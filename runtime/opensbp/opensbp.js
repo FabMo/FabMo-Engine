@@ -1691,19 +1691,15 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
                     " machine>" +
                     this.machine.status.posx
             );
-            //                " runtime>" + CUR_RUNTIME.posx);
-            //            return global.posx;
-            //            return this.posx;
             return this.driver.status.posx;
-        //            return this.machine.status.posx;
 
         case 2: // Y Location
             return this.driver.status.posy;
 
         case 3: // Z Location
             //  log.debug("my Current GLOBAL Z loc = " + global.posz + "  " + posz);
-            return this.posz;
-        //            return this.driver.status.posz;
+            //return this.posz;
+            return this.driver.status.posz;
 
         case 4: // A Location
             return this.driver.status.posa;

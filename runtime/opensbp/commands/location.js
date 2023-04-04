@@ -83,6 +83,7 @@ function offsets(args, callback) {
 
             if (updtG55axes != "") {
                 try {
+                    await machineLoc(args);
                     this.CUR_RUNTIME.emit_gcode("G10 L2 P2 " + updtG55axes);
                     this.CUR_RUNTIME.gcodesPending = false;
                     await config.driver.setManyWrapper(setVA_G2); // syncs FabMo and G2 configs
@@ -110,8 +111,8 @@ function offsets(args, callback) {
 
 // Setting Machine Base Location to Zero or other Value
 //   * This function called first by VA for case of also having G55 Offsets (lower register)
-async function machineLoc(args, callback) {
-    log.debug("##-> STARTING machineLoc - UPPER");
+async function machineLoc(args) {
+    log.debug("##-> STARTING machineLoc - UPPER > " + args);
 
     let updtMachineLoc = "X0";
     if (updtMachineLoc != "") {
@@ -120,13 +121,15 @@ async function machineLoc(args, callback) {
         //    log.debug("##-> FINISHED AWAIT CONFIG - UPPER");
         // await this.driver.requestStatusReport();
         try {
-            await this.emit_gcode("G28.3 " + updtMachineLoc);
-            if (callback) {
-                callback(offsets.call(this, args, callback));
-            }
+            await this.CUR_RUNTIME.emit_gcode("G28.3 " + updtMachineLoc);
+            this.CUR_RUNTIME.emit_gcode("M0");
+            // if (callback) {
+            //     callback(offsets.call(this, args, callback));
+            //     callback(offsets.call(this, args, callback));
+            // }
         } catch (error) {
             log.debug(error);
-            callback(error);
+            //callback(error);
         }
     }
 }

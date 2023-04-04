@@ -28,7 +28,6 @@ exports.VA = function (args, callback) {
     //    machineLoc.call(this, args, callback);
     log.debug("####-> Calling offsets for VA");
     offsets.call(this, args, callback);
-    //offsets(args, callback);
 
     // }
     // if (axes !== undefined) {         // then pass this to the location.js functions
