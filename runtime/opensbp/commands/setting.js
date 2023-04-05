@@ -52,7 +52,7 @@ exports.SR = function (args, callback) {
     callback();
 };
 
-// Set (restore) table (machine) base coordinates
+// Set (restore) table (machine) base coordinates by zeroing G55s
 exports.ST = function (args, callback) {
     this.machine.driver.get(
         "mpo",
