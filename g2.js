@@ -245,10 +245,9 @@ G2.prototype._createCycleContext = function () {
     // Items that need to be pre-pended for all normal motions cycles.
     // So, if we are not in IdleRuntime, then ...
     // Set absolute, spindle speed default, units, and turn on output 4 & ...
-    // M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4
+    // M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4 (needs to be in first 4 commands or vulnerable)
     // ... these conditions are exited when in machine as it goes back to idle
     ////## S1000 is default for spindle speed so that m3 (and SO,1,1) will work correctly w/delay w/o speed
-    ////## M0 makes sure we don't get a spurious stat:4 (needs to be in first 4 commands or vulnerable)
     ////## TODO: create default variable for S-value for VFD spindle control, just a dummy here now
     ////## TODO: fix this kludge to get the current_runtime !
     if (global.CUR_RUNTIME != "[IdleRuntime]") {

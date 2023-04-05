@@ -7,7 +7,6 @@ const { offsets } = require("./location");
 /* VALUES */
 
 exports.VA = function (args, callback) {
-    log.debug("VA Command: " + args);
     // VA Command is complex because in gcode terms it is two commands: the lower "args" register of 6 parameters emits a
     //   ... G10 L2 P2 (setting g55 offsets) and the upper register emits a G28.3 (setting axes to absolute locations,
     //   ... optionally zero). If it has changes, the upper register is executed first; then changes to the g55 values
@@ -15,97 +14,8 @@ exports.VA = function (args, callback) {
     // New values included in the command replace existing G55 values.
     // Note that the number entered into the offset register is not the new g55 value itself, but is the new desired
     //   ... location, from which a new g55 is computed.
-
-    // // Process Upper Register for Setting Machine Location (needs to be done before offsets if there are any)
-    // const subArgs = args.slice(6, 11); // Check to see if there are any in top of array
-    // if (subArgs.some((val) => val !== undefined)) {
-    //     log.debug("Machine Base Changes being Processed First!");
-    //     machineLoc.call(this, args, callback);
-    // } else {
-    //     log.debug("--> No Machine Base Value Changes in this VA");
-    // }
-    //    log.debug("####-> Calling machineLoc for VA");
-    //    machineLoc.call(this, args, callback);
-    log.debug("####-> Calling offsets for VA");
+    log.debug("Calling offsets for VA");
     offsets.call(this, args, callback);
-
-    // }
-    // if (axes !== undefined) {         // then pass this to the location.js functions
-    //     //X Base Coordinate
-    //     machineLoc.call(this, axes, callback);
-    //     //    this.emit_gcode("G28.3 X" + args[6]);
-    //     //    MPO.x = args[6] / unitConv;
-    // }
-
-    //Process Lower Register for Required G55 Offset (needs to follow after machine base location is reset, if reset)
-    //    if (args[0] !== undefined) {
-    // //X location
-    //    axes[0] = args[0];
-    //        offsets.call(this, args, callback);
-
-    // setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
-    // log.debug(
-    //     "    g55X" +
-    //         JSON.stringify(setVA_G2.g55x) +
-    //         "  MPO.x = " +
-    //         MPO.x +
-    //         " args[0] = " +
-    //         args[0]
-    // );
-    // updtG55axes += "X" + setVA_G2.g55x + " ";    // start building axis request for G10 call
-    // this.cmd_posx = this.posx = args[0];
-    //    }
-    // if (args[1] !== undefined) {
-    //     //Y location
-    //     setVA_G2.g55y = Number((MPO.y * unitConv - args[1]).toFixed(5));
-    //     updtG55axes += "Y" + setVA_G2.g55y + " ";
-    //     this.cmd_posy = this.posy = args[1];
-    // }
-    // if (args[2] !== undefined) {
-    //     //Z location
-    //     setVA_G2.g55z = Number((MPO.z * unitConv - args[2]).toFixed(5));
-    //     updtG55axes += "Z" + setVA_G2.g55z + " ";
-    //     this.cmd_posz = this.posz = args[2];
-    // }
-    // if (args[3] !== undefined) {
-    //     //A location
-    //     setVA_G2.g55a = Number(
-    //         (MPO.a * 1.0 /*unitConv*/ - args[3]).toFixed(5)
-    //     );
-    //     updtG55axes += "A" + setVA_G2.g55a + " ";
-    //     this.cmd_posa = this.posa = args[3];
-    // }
-    // if (args[4] !== undefined) {
-    //     //B location
-    //     setVA_G2.g55b = Number(
-    //         (MPO.b * 1.0 /*unitConv*/ - args[4]).toFixed(5)
-    //     );
-    //     updtG55axes += "B" + setVA_G2.g55b + " ";
-    //     this.cmd_posb = this.posb = args[4];
-    // }
-    // if (args[5] !== undefined) {
-    //     //C location
-    //     setVA_G2.g55c = Number(
-    //         (MPO.c * 1.0 /*unitConv*/ - args[5]).toFixed(5)
-    //     );
-    //     updtG55axes += "C" + setVA_G2.g55c + " ";
-    //     this.cmd_posc = this.posc = args[5];
-    // }
-
-    // if (updtG55axes != "") {
-    //     // Make G10 update request if values present
-    //     log.debug("G10 L2 P2 " + updtG55axes);
-    //     this.emit_gcode("G10 L2 P2 " + updtG55axes);
-    // }
-
-    //         try {
-    //             await config.driver.setManyWrapper(setVA_G2);
-    //             callback();
-    //         } catch (error) {
-    //             callback(error);
-    //         }
-    //     }.bind(this)
-    // );
 };
 
 exports.VC = function (args, callback) {

@@ -519,7 +519,7 @@ SBPRuntime.prototype._saveConfig = async function (callback) {
     }
 };
 
-// Save runtime driver settings to the opensbp settings file
+// Save runtime driver settings to settings files
 //   callback - Called when config has been written
 SBPRuntime.prototype._saveDriverSettings = async function (callback) {
     var g2_values = {};
