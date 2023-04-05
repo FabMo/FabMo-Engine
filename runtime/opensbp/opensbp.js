@@ -143,15 +143,6 @@ SBPRuntime.prototype.disconnect = function () {
     }
 
     if (this.ok_to_disconnect) {
-        log.debug(
-            "various posx's: global>" +
-                global.posx +
-                " driver>" +
-                this.driver.status.posx +
-                " machine>" +
-                this.machine.status.posx
-        );
-
         this.driver.removeListener("status", this.status_handler);
         this.machine = null;
         this.driver = null;

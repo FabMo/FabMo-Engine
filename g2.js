@@ -433,18 +433,6 @@ G2.prototype.requestStatusReport = function (callback) {
     this.command({ sr: null });
 };
 
-G2.prototype.requestStatusReportWrapper = async function (input) {
-    return await new Promise((resolve, reject) => {
-        this.requestStatusReport(input, function (err, result) {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(result);
-            }
-        });
-    });
-};
-
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function (data) {
     var t = new Date().getTime(); // Get current time for logging
