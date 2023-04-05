@@ -324,8 +324,6 @@ ManualDriver.prototype.set = function (pos) {
                         console.log(key);
                         switch (key) {
                             case "X":
-                                //axes[0] = pos[key];
-                                //offsets.call(this, axes);
                                 toSet.g55x = Number(
                                     (MPO.x * unitConv - pos[key]).toFixed(5)
                                 );
