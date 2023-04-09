@@ -845,7 +845,7 @@ SBPRuntime.prototype._run = function () {
             case this.driver.STAT_PROBE:
                 //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
                 //log.debug(this.probingPending) //; = true; // would be redundant we hope
-                this.probingInitialized = false;
+                this.probingInitialized = false; // should still be probingPending = true, awaiting stat:7
                 break;
 
             case this.driver.STAT_RUNNING:
@@ -993,8 +993,7 @@ SBPRuntime.prototype._executeNext = function () {
         // g-codes executing, and we might not have gotten a report that indicates that the machine
         // has stopped executing stuff.  Of course we only do that if there's a driver (we're not simulating)
 
-        if (this.probingPending) {
-            //        if (this.probingPending && this.driver) {
+        if (this.probingPending && this.driver) {
             log.debug("Deferring because still PROBING ......");
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else if (this.gcodesPending && this.driver) {
