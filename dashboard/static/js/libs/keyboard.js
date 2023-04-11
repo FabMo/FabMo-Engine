@@ -45,7 +45,8 @@
     to the designed functionality was ever supposed to be handled for the keyboard case (vs the keypad case). I also went back
     a bit in time and did not find evidence that this system ever worked to set a visual indicators that an axis button was
     being pushed from the device keyboard arrows. There may be other "intended" features that also fail here. I have created a
-    system for handling the display for now. Don't know if it's as efficient as it could be. 
+    system for handling the display for now. Don't know if it's as efficient as it could be. Note that both keyboard and
+    work through main.js motion calls.
     */
 
     Keyboard.prototype.init = function () {
@@ -132,7 +133,7 @@
         }
     };
 
-    // Get keypad icons to light when keyboard arrow keys are used; see note above; see note above
+    // Get keypad icons to light when keyboard arrow keys are used; see note above
     Keyboard.prototype.start = function (axis, direction) {
         if (this.going) {
             return;
@@ -261,11 +262,26 @@
 
     Keyboard.prototype.nudge = function (axis, direction) {
         if (this.going) {
+            this.going = false;
             return this.stop();
         }
         var nudge = { axis: axis, dir: direction };
         if (this.enabled) {
             this.emit("nudge", nudge);
+            let activeArrowStr =
+                "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
+            $(activeArrowStr).addClass("drive-button-active-transient");
+            setTimeout(
+                function () {
+                    if (!this.going) {
+                        $(activeArrowStr).removeClass(
+                            "drive-button-active-transient"
+                        );
+                        $(activeArrowStr).addClass("drive-button-inactive");
+                    }
+                }.bind(this),
+                50
+            );
         }
     };
 

@@ -629,7 +629,8 @@ $(document).on("keydown", function (e) {
         console.warn("ESC key pressed - quitting engine.");
         dashboard.engine.manualExit();
         // keyboard.setEnabled(true);
-    } else if (e.keyCode === 75 && e.ctrlKey) {
+    } else if (e.keyCode === 75 && e.altKey) {
+        // changed to alt but still not very useful being outside iframe
         dashboard.engine.manualEnter();
     }
 });
