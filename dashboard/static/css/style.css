@@ -1339,10 +1339,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .manual-drive-message {
 	font-size: 1.2rem;
 	display: none;
-	color: #eee;
+	color: #313366;
 	width: 100%;
 	height: auto;
 	text-align: center;
+	margin-top: -8px;
 	margin-bottom: 10px;
 }
 .keypad-button {
