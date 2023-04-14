@@ -527,6 +527,13 @@ G2.prototype.clearLastException = function () {
  * 9	machine is homing
  */
 G2.prototype.handleStatusReport = function (response) {
+    if (response.prb) {
+        log.debug("GOT PROBE FINISH REPORT! Target at:  " + response.prb.z);
+        if (response.prb.e === 1) {
+            log.debug("HIT TARGET!");
+        }
+        // Don't clear probePending until next stat:3; managed in "opensbp"
+    }
     if (response.sr) {
         // Update our copy of the system status
         for (var key in response.sr) {

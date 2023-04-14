@@ -86,7 +86,6 @@
             this.socket.on(
                 "status",
                 function (status) {
-                    console.log(status);
                     this._setStatus(status);
                     this.emit("status", status);
                 }.bind(this)
