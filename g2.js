@@ -245,7 +245,7 @@ G2.prototype._createCycleContext = function () {
     // Items that need to be pre-pended for all normal motions cycles.
     // So, if we are not in IdleRuntime, then ...
     // Set absolute, spindle speed default, units, and turn on output 4 & ...
-    // M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4
+    // M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4 (needs to be in first 4 commands or vulnerable)
     // ... these conditions are exited when in machine as it goes back to idle
     ////## S1000 is default for spindle speed so that m3 (and SO,1,1) will work correctly w/delay w/o speed
     ////## TODO: create default variable for S-value for VFD spindle control, just a dummy here now
@@ -253,11 +253,11 @@ G2.prototype._createCycleContext = function () {
     if (global.CUR_RUNTIME != "[IdleRuntime]") {
         log.debug("PREPEND to cycle - " + global.CUR_RUNTIME);
         st.write(
-            "N1 G90\n" +
-                "N2 S1000\n" +
+            "N1 M0\n" +
+                "N2 G90\n" +
                 "N3 G61\n" +
                 "N4 M100 ({out4:1})\n" +
-                "N5 M0\n"
+                "N5 S1000\n"
         );
     }
 
@@ -527,6 +527,13 @@ G2.prototype.clearLastException = function () {
  * 9	machine is homing
  */
 G2.prototype.handleStatusReport = function (response) {
+    if (response.prb) {
+        log.debug("GOT PROBE FINISH REPORT! Target at:  " + response.prb.z);
+        if (response.prb.e === 1) {
+            log.debug("HIT TARGET!");
+        }
+        // Don't clear probePending until next stat:3; managed in "opensbp"
+    }
     if (response.sr) {
         // Update our copy of the system status
         for (var key in response.sr) {
