@@ -1683,9 +1683,10 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
     }
 };
 
-// TODO: Needs to be fixed for C-AXIS
 // Return the value of the provided system variable.
 //   v - System variable as a string, eg: "%(1)"
+// SEE: Planning doc in progress on "Supported System Variables in FabMo"
+// CURRENTLY a work in progress ...
 SBPRuntime.prototype.evaluateSystemVariable = function (v) {
     var envelope = config.machine.get("envelope");
     if (v === undefined) {
@@ -1713,32 +1714,26 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 5: // B Location
             return this.driver.status.posb;
 
-        case 6: // X Table Base
+        case 6: // C Location
+            return this.driver.status.posc;
+
+        case 7: // X Table Base
             return config.driver.get("g55x");
 
-        case 7: // Y Table Base
+        case 8: // Y Table Base
             return config.driver.get("g55y");
 
-        case 8: // Z Table Base
+        case 9: // Z Table Base
             return config.driver.get("g55z");
 
-        case 9: // A Table Base
+        case 10: // A Table Base
             return config.driver.get("g55a");
 
-        case 10: // B Table Base
+        case 11: // B Table Base
             return config.driver.get("g55b");
 
-        case 11: //Min Table limit X
-            return envelope.xmin;
-
-        case 12: //Max Table limit X
-            return envelope.xmax;
-
-        case 13: //Min Table limit Y
-            return envelope.ymin;
-
-        case 14: //Max Table limit Y
-            return envelope.ymax;
+        case 12: // C Table Base
+            return config.driver.get("g55c");
 
         case 25:
             var units = config.machine.get("units");
@@ -1753,7 +1748,10 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 28:
             return config.opensbp.get("safeZpullUp");
 
-        case 51:
+        case 29:
+            return config.opensbp.get("safeApullUp");
+
+        case 51: // Note that these all fall through to the last
         case 52:
         case 53:
         case 54:
@@ -1761,8 +1759,16 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 56:
         case 57:
         case 58:
+        case 59:
+        case 60:
+        case 61:
+        case 62: // End of current inputs at #12
+        case 63:
             return this.machine.status["in" + (n - 50)];
 
+        // NOTE: More inputs are imagined here
+
+        // PLANNING to Start Outputs at 71 with speeds above 100; so the following are just remnants at the moment
         case 71: // XY Move Speed
             return config.opensbp.get("movexy_speed");
 
@@ -1799,8 +1805,43 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 86:
             return config.driver.get("cjm");
 
-        case 144:
-            return this.machine.status.posc;
+        case 101: //Min Table limit X
+            return envelope.xmin;
+
+        case 102: //Max Table limit X
+            return envelope.xmax;
+
+        case 103: //Min Table limit Y
+            return envelope.ymin;
+
+        case 104: //Max Table limit Y
+            return envelope.ymax;
+
+        case 105: //Min Table limit Z
+            return envelope.zmin;
+
+        case 106: //Max Table limit Z
+            return envelope.zmax;
+
+        case 107: //Min Table limit A
+            return envelope.amin;
+
+        case 108: //Max Table limit A
+            return envelope.amax;
+
+        case 109: //Min Table limit B
+            return envelope.bmin;
+
+        case 110: //Max Table limit B
+            return envelope.bmax;
+
+        case 111: //Min Table limit C
+            return envelope.cmin;
+
+        case 112: //Max Table limit C
+            return envelope.cmax;
+
+        // PLANNING for Movespeeds starting at 121
 
         default:
             throw new Error(
