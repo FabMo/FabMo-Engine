@@ -219,6 +219,9 @@
     };
 
     Keyboard.prototype.onKeyUp = function (evt) {
+        if (evt.keyCode < 27) {
+            return;
+        } // prevents un-needed kills to shift and ctl release
         if (this.nudgeTimer) {
             clearTimeout(this.nudgeTimer);
             this.nudgeTimer = null;

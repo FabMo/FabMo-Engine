@@ -577,27 +577,6 @@ $(".manual-drive-enter").on("click", function () {
     dashboard.engine.manualEnter();
 });
 
-function showConsent() {
-    $(".modalDim").show();
-    $("#beacon_consent_container").show();
-}
-function hideConsent() {
-    $(".modalDim").hide();
-    $("#beacon_consent_container").hide();
-}
-
-$("#beacon_consent_button").on("click", function (conf) {
-    conf = { consent_for_beacon: "true" };
-    dashboard.engine.setUpdaterConfig(conf, function (err) {
-        if (err) {
-            return;
-        }
-    });
-    consent = "true";
-    $(".modalDim").hide();
-    $("#beacon_consent_container").hide();
-});
-
 function showDaisy(callback) {
     if (daisyIsShown) {
         return;
@@ -623,19 +602,68 @@ function hideDaisy(callback) {
     dashboard.hideModal();
 }
 
-// listen for escape key press to quit the engine ctrl and k enters manual
+// Click outside the modal keypad to close it  //th: don't know if I like this now that it is done?
+const modalKeyPad = document.getElementById("keypad-modal");
+function handleClickOutside(event) {
+    if (
+        modalKeyPad &&
+        !modalKeyPad.contains(event.target) &&
+        modalKeyPad.style.display === "block"
+    ) {
+        if (last_state_seen === "manual") {
+            dashboard.engine.manualExit();
+        }
+    }
+}
+// Attach the event listener to the document
+document.addEventListener("click", handleClickOutside);
+
+// Access slider for using speed up/dn keys (could not make our jquery work for this, need ui version?)
+const slider = document.getElementById("manual-move-speed");
+function triggerSliderEvent(value) {
+    if (slider) {
+        slider.value = value;
+        const changeEvent = new Event("change");
+        slider.dispatchEvent(changeEvent);
+        const inputEvent = new Event("input");
+        slider.dispatchEvent(inputEvent);
+    }
+}
+
+// Key action in from keyboard in Modal Keypad
 $(document).on("keydown", function (e) {
-    if (e.keyCode === 27) {
-        console.warn("ESC key pressed - quitting engine.");
-        dashboard.engine.manualExit();
-        // keyboard.setEnabled(true);
-    } else if (e.keyCode === 75 && e.altKey) {
-        // changed to alt but still not very useful being outside iframe
+    // escape key press to quit the engine
+    if (e.key === "Escape") {
+        console.warn("ESC key pressed - quitting manual mode.");
+        dashboard.engine.manualExit(); // not checking for modal active as useful to a button to send a "kill" to G2 for general clear
+        // alt + k enters manual (only if not in iframe)
+    } else if (e.key === "k" && e.altKey) {
+        // changed to alt but still not very useful only working outside iframe
         dashboard.engine.manualEnter();
+        // toggle "Fixed" moves
+    } else if (e.key === "f") {
+        $(".fixed-switch").trigger("click");
+        // increase or decrease speed
+    } else if (e.key === ">" || e.key === "<") {
+        let newSpeed;
+        let adder = 0.1;
+        if (dashboard.engine.status.unit === "mm") {
+            adder = 1.0;
+        }
+        switch (e.key) {
+            case ">":
+                newSpeed = parseFloat($("#manual-move-speed").val()) + adder;
+                triggerSliderEvent(newSpeed);
+                break;
+            case "<":
+                newSpeed = parseFloat($("#manual-move-speed").val()) - adder;
+                triggerSliderEvent(newSpeed);
+                break;
+        }
     }
 });
 
-//goto this location
+// Goto this location
 var axisValues = [];
 var getAxis = function () {
     $(".axi").each(function () {
@@ -798,7 +826,6 @@ engine.on("disconnect", function () {
     if (!disconnected) {
         disconnected = true;
         setConnectionStrength(null);
-        hideConsent();
         showDaisy();
     }
 });
