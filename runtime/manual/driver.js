@@ -227,16 +227,16 @@ ManualDriver.prototype.stopMotion = function () {
     if (this._limit()) {
         return;
     }
-    this.stop_pending = true; ////## queue not clearing right ... testing
+    this.stop_pending = true;
     this.keep_moving = false;
     if (this.renew_timer) {
         clearTimeout(this.renew_timer);
     }
     this.omg_stop = true;
-    this.driver.manualFeedHold();
+    this.driver.manualFeedHold(); // Will just send ! from G2driver
     this.driver.queueFlush(
         function () {
-            this.driver.resume();
+            this.driver._write("%\n"); // Will send flush as callback
         }.bind(this)
     );
 };
@@ -250,11 +250,7 @@ ManualDriver.prototype.quitMove = function () {
     if (this.moving) {
         this.stop_pending = true;
         this.driver.quit();
-        this.driver.queueFlush(
-            function () {
-                this.driver.resume();
-            }.bind(this)
-        );
+        this.driver.queueFlush();
     } else {
         this.stop_pending = false;
     }
@@ -613,12 +609,14 @@ ManualDriver.prototype._onG2Status = function (status) {
             if (this._handleNudges()) {
                 // Nudges got handled
             } else {
-                // No nudges
+                this.omg_stop = false;
+                this.stop_pending = false;
+                if (this.driver.status.hold === 0) {
+                    this.driver._write("%\n"); // flush feed-hold and get stat:
+                }
                 if (this.exit_pending) {
                     this.exit();
                 }
-                this.omg_stop = false;
-                this.stop_pending = false;
             }
             break;
     }

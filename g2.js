@@ -736,7 +736,7 @@ G2.prototype.onMessage = function (response) {
 // eslint-disable-next-line no-unused-vars
 G2.prototype.manualFeedHold = function (callback) {
     this.pause_flag = true;
-    this._write("\x04\n");
+    this._write("!\n");
 };
 
 // "pause" the current machining cycle by issuing a feedhold. Used in Files (not Manual)!
@@ -758,14 +758,11 @@ G2.prototype.feedHold = function (callback) {
 // Clears the queue, this means both the queue of g-codes in the engine to send,
 // and whatever gcodes have been received but not yet executed in the g2 firmware context
 G2.prototype.queueFlush = function (callback) {
-    //TODO: is this the correct way to flush the g2Core queue currently
-    log.debug("Sending FabMo Queue Clear, first!");
+    log.debug("Sending FabMo Queue Clear");
     this.flushcallback = callback;
     this.lines_to_send = 4;
-    this.gcode_queue.clear();
-    this.command({ clr: null });
-    // TODO: It looks like this kill will go off before the command above is sent in some cases preventing the clr from sending.
-    this._write("\x04\n");
+    this.gcode_queue.clear(); // clear FabMo
+    this._write("%\n"); // clear G2, though redundant in case of quitting a file
 };
 
 // Bring the system out of feedhold
@@ -821,10 +818,9 @@ G2.prototype.quit = function () {
     if (this.stream) {
         this.stream.end();
     }
-    // Clear queues then issue kill.
+    // Issue kill and clear queues.
+    this._write("\x04\n");
     this.queueFlush(function () {
-        // TODO: is a kill needed in the callback?
-        this._write("\x04\n");
         //Finally clear context and _reset primed flag so we're not reliant on getting a stat 4 to clear the context.
         this.context = null;
         this._primed = false;
