@@ -101,8 +101,8 @@ var setUpManual = function () {
     // Customize for video
     let current_App = localStorage.getItem("currentapp");
     if (current_App === "video") {
-        $(".modalDim").css("background-color", "#rgba(0,0,0,0)");
         $("#keypad-modal").css("opacity", "0.35");
+        $(".modalDim").css("background-color", "rgba(0,0,0,0)");
     } else {
         $("#keypad-modal").css("opacity", "1.00");
         $(".modalDim").css("background-color", "rgba(0,0,0,0.45)");
