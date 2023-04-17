@@ -1339,10 +1339,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .manual-drive-message {
 	font-size: 1.2rem;
 	display: none;
-	color: #eee;
+	color: #313366;
 	width: 100%;
 	height: auto;
 	text-align: center;
+	margin-top: -8px;
 	margin-bottom: 10px;
 }
 .keypad-button {
@@ -1538,7 +1539,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 } */
 
 .speed_read_out {
-	position: absolute;
+	position: relative;
+	top: 0%;
+	left: 73%;
 	color: #422001;
 	display: none;
 	z-index: 10000;
@@ -1574,6 +1577,7 @@ input[type='range']::-webkit-slider-runnable-track {
   background: linear-gradient(#e38928, #DB8635) no-repeat content-box, linear-gradient(#1c1c1c, #fd2) content-box;
   background-size: 100% 100%;
 }
+/* #### Between marks these may need updating for new appearance ? Don't seem to be used in edge */
 input[type='range']::-moz-range-track {
   box-sizing: border-box;
   padding: 0.75em;
@@ -1594,10 +1598,10 @@ input[type='range']::-ms-track {
   background: linear-gradient(#1c1c1c, #fd2) content-box;
   color: transparent;
 }
+/* #### and possibly below as well */
 
 
-
-
+/* Also needed for new appearance ? */
 input[type='range']::-moz-range-progress {
   padding: 0.75em 1px 0.75em 0.75em;
   height: 1em;
@@ -2185,6 +2189,8 @@ input[type='range']:focus {
     }
 
 	.speed_read_out {
+		top: 40%;
+		left: 40%;
 		padding-top: 35px;
 		padding-left: 35px;
 	}

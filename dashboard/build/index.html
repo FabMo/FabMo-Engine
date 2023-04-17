@@ -32,9 +32,6 @@
   <body id="body">
     <div id='mainContent'>
     </div>
-    <div class="speed_read_out">
-      100
-    </div>
     <form>
       <input type="file" id="hidden-file-input" style="position: fixed; top:-1000; display: none" />
     </form>
@@ -247,9 +244,11 @@
 
     <!-- The Dialog -->
     <div class="modalDim"></div>
-    <div class="manual-drive-modal" oncontextmenu="return false;">
+    <div class="manual-drive-modal" id="keypad-modal" oncontextmenu="return false;">
       <div class="manual-drive-exit"><i class="fa fa-times"></i></div>
-
+      <div class="speed_read_out">
+        100
+      </div>
       <div class="manual-drive-message">This is where a message will go</div>
       <div class="manual-drive-container">
         <div>
@@ -314,7 +313,7 @@
           <div id="keypad" class="fabmo-manual-control keypad " style="text-align: center;">
             <div class="slidecontainer">
               <input type="range"  step="0.1" class="slider" id="manual-move-speed">
-              <label >XY Move Speed</label>
+              <label><u><</u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XY Move Speed&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<u>></u></label>
             </div>
             <div class="fixed-input-container ">
               <div>
@@ -401,7 +400,7 @@
               </div>
             </div>
             <div class="switch-container">
-              <span class="fixed-label">Fixed Distance </span>
+              <span class="fixed-label"><u>F</u>ixed Distance </span>
               <label class="fixed-switch">
               <input type="checkbox">
               <span class="slider-toggle round"></span>
