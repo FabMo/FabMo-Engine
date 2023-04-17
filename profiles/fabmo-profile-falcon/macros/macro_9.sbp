@@ -1,6 +1,11 @@
 '!FABMO!name:Tool Change
 '!FABMO!description:Use ATC or manual tool change
 SC,0
+SO,1,0
+Pause,2
+&PlateOffset = 0
+&WorkZoffset = 0
+&SafeClip= 4
 &XYMoveSpeed = %(71)
 &XYJogSpeed = %(76)
 &ZMoveSpeed = %(73)
@@ -9,6 +14,7 @@ MS,12,10
 JS,30,20
 VR,150,150,150
 
+&offZ = &PlateOffset
 &cnt = 0
 
 &MyToolin = $Toolin
@@ -17,34 +23,34 @@ VR,150,150,150
 &clipZ = 0
 '&ToolL = 0
 
-&clip1X = 6.841
-&clip1Y = 54.889
-&clip1Z = -4
+&clip1X = 6.230
+&clip1Y = 55
+&clip1Z = -3.875
 '&Tool1L = 11.11
 
-&clip2X = 12.95
-&clip2Y = 54.967
-&clip2Z = -4
+&clip2X = 12.306
+&clip2Y = 55
+&clip2Z = -3.875
 '&Tool2L = 10.75
 
-&clip3X = 19.195
+&clip3X = 18.50
 &clip3Y = 55
-&clip3Z = -4
+&clip3Z = -3.875
 '&Tool3L = 4.619
 
-&clip4X = 25.445
-&clip4Y = 54.986
+&clip4X = 24.856
+&clip4Y = 55
 &clip4Z = -3.875
 '&Tool4L = 10.75
 
-&clip5X = 31.907
-&clip5Y = 54.975
+&clip5X = 31.086
+&clip5Y = 55
 &clip5Z = -3.875
 '&Tool5L = 10.75
 
 if %(57) = 0 then gosub SetZeroTool
 
-MZ,0
+MZ,-.125
 if &MyToolin = 1 then  gosub SetClip1in
 if &MyToolin = 2 then  gosub SetClip2in
 if &MyToolin = 3 then  gosub SetClip3in
@@ -78,15 +84,16 @@ PickUp:
     gosub Check8
 	MZ,&clipZ
 	SO,8,0
-	MY,&clipY - 1.75
+	MY,&clipY - &SafeClip
 	JZ,0
-    VA,,,&ToolL '- &offZ
+    VA,,,&ToolL - &offZ - &WorkZoffset
+    MZ,%(3)-.125
 	'$Toolin = &Tool
 
 Return
 
 Drop:
-	J2,&clipX,&clipY - 1.75 
+	J2,&clipX,&clipY - &SafeClip
 	'MX,&clipX + 1.5
 	JZ,&clipZ
     M2,&clipX,&clipY - 0.75
@@ -103,6 +110,7 @@ SetClip1:
 	&clipX = &clip1X
 	&clipY = &clip1Y
 	&clipZ = &clip1Z
+
     &ToolL = $Tool1L
 Return
 
@@ -110,6 +118,7 @@ SetClip2:
 	&clipX = &clip2X
 	&clipY = &clip2Y
 	&clipZ = &clip2Z
+    
     &ToolL = $Tool2L
 Return
 
@@ -139,36 +148,35 @@ SetClip1in:
 	&clipX = &clip1X
 	&clipY = &clip1Y
 	&clipZ = &clip1Z
-    &offZ = $Tool1L '- (-1 * -10.11)
-   ' pause "Z Offset" + &offZ
+    &WorkZoffset = %(8) + $Tool1L
 Return
 
 SetClip2in:
 	&clipX = &clip2X
 	&clipY = &clip2Y
 	&clipZ = &clip2Z
-    &offZ = $Tool1L '- (-1 * -9.75)
+	&WorkZoffset = %(8) + $Tool2L  
 return
 
 SetClip3in:
 	&clipX = &clip3X
 	&clipY = &clip3Y
 	&clipZ = &clip3Z
-    &offZ = $Tool3L '- (-1 * -9.75)
+	&WorkZoffset = %(8) + $Tool3L 
 Return
 
 SetClip4in:
 	&clipX = &clip4X
 	&clipY = &clip4Y
 	&clipZ = &clip4Z
-    &offZ = $Tool4L '- (-1 * -9.75)
+	&WorkZoffset = %(8) + $Tool4L 
 Return
     
 SetClip5in:
 	&clipX = &clip5X
 	&clipY = &clip5Y
 	&clipZ = &clip5Z
-    &offZ = $Tool5L '- (-1 * -9.75)
+	&WorkZoffset = %(8) + $Tool5L 
 Return
     
     
