@@ -1,5 +1,4 @@
 //var log = require("../../../log").logger("sbp");
-
 const { offsets } = require("./location");
 
 /* ZERO */

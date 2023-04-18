@@ -1692,27 +1692,26 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
     if (v === undefined) {
         return undefined;
     }
+
     if (v.type != "system_variable") {
         return;
     }
     var n = this._eval(v.expr);
     switch (n) {
-        // To get location data expeditiously these were changed to read driver (G2) status rather than machine
-        // or runtime status. This works within files, but may otherwise create issues?
         case 1: // X Location
             return this.driver.status.posx;
 
         case 2: // Y Location
-            return this.driver.status.posy;
+            return this.machine.status.posy;
 
         case 3: // Z Location
             return this.driver.status.posz;
 
         case 4: // A Location
-            return this.driver.status.posa;
+            return this.machine.status.posa;
 
         case 5: // B Location
-            return this.driver.status.posb;
+            return this.machine.status.posb;
 
         case 6: // C Location
             return this.driver.status.posc;
