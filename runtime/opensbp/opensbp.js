@@ -511,7 +511,7 @@ SBPRuntime.prototype._saveConfig = async function (callback) {
     }
 };
 
-// Save runtime driver settings to the opensbp settings file
+// Save runtime driver settings to settings files
 //   callback - Called when config has been written
 SBPRuntime.prototype._saveDriverSettings = async function (callback) {
     var g2_values = {};
@@ -795,6 +795,8 @@ SBPRuntime.prototype._run = function () {
     this.started = true;
     this.waitingForStackBreak = false;
     this.gcodesPending = false;
+    this.probingInitialized = false;
+    this.probingPending = false;
     log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
     if (this.machine) {
         this.machine.setState(this, "running");
@@ -811,10 +813,22 @@ SBPRuntime.prototype._run = function () {
         }
         switch (stat) {
             case this.driver.STAT_STOP:
-                // Only update and call execute next if we're waiting on pending gcodes.
+                // Only update and call execute next if we're waiting on pending gcodes or probing
+                // ... and expecting this stat:3
+                // For probing we do not turn off the pending if we have not passed the Initialization phase
+                if (this.probingPending && !this.probingInitialized) {
+                    this.probingPending = false;
+                    this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
+                    this.prime();
+                    //log.debug("COMPLETETED PENDING PROBING =(cleared)============####")
+                    this._executeNext();
+                    break;
+                }
                 if (this.gcodesPending) {
                     this.gcodesPending = false;
+                    //log.debug("COMPLETETED PENDING GCODES =(cleared)============####")
                     this._executeNext();
+                    break;
                 }
                 break;
             case this.driver.STAT_HOLDING:
@@ -829,7 +843,13 @@ SBPRuntime.prototype._run = function () {
                     this.machine.setState(this, "paused");
                 }
                 break;
+
             case this.driver.STAT_PROBE:
+                //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
+                //log.debug(this.probingPending) //; = true; // would be redundant we hope
+                this.probingInitialized = false; // should still be probingPending = true, awaiting stat:7
+                break;
+
             case this.driver.STAT_RUNNING:
                 if (!this.inManualMode) {
                     if (this.machine.status.state != "running") {
@@ -931,8 +951,11 @@ SBPRuntime.prototype._executeNext = function () {
         // state (because it's run everything that it's recieved) - If pending is true, that means there's
         // more work to do before finishing out the program.  We prime()d above, so those instructions will
         // get executed (and the stat handler will call _executeNext again once the machine stops moving)
-        if (this.gcodesPending && this.driver) {
-            log.debug("GCodes are still pending...");
+        if (
+            (this.gcodesPending && this.driver) ||
+            (this.probingPending && this.driver)
+        ) {
+            log.debug("GCodes or Probing is still pending...");
             return;
         }
 
@@ -974,10 +997,14 @@ SBPRuntime.prototype._executeNext = function () {
         // allowed to execute it if everything up till now has finished executing
         // (there are no instructions pending in the motion system)
         // We request a status report, just to catch the case where there are non-motion
-        // g-codes executing, and we might not have got a report that indicates that the machine
+        // g-codes executing, and we might not have gotten a report that indicates that the machine
         // has stopped executing stuff.  Of course we only do that if there's a driver (we're not simulating)
-        if (this.gcodesPending && this.driver) {
-            log.debug("Deferring because g-codes pending.");
+
+        if (this.probingPending && this.driver) {
+            log.debug("Deferring because still PROBING ......");
+            return; // We can return knowing that we'll be called again when the system enters STAT_STOP
+        } else if (this.gcodesPending && this.driver) {
+            log.debug("Deferring because g-codes PENDING ......");
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else {
             // G2 is stopped, execute stack breaking command now
@@ -1160,7 +1187,7 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
         var macro = macros.get(number);
         if (macro) {
             // TODO: Should this just display the macro identifier or name?
-            log.debug("Running macro: " + JSON.stringify(macro));
+            // log.debug("Running macro: " + JSON.stringify(macro));
             this._pushFileStack();
             this.runFile(macro.filename);
         } else {
@@ -1457,7 +1484,6 @@ SBPRuntime.prototype._assign = async function (identifier, value, callback) {
         }
         return;
     }
-    log.debug(identifier.expr + " is not a user variable");
 
     if (identifier.type == "persistent_variable") {
         // Persistent variable
@@ -1471,7 +1497,6 @@ SBPRuntime.prototype._assign = async function (identifier, value, callback) {
         }
         return;
     }
-    log.debug(identifier.expr + " is not a persistent variable");
 
     throw new Error("Cannot assign to " + identifier);
 };
@@ -1666,9 +1691,10 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
     }
 };
 
-// TODO: Needs to be fixed for C-AXIS
 // Return the value of the provided system variable.
 //   v - System variable as a string, eg: "%(1)"
+// SEE: Planning doc in progress on "Supported System Variables in FabMo"
+// CURRENTLY a work in progress ...
 SBPRuntime.prototype.evaluateSystemVariable = function (v) {
     var envelope = config.machine.get("envelope");
     if (v === undefined) {
@@ -1681,13 +1707,13 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
     var n = this._eval(v.expr);
     switch (n) {
         case 1: // X Location
-            return this.machine.status.posx;
+            return this.driver.status.posx;
 
         case 2: // Y Location
             return this.machine.status.posy;
 
         case 3: // Z Location
-            return this.machine.status.posz;
+            return this.driver.status.posz;
 
         case 4: // A Location
             return this.machine.status.posa;
@@ -1695,32 +1721,26 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 5: // B Location
             return this.machine.status.posb;
 
-        case 6: // X Table Base
+        case 6: // C Location
+            return this.driver.status.posc;
+
+        case 7: // X Table Base
             return config.driver.get("g55x");
 
-        case 7: // Y Table Base
+        case 8: // Y Table Base
             return config.driver.get("g55y");
 
-        case 8: // Z Table Base
+        case 9: // Z Table Base
             return config.driver.get("g55z");
 
-        case 9: // A Table Base
+        case 10: // A Table Base
             return config.driver.get("g55a");
 
-        case 10: // B Table Base
+        case 11: // B Table Base
             return config.driver.get("g55b");
 
-        case 11: //Min Table limit X
-            return envelope.xmin;
-
-        case 12: //Max Table limit X
-            return envelope.xmax;
-
-        case 13: //Min Table limit Y
-            return envelope.ymin;
-
-        case 14: //Max Table limit Y
-            return envelope.ymax;
+        case 12: // C Table Base
+            return config.driver.get("g55c");
 
         case 25:
             var units = config.machine.get("units");
@@ -1735,7 +1755,10 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 28:
             return config.opensbp.get("safeZpullUp");
 
-        case 51:
+        case 29:
+            return config.opensbp.get("safeApullUp");
+
+        case 51: // Note that these all fall through to the last
         case 52:
         case 53:
         case 54:
@@ -1743,8 +1766,16 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 56:
         case 57:
         case 58:
+        case 59:
+        case 60:
+        case 61:
+        case 62: // End of current inputs at #12
+        case 63:
             return this.machine.status["in" + (n - 50)];
 
+        // NOTE: More inputs are imagined here
+
+        // PLANNING to Start Outputs at 71 with speeds above 100; so the following are just remnants at the moment
         case 71: // XY Move Speed
             return config.opensbp.get("movexy_speed");
 
@@ -1781,8 +1812,43 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 86:
             return config.driver.get("cjm");
 
-        case 144:
-            return this.machine.status.posc;
+        case 101: //Min Table limit X
+            return envelope.xmin;
+
+        case 102: //Max Table limit X
+            return envelope.xmax;
+
+        case 103: //Min Table limit Y
+            return envelope.ymin;
+
+        case 104: //Max Table limit Y
+            return envelope.ymax;
+
+        case 105: //Min Table limit Z
+            return envelope.zmin;
+
+        case 106: //Max Table limit Z
+            return envelope.zmax;
+
+        case 107: //Min Table limit A
+            return envelope.amin;
+
+        case 108: //Max Table limit A
+            return envelope.amax;
+
+        case 109: //Min Table limit B
+            return envelope.bmin;
+
+        case 110: //Max Table limit B
+            return envelope.bmax;
+
+        case 111: //Min Table limit C
+            return envelope.cmin;
+
+        case 112: //Max Table limit C
+            return envelope.cmax;
+
+        // PLANNING for Movespeeds starting at 121
 
         default:
             throw new Error(

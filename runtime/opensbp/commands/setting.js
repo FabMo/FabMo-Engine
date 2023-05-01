@@ -10,6 +10,7 @@ exports.SA = function (args, callback) {
     callback();
 };
 
+// Set Active coordinate system (not erasing either)
 exports.SC = function (args, callback) {
     try {
         switch (args[0]) {
@@ -39,6 +40,7 @@ exports.SC = function (args, callback) {
     callback();
 };
 
+// Set/Open Manual Keypay (for calling up in files)
 exports.SK = function (args, callback) {
     this.manualEnter(args[0], callback);
 };
@@ -50,7 +52,7 @@ exports.SR = function (args, callback) {
     callback();
 };
 
-// Set to table base coordinates
+// Set (restore) table (machine) base coordinates by zeroing G55s
 exports.ST = function (args, callback) {
     this.machine.driver.get(
         "mpo",
@@ -82,6 +84,7 @@ exports.ST = function (args, callback) {
     );
 };
 
+// Set an Output On or Off (note M-codes only for output 1)
 exports.SO = function (args) {
     var outnum = parseInt(args[0]);
     var state = parseInt(args[1]);
@@ -102,6 +105,7 @@ exports.SO = function (args) {
     }
 };
 
+// Output a PWM Signal *not implemented in FabMo ???
 exports.SP = function (args) {
     var outnum = parseInt(args[0]);
     var state = parseFloat(args[1]);
@@ -117,6 +121,7 @@ exports.SP = function (args) {
     }
 };
 
+// Set Units
 exports.SU = function (args) {
     var units = ((args[0] || "in") + "").toLowerCase();
 
@@ -141,6 +146,7 @@ exports.SU = function (args) {
     }
 };
 
+// Save driver settings to settings files  *Utility ???
 exports.SV = function (args, callback) {
     this._saveDriverSettings(
         // eslint-disable-next-line no-unused-vars

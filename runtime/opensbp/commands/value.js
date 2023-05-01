@@ -1,112 +1,21 @@
 var log = require("../../../log").logger("sbp");
 var config = require("../../../config");
+
+const { offsets } = require("./location");
+//const { machineLoc } = require("./location");
+
 /* VALUES */
 
 exports.VA = function (args, callback) {
-    log.debug("VA Command: " + args);
-
-    this.machine.driver.get(
-        "mpo",
-        async function (err, MPO) {
-            var setVA_G2 = {};
-            var unitConv = 1;
-
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-
-            if (args[6] !== undefined) {
-                //X Base Coordinate
-                this.emit_gcode("G28.3 X" + args[6]);
-                MPO.x = args[6] / unitConv;
-            }
-            if (args[7] !== undefined) {
-                //Y Base Coordinate
-                this.emit_gcode("G28.3 Y" + args[7]);
-                MPO.y = args[7] / unitConv;
-            }
-            if (args[8] !== undefined) {
-                //Z Base Coordinate
-                this.emit_gcode("G28.3 Z" + args[8]);
-                MPO.z = args[8] / unitConv;
-            }
-            if (args[9] !== undefined) {
-                //A Base Coordinate
-                this.emit_gcode("G28.3 A" + args[9]);
-                MPO.a = args[9]; // / unitConv; // No unit conversion for rotary
-            }
-            if (args[10] !== undefined) {
-                //B Base Coordinate
-                this.emit_gcode("G28.3 B" + args[10]);
-                MPO.b = args[10]; // / unitConv; // No unit conversion for rotary
-            }
-            if (args[11] !== undefined) {
-                //C Base Coordinate
-                this.emit_gcode("G28.3 C" + args[11]);
-                MPO.c = args[11]; // / unitConv; // No unit conversion for rotary
-            }
-            if (args[0] !== undefined) {
-                //X location
-                setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
-                log.debug(
-                    "    g55X" +
-                        JSON.stringify(setVA_G2.g55x) +
-                        "  MPO.x = " +
-                        MPO.x +
-                        " args[0] = " +
-                        args[0]
-                );
-                this.cmd_posx = this.posx = args[0];
-            }
-            if (args[1] !== undefined) {
-                //Y location
-                setVA_G2.g55y = Number((MPO.y * unitConv - args[1]).toFixed(5));
-                log.debug(
-                    "    g55Y" +
-                        JSON.stringify(setVA_G2.g55y) +
-                        "  MPO.y = " +
-                        MPO.y +
-                        " args[1] = " +
-                        args[1]
-                );
-                this.cmd_posy = this.posy = args[1];
-            }
-            if (args[2] !== undefined) {
-                //Z location
-                setVA_G2.g55z = Number((MPO.z * unitConv - args[2]).toFixed(5));
-                this.cmd_posz = this.posz = args[2];
-            }
-            if (args[3] !== undefined) {
-                //A location
-                setVA_G2.g55a = Number(
-                    (MPO.a * 1.0 /*unitConv*/ - args[3]).toFixed(5)
-                );
-                this.cmd_posa = this.posa = args[3];
-            }
-            if (args[4] !== undefined) {
-                //B location
-                setVA_G2.g55b = Number(
-                    (MPO.b * 1.0 /*unitConv*/ - args[4]).toFixed(5)
-                );
-                this.cmd_posb = this.posb = args[4];
-            }
-            if (args[5] !== undefined) {
-                //C location
-                setVA_G2.g55c = Number(
-                    (MPO.c * 1.0 /*unitConv*/ - args[5]).toFixed(5)
-                );
-                this.cmd_posc = this.posc = args[5];
-            }
-
-            try {
-                await config.driver.setManyWrapper(setVA_G2);
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    // VA Command is complex because in gcode terms it is two commands: the lower "args" register of 6 parameters emits a
+    //   ... G10 L2 P2 (setting g55 offsets) and the upper register emits a G28.3 (setting axes to absolute locations,
+    //   ... optionally zero). If it has changes, the upper register is executed first; then changes to the g55 values
+    //   ... are applied, if there are any.
+    // New values included in the command replace existing G55 values.
+    // Note that the number entered into the offset register is not the new g55 value itself, but is the new desired
+    //   ... location, from which a new g55 is computed.
+    log.debug("Calling offsets for VA");
+    offsets.call(this, args, callback);
 };
 
 exports.VC = function (args, callback) {

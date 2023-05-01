@@ -50,10 +50,9 @@
         $("#manual-move-speed").on("input", function (e) {
             $(".speed_read_out").show();
             $(".speed_read_out").html($("#manual-move-speed").val());
-            $(".speed_read_out").css({
-                top: $("#manual-move-speed").offset().top - 35,
-                left: mouseX,
-            });
+            setTimeout(function () {
+                $(".speed_read_out").hide();
+            }, 750);
         });
 
         $("#manual-move-speed").on("mouseup touchend", function () {
@@ -215,8 +214,12 @@
         }
 
         var unit = status.unit || "??";
-
-        var digits = unit === "mm" ? 2 : 3;
+        var digits = 3;
+        $("#manual-move-speed").attr("step", 0.1);
+        if (unit === "mm") {
+            digits = 2;
+            $("#manual-move-speed").attr("step", 1);
+        }
 
         if (unit !== currentUnits) {
             currentUnits = unit;
