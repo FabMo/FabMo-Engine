@@ -148,8 +148,11 @@ var getCurrentUser = function (req, res, next) {
 // eslint-disable-next-line no-unused-vars
 var modifyUser = function (req, res, next) {
     var currentUser = authentication.getCurrentUser();
-    if (!req.params.id) {
-        res.send(200, { status: "error", message: "no username provided" });
+    if (!req.params.id || req.params.id === "undefined") {
+        res.send(200, {
+            status: "error",
+            message: "invalid username provided",
+        });
         return;
     }
     if (
