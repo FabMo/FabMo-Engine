@@ -235,12 +235,17 @@ UserConfig.prototype.add = function (username, password, callback) {
 
 //Maybe move this to the routes or whatever
 UserConfig.prototype.findOne = function (username, callback) {
-    username in this._cache
-        ? callback(null, this._cache[username])
-        : callback(
-              new Error("The username " + username + " is invalid."),
-              null
-          );
+    if (!username || typeof username !== "string") {
+        return callback(new Error("Invalid username."), null);
+    }
+    if (username in this._cache) {
+        return callback(null, this._cache[username]);
+    } else {
+        return callback(
+            new Error("The username " + username + " is invalid."),
+            null
+        );
+    }
 };
 
 // Get a map of all user ids to values

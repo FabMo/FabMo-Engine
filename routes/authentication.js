@@ -1,4 +1,3 @@
-var log = require("../log").logger("authentication");
 var authentication = require("../authentication");
 var passport = authentication.passport;
 
@@ -68,10 +67,9 @@ var addUser = function (req, res, next) {
 };
 
 var logout = function (req, res, next) {
-    log.error(req);
     req.logout();
     authentication.setCurrentUser(null);
-    res.redirect("", next);
+    res.redirect("/", next);
     return;
 };
 
