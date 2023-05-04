@@ -24,7 +24,7 @@ function setupUserManager() {
       user = current_user;
       user_info= {
         user:{
-          id:current_user.username,
+          username:current_user.username,
           password:password
         }
       };
@@ -248,7 +248,7 @@ function refreshUsersListView(users){
           if(password===password_confirm){
             user_info= {
               user : {
-                id : user._id,
+                username : user.username,
                 password:password
               }
             };
