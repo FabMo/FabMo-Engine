@@ -148,18 +148,18 @@ var getCurrentUser = function (req, res, next) {
 // eslint-disable-next-line no-unused-vars
 var modifyUser = function (req, res, next) {
     var currentUser = authentication.getCurrentUser();
-    if (!req.params.id || req.params.id === "undefined") {
+    if (!req.params.user.id || req.params.user.id === "undefined") {
         res.send(200, {
             status: "error",
             message: "invalid username provided",
         });
         return;
     }
+    // if current user or admin
     if (
         currentUser &&
         (currentUser.username == req.params.username || currentUser.isAdmin)
     ) {
-        // if current user or admin
         if (!req.params.user) {
             res.send(200, {
                 status: "error",
@@ -168,7 +168,7 @@ var modifyUser = function (req, res, next) {
             return;
         }
         authentication.modifyUser(
-            req.params.id,
+            req.params.user.id,
             req.params.user,
             function (err, user) {
                 if (err) {
