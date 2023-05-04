@@ -158,7 +158,7 @@ var modifyUser = function (req, res, next) {
     // if current user or admin
     if (
         currentUser &&
-        (currentUser.username == req.params.username || currentUser.isAdmin)
+        (currentUser.username == req.params.id || currentUser.isAdmin)
     ) {
         if (!req.params.user) {
             res.send(200, {
