@@ -1,25 +1,31 @@
-'!FABMO!name: Home Tool
+'!FABMO!name:Home Tool
 '!FABMO!description: Automatically Set Axis Zero for XYZ and position tool
 'Home XYZ
+SO,5,0
 SC,0
 &Zoffset = 0
-&Aoffset = 6.125
+&Aoffset = 6.155 '6.115
 &Atarget = 0
 &Atemp = 0	
-$PlateOffset = 2.864
-VA,,,&Zoffset,0,,,,,0,0,,
+$PlateOffset = 2.744
+VA,,,&Zoffset,0,0,,,,0,0,0,
 if $Toolin = 0 then gosub Set0
 if $Toolin = 1 then gosub Set1
 if $Toolin = 2 then gosub Set2
 if $Toolin = 3 then gosub Set3
 if $Toolin = 4 then gosub Set4
 if $Toolin = 5 then gosub Set5
+IF %(56) = 1 THEN GOSUB GET_OFF_Z_LIMIT
+IF %(55) = 1 THEN GOSUB GET_OFF_A_LIMIT
+IF %(52) = 1 THEN GOSUB GET_OFF_X_LIMIT
+IF %(53) = 1 THEN GOSUB GET_OFF_Y_LIMIT
 
 gosub FindZ
 goto FindAFast
 END
 
 FindZ:
+
 	PZ, 15, 6, 6
 	VA,,,&Zoffset + $PlateOffset,,,,,,0,,,
 	MZ,-.25
@@ -60,7 +66,7 @@ FindAFinal:
     GOTO FindAFinal
     
 setAFinal:
-	VA,,,,&Aoffset,,,,,,0,,
+	VA,,,,$Aoffset,,,,,,0,,
     MA, %(4) - 0.25
     goto FindY
 
@@ -101,4 +107,24 @@ return
 Set5:
 	&Zoffset = $TOOL5L
 return
+
+GET_OFF_Z_LIMIT:
+MZ,%(3)-1
+RETURN
+
+GET_OFF_A_LIMIT:
+MA,%(4)-1
+RETURN
+
+GET_OFF_Y_LIMIT:
+MY,%(2)+1
+IF %(53) = 1 THEN GOSUB GET_OFF_Y_OTHER_WAY
+RETURN
+
+GET_OFF_X_LIMIT:
+MX,%(1)+1
+RETURN
     
+GET_OFF_Y_OTHER_WAY:
+MY,%(2)-2
+RETURN

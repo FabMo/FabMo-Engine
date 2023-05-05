@@ -1,0 +1,8 @@
+'!FABMO!name:LSB-H1[S]
+'!FABMO!description:Macro Description
+'1151
+'Pause
+MX,2
+MY,4
+MX,0
+MY,0

@@ -1,0 +1,33 @@
+'!FABMO!name:Point to Point Milling RH
+'!FABMO!description:Milling from one point to another on right hand conveyor
+GOTO PTPMILLING_RH
+
+C500
+&X1 = 1
+&Y1 = 1
+&X2 = 3
+&Y2 = 3
+&XY_SPEED = 8
+&Pass_Height = 0.05
+&SAFE_ENTER = 1
+&SAFE_EXIT = 0
+&Jamb_Length_Offset = 0
+C307
+
+PTPMILLING_RH:
+MS,&XY_SPEED,&XY_SPEED
+&XMOD = &FR_Edge - &Jamb_Length_Offset * (&Max_Length - &Jamb_Length) - &A_Bit_Diameter / 2 + &XOffset
+&YMOD = &RH_Center + &YOffset
+IF &SAFE_ENTER = 1 THEN GOSUB SAFE_HEIGHT
+J2,&X1 + &XMOD,&Y1 + &YMOD
+JA,&Pass_Height + &Z_Plunge
+MA,&Pass_Height
+M2,&X2 + &XMOD,&Y2 + &YMOD
+JA,&Pass_Height + &Z_Plunge
+IF &SAFE_EXIT = 1 THEN GOSUB SAFE_HEIGHT
+MS, &Default_X_Move_Speed, &Default_Y_Move_Speed, &Default_Z_Move_Speed, &Default_A_Move_Speed
+END
+
+SAFE_HEIGHT:
+JA,&Z_Clearance
+RETURN

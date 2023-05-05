@@ -1,0 +1,8 @@
+'!FABMO!name:LPK-LST[S]
+'!FABMO!description:Macro Description
+'1134
+'Pause
+MX,2
+MY,4
+MX,0
+MY,0

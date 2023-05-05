@@ -1,0 +1,8 @@
+'!FABMO!name:LMTP[M]
+'!FABMO!description:Macro Description
+'1112
+'Pause
+MX,2
+MY,4
+MX,0
+MY,0

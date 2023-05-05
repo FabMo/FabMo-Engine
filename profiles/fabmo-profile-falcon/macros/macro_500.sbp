@@ -1,0 +1,79 @@
+'!FABMO!name:Settings Main
+'!FABMO!description:Settings file with offsets and other parameters for jamb processing
+'Macro 500
+'This macro contains settings and defaults for jamb processing
+'IF &TESTMODE = 1 THEN GOTO TEST_SETTINGS
+'&Jamb_Length = override value
+SETUP:
+&Default_X_Move_Speed=5
+&Default_Y_Move_Speed=5
+&Default_Z_Move_Speed=12
+&Default_A_Move_Speed=5
+MS, &Default_X_Move_Speed, &Default_Y_Move_Speed, &Default_Z_Move_Speed, &Default_A_Move_Speed
+JS,20,20,20,20 'The default jog speeds for milling/drilling operations
+'Machine Paremeters
+&LH_Center = 43.251 'Y Offset to reference point on left hand conveyor
+&RH_Center = 27.256 'Y Offset to reference point on right hand conveyor
+&Z_Plunge = 0.15 'Z height to switch from jog to move during plunge
+&Z_Clearance = 2.5 'Z height for rapid XY motion
+&XOffset = -0.975 'X offset from Z axis spindle to A axis spindle
+&YOffset = 7.849 'Y offset from Z axis spindle to A axis spindle
+
+'The following settings provide limits of travel in X and Y for the system, milling/drilling operations past this will be ignored by the machine (prevents collisions with hard stops)
+&XUpperLim = 103
+&XLowerLim = 0
+&YUpperLim = 55
+&YLowerLim = 0
+
+'Hole Parameters
+&Pilot_Hole = -0.125 'The dept of a hole being drilled as a pilot hole
+&Thru_Hole = -1.5'-1.6 'The depth of a hole being drilled all the way through
+&PTP_Milling_Height = 0
+
+'Cutter Parameters
+&Z_Bit_Diameter = 0.25 'The diameter of the bit used on the Z axis (not used)
+&A_Bit_Diameter = 0.375 'The diameter of the bit used on the A axis (used for bit diameter compensation)
+&Milling_Allowance = 0.05
+
+'Work Piece Parameters
+&FR_Edge = 4.149 'The offset from X=0 to the front edge of a jamb resting against the pop-up pin on the right hand conveyor
+&BK_Edge = 97.724 'The offset from X=0 to the back edge of a jamb resting against the pop-up pin on the left hand conveyor
+&Max_Length = 95.6875 'The maximum length of a jamb that will be processed on the machine.
+
+END
+
+TEST_SETTINGS:
+&Default_X_Move_Speed=5
+&Default_Y_Move_Speed=5
+&Default_Z_Move_Speed=12
+&Default_A_Move_Speed=5
+MS, &Default_X_Move_Speed, &Default_Y_Move_Speed, &Default_Z_Move_Speed, &Default_A_Move_Speed
+JS,20,20,20,20 'The default jog speeds for milling/drilling operations
+'Machine Paremeters
+&LH_Center = 9 '43.251 'Y Offset to reference point on left hand conveyor
+&RH_Center = 9 '27.256 'Y Offset to reference point on right hand conveyor
+&Z_Plunge = 0.15 'Z height to switch from jog to move during plunge
+&Z_Clearance = 5.5 'Z height for rapid XY motion
+&XOffset = -0.975 'X offset from Z axis spindle to A axis spindle
+&YOffset = 7.849 'Y offset from Z axis spindle to A axis spindle
+
+'The following settings provide limits of travel in X and Y for the system, milling/drilling operations past this will be ignored by the machine (prevents collisions with hard stops)
+&XUpperLim = 103
+&XLowerLim = 0
+&YUpperLim = 55
+&YLowerLim = 0
+
+'Hole Parameters
+&Pilot_Hole = -0.125 'The dept of a hole being drilled as a pilot hole
+&Thru_Hole = -1.5'-1.6 'The depth of a hole being drilled all the way through
+&PTP_Milling_Height = 5.0 '0
+
+'Cutter Parameters
+&Z_Bit_Diameter = 0.25 'The diameter of the bit used on the Z axis (not used)
+&A_Bit_Diameter = 0.375 'The diameter of the bit used on the A axis (used for bit diameter compensation)
+&Milling_Allowance = 0.05
+
+'Work Piece Parameters
+&FR_Edge = 4.149 'The offset from X=0 to the front edge of a jamb resting against the pop-up pin on the right hand conveyor
+&BK_Edge = 97.724 'The offset from X=0 to the back edge of a jamb resting against the pop-up pin on the left hand conveyor
+&Max_Length = 95.6875 'The maximum length of a jamb that will be processed on the machine.

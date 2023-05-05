@@ -1,0 +1,6 @@
+'!FABMO!name:End of Series
+'!FABMO!description:Turn outputs off when cut starts
+SO,1,0
+SO,2,0
+SO,5,0
+J2,0,0

@@ -1,0 +1,99 @@
+'!FABMO!name:TEST MACRO
+'!FABMO!description:Macro Description
+&Jamb_Length = 80
+&TESTMODE = 0
+'!! ONLLY EDIT THE CODE BELOW THIS LINE !!
+PAUSE "Do you want to home the machine? (1/0)" &Home
+IF &Home = 0 THEN GOTO START_CUT
+C3 ' Home Gantry
+START_CUT:
+PAUSE 1
+C6
+'Pause 10
+C500
+
+GOTO PTP
+
+'Exterior Track pass 1
+&Yloc = -2.807 'Y Location of the flange to be milled
+&Length = 1.089 '1.049 was from CAD, Length of flange to be removed
+&Pass_Height = 0.5 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&SAFE_ENTER = 1
+&SAFE_EXIT = 0
+&Jamb_Length_Offset = 0
+C305
+
+'Exterior Track pass 2
+&Yloc = -2.807 'Y Location of the flange to be milled
+&Length = 1.089 '1.049 was from CAD, Length of flange to be removed
+&Pass_Height = 0 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&SAFE_ENTER = 0
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C305
+
+'Coex leg (1 pass)
+&Yloc = -1.33 'Y Location of the flange to be milled
+&Length = 3.54 '3.5 from CAD Length of flange to be removed
+&Pass_Height = 0 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&SAFE_ENTER = 1
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C305
+
+'Interior Track Leg Pass 1
+&Yloc = -0.967 'Y Location of the flange to be milled
+&Length = 1.348 '1.308 from CAD Length of flange to be removed
+&Pass_Height = .5 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&SAFE_ENTER = 1
+&SAFE_EXIT = 0
+&Jamb_Length_Offset = 0
+C305
+
+'Interior Track Leg Pass 2
+&Yloc = -0.967 'Y Location of the flange to be milled
+&Length = 1.348 '1.308 from CAD Length of flange to be removed
+&Pass_Height = 0 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&SAFE_ENTER = 0
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C305
+
+'Capping Lip (1 pass)
+&Yloc = 1.148 'Y Location of the flange to be milled
+&Length = 1.66 '1.62 from CAD, Length of flange to be removed
+&Pass_Height = 0 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&SAFE_ENTER = 1
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C305
+
+'Hole Drilling Example for Right Hand Conveyor
+&Xloc = 1.814 'X Location of the hole referenced from front edge of work piece
+&Yloc = 0 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Pilot_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut is being made on the end of the jamb opposite from the origin point (close to X=96 on the right hand conveyor)
+C301 'Calls Routine
+
+PTP:
+&X1 = 1.620 + 0.1043
+&Y1 = 1.148 + 0.7427
+&X2 = 1.620 + 0.1043 - 1.12432
+&Y2 = 1.148 + 0.7427 - 8
+&XY_SPEED = 1
+&Pass_Height = 0.025
+&SAFE_ENTER = 1
+&SAFE_EXIT = 0
+&Jamb_Length_Offset = 0
+C307
+
+'C3
+
+'!! DO NOT DELETE THE LINE BELOW !!
+&TESTMODE = 0

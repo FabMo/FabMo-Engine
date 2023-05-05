@@ -1,4 +1,4 @@
-'!FABMO!name: Z-Zero
+'!FABMO!name:Z-Zero
 '!FABMO!description: Set Z-Zero with Zeroing Plate; after changing cutter
 '   2021/09/25 - Refactored (th)
 '   Standard Macro Variables are read from Macro #199, only needs to happen once 

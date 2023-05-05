@@ -1,0 +1,68 @@
+'!FABMO!name:A-Zero
+'!FABMO!description:Zero the A Axis
+'Macro for measuring the A Axis Vertical offset, run after bit changes.
+&Plate_Thickness = 0 'Measured thickness of Z Zero plate
+
+'First step; find position of z zero plate by searching in A axis downward.
+IF %(51) = 1 THEN GOTO INITIAL_CONTACT
+PAUSE 1
+ZERO_A_FAST:
+MA, %(4) - 0.1
+&Switch_Status = %(51)
+IF &Switch_Status = 0 THEN GOTO ZERO_A_FAST
+INITIAL_CONTACT:
+ZA
+PAUSE 1
+MA, %(4) + 0.1
+PAUSE 1
+ZERO_A_SLOW:
+MA, %(4) - 0.01
+&Switch_Status = %(51)
+IF &Switch_Status = 0 THEN GOTO ZERO_A_SLOW
+ZA
+PAUSE 1
+MA, %(4) + 0.05
+PAUSE 1
+ZERO_A_EXTRA_SLOW:
+MA, %(4) - 0.002
+&Switch_Status = %(51)
+IF &Switch_Status = 0 THEN GOTO ZERO_A_EXTRA_SLOW
+PAUSE 1
+VA,,,,&Plate_Thickness
+PAUSE 1
+MA, %(4) + 0.25
+PAUSE 1
+'Second step; find position of a limit switch by searching in A axis upward.
+FIND_TOP_A_FAST:
+MA,%(4) + 0.2
+&Switch_Status = %(55)
+IF &Switch_Status = 0 THEN GOTO FIND_TOP_A_FAST
+PAUSE 1
+&Aoffset = %(4) 'Record offset to temporary variable.
+PAUSE 1
+MA, %(4) - 0.2
+PAUSE 1
+FIND_TOP_A_SLOW:
+MA,%(4) + 0.01
+&Switch_Status = %(55)
+IF &Switch_Status = 0 THEN GOTO FIND_TOP_A_SLOW
+PAUSE 1
+&Aoffset = %(4) 'Record offset to temporary variable.
+PAUSE 1
+MA, %(4) - 0.05
+PAUSE 1
+FIND_TOP_A_EXTRA_SLOW:
+MA,%(4) + 0.002
+&Switch_Status = %(55)
+IF &Switch_Status = 0 THEN GOTO FIND_TOP_A_EXTRA_SLOW
+PAUSE 1
+&Aoffset = %(4) 'Record offset to temporary variable.
+PAUSE 1
+MA, %(4) - 0.2
+
+'Assign final A offset to permanent variable that will be used in homing
+$Aoffset = &Aoffset
+
+
+
+END

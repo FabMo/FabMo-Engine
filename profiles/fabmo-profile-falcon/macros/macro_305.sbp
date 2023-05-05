@@ -1,0 +1,68 @@
+'!FABMO!name:Alternative Mill Flange RH
+'!FABMO!description:Subroutine to mill a flange on the right hand conveyor
+GOTO Mill_Flange_RH
+
+C500
+&Yloc = 2 'Y Location of the flange to be milled
+&Length = 2 'Length of flange to be removed
+&Pass_Height = 0.5 'Height of pass
+&Pass_Speed = 5 'Cut speed for pass
+&T_CLEAN = 0 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.25 'Length of T in positive Y
+&T_NEG_Y = 0.25 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 0
+&Jamb_Length_Offset = 0
+C305
+
+Mill_Flange_RH:
+MS,&Pass_Speed,&Pass_Speed
+IF &Length < 0 THEN GOSUB FLIP_SIGN
+&Xloc = &FR_Edge  + &XOffset - &Jamb_Length_OffSet * (&Max_Length - &Jamb_Length) 'Applies X offsets to flange location
+&Yloc = &Yloc  + &YOffset + &RH_Center 'Applies Y offsets to flange location
+IF &Xloc > &XUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max X
+IF &Xloc < &XLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min X
+IF &Yloc > &YUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max Y
+IF &Yloc < &YLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min Y
+
+Cut:
+
+IF &SAFE_ENTER = 1 THEN GOSUB SAFE_HEIGHT
+J2,&Xloc - &A_Bit_Diameter,&Yloc
+JA,&Pass_Height
+MX,&Xloc + &Length - &A_Bit_Diameter/2 - &Milling_Allowance
+IF &T_CLEAN = 1 THEN GOSUB T_CLEAN
+JA,&Pass_Height + &Z_Plunge
+IF &SAFE_EXIT = 1 THEN GOSUB SAFE_HEIGHT
+
+ERRORSKIP:
+MS, &Default_X_Move_Speed, &Default_Y_Move_Speed, &Default_Z_Move_Speed, &Default_A_Move_Speed
+END
+
+T_CLEAN:
+MS,0.5
+&Tan = 0
+IF &ANGLE > 0 THEN GOSUB TAN_CALC
+MX,&Xloc + &Length - &A_Bit_Diameter/2
+M2,&Xloc + &Length - &A_Bit_Diameter/2 + &Tan * &T_POS_Y,&Yloc + &T_POS_Y
+M2,&Xloc + &Length - &A_Bit_Diameter/2 - &Tan * &T_NEG_Y,&Yloc - &T_NEG_Y
+MS,&Pass_Speed
+RETURN
+
+TAN_CALC:
+'Tangent calculation based on Taylor Series expansion to get coordinates for angled flange milling
+&Num = &ANGLE * 0.0174533 'Convert angle value to radians
+&Num3 = &Num * &Num * &Num 'Calculate angle^3
+&Num5 = &Num3 * &Num * &Num 'Calculate angle^5
+&Num7 = &Num5 * &Num * &Num 'Calculate angle^7
+&Tan = &Num + &Num3/3 + 2*&Num5/15 - 17*&Num7/315 'Estimate of sine accurate to 0.01" over 48 inches.
+RETURN
+
+SAFE_HEIGHT:
+JA,&Z_Clearance
+RETURN
+
+FLIP_SIGN:
+&Length = &Length * -1
+RETURN

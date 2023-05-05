@@ -1,15 +1,31 @@
 {
-	"units" : "in",
-	"default_app" : "fabmo-sb4",
-	"envelope" : {
-		"xmin" : 0.0,
-		"xmax" : 24.0,
-		"ymin" : 0.0,
-		"ymax" : 18.0
-	},
-	"manual" : {
-        "xy_speed": 3.0,
+    "units": "in",
+    "time_units": "s",
+    "quit_input": 8,
+    "auth_timeout": 30,
+    "auth_required": false,
+    "auth_input": 2,
+    "ap_input": 0,
+    "ap_time": 8,
+    "interlock_required": false,
+    "interlock_input": 2,
+    "default_app": "macros",
+    "envelope": {
+        "xmin": 0,
+        "xmax": 40,
+        "ymin": 0,
+        "ymax": 48
+    },
+    "manual": {
+        "xy_speed": 1.9,
         "xy_min": 0.1,
-        "xy_max": 6
-	}
+        "xy_max": 6,
+        "z_fast_speed": 1,
+        "z_slow_speed": 0.1,
+        "xy_increment": 0.1,
+        "z_increment": 0.01,
+        "ab_increment": 0.05,
+        "xy_jerk": 50,
+        "z_jerk": 50
+    }
 }

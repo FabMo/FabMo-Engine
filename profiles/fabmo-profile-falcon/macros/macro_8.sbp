@@ -1,0 +1,7 @@
+'!FABMO!name:Reference Offsets
+'!FABMO!description:Default offset jamb locations
+'Variables located in macro 500
+'Right pin offset (FR_EDGE) 4.149
+'Left pin offset (BK_EDGE) 97.664
+'Right mobile offset (RH_CENTER) 27.256
+'Left mobile offst (LH_CENTER) 43.221

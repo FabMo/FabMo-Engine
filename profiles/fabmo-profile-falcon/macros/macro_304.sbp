@@ -1,0 +1,63 @@
+'!FABMO!name:Mill Flange LH
+'!FABMO!description:Subroutine to mill a flange on the left hand conveyor
+GOTO Mill_Flange_LH 'Skips example code
+
+'Flange Milling for Front Gantry on Left Hand Conveyor
+&Yloc = 2.9211 'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 2.8134 'Length of flange portion to be removed
+&Height = 0.75 'Height of flange
+&Pass_Depth = 0.25 'Depth per pass during cutting
+&Angle = 0 'Desired angle of flange edge relative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset to end of jamb opposite "origin" (The end of the jamb near X = 0 on the left hand conveyor)
+C304 'Calls Routine
+
+Mill_Flange_LH:
+'-----------------Setup--------------------------------
+MA,&Z_Clearance 'Moves A axis to safe clearance height
+&Xloc = &BK_Edge + &XOffset - &Max_Length + &Jamb_Length_OffSet * (&Max_Length - &Jamb_Length) 'Applies X offsets to flange location
+&Yloc = &Yloc  + &YOffset + &LH_Center 'Applies Y offsets to flange location
+IF &Xloc > &XUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max X
+IF &Xloc < &XLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min X
+IF &Yloc > &YUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max Y
+IF &Yloc < &YLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min Y
+&Count = 0 'Initialize counter for use in for loops
+J2,&Xloc,&Yloc 'Jog to location for milling
+JA,&Height + &Z_Plunge 'Drop to top of flange
+&Passes = &Height/&Pass_Depth 'Estimate number of passes based on height and pass depth
+ROUND: 'Routine to round &Passes to nearest multiple of 2
+&Count = &Count + 2 'Increment count by 2
+IF &Passes < &Count THEN GOTO ROUNDED 'If we have a multiple of 2 that is greater than the calculated pass count then we're done
+GOTO ROUND 'If we need a higher number for pass count go back to start
+ROUNDED: 'Exit label for rounding routine
+&Passes = &Count 'Assign new value to &Passes
+'------------------Cutting-------------------------------
+Cut:
+&Pass_Depth = &Height / &Passes 'Calculates final depth per pass based on pass count
+&Count= 0 'Reset counter variable for use later
+MA,&Height 'Drop bit onto surface of flange
+Pass: 'For loop to make milling passes
+&Count = &Count + 1 'Increments pass count
+M4,&Xloc + (&Length - &A_Bit_Diameter/2 - &A_Bit_Diameter * 0.1) * (2 * &Jamb_Length_Offset - 1),,,&Height - &Count*(&Height/&Passes) 'Ramped cut towards center of jamb
+&Count = &Count + 1 'Increments pass count
+M4,&Xloc,,,&Height - &Count*(&Height/&Passes) 'Return cut to end of jamb
+IF &Count < &Passes THEN GOTO Pass 'Check if the final depth has been reached, return to Pass if not.
+M4,&Xloc + (&Length - &A_Bit_Diameter/2) * (2 * &Jamb_Length_Offset - 1),,,&Height - &Count*(&Height/&Passes) 'Complete final milling pass
+
+JA,&Z_Clearance 'Jog to clearance height (remove if adding back in angle cut)
+
+GOTO ERRORSKIP
+'Sine calculation based on Taylor Series expansion to get coordinates for angled flange milling
+&Num = &Angle * 0.0174533 'Convert angle value to radians
+&Num3 = &Num * &Num * &Num 'Calculate angle^3
+&Num5 = &Num3 * &Num * &Num 'Calculate angle^5
+&Num7 = &Num5 * &Num * &Num 'Calculate angle^7
+&Number = &Num - &Num3/6 + &Num5/120 - &Num7/5040 'Estimate of sine accurate to 0.01" over 48 inches.
+
+&X_Angle_1 = &Xloc + (&Length - &A_Bit_Diameter/2) * (2 * &Jamb_Length_Offset - 1) + &A_Bit_Diameter * &Number 'Calculate first end point of angled line
+&X_Angle_2 = &Xloc + (&Length - &A_Bit_Diameter/2) * (2 * &Jamb_Length_Offset - 1) - &A_Bit_Diameter * &Number 'Calculate second end point of angled line
+M2,&X_Angle_1,&Yloc + &A_Bit_Diameter * (2 * &Jamb_Length_Offset - 1) 'Move to first end point along angled line
+M2,&X_Angle_2,&Yloc - &A_Bit_Diameter * (2 * &Jamb_Length_Offset - 1) 'Move to second end point along angled line
+M2,&Xloc + (&Length - &A_Bit_Diameter/2) * (2 * &Jamb_Length_Offset - 1),&Yloc 'Return to center to finish cut
+JA,&Z_Clearance 'Jog to clearance height
+ERRORSKIP: 'Label to skip cut if out of bounds
+END

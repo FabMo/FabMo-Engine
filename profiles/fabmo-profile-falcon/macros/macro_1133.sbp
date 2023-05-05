@@ -1,0 +1,15 @@
+'!FABMO!name:LPK-REN[D]
+'!FABMO!description:Macro Description
+'Hole Drilling Example for Left Hand Conveyor
+&Xloc = -40.815 'X Location of the hole referenced from front edge of work piece
+&Yloc = 1.244 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Thru_Hole '&Pilot_Hole or &Thru_Hole Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+C302 'Calls Routine
+
+'Hole Drilling Example for Left Hand Conveyor
+&Xloc = -39.875 'X Location of the hole referenced from front edge of work piece
+&Yloc = 1.244 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Thru_Hole '&Pilot_Hole or &Thru_Hole Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+C302 'Calls Routine

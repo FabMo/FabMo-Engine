@@ -1,0 +1,36 @@
+'!FABMO!name:Left Side Drill 1
+'!FABMO!description:Macro Description
+C500 'Load Settings
+'MAIN PROGRAM -------------
+SO,1,1
+PAUSE 2
+&Xloc = -1.5 'X Location of the hole referenced from front edge of work piece
+&Yloc = 29 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Pilot_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted by the length of the jamb
+C302 'Calls Routine
+&Xloc = -1.5 'X Location of the hole referenced from front edge of work piece
+&Yloc = 27 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Pilot_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted by the length of the jamb
+C302 'Calls Routine
+&Xloc = -1.5 'X Location of the hole referenced from front edge of work piece
+&Yloc = 25 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Pilot_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted by the length of the jamb
+C302 'Calls Routine
+&Xloc = -3 'X Location of the hole referenced from front edge of work piece
+&Yloc = 29 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted by the length of the jamb
+C302 'Calls Routine
+&Xloc = -3 'X Location of the hole referenced from front edge of work piece
+&Yloc = 27 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted by the length of the jamb
+C302 'Calls Routine
+&Xloc = -3 'X Location of the hole referenced from front edge of work piece
+&Yloc = 25 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted by the length of the jamb
+C302 'Calls Routine

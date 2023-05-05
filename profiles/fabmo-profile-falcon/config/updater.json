@@ -1,17 +1,20 @@
 {
-    "server_port": 80,
-    "driver": "g2",
-    "log_level": "g2",
-    "upload_dir": "/tmp",
-    "profile": "ShopBot Desktop",
-    "name": "fabmo-136e34ed4",
-    "password": "go2fabmo",
+    "log_level": "shell",
+    "engine_dir": "/fabmo",
+    "engine_git_repos": "https://github.com/FabMo/FabMo-Engine.git",
+    "updater_git_repos": "https://github.com/FabMo/FabMo-Updater.git",
+    "packages_url": "http://gofabmo.org/manifest/packages.json",
     "platform": "raspberry-pi",
-    "consent_for_beacon": "false",
-    "beacon_url": "",
+    "system": "dt",
+    "server_port": 81,
+    "engine_server_port": 80,
+    "name": "-- now handled in engine",
+    "password": "go2fabmo",
+    "firmware_file": "/fabmo/firmware/g2core_101.57.28build_FabMo-G2",
+    "os_version": "Linux fabmo 5.10.63-v7l+ #1496 SMP Wed Dec 1 15:58:56 GMT 2021 armv7l GNU/Linux",
     "network": {
         "wifi": {
-            "mode": "ap",
+            "mode": "-- now handled in engine",
             "enabled": true,
             "wifi_networks": [],
             "default_config": {
@@ -39,8 +42,10 @@
             }
         }
     },
-    "control_port_linux": "/dev/ttyACM0",
-    "data_port_linux": "/dev/ttyACM0",
-    "init": true,
-    "version": "15178-FALCON_LEFT_1.0.0-3-gbd88cb08-dev"
+    "id": "10000000ce0e6966",
+    "version": {
+        "number": "99505-3.0.1-20-gd0ab45c-dev",
+        "debug": false,
+        "type": "dev"
+    }
 }

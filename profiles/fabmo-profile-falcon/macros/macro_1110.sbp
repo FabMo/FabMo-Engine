@@ -1,0 +1,46 @@
+'!FABMO!name:LMTP[M]
+'!FABMO!description:Macro Description
+'Flange Milling for Front Gantry on Right Hand Conveyor
+&Yloc = -2.895'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 2.813 'Length of flange portion to be removed
+&Height = 0.5 'Height of flange
+&Pass_Depth = 0.5 'Depth per pass during cutting
+&Angle = 0 'Desired angle of flange edge relative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset to end of jamb opposite "origin" (The end of the jamb near X = 0 on the left hand conveyor)
+C304 'Calls Routine
+
+'Flange Milling for Front Gantry on Right Hand Conveyor
+&Yloc = -0.924'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 2.813 'Length of flange portion to be removed
+&Height = 0.75 'Height of flange
+&Pass_Depth = 0.25 'Depth per pass during cutting
+&Angle = 0 'Desired angle of flange edge relative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset to end of jamb opposite "origin" (The end of the jamb near X = 0 on the left hand conveyor)
+C304 'Calls Routine
+
+'Flange Milling for Front Gantry on Right Hand Conveyor
+&Yloc = -0.600'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 3.357 'Length of flange portion to be removed
+&Height = 0.25 'Height of flange
+&Pass_Depth = 0.25 'Depth per pass during cutting
+&Angle = 0 'Desired angle of flange edge relative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset to end of jamb opposite "origin" (The end of the jamb near X = 0 on the left hand conveyor)
+C304 'Calls Routine
+
+'Flange Milling for Front Gantry on Right Hand Conveyor
+&Yloc = 0.901'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 2.813 'Length of flange portion to be removed
+&Height = 0.75 'Height of flange
+&Pass_Depth = 0.25 'Depth per pass during cutting
+&Angle = 0 'Desired angle of flange edge relative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset to end of jamb opposite "origin" (The end of the jamb near X = 0 on the left hand conveyor)
+C304 'Calls Routine
+
+'Flange Milling for Front Gantry on Right Hand Conveyor
+&Yloc = 1.318'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 1.321 'Length of flange portion to be removed
+&Height = 0.125 'Height of flange
+&Pass_Depth = 0.125 'Depth per pass during cutting
+&Angle = 0 'Desired angle of flange edge relative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset to end of jamb opposite "origin" (The end of the jamb near X = 0 on the left hand conveyor)
+C304 'Calls Routine

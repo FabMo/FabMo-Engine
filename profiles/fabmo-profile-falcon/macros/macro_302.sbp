@@ -1,0 +1,25 @@
+'!FABMO!name:Cut Hole LH
+'!FABMO!description:Subroutine to drill/spot a hole on the left hand conveyor
+GOTO Cut_Hole_LH 'Skips example code
+
+'Hole Drilling Example for Left Hand Conveyor
+&Xloc = 1.3472 'X Location of the hole referenced from front edge of work piece
+&Yloc = 1.0707 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Pilot_Hole 'or &Thru_Hole  'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+C302 'Calls Routine
+
+'-------------------------Main Program------------------------------------	
+Cut_Hole_LH:
+&Xloc = &Xloc + &BK_Edge + &Jamb_Length_Offset * (&Max_Length - &Jamb_Length) 'Applies X offsets to hole locations
+&Yloc = &Yloc + &LH_Center 'Applies Y offsets to hole locations
+IF &Xloc > &XUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max X
+IF &Xloc < &XLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min X
+IF &Yloc > &YUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max Y
+IF &Yloc < &YLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min Y
+J2,&Xloc, &Yloc 'Moves to location of hole
+JZ,&Z_Plunge 'Drops to material surface
+MZ,&Depth 'Drills hole
+JZ,&Z_Clearance 'Jogs to safe height
+ERRORSKIP: 'Label for boundary error
+End

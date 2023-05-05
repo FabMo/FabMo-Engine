@@ -1,0 +1,61 @@
+'!FABMO!name:Get Tool Length
+'!FABMO!description:Macro Description
+SC, 0
+&PlateX = 38.581
+&PlateY = 55.2
+&Top = 0
+&Bot = 0
+&TLen = 0
+gosub Ztop
+&Top = %(3)
+
+JX,&PlateX
+JY,&PlateY
+
+gosub ZBottom
+&Bot = %(3)
+&TLen = (&Bot - &Top) * (-1)
+MZ,%(3) + 0.375
+JY, 45
+'pause "Tlen: " + &TLen
+
+IF $toolin = 1 then gosub Set1
+IF $toolin = 2 then gosub Set2
+IF $toolin = 3 then gosub Set3
+IF $toolin = 4 then gosub Set4
+IF $toolin = 5 then gosub Set5
+
+END
+
+Ztop:
+	PZ, 15, 1, 6
+return
+
+ZBottom:
+	PZ, -15, 1, 1
+return
+
+Set1:
+	$TOOL1L = &TLen 
+return
+
+Set2:
+	$TOOL2L = &TLen 
+return
+
+Set3:
+	$TOOL3L = &TLen 
+return
+
+Set4:
+	$TOOL4L = &TLen 
+return
+
+Set5:
+	$TOOL5L = &TLen 
+return
+
+
+
+
+

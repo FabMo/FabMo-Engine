@@ -1,0 +1,26 @@
+'!FABMO!name:Left Side Mill 1
+'!FABMO!description:Macro Description
+SO,1,1
+C500
+'Main Program ----------------------------------------------------------------------------------------------------------------------------------------
+&Yloc = 26.5 'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 1.5 'Length of flange portion to be removed
+&Height = 0.75 'Height of flange
+&Pass_Depth = 0.25 'Depth per pass during cutting
+&Angle = 8 'Desired angle of flange edge re5ative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset by length of jamb
+C304 'Calls Routine
+&Yloc = 28.23 'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 2 'Length of flange portion to be removed
+&Height = 0.75 'Height of flange
+&Pass_Depth = 0.25 'Depth per pass during cutting
+&Angle = 8 'Desired angle of flange edge re5ative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset by length of jamb
+C304 'Calls Routine
+&Yloc = 24.6 'Y Location of the center of the flange referenced from the center point between main flanges
+&Length = 1 'Length of flange portion to be removed
+&Height = 0.75 'Height of flange
+&Pass_Depth = 0.1 'Depth per pass during cutting
+&Angle = 8 'Desired angle of flange edge re5ative to cut edge of jamb
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that flange milling should be offset by length of jamb
+C304 'Calls Routine

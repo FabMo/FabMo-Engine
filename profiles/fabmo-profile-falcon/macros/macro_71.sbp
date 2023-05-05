@@ -1,0 +1,10 @@
+'!FABMO!name:Get all Tool Length
+'!FABMO!description:Macro Description
+&CNT72 = 1
+GoAGAIN:
+&tool=&CNT72
+C9
+Pause .5
+CN,72
+&CNT72 = &CNT72+1
+IF &CNT72 < 6 THEN GOTO GoAGAIN

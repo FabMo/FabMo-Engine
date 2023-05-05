@@ -1,8 +1,7 @@
 '!FABMO!name:Tool Change
 '!FABMO!description:Use ATC or manual tool change
 SC,0
-SO,1,0
-Pause,2
+
 &PlateOffset = 0
 &WorkZoffset = 0
 &SafeClip= 4

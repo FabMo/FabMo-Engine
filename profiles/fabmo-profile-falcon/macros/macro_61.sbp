@@ -1,0 +1,9 @@
+'!FABMO!name:Tool Length
+'!FABMO!description:Tool offsets for Z zero
+'Tool Lengths
+
+'$TOOL1L = 4.619
+'$TOOL2L = 4.619
+'$TOOL3L = 4.619
+'$TOOL4L = 4.619
+'$TOOL5L = 4.619

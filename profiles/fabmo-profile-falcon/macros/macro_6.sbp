@@ -6,4 +6,4 @@
 ' If Macro is run manually, file ends after the PAUSE and Spindle turns off automatically at that file-end.
 
 SO, 1, 1            ' Make OUTPUT #1 ACTIVE (high) [Spindle channel]
-PAUSE .1            ' ... optional additional pause for spinup, now automatic in FabMo, may be increased here
+PAUSE 0.1       ' ... optional additional pause for spinup, now automatic in FabMo, may be increased here

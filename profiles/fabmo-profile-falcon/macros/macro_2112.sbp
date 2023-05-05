@@ -1,0 +1,139 @@
+'!FABMO!name:RFBP[M]
+'!FABMO!description:Macro Description
+'2112
+
+'Milling Operation for Bottom of Fixed Right Jamb
+&First_Pass_Height = .400
+&Zero_Pass_Height = 0.020 'The larger the number, the higher the bit is off the zero surface of the part
+
+'Exterior Track pass 1
+&Yloc = -2.807 'Y Location of the flange to be milled
+&Length = 1.079 '1.049 was from CAD, Length of flange to be removed
+&Pass_Height = &First_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.079 'Length of T in positive Y
+&T_NEG_Y = 0.079 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 1
+&SAFE_EXIT = 0
+&Jamb_Length_Offset = 0
+C305
+
+'Exterior Track pass 2
+&Yloc = -2.807 'Y Location of the flange to be milled
+&Length = 1.079 '1.049 was from CAD, Length of flange to be removed
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.079 'Length of T in positive Y
+&T_NEG_Y = 0.079 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C305
+
+'Coex leg (1 pass)
+&Yloc = -1.33 'Y Location of the flange to be milled
+&Length = 3.54 '3.5 from CAD Length of flange to be removed
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 0 'Finish cut by cleaning edge of flange
+&SAFE_ENTER = 1
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C305
+
+'Interior Track Leg Pass 1
+&Yloc = -0.967 'Y Location of the flange to be milled
+&Length = 1.308 'from CAD Length of flange to be removed
+&Pass_Height = &First_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.079 'Length of T in positive Y
+&T_NEG_Y = 0.079 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 1
+&SAFE_EXIT = 0
+&Jamb_Length_Offset = 0
+C305
+
+'Interior Track Leg Pass 2
+&Yloc = -0.967 'Y Location of the flange to be milled
+&Length = 1.308 'from CAD Length of flange to be removed
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.079 'Length of T in positive Y
+&T_NEG_Y = 0.079 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C305
+
+'Capping Lip (1 pass)
+&Yloc = 1.148 '1.148 'Y Location of the flange to be milled
+&Length = 1.61 '1.62 from CAD, Length of flange to be removed
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.21 + 0.096 'Length of T in positive Y
+&T_NEG_Y = 0.188 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 1
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C305
+END
+
+PTP:
+'Point To point milling to get 8deg angle cut across piece
+&X1 = 1.620 + 0.1043
+&Y1 = 1.148 + 0.7427 - 0.375
+&X2 = 1.620 + 0.1043 - 1.12432
+&Y2 = 1.148 + 0.7427 - 8
+&XY_SPEED = 1
+&Pass_Height = &Zero_Pass_Height
+&SAFE_ENTER = 1
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C307
+
+END
+
+'The code below cuts the end of the jamb off with the ShopBot. 
+
+&X1 = 0
+&Y1 = -6
+&X2 = 0
+&Y2 = 6
+&XY_SPEED = 1
+&Pass_Height = -0.5
+&SAFE_ENTER = 1
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C307
+
+&X1 = 0
+&Y1 = -6
+&X2 = 0
+&Y2 = 6
+&XY_SPEED = 1
+&Pass_Height = -1.0
+&SAFE_ENTER = 1
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C307
+
+&X1 = 0
+&Y1 = -6
+&X2 = 0
+&Y2 = 6
+&XY_SPEED = 1
+&Pass_Height = -1.5
+&SAFE_ENTER = 1
+&SAFE_EXIT = 1
+&Jamb_Length_Offset = 0
+C307
