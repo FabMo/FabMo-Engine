@@ -194,6 +194,11 @@ UserConfig.prototype.revokeAdmin = function (username, callback) {
 //   password - The password for the new user
 //   callback - Called with the new user object, or error if there was an error
 UserConfig.prototype.add = function (username, password, callback) {
+    // The first new user that is created causes this function to be
+    // called with two empty strings as username and password. Guard against that.
+    if (username == "" && password == "") {
+        return;
+    }
     if (!/^([a-zA-Z0-9]{3,20})$/.test(username)) {
         //validate username
         callback(
