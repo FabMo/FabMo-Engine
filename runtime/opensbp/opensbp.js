@@ -74,6 +74,7 @@ function SBPRuntime() {
     this.cmd_StartB = 0;
     this.cmd_StartC = 0;
     this.paused = false;
+    this.feedhold = false;
     this.resumeAllowed = true;
     this.lastNoZPullup = 0;
     this.continue_callback = null;
@@ -831,6 +832,7 @@ SBPRuntime.prototype._run = function () {
                 }
                 break;
             case this.driver.STAT_HOLDING:
+                this.feedhold = true;
                 if (this.machine.pauseTimer) {
                     clearTimeout(this.machine.pauseTimer);
                     this.machine.pauseTimer = false;
@@ -930,6 +932,11 @@ SBPRuntime.prototype._executeNext = function () {
     // If _executeNext is called but we're paused, stay paused. (We'll call _executeNext again on resume)
     if (this.paused) {
         log.info("Program is paused.");
+        return;
+    }
+
+    if (this.feedhold) {
+        log.info("Program is in feedhold.");
         return;
     }
 
@@ -1571,6 +1578,7 @@ SBPRuntime.prototype.init = function () {
     this.quit_pending = false;
     this.end_message = null;
     this.paused = false;
+    this.feedhold = false;
     this.units = config.machine.get("units");
     this.pending_error = null;
     this.pendingFeedhold = false;
@@ -2182,8 +2190,12 @@ SBPRuntime.prototype.pause = function () {
     ) {
         this.pendingFeedhold = true;
     } else {
+        //Send feedhold to driver
         this.machine.driver.feedHold();
+        //Alert machine that we are in feedhold
         this.machine.status.inFeedHold = true;
+        //Internal opensbp flag indicating we are in feedhold
+        this.feedhold = true;
     }
 };
 
@@ -2219,6 +2231,7 @@ SBPRuntime.prototype.resume = function (input = false) {
         } else {
             this.driver.resume();
             this.machine.status.inFeedHold = false;
+            this.feedhold = false;
         }
     }
 };
