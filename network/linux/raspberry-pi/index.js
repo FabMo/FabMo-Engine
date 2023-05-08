@@ -632,8 +632,6 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (
             function set_name(callback) {
                 if (identity.name) {
                     log.info("Setting network name to " + identity.name);
-                    // eslint-disable-next-line no-undef
-                    jedison("set name '" + identity.name + "'", callback);
                 } else {
                     callback(null);
                 }
@@ -651,11 +649,6 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (
                 if (identity.password) {
                     log.info(
                         "Setting network password to " + identity.password
-                    );
-                    // eslint-disable-next-line no-undef
-                    jedison(
-                        "set password '" + identity.password + "'",
-                        callback
                     );
                 } else {
                     callback(null);

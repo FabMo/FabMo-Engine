@@ -194,6 +194,11 @@ UserConfig.prototype.revokeAdmin = function (username, callback) {
 //   password - The password for the new user
 //   callback - Called with the new user object, or error if there was an error
 UserConfig.prototype.add = function (username, password, callback) {
+    // The first new user that is created causes this function to be
+    // called with two empty strings as username and password. Guard against that.
+    if (username == "" && password == "") {
+        return;
+    }
     if (!/^([a-zA-Z0-9]{3,20})$/.test(username)) {
         //validate username
         callback(
@@ -235,12 +240,17 @@ UserConfig.prototype.add = function (username, password, callback) {
 
 //Maybe move this to the routes or whatever
 UserConfig.prototype.findOne = function (username, callback) {
-    username in this._cache
-        ? callback(null, this._cache[username])
-        : callback(
-              new Error("The username " + username + " is invalid."),
-              null
-          );
+    if (!username || typeof username !== "string") {
+        return callback(new Error("Invalid username."), null);
+    }
+    if (username in this._cache) {
+        return callback(null, this._cache[username]);
+    } else {
+        return callback(
+            new Error("The username " + username + " is invalid."),
+            null
+        );
+    }
 };
 
 // Get a map of all user ids to values

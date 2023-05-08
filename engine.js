@@ -728,39 +728,6 @@ Engine.prototype.start = function (callback) {
                 );
             }.bind(this),
 
-            function setup_config_events(callback) {
-                config.engine.on(
-                    "change",
-                    function (evt) {
-                        if (evt.beacon_url) {
-                            this.beacon.set(
-                                "url",
-                                config.updater.get("beacon_url")
-                            );
-                        }
-                        //TODO ... as part of dealing with beacon
-                        ////## this 'once' generating can't read prop error on first config changes
-                        // If the tool name changes, report the change to beacon
-                        if (evt.name) {
-                            this.beacon.once("config");
-                        }
-
-                        // If beacon consent changes, let the beacon daemon know (possibly do a report)
-                        if (evt.consent_for_beacon) {
-                            this.beacon.set(
-                                "consent_for_beacon",
-                                evt.consent_for_beacon
-                            );
-                            log.info(
-                                "Consent for beacon is " +
-                                    evt.consent_for_beacon
-                            );
-                        }
-                    }.bind(this)
-                );
-                callback();
-            }.bind(this),
-
             // Kick off the server if all of the above went OK.
             function start_server(callback) {
                 log.info("Setting up the webserver...");

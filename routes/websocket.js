@@ -32,22 +32,24 @@ function setupAuthentication(svr) {
         );
         if (handshakeData.sessionID.content.passport !== undefined) {
             var user = handshakeData.sessionID.content.passport.user;
-            authentication.getUserById(user, function (err, data) {
-                if (err) {
-                    err = new Error(err);
-                    log.error(err);
-                    // delete socket.request.headers.cookie;
-                    return next(err);
-                } else {
-                    authentication.setCurrentUser(data);
-                    next();
-                }
-            });
-            // authentication.configure();
-            if (!handshakeData.sessionID) {
-                err = new Error("Wrong session.");
+            if (user != undefined) {
+                authentication.getUserById(user, function (err, data) {
+                    if (err) {
+                        err = new Error(err);
+                        log.error(err);
+                        // delete socket.request.headers.cookie;
+                        return next(err);
+                    } else {
+                        authentication.setCurrentUser(data);
+                        next();
+                    }
+                });
+                // authentication.configure();
+                if (!handshakeData.sessionID) {
+                    err = new Error("Wrong session.");
 
-                return next(err);
+                    return next(err);
+                }
             }
         } else {
             next();

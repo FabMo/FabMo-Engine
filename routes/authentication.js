@@ -1,4 +1,3 @@
-var log = require("../log").logger("authentication");
 var authentication = require("../authentication");
 var passport = authentication.passport;
 
@@ -68,10 +67,9 @@ var addUser = function (req, res, next) {
 };
 
 var logout = function (req, res, next) {
-    log.error(req);
     req.logout();
     authentication.setCurrentUser(null);
-    res.redirect("", next);
+    res.redirect("/", next);
     return;
 };
 
@@ -148,15 +146,18 @@ var getCurrentUser = function (req, res, next) {
 // eslint-disable-next-line no-unused-vars
 var modifyUser = function (req, res, next) {
     var currentUser = authentication.getCurrentUser();
-    if (!req.params.id) {
-        res.send(200, { status: "error", message: "no username provided" });
+    if (!req.params.id || req.params.id === "undefined") {
+        res.send(200, {
+            status: "error",
+            message: "invalid username provided",
+        });
         return;
     }
+    // if current user or admin
     if (
         currentUser &&
-        (currentUser.username == req.params.username || currentUser.isAdmin)
+        (currentUser.username == req.params.id || currentUser.isAdmin)
     ) {
-        // if current user or admin
         if (!req.params.user) {
             res.send(200, {
                 status: "error",
