@@ -384,6 +384,39 @@ engine.getVersion(function (err, version) {
                         },
                     });
                 } else if (
+                    status.state === "limit" &&
+                    status.resumeFlag === false
+                ) {
+                    interlockDialog = true;
+                    keypad.setEnabled(false);
+                    keyboard.setEnabled(false);
+                    dashboard.showModal({
+                        title: "Limit Hit!",
+                        message:
+                            "Limit Switch has been Hit! Quit will temporarily over-ride Limit sensor to allow backing off with Keypad.",
+                        cancelText: "Quit",
+                        cancel: function () {
+                            interlockDialog = false;
+                            if (status.overrideLimits === true) {
+                                console.log("overrideLimits is true");
+                            }
+                            dashboard.engine.quit(function (err, result) {
+                                if (err) {
+                                    console.log("ERRROR: " + err);
+                                }
+                            });
+                        },
+                        // okText: "Resume",
+                        // ok: function () {
+                        //     // make switch not a limit
+                        //     //            this.machine.driver.command("{lim:0}")
+                        //     //            dashboard.engine.config.driver.di3ac = 0; //({ ["di3_def"]: 0 });
+                        //     //            dashboard.engine.config.machine.di3_def = 0; //({ ["di3_def"]: 0 });
+                        //     //            interlockDialog = false;
+                        //     dashboard.engine.resume();
+                        // },
+                    });
+                } else if (
                     status.state === "interlock" &&
                     status.resumeFlag === false
                 ) {
@@ -391,9 +424,9 @@ engine.getVersion(function (err, version) {
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
-                        title: "Safety Interlock Active!",
+                        title: "Safety Interlock Activated!",
                         message:
-                            "You cannot perform the specified action with the safety interlock open.  Please close the safety interlock to continue.",
+                            "You cannot perform the specified action with the safety interlock open.  Please close the safety interlock before Resuming.",
                         cancelText: "Quit",
                         cancel: function () {
                             interlockDialog = false;

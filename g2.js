@@ -41,6 +41,10 @@ var intendedClose = false;
 var THRESH = 1;
 var PRIMED_THRESHOLD = 10;
 
+// array of states of limit inputs (true = triggered)
+////##let limitState = [];
+////##let activeLimits = 0;
+
 // var pat = /s*(G(28|38)\.\d|G2(0|1))/g; Not used yet
 
 // Error codes defined by G2
@@ -542,6 +546,39 @@ G2.prototype.handleStatusReport = function (response) {
             this.status[key] = value;
         }
 
+        // // Check for inputs and reset them to bitwise value for DRO display in Dashboard; track limitState for clearing
+        // for (let i = 1; i < MAX_INPUTS + 1; i++) {
+        //     if ("in" + i in response.sr) {
+        //         //* we got a new input value
+        //         //* we'll pass status of the input with bitwise change so DRO will display correct colors
+        //         // eslint flags config as undefined
+        //         // eslint-disable-next-line no-undef
+        //         let ibval = config.machine.get("di" + i + "_def");
+        //         if (0 < ibval && ibval < 17) {
+        //             this.status["in" + i] |= ibval; // Set input value to cur value + bitwise def; for small DRO display
+        //             //* then to update limitState for that tool
+        //             if (ibval === 16) {
+        //                 limitState[i] = this.status[key] & 1; // track limit state for potential clearing
+        //             }
+        //         }
+        //     }
+        // }
+        // // Now, if overrideLimits is ON, check through all the limit states and see if any limit is still active,
+        // // if not, clear overrideLimits
+        // if (this.status.overrideLimits === true) {
+        //     //            let activeLimits = 0;
+        //     for (let i = 1; i < MAX_INPUTS + 1; i++) {
+        //         if (limitState[i]) {
+        //             activeLimits++;
+        //         }
+        //     }
+        //     if (activeLimits === 0) {
+        //         // If no limits are active, clear the override
+        //         this.status.overrideLimits = false;
+        //     }
+        //     activeLimits = 0;
+        // }
+
         // stat is the system state (detailed in the list above)
         if ("stat" in response.sr) {
             switch (response.sr.stat) {
@@ -811,6 +848,8 @@ G2.prototype.quit = function () {
         this.context = null;
         this._primed = false;
     });
+
+    //    }
 };
 
 // When the gcode runtime asks that an M30 be sent, send it. This is pulled out from the

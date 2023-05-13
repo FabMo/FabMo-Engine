@@ -331,6 +331,7 @@
         ///update inputs and set the small DRO display depending on input definitions
         let stopIsOn = false; // ... at least one is already on
         let intIsOn = false;
+        let limitIsOn = false;
         for (var i = 1; i < MAX_INPUTS + 1; i++) {
             let iname = "in" + i;
             if (iname in status) {
@@ -356,6 +357,11 @@
                         intIsOn = true;
                         $("#inp-interlock").css("visibility", "visible");
                     }
+                    if (assignedAction === "limit") {
+                        idisp = "limitOn";
+                        limitIsOn = true;
+                        $("#inp-limit").css("visibility", "visible");
+                    }
                     $(selector).removeClass("off").addClass(idisp);
                 } else if (ival === 0) {
                     // input is OFF ... cleanup
@@ -368,8 +374,11 @@
                     if (assignedAction === "interlock") {
                         $("#inp-interlock").css("visibility", "hidden");
                     }
+                    if (assignedAction === "limit") {
+                        $("#inp-limit").css("visibility", "hidden");
+                    }
                     $(selector)
-                        .removeClass("on stopOn interlockOn")
+                        .removeClass("on stopOn interlockOn limitOn")
                         .addClass("off");
                 } else {
                     // input is disabled  ... not picking up at moment because all reported
@@ -479,7 +488,7 @@
                 $(that.resume_button_selector).hide();
                 $(that.pause_button_selector).hide();
             }
-        } else if (status.state === "paused") {
+        } else if (status.state === "paused" || status.state === "lock") {
             $(that.status_div_selector).removeClass(
                 "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"
             );

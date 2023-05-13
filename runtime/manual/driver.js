@@ -612,7 +612,7 @@ ManualDriver.prototype._onG2Status = function (status) {
                 this.omg_stop = false;
                 this.stop_pending = false;
                 if (this.driver.status.hold === 0) {
-                    this.driver._write("%\n"); // flush feed-hold and get stat:
+                    this.driver._write("%\n"); // flush feed-hold and get stat; this is Important! (deletion produces errors)
                 }
                 if (this.exit_pending) {
                     this.exit();

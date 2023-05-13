@@ -128,6 +128,7 @@ function Machine(control_path, callback) {
         hideKeypad: false,
         inFeedHold: false,
         resumeFlag: false,
+        overrideLimits: false,
         quitFlag: false,
     };
 
@@ -214,7 +215,7 @@ function Machine(control_path, callback) {
     // If any of the axes in G2s configuration become enabled or disabled, we want to show or hide
     // them accordingly.  These change events happen even during the initial configuration load, so
     // right from the beginning, we will be displaying the correct axes.
-    // TODO - I think it's good to used named callbacks, to make the code more self-documenting
+    // TODO - I think it's good to use named callbacks, to make the code more self-documenting
     config.driver.on(
         "change",
         function (update) {
@@ -356,6 +357,15 @@ Machine.prototype.handleOkayCancelDual = function (stat, quit_input) {
                 log.info(msg);
             }
         });
+    } else if (this.status.state === "limit" && this.quit_pressed) {
+        log.info("Okay hit, resuming and over-riding from limit");
+        this.resume(function (err, msg) {
+            if (err) {
+                log.error(err);
+            } else {
+                log.info(msg);
+            }
+        });
     }
     this.quit_pressed = stat[quit_input] & 1;
 };
@@ -486,7 +496,8 @@ function decideNextAction(
     interlock_action_io,
     driver_status_inFeedHold,
     current_action_io,
-    bypass_in
+    bypass_in,
+    thisMachine
 ) {
     let result_arm_obj = {
         interlock_required: null,
@@ -497,7 +508,18 @@ function decideNextAction(
     };
     switch (current_state_in) {
         case "idle":
+            //thisMachine.status.overrideLimits = false; ////###
             result_arm_obj["interlock_action"] = current_action_io;
+            break;
+
+        case "limit":
+            if (driver_status_inFeedHold === true) {
+                // handle lock/interlock after software pause; in FeedHold
+                result_arm_obj["interlock_action"] = current_action_io;
+            } else {
+                result_arm_obj["current_action"] =
+                    interlock_action_io || current_action_io;
+            }
             break;
         case "lock":
         case "interlock":
@@ -515,6 +537,7 @@ function decideNextAction(
                 (current_action_io.type == "runtimeCode" &&
                     current_action_io.payload.name == "manual")
             ) {
+                thisMachine.status.overrideLimits = true;
                 break;
             }
             result_arm_obj["error_thrown"] = new Error(
@@ -563,10 +586,28 @@ function decideNextAction(
         result_arm_obj["next_action"] = "throw";
         return result_arm_obj;
     }
-    if (interlock_required_io && driver_status_interlock_in) {
+
+    // OverrideLimits Case
+    ////##    if (interlock_required_io && driver_status_interlock_in && thisMachine.status.overrideLimits === true) {
+    if (interlock_required_io && driver_status_interlock_in === 16) {
+        if (thisMachine.status.overrideLimits === false) {
+            thisMachine.status.overrideLimits = true;
+            result_arm_obj["next_action"] = "abort_due_to_interlock";
+            return result_arm_obj;
+        }
+        thisMachine.status.overrideLimits = false;
+        //  result_arm_obj["next_action"] = "abort_due_to_interlock";
+        //  return result_arm_obj;
+    } else if (interlock_required_io && driver_status_interlock_in) {
         result_arm_obj["next_action"] = "abort_due_to_interlock";
         return result_arm_obj;
     }
+
+    // Ordinary Interlock or Lock Case
+    // if (interlock_required_io && driver_status_interlock_in) {
+    //     result_arm_obj["next_action"] = "abort_due_to_interlock";
+    //     return result_arm_obj;
+    // }
 
     // Now we decide what the next action should be if we haven't already aborted for some reason
 
@@ -673,7 +714,8 @@ Machine.prototype.arm = function (action, timeout) {
         this.interlock_action,
         this.status.inFeedHold,
         action,
-        interlockBypass
+        interlockBypass,
+        this
     );
     // Implement side-effects that the result obj has returned so state is set correctly:
     if (arm_obj["interlock_required"]) {
@@ -699,7 +741,9 @@ Machine.prototype.arm = function (action, timeout) {
             throw arm_obj["error_thrown"];
 
         case "abort_due_to_interlock":
-            if (isInterlocked === "interlock") {
+            if (isInterlocked === "limit") {
+                this.setState(this, "limit");
+            } else if (isInterlocked === "interlock") {
                 this.setState(this, "interlock");
             } else {
                 this.setState(this, "lock");
@@ -1105,7 +1149,9 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                         !interlockBypass
                     ) {
                         this.interlock_action = null;
-                        if (isInterlocked === "interlock") {
+                        if (isInterlocked === "limit") {
+                            this.setState(this, "limit");
+                        } else if (isInterlocked === "interlock") {
                             this.setState(this, "interlock");
                         } else {
                             this.setState(this, "lock");
@@ -1118,6 +1164,11 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
             case "lock":
             case "interlock":
                 this.status.resumeFlag = false;
+                break;
+            case "limit":
+                interlockBypass = true;
+                this.status.overrideLimits = true;
+                this.status.resumeFlag = true;
                 break;
             case "dead":
                 this.status.out4 = 0;
@@ -1203,6 +1254,11 @@ Machine.prototype.quit = function (callback) {
             break;
 
         case "lock":
+            this.action = null;
+            this.setState(this, "idle");
+            break;
+
+        case "limit":
             this.action = null;
             this.setState(this, "idle");
             break;
@@ -1358,7 +1414,12 @@ Machine.prototype.gcode = function (string) {
 Machine.prototype._executeRuntimeCode = function (runtimeName, code) {
     runtime = this.getRuntime(runtimeName);
     if (runtime) {
-        if (this.current_runtime == this.idle_runtime) {
+        // Normally, we only switch runtimes if we're in idle runtime, but to override limit for manual, allow idle state.
+        if (
+            this.current_runtime == this.idle_runtime ||
+            (runtimeName === "manual" && this.status.state === "idle")
+        ) {
+            ///##            if (this.current_runtime == this.idle_runtime )
             this.setRuntime(
                 runtime,
                 function (err, runtime) {
