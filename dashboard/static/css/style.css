@@ -220,6 +220,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	cursor: pointer;
 	position: absolute;
     top: 25px;
+	left: 0px;
     transition: all 0.2s;
 }
 
@@ -244,7 +245,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-family: 'source_sans_proextralight';
 	font-size: 14px;
 	line-height: 15px;
-	padding-left: 0.5rem;
+	padding-left: 20px;
 }
 
 #right-position-container span {
@@ -376,6 +377,13 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-weight: bold;
 }
 
+.input.limitOn {
+	/* border: 0.5px solid #32B433; */
+	/* background-color: #eee; */
+	color: #fca1e8;
+	font-weight: 900;
+}
+
 .inp-alert {
     display: inline;
     visibility: hidden;
@@ -391,6 +399,10 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-weight: bolder;
 }
 
+#inp-limit {
+	color: #fca1e8;
+	font-weight: 900;
+}
 
 .output.on {
 	/* border: 0.5px solid #32B433; */
