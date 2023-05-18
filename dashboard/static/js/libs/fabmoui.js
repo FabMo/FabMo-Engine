@@ -337,26 +337,35 @@
                 let idisp = "off";
                 let selector = that.status_div_selector + " .in" + i;
                 let ival = status[iname];
-                if (ival & 1) {
+                // get the assigned action for this input from the machine config
+                let assignedAction =
+                    this.tool.config.machine["di" + i + "_def"];
+                if (ival) {
                     // input is ON
                     idisp = "on";
-                    if (ival & 2 || ival & 4) {
+                    if (
+                        assignedAction === "stop" ||
+                        assignedAction === "faststop"
+                    ) {
                         idisp = "stopOn";
                         stopIsOn = true;
                         $("#inp-stop").css("visibility", "visible");
                     }
-                    if (ival & 8) {
+                    if (assignedAction === "interlock") {
                         idisp = "interlockOn";
                         intIsOn = true;
                         $("#inp-interlock").css("visibility", "visible");
                     }
                     $(selector).removeClass("off").addClass(idisp);
-                } else if ((ival & 1) === 0) {
+                } else if (ival === 0) {
                     // input is OFF ... cleanup
-                    if ((ival & 2 || ival & 4) && !stopIsOn) {
+                    if (
+                        assignedAction === "stop" ||
+                        assignedAction === "faststop"
+                    ) {
                         $("#inp-stop").css("visibility", "hidden");
                     }
-                    if (ival & 8 && !intIsOn) {
+                    if (assignedAction === "interlock") {
                         $("#inp-interlock").css("visibility", "hidden");
                     }
                     $(selector)

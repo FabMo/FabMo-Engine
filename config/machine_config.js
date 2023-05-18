@@ -93,12 +93,12 @@ MachineConfig.prototype.update = function (data, callback, force) {
         if (diDef in this._cache) {
             let g2inpAction = 0; // G2 action defaults to none
             switch (this._cache[diDef]) {
-                case 2:
-                case 8:
-                case 16:
+                case "stop":
+                case "interlock":
+                case "limit":
                     g2inpAction = 1; // G2 regular stop action
                     break;
-                case 4:
+                case "faststop":
                     g2inpAction = 2; // G2 fast-stop action
                     break;
             }

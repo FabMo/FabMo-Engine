@@ -100,7 +100,7 @@ var setUpManual = function () {
     });
     // Customize for video
     let current_App = localStorage.getItem("currentapp");
-    if (current_App === "video") {
+    if (current_App === "video" || current_App === "fabmo-sb4") {
         $("#keypad-modal").css("opacity", "0.35");
         $(".modalDim").css("background-color", "rgba(0,0,0,0)");
     } else {
