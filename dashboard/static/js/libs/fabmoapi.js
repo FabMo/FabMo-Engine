@@ -59,6 +59,7 @@
             upload_progress: [],
         };
         var url = window.location.origin;
+        this.is_refreshed = "NO";
         this.base_url = url.replace(/\/$/, "");
         this.commandCounter = 0;
         this.status = {};
@@ -104,6 +105,12 @@
                     console.info("Websocket connected");
                     this.emit("connect");
                     this.requestStatus();
+                    // If we are reconnecting to the websocket while the webpage
+                    // is already open, we need to refresh the page
+                    if (this.is_refreshed == false) {
+                        this.is_refreshed = true;
+                        window.location.reload(true);
+                    }
                 }.bind(this)
             );
 
@@ -114,6 +121,7 @@
             this.socket.on(
                 "disconnect",
                 function () {
+                    this.is_refreshed = false;
                     console.info("Websocket disconnected");
                     this.emit("disconnect");
                 }.bind(this)
