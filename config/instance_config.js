@@ -8,8 +8,7 @@
  * (and restore it when the engine is restarted)
  */
 Config = require("./config").Config;
-var log = require("../log");
-var logger = log.logger("config");
+var log = require("../log").logger("instance_config");
 
 // The InstanceConfig object keeps track of runtime settings - they aren't set by the user and are used for things like positional memory, etc.
 InstanceConfig = function (driver) {
@@ -44,6 +43,23 @@ InstanceConfig.prototype.update = function (data, callback) {
 InstanceConfig.prototype.apply = function (callback) {
     try {
         var position = this.get("position");
+        if (position.length === 1) {
+            // if there is nothing in the object
+            log.debug(
+                "Unable to Recover Previous Location! Setting Base Locations to 0.0"
+            );
+            position = {
+                x: 0,
+                y: 0,
+                z: 0,
+                a: 0,
+                b: 0,
+                c: 0,
+                u: 0,
+                v: 0,
+                w: 0,
+            };
+        }
         this.driver.setMachinePosition(position, callback);
     } catch (e) {
         callback(e);
