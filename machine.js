@@ -37,6 +37,10 @@ var canResume = false;
 var clickDisabled = false;
 var interlockBypass = false;
 var runtime = null;
+let MAX_INPUTS = 12; // TODO - This should be a global constant
+//let MAX_OUTPUTS = 12; // TODO - This should be a global constant
+////## array of states of limit inputs (true = triggered)
+let limitState = [];
 
 ////## total temp KLUDGE
 global.CUR_RUNTIME;
@@ -248,6 +252,22 @@ function Machine(control_path, callback) {
             var auth_input = "in" + config.machine.get("auth_input");
             var quit_input = "in" + config.machine.get("quit_input");
             var ap_input = "in" + config.machine.get("ap_input");
+
+            // Deterimine if any previously active limits are now clear and reset override if so
+            if (this.status.overrideLimits === true) {
+                let activeLimits = 0;
+                for (let i = 1; i < MAX_INPUTS + 1; i++) {
+                    if (limitState[i]) {
+                        if (this.status["in" + i]) {
+                            activeLimits++;
+                        }
+                    }
+                }
+                if (activeLimits === 0) {
+                    // If no limits are active, clear any override
+                    this.status.overrideLimits = false;
+                }
+            }
 
             // If you press a button to pause, you're not allowed to resume or quit for at least a second
             // (To eliminate the chance of a double-tap doing something you didn't intend.)
@@ -509,6 +529,12 @@ function decideNextAction(
     switch (current_state_in) {
         case "idle":
             //thisMachine.status.overrideLimits = false; ////###
+            //            if (driver_status_interlock_in === "limit" &&
+            //                current_action_io.payload.name === "manual" &&
+            //                thisMachine.status.currentCmd === "exit") {
+            // handle lock/interlock after software pause; in FeedHold
+            //                thisMachine.status.overrideLimits = true;
+            //            }
             result_arm_obj["interlock_action"] = current_action_io;
             break;
 
@@ -537,7 +563,7 @@ function decideNextAction(
                 (current_action_io.type == "runtimeCode" &&
                     current_action_io.payload.name == "manual")
             ) {
-                thisMachine.status.overrideLimits = true;
+                ////##                thisMachine.status.overrideLimits = true; ////## maybe remove???
                 break;
             }
             result_arm_obj["error_thrown"] = new Error(
@@ -589,25 +615,24 @@ function decideNextAction(
 
     // OverrideLimits Case
     ////##    if (interlock_required_io && driver_status_interlock_in && thisMachine.status.overrideLimits === true) {
-    if (interlock_required_io && driver_status_interlock_in === 16) {
-        if (thisMachine.status.overrideLimits === false) {
-            thisMachine.status.overrideLimits = true;
+    if (interlock_required_io && driver_status_interlock_in === "limit") {
+        if (thisMachine.status.overrideLimits === true) {
+            thisMachine.status.overrideLimits = false;
+        } else {
             result_arm_obj["next_action"] = "abort_due_to_interlock";
+            thisMachine.status.overrideLimits = false;
             return result_arm_obj;
         }
-        thisMachine.status.overrideLimits = false;
-        //  result_arm_obj["next_action"] = "abort_due_to_interlock";
-        //  return result_arm_obj;
+        // thisMachine.status.overrideLimits = false;
+        // result_arm_obj["next_action"] = "abort_due_to_interlock";
+        // return result_arm_obj;
+
+        // Ordinary Interlock or Lock Case (stop or interlock)
     } else if (interlock_required_io && driver_status_interlock_in) {
+        thisMachine.status.overrideLimits = false;
         result_arm_obj["next_action"] = "abort_due_to_interlock";
         return result_arm_obj;
     }
-
-    // Ordinary Interlock or Lock Case
-    // if (interlock_required_io && driver_status_interlock_in) {
-    //     result_arm_obj["next_action"] = "abort_due_to_interlock";
-    //     return result_arm_obj;
-    // }
 
     // Now we decide what the next action should be if we haven't already aborted for some reason
 
@@ -664,7 +689,8 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 
 // Before beginning or resuming any runtime action also check for "locking/interlocking" inputs that may be ACTIVE
 // Locking/Interlocking Inputs are inputs defined as Stop(2), FastStop(4), or Interlock(8)  {bitwise comparison used to set display}
-// These inputs are fucntionally similar in producing a feedhold in G2 when activated, BUT have different user displays -- so are distinct
+// These inputs are fucntionally similar in producing a feedhold in G2 when effected, BUT have different user displays and for LIMIT
+// a different follow-on action -- so they are distinct for FabMo
 // Input definitions are stored in machine.json and = "machine: di#_def" in the configuration tree
 // ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold
 // TABLE:
@@ -677,18 +703,22 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 //    limit  -  Limit           NO         Limit Hit          1   [feedhold]
 //  hardstop -  ImmediateStop   NO             -              3   [feedhold instant] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
 
+// We check for interlock state before any action that ARMS tool for action and with any general change in state
 function checkForInterlocks(thisMachine) {
     let getInterlockState = "";
     for (let pin = 1; pin < 13; pin++) {
         let checkAssignedInput = config.machine.get("di" + pin + "_def");
-        // if an "assigned" input pin is active, Set InterlockState to assigned action
         // if more than one, highest priority will be assigned to InterlockState
         if (checkAssignedInput) {
             if (thisMachine.driver.status["in" + pin]) {
                 getInterlockState = checkAssignedInput;
+                if (getInterlockState === "limit") {
+                    limitState[pin] = true; // keep track of activated limits
+                }
             }
         }
     }
+
     return getInterlockState;
 }
 
@@ -736,10 +766,16 @@ Machine.prototype.arm = function (action, timeout) {
         "ARMING the machine" + (action ? " for " + action.type : "(No action)")
     );
 
+    // ////##
+    // // A one-time override of the limits is allowed if the action is ...
+    // if (nextAction === "abort_due_to_interlock" && this.status.overrideLimits) {
+    //     nextAction = "fire";
+    //     this.status.overrideLimits = false; // but only once
+    // }
+
     switch (nextAction) {
         case "throw":
             throw arm_obj["error_thrown"];
-
         case "abort_due_to_interlock":
             if (isInterlocked === "limit") {
                 this.setState(this, "limit");
@@ -1161,15 +1197,16 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                 }
                 break;
             case "running":
+            case "limit":
             case "lock":
             case "interlock":
                 this.status.resumeFlag = false;
                 break;
-            case "limit":
-                interlockBypass = true;
-                this.status.overrideLimits = true;
-                this.status.resumeFlag = true;
-                break;
+            //             case "limit":
+            //                 interlockBypass = true;
+            // ////##                this.status.overrideLimits = true;
+            //                 this.status.resumeFlag = true;
+            //                 break;
             case "dead":
                 this.status.out4 = 0;
                 log.error("G2 is dead!");
@@ -1231,7 +1268,7 @@ Machine.prototype.pause = function (callback) {
 // Quit
 Machine.prototype.quit = function (callback) {
     // Release Pause hold if present
-    this.driver.pause_hold = false;
+    this.driver.pause_hold = false; ////## Do all quits start here? CHECK for SbpRuntime first???
     this.status.inFeedHold = false;
     this.status.resumeFlag = false;
     this.status.quitFlag = true;
@@ -1250,17 +1287,30 @@ Machine.prototype.quit = function (callback) {
 
         case "interlock":
             this.action = null;
-            this.setState(this, "idle");
+            // if we started from idle, go back to idle; if we are exiting, also go to idle
+            if (
+                this.preArmedState === "idle" ||
+                this.status.currentCmd === "exit"
+            ) {
+                this.setState(this, "idle");
+            }
             break;
 
         case "lock":
             this.action = null;
-            this.setState(this, "idle");
+            // if we started from idle, go back to idle; if we are exiting, also go to idle
+            if (
+                this.preArmedState === "idle" ||
+                this.status.currentCmd === "exit"
+            ) {
+                this.setState(this, "idle");
+            }
             break;
 
         case "limit":
             this.action = null;
-            this.setState(this, "idle");
+            this.status.overrideLimits = true; ////## Only place that override is set; User has selected QUIT
+            //    this.setState(this, "idle");
             break;
 
         case "armed":

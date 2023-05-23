@@ -622,6 +622,7 @@ ManualDriver.prototype._onG2Status = function (status) {
     }
 };
 
+////## not used in current limit handling system ???
 // Boilerplate limit handler
 // TODO needs work
 ManualDriver.prototype._limit = function () {

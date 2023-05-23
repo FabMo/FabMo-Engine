@@ -397,9 +397,11 @@ engine.getVersion(function (err, version) {
                         cancelText: "Quit",
                         cancel: function () {
                             interlockDialog = false;
-                            if (status.overrideLimits === true) {
-                                console.log("overrideLimits is true");
-                            }
+                            ////## set override here on quit
+                            //if (status.overrideLimits === true) {
+                            ////##                             dashboard.status.overrideLimits = true;
+                            console.log("overrideLimits is true");
+                            //}
                             dashboard.engine.quit(function (err, result) {
                                 if (err) {
                                     console.log("ERRROR: " + err);

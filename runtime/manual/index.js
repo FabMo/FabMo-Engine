@@ -189,8 +189,28 @@ ManualRuntime.prototype.executeCode = function (code) {
 };
 
 // Commands that need to be implemented for runtime interface, but don't do anything
-ManualRuntime.prototype.pause = function () {};
-ManualRuntime.prototype.quit = function () {};
+ManualRuntime.prototype.pause = function () {
+    // TODO: Pending feedholds appear to be broken and may no longer be desired functionality.
+    // TODO: Should this be handled by g2.js behavior?
+    if (
+        this.machine.driver.status.stat == this.machine.driver.STAT_END ||
+        this.machine.driver.status.stat == this.machine.driver.STAT_STOP
+    ) {
+        this.pendingFeedhold = true;
+    } else {
+        //Send feedhold to driver
+        this.machine.driver.feedHold();
+        //Alert machine that we are in feedhold
+        this.machine.status.inFeedHold = true;
+        //Internal opensbp flag indicating we are in feedhold
+        this.feedhold = true;
+    }
+};
+
+ManualRuntime.prototype.quit = function () {
+    this.driver.quit();
+};
+
 ManualRuntime.prototype.resume = function () {};
 
 // Internal handler for machine status

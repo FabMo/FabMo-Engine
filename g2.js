@@ -664,7 +664,7 @@ G2.prototype.handleStatusReport = function (response) {
                         this.expectations.push(expectation);
                     } else {
                         expectation[stat](this);
-                    }
+                    } ////## are we doing anything with expectations?
                 } else if (null in expectation) {
                     expectation[null](this);
                 }
@@ -753,8 +753,8 @@ G2.prototype.onMessage = function (response) {
     }
 };
 
-// Interrupt motion in manual run-time; now using "kill" rather than G2-hold
-////## Handling normal and raw now the same
+// Interrupt motion in manual run-time; back to using G2-hold
+// Handling normal and raw now the same
 // eslint flags callback as unused, gets used in driver.js
 // eslint-disable-next-line no-unused-vars
 G2.prototype.manualFeedHold = function (callback) {
@@ -842,7 +842,7 @@ G2.prototype.quit = function () {
         this.stream.end();
     }
     // Issue kill and clear queues.
-    this._write("\x04\n");
+    ////##    this._write("\x04\n");
     this.queueFlush(function () {
         //Finally clear context and _reset primed flag so we're not reliant on getting a stat 4 to clear the context.
         this.context = null;
@@ -1107,17 +1107,18 @@ G2.prototype.prime = function () {
     this.sendMore();
 };
 
-// TODO - This was mostly an informational thing that should no longer be needed
-G2.prototype.getInfo = function () {
-    return (
-        "G2: primed:" +
-        (this._primed ? "1" : "0") +
-        " l2s:" +
-        this.lines_to_send +
-        " gcq:" +
-        this.gcode_queue.getLength()
-    );
-};
+////##
+// // TODO - This was mostly an informational thing that should no longer be needed
+// G2.prototype.getInfo = function () {
+//     return (
+//         "G2: primed:" +
+//         (this._primed ? "1" : "0") +
+//         " l2s:" +
+//         this.lines_to_send +
+//         " gcq:" +
+//         this.gcode_queue.getLength()
+//     );
+// };
 
 // This function is called internally when it's time to send more g-codes or commands from the queue.
 // This implements the so-called "linemode" protocol (see G2 source documentation for more info)
@@ -1182,6 +1183,7 @@ G2.prototype.setMachinePosition = function (position, callback) {
     });
 };
 
+////## are we using this?
 // Function works like "once()" for a state change
 // callbacks is an associative array mapping states to callbacks
 // If the *next* state change matches a state in the associative array, the callback it maps to is called.

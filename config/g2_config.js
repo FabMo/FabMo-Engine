@@ -223,7 +223,6 @@ G2Config.prototype.configureStatusReports = function (callback) {
                 out10: true,
                 out11: true,
                 out12: true,
-                overrideLimits: false,
             },
         });
         this.driver.command({ qv: 0 });
