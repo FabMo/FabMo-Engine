@@ -642,6 +642,7 @@ function checkForInterlocks(thisMachine) {
         let checkAssignedInput = config.machine.get("di" + pin + "_def");
         // if an "assigned" input pin is active, Set InterlockState to assigned action
         // if more than one, highest priority will be assigned to InterlockState
+        // currently that is "stop" < "interlock" < "limit" ; This is where an INPUT gets LABELED
         if (checkAssignedInput) {
             if (thisMachine.driver.status["in" + pin]) {
                 getInterlockState = checkAssignedInput;
@@ -699,9 +700,11 @@ Machine.prototype.arm = function (action, timeout) {
             throw arm_obj["error_thrown"];
 
         case "abort_due_to_interlock":
-            if (isInterlocked === "interlock") {
+            if (isInterlocked === "limit") {
                 this.setState(this, "interlock");
-            } else {
+            } else if (isInterlocked === "interlock") {
+                this.setState(this, "interlock");
+            } else if (isInterlocked === "stop") {
                 this.setState(this, "lock");
             }
             return;
@@ -1104,10 +1107,11 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                         isInterlocked &&
                         !interlockBypass
                     ) {
-                        this.interlock_action = null;
-                        if (isInterlocked === "interlock") {
+                        if (isInterlocked === "limit") {
                             this.setState(this, "interlock");
-                        } else {
+                        } else if (isInterlocked === "interlock") {
+                            this.setState(this, "interlock");
+                        } else if (isInterlocked === "stop") {
                             this.setState(this, "lock");
                         }
                         return;
