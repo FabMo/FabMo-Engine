@@ -59,7 +59,7 @@
             upload_progress: [],
         };
         var url = window.location.origin;
-        this.is_refreshed = "NO";
+        this.is_refreshed = null;
         this.base_url = url.replace(/\/$/, "");
         this.commandCounter = 0;
         this.status = {};
