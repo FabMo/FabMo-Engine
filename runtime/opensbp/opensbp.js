@@ -164,7 +164,6 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
         // Plain old string interprets as OpenSBP code segment
         this.runString(s, callback);
     } else {
-        ////## Is this up-to-date and does it work with new variations on manual 2020 on ?
         // If we're in manual mode, interpret an object as a command for that mode
         // The OpenSBP runtime can enter manual mode with the 'SK' command so we have this code here to mimick that mode
         if (this.inManualMode) {
@@ -183,7 +182,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                                 s.cmd +
                                 "' - not entered."
                         );
-                        this.machine.setState(this, "idle");
+                        ////##      this.machine.setState(this, "idle");
                         return;
                     }
                     switch (s.cmd) {
@@ -809,6 +808,8 @@ SBPRuntime.prototype._run = function () {
     var onStat = function (stat) {
         log.debug("onSTAT ..." + stat);
         if (this.inManualMode) {
+            ////##            log.debug("inManualMode but opensbpRuntime: " + stat);
+            ////##            this.helper.status_handler(stat);
             return;
         }
         switch (stat) {
