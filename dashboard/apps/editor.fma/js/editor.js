@@ -269,6 +269,10 @@ require('./cm-fabmo-modes.js');
 
     }); // document.ready
 
+    $("#topbar").on("dragstart", function(evt) {
+      evt.preventDefault();
+    });
+    
     $("#submit-immediate").click(function(evt) {
       evt.preventDefault();
       execute();

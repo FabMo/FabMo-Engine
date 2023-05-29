@@ -627,23 +627,24 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 // Input definitions are stored in machine.json and = "machine: di#_def" in the configuration tree
 // ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold
 // TABLE:
-//   -bitdef  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions)
-//      0  -  none            -             -               0
-//      2  -  Stop           YES          Stop ON           1   [feedhold]
-//      4  -  FastStop       YES          Stop ON           2   [feedhold] *not implemented in G2 yet ???
-//      8  -  Interlock      YES        Interlock ON        1   [feedhold]
-//      16 -  Limit           NO         Limit Hit          1   [feedhold]
-//      -  -  ImmediateStop   NO            -               3   [feedhold] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
+// interlock
+// --state--  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions)
+//           -  (none)          -             -               0
+//    stop   -  Stop           YES          Stop ON           1   [feedhold]
+// faststop  -  FastStop       YES          Stop ON           2   [feedhold w/HiJerk] *not implemented in G2 yet ???
+// interlock -  Interlock      YES        Interlock ON        1   [feedhold]
+//    limit  -  Limit           NO         Limit Hit          1   [feedhold]
+//  hardstop -  ImmediateStop   NO             -              3   [feedhold instant] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
+
 function checkForInterlocks(thisMachine) {
-    let getInterlockState = 0;
+    let getInterlockState = "";
     for (let pin = 1; pin < 13; pin++) {
-        let checkInput = config.machine.get("di" + pin + "_def");
-        if (0 < checkInput && checkInput < 17) {
-            if (thisMachine.driver.status["in" + pin] & 1) {
-                // IF "locking" input pin is active, Set to INTERLOCKED
-                if (checkInput > getInterlockState) {
-                    getInterlockState = checkInput;
-                } // ... use highest lock priority if multiples
+        let checkAssignedInput = config.machine.get("di" + pin + "_def");
+        // if an "assigned" input pin is active, Set InterlockState to assigned action
+        // if more than one, highest priority will be assigned to InterlockState
+        if (checkAssignedInput) {
+            if (thisMachine.driver.status["in" + pin]) {
+                getInterlockState = checkAssignedInput;
             }
         }
     }
@@ -661,7 +662,7 @@ Machine.prototype.arm = function (action, timeout) {
     var requireAuth = config.machine.get("auth_required");
 
     var interlockRequired = true; // ... hard coded here; may need to manipulate at some point (no longer in configs)
-    let isInterlocked = checkForInterlocks(this);
+    let isInterlocked = checkForInterlocks(this); // check switches before arming
 
     var nextAction = null;
     let arm_obj = decideNextAction(
@@ -698,7 +699,7 @@ Machine.prototype.arm = function (action, timeout) {
             throw arm_obj["error_thrown"];
 
         case "abort_due_to_interlock":
-            if (isInterlocked > 2) {
+            if (isInterlocked === "interlock") {
                 this.setState(this, "interlock");
             } else {
                 this.setState(this, "lock");
@@ -1096,7 +1097,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                     });
                     // Check for interlocks and switch to the interlock state if it's engaged
                     var interlockRequired = true; // ... hard coded here; may need to manipulate at some point (no longer in configs)
-                    let isInterlocked = checkForInterlocks(this);
+                    let isInterlocked = checkForInterlocks(this); // check switches when setting machine state (parallels arming)
 
                     if (
                         interlockRequired &&
@@ -1104,7 +1105,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                         !interlockBypass
                     ) {
                         this.interlock_action = null;
-                        if (isInterlocked > 2) {
+                        if (isInterlocked === "interlock") {
                             this.setState(this, "interlock");
                         } else {
                             this.setState(this, "lock");
