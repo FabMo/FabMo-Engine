@@ -641,11 +641,11 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 }
 
 // Before beginning or resuming any runtime action also check for "locking/interlocking" inputs that may be ACTIVE
-// Locking/Interlocking Inputs are inputs defined as Stop(2), FastStop(4), or Interlock(8)
-// These inputs are fucntionally similar in producing a feedhold in G2 when effected, BUT have different user displays and for LIMIT
-// a different follow-on action -- so they are distinct for FabMo vs G2
+// Locking/Interlocking Inputs are inputs defined as Stop(stop), FastStop(faststop), Interlock(interlock), or Limit(limit)
+// These inputs are fucntionally similar as they produce a feedhold in G2 when effected, BUT they have different user displays and for LIMIT
+// a different follow-on action -- so they are distinct for FabMo vs G2 (G2 has some similar functions we do not use because of conflicts)
 // Input definitions are stored in machine.json and = "machine: di#_def" in the configuration tree
-// ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold
+// ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold (and variations)
 // TABLE:
 // interlock
 // --state--  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions)
@@ -653,7 +653,7 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 //    stop   -  Stop           YES          Stop ON           1   [feedhold]
 // faststop  -  FastStop       YES          Stop ON           2   [feedhold w/HiJerk] *not implemented in G2 yet ???
 // interlock -  Interlock      YES        Interlock ON        1   [feedhold]
-//    limit  -  Limit           NO         Limit Hit          1   [feedhold]
+//    limit  -  Limit          YES         Limit Hit          1   [feedhold]
 //  hardstop -  ImmediateStop   NO             -              3   [feedhold instant] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
 
 // We check for interlock state before any action that ARMS tool for action and with any general change in state

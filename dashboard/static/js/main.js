@@ -711,8 +711,6 @@ $(".go-to").on("mousedown", function () {
     $(".modal-axi:visible").each(function () {
         move[$(this).attr("id")] = parseFloat($(this).val());
     });
-    // add speed setting to moves (speed vectored and limited in G2) ////##
-    ////##    move["F"] = pasreFloat($("#manual-move-speed").val() * 60);  ////## to driver?
     dashboard.engine.goto(move);
 });
 

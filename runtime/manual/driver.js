@@ -221,9 +221,6 @@ ManualDriver.prototype.maintainMotion = function () {
 
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
-    // if (this._limit()) {
-    //     return;
-    // }
     this.stop_pending = true;
     this.keep_moving = false;
     if (this.renew_timer) {
@@ -240,9 +237,6 @@ ManualDriver.prototype.stopMotion = function () {
 
 // Stop all movement (also? TODO: What's this all about?)
 ManualDriver.prototype.quitMove = function () {
-    // if (this._limit()) {
-    //     return;
-    // }
     this.keep_moving = false;
     if (this.moving) {
         this.stop_pending = true;
@@ -290,7 +284,7 @@ ManualDriver.prototype.goto = function (pos) {
         if (Object.prototype.hasOwnProperty.call(pos, key)) {
             move += key + pos[key] + " ";
         }
-    } ////## add speed here???
+    }
     move += "\nM0\nG91\n";
     this.driver.prime();
     this.stream.write(move);
@@ -573,12 +567,8 @@ ManualDriver.prototype._onG2Status = function (status) {
         case this.driver.STAT_PANIC:
             this.emit("crash");
             break;
-        ////## revise this for current limit
         case this.driver.STAT_ALARM:
             // no handler in manual
-            // if (this._limit()) {
-            //     return;
-            // }
             break;
         case this.driver.STAT_RUNNING:
             this.moving = true;
@@ -622,22 +612,6 @@ ManualDriver.prototype._onG2Status = function (status) {
             break;
     }
 };
-
-// ////## not used in current limit handling system ???
-// // Boilerplate limit handler
-// // TODO needs work
-// ManualDriver.prototype._limit = function () {
-//     var er = this.driver.getLastException();
-//     if (er && er.st == 203) {
-//         var msg = er.msg.replace(/\[[^[\]]*\]/, "");
-//         this.keep_moving = false;
-//         this.moving = false;
-//         this.driver.clearLastException();
-//         this.emit("crash", { error: msg });
-//         return true;
-//     }
-//     return false;
-// };
 
 // Internal call that is issued when manual mode is done
 // Resolves the promise created by the enter() function and resets internal state

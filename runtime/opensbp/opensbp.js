@@ -182,7 +182,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                                 s.cmd +
                                 "' - not entered."
                         );
-                        ////##      this.machine.setState(this, "idle");
+                        //      this.machine.setState(this, "idle"); // switching to idle seems to create issues ?
                         return;
                     }
                     switch (s.cmd) {
@@ -808,8 +808,6 @@ SBPRuntime.prototype._run = function () {
     var onStat = function (stat) {
         log.debug("onSTAT ..." + stat);
         if (this.inManualMode) {
-            ////##            log.debug("inManualMode but opensbpRuntime: " + stat);
-            ////##            this.helper.status_handler(stat);
             return;
         }
         switch (stat) {
@@ -1089,7 +1087,7 @@ SBPRuntime.prototype._end = function (error) {
         }
         // Clear the internal state of the runtime (restore it to its initial state)
         //TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
-        this.ok_to_disconnect = true; ////## removed in disconnect
+        this.ok_to_disconnect = true;
         this.init();
         //TODO: G2 stream should be closed when this triggers keep as safety?
         this.emit("end", this);

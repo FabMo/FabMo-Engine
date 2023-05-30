@@ -81,8 +81,6 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
     this.helper.enter().then(
         function () {
             log.debug("** Resolving enter promise **");
-            ////##		this.driver.quit();  ////## removed because sending a delayed kill to next routine???
-            ////##   ... maybe not integrated with streaming right
         }.bind(this)
     );
     this.machine.status.hideKeypad = hideKeypad;
