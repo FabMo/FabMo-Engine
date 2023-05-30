@@ -182,7 +182,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                                 s.cmd +
                                 "' - not entered."
                         );
-                        //      this.machine.setState(this, "idle"); // switching to idle seems to create issues ?
+                        this.machine.setState(this, "idle"); // switching to idle sometimes seems to create issues ?
                         return;
                     }
                     switch (s.cmd) {
