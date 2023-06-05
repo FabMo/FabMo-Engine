@@ -363,10 +363,14 @@
                         assignedAction === "stop" ||
                         assignedAction === "faststop"
                     ) {
-                        $("#inp-stop").css("visibility", "hidden");
+                        if (!stopIsOn) {
+                            $("#inp-stop").css("visibility", "hidden");
+                        }
                     }
                     if (assignedAction === "interlock") {
-                        $("#inp-interlock").css("visibility", "hidden");
+                        if (!intIsOn) {
+                            $("#inp-interlock").css("visibility", "hidden");
+                        }
                     }
                     $(selector)
                         .removeClass("on stopOn interlockOn")
