@@ -661,9 +661,14 @@ function checkForInterlocks(thisMachine, action) {
     let getInterlockState = "";
     for (let pin = 1; pin < 13; pin++) {
         let checkAssignedInput = config.machine.get("di" + pin + "_def");
-        // if an "assigned" input pin is active, Set InterlockState to assigned action
-        // if more than one, highest priority will be assigned to InterlockState
-        // currently that is "stop" < "interlock" < "limit" ; This is where an INPUT gets LABELED
+        // If an "assigned" input pin is active, Set InterlockState to assigned action
+        // ... if more than one, highest priority will be assigned to InterlockState
+        // ... currently that is "stop" < "interlock" < "limit" ; This is where an INPUT gets LABELED
+        // Related: If an input assigned to an interlock function is then selected for Probing [P*] in the opensbp runtime
+        //      - for the case of Limit, the interlock function will be disabled for the duration of the probing and
+        //         ... in G2, feedholds are automatically overridden during probing
+        //         ... in the Dashboard, for this case the Limit messages will not be displayed (managed in fabmoui.js)
+        //      - for the case of Stop, Faststop or Interlock, the opensbp runtime should generate an error with explanation
         if (checkAssignedInput) {
             if (thisMachine.driver.status["in" + pin]) {
                 getInterlockState = checkAssignedInput;

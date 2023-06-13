@@ -554,19 +554,6 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
     }
 };
 
-// Doofy limit call
-// TODO - work on this
-SBPRuntime.prototype._limit = function () {
-    var er = this.driver.getLastException();
-    if (er && er.st == 203) {
-        var msg = er.msg.replace(/\[[^[\]]*\]/, "");
-        this.driver.clearLastException();
-        this._abort(msg);
-        return true;
-    }
-    return false;
-};
-
 // Handler for G2 status reports
 //   status - The status report as sent by G2 to the host
 SBPRuntime.prototype._onG2Status = function (status) {
@@ -796,6 +783,7 @@ SBPRuntime.prototype._run = function () {
     this.gcodesPending = false;
     this.probingInitialized = false;
     this.probingPending = false;
+    this.probePin = null;
     log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
     if (this.machine) {
         this.machine.setState(this, "running");
@@ -845,8 +833,8 @@ SBPRuntime.prototype._run = function () {
 
             case this.driver.STAT_PROBE:
                 //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
-                //log.debug(this.probingPending) //; = true; // would be redundant we hope
-                this.probingInitialized = false; // should still be probingPending = true, awaiting stat:7
+                this.probingInitialized = false;
+                this.machine.setState(this, "probing");
                 break;
 
             case this.driver.STAT_RUNNING:

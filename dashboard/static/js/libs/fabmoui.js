@@ -13,6 +13,7 @@
     var MAX_INPUTS = 12;
     var MAX_OUTPUTS = 12;
     var currentUnits = null;
+    var inProbeOn = false;
     var mouseX;
     var mouseY;
     $(document).on("mousemove touchmove", function (e) {
@@ -328,7 +329,7 @@
             this.progress = 0;
         }
 
-        ///update inputs and set the small DRO display depending on input definitions
+        // Update inputs and set the small DRO display depending on input definitions
         let stopIsOn = false; // ... at least one is already on
         let intIsOn = false;
         let limitIsOn = false;
@@ -358,9 +359,15 @@
                         $("#inp-interlock").css("visibility", "visible");
                     }
                     if (assignedAction === "limit") {
-                        idisp = "limitOn";
-                        limitIsOn = true;
-                        $("#inp-limit").css("visibility", "visible");
+                        if (status.state === "probing") {
+                            inProbeOn = true;
+                        } else if (inProbeOn) {
+                            console.log("limit used for probing");
+                        } else {
+                            idisp = "limitOn";
+                            limitIsOn = true;
+                            $("#inp-limit").css("visibility", "visible");
+                        }
                     }
                     $(selector).removeClass("off").addClass(idisp);
                 } else if (ival === 0) {
@@ -381,6 +388,7 @@
                     if (assignedAction === "limit") {
                         if (!limitIsOn) {
                             $("#inp-limit").css("visibility", "hidden");
+                            inProbeOn = false;
                         }
                     }
                     $(selector)

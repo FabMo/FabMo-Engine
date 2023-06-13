@@ -212,6 +212,7 @@ engine.getVersion(function (err, version) {
 
                 switch (status.state) {
                     case "running":
+                    case "probing":
                     case "paused":
                     case "stopped":
                         if (modalIsShown === false) {
