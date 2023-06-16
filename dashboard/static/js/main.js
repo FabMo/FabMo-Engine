@@ -347,7 +347,7 @@ engine.getVersion(function (err, version) {
                                 "</p>";
                         } else {
                             detailHTML =
-                                '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
+                                '<p>Check the log <a href="/log" target="_blank"><span style="color: blue"> for more information</span>.</a></p>';
                         }
                         dashboard.showModal({
                             title: "An Error Occurred!",

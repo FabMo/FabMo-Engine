@@ -1132,13 +1132,14 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
                     }.bind(this)
                 );
             } catch (e) {
-                // TODO - Should we throw the error here?!  This feels like an issue.
-                log.error(
-                    "There was a problem executing a stack-breaking command: "
-                );
-                log.error(e);
-                this.pc += 1;
-                callback();
+                // TODO - Should we throw the error here?!  This feels like an issue. (Sturmer, 5 years ago)
+                // Update(th-6/15/23): Yes, we should throw the error here.  Otherwise, the error is
+                //         swallowed and the program continues to run. Done.
+                log.error("Error in a stack-breaking command");
+                var e_more =
+                    e + " (in [" + command.cmd + "] Line-" + this.pc + ").";
+                log.error(e_more);
+                throw e_more;
             }
             return true;
         } else {
