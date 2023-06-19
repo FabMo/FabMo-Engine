@@ -644,7 +644,10 @@
                     if (err) {
                         console.log(err);
                     } else {
-                        if (data.state === "running") {
+                        if (
+                            data.state === "running" ||
+                            data.state === "probing"
+                        ) {
                             that.pause();
                         }
                     }

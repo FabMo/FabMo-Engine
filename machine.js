@@ -1116,6 +1116,10 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                     if (this.status.state === "manual") {
                         this.overrideLimit = false; // remove any temporary limit override
                     }
+                    if (this.status.state === "probing") {
+                        log.debug("Handle case of disrupted probe");
+                        this.status.quitFlag = true;
+                    }
                 }
 
                 // Clear the fields that describe a running job
@@ -1208,7 +1212,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 
 // Pause the machine
 Machine.prototype.pause = function (callback) {
-    if (this.status.state === "running") {
+    if (this.status.state === "running" || this.status.state === "probing") {
         if (this.current_runtime) {
             this.current_runtime.pause();
             callback(null, "paused");
@@ -1278,6 +1282,7 @@ Machine.prototype.quit = function (callback) {
     }
     if (this.current_runtime) {
         log.info("Quitting the current runtime...");
+        this.status.quitFlag = false;
         this.current_runtime.quit();
         if (callback) {
             callback(null, "quit");
@@ -1288,7 +1293,12 @@ Machine.prototype.quit = function (callback) {
             callback("Not quiting because no current runtime");
         }
     }
-    this.status.quitFlag = false;
+    if (this.status.state === "probing") {
+        // allow stopping probing
+        this.status.quitFlag = true;
+    } else {
+        this.status.quitFlag = false;
+    }
 };
 
 // Resume from the paused state.

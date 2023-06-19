@@ -455,6 +455,17 @@ engine.getVersion(function (err, version) {
                             dashboard.engine.resume();
                         },
                     });
+                } else if (
+                    status.state === "idle" &&
+                    status.quitFlag === true
+                ) {
+                    interlockDialog = true;
+                    dashboard.showModal({
+                        title: "Probing Move Stopped!",
+                        message:
+                            "A probing or homing move has been stopped. You may re-start the macro or file when ready.",
+                        cancelText: "Quit",
+                    });
                 }
             });
         },
