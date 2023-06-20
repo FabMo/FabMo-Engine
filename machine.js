@@ -1251,6 +1251,7 @@ Machine.prototype.quit = function (callback) {
     switch (this.status.state) {
         case "idle":
             delete this.status.info;
+            this.status.quitFlag = false;
             this.emit("status", this.status);
             break;
 
@@ -1292,12 +1293,6 @@ Machine.prototype.quit = function (callback) {
         if (callback) {
             callback("Not quiting because no current runtime");
         }
-    }
-    if (this.status.state === "probing") {
-        // allow stopping probing
-        this.status.quitFlag = true;
-    } else {
-        this.status.quitFlag = false;
     }
 };
 
