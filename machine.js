@@ -129,6 +129,7 @@ function Machine(control_path, callback) {
         inFeedHold: false,
         resumeFlag: false,
         quitFlag: false,
+        lastState: null,
     };
 
     this.fireButtonDebounce = false;
@@ -1184,6 +1185,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                 break;
         }
 
+        this.status.stateLast = this.status.state;
         this.status.state = newstate;
     } else {
         log.warn(
