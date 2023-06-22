@@ -134,10 +134,6 @@ ManualDriver.prototype.exit = function () {
         config.driver.restoreSome(
             ["xjm", "yjm", "zjm"],
             function () {
-                ////##
-                //      config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
-                ////## Hopefully we no longer need to manage zl in here in manual as the lift now comes from safeZ and
-                //       we don't have a parallel way to simply 'restoreSome' values in opensbp.json config.
                 this._done();
             }.bind(this)
         );
@@ -146,6 +142,7 @@ ManualDriver.prototype.exit = function () {
             this.stream.write("M0\n"); // avoid triggering stat:4 when in file
         } else {
             this.stream.write("M30\n");
+            this.stream.write("{out4:0}\n");
         }
         this.driver.removeListener("status", this.status_handler);
         this.exited = true;
@@ -224,9 +221,6 @@ ManualDriver.prototype.maintainMotion = function () {
 
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
-    if (this._limit()) {
-        return;
-    }
     this.stop_pending = true;
     this.keep_moving = false;
     if (this.renew_timer) {
@@ -243,9 +237,6 @@ ManualDriver.prototype.stopMotion = function () {
 
 // Stop all movement (also? TODO: What's this all about?)
 ManualDriver.prototype.quitMove = function () {
-    if (this._limit()) {
-        return;
-    }
     this.keep_moving = false;
     if (this.moving) {
         this.stop_pending = true;
@@ -284,9 +275,11 @@ ManualDriver.prototype.runGCode = function (code) {
 };
 
 // Go to a specified absolute position
-//   pos - Position vector as an object, eg: {"X":10, "Y":5}
+//   pos - Position vector as an object, eg: {"X":10, "Y":5, "F":60} Speed is optionally added
+// The speed will be vectored based on the current speed setting on the slider; but limited to axis maximums
 ManualDriver.prototype.goto = function (pos) {
-    var move = "G90\nG0 ";
+    // We may want to consider whether GOTOs are moves or jogs; for now, they're moves w/speed set by slider (safer)
+    var move = "G90\nG1 ";
     for (var key in pos) {
         if (Object.prototype.hasOwnProperty.call(pos, key)) {
             move += key + pos[key] + " ";
@@ -376,7 +369,7 @@ ManualDriver.prototype.set = function (pos) {
 };
 
 // Internal function for handling nudges. (This function called "Fixed" moves in Sb3; there, nudges were
-// moves inserted at a Stop in the middle of a file; G2 would allow implementation of this behavior.)
+// moves inserted at a Stop in the middle of a file; G2 could allow implementation of this behavior.)
 // Nudges are little fixed incremental moves that are usually initiated by a short tap on one of the
 // direction keys on a pendant display, or by pressing the direction keys in a specified "fixed" mode
 // and executed at the end of the current move.  This is the function that dequeues and executes them.
@@ -575,9 +568,7 @@ ManualDriver.prototype._onG2Status = function (status) {
             this.emit("crash");
             break;
         case this.driver.STAT_ALARM:
-            if (this._limit()) {
-                return;
-            }
+            // no handler in manual
             break;
         case this.driver.STAT_RUNNING:
             this.moving = true;
@@ -620,21 +611,6 @@ ManualDriver.prototype._onG2Status = function (status) {
             }
             break;
     }
-};
-
-// Boilerplate limit handler
-// TODO needs work
-ManualDriver.prototype._limit = function () {
-    var er = this.driver.getLastException();
-    if (er && er.st == 203) {
-        var msg = er.msg.replace(/\[[^[\]]*\]/, "");
-        this.keep_moving = false;
-        this.moving = false;
-        this.driver.clearLastException();
-        this.emit("crash", { error: msg });
-        return true;
-    }
-    return false;
 };
 
 // Internal call that is issued when manual mode is done

@@ -138,6 +138,7 @@ function Machine(control_path, callback) {
     this.info_id = 0;
     this.action = null;
     this.interlock_action = null; // Continuing to use this as interlock/lock flag after allowing mult interlock defs
+    this.overrideLimit = false;
     this.pauseTimer = false;
 
     // Instantiate and connect to the G2 driver using the port specified in the constructor
@@ -356,6 +357,15 @@ Machine.prototype.handleOkayCancelDual = function (stat, quit_input) {
                 log.info(msg);
             }
         });
+    } else if (this.status.state === "limit" && this.quit_pressed) {
+        log.info("Okay hit, resuming and over-riding from limit");
+        this.resume(function (err, msg) {
+            if (err) {
+                log.error(err);
+            } else {
+                log.info(msg);
+            }
+        });
     }
     this.quit_pressed = stat[quit_input] & 1;
 };
@@ -499,6 +509,15 @@ function decideNextAction(
         case "idle":
             result_arm_obj["interlock_action"] = current_action_io;
             break;
+        case "limit":
+            if (driver_status_inFeedHold === true) {
+                // handle lock/interlock after software pause; in FeedHold
+                result_arm_obj["interlock_action"] = current_action_io;
+            } else {
+                result_arm_obj["current_action"] =
+                    interlock_action_io || current_action_io;
+            }
+            break;
         case "lock":
         case "interlock":
             if (driver_status_inFeedHold === true) {
@@ -622,10 +641,11 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 }
 
 // Before beginning or resuming any runtime action also check for "locking/interlocking" inputs that may be ACTIVE
-// Locking/Interlocking Inputs are inputs defined as Stop(2), FastStop(4), or Interlock(8)  {bitwise comparison used to set display}
-// These inputs are fucntionally similar in producing a feedhold in G2 when activated, BUT have different user displays -- so are distinct
+// Locking/Interlocking Inputs are inputs defined as Stop(stop), FastStop(faststop), Interlock(interlock), or Limit(limit)
+// These inputs are fucntionally similar as they produce a feedhold in G2 when effected, BUT they have different user displays and for LIMIT
+// a different follow-on action -- so they are distinct for FabMo vs G2 (G2 has some similar functions we do not use because of conflicts)
 // Input definitions are stored in machine.json and = "machine: di#_def" in the configuration tree
-// ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold
+// ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold (and variations)
 // TABLE:
 // interlock
 // --state--  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions)
@@ -633,18 +653,37 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 //    stop   -  Stop           YES          Stop ON           1   [feedhold]
 // faststop  -  FastStop       YES          Stop ON           2   [feedhold w/HiJerk] *not implemented in G2 yet ???
 // interlock -  Interlock      YES        Interlock ON        1   [feedhold]
-//    limit  -  Limit           NO         Limit Hit          1   [feedhold]
+//    limit  -  Limit          YES         Limit Hit          1   [feedhold]
 //  hardstop -  ImmediateStop   NO             -              3   [feedhold instant] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
 
-function checkForInterlocks(thisMachine) {
+// We check for interlock state before any action that ARMS tool for action and with any general change in state
+function checkForInterlocks(thisMachine, action) {
     let getInterlockState = "";
     for (let pin = 1; pin < 13; pin++) {
         let checkAssignedInput = config.machine.get("di" + pin + "_def");
-        // if an "assigned" input pin is active, Set InterlockState to assigned action
-        // if more than one, highest priority will be assigned to InterlockState
+        // If an "assigned" input pin is active, Set InterlockState to assigned action
+        // ... if more than one, highest priority will be assigned to InterlockState
+        // ... currently that is "stop" < "interlock" < "limit" ; This is where an INPUT gets LABELED
+        // Related: If an input assigned to an interlock function is then selected for Probing [P*] in the opensbp runtime
+        //      - for the case of Limit, the interlock function will be disabled for the duration of the probing and
+        //         ... in G2, feedholds are automatically overridden during probing
+        //         ... in the Dashboard, for this case the Limit messages will not be displayed (managed in fabmoui.js)
+        //      - for the case of Stop, Faststop or Interlock, the opensbp runtime should generate an error with explanation
         if (checkAssignedInput) {
             if (thisMachine.driver.status["in" + pin]) {
                 getInterlockState = checkAssignedInput;
+            }
+        }
+    }
+    // When overrideLimit true and starting in manual, clear interlock state to produce override; one time only
+    if (thisMachine.overrideLimit === true) {
+        if (action?.payload?.name) {
+            // if an action is defined
+            if (action.payload.name === "manual") {
+                getInterlockState = "";
+                if (action.payload.code === "exit") {
+                    thisMachine.overrideLimit = false; // clear overrideLimit on exiting manual
+                }
             }
         }
     }
@@ -662,7 +701,7 @@ Machine.prototype.arm = function (action, timeout) {
     var requireAuth = config.machine.get("auth_required");
 
     var interlockRequired = true; // ... hard coded here; may need to manipulate at some point (no longer in configs)
-    let isInterlocked = checkForInterlocks(this); // check switches before arming
+    let isInterlocked = checkForInterlocks(this, action); // check switches before arming
 
     var nextAction = null;
     let arm_obj = decideNextAction(
@@ -699,9 +738,11 @@ Machine.prototype.arm = function (action, timeout) {
             throw arm_obj["error_thrown"];
 
         case "abort_due_to_interlock":
-            if (isInterlocked === "interlock") {
+            if (isInterlocked === "limit") {
+                this.setState(this, "limit");
+            } else if (isInterlocked === "interlock") {
                 this.setState(this, "interlock");
-            } else {
+            } else if (isInterlocked === "stop") {
                 this.setState(this, "lock");
             }
             return;
@@ -1015,15 +1056,16 @@ Machine.prototype.getRuntime = function (name) {
         case "gcode":
         case "nc":
         case "g":
+            this.overrideLimit = false;
             return this.gcode_runtime;
-
         case "opensbp":
         case "sbp":
+            this.overrideLimit = false;
             return this.sbp_runtime;
-
         case "manual":
             return this.manual_runtime;
         default:
+            this.overrideLimit = false;
             return null;
     }
 };
@@ -1051,23 +1093,31 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                 // If we're changing from a non-idle state to the idle state
                 // Go ahead and request the current machine position and write it to disk.  This
                 // is done regularly, so that if the machine is powered down it retains the current position
-                if (this.status.state != "idle") {
+                if (
+                    this.status.quitFlag === true &&
+                    this.current_runtime === this.manual_runtime
+                ) {
+                    this.current_runtime.executeCode({ cmd: "exit" });
+                } else if (this.status.state != "idle") {
                     log.debug("call final lines from machine");
                     this.driver.command({ out4: 0 }); // Permissive relay
                     this.driver.command({ gc: "m30" }); // Generate End
-                    // A switch to the 'idle' state means we change to the idle runtime
 
+                    // A switch to the 'idle' state means we change to the idle runtime
                     log.debug("call MPO from machine");
                     this.driver.get("mpo", function (err, mpo) {
                         if (config.instance) {
                             config.instance.update({ position: mpo });
                         }
                     });
-
                     if (this.current_runtime != this.idle_runtime) {
                         this.setRuntime(null, function () {});
                     }
+                    if (this.status.state === "manual") {
+                        this.overrideLimit = false; // remove any temporary limit override
+                    }
                 }
+
                 // Clear the fields that describe a running job
                 this.status.nb_lines = null;
                 this.status.line = null;
@@ -1105,9 +1155,11 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                         !interlockBypass
                     ) {
                         this.interlock_action = null;
-                        if (isInterlocked === "interlock") {
+                        if (isInterlocked === "limit") {
+                            this.setState(this, "limit");
+                        } else if (isInterlocked === "interlock") {
                             this.setState(this, "interlock");
-                        } else {
+                        } else if (isInterlocked === "stop") {
                             this.setState(this, "lock");
                         }
                         return;
@@ -1115,6 +1167,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                 }
                 break;
             case "running":
+            case "limit":
             case "lock":
             case "interlock":
                 this.status.resumeFlag = false;
@@ -1203,6 +1256,13 @@ Machine.prototype.quit = function (callback) {
             break;
 
         case "lock":
+            this.action = null;
+            this.setState(this, "idle");
+
+            break;
+
+        case "limit":
+            this.overrideLimit = true; ////## Only place that override is set; as user has selected QUIT
             this.action = null;
             this.setState(this, "idle");
             break;

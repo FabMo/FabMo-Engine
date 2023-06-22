@@ -164,7 +164,6 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
         // Plain old string interprets as OpenSBP code segment
         this.runString(s, callback);
     } else {
-        ////## Is this up-to-date and does it work with new variations on manual 2020 on ?
         // If we're in manual mode, interpret an object as a command for that mode
         // The OpenSBP runtime can enter manual mode with the 'SK' command so we have this code here to mimick that mode
         if (this.inManualMode) {
@@ -183,7 +182,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                                 s.cmd +
                                 "' - not entered."
                         );
-                        this.machine.setState(this, "idle");
+                        this.machine.setState(this, "idle"); // switching to idle sometimes seems to create issues ?
                         return;
                     }
                     switch (s.cmd) {
@@ -555,19 +554,6 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
     }
 };
 
-// Doofy limit call
-// TODO - work on this
-SBPRuntime.prototype._limit = function () {
-    var er = this.driver.getLastException();
-    if (er && er.st == 203) {
-        var msg = er.msg.replace(/\[[^[\]]*\]/, "");
-        this.driver.clearLastException();
-        this._abort(msg);
-        return true;
-    }
-    return false;
-};
-
 // Handler for G2 status reports
 //   status - The status report as sent by G2 to the host
 SBPRuntime.prototype._onG2Status = function (status) {
@@ -797,6 +783,7 @@ SBPRuntime.prototype._run = function () {
     this.gcodesPending = false;
     this.probingInitialized = false;
     this.probingPending = false;
+    this.probePin = null;
     log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
     if (this.machine) {
         this.machine.setState(this, "running");
@@ -846,8 +833,8 @@ SBPRuntime.prototype._run = function () {
 
             case this.driver.STAT_PROBE:
                 //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
-                //log.debug(this.probingPending) //; = true; // would be redundant we hope
-                this.probingInitialized = false; // should still be probingPending = true, awaiting stat:7
+                this.probingInitialized = false;
+                this.machine.setState(this, "probing");
                 break;
 
             case this.driver.STAT_RUNNING:
@@ -1088,7 +1075,7 @@ SBPRuntime.prototype._end = function (error) {
         }
         // Clear the internal state of the runtime (restore it to its initial state)
         //TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
-        this.ok_to_disconnect = true; ////## removed in disconnect
+        this.ok_to_disconnect = true;
         this.init();
         //TODO: G2 stream should be closed when this triggers keep as safety?
         this.emit("end", this);
@@ -1145,13 +1132,14 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
                     }.bind(this)
                 );
             } catch (e) {
-                // TODO - Should we throw the error here?!  This feels like an issue.
-                log.error(
-                    "There was a problem executing a stack-breaking command: "
-                );
-                log.error(e);
-                this.pc += 1;
-                callback();
+                // TODO - Should we throw the error here?!  This feels like an issue. (Sturmer, 5 years ago)
+                // Update(th-6/15/23): Yes, we should throw the error here.  Otherwise, the error is
+                //         swallowed and the program continues to run. Done.
+                log.error("Error in a stack-breaking command");
+                var e_more =
+                    e + " (in [" + command.cmd + "] Line-" + this.pc + ").";
+                log.error(e_more);
+                throw e_more;
             }
             return true;
         } else {

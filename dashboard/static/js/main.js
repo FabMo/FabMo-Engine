@@ -212,6 +212,7 @@ engine.getVersion(function (err, version) {
 
                 switch (status.state) {
                     case "running":
+                    case "probing":
                     case "paused":
                     case "stopped":
                         if (modalIsShown === false) {
@@ -346,7 +347,7 @@ engine.getVersion(function (err, version) {
                                 "</p>";
                         } else {
                             detailHTML =
-                                '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
+                                '<p>Check the log <a href="/log" target="_blank"><span style="color: blue"> for more information</span>.</a></p>';
                         }
                         dashboard.showModal({
                             title: "An Error Occurred!",
@@ -384,6 +385,27 @@ engine.getVersion(function (err, version) {
                         },
                     });
                 } else if (
+                    status.state === "limit" &&
+                    status.resumeFlag === false
+                ) {
+                    interlockDialog = true;
+                    keypad.setEnabled(false);
+                    keyboard.setEnabled(false);
+                    dashboard.showModal({
+                        title: "Limit Hit!",
+                        message:
+                            "Limit Switch has been Hit! Quit will temporarily over-ride Limit sensor to allow backing off with Keypad.",
+                        cancelText: "Quit",
+                        cancel: function () {
+                            interlockDialog = false;
+                            dashboard.engine.quit(function (err, result) {
+                                if (err) {
+                                    console.log("ERRROR: " + err);
+                                }
+                            });
+                        },
+                    });
+                } else if (
                     status.state === "interlock" &&
                     status.resumeFlag === false
                 ) {
@@ -391,9 +413,9 @@ engine.getVersion(function (err, version) {
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
-                        title: "Safety Interlock Active!",
+                        title: "Safety Interlock Activated!",
                         message:
-                            "You cannot perform the specified action with the safety interlock open.  Please close the safety interlock to continue.",
+                            "You cannot perform the specified action with the safety interlock open.  Please close the safety interlock before Resuming.",
                         cancelText: "Quit",
                         cancel: function () {
                             interlockDialog = false;

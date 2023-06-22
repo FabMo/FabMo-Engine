@@ -13,6 +13,7 @@
     var MAX_INPUTS = 12;
     var MAX_OUTPUTS = 12;
     var currentUnits = null;
+    var inProbeOn = false;
     var mouseX;
     var mouseY;
     $(document).on("mousemove touchmove", function (e) {
@@ -328,9 +329,10 @@
             this.progress = 0;
         }
 
-        ///update inputs and set the small DRO display depending on input definitions
+        // Update inputs and set the small DRO display depending on input definitions
         let stopIsOn = false; // ... at least one is already on
         let intIsOn = false;
+        let limitIsOn = false;
         for (var i = 1; i < MAX_INPUTS + 1; i++) {
             let iname = "in" + i;
             if (iname in status) {
@@ -356,6 +358,17 @@
                         intIsOn = true;
                         $("#inp-interlock").css("visibility", "visible");
                     }
+                    if (assignedAction === "limit") {
+                        if (status.state === "probing") {
+                            inProbeOn = true;
+                        } else if (inProbeOn) {
+                            console.log("limit used for probing");
+                        } else {
+                            idisp = "limitOn";
+                            limitIsOn = true;
+                            $("#inp-limit").css("visibility", "visible");
+                        }
+                    }
                     $(selector).removeClass("off").addClass(idisp);
                 } else if (ival === 0) {
                     // input is OFF ... cleanup
@@ -372,8 +385,14 @@
                             $("#inp-interlock").css("visibility", "hidden");
                         }
                     }
+                    if (assignedAction === "limit") {
+                        if (!limitIsOn) {
+                            $("#inp-limit").css("visibility", "hidden");
+                            inProbeOn = false;
+                        }
+                    }
                     $(selector)
-                        .removeClass("on stopOn interlockOn")
+                        .removeClass("on stopOn interlockOn limitOn")
                         .addClass("off");
                 } else {
                     // input is disabled  ... not picking up at moment because all reported

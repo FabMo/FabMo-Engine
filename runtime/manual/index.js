@@ -81,8 +81,6 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
     this.helper.enter().then(
         function () {
             log.debug("** Resolving enter promise **");
-            ////##		this.driver.quit();  ////## removed because sending a delayed kill to next routine???
-            ////##   ... maybe not integrated with streaming right
         }.bind(this)
     );
     this.machine.status.hideKeypad = hideKeypad;
@@ -119,7 +117,6 @@ ManualRuntime.prototype.executeCode = function (code) {
                 log.warn(
                     "Can't accept command '" + code.cmd + "' - not entered."
                 );
-                this.machine.setState(this, "idle");
                 return;
             }
             switch (code.cmd) {
@@ -199,6 +196,13 @@ ManualRuntime.prototype._onG2Status = function (status) {
     for (var key in this.machine.status) {
         if (key in status) {
             this.machine.status[key] = status[key];
+            // Special case handler for stop, interlock, or limit in a manual mode 'GOTO'
+            if (key === "inFeedHold" && status[key] === true) {
+                if (this.machine.status["currentCmd"] === "goto") {
+                    log.debug("got currentCmd");
+                    this.machine.setState(this, "paused");
+                }
+            }
         }
     }
     // Update machine status further

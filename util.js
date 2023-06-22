@@ -655,6 +655,7 @@ var addNoButtonParam = function (noButton, params = {}) {
     return params;
 };
 
+// More info on MODAL display options (not yet supporting options from SBP file)
 // Function packageModalParams(<new parameters>, <current info object>)
 // This function accepts a set of optional new parameters and optional current status['info'] object ready for send to front end.
 // If called without arguments a basic info object with 'message': 'Paused.' will be created.
