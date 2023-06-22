@@ -1,5 +1,3 @@
-'!FABMO!name: Home Tool
-'!FABMO!description: Automatically Set Axis Zero for XYZ and position tool
 '   Standard Macro Variables are read from Macro #201, only needs to happen once 
 '   2021/09/25 - Refactored (th)
 '   Note that tracking of current_cutter_Zoffset allows automatic zeroing all three axis including Z, even if re-powered
@@ -35,7 +33,6 @@ home_z:
     JZ, (-1 * &homeOff_Z)										' Pull back from prox
     &target_ck = &homeOff_Z + &ooch								' New target for detecting error just past prox
     PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z				' Slowly probe for prox in final accurate check
-	PAUSE .5
     IF %(3) == &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
     ZZ
     JZ, (-1 * &homeOff_Z)
@@ -48,7 +45,6 @@ home_x:
     JX, &homeOff_X												' Pull back from prox
     &target_ck = (-1 * (&homeOff_X + &ooch))					' New target for detecting error just past prox
     PX, &target_ck, &slowSearchSpeed_XY, &proxNum_X				' Slowly probe for prox in final accurate check
-    PAUSE .5
     IF %(1) == &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
     ZX
     JX, &homeOff_X
@@ -61,7 +57,6 @@ home_y:
     JY, &homeOff_Y
     &target_ck = (-1 * (&homeOff_Y + &ooch))               
     PY, &target_ck, &slowSearchSpeed_XY, &proxNum_Y 
-    PAUSE .5
     IF %(2) == &target_ck THEN GOTO fail_missed_target
     ZY
     JY, &homeOff_Y
