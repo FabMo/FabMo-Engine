@@ -16,6 +16,18 @@ var setTime = function (req, res, next) {
     }
 };
 
+// eslint-disable-next-line no-unused-vars
+var get_time = function (req, res, next) {
+    const d = new Date();
+    let t = d.getTime();
+    var answer = {
+        status: "success",
+        data: { time: t },
+    };
+    res.json(answer);
+};
+
 module.exports = function (server) {
     server.post("/time", setTime);
+    server.get("/time", get_time);
 };
