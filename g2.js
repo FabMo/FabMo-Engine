@@ -528,6 +528,9 @@ G2.prototype.handleStatusReport = function (response) {
     if (response.prb) {
         log.debug("GOT PROBE FINISH REPORT! Target at:  " + response.prb.z);
         if (response.prb.e === 1) {
+            // Special Case: When a probe move starts very close to the target,
+            // ... a STAT_PROBE may not have been issued before it is hit. So we add this flag, which is usually redundant.
+            this.status.targetHit = true;
             log.debug("HIT TARGET!");
         }
         // Don't clear probePending until next stat:3; managed in "opensbp"
@@ -542,7 +545,7 @@ G2.prototype.handleStatusReport = function (response) {
             this.status[key] = value;
         }
 
-        // stat is the system state (detailed in the list above)
+        // "stat" is the system state (detailed in the list above)
         if ("stat" in response.sr) {
             switch (response.sr.stat) {
                 // If we stopped and flushed, we might have provided a callback
