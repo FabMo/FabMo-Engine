@@ -803,11 +803,7 @@ SBPRuntime.prototype._run = function () {
                 // Only update and call execute next if we're waiting on pending gcodes or probing
                 // ... and expecting this stat:3
                 // For probing we do not turn off the pending if we have not passed the Initialization phase
-                if (
-                    (this.probingPending && !this.probingInitialized) ||
-                    this.driver.status.targetHit
-                ) {
-                    this.driver.status.targetHit = false;
+                if (this.probingPending && !this.probingInitialized) {
                     this.probingPending = false;
                     this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
                     this.prime();
@@ -2183,6 +2179,7 @@ SBPRuntime.prototype.pause = function () {
         this.pendingFeedhold = true;
     } else {
         //Send feedhold to driver
+        log.debug("====> flow SBP.pause -> drive.feedhold()");
         this.machine.driver.feedHold();
         //Alert machine that we are in feedhold
         this.machine.status.inFeedHold = true;

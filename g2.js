@@ -133,6 +133,7 @@ CycleContext.prototype.emit = function (event, data) {
 
 // Pause the run by pausing the stream that is piping data into this context
 CycleContext.prototype.pause = function () {
+    log.debug("====> flow CycleContext _paused, to _stream.pause()");
     this._paused = true;
     this._stream.pause();
 };
@@ -582,6 +583,9 @@ G2.prototype.handleStatusReport = function (response) {
                 switch (response.sr.stat) {
                     case STAT_STOP:
                     case STAT_HOLDING:
+                        log.debug(
+                            "====> flow STAT_HOLDING --quit pending, to write x04"
+                        );
                         log.info("Issuing the job kill command.");
                         setTimeout(
                             function () {
@@ -603,6 +607,9 @@ G2.prototype.handleStatusReport = function (response) {
                 // and pause the cycle context if it exists.
                 switch (response.sr.stat) {
                     case STAT_HOLDING:
+                        log.debug(
+                            "====> flow STAT_HOLDING --NOT quit pending, to context.pause()"
+                        );
                         this.pause_flag = true;
                         this.status.inFeedHold = true; // for sensing input-generated-hold
                         if (this.context) {
@@ -734,10 +741,11 @@ G2.prototype.feedHold = function (callback) {
     this.pause_flag = true;
     this.flooded = false;
     typeof callback === "function" && this.once("state", callback);
-    if (this.status.stat === this.STAT_PROBE) {
-        return this.quit();
-    }
+    // if (this.status.stat === this.STAT_PROBE) {
+    //     return this.quit();
+    // }
     log.debug("Sending a feedhold");
+    log.debug("====> flow sending FeedHold from G2, with a context.pause()");
     if (this.context) {
         this.context.pause();
     }

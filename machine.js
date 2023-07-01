@@ -1108,29 +1108,30 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                         case "lock":
                             log.debug("... skip cases of input processing");
                             break;
-                        case "idle": // From 'idle' into 'idle insures we change to the idle runtime
-                            log.debug("call final lines from machine");
-                            this.driver.command({ out4: 0 }); // Permissive relay
-                            this.driver.command({ gc: "m30" }); // Generate End
-                            log.debug("call MPO from machine");
-                            this.driver.get("mpo", function (err, mpo) {
-                                if (config.instance) {
-                                    config.instance.update({ position: mpo });
-                                }
-                            });
-                            if (this.current_runtime != this.idle_runtime) {
-                                this.setRuntime(null, function () {});
-                            }
-                            if (this.status.state === "manual") {
-                                this.overrideLimit = false; // remove any temporary limit override
-                            }
-                            if (this.status.state === "probing") {
-                                log.debug("Handle case of disrupted probe");
-                                this.status.quitFlag = true;
-                            }
-                            break;
                         default:
-                            break;
+                            if (this.status.state != "idle") {
+                                log.debug("call final lines from machine");
+                                this.driver.command({ out4: 0 }); // Permissive relay
+                                this.driver.command({ gc: "m30" }); // Generate End
+                                log.debug("call MPO from machine");
+                                this.driver.get("mpo", function (err, mpo) {
+                                    if (config.instance) {
+                                        config.instance.update({
+                                            position: mpo,
+                                        });
+                                    }
+                                });
+                                if (this.current_runtime != this.idle_runtime) {
+                                    this.setRuntime(null, function () {});
+                                }
+                                if (this.status.state === "manual") {
+                                    this.overrideLimit = false; // remove any temporary limit override
+                                }
+                                if (this.status.state === "probing") {
+                                    log.debug("Handle case of disrupted probe");
+                                    // this.status.quitFlag = true;
+                                }
+                            }
                     }
                 }
 
@@ -1184,6 +1185,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                                 details_newstate = "lock";
                                 break;
                         }
+                        //                return;
                     }
                 }
                 break;
@@ -1233,6 +1235,9 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 Machine.prototype.pause = function (callback) {
     if (this.status.state === "running" || this.status.state === "probing") {
         if (this.current_runtime) {
+            log.debug(
+                "====> Handling .pause in Machine, to cur_runtime.pause()"
+            );
             this.current_runtime.pause();
             callback(null, "paused");
         } else {
