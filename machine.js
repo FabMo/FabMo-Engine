@@ -1093,9 +1093,9 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 
         switch (newstate) {
             case "idle":
-                // If we're changing from a non-idle state to the idle state
+                // Beginning a change to the idle state:
                 // Go ahead and request the current machine position and write it to disk. This
-                // is done regularly, so that if the machine is powered down it retains the current position
+                // ... is done regularly, so that if the machine is powered down it retains the current position
                 if (
                     this.status.quitFlag === true &&
                     this.current_runtime === this.manual_runtime
@@ -1106,32 +1106,38 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                         case "limit":
                         case "interlock":
                         case "lock":
-                            log.debug("... skip cases of input processing");
+                            log.debug(
+                                "Initially skip cases of input-hit processing"
+                            );
                             break;
                         default:
-                            if (this.status.state != "idle") {
-                                log.debug("call final lines from machine");
-                                this.driver.command({ out4: 0 }); // Permissive relay
-                                this.driver.command({ gc: "m30" }); // Generate End
-                                log.debug("call MPO from machine");
-                                this.driver.get("mpo", function (err, mpo) {
-                                    if (config.instance) {
-                                        config.instance.update({
-                                            position: mpo,
-                                        });
-                                    }
-                                });
-                                if (this.current_runtime != this.idle_runtime) {
-                                    this.setRuntime(null, function () {});
+                            // [We should be in some state other than idle, but allow redundancy
+                            // ... for a few cases such as coming our of probing on Stop input]
+                            //if (this.status.state != "idle") {
+                            log.debug(
+                                "... otherwise send final lines from machine"
+                            );
+                            this.driver.command({ out4: 0 }); // Permissive relay
+                            this.driver.command({ gc: "m30" }); // Generate End
+                            log.debug("call MPO from machine");
+                            this.driver.get("mpo", function (err, mpo) {
+                                if (config.instance) {
+                                    config.instance.update({
+                                        position: mpo,
+                                    });
                                 }
-                                if (this.status.state === "manual") {
-                                    this.overrideLimit = false; // remove any temporary limit override
-                                }
-                                if (this.status.state === "probing") {
-                                    log.debug("Handle case of disrupted probe");
-                                    // this.status.quitFlag = true;
-                                }
+                            });
+                            if (this.current_runtime != this.idle_runtime) {
+                                this.setRuntime(null, function () {});
                             }
+                            if (this.status.state === "manual") {
+                                this.overrideLimit = false; // remove any temporary limit override
+                            }
+                            if (this.status.state === "probing") {
+                                log.debug("Handle case of disrupted probe");
+                                // this.status.quitFlag = true;
+                            }
+                        //}
                     }
                 }
 
