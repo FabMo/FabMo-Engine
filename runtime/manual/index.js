@@ -117,6 +117,8 @@ ManualRuntime.prototype.executeCode = function (code) {
                 log.warn(
                     "Can't accept command '" + code.cmd + "' - not entered."
                 );
+                ////## testing this for stop effect
+                this.machine.setState(this, "idle");
                 return;
             }
             switch (code.cmd) {

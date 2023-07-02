@@ -2183,7 +2183,6 @@ SBPRuntime.prototype.pause = function () {
         this.pendingFeedhold = true;
     } else {
         //Send feedhold to driver
-        log.debug("====> flow SBP.pause -> drive.feedhold()");
         this.machine.driver.feedHold();
         //Alert machine that we are in feedhold
         this.machine.status.inFeedHold = true;

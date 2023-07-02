@@ -67,7 +67,6 @@ GCodeRuntime.prototype._changeState = function (newstate) {
     }
 };
 
-////## how much stuff still around for detecting a G2 defined limit?
 GCodeRuntime.prototype._limit = function () {
     var er = this.driver.getLastException();
     if (er && er.st == 203) {
