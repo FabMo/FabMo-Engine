@@ -125,6 +125,7 @@ CycleContext.prototype.emit = function (event, data) {
     var handlers = this.eventHandlers[event];
 
     if (handlers) {
+        log.debug("====> flow CycleContext doing event handlers");
         for (var i = 0; i < handlers.length; i++) {
             handlers[i](data);
         }
@@ -140,6 +141,7 @@ CycleContext.prototype.pause = function () {
 
 // Resume the run by resuming the stream that is piping data into this context
 CycleContext.prototype.resume = function () {
+    log.debug("====> flow CycleContext _resume, to _stream.resume()");
     this._paused = false;
     this._stream.resume();
 };
@@ -732,7 +734,17 @@ G2.prototype.onMessage = function (response) {
 // eslint-disable-next-line no-unused-vars
 G2.prototype.manualFeedHold = function (callback) {
     this.pause_flag = true;
+    log.debug("Sending a feedhold");
+    log.debug("====> flow sending manualFeedHold from G2, NO context.pause()");
     this._write("!\n");
+};
+
+G2.prototype.manualResume = function () {
+    this.status.resumeFlag = true;
+    resumePending = true;
+    log.debug("Sending a resume");
+    log.debug("====> flow sending manualResume from G2, NO context.resume()");
+    this._write("~"); //cycle start command character
 };
 
 // "pause" the current machining cycle by issuing a feedhold. Used in Files (not Manual)!

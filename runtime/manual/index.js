@@ -144,6 +144,10 @@ ManualRuntime.prototype.executeCode = function (code) {
                     this.helper.quitMove();
                     break;
 
+                case "resume":
+                    this.helper.resumeMove();
+                    break;
+
                 case "maint":
                     this.helper.maintainMotion();
                     break;
@@ -189,8 +193,14 @@ ManualRuntime.prototype.executeCode = function (code) {
 
 // Commands that need to be implemented for runtime interface, but don't do anything
 ManualRuntime.prototype.pause = function () {};
-ManualRuntime.prototype.quit = function () {};
-ManualRuntime.prototype.resume = function () {};
+ManualRuntime.prototype.quit = function () {
+    this.driver.quit();
+    this.executeCode({ cmd: "exit" });
+};
+ManualRuntime.prototype.resume = function () {
+    this.driver.resume();
+    this.executeCode({ cmd: "resume" });
+};
 
 // Internal handler for machine status
 ManualRuntime.prototype._onG2Status = function (status) {
@@ -211,7 +221,6 @@ ManualRuntime.prototype._onG2Status = function (status) {
     this.machine.status.currentCmd = currentCmd;
     // TODO - Is this needed?  isn't it done in the loop above?
     this.machine.status.stat = status.stat;
-
     this.machine.emit("status", this.machine.status);
 };
 

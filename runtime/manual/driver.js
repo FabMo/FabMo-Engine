@@ -227,12 +227,14 @@ ManualDriver.prototype.stopMotion = function () {
         clearTimeout(this.renew_timer);
     }
     this.omg_stop = true;
-    this.driver.manualFeedHold(); // Will just send ! from G2driver
-    this.driver.queueFlush(
-        function () {
-            this.driver._write("%\n"); // Will send flush as callback
-        }.bind(this)
-    );
+    //    this.driver.manualFeedHold(); // Will just send ! from G2driver
+    this.driver.feedHold();
+
+    // this.driver.queueFlush(
+    //     function () {
+    //         this.driver._write("%\n"); // Will send flush as callback
+    //     }.bind(this)
+    // );
 };
 
 // Stop all movement (also? TODO: What's this all about?)
@@ -242,6 +244,20 @@ ManualDriver.prototype.quitMove = function () {
         this.stop_pending = true;
         this.driver.quit();
         this.driver.queueFlush();
+    } else {
+        this.stop_pending = false;
+    }
+};
+
+ManualDriver.prototype.resumeMove = function () {
+    this.driver.manual_hold = false;
+    this.keep_moving = true;
+    this.stop_pending = false;
+    //    this.driver.manualResume();
+
+    this.keep_moving = true;
+    if (this.moving) {
+        this.driver.resume();
     } else {
         this.stop_pending = false;
     }
@@ -602,7 +618,8 @@ ManualDriver.prototype._onG2Status = function (status) {
             } else {
                 this.omg_stop = false;
                 this.stop_pending = false;
-                if (this.driver.status.hold === 0) {
+                if (!this.driver.pause_hold && this.driver.status.hold === 0) {
+                    //                if (this.driver.status.hold === 0) {
                     this.driver._write("%\n"); // flush feed-hold and get stat:
                 }
                 if (this.exit_pending) {
