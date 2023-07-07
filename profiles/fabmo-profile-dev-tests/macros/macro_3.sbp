@@ -1,3 +1,5 @@
+'!FABMO!name: Home Tool
+'!FABMO!description: Automatically Set Axis Zero for XYZ and position tool
 '   Standard Macro Variables are read from Macro #201, only needs to happen once 
 '   2021/09/25 - Refactored (th)
 '   Note that tracking of current_cutter_Zoffset allows automatic zeroing all three axis including Z, even if re-powered
