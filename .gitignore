@@ -23,7 +23,7 @@ dashboard/build/*
 profiles/*
 profiles/.*
 !dashboard/build/index.html
-!profiles/backup
+!profiles/gantry_1
 !profiles/default
 !profiles/README.md
 install_token

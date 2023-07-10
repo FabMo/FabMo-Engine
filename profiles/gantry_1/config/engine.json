@@ -3,7 +3,7 @@
     "driver": "g2",
     "log_level": "debug",
     "upload_dir": "/tmp",
-    "profile": "ShopBot Desktop",
+    "profile": "Gantry 1",
     "name": "Gantry 1",
     "password": "go2fabmo",
     "platform": "raspberry-pi",
