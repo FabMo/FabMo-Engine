@@ -1,0 +1,13 @@
+'!FABMO!name:Corner Sample Bot
+'!FABMO!description:Macro Description
+'15 Corner Sample Bottom
+&Jamb_Length = 81.5
+'Cut a Left Mob 5.5 Jamb to 30" and load into left conveyor
+'C1210
+'C1220
+
+'Cut a Left Mob 7.25 Jamb to 30" and load into left conveyor
+C1214
+C1221
+END
+

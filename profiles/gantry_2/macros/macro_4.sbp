@@ -1,0 +1,92 @@
+'!FABMO!name:A-Zero Pressure Plate
+'!FABMO!description:Set A Axis zero with pressure Plate
+&PlateX = 60.1
+&PlateY = 21.1
+'&APlateOffset = 0.92496
+
+FindAFast:
+	&Atarget = %(55)
+    &Atemp = %(4)
+    if &Atarget = 1 then goto setAFast
+    MA, %(4) + 0.25
+    IF %(4) > 10 THEN GOTO A_PROBLEM
+    GOTO FindAFast
+    
+setAFast:
+	VA,,,,0,,,,,,0,,
+    MA, -.25
+    goto FindASlow
+    
+FindASlow:
+	&Atarget = %(55)
+    &Atemp = %(4)
+    if &Atarget = 1 then goto setASlow
+    MA, %(4) + 0.03
+    GOTO FindASlow
+
+setASlow:
+	VA,,,,0,,,,,,0,,
+    MA, -.015
+    goto FindAFinal
+
+FindAFinal:
+	&Atarget = %(55)
+    &Atemp = %(4)
+    if &Atarget = 1 then goto setAFinal
+    MA, %(4) + 0.0005
+    GOTO FindAFinal
+    
+setAFinal:
+    PAUSE 1
+	VA,,,,0,,,,,,0,,
+    MA, %(4) - 0.25
+    
+ J2,&PlateX,&PlateY
+ 
+ DropAFast:
+	&Atarget = %(51)
+    &Atemp = %(4)
+    if &Atarget = 1 then goto setABottomFast
+    MA, %(4) - 0.1
+    IF %(4) > 10 THEN GOTO A_PROBLEM
+    GOTO DropAFast
+    
+setABottomFast:
+
+    MA, %(4) + .25
+    goto DropASlow
+    
+DropASlow:
+	&Atarget = %(51)
+    &Atemp = %(4)
+    if &Atarget = 1 then goto setABottomSlow
+    MA, %(4) - 0.03
+    GOTO DropASlow
+
+setABottomSlow:
+
+    MA, %(4) + .015
+    goto DropAFinal
+
+DropAFinal:
+	&Atarget = %(51)
+    &Atemp = %(4)
+    if &Atarget = 1 then goto setABottomFinal
+    MA, %(4) - 0.0005
+    GOTO DropAFinal
+    
+setABottomFinal:
+    PAUSE 1
+	$AOffset = %(4) * -1 + $APlateOffset
+    MA, %(4) + 0.25 
+    PAUSE 1
+    VA,,,,($APlateOffset + 0.25)/25.4,,,,,,($APlateOffset + 0.25)/25.4,,
+    MA, 3
+'PAUSE "AOffset = " + $AOffset
+
+END
+
+A_PROBLEM:
+PAUSE "Error, Restart Zeroing Routine"
+END
+ 

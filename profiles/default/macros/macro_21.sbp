@@ -1,0 +1,16 @@
+'!FABMO!name:Beginning Series
+'!FABMO!description:Turn outputs on when cut starts
+SO,1,1
+SO,2,1
+SO,5,1
+C500
+IF &LeftRight = "R" THEN GOTO CHECK_MAX
+START_CUT:
+$Run_Auto = 1
+END
+
+CHECK_MAX:
+IF &Jamb_Length <= &RIGHT_MAX_LENGTH THEN GOTO LENGTH_OK
+&Jamb_Length = &RIGHT_MAX_LENGTH
+LENGTH_OK:
+GOTO START_CUT

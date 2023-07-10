@@ -23,9 +23,7 @@ dashboard/build/*
 profiles/*
 profiles/.*
 !dashboard/build/index.html
-!profiles/fabmo-profile-dev-tests
-!profiles/fabmo-profile-atc
-!profiles/fabmo-profile-dt
+!profiles/gantry_2
 !profiles/default
 !profiles/README.md
 install_token

@@ -1,0 +1,171 @@
+'!FABMO!name:Manual Running
+'!FABMO!description:Macro Description
+$RUN_AUTO = 0
+PAUSE "Enter Jamb Length" &Jamb_Length
+
+If &Jamb_Length > 81.5 THEN GOTO ERR
+If &Jamb_Length < 79.5 THEN GOTO ERR
+
+'Specify which door to run below:
+GOSUB L7PVC 'L5PVC 'RRR 'R7PVC 'RRR' R7PVC 'ORR 'R5HS '
+
+'HARDWARE is R
+'GOSUB ROR 'RO1, RRR, RO2
+
+'SECURITY BAR is R Conveyor
+'PAUSE "WAITING FOR SB"
+'GOSUB BACKOFF
+'GOSUB RH1
+
+GOTO GOHOME
+
+
+L5PVC: 'Left 5.5" PVC Door
+C2212 'R Mill
+C2220 'R Drill
+C1210 'L Mill
+C1220 'L Drill
+RETURN
+
+L5HS: 'Left Hybrid Sill 5" Door
+C2212 'R Mill
+C2220 'R Drill
+C1211 'L Mill
+C1220 'L Drill
+RETURN
+
+R5PVC: 'Right 5.5" PVC Door
+C2210 'R Mill
+C2220 'R Drill
+C1212 'L Mill
+C1220 'L Drill
+RETURN
+
+R5HS: 'Right Hybrid Sill 5" Door
+C2210 'R Mill
+C2220 'R Drill
+C1213 'L Mill
+C1220 'L Drill
+RETURN
+
+'7.25
+L7PVC: 'Left 7.25" PVC Door
+'C2212 'R Mill
+'C2221 'R Drill
+C1214 'L Mill
+C1221 'L Drill
+RETURN
+
+L7HS: 'Left 7.25" Hybrid Sill  Door
+C2212
+C2221
+C1215
+C1221
+RETURN
+
+R7PVC: 'Right 7.25" PVC Door
+C2210 'R Mill
+C2221 'R Drill
+'C1216 'L Mill
+'C1221 'L Drill
+RETURN
+
+R7HS: 'Right Hybrid Sill 7.25" Door
+C2210 'R Mill
+C2221 'R Drill
+C1217 'L Mill
+C1221 'L Drill
+RETURN
+
+HARDWARE:
+
+ROR:
+C2230
+C2240
+RETURN
+
+RO1:
+C2231
+C2240
+RETURN
+
+RO2:
+C2232
+C2240
+RETURN
+
+RAR:
+C2230
+C2242
+RETURN
+
+RA1:
+C2231
+C2242
+RETURN
+
+RA2:
+C2232
+C2242
+RETURN
+
+
+RRR:
+C2233
+C2241
+RETURN
+
+RR1:
+C2231
+C2241
+RETURN
+
+RR2:
+C2232
+C2241
+RETURN
+
+RH1:
+PAUSE 70
+C2250 'up to 6'
+RETURN
+
+RH2:
+PAUSE 70
+C2251 ' Up to 7'
+RETURN
+
+RH3:
+PAUSE 70
+C2252 'walkthru
+RETURN
+
+RH4:
+PAUSE 70
+C2253 ' Up to 8'
+RETURN
+
+
+CUST:
+GOSUB RO1
+RETURN
+
+BACKOFF:
+MA, 3
+PAUSE 1
+MZ, 3
+PAUSE 1
+JX, 103
+RETURN
+
+GOHOME:
+MA, 3
+PAUSE 1
+MZ, 3
+PAUSE 1
+J2, 103,0
+END
+
+ERR:
+PAUSE "CHECK JAMB LENGTH"
+END

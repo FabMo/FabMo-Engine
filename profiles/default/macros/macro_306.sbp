@@ -1,0 +1,175 @@
+'!FABMO!name:Alternative Mill Flange LH
+'!FABMO!description:Subroutine to mill a flange on the left hand conveyor
+GOTO Mill_Flange_LH
+
+C500
+&Yloc = 2
+&Length = 2
+&Pass_Height = 0.5 'Height of pass
+&Pass_Speed = 5 'Cut speed for pass
+&T_CLEAN = 0 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.25 'Length of T in positive Y
+&T_NEG_Y = 0.25 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 0
+&Jamb_Length_Offset = 0
+&CUTA = 0 'If =1 then cut will be made with the A Axis
+&Tool = 1 'Default bit for performing this operation
+C306
+
+Mill_Flange_LH:
+MS,&Pass_Speed,&Pass_Speed
+IF &Length < 0 THEN GOSUB FLIP_SIGN
+&Xloc = &BK_Edge + &XOffset + &Jamb_Length_OffSet * (&Max_Length - &Jamb_Length) 'Applies X offsets to flange location
+&Yloc = &Yloc + &YOffset + &LH_Center 'Applies Y offsets to flange location
+
+&XCurr = %(1)
+&YCurr = %(2)
+IF &SAFETY_OFF = 1 THEN GOTO CUT
+'Cut location error checks ---------------------------------------------------
+&ERRORMSG = "Cut X location above left conveyor upper limit"
+IF &Xloc - &XOffset > &XLUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max X
+
+&ERRORMSG = "Cut X location below left conveyor lower limit"
+IF &Xloc - &XOffset < &XLLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min X
+
+&ERRORMSG = "Cut Y location above left conveyor upper limit"
+IF &Yloc - &YOffset > &YLUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max Y
+
+&ERRORMSG = "Cut Y location below left conveyor lower limit"
+IF &Yloc - &YOffset < &YLLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min Y
+
+&ERRORMSG = "Clamp L1 collision predicted at milling site"
+&GAP = &Xloc - &Clamp_L1_X - &XOffset
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+&GAP = &Xloc - &Clamp_L1_X - &XOffset - &Length
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+
+&ERRORMSG = "Clamp L2 collision predicted at milling site"
+&GAP = &Xloc - &Clamp_L2_X - &XOffset
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+&GAP = &Xloc - &Clamp_L2_X - &XOffset - &Length
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+
+&ERRORMSG = "Clamp L3 collision predicted at milling site"
+&GAP = &Xloc - &Clamp_L3_X - &XOffset
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+&GAP = &Xloc - &Clamp_L3_X - &XOffset - &Length
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+
+&ERRORMSG = "Clamp LM collision predicted at milling site"
+&GAP = &Xloc - &Clamp_LM_X - &XOffset
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+&GAP = &Xloc - &Clamp_LM_X - &XOffset - &Length
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+
+&ERRORMSG = "OK"
+
+'Force lift if passing over clamp
+&Lift = 0
+IF &XCurr - &XOffset < &Clamp_LM_X THEN GOSUB ADD_LIFT
+IF &Xloc - &XOffset < &Clamp_LM_X THEN GOSUB SUB_LIFT
+IF &XCurr - &XOffset < &Clamp_L1_X THEN GOSUB ADD_LIFT
+IF &Xloc - &XOffset < &Clamp_L1_X THEN GOSUB SUB_LIFT
+IF &XCurr - &XOffset < &Clamp_L2_X THEN GOSUB ADD_LIFT
+IF &Xloc - &XOffset < &Clamp_L2_X THEN GOSUB SUB_LIFT
+IF &XCurr - &XOffset < &Clamp_L3_X THEN GOSUB ADD_LIFT
+IF &Xloc - &XOffset < &Clamp_L3_X THEN GOSUB SUB_LIFT
+
+IF &Lift = 0 THEN GOTO CUT
+GOSUB SAFE_HEIGHTA
+GOSUB SAFE_HEIGHTZ
+
+CUT:
+IF &CUTA = 1 THEN GOTO CUTA
+
+CUTZ:
+IF &Tool = $ToolIn THEN GOTO CONTCUTZ
+C9
+SO,1,1
+CONTCUTZ:
+&Xloc = &Xloc - &XOffset
+&Yloc = &Yloc - &YOffset
+JA,&Z_Clearance
+IF &SAFE_ENTER = 1 THEN GOSUB SAFE_HEIGHTZ
+J2,&Xloc + &A_Bit_Diameter + &XClearance,&Yloc
+JZ,&Pass_Height
+MX,&Xloc - &Length + &A_Bit_Diameter/2 + &Milling_Allowance
+IF &T_CLEAN = 1 THEN GOSUB T_CLEAN
+JZ,&Pass_Height + &Z_Plunge
+J2,&Xloc + &A_Bit_Diameter + &XClearance,&Yloc
+IF &SAFE_EXIT = 1 THEN GOSUB SAFE_HEIGHTZ
+GOTO ENDROUTINE
+
+
+CUTA:
+JZ,&Z_Clearance
+IF &SAFE_ENTER = 1 THEN GOSUB SAFE_HEIGHTA
+J2,&Xloc + &A_Bit_Diameter + &XClearance,&Yloc
+JA,&Pass_Height
+MX,&Xloc - &Length + &A_Bit_Diameter/2 + &Milling_Allowance
+IF &T_CLEAN = 1 THEN GOSUB T_CLEAN
+JA,&Pass_Height + &Z_Plunge
+J2,&Xloc + &A_Bit_Diameter + &XClearance,&Yloc
+IF &SAFE_EXIT = 1 THEN GOSUB SAFE_HEIGHTA
+GOTO ENDROUTINE
+
+ENDROUTINE:
+END
+
+T_CLEAN:
+MS,0.5
+&Tan = 0
+IF &ANGLE > 0 THEN GOSUB TAN_CALC
+MX,&Xloc - &Length + &A_Bit_Diameter/2
+M2,&Xloc - &Length + &A_Bit_Diameter/2 - &Tan * &T_POS_Y,&Yloc + &T_POS_Y 'was - &Tan
+M2,&Xloc - &Length + &A_Bit_Diameter/2 + &Tan * &T_NEG_Y,&Yloc - &T_NEG_Y 'was + &Tan
+MS,&Pass_Speed
+RETURN
+
+TAN_CALC:
+'Tangent calculation based on Taylor Series expansion to get coordinates for angled flange milling
+&Num = &ANGLE * 0.0174533 'Convert angle value to radians
+&Num3 = &Num * &Num * &Num 'Calculate angle^3
+&Num5 = &Num3 * &Num * &Num 'Calculate angle^5
+&Num7 = &Num5 * &Num * &Num 'Calculate angle^7
+&Tan = &Num + &Num3/3 + 2*&Num5/15 - 17*&Num7/315 'Estimate of tan accurate to 0.01" over 48 inches.
+RETURN
+
+SAFE_HEIGHTA:
+JA,&Z_Clearance
+RETURN
+
+SAFE_HEIGHTZ:
+JZ,&Z_Clearance
+RETURN
+
+FLIP_SIGN:
+&Length = &Length * -1
+RETURN
+
+FLIP_SIGN_GAP:
+&GAP = &GAP * -1
+RETURN
+
+ADD_LIFT:
+&Lift = &Lift + 1
+RETURN
+
+SUB_LIFT:
+&Lift = &Lift - 1
+RETURN
+
+ERRORSKIP:
+MS, &Default_X_Move_Speed, &Default_Y_Move_Speed, &Default_Z_Move_Speed, &Default_A_Move_Speed
+PAUSE "ERROR STATE: " + &ERRORMSG
+END

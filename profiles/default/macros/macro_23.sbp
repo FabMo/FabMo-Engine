@@ -1,0 +1,18 @@
+'!FABMO!name:Auto/Manual
+'!FABMO!description:Check if macro should be Auto or Manual
+IF $Run_Auto = 0 THEN GOTO RUN_MANUAL
+END
+RUN_MANUAL:
+
+IF %(56) = 1 THEN GOTO ZOK
+PAUSE 0.1
+PZ,10,5,6
+PAUSE 0.1
+ZOK:
+MZ,%(3) - 0.5
+MA,3
+'PAUSE "Enter Jamb Length" &Jamb_Length
+C500
+SO,1,1
+SO,5,1
+END

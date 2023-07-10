@@ -1,0 +1,39 @@
+'!FABMO!name:RSB-H4[S]
+'!FABMO!description:Spot Drilling For Right Security Bar H4
+'2253
+'Drilling For Security Bar H4
+
+C23 'Checks if Macro running in Auto or Manual Mode
+
+&SAFETY_OFF = 1 'Setting to "1" turns off safety checks when this file is run. Setting to "0" turns them back on. Don't forget to reset to 0 at the end of the file!
+&Jamb_Length_Offset = 0  '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+&Depth = &Pilot_Hole '&Thru_Hole or &Pilot_Hole  'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&CUTA = 1
+&tool = 2
+
+
+'Hole 1
+&Xloc = 30.625 'X Location of the hole referenced from front edge of work piece
+&Yloc = 0.070 - 0.125 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Pilot_Hole '&Thru_Hole or &Pilot_Hole  'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+&Exit_height = &Z_Plunge
+C301 'Calls Routine
+
+
+'Hole 2
+&Xloc = 27.625 'X Location of the hole referenced from front edge of work piece
+&Yloc = 0.070 - 0.125 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Pilot_Hole '&Thru_Hole or &Pilot_Hole  'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+&Exit_height = &Z_Clearance
+C301 'Calls Routine
+
+&SAFETY_OFF = 0
+
+IF $Run_Auto = 0 THEN GOTO FINISHED
+END
+
+FINISHED:
+C22
+END

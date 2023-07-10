@@ -1,0 +1,8 @@
+'!FABMO!name:Move to Home
+'!FABMO!description:Macro Description
+MA, 3
+PAUSE 1
+MZ, 3
+PAUSE 1
+J2, 103,0
+END

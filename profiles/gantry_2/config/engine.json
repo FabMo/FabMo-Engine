@@ -1,0 +1,46 @@
+{
+    "server_port": 80,
+    "driver": "g2",
+    "log_level": "g2",
+    "upload_dir": "/tmp",
+    "profile": "Gantry 2",
+    "name": "Gantry 2",
+    "password": "go2fabmo",
+    "platform": "raspberry-pi",
+    "network": {
+        "wifi": {
+            "mode": "ap",
+            "enabled": true,
+            "wifi_networks": [],
+            "default_config": {
+                "ip_address": "192.168.42.1",
+                "netmask": "255.255.255.0",
+                "gateway": "192.168.42.1",
+                "dns": [
+                    "8.8.8.8"
+                ]
+            }
+        },
+        "ethernet": {
+            "mode": "magic",
+            "default_config": {
+                "ip_address": "192.168.44.1",
+                "netmask": "255.255.255.0",
+                "gateway": "192.168.44.1",
+                "dns": [
+                    "8.8.8.8"
+                ],
+                "dhcp_range": {
+                    "start": "192.168.44.20",
+                    "end": "192.168.44.254"
+                }
+            }
+        }
+    },
+    "consent_for_beacon": "false",
+    "beacon_url": "",
+    "control_port_linux": "/dev/ttyACM0",
+    "data_port_linux": "/dev/ttyACM0",
+    "init": true,
+    "version": "73094-3.1.73-dev"
+}

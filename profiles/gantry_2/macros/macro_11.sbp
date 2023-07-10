@@ -1,0 +1,16 @@
+'!FABMO!name:Real Manual Tool Change
+'!FABMO!description:Specify which tool is inserted
+'11
+'Manual Tool Change
+
+CHECK_FOR_TOOL:
+if %(57) = 0 THEN GOTO NO_TOOL_ERROR
+PAUSE, "Which tool is inserted?" &tool
+$Toolin = &tool
+C3
+END
+
+NO_TOOL_ERROR:
+PAUSE, "No Tool detected, please insert a tool and try again."
+$Toolin = 0
+END

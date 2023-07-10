@@ -1,0 +1,62 @@
+'!FABMO!name:Main Settings
+'!FABMO!description:Settings file with offsets and other parameters for jamb processing
+'Macro 500
+'This macro contains settings and defaults for jamb processing
+'&Jamb_Length = 81.5 '95.6875 'Override Value
+SETUP:
+&Default_X_Move_Speed=5
+&Default_Y_Move_Speed=5
+&Default_Z_Move_Speed=12
+&Default_A_Move_Speed=12
+MS, &Default_X_Move_Speed, &Default_Y_Move_Speed, &Default_Z_Move_Speed, &Default_A_Move_Speed
+JS,20,20,20,20 'The default jog speeds for milling/drilling operations
+'Machine Paremeters
+&LH_Center = 43.251 '42.174 'Y Offset to reference point on left hand conveyor
+&RH_Center = 27.256 '25.028 'Y Offset to reference point on right hand conveyor
+&Z_Plunge = 0.2 'Z height to switch from jog to move during plunge
+&Z_Clamp_Clearance = 1.25 'Z height for moving over clamp
+&Z_Clearance = 3.0 'Z height for rapid XY motion
+&XOffset = -0.979 '-1.0115 'X offset from Z axis spindle to A axis spindle
+&YOffset = 7.749 'Y offset from Z axis spindle to A axis spindle
+&XClearance = 2 'Extra pull-back from jamb end during milling operations
+
+'The following settings provide limits of travel in X and Y for the system, milling/drilling operations past this will be ignored by the machine (prevents collisions with hard stops)
+&XRUpperLim = 103
+&XRLowerLim = 0
+&YRUpperLim = 35
+&YRLowerLim = 22
+&XLUpperLim = 103
+&XLLowerLim = 0
+&YLUpperLim = 49
+&YLLowerLim = 38
+
+'Hole Parameters
+&Pilot_Hole = -0.0625 'The dept of a hole being drilled as a pilot hole
+&Thru_Hole = -1.45'-1.6 'The depth of a hole being drilled all the way through
+&Test_Hole = 1.25
+&PTP_Milling_Height = 0
+
+'Cutter Parameters
+&Z_Bit_Diameter = 0.25 'The diameter of the bit used on the Z axis (not used)
+&A_Bit_Diameter = 0.375 'The diameter of the bit used on the A axis (used for bit diameter compensation)
+&Milling_Allowance = 0.05
+&Gan2_Left_Milling_Offset = 0.060 'We set the 0 on the right conveyor and this value is the measured offset on the left conveyor
+
+'Work Piece Parameters
+&FR_Edge = 4.149 'The offset from X=0 to the front edge of a jamb resting against the pop-up pin on the right hand conveyor
+&BK_Edge = 97.724 'The offset from X=0 to the back edge of a jamb resting against the pop-up pin on the left hand conveyor
+&Max_Length = 95.6875 'The maximum length of a jamb that will be processed on the machine.
+&RIGHT_MAX_LENGTH = 91
+&LEFT_MAX_LENGTH = 95.6875
+
+'Clamp Locations
+&Clamp_Allowance = 2.5
+&Clamp_RM_X = &Jamb_Length - 4
+&Clamp_R1_X = 57.262 'X:56.262, Y: 28.629
+&Clamp_R2_X = 34.6 'X:33.6, Y: 28.629
+&Clamp_R3_X = 12.033 'X:11.033, Y: 28.629
+&Clamp_LM_X = &Jamb_Length + 4
+&Clamp_L1_X = 45.83 'X: 44.83, Y: 44.98
+&Clamp_L2_X = 71.711 'X: 70.711, Y: 44.98
+&Clamp_L3_X = 91.336 'X: 90.336, Y: 44.98
+END
