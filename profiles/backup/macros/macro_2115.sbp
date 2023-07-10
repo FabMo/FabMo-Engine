@@ -1,0 +1,91 @@
+'!FABMO!name:RMB7H[M]
+'!FABMO!description:MILL: Right Mobile Bottom 7.25" HYBRID Frame [screen leg + 2 panel legs]
+'2115
+'Milling for Right Mobile Bottom 7.25" HYBRID
+
+C23 'Checks if Macro running in Auto or Manual Mode
+
+&SAFETY_OFF = 1 'Setting to "1" turns off safety checks when this file is run. Setting to "0" turns them back on. Don't forget to reset to 0 at the end of the file!
+&Jamb_Length_Offset = 0  '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+&Zero_Pass_Height = 0.025 '0.010 + 0.025 'Added 0.025 for 5.5"
+&CUTA = 0
+&tool = 1
+
+'Screen Track
+&Yloc = -2.895 + 0.030 + 0.060
+&Length = 1.047 + 0.100
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 0 'Finish cut by cleaning edge of flange
+'&T_POS_Y = 0.25 'Length of T in positive Y
+'&T_NEG_Y = 0.25 'Length of T in negative Y
+'&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 1
+&SAFE_EXIT = 0
+'&Jamb_Length_Offset = 0
+C305
+
+'Exterior Track
+&Yloc = -0.924 + 0.050 + 0.020
+&Length = 1.317 + 0.100
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.079 'Length of T in positive Y
+&T_NEG_Y = 0.079 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 0
+'&Jamb_Length_Offset = 0
+C305
+
+'Bulb Slot
+&Yloc = -0.627 + 0.080 + 0.020 + 0.020 -0.030 + 0.020 '-0.627 og
+&Length = 3.500
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 0 'Finish cut by cleaning edge of flange
+'&T_POS_Y = 0.079 'Length of T in positive Y
+'&T_NEG_Y = 0.079 'Length of T in negative Y
+'&ANGLE = 0 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 0
+'&Jamb_Length_Offset = 0
+C305
+
+'Interior Track
+&Yloc = 0.901 + 0.030 + 0.030
+&Length = 1.573
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.079 'Length of T in positive Y
+&T_NEG_Y = 0.079 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 0
+'&Jamb_Length_Offset = 0
+C305
+
+'Capping Lip
+&Yloc = 1.218 + 0.050 + 0.010
+&Length = 1.680
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.300 'Length of T in positive Y
+&T_NEG_Y = 0.0 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 1
+'&Jamb_Length_Offset = 0
+C305
+
+&SAFETY_OFF = 0
+
+IF $Run_Auto = 0 THEN GOTO FINISHED
+END
+
+FINISHED:
+C22
+END

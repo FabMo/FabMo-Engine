@@ -1,0 +1,62 @@
+'!FABMO!name:Auto/Manual
+'!FABMO!description:Check if macro should be Auto or Manual
+IF $Run_Auto = 0 THEN GOTO RUN_MANUAL
+END
+RUN_MANUAL:
+
+IF %(56) = 1 THEN GOTO ZOK
+PAUSE 0.1
+PZ,10,5,6
+PAUSE 0.1
+ZOK:
+MZ,%(3) - 0.5
+MA,3
+'PAUSE "Enter Jamb Length" &Jamb_Length
+C500
+SO,1,1
+SO,5,1
+ENDIT:
+END
+GOTO ENDIT
+END
+
+PAUSE,0.1
+PX, -200, 1, 2
+PAUSE,0.5
+
+&LIMITX = %(1)
+
+PAUSE, 3
+
+IF &LIMITX + .5 < -0.01 THEN GOTO HOMING_ERROR
+IF &LIMITX + .5 > 0.01 THEN GOTO HOMING_ERROR
+
+PAUSE,0.1
+PY, -60, 1, 3
+PAUSE,0.5
+&LIMITY = %(2)
+PAUSE, 3
+IF &LIMITY +.5 < -0.01 THEN GOTO HOMING_ERROR
+IF &LIMITY +.5 > 0.01 THEN GOTO HOMING_ERROR
+
+
+GETOFFX:
+MX,%(1) + 1
+GOTO CHECKX
+
+GETOFFY:
+MY,%(2) + 1
+GOTO CHECKY
+
+HOMING_ERROR:
+PAUSE, "ERR"
+M2,%(1) + 2, %(2) + 2
+PAUSE, "Position inconsistent - starting homing routine."
+C3
+END
+
+J2,1,1
+CHECKX:
+IF %(52) = 1 THEN GOTO GETOFFX
+CHECKY:
+IF %(53) = 1 THEN GOTO GETOFFY

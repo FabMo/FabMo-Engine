@@ -1,0 +1,5 @@
+'!FABMO!name:Manual Tool Change
+'!FABMO!description:Change Tools Manually
+PAUSE, "Which bit would you like to pick up?" &tool
+C9
+END

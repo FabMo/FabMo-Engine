@@ -1,0 +1,7 @@
+'!FABMO!name:Dummy Macro
+'!FABMO!description:Runs when no barcode has been scanned
+PAUSE, 1
+SO,5,1
+PAUSE, 3
+SO,5,0
+END

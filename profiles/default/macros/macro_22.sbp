@@ -1,0 +1,14 @@
+'!FABMO!name:End of Series
+'!FABMO!description:Turn outputs off when done
+SO,1,0
+SO,2,0
+&SAFETY_OFF = 0
+'JX,0
+IF %(56) = 1 THEN GOSUB CLEARZ
+$Run_Auto = 0
+SO,5,0
+END
+
+CLEARZ:
+MZ,%(3) - 0.5
+RETURN

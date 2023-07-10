@@ -1,0 +1,135 @@
+'!FABMO!name:Cut Hole LH
+'!FABMO!description:Subroutine to drill/spot a hole on the left hand conveyor
+GOTO Cut_Hole_LH 'Skips example code
+
+'Hole Drilling Example for Left Hand Conveyor
+&Xloc = 1.3472 'X Location of the hole referenced from front edge of work piece
+&Yloc = 1.0707 'Y Location of the hole refrenced from right edge of work piece
+&Depth = &Pilot_Hole 'or &Thru_Hole  'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+&CUTA = 0 'If =1 then cut will be made with the A Axis
+&Tool = 1 'Default bit for performing this operation
+&Exit_height = &Z_Clearance 'or &Z_Plunge or &Z_Clamp_Clearance 'Height to lift to after finishing the cut
+C302 'Calls Routine
+
+'-------------------------Main Program------------------------------------	
+Cut_Hole_LH:
+&Xloc = &Xloc + &BK_Edge + &Jamb_Length_Offset * (&Max_Length - &Jamb_Length) 'Applies X offsets to hole locations
+&Yloc = &Yloc + &LH_Center 'Applies Y offsets to hole locations
+&XCurr = %(1)
+&YCurr = %(2)
+IF &SAFETY_OFF = 1 THEN GOTO CUT
+'Cut location error checks ---------------------------------------------------
+&ERRORMSG = "Cut X location above left conveyor upper limit"
+IF &Xloc > &XLUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max X
+
+&ERRORMSG = "Cut X location below left conveyor lower limit"
+IF &Xloc < &XLLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min X
+
+&ERRORMSG = "Cut Y location above left conveyor upper limit"
+IF &Yloc > &YLUpperLim THEN GOTO ERRORSKIP 'Skips cut if it is above max Y
+
+&ERRORMSG = "Cut Y location below left conveyor lower limit"
+IF &Yloc < &YLLowerLim THEN GOTO ERRORSKIP 'Skips cut if it is below min Y
+
+&ERRORMSG = "Clamp L1 collision predicted at milling site"
+&GAP = &Xloc - &Clamp_L1_X
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+
+&ERRORMSG = "Clamp L2 collision predicted at milling site"
+&GAP = &Xloc - &Clamp_L2_X
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+
+&ERRORMSG = "Clamp L3 collision predicted at milling site"
+&GAP = &Xloc - &Clamp_L3_X
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+
+&ERRORMSG = "Clamp LM collision predicted at milling site"
+&GAP = &Xloc - &Clamp_LM_X
+IF &GAP < 0 THEN GOSUB FLIP_SIGN_GAP
+IF &GAP < &Clamp_Allowance THEN GOTO ERRORSKIP
+
+&ERRORMSG = "OK"
+
+'Force lift if passing over clamp
+&Lift = 0
+IF &XCurr < &Clamp_LM_X THEN GOSUB ADD_LIFT
+IF &Xloc < &Clamp_LM_X THEN GOSUB SUB_LIFT
+IF &XCurr < &Clamp_L1_X THEN GOSUB ADD_LIFT
+IF &Xloc < &Clamp_L1_X THEN GOSUB SUB_LIFT
+IF &XCurr < &Clamp_L2_X THEN GOSUB ADD_LIFT
+IF &Xloc < &Clamp_L2_X THEN GOSUB SUB_LIFT
+IF &XCurr < &Clamp_L3_X THEN GOSUB ADD_LIFT
+IF &Xloc < &Clamp_L3_X THEN GOSUB SUB_LIFT
+
+IF &Lift = 0 THEN GOTO CUT
+GOSUB SAFE_HEIGHTZ
+GOSUB SAFE_HEIGHTA
+
+CUT:
+IF &CUTA = 1 THEN GOTO CUTA
+
+CUTZ:
+IF &Tool = $ToolIn THEN GOTO CONTCUTZ
+C9
+SO,1,1
+CONTCUTZ:
+JA,&Z_Clearance
+J2,&Xloc, &Yloc 'Moves to location of hole
+IF &Depth < &Z_Plunge THEN GOSUB PLUNGEZ
+MZ,&Depth 'Drills hole
+JZ,&Exit_height 'Jogs to safe height
+GOTO ENDROUTINE
+
+CUTA:
+&Xloc = &Xloc + &XOffset
+&Yloc = &Yloc + &YOffset
+JZ,&Z_Clearance
+J2,&Xloc, &Yloc 'Moves to location of hole
+IF &Depth < &Z_Plunge THEN GOSUB PLUNGEA
+MA,&Depth 'Drills hole
+JA,&Exit_height 'Jogs to safe height
+GOTO ENDROUTINE
+
+ENDROUTINE:
+END
+
+PLUNGEZ:
+JZ,&Z_Plunge 'Drops to material surface
+RETURN
+
+PLUNGEA:
+JA,&Z_Plunge 'Drops to material surface
+RETURN
+
+SAFE_HEIGHTA:
+JA,&Z_Clearance
+RETURN
+
+SAFE_HEIGHTZ:
+JZ,&Z_Clearance
+RETURN
+
+FLIP_SIGN:
+&Length = &Length * -1
+RETURN
+
+FLIP_SIGN_GAP:
+&GAP = &GAP * -1
+RETURN
+
+ADD_LIFT:
+&Lift = &Lift + 1
+RETURN
+
+SUB_LIFT:
+&Lift = &Lift - 1
+RETURN
+
+ERRORSKIP:
+MS, &Default_X_Move_Speed, &Default_Y_Move_Speed, &Default_Z_Move_Speed, &Default_A_Move_Speed
+PAUSE "ERROR STATE: " + &ERRORMSG
+END

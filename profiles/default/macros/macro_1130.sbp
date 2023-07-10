@@ -1,0 +1,33 @@
+'!FABMO!name:LPK-ODY[S]
+'!FABMO!description:Spot Drilling for Left panel Keeper Odyssey
+'1130
+'Spot Drilling for Left panel Keeper Odyssey
+
+C23
+
+&SAFETY_OFF = 1 'Setting to "1" turns off safety checks when this file is run. Setting to "0" turns them back on. Don't forget to reset to 1 at the end of the file!
+&Depth = &Pilot_Hole '&Pilot_Hole or &Thru_Hole Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+&CUTA = 1
+&tool = 2
+
+'Hole 1
+&Xloc = -41.713 'X Location of the hole referenced from front edge of work piece
+&Yloc = 1.263 'Y Location of the hole refrenced from right edge of work piece
+&Exit_height = &Z_Plunge
+C302 'Calls Routine
+
+'Hole 2
+&Xloc = -39.063 'X Location of the hole referenced from front edge of work piece
+&Yloc = 1.263 'Y Location of the hole refrenced from right edge of work piece
+&Exit_height = &Z_Clearance
+C302 'Calls Routine
+
+&SAFETY_OFF = 0
+
+IF $Run_Auto = 0 THEN GOTO FINISHED
+
+END
+
+FINISHED:
+C22

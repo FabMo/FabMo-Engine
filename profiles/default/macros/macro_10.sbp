@@ -1,0 +1,9 @@
+'!FABMO!name:Shutdown Sequence
+'!FABMO!description:Put away tools, home machine and park spindles
+'Shutdown sequence
+&tool = 0
+C9
+C12
+
+PAUSE "Tool ready for shutdown, turn off air and power."
+END

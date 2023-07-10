@@ -1,0 +1,35 @@
+'!FABMO!name:Record A-Offset
+'!FABMO!description:Record the offset between manual A-zero and A limit switch
+&ClampThickness = 0
+VA,,,,0,,,,,,0,,
+FIND_TOP_A_FAST:
+MA,%(4) + 0.2
+&Switch_Status = %(55)
+IF &Switch_Status = 0 THEN GOTO FIND_TOP_A_FAST
+PAUSE 1
+&Aoffset = %(4) 'Record offset to temporary variable.
+PAUSE 1
+MA, %(4) - 0.2
+PAUSE 1
+FIND_TOP_A_SLOW:
+MA,%(4) + 0.01
+&Switch_Status = %(55)
+IF &Switch_Status = 0 THEN GOTO FIND_TOP_A_SLOW
+PAUSE 1
+&Aoffset = %(4) 'Record offset to temporary variable.
+PAUSE 1
+MA, %(4) - 0.05
+PAUSE 1
+FIND_TOP_A_EXTRA_SLOW:
+MA,%(4) + 0.002
+&Switch_Status = %(55)
+IF &Switch_Status = 0 THEN GOTO FIND_TOP_A_EXTRA_SLOW
+PAUSE 1
+&Aoffset = %(4) 'Record offset to temporary variable.
+PAUSE 1
+MA, %(4) - 0.2
+
+'Assign final A offset to permanent variable that will be used in homing
+$Aoffset = &Aoffset + &ClampThickness
+
+PAUSE "Please update the first line of macro 3 with your new A Offset = " + $Aoffset

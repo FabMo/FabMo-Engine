@@ -1,0 +1,80 @@
+'!FABMO!name:RFB5P[M]
+'!FABMO!description:MILL: Right Fixed Bottom 5.5" PVC Frame [2 panel legs]
+'2112
+'RFBP[M]
+'Milling for Right Fixed Bottom 5.5" PVC
+
+C23 'Checks if macro is running in Auto or Manual Mode
+
+&SAFETY_OFF = 1 'Setting to "1" turns off safety checks when this file is run. Setting to "0" turns them back on. Don't forget to reset to 0 at the end of the file!
+&Zero_Pass_Height = 0.010 'The larger the number, the higher the bit is off the zero surface of the part
+&Jamb_Length_Offset = 0
+&CUTA = 0
+&tool = 1
+
+'Exterior Leg
+&Yloc = -2.807 'Y Location of the flange to be milled
+&Length = 1.079 + 0.045 - 0.075 '1.049 was from CAD, Length of flange to be removed
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.120 'Length of T in positive Y
+&T_NEG_Y = 0.120 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 1
+&SAFE_EXIT = 0
+'&Jamb_Length_Offset = 0
+C305
+
+'Coex leg
+&Yloc = -1.33 'Y Location of the flange to be milled
+&Length = 3.54 '3.5 from CAD Length of flange to be removed
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 0 'Finish cut by cleaning edge of flange
+&SAFE_ENTER = 0
+&SAFE_EXIT = 0
+'&Jamb_Length_Offset = 0
+C305
+
+'Interior Leg !!NEED TO REVERSE THIS CUT - Plunge, T clean, exit and cut from the front!!
+&Yloc = -0.967 + 0.080'Y Location of the flange to be milled
+&Length = 1.308 + 0.045 - 0.075 'from CAD Length of flange to be removed
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.179 + 0.080 'Length of T in positive Y
+&T_NEG_Y = 0.179 + 0.080 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 0
+'&Jamb_Length_Offset = 0
+C305
+
+'Capping Lip
+&Yloc = 1.148 '1.148 'Y Location of the flange to be milled
+&Length = 1.61 + 0.045 - 0.075 + 0.020 '1.62 from CAD, Length of flange to be removed
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 2 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.21 + 0.196 'Length of T in positive Y
+&T_NEG_Y = 0 'Length of T in negative Y
+&ANGLE = 8 'Angle of T Top
+&SAFE_ENTER = 0
+&SAFE_EXIT = 1
+'&Jamb_Length_Offset = 0
+C305
+
+
+
+&SAFETY_OFF = 0
+
+IF $Run_Auto = 0 THEN GOTO FINISHED
+END
+
+FINISHED:
+C22
+END
+
+
+

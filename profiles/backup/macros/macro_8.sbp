@@ -1,0 +1,121 @@
+'!FABMO!name:Check Bits
+'!FABMO!description:Check for tool presence in toolbar
+SC,0
+&tool = 0
+C9
+
+&PlateOffset = 0
+&WorkZoffset = 0
+&SafeClip= 4
+&XYMoveSpeed = %(71)
+&XYJogSpeed = %(76)
+&ZMoveSpeed = %(73)
+&ZJogSpeed = 6
+&NOT_PRESENT = 0
+MS,6,6
+JS,20,20
+VR,150,150,150
+
+&offZ = &PlateOffset
+&cnt = 0
+
+&clipX = 6.230
+&clipY = 54.95
+&clipZ = -3.875
+
+$Tool1Present = 1
+GOSUB CHECK_TOOL
+IF &NOT_PRESENT = 1 THEN GOSUB TOOL1_NP
+&NOT_PRESENT = 0
+
+&clipX = 12.306
+&clipY = 54.95
+&clipZ = -3.875
+
+$Tool2Present = 1
+GOSUB CHECK_TOOL
+IF &NOT_PRESENT = 1 THEN GOSUB TOOL2_NP
+&NOT_PRESENT = 0
+
+&clipX = 18.50
+&clipY = 54.95
+&clipZ = -3.875
+
+$Tool3Present = 1
+GOSUB CHECK_TOOL
+IF &NOT_PRESENT = 1 THEN GOSUB TOOL3_NP
+&NOT_PRESENT = 0
+
+&clipX = 24.856
+&clipY = 54.95
+&clipZ = -3.875
+
+$Tool4Present = 1
+GOSUB CHECK_TOOL
+IF &NOT_PRESENT = 1 THEN GOSUB TOOL4_NP
+&NOT_PRESENT = 0
+
+&clipX = 31.086
+&clipY = 54.95
+&clipZ = -3.875
+
+$Tool5Present = 1
+GOSUB CHECK_TOOL
+IF &NOT_PRESENT = 1 THEN GOSUB TOOL5_NP
+&NOT_PRESENT = 0
+
+END
+
+NOT_PRESENT:
+&NOT_PRESENT = 1
+RETURN
+
+TOOL1_NP:
+$Tool1Present = 0
+RETURN
+
+TOOL2_NP:
+$Tool2Present = 0
+RETURN
+
+TOOL3_NP:
+$Tool3Present = 0
+RETURN
+
+TOOL4_NP:
+$Tool4Present = 0
+RETURN
+
+TOOL5_NP:
+$Tool5Present = 0
+RETURN
+
+Check8:
+	&cnt = &cnt + 1
+    if &cnt = 50 then goto Fail8
+    PAUSE,0.05
+	if %(58) = 0 then goto Check8
+RETURN
+
+CHECK_TOOL:
+	&cnt = 0
+	J2,&clipX,&clipY 
+	SO,8,1
+    JZ,&clipZ + 3.25
+	GOSUB Check8
+	MZ,&clipZ
+	SO,8,0
+    PAUSE 1
+	IF %(57) = 0 THEN GOSUB NOT_PRESENT
+   	&cnt = 0
+ 	J2,&clipX,&clipY  
+    MZ,&clipZ
+	SO,8,1
+	GOSUB Check8
+	JZ,&clipZ + 3.25
+	SO,8,0
+RETURN
+
+Fail8:
+	pause "DrawBar did not open"
+END

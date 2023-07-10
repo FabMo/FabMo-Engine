@@ -1,0 +1,86 @@
+'!FABMO!name:Get Tool Length
+'!FABMO!description:Macro Description
+IF $toolin = 0 THEN GOTO NOTOOL
+SC, 0
+MS,6,3
+JS,10,10
+&PlateX = 38.581
+&PlateY = 54.95
+&Top = 0
+&Bot = 0
+&TLen = 0
+CHECKZ:
+IF %(56) = 1 THEN GOTO GETOFFZ
+gosub Ztop
+&Top = %(3)
+
+JX,&PlateX
+JY,&PlateY
+
+gosub ZBottom
+&Bot = %(3)
+&TLen = (&Bot - &Top) * (-1)
+MZ,%(3) + 0.25
+JY, 45
+ZCLEAR:
+MZ,%(3) - 0.125
+IF %(56) = 1 THEN GOTO ZCLEAR
+
+
+'pause "Tlen: " + &TLen
+
+IF $toolin = 1 then gosub Set1
+IF $toolin = 2 then gosub Set2
+IF $toolin = 3 then gosub Set3
+IF $toolin = 4 then gosub Set4
+IF $toolin = 5 then gosub Set5
+JX,0
+ENDTHIS:
+END
+
+Ztop:
+	PZ, 15, 1, 6
+return
+
+ZBottom:
+	PZ, -15, 1, 1
+    VA,,,$PlateOffset
+return
+
+Set1:
+    'PAUSE "Tool1: " + &TLen
+	IF &TLen > 0.620 THEN GOTO TOOSHORT
+	$TOOL1L = &TLen
+    'PAUSE "Tool1: " + $TOOL1L
+return
+
+Set2:
+	$TOOL2L = &TLen 
+return
+
+Set3:
+	$TOOL3L = &TLen 
+return
+
+Set4:
+	$TOOL4L = &TLen 
+return
+
+Set5:
+	$TOOL5L = &TLen 
+return
+
+NOTOOL:
+PAUSE, "No tool in spindle, ending file"
+GOTO ENDTHIS
+
+TOOSHORT:
+PAUSE, "Bit not prodtruding far enough from collet, adjust bit and try again"
+GOTO ENDTHIS
+
+GETOFFZ:
+MZ,%(3)-0.125
+GOTO CHECKZ
+
+
+

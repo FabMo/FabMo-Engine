@@ -1,0 +1,75 @@
+'!FABMO!name:LFTH-P[M]
+'!FABMO!description:MILL: PAINTED Left Fixed Top HYBRID Frame
+'1117
+'LFTH-P[M]
+'MILL: Left Fixed Top HYBRID PAINTED
+
+C23 'Checks if Macro running in Auto or Manual Mode
+
+&SAFETY_OFF = 1 'Setting to "1" turns off safety checks when this file is run. Setting to "0" turns them back on. Don't forget to reset to 0 at the end of the file!
+&Jamb_Length_Offset = 1  '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+&Zero_Pass_Height = &Gan1_Left_Milling_Offset 
+&CUTA = 0
+&tool = 1
+
+'Capping Lip
+&Yloc = 1.380 - 0.080
+&Length = 1.291
+&Pass_Height = &Zero_Pass_Height'Added 0.010 for 5.5" 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.15 'Length of T in positive Y
+&T_NEG_Y = 0.188 'Length of T in negative Y
+&ANGLE = 0 'Angle of T Top
+&SAFE_ENTER = 1 'Jog to safe height before starting cut (required on first pass)
+&SAFE_EXIT = 0 'Jog to safe height at end of cut (required on last pass)
+'&Jamb_Length_Offset = 1
+C306
+
+'Interior Track Leg
+&Yloc = -0.982
+&Length = 2.813
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.079 'Length of T in positive Y
+&T_NEG_Y = 0.079 'Length of T in negative Y
+&ANGLE = 0 'Angle of T Top
+&SAFE_ENTER = 0 'Jog to safe height before starting cut (required on first pass)
+'&SAFE_EXIT = 0 'Jog to safe height at end of cut (required on last pass)
+'&Jamb_Length_Offset = 1
+C306
+
+'Coex leg
+&Yloc = -1.402
+&Length = 3.357
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 0 'Finish cut by cleaning edge of flange
+'&SAFE_ENTER = 0 'Jog to safe height before starting cut (required on first pass)
+'&SAFE_EXIT = 0 'Jog to safe height at end of cut (required on last pass)
+'&Jamb_Length_Offset = 1
+C306
+
+'Exterior Track
+&Yloc = -2.822
+&Length = 2.813
+&Pass_Height = &Zero_Pass_Height 'Height of pass
+&Pass_Speed = 1 'Cut speed for pass
+&T_CLEAN = 1 'Finish cut by cleaning edge of flange
+&T_POS_Y = 0.079 'Length of T in positive Y
+&T_NEG_Y = 0.079 'Length of T in negative Y
+&ANGLE = 0 'Angle of T Top
+'&SAFE_ENTER = 0 'Jog to safe height before starting cut (required on first pass)
+&SAFE_EXIT = 1 'Jog to safe height at end of cut (required on last pass)
+'&Jamb_Length_Offset = 1
+C306
+
+&SAFETY_OFF = 0
+
+IF $Run_Auto = 0 THEN GOTO FINISHED
+END
+
+FINISHED:
+C22
+END

@@ -1,0 +1,66 @@
+'!FABMO!name:RB7[D]
+'!FABMO!description:Drilling for Right Bottom 7.25"
+'2121
+'RB7[D]
+'Drilling Right Bottom 7.25"
+
+C23 'Checks if Macro running in Auto or Manual Mode
+
+&SAFETY_OFF = 1 'Setting to "1" turns off safety checks when this file is run. Setting to "0" turns them back on. Don't forget to reset to 0 at the end of the file!
+&Jamb_Length_Offset = 0  '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+&Depth = &Thru_Hole '&Test_Hole
+&CUTA = 1
+&tool = 2
+
+'Hole 1
+&Xloc = 1.814 'X Location of the hole referenced from front edge of work piece
+&Yloc = -0.030 + 0.065 '0.000 was original  'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut is being made on the end of the jamb opposite from the origin point (close to X=96 on the right hand conveyor)
+&Exit_height = &Z_Clamp_Clearance
+C301 'Calls Routine
+
+'Hole 2
+&Xloc = 0.802 'X Location of the hole referenced from front edge of work piece
+&Yloc = -3.093 + 0.065 + 0.023 '-3.063 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut is being made on the end of the jamb opposite from the origin point (close to X=96 on the right hand conveyor)
+C301 'Calls Routine
+
+'Hole 3
+'&Xloc = 0.871 'X Location of the hole referenced from front edge of work piece
+'&Yloc = -1.935 + 0.065  '-1.905 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut is being made on the end of the jamb opposite from the origin point (close to X=96 on the right hand conveyor)
+'C301 'Calls Routine
+
+'Hole 4
+&Xloc = 1.161 'X Location of the hole referenced from front edge of work piece
+&Yloc = -0.958 + 0.065 '-0.928 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut is being made on the end of the jamb opposite from the origin point (close to X=96 on the right hand conveyor)
+C301 'Calls Routine
+
+'Hole 5
+&Xloc = 1.415 'X Location of the hole referenced from front edge of work piece
+&Yloc = 0.834 + 0.065 '0.864 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut is being made on the end of the jamb opposite from the origin point (close to X=96 on the right hand conveyor)
+C301 'Calls Routine
+
+'Hole 6
+&Xloc = 1.641 'X Location of the hole referenced from front edge of work piece
+&Yloc = 2.440 + 0.065 '2.470 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Thru_Hole 'or &Thru_Hole 'Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 0 '1 or 0 -- 1 indicates that the cut is being made on the end of the jamb opposite from the origin point (close to X=96 on the right hand conveyor)
+&Exit_height = &Z_Clearance
+C301 'Calls Routine
+
+&SAFETY_OFF = 0
+
+IF $Run_Auto = 0 THEN GOTO FINISHED
+END
+
+FINISHED:
+C22
+END

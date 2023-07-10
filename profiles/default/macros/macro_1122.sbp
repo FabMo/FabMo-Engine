@@ -1,0 +1,53 @@
+'!FABMO!name:LT9[D]
+'!FABMO!description:Drilling for Left Top 9.25"
+'1122
+'Drilling for Left Top Jamb 9.25"
+
+'!!!! DO NOT DRILL LAST HOLE - IT WILL CRASH INTO THE TOOLS!!
+
+C23
+
+&SAFETY_OFF = 1 'Setting to "1" turns off safety checks when this file is run. Setting to "0" turns them back on. Don't forget to reset to 0 at the end of the file!
+&Jamb_Length_Offset = 1
+&Depth = &Thru_Hole '&Test_Hole
+&CUTA = 1
+&tool = 2
+
+'Hole 1
+&Xloc = -94.340 'X Location of the hole referenced from front edge of work piece
+&Yloc = 0.0 + 0.040 'Y Location of the hole refrenced from right edge of work piece
+&Exit_height = &Z_Clamp_Clearance
+'&Depth = &Thru_Hole '&Pilot_Hole or &Thru_Hole Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+C302 
+
+'Hole 2
+&Xloc = -94.340 'X Location of the hole referenced from front edge of work piece
+&Yloc = -2.830 + 0.040 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Thru_Hole '&Pilot_Hole or &Thru_Hole Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+C302 
+
+'Hole 3
+&Xloc = -95.095 'X Location of the hole referenced from front edge of work piece
+&Yloc = -1.415 'Y Location of the hole refrenced from right edge of work piece
+'&Depth = &Thru_Hole '&Pilot_Hole or &Thru_Hole Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+C302 
+
+'Hole 4
+&Xloc = -95.095 'X Location of the hole referenced from front edge of work piece
+&Yloc = 1.970 'Y Location of the hole refrenced from right edge of work piece
+&Exit_height = &Z_Clearance
+'&Depth = &Thru_Hole '&Pilot_Hole or &Thru_Hole Using stepped bit, Diameter of hole is determined by depth of cut. Parameters set in "Hole Parameters" section of code
+'&Jamb_Length_Offset = 1 '1 or 0 -- 1 indicates that the cut should be shifted to the end of the jamb opposite the "origin" (The end near X=0 on the left hand conveyor)
+C302 
+
+&SAFETY_OFF = 0
+
+IF $Run_Auto = 0 THEN GOTO FINISHED
+END
+
+FINISHED:
+C22
+END

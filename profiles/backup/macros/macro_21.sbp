@@ -1,0 +1,7 @@
+'!FABMO!name:Beginning Series
+'!FABMO!description:Turn outputs on when cut starts
+SO,1,1
+SO,2,1
+SO,5,1
+C500
+$Run_Auto = 1

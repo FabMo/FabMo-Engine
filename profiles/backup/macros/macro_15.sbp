@@ -1,0 +1,19 @@
+'!FABMO!name:Corner Sample TOP
+'!FABMO!description:Macro Description
+'15 Corner Sample Top
+
+'!!!!NOTE: UNCOMMENT the enter jamb length in C23!!!!!
+
+'Cut jamb down to 20"
+'Move clamp to 65.125 (for an 69 1/8" jamb) size tbd and run the following with jamb size of 69.125":
+&Jamb_Length = 69.125
+'5.5" jamb
+'C1110
+'C1120
+
+'7.25" jamb
+C1110
+C1121
+
+JX,0
+END
