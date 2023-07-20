@@ -42,6 +42,8 @@ function ManualDriver(drv, st, mode) {
     this.exited = false;
     this.fromFile = false;
 
+    this.gotoMode = false;
+
     // True while the tool is known to be in motion
     this.moving = false;
 
@@ -131,12 +133,14 @@ ManualDriver.prototype.exit = function () {
                 log.warn("Unknown manual drive mode on exit: " + this.mode);
                 break;
         }
-        config.driver.restoreSome(
-            ["xjm", "yjm", "zjm"],
-            function () {
-                this._done();
-            }.bind(this)
-        );
+
+        ////## Maybe need to be saving to opensbp
+        // config.driver.restoreSome(
+        //     ["xjm", "yjm", "zjm"],
+        //     function () {
+        //         this._done();
+        //     }.bind(this)
+        // );
         this.stream.write("G61\n"); // don't leave in exact stop mode from nudge
         if (this.fromFile) {
             this.stream.write("M0\n"); // avoid triggering stat:4 when in file
@@ -165,6 +169,7 @@ ManualDriver.prototype.startMotion = function (
     var dir = speed < 0 ? -1.0 : 1.0;
     var second_dir = second_speed < 0 ? -1.0 : 1.0;
     speed = Math.abs(speed);
+    this.gotoMode = false;
     // Raw mode doesn't accept start motion command
     if (this.mode != "normal") {
         throw new Error("Cannot start movement in " + this.mode + " mode.");
@@ -230,16 +235,25 @@ ManualDriver.prototype.stopMotion = function () {
     //    this.driver.manualFeedHold(); // Will just send ! from G2driver
     this.driver.feedHold();
 
-    // this.driver.queueFlush(
-    //     function () {
-    //         this.driver._write("%\n"); // Will send flush as callback
-    //     }.bind(this)
-    // );
+    if (!this.gotoMode) {
+        this.driver.queueFlush(
+            function () {
+                this.driver._write("%\n"); // Will send flush as callback
+            }.bind(this)
+        );
+    }
 };
 
 // Stop all movement (also? TODO: What's this all about?)
 ManualDriver.prototype.quitMove = function () {
     this.keep_moving = false;
+
+    this.driver.queueFlush(
+        function () {
+            this.driver._write("%\n"); // Will send flush as callback
+        }.bind(this)
+    );
+
     if (this.moving) {
         this.stop_pending = true;
         this.driver.quit();
@@ -253,7 +267,12 @@ ManualDriver.prototype.resumeMove = function () {
     this.driver.manual_hold = false;
     this.keep_moving = true;
     this.stop_pending = false;
-    //    this.driver.manualResume();
+    ////## to get update footer after resume
+    //    this.machine.emit("status", this.machine.status);
+    this.emit("status", this.driver.status);
+    this.emit("manual");
+
+    this.driver.manualResume(); ////##
 
     this.keep_moving = true;
     if (this.moving) {
@@ -301,6 +320,7 @@ ManualDriver.prototype.goto = function (pos) {
             move += key + pos[key] + " ";
         }
     }
+    this.gotoMode = true;
     move += "\nM0\nG91\n";
     this.driver.prime();
     this.stream.write(move);
@@ -587,14 +607,15 @@ ManualDriver.prototype._onG2Status = function (status) {
             // no handler in manual
             break;
         case this.driver.STAT_RUNNING:
+            log.debug("got stat RUNNING in Manual");
             this.moving = true;
             if (this.omg_stop) {
                 this.stop_pending = true;
-                log.debug("===> Redundant KILL (STAT_RUNNING) ?");
-                this.driver.manualFeedHold(function () {}.bind(this));
+                this.driver.manualFeedHold(function () {}.bind(this)); ////##
             }
             break;
         case this.driver.STAT_STOP:
+            log.debug("got stat STOP in Manual");
             this.stop_pending = false;
             if (this.omg_stop) {
                 log.debug("===> Redundant KILL (STAT_STOP)?");
@@ -612,16 +633,27 @@ ManualDriver.prototype._onG2Status = function (status) {
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
         case this.driver.STAT_HOLDING:
+            log.debug("got stat HOLDING in Manual");
+
             // Handle nudges once we've come to a stop
             if (this._handleNudges()) {
                 // Nudges got handled
             } else {
-                this.omg_stop = false;
-                this.stop_pending = false;
-                if (!this.driver.pause_hold && this.driver.status.hold === 0) {
-                    //                if (this.driver.status.hold === 0) {
-                    this.driver._write("%\n"); // flush feed-hold and get stat:
+                //recent 2
+
+                if (this.omg_stop) {
+                    ////## this is where all the extra flushes are coming from
+                    this.omg_stop = false;
+                    this.stop_pending = false;
+                    if (
+                        !this.driver.pause_hold &&
+                        this.driver.status.hold === 0
+                    ) {
+                        //                if (this.driver.status.hold === 0) {
+                        this.driver._write("%\n"); // flush feed-hold and get stat:
+                    }
                 }
+
                 if (this.exit_pending) {
                     this.exit();
                 }

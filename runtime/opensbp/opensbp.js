@@ -565,7 +565,7 @@ SBPRuntime.prototype._onG2Status = function (status) {
 
     // If we die then we are dead.
     // The first rule of tautology club is the first rule of tautology club.
-    //TODO: Should Interlock be treated as Dead?
+    //TODO: Should Interlock be treated as Dead? ... Probaby, yes. This is unsupported G2 interlock, not FabMo interlock.
     switch (status.stat) {
         case this.driver.STAT_INTERLOCK:
         case this.driver.STAT_SHUTDOWN:

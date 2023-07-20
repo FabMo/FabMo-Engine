@@ -157,11 +157,25 @@ engine.getVersion(function (err, version) {
                 }
 
                 if (status.state === "manual") {
+                    console.log(
+                        "MANUAL STATE seen",
+                        status.stat,
+                        status.currentCmd
+                    );
+                    console.log(status);
                     if (!status["hideKeypad"]) {
                         $(".modalDim").show();
                         $(".manual-drive-modal").show();
-                        // if currently running a goto command in manual keypad
-                        if (status.stat === 5 && status.currentCmd === "goto") {
+                        // if currently running a goto command in manual keypad and have stopped and resumed
+                        //                        if ((status.stat === 5 || status.stat === 6) && (status.currentCmd === "goto" || status.currentCmd === "resume" || status.currentCmd === "stop")) {
+                        if (
+                            status.stat === 5 &&
+                            (status.currentCmd === "goto" ||
+                                status.currentCmd === "resume" ||
+                                status.currentCmd === "stop")
+                        ) {
+                            //                        if ((status.currentCmd === "goto" || status.currentCmd === "resume" || status.currentCmd === "stop" )) {
+                            console.log("in SHOW MANUAL STOP");
                             $(".manual-stop").show();
                             $(".go-to, .set-coordinates").hide();
                             keyboard.setEnabled(false);
@@ -170,6 +184,7 @@ engine.getVersion(function (err, version) {
                         } else {
                             // if an axis is selected in go-to or set, then flag is true
                             if (in_goto_flag) {
+                                console.log("in GoTo Container");
                                 in_goto_flag = false;
                                 $(".manual-stop").hide();
                                 $(".go-to, .set-coordinates").show();

@@ -734,17 +734,17 @@ G2.prototype.onMessage = function (response) {
 // eslint-disable-next-line no-unused-vars
 G2.prototype.manualFeedHold = function (callback) {
     this.pause_flag = true;
-    log.debug("Sending a feedhold");
-    log.debug("====> flow sending manualFeedHold from G2, NO context.pause()");
-    this._write("!\n");
+    log.debug("not really Sending a feedhold");
+    //    log.debug("====> flow sending manualFeedHold from G2, NO context.pause()");
+    //    this._write("!\n");
 };
 
 G2.prototype.manualResume = function () {
     this.status.resumeFlag = true;
     resumePending = true;
-    log.debug("Sending a resume");
-    log.debug("====> flow sending manualResume from G2, NO context.resume()");
-    this._write("~"); //cycle start command character
+    log.debug("not really ... Sending a resume");
+    //    log.debug("====> flow sending manualResume from G2, NO context.resume()");
+    //    this._write("~"); //cycle start command character
 };
 
 // "pause" the current machining cycle by issuing a feedhold. Used in Files (not Manual)!

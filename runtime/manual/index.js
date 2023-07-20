@@ -146,6 +146,10 @@ ManualRuntime.prototype.executeCode = function (code) {
 
                 case "resume":
                     this.helper.resumeMove();
+                    this.machine.status.stat = 5; ////##
+                    this.machine.status.currentCmd = "goto"; ////##
+                    this.machine.status.state = "manual"; ////##
+                    this.machine.emit("status", this.machine.status); ////##
                     break;
 
                 case "maint":
@@ -202,7 +206,7 @@ ManualRuntime.prototype.resume = function () {
     this.executeCode({ cmd: "resume" });
 };
 
-// Internal handler for machine status
+// Internal management of machine status in MANUAL mode
 ManualRuntime.prototype._onG2Status = function (status) {
     // Update machine copy of the system status
     for (var key in this.machine.status) {
@@ -210,9 +214,16 @@ ManualRuntime.prototype._onG2Status = function (status) {
             this.machine.status[key] = status[key];
             // Special case handler for stop, interlock, or limit in a manual mode 'GOTO'
             if (key === "inFeedHold" && status[key] === true) {
-                if (this.machine.status["currentCmd"] === "goto") {
-                    log.debug("got currentCmd");
-                    this.machine.setState(this, "paused");
+                if (
+                    this.machine.status["currentCmd"] === "goto" ||
+                    this.machine.status["currentCmd"] === "resume" ||
+                    this.machine.status["currentCmd"] === "stop"
+                ) {
+                    log.debug(
+                        "got currentCmd",
+                        this.machine.status["currentCmd"]
+                    );
+                    this.machine.setState(this, "paused"); // this triggers standard pause behavior
                 }
             }
         }
