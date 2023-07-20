@@ -125,7 +125,6 @@ CycleContext.prototype.emit = function (event, data) {
     var handlers = this.eventHandlers[event];
 
     if (handlers) {
-        log.debug("====> flow CycleContext doing event handlers");
         for (var i = 0; i < handlers.length; i++) {
             handlers[i](data);
         }
@@ -134,14 +133,12 @@ CycleContext.prototype.emit = function (event, data) {
 
 // Pause the run by pausing the stream that is piping data into this context
 CycleContext.prototype.pause = function () {
-    log.debug("====> flow CycleContext _paused, to _stream.pause()");
     this._paused = true;
     this._stream.pause();
 };
 
 // Resume the run by resuming the stream that is piping data into this context
 CycleContext.prototype.resume = function () {
-    log.debug("====> flow CycleContext _resume, to _stream.resume()");
     this._paused = false;
     this._stream.resume();
 };
@@ -585,9 +582,6 @@ G2.prototype.handleStatusReport = function (response) {
                 switch (response.sr.stat) {
                     case STAT_STOP:
                     case STAT_HOLDING:
-                        log.debug(
-                            "====> flow STAT_HOLDING --quit pending, to write x04"
-                        );
                         log.info("Issuing the job kill command.");
                         setTimeout(
                             function () {
@@ -609,9 +603,6 @@ G2.prototype.handleStatusReport = function (response) {
                 // and pause the cycle context if it exists.
                 switch (response.sr.stat) {
                     case STAT_HOLDING:
-                        log.debug(
-                            "====> flow STAT_HOLDING --NOT quit pending, to context.pause()"
-                        );
                         this.pause_flag = true;
                         this.status.inFeedHold = true; // for sensing input-generated-hold
                         if (this.context) {
@@ -734,17 +725,13 @@ G2.prototype.onMessage = function (response) {
 // eslint-disable-next-line no-unused-vars
 G2.prototype.manualFeedHold = function (callback) {
     this.pause_flag = true;
-    log.debug("not really Sending a feedhold");
-    //    log.debug("====> flow sending manualFeedHold from G2, NO context.pause()");
-    //    this._write("!\n");
+    log.debug("Processing manualFeedHold");
 };
 
 G2.prototype.manualResume = function () {
     this.status.resumeFlag = true;
     resumePending = true;
-    log.debug("not really ... Sending a resume");
-    //    log.debug("====> flow sending manualResume from G2, NO context.resume()");
-    //    this._write("~"); //cycle start command character
+    log.debug("Processing manualResume");
 };
 
 // "pause" the current machining cycle by issuing a feedhold. Used in Files (not Manual)!
@@ -753,11 +740,7 @@ G2.prototype.feedHold = function (callback) {
     this.pause_flag = true;
     this.flooded = false;
     typeof callback === "function" && this.once("state", callback);
-    // if (this.status.stat === this.STAT_PROBE) {
-    //     return this.quit();
-    // }
     log.debug("Sending a feedhold");
-    log.debug("====> flow sending FeedHold from G2, with a context.pause()");
     if (this.context) {
         this.context.pause();
     }

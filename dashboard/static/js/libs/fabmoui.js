@@ -484,7 +484,6 @@
                 $(that.resume_button_selector + " div:first-child").removeClass(
                     "spinner green"
                 );
-                console.log("remove red spinner for Quit");
                 $(that.stop_button_selector + " div:first-child").removeClass(
                     "spinner red"
                 );
@@ -680,7 +679,6 @@
         });
 
         $(that.stop_button_selector).click(function (e) {
-            console.log("ADD red spinner for QUIT");
             $(that.stop_button_selector + " div:first-child").addClass(
                 "spinner red"
             );

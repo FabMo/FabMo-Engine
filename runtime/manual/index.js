@@ -117,7 +117,6 @@ ManualRuntime.prototype.executeCode = function (code) {
                 log.warn(
                     "Can't accept command '" + code.cmd + "' - not entered."
                 );
-                ////## testing this for stop effect
                 this.machine.setState(this, "idle");
                 return;
             }
@@ -146,10 +145,7 @@ ManualRuntime.prototype.executeCode = function (code) {
 
                 case "resume":
                     this.helper.resumeMove();
-                    this.machine.status.stat = 5; ////##
-                    this.machine.status.currentCmd = "goto"; ////##
-                    this.machine.status.state = "manual"; ////##
-                    this.machine.emit("status", this.machine.status); ////##
+                    this.machine.status.state = "manual";
                     break;
 
                 case "maint":
@@ -212,25 +208,16 @@ ManualRuntime.prototype._onG2Status = function (status) {
     for (var key in this.machine.status) {
         if (key in status) {
             this.machine.status[key] = status[key];
-            // Special case handler for stop, interlock, or limit in a manual mode 'GOTO'
-            if (key === "inFeedHold" && status[key] === true) {
-                if (
-                    this.machine.status["currentCmd"] === "goto" ||
-                    this.machine.status["currentCmd"] === "resume" // ||
-                    //this.machine.status["currentCmd"] === "stop"
-                ) {
-                    log.debug(
-                        "got currentCmd",
-                        this.machine.status["currentCmd"]
-                    );
-                    this.machine.setState(this, "paused"); // this triggers standard pause behavior
-                }
-            }
         }
     }
-    // Update machine status further
+    if (this.machine.status.inFeedHold) {
+        var manualCmd = this.machine.status.currentCmd;
+        if (manualCmd === "goto" || manualCmd === "resume") {
+            this.machine.setState(this, "paused"); // setting state triggers standard feedHold behavior
+        }
+    }
+    // Update machine status further becasue of inconsistent list match
     this.machine.status.currentCmd = currentCmd;
-    // TODO - Is this needed?  isn't it done in the loop above?
     this.machine.status.stat = status.stat;
     this.machine.emit("status", this.machine.status);
 };

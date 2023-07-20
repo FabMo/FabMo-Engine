@@ -41,8 +41,7 @@ function ManualDriver(drv, st, mode) {
     this.entered = false;
     this.exited = false;
     this.fromFile = false;
-
-    this.gotoMode = false;
+    this.gotoModeHold = false;
 
     // True while the tool is known to be in motion
     this.moving = false;
@@ -121,7 +120,7 @@ ManualDriver.prototype.exit = function () {
         this.stopMotion();
     } else {
         log.debug("Executing immediate exit");
-        this.driver.manual_hold = false; ////## PROBLEM area for exiting SK when used in file
+        this.driver.manual_hold = false; // PROBLEM area for exiting SK when used in file
         switch (this.mode) {
             case "normal":
                 // Potential additional Manual Keypad post-pend commands
@@ -134,13 +133,13 @@ ManualDriver.prototype.exit = function () {
                 break;
         }
 
-        ////## Maybe need to be saving to opensbp
-        // config.driver.restoreSome(
-        //     ["xjm", "yjm", "zjm"],
-        //     function () {
-        //         this._done();
-        //     }.bind(this)
-        // );
+        // Retrieve the original jerk settings and reset G2 to them
+        var jerkXY = config.xy_maxjerk || 250;
+        var jerkZ = config.z_maxjerk || 250;
+        this.stream.write("M100.1 ({xjm:" + jerkXY + "})\n");
+        this.stream.write("M100.1 ({yjm:" + jerkXY + "})\n");
+        this.stream.write("M100.1 ({zjm:" + jerkZ + "})\n");
+
         this.stream.write("G61\n"); // don't leave in exact stop mode from nudge
         if (this.fromFile) {
             this.stream.write("M0\n"); // avoid triggering stat:4 when in file
@@ -169,7 +168,7 @@ ManualDriver.prototype.startMotion = function (
     var dir = speed < 0 ? -1.0 : 1.0;
     var second_dir = second_speed < 0 ? -1.0 : 1.0;
     speed = Math.abs(speed);
-    this.gotoMode = false;
+    this.gotoModeHold = false;
     // Raw mode doesn't accept start motion command
     if (this.mode != "normal") {
         throw new Error("Cannot start movement in " + this.mode + " mode.");
@@ -232,10 +231,8 @@ ManualDriver.prototype.stopMotion = function () {
         clearTimeout(this.renew_timer);
     }
     this.omg_stop = true;
-    //    this.driver.manualFeedHold(); // Will just send ! from G2driver
     this.driver.feedHold();
-
-    if (!this.gotoMode) {
+    if (!this.gotoModeHold) {
         this.driver.queueFlush(
             function () {
                 this.driver._write("%\n"); // Will send flush as callback
@@ -247,13 +244,11 @@ ManualDriver.prototype.stopMotion = function () {
 // Stop all movement (also? TODO: What's this all about?)
 ManualDriver.prototype.quitMove = function () {
     this.keep_moving = false;
-
     this.driver.queueFlush(
         function () {
             this.driver._write("%\n"); // Will send flush as callback
         }.bind(this)
     );
-
     if (this.moving) {
         this.stop_pending = true;
         this.driver.quit();
@@ -267,13 +262,8 @@ ManualDriver.prototype.resumeMove = function () {
     this.driver.manual_hold = false;
     this.keep_moving = true;
     this.stop_pending = false;
-    ////## to get update footer after resume
-    //    this.machine.emit("status", this.machine.status);
-    this.emit("status", this.driver.status);
     this.emit("manual");
-
-    this.driver.manualResume(); ////##
-
+    this.driver.manualResume();
     this.keep_moving = true;
     if (this.moving) {
         this.driver.resume();
@@ -320,7 +310,7 @@ ManualDriver.prototype.goto = function (pos) {
             move += key + pos[key] + " ";
         }
     }
-    this.gotoMode = true;
+    this.gotoModeHold = true;
     move += "\nM0\nG91\n";
     this.driver.prime();
     this.stream.write(move);
@@ -607,15 +597,13 @@ ManualDriver.prototype._onG2Status = function (status) {
             // no handler in manual
             break;
         case this.driver.STAT_RUNNING:
-            log.debug("got stat RUNNING in Manual");
             this.moving = true;
             if (this.omg_stop) {
                 this.stop_pending = true;
-                this.driver.manualFeedHold(function () {}.bind(this)); ////##
+                this.driver.manualFeedHold(function () {}.bind(this));
             }
             break;
         case this.driver.STAT_STOP:
-            log.debug("got stat STOP in Manual");
             this.stop_pending = false;
             if (this.omg_stop) {
                 log.debug("===> Redundant KILL (STAT_STOP)?");
@@ -633,27 +621,21 @@ ManualDriver.prototype._onG2Status = function (status) {
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
         case this.driver.STAT_HOLDING:
-            log.debug("got stat HOLDING in Manual");
-
             // Handle nudges once we've come to a stop
             if (this._handleNudges()) {
                 // Nudges got handled
             } else {
-                //recent 2
-
                 if (this.omg_stop) {
-                    ////## this is where all the extra flushes are coming from
+                    // extra flushes may be coming from here
                     this.omg_stop = false;
                     this.stop_pending = false;
                     if (
                         !this.driver.pause_hold &&
                         this.driver.status.hold === 0
                     ) {
-                        //                if (this.driver.status.hold === 0) {
-                        this.driver._write("%\n"); // flush feed-hold and get stat:
+                        this.driver._write("%\n"); // flush feed-hold and get stat
                     }
                 }
-
                 if (this.exit_pending) {
                     this.exit();
                 }
