@@ -467,8 +467,8 @@
         } else if (
             status.state === "running" ||
             status.state === "homing" ||
-            status.state === "probing" //|| // probing and manual are here to provide the same feedhold ui's as regular moves
-            //  status.state === "manual"
+            status.state === "probing" || // probing and manual are here to provide the same graphics as regular moves
+            status.state === "manual"
         ) {
             that.forbidKeypad();
             $(that.status_div_selector).removeClass(
@@ -484,26 +484,26 @@
                 $(that.resume_button_selector + " div:first-child").removeClass(
                     "spinner green"
                 );
+                console.log("remove red spinner for Quit");
                 $(that.stop_button_selector + " div:first-child").removeClass(
                     "spinner red"
                 );
             }
-        } else if (status.state === "manual") {
-            console.log("SPECIAL manual state case");
-            that.allowKeypad();
-            $(".tab-bar").addClass("manual");
-            $(that.status_div_selector).removeClass(
-                "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"
-            );
-            $(that.status_div_selector).removeClass("fabmo-status-running");
-            $(".tools-current > li a").removeClass("disc err").addClass("paus");
-            $(that.state_selector).html(statename);
+            // } else if (status.state === "manual") {
+            //     that.allowKeypad();
+            //     $(".tab-bar").addClass("manual");
+            //     $(that.status_div_selector).removeClass(
+            //         "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"
+            //     );
+            //     $(that.status_div_selector).removeClass("fabmo-status-running");
+            //     $(".tools-current > li a").removeClass("disc err").addClass("paus");
+            //     $(that.state_selector).html(statename);
 
-            if (that.file_control) {
-                $(that.stop_button_selector).hide();
-                $(that.resume_button_selector).hide();
-                $(that.pause_button_selector).hide();
-            }
+            //     if (that.file_control) {
+            //         $(that.stop_button_selector).hide();
+            //         $(that.resume_button_selector).hide();
+            //         $(that.pause_button_selector).hide();
+            //     }
         } else if (status.state === "paused") {
             $(that.status_div_selector).removeClass(
                 "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"

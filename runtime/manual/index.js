@@ -216,8 +216,8 @@ ManualRuntime.prototype._onG2Status = function (status) {
             if (key === "inFeedHold" && status[key] === true) {
                 if (
                     this.machine.status["currentCmd"] === "goto" ||
-                    this.machine.status["currentCmd"] === "resume" ||
-                    this.machine.status["currentCmd"] === "stop"
+                    this.machine.status["currentCmd"] === "resume" // ||
+                    //this.machine.status["currentCmd"] === "stop"
                 ) {
                     log.debug(
                         "got currentCmd",
