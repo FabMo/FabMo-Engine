@@ -132,7 +132,6 @@ ManualDriver.prototype.exit = function () {
                 log.warn("Unknown manual drive mode on exit: " + this.mode);
                 break;
         }
-
         this.stream.write("G61\n"); // don't leave in exact stop mode from nudge
         if (this.fromFile) {
             this.stream.write("M0\n"); // avoid triggering stat:4 when in file

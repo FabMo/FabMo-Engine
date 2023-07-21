@@ -1113,7 +1113,6 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                         default:
                             // [We should be in some state other than idle, but allow redundancy
                             // ... for a few cases such as coming our of probing on Stop input]
-                            //if (this.status.state != "idle") {
                             log.debug(
                                 "... otherwise send final lines from machine"
                             );
@@ -1137,7 +1136,9 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                                 log.debug("Handle case of disrupted probe");
                                 // this.status.quitFlag = true;
                             }
-                        //}
+                    }
+                    if (this.status.state === "manual") {
+                        this.overrideLimit = false; // remove any temporary limit override
                     }
                 }
 
@@ -1191,7 +1192,6 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                                 details_newstate = "lock";
                                 break;
                         }
-                        //                return;
                     }
                 }
                 break;

@@ -273,6 +273,11 @@ define(function(require) {
             resizedoc();
         });
 
+        //Prevent draggin left icon links
+        $("#left-menu").on("dragstart", function(evt) {
+            evt.preventDefault();
+          });
+
         //Idem if we colapse or un-colapse the right menu
         $("#icon_colapse").on('click', function(evt) {
           evt.preventDefault();
