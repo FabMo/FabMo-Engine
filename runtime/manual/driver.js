@@ -133,13 +133,6 @@ ManualDriver.prototype.exit = function () {
                 break;
         }
 
-        // Retrieve the original jerk settings and reset G2 to them
-        var jerkXY = config.xy_maxjerk || 250;
-        var jerkZ = config.z_maxjerk || 250;
-        this.stream.write("M100.1 ({xjm:" + jerkXY + "})\n");
-        this.stream.write("M100.1 ({yjm:" + jerkXY + "})\n");
-        this.stream.write("M100.1 ({zjm:" + jerkZ + "})\n");
-
         this.stream.write("G61\n"); // don't leave in exact stop mode from nudge
         if (this.fromFile) {
             this.stream.write("M0\n"); // avoid triggering stat:4 when in file
