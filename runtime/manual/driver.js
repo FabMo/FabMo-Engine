@@ -52,7 +52,6 @@ function ManualDriver(drv, st, mode) {
     // Set to true to exit the manual state once the current operation is completed
     this.exit_pending = false;
     this.stop_pending = false;
-    this.omg_stop = false;
 
     // The default mode is "normal" (feed the queue with constant movement along a vector)
     if (mode === "raw") {
@@ -166,7 +165,7 @@ ManualDriver.prototype.startMotion = function (
         throw new Error("Cannot start movement in " + this.mode + " mode.");
     }
     // Don't start motion if we're in the middle of stopping (can do it from stopped, though)
-    if (this.stop_pending || this.omg_stop) {
+    if (this.stop_pending) {
         return;
     }
 
@@ -222,7 +221,6 @@ ManualDriver.prototype.stopMotion = function () {
     if (this.renew_timer) {
         clearTimeout(this.renew_timer);
     }
-    this.omg_stop = true;
     this.driver.feedHold();
     if (!this.gotoModeHold) {
         this.driver.queueFlush(
@@ -590,26 +588,9 @@ ManualDriver.prototype._onG2Status = function (status) {
             break;
         case this.driver.STAT_RUNNING:
             this.moving = true;
-            if (this.omg_stop) {
-                this.stop_pending = true;
-                this.driver.manualFeedHold(function () {}.bind(this));
-            }
             break;
         case this.driver.STAT_STOP:
             this.stop_pending = false;
-            if (this.omg_stop) {
-                log.debug("===> Redundant KILL (STAT_STOP)?");
-                this.stop_pending = true;
-                this.driver.manualFeedHold(
-                    function () {
-                        this.driver.queueFlush(
-                            function () {
-                                this.driver.manual_hold = false;
-                            }.bind(this)
-                        );
-                    }.bind(this)
-                );
-            }
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
         case this.driver.STAT_HOLDING:
@@ -617,16 +598,10 @@ ManualDriver.prototype._onG2Status = function (status) {
             if (this._handleNudges()) {
                 // Nudges got handled
             } else {
-                if (this.omg_stop) {
-                    // extra flushes may be coming from here
-                    this.omg_stop = false;
-                    this.stop_pending = false;
-                    if (
-                        !this.driver.pause_hold &&
-                        this.driver.status.hold === 0
-                    ) {
-                        this.driver._write("%\n"); // flush feed-hold and get stat
-                    }
+                // extra flushes may be coming from here
+                this.stop_pending = false;
+                if (!this.driver.pause_hold && this.driver.status.hold === 0) {
+                    this.driver._write("%\n"); // flush feed-hold and get stat
                 }
                 if (this.exit_pending) {
                     this.exit();

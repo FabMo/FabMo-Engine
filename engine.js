@@ -749,7 +749,9 @@ Engine.prototype.start = function (callback) {
 
                 // Introduce deliberate latency for testing.  You can activate this by
                 // passing the --slow switch when running server.js (must include --debug too)
-                if ("debug" in argv && argv.debug === "slow") {
+                //  if ("debug" in argv && argv.debug === "slow") { // not working this way for current scripting
+                // Not sure how useful this is in anycase
+                if (argv.debug && argv.slow) {
                     log.warn("Configuring deliberate latency for testing...");
                     server.use(function latency(req, res, next) {
                         setTimeout(next, 500 * Math.random());
