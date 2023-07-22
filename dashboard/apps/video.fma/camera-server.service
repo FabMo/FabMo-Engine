@@ -3,7 +3,7 @@ Description=Video Camera Server
 After=network.target
 
 [Service]
-ExecStart=/opt/fabmo/approot/approot/video.fma/camera-server -a 0.0.0.0 -p 3141
+ExecStart=/fabmo/dashboard/apps/video.fma/camera-server -a 0.0.0.0 -p 3141
 User=root
 Restart=always
 StandardOutput=null

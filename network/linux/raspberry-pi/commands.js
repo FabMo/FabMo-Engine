@@ -111,90 +111,12 @@ class commands {
     // Simplified access to dnsmasq - the fellow responsible for handing out IP
     // addresses to your wifi clients.  This can take commands as parameters
     // but this function again takes advantage of the file configuration method.
-    static dnsmasq(options, callback) {
-        var commands = [];
-        var defaultOptions = {
-            interface: "uap0",
-            "listen-address": "192.168.42.1",
-            "bind-interfaces": "",
-            server: "8.8.8.8", // <--- Google's DNS servers.  Very handy.
-            "domain-needed": "",
-            "bogus-priv": "",
-            "dhcp-range": "192.168.42.10,192.168.42.120,24h",
-        };
-
-        const finalOptions = Object.assign(options, defaultOptions);
-
-        Object.getOwnPropertyNames(finalOptions).forEach(function (key) {
-            if (options[key] != "") {
-                commands.push(key + "=" + options[key]);
-            } else {
-                commands.push(key);
-            }
-        });
-
-        exec("systemctl stop dnsmasq", () => {
-            tmp.file((err, path, fd) => {
-                if (err) console.log(err);
-                console.log("writing dnsmasq file");
-                fs.write(fd, commands.join("\n"), function (err, result) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log(result);
-                    }
-                });
-
-                console.log("Commands being executed: ", commands);
-                exec("dnsmasq -C " + path);
-                if (callback) {
-                    callback();
-                }
-            });
-        });
+    static dnsmasq(/*options, callback*/) {
+        // deliberately removed so that os services can manage this based on the rotary switch
     }
 
-    static dnsmasqETH(options, callback) {
-        var commands = [];
-        var defaultOptions = {
-            interface: "eth0",
-            "listen-address": "192.168.44.1",
-            "bind-interfaces": "",
-            server: "8.8.8.8", // <--- Google's DNS servers.  Very handy.
-            "domain-needed": "",
-            "bogus-priv": "",
-            "dhcp-range": "192.168.42.10,192.168.42.120,24h",
-        };
-
-        const finalOptions = Object.assign(options, defaultOptions);
-
-        Object.getOwnPropertyNames(finalOptions).forEach(function (key) {
-            if (options[key] != "") {
-                commands.push(key + "=" + options[key]);
-            } else {
-                commands.push(key);
-            }
-        });
-
-        exec("systemctl stop dnsmasq", () => {
-            tmp.file((err, path, fd) => {
-                if (err) console.log(err);
-                console.log("writing dnsmasq file");
-                fs.write(fd, commands.join("\n"), function (err, result) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log(result);
-                    }
-                });
-
-                console.log("Commands being executed: ", commands);
-                exec("dnsmasq -C " + path);
-                if (callback) {
-                    callback();
-                }
-            });
-        });
+    static dnsmasqETH(/*options, callback*/) {
+        // deliberately removed so that os services can manage this based on the rotary switch
     }
 }
 
