@@ -67,6 +67,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
                 "z_speed",
                 "xy_increment",
                 "z_increment",
+                "abc_increment",
                 "xy_min",
                 "xy_max",
                 "xy_jerk",

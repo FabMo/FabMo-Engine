@@ -36,7 +36,7 @@
 		"z_slow_speed": 0.1,
 		"xy_increment" : 0.05,
 		"z_increment" : 0.005,
-		"ab_increment" : 1,
+		"abc_increment" : 1,
 		"xy_jerk" : 50,
 		"z_jerk" : 50
 	}
