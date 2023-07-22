@@ -12,13 +12,11 @@ var ifconfig = require("wireless-tools/ifconfig");
 var iwconfig = require("wireless-tools/iwconfig");
 var wpa_cli = require("wireless-tools/wpa_cli");
 var udhcpc = require("wireless-tools/udhcpc");
-var udhcpd = require("wireless-tools/udhcpd");
 
 const commands = require("./commands.js");
 
 var wifiInterface = "wlan0";
 var ethernetInterface = "eth0";
-var tmpPath = os.tmpdir() + "/";
 
 var last_name = "";
 
@@ -719,34 +717,21 @@ RaspberryPiNetworkManager.prototype.disableDHCP = function (
 // Start the internal DHCP server on the provided interface
 //   interface - The interface on which to start the DHCP server
 //    callback - Called when the DHCP server has been started, or with error if error
-RaspberryPiNetworkManager.prototype.startDHCPServer = function (
-    interface,
-    callback
-) {
-    var ethernet_config = config.engine.get("network").ethernet;
-    var options = {
-        interface: interface,
-        tmpPath: tmpPath,
-        start:
-            ethernet_config.default_config.dhcp_range.start || "192.168.44.20",
-        end: ethernet_config.default_config.dhcp_range.end || "192.168.44.254",
-        option: {
-            router: ethernet_config.default_config.ip_address || "192.168.44.1",
-            subnet: ethernet_config.default_config.netmask || "255.255.255.0",
-            dns: ethernet_config.default_config.dns || ["8.8.8.8"],
-        },
-    };
-    udhcpd.enable(options, callback);
+RaspberryPiNetworkManager.prototype.startDHCPServer = function () /* interface,
+    callback */
+{
+    // rmackie: invocation of udhcpd removed because this is now handled by the OS and the
+    // rotary switch
 };
 
 // Stop the internal DHCP server on the provided interface
 //   interface - The interface on which to stop the DHCP server
 //    callback - Called when the DHCP server has been stopped, or with error if error
-RaspberryPiNetworkManager.prototype.stopDHCPServer = function (
-    interface,
-    callback
-) {
-    udhcpd.disable({ interface: interface, tmpPath: tmpPath }, callback);
+RaspberryPiNetworkManager.prototype.stopDHCPServer = function () /* interface,
+    callback */
+{
+    // rmackie: deliberately removed code - this is now handled by the OS services and the
+    // rotary switch
 };
 
 // Set the ip address for the provided interface to the provided value
