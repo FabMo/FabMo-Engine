@@ -165,8 +165,7 @@ engine.getVersion(function (err, version) {
                         if (
                             status.stat === 5 &&
                             (status.currentCmd === "goto" ||
-                                status.currentCmd === "resume" ||
-                                status.currentCmd === "stop")
+                                status.currentCmd === "resume")
                         ) {
                             $(".manual-stop").show();
                             $(".go-to, .set-coordinates").hide();
