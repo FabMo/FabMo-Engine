@@ -749,11 +749,18 @@ Engine.prototype.start = function (callback) {
 
                 // Introduce deliberate latency for testing.  You can activate this by
                 // passing the --slow switch when running server.js (must include --debug too)
+                ////## 7/20/23th Had trouble getting this to trigger in scripted start
+                ////## Not sure how useful it is in anycase
                 if ("debug" in argv && argv.debug === "slow") {
-                    log.warn("Configuring deliberate latency for testing...");
+                    // not working this way for current vscode scripting
+                    log.warn("Configuring deliberate LATENCY FOR TESTING ...");
                     server.use(function latency(req, res, next) {
                         setTimeout(next, 500 * Math.random());
                     });
+                } else {
+                    log.info(
+                        "NORMAL EXEC ! Not configuring deliberate latency."
+                    );
                 }
 
                 // If in 'debug' mode, do some extra logging of HTTP requests

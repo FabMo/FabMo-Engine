@@ -129,6 +129,8 @@ function Machine(control_path, callback) {
         inFeedHold: false,
         resumeFlag: false,
         quitFlag: false,
+        targetHit: false,
+        lastState: null,
     };
 
     this.fireButtonDebounce = false;
@@ -1075,6 +1077,7 @@ Machine.prototype.getRuntime = function (name) {
 // newstate - The state to transition to
 // stateinfo - The contents of the 'info' field of the status report, if needed.
 Machine.prototype.setState = function (source, newstate, stateinfo) {
+    var details_newstate = newstate;
     this.fireButtonDebounce = false;
     if (source === this || source === this.current_runtime) {
         // Set the info field
@@ -1090,28 +1093,49 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 
         switch (newstate) {
             case "idle":
-                // If we're changing from a non-idle state to the idle state
-                // Go ahead and request the current machine position and write it to disk.  This
-                // is done regularly, so that if the machine is powered down it retains the current position
+                // Beginning a change to the idle state:
+                // Go ahead and request the current machine position and write it to disk. This
+                // ... is done regularly, so that if the machine is powered down it retains the current position
                 if (
                     this.status.quitFlag === true &&
                     this.current_runtime === this.manual_runtime
                 ) {
                     this.current_runtime.executeCode({ cmd: "exit" });
-                } else if (this.status.state != "idle") {
-                    log.debug("call final lines from machine");
-                    this.driver.command({ out4: 0 }); // Permissive relay
-                    this.driver.command({ gc: "m30" }); // Generate End
-
-                    // A switch to the 'idle' state means we change to the idle runtime
-                    log.debug("call MPO from machine");
-                    this.driver.get("mpo", function (err, mpo) {
-                        if (config.instance) {
-                            config.instance.update({ position: mpo });
-                        }
-                    });
-                    if (this.current_runtime != this.idle_runtime) {
-                        this.setRuntime(null, function () {});
+                } else {
+                    switch (this.status.state) {
+                        case "limit":
+                        case "interlock":
+                        case "lock":
+                            log.debug(
+                                "Initially skip cases of input-hit processing"
+                            );
+                            break;
+                        default:
+                            // [We should be in some state other than idle, but allow redundancy
+                            // ... for a few cases such as coming our of probing on Stop input]
+                            log.debug(
+                                "... otherwise send final lines from machine"
+                            );
+                            this.driver.command({ out4: 0 }); // Permissive relay
+                            this.driver.command({ gc: "m30" }); // Generate End
+                            log.debug("call MPO from machine");
+                            this.driver.get("mpo", function (err, mpo) {
+                                if (config.instance) {
+                                    config.instance.update({
+                                        position: mpo,
+                                    });
+                                }
+                            });
+                            if (this.current_runtime != this.idle_runtime) {
+                                this.setRuntime(null, function () {});
+                            }
+                            if (this.status.state === "manual") {
+                                this.overrideLimit = false; // remove any temporary limit override
+                            }
+                            if (this.status.state === "probing") {
+                                log.debug("Handle case of disrupted probe");
+                                // this.status.quitFlag = true;
+                            }
                     }
                     if (this.status.state === "manual") {
                         this.overrideLimit = false; // remove any temporary limit override
@@ -1145,24 +1169,29 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                             config.instance.update({ position: mpo });
                         }
                     });
-                    // Check for interlocks and switch to the interlock state if it's engaged
+                    // On a PAUSE (hold) check for specific input actions (stops and interlocks)
+                    // Set a more detailed state processing for user displays and limit overrides
+                    // ... will be immediately re-processed through here
                     var interlockRequired = true; // ... hard coded here; may need to manipulate at some point (no longer in configs)
                     let isInterlocked = checkForInterlocks(this); // check switches when setting machine state (parallels arming)
-
                     if (
                         interlockRequired &&
                         isInterlocked &&
                         !interlockBypass
                     ) {
                         this.interlock_action = null;
-                        if (isInterlocked === "limit") {
-                            this.setState(this, "limit");
-                        } else if (isInterlocked === "interlock") {
-                            this.setState(this, "interlock");
-                        } else if (isInterlocked === "stop") {
-                            this.setState(this, "lock");
+                        this.driver.ok_to_disconnect = true;
+                        switch (isInterlocked) {
+                            case "limit":
+                                details_newstate = "limit";
+                                break;
+                            case "interlock":
+                                details_newstate = "interlock";
+                                break;
+                            case "stop":
+                                details_newstate = "lock";
+                                break;
                         }
-                        return;
                     }
                 }
                 break;
@@ -1180,6 +1209,8 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                 break;
         }
 
+        this.status.lastState = this.status.state;
+        newstate = details_newstate;
         this.status.state = newstate;
     } else {
         log.warn(
@@ -1208,8 +1239,11 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 
 // Pause the machine
 Machine.prototype.pause = function (callback) {
-    if (this.status.state === "running") {
+    if (this.status.state === "running" || this.status.state === "probing") {
         if (this.current_runtime) {
+            log.debug(
+                "====> Handling .pause in Machine, to cur_runtime.pause()"
+            );
             this.current_runtime.pause();
             callback(null, "paused");
         } else {
@@ -1247,6 +1281,7 @@ Machine.prototype.quit = function (callback) {
     switch (this.status.state) {
         case "idle":
             delete this.status.info;
+            this.status.quitFlag = false;
             this.emit("status", this.status);
             break;
 
@@ -1278,6 +1313,7 @@ Machine.prototype.quit = function (callback) {
     }
     if (this.current_runtime) {
         log.info("Quitting the current runtime...");
+        this.status.quitFlag = false;
         this.current_runtime.quit();
         if (callback) {
             callback(null, "quit");
@@ -1288,7 +1324,6 @@ Machine.prototype.quit = function (callback) {
             callback("Not quiting because no current runtime");
         }
     }
-    this.status.quitFlag = false;
 };
 
 // Resume from the paused state.

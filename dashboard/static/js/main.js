@@ -161,8 +161,12 @@ engine.getVersion(function (err, version) {
                     if (!status["hideKeypad"]) {
                         $(".modalDim").show();
                         $(".manual-drive-modal").show();
-                        // if currently running a goto command in manual keypad
-                        if (status.stat === 5 && status.currentCmd === "goto") {
+                        // if currently running a goto command in manual keypad and have stopped and resumed
+                        if (
+                            status.stat === 5 &&
+                            (status.currentCmd === "goto" ||
+                                status.currentCmd === "resume")
+                        ) {
                             $(".manual-stop").show();
                             $(".go-to, .set-coordinates").hide();
                             keyboard.setEnabled(false);
