@@ -284,16 +284,17 @@ class Camera(object):
         self.overtemp = False
         self.dev = None
         self.clients = []
-        self.path = None
+        self.paths = [] # Initialize as empty list
+        self.devs = []  # Initialize as empty list
         self.have_camera = False
 
         # Find connected cameras
-        for i in range(4):
+        for i in range(3):
             path = '/dev/video%d' % i
             if os.path.exists(path):
                 self.have_camera = True
                 self.open(path)
-                break
+                #break
 
         # Get notifications of camera (un)plug events
         self.udevCtx = pyudev.Context()
@@ -342,7 +343,7 @@ class Camera(object):
         except Exception as e:
             if isinstance(e, BlockingIOError): return
 
-            self.log.info('Failed to read from camera.  Unplugged?')
+            self.log.info('Failed to read from camera.  Unplugged? %d' % fd)
             self.ioloop.remove_handler(fd)
             self.close()
 
@@ -357,31 +358,33 @@ class Camera(object):
 
     def open(self, path):
         try:
-            self.log.info('Opening ' + path)
+            self.log.info('Creating ' + path)
 
             self._update_client_image()
-            self.path = path
+            self.paths.append(path) # Add path to list of paths
             if self.overtemp: return
-            self.dev = VideoDevice(path)
 
-            caps = self.dev.get_info()
-            self.log.info('   Device: %s, %s, %s, %s', caps._driver, caps._card,
+            dev = VideoDevice(path)  #Create a VideoDevice object
+            self.devs.append(dev)  # Append to the list
+
+            caps = dev.get_info()
+            log.info('   Device: %s, %s, %s, %s', caps._driver, caps._card,
                           caps._bus_info, caps._caps)
 
             if caps.capabilities & v4l2.V4L2_CAP_VIDEO_CAPTURE == 0:
                 raise Exception('Video capture not supported.')
 
             fourcc  = string_to_fourcc(self.fourcc)
-            formats = self.dev.get_formats()
-            sizes   = self.dev.get_frame_sizes(fourcc)
+            formats = dev.get_formats()
+            sizes   = dev.get_frame_sizes(fourcc)
 
             fmts    = ', '.join(map(lambda s: s[1], formats))
             sizes   = ' '.join(map(lambda s: '%dx%d' % s, sizes))
-            audio   = ' '.join(self.dev.get_audio())
+            audio   = ' '.join(dev.get_audio())
 
-            self.log.info('  Formats: %s', fmts)
-            self.log.info('    Sizes: %s', sizes)
-            self.log.info('    Audio: %s', audio)
+            log.info('  Formats: %s', fmts)
+            log.info('    Sizes: %s', sizes)
+            log.info('    Audio: %s', audio)
 
             hasFormat = False
             for name, description in formats:
@@ -390,13 +393,12 @@ class Camera(object):
             if not hasFormat:
                 raise Exception(self.fourcc + ' video format not supported.')
 
-            self.dev.set_format(self.width, self.height, fourcc = fourcc)
-            self.dev.set_fps(self.fps)
-            self.dev.create_buffers(4)
-            self.dev.start()
+            dev.set_format(self.width, self.height, fourcc = fourcc)
+            dev.set_fps(self.fps)
+            dev.create_buffers(4)
+            dev.start()
 
-            self.ioloop.add_handler(self.dev, self._fd_handler,
-                                    self.ioloop.READ)
+            self.ioloop.add_handler(dev, self._fd_handler, self.ioloop.READ)
 
         except Exception as e:
             self.log.warning('While loading camera: %s' % e)
@@ -539,6 +541,22 @@ if __name__ == '__main__':
     import tornado
     import logging
 
+    # Set up logging to file
+    logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s',
+    filename='/opt/fabmo/log/camera-server.log',
+    filemode='w'
+    )
+#    # Set up logging to console   
+#    logging.basicConfig(level = logging.INFO, format = '%(message)s')
+#    log = logging.getLogger('Camera')
+
+    # Create a logger object
+    log = logging.getLogger('Camera')
+    # Use the logger object to log messages
+    log.info('Logging started')
+
 
     class Web(tornado.web.Application):
         def __init__(self, args, ioloop, log):
@@ -546,24 +564,24 @@ if __name__ == '__main__':
 
             self.args = args
             self.ioloop = ioloop
-            self.camera = Camera(ioloop, args, log)
+            self.camera = Camera(ioloop, args, log)  # Initialize a list of cameras
 
-            try:
-                self.listen(args.port, address = args.addr)
+           # For each camera, create a Camera object and listen on a unique port
+            for i in range(len(self.camera.devs)):
 
-            except Exception as e:
-                raise Exception('Failed to bind %s:%d: %s' % (
-                    args.addr, args.port, e))
+                port = args.port + i  # Calculate the unique port for this camera
 
-            print('Listening on http://%s:%d/' % (args.addr, args.port))
+                try:
+                    self.listen(port, address = args.addr)
+                    print('Listening on http://%s:%d/ for camera %d' % (args.addr, port, i))
+                except Exception as e:
+                    raise Exception('Failed to bind %s:%d: %s' % (args.addr, port, e))
 
 
         def get_image_resource(self, name): return None
 
 
     args = parse_args()
-    logging.basicConfig(level = logging.INFO, format = '%(message)s')
-    log = logging.getLogger('Camera')
     ioloop = tornado.ioloop.IOLoop.current()
     app = Web(args, ioloop, log)
 

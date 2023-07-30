@@ -209,7 +209,36 @@
               <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
               <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
               <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div>
+          </div>
+
+
+
+
+          <!-- Macro Button Panel  -->
+        <div class="row">  
+        <!--<div class="small-5 medium-3 large-3 columns">-->
+          <div class="callout panel" id="macro-panel">
+            <!-- Buttons (actions) -->
+            <div class="macros">
+            <label data-tooltip class="panel-label show-for-medium-up" title="Normal sequence for starting up your tool and running a Part File"><strong>Standard Work Flow</strong></label>
+            <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button">Home X & Y [C3]</button>
+            <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button">Set Z Zero [C2]</button>
+            <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call"><strong>CUT PART [FP]</strong></button>
             </div>
+            <div class="other-macros">
+            <label data-tooltip class="panel-label show-for-medium-up" title="Access other helpful macros and quick command calls; User configurable in ..."><strong>Other Helpful Macros</strong></label>
+            <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button1" title="Jog Home (X and Y; Z Safe Height)">JH</button>
+            <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button2" title="zero Z axis">ZZ</button>
+            <button type="button" class="macro-button secondary button small medium-expanded" id="third_macro_button">Square Gantry (C10)</button>
+            <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button">Test Cut (C210)</button>
+            <button type="button" class="macro-button secondary button small medium-expanded" id="fifth_macro_button">First Project - Bit Holder (C211)</button>
+            </div>
+          </div>
+        <!--</div>-->  
+        </div>
+
+
+
       </aside>
 
         <section class="main-section">

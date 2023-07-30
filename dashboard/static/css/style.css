@@ -2555,3 +2555,70 @@ filter: blur(2px);
     height: 0;
     z-index: 1;
 }
+
+
+
+
+
+
+#macro-panel {
+    background-color: rgb(206, 207, 209);
+    border-radius: 10px;
+    border-color: rgb(136, 171, 190);
+}
+
+#macro-panel {
+    padding-top: 5px;
+    padding-bottom: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    margin: 12px;
+}
+
+.macro-button {
+    margin-top:.35rem;
+    margin-bottom:.45rem;
+}
+
+#cut_part_call {
+    background: #008000;
+    border-radius: 5px;
+    width: -webkit-fill-available;
+}
+
+#cut_part_call:hover {
+    color:rgb(255,250, 203);
+    background: #014101; 
+
+}
+
+.cmd-button.button.small {
+	color: #333333;
+	background-color: rgb(231, 230, 230);
+    border-radius: 5px;
+    padding: .7rem;
+    margin: .3rem;
+    width: auto;
+}
+
+#first_macro_button,
+#second_macro_button {
+  border-radius: 5px;
+  background-color: rgb(167, 165, 165);
+  width: -webkit-fill-available;
+}
+
+#third_macro_button,
+#fourth_macro_button,
+#fifth_macro_button {
+	color: #333333;
+	background-color: rgb(231, 230, 230);
+	border-radius: 5px;
+  width: -webkit-fill-available;
+}
+
+#first_macro_button:hover,
+#second_macro_button:hover {
+  background-color: rgb(146, 142, 142);
+}
+
