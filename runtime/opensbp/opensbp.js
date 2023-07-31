@@ -900,7 +900,6 @@ SBPRuntime.prototype.isInSubProgram = function () {
 // Continue running the current program (until the next stack break)
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._executeNext = function () {
-    log.debug("_executeNext called at pc = " + this.pc);
     // Copy values from the machine to our local state variables
     this._update();
 
@@ -1144,7 +1143,6 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
             return true;
         } else {
             // This is NOT a stack breaker, run immediately, increment PC, call the callback.
-            console.log("Non stack breaker: ", command);
             try {
                 f(args);
             } catch (e) {
@@ -1978,7 +1976,6 @@ SBPRuntime.prototype.emit_gcode = function (s) {
     this.gcodesPending = true;
     var temp_n = n + 20; ////## save low numbers for prepend/postpend; being done in util for gcode?
     var gcode = "N" + temp_n + " " + s;
-    log.debug("emit_gcode: " + gcode);
     gcode = gcode + "\n";
     this.stream.write(gcode);
 };
