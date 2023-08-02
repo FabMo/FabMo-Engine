@@ -43,7 +43,8 @@ InstanceConfig.prototype.update = function (data, callback) {
 InstanceConfig.prototype.apply = function (callback) {
     try {
         var position = this.get("position");
-        if (position.length === 1) {
+        var keys = Object.keys(position);
+        if (keys.length < 1) {
             // if there is nothing in the object
             log.debug(
                 "Unable to Recover Previous Location! Setting Base Locations to 0.0"
