@@ -565,7 +565,7 @@ SBPRuntime.prototype._onG2Status = function (status) {
 
     // If we die then we are dead.
     // The first rule of tautology club is the first rule of tautology club.
-    //TODO: Should Interlock be treated as Dead?
+    //TODO: Should Interlock be treated as Dead? ... Probaby, yes. This is unsupported G2 interlock, not FabMo interlock.
     switch (status.stat) {
         case this.driver.STAT_INTERLOCK:
         case this.driver.STAT_SHUTDOWN:
@@ -803,7 +803,11 @@ SBPRuntime.prototype._run = function () {
                 // Only update and call execute next if we're waiting on pending gcodes or probing
                 // ... and expecting this stat:3
                 // For probing we do not turn off the pending if we have not passed the Initialization phase
-                if (this.probingPending && !this.probingInitialized) {
+                if (
+                    (this.probingPending && !this.probingInitialized) ||
+                    this.driver.status.targetHit
+                ) {
+                    this.driver.status.targetHit = false;
                     this.probingPending = false;
                     this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
                     this.prime();
@@ -900,7 +904,6 @@ SBPRuntime.prototype.isInSubProgram = function () {
 // Continue running the current program (until the next stack break)
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._executeNext = function () {
-    log.debug("_executeNext called at pc = " + this.pc);
     // Copy values from the machine to our local state variables
     this._update();
 
@@ -1144,7 +1147,6 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
             return true;
         } else {
             // This is NOT a stack breaker, run immediately, increment PC, call the callback.
-            console.log("Non stack breaker: ", command);
             try {
                 f(args);
             } catch (e) {
@@ -1978,7 +1980,6 @@ SBPRuntime.prototype.emit_gcode = function (s) {
     this.gcodesPending = true;
     var temp_n = n + 20; ////## save low numbers for prepend/postpend; being done in util for gcode?
     var gcode = "N" + temp_n + " " + s;
-    log.debug("emit_gcode: " + gcode);
     gcode = gcode + "\n";
     this.stream.write(gcode);
 };

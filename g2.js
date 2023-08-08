@@ -528,6 +528,9 @@ G2.prototype.handleStatusReport = function (response) {
     if (response.prb) {
         log.debug("GOT PROBE FINISH REPORT! Target at:  " + response.prb.z);
         if (response.prb.e === 1) {
+            // Special Case: When a probe move starts very close to the target,
+            // ... a STAT_PROBE may not have been issued before it is hit. So we add this flag, which is usually redundant.
+            this.status.targetHit = true;
             log.debug("HIT TARGET!");
         }
         // Don't clear probePending until next stat:3; managed in "opensbp"
@@ -542,7 +545,7 @@ G2.prototype.handleStatusReport = function (response) {
             this.status[key] = value;
         }
 
-        // stat is the system state (detailed in the list above)
+        // "stat" is the system state (detailed in the list above)
         if ("stat" in response.sr) {
             switch (response.sr.stat) {
                 // If we stopped and flushed, we might have provided a callback
@@ -722,7 +725,13 @@ G2.prototype.onMessage = function (response) {
 // eslint-disable-next-line no-unused-vars
 G2.prototype.manualFeedHold = function (callback) {
     this.pause_flag = true;
-    this._write("!\n");
+    log.debug("Processing manualFeedHold");
+};
+
+G2.prototype.manualResume = function () {
+    this.status.resumeFlag = true;
+    resumePending = true;
+    log.debug("Processing manualResume");
 };
 
 // "pause" the current machining cycle by issuing a feedhold. Used in Files (not Manual)!
@@ -731,9 +740,6 @@ G2.prototype.feedHold = function (callback) {
     this.pause_flag = true;
     this.flooded = false;
     typeof callback === "function" && this.once("state", callback);
-    if (this.status.stat === this.STAT_PROBE) {
-        return this.quit();
-    }
     log.debug("Sending a feedhold");
     if (this.context) {
         this.context.pause();

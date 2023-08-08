@@ -82,6 +82,7 @@ var setUpManual = function () {
             if (manual_config.xy_increment) {
                 $(".xy-fixed").val(manual_config.xy_increment);
                 $(".z-fixed").val(manual_config.z_increment);
+                $(".abc-fixed").val(manual_config.abc_increment);
             } else {
                 $(".xy-fixed").val(0.1);
                 $(".z-fixed").val(0.01);
@@ -160,8 +161,12 @@ engine.getVersion(function (err, version) {
                     if (!status["hideKeypad"]) {
                         $(".modalDim").show();
                         $(".manual-drive-modal").show();
-                        // if currently running a goto command in manual keypad
-                        if (status.stat === 5 && status.currentCmd === "goto") {
+                        // if currently running a goto command in manual keypad and have stopped and resumed
+                        if (
+                            status.stat === 5 &&
+                            (status.currentCmd === "goto" ||
+                                status.currentCmd === "resume")
+                        ) {
                             $(".manual-stop").show();
                             $(".go-to, .set-coordinates").hide();
                             keyboard.setEnabled(false);
@@ -500,7 +505,8 @@ function getManualNudgeIncrement(move) {
                 break;
             case "a":
             case "b":
-                increment_inches = engine.config.machine.manual.ab_increment;
+            case "c":
+                increment_inches = engine.config.machine.manual.abc_increment;
                 break;
         }
     } catch (e) {
@@ -777,6 +783,21 @@ $(".z-fixed").on("change", function () {
                 console.log(err);
             } else {
                 engine.config.machine.manual.z_increment = newDefault;
+            }
+        }
+    );
+});
+
+$(".abc-fixed").on("change", function () {
+    keyboard.setEnabled(false);
+    newDefault = $(".abc-fixed").val();
+    dashboard.engine.setConfig(
+        { machine: { manual: { abc_increment: newDefault } } },
+        function (err, data) {
+            if (err) {
+                console.log(err);
+            } else {
+                engine.config.machine.manual.abc_increment = newDefault;
             }
         }
     );
