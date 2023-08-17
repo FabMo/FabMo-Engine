@@ -6,33 +6,35 @@ var log = require("../log").logger("routes");
 try {
     var udev = require("udev");
 } catch (e) {
-    log.warn("No video support.  (Could not load udev module)");
+    log.warn("Old video support. Not Used. REPLACE with Setup for newer systemd Video App!");
+    log.warn("[Current Video parameters hard-coded in config.]");
+    //    log.warn("No video support.  (Could not load udev module)");
 }
 
-// video frame limited to 640*360 for now, because of streaming issue (spawn chunk the stdout data buffer to 65536)
-var video_settings = config.engine.get("video");
+// // video frame limited to 640*360 for now, because of streaming issue (spawn chunk the stdout data buffer to 65536)
+// var video_settings = config.engine.get("video");
 
-this.server;
-var gstreamer = null;
-var args = [
-    "v4l2src",
-    "device=" + video_settings.path,
-    "!",
-    "video/x-raw-yuv,width=" +
-        video_settings.width +
-        ",heigth=" +
-        video_settings.height +
-        ",framerate=" +
-        video_settings.framerate +
-        "/1",
-    "!",
-    "jpegenc",
-    //  "!","image/jpeg,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
-    "!",
-    "queue",
-    "!",
-    "fdsink",
-];
+// this.server;
+// var gstreamer = null;
+// var args = [
+//     "v4l2src",
+//     "device=" + video_settings.path,
+//     "!",
+//     "video/x-raw-yuv,width=" +
+//         video_settings.width +
+//         ",heigth=" +
+//         video_settings.height +
+//         ",framerate=" +
+//         video_settings.framerate +
+//         "/1",
+//     "!",
+//     "jpegenc",
+//     //  "!","image/jpeg,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
+//     "!",
+//     "queue",
+//     "!",
+//     "fdsink",
+// ];
 
 if (udev) {
     var dev_list = udev.list();
@@ -100,7 +102,8 @@ function video_now(req, res, next) {
 
 module.exports = function (server) {
     if (udev === null) {
-        console.log("Video not enabled, no udev");
+        console.log("Old Video not enabled.");
+//        console.log("Video not enabled, no udev");
     }
     this.server = server;
     // TODO: rmackie - Not sure this is correctly updated, test

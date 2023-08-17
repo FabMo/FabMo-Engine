@@ -39,6 +39,7 @@ module.exports = {
         "dashboard/static/js/libs/backbone.js",
         "dashboard/static/js/events.js",
         "dashboard/apps/",
+        "routes/video.js",
     ],
     overrides: [
         {
