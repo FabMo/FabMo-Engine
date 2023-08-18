@@ -73,6 +73,9 @@ var get_config = function (req, res, next) {
 var post_config = function (req, res, next) {
     var answer;
     var final_result = {};
+    console.log(
+        "client request for config update" + JSON.stringify(req.params)
+    );
     console.log(req.params);
     var setMany_remaining = 0;
     ["engine", "driver", "opensbp", "machine"].forEach(function (each) {
