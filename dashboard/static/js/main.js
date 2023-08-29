@@ -119,6 +119,8 @@ engine.getVersion(function (err, version) {
         success: function () {
             // Create a FabMo object for the dashboard
             dashboard.setEngine(engine);
+            console.log("Configuring this FabMo ...");
+            setUpManual(); // Configures all axis displays
             dashboard.ui = new FabMoUI(dashboard.engine);
             dashboard.getNetworkIdentity();
 
@@ -972,4 +974,4 @@ $(".icon_sign_out").on("click", function (e) {
     });
 });
 
-setUpManual();
+//setUpManual();

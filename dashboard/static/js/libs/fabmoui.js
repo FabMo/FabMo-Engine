@@ -340,8 +340,11 @@
                 let selector = that.status_div_selector + " .in" + i;
                 let ival = status[iname];
                 // get the assigned action for this input from the machine config
-                let assignedAction =
-                    this.tool.config.machine["di" + i + "_def"];
+                let assignedAction = "none";
+                if (this.tool.config.machine["di" + i + "_def"] === "string") {
+                    assignedAction =
+                        this.tool.config.machine["di" + i + "_def"];
+                }
                 if (ival) {
                     // input is ON
                     idisp = "on";

@@ -30,6 +30,7 @@ var config = {
             "./dashboard/apps/network_manager.fma/js/network_manager.js",
         preview: "./dashboard/apps/previewer.fma/js/app.js",
         selftest: "./dashboard/apps/selftest.fma/js/selftest.js",
+        video: "./dashboard/apps/video.fma/js/video.js",
     },
 
     output: {

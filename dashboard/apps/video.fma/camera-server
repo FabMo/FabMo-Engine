@@ -275,6 +275,7 @@ class Camera(object):
         self.ioloop = ioloop
         self.log = log
 
+        self.cam_index = args.cam
         self.width = args.width
         self.height = args.height
         self.fps = args.fps
@@ -287,13 +288,11 @@ class Camera(object):
         self.path = None
         self.have_camera = False
 
-        # Find connected cameras
-        for i in range(4):
-            path = '/dev/video%d' % i
-            if os.path.exists(path):
-                self.have_camera = True
-                self.open(path)
-                break
+        # Find a connected cameras
+        path = '/dev/video%d' % self.cam_index
+        if os.path.exists(path):
+            self.have_camera = True
+            self.open(path)
 
         # Get notifications of camera (un)plug events
         self.udevCtx = pyudev.Context()
@@ -521,6 +520,8 @@ def parse_args():
 
     parser.add_argument('-p', '--port', default = 80,
                         type = int, help = 'HTTP port')
+    parser.add_argument('-c', '--cam', type=int, default=0,
+                        help='The index of the camera to use')
     parser.add_argument('-a', '--addr', metavar = 'IP', default = '127.0.0.1',
                         help = 'HTTP address to bind')
     parser.add_argument('--width', default = 1280, type = int,
