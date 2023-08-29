@@ -257,6 +257,10 @@
         this._post("/time", data, callback, callback);
     };
 
+    FabMoAPI.prototype.get_time = function (callback) {
+        this._get("/time", callback, callback, "time");
+    };
+
     // Updater Configuration
 
     FabMoAPI.prototype.getUpdaterConfig = function (callback) {
