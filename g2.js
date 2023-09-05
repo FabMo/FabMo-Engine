@@ -1131,8 +1131,7 @@ G2.prototype.sendMore = function () {
 // Set the position of the motion system using the G28.3 code (on start)
 // position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function (position, callback) {
-    ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
-    var axes = ["x", "y", "z", "a", "b", "c"];
+    var axes = ["x", "y", "z", "a", "b", "c", "u", "v", "w"];
     var gcodes = new stream.Readable();
     let mult = this.status.unit === "mm" ? 1 : 1 / 25.4; // Convert saved position from mm to current for restore
     axes.forEach(function (axis) {
