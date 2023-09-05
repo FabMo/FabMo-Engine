@@ -40,12 +40,15 @@ InstanceConfig.prototype.update = function (data, callback) {
 
 // Apply this configuration - set the machine position to the saved value
 //   callback - called once the values have been restored (or error)
+//       Instance is a config that is checked twice during intialization for corruption and correctness
+//       1. First (as for other configs) for whether the json is appropriately formed (previously)
+//       2. Second here for completeness, with the idea that if some values are missing, we are not getting the proper data
 InstanceConfig.prototype.apply = function (callback) {
     try {
         var position = this.get("position");
         var keys = Object.keys(position);
-        if (keys.length < 1) {
-            // if there is nothing in the object
+        if (keys.length < 6) {
+            // this should be 9, but we are only using 6 axes from G2 at the moment and a config might have been truncated
             log.debug(
                 "Unable to Recover Previous Location! Setting Base Locations to 0.0"
             );

@@ -221,7 +221,7 @@ function Machine(control_path, callback) {
     config.driver.on(
         "change",
         function (update) {
-            ["x", "y", "z", "a", "b", "c"].forEach(
+            ["x", "y", "z", "a", "b", "c", "u", "v", "w"].forEach(
                 function (axis) {
                     var mode = axis + "am";
                     var pos = "pos" + axis;
