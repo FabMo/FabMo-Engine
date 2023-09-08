@@ -133,15 +133,18 @@ function setGlobalLevel(lvl){
 		else {
 			logger('log').warn('Invalid log level: ' + lvl);
 		}
-		if(lvl === "g2") {
-			_log.info("Creating flight recorder...")
-			flightRecorder = new FlightRecorder();
-		} else {
-			if(flightRecorder) {
-				_log.info("Destroying flight recorder...")				
-			}
-			flightRecorder = null;
-		}
+		////## Flight recorder disabled for now
+		//       - not being used (same info in normal log and debug stream)
+		//       - exclusive focus on g2 channel no longer as important as it once was
+		// if(lvl === "g2") {
+		// 	_log.info("Creating flight recorder...")
+		// 	flightRecorder = new FlightRecorder();
+		// } else {
+		// 	if(flightRecorder) {
+		// 		_log.info("Destroying flight recorder...")				
+		// 	}
+		flightRecorder = null;
+		// }
 	}
 }
 

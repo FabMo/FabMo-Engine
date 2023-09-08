@@ -340,8 +340,13 @@
                 let selector = that.status_div_selector + " .in" + i;
                 let ival = status[iname];
                 // get the assigned action for this input from the machine config
+                // ... sometimes we are hitting this at startup before the machine config is loaded
+                // ... not sure why ...
                 let assignedAction = "none";
-                if (this.tool.config.machine["di" + i + "_def"] === "string") {
+                if (
+                    typeof this.tool.config.machine["di" + i + "_def"] ===
+                    "string"
+                ) {
                     assignedAction =
                         this.tool.config.machine["di" + i + "_def"];
                 }

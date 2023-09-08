@@ -40,6 +40,7 @@ module.exports = {
         "dashboard/static/js/events.js",
         "dashboard/apps/",
         "routes/video.js",
+        "log.js",
     ],
     overrides: [
         {
