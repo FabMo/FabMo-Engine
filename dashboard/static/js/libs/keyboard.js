@@ -37,16 +37,15 @@
 
     /* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
      length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
-     will trigger longer moves, with refresh pumping new moves to engine/g2. Stop now triggers stop via g2 "kill" from
-     engine. from 2020 */
-    /* th 3/3/23 Per the note above keyboard.js seems intended to micmick keypad.js in how the visuals on the keypad work.
-    Before changes, setEnabled did not appear to be setting any visuals for keyboard arrow keys when they were pressed in 
+     will trigger longer moves. Stop triggers a g2 feedhold, from 2023 */
+    /* Further: th 3/3/23 Per the note above, keyboard.js seems intended to micmick keypad.js in how the visuals on the keypad work.
+    But, setEnabled did not appear to be setting any visuals for keyboard arrow keys when they were pressed in 
     modal-keypad (classes are mislabled but action never gets to the call in anycase). I could not figure how "elem", the key
     to the designed functionality was ever supposed to be handled for the keyboard case (vs the keypad case). I also went back
     a bit in time and did not find evidence that this system ever worked to set a visual indicators that an axis button was
     being pushed from the device keyboard arrows. There may be other "intended" features that also fail here. I have created a
     system for handling the display for now. Don't know if it's as efficient as it could be. Note that both keyboard and
-    work through main.js motion calls.
+    keypad work through main.js motion calls.
     */
 
     Keyboard.prototype.init = function () {
@@ -143,7 +142,8 @@
             "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
         $(activeArrowStr).addClass("drive-button-active");
         this.going = true;
-        this.refresh();
+        ////##        this.refresh();
+        this.emit("go", this.move);
     };
 
     Keyboard.prototype.stop = function () {

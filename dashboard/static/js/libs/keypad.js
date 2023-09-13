@@ -150,7 +150,8 @@
             this.move = { axis: axis, dir: direction };
         }
         this.going = true;
-        this.refresh();
+        //       this.refresh();
+        this.emit("go", this.move);
     };
 
     Keypad.prototype.nudge = function (

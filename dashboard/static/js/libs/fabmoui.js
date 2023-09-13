@@ -344,11 +344,11 @@
                 // ... not sure why ...
                 let assignedAction = "none";
                 if (
-                    typeof this.tool.config.machine["di" + i + "_def"] ===
+                    typeof that.tool.config.machine["di" + i + "_def"] ===
                     "string"
                 ) {
                     assignedAction =
-                        this.tool.config.machine["di" + i + "_def"];
+                        that.tool.config.machine["di" + i + "_def"];
                 }
                 if (ival) {
                     // input is ON

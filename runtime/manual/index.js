@@ -93,8 +93,8 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
 // {cmd:"start",axis:"X",speed:2, second_axis:"Y", second_speed:2}
 // {cmd:"exit"} - Exit the manual mode (return to idle)
 // {cmd:"stop"} - Stop movement, but do not exit the manual mode
-// {cmd:"quit"} - Quit motion (TODO - what's the diff between this and exit?)
-// {cmd:"maint"} - Maintain motion along the current vector
+// {cmd:"quit"} - Quit motion (TODO - from hold? w/resume? what's the diff between this and exit?)
+// {cmd:"maint"} - Maintain motion along the current vector ////## re-assert timer?
 // {cmd:"goto",move:{X:1,Y:2,Z:3}} - Go to x,y,z = 1,2,3
 // {cmd:"set", move:{X:1,Y:2,Z:3}} - Set current x,y,z to 1,2,3 (No movement)
 //
