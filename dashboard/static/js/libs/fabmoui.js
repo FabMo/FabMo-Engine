@@ -344,8 +344,10 @@
                 // ... not sure why ...
                 let assignedAction = "none";
                 if (
+                    this.tool.config.machine !== undefined &&
+                    this.tool.config.machine["di" + i + "_def"] !== undefined &&
                     typeof that.tool.config.machine["di" + i + "_def"] ===
-                    "string"
+                        "string"
                 ) {
                     assignedAction =
                         that.tool.config.machine["di" + i + "_def"];

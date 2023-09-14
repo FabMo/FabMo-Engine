@@ -101,8 +101,7 @@
 
     /* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
      length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
-     will trigger longer moves, with refresh pumping new moves to engine/g2. Stop now triggers stop via g2 "kill" from
-     engine. */
+     will trigger longer moves, with refresh pumping new moves to engine/g2. */
 
     Keypad.prototype.setEnabled = function (enabled) {
         this.enabled = enabled;

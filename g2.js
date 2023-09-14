@@ -719,8 +719,7 @@ G2.prototype.onMessage = function (response) {
     }
 };
 
-// Interrupt motion in manual run-time; now using "kill" rather than G2-hold
-////## Handling normal and raw now the same
+// Handling normal and raw now the same
 // eslint flags callback as unused, gets used in driver.js
 // eslint-disable-next-line no-unused-vars
 G2.prototype.manualFeedHold = function (callback) {
@@ -734,8 +733,8 @@ G2.prototype.manualResume = function () {
     log.debug("Processing manualResume");
 };
 
-// "pause" the current machining cycle by issuing a feedhold. Used in Files (not Manual)!
-// callback is called when the next state change takes place.
+// "pause" the current machining cycle by issuing a feedhold
+// callback is called when the next state change takes place
 G2.prototype.feedHold = function (callback) {
     this.pause_flag = true;
     this.flooded = false;

@@ -514,8 +514,11 @@ ManualDriver.prototype.isMoving = function () {
 ManualDriver.prototype._renewMoves = function (reason) {
     if (this.mode === "normal") {
         if (this.moving && this.keep_moving) {
-            ////##            this.keep_moving = false;
             this.keep_moving = true;
+            if (global.CLIENT_DISCONNECTED) {
+                ////## added to prevent runaway; fix global!
+                this.keep_moving = false;
+            }
             var segment =
                 this.currentDirection * (this.renewDistance / RENEW_SEGMENTS);
             var second_segment =
