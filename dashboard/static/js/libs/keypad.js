@@ -101,7 +101,10 @@
 
     /* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
      length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
-     will trigger longer moves, with refresh pumping new moves to engine/g2. */
+     will trigger longer moves. */
+    /* Beginning 9/2023 the maintenance of motion is handled by the server to prevent punctuation of smooth motion from
+     network. This may have been the original intent. Run-on motion is prevented in case of client disconnect. It may be
+     that we also need some keydown checking in the client to prevent stuck keys. */
 
     Keypad.prototype.setEnabled = function (enabled) {
         this.enabled = enabled;
@@ -149,7 +152,7 @@
             this.move = { axis: axis, dir: direction };
         }
         this.going = true;
-        //       this.refresh();
+        // this.refresh(); ////## previous method for maintianig motion
         this.emit("go", this.move);
     };
 

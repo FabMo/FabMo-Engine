@@ -41,7 +41,7 @@
     /* Further: th 3/3/23 Per the note above, keyboard.js seems intended to micmick keypad.js in how the visuals on the keypad work.
     But, setEnabled did not appear to be setting any visuals for keyboard arrow keys when they were pressed in 
     modal-keypad (classes are mislabled but action never gets to the call in anycase). I could not figure how "elem", the key
-    to the designed functionality was ever supposed to be handled for the keyboard case (vs the keypad case). I also went back
+    to the designed functionality, was ever supposed to be handled for the keyboard case (vs the keypad case). I also went back
     a bit in time and did not find evidence that this system ever worked to set a visual indicators that an axis button was
     being pushed from the device keyboard arrows. There may be other "intended" features that also fail here. I have created a
     system for handling the display for now. Don't know if it's as efficient as it could be. Note that both keyboard and
@@ -142,7 +142,7 @@
             "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
         $(activeArrowStr).addClass("drive-button-active");
         this.going = true;
-        ////##        this.refresh();
+        // this.refresh(); ////## previous method for maintianig motion
         this.emit("go", this.move);
     };
 

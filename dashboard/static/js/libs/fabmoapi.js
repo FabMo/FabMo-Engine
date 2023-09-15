@@ -484,7 +484,6 @@
         second_axis,
         second_speed
     ) {
-        console.log("###-### manual start");
         this.executeRuntimeCode("manual", {
             cmd: "start",
             axis: axis,
@@ -499,7 +498,6 @@
     };
 
     FabMoAPI.prototype.manualStop = function (callback) {
-        console.log("***-*** manual stop");
         this.executeRuntimeCode("manual", { cmd: "stop" });
     };
 

@@ -341,7 +341,7 @@
                 let ival = status[iname];
                 // get the assigned action for this input from the machine config
                 // ... sometimes we are hitting this at startup before the machine config is loaded
-                // ... not sure why ...
+                // ... not sure why ... could be a problem area
                 let assignedAction = "none";
                 if (
                     this.tool.config.machine !== undefined &&

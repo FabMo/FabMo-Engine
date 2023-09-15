@@ -516,7 +516,7 @@ ManualDriver.prototype._renewMoves = function (reason) {
         if (this.moving && this.keep_moving) {
             this.keep_moving = true;
             if (global.CLIENT_DISCONNECTED) {
-                ////## added to prevent runaway; fix global!
+                ////## added to prevent runaway; TODO: sovled this without global!
                 this.keep_moving = false;
             }
             var segment =
@@ -549,7 +549,6 @@ ManualDriver.prototype._renewMoves = function (reason) {
             this.driver.prime();
             this.renew_timer = setTimeout(
                 function () {
-                    log.debug("****Renewing Timer for Moves ****");
                     this._renewMoves("timeout");
                 }.bind(this),
                 T_RENEW
@@ -558,14 +557,12 @@ ManualDriver.prototype._renewMoves = function (reason) {
             this.stopMotion();
         }
     } else {
-        // else raw mode ... no renewing
         if (!(this.moving && this.keep_moving)) {
             // TODO:  Why is this disabled?
             //this.stopMotion();
         } else {
             this.renew_timer = setTimeout(
                 function () {
-                    log.debug("****Renewing Timer for Moves ****");
                     this._renewMoves("timeout");
                 }.bind(this),
                 T_RENEW
@@ -595,11 +592,9 @@ ManualDriver.prototype._onG2Status = function (status) {
             break;
         case this.driver.STAT_RUNNING:
             this.moving = true;
-            log.debug("ManualDriver: GOT STAT_RUNNING");
             break;
         case this.driver.STAT_STOP:
             this.stop_pending = false;
-        ////## change to this.moving ?
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
         case this.driver.STAT_HOLDING:

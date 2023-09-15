@@ -42,6 +42,9 @@ ManualRuntime.prototype.connect = function (machine) {
     // Set to true to exit the manual state once the current operation is completed
     this.exit_pending = false;
 
+    // Make sure we haven't got a left-over disconnect flag (clean up when getting rid of global here)
+    global.CLIENT_DISCONNECTED = false;
+
     // Current trajectory
     this.current_axis = null;
     this.current_speed = null;
@@ -93,8 +96,8 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
 // {cmd:"start",axis:"X",speed:2, second_axis:"Y", second_speed:2}
 // {cmd:"exit"} - Exit the manual mode (return to idle)
 // {cmd:"stop"} - Stop movement, but do not exit the manual mode
-// {cmd:"quit"} - Quit motion (TODO - from hold? w/resume? what's the diff between this and exit?)
-// {cmd:"maint"} - Maintain motion along the current vector ////## re-assert timer?
+// {cmd:"quit"} - Quit motion (from hold w/resume)
+// {cmd:"maint"} - Maintain motion along the current vector // 9/2023 now in server, see elsewhere
 // {cmd:"goto",move:{X:1,Y:2,Z:3}} - Go to x,y,z = 1,2,3
 // {cmd:"set", move:{X:1,Y:2,Z:3}} - Set current x,y,z to 1,2,3 (No movement)
 //
