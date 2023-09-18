@@ -145,3 +145,5 @@ $sb_standard_variables_PRESENT = 1   'CONFIRM ALL READ.
 '* - FUTURE: SD-Image could have tabulated universal tool info. Use it to get correct tool profile from SbWebsite w/serial number or QR code?
 '* - FUTURE: We should have a sb_safe_Z variable that is consistent with VC and with g2! Just read it here and make redundant?
 '* - FUTURE: Allow hyphens in sbp var names?
+
+'* - SPECIAL NOTE: Do not use a "PAUSE" immediately after a probe (e.g. PX, PY, PZ etc...)
