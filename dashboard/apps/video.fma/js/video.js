@@ -1,6 +1,8 @@
 require('jquery');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo();
+var camera1_on = false;
+var camera2_on = false; 
 
 window.onload = function() {
 
@@ -9,7 +11,7 @@ window.onload = function() {
   var img2 = document.getElementById('camera2');
 
 
-  ////## th - experiment on FLOW back re: Sb4 and similar apps
+  ////## th - experiment on FLOW "back" or (Esc) re: Sb4 and similar apps
 
     // get info for setting up exit-back behavior
     let this_App = "video";
@@ -41,9 +43,10 @@ window.onload = function() {
 
   // Check in config.engine for the existence of a 'video' object
   // If it exists, use it to populate the video sources
-  // If it doesn't exist, use the default sources
-  // If the default sources don't exist, use the hard-coded sources
+  // (at the moment, the config is determined manually and set in the config.json file)
+  // TODO: add a UI for configuring the video sources
   fabmo.getConfig(function(err, data) {
+    let videos = 0;
     if (err){
         console.log(err);
     } else {
@@ -53,65 +56,85 @@ window.onload = function() {
             // if camera1 exists, use it
             if (video_config.camera1) {
                 console.log("video_config.camera1 exists");
+                localStorage.setItem("camera1", true)
+                camera1_on = true;
+                videos += 1;
                 img1.src = 'http://' + location.hostname + ':3141?' + Math.random();
+                // set the cam-label in display
+                document.getElementById("cam-label").innerHTML = "camera 1";
             } else {  
-                console.log("video_config.camera1 does not exist");
-                img1.src = 'http://' + location.hostname + ':3141?' + Math.random();
+                console.log("video_config.camera1 not defined");
             }
             // if camera2 exists, use it  
             if (video_config.camera2) {
                 console.log("video_config.camera2 exists");
+                localStorage.setItem("camera2", true)
+                camera2_on = true;
+                videos += 1;
                 img2.src = 'http://' + location.hostname + ':3142?' + Math.random();
+                document.getElementById("cam-label").innerHTML = "camera 2";
             } else {
-                console.log("video_config.camera2 does not exist");
-                img2.src = 'http://' + location.hostname + ':3142?' + Math.random();
+                console.log("video_config.camera2 not defined");
             } 
         } else { // if video config does not exist  
             console.log("video_config does not exist");
-            img1.src = 'http://' + location.hostname + ':3141?' + Math.random(); // hardcode 2 cameras for now
-            img2.src = 'http://' + location.hostname + ':3142?' + Math.random();
+            videos = 0;
         }
+        localStorage.setItem("videos", videos);
     }
   });
 
-  
-
-  
-  // hardcode 2 cameras for now
+  // hardcoding 2 cameras for now
   function resize() {
     var width = window.innerWidth;
     var height = window.innerHeight;
-    var aspect1 = img1.naturalHeight / img1.naturalWidth;
-    var aspect2 = img2.naturalHeight / img2.naturalWidth;
+    //var aspect1 = img1.naturalHeight / img1.naturalWidth;
+    //var aspect2 = img2.naturalHeight / img2.naturalWidth;
 
     if (!width) return;
-
-    img1.width = Math.min(width, height / aspect1);
-    img1.height = Math.min(height, width * aspect1);
-    img2.width = Math.min(width, height / aspect2);
-    img2.height = Math.min(height, width * aspect2);
+    // Size the images to fill the window not considering aspect ratio
+    img1.height = height; 
+    img1.width = width;
+    img2.height = height;
+    img2.width = width;
+    //img1.width = Math.min(width, height / aspect1);
+    //img1.height = Math.min(height, width * aspect1);
+    //img2.width = Math.min(width, height / aspect2);
+    //img2.height = Math.min(height, width * aspect2);
   }
-
 
   function reload() {
     img1.onload = resize;
-//    img1.src = 'http://' + location.hostname + ':3141?' + Math.random()
     img2.onload = resize;
-//    img2.src = 'http://' + location.hostname + ':3142?' + Math.random()
   }
-
 
   window.addEventListener('resize', resize, false);
-// toggle between img1 and img2 on click (for testing)
+  
+  // Set or Toggle between full size img1 and img2 on click (for testing)
+  var doToggles = localStorage.getItem("videos");
+
   img1.onclick = function() {
-    img1.style.display = 'none';
-    img2.style.display = 'block';
+    if (doToggles === "1" && camera1_on) {  // on single camera don't toggle
+      img1.style.display = 'block';
+      img2.style.display = 'none';
+      document.getElementById("cam-label").innerHTML = "camera 1 only";
+    } else if (doToggles === "2" || camera2_on) {
+      img1.style.display = 'none';
+      img2.style.display = 'block';
+      document.getElementById("cam-label").innerHTML = "camera 2";
+    } 
   }
   img2.onclick = function() {
-    img1.style.display = 'block';
-    img2.style.display = 'none';
-  }
-    // img1.onclick = reload;
-    // img2.onclick = reload;
+    if (doToggles === "1" && camera2_on) {  // on single camera don't toggle
+      img1.style.display = 'none';
+      img2.style.display = 'block';
+      document.getElementById("cam-label").innerHTML = "camera 2";
+    } else if (doToggles === "2" || camera1_on) {
+      img1.style.display = 'block';
+      img2.style.display = 'none';
+      document.getElementById("cam-label").innerHTML = "camera 1";
+    }
+  }  
   reload();
+  
 }
