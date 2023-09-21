@@ -669,6 +669,12 @@ function checkForInterlocks(thisMachine, action) {
     let getInterlockState = "";
     for (let pin = 1; pin < 13; pin++) {
         let checkAssignedInput = config.machine.get("di" + pin + "_def");
+        // Check assignedInput for "none" in letters of any case; then set value to ""
+        if (checkAssignedInput) {
+            if (checkAssignedInput.toLowerCase() === "none") {
+                checkAssignedInput = "";
+            }
+        }
         // If an "assigned" input pin is active, Set InterlockState to assigned action
         // ... if more than one, highest priority will be assigned to InterlockState
         // ... currently that is "stop" < "interlock" < "limit" ; This is where an INPUT gets LABELED
