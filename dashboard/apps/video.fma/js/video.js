@@ -12,7 +12,6 @@ window.onload = function() {
 
 
   ////## th - experiment on FLOW "back" or (Esc) re: Sb4 and similar apps
-
     // get info for setting up exit-back behavior
     let this_App = "video";
     let default_App = localStorage.getItem("defaultapp");
@@ -27,7 +26,6 @@ window.onload = function() {
         localStorage.setItem("currentapp", current_App);
         localStorage.setItem("backapp", back_App);
     } 
-
     //$(".exit-button").on("click", function(){
     //    fabmo.launchApp(back_App);
     //});
@@ -39,8 +37,9 @@ window.onload = function() {
       }
   };
 
-  // set focus at the end of 'ready'.
-
+  // Analyze available video sources to populate config.engine.video and update local storage
+  // (at the moment, the config is determined manually and set in the config.json file)
+  
   // Check in config.engine for the existence of a 'video' object
   // If it exists, use it to populate the video sources
   // (at the moment, the config is determined manually and set in the config.json file)
@@ -53,38 +52,45 @@ window.onload = function() {
         video_config = data.engine.video;
         if (video_config) { // if video config exists
             console.log("video_config exists");
-            // if camera1 exists, use it
-            if (video_config.camera1) {
-                console.log("video_config.camera1 exists");
-                localStorage.setItem("camera1", true)
-                camera1_on = true;
-                videos += 1;
-                img1.src = 'http://' + location.hostname + ':3141?' + Math.random();
-                // set the cam-label in display
-                document.getElementById("cam-label").innerHTML = "camera 1";
-            } else {  
-                console.log("video_config.camera1 not defined");
-            }
-            // if camera2 exists, use it  
             if (video_config.camera2) {
                 console.log("video_config.camera2 exists");
                 localStorage.setItem("camera2", true)
                 camera2_on = true;
                 videos += 1;
                 img2.src = 'http://' + location.hostname + ':3142?' + Math.random();
+                img1.style.display = 'none';
+                img2.style.display = 'block';
                 document.getElementById("cam-label").innerHTML = "camera 2";
             } else {
                 console.log("video_config.camera2 not defined");
             } 
-        } else { // if video config does not exist  
-            console.log("video_config does not exist");
+            if (video_config.camera1) {
+                console.log("video_config.camera1 exists");
+                localStorage.setItem("camera1", true)
+                camera1_on = true;
+                videos += 1;
+                img1.src = 'http://' + location.hostname + ':3141?' + Math.random();
+                img1.style.display = 'block';
+                img2.style.display = 'none';
+                document.getElementById("cam-label").innerHTML = "camera 1";
+            } else {  
+                console.log("video_config.camera1 not defined");
+            }
+        } else {
             videos = 0;
         }
+
+        if (videos === 0) { // if video config does not exist  
+            console.log("video_config does not exist");
+            document.getElementById("cam-label").innerHTML = "no camera feeds available";
+            videos = 0;
+        }
+
         localStorage.setItem("videos", videos);
     }
   });
 
-  // hardcoding 2 cameras for now
+  // Just HARDCODING the 2 cameras for now
   function resize() {
     var width = window.innerWidth;
     var height = window.innerHeight;
@@ -128,7 +134,7 @@ window.onload = function() {
     if (doToggles === "1" && camera2_on) {  // on single camera don't toggle
       img1.style.display = 'none';
       img2.style.display = 'block';
-      document.getElementById("cam-label").innerHTML = "camera 2";
+      document.getElementById("cam-label").innerHTML = "camera 2 only";
     } else if (doToggles === "2" || camera1_on) {
       img1.style.display = 'block';
       img2.style.display = 'none';
@@ -136,5 +142,7 @@ window.onload = function() {
     }
   }  
   reload();
+
+  // set focus at the end of 'ready' ?
   
 }
