@@ -84,9 +84,13 @@ function setupStatusBroadcasts(server) {
 var onPublicConnect = function (socket) {
     var client_address = util.getClientAddress(socket.client.request);
     log.info("Anonymous client at " + client_address + " connected.");
+    //    socket.emit("status", machine.status.clientDisconnected);
+    global.CLIENT_DISCONNECTED = false;
 
     socket.on("disconnect", function () {
         log.debug("Client disconnected");
+        //driver.status.clientDisconnected = true;  // Used only here for case of disconnect during Manual motion
+        global.CLIENT_DISCONNECTED = true;
     });
 
     // eslint-disable-next-line no-unused-vars

@@ -15,8 +15,8 @@ camera in FabMo.
 ## Install
 
 This is a system app so the app itself does not require installation.
-However, the camera server which this app connects to must be installed on the
-RaspberryPi with the following commands:
+If not using a recent FabMo Raspberry Pi OS Image, the camera server with which
+this app connects can be installed on the RaspberryPi with the following commands:
 
 ```
 sudo apt-get update
@@ -38,10 +38,9 @@ The camera server supports the following command line options:
 | --width WIDTH        | Set the video width.                         |
 | --height HEIGHT      | Set the video height.                        |
 | --fps FPS            | Set the frames per second.                   |
-| --camera_clients NUM | Set the maximum number of connected clients. |
 
 These options can be passed to the camera server by adding them to the
-``camera-server.service`` file and reloading with:
+``camera-server-#.service`` file and reloading with:
 
 ```
 sudo systemctl daemon-reload
@@ -50,15 +49,15 @@ sudo systemctl restart camera-server
 
 ## Files
 
-| File                  | Description                                    |
-| --------------------- | ---------------------------------------------- |
-| package.json          | Application meta data.                         |
-| index.html            | Application HTML file.                         |
-| icon.png              | Application icon.                              |
-| camera-server.service | SystemD service configuration.                 |
-| camera-server         | Camera server Python code.                     |
-| v4l2.py               | Video4Linux definitions used by camera-server. |
-| README.md             | This file.                                     |
-| images/in-use.jpg     | Displayed when are too many camera clients.    |
-| images/offline.jpg    | Displayed when no USB camera is plugged in.    |
-| js/video.js           | Resizes the video to fit the browser screen.   |
+| File                    | Description                                    |
+| ----------------------- | ---------------------------------------------- |
+| package.json            | Application meta data.                         |
+| index.html              | Application HTML file.                         |
+| icon.png                | Application icon.                              |
+| camera-server-1.service | SystemD service configuration.                 |
+| camera-server-2.service | SystemD service configuration.                 |
+| camera-server           | Camera server Python code.                     |
+| v4l2.py                 | Video4Linux definitions used by camera-server. |
+| README.md               | This file.                                     |
+| images/offline.jpg      | Displayed when no USB camera is plugged in.    |
+| js/video.js             | Manages the video and browser screen.          |

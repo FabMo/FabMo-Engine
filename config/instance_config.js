@@ -59,9 +59,6 @@ InstanceConfig.prototype.apply = function (callback) {
                 a: 0,
                 b: 0,
                 c: 0,
-                u: 0,
-                v: 0,
-                w: 0,
             };
         }
         this.driver.setMachinePosition(position, callback);

@@ -38,8 +38,9 @@ var clickDisabled = false;
 var interlockBypass = false;
 var runtime = null;
 
-////## total temp KLUDGE
+////## total temp KLUDGES because of difficulty in figuring out a couple of quick comms between modules
 global.CUR_RUNTIME;
+global.CLIENT_DISCONNECTED = false; // Special purpose kludge to stop any ongoing keypad or keyboard actions if client disconnects
 
 // Load up all the runtimes that are currently defined
 // TODO - One day, a folder-scan and auto-registration process might be nice here, this is all sort of hand-rolled.
@@ -94,6 +95,9 @@ function Machine(control_path, callback) {
         posx: 0.0,
         posy: 0.0,
         posz: 0.0,
+        posa: 0.0,
+        posb: 0.0,
+        posc: 0.0,
         in1: 1,
         in2: 1,
         in3: 1,
@@ -131,6 +135,7 @@ function Machine(control_path, callback) {
         quitFlag: false,
         targetHit: false,
         lastState: null,
+        clientDisconnected: false,
     };
 
     this.fireButtonDebounce = false;
@@ -277,6 +282,7 @@ function Machine(control_path, callback) {
             // Other functions
             this.handleFireButton(stat, auth_input);
             this.handleAPCollapseButton(stat, ap_input);
+            this.status.clientDisconnected = global.CLIENT_DISCONNECTED;
         }.bind(this)
     );
 }
@@ -663,6 +669,12 @@ function checkForInterlocks(thisMachine, action) {
     let getInterlockState = "";
     for (let pin = 1; pin < 13; pin++) {
         let checkAssignedInput = config.machine.get("di" + pin + "_def");
+        // Check assignedInput for "none" in letters of any case; then set value to ""
+        if (checkAssignedInput) {
+            if (checkAssignedInput.toLowerCase() === "none") {
+                checkAssignedInput = "";
+            }
+        }
         // If an "assigned" input pin is active, Set InterlockState to assigned action
         // ... if more than one, highest priority will be assigned to InterlockState
         // ... currently that is "stop" < "interlock" < "limit" ; This is where an INPUT gets LABELED

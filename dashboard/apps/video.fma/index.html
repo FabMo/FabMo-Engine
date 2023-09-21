@@ -12,11 +12,26 @@
         overflow: hidden;
         text-align: center;
       }
+      #cam-label {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 15%;
+        padding: 10px;
+        text-align: left;
+        background: transparent;
+        color: #fff;
+        font-size: 14px;
+        font-family: sans-serif;
+      }
     </style>
   </head>
   <body>
     <div>
-      <img id="camera1"/><img id="camera2"/>
+      <h5 id="cam-label">camera 1</h1>
+      <div id="image-container">
+        <img id="camera1"/><img id="camera2"/>
+      </div>
     </div>
     <script src="../../video.js"></script>
   </body>

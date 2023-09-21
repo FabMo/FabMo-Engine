@@ -506,15 +506,19 @@ ManualDriver.prototype.isMoving = function () {
 };
 
 // Internal function called to "pump" moves into the queue
-// This function is called periodically until a stop is requested,
-// or the users intent to continue moving evaporates.
+// This function is called periodically until a == stop is requested ==,
+// or the users intent to continue moving evaporates ////##??.
 // The idea behind this function is that it is called at an interval that outpaces the
-// reason - The reason this functon is being called (used for debug purposes)
+// reason - The reason this functon is being called (used for -debug- purposes)
 // eslint-disable-next-line no-unused-vars
 ManualDriver.prototype._renewMoves = function (reason) {
     if (this.mode === "normal") {
         if (this.moving && this.keep_moving) {
-            this.keep_moving = false;
+            this.keep_moving = true;
+            if (global.CLIENT_DISCONNECTED) {
+                ////## added to prevent runaway; TODO: sovled this without global!
+                this.keep_moving = false;
+            }
             var segment =
                 this.currentDirection * (this.renewDistance / RENEW_SEGMENTS);
             var second_segment =
