@@ -31,8 +31,8 @@ IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 '--- 'Subroutines ---
 clear_z: 
     PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z         ' Search for prox switch
-	VA,,,0,,,,,,0,,,                                      ' Set 0 location
-    JZ, %(3) - &backOff_dist
+    &Z_AT = %(3)                                          ' Get where we're at to backoff from
+	JZ, &Z_AT - (4 * &backOff_dist)
     RETURN
 
 square_y_gantry:
@@ -41,7 +41,6 @@ square_y_gantry:
     VR, &squaringJerk
     MY, &squaringMove				  ' Move Y axis .75 inches past prox switch, which will force it into end stop  
     VA,,0,,,,,,0,,,,                  ' Zero Y again so we know where we are at
-    PAUSE .5
     VR,150
     MY, (&squaringMove * -5)
     VA,,18,,,,,,0,,,,
@@ -53,7 +52,6 @@ square_x_gantry:
     VR, &squaringJerk
     MX, &squaringMove			   	  ' Move Y axis .75 inches past prox switch, which will force it into end stop  
     VA,0,,,,,,0,,,,,                  ' Zero Y again so we know where we are at
-    PAUSE .5
     VR,150
     MX, (&squaringMove * -5)
     VA,36,,,,,,0,,,,,

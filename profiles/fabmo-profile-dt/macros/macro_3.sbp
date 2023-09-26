@@ -66,7 +66,7 @@ home_y:
 	RETURN
 
 offset_z_cutter:
-    PAUSE "Click RESUME to set Z offset to last ZZero cutter measurement; QUIT leaves Z set at Top"
+    PAUSE "Click RESUME to set Z offset to last ZZero cutter measurement; QUIT leaves Z set to zero at Top"
     VA,,,($sb_current_cutter_Zoffset * &Zoff_mult),,,,,,0,,     ' Set 0 based on previous cutter ZZero
     RETURN
 
