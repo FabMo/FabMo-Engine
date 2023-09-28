@@ -1339,10 +1339,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     top: 10px;
     right: 10px;
     border-radius: 50%;
-    height: 30px;
-    width: 30px;
+    height: 35px;
+    width: 35px;
     font-size: 30px;
-    color: #eee;
+	padding: 0.2rem;
+    color: #313366;
+	background-color: #ffda29;
     line-height: 20px;
     text-align: center;
     cursor: pointer;
@@ -1955,8 +1957,8 @@ input[type='range']:focus {
 #title_goto {
     font-size: 1rem;
     position: absolute;
-    top: 3rem;
-    margin-top: -1.3rem;
+    top: 1rem;
+    margin-top: -2rem;
     margin-left: 2rem;
     margin-bottom: 0.5rem;
 }
@@ -1983,6 +1985,7 @@ input[type='range']:focus {
 .read-out-container label {
 	display: inline-block;
 	font-size: 1.65rem;
+	padding-inline: 0.5rem;
     background-color: #ffda29;
     border: none;
 	color: #313366;
