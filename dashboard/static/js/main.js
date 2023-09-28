@@ -102,10 +102,12 @@ var setUpManual = function () {
     // Customize for video
     let current_App = localStorage.getItem("currentapp");
     if (current_App === "video" || current_App === "fabmo-sb4") {
-        $("#keypad-modal").css("opacity", "0.35");
+        $("#keypad-modal").css("opacity", "0.55");
+        $(".manual-drive-modal").css("background-color", "rgba(0,0,0,0)");
         $(".modalDim").css("background-color", "rgba(0,0,0,0)");
     } else {
         $("#keypad-modal").css("opacity", "1.00");
+        $(".manual-drive-modal").css("background-color", "#ffda29");
         $(".modalDim").css("background-color", "rgba(0,0,0,0.45)");
     }
 };
