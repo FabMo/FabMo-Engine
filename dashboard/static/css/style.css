@@ -1946,7 +1946,6 @@ input[type='range']:focus {
 
 .go-to-container span {
 	position: absolute;
-    text-align: center;
     width: 90%;
     top: 50%;
     left: 50%;
@@ -1956,11 +1955,12 @@ input[type='range']:focus {
 
 #title_goto {
     font-size: 1rem;
-    position: absolute;
+    /* position: absolute; */
     top: 1rem;
+	left: 5%;
     margin-top: -2rem;
-    margin-left: 2rem;
-    margin-bottom: 0.5rem;
+    /* margin-bottom: 0.5rem; */
+	margin-bottom: 1.5rem;
 }
 
 
@@ -2032,7 +2032,6 @@ input[type='range']:focus {
     background-color: #877b56;
     border-radius: 0 4px 4px 0;
     box-shadow: 0px 2px 0px #84743d, 0px 2px 4px rgba(0,0,0,.2);
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
     font-family: 'source_sans_proextralight';
 	transition: all .1s ease;
 	vertical-align:top;
@@ -2044,6 +2043,36 @@ input[type='range']:focus {
 	color: #eee;
 }
 
+.keypad-actions {
+	display: table-row;
+	font-size: 0;
+	text-align: center;
+	height: 50px;
+}
+
+.action-button{
+	cursor: pointer;
+    color: #eee;
+    display: inline-block;
+    font-size: 23px;
+	margin-top: 1.5rem;
+    margin-left: 0.3rem;
+	margin-right: 0.3rem;
+	width: 50px;
+    padding: 3px 5px 3px;
+    background-color: #035b1c;
+    border-radius: 10px 10px 10px 10px;
+    box-shadow: 0px 2px 0px #84743d, 0px 2px 4px rgba(0,0,0,.2);
+    font-family: 'Droid_Sans_Mono';
+	transition: all .1s ease;
+	vertical-align: middle;
+}
+
+.action-button:active {
+	margin-top: 1px;
+	box-shadow: 0px 1px 0px #ce6402, 0px 1px 1px rgba(0,0,0,.9);
+	color: #eee;
+}
 
 
 
@@ -2168,8 +2197,8 @@ input[type='range']:focus {
 	}
 
     #title_goto {
-        margin-top: 0rem;
-        margin-left: 25%;
+		left: 15%;
+		margin-top: 0rem;
         margin-bottom: -0.5rem;    
     }
 
