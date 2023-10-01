@@ -1955,12 +1955,11 @@ input[type='range']:focus {
 
 #title_goto {
     font-size: 1rem;
-    /* position: absolute; */
     top: 1rem;
 	left: 5%;
+	padding-bottom: 1rem;
     margin-top: -2rem;
-    /* margin-bottom: 0.5rem; */
-	margin-bottom: 1.5rem;
+	margin-bottom: 1.2rem;
 }
 
 
@@ -2055,11 +2054,11 @@ input[type='range']:focus {
     color: #eee;
     display: inline-block;
     font-size: 23px;
-	margin-top: 1.5rem;
+	margin-top: .75rem;
+	margin-bottom: 1.5rem;
     margin-left: 0.3rem;
 	margin-right: 0.3rem;
 	width: 50px;
-    padding: 3px 5px 3px;
     background-color: #035b1c;
     border-radius: 10px 10px 10px 10px;
     box-shadow: 0px 2px 0px #84743d, 0px 2px 4px rgba(0,0,0,.2);
