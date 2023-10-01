@@ -41,6 +41,7 @@ var isAuth = false;
 var lastInfoSeen = null;
 var consent = "";
 var disconnected = false;
+var calledFromModal = ""; // variable for passing action from Keypad modal to engine
 var last_state_seen = null;
 var in_goto_flag = false;
 
@@ -58,22 +59,8 @@ engine.getCurrentUser(function (err, user) {
     }
 });
 
-// engine.getUpdaterConfig(function(err, data){
-//    consent =  data.consent_for_beacon;
-
-//    if (consent === "none") {
-//         showConsent();
-//         $(document).keyup(function(e) {
-//             if (e.keyCode == 27) {
-//                 hideConsent();
-//             }
-//         });
-
-//    }
-//    return consent;
-// });
-
 var setUpManual = function () {
+    calledFromModal = "";
     engine.getConfig(function (err, config) {
         if (err) {
             console.log(err);
@@ -237,10 +224,43 @@ engine.getVersion(function (err, version) {
                     $("#position input").attr("disabled", true);
                     // authenticate.setIsRunning(true);
                 } else {
-                    $("#position input").attr("disabled", false);
-                    // authenticate.setIsRunning(false);
+                    // NOW IN IDLE
+                    // Send a requested ACTION from KEYPAD modal when we get back to "idle"
+                    // Might be able to add a return to Keypad if that becomes a desired feature
+                    engine.getStatus();
+                    if (
+                        status.currentCmd === "exit" &&
+                        calledFromModal &&
+                        status.stat === 4
+                    ) {
+                        // Institute a 0.5 second delay to allow G2 to get back to idle
+                        setTimeout(function () {
+                            // Sort out the tpe of action requested
+                            console.log(
+                                "Action called From Modal: " + calledFromModal
+                            );
+                            var match = calledFromModal.match(
+                                /(\d{1,2})$|([a-zA-Z]{2})$/
+                            );
+                            if (match) {
+                                if (match[1]) {
+                                    calledFromModal = match[1];
+                                    dashboard.engine.runMacro(calledFromModal);
+                                } else {
+                                    calledFromModal = match[2].toUpperCase();
+                                    engine.sbp(calledFromModal);
+                                    // Had trouble gettgin this to run reliably and added timeout
+                                    //   Tried with dashboard.engine., and engine. calls
+                                    //   Perhaps runCode might have been better?
+                                }
+                            }
+                            calledFromModal = "";
+                        }, 500);
+                    } else {
+                        $("#position input").attr("disabled", false);
+                        // authenticate.setIsRunning(false);
+                    }
                 }
-
                 if (status["info"] && status["info"]["id"] != lastInfoSeen) {
                     lastInfoSeen = status["info"]["id"];
                     if (status.info["message"]) {
@@ -607,9 +627,32 @@ function setupKeypad() {
     return keypad;
 }
 
+$(".action-button").on("click", function () {
+    $(".manual-drive-message").html("");
+    $(".manual-drive-message").hide();
+    // get the action from the button
+    var action = $(this).attr("id");
+    switch (action) {
+        case "action-1":
+            calledFromModal = "macro2";
+            break;
+        case "action-2":
+            calledFromModal = "macro3";
+            break;
+        case "action-3":
+            calledFromModal = "JH";
+            break;
+        case "action-4":
+            calledFromModal = "";
+            break;
+    }
+    dashboard.engine.manualExit();
+});
+
 $(".manual-drive-exit").on("click", function () {
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
+    calledFromModal = "";
     dashboard.engine.manualExit();
 });
 
@@ -652,6 +695,7 @@ function handleClickOutside(event) {
         modalKeyPad.style.display === "block"
     ) {
         if (last_state_seen === "manual") {
+            calledFromModal = "";
             dashboard.engine.manualExit();
         }
     }
@@ -676,10 +720,12 @@ $(document).on("keydown", function (e) {
     // escape key press to quit the engine
     if (e.key === "Escape") {
         console.warn("ESC key pressed - quitting manual mode.");
+        calledFromModal = "";
         dashboard.engine.manualExit(); // not checking for modal active as useful to a button to send a "kill" to G2 for general clear
         // alt + k enters manual (only if not in iframe)
     } else if (e.key === "k" && e.altKey) {
         // changed to alt but still not very useful only working outside iframe
+        calledFromModal = "";
         dashboard.engine.manualEnter();
         // toggle "Fixed" moves
     } else if (e.key === "f") {
