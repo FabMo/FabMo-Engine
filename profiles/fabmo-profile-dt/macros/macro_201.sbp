@@ -97,7 +97,7 @@ $sb_current_cutter_Zoffset_Units = "IN" '- (m2,m3,m9,m78) ... IN or MM; can be s
 
 
 ' MTC (Manual Tool Change) Behaviors
-$sb_MTCmode              = "IGNORE" '- (m9) IGNORE; QUIT; MTC ... defaulting to IGNORE for moment
+$sb_MTCmode              = "QUIT"   '- (m9) IGNORE; QUIT; MTC ... defaulting to IGNORE for moment
 $sb_MTC_XY_mode          = "FIXED"  '- (m9) FIXED; STAY where to do tool change
 $sb_MTC_Z_mode           = "FIXED"  '- (m9) MAX; FIXED method pull-up
 $sb_MTC_Zero_mode        = "MACRO"  '- (m9) MACRO; or, DRO keypad manual method to zero Z
