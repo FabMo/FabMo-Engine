@@ -88,7 +88,12 @@ var setUpManual = function () {
     });
     // Customize for video
     let current_App = localStorage.getItem("currentapp");
-    if (current_App === "video" || current_App === "fabmo-sb4") {
+    let app_has_video = localStorage.getItem("fabmo_sb4_has_video");
+    if (
+        current_App === "video" ||
+        (current_App === "fabmo-sb4" && app_has_video === "true")
+    ) {
+        // just kludged for moment
         $("#keypad-modal").css("opacity", "0.55");
         $(".manual-drive-modal").css("background-color", "rgba(0,0,0,0)");
         $(".modalDim").css("background-color", "rgba(0,0,0,0)");
