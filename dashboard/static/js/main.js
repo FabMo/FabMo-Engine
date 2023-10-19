@@ -44,6 +44,8 @@ var disconnected = false;
 var calledFromModal = ""; // variable for passing action from Keypad modal to engine
 var last_state_seen = null;
 var in_goto_flag = false;
+var fixedTimeStart = 0; // variable for measuring response latency in keypad fixed moves
+var fixedTimeEnd = 0;
 
 // move timer cutoff to var so it can be set in settings later
 var TIMER_DISPLAY_CUTOFF = 5;
@@ -143,6 +145,7 @@ engine.getVersion(function (err, version) {
             });
 
             dashboard.engine.on("status", function (status) {
+                fixedTimeEnd = Date.now();
                 console.log(status);
                 if (status.state == "dead") {
                     dashboard.showModal({
@@ -152,7 +155,10 @@ engine.getVersion(function (err, version) {
                     });
                     return;
                 }
-
+                if (status.currentCmd === "fixed") {
+                    // report on keypad response latency
+                    console.log(fixedTimeEnd - fixedTimeStart);
+                }
                 if (status.state === "manual") {
                     if (!status["hideKeypad"]) {
                         $(".modalDim").show();
@@ -612,6 +618,7 @@ function setupKeypad() {
         var speed = getManualMoveSpeed(nudge);
         var increment = getManualNudgeIncrement(nudge);
         // var jerk = getManualMoveJerk(nudge);
+        fixedTimeStart = Date.now(); // for measuring keypad response latency
         if (nudge.second_axis) {
             dashboard.engine.manualMoveFixed(
                 nudge.axis,

@@ -10,8 +10,7 @@
     "use strict";
 
     var NUDGE_TIMEOUT = 200;
-    var MOVE_THRESH = 10; // for mouse to disrupt ?
-    ////## var Keyboard_enabled = false;   ////## not used ???
+    var MOVE_THRESH = 50; //10; // for mouse to disrupt ?
     var KEY_RIGHT = 39;
     var KEY_LEFT = 37;
     var KEY_UP = 38;
@@ -37,16 +36,14 @@
 
     /* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
      length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
-     will trigger longer moves. Stop triggers a g2 feedhold, from 2023 */
+     will trigger longer moves assuming "fixed" button off. Stop triggers a g2 feedhold, from 2023 */
+
     /* Further: th 3/3/23 Per the note above, keyboard.js seems intended to micmick keypad.js in how the visuals on the keypad work.
     But, setEnabled did not appear to be setting any visuals for keyboard arrow keys when they were pressed in 
     modal-keypad (classes are mislabled but action never gets to the call in anycase). I could not figure how "elem", the key
     to the designed functionality, was ever supposed to be handled for the keyboard case (vs the keypad case). I also went back
     a bit in time and did not find evidence that this system ever worked to set a visual indicators that an axis button was
-    being pushed from the device keyboard arrows. There may be other "intended" features that also fail here. I have created a
-    system for handling the display for now. Don't know if it's as efficient as it could be. Note that both keyboard and
-    keypad work through main.js motion calls.
-    */
+    being pushed from the device keyboard arrows. I have kludged the handling of key display for now. */
 
     Keyboard.prototype.init = function () {
         if (this.elem) {
@@ -115,10 +112,10 @@
         if (!this.enabled || !this.going) {
             this.emit("stop", null);
         } else if ($(".fixed-switch input").is(":checked")) {
-            console.log("fixed-DOWN");
             this.nudgeTimer = 1;
             this.going = true;
             if (this.enabled) {
+                $(".drive-button").removeClass("drive-button-active");
                 this.emit("nudge", this.move);
             }
         } else {
@@ -140,10 +137,13 @@
         this.move = { axis: axis, dir: direction };
         let activeArrowStr =
             "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
-        $(activeArrowStr).addClass("drive-button-active");
+        if ($(".fixed-switch input").is(":checked")) {
+            $(activeArrowStr).addClass("drive-button-active-transient");
+        } else {
+            $(activeArrowStr).addClass("drive-button-active");
+        }
         this.going = true;
-        // this.refresh(); ////## previous method for maintianig motion
-        this.emit("go", this.move);
+        this.refresh();
     };
 
     Keyboard.prototype.stop = function () {
@@ -154,6 +154,7 @@
         }
         this.emit("stop", null);
         $(".drive-button").removeClass("drive-button-active");
+        $(".drive-button").removeClass("drive-button-active-transient"); // this does not quite parallel keypad action
     };
 
     Keyboard.prototype.onClick = function (evt) {
@@ -228,7 +229,6 @@
             if (!this.enabled) {
                 return;
             }
-
             switch (evt.keyCode) {
                 case KEY_UP:
                     this.nudge("y", 1);
@@ -280,10 +280,9 @@
                         $(activeArrowStr).removeClass(
                             "drive-button-active-transient"
                         );
-                        $(activeArrowStr).addClass("drive-button-inactive");
                     }
                 }.bind(this),
-                50
+                200
             );
         }
     };
