@@ -1,5 +1,6 @@
 '!FABMO!name: STANDARD FABMO MACRO VARIABLES
 '!FABMO!description: Set Values for Standard Variables used in many Macros
+'!FABMO!enabled:true
 '   2022/03/10 - Refactored (th)
 '   Standard Macro Variables are defined and read from Macro #201 (variables are stored as persistent)
 '
@@ -57,6 +58,7 @@ $sb_proxCk_X = $sb_proxNum_X + 50
 $sb_proxCk_Y = $sb_proxNum_Y + 50
 $sb_proxCk_Z = $sb_proxNum_Z + 50
 
+$sb_homePullBack         = 0.5      '- for C3 short pullback after hitting prox (for case of longer offsets)
 $sb_homeOff_X            = 0.5      '- (m2,m3) back off a prox to Home location 
 $sb_homeOff_Y            = 0.5      '- (m2,m3) back off a prox to Home location
 $sb_homeOff_Z            = 0.15     '- (m2,m3) back off a prox to Home location
@@ -64,7 +66,7 @@ $sb_homeOff_Z            = 0.15     '- (m2,m3) back off a prox to Home location
 '$sb_homeOff_B
 '$sb_homeOff_C
 
-$sb_searchSpeed_XY       = 2.5      '- (m2,m3,?)
+$sb_searchSpeed_XY       = 3.5      '- (m2,m3,?)
 $sb_searchSpeed_Z        = 1.5      '- (m2,m3,?)
 $sb_searchSpeed_Zzero    = 0.5      '- (m2) don't want any extra steps into plate
 '$sb_searchSpeed_A
