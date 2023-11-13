@@ -1,5 +1,6 @@
 '!FABMO!name: Home Tool
 '!FABMO!description: Automatically Set Axis Zero for XYZ and position tool
+'!FABMO!enabled:true
 '   Standard Macro Variables are read from Macro #201, only needs to happen once 
 '   2021/09/25 - Refactored (th)
 '   Note that tracking of current_cutter_Zoffset allows automatic zeroing all three axis including Z, even if re-powered
@@ -44,11 +45,12 @@ home_z:
 home_x:
     PX, (-1 * &searchDist_X), &searchSpeed_XY, &proxNum_X       ' PX "probes" for a switch or contact in the Z axis 
     ZX															' Reset working zero
-    JX, &homeOff_X												' Pull back from prox
+    JX, &homePullBack											' Pull back from prox
     &target_ck = (-1 * (&homeOff_X + &ooch))					' New target for detecting error just past prox
     PX, &target_ck, &slowSearchSpeed_XY, &proxNum_X				' Slowly probe for prox in final accurate check
     IF %(1) == &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
     ZX
+    &change_Offset_X = %(7) + &homeOff_X 						' How different than last ?
     JX, &homeOff_X
 	VA,0,,,,,,0,,,,,											' Set 0 location and Table Base Zero                                   
 	RETURN
@@ -56,17 +58,18 @@ home_x:
 home_y:
     PY, (-1 * &searchDist_Y), &searchSpeed_XY, &proxNum_Y        
     ZY
-    JY, &homeOff_Y
+    JY, &homePullBack
     &target_ck = (-1 * (&homeOff_Y + &ooch))               
     PY, &target_ck, &slowSearchSpeed_XY, &proxNum_Y 
     IF %(2) == &target_ck THEN GOTO fail_missed_target
     ZY
+    &change_Offset_Y = %(8) + &homeOff_Y
     JY, &homeOff_Y
 	VA,,0,,,,,,0,,,,                                     
 	RETURN
 
 offset_z_cutter:
-    PAUSE "Click RESUME to set Z offset to last ZZero cutter measurement; QUIT leaves Z set to zero at Top"
+    PAUSE "Click RESUME to set Z offset to last ZZero cutter measurement; QUIT leaves Z zeroed at Top; {X&Y change = " + &change_Offset_X + ", " + &change_Offset_Y +"}"
     VA,,,($sb_current_cutter_Zoffset * &Zoff_mult),,,,,,0,,     ' Set 0 based on previous cutter ZZero
     RETURN
 
@@ -104,7 +107,7 @@ offset_z_cutter:
       END
 
   no_variables:
-        C201
+        CN,201
         RETURN
 
 '--- Initialize Variables and Adjust Standard Macro Variables for Current Tool and Conditions as Needed
@@ -123,7 +126,7 @@ initialize_variables:
 	  tool_IN:
 	    $sb_current_cutter_Zoffset := .25                     ' Initialize variable in IN for case tool cutter not zeroed
 		$sb_current_cutter_Zoffset_Units := 0
-		IF $sb_current_cutter_Zoffset_Units == 0 THEN GOTO ok_IN
+		IF $sb_current_cutter_Zoffset_Units == "IN" THEN GOTO ok_IN
 		  &Zoff_mult = 0.0393701
 		ok_IN:
 	    IF $sb_varTableUNITS == "IN" THEN GOTO continue_with_variables
@@ -132,7 +135,7 @@ initialize_variables:
 	  tool_MM:
 	    $sb_current_cutter_Zoffset := 6.35                    ' Initialize variable in MM for case tool cutter not zeroed
 		$sb_current_cutter_Zoffset_Units := 1
-		IF $sb_current_cutter_Zoffset_Units == 1 THEN GOTO ok_MM
+		IF $sb_current_cutter_Zoffset_Units == "MM" THEN GOTO ok_MM
 		  &Zoff_mult = 25.4
 		ok_MM:
 	    IF $sb_varTableUNITS == "MM" THEN GOTO continue_with_variables
@@ -150,6 +153,7 @@ initialize_variables:
 		&searchDist_Y = $sb_searchDist_Y * &dist_mult
 		&searchSpeed_XY = $sb_searchSpeed_XY * &dist_mult
 		&slowSearchSpeed_XY = $sb_slowSearchSpeed_XY * &dist_mult
+		&homePullBack = $sb_homePullBack * &dist_mult
 		&homeOff_Z = $sb_homeOff_Z * &dist_mult
 		&homeOff_X = $sb_homeOff_X * &dist_mult
 		&homeOff_Y = $sb_homeOff_Y * &dist_mult
