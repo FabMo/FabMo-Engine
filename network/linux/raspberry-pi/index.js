@@ -20,6 +20,8 @@ var ethernetInterface = "eth0";
 
 var last_name = "";
 
+var CUR_UAP0_SSID = "";
+
 var DEFAULT_NETMASK = "255.255.255.0";
 var DEFAULT_BROADCAST = "192.168.1.255";
 // This is how long the system will wait for DHCP before going into "magic mode" (ms)
@@ -42,13 +44,18 @@ var RaspberryPiNetworkManager = function () {
 };
 util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
-RaspberryPiNetworkManager.prototype.set_uuid = function (callback) {
-    log.info("SETTING UUID");
+RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
+    log.info("SETTING FabMo Serial Number from R-Pi for default SSID");
+    // We are putting the R-Pi serial number into the FabMo name
+    // ... this will be used as the default name for the FabMo
+    // ... and will be used (with IP) as the default SSID for the FabMo until set by the user.
+    // ... Once defined, it will subsequently be read from the config file.
     exec(
         "cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2",
         function (err, result) {
             if (err) {
-                var name = { name: "fabmo" };
+                var name = { name: "fabmo-?" };
+                // this is an indication of a bad name from config file
                 config.engine.update(name, function () {
                     callback(name);
                 });
@@ -58,7 +65,7 @@ RaspberryPiNetworkManager.prototype.set_uuid = function (callback) {
                 log.debug("At RPI naming from SerialNum - ");
                 result = result.split("0").join("").split("\n").join("").trim();
                 log.debug("modifiedSerial- " + result);
-                name = { name: "fabmo-" + result };
+                name = { name: "FabMo-" + result };
                 config.engine.update(name, function () {
                     callback(name);
                 });
@@ -139,30 +146,67 @@ RaspberryPiNetworkManager.prototype.returnWifiNetworks = function () {
     );
 };
 
+// Check SSID of the current uap0 interface; then call final name-check and joinAP if needed
+RaspberryPiNetworkManager.prototype._checkSSID = function (callback) {
+    exec("iw uap0 info | grep ssid", (error, stdout, stderr) => {
+        if (error) {
+            log.error(`Execution error: ${error}`);
+            CUR_UAP0_SSID = "";
+            //                callback(null)
+            //                return;
+        } else if (stderr) {
+            log.error(`Error: ${stderr}`);
+            CUR_UAP0_SSID = "";
+            //                callback(null)
+            //                return;
+        } else {
+            log.debug(`Current SSID of uap0: ${stdout}`);
+            // Check if the result is what we expect before replacing
+            if (stdout.includes("ssid")) {
+                // clean up ssid value by removing "ssid" and blanks
+                CUR_UAP0_SSID = stdout.replace(/ssid\s*/i, "").trim();
+                //                    let CUR_UAP0_SSID = stdout.replace(/ssid\s*/i, "").trim();
+                log.debug("NEXT LINE IS FIRST READ OF CUR_UAP0_SSID");
+                log.debug(CUR_UAP0_SSID);
+            } else {
+                log.debug("Unexpected result:", stdout);
+            }
+        }
+        callback(
+            this._joinAP(function (err) {
+                if (err) {
+                    log.warn("Could not bring back up AP");
+                } else {
+                    log.info("AP back up after responding to relevant change");
+                }
+            })
+        );
+    });
+};
+
 RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     var interfaces = os.networkInterfaces();
     var wlan0Int = interfaces.wlan0;
     var apInt = interfaces.uap0;
     var wiredInt = "eth0";
-    // All of the cases below should force us to update the AP SSID to have
-    // the current IP address
+    log.debug("##############-------- >>>>>> CALL to checkWifiHealth");
+
+    log.debug("##-------------------- >> Initial Screen");
+    // Cases below should force us to consider updating the AP SSID
     if (
-        !this.network_history ||
-        // ^^ we had never done this before
-        (!this.network_history[wiredInt] &&
+        !this.network_history || // first time through
+        (!this.network_history[wiredInt] && // no history
             interfaces[wiredInt]?.[0]?.address) ||
-        //^^  eth0 just showed up            ^^^^^^
-        (this.network_history[wiredInt] && !interfaces[wiredInt]) ||
-        //^^ looks like eth0 just disappeared ^^^^^^^
+        (this.network_history[wiredInt] && !interfaces[wiredInt]) || //
         (this.network_history[wiredInt] &&
-            interfaces[wiredInt] &&
-            // we have history and a current value, BUT...
-            this.network_history[wiredInt] != interfaces[wiredInt][0].address)
+            interfaces[wiredInt] && // we have history and a current value, BUT...
+            this.network_history[wiredInt] != interfaces[wiredInt][0].address) // ... they are different
     ) {
-        //  eth0 address changed     ^^
         var forceSSIDupdate = 1;
+        log.debug("##-------------got a FORCED UPDATE");
     }
 
+    log.debug("##-------------------- >> Update History for Re-Screen");
     this.network_history = {};
     Object.keys(interfaces).forEach(
         function (interface) {
@@ -175,15 +219,6 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
         }.bind(this)
     );
 
-    /* Commentary on how we might choose to reorganize all this
-     We seem to be combining the funtion of resetting the AP SSID name with
-     the function of joining a wifi network - all in _joinAP().
-     I wonder if it wouldn't make sense to do those things separately.
-     One function to fix the SSID and another to join an external SSID.
-     If we did that the following cases might actually differ in more than
-     just the log messages they emit.  AND we might not need to rejoin
-     the external network so often.  Probably needs more study - rmackie
-  */
     // The only differences between the following conditions are in the
     // text messages we log. Here are variables to set that up.
     var wirelessWarn;
@@ -198,10 +233,10 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
         apRecoverySuccess = "AP back up";
         apRecoverExecute = true;
     } else {
-        // uh oh - no wireless connection
+        // No wireless connection
         if (apInt) {
-            // if the AP is up we only join if the ethernet ip address changed.
-            // otherwise we just leave things along. rmackie - makes sense to me
+            // If the AP is up we only join if the ethernet ip address changed (checked later).
+            // ... otherwise we just leave things alone.
             if (forceSSIDupdate) {
                 wirelessWarn = "Currently in AP mode, re-writing SSID";
                 apRecoveryError = "Could not re-write SSID";
@@ -220,14 +255,24 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
         }
     }
     if (apRecoverExecute) {
+        log.debug("##----------------####=>>>>>> CALL DEEPER CHECK!");
         // eslint-disable-next-line no-unused-vars
-        this._joinAP(function (err, res) {
+        this._checkSSID(function (err, res) {
             if (err) {
-                log.warn("Could not bring back up AP");
+                log.debug(err);
             } else {
-                log.info("AP back up");
+                log.debug("##---- AP RECOVER CONSIDERATION COMPLETED");
+                log.debug();
             }
         });
+        // eslint-disable-next-line no-unused-vars
+        // this._joinAP(function (err, res) {
+        //     if (err) {
+        //         log.warn("Could not bring back up AP");
+        //     } else {
+        //         log.info("AP back up");
+        //     }
+        // });
     }
 };
 
@@ -243,7 +288,7 @@ RaspberryPiNetworkManager.prototype.checkEthernetHealth = function () {
 
 RaspberryPiNetworkManager.prototype.confirmIP = function (callback) {
     var wlan0Int;
-    var attempts = 60;
+    var attempts = 30; //60
     var counter = 0;
     var interval = setInterval(function () {
         var interfaces = os.networkInterfaces();
@@ -269,7 +314,10 @@ RaspberryPiNetworkManager.prototype.confirmIP = function (callback) {
 };
 
 // Actually do the work of joining AP mode AND updating AP name
-RaspberryPiNetworkManager.prototype._joinAP = function (callback) {
+RaspberryPiNetworkManager.prototype._joinAP = function (
+    callback,
+    CUR_UAP0_SSID
+) {
     var interfaces = os.networkInterfaces();
     var wlan0Int = interfaces.wlan0;
     var eth0Int = interfaces.eth0;
@@ -286,10 +334,19 @@ RaspberryPiNetworkManager.prototype._joinAP = function (callback) {
     } else if (wlan0Int) {
         ext = ext + wlan0Int[0].address;
     } else {
-        ext = "";
+        ext = ">AP:192.168.42.1";
     }
     full_name = name + ext;
-    if (full_name !== last_name) {
+    log.debug("CHECKING NAMES full_name: " + full_name);
+    log.debug("CHECKING NAMES last_name: " + last_name);
+    if (
+        full_name !== last_name ||
+        (CUR_UAP0_SSID &&
+            (!CUR_UAP0_SSID.includes(":") ||
+                CUR_UAP0_SSID === "FabMo-???>AP:192.168.42.1" ||
+                full_name != CUR_UAP0_SSID))
+    ) {
+        log.debug("///////////###-------- >>>>>> CALL REJOIN-AP");
         log.debug(
             'Changing SSID from "' + last_name + '" to "' + full_name + '"'
         );
@@ -322,10 +379,10 @@ RaspberryPiNetworkManager.prototype._joinAP = function (callback) {
                             },
                             () => {
                                 log.debug("hostAPD up");
-                                commands.dnsmasq({ interface: "uap0" }, () => {
-                                    console.log("should be up and running AP");
-                                    callback(err, result);
-                                });
+                                //   commands.dnsmasq({ interface: "uap0" }, () => {
+                                //       console.log("should be up and running AP");
+                                //       callback(err, result);
+                                //   });
                             }
                         );
                     });
@@ -509,19 +566,27 @@ RaspberryPiNetworkManager.prototype.applyWifiConfig = function () {
 
 // Initialize the network manager.  This kicks off the state machines that process commands from here on out
 RaspberryPiNetworkManager.prototype.init = function () {
-    commands.startWpaSupplicant((err, result) => {
-        if (err) {
-            log.error("RIGHT HERE!!! wpa errored with: " + err);
-        } else {
-            log.info("wpa started with: " + result);
-            setInterval(() => {
-                this.returnWifiNetworks();
-                this.checkWifiHealth();
-                // this.checkEthernetHealth();
-                // this.runEthernet();
-            }, 10000);
-        }
-    });
+    setInterval(() => {
+        this.returnWifiNetworks();
+        this.checkWifiHealth();
+        // this.checkEthernetHealth();
+        // this.runEthernet();
+    }, 10000);
+    // commands.startWpaSupplicant((err, result) => {
+    //     if (err) {
+    //         log.error("RIGHT HERE!!! wpa errored with: " + err);
+    //     } else {
+    //         log.info("wpa started with: " + result);
+    //         setInterval(() => {
+    //             this.returnWifiNetworks();
+    //             this.checkWifiHealth();
+    //             // this.checkEthernetHealth();
+    //             // this.runEthernet();
+    //         }, 10000);
+    //     }
+    // });
+
+    //// older code
     // TODO: should this be used?
     // setInterval(() => {
     //   this.returnWifiNetworks();
@@ -720,8 +785,7 @@ RaspberryPiNetworkManager.prototype.disableDHCP = function (
 RaspberryPiNetworkManager.prototype.startDHCPServer = function () /* interface,
     callback */
 {
-    // rmackie: invocation of udhcpd removed because this is now handled by the OS and the
-    // rotary switch
+    // rmackie: invocation of udhcpd removed because this is now handled by the OS and R-Pi UI
 };
 
 // Stop the internal DHCP server on the provided interface

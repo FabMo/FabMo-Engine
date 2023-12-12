@@ -13,7 +13,7 @@ var log = require("./log").logger("network");
 // If no such manager is defined or there's a problem creating it, an exception is thrown.
 exports.createNetworkManager = function (name, callback) {
     // The OS comes from node, and is something like 'linux' or 'darwin'
-    // The platform is defined in the updater configuration - it's something like 'edison' or 'westinghouse' or 'generic'
+    // The platform is now defined in the engine configuration - it's something like 'raspberry-pi'
     var OS = config.platform;
     var PLATFORM = config.engine.get("platform");
     log.info("OS is:" + OS);
@@ -28,7 +28,7 @@ exports.createNetworkManager = function (name, callback) {
         nm.platform = PLATFORM;
         if (!name && nm.platform === "raspberry-pi") {
             // eslint-disable-next-line no-unused-vars
-            nm.set_uuid(function (name) {
+            nm.set_serialnum(function (name) {
                 callback(null, nm);
             });
         } else {
