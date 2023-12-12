@@ -20,6 +20,7 @@ class commands {
         exec("ifconfig uap0 " + ip, callback);
     }
 
+    // use this plus systemctl start hostapd to start the AP
     static addApInterface(callback) {
         exec("iw phy phy0 interface add uap0 type __ap", callback);
     }
@@ -55,14 +56,14 @@ class commands {
     static hostapd(options, callback) {
         var commands = [];
 
-        // Known good options for the Raspberry PI 3.  If you are using the
-        // Raspberry PI Zero the driver value might need to be different.
+        // Known good options for the Raspberry PI 3.
+        // (obvious ssid so we can recognize this origin; ssid should come from the config.engine file)
         var defaultOptions = {
             driver: "nl80211",
             channel: 6,
             hw_mode: "g",
             interface: "uap0",
-            ssid: "fabmo",
+            ssid: "fa3mo",
         };
 
         var finalOptions = Object.assign(defaultOptions, options);
