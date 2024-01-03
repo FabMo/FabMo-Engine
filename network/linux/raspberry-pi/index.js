@@ -15,7 +15,7 @@ var udhcpc = require("wireless-tools/udhcpc");
 
 const commands = require("./commands.js");
 
-var wifiInterface = "wlan0";
+var wifiInterface = "wlan0"; // test assigning wlan1 to wifiInterface ???
 var ethernetInterface = "eth0";
 
 var last_name = "";
@@ -288,7 +288,7 @@ RaspberryPiNetworkManager.prototype.checkEthernetHealth = function () {
 
 RaspberryPiNetworkManager.prototype.confirmIP = function (callback) {
     var wlan0Int;
-    var attempts = 30; //60
+    var attempts = 20; //15; //30; //60    // time it takes to chek for IP
     var counter = 0;
     var interval = setInterval(function () {
         var interfaces = os.networkInterfaces();

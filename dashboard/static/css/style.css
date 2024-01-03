@@ -45,6 +45,15 @@ body {
 
 /* ********** Top Bar Settings ********** */
 
+.menu-name {
+	cursor: default;
+	background-color: #777;
+}
+.menu-name:hover {
+	cursor: default;
+	background-color: #777;
+}
+
 .tab-bar {
 	background: #313366;
 	/* background: red*/
@@ -439,6 +448,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 
 .svg-container {
 	height: 100%;
+	margin-left: 0.25em;
 }
 
 #connection-strength-indicator .on {
@@ -472,16 +482,24 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 .left-off-canvas-menu {
 	background-color: #444;
 	width: 182px;
-	width: 11.375rem;
+	width: 10.375rem;
     height: 2.5rem;
     line-height: 1.15rem;
 }
 
+/* deal with getting the little "expand" icon to show up */
 
+#icon-colapse {
+	padding-bottom: 0rem;
+}
 
+.expand-text {
+	visibility: inherit;
+	margin-left: 0.4rem;
+	margin-top: -0.75rem;
+}
 
 /* Change #left-menu & #right-menu config */
-
 
 @media only screen and (min-width: 40.063em) {
 	.left-off-canvas-menu	{ float: left; }
@@ -514,9 +532,10 @@ ul.off-canvas-list li:not(.tool) a:hover, ul.off-canvas-list li.no-link:hover {
 ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border-bottom : 0px solid #fff;
 	color : rgb(240,240,240);
-	padding: 11px;
-	padding: 0.6875rem;
-    line-height: 1.13rem;
+	padding: 13.5px; /*from 11px */
+	/* padding: 0.6875rem; */
+    /* line-height: 1.13rem; */
+	line-height: 1.15rem;
 }
 
 .offcanvas-overlap-left .exit-off-canvas :hover,
@@ -562,21 +581,18 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	display: none;
 }
 
-/*
-*** Widgets Styles
-*/
+/*   Widgets Styles   */
 
 .widget {
 	margin-bottom: 7px;
 	margin-bottom: 0.4375rem;
-	margin-top: 0.5rem;
 }
 
 .widget.colapsed span {	display: none; }
 .widget.colapsed label { display: none; }
 
 .widget.colapsed ul li a {
-	height : 2.5rem;   
+	height : 2.84rem;  /*2.5rem*/   
 	padding-left : 0px !important;
 }
 
@@ -732,7 +748,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .left-slide-menu li a {
 	display: block;
     text-align: center;
-    padding: 10px;
+    padding-bottom: 20px;
+	padding-top: 10px;
+	padding-left: 10px;
+	padding-right: 10px;
     text-decoration: none;
     background-repeat: no-repeat;
     background-size: cover;
