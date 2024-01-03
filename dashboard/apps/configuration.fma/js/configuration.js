@@ -277,32 +277,32 @@ $(document).ready(function() {
     update();
 
     ///tool tip logic
+    $('.tool-tip').click(function(){
+        var tip =$(this).parent().data('tip');
+        var eTop = $(this).offset().top;
+        var eLeft = $(this).offset().left;
+        
+        var realTop = eTop - 10;
+        $('.tip-output').show();
+        var eWidth = $('.tip-output').width();
+        var realLeft = eLeft - eWidth - 40;
+        $('.tip-text').text(tip);
+        $('.tip-output').css('top', realTop + 'px');
+        $('.tip-output').css('left', realLeft + 'px');
+    });
 
-$('.tool-tip').click(function(){
-     var tip =$(this).parent().data('tip');
-     var eTop = $(this).offset().top;
-     var eLeft = $(this).offset().left;
-     
-     var realTop = eTop - 10;
-     $('.tip-output').show();
-     var eWidth = $('.tip-output').width();
-     var realLeft = eLeft - eWidth - 40;
-     $('.tip-text').text(tip);
-     $('.tip-output').css('top', realTop + 'px');
-     $('.tip-output').css('left', realLeft + 'px');
-});
+    $('body').scroll(function(){
+        $('.tip-output').hide();
+    });
 
-$('body').scroll(function(){
-    $('.tip-output').hide();
-});
+    $('body').click(function(event){   
+          if($(event.target).attr('class') == "tool-tip"){
+              return
+          } else {
+              $('.tip-output').hide();
+          }
+    });
 
-$('body').click(function(event){   
-       if($(event.target).attr('class') == "tool-tip"){
-          return
-       } else {
-           $('.tip-output').hide();
-       }
-});
     // Update settings on change
     $('.driver-input').change( function() {
         var parts = this.id.split("-");

@@ -1,61 +1,80 @@
+<!doctype html>
 <html>
+
 <head>
+
     <meta charset="utf-8">
     <title>Network Manager</title>
-
-        <link rel="stylesheet" href="../../css/dashboard.css">
+      <link rel="stylesheet" href="../../css/dashboard.css">
+      <link rel="stylesheet" href="../../css/tips.css">
 	    <link rel="stylesheet" href="./css/style.css">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-
-
-    <div id="passwd-modal" class="reveal-modal medium" data-reveal>
-    <div id="modal-title"></div>
-      <div class="row">
-          <label for="wifi-password">Passphrase</label>
-          <input type="password" name="wifi-password" autocomplete="new-password" id="txt-password"/>
-      </div>
-      <div class="row">
-           <div class="right">
-               <button class="button radius success" id="btn-connect">Connect</button>
-           </div>
-       </div>
-       <a class="close-reveal-modal" id="close-password-modal">&#215;</a>
-    </div>
-
-    <div id="confirm-modal" class="reveal-modal medium" data-reveal>
-    <div id="confirm-modal-title"></div>
-    <div id="confirm-modal-description"></div>
-    <div class="row">
-         <div class="right">
-             <button id="confirm-modal-cancel" class="button radius alert">Cancel</button>
-             <button id="confirm-modal-ok" class="button radius success">Ok</button>
-         </div>
-     </div>
-    </div>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
 
 </head>
+
 <body>
 
-    <section class="top-bar-section">
-        <nav class="top-bar" data-topbar role="navigation">
-          <ul class="title-area">
-            <li class="name">
-              <h1><a id="app-header" >Wifi Networks</a></h1>
-            </li>
-            <li><a id="ap-mode-button" href="#">Enter AP Mode</a></li>
-            <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
-          </ul>
-          <section class="top-bar-section">
-          </section>
-        </nav>
-        </section>
+    <div id="passwd-modal" class="reveal-modal medium" data-reveal>
+      <form>
+        <div id="modal-title"></div>
+        
+          <div id="wifiLogin">
+            <div class="passphrase-container">
+                <input type="text" id="passphraseInput" autocomplete="off" placeholder="passphrase">
+                <span class="toggle-passphrase">
+                    <i id="toggleIcon" class="fa fa-eye"></i>
+                </span>
+            </div>
+          </div>
 
-        <h1>Wireless Networks</h1>
+        <div class="row">
+            <div class="right">
+                <button class="button radius success" id="btn-connect">Connect</button>
+            </div>
+        </div>
+    
+        <a class="close-reveal-modal" id="close-password-modal">&#215;</a>
+      </form>
+    </div>    
+
+    <div id="confirm-modal" class="reveal-modal medium" data-reveal>
+        <div id="confirm-modal-title"></div>
+        <div id="confirm-modal-description"></div>
+        <div class="row">
+            <div class="right">
+                <button id="confirm-modal-cancel" class="button radius alert">Cancel</button>
+                <button id="confirm-modal-ok" class="button radius success">Ok</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="top-bar" data-topbar role="navigation">
+        <ul class="title-area">
+            <li class="name">
+              <h1><a id="app-header" class="menu-name" >Wifi </a></h1>
+            </li>
+            <li class="toggle-topbar">
+              <a href="#" id="little_menu"><span>Menu </span>
+              <!-- <span class="exit-button" id="exit_small">X</span></a> -->
+            </li>
+        </ul>
+          <section class="top-bar-section">
+            <ul class="left">
+              <li><a id="ap-mode-button" class="submit-button" href="#">Toggle AP Mode</a></li>
+            </ul>  
+          </section>
+      </nav>
+
+        <h1>Wireless Networks Available<span class="tooltip">i<span class="tooltiptext">
+            Wifi networks available to your tool. 
+            Click on SSID name to set up a wifi interface.</span></span>
+        </h1>
+       
         <div class="table-outer">
             <table class="small-12 columns" style="width:100%" id="wifi_table">
             <thead>
                 <tr>
-                    <th>SSID</th>
+                    <th>SSID Name</th>
                     <th>Security</th>
                     <th style="text-align: center;">Strength</th>
                 </tr>
@@ -65,23 +84,31 @@
         </div>
 
         <div id="recent" class="hidden">
-        <h1>Recently Connected</h1>
-        <div class="table-outer">
+
+            <h1>Connected Interfaces<span class="tooltip">i<span class="tooltiptext">
+                Your tool is connected to each of these interfaces. Favored interface is reported:
+                ethernet > wifi > AP-mode. Click on an interface to remove it (coming).</span></span>
+            </h1>
+
+          <div class="table-outer">
             <table class="small-12 columns" style="width:100%" id="history_table">
             <thead>
                 <tr>
                     <th>Interface</th>
-                    <th>IP Address</th>
+                    <th>IP Address on Interface</th>
+                    <th>Network Name</th>
                 </tr>
             </thead>
             <tbody><tr></tr></tbody>
             </table>
-        </div>
+          </div>
         </div>
 
     </section>
 
   <!-- Javascript inclusions -->
+    <script src="../../static/js/libs/modernizr.js"></script>
     <script src="../../network_manager.js"></script>
+
 </body>
 </html>

@@ -31,6 +31,7 @@ module.exports = {
         "dashboard/static/js/libs/jquery.min.js",
         "dashboard/static/js/libs/lockr.min.js",
         "dashboard/static/js/libs/moment.js",
+        "dashboard/static/js/libs/modernizr.js",
         "dashboard/static/js/libs/pako.min.js",
         "dashboard/static/js/libs/require.js",
         "dashboard/static/js/libs/toastr.min.js",

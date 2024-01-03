@@ -68,6 +68,21 @@ button.small, .button.small {
   }
 }
 
+.tool-tip {
+  background-color: #313366;
+  float: right;
+  border-radius: 50%;
+  height: 20px;
+  width: 20px;
+  line-height: 130%;
+  color: #eee;
+  text-align: center;
+  font-size: 1rem;
+  font-family: serif;
+  -webkit-box-shadow: 1px 1px 1px 0px #aaaaaa;
+  -moz-box-shadow:    1px 1px 1px 0px #aaaaaa;
+  box-shadow:         1px 1px 1px 0px #aaaaaa;
+}
 
 .tip-output {
   position: fixed;
@@ -91,7 +106,6 @@ button.small, .button.small {
   right: -0.5em;
   width: 1em;
   height: 1em;
-
   background-color: #ffffff;
   -ms-transform: rotate(45deg); /* IE 9 */
     -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
@@ -237,22 +251,6 @@ table {
   border: 1px solid #444444;
   border-radius: 5px;
   box-shadow: .5px .5px .5px #aaaaaa;
-}
-
-.tool-tip {
-  background-color: #313366;
-  float: right;
-  border-radius: 50%;
-  height: 20px;
-  width: 20px;
-  line-height: 130%;
-  color: #eee;
-  text-align: center;
-  font-size: 1rem;
-  font-family: serif;
-  -webkit-box-shadow: 1px 1px 1px 0px #aaaaaa;
-  -moz-box-shadow:    1px 1px 1px 0px #aaaaaa;
-  box-shadow:         1px 1px 1px 0px #aaaaaa;
 }
 
 .flash-green{
@@ -504,5 +502,5 @@ input[type=number] {
 }
 
 select {
-   -moz-appearance:none;
+    -moz-appearance: none;
 }

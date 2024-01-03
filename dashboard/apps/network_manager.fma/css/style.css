@@ -34,10 +34,21 @@ h1 {
   font-style: italic;
 }
 
+/* NEXT 2, kludge for some media split */
+.menu-name {
+  background-color: #777;
+}
+.menu-name:hover {
+  background-color: #777;
+}
+
+.security {
+  cursor: default;
+}
+
 .noselect {
     -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
+    -webkit-user-select: none;    -khtml-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
@@ -65,4 +76,38 @@ h1 {
 
 .connected {
     background: url('../images/status_connected.png') no-repeat center center;
+}
+
+
+#wifiLogin {
+  /* Style your login box */
+  width: 300px;
+  border: none;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.passphrase-container {
+  position: relative;
+  width: 100%;
+}
+
+#passphraseInput {
+  width: calc(100% - 40px); /* space for the icon */
+  padding-right: 30px;
+  box-sizing: border-box;
+}
+
+.toggle-passphrase {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-passphrase i {
+  margin-right: 10px;
 }

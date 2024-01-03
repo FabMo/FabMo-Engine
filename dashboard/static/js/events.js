@@ -167,9 +167,9 @@ define(function(require) {
             $("#widget-links-general").removeClass("colapsed");
             $("#left-menu").removeClass("colapsed");
             $("#collapse_icon").attr('src', '/img/icon_colapse_r.png');
-
+            $('.expand-text').hide();
             if ($("body").width() < 640) {
-                $('.colapseLeft').show(); // show tinted screen to close menu
+            $('.colapseLeft').show(); // show tinted screen to close menu
             }
         }
 
@@ -177,9 +177,9 @@ define(function(require) {
         else {
             $("#widget-links-general").addClass("colapsed");
             $("#left-menu").addClass("colapsed");
-            $('.colapseLeft').hide();
+            $(".colapseLeft").hide();
             $("#collapse_icon").attr('src', '/img/icon_colapse.png');
-
+            $(".expand-text").show();
         }
         //Handle collapse of left
         $('.colapseLeft').on('click', function(evt) {

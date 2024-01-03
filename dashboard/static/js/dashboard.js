@@ -1231,6 +1231,7 @@ define(function (require) {
                     callback(err);
                 } else {
                     var name = result.name || "";
+                    name = "TOOL:  " + name;
                     $("#tool-name").text(name);
                     document.title = name || "FabMo Dashboard";
                     callback(null, result);
