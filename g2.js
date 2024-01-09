@@ -1134,7 +1134,7 @@ G2.prototype.setMachinePosition = function (position, callback) {
     var gcodes = new stream.Readable();
     let mult = this.status.unit === "mm" ? 1 : 1 / 25.4; // Convert saved position from mm to current for restore
 
-    // ** UPDATE INITIAL LOCATION offsets + values **
+    // ** UPDATE INITIAL LOCATION (offsets + values) **
     gcodes.push("G55 \n"); // Set coordinate system to G55 to match FabMo
     axes.forEach(function (axis) {
         // For each axis, if it is in the position object, add a G28.3 command to the stream
