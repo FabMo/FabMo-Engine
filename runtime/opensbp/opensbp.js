@@ -1656,8 +1656,11 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
         if (line) {
             switch (line.type) {
                 case "cond":
+                    if (line.stmt.type != "goto" && line.stmt.type != "gosub") {
+                        break;
+                    }
                     line = line.stmt;
-                // No break: fall through to next state(s)
+                // No break: fall through in case of this being a label call
                 case "goto":
                 case "gosub":
                     if (line.label in this.label_index) {

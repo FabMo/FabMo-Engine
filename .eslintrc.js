@@ -41,6 +41,7 @@ module.exports = {
         "dashboard/static/js/events.js",
         "dashboard/apps/",
         "routes/video.js",
+        "runtime/opensbp/sbp_parser.js",
         "log.js",
     ],
     overrides: [

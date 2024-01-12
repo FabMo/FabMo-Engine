@@ -1,3 +1,6 @@
+// This is the working PEG for generating the OpenSBP parser
+// Currently still using the peg.js 0.7.0 version TODO: update to peggyjs
+
 {
 
    function buildLeftAssocTree(l, r) {
@@ -58,7 +61,8 @@ pause
    }
 
 conditional
-   = "IF"i ___ cmp:comparison ___ "THEN"i ___ stmt:(jump) { return {"type":"cond", "cmp":cmp, "stmt":stmt};}
+   = "IF"i ___ cmp:comparison ___ "THEN"i ___ stmt:(jump / single / fail / pause / assignment / command) 
+     { return {"type":"cond", "cmp":cmp, "stmt":stmt}; }
 
 open
    = "OPEN"i ___ pth:quotedstring ___ "FOR"i ___ mode:("INPUT"i / "OUTPUT"i / "APPEND"i) ___ "AS"i ___ "#"num:[1-9] 
