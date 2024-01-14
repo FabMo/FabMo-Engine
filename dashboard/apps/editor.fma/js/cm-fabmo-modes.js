@@ -31,7 +31,9 @@ var LABEL_REGEX = /^[A-Z_][A-Z0-9_]*\:/i
 var WORD_REGEX = /^[A-Z_][A-Z0-9_]*/i
 var STRING_REGEX = /^"(?:[^\\]|\\.)*?"/
 var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i
-var SYS_VAR_REGEX = /^\%\([ \t]*[0-9]+[ \t]*\)/i
+
+var SYS_VAR_REGEX = /^\%\(([ \t]*((&|\$)[A-Z_][A-Z0-9_]*)|[0-9]+[ \t]*)\)/i;
+
 var USR_VAR_REGEX = /^\&[A-Z_][A-Z0-9_]*/i
 var PERSIST_VAR_REGEX = /^\$[A-Z_][A-Z0-9_]*/i
 
@@ -41,7 +43,7 @@ var OPERATOR_REGEX = /^[\+\-\*\/\^\!\(\)\=\>\<|\=\:]/i
 
 function matchExpression(stream) {
   if(stream.match(SYS_VAR_REGEX)) {
-    return "variable";
+    return "systemvar"; // Return a 'variable' token for matching system variables
   }
   if(stream.match(USR_VAR_REGEX)) {
     return "variable-2";
@@ -107,8 +109,8 @@ CodeMirror.defineMode("opensbp", function() {
 
           // LHS of an assignment
           if(stream.match(SYS_VAR_REGEX)) {
-            state.name = "assign";
-            return "variable";
+            state.name = "property";
+            return "systemvar";
           } 
 
           if(stream.match(USR_VAR_REGEX)) {
@@ -135,10 +137,11 @@ CodeMirror.defineMode("opensbp", function() {
           	state.name = "gcode";
           	return "property";
           }
-          // Command mnemonic
+
+          // Command two-letter
           if(stream.match(CMD_REGEX)) {
             state.name = "args";
-            return "keyword";
+            return "cmd";
           } 
 
           // Pause command
@@ -164,13 +167,39 @@ CodeMirror.defineMode("opensbp", function() {
             state.name = "single";
             return "keyword";
           }
+
+          // Hard case of a user or persistent variable inside a system variable parenthesis
+          if (stream.match(/^\%\(/)) {
+            stream.backUp(2); // Move back to before '%('
+            stream.match(/^\%/); // Tokenize '%'
+            stream.match(/\(/); // Tokenize '('
+            stream.name = "systemvar";
+            if (stream.match(USR_VAR_REGEX, false)) {
+              stream.match(USR_VAR_REGEX); // Consume and style user variable
+              stream.name = variable-2; // Return style for user variable
+              stream.match(/\)/); // Consume ')'
+              return "variable-2"; // Return style for user variable
+            } else if (stream.match(PERSIST_VAR_REGEX, false)) {
+              stream.match(PERSIST_VAR_REGEX); // Consume and style persistent variable
+              stream.match(/\)/); // Consume ')'
+              return "variable-3"; // Return style for persistent variable
+            } else if (stream.match(NUMBER_REGEX, false)) {
+              stream.match(NUMBER_REGEX); // Consume number
+              stream.match(/\)/); // Consume ')'
+              return "number"; // Return style for number
+            } else {
+              stream.skipTo(')'); // Skip to the end of the system variable
+              stream.next(); // Consume ')'
+              return "error"; // Return style for error
+            }
+          }
+
           //
-          stream.skipToEnd();
-        break;
+            stream.skipToEnd();
+          break;
 
         case "single":
-
-        break;
+          break;
 
         case "args":
           if(stream.eat(',')) {
@@ -178,8 +207,7 @@ CodeMirror.defineMode("opensbp", function() {
           }
           var match = matchArgument(stream);
           if(match) { return match; }
-
-        break;
+          break;
 
         case "assign":
           var match = matchExpression(stream);
@@ -187,14 +215,33 @@ CodeMirror.defineMode("opensbp", function() {
           stream.skipToEnd();
           return 'string';
 
-        break;
-
+          case "systemvar":
+            if (stream.peek() === ')') {
+              stream.next(); // Consume the closing parenthesis
+              state.name = "sol";
+              return "operator";
+            }
+          
+            // Now handle the contents within the system variable
+            if (stream.match(USR_VAR_REGEX)) {
+              return "variable-2"; // Tokenize user variables with their unique color
+            }
+          
+            if (stream.match(PERSIST_VAR_REGEX)) {
+              return "variable-3"; // Tokenize persistent variables with their unique color
+            }
+          
+            stream.next(); // Move the stream forward to avoid infinite loop
+            return "error";
+          
+                  
         case "test":
           var match = matchExpression(stream);
           if(match) { return match;}
           if(stream.match(/^THEN/i)) {
+            state.name = "then"; // Change to a new state to handle post-THEN syntax
             return "keyword";
-          }        
+          } 
           if(stream.match(/^GOTO|GOSUB/i)) {
             state.name = "goto"
             return "keyword";
@@ -202,14 +249,44 @@ CodeMirror.defineMode("opensbp", function() {
           if(stream.match(LABEL_REGEX)) {
             return "property";
           }
-        break;
+          break;
+
+        case "then":
+          if(stream.match(/^RETURN|END/i)) {
+            state.name = "single";
+            return "keyword";
+          }
+          if(stream.match(/^FAIL/i)) {
+            state.name = "fail";
+            return "keyword";
+          }
+          if(stream.match(/^PAUSE/i)) {
+            state.name = "pause";
+            return "keyword";
+          }
+          if(stream.match(SYS_VAR_REGEX) || stream.match(USR_VAR_REGEX) || stream.match(PERSIST_VAR_REGEX)) {
+            state.name = "assign";
+            return stream.match(SYS_VAR_REGEX) ? "variable" : stream.match(USR_VAR_REGEX) ? "variable-2" : "variable-3";
+          }
+          if(stream.match(CMD_REGEX)) {
+            state.name = "args";
+            return "cmd";
+          }
+          if(stream.match(/^GOTO|GOSUB/i)) {
+            state.name = "goto"
+            return "keyword";
+          }        
+          if(stream.match(LABEL_REGEX)) {
+            return "property";
+          }
+          break;
 
         case "goto":
           if(stream.match(WORD_REGEX)) {
             state.name = "sol"
             return "property"            
           }                
-        break;
+          break;
 
         case "on":
           if(stream.eat(',')) {
@@ -257,8 +334,15 @@ CodeMirror.defineMode("opensbp", function() {
         case "gcode":
         	stream.skipToEnd();
         	return null;
-        break;
       }
+
+
+      // Detect the start of a system variable
+      if(stream.match(/^\%\(/)) {
+        state.name = "systemvar";
+        return "operator"; // Tokenize the opening part of the system variable
+      }
+
 
       stream.next();
       return "error";
@@ -268,33 +352,3 @@ CodeMirror.defineMode("opensbp", function() {
 });
 CodeMirror.defineMIME("text/x-opensbp","opensbp")
 
-/*
-
-CodeMirror.defineSimpleMode("opensbp", {
-  // The start state contains the rules that are intially used
-  start: [
-    {regex: /\s*[A-Z](?:[A-Z]|[0-9]+|\#)\b/i, token: "keyword", next:"args", sol: true},
-    {regex: /PAUSE/i, token: "keyword", next:"args"},
-
-    // You can match multiple tokens at once. Note that the captured
-    // groups must span the whole string in this case
-    //{regex: /([A-FH-LN-Z])([+\-]?[0-9]+(?:\.[0-9]+)?)/i,
-    // token: ["variable", "number"]},
-    {regex: /\'., token: "comment"},
-  ],
-
-  args: [
-    {regex: /,/i, token: "operator"},
-    {regex: /"(?:[^\\]|\\.)*?"/, token: "string"},
-    {regex: /[+\-]?[0-9]+(?:\.[0-9]+)?/i, token: "number"},
-    {regex: /[^\t ,]/, next: "start"}
-  ],
-  // The meta property contains global information about the mode. It
-  // can contain properties like lineComment, which are supported by
-  // all modes, and also directives like dontIndentStates, which are
-  // specific to simple modes.
-  meta: {
-    dontIndentStates: ["comment"],
-    lineComment: "'"
-  }
-});*/
