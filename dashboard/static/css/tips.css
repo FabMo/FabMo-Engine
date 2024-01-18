@@ -1,20 +1,17 @@
-
-
 /* To Implement a Tooltip in FabMo -- (no dependencies) -- 
         - reference this sheet;
         - add class="tooltip" to the element you want to have a tooltip;
         - add class="tooltiptext" to the element you want to be the tooltip text;
         - add the text you want to be the tooltip text between the opening and closing tags of the element with class="tooltiptext"
+        - add class="tooltip-below" to the element you want to have a tooltip below the element;
 */
-
-
 
 /* Tooltip container */
 
 .tooltip {
   background-color: #bdbdbd;
   position: relative;
-  left: 5px;
+  left: 0px;
   top: -10px;
   display: inline-block;
   z-index: 900;
@@ -73,3 +70,39 @@
     max-width: 350px;
     opacity: 1;
   }
+
+  /* Tooltip-below container */
+  .tooltip-below .tooltiptext {
+    top: 130%; /* Position below the trigger element */
+    bottom: auto; /* Remove the bottom property */
+  }
+
+  /* Tooltip-below arrow */
+  .tooltip-below .tooltiptext::after {
+    content: "";
+    position: absolute;
+    bottom: 100%; /* Position the arrow at the bottom of the tooltip when it is above the trigger */
+    top: auto; /* Remove the top property */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #bdbdbd transparent; /* Flip the arrow to point upwards */
+  }
+
+  /* Optional: Adjust the left property of the arrow for better alignment */
+  .tooltip-below .tooltiptext::after {
+    left: 20%; /* Adjust as needed for proper alignment */
+  }
+
+  /* Tool Tip Link */
+  .tooltiplink {
+    color: #007bff !important;
+    text-decoration: underline;
+  }
+  
+  .tooltiplink:hover {
+    color: #0056b3 !important;
+    text-decoration: none;
+  }
+  

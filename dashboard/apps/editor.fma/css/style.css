@@ -20,23 +20,30 @@
     pointer-events: none;    
 }
 
+.menu-name {
+    color: #eee;
+}
+
 #app-header {
-    margin-left: 15px;
     margin-right: 0px;
-    padding-right: 2px;
+    padding-left: 20px;
+    padding-right: 12px;
 }
 
 #app-content {
-    padding-left: 2px;
+    background-color: #777;
+    padding-left: 12px;
     padding-right: 2px;
 }
 
 #edit-filename {
+    background-color: #777;
     padding-left: 3px;
     padding-right: 3px;
 }
 
 #app-header-language {
+    background-color: #777;
     padding-left: 2px;
     padding-right: 20px;
 }
