@@ -110,6 +110,18 @@ function parseLine(line) {
         }
     }
 
+    // Deal with an OpenSBP command inside the THEN of an IF/THEN statement, passed back
+    // ... inside an object with a type of "cond" and a statement block
+    if (obj.type === "cond" && obj.stmt.type === "cmd") {
+        obj = {
+            // convert the object into a cmd type object with a statement block
+            type: "cmd",
+            cmd: obj.stmt.cmd,
+            args: obj.stmt.args,
+            block: obj.block,
+        };
+    }
+
     // Deal with full-line comments
     if (Array.isArray(obj) || obj === null) {
         obj = { type: "comment", comment: comment };

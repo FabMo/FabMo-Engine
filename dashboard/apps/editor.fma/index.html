@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="../../css/dashboard.css">
 	<link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/codemirror.css">
+  <link rel="stylesheet" href="../../css/tips.css">
   <link rel="stylesheet" href="./css/syntax.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -35,16 +36,37 @@
 </head>
 <body>
   <nav id="topbar" class="top-bar" data-topbar role="navigation">
+
     <ul class="title-area">
-      <li class="name noselect no-hover">
-        <h1><a id="app-header" class="noselect">Editor</a></h1>
+      <li class="name noselect">
+        <h1 id="app-header" class="menu-name">Editor
+          <span class="tooltip tooltip-below">i
+            <span class="tooltiptext">
+              Edit in scratchpad (automatically saved)<br>
+              or, Edit jobfile (REQUIRES Saving)<br><br>
+              <ul style="text-align: left;">
+                <li>Ctrl-F / Cmd-F <strong>&gt; Start searching</strong></li>
+                <li>Ctrl-G / Cmd-G <strong>&gt; Find next</strong></li>
+              </ul><br>
+                <a href="https://www.dropbox.com/s/dkdsnwqjj9nq04m/SBG00353%20FabMo%20OpenSBP%20Command%20Reference.docx?dl=0" class="tooltiplink" style="text-align:left" target="_blank">Command Reference</a>
+                <a href="https://docs.google.com/spreadsheets/d/1g9X5Sd_3ijWfdN9Hk3xVbwkPs4eA1xqbRRzuoZxiD3Y/edit?usp=sharing" class="tooltiplink" style="text-align:left" target="_blank">System Variables</a>
+                <!--These call kludged by adding to the iframe sandbox in views, "allow-popups". We ultimately want to do this with fabmo, see: "#navigateAbsolute2"-->
+            </span>
+          </span>
+        </h1>
       </li>
-      <li class="toggle-topbar"><a href="#" id="small_menu"><span>Menu</span>
-        <span class="exit-button" id="exit_small">X</span></a>
+
+      <li class="toggle-topbar">
+        <a href="#" id="small_menu">
+          <span>Menu</span>
+          <span class="exit-button" id="exit_small">X</span>
+        </a>
       </li>
     </ul>
+   
 
     <section class="top-bar-section">
+
       <!-- Right Nav Section -->
       <ul class="right">
       </ul>
@@ -53,13 +75,13 @@
       <ul class="left">
 
         <li class="noselect no-hover">
-            <a id="app-content" class="noselect show-for-medium-up">[]</a>
+            <a id="app-content" class="menu-name noselect show-for-medium-up"> []</a>
         </li>
         <li class="noselect no-hover">
-            <a id="edit-filename" class="noselect show-for-medium-up"></a>
+            <a id="edit-filename" class="menu-name noselect show-for-medium-up"></a>
         </li>
         <li class="noselect no-hover">
-            <a id="app-header-language" class="noselect show-for-medium-up">()</a>
+            <a id="app-header-language" class="menu-name noselect show-for-medium-up">()</a>
         </li>
 
         <li class="has-dropdown hidden" id="macro-menu">
@@ -77,17 +99,18 @@
           </ul>
         </li>
         <li class="has-dropdown" id="execute-menu"> 
-          <a href="#executemenu" class="success">Execute</a>
+          <a href="#executemenu" class="success">Execute/Save</a>
           <ul class="dropdown"> 
             <li><a id="submit-immediate" href="#submitimmediate">Run Code Immediately (Ctrl+Enter)</a></li>
             <li><a id="submit-job" href="#submitasjob">Save and Submit as Separate New Job</a></li>
           </ul>
         </li>
       </ul>
-        <ul class="right">
-        <li>
-            <a class="exit-button"  id="exit_btn">X</a>
-        </li>
+
+      <ul class="right">
+          <li>
+              <a class="exit-button"  id="exit_btn">X</a>
+          </li>
       </ul>
 
     </section>

@@ -46,9 +46,10 @@ require('./cm-fabmo-modes.js');
       }
     }
 
-    $('#app-header').click(function(evt) {
-      cycleLanguage(true);
-    });
+    // 'Click' on the header to cycle the language -- don't think we want this!
+    // $('#app-header').click(function(evt) {
+    //   cycleLanguage(true);
+    // });
 
     function set_language(language, save) {
       switch(language) {

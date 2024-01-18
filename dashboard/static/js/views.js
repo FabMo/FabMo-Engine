@@ -36,7 +36,7 @@ define(function (require) {
             var client_container = jQuery(this.el);
             ////##			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>'
             var src =
-                '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin allow-downloads" allowfullscreen></iframe>';
+                '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin allow-downloads allow-popups" allowfullscreen></iframe>';
             client_container.html(src);
             this.iframe = $(client_container.children()[0]);
             if (hard_refresh) {
