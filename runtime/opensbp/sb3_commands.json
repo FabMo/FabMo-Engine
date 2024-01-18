@@ -2193,7 +2193,16 @@
    },
    "SK": {
       "cmd": "SK",
-      "name": "set to KeyPad control w/ arrow keys { K }"
+      "name": "set to KeyPad control w/ arrow keys { K }",
+      "params": [
+         {
+            "name": "Message",
+            "desc": "Optional Message for SK in File",
+            "default": "Use SK in file",
+            "sysvar": "0",
+            "type": "str"
+         }
+      ]
    },
    "SL": {
       "cmd": "SL",

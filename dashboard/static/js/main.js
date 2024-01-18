@@ -276,6 +276,7 @@ engine.getVersion(function (err, version) {
                     lastInfoSeen = status["info"]["id"];
                     if (status.info["message"]) {
                         if (status.state === "manual") {
+                            $("#title_goto").css("visibility", "hidden");
                             $(".manual-drive-message").show();
                             $(".manual-drive-message").html(
                                 status.info.message
@@ -640,8 +641,6 @@ function setupKeypad() {
 }
 
 $(".action-button").on("click", function () {
-    $(".manual-drive-message").html("");
-    $(".manual-drive-message").hide();
     // get the action from the button
     var action = $(this).attr("id");
     switch (action) {
@@ -662,6 +661,7 @@ $(".action-button").on("click", function () {
 });
 
 $(".manual-drive-exit").on("click", function () {
+    $("#title_goto").css("visibility", "visible");
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
     calledFromModal = "";
