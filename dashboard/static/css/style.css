@@ -1371,6 +1371,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .manual-drive-message {
 	font-size: 1.2rem;
+	font-weight: bold;
 	display: none;
 	color: #313366;
 	width: 100%;
@@ -1974,6 +1975,7 @@ input[type='range']:focus {
 
 #title_goto {
     font-size: 1rem;
+	visibility: visible;
     top: 1rem;
 	left: 5%;
 	padding-bottom: 1rem;
@@ -2215,6 +2217,7 @@ input[type='range']:focus {
 	}
 
     #title_goto {
+		visibility: visible;
 		left: 15%;
 		margin-top: 0rem;
         margin-bottom: -0.5rem;    
@@ -2242,6 +2245,7 @@ input[type='range']:focus {
 
 	.manual-drive-message {
 		font-size: 15px;
+		font-weight: bold;
 		line-height: 16px;
 		padding: 0.5em;
 	}
