@@ -20,6 +20,7 @@ var ethernetInterface = "eth0";
 
 var last_name = "";
 
+// eslint-disable-next-line no-unused-vars
 var CUR_UAP0_SSID = "";
 
 var DEFAULT_NETMASK = "255.255.255.0";
@@ -166,8 +167,8 @@ RaspberryPiNetworkManager.prototype._checkSSID = function (callback) {
                 // clean up ssid value by removing "ssid" and blanks
                 CUR_UAP0_SSID = stdout.replace(/ssid\s*/i, "").trim();
                 //                    let CUR_UAP0_SSID = stdout.replace(/ssid\s*/i, "").trim();
-                log.debug("NEXT LINE IS FIRST READ OF CUR_UAP0_SSID");
-                log.debug(CUR_UAP0_SSID);
+                //                log.debug("NEXT LINE IS FIRST READ OF CUR_UAP0_SSID");
+                //                log.debug(CUR_UAP0_SSID);
             } else {
                 log.debug("Unexpected result:", stdout);
             }
@@ -191,7 +192,7 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     var wiredInt = "eth0";
     log.debug("##############-------- >>>>>> CALL to checkWifiHealth");
 
-    log.debug("##-------------------- >> Initial Screen");
+    //    log.debug("##-------------------- >> Initial Screen");
     // Cases below should force us to consider updating the AP SSID
     if (
         !this.network_history || // first time through
@@ -203,10 +204,10 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             this.network_history[wiredInt] != interfaces[wiredInt][0].address) // ... they are different
     ) {
         var forceSSIDupdate = 1;
-        log.debug("##-------------got a FORCED UPDATE");
+        //        log.debug("##-------------got a FORCED UPDATE");
     }
 
-    log.debug("##-------------------- >> Update History for Re-Screen");
+    //    log.debug("##-------------------- >> Update History for Re-Screen");
     this.network_history = {};
     Object.keys(interfaces).forEach(
         function (interface) {
@@ -255,14 +256,14 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
         }
     }
     if (apRecoverExecute) {
-        log.debug("##----------------####=>>>>>> CALL DEEPER CHECK!");
+        //        log.debug("##----------------####=>>>>>> CALL DEEPER CHECK!");
         // eslint-disable-next-line no-unused-vars
         this._checkSSID(function (err, res) {
             if (err) {
                 log.debug(err);
             } else {
-                log.debug("##---- AP RECOVER CONSIDERATION COMPLETED");
-                log.debug();
+                //                log.debug("##---- AP RECOVER CONSIDERATION COMPLETED");
+                //                log.debug();
             }
         });
         // eslint-disable-next-line no-unused-vars
@@ -337,8 +338,8 @@ RaspberryPiNetworkManager.prototype._joinAP = function (
         ext = ">AP:192.168.42.1";
     }
     full_name = name + ext;
-    log.debug("CHECKING NAMES full_name: " + full_name);
-    log.debug("CHECKING NAMES last_name: " + last_name);
+    //    log.debug("CHECKING NAMES full_name: " + full_name);
+    //    log.debug("CHECKING NAMES last_name: " + last_name);
     if (
         full_name !== last_name ||
         (CUR_UAP0_SSID &&
@@ -346,7 +347,7 @@ RaspberryPiNetworkManager.prototype._joinAP = function (
                 CUR_UAP0_SSID === "FabMo-???>AP:192.168.42.1" ||
                 full_name != CUR_UAP0_SSID))
     ) {
-        log.debug("///////////###-------- >>>>>> CALL REJOIN-AP");
+        //        log.debug("///////////###-------- >>>>>> CALL REJOIN-AP");
         log.debug(
             'Changing SSID from "' + last_name + '" to "' + full_name + '"'
         );
