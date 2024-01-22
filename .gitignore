@@ -20,6 +20,7 @@ config/data/*.json
 *.sublime*
 *.orig
 dashboard/build/*
+#had to comment out the following to build using vscode; then had to manually create paths and copy files
 #profiles/*
 #profiles/.*
 !dashboard/build/index.html
