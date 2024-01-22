@@ -1,0 +1,110 @@
+'!FABMO!name: Square Tool
+'!FABMO!description: Squares Deskop Tool
+' Name: Square Tool
+' Description: Squares Deskop Tool [C10]
+' Platform: Desktop Only
+'   - note that DT and DT Max will be squaring the same gantry but it is on different axes depending on tool
+' Author: Ryan Sturmer, Brendan Collins
+' History: 2018/04/3 - created
+' 2021/10/15 refactored (th)
+
+'--- Adjust Standard Macro Variables to Current Tool Units if Needed ---
+'--- Check to make sure Standard Macro Variables have been read
+$sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
+IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+
+' === Main Program ===
+  GOSUB initialize_variables
+  PAUSE "This routine will Square Gantry by pushing it into End Stops (loudly). Resume to Continue."
+  Z3
+  GOSUB clear_z
+  IF &dtType = 3 then GOTO dt3
+	  GOSUB square_x_gantry
+	  GOSUB run_C3
+  END
+  dt3:
+      GOSUB square_y_gantry
+	  GOSUB run_C3
+  END
+'====================
+
+'--- 'Subroutines ---
+clear_z: 
+    PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z         ' Search for prox switch
+    &Z_AT = %(3)                                          ' Get where we're at to backoff from
+	JZ, &Z_AT - (4 * &backOff_dist)
+    RETURN
+
+square_y_gantry:
+    PY, &searchDist_Y, &searchSpeed_XY, &proxNum_Y        ' Search for prox switch
+	VA,,0,,,,,,0,,,,                                      ' Set 0 location
+    VR, &squaringJerk
+    MY, &squaringMove				  ' Move Y axis .75 inches past prox switch, which will force it into end stop  
+    VA,,0,,,,,,0,,,,                  ' Zero Y again so we know where we are at
+    VR,150
+    MY, (&squaringMove * -5)
+    VA,,18,,,,,,0,,,,
+    RETURN
+
+square_x_gantry:
+    PX, &searchDist_X, &searchSpeed_XY, &proxNum_X        ' Search for prox switch
+	VA,0,,,,,,0,,,,,                                      ' Set 0 location
+    VR, &squaringJerk
+    MX, &squaringMove			   	  ' Move Y axis .75 inches past prox switch, which will force it into end stop  
+    VA,0,,,,,,0,,,,,                  ' Zero Y again so we know where we are at
+    VR,150
+    MX, (&squaringMove * -5)
+    VA,36,,,,,,0,,,,,
+    RETURN
+
+run_C3: 
+    PAUSE "Tool is squared.You should run the Homing Macro now? Press RESUME to Run; QUIT to Skip."
+  ' * MAYBE Jog the squared axis back near zero in above routines ???
+	C3
+	RETURN
+
+no_variables:
+    C201
+    RETURN
+
+
+'--- Initialize Variables and Adjust Standard Macro Variables for Current Tool and Conditions as Needed
+initialize_variables:
+
+'--- Local Variables ---
+    &dtType = $sb_dtType
+    &proxNum_Z = $sb_proxNum_Z
+    &check_prox_Z = $sb_proxCk_Z							  
+    &proxNum_X = $sb_proxNum_X
+    &check_prox_X = $sb_proxCk_X							  
+    &proxNum_Y = $sb_proxNum_Y
+    &check_prox_Y = $sb_proxCk_Y							  
+
+  'Adjust to current UNITS of tool (handles whether tool Macro Variables are for INCHES or MM)
+	&dist_mult = 1.0
+	IF %(25) == 1 THEN GOTO tool_MM							  ' Read UNIT of Tool; System Variable #25
+	  tool_IN:
+	    IF $sb_varTableUNITS == "IN" THEN GOTO continue_with_variables
+		  &dist_mult = 0.0393701                                ' Defined in MM: Multiplier to redefine distances from mm to inches 
+	    GOTO continue_with_variables
+	  tool_MM:
+	    IF $sb_varTableUNITS == "MM" THEN GOTO continue_with_variables
+	      &dist_mult = 25.4                                     ' Defined in IN: Multiplier to redefine distances from inches to mm 
+	    GOTO continue_with_variables
+  'continue adjusting units for current working variables ...
+	continue_with_variables:
+		&target_ck = 0
+		&ooch = $sb_ooch * &dist_mult
+		&backOff_dist = &ooch * 5
+		&squaringMove = $sb_squaringMove * &dist_mult  
+		&squaringJerk = $sb_squaringJerk * &dist_mult
+ 		&searchDist_Z = $sb_searchDist_Z * &dist_mult
+		&searchSpeed_Z = $sb_searchSpeed_Z * &dist_mult
+		&searchDist_X = $sb_searchDist_X * &dist_mult
+		&searchDist_Y = $sb_searchDist_Y * &dist_mult
+		&searchSpeed_XY = $sb_searchSpeed_XY * &dist_mult
+		&slowSearchSpeed_XY = $sb_slowSearchSpeed_XY * &dist_mult
+		&homeOff_Z = $sb_homeOff_Z * &dist_mult
+		&homeOff_X = $sb_homeOff_X * &dist_mult
+		&homeOff_Y = $sb_homeOff_Y * &dist_mult
+	RETURN

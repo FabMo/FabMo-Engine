@@ -20,12 +20,14 @@ config/data/*.json
 *.sublime*
 *.orig
 dashboard/build/*
-profiles/*
-profiles/.*
+#had to comment out the following to build using vscode; then had to manually create paths and copy files
+#profiles/*
+#profiles/.*
 !dashboard/build/index.html
 !profiles/fabmo-profile-dev-tests
 !profiles/fabmo-profile-atc
 !profiles/fabmo-profile-dt
+!profiles/fabmo-handibot-2
 !profiles/default
 !profiles/README.md
 install_token

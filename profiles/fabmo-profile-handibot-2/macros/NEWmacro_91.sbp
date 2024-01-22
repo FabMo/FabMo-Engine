@@ -1,0 +1,24 @@
+'!FABMO!name: Unit error
+'!FABMO!description: Notification that file Units do not match machine
+' Name: Change Unit error
+' Description: Notify of inconsistent Units
+
+' This Macro is called by Vectric posts in the process of checking Units
+' FabMo will handle a file even if its Units are mismatched to the current tool setting.
+'   - So this macro could just provide a warning and return
+'   - Or, content could just be deleted, though the macro needs to remain stubbed in to handle legacy Vectric posts 
+
+   IF %(25)=1 THEN GOTO METRIC_ERROR
+
+  'Deal with Metric file in Inch Mode ------------------------ 
+   'The file you are running is written for use in metric mode but your tool is set for inches.  Quit and Reset your tool for metric in the Configuration Manager (left panel).
+   PAUSE
+   ' We could allow a better option here by putting the action at the beginning of the file and making use of END/EXIT.
+   END
+
+  'Deal with Inch file in Metric Mode ------------------------
+   METRIC_ERROR:
+   'The file you are running is written for use in inch mode but your tool is set for metric.  Quit and reset your tool for inches in the Configuration Manager (left panel).
+   PAUSE
+   ' We could allow a better option here by putting the action at the beginning of the file and making use of END/EXIT.
+   END

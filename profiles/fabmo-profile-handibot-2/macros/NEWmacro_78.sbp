@@ -1,0 +1,25 @@
+'!FABMO!name: Set Z-Zero to Current Offset
+'!FABMO!description: Use after manually zeroing to record offset
+'!FABMO!enabled:true
+' Name: Set Z-Zero to Current Offset
+' Description: 
+'   Installs Current Value of Z offset to permanent offset for future Zeroing. Works even if manually zeroed assuming Macro#3 has been run once. 
+' Author: Ted Hall, Ryan Sturmer
+' History:
+'   2/2/17, 3/16/17, 9/13/17, 11/12/19
+'   9/25/21 Refactored for FabMo (th)
+
+ 	PAUSE "This routine requires you have only zeroed once at the new Z location since homing tool with Macro#3."   ''too much commentary?
+	&tempTB_Zoffset = %(9)								' Read in System Variables for current Z-tablebase-offset (g55Z)
+
+    IF %(25) == 1 THEN GOTO tool_MM   		            ' Read UNIT of Tool; System Variable #25
+      tool_IN:
+        $sb_current_cutter_Zoffset_Units = "IN"
+        GOTO continue_with_variables
+      tool_MM:
+        $sb_current_cutter_Zoffset_Units = "MM"
+        GOTO continue_with_variables
+  'continue adjusting units for current working variables ...
+	continue_with_variables:
+		$sb_current_cutter_Zoffset = &tempTB_Zoffset * -1
+	END

@@ -1,0 +1,120 @@
+'!FABMO!name: Z-Zero
+'!FABMO!description: Set Z-Zero with Zeroing Plate; Use after installing new cutter
+' Name: Z-Zero
+' Description: 
+'   Set Z-Zero with Zeroing Plate; Use after installing new cutter [C2]
+' Platform: Handibot2
+' Author: Ted Hall, Ryan Sturmer
+' History:
+'   2016/03/01 - Initial version (th)
+'   2017/09/25 - Refactored (th)
+'   2019/10/06 - Re-write to remove location variables in homing
+
+SU, 0                         ' Set to Inches; Units will auto-revert to current starting units at end of file
+
+'--- Settings ---
+$current_cutter_Zoffset := .25' Initializes permanent variables if not already set
+$x_backoff := .075
+$y_backoff := .075
+$z_backoff := .075
+$ZZeroInput := 1              ' Later also using system variable %(51) to read input; ... a temporary kludge
+$ZZeroPlateThickness := 0.75  ' 0.75" for swing-out plate; 0.57" for pressure plate
+  ' To only use pressure plate, change &ZZeroInput to 5
+  ' ... Adjust plate thickness to 0.57
+  ' ... AND change %(51) to %(55) in check_input subroutine
+
+&ZZeroSearchDistance = -4.0 
+&ZZeroSearchSpeedSlow = 0.1
+&ZZeroSearchSpeedFast = 0.5
+
+MS, 4, 4					  ' Speeds will auto-revert back to current values at end of file
+JS, 5, 5
+
+' -------- Main Program Section --------
+GOSUB check_input
+GOSUB re_home                ' Like Macro 3 to re-set X & Y home, just in case ... (Macro 3 has un-needed prompt)
+GOSUB find_z_zero
+END
+
+' --- Subroutines ---
+find_z_zero:    
+   M2, 6, 0            ' Go to plate location
+   PAUSE "Attach Aligator Clip to Cutter Shank and Swing-Out Target. -Resume- when Ready"
+   &zpos = %(3)
+   PZ, &zpos + &ZZeroSearchDistance, &ZZeroSearchSpeedFast, $ZZeroInput
+   ZZ
+   JZ, $z_backoff
+   ZZ
+   &reapproach = -2 * $z_backoff   
+   PZ, &reapproach, &ZZeroSearchSpeedSlow, $ZZeroInput
+   ZZ
+   JZ, $z_backoff
+   VA,,, $z_backoff + $ZZeroPlateThickness
+   PAUSE 1
+  ' Read in current System Variables for current Z and Z-tablebase-offset 
+	 &tempTB_Zoffset = %(8) 
+  ' Reset current_cutter and Set Table Base Coordinates and Location to 0 for Z
+     $current_cutter_Zoffset = &tempTB_Zoffset * -1
+   PAUSE "Z-ZEROED and Cutter Length Saved. Make sure to remove Z-Zero Plate and Clip!"
+   RETURN
+
+re_home:
+   GOSUB home_z        ' Need to make sure we also have Z 0 at top, now we're all set
+   GOSUB home_x    
+   GOSUB home_y
+   RETURN
+
+home_z:
+    VR, 250, 250                               ' Set approach accelerations
+	ZZ
+    MZ, 5.0                                    ' Drive into top hard stop 
+    PAUSE .25      
+    MZ, 4.5				                       ' Retreat for final approach
+    VR,,1000                                   ' Set higher accel to limit bounce
+    JZ, %(3) + 1.0                             ' Hit hard stop (again); at Jog Speed (reduces power)
+    PAUSE .25
+    &temp_loc = 0 + $z_backoff                 ' Set Z User Location and Table Base offsets (to zero)
+    VA,,, &temp_loc,,,,,, &temp_loc  
+    VR,,50                                     ' Set accel back to reasonable values
+    MZ, 0.0                                      ' ... about as high as you can safely be
+    RETURN
+
+home_x:
+    VR, 250, 250                               ' Set approach accelerations 
+	ZX
+    MX, 7.0   			                       ' Drive into right-side hard stop
+    PAUSE .25
+    MX, 6.0                                    ' Retreat
+    VR, 1000                                   ' Set higher accel to limit bounce       
+    JX, 8.0                                    ' Drive into right-side hard stop (again) 
+    PAUSE .25
+	&temp_loc = 6.0 + $x_backoff               
+    VA, &temp_loc,,,,,, &temp_loc              ' Set X Table Base offsets
+    VR, 50                                     ' Set accel back to reasonable values
+    MX, 0.0                                    ' Move to the zero location in the X
+	RETURN
+    
+home_y:
+    VR, 250, 250                               ' Set approach accelerations 
+	ZY
+    MY, -9.0                                   ' Drive into the front hard stop
+	PAUSE .25  
+    MY, -8.0                                   ' Retreat
+    VR, 1000                                   ' Set higher accel to limit bounce
+    JY, -10.0                                   ' Drive into the front hard stop 
+	PAUSE .25
+	&temp_loc = 0 - $y_backoff 
+    VA, , &temp_loc,,,,,, &temp_loc            ' Set Y Table Base offsets            
+	VR, 50		                               ' Set accel back to reasonable values	
+    MY, 0.0                                    ' Move to the zero location in the Y	
+    PAUSE 1
+	RETURN
+
+check_input:
+    IF %(51) = 1 THEN GOTO check_input_fail
+	RETURN
+
+check_input_fail:
+    FAIL "Input switch is already tripped. Cannot zero the tool. Move Off Switch and Retry."
+
+END

@@ -1,0 +1,87 @@
+'!FABMO!name: Home Tool
+'!FABMO!description: Automatically Set Axis Zero for XYZ
+' Name: Home Tool
+' Description: 
+'   Automatically Set Axis Zero for XYZ (uses Handibot 2 bump technique) [C3].
+' Platform: Handibot2
+' Author: Ted Hall, Ryan Sturmer
+' History:
+'   2016/03/01 - Initial version (th)
+'   2016/11/20 - Switched to FRONT for simpler touch. Hard stop at rear still provides more accuracy. (th)
+'   2017/08/2 - Updated for new fabmo features (rs)
+'   2017/08/26 - Refactored (th)
+'   2019/10/06 - Re-written to avoid location variables [%()] (th)
+'   2020/01/08 - Fixed := for current_cutter_Zoffset
+
+SU,0                         ' Set to Inches; Units will auto-revert to current starting units at end of file
+
+'--- Settings ---            ' Initializes permanent variables if not already set
+$current_cutter_Zoffset := .25
+$x_backoff = .075
+$y_backoff = .075
+$z_backoff = .075
+
+MS, 4, 4					 ' Speeds will auto-revert back to current values at end of file
+JS, 5, 5
+
+' --- Main Program ---
+GOSUB home_z
+GOSUB home_x
+GOSUB home_y
+GOSUB offset_z_cutter                          ' Adds the offset for Z cutter; SEE COMMENTS IN SUBROUTINE
+ 
+END
+
+' --- Subroutines ---
+home_z:
+    VR, 250, 250                               ' Set approach accelerations
+	ZZ
+    MZ, 5.0                                    ' Drive into top hard stop 
+    PAUSE .25      
+    MZ, 4.5				                       ' Retreat for final approach
+    VR,,1000                                   ' Set higher accel to limit bounce
+    JZ, %(3) + 1.0                             ' Hit hard stop (again); at Jog Speed (reduces power)
+    PAUSE .25
+    &temp_loc = 0 + $z_backoff                 ' Set Z User Location and Table Base offsets (to zero)
+    VA,,, &temp_loc,,,,,, &temp_loc  
+    VR,,50                                     ' Set accel back to reasonable values
+    MZ, 0.0                                      ' ... about as high as you can safely be
+    RETURN
+
+offset_z_cutter:
+   ' Comment (') out the PAUSE Line if you do not want the User Query about Z offset
+   ' Or, comment out call to this subroutine if you NEVER want to include the cutter offset in your zeroing routine
+    PAUSE "Click RESUME to Set Z to most recent Cutter Offset; QUIT to leave Z set at 0"
+    VA,,, $current_cutter_Zoffset
+    RETURN
+  
+home_x:
+    VR, 250, 250                               ' Set approach accelerations 
+	ZX
+    MX, 7.0   			                       ' Drive into right-side hard stop
+    PAUSE .25
+    MX, 6.0                                    ' Retreat
+    VR, 1000                                   ' Set higher accel to limit bounce       
+    JX, 8.0                                    ' Drive into right-side hard stop (again) 
+    PAUSE .25
+	&temp_loc = 6.0 + $x_backoff               
+    VA, &temp_loc,,,,,, &temp_loc              ' Set X Table Base offsets
+    VR, 50                                     ' Set accel back to reasonable values
+    MX, 0.0                                    ' Move to the zero location in the X
+	RETURN
+    
+home_y:
+    VR, 250, 250                               ' Set approach accelerations 
+	ZY
+    MY, -9.0                                   ' Drive into the front hard stop
+	PAUSE .25  
+    MY, -8.0                                   ' Retreat
+    VR, 1000                                   ' Set higher accel to limit bounce
+    JY, -10.0                                   ' Drive into the front hard stop 
+	PAUSE .25
+	&temp_loc = 0 - $y_backoff 
+    VA, , &temp_loc,,,,,, &temp_loc            ' Set Y Table Base offsets            
+	VR, 50		                               ' Set accel back to reasonable values	
+    MY, 0.0                                    ' Move to the zero location in the Y	
+    PAUSE 1
+	RETURN

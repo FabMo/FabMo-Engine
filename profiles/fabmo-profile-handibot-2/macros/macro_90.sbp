@@ -1,0 +1,7 @@
+'!FABMO!name: Settings
+'!FABMO!description: LEGACY: Loaded default variable settings
+' Name: Settings
+' Description: LEGACY: Loaded default variable settings
+
+' This macro was previously used to load default settings. Now being done in FabMo by the tool "Profile"
+' It is called by existing Vectric posts
