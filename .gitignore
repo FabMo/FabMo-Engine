@@ -20,8 +20,8 @@ config/data/*.json
 *.sublime*
 *.orig
 dashboard/build/*
-profiles/*
-profiles/.*
+#profiles/*
+#profiles/.*
 !dashboard/build/index.html
 !profiles/fabmo-profile-dev-tests
 !profiles/fabmo-profile-atc
