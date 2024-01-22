@@ -26,6 +26,7 @@ profiles/.*
 !profiles/fabmo-profile-dev-tests
 !profiles/fabmo-profile-atc
 !profiles/fabmo-profile-dt
+!profiles/fabmo-handibot-2
 !profiles/default
 !profiles/README.md
 install_token
