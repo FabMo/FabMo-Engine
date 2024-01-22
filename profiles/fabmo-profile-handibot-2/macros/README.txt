@@ -1,0 +1,1 @@
+We are in the process of converting the earlier Handibot macro framework to FabMo's current framework. New Desktop version included here for reference.

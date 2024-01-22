@@ -1,0 +1,30 @@
+{
+	"units" : "in",
+    "limits_on" : false,
+    "softlimits_on" : false,
+    "di1_def": "none",
+    "di2_def": "none",
+    "di3_def": "limit",
+    "di4_def": "stop",
+    "di5_def": "none",
+    "di6_def": "none",
+    "di7_def": "none",
+    "di8_def": "none",
+    "di9_def": "none",
+    "di10_def": "none",
+    "di11_def": "none",
+    "di12_def": "interlock",
+	"default_app" : "fabmo-sb4",
+	"envelope" : {
+		"xmin" : 0,
+		"xmax" : 6,
+		"ymin" : 0,
+		"ymax" : 8,
+		"zmin" : -2,
+		"zmax" : 6
+	},
+	"manual" : {
+        "xy_speed": 2,
+        "xy_max": 6
+	}
+}

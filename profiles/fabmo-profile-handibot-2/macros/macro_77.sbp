@@ -1,0 +1,82 @@
+'!FABMO!name: Measure Plate
+'!FABMO!description: Re-Measure height or thickness of Z-Zeroing plate
+' Name: Measure Plate
+' Description: 
+'   Re-Measure height or thickness of Z-Zeroing plate [C77]
+' Platform: Handibot2
+' Author: Ted Hall, Ryan Sturmer
+' History:
+'   11/11/16, 2/2/17, 3/16/17, 9/25/17 th
+'   10/06/19 - Re-write to remove axis location variables (th)
+
+SU,0                          ' Set to Inches; Units will auto-revert to current starting units at end of file
+
+'--- Settings ---
+$current_cutter_Zoffset := .25' Initializes permanent variables if not already set
+$x_backoff := .075
+$y_backoff := .075
+$z_backoff := .075
+$ZZeroInput := 1              ' Later also using system variable %(51) to read input; ... a temporary kludge
+
+&ZZeroSearchDistance := -4.0  ' Weak variable assignments if not perviously defined
+&ZZeroSearchSpeedSlow := 0.1
+&ZZeroSearchSpeedFast := 0.5
+&ZZeroBackoffInitial := 0.2
+&ZZeroBackoffFinal := 0.5
+
+MS, 4, 4					  ' Speeds will auto-revert back to current values at end of file
+JS, 5, 5
+
+' -------- Main Program Section --------
+GOSUB prelims                 ' Make sure we're set up right to do this
+GOSUB check_input             ' Make sure not already triggered
+GOSUB find_plate
+END
+
+' --- Subroutines ---
+prelims:
+'Before doing this adjustment, you need to have run Macro#3 (or Macro#2 if this is a new cutter). 
+    GOSUB home_z        ' Need to make sure we also have Z 0 at top, now we're all set
+	PAUSE "You need to have MANUALLY ZEROED the CUTTER and RUN Macro#78 before using this macro to adjust plate thickness/height. If not, QUIT to do that first."
+    &tempTB_Zoffset = %(8)  ' Read in current System Variables for current Z and Z-tablebase-offset
+    $current_cutter_Zoffset = &tempTB_Zoffset * -1
+    RETURN
+		
+find_plate:    
+   M2, 6, 0            ' Go to plate location for Handibot (modify for other tools)
+   PAUSE "Attach Aligator Clip to Cutter Shank and Place Plate. -Resume- when Ready"
+   &zpos = %(3)
+   PZ, &zpos + &ZZeroSearchDistance, &ZZeroSearchSpeedFast, $ZZeroInput
+   ZZ
+   JZ, &ZZeroBackoffInitial
+   &reapproach = &ZZeroBackoffInitial - 2
+   PZ, &reapproach, &ZZeroSearchSpeedSlow, $ZZeroInput
+   Pause 1
+   $ZZeroPlateThickness = %(3)
+   JZ, $ZZeroPlateThickness + &ZZeroBackoffFinal
+   PAUSE "Re-Measurement Complete (check Fire-Up! for thickness). Make sure to remove Z-Zero Plate and Clip!"
+   RETURN
+
+home_z:
+    VR, 250, 250                               ' Set approach accelerations
+	ZZ
+    MZ, 5.0                                    ' Drive into top hard stop 
+    PAUSE .25      
+    MZ, 4.5				                       ' Retreat for final approach
+    VR,,1000                                   ' Set higher accel to limit bounce
+    JZ, %(3) + 1.0                             ' Hit hard stop (again); at Jog Speed (reduces power)
+    PAUSE .25
+    &temp_loc = 0 + $z_backoff                 ' Set Z User Location and Table Base offsets (to zero)
+    VA,,, &temp_loc,,,,,, &temp_loc  
+    VR,,50                                     ' Set accel back to reasonable values
+    MZ, 0.0                                      ' ... about as high as you can safely be
+    RETURN
+
+check_input:
+    IF %(51) = 1 THEN GOTO check_input_fail
+	RETURN
+
+check_input_fail:
+    END "Input switch is already tripped. Cannot zero the tool. Move Off Switch and Retry."
+
+END

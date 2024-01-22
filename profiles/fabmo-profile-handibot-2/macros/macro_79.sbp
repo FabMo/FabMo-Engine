@@ -1,0 +1,39 @@
+'!FABMO!name: Park
+'!FABMO!description: Move Tool to Parking Location (typically to back)
+' Name: Park
+' Description: Move Tool to Parking Location (typically to back) [C79]
+' Platform: Handibot2, Handibot1
+' Author: Ted Hall, Ryan Sturmer
+' History:
+'  2/2/17, 3/16/17, 12/12/18 th
+
+SU,0                          ' Set to Inches; Units will auto-revert to current starting units at end of file
+
+'--- Main ---
+IF %(25) = 0 THEN GOTO Inch
+'else
+GOTO Metric
+END
+
+'--- Settings --- Initializing permanent variables; ##:=## if not already set
+Inch:
+	$x_park_in := 3           
+	$y_park_in := 7
+	$z_park_in := 1.5
+	GOTO Move_to_Position_INCH
+Metric:
+	$x_park_mm := 75
+	$y_park_mm := 175
+	$z_park_mm := 40
+	GOTO Move_to_Position_MM
+
+'--- Subroutines ---
+Move_to_Position_INCH:
+  JZ, $z_park_in
+  J2, $x_park_in, $y_park_in
+  END
+
+Move_to_Position_MM:
+  JZ, $z_park_mm
+  J2, $x_park_mm, $y_park_mm
+  END
