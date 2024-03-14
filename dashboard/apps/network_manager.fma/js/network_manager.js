@@ -3,10 +3,12 @@ require('jquery');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
+const { info } = require('toastr');
 var fabmo = new Fabmo;
 
 var networks = {};
 var network_history = {};
+var CUrssid = '';
 
 // Get networks from the tool, and add entries to the table
 function refreshWifiTable(callback){
@@ -48,7 +50,7 @@ function addWifiEntries(network_entries, callback) {
             var ssid = row.insertCell(0);
             ssid.className = 'ssid noselect';
             var security = row.insertCell(1);
-            security.className = 'security';
+            security.className = 'security noselect';
             var strength = row.insertCell(2);
             strength.className = 'wifi' + strengthNumber;
 
@@ -77,21 +79,41 @@ function refreshHistoryTable(callback){
     });
 }
 
-// Add history entries (retrieved from the tool) to the HTML table in the UI
+// Add history entries (retrieved from the tool) to the HTML table in the UI, hack the wifi ssid
 function addHistoryEntries(history_entries, callback) {
     callback = callback || function() {};
     var table = document.getElementById('history_table');
     Object.keys(history_entries).forEach(function (entry) {
         var row = table.insertRow(table.rows.length);
         var interface = row.insertCell(0);
-        interface.className = 'interface noselect'
+        interface.className = 'interface not-implemented noselect'
         var ipaddress = row.insertCell(1);
-        ipaddress.className = 'ipaddress noselect'
+        ipaddress.className = 'ipaddress'
+        var intinfo = row.insertCell(2);
+        intinfo.className = 'intinfo'
 
         var interfaceText = entry || '';
         var ipAddressText = history_entries[entry] || '';
+        var intInfoText = '';
+        if (interfaceText === 'eth0') {
+            intInfoText = 'Ethernet: LAN or direct PC connection';
+        } else if (interfaceText === 'uap0') {
+            intInfoText = 'Access Point (AP)';
+        } else if (interfaceText === 'wlan0') {
+            // if there is a comma in the history_entries[entry] string, return the right hand portion
+            if (history_entries[entry].includes(',')) {
+                ipAddressText = history_entries[entry].split(',')[0];
+                intInfoText = 'Wireless: ' + history_entries[entry].split(',')[1];
+            } else {
+                intInfoText = 'Wireless: ' + "unknown";
+            }
+        } else {
+            intInfoText = 'Unknown';
+        }
+
         interface.innerHTML = interfaceText;
         ipaddress.innerHTML = ipAddressText;
+        intinfo.innerHTML = intInfoText;
     });
 }
 
@@ -168,7 +190,6 @@ function requestPassword(ssid, callback){
     });
     
     document.getElementById('toggleIcon').addEventListener('click', togglePassphraseVisibility);
-
     function togglePassphraseVisibility() {
         var passphraseInput = document.getElementById('passphraseInput');
         var toggleIcon = document.getElementById('toggleIcon');
@@ -244,13 +265,30 @@ $(document).ready(function() {
                     fabmo.showModal({message:err});
                 } else {
                     console.log(data);
+                    CUrssid = data.ssid;
                     fabmo.showModal({message:"Successfully connected! Please go find me on network: " + data.ssid+ " at " + data.ip});
                     refreshApps();
+                    refreshHistoryTable();
+                    // full refresh of this page to get the new ip address to display
+                    location.reload();
                 }
             });
         });
     });
 
+    // If we get a click on td.security then click td.ssid to trigger the same action
+    $('tbody').on('click', 'td.security', function () {
+        $(this).prev().click();
+    });
+
+    $('.not-implemented').on('click', function() {
+        fabmo.showModal({message:"Feature coming soon."});
+    });
+
+    // Display generic browser info message for buttons not yet functional
+    $('tbody').on('click', 'td.not-implemented', function() {
+        fabmo.showModal({message:"Feature coming soon."});
+    });
 
     // Action for clicking the AP mode button
     // $('#ap-mode-button').on('click', function(evt) {

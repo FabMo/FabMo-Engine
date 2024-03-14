@@ -1,5 +1,6 @@
 var log = require("../../../log").logger("network");
 var os = require("os");
+var fs = require("fs");
 var config = require("../../../config");
 var async = require("async");
 var child_process = require("child_process");
@@ -187,8 +188,8 @@ RaspberryPiNetworkManager.prototype._checkSSID = function (callback) {
 
 RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     var interfaces = os.networkInterfaces();
-    var wlan0Int = interfaces.wlan0;
-    var apInt = interfaces.uap0;
+    // var wlan0Int = interfaces.wlan0;
+    // var apInt = interfaces.uap0;
     var wiredInt = "eth0";
     log.debug("##############-------- >>>>>> CALL to checkWifiHealth");
 
@@ -203,7 +204,7 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             interfaces[wiredInt] && // we have history and a current value, BUT...
             this.network_history[wiredInt] != interfaces[wiredInt][0].address) // ... they are different
     ) {
-        var forceSSIDupdate = 1;
+        //        var forceSSIDupdate = 1;
         //        log.debug("##-------------got a FORCED UPDATE");
     }
 
@@ -219,62 +220,82 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             }
         }.bind(this)
     );
-
-    // The only differences between the following conditions are in the
-    // text messages we log. Here are variables to set that up.
-    var wirelessWarn;
-    var apRecoveryError;
-    var apRecoverySuccess;
-    var apRecoverExecute = false; //flag to record if we should we execute _joinAP()
-    if (wlan0Int) {
-        // don't know why but if the wlan is up we always silently _rejoin() and
-        // reset the ap name? why?  rmackie question for reviewers.
-        wirelessWarn = "";
-        apRecoveryError = "Could not bring back up AP";
-        apRecoverySuccess = "AP back up";
-        apRecoverExecute = true;
+    // Check if wlan0 exists
+    if (interfaces.wlan0) {
+        log.debug("wlan0 interface found");
+        // Read the JSON file to get the SSID name
+        const filePath = "/etc/network_conf_fabmo/recent_wifi.json";
+        const data = fs.readFileSync(filePath, "utf8"); // Read file as a string
+        const json = JSON.parse(data);
+        const ssid = json.ssid;
+        this.network_history.wlan0 = this.network_history.wlan0 + " ," + ssid;
+        log.debug("SSID:", this.network_history.wlan0);
     } else {
-        // No wireless connection
-        if (apInt) {
-            // If the AP is up we only join if the ethernet ip address changed (checked later).
-            // ... otherwise we just leave things alone.
-            if (forceSSIDupdate) {
-                wirelessWarn = "Currently in AP mode, re-writing SSID";
-                apRecoveryError = "Could not re-write SSID";
-                apRecoverySuccess = "AP back up";
-                apRecoverExecute = true;
-            } // no else, because apRecover is already false
-        } else {
-            // if the ap isn't up, we rejoin.
-            // eslint-disable-next-line no-unused-vars
-            wirelessWarn = "No wifi or AP trying to bring up AP";
-            // eslint-disable-next-line no-unused-vars
-            apRecoveryError = "Could not bring back up AP";
-            // eslint-disable-next-line no-unused-vars
-            apRecoverySuccess = "AP back up";
-            apRecoverExecute = true;
-        }
+        log.debug(
+            "wlan0 interface not found or it does not have an IP address"
+        );
     }
-    if (apRecoverExecute) {
-        //        log.debug("##----------------####=>>>>>> CALL DEEPER CHECK!");
-        // eslint-disable-next-line no-unused-vars
-        this._checkSSID(function (err, res) {
-            if (err) {
-                log.debug(err);
-            } else {
-                //                log.debug("##---- AP RECOVER CONSIDERATION COMPLETED");
-                //                log.debug();
-            }
-        });
-        // eslint-disable-next-line no-unused-vars
-        // this._joinAP(function (err, res) {
-        //     if (err) {
-        //         log.warn("Could not bring back up AP");
-        //     } else {
-        //         log.info("AP back up");
-        //     }
-        // });
-    }
+
+    // Check to see if there is a wlan0 interface in interfaces object
+    // if there is, then check if it has an IP address
+    // if it does, then read the json file /etc/network_conf_fabmo/recent_wifi.json
+    // to get the ssid name
+
+    // // The only differences between the following conditions are in the
+    // // text messages we log. Here are variables to set that up.
+    // var wirelessWarn;
+    // var apRecoveryError;
+    // var apRecoverySuccess;
+    // var apRecoverExecute = false; //flag to record if we should we execute _joinAP()
+    // if (wlan0Int) {
+    //     // don't know why but if the wlan is up we always silently _rejoin() and
+    //     // reset the ap name? why?  rmackie question for reviewers.
+    //     wirelessWarn = "";
+    //     apRecoveryError = "Could not bring back up AP";
+    //     apRecoverySuccess = "AP back up";
+    //     apRecoverExecute = true;
+    // } else {
+    //     // No wireless connection
+    //     if (apInt) {
+    //         // If the AP is up we only join if the ethernet ip address changed (checked later).
+    //         // ... otherwise we just leave things alone.
+    //         if (forceSSIDupdate) {
+    //             wirelessWarn = "Currently in AP mode, re-writing SSID";
+    //             apRecoveryError = "Could not re-write SSID";
+    //             apRecoverySuccess = "AP back up";
+    //             apRecoverExecute = true;
+    //         } // no else, because apRecover is already false
+    //     } else {
+    //         // if the ap isn't up, we rejoin.
+    //         // eslint-disable-next-line no-unused-vars
+    //         wirelessWarn = "No wifi or AP trying to bring up AP";
+    //         // eslint-disable-next-line no-unused-vars
+    //         apRecoveryError = "Could not bring back up AP";
+    //         // eslint-disable-next-line no-unused-vars
+    //         apRecoverySuccess = "AP back up";
+    //         apRecoverExecute = true;
+    //     }
+    // }
+    // if (apRecoverExecute) {
+    //     //        log.debug("##----------------####=>>>>>> CALL DEEPER CHECK!");
+    //     // eslint-disable-next-line no-unused-vars
+    //     this._checkSSID(function (err, res) {
+    //         if (err) {
+    //             log.debug(err);
+    //         } else {
+    //             //                log.debug("##---- AP RECOVER CONSIDERATION COMPLETED");
+    //             //                log.debug();
+    //         }
+    //     });
+    //     // eslint-disable-next-line no-unused-vars
+    //     // this._joinAP(function (err, res) {
+    //     //     if (err) {
+    //     //         log.warn("Could not bring back up AP");
+    //     //     } else {
+    //     //         log.info("AP back up");
+    //     //     }
+    //     // });
+    //}
 };
 
 RaspberryPiNetworkManager.prototype.checkEthernetHealth = function () {

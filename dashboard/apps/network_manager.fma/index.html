@@ -60,7 +60,12 @@
         </ul>
           <section class="top-bar-section">
             <ul class="left">
-              <li><a id="ap-mode-button" class="submit-button" href="#">Toggle AP Mode</a></li>
+              <li><a id="eth-mode-button" class="submit-button not-implemented" href="#">Set Connection Type</a></li>
+            </ul>  
+          </section>
+          <section class="top-bar-section">
+            <ul class="left">
+              <li><a id="ap-mode-button" class="submit-button not-implemented" href="#">Toggle AP Mode to OFF</a></li>
             </ul>  
           </section>
       </nav>
@@ -86,8 +91,8 @@
         <div id="recent" class="hidden">
 
             <h1>Connected Interfaces<span class="tooltip">i<span class="tooltiptext">
-                Your tool is connected to each of these interfaces. Favored interface is reported:
-                ethernet > wifi > AP-mode. Click on an interface to remove it (coming).</span></span>
+                Your tool is connected to each of these interfaces. The favored interface is shown on the mini-screen
+                (if attached). Click on any interface to remove it (coming).</span></span>
             </h1>
 
           <div class="table-outer">
@@ -96,7 +101,7 @@
                 <tr>
                     <th>Interface</th>
                     <th>IP Address on Interface</th>
-                    <th>Network Name</th>
+                    <th>Interfaced Via:</th>
                 </tr>
             </thead>
             <tbody><tr></tr></tbody>
