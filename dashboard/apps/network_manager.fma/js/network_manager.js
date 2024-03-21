@@ -8,7 +8,6 @@ var fabmo = new Fabmo;
 
 var networks = {};
 var network_history = {};
-var CUrssid = '';
 
 // Get networks from the tool, and add entries to the table
 function refreshWifiTable(callback){
@@ -267,10 +266,14 @@ $(document).ready(function() {
                     console.log(data);
                     CUrssid = data.ssid;
                     fabmo.showModal({message:"Successfully connected! Please go find me on network: " + data.ssid+ " at " + data.ip});
-                    refreshApps();
-                    refreshHistoryTable();
+                    
+                    // How do I pick up the closing of this modal message?
+
+
                     // full refresh of this page to get the new ip address to display
-                    location.reload();
+                    // window.location.reload();
+                    // refreshApps();
+                    // refreshHistoryTable();
                 }
             });
         });
@@ -288,6 +291,14 @@ $(document).ready(function() {
     // Display generic browser info message for buttons not yet functional
     $('tbody').on('click', 'td.not-implemented', function() {
         fabmo.showModal({message:"Feature coming soon."});
+    });
+
+    // Pick up closing of the modal message
+    $('fabmo.modalOkay').on('click', function () {
+        //fabmo.on('modal:close', function() {
+        window.location.reload();
+        refreshApps();
+        refreshHistoryTable();
     });
 
     // Action for clicking the AP mode button

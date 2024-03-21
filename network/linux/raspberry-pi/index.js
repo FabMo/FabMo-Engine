@@ -19,7 +19,7 @@ const commands = require("./commands.js");
 var wifiInterface = "wlan0"; // test assigning wlan1 to wifiInterface ???
 var ethernetInterface = "eth0";
 
-var last_name = "";
+//var last_name = "";
 
 // eslint-disable-next-line no-unused-vars
 var CUR_UAP0_SSID = "";
@@ -190,23 +190,23 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     var interfaces = os.networkInterfaces();
     // var wlan0Int = interfaces.wlan0;
     // var apInt = interfaces.uap0;
-    var wiredInt = "eth0";
+    //var wiredInt = "eth0";
     log.debug("##############-------- >>>>>> CALL to checkWifiHealth");
 
     //    log.debug("##-------------------- >> Initial Screen");
     // Cases below should force us to consider updating the AP SSID
-    if (
-        !this.network_history || // first time through
-        (!this.network_history[wiredInt] && // no history
-            interfaces[wiredInt]?.[0]?.address) ||
-        (this.network_history[wiredInt] && !interfaces[wiredInt]) || //
-        (this.network_history[wiredInt] &&
-            interfaces[wiredInt] && // we have history and a current value, BUT...
-            this.network_history[wiredInt] != interfaces[wiredInt][0].address) // ... they are different
-    ) {
-        //        var forceSSIDupdate = 1;
-        //        log.debug("##-------------got a FORCED UPDATE");
-    }
+    // if (
+    //     !this.network_history || // first time through
+    //     (!this.network_history[wiredInt] && // no history
+    //         interfaces[wiredInt]?.[0]?.address) ||
+    //     (this.network_history[wiredInt] && !interfaces[wiredInt]) || //
+    //     (this.network_history[wiredInt] &&
+    //         interfaces[wiredInt] && // we have history and a current value, BUT...
+    //         this.network_history[wiredInt] != interfaces[wiredInt][0].address) // ... they are different
+    // ) {
+    //     //        var forceSSIDupdate = 1;
+    //     //        log.debug("##-------------got a FORCED UPDATE");
+    // }
 
     //    log.debug("##-------------------- >> Update History for Re-Screen");
     this.network_history = {};
@@ -220,7 +220,7 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             }
         }.bind(this)
     );
-    // Check if wlan0 exists
+    // Check if wlan0 exists and get ssid from outside file if so
     if (interfaces.wlan0) {
         log.debug("wlan0 interface found");
         // Read the JSON file to get the SSID name
@@ -235,67 +235,6 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             "wlan0 interface not found or it does not have an IP address"
         );
     }
-
-    // Check to see if there is a wlan0 interface in interfaces object
-    // if there is, then check if it has an IP address
-    // if it does, then read the json file /etc/network_conf_fabmo/recent_wifi.json
-    // to get the ssid name
-
-    // // The only differences between the following conditions are in the
-    // // text messages we log. Here are variables to set that up.
-    // var wirelessWarn;
-    // var apRecoveryError;
-    // var apRecoverySuccess;
-    // var apRecoverExecute = false; //flag to record if we should we execute _joinAP()
-    // if (wlan0Int) {
-    //     // don't know why but if the wlan is up we always silently _rejoin() and
-    //     // reset the ap name? why?  rmackie question for reviewers.
-    //     wirelessWarn = "";
-    //     apRecoveryError = "Could not bring back up AP";
-    //     apRecoverySuccess = "AP back up";
-    //     apRecoverExecute = true;
-    // } else {
-    //     // No wireless connection
-    //     if (apInt) {
-    //         // If the AP is up we only join if the ethernet ip address changed (checked later).
-    //         // ... otherwise we just leave things alone.
-    //         if (forceSSIDupdate) {
-    //             wirelessWarn = "Currently in AP mode, re-writing SSID";
-    //             apRecoveryError = "Could not re-write SSID";
-    //             apRecoverySuccess = "AP back up";
-    //             apRecoverExecute = true;
-    //         } // no else, because apRecover is already false
-    //     } else {
-    //         // if the ap isn't up, we rejoin.
-    //         // eslint-disable-next-line no-unused-vars
-    //         wirelessWarn = "No wifi or AP trying to bring up AP";
-    //         // eslint-disable-next-line no-unused-vars
-    //         apRecoveryError = "Could not bring back up AP";
-    //         // eslint-disable-next-line no-unused-vars
-    //         apRecoverySuccess = "AP back up";
-    //         apRecoverExecute = true;
-    //     }
-    // }
-    // if (apRecoverExecute) {
-    //     //        log.debug("##----------------####=>>>>>> CALL DEEPER CHECK!");
-    //     // eslint-disable-next-line no-unused-vars
-    //     this._checkSSID(function (err, res) {
-    //         if (err) {
-    //             log.debug(err);
-    //         } else {
-    //             //                log.debug("##---- AP RECOVER CONSIDERATION COMPLETED");
-    //             //                log.debug();
-    //         }
-    //     });
-    //     // eslint-disable-next-line no-unused-vars
-    //     // this._joinAP(function (err, res) {
-    //     //     if (err) {
-    //     //         log.warn("Could not bring back up AP");
-    //     //     } else {
-    //     //         log.info("AP back up");
-    //     //     }
-    //     // });
-    //}
 };
 
 RaspberryPiNetworkManager.prototype.checkEthernetHealth = function () {
@@ -335,85 +274,85 @@ RaspberryPiNetworkManager.prototype.confirmIP = function (callback) {
     }, 1000);
 };
 
-// Actually do the work of joining AP mode AND updating AP name
-RaspberryPiNetworkManager.prototype._joinAP = function (
-    callback,
-    CUR_UAP0_SSID
-) {
-    var interfaces = os.networkInterfaces();
-    var wlan0Int = interfaces.wlan0;
-    var eth0Int = interfaces.eth0;
-    var name = config.engine.get("name"); // should already be simplified
-    //var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
-    var full_name;
-    var ext;
+// // Actually do the work of joining AP mode AND updating AP name
+// RaspberryPiNetworkManager.prototype._joinAP = function (
+//     callback,
+//     CUR_UAP0_SSID
+// ) {
+//     var interfaces = os.networkInterfaces();
+//     var wlan0Int = interfaces.wlan0;
+//     var eth0Int = interfaces.eth0;
+//     var name = config.engine.get("name"); // should already be simplified
+//     //var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
+//     var full_name;
+//     var ext;
 
-    // Updating AP-Name
-    // Then, restarting AP if we get name change; this should drop AP momentarily!
-    ext = ":";
-    if (eth0Int) {
-        ext = ext + eth0Int[0].address;
-    } else if (wlan0Int) {
-        ext = ext + wlan0Int[0].address;
-    } else {
-        ext = ">AP:192.168.42.1";
-    }
-    full_name = name + ext;
-    //    log.debug("CHECKING NAMES full_name: " + full_name);
-    //    log.debug("CHECKING NAMES last_name: " + last_name);
-    if (
-        full_name !== last_name ||
-        (CUR_UAP0_SSID &&
-            (!CUR_UAP0_SSID.includes(":") ||
-                CUR_UAP0_SSID === "FabMo-???>AP:192.168.42.1" ||
-                full_name != CUR_UAP0_SSID))
-    ) {
-        //        log.debug("///////////###-------- >>>>>> CALL REJOIN-AP");
-        log.debug(
-            'Changing SSID from "' + last_name + '" to "' + full_name + '"'
-        );
-        // SSID is limited to 32 char; so makes long names challenging, as in:
-        // 'ted-dev:169.254.225.224:192.168.1.109'
-        // So best to prioritize display for ethernet, until a better idea ...
-        //     TODO: chop tool names that are too long
-        var network_config = config.engine.get("network");
-        network_config.wifi.mode = "ap";
-        config.engine.set("network", network_config);
-        commands.takeDown("uap0", (err, result) => {
-            log.debug("taken down AP");
-            console.log(err);
-            console.log(result);
-            commands.addApInterface((err, result) => {
-                log.debug("Adding AP int");
-                console.log(err);
-                console.log(result);
-                commands.bringUp("uap0", (err, result) => {
-                    log.debug("bringing up");
-                    console.log(err);
-                    console.log(result);
-                    commands.configureApIp("192.168.42.1", (err, result) => {
-                        log.debug("configure");
-                        console.log(err);
-                        console.log(result);
-                        commands.hostapd(
-                            {
-                                ssid: full_name,
-                            },
-                            () => {
-                                log.debug("hostAPD up");
-                                //   commands.dnsmasq({ interface: "uap0" }, () => {
-                                //       console.log("should be up and running AP");
-                                //       callback(err, result);
-                                //   });
-                            }
-                        );
-                    });
-                });
-            });
-        });
-    }
-    last_name = full_name;
-};
+//     // Updating AP-Name
+//     // Then, restarting AP if we get name change; this should drop AP momentarily!
+//     ext = ":";
+//     if (eth0Int) {
+//         ext = ext + eth0Int[0].address;
+//     } else if (wlan0Int) {
+//         ext = ext + wlan0Int[0].address;
+//     } else {
+//         ext = ">AP:192.168.42.1";
+//     }
+//     full_name = name + ext;
+//     //    log.debug("CHECKING NAMES full_name: " + full_name);
+//     //    log.debug("CHECKING NAMES last_name: " + last_name);
+//     if (
+//         full_name !== last_name ||
+//         (CUR_UAP0_SSID &&
+//             (!CUR_UAP0_SSID.includes(":") ||
+//                 CUR_UAP0_SSID === "FabMo-???>AP:192.168.42.1" ||
+//                 full_name != CUR_UAP0_SSID))
+//     ) {
+//         //        log.debug("///////////###-------- >>>>>> CALL REJOIN-AP");
+//         log.debug(
+//             'Changing SSID from "' + last_name + '" to "' + full_name + '"'
+//         );
+//         // SSID is limited to 32 char; so makes long names challenging, as in:
+//         // 'ted-dev:169.254.225.224:192.168.1.109'
+//         // So best to prioritize display for ethernet, until a better idea ...
+//         //     TODO: chop tool names that are too long
+//         var network_config = config.engine.get("network");
+//         network_config.wifi.mode = "ap";
+//         config.engine.set("network", network_config);
+//         commands.takeDown("uap0", (err, result) => {
+//             log.debug("taken down AP");
+//             console.log(err);
+//             console.log(result);
+//             commands.addApInterface((err, result) => {
+//                 log.debug("Adding AP int");
+//                 console.log(err);
+//                 console.log(result);
+//                 commands.bringUp("uap0", (err, result) => {
+//                     log.debug("bringing up");
+//                     console.log(err);
+//                     console.log(result);
+//                     commands.configureApIp("192.168.42.1", (err, result) => {
+//                         log.debug("configure");
+//                         console.log(err);
+//                         console.log(result);
+//                         commands.hostapd(
+//                             {
+//                                 ssid: full_name,
+//                             },
+//                             () => {
+//                                 log.debug("hostAPD up");
+//                                 //   commands.dnsmasq({ interface: "uap0" }, () => {
+//                                 //       console.log("should be up and running AP");
+//                                 //       callback(err, result);
+//                                 //   });
+//                             }
+//                         );
+//                     });
+//                 });
+//             });
+//         });
+//     }
+//     last_name = full_name;
+// };
 
 RaspberryPiNetworkManager.prototype._disableWifi = function (callback) {
     log.info("Disabling wifi...");
@@ -594,44 +533,6 @@ RaspberryPiNetworkManager.prototype.init = function () {
         // this.checkEthernetHealth();
         // this.runEthernet();
     }, 10000);
-    // commands.startWpaSupplicant((err, result) => {
-    //     if (err) {
-    //         log.error("RIGHT HERE!!! wpa errored with: " + err);
-    //     } else {
-    //         log.info("wpa started with: " + result);
-    //         setInterval(() => {
-    //             this.returnWifiNetworks();
-    //             this.checkWifiHealth();
-    //             // this.checkEthernetHealth();
-    //             // this.runEthernet();
-    //         }, 10000);
-    //     }
-    // });
-
-    //// older code
-    // TODO: should this be used?
-    // setInterval(() => {
-    //   this.returnWifiNetworks();
-    //   this.checkWifiHealth();
-    //   // this.checkEthernetHealth();
-    //   // this.runEthernet();
-    // }, 10000);
-    // this._joinAP(function(err, res){
-    //   if(err){
-    //     console.log(err)
-    //   } else {
-    //     setTimeout(
-    //       function () {
-    //         commands.startWpaSupplicant((err, result) => {
-    //           if(err){
-    //             log.error('wpa errored with: ' + err)
-    //           } else {
-    //             log.info('wpa started with: '+ res);
-    //           }
-    //         })
-    //       }, 10000);
-    //   }
-    // }.bind(this));
 };
 
 // Get a list of the available wifi networks.  (The "scan results")
@@ -653,6 +554,19 @@ RaspberryPiNetworkManager.prototype.connectToAWifiNetwork = function (
 ) {
     // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
     this._joinWifi(ssid, key, callback);
+};
+
+// Stubbing this in as a new forget function based on some stubbs already in place for call
+// Forget a specified wifi network.
+//   ssid - The network ssid to connect to
+//    key - The network key
+RaspberryPiNetworkManager.prototype.forgetAWifiNetwork = function (
+    ssid,
+    key,
+    callback
+) {
+    // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
+    this._forgetWifi(ssid, key, callback);
 };
 
 // Enable the wifi
