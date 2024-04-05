@@ -22,7 +22,8 @@ module.exports = {
     },
     rules: {
         "no-mixed-spaces-and-tabs": "off",
-        "prettier/prettier": ["error"],
+        "prettier/prettier": ["warn"],
+        "no-unused-vars": "warn",
     },
     ignorePatterns: [
         "dashboard/static/js/libs/socket.io.js",

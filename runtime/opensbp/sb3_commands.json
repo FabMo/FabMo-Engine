@@ -5046,8 +5046,59 @@
 
    "TR": {
       "cmd": "TR",
-      "name": "Tool for Spindle RPM Control"
+      "name": "Tool for Spindle RPM Control",
+      "params": [
+         {
+            "name": "New RPM",
+            "desc": "New Spindle Speed in RPM",
+            "abrev": "spS",
+            "typeext": 2,
+            "default": "",
+            "sysvar": "0",
+            "range": [
+               "500",
+               "30,000"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Spindle Number",
+            "desc": "If more than one spindle, specify spindle number",
+            "abrev": "sNum",
+            "typeext": 2,
+            "default": "1",
+            "sysvar": "0",
+            "range": [
+               "1",
+               "2"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Spindle Direction",
+            "desc": "Direction as FORWARD(F) or REVERSE(R); Disregarded if Spindle is in motion when called",
+            "abrev": "sDir",
+            "typeext": 2,
+            "default": "F",
+            "sysvar": "0",
+            "range": [
+               "F",
+               "R"
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "Spindle Option",
+            "desc": "Optional spindle call using specific VFD parameter specifications.",
+            "abrev": "sOpt",
+            "typeext": 2,
+            "default": "",
+            "sysvar": "0",
+            "type": "opt"
+         }
+      ]
    },
+
 
    "DE": {
       "cmd": "DE",

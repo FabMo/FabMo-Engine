@@ -24,7 +24,9 @@ var flashFirmWare = function (req, res, next) {
                 engine.stop("firmware", function () {
                     setTimeout(function () {
                         exec(
-                            "stty -F /dev/ttyACM0 1200",
+                            // **todo: this needs to be drawn from config
+                            //"stty -F /dev/ttyACM0 1200",
+                            "stty -F /dev/fabmo_g2_motion 1200",
                             function (err, result) {
                                 if (err) {
                                     throw new Error(

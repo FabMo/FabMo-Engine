@@ -30,6 +30,7 @@ var profiles = require("./profiles");
 var crypto = require("crypto");
 var moment = require("moment");
 //other util
+var spindle = require("./spindle");
 var Util = require("util");
 
 var PACKAGE_CHECK_DELAY = 30; // Seconds
@@ -73,8 +74,10 @@ function EngineConfigFirstTime(callback) {
     switch (OS) {
         case "linux":
             var ports = {
-                control_port_linux: "/dev/ttyACM0",
-                data_port_linux: "/dev/ttyACM0",
+                control_port_linux: "/dev/fabmo_g2_motion",
+                data_port_linux: "/dev/ttyfabmo_g2_motion",
+                // control_port_linux: "/dev/ttyACM0",
+                // data_port_linux: "/dev/ttyACM0",
             };
             config.engine.update(ports, function () {
                 callback();
@@ -565,6 +568,31 @@ Engine.prototype.start = function (callback) {
                     log.debug("No obsolete entries in G2 config.");
                     callback();
                 }
+            }.bind(this),
+
+            function startup_spindle(callback) {
+                // spindle speed controller start
+                // main server application file, e.g., app.js
+                // Example of initializing the spindle connection during app startup
+                spindle
+                    .connectVFD()
+                    .then(() => {
+                        // The spindle is now connected, and you can proceed with the rest of the application setup
+                        log.info("*****Connected to spindle VFD via MODBUS");
+                        // todo: NEED TO CHANGE THIS INTO a CONFIG BASED CCALL
+                        spindle.readVFD(8450).then((data) => {
+                            // The spindle data has been read, and you can proceed with the rest of the application setup
+                            log.info("*****Spindle Data:", data);
+                        });
+                    })
+                    .catch((error) => {
+                        // Handle connection errors here
+                        log.error(
+                            "*****Failed to connect to spindle VFD:",
+                            error
+                        );
+                    });
+                callback();
             }.bind(this),
 
             // Load commands which are populated dynamically from the contents of a folder
