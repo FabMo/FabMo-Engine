@@ -5075,21 +5075,17 @@
             "type": "sng"
          },
          {
-            "name": "Spindle Direction",
-            "desc": "Direction as FORWARD(F) or REVERSE(R); Disregarded if Spindle is in motion when called",
-            "abrev": "sDir",
+            "name": "Spindle Option 1",
+            "desc": "Unused",
+            "abrev": "",
             "typeext": 2,
-            "default": "F",
+            "default": "",
             "sysvar": "0",
-            "range": [
-               "F",
-               "R"
-            ],
             "type": "opt"
          },
          {
-            "name": "Spindle Option",
-            "desc": "Optional spindle call using specific VFD parameter specifications.",
+            "name": "Spindle Option 2",
+            "desc": "Unused",
             "abrev": "sOpt",
             "typeext": 2,
             "default": "",

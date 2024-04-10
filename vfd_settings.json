@@ -18,6 +18,7 @@
         "READ_OUTPUT_CURRENT": 8452,
         "READ_STATUS": 8449,
         "SET_FREQUENCY": 8193,
+        "SET_DIRECTION": 8192,
         "UNLOCK_DRIVE": 48,
         "UNLOCK_PARAMETERS": 49
       },

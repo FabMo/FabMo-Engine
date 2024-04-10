@@ -50,6 +50,8 @@ var ManualRuntime = require("./runtime/manual").ManualRuntime;
 var PassthroughRuntime = require("./runtime/passthrough").PassthroughRuntime;
 var IdleRuntime = require("./runtime/idle").IdleRuntime;
 
+const { getSpindleVFDStatus } = require("./spindle1.js");
+
 // Instantiate a machine, connecting to the serial port specified in the engine configuration.
 // TODO: We probably don't need special keys in the config for each platform anymore.  Since the engine
 //       does its first-time config platform-detecting magic (See engine.js) these ports are likely to
@@ -245,6 +247,7 @@ function Machine(control_path, callback) {
                     }
                 }.bind(this)
             );
+            this.status.spindleVFD1 = getSpindleVFDStatus();
         }.bind(this)
     );
 
