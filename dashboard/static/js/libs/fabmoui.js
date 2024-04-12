@@ -263,6 +263,29 @@
             }
         });
 
+        // Update Spindle Speed Display
+        if ("spindleVFD1" in status) {
+            // compare status.spindleVFD1.vfdDesgFreq to status.spindleVFD1.vfdAchvFreq
+            // if .vfdAchFreq is not 0, then spindle is on and we should display the achieved speed .vfdAchvFreq
+            // and color the text blue
+            // if .vfdAchFreq is 0, then spindle is off and we should display the desired speed .vfdDesgFreq
+            // and color the text black
+            if (status.spindleVFD1.vfdAchvFreq !== 0) {
+                var spindleSpeed = status.spindleVFD1.vfdAchvFreq;
+                $(".spindle-speed input").css("color", "blue");
+                $(".spindle-speed input").val(spindleSpeed);
+            } else {
+                var spindleSpeed = status.spindleVFD1.vfdDesgFreq;
+                $(".spindle-speed input").css("color", "black");
+                $(".spindle-speed input").val(spindleSpeed);
+            }
+            var pwrDraw = status.spindleVFD1.vfdAmps;
+            $(".spindle-power input").val(pwrDraw);
+        } else {
+            $(".spindle-speed input").val(0);
+            $(".spindle-power input").val(0);
+        }
+
         //Current File or job
         if (status.job) {
             var time_in_ms = status.server_ts - status.job.started_at;

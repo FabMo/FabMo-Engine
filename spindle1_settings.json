@@ -11,6 +11,8 @@
       "CLEAR_BUFFERS_AFTER_CALL": true,
       "DEBUG": false,
       "PASSWORD": 0,
+      "MAX_RPM": 18000,
+      "MIN_RPM": 8000,
       "Registers": {
         "COMMAND_DRIVE": 1,
         "READ_FREQUENCY": 8450,

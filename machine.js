@@ -138,6 +138,12 @@ function Machine(control_path, callback) {
         targetHit: false,
         lastState: null,
         clientDisconnected: false,
+        spindleVFD1: {
+            vfdStatus: "stop-FWD",
+            vfdDesgFreq: 12000,
+            vfdAchvFreq: 0,
+            vfdAmps: 0,
+        },
     };
 
     this.fireButtonDebounce = false;

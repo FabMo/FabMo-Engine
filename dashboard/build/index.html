@@ -202,7 +202,7 @@
         </div>
       </aside>
 
-        <!-- ********** Tool Position Widget ********** -->
+        <!-- ********** LARGE POSITION DRO slide-out  ********** -->
       <aside class="DRO" id="right-menu">
           <div class="dro-dropdown">
               <div class="xaxis machine-pos-large" ><label>X : <span class="posx">X.XXX</span></label></div>
@@ -211,7 +211,44 @@
               <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
               <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
               <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div>
-            </div>
+          </div>
+
+          <div class="dro-addons fabmo-status">
+              <div class="dro-addon" id="dro-addon-1">
+                  <div class="dro-addon-spacer-row"></div>
+                  <div class="dro-addon-label"> OUTPUTS (Toggle) </div>
+                  <div class="dro-addon-outputs output-toggles">
+                    <div class="out1 output off" onclick="toggleOutput(1)"> 1 </div>
+                    <div class="out2 output off" onclick="toggleOutput(2)"> 2 </div>
+                    <div class="out3 output off" onclick="toggleOutput(3)"> 3 </div>
+                    <div class="out4 output off"> 4 </div>
+                    <div class="space input">&nbsp</div>
+                    <div class="space input">&nbsp</div>
+                    <div class="out5 output off"> 5 </div>
+                    <div class="out6 output off"> 6 </div>
+                    <div class="out7 output off"> 7 </div>
+                    <div class="out8 output off"> 8 </div>
+                    <div class="space input">&nbsp</div>
+                    <div class="space input">&nbsp</div>
+                    <div class="out9 output off"> 9 </div>
+                    <div class="out10 output off"> 10 </div>
+                    <div class="out11 output off"> 11 </div>
+                    <div class="out12 output off"> 12 </div>
+                  </div>  
+              </div>
+              <div class="dro-addon" id="dro-addon-2">
+                <div class="dro-addon-spacer-row""></div>
+                <div class="dro-addon-label"> MOVE SPEED X/Y (Feedrate) </div>
+                  <div class="dro-addon-value"> IPS <input type="number" step="0.1" min="0" max="50" value="0.00"></div>
+              </div>
+              <div class="dro-addon" id="dro-addon-3">
+                <div class="dro-addon-spacer-row"></div>
+                <div class="dro-addon-label"> Spindle-1 </div>
+                <div class="dro-addon-value spindle-speed"> RPM <input type="number" step="0.1" min="0" max="50" value="0.00"></div>
+                <div class="dro-addon-value spindle-power"> AMP <input type="number" step="0.1" min="0" max="50" value="0.00"></div>
+              </div>
+          </div>    
+
       </aside>
 
         <section class="main-section">

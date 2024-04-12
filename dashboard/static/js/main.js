@@ -144,6 +144,7 @@ engine.getVersion(function (err, version) {
                 }
             });
 
+            // ------------------------------------------------------------ STATUS HANDLER
             dashboard.engine.on("status", function (status) {
                 fixedTimeEnd = Date.now();
                 console.log(status);
