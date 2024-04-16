@@ -15,8 +15,14 @@ var util = require("util");
 var extend = require("../util").extend;
 var PLATFORM = require("process").platform;
 var log = require("../log").logger("config");
+//var EventEmitter = require("events").EventEmitter;
 
 var Config = require("./config").Config;
+// var Config = function (name) {
+//     EventEmitter.call(this);
+//     this.name = name;
+//     this._cache = {}; // Assuming some kind of internal state
+// };
 
 // The OpenSBP configuration object manages the settings related to the OpenSBP runtime.
 // Importantly, it keeps a field called `variables` which is a map of variable names to values
@@ -25,6 +31,9 @@ var Config = require("./config").Config;
 // lends the persistence to those variables.
 var OpenSBPConfig = function () {
     Config.call(this, "opensbp");
+    // EventEmitter.call(this);
+    // this.name = name;
+    // this._cache = {}; // Assuming some kind of internal state
 };
 util.inherits(OpenSBPConfig, Config);
 
@@ -146,7 +155,7 @@ OpenSBPConfig.prototype.update = function (data, callback, force) {
             });
         }
     }
-
+    //    this.emit("configChanged", this._cache); // Emit event with the current state of the config
     this.save(function (err, result) {
         if (err) {
             callback(err);

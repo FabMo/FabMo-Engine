@@ -126,6 +126,15 @@
                 this.updateStatusContent(status_report);
             }.bind(this)
         );
+
+        // update status content every sec to cover potential missed updates and config changes
+        setInterval(
+            function () {
+                this.updateStatus();
+            }.bind(this),
+            1000
+            //this.refresh
+        );
     }
 
     FabMoUI.prototype.on = function (evt, handler) {
@@ -263,27 +272,43 @@
             }
         });
 
+        // Update Speed Display (Feedrate)
+        var speed = 0;
+
+        // are these different speeds? One might be the update?
+        console.log("speedThat- ", that.tool.config.opensbp["movexy_speed"]);
+        console.log("speedThis- ", this.tool.config.opensbp["movexy_speed"]);
+        // Reading any new speed from config; update being triggered from machine by report of config change
+        speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
+
+        $(".feedrate input").val(speed);
+        if (status.unit === "mm") {
+            $(".feedrate-unit").text("mm/sec");
+        } else {
+            $(".feedrate-unit").text("in/sec");
+        }
+
         // Update Spindle Speed Display
-        if ("spindleVFD1" in status) {
-            // compare status.spindleVFD1.vfdDesgFreq to status.spindleVFD1.vfdAchvFreq
-            // if .vfdAchFreq is not 0, then spindle is on and we should display the achieved speed .vfdAchvFreq
+        if ("spindle" in status) {
+            // If .vfdAchFreq is not 0, then spindle is ON and we should display the achieved speed .vfdAchvFreq
             // and color the text blue
             // if .vfdAchFreq is 0, then spindle is off and we should display the desired speed .vfdDesgFreq
-            // and color the text black
-            if (status.spindleVFD1.vfdAchvFreq !== 0) {
-                var spindleSpeed = status.spindleVFD1.vfdAchvFreq;
-                $(".spindle-speed input").css("color", "blue");
+            // and color the text dull
+            if (status.spindle.vfdAchvFreq !== 0) {
+                var spindleSpeed = status.spindle.vfdAchvFreq;
+                $(".spindle-speed input").css("color", "#42e6f5");
                 $(".spindle-speed input").val(spindleSpeed);
             } else {
-                var spindleSpeed = status.spindleVFD1.vfdDesgFreq;
-                $(".spindle-speed input").css("color", "black");
+                var spindleSpeed = status.spindle.vfdDesgFreq;
+                $(".spindle-speed input").css("color", "gray");
                 $(".spindle-speed input").val(spindleSpeed);
             }
-            var pwrDraw = status.spindleVFD1.vfdAmps;
-            $(".spindle-power input").val(pwrDraw);
+            var pwrDraw = status.spindle.vfdAmps;
+            var formattedDraw = (pwrDraw * 0.01).toFixed(2);
+            $(".spindle-power input").val(formattedDraw);
         } else {
-            $(".spindle-speed input").val(0);
-            $(".spindle-power input").val(0);
+            $(".spindle-speed input").val("0");
+            $(".spindle-power input").val("0.00");
         }
 
         //Current File or job

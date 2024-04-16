@@ -731,22 +731,17 @@ Engine.prototype.start = function (callback) {
                 );
             }.bind(this),
 
-            function startup_spindle(callback) {
-                // spindle speed controller startup
-                spindle1
-                    .connectVFD()
-                    .then(() => {
-                        log.info("Spindle1 VFD connected via MODBUS");
-                    })
-                    .catch((error) => {
-                        // Handle connection errors here
-                        log.error(
-                            "***Failed to connect to Spindle1 VFD:",
-                            error
-                        );
-                    });
+            // Start the accessories (spindle speed controller, etc.)
+            function add_accessories(callback) {
+                this.machine.startAccessories(callback);
                 callback();
             }.bind(this),
+
+            // // Start watching for config changes for display
+            // function start_configWatch(callback) {
+            //     this.machine.watchConfig(callback);
+            //     callback();
+            // }.bind(this),
 
             // Kick off the server if all of the above went OK.
             function start_server(callback) {

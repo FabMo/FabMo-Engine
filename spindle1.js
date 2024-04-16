@@ -1,52 +1,137 @@
 // turn off prettier for this file
 /* eslint-disable */
-//var SerialPort = require("serialport");
-var fs = require("fs");
-// var events = require("events");
-// var async = require("async");
-// var util = require("util");
-// var u = require("./util")
-var log = require("./log").logger("spindleVFD");
-// var process = require("process");
-// var stream = require("stream");
-
-var machine = require("./machine");
-//var machine = new machine();
-
 // spindle1.js
-var vfdBusy = false;
+const EventEmitter = require('events').EventEmitter;
+const util = require("util");
+const ModbusRTU = require("modbus-serial");
+const client = new ModbusRTU();
+const fs = require("fs");
+const log = require("./log").logger("spindleVFD");
 
 // At this time only using the Modbus-Serial library for VFD control of RPM and reading registers and status
 // RUN/STOP is implemented as and OUPUT 1 from FabMo to RUN input on VFD (Delta = M1); FWD/REV is optional, also to be implemented as OUTPUT#? (Delta=M0)
-// Only spindleVFD1 is implemented; spindleVFD2 is a placeholder for future expansion
+// Only Spin is implemented; spindleVFD2 is a placeholder for future expansion
 
-const ModbusRTU = require("modbus-serial");
-const client = new ModbusRTU();
-
-let spindleVFD1 = {
-    status: {
+// Constructor for Spin
+function Spin() {
+    EventEmitter.call(this);
+    this.status = {
         vfdStatus: 0,
         vfdDesgFreq: 0,
         vfdAchvFreq: 0,
         vfdAmps: 0
+    };
+    this.vfdSettings = {};
+    this.vfdBusy = false;
+    this.laststatus = {};
+}
+
+// Inherit from EventEmitter
+util.inherits(Spin, EventEmitter);
+
+// Load settings for a VFD
+Spin.prototype.loadVFDSettings = function() {
+    const configFile = "./spindle1_settings.json";
+    return new Promise((resolve, reject) => {
+        fs.readFile(configFile, "utf8", (err, data) => {
+            if (err) {
+                log.error("Failed to load VFD settings from settings file:", err);
+                reject(err);
+            } else {
+                this.settings = JSON.parse(data);
+                log.info("VFD Settings loaded from settings file:", this.settings.VFD_Settings);
+                resolve();
+            }
+        });
+    });
+};
+
+// Connect to a VFD
+Spin.prototype.connectVFD = function() {
+    return new Promise((resolve, reject) => {
+        // Access settings from this.settings.VFD_Settings per JSON file setup
+        const settings = this.settings.VFD_Settings;
+        this.vfdSettings = settings;
+        client.connectRTUBuffered(settings.COM_PORT, {
+            baudRate: settings.BAUDRATE,
+            parity: settings.PARITY,
+            dataBits: settings.BYTESIZE,
+            stopBits: settings.STOPBITS
+        })
+        .then(() => {
+            client.setID(settings.MB_ADDRESS);
+            log.info("Connected to VFD via MODBUS");
+            this.startSpindleVFD();
+            resolve();
+        })
+        .catch((error) => {
+            log.error("***Error connecting to VFD:", error);
+            reject(error);
+        });
+    });
+};
+
+// Set up 2-second updates to spindleVFD status (sort of a model for other accessory drivers)
+Spin.prototype.startSpindleVFD = function() {
+    const settings = this.settings.VFD_Settings;
+    setInterval(() => {
+        if (this.vfdBusy) {
+            log.error("VFD is busy; skipping update");
+            return;
+        }
+        Promise.race([
+            readVFD(settings.Registers.READ_STATUS), // Assumes readVFD is another method on Spin
+            new Promise((_, reject) => setTimeout(() => reject(new Error("VFD not responding > ON? PRESENT?")), 5000)) // 5 seconds timeout
+        ])
+        .then((data) => {
+            var vOnDir = "stop-F";
+            if (data[0] & 3) {vOnDir = "RUN-"} else {vOnDir = "stop-"}
+            if (data[0] & 24) {vOnDir += "REV"} else {vOnDir += "FWD"}
+            this.status.vfdStatus = vOnDir;
+            this.status.vfdDesgFreq = data[1];
+            this.status.vfdAchvFreq = data[2];
+            this.status.vfdAmps = data[3];
+            this.updateStatus(this.status); // initiate change-check and global status change if warranted
+            log.info("VFD update:" + JSON.stringify(this.status));
+        })
+        .catch((error) => {
+            log.error("Error reading VFD:" + error);
+        });
+    }, 2000);
+};
+  
+// Method to update VFD status Globally via "machine"
+Spin.prototype.updateStatus = function(newStatus) {
+    // for the change-check here, probably most efficient to just do this manual comparison
+    if (this.laststatus.vfdStatus !== newStatus.vfdStatus || 
+        this.laststatus.vfdDesgFreq !== newStatus.vfdDesgFreq || 
+        this.laststatus.vfdAchvFreq !== newStatus.vfdAchvFreq ||
+        this.laststatus.vfdAmps !== newStatus.vfdAmps) {
+        this.status = Object.assign({}, this.status, newStatus);
+        this.emit('statusChanged', this.status); // Emit status change to trigger event on machine
+        log.info("VFD Status Changed:", JSON.stringify(this.status));
+        this.laststatus = {...this.status};
     }
 };
 
-function connectVFD() {
+Spin.prototype.setSpindleVFDFreq = function(data) {
+    this.vfdBusy = true;
     return new Promise((resolve, reject) => {
-        client.connectRTUBuffered( vfdSettings.COM_PORT, { baudRate: vfdSettings.BAUDRATE, parity: vfdSettings.PARITY, dataBits: vfdSettings.BYTESIZE, stopBits: vfdSettings.STOPBITS })
-            .then(() => {
-                client.setID(vfdSettings.MB_ADDRESS);
-                log.info("Connected to VFD via MODBUS");
-                startSpindleVFD();
-                resolve();
+        writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, data)
+            .then((data) => {
+                log.info("VFD Data after setting:" + JSON.stringify(data));
+                this.vfdBusy = false;
+                resolve(data);
             })
             .catch((error) => {
-                log.error("***Error connecting to VFD:", error);
+                log.error("Error setting VFD frequency:", error);
+                this.vfdBusy = false;
                 reject(error);
             });
     });
 }
+
+// ------------------- Calls to ModbusRTU ------------------
 
 function readVFD(data) {
     return new Promise((resolve, reject) => {
@@ -60,7 +145,7 @@ function readVFD(data) {
                 }
             })
             .catch((error) => {
-                log.error("***Error reading VFD:", error);
+                log.error("***Error reading VFD: " + error);
                 reject(error);
             });
     });
@@ -73,7 +158,7 @@ function writeVFD(reg, data) {
                 resolve(data);
             })
             .catch((error) => {
-                log.error("***Error writing VFD:", error);
+                log.error("***Error writing VFD: " + error);
                 reject(error);
             });
     });
@@ -87,80 +172,14 @@ function disconnectVFD() {
                 resolve();
             })
             .catch((error) => {
-                log.error("***Error disconnecting from VFD:", error);
+                log.error("***Error disconnecting from VFD: " + error);
                 reject(error);
             });
     });
 }
 
-// ==================================================  Handlers for TR Command
 
-function getSpindleVFDStatus() {
-    // keys used here correspond to those in main status report, should just fold in;
-    return spindleVFD1.status;
-}
-function setSpindleVFDFreq(data) {
-    vfdBusy = true;
-    writeVFD(vfdSettings.Registers.SET_FREQUENCY, data)
-        .then((data) => {
-        // log.info("VFD Data after setting:" + JSON.stringify(data));
-        })
-        .catch((error) => {
-            log.error("Error reading VFD after Freq:", error);
-        });
-    vfdBusy = false;
-}
+// Setting up a single instance
+const singletonInstance = new Spin();
 
-// Load the VFD settings from the config file
-function loadVFDSettings() {
-    const configFile = './spindle1_settings.json';
-    const rawData = fs.readFileSync(configFile);
-    const settings = JSON.parse(rawData);
-    return settings.VFD_Settings;
-}
-
-// Set up 2-second updates to spindleVFD status (sort of a model for other accessory drivers)
-function startSpindleVFD() {
-    // var spindleSupport = new SpindleSupport();
-    // spindleSupport.connect(machine);
-
-    setInterval(() => {
-        // 5 sec error protection
-        // if vfdBusy then return
-        if (vfdBusy) {
-            log.error("VFD is busy; skipping update");
-            return;
-        }
-        Promise.race([
-            readVFD(vfdSettings.Registers.READ_STATUS),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('VFD not responding; ON? PRESENT?')), 5000)) // 5 seconds timeout
-        ])
-            .then((data) => {
-                var vOnDir = "stop-F";
-                if (data[0] & 3) {vOnDir = "RUN-"} else {vOnDir = "stop-"}
-                if (data[0] & 24) {vOnDir += "REV"} else {vOnDir += "FWD"}
-                spindleVFD1.status.vfdStatus = vOnDir;
-                spindleVFD1.status.vfdDesgFreq = data[1];
-                spindleVFD1.status.vfdAchvFreq = data[2];
-            //    machine.emit("status", spindleVFD1.status);
-                log.info("VFD update:" + JSON.stringify(spindleVFD1.status));
-            })
-            .catch((error) => {
-                log.error("Error reading VFD: " + error);
-            });
-        // log.info("***---VFD update TRIGGERED");
-    }, 2000);
-}
-
-// ===================================== Spindle/VFD action on Startup ===========================
-// Load the VFD settings from the config file
-const vfdSettings = loadVFDSettings();
-
-// Export spindleVFD functions (started from engine, polled from machine)
-module.exports = {
-    vfdSettings,
-    spindleVFD1,
-    getSpindleVFDStatus,
-    setSpindleVFDFreq,
-    connectVFD
-};
+module.exports = singletonInstance;
