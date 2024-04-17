@@ -1,5 +1,8 @@
 /* eslint-disable no-redeclare */
 /* eslint-disable no-unused-vars */
+
+const { last } = require("underscore");
+
 /* eslint-disable no-undef */
 (function (root, factory) {
     /* CommonJS */
@@ -127,7 +130,7 @@
             }.bind(this)
         );
 
-        // update status content every sec to cover potential missed updates and config changes
+        // Update status every sec to cover potential missed updates and config changes
         setInterval(
             function () {
                 this.updateStatus();
@@ -236,7 +239,8 @@
             that.updateText($(that.units_selector), unit);
         }
 
-        ////## key DRO display stuff
+        // What follows is a bit of a kludge to make sure key display items keep updated
+        // Key DRO display stuff
         ["x", "y", "z", "a", "b", "c"].forEach(function (axis) {
             var pos = "pos" + axis;
             if (pos in status) {
@@ -272,15 +276,9 @@
             }
         });
 
-        // Update Speed Display (Feedrate)
+        // Update big DRO Speed Display (Feedrate)
         var speed = 0;
-
-        // are these different speeds? One might be the update?
-        console.log("speedThat- ", that.tool.config.opensbp["movexy_speed"]);
-        console.log("speedThis- ", this.tool.config.opensbp["movexy_speed"]);
-        // Reading any new speed from config; update being triggered from machine by report of config change
         speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
-
         $(".feedrate input").val(speed);
         if (status.unit === "mm") {
             $(".feedrate-unit").text("mm/sec");

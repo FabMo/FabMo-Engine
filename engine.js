@@ -704,10 +704,6 @@ Engine.prototype.start = function (callback) {
                                     );
                                     setTimeout(
                                         function () {
-                                            //TODO re-imlpement for dashboard only updates?
-                                            //log.info('Doing beacon report due to network change');
-                                            //this.beacon.setLocalAddresses(this.networkManager.getLocalAddresses());
-                                            //this.beacon.once('network');
                                             // log.info('Running package check due to network change');
                                             // this.runAllPackageChecks();
                                         }.bind(this),
@@ -736,12 +732,6 @@ Engine.prototype.start = function (callback) {
                 this.machine.startAccessories(callback);
                 callback();
             }.bind(this),
-
-            // // Start watching for config changes for display
-            // function start_configWatch(callback) {
-            //     this.machine.watchConfig(callback);
-            //     callback();
-            // }.bind(this),
 
             // Kick off the server if all of the above went OK.
             function start_server(callback) {

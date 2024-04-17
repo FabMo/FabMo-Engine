@@ -91,7 +91,7 @@ function Machine(control_path, callback) {
     // Handle Inheritance
     events.EventEmitter.call(this);
 
-    this.accessories = {};
+    //    this.accessories = {};
 
     // Instantiate driver and connect to G2
     this.status = {
@@ -1500,7 +1500,8 @@ Machine.prototype.startAccessories = async function () {
     }
 };
 
-// Handle updating status on changes from opensbpConfig that deals with keeping things current
+// Handle updating status on changes from opensbpConfig or elsewhere
+// ... at some point we may need to watch other things, start something like this from engine.js start sequence
 Machine.prototype.watchConfig = function () {
     // sbpConfig.on("configChanged", function (newConfig) {
     //     console.log("Configuration has changed:", newConfig);

@@ -32,7 +32,6 @@ define(function(require) {
         $('#right-position-container').removeClass('dropped');
     }
      var setRightMenuBehavior = function() {
-
         if ($('#right-menu').css('right') === '0px') {
             $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
             $("#dro-tab").attr("title", "Click to open larger Display");
