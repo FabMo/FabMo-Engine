@@ -43,7 +43,6 @@ function fileUploadProgress(progress) {
   }
 }
 
-
 function setupDropTarget() {
   $('#tabpending').dragster({
     enter: function(devt, evt) {
@@ -997,6 +996,17 @@ $(document).ready(function() {
         e.wrap('<form>').closest('form').get(0).reset();
         e.unwrap();
     }
+
+    fabmo.getAppArgs(function(err, args) {
+      if('tab' in args) {
+          var tab = $("#" + args.tab);
+          if(tab.length) {
+              tab.click();
+          } else {
+              console.log('Tab not found: ' + args.tab);
+          }
+      }
+  });
 
     update();  
     $(window).trigger("focus");

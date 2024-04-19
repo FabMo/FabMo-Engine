@@ -41,29 +41,27 @@
       "cmd": "FP",
       "name": "PART FILE LOAD"
    },
+   
+   "FL": {
+      "cmd": "FL",
+      "name": "re-load File Last run"
+   },
+   
    "FE": {
       "cmd": "FE",
-      "name": "part file Edit",
-      "params": [
-         {
-            "name": "Part File Name",
-            "desc": "Part Files have a .sbp extension",
-            "abrev": "fNm",
-            "typeext": 0,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "partfile"
-         }
-      ]
+      "name": "last File Edit (local cache)"
    },
+   
+   "FR": {
+      "cmd": "FR",
+      "name": "select from Files Recently run"
+   },
+
    "FN": {
       "cmd": "FN",
       "name": "New blank part file"
    },
+   
    "MX": {
       "cmd": "MX",
       "name": "move X axis",

@@ -268,9 +268,11 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 }
 
 .sm-axes label {
-    font-weight: bold;
-	font-size: 17px;
+	font-family: 'Droid_Sans_Mono', monospace; /* Fallback to generic monospace if Consolas is not available */
+	/*font-weight: bold;*/
+	font-size: 15px;
 	line-height: 20px;
+	opacity: .85;
 }
 
 .machine-pos {

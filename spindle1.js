@@ -92,7 +92,7 @@ Spin.prototype.startSpindleVFD = function() {
             this.status.vfdAchvFreq = data[2];
             this.status.vfdAmps = data[3];
             this.updateStatus(this.status); // initiate change-check and global status change if warranted
-            log.info("VFD update:" + JSON.stringify(this.status));
+            // log.info("VFD update:" + JSON.stringify(this.status));
         })
         .catch((error) => {
             log.error("Error reading VFD:" + error);

@@ -133,7 +133,10 @@ const { last } = require("underscore");
         // Update status every sec to cover potential missed updates and config changes
         setInterval(
             function () {
-                this.updateStatus();
+                // if not already running and updating status
+                if (this.tool.status.state !== "running") {
+                    this.updateStatus();
+                }
             }.bind(this),
             1000
             //this.refresh
@@ -266,7 +269,11 @@ const { last } = require("underscore");
                 }
                 $("." + axis + "axis").show();
                 try {
-                    var posText = status[pos].toFixed(digits);
+                    var posText = ""; // fix the z display jumping from "-"'s
+                    if (axis === "z" && status[pos] >= 0) {
+                        posText = " ";
+                    }
+                    posText = posText + status[pos].toFixed(digits); // <================ LOCATION DISPLAY
                 } catch (e) {
                     var posText = (pos + "." + pos + pos + pos).toUpperCase();
                 }

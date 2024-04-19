@@ -655,7 +655,7 @@ $(".action-button").on("click", function () {
             calledFromModal = "JH";
             break;
         case "action-4":
-            calledFromModal = "";
+            calledFromModal = "macro79";
             break;
     }
     dashboard.engine.manualExit();
