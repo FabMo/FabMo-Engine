@@ -24,6 +24,7 @@ function Spin() {
     this.vfdSettings = {};
     this.vfdBusy = false;
     this.laststatus = {};
+    this.unlockRequired = false;
 }
 
 // Inherit from EventEmitter
@@ -61,6 +62,10 @@ Spin.prototype.connectVFD = function() {
         .then(() => {
             client.setID(settings.MB_ADDRESS);
             log.info("Connected to VFD via MODBUS");
+            if (settings.Registers.UNLOCK_PARAMETERS !== null) {
+                this.unlockRequired = true;
+            }
+            log.info("Unlock required: " + this.unlockRequired);
             this.startSpindleVFD();
             resolve();
         })
@@ -71,7 +76,7 @@ Spin.prototype.connectVFD = function() {
     });
 };
 
-// Set up 2-second updates to spindleVFD status (sort of a model for other accessory drivers)
+// Set up 1-second updates to spindleVFD status (sort of a model for other accessory drivers)
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
     setInterval(() => {
@@ -97,7 +102,7 @@ Spin.prototype.startSpindleVFD = function() {
         .catch((error) => {
             log.error("Error reading VFD:" + error);
         });
-    }, 2000);
+    }, 1000);
 };
   
 // Method to update VFD status Globally via "machine"
@@ -117,6 +122,18 @@ Spin.prototype.updateStatus = function(newStatus) {
 Spin.prototype.setSpindleVFDFreq = function(data) {
     this.vfdBusy = true;
     return new Promise((resolve, reject) => {
+        if (this.unlockRequired) {
+            writeVFD(this.vfdSettings.Registers.UNLOCK_PARAMETERS, 225)
+                .then(() => {
+                    log.info("VFD Unlocked");
+                    return setFrequency(data);
+                })
+                .catch((error) => {
+                    log.error("Error unlocking VFD:", error);
+                    this.vfdBusy = false;
+                    reject(error);
+                });
+            }
         writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, data)
             .then((data) => {
                 log.info("VFD Data after setting:" + JSON.stringify(data));
