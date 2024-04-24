@@ -7,7 +7,6 @@
       "BYTESIZE": 8,
       "STOPBITS": 1,
       "PARITY": "even",
-      "TIMEOUT": 0.25,
       "MAX_RPM": 18000,
       "MIN_RPM": 8000,
       "Registers": {

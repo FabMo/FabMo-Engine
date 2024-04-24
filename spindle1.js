@@ -53,6 +53,7 @@ Spin.prototype.connectVFD = function() {
         // Access settings from this.settings.VFD_Settings per JSON file setup
         const settings = this.settings.VFD_Settings;
         this.vfdSettings = settings;
+
         client.connectRTUBuffered(settings.COM_PORT, {
             baudRate: settings.BAUDRATE,
             parity: settings.PARITY,
@@ -71,6 +72,7 @@ Spin.prototype.connectVFD = function() {
         })
         .catch((error) => {
             log.error("***Error connecting to VFD:", error);
+            log.debug(settings.MB_ADDRESS)
             reject(error);
         });
     });
@@ -82,20 +84,35 @@ Spin.prototype.startSpindleVFD = function() {
     setInterval(() => {
         if (this.vfdBusy) {
             log.error("VFD is busy; skipping update");
+            this.vfdBusy = false;  // ? really turn off busy flag here?
             return;
         }
         Promise.race([
-            readVFD(settings.Registers.READ_STATUS), // Assumes readVFD is another method on Spin
+            readVFD(settings.Registers.READ_STATUS, settings.READ_LENGTH), // <<==== YOUR BASIC DATA READ
             new Promise((_, reject) => setTimeout(() => reject(new Error("VFD not responding > ON? PRESENT?")), 5000)) // 5 seconds timeout
         ])
         .then((data) => {
             var vOnDir = "stop-F";
-            if (data[0] & 3) {vOnDir = "RUN-"} else {vOnDir = "stop-"}
-            if (data[0] & 24) {vOnDir += "REV"} else {vOnDir += "FWD"}
-            this.status.vfdStatus = vOnDir;
-            this.status.vfdDesgFreq = data[1];
-            this.status.vfdAchvFreq = data[2];
-            this.status.vfdAmps = data[3];
+
+            // DELTA (uses the exact numbers provided in manual)
+            // if (data[0] & 3) {vOnDir = "RUN-"} else {vOnDir = "stop-"}
+            // if (data[0] & 24) {vOnDir += "REV"} else {vOnDir += "FWD"}
+            // this.status.vfdStatus = vOnDir;
+            // this.status.vfdDesgFreq = data[1];
+            // this.status.vfdAchvFreq = data[2];
+            // this.status.vfdAmps = data[3];
+            // LENZE (uses the numbers described as the "driver registers" not MODBUS registers)
+            // if (data[0] & 3) {vOnDir = "RUN-"} else {vOnDir = "stop-"}
+            // if (data[0] & 24) {vOnDir += "REV"} else {vOnDir += "FWD"}
+            // this.status.vfdStatus = vOnDir;
+            this.status.vfdDesgFreq = data[0] * 6;
+            this.status.vfdAchvFreq = data[1] * 6;
+            // get the high byte of data[2] shifted low for single byte for vfdAmps (LENZE)
+            var vCur = ((data[2] >> 8) & 0xFF) * (2.6);
+            this.status.vfdAmps = vCur;
+            //this.status.vfdAmps = data[2] & 0xFF00;
+            // this.status.vfdAmps = data[3];
+
             this.updateStatus(this.status); // initiate change-check and global status change if warranted
             // log.info("VFD update:" + JSON.stringify(this.status));
         })
@@ -110,8 +127,8 @@ Spin.prototype.updateStatus = function(newStatus) {
     // for the change-check here, probably most efficient to just do this manual comparison
     if (this.laststatus.vfdStatus !== newStatus.vfdStatus || 
         this.laststatus.vfdDesgFreq !== newStatus.vfdDesgFreq || 
-        this.laststatus.vfdAchvFreq !== newStatus.vfdAchvFreq ||
-        this.laststatus.vfdAmps !== newStatus.vfdAmps) {
+        this.laststatus.vfdAchvFreq !== newStatus.vfdAchvFreq) { // ||
+//        this.laststatus.vfdAmps !== newStatus.vfdAmps) {
         this.status = Object.assign({}, this.status, newStatus);
         this.emit('statusChanged', this.status); // Emit status change to trigger event on machine
         log.info("VFD Status Changed:", JSON.stringify(this.status));
@@ -119,40 +136,82 @@ Spin.prototype.updateStatus = function(newStatus) {
     }
 };
 
+// Spin.prototype.setSpindleVFDFreq = function(data) {
+//     this.vfdBusy = true;
+//     return new Promise((resolve, reject) => {
+//         if (this.unlockRequired) {
+//             writeVFD(this.vfdSettings.Registers.UNLOCK_PARAMETERS, 11)
+//                 .then(() => {
+//                     this.vfdBusy = false;
+//                     log.info("VFD Unlocked");
+//                     return setFrequency(data);
+//                 })
+//                 .catch((error) => {
+//                     log.error("Error unlocking VFD:", error);
+//                     this.vfdBusy = false;
+//                     reject(error);
+//                 });
+//             }
+//             var vfd_req = Math.round(data / 6);    
+//             writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req)
+//             .then((data) => {
+//                 log.info("VFD Data after setting:" + JSON.stringify(data));
+//                 this.vfdBusy = false;
+//                 resolve(data);
+//             })
+//             .catch((error) => {
+//                 log.error("Error setting VFD frequency:", error);
+//                 this.vfdBusy = false;
+//                 reject(error);
+//             });
+//     });
+// }
 Spin.prototype.setSpindleVFDFreq = function(data) {
     this.vfdBusy = true;
     return new Promise((resolve, reject) => {
-        if (this.unlockRequired) {
-            writeVFD(this.vfdSettings.Registers.UNLOCK_PARAMETERS, 225)
-                .then(() => {
-                    log.info("VFD Unlocked");
-                    return setFrequency(data);
-                })
-                .catch((error) => {
-                    log.error("Error unlocking VFD:", error);
-                    this.vfdBusy = false;
-                    reject(error);
-                });
+        const unlockAndSetFrequency = () => {
+            // Unlock VFD first, if required
+            if (this.unlockRequired) {
+                return writeVFD(this.vfdSettings.Registers.UNLOCK_PARAMETERS, 0)
+                    .then(() => {
+                        log.info("VFD Unlocked");
+                        // Once unlocked, proceed to set frequency
+                        return this.setFrequency(data);
+                    });
+            } else {
+                // If no unlock needed, go straight to setting frequency
+                return this.setFrequency(data);
             }
-        writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, data)
-            .then((data) => {
-                log.info("VFD Data after setting:" + JSON.stringify(data));
+        };
+
+        unlockAndSetFrequency()
+            .then(result => {
                 this.vfdBusy = false;
-                resolve(data);
+                resolve(result);
             })
-            .catch((error) => {
-                log.error("Error setting VFD frequency:", error);
+            .catch(error => {
+                log.error("Error in setting frequency: ", error);
                 this.vfdBusy = false;
                 reject(error);
             });
     });
-}
+};
+
+Spin.prototype.setFrequency = function(data) {
+    var vfd_req = Math.round(data / 6);    
+    return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req)
+        .then(data => {
+            log.info("VFD Data after setting:" + JSON.stringify(data));
+            return data;  // return data to resolve
+        });
+};
+
 
 // ------------------- Calls to ModbusRTU ------------------
 
-function readVFD(data) {
+function readVFD(data, length) {
     return new Promise((resolve, reject) => {
-        client.readHoldingRegisters(data, 4)
+        client.readHoldingRegisters(data, length)
             .then((data) => {
                 if (data && data.data) {
                     resolve(data.data);
@@ -168,14 +227,25 @@ function readVFD(data) {
     });
 }
 
+// function writeVFD(reg, data) {
+//     return new Promise((resolve, reject) => {
+//         client.writeRegister(reg, data)
+//             .then(() => {
+//                 resolve(data);
+//             })
+//             .catch((error) => {
+//                 log.error("***Error writing VFD: " + error);
+//                 reject(error);
+//             });
+//     });
+// }
+
 function writeVFD(reg, data) {
     return new Promise((resolve, reject) => {
         client.writeRegister(reg, data)
-            .then(() => {
-                resolve(data);
-            })
-            .catch((error) => {
-                log.error("***Error writing VFD: " + error);
+            .then(() => resolve(data))
+            .catch(error => {
+                log.error("***Error writing VFD:", error);
                 reject(error);
             });
     });

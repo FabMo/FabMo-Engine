@@ -7,17 +7,16 @@
     "BYTESIZE": 8,
     "STOPBITS": 1,
     "PARITY": "even",
-    "TIMEOUT": 0.25,
     "MAX_RPM": 18000,
     "MIN_RPM": 8000,
     "Registers": {
-      "READ_FREQUENCY": 40025,
-      "READ_ATTAINED_FREQUENCY": 40026,
-      "READ_OUTPUT_CURRENT": 40027,
-      "READ_STATUS": 40024,
-      "SET_FREQUENCY": 40045,
-      "UNLOCK_DRIVE": 40049,
-      "UNLOCK_PARAMETERS": 40050
+      "READ_FREQUENCY": 25,
+      "READ_ATTAINED_FREQUENCY": 26,
+      "READ_OUTPUT_CURRENT": 27,
+      "READ_STATUS": 24,
+      "SET_FREQUENCY": 44,
+      "UNLOCK_DRIVE": 48,
+      "UNLOCK_PARAMETERS": 49
     },
     "Modbus_Function_Codes": {
       "READ_REGISTER": 3,
