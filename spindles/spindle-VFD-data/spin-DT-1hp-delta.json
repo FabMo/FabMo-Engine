@@ -13,7 +13,7 @@
         "READ_FREQUENCY": 8450,
         "READ_ATTAINED_FREQUENCY": 8451,
         "READ_OUTPUT_CURRENT": 8452,
-        "READ_STATUS": 8449,
+        "TRIG_READ_FREQ": 8449,
         "SET_FREQUENCY": 8193,
         "UNLOCK_DRIVE": null,
         "UNLOCK_PARAMETERS": null
