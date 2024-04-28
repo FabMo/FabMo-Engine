@@ -295,15 +295,14 @@ const { last } = require("underscore");
 
         // Update Spindle Speed Display
         if ("spindle" in status) {
-            // If .vfdAchFreq is not 0, then spindle is ON and we should display the achieved speed .vfdAchvFreq
-            // and color the text blue
-            // if .vfdAchFreq is 0, then spindle is off and we should display the desired speed .vfdDesgFreq
-            // and color the text dull
-            if (status.spindle.vfdAchvFreq !== 0) {
+            if (
+                status.spindle.vfdAchvFreq !== 0 &&
+                $(".spindle-speed input").is(":focus") === false
+            ) {
                 var spindleSpeed = status.spindle.vfdAchvFreq;
                 $(".spindle-speed input").css("color", "#42e6f5");
                 $(".spindle-speed input").val(spindleSpeed);
-            } else {
+            } else if ($(".spindle-speed input").is(":focus") === false) {
                 var spindleSpeed = status.spindle.vfdDesgFreq;
                 $(".spindle-speed input").css("color", "gray");
                 $(".spindle-speed input").val(spindleSpeed);

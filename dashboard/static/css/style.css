@@ -32,6 +32,10 @@ body {
  cursor: text;
 }
 
+label {
+	cursor: default;
+}
+
 .main-section, .app-section, .spinner-section {
 	height: 100%;
 	background-color: #eee;
@@ -275,6 +279,12 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	opacity: .85;
 }
 
+.dro-dropdown {
+	cursor: default;
+	-webkit-user-select: none;
+    user-select: none;
+}
+
 .machine-pos {
 	display: inline-block;
 	text-align: center;
@@ -308,6 +318,11 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 }
 .machine-pos-large span {
 	float: right;
+}
+
+.not-selectable {
+	-webkit-user-select: none;
+    user-select: none;
 }
 
 #display-units {
@@ -357,6 +372,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
     font-weight: bold;
 	justify-content: center;
 	color: #313131;
+	cursor: default;
 	background-color:#777777;
 	margin-left: 8px;
 	margin-right: 8px;
@@ -365,6 +381,10 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 .dro-addon-outputs {
 	justify-content: center;
 	display: flex;
+}
+.toggle-out:hover {
+	background-color: rgb(105, 125, 64);
+	cursor: pointer; 
 }
 .dro-addon-value {
 	justify-content: center;

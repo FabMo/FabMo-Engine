@@ -30,7 +30,6 @@ var profiles = require("./profiles");
 var crypto = require("crypto");
 var moment = require("moment");
 //other util
-var spindle1 = require("./spindle1");
 var Util = require("util");
 
 var PACKAGE_CHECK_DELAY = 30; // Seconds

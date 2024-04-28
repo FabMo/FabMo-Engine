@@ -539,6 +539,10 @@
         this.executeRuntimeCode("manual", { cmd: "raw", code: code });
     };
 
+    FabMoAPI.prototype.setAcc = function (acc, new_RPM, callback) {
+        this._post("/acc/spindle_speed", { rpm: new_RPM }, callback);
+    };
+
     FabMoAPI.prototype.connectToWifi = function (ssid, key, callback) {
         var data = { ssid: ssid, key: key };
         this._post("/network/wifi/connect", data, callback, callback, "wifi");

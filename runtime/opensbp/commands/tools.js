@@ -28,7 +28,7 @@ exports.TR = function (args, callback) {
     }
 
     // Set RPM; todo: check for change only (or deeper than here); update range
-    if (new_RPM > 500 && new_RPM < 30000) {
+    if (new_RPM > 5000 && new_RPM < 30000) {
         try {
             log.info("----> new speed: " + new_RPM);
             spindle.setSpindleVFDFreq(new_RPM);

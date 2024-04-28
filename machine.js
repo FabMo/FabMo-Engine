@@ -37,6 +37,7 @@ var canResume = false;
 var clickDisabled = false;
 var interlockBypass = false;
 var runtime = null;
+var spindle = require("./spindle1");
 
 //var sbpConfig = require("./config/opensbp_config");
 
@@ -1479,7 +1480,6 @@ Machine.prototype.gcode = function (string) {
 
 // Handle loading and updating any machine accessories such as spindleVFD, etc (this called in the start sequence)
 Machine.prototype.startAccessories = async function () {
-    const spindle = require("./spindle1");
     try {
         //const spindle = new Spin();
         log.info("Spindle instance created:" + JSON.stringify(spindle));
@@ -1497,6 +1497,18 @@ Machine.prototype.startAccessories = async function () {
         });
     } catch (error) {
         log.error("Failed to create a spindle instance:" + error);
+    }
+};
+
+// Directly set the spindle speed as an accessory ignoring runtimes
+Machine.prototype.spindleSpeed = function (new_RPM) {
+    if (new_RPM > 5000 && new_RPM < 30000) {
+        try {
+            log.info("----> new speed: " + new_RPM);
+            spindle.setSpindleVFDFreq(new_RPM);
+        } catch (error) {
+            log.error("Failed to pass new RPM: " + error);
+        }
     }
 };
 

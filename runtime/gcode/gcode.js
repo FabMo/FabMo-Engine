@@ -238,8 +238,6 @@ GCodeRuntime.prototype.runFile = function (filename) {
 };
 
 // Run the provided string
-// TODO: Should this all be incorporated with executeCode?
-//		Do we have any need for running gCode strings outside of the editor/job/macro system?
 GCodeRuntime.prototype.runString = function (string) {
     if (
         this.machine.status.state === "idle" ||

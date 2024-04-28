@@ -1,28 +1,31 @@
 {
-    "VFD_Settings": {
-      "Name": "spin-DT-1hp-delta",
-      "COM_PORT": "/dev/vfdACM_controller1",
-      "MB_ADDRESS": 3,
-      "BAUDRATE": 9600,
-      "BYTESIZE": 8,
-      "STOPBITS": 1,
-      "PARITY": "even",
-      "MAX_RPM": 18000,
-      "MIN_RPM": 8000,
-      "Registers": {
-        "READ_FREQUENCY": 8450,
-        "READ_ATTAINED_FREQUENCY": 8451,
-        "READ_OUTPUT_CURRENT": 8452,
-        "TRIG_READ_FREQ": 8449,
-        "SET_FREQUENCY": 8193,
-        "UNLOCK_DRIVE": null,
-        "UNLOCK_PARAMETERS": null
-      },
-      "Modbus_Function_Codes": {
-        "READ_REGISTER": 3,
-        "WRITE_SINGLE_REGISTER": 6
-      },
-      "READ_LENGTH": 6
-    }
+  "VFD_Settings": {
+    "Name": "spin-DT-1hp-delta",
+    "COM_PORT": "/dev/vfdACM_controller1",
+    "MB_ADDRESS": 3,
+    "BAUDRATE": 9600,
+    "BYTESIZE": 8,
+    "STOPBITS": 1,
+    "PARITY": "even",
+    "MAX_RPM": 18000,
+    "MIN_RPM": 8000,
+    "Registers": {
+      "READ_FREQUENCY": 8450,
+      "READ_ATTAINED_FREQUENCY": 8451,
+      "READ_OUTPUT_CURRENT": 8452,
+      "READ_STATUS": 8449,
+      "TRIG_READ_FREQ": 8450,
+      "SET_FREQUENCY": 8193,
+      "RPM_MULT": 1,
+      "READ_AMPS_HI": null,
+      "AMP_MULT": 1,
+      "UNLOCK_PARAMETERS": null,
+      "PASSWORD": 0
+    },
+    "Modbus_Function_Codes": {
+      "READ_REGISTER": 3,
+      "WRITE_SINGLE_REGISTER": 6
+    },
+    "READ_LENGTH": 6
   }
-  
+}  

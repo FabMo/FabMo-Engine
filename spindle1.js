@@ -31,7 +31,7 @@ util.inherits(Spin, EventEmitter);
 
 // Load settings for a VFD
 Spin.prototype.loadVFDSettings = function() {
-    const configFile = "./spindle1_settings.json";
+    const configFile = "./spindles/spindle1_settings.json";
     return new Promise((resolve, reject) => {
         fs.readFile(configFile, "utf8", (err, data) => {
             if (err) {
