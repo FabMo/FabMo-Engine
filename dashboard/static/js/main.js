@@ -29,7 +29,7 @@ var Keypad = require("./libs/keypad.js");
 var keypad, keyboard;
 
 // API object defines our connection to the tool.
-var engine = new FabMoAPI();
+var engine = new FabMoAPI(); // Not sure that "engine" was the name we wanted to use here
 
 var modalIsShown = false;
 var daisyIsShown = false;
@@ -144,6 +144,7 @@ engine.getVersion(function (err, version) {
                 }
             });
 
+            // ------------------------------------------------------------ STATUS HANDLER
             dashboard.engine.on("status", function (status) {
                 fixedTimeEnd = Date.now();
                 console.log(status);
@@ -654,7 +655,7 @@ $(".action-button").on("click", function () {
             calledFromModal = "JH";
             break;
         case "action-4":
-            calledFromModal = "";
+            calledFromModal = "macro79";
             break;
     }
     dashboard.engine.manualExit();
@@ -927,6 +928,71 @@ $(".zero-button").on("click", function () {
 $("#connection-strength-indicator").on("click", function (evt) {
     dashboard.launchApp("network-manager");
 });
+
+// RIGHT DRO Actions (OUTPUTS, FEEDRATE, SPINDLE-SPEED) .........................................................
+
+// Toggle Outputs
+$(".toggle-out").on("click", function (evt) {
+    var output = $(this).text(); // get switch number
+    var state = $(this).hasClass("on"); // ... and state
+    if (state) {
+        dashboard.handlers.runSBP("SO, " + output + ", 0");
+    }
+    if (!state) {
+        dashboard.handlers.runSBP("SO, " + output + ", 1");
+    }
+});
+
+// Feed Rate (move speed)
+var changeFeedRate = function (new_feedrate) {
+    if (new_feedrate > 0 && new_feedrate < 1000) {
+        try {
+            console.log("----> new feedrate: " + new_feedrate);
+            dashboard.handlers.runSBP("MS, " + new_feedrate);
+        } catch (error) {
+            console.log("Failed to pass new feedrate: " + error);
+        }
+    }
+};
+
+$("#feed-rate").on("change", function (evt) {
+    var new_feedrate = $("#feed-rate").val();
+    changeFeedRate(new_feedrate);
+});
+
+// Spindle Speed
+var changeSpindleSpeed = function (new_RPM) {
+    try {
+        console.log("----> new speed: " + new_RPM);
+        engine.setAcc("spindle_speed", new_RPM);
+    } catch (error) {
+        console.log("Failed to pass new RPM: " + error);
+    }
+};
+
+$("#sp-speed").on("change", function (evt) {
+    var new_RPM = $("#sp-speed").val();
+    changeSpindleSpeed(new_RPM);
+});
+
+// ... get FOCUS out of spindle box if done
+var blurTimer;
+function startBlurTimer() {
+    clearTimeout(blurTimer);
+    blurTimer = setTimeout(function () {
+        $("#sp-speed").blur();
+    }, 2000);
+}
+// Listener for focus on the input box
+$("#sp-speed").on("focus", function (evt) {
+    startBlurTimer();
+});
+// Listeners for activity in the input box to restart the timer
+$("#sp-speed").on("input keypress mousemove", function (evt) {
+    startBlurTimer();
+});
+
+// ENGINE INTERACTIONS ========================================================
 
 engine.on("authentication_failed", function (message) {
     if (message === "not authenticated") {

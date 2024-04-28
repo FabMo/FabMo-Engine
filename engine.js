@@ -73,8 +73,10 @@ function EngineConfigFirstTime(callback) {
     switch (OS) {
         case "linux":
             var ports = {
-                control_port_linux: "/dev/ttyACM0",
-                data_port_linux: "/dev/ttyACM0",
+                control_port_linux: "/dev/fabmo_g2_motion",
+                data_port_linux: "/dev/ttyfabmo_g2_motion",
+                // control_port_linux: "/dev/ttyACM0",
+                // data_port_linux: "/dev/ttyACM0",
             };
             config.engine.update(ports, function () {
                 callback();
@@ -701,10 +703,6 @@ Engine.prototype.start = function (callback) {
                                     );
                                     setTimeout(
                                         function () {
-                                            //TODO re-imlpement for dashboard only updates?
-                                            //log.info('Doing beacon report due to network change');
-                                            //this.beacon.setLocalAddresses(this.networkManager.getLocalAddresses());
-                                            //this.beacon.once('network');
                                             // log.info('Running package check due to network change');
                                             // this.runAllPackageChecks();
                                         }.bind(this),
@@ -726,6 +724,12 @@ Engine.prototype.start = function (callback) {
                         return callback(null);
                     }.bind(this)
                 );
+            }.bind(this),
+
+            // Start the accessories (spindle speed controller, etc.)
+            function add_accessories(callback) {
+                this.machine.startAccessories(callback);
+                callback();
             }.bind(this),
 
             // Kick off the server if all of the above went OK.

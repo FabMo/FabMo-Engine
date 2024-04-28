@@ -82,6 +82,8 @@ function SBPRuntime() {
     this.units = null;
     this.absoluteMode = true;
 
+    this.lastFilename = "";
+
     // Physical machine state
     this.machine = null;
     this.driver = null;
@@ -526,6 +528,7 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 //   filename - Full path to file on disk
 //   callback - Called when file is done running or with error if error
 SBPRuntime.prototype.runFile = function (filename) {
+    this.lastFilename = filename;
     var st = fs.createReadStream(filename);
     this.runStream(st);
 };

@@ -41,29 +41,27 @@
       "cmd": "FP",
       "name": "PART FILE LOAD"
    },
+   
+   "FL": {
+      "cmd": "FL",
+      "name": "re-load File Last run"
+   },
+   
    "FE": {
       "cmd": "FE",
-      "name": "part file Edit",
-      "params": [
-         {
-            "name": "Part File Name",
-            "desc": "Part Files have a .sbp extension",
-            "abrev": "fNm",
-            "typeext": 0,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "partfile"
-         }
-      ]
+      "name": "last File Edit (local cache)"
    },
+   
+   "FR": {
+      "cmd": "FR",
+      "name": "select from Files Recently run"
+   },
+
    "FN": {
       "cmd": "FN",
       "name": "New blank part file"
    },
+   
    "MX": {
       "cmd": "MX",
       "name": "move X axis",
@@ -5046,8 +5044,55 @@
 
    "TR": {
       "cmd": "TR",
-      "name": "Tool for Spindle RPM Control"
+      "name": "Tool for Spindle RPM Control",
+      "params": [
+         {
+            "name": "New RPM",
+            "desc": "New Spindle Speed in RPM",
+            "abrev": "spS",
+            "typeext": 2,
+            "default": "",
+            "sysvar": "0",
+            "range": [
+               "500",
+               "30,000"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Spindle Number",
+            "desc": "If more than one spindle, specify spindle number",
+            "abrev": "sNum",
+            "typeext": 2,
+            "default": "1",
+            "sysvar": "0",
+            "range": [
+               "1",
+               "2"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Spindle Option 1",
+            "desc": "Unused",
+            "abrev": "",
+            "typeext": 2,
+            "default": "",
+            "sysvar": "0",
+            "type": "opt"
+         },
+         {
+            "name": "Spindle Option 2",
+            "desc": "Unused",
+            "abrev": "sOpt",
+            "typeext": 2,
+            "default": "",
+            "sysvar": "0",
+            "type": "opt"
+         }
+      ]
    },
+
 
    "DE": {
       "cmd": "DE",

@@ -28,58 +28,16 @@ When the engine starts, it will connect to G2 and setup an http server to accept
 ## Installing the Engine
 The engine is run from source, and only needs to be checked out and stored in a local directory.  Run `npm install` from the source directory to install the needed dependencies and perform the webpack step that builds the frontend.
 
-### On the Intel Edison
-
-![Intel Edison](/doc/intel_edison.jpg)
-
-To install the engine in the "standard" location on the Intel Edison, perform the following steps.
-
-1. Checkout the source into `/fabmo` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo`
-2. Install dependencies using npm: `cd /fabmo; npm install`
-3. Install the systemd service file `cp /fabmo/files/fabmo.service /etc/systemd/system`
-4. Set the appropriate permissions on the service file `chmod 0775 /etc/systemd/system/fabmo.service`
-5. Inform systemd of the unit file change `systemctl daemon-reload`
-6. Enable the new service `systemctl enable fabmo`
-7. Start the new service immediately `systemctl start fabmo`
-8. After the engine has had time to start, check its status: `systemctl status fabmo`
-
-### On the Raspberry Pi 3
+### On the Raspberry Pi
 
 ![Raspberry Pi](/doc/raspi.png)
 
-To install the engine in the "standard" location on the Raspberry Pi 3, perform the following steps.
+To install the engine in the "standard" location on the Raspberry Pi, perform the following steps.
 
 1. Checkout the source into `/fabmo` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo`
 2. Checkout the appropriate branch of the source tree.  The `release` branch is the most recent stable release.  (`git checkout release`)
 3. Install dependencies using npm: `cd /fabmo; npm install`
 4. Run the engine using the instructions below
-
-### On Mac OS X
-
-![Apple Logo](/doc/apple_logo.gif)
-
-To install the engine in the standard location on a Mac, follow the steps below.  This method is used by the FabMo team for development in the OSX environment.
-
-1. Install Node.js 16.14 with homebrew: `brew install node@16`
-1. Install npm: `brew install npm`
-1. Create the fabmo directory: `mkdir -p /fabmo`
-1. Create the fabmo data directory: `mkdir -p /opt/fabmo`
-1. Clone the engine source `/fabmo/engine` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo/engine`
-1. Checkout the appropriate branch of the source tree.  The `release` branch is the most recent stable release.  (`git checkout release` from the `/fabmo/engine` directory)
-1. Install dependencies using npm: `cd /fabmo/engine; npm install`
-1. Run the engine using the instructions below.  Make sure that the G2 motion control board is connected the first time you run the engine.  The engine auto-detects the USB port and saves this setting on first run, and if the motion controller is absent, it won't be properly detected.  If you need to change ports later on, the port settings are located in `/opt/fabmo/config/engine.json`
-
-
-## In Docker
-
-If you have Docker installed locally, you can run the FabMo interface inside a Docker container rather than running it locally.
-
-1. Check out the source code on your workstation
-1.`npm run docker:dev` will build your docker container, install dependencies, and run the `npm dev` target in the docker container. The first time you run it, it may take a bit of time to build the container.
-
-If everything goes right, you'll find the fabmo dashboard running on http://localhost:8411
-
-If you need to log into the docker machine, you can use the command `npm run docker:bash`
 
 ## Running the Engine
 For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js` - make sure you have built the dashboard with `npm run webpack` - alternatively, you can run `npm run dev` which will run the system in debug mode (which adds some logging and more aggressively reloads apps) as well as run the webpack first.  If you want to run in debug mode, but skip the webpack step, run `npm run debug`

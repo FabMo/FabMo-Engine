@@ -1,5 +1,8 @@
 /* eslint-disable no-redeclare */
 /* eslint-disable no-unused-vars */
+
+const { last } = require("underscore");
+
 /* eslint-disable no-undef */
 (function (root, factory) {
     /* CommonJS */
@@ -126,6 +129,18 @@
                 this.updateStatusContent(status_report);
             }.bind(this)
         );
+
+        // Update status every sec to cover potential missed updates and config changes
+        setInterval(
+            function () {
+                // if not already running and updating status
+                if (this.tool.status.state !== "running") {
+                    this.updateStatus();
+                }
+            }.bind(this),
+            1000
+            //this.refresh
+        );
     }
 
     FabMoUI.prototype.on = function (evt, handler) {
@@ -227,7 +242,8 @@
             that.updateText($(that.units_selector), unit);
         }
 
-        ////## key DRO display stuff
+        // What follows is a bit of a kludge to make sure key display items keep updated
+        // Key DRO display stuff
         ["x", "y", "z", "a", "b", "c"].forEach(function (axis) {
             var pos = "pos" + axis;
             if (pos in status) {
@@ -253,7 +269,11 @@
                 }
                 $("." + axis + "axis").show();
                 try {
-                    var posText = status[pos].toFixed(digits);
+                    var posText = ""; // fix the z display jumping from "-"'s
+                    if (axis === "z" && status[pos] >= 0) {
+                        posText = " ";
+                    }
+                    posText = posText + status[pos].toFixed(digits); // <================ LOCATION DISPLAY
                 } catch (e) {
                     var posText = (pos + "." + pos + pos + pos).toUpperCase();
                 }
@@ -262,6 +282,38 @@
                 $("." + axis + "axis").hide();
             }
         });
+
+        // Update big DRO Speed Display (Feedrate)
+        var speed = 0;
+        speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
+        $(".feedrate input").val(speed);
+        if (status.unit === "mm") {
+            $(".feedrate-unit").text("mm/sec");
+        } else {
+            $(".feedrate-unit").text("in/sec");
+        }
+
+        // Update Spindle Speed Display
+        if ("spindle" in status) {
+            if (
+                status.spindle.vfdAchvFreq !== 0 &&
+                $(".spindle-speed input").is(":focus") === false
+            ) {
+                var spindleSpeed = status.spindle.vfdAchvFreq;
+                $(".spindle-speed input").css("color", "#42e6f5");
+                $(".spindle-speed input").val(spindleSpeed);
+            } else if ($(".spindle-speed input").is(":focus") === false) {
+                var spindleSpeed = status.spindle.vfdDesgFreq;
+                $(".spindle-speed input").css("color", "gray");
+                $(".spindle-speed input").val(spindleSpeed);
+            }
+            var pwrDraw = status.spindle.vfdAmps;
+            var formattedDraw = (pwrDraw * 0.01).toFixed(2);
+            $(".spindle-power input").val(formattedDraw);
+        } else {
+            $(".spindle-speed input").val("0");
+            $(".spindle-power input").val("0.00");
+        }
 
         //Current File or job
         if (status.job) {

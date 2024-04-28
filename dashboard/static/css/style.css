@@ -32,6 +32,10 @@ body {
  cursor: text;
 }
 
+label {
+	cursor: default;
+}
+
 .main-section, .app-section, .spinner-section {
 	height: 100%;
 	background-color: #eee;
@@ -268,9 +272,17 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 }
 
 .sm-axes label {
-    font-weight: bold;
-	font-size: 17px;
+	font-family: 'Droid_Sans_Mono', monospace; /* Fallback to generic monospace if Consolas is not available */
+	/*font-weight: bold;*/
+	font-size: 15px;
 	line-height: 20px;
+	opacity: .85;
+}
+
+.dro-dropdown {
+	cursor: default;
+	-webkit-user-select: none;
+    user-select: none;
 }
 
 .machine-pos {
@@ -308,6 +320,11 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	float: right;
 }
 
+.not-selectable {
+	-webkit-user-select: none;
+    user-select: none;
+}
+
 #display-units {
 /*	position: absolute;
 	top: 2px;
@@ -337,13 +354,72 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	margin-top: 45px;
 	padding-top: 0.75rem;
 	right: -222px;
-	background-color: #9C210C;
+	background-color: #931B14;
 	width: 222px;
     min-width: 222px;
 	bottom: 0;
 	z-index: 1002;
 	transition: right 0.5s;
 }
+
+/** Large DRO add-ons or TOOLS **/
+.dro-addon-spacer-row {
+    height: 1px;
+}
+.dro-addon-label {
+	height: 20px;
+    font-size: 10pt;
+    font-weight: bold;
+	justify-content: center;
+	color: #313131;
+	cursor: default;
+	background-color:#777777;
+	margin-left: 8px;
+	margin-right: 8px;
+	display: flex;
+}		
+.dro-addon-outputs {
+	justify-content: center;
+	display: flex;
+}
+.toggle-out:hover {
+	background-color: rgb(105, 125, 64);
+	cursor: pointer; 
+}
+.dro-addon-value {
+	justify-content: center;
+	margin-bottom: -2px;
+	display: flex;
+}
+.dro-addon-value .sub-label {
+/*	margin-top: 5px;
+	margin-right: 15px; */
+	text-align: right;
+	font-size: large;
+	cursor: default;
+}
+/* kludge to get feed-reat input box in right place */
+input#fr-inp {
+	margin-left: 10px;
+	margin-right: 5px;
+}
+.sub-label .feedrate-input {
+	margin-right: 5px;
+}
+.dro-addon-value input {
+	width:50%;
+	height: 1.5rem;
+	text-align: right;
+	margin-bottom: 5px;
+	margin-left: 20px;
+	margin-right: 5px;
+	margin-top: 3px;
+	font-size: large;
+	border-color: gray;
+	font-weight: bold;
+	background-color: #931B14 !important;
+	display: flex;
+}		
 
 
 /**       Input / Output Display         ## DEAL WITH varied Input DEFINITIONS in Display **/
@@ -1766,7 +1842,8 @@ input[type='range']:focus {
 }
 
 .fixed-step-value{
-	-webkit-appearance: none; 
+	-webkit-appearance: none;
+	appearance: none; 
 	margin: 0; 
 	display: inline-block;
 	font-family: 'Droid_Sans_Mono';

@@ -28,6 +28,7 @@
 		"jsesc": "1.0.0",
 		"mime-types": "^2.1.30",
 		"minimist": "^1.2.7",
+		"modbus-serial": "^8.0.16",
 		"moment": "^2.0.0",
 		"ncp": "2.0.0",
 		"pako": "1.0.4",

@@ -4,6 +4,7 @@ var Foundation = require('../../../static/js/libs/foundation.min.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 var CodeMirror = require('./codemirror.js');
+const { updateLocale } = require('moment/moment.js');
 require('./simple.js');
 require('./cm-fabmo-modes.js');
     var editor;
@@ -114,13 +115,13 @@ require('./cm-fabmo-modes.js');
                     $('#edit-filename').text(info.name + " ]");
                   if(info.file.filename.endsWith('sbp')) {
                     set_language('opensbp');
-
-                    $('.language-dropdown').hide();
-
+                    $("#app-header-language").text(" (OpenSBP)")
                 } else {
                     set_language('gcode');
+                    $("#app-header-language").text(" (G-Code)")
                   }
                 }
+                update();
               });
           });
 
@@ -143,7 +144,7 @@ require('./cm-fabmo-modes.js');
           });
         } else if('new' in args) {
           editor.setValue(args.content || '', -1);
-          editor.clearSelection();
+          //editor.clearSelection();
           source = null;
           switch(args.language) {
             case 'sbp':

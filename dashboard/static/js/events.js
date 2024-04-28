@@ -32,7 +32,6 @@ define(function(require) {
         $('#right-position-container').removeClass('dropped');
     }
      var setRightMenuBehavior = function() {
-
         if ($('#right-menu').css('right') === '0px') {
             $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
             $("#dro-tab").attr("title", "Click to open larger Display");
@@ -68,15 +67,9 @@ define(function(require) {
         }
     }
     $('.DRO-button').on('click', function(evt) {
-    
         setRightMenuBehavior();
         evt.preventDefault();
     });
-
-
-    
-
-   
 
     var resizedoc = function() {
         //L & R = width of left & right menus
@@ -138,9 +131,6 @@ define(function(require) {
         if ($('.axi').is(':focus')){
         } else {
        }
-
-
-
         calcLeftPadding();
     };
 
@@ -158,7 +148,6 @@ define(function(require) {
               localStorage.setItem('colapsed', false);
           } else {
               localStorage.setItem('colapsed', true);
-             
           }
         }
 
@@ -242,33 +231,11 @@ define(function(require) {
     };
 
     
-    /********** Disable Menus if in Tour **********/
-    
-   
-    $(window).on('hashchange', function(e){
-         checkifTour();
-    });
-
-    function checkifTour(){
-         var url = window.location.href; 
-         var final = url.substr(url.lastIndexOf('/') + 1);
-         if (final === 'tour'){
-             $('.off-canvas-list, .widget').addClass('blur');
-             $('.tour-filter').css('height', '100%');
-
-         } else {
-             $('.off-canvas-list, .widget').removeClass('blur');
-             $('.tour-filter').css('height', '0');
-         }
-    }
-
-
     /********** Document Ready Init **********/
     function docReady () {
         rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container
-        checkifTour();
         $(window).on('resize', function() {
             resizedoc();
         });

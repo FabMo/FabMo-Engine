@@ -1025,6 +1025,15 @@
         this._call("isOnline", null, callback);
     };
 
+    FabMoDashboard.prototype.setAcc = function (callback) {
+        this._call("setAcc", args, callback);
+    };
+
+    // ... not implemented yet
+    FabMoDashboard.prototype.getAcc = function (callback) {
+        this._call("getAcc", args, callback);
+    };
+
     /**
      * Get a list of all the macros installed on the tool.
      *

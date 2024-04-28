@@ -37,6 +37,9 @@ var canResume = false;
 var clickDisabled = false;
 var interlockBypass = false;
 var runtime = null;
+var spindle = require("./spindle1");
+
+//var sbpConfig = require("./config/opensbp_config");
 
 ////## total temp KLUDGES because of difficulty in figuring out a couple of quick comms between modules
 global.CUR_RUNTIME;
@@ -88,6 +91,8 @@ function connect(callback) {
 function Machine(control_path, callback) {
     // Handle Inheritance
     events.EventEmitter.call(this);
+
+    //    this.accessories = {};
 
     // Instantiate driver and connect to G2
     this.status = {
@@ -222,7 +227,7 @@ function Machine(control_path, callback) {
     // If any of the axes in G2s configuration become enabled or disabled, we want to show or hide
     // them accordingly.  These change events happen even during the initial configuration load, so
     // right from the beginning, we will be displaying the correct axes.
-    // TODO - I think it's good to used named callbacks, to make the code more self-documenting
+    // And, Update status for client
     config.driver.on(
         "change",
         function (update) {
@@ -245,8 +250,27 @@ function Machine(control_path, callback) {
                     }
                 }.bind(this)
             );
+            log.debug("G2 Driver change detected -- UPDATING STATUS");
+            this.emit("status", this.status); // emit a status on any g2 driver change to deal with units, etc
         }.bind(this)
     );
+
+    // config.OpenSBPConfig.on(
+    //     "configChanged",
+    //     function () {
+    //         log.debug("Opensbp change detected -- UPDATING STATUS");
+    //         this.emit("status", this.status); // emit a status similarly on any opensbp change
+    //     }.bind(this)
+    // );
+
+    // // Update status for client on any opensbp change to deal with keypad, etc
+    // config.opensbp.on(
+    //     "change",
+    //     function () {
+    //         log.debug("Opensbp change detected -- UPDATING STATUS");
+    //         this.emit("status", this.status); // emit a status similarly on any opensbp change
+    //     }.bind(this)
+    // );
 
     // This handler deals with inputs that are selected for special functions (authorize, ok, quit, etc)
     this.driver.on(
@@ -969,6 +993,7 @@ Machine.prototype.setPreferredUnits = function (units, callback) {
         } else {
             return callback(null);
         }
+        this.emit("status", this.status); // emit a status change
     } catch (e) {
         log.warn("Couldn't access driver configuration...");
         log.error(e);
@@ -1451,6 +1476,50 @@ Machine.prototype.sbp = function (string) {
 // string - the gcode to run
 Machine.prototype.gcode = function (string) {
     this.executeRuntimeCode("gcode", string);
+};
+
+// Handle loading and updating any machine accessories such as spindleVFD, etc (this called in the start sequence)
+Machine.prototype.startAccessories = async function () {
+    try {
+        //const spindle = new Spin();
+        log.info("Spindle instance created:" + JSON.stringify(spindle));
+        // load VFD settings with wait and complete connection before listening for changes
+        await spindle.loadVFDSettings();
+        await spindle.connectVFD();
+        spindle.on("statusChanged", (spindlestatus) => {
+            log.info(
+                "EMIT New GLOBAL Spindle status : " +
+                    JSON.stringify(spindlestatus)
+            );
+            // add spindle status to global status object
+            this.status.spindle = spindlestatus;
+            this.emit("status", this.status);
+        });
+    } catch (error) {
+        log.error("Failed to create a spindle instance:" + error);
+    }
+};
+
+// Directly set the spindle speed as an accessory ignoring runtimes
+Machine.prototype.spindleSpeed = function (new_RPM) {
+    if (new_RPM > 5000 && new_RPM < 30000) {
+        try {
+            log.info("----> new speed: " + new_RPM);
+            spindle.setSpindleVFDFreq(new_RPM);
+        } catch (error) {
+            log.error("Failed to pass new RPM: " + error);
+        }
+    }
+};
+
+// Handle updating status on changes from opensbpConfig or elsewhere
+// ... at some point we may need to watch other things, start something like this from engine.js start sequence
+Machine.prototype.watchConfig = function () {
+    // sbpConfig.on("configChanged", function (newConfig) {
+    //     console.log("Configuration has changed:", newConfig);
+    //     // Trigger a machine status update to clean up displays
+    //     this.emit("status", this.status);
+    // });
 };
 
 /*
