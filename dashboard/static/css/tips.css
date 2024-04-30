@@ -12,9 +12,9 @@
   background-color: #bdbdbd;
   position: relative;
   left: 5px;
-  top: -10px;
+  top: -5px;
   display: inline-block;
-  z-index: 900;
+  z-index: 50;
   padding: 0px;
   border-radius: 50%;
   height: 18px;
@@ -26,24 +26,32 @@
   font-family: serif;
   cursor: pointer;
 }
+  /* Tooltip position for logo */
+  .tooltip-logo {
+    left: -5px;
+    top: -5px;
+  }
 
   /* Tooltip text */
   .tooltip .tooltiptext {
     visibility: hidden;
-    max-width: 400px;
+    max-width: 500px;
     background-color: #bdbdbd;
     color: #fff;
     font-family: "Helvetica Neue",Helvetica,Roboto,Arial,sans-serif;
-    text-align: center;
-    padding: 5px 0;
+    line-height: 1.2;
+    font-size: .9rem;
+    text-align: left;
+    padding-top: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
     border-radius: 6px;
-  
     /* Position the tooltip text */
     position: absolute;
     bottom: 125%;
     left: 50%;
     margin-left: -60px;
-  
     /* Fade in tooltip */
     opacity: 0;
     transition: opacity 1s;
@@ -55,7 +63,7 @@
     position: absolute;
     font-size: .875rem;
     top: 100%;
-    left: 20%;
+    left: 16%;
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
@@ -67,7 +75,7 @@
     visibility: visible;
     display: inline-block;
     width: max-content;
-    max-width: 350px;
+    max-width: 500px;
     opacity: 1;
   }
 
