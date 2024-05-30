@@ -1,0 +1,11 @@
+[Unit]
+Description=Network Monitor and Switch Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/network_monitor.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
