@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/usr/local/bin/network_monitor.sh
+ExecStart=/usr/local/bin/network-monitor.sh
 Restart=always
 
 [Install]
