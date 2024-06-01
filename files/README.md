@@ -1,0 +1,2 @@
+These are files representing fabmo systemd utilities (with their service files) or other useful tools for FabMo.
+They are installed as symlinks during the SD-card-BUILD so that they can be maintained in the context of FabMo and updated here.
