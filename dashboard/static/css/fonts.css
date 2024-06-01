@@ -106,3 +106,9 @@
        url('../fonts/droid-sans-mono-v7-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
        url('../fonts/droid-sans-mono-v7-latin-regular.svg#DroidSansMono') format('svg'); /* Legacy iOS */
 }
+
+/* ShopBotStandard-Regular.otf */    
+@font-face {
+  font-family: 'ShopBotStandard-Regular';
+  src: url('../fonts/ShopBotStandard-Regular.otf') format('opentype');
+}

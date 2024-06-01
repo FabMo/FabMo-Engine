@@ -66,7 +66,7 @@ var config = {
                 ],
             },
             {
-                test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/,
+                test: /\.(eot|otf|svg|ttf|woff|woff2|png|jpg|gif)$/,
                 type: "asset",
             },
 

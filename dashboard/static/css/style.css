@@ -273,6 +273,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 
 .sm-axes label {
 	/*font-family: 'Droid_Sans_Mono', monospace;*/ /* Fallback to generic monospace if Consolas is not available */
+	font-family: 'ShopBotStandard-Regular';
 	font-weight: 900;
 	font-size: 17px;
 	line-height: 20px;
