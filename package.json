@@ -88,8 +88,7 @@
 		"webpack": "npx webpack",
 		"postinstall": "npx webpack --mode=development",
 		"prod": "npx webpack --mode=development",
-		"dev": "npm run build && npm run stopdaemon && npm run debugserver",
-		"stopdaemon": "sh build_scripts/stop_fabmo.sh",
+		"dev": "npm run build && npm run debugserver",
 		"install-and-dev": "npm install && npm run dev",
 		"docker:dev": "./build_scripts/run-docker npm run install-and-dev",
 		"docker:bash": "./build_scripts/run-docker bash",
@@ -109,5 +108,5 @@
 	"lint-staged": {
 		"*.{js,jsx}": "eslint --fix"
 	},
-	"version": "1.00.01"
+	"version": "1.00.02"
 }
