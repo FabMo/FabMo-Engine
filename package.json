@@ -90,8 +90,6 @@
 		"prod": "npx webpack --mode=development",
 		"dev": "npm run build && npm run debugserver",
 		"install-and-dev": "npm install && npm run dev",
-		"docker:dev": "./build_scripts/run-docker npm run install-and-dev",
-		"docker:bash": "./build_scripts/run-docker bash",
 		"build": "webpack --mode=development && npm run copybuiltfiles && npm run initSystemFiles",
 		"copybuiltfiles": "sh build_scripts/copy_built_files.sh",
 		"initSystemFiles": "sh build_scripts/init_system_files.sh",
