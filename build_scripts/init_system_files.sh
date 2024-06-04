@@ -6,7 +6,7 @@
 #cp ${FABMO_HOME}/files/*.path /etc/systemd/system/
 
 mkdir -p /home/pi/bin/
-install -g pi -o pi ${FABMO_HOME}/files/export_network_config_thumb.sh /home/pi/bin/
+install -g pi -o pi ${FABMO_HOME}/files/network_conf_fabmo/export_network_config_thumb.sh /home/pi/bin/
 
 # if [ ! -f /.dockerenv ]; then
 # # When running inside docker, systemd is hard to do right, so just skip it
