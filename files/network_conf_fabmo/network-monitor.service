@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/fabmo/files/network-monitor.sh
+ExecStart=/fabmo/files/network_conf_fabmo/network-monitor.sh
 Restart=always
 
 [Install]
