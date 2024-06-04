@@ -2,7 +2,7 @@
 Description=Run script to export network configuration to a thumbdrive
 
 [Service]
-ExecStart=/home/pi/bin/export_network_config_thumb.sh
+ExecStart=/fabmo/files/network_conf_fabmo/export_network_config_thumb.sh
 
 [Install]
 WantedBy=multi-user.target
