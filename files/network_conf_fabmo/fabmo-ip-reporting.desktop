@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=fabmo_ip_report
+Comment=Show IP in tkinter window and AP-ssid
+NoDisplay=false
+Exec=/fabmo/files/network_conf_fabmo/ip-reporting.sh
