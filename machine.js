@@ -128,6 +128,7 @@ function Machine(control_path, callback) {
         out10: 0,
         out11: 0,
         out12: 0,
+        fro: 1.0,
         job: null,
         info: null,
         unit: null,
@@ -1502,12 +1503,25 @@ Machine.prototype.startAccessories = async function () {
 
 // Directly set the spindle speed as an accessory ignoring runtimes
 Machine.prototype.spindleSpeed = function (new_RPM) {
-    if (new_RPM > 5000 && new_RPM < 30000) {
+    if (new_RPM >= 5000 && new_RPM <= 30000) {
         try {
             log.info("----> new speed: " + new_RPM);
             spindle.setSpindleVFDFreq(new_RPM);
         } catch (error) {
             log.error("Failed to pass new RPM: " + error);
+        }
+    }
+};
+
+// Set a Feed Rate Override Request for injection into runtimes
+Machine.prototype.frOverride = function (new_override) {
+    if (new_override >= 5 && new_override <= 200) {
+        try {
+            log.info("----> new override: " + new_override);
+            this.frOverride = new_override;
+            //spindle.setSpindleVFDFreq(new_RPM);
+        } catch (error) {
+            log.error("Failed to pass new Overfied: " + error);
         }
     }
 };

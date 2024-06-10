@@ -286,7 +286,7 @@ const { last } = require("underscore");
         // Update big DRO Speed Display (Feedrate)
         var speed = 0;
         speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
-        $(".feedrate input").val(speed);
+        $("#fr-inp").val(speed);
         if (status.unit === "mm") {
             $(".feedrate-unit").text("mm/sec");
         } else {

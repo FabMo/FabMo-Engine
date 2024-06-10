@@ -284,7 +284,6 @@ SBPRuntime.prototype.runString = function (s) {
 
         // The machine status `nb_lines` indicates the total number of lines in the currently running file
         // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
-        // TODO I've never liked nb_lines as a name
         if (this.machine) {
             if (this.file_stack.length === 0) {
                 this.machine.status.nb_lines = lines.length - 1;
@@ -293,7 +292,7 @@ SBPRuntime.prototype.runString = function (s) {
 
         // Parse the program.  Bail with a useful error message if parsing fails.
         // "Useful" is relative.  The PegJS errors are pretty arcane... TODO - we could probably do better.
-        // We catch parse errors separately from other errors because the parser reports line numbers differently than
+        // We catch parse errors separately from other errors because the *parser reports line numbers differently* than
         // they will be accessed once the program has been parsed (and we want to report the line number always when we have an error)
         try {
             this.program = parser.parse(s);
@@ -307,7 +306,7 @@ SBPRuntime.prototype.runString = function (s) {
         ////##
         // TODO Bad bad bad - re-using lines above (the list of lines in the file) as the number of lines here.
         //      It looks like we can just remove this.  It doesn't seem to be used.
-        lines = this.program.length;
+        ////##        lines = this.program.length;
         // Configure affine transformations on the file
         this._setupTransforms();
 
@@ -776,7 +775,7 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
 };
 
 // Start the stored program running; manage changes
-// Return the stream of g-codes that are being run, which will be fed by the asynchronous running process.
+// Return the stream of g-codes that are being run, which will be *fed by the asynchronous running process*.
 // This function is called ONCE at the beginning of a program, and is not called again until the program
 // completes, except if a macro (subprogram) is encountered, in which case it is called for that program as well.
 SBPRuntime.prototype._run = function () {
@@ -981,6 +980,32 @@ SBPRuntime.prototype._executeNext = function () {
     // Pull the current line of the program from the list
     var line = this.program[this.pc];
     var breaksTheStack = this._breaksStack(line);
+
+    ////## Possible location for OVERRIDE ???
+    // Possible location to put an check for an existing feedrate override request
+    // We will detect if there is a feedrate override request and apply it to the current line
+    // Overrides are expressed as a proportion of the current feedrate, so we need to know the current feedrate
+    // We will multiply that by the override factor and apply it to the current line
+    log.debug(
+        "#-# TESTING for OVERRIDE check placement - " + this.machine.frOverride
+    );
+    // By sending the G-code to command M50 P<factor> we can set the feedrate override factor
+    // We will inject this into the stream and then continu processing the current line, so that the override is applied to the current line whether a stack breaker or not
+    // This will allow us to apply the override to the current line and then continue processing the program.
+    // Here is a sample version of the code that would be used to apply the override
+    // if (this.feedrateOverride) {
+    //     var factor = this.feedrateOverride;
+    //     var feedrate = this._getFeedrate(line);
+    //     if (feedrate) {
+    //         var newFeedrate = feedrate * factor;
+    //         line = this._setFeedrate(line, newFeedrate);
+    //     }
+    // }
+    // this.feedrateOverride = 0;
+    // this.emit_gcode(line);
+    // this.pc += 1;
+    // setImmediate(this._executeNext.bind(this));
+    // return;
 
     if (breaksTheStack) {
         log.debug("Stack break: " + JSON.stringify(line));

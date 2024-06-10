@@ -399,13 +399,14 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-size: large;
 	cursor: default;
 }
-/* kludge to get feed-reat input box in right place */
+/* kludge to get feed-rate input box in right place */
 input#fr-inp {
 	margin-left: 10px;
 	margin-right: 5px;
 }
-.sub-label .feedrate-input {
-	margin-right: 5px;
+/* kludge to get feed-rate override input box in right place */
+input#override {
+	width: 35%;
 }
 .dro-addon-value input {
 	width:50%;
