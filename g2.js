@@ -15,7 +15,7 @@ var log = require("./log").logger("g2");
 var process = require("process");
 var stream = require("stream");
 var Q = require("q");
-const { last } = require("underscore");
+//const { last } = require("underscore");
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -41,7 +41,7 @@ var resumePending = false;
 var intendedClose = false;
 var THRESH = 1;
 var PRIMED_THRESHOLD = 10;
-var lastOverride = 1.0;
+//var lastOverride = 1.0;
 
 // var pat = /s*(G(28|38)\.\d|G2(0|1))/g; Not used yet
 

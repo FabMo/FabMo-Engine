@@ -515,25 +515,6 @@
       "cmd": "MH",
       "name": "move Home (X and Y; Z Safe Height)"
    },
-   "MO": {
-      "cmd": "MO",
-      "name": "move speed Override (5% - 200% Change)",
-      "params": [
-         {
-            "name": "% Change",
-            "desc": "Override the current feed-rate (move speed)",
-            "abrev": "mvOvr",
-            "typeext": 0,
-            "default": "100",
-            "sysvar": 0,
-            "range": [
-               5,
-               200
-            ],
-            "type": "str"
-         }
-      ]
-   },
    "MS": {
       "cmd": "MS",
       "name": "move Speeds",

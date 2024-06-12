@@ -1428,15 +1428,14 @@ Machine.prototype.spindleSpeed = function (new_RPM) {
     }
 };
 
-// Set a Feed Rate Override Request for injection into runtimes
+// Set a Feed Rate Override Request for injection into G2 "driver"
 Machine.prototype.frOverride = function (new_override) {
     if (new_override >= 5 && new_override <= 200) {
         try {
             log.info("----> new override: " + new_override);
-            // set the new override value and format to 2 decimal places for the driver
+            // set the new override value and format for the driver
             var cmd_to_G2 = "{fro: " + (new_override / 100).toFixed(2) + "}";
-            this.driver.command(cmd_to_G2);
-            //this.driver.passed_frOverride = (new_override / 100).toFixed(2);
+            this.driver.command(cmd_to_G2); // <<==== injected here, but may be several commands away form execution
         } catch (error) {
             log.error("Failed to pass new Override: " + error);
         }

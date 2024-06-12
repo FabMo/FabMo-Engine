@@ -899,7 +899,7 @@ $("#feed-rate").on("change", function (evt) {
     changeFeedRate(new_feedrate);
 });
 
-// Requested OVERRIDE Feed Rate (rqfro) via status
+// Requested OVERRIDE Feed Rate via setUix process (see uix.js)
 var overrideFeedRate = function (new_override) {
     try {
         console.log("----> new override: " + new_override);
@@ -911,7 +911,7 @@ var overrideFeedRate = function (new_override) {
 $("#override").on("change", function (evt) {
     var new_override = parseFloat($("#override").val());
     overrideFeedRate(new_override);
-    engine._setStatus.rqFro = new_override;
+    //engine._setStatus.rqFro = new_override;
 });
 
 // Spindle Speed
