@@ -407,6 +407,7 @@ input#fr-inp {
 /* kludge to get feed-rate override input box in right place */
 input#override {
 	width: 35%;
+	margin-left: 5px;
 }
 .dro-addon-value input {
 	width:50%;
@@ -2510,61 +2511,9 @@ input[type='range']:focus {
     margin-bottom: 1em;
 }
 
-
-#beacon_consent_container {
-    display: none;
-    width: 40%;
-	max-width: 500px;
-	min-width: 330px;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 3001;
-    background-color: #fcfcfc;
-      -webkit-font-smoothing: antialiased;
-}
-
-#beacon_consent_inner{
-	margin: 1.5em 1.5em 0 1.5em;
-	padding: 1em;
-	background-color: #fff;
-	line-height: 1.2em;
-	font-size: 1.2em;
-	font-family: source_sans_proextralight;
-}
-
-#beacon_sub_container{
-	padding: 1em;
-	width: 100%;
-}
-
-#beacon_checkbox_label, #beacon_checkbox, #beacon_consent_button{
-	display: inline-block;
-}
-
-
-#beacon_consent_button {
-	background-color: #5DAA35;
-	color: #fff;
-	border-radius: 5px;
-	cursor: pointer;
-	float: right;
-	padding: 0.5em 0.6em 0.5em 0.6em;
-	margin-right: 0.5em;
-	transform: translateY(-8px)
-}
-
-#beacon_checkbox {
-	transform: translateY(1px);
-	margin-left: 5px;
-}
-
-
 .toast {
     opacity:0.9 !important;
 }
-
 
 .loader {
 	position: absolute;
@@ -2575,15 +2524,14 @@ input[type='range']:focus {
 	will-change: transform;
 }
 
-
 .loader svg {
 	position: relative;
   	top: 50%;
   	transform: translateY(-50%);
 }
 
-/* Special Custom Style : rotations et animations */
 
+/* Special Custom Style : rotations et animations */
 
 .spinner {
 
@@ -2662,6 +2610,15 @@ input[type='range']:focus {
 	}
   }
 
+/* for feed rate override */  
+@keyframes blink {
+	0% {opacity: 1;}
+	50% {opacity: 0;}
+	100% {opacity: 1;}
+}
+.blinking-text {
+	animation: blink .25s linear infinite;
+}
 
 .logout_link_container{
   bottom: 0;

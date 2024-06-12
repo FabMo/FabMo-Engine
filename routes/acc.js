@@ -1,14 +1,16 @@
 var machine = require("../machine").machine;
 
 /**
- * @api {post} /direct control of acc's like spindles
- * @apiGroup acc
+ * @api {post}  // Direct control of accessories like spindles
+ * @apiGroup acc  // *have not figured out how to make these calls work as groups
  * @apiDescription Execute the POSTed acc request
  * @apiParam {Object} acc ITEM.  Currently suppored: `spindle-speed`
  * @apiParam {Object} new RPM.
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+
+// eslint-disable-next-line no-unused-vars
 var spindle_speed = function (req, res, next) {
     var answer = {
         status: "success",

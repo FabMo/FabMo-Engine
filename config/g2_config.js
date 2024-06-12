@@ -75,11 +75,7 @@ G2Config.prototype.getFromDriver = function (callback) {
             callback(err);
         } else {
             if (keys.length != values.length) {
-                callback(
-                    new Error(
-                        "Something went wrong when getting values from G2"
-                    )
-                );
+                callback(new Error("Something went wrong when getting values from G2"));
             } else {
                 var obj = {};
                 for (var i = 0; i < keys.length; i++) {
@@ -184,6 +180,7 @@ G2Config.prototype.configureStatusReports = function (callback) {
     // spc=0 [OFF]; =1 or =2 [ON]; =3 [PAUSED-OFF in hold]; =4 [RESUMING]
     // see g2 spindle.h (no other documentation)
     // also see DIO defs in g2core >gpio.h (for setting number and analog, PWM?)
+    // fro is feed rate override
     if (this.driver) {
         this.driver.command({
             sr: {

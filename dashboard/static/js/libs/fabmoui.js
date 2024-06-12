@@ -7,8 +7,7 @@ const { last } = require("underscore");
 (function (root, factory) {
     /* CommonJS */
     if (typeof module == "object" && module.exports) module.exports = factory();
-    /* AMD module */ else if (typeof define == "function" && define.amd)
-        define(factory);
+    /* AMD module */ else if (typeof define == "function" && define.amd) define(factory);
     /* Browser global */ else root.FabMoUI = factory();
 })(this, function () {
     "use strict";
@@ -106,10 +105,8 @@ const { last } = require("underscore");
         this.manual_controls_selector = ".fabmo-manual-control";
 
         this.stop_button_selector = this.file_control_selector + " .stopJob";
-        this.resume_button_selector =
-            this.file_control_selector + " .resumeJob";
-        this.pause_button_selector =
-            this.file_control_selector + " .pauseJob-wrapper";
+        this.resume_button_selector = this.file_control_selector + " .resumeJob";
+        this.pause_button_selector = this.file_control_selector + " .pauseJob-wrapper";
 
         this.units_selector = ".units";
 
@@ -283,7 +280,7 @@ const { last } = require("underscore");
             }
         });
 
-        // Update big DRO Speed Display (Feedrate)
+        // Update big DRO Speed Display (Feedrate and Override)
         var speed = 0;
         speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
         $("#fr-inp").val(speed);
@@ -293,12 +290,33 @@ const { last } = require("underscore");
             $(".feedrate-unit").text("in/sec");
         }
 
+        // Feed rate override color displays
+        if (status.state != "idle") {
+            var cur_fro = (status.fro * 100).toFixed(0);
+            var cur_req_fro = $("#override").val();
+            /* do the blink */
+            if (cur_req_fro == cur_fro) {
+                $("#override").removeClass("blinking-text");
+            } else {
+                $("#override").addClass("blinking-text");
+            }
+            /* do the color */
+            if (cur_req_fro > 100) {
+                $("#override").css("color", "yellow");
+            } else if (cur_req_fro < 100) {
+                $("#override").css("color", "blue");
+            } else {
+                $("#override").css("color", "gray");
+            }
+        } else {
+            $("#override").removeClass("blinking-text");
+            $("#override").val(100);
+            $("#override").css("color", "gray");
+        }
+
         // Update Spindle Speed Display
         if ("spindle" in status) {
-            if (
-                status.spindle.vfdAchvFreq !== 0 &&
-                $(".spindle-speed input").is(":focus") === false
-            ) {
+            if (status.spindle.vfdAchvFreq !== 0 && $(".spindle-speed input").is(":focus") === false) {
                 var spindleSpeed = status.spindle.vfdAchvFreq;
                 $(".spindle-speed input").css("color", "#42e6f5");
                 $(".spindle-speed input").val(spindleSpeed);
@@ -334,11 +352,7 @@ const { last } = require("underscore");
             $(that.file_info_div_selector).removeClass("hide");
             $(".currentJobTitle").text(status.job.name);
             $(that.filename_selector).html(status.job.name);
-            var transform_styles = [
-                "-webkit-transform",
-                "-ms-transform",
-                "transform",
-            ];
+            var transform_styles = ["-webkit-transform", "-ms-transform", "transform"];
             var prog = ((status.line / status.nb_lines) * 100).toFixed(2);
             if (prog > 100) {
                 prog = 100;
@@ -398,19 +412,14 @@ const { last } = require("underscore");
                 if (
                     this.tool.config.machine !== undefined &&
                     this.tool.config.machine["di" + i + "_def"] !== undefined &&
-                    typeof that.tool.config.machine["di" + i + "_def"] ===
-                        "string"
+                    typeof that.tool.config.machine["di" + i + "_def"] === "string"
                 ) {
-                    assignedAction =
-                        that.tool.config.machine["di" + i + "_def"];
+                    assignedAction = that.tool.config.machine["di" + i + "_def"];
                 }
                 if (ival) {
                     // input is ON
                     idisp = "on";
-                    if (
-                        assignedAction === "stop" ||
-                        assignedAction === "faststop"
-                    ) {
+                    if (assignedAction === "stop" || assignedAction === "faststop") {
                         idisp = "stopOn";
                         stopIsOn = true;
                         $("#inp-stop").css("visibility", "visible");
@@ -434,10 +443,7 @@ const { last } = require("underscore");
                     $(selector).removeClass("off").addClass(idisp);
                 } else if (ival === 0) {
                     // input is OFF ... cleanup
-                    if (
-                        assignedAction === "stop" ||
-                        assignedAction === "faststop"
-                    ) {
+                    if (assignedAction === "stop" || assignedAction === "faststop") {
                         if (!stopIsOn) {
                             $("#inp-stop").css("visibility", "hidden");
                         }
@@ -453,14 +459,10 @@ const { last } = require("underscore");
                             inProbeOn = false;
                         }
                     }
-                    $(selector)
-                        .removeClass("on stopOn interlockOn limitOn")
-                        .addClass("off");
+                    $(selector).removeClass("on stopOn interlockOn limitOn").addClass("off");
                 } else {
                     // input is disabled  ... not picking up at moment because all reported
-                    $(selector)
-                        .removeClass("on off stopOn interlockOn")
-                        .addClass("disabled");
+                    $(selector).removeClass("on off stopOn interlockOn").addClass("disabled");
                 }
             } else {
                 break;
@@ -502,8 +504,7 @@ const { last } = require("underscore");
 
         $(that.status_div_selector).trigger("statechange", status.state);
 
-        var statename =
-            status.state.charAt(0).toUpperCase() + status.state.slice(1);
+        var statename = status.state.charAt(0).toUpperCase() + status.state.slice(1);
 
         if (status.state != "manual") {
             $(".tab-bar").removeClass("manual");
@@ -517,9 +518,7 @@ const { last } = require("underscore");
             $(".tools-current > li a").removeClass("paus err disc");
             $(that.state_selector).html(statename);
             $(".exit-button").hide();
-            $(that.pause_button_selector + " div div:first-child").removeClass(
-                "spinner red"
-            );
+            $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
 
             if (that.file_control) {
                 $(that.stop_button_selector).hide();
@@ -543,12 +542,8 @@ const { last } = require("underscore");
                 $(that.stop_button_selector).hide();
                 $(that.pause_button_selector).show();
                 $(that.resume_button_selector).hide();
-                $(that.resume_button_selector + " div:first-child").removeClass(
-                    "spinner green"
-                );
-                $(that.stop_button_selector + " div:first-child").removeClass(
-                    "spinner red"
-                );
+                $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
+                $(that.stop_button_selector + " div:first-child").removeClass("spinner red");
             }
             // } else if (status.state === "manual") {
             //     that.allowKeypad();
@@ -570,9 +565,7 @@ const { last } = require("underscore");
                 "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"
             );
             $(that.status_div_selector).removeClass("fabmo-status-paused");
-            $(".tools-current > li a")
-                .removeClass("paus disc err")
-                .addClass("paus");
+            $(".tools-current > li a").removeClass("paus disc err").addClass("paus");
             $(that.state_selector).html(statename);
             $(".exit-button").hide();
             if (that.file_control) {
@@ -587,18 +580,12 @@ const { last } = require("underscore");
                     $(that.pause_button_selector).show();
                     $(that.resume_button_selector).hide();
                 }
-                $(that.resume_button_selector + " div:first-child").removeClass(
-                    "spinner green"
-                );
-                $(
-                    that.pause_button_selector + " div div:first-child"
-                ).removeClass("spinner red");
+                $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
+                $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
             }
         } else if (status.state === "passthrough") {
             that.forbidKeypad();
-            $(".tools-current > li a")
-                .removeClass("paus disc err")
-                .addClass("paus");
+            $(".tools-current > li a").removeClass("paus disc err").addClass("paus");
             $(that.status_div_selector).removeClass(
                 "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"
             );
@@ -673,9 +660,7 @@ const { last } = require("underscore");
                 that.updateStatusContent(status);
                 that.emit("reconnect");
             } else {
-                $(".tools-current > li a")
-                    .removeClass("paus err")
-                    .addClass("disc");
+                $(".tools-current > li a").removeClass("paus err").addClass("disc");
                 delete this;
                 $(that.posX_selector).html("X.XXX");
                 $(that.posY_selector).html("X.XXX");
@@ -683,9 +668,7 @@ const { last } = require("underscore");
                 $(that.status_div_selector).removeClass(
                     "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"
                 );
-                $(that.status_div_selector).removeClass(
-                    "fabmo-status-disconnected"
-                );
+                $(that.status_div_selector).removeClass("fabmo-status-disconnected");
                 $(that.state_selector).html("Unknown Error");
                 $(that.status_div_selector).trigger("statechange", "Error");
                 if (that.file_control) {
@@ -707,10 +690,7 @@ const { last } = require("underscore");
                     if (err) {
                         console.log(err);
                     } else {
-                        if (
-                            data.state === "running" ||
-                            data.state === "probing"
-                        ) {
+                        if (data.state === "running" || data.state === "probing") {
                             that.pause();
                         }
                     }
@@ -723,16 +703,12 @@ const { last } = require("underscore");
         var that = this;
         //    console.log("ADD red spinner pause_button");
         $(that.pause_button_selector).click(function (e) {
-            $(that.pause_button_selector + " div div:first-child").addClass(
-                "spinner red"
-            );
+            $(that.pause_button_selector + " div div:first-child").addClass("spinner red");
             that.pause();
         });
 
         $(that.resume_button_selector).click(function (e) {
-            $(that.resume_button_selector + " div:first-child").addClass(
-                "spinner green"
-            );
+            $(that.resume_button_selector + " div:first-child").addClass("spinner green");
             that.tool.resume(function (err, data) {
                 if (err) {
                     console.error(err);
@@ -741,9 +717,7 @@ const { last } = require("underscore");
         });
 
         $(that.stop_button_selector).click(function (e) {
-            $(that.stop_button_selector + " div:first-child").addClass(
-                "spinner red"
-            );
+            $(that.stop_button_selector + " div:first-child").addClass("spinner red");
             that.tool.quit(function (err, data) {
                 if (err) {
                     console.error(err);

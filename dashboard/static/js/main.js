@@ -91,10 +91,7 @@ var setUpManual = function () {
     // Customize for video
     let current_App = localStorage.getItem("currentapp");
     let app_has_video = localStorage.getItem("fabmo_sb4_has_video");
-    if (
-        current_App === "video" ||
-        (current_App === "fabmo-sb4" && app_has_video === "true")
-    ) {
+    if (current_App === "video" || (current_App === "fabmo-sb4" && app_has_video === "true")) {
         // just kludged for moment
         $("#keypad-modal").css("opacity", "0.55");
         $(".manual-drive-modal").css("background-color", "rgba(0,0,0,0)");
@@ -165,11 +162,7 @@ engine.getVersion(function (err, version) {
                         $(".modalDim").show();
                         $(".manual-drive-modal").show();
                         // if currently running a goto command in manual keypad and have stopped and resumed
-                        if (
-                            status.stat === 5 &&
-                            (status.currentCmd === "goto" ||
-                                status.currentCmd === "resume")
-                        ) {
+                        if (status.stat === 5 && (status.currentCmd === "goto" || status.currentCmd === "resume")) {
                             $(".manual-stop").show();
                             $(".go-to, .set-coordinates").hide();
                             keyboard.setEnabled(false);
@@ -204,10 +197,8 @@ engine.getVersion(function (err, version) {
 
                 if (
                     (status.state != "armed" && last_state_seen === "armed") ||
-                    (status.state != "paused" &&
-                        last_state_seen === "paused") ||
-                    (status.state != "interlock" &&
-                        last_state_seen === "interlock") ||
+                    (status.state != "paused" && last_state_seen === "paused") ||
+                    (status.state != "interlock" && last_state_seen === "interlock") ||
                     (status.state != "lock" && last_state_seen === "lock")
                 ) {
                     dashboard.hideModal();
@@ -240,20 +231,12 @@ engine.getVersion(function (err, version) {
                     // Send a requested ACTION from KEYPAD modal when we get back to "idle"
                     // Might be able to add a return to Keypad if that becomes a desired feature
                     engine.getStatus();
-                    if (
-                        status.currentCmd === "exit" &&
-                        calledFromModal &&
-                        status.stat === 4
-                    ) {
+                    if (status.currentCmd === "exit" && calledFromModal && status.stat === 4) {
                         // Institute a 0.5 second delay to allow G2 to get back to idle
                         setTimeout(function () {
                             // Sort out the tpe of action requested
-                            console.log(
-                                "Action called From Modal: " + calledFromModal
-                            );
-                            var match = calledFromModal.match(
-                                /(\d{1,2})$|([a-zA-Z]{2})$/
-                            );
+                            console.log("Action called From Modal: " + calledFromModal);
+                            var match = calledFromModal.match(/(\d{1,2})$|([a-zA-Z]{2})$/);
                             if (match) {
                                 if (match[1]) {
                                     calledFromModal = match[1];
@@ -279,13 +262,8 @@ engine.getVersion(function (err, version) {
                         if (status.state === "manual") {
                             $("#title_goto").css("visibility", "hidden");
                             $(".manual-drive-message").show();
-                            $(".manual-drive-message").html(
-                                status.info.message
-                            );
-                        } else if (
-                            status.info["timer"] &&
-                            status.info["timer"] <= TIMER_DISPLAY_CUTOFF
-                        ) {
+                            $(".manual-drive-message").html(status.info.message);
+                        } else if (status.info["timer"] && status.info["timer"] <= TIMER_DISPLAY_CUTOFF) {
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
                         } else {
@@ -330,8 +308,7 @@ engine.getVersion(function (err, version) {
                             if (status.info["custom"]) {
                                 // Custom button action and text
                                 if (status.info.custom["ok"]) {
-                                    modalOptions.okText =
-                                        status.info.custom.ok["text"];
+                                    modalOptions.okText = status.info.custom.ok["text"];
                                     switch (status.info.custom.ok["func"]) {
                                         case "resume":
                                             modalOptions.ok = resumeFunction;
@@ -344,16 +321,13 @@ engine.getVersion(function (err, version) {
                                     }
                                 }
                                 if (status.info.custom["cancel"]) {
-                                    modalOptions.cancelText =
-                                        status.info.custom.cancel["text"];
+                                    modalOptions.cancelText = status.info.custom.cancel["text"];
                                     switch (status.info.custom.cancel["func"]) {
                                         case "resume":
-                                            modalOptions.cancel =
-                                                resumeFunction;
+                                            modalOptions.cancel = resumeFunction;
                                             break;
                                         case "quit":
-                                            modalOptions.cancel =
-                                                cancelFunction;
+                                            modalOptions.cancel = cancelFunction;
                                             break;
                                         default:
                                             modalOptions.cancel = function () {
@@ -362,12 +336,10 @@ engine.getVersion(function (err, version) {
                                     }
                                 }
                                 if (status.info.custom["detail"]) {
-                                    modalOptions["detail"] =
-                                        status.info.custom["detail"];
+                                    modalOptions["detail"] = status.info.custom["detail"];
                                 }
                                 if (status.info.custom["title"]) {
-                                    modalOptions["title"] =
-                                        status.info.custom["title"];
+                                    modalOptions["title"] = status.info.custom["title"];
                                 }
                                 if (status.info.custom["noButton"]) {
                                     modalOptions.noButton = true;
@@ -405,17 +377,13 @@ engine.getVersion(function (err, version) {
                     }
                     // quitFlag prevents authorize dialog from popping up
                     // after quitting from authorize dialog
-                } else if (
-                    status.state === "armed" &&
-                    status.quitFlag === false
-                ) {
+                } else if (status.state === "armed" && status.quitFlag === false) {
                     authorizeDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
                         title: "Authorization Required!",
-                        message:
-                            "To authorize your tool, press and hold the start button for one second.",
+                        message: "To authorize your tool, press and hold the start button for one second.",
                         cancelText: "Quit",
                         cancel: function () {
                             authorizeDialog = false;
@@ -426,10 +394,7 @@ engine.getVersion(function (err, version) {
                             });
                         },
                     });
-                } else if (
-                    status.state === "limit" &&
-                    status.resumeFlag === false
-                ) {
+                } else if (status.state === "limit" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
@@ -447,10 +412,7 @@ engine.getVersion(function (err, version) {
                             });
                         },
                     });
-                } else if (
-                    status.state === "interlock" &&
-                    status.resumeFlag === false
-                ) {
+                } else if (status.state === "interlock" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
@@ -472,17 +434,13 @@ engine.getVersion(function (err, version) {
                             dashboard.engine.resume();
                         },
                     });
-                } else if (
-                    status.state === "lock" &&
-                    status.resumeFlag === false
-                ) {
+                } else if (status.state === "lock" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
                         title: "Stop Input Activated!",
-                        message:
-                            "Please release any Stop Input before continuing.",
+                        message: "Please release any Stop Input before continuing.",
                         cancelText: "Quit",
                         cancel: function () {
                             interlockDialog = false;
@@ -556,15 +514,9 @@ function setupKeyboard() {
     var keyboard = new Keyboard();
     keyboard.on("go", function (move) {
         if (move.axis === "z") {
-            dashboard.engine.manualStart(
-                move.axis,
-                move.dir * 60.0 * (getManualMoveSpeed(move) / 2 || 0.1)
-            );
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) / 2 || 0.1));
         } else if (move) {
-            dashboard.engine.manualStart(
-                move.axis,
-                move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1)
-            );
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
         }
     });
 
@@ -594,20 +546,11 @@ function setupKeypad() {
                 move.second_dir * 60.0 * (getManualMoveSpeed(move) || 0.1)
             );
         } else if (move.axis === "z_fast") {
-            dashboard.engine.manualStart(
-                "z",
-                move.dir * 60.0 * engine.config.machine.manual.z_fast_speed
-            );
+            dashboard.engine.manualStart("z", move.dir * 60.0 * engine.config.machine.manual.z_fast_speed);
         } else if (move.axis === "z_slow") {
-            dashboard.engine.manualStart(
-                "z",
-                move.dir * 60.0 * engine.config.machine.manual.z_slow_speed
-            );
+            dashboard.engine.manualStart("z", move.dir * 60.0 * engine.config.machine.manual.z_slow_speed);
         } else if (move) {
-            dashboard.engine.manualStart(
-                move.axis,
-                move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1)
-            );
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
         }
     });
 
@@ -682,8 +625,7 @@ function showDaisy(callback) {
         daisyIsShown = true;
         dashboard.showModal({
             title: "Waiting for FabMo...",
-            message:
-                '<i class="fa fa-cog fa-spin" aria-hidden="true" style="font-size:40px;color:#313366" ></i>',
+            message: '<i class="fa fa-cog fa-spin" aria-hidden="true" style="font-size:40px;color:#313366" ></i>',
             noButton: true,
             noLogo: true,
         });
@@ -702,11 +644,7 @@ function hideDaisy(callback) {
 // Click outside the modal keypad to close it  //th: don't know if I like this now that it is done?
 const modalKeyPad = document.getElementById("keypad-modal");
 function handleClickOutside(event) {
-    if (
-        modalKeyPad &&
-        !modalKeyPad.contains(event.target) &&
-        modalKeyPad.style.display === "block"
-    ) {
+    if (modalKeyPad && !modalKeyPad.contains(event.target) && modalKeyPad.style.display === "block") {
         if (last_state_seen === "manual") {
             calledFromModal = "";
             dashboard.engine.manualExit();
@@ -811,59 +749,47 @@ $(".fixed-switch input").on("change", function () {
 
 $("#manual-move-speed").on("change", function () {
     newDefault = $("#manual-move-speed").val();
-    dashboard.engine.setConfig(
-        { machine: { manual: { xy_speed: newDefault } } },
-        function (err, data) {
-            if (err) {
-                console.log(err);
-            }
+    dashboard.engine.setConfig({ machine: { manual: { xy_speed: newDefault } } }, function (err, data) {
+        if (err) {
+            console.log(err);
         }
-    );
+    });
 });
 
 $(".xy-fixed").on("change", function () {
     keyboard.setEnabled(false);
     newDefault = $(".xy-fixed").val();
-    dashboard.engine.setConfig(
-        { machine: { manual: { xy_increment: newDefault } } },
-        function (err, data) {
-            if (err) {
-                console.log(err);
-            } else {
-                engine.config.machine.manual.xy_increment = newDefault;
-            }
+    dashboard.engine.setConfig({ machine: { manual: { xy_increment: newDefault } } }, function (err, data) {
+        if (err) {
+            console.log(err);
+        } else {
+            engine.config.machine.manual.xy_increment = newDefault;
         }
-    );
+    });
 });
 
 $(".z-fixed").on("change", function () {
     keyboard.setEnabled(false);
     newDefault = $(".z-fixed").val();
-    dashboard.engine.setConfig(
-        { machine: { manual: { z_increment: newDefault } } },
-        function (err, data) {
-            if (err) {
-                console.log(err);
-            } else {
-                engine.config.machine.manual.z_increment = newDefault;
-            }
+    dashboard.engine.setConfig({ machine: { manual: { z_increment: newDefault } } }, function (err, data) {
+        if (err) {
+            console.log(err);
+        } else {
+            engine.config.machine.manual.z_increment = newDefault;
         }
-    );
+    });
 });
 
 $(".abc-fixed").on("change", function () {
     keyboard.setEnabled(false);
     newDefault = $(".abc-fixed").val();
-    dashboard.engine.setConfig(
-        { machine: { manual: { abc_increment: newDefault } } },
-        function (err, data) {
-            if (err) {
-                console.log(err);
-            } else {
-                engine.config.machine.manual.abc_increment = newDefault;
-            }
+    dashboard.engine.setConfig({ machine: { manual: { abc_increment: newDefault } } }, function (err, data) {
+        if (err) {
+            console.log(err);
+        } else {
+            engine.config.machine.manual.abc_increment = newDefault;
         }
-    );
+    });
 });
 
 $(".axi").on("click", function (e) {
@@ -931,33 +857,61 @@ $("#connection-strength-indicator").on("click", function (evt) {
 
 // RIGHT DRO Actions (OUTPUTS, FEEDRATE, SPINDLE-SPEED) .........................................................
 
+// * Note awkward js patterns to get the right API calls to work
 // Toggle Outputs
 $(".toggle-out").on("click", function (evt) {
     var output = $(this).text(); // get switch number
     var state = $(this).hasClass("on"); // ... and state
     if (state) {
-        dashboard.handlers.runSBP("SO, " + output + ", 0");
+        dashboard.handlers.runSBP("SO, " + output + ", 0", function (err, result) {
+            if (err) {
+                console.error("An error occurred:", err);
+            } else {
+                console.log("The result is:", result);
+            }
+        });
     }
     if (!state) {
-        dashboard.handlers.runSBP("SO, " + output + ", 1");
+        dashboard.handlers.runSBP("SO, " + output + ", 1", function (err, result) {
+            if (err) {
+                console.error("An error occurred:", err);
+            } else {
+                console.log("The result is:", result);
+            }
+        });
     }
 });
 
 // Feed Rate (move speed)
 var changeFeedRate = function (new_feedrate) {
     if (new_feedrate > 0 && new_feedrate < 1000) {
-        try {
-            console.log("----> new feedrate: " + new_feedrate);
-            dashboard.handlers.runSBP("MS, " + new_feedrate);
-        } catch (error) {
-            console.log("Failed to pass new feedrate: " + error);
-        }
+        dashboard.handlers.runSBP("MS, " + new_feedrate, function (err, result) {
+            if (err) {
+                console.error("An error occurred:", err);
+            } else {
+                console.log("The result is:", result);
+            }
+        });
     }
 };
-
 $("#feed-rate").on("change", function (evt) {
-    var new_feedrate = $("#feed-rate").val();
+    var new_feedrate = parseFloat($("#feed-rate").val());
     changeFeedRate(new_feedrate);
+});
+
+// Requested OVERRIDE Feed Rate (rqfro) via status
+var overrideFeedRate = function (new_override) {
+    try {
+        console.log("----> new override: " + new_override);
+        engine.setUix("fr_override", new_override);
+    } catch (error) {
+        console.log("Failed to pass new Override: " + error);
+    }
+};
+$("#override").on("change", function (evt) {
+    var new_override = parseFloat($("#override").val());
+    overrideFeedRate(new_override);
+    engine._setStatus.rqFro = new_override;
 });
 
 // Spindle Speed
@@ -969,7 +923,6 @@ var changeSpindleSpeed = function (new_RPM) {
         console.log("Failed to pass new RPM: " + error);
     }
 };
-
 $("#sp-speed").on("change", function (evt) {
     var new_RPM = $("#sp-speed").val();
     changeSpindleSpeed(new_RPM);
@@ -990,6 +943,22 @@ $("#sp-speed").on("focus", function (evt) {
 // Listeners for activity in the input box to restart the timer
 $("#sp-speed").on("input keypress mousemove", function (evt) {
     startBlurTimer();
+});
+// ... get FOCUS out of override box if done
+var ovBlurTimer;
+function startOvBlurTimer() {
+    clearTimeout(ovBlurTimer);
+    ovBlurTimer = setTimeout(function () {
+        $("#override").blur();
+    }, 2000);
+}
+// Listener for focus on the input box
+$("#override").on("focus", function (evt) {
+    startOvBlurTimer();
+});
+// Listeners for activity in the input box to restart the timer
+$("#override").on("input keypress mousemove", function (evt) {
+    startOvBlurTimer();
 });
 
 // ENGINE INTERACTIONS ========================================================

@@ -248,3 +248,20 @@ exports.MS = function (args, callback) {
     //    log.debug("  MS: vs_change = " + this.vs_change);
     callback();
 };
+
+// Override current move speed in G2
+// eslint-disable-next-line no-unused-vars
+exports.MO = function (args) {
+    var override = 1.0;
+    if (args[0] == undefined) {
+        override = 1.0;
+    } else {
+        override = args[0] * 0.01; // convert to proportion
+    }
+    //    this.emit_move("M5O", { P: override });
+    // format the override value to 2 decimal places
+    override = override.toFixed(2);
+    this.emit_gcode("M100({fro:" + override + "})");
+
+    //this.override_speed = override; ////???
+};
