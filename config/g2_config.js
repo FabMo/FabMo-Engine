@@ -1,5 +1,8 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
+
+const { truncate } = require("fs");
+
 /*
  * g2_config.js
  *
@@ -72,11 +75,7 @@ G2Config.prototype.getFromDriver = function (callback) {
             callback(err);
         } else {
             if (keys.length != values.length) {
-                callback(
-                    new Error(
-                        "Something went wrong when getting values from G2"
-                    )
-                );
+                callback(new Error("Something went wrong when getting values from G2"));
             } else {
                 var obj = {};
                 for (var i = 0; i < keys.length; i++) {
@@ -177,12 +176,11 @@ G2Config.prototype.restoreSome = function (keys, callback) {
 // Configure the status reports (indicating to G2 what is to be reported)
 //   callback - Called as soon as the command is issued (Does not wait for a response)
 G2Config.prototype.configureStatusReports = function (callback) {
-    ////## Added spc for spindle state, might also want sps for speed ???
-    ////## spc=0 [OFF]; =1 or =2 [ON]; =3 [PAUSED-OFF in hold]; =4 [RESUMING]
-    ////## see g2 spindle.h (no other documentation)
-    ////## RE: g2 101.03 may change later with DIO
-    ////## also see DIO defs in g2core >gpio.h (for setting number and analog, PWM?)
-    ////## testing w/o out1 in case the null return may be causing read problem
+    // Added spc for spindle state
+    // spc=0 [OFF]; =1 or =2 [ON]; =3 [PAUSED-OFF in hold]; =4 [RESUMING]
+    // see g2 spindle.h (no other documentation)
+    // also see DIO defs in g2core >gpio.h (for setting number and analog, PWM?)
+    // fro is feed rate override
     if (this.driver) {
         this.driver.command({
             sr: {
@@ -223,6 +221,7 @@ G2Config.prototype.configureStatusReports = function (callback) {
                 out10: true,
                 out11: true,
                 out12: true,
+                fro: true,
             },
         });
         this.driver.command({ qv: 0 });

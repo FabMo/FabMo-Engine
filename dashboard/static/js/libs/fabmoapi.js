@@ -4,8 +4,7 @@
 (function (root, factory) {
     /* CommonJS */
     if (typeof module == "object" && module.exports) module.exports = factory();
-    /* AMD module */ else if (typeof define == "function" && define.amd)
-        define([], factory);
+    /* AMD module */ else if (typeof define == "function" && define.amd) define([], factory);
     /* Browser global */ else root.FabMoAPI = factory();
 })(this, function (io) {
     "use strict";
@@ -77,9 +76,7 @@
             });
         } catch (e) {
             this.socket = null;
-            console.error(
-                "connection to the engine via websocket failed : " + e.message
-            );
+            console.error("connection to the engine via websocket failed : " + e.message);
         }
 
         if (this.socket) {
@@ -153,9 +150,7 @@
             this.videoSocket = io(this.base_url + "/video");
         } catch (e) {
             this.videoSocket = null;
-            console.info(
-                "connection to the video streaming via websocket failed."
-            );
+            console.info("connection to the video streaming via websocket failed.");
         }
 
         if (this.videoSocket) {
@@ -174,10 +169,7 @@
             );
 
             this.videoSocket.on("message", function (message) {
-                console.info(
-                    " Video streaming websocket message: " +
-                        JSON.stringify(message)
-                );
+                console.info(" Video streaming websocket message: " + JSON.stringify(message));
             });
 
             this.videoSocket.on(
@@ -190,9 +182,7 @@
             this.videoSocket.on(
                 "connect_error",
                 function () {
-                    console.info(
-                        "Video streaming websocket disconnected (connection error)"
-                    );
+                    console.info("Video streaming websocket disconnected (connection error)");
                 }.bind(this)
             );
             callback();
@@ -234,10 +224,7 @@
             var fail = setTimeout(
                 function () {
                     this.socket.off("pong");
-                    callback(
-                        new Error("Timeout waiting for ping response."),
-                        null
-                    );
+                    callback(new Error("Timeout waiting for ping response."), null);
                 }.bind(this),
                 PING_TIMEOUT
             );
@@ -381,12 +368,7 @@
     FabMoAPI.prototype.getJobHistory = function (options, callback) {
         var start = options.start || 0;
         var count = options.count || 0;
-        this._get(
-            "/jobs/history?start=" + start + "&count=" + count,
-            callback,
-            callback,
-            "jobs"
-        );
+        this._get("/jobs/history?start=" + start + "&count=" + count, callback, callback, "jobs");
     };
 
     FabMoAPI.prototype.getJob = function (id, callback) {
@@ -427,13 +409,7 @@
     };
 
     FabMoAPI.prototype.setAppConfig = function (id, cfg_data, callback) {
-        this._post(
-            "/apps/" + id + "/config",
-            { config: cfg_data },
-            callback,
-            callback,
-            "config"
-        );
+        this._post("/apps/" + id + "/config", { config: cfg_data }, callback, callback, "config");
     };
 
     // Macros
@@ -478,12 +454,7 @@
         this.socket.emit("code", { rt: runtime, data: code });
     };
 
-    FabMoAPI.prototype.manualStart = function (
-        axis,
-        speed,
-        second_axis,
-        second_speed
-    ) {
+    FabMoAPI.prototype.manualStart = function (axis, speed, second_axis, second_speed) {
         this.executeRuntimeCode("manual", {
             cmd: "start",
             axis: axis,
@@ -518,13 +489,7 @@
         this.executeRuntimeCode("manual", { cmd: "exit" });
     };
 
-    FabMoAPI.prototype.manualMoveFixed = function (
-        axis,
-        speed,
-        distance,
-        second_axis,
-        second_distance
-    ) {
+    FabMoAPI.prototype.manualMoveFixed = function (axis, speed, distance, second_axis, second_distance) {
         this.executeRuntimeCode("manual", {
             cmd: "fixed",
             axis: axis,
@@ -541,6 +506,10 @@
 
     FabMoAPI.prototype.setAcc = function (acc, new_RPM, callback) {
         this._post("/acc/spindle_speed", { rpm: new_RPM }, callback);
+    };
+
+    FabMoAPI.prototype.setUix = function (acc, new_override, callback) {
+        this._post("/uix/fr_override", { ovr: new_override }, callback);
     };
 
     FabMoAPI.prototype.connectToWifi = function (ssid, key, callback) {
@@ -602,46 +571,16 @@
     FabMoAPI.prototype.submitJobs = FabMoAPI.prototype.submitJob;
 
     FabMoAPI.prototype.command = function (name, args, callback) {
-        this.socket.emit(
-            "cmd",
-            { name: name, args: args || {}, count: this.commandCounter },
-            callback
-        );
+        this.socket.emit("cmd", { name: name, args: args || {}, count: this.commandCounter }, callback);
         this.commandCounter += 1;
     };
 
-    FabMoAPI.prototype.submitFirmwareUpdate = function (
-        file,
-        options,
-        callback,
-        progress
-    ) {
-        this._postUpload(
-            "/firmware/update",
-            file,
-            {},
-            callback,
-            callback,
-            null,
-            progress
-        );
+    FabMoAPI.prototype.submitFirmwareUpdate = function (file, options, callback, progress) {
+        this._postUpload("/firmware/update", file, {}, callback, callback, null, progress);
     };
 
-    FabMoAPI.prototype.submitUpdate = function (
-        file,
-        options,
-        callback,
-        progress
-    ) {
-        this._postUpload(
-            "/update/fabmo",
-            file,
-            {},
-            callback,
-            callback,
-            null,
-            progress
-        );
+    FabMoAPI.prototype.submitUpdate = function (file, options, callback, progress) {
+        this._postUpload("/update/fabmo", file, {}, callback, callback, null, progress);
     };
 
     FabMoAPI.prototype.getCurrentUser = function (callback) {
@@ -656,12 +595,7 @@
         var username = user_info.user.username;
 
         var user = user_info;
-        this._post(
-            "/authentication/user/" + username,
-            user,
-            callback,
-            callback
-        );
+        this._post("/authentication/user/" + username, user, callback, callback);
     };
 
     FabMoAPI.prototype.deleteUser = function (user_info, callback) {
@@ -710,15 +644,7 @@
         });
     };
 
-    FabMoAPI.prototype._postUpload = function (
-        url,
-        data,
-        metadata,
-        errback,
-        callback,
-        key,
-        options
-    ) {
+    FabMoAPI.prototype._postUpload = function (url, data, metadata, errback, callback, key, options) {
         //var url = this._url(url);
         var callback = callback || function () {};
         var errback = errback || function () {};
@@ -760,11 +686,7 @@
                         fr.readAsArrayBuffer(file);
                         fr.onload = function (evt) {
                             //var size_bf_compression = file.size;
-                            file = new File(
-                                [pako.deflate(fr.result)],
-                                file.name,
-                                file
-                            );
+                            file = new File([pako.deflate(fr.result)], file.name, file);
                             //var compression_time=Date.now()-compress_start_time
                             //var stats = "Size before compression : "+size_bf_compression+" after : "+file.size+" ratio : "+((file.size/size_bf_compression)*100)+"% compression time : "+compression_time+"ms";
                             fd.append("file", file);
@@ -819,38 +741,16 @@
                                 }
                             }
                         }.bind(this);
-                        var request = this._post(
-                            url,
-                            fd,
-                            onFileUploadComplete,
-                            onFileUploadComplete,
-                            null,
-                            null,
-                            true
-                        );
+                        var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete, null, null, true);
                         requests.push(request);
                     }
                 }.bind(this)
             );
         }.bind(this);
-        this._post(
-            url,
-            meta,
-            onMetaDataUploadComplete,
-            onMetaDataUploadComplete,
-            "key"
-        );
+        this._post(url, meta, onMetaDataUploadComplete, onMetaDataUploadComplete, "key");
     };
 
-    FabMoAPI.prototype._post = function (
-        url,
-        data,
-        errback,
-        callback,
-        key,
-        redirect,
-        doProgress
-    ) {
+    FabMoAPI.prototype._post = function (url, data, errback, callback, key, redirect, doProgress) {
         if (!redirect) {
             var url = this._url(url);
         }
@@ -913,14 +813,7 @@
                     try {
                         var response = JSON.parse(xhr.responseText);
                         if (response.url) {
-                            this._post(
-                                response.url,
-                                data,
-                                errback,
-                                callback,
-                                key,
-                                true
-                            );
+                            this._post(response.url, data, errback, callback, key, true);
                         } else {
                             console.error("Bad redirect in FabMo API");
                         }
@@ -930,9 +823,7 @@
                     break;
 
                 default:
-                    console.error(
-                        "Got a bad response from server: " + xhr.status
-                    );
+                    console.error("Got a bad response from server: " + xhr.status);
                     break;
             }
         }.bind(this);

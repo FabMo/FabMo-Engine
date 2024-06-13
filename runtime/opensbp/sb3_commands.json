@@ -515,14 +515,6 @@
       "cmd": "MH",
       "name": "move Home (X and Y; Z Safe Height)"
    },
-   "M0": {
-      "cmd": "M0",
-      "name": "motors 0FF"
-   },
-   "MO": {
-      "cmd": "MO",
-      "name": "motors oFF"
-   },
    "MS": {
       "cmd": "MS",
       "name": "move Speeds",

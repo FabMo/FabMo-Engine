@@ -81,10 +81,7 @@ function connect(callback) {
         // TODO - I dunno, this is sort of a weird pattern
         exports.machine = new Machine(control_path, callback);
     } else {
-        typeof callback === "function" &&
-            callback(
-                'No supported serial path for platform "' + PLATFORM + '"'
-            );
+        typeof callback === "function" && callback('No supported serial path for platform "' + PLATFORM + '"');
     }
 }
 
@@ -128,6 +125,8 @@ function Machine(control_path, callback) {
         out10: 0,
         out11: 0,
         out12: 0,
+        fro: 1.0,
+        rqFro: 1.0,
         job: null,
         info: null,
         unit: null,
@@ -166,9 +165,7 @@ function Machine(control_path, callback) {
             if (err) {
                 log.error(JSON.stringify(err));
                 log.warn("Setting the disconnected state");
-                this.die(
-                    "An internal error has occurred. You must reboot your tool."
-                );
+                this.die("An internal error has occurred. You must reboot your tool.");
                 if (typeof callback === "function") {
                     return callback(new Error("No connection to G2"));
                 } else {
@@ -208,14 +205,11 @@ function Machine(control_path, callback) {
                                         case g2.STAT_INTERLOCK:
                                         case g2.STAT_SHUTDOWN:
                                         case g2.STAT_PANIC:
-                                            this.die(
-                                                "A G2 exception has occurred. You must reboot your tool."
-                                            );
+                                            this.die("A G2 exception has occurred. You must reboot your tool.");
                                             break;
                                     }
                                 }
-                                typeof callback === "function" &&
-                                    callback(null, this);
+                                typeof callback === "function" && callback(null, this);
                             }.bind(this)
                         );
                     }
@@ -237,14 +231,10 @@ function Machine(control_path, callback) {
                     var pos = "pos" + axis;
                     if (mode in update) {
                         if (update[mode] === 0) {
-                            log.debug(
-                                "Disabling display for " + axis + " axis."
-                            );
+                            log.debug("Disabling display for " + axis + " axis.");
                             delete this.status[pos];
                         } else {
-                            log.debug(
-                                "Enabling display for " + axis + " axis."
-                            );
+                            log.debug("Enabling display for " + axis + " axis.");
                             this.status[pos] = 0;
                         }
                     }
@@ -323,16 +313,10 @@ Machine.prototype.handleAPCollapseButton = function (stat, ap_input) {
         // For the first time
         if (!this.APCollapseTimer) {
             // Do an AP collapse in ap_collapse_time seconds, if the button is never released
-            log.debug(
-                "Starting a timer for AP mode collapse (AP button was pressed)"
-            );
+            log.debug("Starting a timer for AP mode collapse (AP button was pressed)");
             this.APCollapseTimer = setTimeout(
                 function APCollapse() {
-                    log.info(
-                        "AP Collapse button held for " +
-                            ap_collapse_time +
-                            " seconds.  Triggering AP collapse."
-                    );
+                    log.info("AP Collapse button held for " + ap_collapse_time + " seconds.  Triggering AP collapse.");
                     this.APCollapseTimer = null;
                     updater.APModeCollapse();
                 }.bind(this),
@@ -357,12 +341,7 @@ Machine.prototype.handleAPCollapseButton = function (stat, ap_input) {
 // different than if they were separate. (see below)
 Machine.prototype.handleOkayCancelDual = function (stat, quit_input) {
     //this may be changed to user select wether to continue or to cancel
-    if (
-        !(stat[quit_input] & 1) &&
-        this.status.state === "paused" &&
-        canQuit &&
-        this.quit_pressed
-    ) {
+    if (!(stat[quit_input] & 1) && this.status.state === "paused" && canQuit && this.quit_pressed) {
         log.info("Cancel hit!");
         this.quit(function (err, msg) {
             if (err) {
@@ -407,11 +386,7 @@ Machine.prototype.handleOkayCancelDual = function (stat, quit_input) {
 // go into an authorized state.  Pressing "fire" while armed either executes the action, or
 // puts the system in an authorized state for the authorization period.
 Machine.prototype.handleFireButton = function (stat, auth_input) {
-    if (
-        this.fireButtonPressed &&
-        !(stat[auth_input] & 1) &&
-        this.status.state === "armed"
-    ) {
+    if (this.fireButtonPressed && !(stat[auth_input] & 1) && this.status.state === "armed") {
         log.info("FIRE button hit!");
         this.fire();
     }
@@ -482,9 +457,7 @@ Machine.prototype.handleCancelButton = function (stat, quit_input) {
  */
 Machine.prototype.die = function (err_msg) {
     this.setState(this, "dead", {
-        error:
-            err_msg ||
-            "A G2 exception has occurred. You must reboot your tool.",
+        error: err_msg || "A G2 exception has occurred. You must reboot your tool.",
     });
     this.emit("status", this.status);
 };
@@ -546,8 +519,7 @@ function decideNextAction(
                 // handle lock/interlock after software pause; in FeedHold
                 result_arm_obj["interlock_action"] = current_action_io;
             } else {
-                result_arm_obj["current_action"] =
-                    interlock_action_io || current_action_io;
+                result_arm_obj["current_action"] = interlock_action_io || current_action_io;
             }
             break;
         case "lock":
@@ -556,56 +528,39 @@ function decideNextAction(
                 // handle lock/interlock after software pause; in FeedHold
                 result_arm_obj["interlock_action"] = current_action_io;
             } else {
-                result_arm_obj["current_action"] =
-                    interlock_action_io || current_action_io;
+                result_arm_obj["current_action"] = interlock_action_io || current_action_io;
             }
             break;
         case "manual":
             if (
                 current_action_io == null ||
-                (current_action_io.type == "runtimeCode" &&
-                    current_action_io.payload.name == "manual")
+                (current_action_io.type == "runtimeCode" && current_action_io.payload.name == "manual")
             ) {
                 break;
             }
             result_arm_obj["error_thrown"] = new Error(
-                "Cannot arm machine for " +
-                    current_action_io.type +
-                    " from the manual state"
+                "Cannot arm machine for " + current_action_io.type + " from the manual state"
             );
             break;
         case "paused":
         case "stopped":
-            if (
-                current_action_io.type === "resume" &&
-                driver_status_inFeedHold === false
-            ) {
+            if (current_action_io.type === "resume" && driver_status_inFeedHold === false) {
                 require_auth_in = false;
             } // Rules out Auth request on Timed Pause; no FeedHold
             if (current_action_io.type != "resume") {
                 result_arm_obj["error_thrown"] = new Error(
-                    "Cannot arm the machine for " +
-                        current_action_io.type +
-                        " when " +
-                        current_state_in
+                    "Cannot arm the machine for " + current_action_io.type + " when " + current_state_in
                 );
             }
             break;
         default:
             result_arm_obj["error_thrown"] = new Error(
-                "Cannot arm the machine from the " +
-                    current_state_in +
-                    " state."
+                "Cannot arm the machine from the " + current_state_in + " state."
             );
             break;
     }
 
-    if (
-        (current_action_io &&
-            current_action_io.payload &&
-            current_action_io.payload.name === "manual") ||
-        bypass_in
-    ) {
+    if ((current_action_io && current_action_io.payload && current_action_io.payload.name === "manual") || bypass_in) {
         result_arm_obj["interlock_required"] = false;
     }
 
@@ -621,20 +576,9 @@ function decideNextAction(
 
     // Now we decide what the next action should be if we haven't already aborted for some reason
 
-    if (
-        current_action_io &&
-        current_action_io.payload &&
-        current_action_io.payload.name === "manual"
-    ) {
+    if (current_action_io && current_action_io.payload && current_action_io.payload.name === "manual") {
         var cmd = current_action_io.payload.code.cmd;
-        if (
-            cmd == "set" ||
-            cmd == "exit" ||
-            cmd == "start" ||
-            cmd == "fixed" ||
-            cmd == "stop" ||
-            cmd == "goto"
-        ) {
+        if (cmd == "set" || cmd == "exit" || cmd == "start" || cmd == "fixed" || cmd == "stop" || cmd == "goto") {
             result_arm_obj["next_action"] = "fire";
             return result_arm_obj;
         }
@@ -767,9 +711,7 @@ Machine.prototype.arm = function (action, timeout) {
     }
 
     this.action = action;
-    log.info(
-        "ARMING the machine" + (action ? " for " + action.type : "(No action)")
-    );
+    log.info("ARMING the machine" + (action ? " for " + action.type : "(No action)"));
 
     switch (nextAction) {
         case "throw":
@@ -962,11 +904,7 @@ Machine.prototype.setPreferredUnits = function (units, callback) {
                     break;
 
                 default:
-                    log.warn(
-                        'Invalid units "' +
-                            units +
-                            '" found in machine configuration.'
-                    );
+                    log.warn('Invalid units "' + units + '" found in machine configuration.');
                     break;
             }
             if (uv !== null) {
@@ -1133,26 +1071,19 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                 // Beginning a change to the idle state:
                 // Go ahead and request the current machine position and write it to disk. This
                 // ... is done regularly, so that if the machine is powered down it retains the current position
-                if (
-                    this.status.quitFlag === true &&
-                    this.current_runtime === this.manual_runtime
-                ) {
+                if (this.status.quitFlag === true && this.current_runtime === this.manual_runtime) {
                     this.current_runtime.executeCode({ cmd: "exit" });
                 } else {
                     switch (this.status.state) {
                         case "limit":
                         case "interlock":
                         case "lock":
-                            log.debug(
-                                "Initially skip cases of input-hit processing"
-                            );
+                            log.debug("Initially skip cases of input-hit processing");
                             break;
                         default:
                             // [We should be in some state other than idle, but allow redundancy
                             // ... for a few cases such as coming our of probing on Stop input]
-                            log.debug(
-                                "... otherwise send final lines from machine"
-                            );
+                            log.debug("... otherwise send final lines from machine");
                             this.driver.command({ out4: 0 }); // Permissive relay
                             this.driver.command({ gc: "m30" }); // Generate End
                             log.debug("call MPO from machine");
@@ -1211,11 +1142,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                     // ... will be immediately re-processed through here
                     var interlockRequired = true; // ... hard coded here; may need to manipulate at some point (no longer in configs)
                     let isInterlocked = checkForInterlocks(this); // check switches when setting machine state (parallels arming)
-                    if (
-                        interlockRequired &&
-                        isInterlocked &&
-                        !interlockBypass
-                    ) {
+                    if (interlockRequired && isInterlocked && !interlockBypass) {
                         this.interlock_action = null;
                         this.driver.ok_to_disconnect = true;
                         switch (isInterlocked) {
@@ -1250,11 +1177,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
         newstate = details_newstate;
         this.status.state = newstate;
     } else {
-        log.warn(
-            "Got a state change from a runtime that's not the current one. (" +
-                source +
-                ")"
-        );
+        log.warn("Got a state change from a runtime that's not the current one. (" + source + ")");
     }
     this.emit("status", this.status);
     if (this.status.info && this.status.info["timer"]) {
@@ -1278,9 +1201,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 Machine.prototype.pause = function (callback) {
     if (this.status.state === "running" || this.status.state === "probing") {
         if (this.current_runtime) {
-            log.debug(
-                "====> Handling .pause in Machine, to cur_runtime.pause()"
-            );
+            log.debug("====> Handling .pause in Machine, to cur_runtime.pause()");
             this.current_runtime.pause();
             callback(null, "paused");
         } else {
@@ -1439,9 +1360,7 @@ Machine.prototype.executeRuntimeCode = function (runtimeName, code) {
     interlockBypass = false;
     runtime = this.getRuntime(runtimeName);
     if (runtime === undefined) {
-        log.debug(
-            "Rejecting attempt to execute runtime code with no defined runtime."
-        );
+        log.debug("Rejecting attempt to execute runtime code with no defined runtime.");
         log.debug(JSON.stringify(code));
         return;
     }
@@ -1487,10 +1406,7 @@ Machine.prototype.startAccessories = async function () {
         await spindle.loadVFDSettings();
         await spindle.connectVFD();
         spindle.on("statusChanged", (spindlestatus) => {
-            log.info(
-                "EMIT New GLOBAL Spindle status : " +
-                    JSON.stringify(spindlestatus)
-            );
+            log.info("EMIT New GLOBAL Spindle status : " + JSON.stringify(spindlestatus));
             // add spindle status to global status object
             this.status.spindle = spindlestatus;
             this.emit("status", this.status);
@@ -1502,12 +1418,26 @@ Machine.prototype.startAccessories = async function () {
 
 // Directly set the spindle speed as an accessory ignoring runtimes
 Machine.prototype.spindleSpeed = function (new_RPM) {
-    if (new_RPM > 5000 && new_RPM < 30000) {
+    if (new_RPM >= 5000 && new_RPM <= 30000) {
         try {
             log.info("----> new speed: " + new_RPM);
             spindle.setSpindleVFDFreq(new_RPM);
         } catch (error) {
             log.error("Failed to pass new RPM: " + error);
+        }
+    }
+};
+
+// Set a Feed Rate Override Request for injection into G2 "driver"
+Machine.prototype.frOverride = function (new_override) {
+    if (new_override >= 5 && new_override <= 200) {
+        try {
+            log.info("----> new override: " + new_override);
+            // set the new override value and format for the driver
+            var cmd_to_G2 = "{fro: " + (new_override / 100).toFixed(2) + "}";
+            this.driver.command(cmd_to_G2); // <<==== injected here, but may be several commands away form execution
+        } catch (error) {
+            log.error("Failed to pass new Override: " + error);
         }
     }
 };
@@ -1554,20 +1484,14 @@ Machine.prototype._executeRuntimeCode = function (runtimeName, code) {
 Machine.prototype._resume = function (input) {
     switch (this.status.state) {
         case "interlock":
-            if (
-                this.interlock_action &&
-                this.interlock_action.type != "resume"
-            ) {
+            if (this.interlock_action && this.interlock_action.type != "resume") {
                 this.arm(this.interlock_action);
                 this.interlock_action = null;
                 return;
             }
             break;
         case "lock":
-            if (
-                this.interlock_action &&
-                this.interlock_action.type != "resume"
-            ) {
+            if (this.interlock_action && this.interlock_action.type != "resume") {
                 this.arm(this.interlock_action);
                 this.interlock_action = null;
                 return;

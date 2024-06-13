@@ -95,8 +95,7 @@
                 function (e) {
                     //vertical detection
                     if (
-                        (swipe_det.eY - min_y > swipe_det.sY ||
-                            swipe_det.eY + min_y < swipe_det.sY) &&
+                        (swipe_det.eY - min_y > swipe_det.sY || swipe_det.eY + min_y < swipe_det.sY) &&
                         swipe_det.eX < swipe_det.sX + max_x &&
                         swipe_det.sX > swipe_det.eX - max_x &&
                         swipe_det.eY > 0 &&
@@ -152,11 +151,7 @@
         }
     };
 
-    FabMoDashboard.prototype._download = function (
-        data,
-        strFileName,
-        strMimeType
-    ) {
+    FabMoDashboard.prototype._download = function (data, strFileName, strMimeType) {
         // https://github.com/rndme/download
         // data can be a string, Blob, File, or dataURL
 
@@ -300,10 +295,7 @@
                 if (data.jobs.length === 1) {
                     var msg = "Job Submitted: " + data.jobs[0].filename;
                 } else {
-                    var msg =
-                        data.jobs.length +
-                        " Jobs Submitted: " +
-                        files.join(",");
+                    var msg = data.jobs.length + " Jobs Submitted: " + files.join(",");
                 }
                 text.textContent = msg;
                 showToaster(toast);
@@ -651,21 +643,11 @@
 
     FabMoDashboard.prototype.submitJobs = FabMoDashboard.prototype.submitJob;
 
-    FabMoDashboard.prototype.submitFirmwareUpdate = function (
-        file,
-        options,
-        callback,
-        progress
-    ) {
+    FabMoDashboard.prototype.submitFirmwareUpdate = function (file, options, callback, progress) {
         this._call("submitFirmwareUpdate", file, callback);
     };
 
-    FabMoDashboard.prototype.submitUpdate = function (
-        file,
-        options,
-        callback,
-        progress
-    ) {
+    FabMoDashboard.prototype.submitUpdate = function (file, options, callback, progress) {
         this._call("submitUpdate", file, callback);
     };
 
@@ -824,17 +806,8 @@
      * @param {function} callback
      * @param {Error} callback.err Error object if there was an error.
      */
-    FabMoDashboard.prototype.manualMoveFixed = function (
-        axis,
-        speed,
-        distance,
-        callback
-    ) {
-        this._call(
-            "manualMoveFixed",
-            { axis: axis, speed: speed, dist: distance },
-            callback
-        );
+    FabMoDashboard.prototype.manualMoveFixed = function (axis, speed, distance, callback) {
+        this._call("manualMoveFixed", { axis: axis, speed: speed, dist: distance }, callback);
     };
 
     /**
@@ -852,12 +825,7 @@
      * @param {Number} axis One of `x`,`y`,`z`,`a`,`b`,`c`
      * @param {Number} speed Speed in current tool units.  Negative to move in the negative direction.
      */
-    FabMoDashboard.prototype.manualStart = function (
-        axis,
-        speed,
-        second_axis,
-        second_speed
-    ) {
+    FabMoDashboard.prototype.manualStart = function (axis, speed, second_axis, second_speed) {
         this._call(
             "manualStart",
             {
@@ -1014,10 +982,7 @@
         this._call("getNetworkIdentity", null, callback);
     };
 
-    FabMoDashboard.prototype.setNetworkIdentity = function (
-        identity,
-        callback
-    ) {
+    FabMoDashboard.prototype.setNetworkIdentity = function (identity, callback) {
         this._call("setNetworkIdentity", identity, callback);
     };
 
@@ -1027,6 +992,10 @@
 
     FabMoDashboard.prototype.setAcc = function (callback) {
         this._call("setAcc", args, callback);
+    };
+
+    FabMoDashboard.prototype.setUix = function (callback) {
+        this._call("setUix", args, callback);
     };
 
     // ... not implemented yet

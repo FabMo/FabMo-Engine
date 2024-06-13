@@ -248,3 +248,6 @@ exports.MS = function (args, callback) {
     //    log.debug("  MS: vs_change = " + this.vs_change);
     callback();
 };
+
+// Override current move speed in G2
+// Have not implemented MO, might be for some sort of override; OR M0 to turn off motors (because we can't do it consistently for all tools)

@@ -15,6 +15,7 @@ var log = require("./log").logger("g2");
 var process = require("process");
 var stream = require("stream");
 var Q = require("q");
+//const { last } = require("underscore");
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -40,15 +41,14 @@ var resumePending = false;
 var intendedClose = false;
 var THRESH = 1;
 var PRIMED_THRESHOLD = 10;
+//var lastOverride = 1.0;
 
 // var pat = /s*(G(28|38)\.\d|G2(0|1))/g; Not used yet
 
 // Error codes defined by G2
 // See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
 try {
-    var G2_ERRORS = JSON.parse(
-        fs.readFileSync("./data/g2_errors.json", "utf8")
-    );
+    var G2_ERRORS = JSON.parse(fs.readFileSync("./data/g2_errors.json", "utf8"));
 } catch (e) {
     G2_ERRORS = {};
 }
@@ -194,9 +194,7 @@ util.inherits(G2, events.EventEmitter);
 // Creates a cycle context, which has a pass-through stream into which data can be piped
 G2.prototype._createCycleContext = function () {
     if (this.context) {
-        throw new Error(
-            "Cannot create a new cycle context.  One already exists."
-        );
+        throw new Error("Cannot create a new cycle context.  One already exists.");
     }
     // Create and setup the pass-through stream
     var st = new stream.PassThrough();
@@ -250,13 +248,7 @@ G2.prototype._createCycleContext = function () {
     ////## TODO: fix this kludge to get the current_runtime !
     if (global.CUR_RUNTIME != "[IdleRuntime]") {
         log.debug("PREPEND to cycle - " + global.CUR_RUNTIME);
-        st.write(
-            "N1 M0\n" +
-                "N2 G90\n" +
-                "N3 G61\n" +
-                "N4 M100 ({out4:1})\n" +
-                "N5 S1000\n"
-        );
+        st.write("N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "N4 M100 ({out4:1})\n" + "N5 S1000\n");
     }
 
     // Handle a stream finishing or disconnecting.
@@ -353,9 +345,7 @@ G2.prototype.connect = function (path, callback) {
                 setTimeout(
                     function checkConnected() {
                         if (!this.connected) {
-                            return callback(
-                                new Error("Never got the SYSTEM READY from g2.")
-                            );
+                            return callback(new Error("Never got the SYSTEM READY from g2."));
                         }
                     }.bind(this),
                     3000
@@ -475,10 +465,7 @@ G2.prototype.handleFooter = function (response) {
     if (response.f) {
         if (response.f[1] !== 0) {
             var err_code = response.f[1];
-            var err_msg = G2_ERRORS[err_code] || [
-                "ERR_UNKNOWN",
-                "Unknown Error",
-            ];
+            var err_msg = G2_ERRORS[err_code] || ["ERR_UNKNOWN", "Unknown Error"];
             this.emit("error", [err_code, err_msg[0], err_msg[1]]);
             return new Error(err_msg[1]);
         }
@@ -637,10 +624,8 @@ G2.prototype.handleStatusReport = function (response) {
             }
         }
 
-        this.stat =
-            this.status.stat !== undefined ? this.status.stat : this.stat;
-        this.hold =
-            this.status.hold !== undefined ? this.status.hold : this.hold;
+        this.stat = this.status.stat !== undefined ? this.status.stat : this.stat;
+        this.hold = this.status.hold !== undefined ? this.status.hold : this.hold;
 
         if (this.context) {
             this.context.emit("status", this.status);
@@ -704,10 +689,7 @@ G2.prototype.onMessage = function (response) {
 
     for (var key in r) {
         if (key in this.readers) {
-            if (
-                typeof this.readers[key][this.readers[key].length - 1] ===
-                "function"
-            ) {
+            if (typeof this.readers[key][this.readers[key].length - 1] === "function") {
                 var callback = this.readers[key].shift();
                 if (err) {
                     callback(err);
@@ -1020,12 +1002,7 @@ G2.prototype._createStatePromise = function (states) {
             if (stat === states[i] && !this.manual_hold && !this.pause_hold) {
                 that.removeListener("stat", onStat);
                 log.info(
-                    "Resolving promise " +
-                        thisPromise +
-                        " because of state " +
-                        stat +
-                        " which is one of " +
-                        states
+                    "Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states
                 );
                 deferred.resolve(stat);
             }
@@ -1095,6 +1072,7 @@ G2.prototype.sendMore = function () {
     }
 
     // "commands" (JSON messages) preempt g-codes.  Send these first, regardless of whether or not we're primed.
+    // ... Feedrate overrides come in here, and are sent as commands.
     var count = this.command_queue.getLength();
     if (count) {
         var to_send = count;
@@ -1139,9 +1117,7 @@ G2.prototype.setMachinePosition = function (position, callback) {
     axes.forEach(function (axis) {
         // For each axis, if it is in the position object, add a G28.3 command to the stream
         if (position[axis] != undefined) {
-            gcodes.push(
-                "G28.3 " + axis + (position[axis] * mult).toFixed(5) + "\n"
-            );
+            gcodes.push("G28.3 " + axis + (position[axis] * mult).toFixed(5) + "\n");
         }
     });
     gcodes.push(null);
@@ -1234,3 +1210,5 @@ G2.prototype.STAT_HOMING = STAT_HOMING;
 G2.prototype.STAT_INTERLOCK = STAT_INTERLOCK;
 G2.prototype.STAT_SHUTDOWN = STAT_SHUTDOWN;
 G2.prototype.STAT_PANIC = STAT_PANIC;
+
+G2.prototype.passed_frOverride = 1.0;

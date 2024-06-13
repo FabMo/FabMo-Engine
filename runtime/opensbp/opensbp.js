@@ -179,11 +179,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                 default:
                     //
                     if (!this.helper) {
-                        log.warn(
-                            "Can't accept command '" +
-                                s.cmd +
-                                "' - not entered."
-                        );
+                        log.warn("Can't accept command '" + s.cmd + "' - not entered.");
                         this.machine.setState(this, "idle"); // switching to idle sometimes seems to create issues ?
                         return;
                     }
@@ -194,12 +190,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             break;
 
                         case "start":
-                            this.helper.startMotion(
-                                s.axis,
-                                s.speed,
-                                s.second_axis,
-                                s.second_speed
-                            );
+                            this.helper.startMotion(s.axis, s.speed, s.second_axis, s.second_speed);
                             break;
 
                         case "stop":
@@ -226,21 +217,11 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             if (!this.helper) {
                                 this.enter();
                             }
-                            this.helper.nudge(
-                                s.axis,
-                                s.speed,
-                                s.dist,
-                                s.second_axis,
-                                s.second_dist
-                            );
+                            this.helper.nudge(s.axis, s.speed, s.dist, s.second_axis, s.second_dist);
                             break;
 
                         default:
-                            log.error(
-                                "Don't know what to do with '" +
-                                    s.cmd +
-                                    "' in manual command."
-                            );
+                            log.error("Don't know what to do with '" + s.cmd + "' in manual command.");
                             break;
                     }
             }
@@ -284,7 +265,6 @@ SBPRuntime.prototype.runString = function (s) {
 
         // The machine status `nb_lines` indicates the total number of lines in the currently running file
         // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
-        // TODO I've never liked nb_lines as a name
         if (this.machine) {
             if (this.file_stack.length === 0) {
                 this.machine.status.nb_lines = lines.length - 1;
@@ -293,7 +273,7 @@ SBPRuntime.prototype.runString = function (s) {
 
         // Parse the program.  Bail with a useful error message if parsing fails.
         // "Useful" is relative.  The PegJS errors are pretty arcane... TODO - we could probably do better.
-        // We catch parse errors separately from other errors because the parser reports line numbers differently than
+        // We catch parse errors separately from other errors because the *parser reports line numbers differently* than
         // they will be accessed once the program has been parsed (and we want to report the line number always when we have an error)
         try {
             this.program = parser.parse(s);
@@ -307,7 +287,7 @@ SBPRuntime.prototype.runString = function (s) {
         ////##
         // TODO Bad bad bad - re-using lines above (the list of lines in the file) as the number of lines here.
         //      It looks like we can just remove this.  It doesn't seem to be used.
-        lines = this.program.length;
+        ////##        lines = this.program.length;
         // Configure affine transformations on the file
         this._setupTransforms();
 
@@ -573,9 +553,7 @@ SBPRuntime.prototype._onG2Status = function (status) {
         case this.driver.STAT_INTERLOCK:
         case this.driver.STAT_SHUTDOWN:
         case this.driver.STAT_PANIC:
-            return this.machine.die(
-                "A G2 exception has occurred. You must reboot your tool."
-            );
+            return this.machine.die("A G2 exception has occurred. You must reboot your tool.");
     }
 
     // Update the machine of the driver status
@@ -690,10 +668,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
     if (cmd.args) {
         for (var i = 0; i < cmd.args.length; i++) {
             if (this._exprBreaksStack(cmd.args[i])) {
-                log.warn(
-                    "STACK BREAK for an expression: " +
-                        JSON.stringify(cmd.args[i])
-                );
+                log.warn("STACK BREAK for an expression: " + JSON.stringify(cmd.args[i]));
                 return true;
             }
         }
@@ -768,15 +743,12 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
     if (expr.op === undefined) {
         return expr[0] == "%"; // For now, all system variable evaluations are stack-breaking
     } else {
-        return (
-            this._exprBreaksStack(expr.left) ||
-            this._exprBreaksStack(expr.right)
-        );
+        return this._exprBreaksStack(expr.left) || this._exprBreaksStack(expr.right);
     }
 };
 
 // Start the stored program running; manage changes
-// Return the stream of g-codes that are being run, which will be fed by the asynchronous running process.
+// Return the stream of g-codes that are being run, which will be *fed by the asynchronous running process*.
 // This function is called ONCE at the beginning of a program, and is not called again until the program
 // completes, except if a macro (subprogram) is encountered, in which case it is called for that program as well.
 SBPRuntime.prototype._run = function () {
@@ -806,10 +778,7 @@ SBPRuntime.prototype._run = function () {
                 // Only update and call execute next if we're waiting on pending gcodes or probing
                 // ... and expecting this stat:3
                 // For probing we do not turn off the pending if we have not passed the Initialization phase
-                if (
-                    (this.probingPending && !this.probingInitialized) ||
-                    this.driver.status.targetHit
-                ) {
+                if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
                     this.driver.status.targetHit = false;
                     this.probingPending = false;
                     this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
@@ -944,10 +913,7 @@ SBPRuntime.prototype._executeNext = function () {
         // state (because it's run everything that it's recieved) - If pending is true, that means there's
         // more work to do before finishing out the program.  We prime()d above, so those instructions will
         // get executed (and the stat handler will call _executeNext again once the machine stops moving)
-        if (
-            (this.gcodesPending && this.driver) ||
-            (this.probingPending && this.driver)
-        ) {
+        if ((this.gcodesPending && this.driver) || (this.probingPending && this.driver)) {
             log.debug("GCodes or Probing is still pending...");
             return;
         }
@@ -1142,8 +1108,7 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
                 // Update(th-6/15/23): Yes, we should throw the error here.  Otherwise, the error is
                 //         swallowed and the program continues to run. Done.
                 log.error("Error in a stack-breaking command");
-                var e_more =
-                    e + " (in [" + command.cmd + "] Line-" + this.pc + ").";
+                var e_more = e + " (in [" + command.cmd + "] Line-" + this.pc + ").";
                 log.error(e_more);
                 throw e_more;
             }
@@ -1184,12 +1149,7 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
             this._pushFileStack();
             this.runFile(macro.filename);
         } else {
-            throw new Error(
-                "Can't run custom cut (macro) C" +
-                    number +
-                    ": Macro not found at " +
-                    (this.pc + 1)
-            );
+            throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found at " + (this.pc + 1));
         }
     } else {
         this.pc += 1;
@@ -1241,9 +1201,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 setImmediate(callback);
                 return true;
             } else {
-                throw new Error(
-                    "Runtime Error: Return with no GOSUB at " + (this.pc + 1)
-                );
+                throw new Error("Runtime Error: Return with no GOSUB at " + (this.pc + 1));
             }
 
         case "end":
@@ -1263,43 +1221,23 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "goto":
             if (command.label in this.label_index) {
                 var pc = this.label_index[command.label];
-                log.debug(
-                    "Hit a GOTO: Going to line " +
-                        pc +
-                        "(Label: " +
-                        command.label +
-                        ")"
-                );
+                log.debug("Hit a GOTO: Going to line " + pc + "(Label: " + command.label + ")");
                 this.pc = pc;
                 setImmediate(callback);
                 return true;
             } else {
-                throw new Error(
-                    "Runtime Error: Unknown Label '" +
-                        command.label +
-                        "' at line " +
-                        (this.pc + 1)
-                );
+                throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
             }
 
         case "gosub":
             if (command.label in this.label_index) {
                 this.stack.push(this.pc + 1);
-                log.debug(
-                    "Pushing the current PC onto the stack (" +
-                        (this.pc + 1) +
-                        ")"
-                );
+                log.debug("Pushing the current PC onto the stack (" + (this.pc + 1) + ")");
                 this.pc = this.label_index[command.label];
                 setImmediate(callback);
                 return true;
             } else {
-                throw new Error(
-                    "Runtime Error: Unknown Label '" +
-                        command.label +
-                        "' at line " +
-                        (this.pc + 1)
-                );
+                throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
             }
 
         case "assign":
@@ -1358,11 +1296,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                     return true;
                 }
                 this.paused = true;
-                this.machine.setState(
-                    this,
-                    "paused",
-                    u.packageModalParams({ timer: arg })
-                );
+                this.machine.setState(this, "paused", u.packageModalParams({ timer: arg }));
                 return true;
             } else {
                 // In simulation, just don't do anything
@@ -1384,10 +1318,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 }
                 var modalParams = {};
                 if (message) {
-                    modalParams = u.packageModalParams(
-                        { message: message },
-                        modalParams
-                    );
+                    modalParams = u.packageModalParams({ message: message }, modalParams);
                 }
                 // Example of modal customization. Adds input param, sets ok button text to Submit, removes cancel/quit button.
                 // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel button s detailed below.
@@ -1398,10 +1329,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                         cancelText: false, // remove or set new text to display cancel/quit button.
                         cancelFunc: false, // remove to enable quit job onclick
                     };
-                    modalParams = u.packageModalParams(
-                        inputParams,
-                        modalParams
-                    );
+                    modalParams = u.packageModalParams(inputParams, modalParams);
                 }
                 this.paused = true;
                 //Set driver in paused state
@@ -1637,10 +1565,7 @@ SBPRuntime.prototype._analyzeLabels = function () {
                 case "label":
                     if (line.value in this.label_index) {
                         throw new Error(
-                            "Duplicate labels on lines " +
-                                this.label_index[line.value] +
-                                " and " +
-                                (i + 1)
+                            "Duplicate labels on lines " + this.label_index[line.value] + " and " + (i + 1)
                         );
                     }
                     this.label_index[line.value] = i;
@@ -1671,12 +1596,7 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
                     } else {
                         // Add one to the line number so they start at 1
                         ////## right now, in a macro, you need to add 3; FIX and show all lines
-                        throw new Error(
-                            "Undefined label " +
-                                line.label +
-                                " on line " +
-                                (i + 1)
-                        );
+                        throw new Error("Undefined label " + line.label + " on line " + (i + 1));
                     }
                     break;
                 default:
@@ -1847,23 +1767,14 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         // PLANNING for Movespeeds starting at 121
 
         default:
-            throw new Error(
-                "Unknown System Variable: " +
-                    JSON.stringify(v) +
-                    " on line " +
-                    (this.pc + 1)
-            );
+            throw new Error("Unknown System Variable: " + JSON.stringify(v) + " on line " + (this.pc + 1));
     }
 };
 
 // Return true if the provided expression is a variable
 //   v - Value to check, eg: "&Tool" or "%(1)"
 SBPRuntime.prototype._isVariable = function (v) {
-    return (
-        this._isUserVariable(v) ||
-        this._isPersistentVariable(v) ||
-        this._isSystemVariable(v)
-    );
+    return this._isUserVariable(v) || this._isPersistentVariable(v) || this._isSystemVariable(v);
 };
 
 // Return true if the provided expression is a system variable
@@ -2035,9 +1946,7 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
                 var v = Pt[key];
                 if (v !== undefined) {
                     if (isNaN(v)) {
-                        var err = new Error(
-                            "Invalid " + key + " argument: " + v
-                        );
+                        var err = new Error("Invalid " + key + " argument: " + v);
                         log.error(err);
                         throw err;
                     }
@@ -2050,9 +1959,7 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
 
     if (this.transforms.level.apply === true) {
         if (this.leveler.triangulationFailed() === true) {
-            log.error(
-                "Point cloud not triangulated, impossible to do levelling."
-            );
+            log.error("Point cloud not triangulated, impossible to do levelling.");
             return;
         }
         var X = tPt.X === undefined ? this.cmd_posx : tPt.X;
@@ -2083,9 +1990,7 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
 // Load transform settings from the OpenSBP configuration
 SBPRuntime.prototype._setupTransforms = function () {
     log.debug("_setupTransforms");
-    this.transforms = JSON.parse(
-        JSON.stringify(config.opensbp.get("transforms"))
-    );
+    this.transforms = JSON.parse(JSON.stringify(config.opensbp.get("transforms")));
 };
 
 // Transform the specified points within a motion command for a line or arc
@@ -2109,9 +2014,7 @@ SBPRuntime.prototype.transformation = function (TranPt) {
             if (!("Y" in TranPt)) {
                 TranPt.Y = this.cmd_posy;
             }
-            log.debug(
-                "xy rot transformation TranPt: " + JSON.stringify(TranPt)
-            );
+            log.debug("xy rot transformation TranPt: " + JSON.stringify(TranPt));
             var angle = this.transforms.rotate.angle;
             // var x = TranPt.X;
             // var y = TranPt.Y;
@@ -2150,26 +2053,11 @@ SBPRuntime.prototype.transformation = function (TranPt) {
         var PtI = this.transforms.scale.x;
         var PtJ = this.transforms.scale.y;
 
-        TranPt = tform.scale(
-            TranPt,
-            ScaleX,
-            ScaleY,
-            ScaleZ,
-            PtX,
-            PtY,
-            PtZ,
-            PtI,
-            PtJ
-        );
+        TranPt = tform.scale(TranPt, ScaleX, ScaleY, ScaleZ, PtX, PtY, PtZ, PtI, PtJ);
     }
     if (this.transforms.move.apply != false) {
         log.debug("Move: " + JSON.stringify(this.transforms.move));
-        TranPt = tform.translate(
-            TranPt,
-            this.transforms.move.x,
-            this.transforms.move.y,
-            this.transforms.move.z
-        );
+        TranPt = tform.translate(TranPt, this.transforms.move.x, this.transforms.move.y, this.transforms.move.z);
     }
 
     return TranPt;
@@ -2240,11 +2128,7 @@ SBPRuntime.prototype.manualEnter = function (message, callback) {
     this._update();
 
     if (this.machine) {
-        this.machine.setState(
-            this,
-            "manual",
-            message ? { message: message } : undefined
-        );
+        this.machine.setState(this, "manual", message ? { message: message } : undefined);
         this.machine.authorize();
     }
 
