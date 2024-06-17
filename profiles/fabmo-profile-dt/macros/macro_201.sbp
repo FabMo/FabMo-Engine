@@ -68,7 +68,7 @@ $sb_homeOff_Z            = 0.15     '- (m2,m3) back off a prox to Home location
 
 $sb_searchSpeed_XY       = 3.5      '- (m2,m3,?)
 $sb_searchSpeed_Z        = 1.5      '- (m2,m3,?)
-$sb_searchSpeed_Zzero    = 0.5      '- (m2) don't want any extra steps into plate
+$sb_searchSpeed_Zzero    = 0.5      '- (m2) don't want any extra steps into plate, for sure
 '$sb_searchSpeed_A
 '$sb_searchSpeed_B
 '$sb_searchSpeed_C
