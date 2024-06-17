@@ -63,6 +63,11 @@ engine.getCurrentUser(function (err, user) {
 
 var setUpManual = function () {
     calledFromModal = "";
+    // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
+    $(".drive-button").removeClass("drive-button-fixed");
+    $(".slidecontainer").show();
+    $(".fixed-input-container").hide();
+    $(".fixed-switch input").prop("checked", false);
     engine.getConfig(function (err, config) {
         if (err) {
             console.log(err);
@@ -902,16 +907,19 @@ $("#feed-rate").on("change", function (evt) {
 // Requested OVERRIDE Feed Rate via setUix process (see uix.js)
 var overrideFeedRate = function (new_override) {
     try {
-        console.log("----> new override: " + new_override);
+        console.log("----> fr Override Request: " + new_override);
         engine.setUix("fr_override", new_override);
     } catch (error) {
         console.log("Failed to pass new Override: " + error);
     }
 };
 $("#override").on("change", function (evt) {
-    var new_override = parseFloat($("#override").val());
-    overrideFeedRate(new_override);
-    //engine._setStatus.rqFro = new_override;
+    if (engine.status.state != "idle") {
+        var new_override = parseFloat($("#override").val());
+        if (new_override > 4 && new_override < 201) {
+            overrideFeedRate(new_override);
+        }
+    }
 });
 
 // Spindle Speed
@@ -923,17 +931,21 @@ var changeSpindleSpeed = function (new_RPM) {
         console.log("Failed to pass new RPM: " + error);
     }
 };
-$("#sp-speed").on("change", function (evt) {
-    var new_RPM = $("#sp-speed").val();
+$(".spindle-speed").on("change", function (evt) {
+    var new_RPM = $(".spindle-speed input").val();
     changeSpindleSpeed(new_RPM);
 });
 
-// ... get FOCUS out of spindle box if done
+// ... get FOCUS out of SPINDLE BOX if done
 var blurTimer;
 function startBlurTimer() {
     clearTimeout(blurTimer);
     blurTimer = setTimeout(function () {
-        $("#sp-speed").blur();
+        // ... but, dont' blur if in the middle of selecting text
+        if (!document.activeElement.classList.contains("spindle-speed") && !window.getSelection().toString()) {
+            $("#sp-speed").blur();
+            $(".spindle-speed input").val(engine.status.spindle.vfdDesgFreq); // reset to current speed
+        }
     }, 2000);
 }
 // Listener for focus on the input box
@@ -944,7 +956,7 @@ $("#sp-speed").on("focus", function (evt) {
 $("#sp-speed").on("input keypress mousemove", function (evt) {
     startBlurTimer();
 });
-// ... get FOCUS out of override box if done
+// ... get FOCUS out of OVERRIDE BOX if done
 var ovBlurTimer;
 function startOvBlurTimer() {
     clearTimeout(ovBlurTimer);

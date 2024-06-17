@@ -971,12 +971,13 @@ G2.prototype.set = function (key, value, callback) {
     this.command(cmd);
 };
 
-// Send a command to G2 (can be string or JSON)
+// Send a command to G2 (can be string or JSON); set then triggers the sendMore function
+////** ... see note on change below; may create problems for other commands and where they are inserted
 G2.prototype.command = function (obj) {
     var cmd;
     if (typeof obj == "string") {
         cmd = obj.trim();
-        this.gcode_queue.enqueue(cmd);
+        this.command_queue.enqueue(cmd); ////** changed this (from gcode_queue) to support 'fro' injection
     } else {
         // G2 supports a "truncated" format that allows for more compact JSON
         cmd = JSON.stringify(obj);
@@ -1210,5 +1211,3 @@ G2.prototype.STAT_HOMING = STAT_HOMING;
 G2.prototype.STAT_INTERLOCK = STAT_INTERLOCK;
 G2.prototype.STAT_SHUTDOWN = STAT_SHUTDOWN;
 G2.prototype.STAT_PANIC = STAT_PANIC;
-
-G2.prototype.passed_frOverride = 1.0;

@@ -170,9 +170,6 @@ G2Config.prototype.restoreSome = function (keys, callback) {
     this.update(cache, callback);
 };
 
-// Status reports are special, and their format must be whats expected for the
-// machine/runtime environments to work properly.
-// TODO: Move this data out into a configuration file, perhaps.
 // Configure the status reports (indicating to G2 what is to be reported)
 //   callback - Called as soon as the command is issued (Does not wait for a response)
 G2Config.prototype.configureStatusReports = function (callback) {

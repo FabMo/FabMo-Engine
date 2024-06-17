@@ -230,7 +230,52 @@ define(function(require) {
         });
     };
 
-    
+//----------------------------------- These two routines are enough to communicate events from dash during running
+// Function to handle key events
+function handleKeyEvent(key) {
+    switch (key) {
+        case "+":
+            var $spinner = $('.spindle-speed input');
+            $spinner.val(parseInt($spinner.val(), 10) + 100);
+            $spinner.trigger('change');
+            break;
+        case "_":
+            var $spinner = $('.spindle-speed input');
+            $spinner.val(parseInt($spinner.val(), 10) - 100);
+            $spinner.trigger('change');
+            break
+        case ">":
+            var $frOverride = $('#override');
+            $frOverride.val(parseInt($frOverride.val(), 10) + 5);
+            $frOverride.trigger('change');
+            break;
+        case "<":
+            var $frOverride = $('#override');
+            $frOverride.val(parseInt($frOverride.val(), 10) - 5);
+            $frOverride.trigger('change');
+            break;
+    }
+    console.log('Second Received key: ' + key);
+}
+// In the main window
+window.addEventListener('keyup', function (event) {
+    // Handle the keystroke
+    console.log('First Received key: ' + event.key);
+    handleKeyEvent(event.key);
+});
+//---------------------------------------------------------------
+
+// Receive parallel events from apps
+window.addEventListener('message', function(event) {
+    console.log('Received key: ' + event.data.key);
+    // Check the origin of the message
+    //    if (event.origin !== 'http://example.com') return;
+    // Process the event.detail.keys
+    handleKeyEvent(event.data.key);
+    //console.log('origin >> ' + event.origin);
+
+});
+
     /********** Document Ready Init **********/
     function docReady () {
         rightMenuLoad();
@@ -277,13 +322,12 @@ define(function(require) {
             return false; //Override the action of the button, so the user is not redirected to another page (no data lost)
         });
 
-
+    
     //handle log out
 
     };
 
     $(docReady);
-
 
     return {
         'resizedocclick': resizedocclick,

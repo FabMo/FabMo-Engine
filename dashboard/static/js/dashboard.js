@@ -112,9 +112,7 @@ define(function (require) {
     // Register a handler function for the provided message type
     Dashboard.prototype._registerHandler = function (name, handler) {
         if ("message" in this.handlers) {
-            throw (
-                'Already registered a handler for the "' + name + '" message.'
-            );
+            throw 'Already registered a handler for the "' + name + '" message.';
         }
         this.handlers[name] = handler;
     };
@@ -202,10 +200,7 @@ define(function (require) {
                                 id: id,
                             };
                             if (source) {
-                                source.postMessage(
-                                    JSON.stringify(msg),
-                                    evt.origin
-                                );
+                                source.postMessage(JSON.stringify(msg), evt.origin);
                             }
                         }
                     }
@@ -322,12 +317,7 @@ define(function (require) {
         this._registerHandler(
             "submitFirmwareUpdate",
             function (file, options, callback, progress) {
-                this.engine.submitFirmwareUpdate(
-                    file,
-                    options,
-                    callback,
-                    progress
-                );
+                this.engine.submitFirmwareUpdate(file, options, callback, progress);
             }.bind(this)
         );
 
@@ -520,17 +510,13 @@ define(function (require) {
         this._registerHandler(
             "manualNudge",
             function (data, callback) {
-                this.engine.manualNudge(
-                    data.dir,
-                    data.dist,
-                    function (err, result) {
-                        if (err) {
-                            callback(err);
-                        } else {
-                            callback(null);
-                        }
+                this.engine.manualNudge(data.dir, data.dist, function (err, result) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        callback(null);
                     }
-                );
+                });
             }.bind(this)
         );
 
@@ -556,16 +542,13 @@ define(function (require) {
         this._registerHandler(
             "manualEnter",
             function (data, callback) {
-                this.engine.manualEnter(
-                    { mode: data["mode"], hideKeypad: data["hideKeypad"] },
-                    function (err, result) {
-                        if (err) {
-                            callback(err);
-                        } else {
-                            callback(null);
-                        }
+                this.engine.manualEnter({ mode: data["mode"], hideKeypad: data["hideKeypad"] }, function (err, result) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        callback(null);
                     }
-                );
+                });
             }.bind(this)
         );
 
@@ -1152,11 +1135,7 @@ define(function (require) {
         this._registerHandler(
             "setAppConfig",
             function (data, callback) {
-                this.engine.setAppConfig(
-                    context.current_app_id,
-                    data,
-                    callback
-                );
+                this.engine.setAppConfig(context.current_app_id, data, callback);
             }.bind(this)
         );
 
@@ -1199,10 +1178,7 @@ define(function (require) {
                     if (pat.test(data.url)) {
                         window.open(data.url, data.options.target || "_self");
                     } else {
-                        window.open(
-                            data.path + data.url,
-                            data.options.target || "_self"
-                        );
+                        window.open(data.path + data.url, data.options.target || "_self");
                     }
                 } else {
                     callback(new Error("No URL specified"));
@@ -1254,10 +1230,7 @@ define(function (require) {
 
     // Brings up the DRO (if separate from the keypad) in the dashboard
     Dashboard.prototype.DRO = function (callback) {
-        this.notification(
-            "info",
-            'Move the tool if necessary, then hit "Enter'
-        );
+        this.notification("info", 'Move the tool if necessary, then hit "Enter');
         this.openRightMenu(); //Open the menu to let the user control the tool
 
         //Waiting keydown on "enter" key, before calling callback.
@@ -1341,12 +1314,6 @@ define(function (require) {
         } else {
             $(".modalTitle").hide();
         }
-
-        // if(options['lead']) {
-        // 	$('#modalDialogLead').html(options.lead).show();
-        // } else {
-        // 	$('#modalDialogLead').hide();
-        // }
 
         if (options["message"]) {
             $(".modalDialogue").html(options.message).show();
@@ -1440,11 +1407,6 @@ define(function (require) {
                 $(".modalLogo").hide();
             }
         }
-        // }
-        // funarr.push(modal);
-        //     while (funarr.length > 0) {
-        //     (funarr.shift())();
-        // }
     };
 
     //Hide Modal
