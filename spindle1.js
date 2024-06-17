@@ -9,8 +9,8 @@ const fs = require("fs");
 const log = require("./log").logger("spindleVFD");
 
 // At this time only using the Modbus-Serial library for VFD control of RPM and reading registers and status
-// RUN/STOP is implemented as and OUPUT 1 from FabMo to RUN input on VFD (Delta = M1); FWD/REV is optional, also to be implemented as OUTPUT#? (Delta=M0)
-// Only Spin is implemented; spindleVFD2 is a placeholder for future expansion
+// RUN/STOP is still implemented as and OUPUT 1 from FabMo to RUN input on VFD (Delta = M1); FWD/REV is optional, also to be implemented as OUTPUT#? (Delta=M0)
+// Only Spin is implemented for spindle1'spindleVFD1; spindleVFD2 is a placeholder for future expansion
 
 // Constructor for Spin
 function Spin() {
@@ -31,7 +31,7 @@ util.inherits(Spin, EventEmitter);
 
 // Load settings for a VFD
 Spin.prototype.loadVFDSettings = function() {
-    const configFile = "./spindles/spindle1_settings.json";
+    const configFile = "./spindles/spindle1_settings.json"; // contains VFD settings
     return new Promise((resolve, reject) => {
         fs.readFile(configFile, "utf8", (err, data) => {
             if (err) {
@@ -77,7 +77,7 @@ Spin.prototype.connectVFD = function() {
     });
 };
 
-// Set up 1-second updates to spindleVFD status (sort of a model for other accessory drivers)
+// Set up 1-second UPDATES to spindleVFD status (sort of a model for other accessory drivers)
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
     setInterval(() => {

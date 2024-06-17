@@ -1040,9 +1040,19 @@ $(document).ready(function() {
               console.log('Tab not found: ' + args.tab);
           }
       }
-  });
+    });
 
     update();  
     $(window).trigger("focus");
+
+    window.addEventListener('keyup', function(event) {
+      // If the key is either the + or the _ , then send the key code to the parent window
+      if (event.key === "+" || event.key === "_" || event.key === "<" || event.key === ">") {
+          //console.log("Sending key code to parent window: " + event.key);
+          window.parent.postMessage({ key: event.key }, '*');
+          event.stopPropagation();
+          event.preventDefault();
+      }
+    });
 
 });

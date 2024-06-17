@@ -290,10 +290,16 @@ const { last } = require("underscore");
             $(".feedrate-unit").text("in/sec");
         }
 
+        var cur_req_fro = 100;
         // Feed rate override color displays
-        if (status.state != "idle") {
+        if (status.state === "idle") {
+            $("#override").removeClass("blinking-text");
+            $("#override").val(100);
+            cur_req_fro = 100;
+            $("#override").css("color", "gray");
+        } else {
             var cur_fro = (status.fro * 100).toFixed(0);
-            var cur_req_fro = $("#override").val();
+            cur_req_fro = $("#override").val();
             /* do the blink */
             if (cur_req_fro == cur_fro) {
                 $("#override").removeClass("blinking-text");
@@ -308,22 +314,18 @@ const { last } = require("underscore");
             } else {
                 $("#override").css("color", "gray");
             }
-        } else {
-            $("#override").removeClass("blinking-text");
-            $("#override").val(100);
-            $("#override").css("color", "gray");
         }
 
         // Update Spindle Speed Display
         if ("spindle" in status) {
-            if (status.spindle.vfdAchvFreq !== 0 && $(".spindle-speed input").is(":focus") === false) {
-                var spindleSpeed = status.spindle.vfdAchvFreq;
+            if (status.spindle.vfdAchvFreq !== 0) {
                 $(".spindle-speed input").css("color", "#42e6f5");
-                $(".spindle-speed input").val(spindleSpeed);
-            } else if ($(".spindle-speed input").is(":focus") === false) {
-                var spindleSpeed = status.spindle.vfdDesgFreq;
+            } else {
                 $(".spindle-speed input").css("color", "gray");
-                $(".spindle-speed input").val(spindleSpeed);
+            }
+            // If spindle speed display is at 0 then set it to the current designated freq from the VFD, ck if exists ???
+            if ($(".spindle-speed input").val() === "0") {
+                $(".spindle-speed input").val(status.spindle.vfdDesgFreq);
             }
             var pwrDraw = status.spindle.vfdAmps;
             var formattedDraw = (pwrDraw * 0.01).toFixed(2);

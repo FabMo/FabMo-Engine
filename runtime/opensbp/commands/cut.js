@@ -37,10 +37,7 @@ exports.CA = function (args) {
         comp = -1;
     }
 
-    var radius =
-        ht / 2 +
-        (len * len) / (8 * ht) +
-        (config.opensbp.get("cutterDia") / 2) * comp;
+    var radius = ht / 2 + (len * len) / (8 * ht) + (config.opensbp.get("cutterDia") / 2) * comp;
 
     if (radius === undefined || radius <= 0) {
         throw "Invalid CA circle: Zero Radius";
@@ -97,14 +94,14 @@ exports.CC = function (args) {
     var plgFromZero = args[11] !== undefined ? args[11] : undefined;
     var comp = 0;
 
-    log.debug(
-        "CC:   startX = " +
-            CCstartX +
-            "  startY = " +
-            CCstartY +
-            "  startZ = " +
-            CCstartZ
-    );
+    // log.debug(
+    //     "CC:   startX = " +
+    //         CCstartX +
+    //         "  startY = " +
+    //         CCstartY +
+    //         "  startZ = " +
+    //         CCstartZ
+    // );
 
     if (OIT === "O") {
         comp = 1;
@@ -150,22 +147,7 @@ exports.CC = function (args) {
         endY = centerY + radius * Math.sin(Eradians);
     }
 
-    this.CG([
-        undefined,
-        endX,
-        endY,
-        xOffset,
-        yOffset,
-        OIT,
-        Dir,
-        Plg,
-        reps,
-        propX,
-        propY,
-        optCC,
-        noPullUp,
-        plgFromZero,
-    ]);
+    this.CG([undefined, endX, endY, xOffset, yOffset, OIT, Dir, Plg, reps, propX, propY, optCC, noPullUp, plgFromZero]);
 };
 
 //  The CP command will cut a circle as defined by its center point.
@@ -250,22 +232,7 @@ exports.CP = function (args) {
             this.emit_move("G1", { Z: CPstartZ, F: feedrate });
         }
     }
-    this.CG([
-        undefined,
-        endX,
-        endY,
-        xOffset,
-        yOffset,
-        OIT,
-        Dir,
-        Plg,
-        reps,
-        propX,
-        propY,
-        optCP,
-        noPullUp,
-        plgFromZero,
-    ]);
+    this.CG([undefined, endX, endY, xOffset, yOffset, OIT, Dir, Plg, reps, propX, propY, optCP, noPullUp, plgFromZero]);
 };
 
 //	The CG command will cut a circle. This command closely resembles a G-code arc/circle (G02 or G03)
@@ -309,7 +276,7 @@ exports.CG = function (args) {
 
     var forceInterpolation = false;
 
-    log.debug("CG: " + JSON.stringify(args));
+    //log.debug("CG: " + JSON.stringify(args));
     // INTERPOLATION FOR ARCS decided here
     if (Math.abs(propX) !== Math.abs(propY)) {
         // DO we need interpolation because of circle shape in command itself?
@@ -330,10 +297,7 @@ exports.CG = function (args) {
 
     this.lastNoZPullup = plgFromZero;
 
-    if (
-        (centerX === 0 || centerX === undefined) &&
-        (centerY === 0 || centerY === undefined)
-    ) {
+    if ((centerX === 0 || centerX === undefined) && (centerY === 0 || centerY === undefined)) {
         throw "Invalid CG circle: Zero diameter";
     }
 
@@ -345,14 +309,8 @@ exports.CG = function (args) {
     if (propX === propY) {
         // If X & Y are equal proportion, potentially calc new scaled points for non-interpolated
         if (propX !== 1 || propY !== 1) {
-            endX =
-                CGstartX +
-                centerX * Math.abs(propX) +
-                (endX - (CGstartX + centerX)) * Math.abs(propX);
-            endY =
-                CGstartY +
-                centerY * Math.abs(propY) +
-                (endY - (CGstartY + centerY)) * Math.abs(propY);
+            endX = CGstartX + centerX * Math.abs(propX) + (endX - (CGstartX + centerX)) * Math.abs(propX);
+            endY = CGstartY + centerY * Math.abs(propY) + (endY - (CGstartY + centerY)) * Math.abs(propY);
             centerX *= Math.abs(propX);
             centerY *= Math.abs(propY);
             if (propX < 0) {
@@ -388,18 +346,11 @@ exports.CG = function (args) {
             // If Pocketing: Pocket circle from the outside inward to center
             var circRadius = Math.sqrt(centerX * centerX + centerY * centerY);
             PocketAngle = Math.atan2(centerY, centerX);
-            var stepOver =
-                config.opensbp.get("cutterDia") *
-                ((100 - config.opensbp.get("pocketOverlap")) / 100);
+            var stepOver = config.opensbp.get("cutterDia") * ((100 - config.opensbp.get("pocketOverlap")) / 100);
             Pocket_StepX = stepOver * Math.cos(PocketAngle);
             Pocket_StepY = stepOver * Math.sin(PocketAngle);
 
-            for (
-                j = 0;
-                Math.abs(Pocket_StepX * j) < circRadius &&
-                Math.abs(Pocket_StepY * j) < circRadius;
-                j++
-            ) {
+            for (j = 0; Math.abs(Pocket_StepX * j) < circRadius && Math.abs(Pocket_StepY * j) < circRadius; j++) {
                 nextX = CGstartX + j * Pocket_StepX;
                 nextY = CGstartY + j * Pocket_StepY;
                 if (j > 0) {
@@ -559,17 +510,11 @@ exports.interpolate_circle = function (
 
     // Find the beginning and ending angles in radians. We'll use only radians from here on.
     var Bang = Math.atan2(-1 * centerX, -1 * centerY);
-    var Eang = Math.atan2(
-        endX * propX - (ICstartX + centerX),
-        endY * propY - (ICstartY + centerY)
-    );
+    var Eang = Math.atan2(endX * propX - (ICstartX + centerX), endY * propY - (ICstartY + centerY));
     var inclAng = 0.0;
 
     // Circle test
-    if (
-        Math.abs(nextX - endX) <= 0.000001 &&
-        Math.abs(nextY - endY) <= 0.000001
-    ) {
+    if (Math.abs(nextX - endX) <= 0.000001 && Math.abs(nextY - endY) <= 0.000001) {
         if (Dir === 1) {
             Eang = Bang + 6.28318530717959;
         } else {
@@ -774,10 +719,7 @@ exports.CR = function (args) {
     var safeZCR = currentZ + config.opensbp.get("safeZpullUp");
 
     // Jog to the start position if not already there
-    if (
-        stCorner === 0 &&
-        (CRstartX !== pckt_startX || CRstartY !== pckt_startY)
-    ) {
+    if (stCorner === 0 && (CRstartX !== pckt_startX || CRstartY !== pckt_startY)) {
         if (currentZ < safeZCR && this.lastNoZPullup !== 1) {
             this.emit_move("G0", { Z: safeZCR });
         }
@@ -786,31 +728,13 @@ exports.CR = function (args) {
         } else {
             outStr =
                 "G0X" +
-                (
-                    nextX * cosRA -
-                    nextY * sinRA +
-                    rotPtX * (1 - cosRA) +
-                    rotPtY * sinRA
-                ).toFixed(4) +
+                (nextX * cosRA - nextY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA).toFixed(4) +
                 "Y" +
-                (
-                    nextX * sinRA +
-                    nextY * cosRA +
-                    rotPtX * (1 - cosRA) -
-                    rotPtY * sinRA
-                ).toFixed(4);
+                (nextX * sinRA + nextY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA).toFixed(4);
         }
         if (RotationAngle !== 0) {
-            pckt_startX =
-                pckt_startX * cosRA -
-                pckt_startY * sinRA +
-                rotPtX * (1 - cosRA) +
-                rotPtY * sinRA;
-            pckt_startY =
-                pckt_startX * sinRA +
-                pckt_startY * cosRA +
-                rotPtX * (1 - cosRA) -
-                rotPtY * sinRA;
+            pckt_startX = pckt_startX * cosRA - pckt_startY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA;
+            pckt_startY = pckt_startX * sinRA + pckt_startY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA;
         }
         this.emit_gcode(outStr);
         if (this.cmd_posz !== currentZ && this.lastNoZPullup !== 1) {
@@ -821,9 +745,7 @@ exports.CR = function (args) {
     // If a pocket, calculate the step over and number of steps to pocket out the complete rectangle.
     if (optCR > 1) {
         // Calculate the overlap distacne
-        stepOver =
-            config.opensbp.get("cutterDia") *
-            ((100 - config.opensbp.get("pocketOverlap")) / 100);
+        stepOver = config.opensbp.get("cutterDia") * ((100 - config.opensbp.get("pocketOverlap")) / 100);
         pckt_stepX = pckt_stepY = stepOver;
         pckt_stepX *= xDir;
         pckt_stepY *= yDir;
@@ -849,19 +771,9 @@ exports.CR = function (args) {
             } else {
                 outStr =
                     "G0X" +
-                    (
-                        nextX * cosRA -
-                        nextY * sinRA +
-                        rotPtX * (1 - cosRA) +
-                        rotPtY * sinRA
-                    ).toFixed(4) +
+                    (nextX * cosRA - nextY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA).toFixed(4) +
                     "Y" +
-                    (
-                        nextX * sinRA +
-                        nextY * cosRA +
-                        rotPtX * (1 - cosRA) -
-                        rotPtY * sinRA
-                    ).toFixed(4);
+                    (nextX * sinRA + nextY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA).toFixed(4);
             }
             this.emit_gcode(outStr);
         }
@@ -879,19 +791,9 @@ exports.CR = function (args) {
         } else {
             outStr =
                 "G1X" +
-                (
-                    nextX * cosRA -
-                    nextY * sinRA +
-                    rotPtX * (1 - cosRA) +
-                    rotPtY * sinRA
-                ).toFixed(4) +
+                (nextX * cosRA - nextY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA).toFixed(4) +
                 "Y" +
-                (
-                    nextX * sinRA +
-                    nextY * cosRA +
-                    rotPtX * (1 - cosRA) -
-                    rotPtY * sinRA
-                ).toFixed(4);
+                (nextX * sinRA + nextY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA).toFixed(4);
         }
         this.emit_gcode("G1Z" + CRstartZ + "F" + feedrateZ);
         this.emit_gcode(outStr);
@@ -917,11 +819,7 @@ exports.CR = function (args) {
                     n = order[k];
                     switch (n) {
                         case 1:
-                            nextX =
-                                pckt_startX +
-                                lenX -
-                                pckt_offsetX -
-                                pckt_stepX * j;
+                            nextX = pckt_startX + lenX - pckt_offsetX - pckt_stepX * j;
                             nextY = pckt_startY + pckt_offsetY + pckt_stepY * j;
 
                             if (RotationAngle === 0.0) {
@@ -929,19 +827,9 @@ exports.CR = function (args) {
                             } else {
                                 outStr =
                                     "G1X" +
-                                    (
-                                        nextX * cosRA -
-                                        nextY * sinRA +
-                                        rotPtX * (1 - cosRA) +
-                                        rotPtY * sinRA
-                                    ).toFixed(4) +
+                                    (nextX * cosRA - nextY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA).toFixed(4) +
                                     "Y" +
-                                    (
-                                        nextX * sinRA +
-                                        nextY * cosRA +
-                                        rotPtX * (1 - cosRA) -
-                                        rotPtY * sinRA
-                                    ).toFixed(4);
+                                    (nextX * sinRA + nextY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA).toFixed(4);
                             }
 
                             if (spiralPlg == 1 && pass === 0) {
@@ -954,35 +842,17 @@ exports.CR = function (args) {
                             break;
 
                         case 2:
-                            nextX =
-                                pckt_startX +
-                                lenX -
-                                pckt_offsetX -
-                                pckt_stepX * j;
-                            nextY =
-                                pckt_startY +
-                                lenY -
-                                pckt_offsetY -
-                                pckt_stepY * j;
+                            nextX = pckt_startX + lenX - pckt_offsetX - pckt_stepX * j;
+                            nextY = pckt_startY + lenY - pckt_offsetY - pckt_stepY * j;
 
                             if (RotationAngle === 0.0) {
                                 outStr = "G1X" + nextX + "Y" + nextY;
                             } else {
                                 outStr =
                                     "G1X" +
-                                    (
-                                        nextX * cosRA -
-                                        nextY * sinRA +
-                                        rotPtX * (1 - cosRA) +
-                                        rotPtY * sinRA
-                                    ).toFixed(4) +
+                                    (nextX * cosRA - nextY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA).toFixed(4) +
                                     "Y" +
-                                    (
-                                        nextX * sinRA +
-                                        nextY * cosRA +
-                                        rotPtX * (1 - cosRA) -
-                                        rotPtY * sinRA
-                                    ).toFixed(4);
+                                    (nextX * sinRA + nextY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA).toFixed(4);
                             }
 
                             if (spiralPlg === 1 && pass === 0) {
@@ -996,30 +866,16 @@ exports.CR = function (args) {
 
                         case 3:
                             nextX = pckt_startX + pckt_offsetX + pckt_stepX * j;
-                            nextY =
-                                pckt_startY +
-                                lenY -
-                                pckt_offsetY -
-                                pckt_stepY * j;
+                            nextY = pckt_startY + lenY - pckt_offsetY - pckt_stepY * j;
 
                             if (RotationAngle === 0.0) {
                                 outStr = "G1X" + nextX + "Y" + nextY;
                             } else {
                                 outStr =
                                     "G1X" +
-                                    (
-                                        nextX * cosRA -
-                                        nextY * sinRA +
-                                        rotPtX * (1 - cosRA) +
-                                        rotPtY * sinRA
-                                    ).toFixed(4) +
+                                    (nextX * cosRA - nextY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA).toFixed(4) +
                                     "Y" +
-                                    (
-                                        nextX * sinRA +
-                                        nextY * cosRA +
-                                        rotPtX * (1 - cosRA) -
-                                        rotPtY * sinRA
-                                    ).toFixed(4);
+                                    (nextX * sinRA + nextY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA).toFixed(4);
                             }
 
                             if (spiralPlg == 1 && pass === 0) {
@@ -1040,19 +896,9 @@ exports.CR = function (args) {
                             } else {
                                 outStr =
                                     "G1X" +
-                                    (
-                                        nextX * cosRA -
-                                        nextY * sinRA +
-                                        rotPtX * (1 - cosRA) +
-                                        rotPtY * sinRA
-                                    ).toFixed(4) +
+                                    (nextX * cosRA - nextY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA).toFixed(4) +
                                     "Y" +
-                                    (
-                                        nextX * sinRA +
-                                        nextY * cosRA +
-                                        rotPtX * (1 - cosRA) -
-                                        rotPtY * sinRA
-                                    ).toFixed(4);
+                                    (nextX * sinRA + nextY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA).toFixed(4);
                             }
 
                             if (spiralPlg === 1 && pass === 0) {
@@ -1084,19 +930,9 @@ exports.CR = function (args) {
                 } else {
                     outStr =
                         "G1X" +
-                        (
-                            nextX * cosRA -
-                            nextY * sinRA +
-                            rotPtX * (1 - cosRA) +
-                            rotPtY * sinRA
-                        ).toFixed(4) +
+                        (nextX * cosRA - nextY * sinRA + rotPtX * (1 - cosRA) + rotPtY * sinRA).toFixed(4) +
                         "Y" +
-                        (
-                            nextX * sinRA +
-                            nextY * cosRA +
-                            rotPtX * (1 - cosRA) -
-                            rotPtY * sinRA
-                        ).toFixed(4);
+                        (nextX * sinRA + nextY * cosRA + rotPtX * (1 - cosRA) - rotPtY * sinRA).toFixed(4);
                 }
                 outStr += "F" + feedrateXY;
                 this.emit_gcode(outStr);
