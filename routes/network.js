@@ -119,24 +119,22 @@ var hotspotState = function (req, res, next) {
     var state = req.params.enabled;
     var network = require("../engine").networkManager;
 
+    console.log("enableWifiHotspot typeof:", typeof network.enableWifiHotspot);
+    console.log("disableWifiHotspot typeof:", typeof network.disableWifiHotspot);
+
+    const sendResponse = (err) => {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({ status: "success" });
+    };
+
     if (state === true || state === "true") {
-        network.turnWifiHotspotOn(function (err) {
-            if (err) {
-                res.json({ status: "error", message: err.message });
-            } else {
-                res.json({ status: "success" });
-            }
-        });
+        network.enableWifiHotspot(sendResponse);
     } else if (state === false || state === "false") {
-        network.turnWifiHotspotOff(function (err) {
-            if (err) {
-                res.json({ status: "error", message: err.message });
-            } else {
-                res.json({ status: "success" });
-            }
-        });
+        network.disableWifiHotspot(sendResponse);
     } else {
-        res.json({ status: "error", message: "wrong POST command sent !" });
+        res.json({ status: "error", message: "Invalid state value" });
     }
 };
 

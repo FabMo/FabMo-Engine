@@ -17,21 +17,8 @@ util.inherits(GenericNetworkManager, events.EventEmitter);
 
 function fail(instance, callback) {
     callback
-        ? callback(
-              new Error(
-                  "Function unavailable on " +
-                      instance.os +
-                      "/" +
-                      instance.platform
-              )
-          )
-        : log.warn(
-              "Function unavailable on " +
-                  instance.os +
-                  "/" +
-                  instance.platform +
-                  ", no callback given"
-          );
+        ? callback(new Error("Function unavailable on " + instance.os + "/" + instance.platform))
+        : log.warn("Function unavailable on " + instance.os + "/" + instance.platform + ", no callback given");
 }
 
 GenericNetworkManager.prototype.init = function () {};
@@ -41,11 +28,7 @@ GenericNetworkManager.prototype.getAvailableWifiNetworks = function (callback) {
     fail(this, callback);
 };
 
-GenericNetworkManager.prototype.connectToAWifiNetwork = function (
-    ssid,
-    key,
-    callback
-) {
+GenericNetworkManager.prototype.connectToAWifiNetwork = function (ssid, key, callback) {
     log.warn("Unimplemented: connectToAWifiNetwork(" + ssid + "," + key + ")");
     fail(this, callback);
 };
@@ -112,36 +95,22 @@ GenericNetworkManager.prototype.disableDHCP = function (interface, callback) {
     fail(this, callback);
 };
 
-GenericNetworkManager.prototype.startDHCPServer = function (
-    interface,
-    callback
-) {
+GenericNetworkManager.prototype.startDHCPServer = function (interface, callback) {
     log.warn("Unimplemented: enableDHCP()");
     fail(this, callback);
 };
 
-GenericNetworkManager.prototype.stopDHCPServer = function (
-    interface,
-    callback
-) {
+GenericNetworkManager.prototype.stopDHCPServer = function (interface, callback) {
     log.warn("Unimplemented: disableDHCP()");
     fail(this, callback);
 };
 
-GenericNetworkManager.prototype.setIpAddress = function (
-    interface,
-    ip,
-    callback
-) {
+GenericNetworkManager.prototype.setIpAddress = function (interface, ip, callback) {
     log.warn("Unimplemented: setIpAddress()");
     fail(this, callback);
 };
 
-GenericNetworkManager.prototype.setNetmask = function (
-    interface,
-    netmask,
-    callback
-) {
+GenericNetworkManager.prototype.setNetmask = function (interface, netmask, callback) {
     log.warn("Unimplemented: setNetmask()");
     fail(this, callback);
 };

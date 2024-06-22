@@ -27,20 +27,21 @@ function addWifiEntries(network_entries, callback) {
             return;
         }
         networks[entry.ssid] = entry;
+        // Now parsing the signal strength from nmcli which is in % on a 0-100(strongest) scale: converting to 1-4
 
         var rawStrength = entry.signalLevel;
-        var strengthNumber;
+        var strengthNumber = 0;
 
-        if(rawStrength > -45) { 
-            strengthNumber = 4;
-        } else if(rawStrength <= -45 && rawStrength > -55) {
-            strengthNumber = 3;
-        } else if(rawStrength <= -55 && rawStrength > -65) {
-            strengthNumber = 2;
-        } else if(rawStrength <= -65 && rawStrength > -75) {
-            strengthNumber = 1;
-        } else {
+        if(rawStrength < 20) { 
             strengthNumber = 0;
+        } else if(rawStrength > 20 && rawStrength < 45) {
+            strengthNumber = 1;
+        } else if(rawStrength > 45 && rawStrength < 65) {
+            strengthNumber = 2;
+        } else if(rawStrength > 65 && rawStrength < 90) {
+            strengthNumber = 3;
+        } else if(rawStrength > 90) {
+            strengthNumber = 4;
         }
 
         // Add to table only if strength is above threshold, strengthNumber
@@ -95,9 +96,10 @@ function addHistoryEntries(history_entries, callback) {
         var ipAddressText = history_entries[entry] || '';
         var intInfoText = '';
         if (interfaceText === 'eth0') {
-            intInfoText = 'Ethernet: LAN or direct PC connection';
-        } else if (interfaceText === 'uap0') {
-            intInfoText = 'Access Point (AP)';
+            intInfoText = 'Ethernet: a LAN or direct PC connection';
+        } else if (interfaceText === 'wlan0_ap') {
+            intInfoText = 'Access Point (AP mode) ACTIVE';
+            $('#ap-mode-button').addClass('active');
         } else if (interfaceText === 'wlan0') {
             // if there is a comma in the history_entries[entry] string, return the right hand portion
             if (history_entries[entry].includes(',')) {
@@ -116,27 +118,27 @@ function addHistoryEntries(history_entries, callback) {
     });
 }
 
-// Confirm, then go to AP mode if requested.
-function enterAPMode(callback) {
-    confirm({
-        title : "Enter AP Mode?",
-        description : "You will lose contact with the dashboard and need to reconnect in Access Point Mode.",
-        ok_message : "Yes",
-        cancel_message : "No",
-        ok : function() {
-            fabmo.enableWifiHotspot(function(err, data) {
-                if(err) {
-                    fabmo.notify('error', err);
-                } else {
-                    fabmo.notify('info', data);
-                }
-            });
-        }, 
-        cancel : function() {
-        	// No action required.
-        }
-    });
-}
+// // Confirm, then go to AP mode if requested.
+// function enterAPMode(callback) {
+//     confirm({
+//         title : "Start AP Mode?",
+//         description : "You will lose current contact and need to enter the new IP Address in your browser.",
+//         ok_message : "OK",
+//         cancel_message : "Cancel",
+//         ok : function() {
+//             fabmo.enableWifiHotspot(function(err, data) {
+//                 if(err) {
+//                     fabmo.notify('error', err);
+//                 } else {
+//                     fabmo.notify('info', data);
+//                 }
+//             });
+//         }, 
+//         cancel : function() {
+//         	// No action required.
+//         }
+//     });
+// }
 
 // Show the confirmation dialog
 function confirm(options){
@@ -266,14 +268,6 @@ $(document).ready(function() {
                     console.log(data);
                     CUrssid = data.ssid;
                     fabmo.showModal({message:"Successfully connected! Please go find me on network: " + data.ssid+ " at " + data.ip});
-                    
-                    // How do I pick up the closing of this modal message?
-
-
-                    // full refresh of this page to get the new ip address to display
-                    // window.location.reload();
-                    // refreshApps();
-                    // refreshHistoryTable();
                 }
             });
         });
@@ -301,12 +295,45 @@ $(document).ready(function() {
         refreshHistoryTable();
     });
 
-    // Action for clicking the AP mode button
-    // $('#ap-mode-button').on('click', function(evt) {
-    //     enterAPMode();
-    //     evt.preventDefault();
-    //     fabmo.showModal({message:"Your tool is now back in AP mode."});
-    // })
+    // Toggle Action for clicking the AP mode button
+    // If AP mode is active, turn it off; if AP mode is inactive, turn it on
+    $('#ap-mode-button').on('click', function(evt) {
+        console.log("-got click on AP");
+        if ($('#ap-mode-button').hasClass('active')) {
+            fabmo.disableWifiHotspot(function(err, data) {
+                console.log("  TOGGLE OFF");
+                if(err) {
+                    fabmo.notify('error', err);
+                } else {
+                    fabmo.notify('info', data);
+                    $('#ap-mode-button').removeClass('active');
+                    fabmo.showModal({message:"Your tool is NOT in AP mode."});
+                }
+            });
+        } else {
+                //title : "Start AP Mode?",
+                //description : "You will lose current contact and need to enter the new IP Address in your browser.",
+                //ok_message : "OK",
+                //cancel_message : "Cancel",
+                //ok : function() {
+            fabmo.enableWifiHotspot(function(err, data) {
+                if(err) {
+                    fabmo.notify('error', err);
+                } else {
+                    fabmo.notify('info', data);
+                    $('#ap-mode-button').addClass('active');
+                    fabmo.showModal({message:"Your tool will be AP mode."});
+                }
+            });
+                //}, 
+                //cancel : function() {
+                    // No action required.
+                //}
+        
+        }
+        //evt.preventDefault();
+        //fabmo.showModal({message:"Your tool is now back in AP mode."});
+    })
 
 
 });
