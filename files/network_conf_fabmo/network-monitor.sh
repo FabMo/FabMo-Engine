@@ -26,34 +26,22 @@ bring_up_profile() {
     /usr/bin/nmcli connection up "$1"
 }
 
-get_current_ip() {
-    /usr/sbin/ip addr show $INTERFACE | /bin/grep 'inet ' | /usr/bin/awk '{print $2}' | /usr/bin/cut -d/ -f1
-}
+case "$1" in
+    bring_up_profile)
+        bring_up_profile "$2"
+        ;;
+    bring_down_profile)
+        bring_down_profile "$2"
+        ;;
+    *)
+        log "Invalid command: $1"
+        ;;
+esac
 
-increment_failure_count() {
-    if [ -f $FAIL_COUNT_FILE ]; then
-        FAIL_COUNT=$(cat $FAIL_COUNT_FILE)
-        FAIL_COUNT=$((FAIL_COUNT + 1))
-    else
-        FAIL_COUNT=1
-    fi
-    echo $FAIL_COUNT > $FAIL_COUNT_FILE
-    log "Failure count incremented to $FAIL_COUNT"
-}
-
-reset_failure_count() {
-    log "Resetting failure count."
-    rm -f $FAIL_COUNT_FILE
-}
-
-restart_dnsmasq_if_needed() {
-    CURRENT_PROFILE=$1
-    if [ "$CURRENT_PROFILE" != "$LAST_PROFILE" ]; then
-        log "Profile changed to $CURRENT_PROFILE, restarting dnsmasq service"
-        sudo systemctl restart dnsmasq
-        LAST_PROFILE=$CURRENT_PROFILE
-    fi
-}
+# If no arguments are provided, run the monitor_network function
+if [ -z "$1" ]; then
+    monitor_network
+fi
 
 monitor_network() {
     while true; do
@@ -76,7 +64,7 @@ monitor_network() {
                     fi
                 else
                     log "LAN profile detected. Ensuring LAN profile is active."
-                    if ! check_active_profile "$LAN_PROFILE"; then
+                    if (! check_active_profile "$LAN_PROFILE"); then
                         bring_down_profile "$PC_PROFILE"
                         bring_up_profile "$LAN_PROFILE"
                         restart_dnsmasq_if_needed "lan"
@@ -85,7 +73,7 @@ monitor_network() {
                 reset_failure_count
                 ;;
             disconnected|connecting)
-                log "$INTERFACE is has disconnected or trying to connect."
+                log "$INTERFACE is disconnected or trying to connect."
                 log "$INTERFACE is $STATE."
                 if [ -f $FAIL_COUNT_FILE ]; then
                     FAIL_COUNT=$(cat $FAIL_COUNT_FILE)

@@ -83,6 +83,9 @@ function refreshHistoryTable(callback){
 function addHistoryEntries(history_entries, callback) {
     callback = callback || function() {};
     var table = document.getElementById('history_table');
+    $('#ap-mode-button').removeClass('active'); // clear the AP mode flag by default
+    $('#wifi-mode-button').removeClass('active'); // clear the wifi mode flag by default
+
     Object.keys(history_entries).forEach(function (entry) {
         var row = table.insertRow(table.rows.length);
         var interface = row.insertCell(0);
@@ -91,6 +94,7 @@ function addHistoryEntries(history_entries, callback) {
         ipaddress.className = 'ipaddress'
         var intinfo = row.insertCell(2);
         intinfo.className = 'intinfo'
+
 
         var interfaceText = entry || '';
         var ipAddressText = history_entries[entry] || '';
@@ -102,11 +106,12 @@ function addHistoryEntries(history_entries, callback) {
             $('#ap-mode-button').addClass('active');
         } else if (interfaceText === 'wlan0') {
             // if there is a comma in the history_entries[entry] string, return the right hand portion
+            $('#wifi-mode-button').addClass('active');
             if (history_entries[entry].includes(',')) {
                 ipAddressText = history_entries[entry].split(',')[0];
-                intInfoText = 'Wireless: ' + history_entries[entry].split(',')[1];
+                intInfoText = 'Wifi: ' + history_entries[entry].split(',')[1];
             } else {
-                intInfoText = 'Wireless: ' + "unknown";
+                intInfoText = 'Wifi: ' + "unknown";
             }
         } else {
             intInfoText = 'Unknown';
@@ -117,28 +122,6 @@ function addHistoryEntries(history_entries, callback) {
         intinfo.innerHTML = intInfoText;
     });
 }
-
-// // Confirm, then go to AP mode if requested.
-// function enterAPMode(callback) {
-//     confirm({
-//         title : "Start AP Mode?",
-//         description : "You will lose current contact and need to enter the new IP Address in your browser.",
-//         ok_message : "OK",
-//         cancel_message : "Cancel",
-//         ok : function() {
-//             fabmo.enableWifiHotspot(function(err, data) {
-//                 if(err) {
-//                     fabmo.notify('error', err);
-//                 } else {
-//                     fabmo.notify('info', data);
-//                 }
-//             });
-//         }, 
-//         cancel : function() {
-//         	// No action required.
-//         }
-//     });
-// }
 
 // Show the confirmation dialog
 function confirm(options){
@@ -296,44 +279,110 @@ $(document).ready(function() {
     });
 
     // Toggle Action for clicking the AP mode button
-    // If AP mode is active, turn it off; if AP mode is inactive, turn it on
     $('#ap-mode-button').on('click', function(evt) {
         console.log("-got click on AP");
         if ($('#ap-mode-button').hasClass('active')) {
-            fabmo.disableWifiHotspot(function(err, data) {
-                console.log("  TOGGLE OFF");
-                if(err) {
-                    fabmo.notify('error', err);
-                } else {
-                    fabmo.notify('info', data);
-                    $('#ap-mode-button').removeClass('active');
-                    fabmo.showModal({message:"Your tool is NOT in AP mode."});
+            confirm({
+                title : "Turn Off AP (Access Point) Mode?",
+                description : "Networks will reload in 10 seconds.",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.disableWifiHotspot(function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        // wait 10 seconds then refresh history and wifi table
+                        setTimeout(function() {
+                            refreshApps();
+                            refreshHistoryTable();
+                            refreshWifiTable();
+                            iframe.contentWindow.location.reload()
+                        }, 10000);
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
                 }
             });
         } else {
-                //title : "Start AP Mode?",
-                //description : "You will lose current contact and need to enter the new IP Address in your browser.",
-                //ok_message : "OK",
-                //cancel_message : "Cancel",
-                //ok : function() {
-            fabmo.enableWifiHotspot(function(err, data) {
-                if(err) {
-                    fabmo.notify('error', err);
-                } else {
-                    fabmo.notify('info', data);
-                    $('#ap-mode-button').addClass('active');
-                    fabmo.showModal({message:"Your tool will be AP mode."});
+            confirm({
+                title : "Start AP (Access Point) Mode?",
+                description : "Networks will reload in 10 seconds.",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.enableWifiHotspot(function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        // wait 10 seconds then refresh history and wifi table
+                        setTimeout(function() {
+                            refreshApps();
+                            refreshHistoryTable();
+                            refreshWifiTable();
+                            iframe.contentWindow.location.reload()
+                        }, 10000);
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
                 }
             });
-                //}, 
-                //cancel : function() {
-                    // No action required.
-                //}
-        
         }
-        //evt.preventDefault();
-        //fabmo.showModal({message:"Your tool is now back in AP mode."});
     })
 
-
+    // Toggle Action for clicking the Wifi mode button
+    $('#wifi-mode-button').on('click', function(evt) {
+        console.log("-got click on wifi");
+        if ($('#wifi-mode-button').hasClass('active')) {
+            confirm({
+                title : "Turn Off Wifi (also tunrs off AP Mode) ?",
+                description : "Networks will reload in 10 seconds.",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.disableWifi(function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        // wait 10 seconds then refresh history and wifi table
+                        setTimeout(function() {
+                            refreshApps();
+                            refreshHistoryTable();
+                            refreshWifiTable();
+                            iframe.contentWindow.location.reload()
+                        }, 10000);
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
+                }
+            });
+        } else {
+            confirm({
+                title : "Turn On Wifi ?",
+                description : "Networks will reload in 10 seconds.",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.enableWifi(function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        // wait 10 seconds then refresh history and wifi table
+                        setTimeout(function() {
+                            refreshApps();
+                            refreshHistoryTable();
+                            refreshWifiTable();
+                            iframe.contentWindow.location.reload()
+                        }, 10000);
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
+                }
+            });
+        }
+    })
 });

@@ -8,11 +8,26 @@ var log = require("../log").logger("network");
 var config = require("../config");
 var util = require("../util");
 
+var LOGFILE = "/var/log/network_monitor.log";
+var fs = require("fs");
+var network = require("../engine").networkManager;
+
+// Function to read the latest log entry
+const readLatestLogEntry = (callback) => {
+    fs.readFile(LOGFILE, "utf8", (err, data) => {
+        if (err) {
+            return callback(err);
+        }
+        const lines = data.trim().split("\n");
+        const lastLine = lines.slice(-1)[0];
+        callback(null, lastLine);
+    });
+};
+
 // Return a list of wifi networks that are currently visible.
 // TODO - This is a bad route name, because retrieving it doesn't actually trigger a scan
 // eslint-disable-next-line no-unused-vars
 var scan = function (req, res, next) {
-    var network = require("../engine").networkManager;
     network.getAvailableWifiNetworks(function (err, data) {
         if (err) {
             log.error(err);
@@ -28,7 +43,6 @@ var scan = function (req, res, next) {
 var connectWifi = function (req, res, next) {
     var ssid = req.params.ssid;
     var key = req.params.key;
-    var network = require("../engine").networkManager;
     if (ssid) {
         network.connectToAWifiNetwork(ssid, key, function (err, data) {
             if (err) {
@@ -114,13 +128,8 @@ var wifiState = function (req, res, next) {
 };
 
 // Enable or disable AP mode, depending on the value of the `enabled` attribute in the POST body
-// eslint-disable-next-line no-unused-vars
-var hotspotState = function (req, res, next) {
-    var state = req.params.enabled;
-    var network = require("../engine").networkManager;
-
-    console.log("enableWifiHotspot typeof:", typeof network.enableWifiHotspot);
-    console.log("disableWifiHotspot typeof:", typeof network.disableWifiHotspot);
+const hotspotState = (req, res, next) => {
+    const state = req.body.enabled; // Use req.body for POST data
 
     const sendResponse = (err) => {
         if (err) {
@@ -130,9 +139,35 @@ var hotspotState = function (req, res, next) {
     };
 
     if (state === true || state === "true") {
-        network.enableWifiHotspot(sendResponse);
+        network.enableWifiHotspot((err) => {
+            if (err) {
+                return sendResponse(err);
+            }
+            // Log the action for the monitoring script
+            readLatestLogEntry((logErr, lastLog) => {
+                if (logErr) {
+                    console.error("Failed to read log:", logErr);
+                } else {
+                    console.log("Last log entry:", lastLog);
+                }
+                sendResponse(null);
+            });
+        });
     } else if (state === false || state === "false") {
-        network.disableWifiHotspot(sendResponse);
+        network.disableWifiHotspot((err) => {
+            if (err) {
+                return sendResponse(err);
+            }
+            // Log the action for the monitoring script
+            readLatestLogEntry((logErr, lastLog) => {
+                if (logErr) {
+                    console.error("Failed to read log:", logErr);
+                } else {
+                    console.log("Last log entry:", lastLog);
+                }
+                sendResponse(null);
+            });
+        });
     } else {
         res.json({ status: "error", message: "Invalid state value" });
     }
@@ -264,6 +299,8 @@ var getWifiConfig = function (req, res, next) {
         data: wifiConfig,
     });
 };
+
+module.exports = { hotspotState };
 
 module.exports = function (server) {
     server.post("/network/wifi/state", wifiState);

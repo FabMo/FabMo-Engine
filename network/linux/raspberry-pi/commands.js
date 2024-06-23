@@ -2,39 +2,18 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const tmp = require("tmp");
 
+// Heavily modified to work with the Raspberry Pi 5, Bookworm, and NetworkManager
+//  ... many functions unused and historic
+// In use ==> * th 6/2024
 class commands {
-    // Simple function for using the command line for taking down an interface.
-    // static takeDown(iface) {
-    //     return new Promise((resolve, reject) => {
-    //         exec(`nmcli device disconnect ${iface}`, (err, stdout, stderr) => {
-    //             if (err) {
-    //                 reject(`Error disconnecting ${iface}: ${stderr}`);
-    //             } else {
-    //                 resolve(stdout);
-    //             }
-    //         });
-    //     });
-    // }
-    static takeDown(iface, callback) {
-        exec(`nmcli device disconnect ${iface} managed yes`, (err, stdout, stderr) => {
-            if (err) {
-                console.error(`Error disconnecting interface ${iface}: ${stderr}`);
-                return callback(err);
-            }
-            console.log(`Interface ${iface} disconnected: ${stdout}`);
-            callback(null, stdout);
-        });
+    // Bring up the interface *
+    static bringUp(iface, callback) {
+        this.executeMonitoringScript("bring_up_profile", iface, callback);
     }
 
-    static bringUp(iface, callback) {
-        exec(`nmcli device set ${iface} managed yes`, (err, stdout, stderr) => {
-            if (err) {
-                console.error(`Error bringing up interface ${iface}: ${stderr}`);
-                return callback(err);
-            }
-            console.log(`Interface ${iface} brought up: ${stdout}`);
-            callback(null, stdout);
-        });
+    // Bring up the interface *
+    static takeDown(iface, callback) {
+        this.executeMonitoringScript("take_down_profile", iface, callback);
     }
 
     static configureApIp(ip, callback) {
@@ -54,41 +33,44 @@ class commands {
         exec("nmcli device wifi list", callback);
     }
 
-    static startAP(callback) {
-        exec("systemctl start hostapd dnsmasq", (err, stdout, stderr) => {
+    static executeMonitoringScript(action, profile, callback) {
+        const command = `/fabmo/files/network_conf_fabmo/network-monitor.sh ${action} ${profile}`;
+        exec(command, (err, stdout, stderr) => {
             if (err) {
-                console.error(`Error starting hostapd and dnsmasq: ${stderr}`);
+                console.error(`Error executing ${action} on profile ${profile}: ${stderr}`);
                 return callback(err);
             }
-            console.log(`hostapd and dnsmasq started: ${stdout}`);
-            exec("nmcli connection up wlan0_ap", (err, stdout, stderr) => {
+            console.log(`${action} ${profile}: ${stdout}`);
+            callback(null, stdout);
+        });
+    }
+
+    // Start AP by starting hostapd and dnsmasq, then bring up the interface *
+    static startAP(callback) {
+        this.executeMonitoringScript("bring_up_profile", "wlan0_ap", (err, stdout) => {
+            if (err) {
+                return callback(err);
+            }
+            exec("systemctl start hostapd dnsmasq", (err, stdout, stderr) => {
                 if (err) {
-                    console.error(`Error bringing up AP interface: ${stderr}`);
+                    console.error(`Error starting hostapd and dnsmasq: ${stderr}`);
                     return callback(err);
                 }
-                console.log(`AP interface brought up: ${stdout}`);
+                console.log(`hostapd and dnsmasq started: ${stdout}`);
                 callback(null, stdout);
             });
         });
     }
 
+    // Stop AP by stopping hostapd and dnsmasq, then bring down the interface *
     static stopAP(callback) {
-        exec("systemctl stop hostapd dnsmasq", function (err, stdout, stderr) {
+        exec("systemctl stop hostapd dnsmasq", (err, stdout, stderr) => {
             if (err) {
                 console.error(`Error stopping hostapd and dnsmasq: ${stderr}`);
-                callback(err);
-            } else {
-                console.log(`hostapd and dnsmasq stopped: ${stdout}`);
-                exec("nmcli connection down wlan0_ap", function (err, stdout, stderr) {
-                    if (err) {
-                        console.error(`Error bringing down AP interface: ${stderr}`);
-                        callback(err);
-                    } else {
-                        console.log(`AP interface brought down: ${stdout}`);
-                        callback(null, stdout);
-                    }
-                });
+                return callback(err);
             }
+            console.log(`hostapd and dnsmasq stopped: ${stdout}`);
+            this.executeMonitoringScript("bring_down_profile", "wlan0_ap", callback);
         });
     }
 
