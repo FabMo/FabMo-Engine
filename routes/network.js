@@ -38,13 +38,13 @@ var scan = function (req, res, next) {
     });
 };
 
-// Connect to the wifi network specified in the request body
+// Connect to the wifi network specified in the request body  *
 // eslint-disable-next-line no-unused-vars
 var connectWifi = function (req, res, next) {
     var ssid = req.params.ssid;
     var key = req.params.key;
     if (ssid) {
-        network.connectToAWifiNetwork(ssid, key, function (err, data) {
+        network.joinWifiNetwork(ssid, key, function (err, data) {
             if (err) {
                 log.error(err);
                 res.json({ status: "error", message: err });
@@ -79,7 +79,7 @@ var disconnectWifi = function (req, res, next) {
     }
 };
 
-// Forget the wifi network with the SSID provided in the post body
+// Forget the wifi network with the SSID provided in the post body *
 // eslint-disable-next-line no-unused-vars
 var forgetWifi = function (req, res, next) {
     var ssid = req.params.ssid;
@@ -87,7 +87,7 @@ var forgetWifi = function (req, res, next) {
 
     if (ssid) {
         // eslint-disable-next-line no-unused-vars
-        network.forgetAWifiNetwork(ssid, function (err, data) {
+        network.forgetWifiNetwork(ssid, function (err, data) {
             if (err) {
                 res.json({ status: "error", message: err.message });
             } else {
@@ -126,6 +126,51 @@ var wifiState = function (req, res, next) {
         res.json({ status: "error", message: "wrong POST command sent !" });
     }
 };
+
+// const hotspotState = (req, res, next) => {
+//     const state = req.body.enabled; // Use req.body for POST data
+
+//     const sendResponse = (err) => {
+//         if (err) {
+//             return res.json({ status: "error", message: err.message });
+//         }
+//         res.json({ status: "success" });
+//     };
+
+//     if (state === true || state === "true") {
+//         network.enableWifiHotspot((err) => {
+//             if (err) {
+//                 return sendResponse(err);
+//             }
+//             // Log the action for the monitoring script
+//             readLatestLogEntry((logErr, lastLog) => {
+//                 if (logErr) {
+//                     console.error("Failed to read log:", logErr);
+//                 } else {
+//                     console.log("Last log entry:", lastLog);
+//                 }
+//                 sendResponse(null);
+//             });
+//         });
+//     } else if (state === false || state === "false") {
+//         network.disableWifiHotspot((err) => {
+//             if (err) {
+//                 return sendResponse(err);
+//             }
+//             // Log the action for the monitoring script
+//             readLatestLogEntry((logErr, lastLog) => {
+//                 if (logErr) {
+//                     console.error("Failed to read log:", logErr);
+//                 } else {
+//                     console.log("Last log entry:", lastLog);
+//                 }
+//                 sendResponse(null);
+//             });
+//         });
+//     } else {
+//         res.json({ status: "error", message: "Invalid state value" });
+//     }
+// };
 
 // Enable or disable AP mode, depending on the value of the `enabled` attribute in the POST body
 const hotspotState = (req, res, next) => {

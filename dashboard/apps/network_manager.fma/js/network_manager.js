@@ -283,8 +283,8 @@ $(document).ready(function() {
         console.log("-got click on AP");
         if ($('#ap-mode-button').hasClass('active')) {
             confirm({
-                title : "Turn Off AP (Access Point) Mode?",
-                description : "Networks will reload in 10 seconds.",
+                title : "Turn Off AP (Access Point) Mode ?",
+                description : "Network display will refresh shortly.",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {
@@ -307,8 +307,8 @@ $(document).ready(function() {
             });
         } else {
             confirm({
-                title : "Start AP (Access Point) Mode?",
-                description : "Networks will reload in 10 seconds.",
+                title : "Start AP (Access Point) Mode ?",
+                description : "Network display will refresh shortly.",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {
@@ -337,8 +337,8 @@ $(document).ready(function() {
         console.log("-got click on wifi");
         if ($('#wifi-mode-button').hasClass('active')) {
             confirm({
-                title : "Turn Off Wifi (also tunrs off AP Mode) ?",
-                description : "Networks will reload in 10 seconds.",
+                title : "Turn Off Wifi ?",
+                description : "Also turns off AP Mode. Network display will refresh shortly.",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {
@@ -362,7 +362,7 @@ $(document).ready(function() {
         } else {
             confirm({
                 title : "Turn On Wifi ?",
-                description : "Networks will reload in 10 seconds.",
+                description : "Network display will refresh shortly.",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {

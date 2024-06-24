@@ -6,12 +6,12 @@ const tmp = require("tmp");
 //  ... many functions unused and historic
 // In use ==> * th 6/2024
 class commands {
-    // Bring up the interface *
+    // Bring up the interface
     static bringUp(iface, callback) {
         this.executeMonitoringScript("bring_up_profile", iface, callback);
     }
 
-    // Bring up the interface *
+    // Take down the interface *
     static takeDown(iface, callback) {
         this.executeMonitoringScript("take_down_profile", iface, callback);
     }
@@ -45,7 +45,17 @@ class commands {
         });
     }
 
-    // Start AP by starting hostapd and dnsmasq, then bring up the interface *
+    // Start WiFi by enabling the device and bringing up the profile
+    static startWifi(callback) {
+        this.executeMonitoringScript("bring_up_profile", "wifi-connection", callback);
+    }
+
+    // Stop WiFi by bringing down the profile and disabling the device
+    static stopWifi(callback) {
+        this.executeMonitoringScript("bring_down_profile", "wifi-connection", callback);
+    }
+
+    // Start AP by starting hostapd and dnsmasq, then bring up the interface
     static startAP(callback) {
         this.executeMonitoringScript("bring_up_profile", "wlan0_ap", (err, stdout) => {
             if (err) {
@@ -62,7 +72,7 @@ class commands {
         });
     }
 
-    // Stop AP by stopping hostapd and dnsmasq, then bring down the interface *
+    // Stop AP by stopping hostapd and dnsmasq, then bring down the interface
     static stopAP(callback) {
         exec("systemctl stop hostapd dnsmasq", (err, stdout, stderr) => {
             if (err) {
@@ -71,6 +81,47 @@ class commands {
             }
             console.log(`hostapd and dnsmasq stopped: ${stdout}`);
             this.executeMonitoringScript("bring_down_profile", "wlan0_ap", callback);
+        });
+    }
+
+    // Join a WiFi network
+    static joinWifiNetwork(ssid, password, callback) {
+        const addConnectionCommand = `nmcli dev wifi connect "${ssid}" password "${password}"`;
+        exec(addConnectionCommand, (err, stdout, stderr) => {
+            if (err) {
+                console.error(`Error joining WiFi network ${ssid}: ${stderr}`);
+                return callback(err);
+            }
+            console.log(`Successfully joined WiFi network ${ssid}: ${stdout}`);
+            callback(null, stdout);
+        });
+    }
+
+    // Forget a WiFi network
+    static forgetWifiNetwork(ssid, callback) {
+        // Find the connection associated with the SSID
+        const findConnectionCommand = `nmcli -t -f NAME connection show | grep "${ssid}"`;
+        exec(findConnectionCommand, (err, stdout, stderr) => {
+            if (err) {
+                console.error(`Error finding WiFi network ${ssid}: ${stderr}`);
+                return callback(err);
+            }
+            const connectionName = stdout.trim();
+            if (connectionName) {
+                // Delete the connection
+                const deleteConnectionCommand = `nmcli connection delete "${connectionName}"`;
+                exec(deleteConnectionCommand, (err, stdout, stderr) => {
+                    if (err) {
+                        console.error(`Error forgetting WiFi network ${ssid}: ${stderr}`);
+                        return callback(err);
+                    }
+                    console.log(`Successfully forgot WiFi network ${ssid}: ${stdout}`);
+                    callback(null, stdout);
+                });
+            } else {
+                console.error(`No connection found for SSID ${ssid}`);
+                callback(new Error(`No connection found for SSID ${ssid}`));
+            }
         });
     }
 

@@ -7,11 +7,10 @@ var child_process = require("child_process");
 var exec = child_process.exec;
 var util = require("util");
 var NetworkManager = require("../../../network_manager").NetworkManager;
-// TODO:  Add networking logging instead of useing console.log
 
 var ifconfig = require("wireless-tools/ifconfig");
 var iwconfig = require("wireless-tools/iwconfig");
-var wpa_cli = require("wireless-tools/wpa_cli");
+//var wpa_cli = require("wireless-tools/wpa_cli");
 //var udhcpc = require("wireless-tools/udhcpc");
 
 const commands = require("./commands.js");
@@ -287,59 +286,85 @@ RaspberryPiNetworkManager.prototype._disableWifi = function (callback) {
     );
 };
 
-RaspberryPiNetworkManager.prototype._joinWifi = function (ssid, password, callback) {
-    var network_config = config.engine.get("network");
-    network_config.wifi.mode = "station";
-    network_config.wifi.wifi_networks = [{ ssid: ssid, password: password }];
-    config.engine.set("network", network_config);
-    var PSK = password;
-    var SSID = ssid;
+// RaspberryPiNetworkManager.prototype._joinWifi = function (ssid, password, callback) {
+//     var network_config = config.engine.get("network");
+//     network_config.wifi.mode = "station";
+//     network_config.wifi.wifi_networks = [{ ssid: ssid, password: password }];
+//     config.engine.set("network", network_config);
+//     var PSK = password;
+//     var SSID = ssid;
 
-    async.series(
-        [
-            // Add a new WiFi connection
-            function (callback) {
-                exec(`nmcli dev wifi connect "${SSID}" password "${PSK}"`, function (error, stdout, stderr) {
-                    if (error) {
-                        console.error(`Error adding WiFi connection: ${stderr}`);
-                        callback(error);
-                    } else {
-                        console.log(`WiFi connection added: ${stdout}`);
-                        callback(null, stdout);
-                    }
-                });
-            },
-            // Bring up the network
-            function (callback) {
-                exec(`nmcli con up id "${SSID}"`, function (error, stdout, stderr) {
-                    if (error) {
-                        console.error(`Error bringing up the network: ${stderr}`);
-                        callback(error);
-                    } else {
-                        console.log(`Network brought up: ${stdout}`);
-                        callback(null, stdout);
-                    }
-                });
-            },
-        ],
-        function (errs, results) {
-            if (errs) {
-                callback(errs); // errs = [err1, err2]
-            } else {
-                this.confirmIP((err, ipaddress) => {
-                    if (err) {
-                        callback(err);
-                    } else {
-                        var wifiInfo = {
-                            ssid: SSID,
-                            ip: ipaddress,
-                        };
-                        callback(null, wifiInfo);
-                    }
-                });
-            }
-        }.bind(this)
-    );
+//     async.series(
+//         [
+//             // Add a new WiFi connection
+//             function (callback) {
+//                 exec(`nmcli dev wifi connect "${SSID}" password "${PSK}"`, function (error, stdout, stderr) {
+//                     if (error) {
+//                         console.error(`Error adding WiFi connection: ${stderr}`);
+//                         callback(error);
+//                     } else {
+//                         console.log(`WiFi connection added: ${stdout}`);
+//                         callback(null, stdout);
+//                     }
+//                 });
+//             },
+//             // Bring up the network
+//             function (callback) {
+//                 exec(`nmcli con up id "${SSID}"`, function (error, stdout, stderr) {
+//                     if (error) {
+//                         console.error(`Error bringing up the network: ${stderr}`);
+//                         callback(error);
+//                     } else {
+//                         console.log(`Network brought up: ${stdout}`);
+//                         callback(null, stdout);
+//                     }
+//                 });
+//             },
+//         ],
+//         function (errs, results) {
+//             if (errs) {
+//                 callback(errs); // errs = [err1, err2]
+//             } else {
+//                 this.confirmIP((err, ipaddress) => {
+//                     if (err) {
+//                         callback(err);
+//                     } else {
+//                         var wifiInfo = {
+//                             ssid: SSID,
+//                             ip: ipaddress,
+//                         };
+//                         callback(null, wifiInfo);
+//                     }
+//                 });
+//             }
+//         }.bind(this)
+//     );
+// };
+
+// Join a WiFi network
+RaspberryPiNetworkManager.prototype.joinWifiNetwork = function (ssid, password, callback) {
+    log.info(`Joining WiFi network: ${ssid}`);
+    commands.joinWifiNetwork(ssid, password, (err, result) => {
+        if (err) {
+            log.error(`Failed to join WiFi network ${ssid}:`, err);
+            return callback(err);
+        }
+        log.info(`Successfully joined WiFi network ${ssid}`);
+        callback(null, result);
+    });
+};
+
+// Forget a WiFi network
+RaspberryPiNetworkManager.prototype.forgetWifiNetwork = function (ssid, callback) {
+    log.info(`Forgetting WiFi network: ${ssid}`);
+    commands.forgetWifiNetwork(ssid, (err, result) => {
+        if (err) {
+            log.error(`Failed to forget WiFi network ${ssid}:`, err);
+            return callback(err);
+        }
+        log.info(`Successfully forgot WiFi network ${ssid}`);
+        callback(null, result);
+    });
 };
 
 //=========================================================================================
@@ -429,49 +454,50 @@ RaspberryPiNetworkManager.prototype.getAvailableWifiNetworks = function (callbac
     callback(null, this.networks);
 };
 
-// Connect to the specified wifi network.
-//   ssid - The network ssid to connect to
-//    key - The network key
-RaspberryPiNetworkManager.prototype.connectToAWifiNetwork = function (ssid, key, callback) {
-    // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
-    this._joinWifi(ssid, key, callback);
-};
+// // Connect to the specified wifi network.
+// //   ssid - The network ssid to connect to
+// //    key - The network key
+// RaspberryPiNetworkManager.prototype.connectToAWifiNetwork = function (ssid, key, callback) {
+//     // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
+//     this._joinWifi(ssid, key, callback);
+// };
 
-// Stubbing this in as a new forget function based on some stubbs already in place for call
-// Forget a specified wifi network.
-//   ssid - The network ssid to connect to
-//    key - The network key
-RaspberryPiNetworkManager.prototype.forgetAWifiNetwork = function (ssid, key, callback) {
-    // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
-    this._forgetWifi(ssid, key, callback);
-};
+// // Stubbing this in as a new forget function based on some stubbs already in place for call
+// // Forget a specified wifi network.
+// //   ssid - The network ssid to connect to
+// //    key - The network key
+// RaspberryPiNetworkManager.prototype.forgetAWifiNetwork = function (ssid, key, callback) {
+//     // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
+//     this._forgetWifi(ssid, key, callback);
+// };
 
 // Enable the wifi
 //   callback - Called when wifi is enabled or with error if error
 RaspberryPiNetworkManager.prototype.turnWifiOn = function (callback) {
-    ifconfig.status(
-        wifiInterface,
-        function (err, status) {
-            if (!status.up) {
-                ifconfig.up(
-                    wifiInterface,
-                    // eslint-disable-next-line no-unused-vars
-                    function (err, data) {
-                        callback(err);
-                    }.bind(this)
-                );
-            } else {
-                callback();
-            }
-        }.bind(this)
-    );
+    log.info("Turning on Wifi...");
+    commands.startWifi((err, result) => {
+        if (err) {
+            log.error("Failed to turn on Wifi:", err);
+            return callback(err);
+        }
+        log.info("Wifi turned on successfully");
+        callback(null, result);
+    });
 };
 
 // Disable the wifi
 //   callback - Called when wifi is disabled or with error if error
 // eslint-disable-next-line no-unused-vars
 RaspberryPiNetworkManager.prototype.turnWifiOff = function (callback) {
-    this.disableWifi();
+    log.info("Turning off Wifi...");
+    commands.stopWifi((err, result) => {
+        if (err) {
+            log.error("Failed to turn off Wifi:", err);
+            return callback(err);
+        }
+        log.info("Wifi turned off successfully");
+        callback(null, result);
+    });
 };
 
 // Get the history of connected wifi networks
@@ -490,8 +516,9 @@ RaspberryPiNetworkManager.prototype.enableWifiHotspot = function (callback) {
 
 RaspberryPiNetworkManager.prototype.disableWifiHotspot = function (callback) {
     log.info("Going to turn off wifi hotspot");
-    this._unjoinAP();
-    callback(null);
+    this._unjoinAP(callback);
+    // this._unjoinAP();
+    // callback(null);
 };
 
 // Get network status
