@@ -514,16 +514,18 @@
 
     FabMoAPI.prototype.connectToWifi = function (ssid, key, callback) {
         var data = { ssid: ssid, key: key };
-        this._post("/network/wifi/connect", data, callback, callback, "wifi");
+        //        this._post("/network/wifi/connect", data, callback, callback, "wifi");
+        this._post("/network/wifi/connect", data, callback, callback);
     };
 
-    FabMoAPI.prototype.disconnectFromWifi = function (callback) {
-        this._post("/network/wifi/disconnect", {}, callback, callback);
+    FabMoAPI.prototype.disconnectFromWifi = function (ssid, callback) {
+        var data = { ssid: ssid };
+        this._post("/network/wifi/disconnect", data, callback, callback);
     };
 
-    FabMoAPI.prototype.forgetWifi = function (callback) {
-        this._post("/network/wifi/forget", {}, callback, callback);
-    };
+    // FabMoAPI.prototype.forgetWifi = function (callback) {
+    //     this._post("/network/wifi/forget", {}, callback, callback);
+    // };
 
     FabMoAPI.prototype.enableWifi = function (callback) {
         var data = { enabled: true };

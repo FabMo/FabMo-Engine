@@ -109,9 +109,9 @@ function addHistoryEntries(history_entries, callback) {
             $('#wifi-mode-button').addClass('active');
             if (history_entries[entry].includes(',')) {
                 ipAddressText = history_entries[entry].split(',')[0];
-                intInfoText = 'Wifi: ' + history_entries[entry].split(',')[1];
+                intInfoText = 'Wifi Network: ' + history_entries[entry].split(',')[1];
             } else {
-                intInfoText = 'Wifi: ' + "unknown";
+                intInfoText = 'Wifi: Network' + "unknown";
             }
         } else {
             intInfoText = 'Unknown';
@@ -249,8 +249,9 @@ $(document).ready(function() {
                     fabmo.showModal({message:err});
                 } else {
                     console.log(data);
-                    CUrssid = data.ssid;
-                    fabmo.showModal({message:"Successfully connected! Please go find me on network: " + data.ssid+ " at " + data.ip});
+                    // Parse the IP address from a longer "data.ip" string. Remove everything up to and including the first ":" and then trim the result for the variable "address" 
+                    var address = data.ip.replace(/.*:/, "").trim();
+                    fabmo.showModal({message:"Successfully connected!\nAccess your tool on Wifi network: " + name + " at IP: " + address});
                 }
             });
         });
@@ -266,8 +267,43 @@ $(document).ready(function() {
     });
 
     // Display generic browser info message for buttons not yet functional
-    $('tbody').on('click', 'td.not-implemented', function() {
-        fabmo.showModal({message:"Feature coming soon."});
+    $('tbody').on('click', 'td.not-implemented', function(evt) {
+        var name = evt.target.textContent;
+        console.log(name);
+        if (name === 'eth0') {
+            fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool."});
+        } else if (name === 'wlan0') {
+        // Retrieve the SSID from the third column in the same row; pretty ugly but it works
+            var ssid = $(evt.target).closest('tr').find('td').eq(2).text();
+            ssid = ssid.replace("Wifi Network: ", "").trim();
+            console.log("SSID to disconnect:", ssid); // For debugging purposes
+            confirm({
+                title : "Disconnect and forget this Wifi Interface ?",
+                description : "Network display will refresh shortly.",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.disconnectFromWifi(ssid, function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        // wait 10 seconds then refresh history and wifi table
+                        setTimeout(function() {
+                            refreshApps();
+                            refreshHistoryTable();
+                            refreshWifiTable();
+                            iframe.contentWindow.location.reload()
+                        }, 10000);
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
+                }
+            });
+        } else if (name === 'wlan0_ap') {
+            fabmo.showModal({message:"Feature coming soon."});  
+        }
+        // fabmo.showModal({message:"Feature coming soon."});
     });
 
     // Pick up closing of the modal message

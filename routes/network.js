@@ -38,7 +38,41 @@ var scan = function (req, res, next) {
     });
 };
 
-// Connect to the wifi network specified in the request body  *
+// // Connect to the wifi network specified in the request body  *
+// // eslint-disable-next-line no-unused-vars
+// var connectWifi = function (req, res, next) {
+//     var ssid = req.params.ssid;
+//     var key = req.params.key;
+//     if (ssid) {
+//         network.joinWifiNetwork(ssid, key, function (err, data) {
+//             if (err) {
+//                 log.error(err);
+//                 res.json({ status: "error", message: err });
+//             } else {
+//                 // Assuming getWifiIP is an asynchronous function
+//                 network.getWifiIp(ssid, function (ipErr, ipAddress) {
+//                     if (ipErr) {
+//                         // Handle error, maybe IP couldn't be retrieved
+//                         log.error(ipErr);
+//                         res.json({ status: "success", data: { wifi: data, ip: "Unavailable" } });
+//                     } else {
+//                         // Include the IP address in the response
+//                         res.json({ status: "success", data: { wifi: data, ip: ipAddress } });
+//                     }
+//                 });
+//             }
+
+//             // } else {
+//             //     res.json({ status: "success", data: { wifi: data } });
+//             // }
+//         });
+//     } else {
+//         log.error("Not joining a network because no SSID provided.");
+//         res.json({ status: "error", message: "No SSID provided" });
+//     }
+// };
+
+// Connect to the wifi network specified in the request body
 // eslint-disable-next-line no-unused-vars
 var connectWifi = function (req, res, next) {
     var ssid = req.params.ssid;
@@ -49,7 +83,17 @@ var connectWifi = function (req, res, next) {
                 log.error(err);
                 res.json({ status: "error", message: err });
             } else {
-                res.json({ status: "success", data: { wifi: data } });
+                // Assuming getWifiIP is an asynchronous function
+                network.getWifiIp(ssid, function (ipErr, ipAddress) {
+                    if (ipErr) {
+                        // Handle error, maybe IP couldn't be retrieved
+                        log.error(ipErr);
+                        res.json({ status: "success", data: { wifi: data, ip: "Unavailable" } });
+                    } else {
+                        // Include the IP address in the response
+                        res.json({ status: "success", data: { wifi: data, ip: ipAddress } });
+                    }
+                });
             }
         });
     } else {
@@ -60,18 +104,18 @@ var connectWifi = function (req, res, next) {
 
 // Disconnect from the current wifi network
 // eslint-disable-next-line no-unused-vars
-var disconnectWifi = function (req, res, next) {
-    var state = req.params.disconnect;
+var disconnectFromWifi = function (req, res, next) {
+    var ssid = req.params.ssid;
     var network = require("../engine").networkManager;
-    if (state === true) {
+    if (ssid) {
         // eslint-disable-next-line no-unused-vars
-        network.disconnectFromAWifiNetwork(function (err, data) {
+        network.forgetWifi(ssid, function (err, data) {
             if (err) {
                 res.json({ status: "error", message: err.message });
             } else {
                 res.json({ status: "success" });
             }
-            res.json({ status: "success" });
+            //        res.json({ status: "success" });
         });
     } else {
         // TODO this could be more informative
@@ -79,25 +123,25 @@ var disconnectWifi = function (req, res, next) {
     }
 };
 
-// Forget the wifi network with the SSID provided in the post body *
-// eslint-disable-next-line no-unused-vars
-var forgetWifi = function (req, res, next) {
-    var ssid = req.params.ssid;
-    var network = require("../engine").networkManager;
+// // Forget the wifi network with the SSID provided in the post body *
+// // eslint-disable-next-line no-unused-vars
+// var forgetWifi = function (req, res, next) {
+//     var ssid = req.params.ssid;
+//     var network = require("../engine").networkManager;
 
-    if (ssid) {
-        // eslint-disable-next-line no-unused-vars
-        network.forgetWifiNetwork(ssid, function (err, data) {
-            if (err) {
-                res.json({ status: "error", message: err.message });
-            } else {
-                res.json({ status: "success" });
-            }
-        });
-    } else {
-        res.json({ status: "error", message: "No SSID provided" });
-    }
-};
+//     if (ssid) {
+//         // eslint-disable-next-line no-unused-vars
+//         network.forgetWifiNetwork(ssid, function (err, data) {
+//             if (err) {
+//                 res.json({ status: "error", message: err.message });
+//             } else {
+//                 res.json({ status: "success" });
+//             }
+//         });
+//     } else {
+//         res.json({ status: "error", message: "No SSID provided" });
+//     }
+// };
 
 // Enable or disable the wifi, depending on the value of the `enabled` attribute in the POST body
 // eslint-disable-next-line no-unused-vars
@@ -352,8 +396,7 @@ module.exports = function (server) {
     server.post("/network/hotspot/state", hotspotState);
     server.get("/network/wifi/scan", scan);
     server.post("/network/wifi/connect", connectWifi);
-    server.post("/network/wifi/disconnect", disconnectWifi);
-    server.post("/network/wifi/forget", forgetWifi);
+    server.post("/network/wifi/disconnect", disconnectFromWifi);
     server.get("/network/wifi/history", getWifiHistory);
     server.get("/network/identity", getNetworkIdentity);
     server.post("/network/identity", setNetworkIdentity);

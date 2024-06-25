@@ -15,8 +15,8 @@ var iwconfig = require("wireless-tools/iwconfig");
 
 const commands = require("./commands.js");
 
-var wifiInterface = "wlan0"; // test assigning wlan1 to wifiInterface ???
-var ethernetInterface = "eth0";
+//var wifiInterface = "wlan0"; // test assigning wlan1 to wifiInterface ???
+//var ethernetInterface = "eth0";
 
 //var last_name = "";
 
@@ -89,6 +89,40 @@ RaspberryPiNetworkManager.prototype.getInfo = function (interface, callback) {
     });
 };
 
+// Retun the single IP address for the interface specified by the SSID name
+//   ssid - The SSID name to get the IP address for
+//   callback - Called back with the IP address or error if there was an error
+// RaspberryPiNetworkManager.prototype.getWifiIp = function (ssid, callback) {
+//     // Get the IP address for the interface specified by the SSID name
+//     ifconfig.status("wlan0", function (err, ifstatus) {
+//         if (err) return callback(err);
+//         iwconfig.status("wlan0", function (err, iwstatus) {
+//             if (err) return callback(err);
+//             if (iwstatus.ssid === ssid) {
+//                 callback(null, ifstatus.ipv4_address);
+//             } else {
+//                 callback(null, null);
+//             }
+//         });
+//     });
+// };
+
+RaspberryPiNetworkManager.prototype.getWifiIp = function (ssid, callback) {
+    const getIpCommand = `nmcli -t -f IP4.ADDRESS dev show wlan0`;
+    exec(getIpCommand, (err, stdout, stderr) => {
+        if (err) {
+            console.error(`Error getting IP address: ${stderr}`);
+            return callback(err);
+        }
+        const ipAddress = stdout.trim().split("/")[0]; // Extract the IP address
+        if (ipAddress) {
+            callback(null, ipAddress);
+        } else {
+            callback(new Error("IP address not found"), null);
+        }
+    });
+};
+
 // Return a list of IP addresses (the local IP for all interfaces)
 RaspberryPiNetworkManager.prototype.getLocalAddresses = function () {
     var retval = [];
@@ -143,7 +177,6 @@ RaspberryPiNetworkManager.prototype.scan = function (callback) {
             callback(err);
             return;
         }
-
         callback(null);
     });
 };
@@ -355,7 +388,7 @@ RaspberryPiNetworkManager.prototype.joinWifiNetwork = function (ssid, password, 
 };
 
 // Forget a WiFi network
-RaspberryPiNetworkManager.prototype.forgetWifiNetwork = function (ssid, callback) {
+RaspberryPiNetworkManager.prototype.forgetWifi = function (ssid, callback) {
     log.info(`Forgetting WiFi network: ${ssid}`);
     commands.forgetWifiNetwork(ssid, (err, result) => {
         if (err) {
@@ -466,7 +499,7 @@ RaspberryPiNetworkManager.prototype.getAvailableWifiNetworks = function (callbac
 // // Forget a specified wifi network.
 // //   ssid - The network ssid to connect to
 // //    key - The network key
-// RaspberryPiNetworkManager.prototype.forgetAWifiNetwork = function (ssid, key, callback) {
+// RaspberryPiNetworkManager.prototype.disconnectFromNetwork = function (ssid, key, callback) {
 //     // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
 //     this._forgetWifi(ssid, key, callback);
 // };

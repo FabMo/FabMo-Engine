@@ -6,6 +6,25 @@ const tmp = require("tmp");
 //  ... many functions unused and historic
 // In use ==> * th 6/2024
 class commands {
+    // // Get Wifi IP address of specific SSID * th 6/2024
+    // static getWifiIp(ssid, callback) {
+    //     exec(`nmcli -t -f NAME,DEVICE,IP4.ADDRESS connection show | grep "${ssid}"`, (err, stdout, stderr) => {
+    //         if (err) {
+    //             console.error(`Error getting IP address for WiFi network ${ssid}: ${stderr}`);
+    //             return callback(err);
+    //         }
+    //         const connectionInfo = stdout.trim();
+    //         if (connectionInfo) {
+    //             const ip = connectionInfo.split(":")[2];
+    //             console.log(`IP address for WiFi network ${ssid}: ${ip}`);
+    //             callback(null, ip);
+    //         } else {
+    //             console.error(`No connection found for SSID ${ssid}`);
+    //             callback(new Error(`No connection found for SSID ${ssid}`));
+    //         }
+    //     });
+    // }
+
     // Bring up the interface
     static bringUp(iface, callback) {
         this.executeMonitoringScript("bring_up_profile", iface, callback);
@@ -31,6 +50,18 @@ class commands {
 
     static listNetworks(callback) {
         exec("nmcli device wifi list", callback);
+    }
+
+    // Scan for available networks
+    static scanForNetworks(callback) {
+        exec("nmcli dev wifi rescan", (err, stdout, stderr) => {
+            if (err) {
+                console.error(`Error scanning for WiFi networks: ${stderr}`);
+                return callback(err);
+            }
+            console.log(`WiFi networks scanned: ${stdout}`);
+            callback(null, stdout);
+        });
     }
 
     static executeMonitoringScript(action, profile, callback) {
@@ -86,16 +117,44 @@ class commands {
 
     // Join a WiFi network
     static joinWifiNetwork(ssid, password, callback) {
-        const addConnectionCommand = `nmcli dev wifi connect "${ssid}" password "${password}"`;
-        exec(addConnectionCommand, (err, stdout, stderr) => {
+        // Ensure AP mode is up
+        // this.ensureAPMode((err) => {
+        //     if (err) {
+        //         return callback(err);
+        //     }
+
+        // Scan for available networks
+        this.scanForNetworks((err) => {
             if (err) {
-                console.error(`Error joining WiFi network ${ssid}: ${stderr}`);
                 return callback(err);
             }
-            console.log(`Successfully joined WiFi network ${ssid}: ${stdout}`);
-            callback(null, stdout);
+
+            // Attempt to connect to the specified SSID
+            const addConnectionCommand = `nmcli dev wifi connect "${ssid}" password "${password}" ifname wlan0`;
+            exec(addConnectionCommand, (err, stdout, stderr) => {
+                if (err) {
+                    console.error(`Error joining WiFi network ${ssid}: ${stderr}`);
+                    return callback(err);
+                }
+                console.log(`Successfully joined WiFi network ${ssid}: ${stdout}`);
+                callback(null, stdout);
+            });
         });
+        // });
     }
+
+    // // Join a WiFi network
+    // static joinWifiNetwork(ssid, password, callback) {
+    //     const addConnectionCommand = `nmcli dev wifi connect "${ssid}" password "${password}"`;
+    //     exec(addConnectionCommand, (err, stdout, stderr) => {
+    //         if (err) {
+    //             console.error(`Error joining WiFi network ${ssid}: ${stderr}`);
+    //             return callback(err);
+    //         }
+    //         console.log(`Successfully joined WiFi network ${ssid}: ${stdout}`);
+    //         callback(null, stdout);
+    //     });
+    // }
 
     // Forget a WiFi network
     static forgetWifiNetwork(ssid, callback) {
