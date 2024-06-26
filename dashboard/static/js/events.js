@@ -270,8 +270,10 @@ window.addEventListener('message', function(event) {
     //console.log('Received key: ' + event.data.key);
     // Check the origin of the message
     //    if (event.origin !== 'http://example.com') return;
-    // Process the event.detail.keys
     handleKeyEvent(event.data.key);
+    if (event.data === "refresh-iframes") {
+        location.reload();
+    }   
     //console.log('origin >> ' + event.origin);
 
 });

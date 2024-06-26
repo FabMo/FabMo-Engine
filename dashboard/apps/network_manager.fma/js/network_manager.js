@@ -12,11 +12,25 @@ var network_history = {};
 // Get networks from the tool, and add entries to the table
 function refreshWifiTable(callback){
 	callback = callback || function() {};
-	fabmo.getWifiNetworks(function(err, networks) {
-		if(err) {return callback(err);}
-		addWifiEntries(networks);
-		callback(null, networks);
-	});
+    // Check if wifi is active and if not then clear networks variable and return an empty table 
+    if ($('#wifi-mode-button').hasClass('active')) {
+        if(err) {
+            fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
+            networks = {};
+            return;
+        } else {
+            if(state === 'inactive') {
+                networks = {};
+                return;
+            }
+        }
+    } else {    
+        fabmo.getWifiNetworks(function(err, networks) {
+            if(err) {return callback(err);}
+            addWifiEntries(networks);
+            callback(null, networks);
+        });
+    }
 }
 
 function addWifiEntries(network_entries, callback) {
@@ -149,6 +163,7 @@ function confirm(options){
     $('#confirm-modal').foundation('reveal', 'open');
 }
 
+
 // Prompt for a password with a modal dialog
 let passphrase = '';
 function requestPassword(ssid, callback){
@@ -251,7 +266,27 @@ $(document).ready(function() {
                     console.log(data);
                     // Parse the IP address from a longer "data.ip" string. Remove everything up to and including the first ":" and then trim the result for the variable "address" 
                     var address = data.ip.replace(/.*:/, "").trim();
-                    fabmo.showModal({message:"Successfully connected!\nAccess your tool on Wifi network: " + name + " at IP: " + address});
+                    //fabmo.showModal({message:"Successfully connected!<br>Access your tool on Wifi network: " + name + " at IP: " + address});
+                    fabmo.hideModal();
+                    confirm({
+                        title : "Successfully connected!",
+                        description : "Access your tool on Wifi network: " + name + " at IP: " + address,
+                        ok_message : "OK",
+                        //cancel_message : "Cancel",
+                        ok : function() {
+                            // if(err) {
+                            //     fabmo.notify('error', err);
+                            // }
+                            // wait 3 seconds then refresh history
+                            setTimeout(function() {
+                                console.log('Refreshing tables and iframe');
+                                refreshHistoryTable();
+                                window.parent.postMessage("refresh-iframes");
+                            }, 3000); // Added missing duration for setTimeou
+                        }
+                    });
+        
+
                 }
             });
         });
@@ -269,14 +304,12 @@ $(document).ready(function() {
     // Display generic browser info message for buttons not yet functional
     $('tbody').on('click', 'td.not-implemented', function(evt) {
         var name = evt.target.textContent;
-        console.log(name);
         if (name === 'eth0') {
             fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool."});
         } else if (name === 'wlan0') {
-        // Retrieve the SSID from the third column in the same row; pretty ugly but it works
+            // Retrieve the SSID from the third column in the same row; pretty ugly but it works
             var ssid = $(evt.target).closest('tr').find('td').eq(2).text();
             ssid = ssid.replace("Wifi Network: ", "").trim();
-            console.log("SSID to disconnect:", ssid); // For debugging purposes
             confirm({
                 title : "Disconnect and forget this Wifi Interface ?",
                 description : "Network display will refresh shortly.",
@@ -287,13 +320,12 @@ $(document).ready(function() {
                         if(err) {
                             fabmo.notify('error', err);
                         }
-                        // wait 10 seconds then refresh history and wifi table
+                        // wait 3 seconds then refresh history
                         setTimeout(function() {
-                            refreshApps();
+                            console.log('Refreshing tables and iframe');
                             refreshHistoryTable();
-                            refreshWifiTable();
-                            iframe.contentWindow.location.reload()
-                        }, 10000);
+                            window.parent.postMessage("refresh-iframes");
+                        },3000);
                     });
                 }, 
                 cancel : function() {
@@ -301,17 +333,17 @@ $(document).ready(function() {
                 }
             });
         } else if (name === 'wlan0_ap') {
-            fabmo.showModal({message:"Feature coming soon."});  
+            $('#ap-mode-button').trigger('click');  
         }
-        // fabmo.showModal({message:"Feature coming soon."});
     });
 
     // Pick up closing of the modal message
     $('fabmo.modalOkay').on('click', function () {
         //fabmo.on('modal:close', function() {
-        window.location.reload();
-        refreshApps();
+        //window.location.reload();
+        //refreshApps();
         refreshHistoryTable();
+        window.parent.postMessage("refresh-iframes");
     });
 
     // Toggle Action for clicking the AP mode button
@@ -330,10 +362,10 @@ $(document).ready(function() {
                         }
                         // wait 10 seconds then refresh history and wifi table
                         setTimeout(function() {
-                            refreshApps();
+                            //refreshApps();
                             refreshHistoryTable();
-                            refreshWifiTable();
-                            iframe.contentWindow.location.reload()
+                            //refreshWifiTable();
+                            window.parent.postMessage("refresh-iframes");
                         }, 10000);
                     });
                 }, 
@@ -354,10 +386,10 @@ $(document).ready(function() {
                         }
                         // wait 10 seconds then refresh history and wifi table
                         setTimeout(function() {
-                            refreshApps();
+                            //refreshApps();
                             refreshHistoryTable();
-                            refreshWifiTable();
-                            iframe.contentWindow.location.reload()
+                            //refreshWifiTable();
+                            window.parent.postMessage("refresh-iframes");
                         }, 10000);
                     });
                 }, 
@@ -382,13 +414,13 @@ $(document).ready(function() {
                         if(err) {
                             fabmo.notify('error', err);
                         }
-                        // wait 10 seconds then refresh history and wifi table
+                        // wait 3 seconds then refresh history and wifi table
                         setTimeout(function() {
-                            refreshApps();
+                            //refreshApps();
                             refreshHistoryTable();
                             refreshWifiTable();
-                            iframe.contentWindow.location.reload()
-                        }, 10000);
+                            window.parent.postMessage("refresh-iframes");
+                        }, 3000);
                     });
                 }, 
                 cancel : function() {
@@ -406,13 +438,13 @@ $(document).ready(function() {
                         if(err) {
                             fabmo.notify('error', err);
                         }
-                        // wait 10 seconds then refresh history and wifi table
+                        // wait 3 seconds then refresh history and wifi table
                         setTimeout(function() {
-                            refreshApps();
+                            //refreshApps();
                             refreshHistoryTable();
-                            refreshWifiTable();
-                            iframe.contentWindow.location.reload()
-                        }, 10000);
+                            //refreshWifiTable();
+                            window.parent.postMessage("refresh-iframes");
+                        }, 3000);
                     });
                 }, 
                 cancel : function() {
