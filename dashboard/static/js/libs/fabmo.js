@@ -990,6 +990,10 @@
         this._call("isOnline", null, callback);
     };
 
+    FabMoDashboard.prototype.isWifiOn = function (callback) {
+        this._call("isWifiOn", null, callback);
+    };
+
     FabMoDashboard.prototype.setAcc = function (callback) {
         this._call("setAcc", args, callback);
     };

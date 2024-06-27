@@ -68,6 +68,11 @@ GenericNetworkManager.prototype.isOnline = function (callback) {
     fail(this, callback);
 };
 
+GenericNetworkManager.prototype.isWifiOn = function (callback) {
+    log.warn("Unimplemented: isWiFiOn()");
+    fail(this, callback);
+};
+
 GenericNetworkManager.prototype.getStatus = function (callback) {
     log.warn("Unimplemented: getStatus()");
     fail(this, callback);

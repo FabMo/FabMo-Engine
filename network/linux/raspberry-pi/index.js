@@ -619,6 +619,10 @@ RaspberryPiNetworkManager.prototype.isOnline = function (callback) {
     setImmediate(callback, null, this.mode === "station");
 };
 
+RaspberryPiNetworkManager.prototype.isWifiOn = function (callback) {
+    setImmediate(callback, null, this.mode === "station");
+};
+
 // Take the configuration stored in the network config and apply it to the currently running instance
 // This function returns immediately
 RaspberryPiNetworkManager.prototype.applyNetworkConfig = function () {

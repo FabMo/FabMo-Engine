@@ -40,6 +40,18 @@ disable_wifi_device() {
     /usr/bin/nmcli radio wifi off >> $LOGFILE 2>&1
 }
 
+remove_all_wifi_connections() {
+    log "Removing all saved WiFi connections"
+    /usr/bin/nmcli --fields UUID,TYPE con show | /bin/grep wifi | /usr/bin/awk '{print $1}' | while read -r uuid; do
+        /usr/bin/nmcli con delete uuid "$uuid" >> $LOGFILE 2>&1
+        if [ $? -eq 0 ]; then
+            log "Successfully removed WiFi connection with UUID: $uuid"
+        else
+            log "Failed to remove WiFi connection with UUID: $uuid"
+        fi
+    done
+}
+
 get_current_ip() {
     /usr/sbin/ip addr show $INTERFACE | /bin/grep 'inet ' | /usr/bin/awk '{print $2}' | /usr/bin/cut -d/ -f1
 }

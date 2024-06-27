@@ -3,28 +3,8 @@ const fs = require("fs");
 const tmp = require("tmp");
 
 // Heavily modified to work with the Raspberry Pi 5, Bookworm, and NetworkManager
-//  ... many functions unused and historic
-// In use ==> * th 6/2024
+//  ... some functions unused and historic
 class commands {
-    // // Get Wifi IP address of specific SSID * th 6/2024
-    // static getWifiIp(ssid, callback) {
-    //     exec(`nmcli -t -f NAME,DEVICE,IP4.ADDRESS connection show | grep "${ssid}"`, (err, stdout, stderr) => {
-    //         if (err) {
-    //             console.error(`Error getting IP address for WiFi network ${ssid}: ${stderr}`);
-    //             return callback(err);
-    //         }
-    //         const connectionInfo = stdout.trim();
-    //         if (connectionInfo) {
-    //             const ip = connectionInfo.split(":")[2];
-    //             console.log(`IP address for WiFi network ${ssid}: ${ip}`);
-    //             callback(null, ip);
-    //         } else {
-    //             console.error(`No connection found for SSID ${ssid}`);
-    //             callback(new Error(`No connection found for SSID ${ssid}`));
-    //         }
-    //     });
-    // }
-
     // Bring up the interface
     static bringUp(iface, callback) {
         this.executeMonitoringScript("bring_up_profile", iface, callback);
@@ -78,12 +58,36 @@ class commands {
 
     // Start WiFi by enabling the device and bringing up the profile
     static startWifi(callback) {
-        this.executeMonitoringScript("bring_up_profile", "wifi-connection", callback);
+        // Turn on WiFi radio
+        this.executeMonitoringScript("nmcli radio wifi on", "turn-on-wifi", (err) => {
+            if (err) {
+                return callback(err);
+            }
+            // Then bring up the profile
+            this.executeMonitoringScript("bring_up_profile", "wifi-connection", callback);
+        });
     }
 
     // Stop WiFi by bringing down the profile and disabling the device
     static stopWifi(callback) {
-        this.executeMonitoringScript("bring_down_profile", "wifi-connection", callback);
+        // Bring down the profile
+        this.executeMonitoringScript("bring_down_profile", "wifi-connection", (err) => {
+            if (err) {
+                return callback(err);
+            }
+            // Remove all saved WiFi connections
+            this.executeMonitoringScript(
+                "nmcli --fields UUID,TYPE con show | grep wifi | awk '{print $1}' | xargs -r nmcli con delete uuid",
+                "remove-wifi-connections",
+                (err) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    // Finally, turn off WiFi radio
+                    this.executeMonitoringScript("nmcli radio wifi off", "turn-off-wifi", callback);
+                }
+            );
+        });
     }
 
     // Start AP by starting hostapd and dnsmasq, then bring up the interface
@@ -117,13 +121,8 @@ class commands {
 
     // Join a WiFi network
     static joinWifiNetwork(ssid, password, callback) {
-        // Ensure AP mode is up
-        // this.ensureAPMode((err) => {
-        //     if (err) {
-        //         return callback(err);
-        //     }
-
         // Scan for available networks
+
         this.scanForNetworks((err) => {
             if (err) {
                 return callback(err);
@@ -142,19 +141,6 @@ class commands {
         });
         // });
     }
-
-    // // Join a WiFi network
-    // static joinWifiNetwork(ssid, password, callback) {
-    //     const addConnectionCommand = `nmcli dev wifi connect "${ssid}" password "${password}"`;
-    //     exec(addConnectionCommand, (err, stdout, stderr) => {
-    //         if (err) {
-    //             console.error(`Error joining WiFi network ${ssid}: ${stderr}`);
-    //             return callback(err);
-    //         }
-    //         console.log(`Successfully joined WiFi network ${ssid}: ${stdout}`);
-    //         callback(null, stdout);
-    //     });
-    // }
 
     // Forget a WiFi network
     static forgetWifiNetwork(ssid, callback) {
@@ -184,83 +170,85 @@ class commands {
         });
     }
 
-    // Simplified function for making use of ifconfig command line tool.
-    static ifconfig(iface, addressType, address, callback) {
-        exec(`nmcli connection modify ${iface} ${addressType} ${address}`, callback);
-    }
+    //
 
-    // Simplified interface to iptables.
-    static iptables(iface, flagString, callback) {
-        var command = `iptables -o ${iface} ${flagString}`;
-        exec(command, callback);
-    }
+    // // Simplified function for making use of ifconfig command line tool.
+    // static ifconfig(iface, addressType, address, callback) {
+    //     exec(`nmcli connection modify ${iface} ${addressType} ${address}`, callback);
+    // }
 
-    // Function for making hostapd available to nodejs.  Has basic options
-    // for the AP, but also allows for pass-in configuration parameters.
-    static hostapd(options, callback) {
-        var commands = [];
+    // // Simplified interface to iptables.
+    // static iptables(iface, flagString, callback) {
+    //     var command = `iptables -o ${iface} ${flagString}`;
+    //     exec(command, callback);
+    // }
 
-        // Known good options for the Raspberry PI 3.
-        var defaultOptions = {
-            driver: "nl80211",
-            channel: 6,
-            hw_mode: "g",
-            interface: "wlan0_ap",
-            ssid: "fa3mo",
-        };
+    // // Function for making hostapd available to nodejs.  Has basic options
+    // // for the AP, but also allows for pass-in configuration parameters.
+    // static hostapd(options, callback) {
+    //     var commands = [];
 
-        var finalOptions = Object.assign(defaultOptions, options);
-        if (options.password) {
-            finalOptions.wpa_passphrase = finalOptions.password;
-            delete finalOptions.password;
-        }
+    //     // Known good options for the Raspberry PI 3.
+    //     var defaultOptions = {
+    //         driver: "nl80211",
+    //         channel: 6,
+    //         hw_mode: "g",
+    //         interface: "wlan0_ap",
+    //         ssid: "fa3mo",
+    //     };
 
-        Object.getOwnPropertyNames(finalOptions).forEach(function (key) {
-            commands.push(key + "=" + finalOptions[key]);
-        });
+    //     var finalOptions = Object.assign(defaultOptions, options);
+    //     if (options.password) {
+    //         finalOptions.wpa_passphrase = finalOptions.password;
+    //         delete finalOptions.password;
+    //     }
 
-        // The tmp package does nice things for you, like creating a tmp file in the proper
-        // location and making sure its deleted after the fact.  Hostapd really wants to
-        // take its configurations as a file.  So we shove all the options into one and
-        // pass it along.
-        tmp.file((err, path, fd) => {
-            if (err) throw err;
+    //     Object.getOwnPropertyNames(finalOptions).forEach(function (key) {
+    //         commands.push(key + "=" + finalOptions[key]);
+    //     });
 
-            // In case you want to look at the config file:
-            console.log("File: ", path);
+    //     // The tmp package does nice things for you, like creating a tmp file in the proper
+    //     // location and making sure its deleted after the fact.  Hostapd really wants to
+    //     // take its configurations as a file.  So we shove all the options into one and
+    //     // pass it along.
+    //     tmp.file((err, path, fd) => {
+    //         if (err) throw err;
 
-            // We then write in the configurations...
-            fs.write(fd, commands.join("\n"), function (err) {
-                if (err) {
-                    console.log(err);
-                }
-            });
+    //         // In case you want to look at the config file:
+    //         console.log("File: ", path);
 
-            console.log("Commands being executed: ", commands);
+    //         // We then write in the configurations...
+    //         fs.write(fd, commands.join("\n"), function (err) {
+    //             if (err) {
+    //                 console.log(err);
+    //             }
+    //         });
 
-            // Then execute the hostapd with the file and boom - AP should be started.
-            exec(`hostapd ${path}`, (err, stdout, stderr) => {
-                if (err) {
-                    console.error(`Error starting hostapd: ${stderr}`);
-                    if (callback) callback(err);
-                } else {
-                    console.log(`hostapd started: ${stdout}`);
-                    if (callback) callback(null, stdout);
-                }
-            });
-        });
-    }
+    //         console.log("Commands being executed: ", commands);
 
-    // Simplified access to dnsmasq - the fellow responsible for handing out IP
-    // addresses to your wifi clients.  This can take commands as parameters
-    // but this function again takes advantage of the file configuration method.
-    static dnsmasq(/*options, callback*/) {
-        // deliberately removed so that os services can manage this based on the rotary switch
-    }
+    //         // Then execute the hostapd with the file and boom - AP should be started.
+    //         exec(`hostapd ${path}`, (err, stdout, stderr) => {
+    //             if (err) {
+    //                 console.error(`Error starting hostapd: ${stderr}`);
+    //                 if (callback) callback(err);
+    //             } else {
+    //                 console.log(`hostapd started: ${stdout}`);
+    //                 if (callback) callback(null, stdout);
+    //             }
+    //         });
+    //     });
+    // }
 
-    static dnsmasqETH(/*options, callback*/) {
-        // deliberately removed so that os services can manage this based on the rotary switch
-    }
+    // // Simplified access to dnsmasq - the fellow responsible for handing out IP
+    // // addresses to your wifi clients.  This can take commands as parameters
+    // // but this function again takes advantage of the file configuration method.
+    // static dnsmasq(/*options, callback*/) {
+    //     // deliberately removed so that os services can manage this based on the rotary switch
+    // }
+
+    // static dnsmasqETH(/*options, callback*/) {
+    //     // deliberately removed so that os services can manage this based on the rotary switch
+    // }
 }
 
 module.exports = commands;

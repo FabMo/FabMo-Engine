@@ -93,49 +93,51 @@ function refreshHistoryTable(callback){
     });
 }
 
+
 // Add history entries (retrieved from the tool) to the HTML table in the UI, hack the wifi ssid
+
 function addHistoryEntries(history_entries, callback) {
     callback = callback || function() {};
-    var table = document.getElementById('history_table');
+    var $table = $('#history_table');
+    // Clear existing table rows, except for the header if it exists
+    $table.find('tr:gt(0)').remove(); // Assuming the first row is a header
+
     $('#ap-mode-button').removeClass('active'); // clear the AP mode flag by default
     $('#wifi-mode-button').removeClass('active'); // clear the wifi mode flag by default
 
-    Object.keys(history_entries).forEach(function (entry) {
-        var row = table.insertRow(table.rows.length);
-        var interface = row.insertCell(0);
-        interface.className = 'interface not-implemented noselect'
-        var ipaddress = row.insertCell(1);
-        ipaddress.className = 'ipaddress'
-        var intinfo = row.insertCell(2);
-        intinfo.className = 'intinfo'
-
-
+    Object.keys(history_entries).forEach(function(entry) {
+        var $row = $('<tr></tr>');
         var interfaceText = entry || '';
         var ipAddressText = history_entries[entry] || '';
         var intInfoText = '';
+
         if (interfaceText === 'eth0') {
             intInfoText = 'Ethernet: a LAN or direct PC connection';
         } else if (interfaceText === 'wlan0_ap') {
             intInfoText = 'Access Point (AP mode) ACTIVE';
             $('#ap-mode-button').addClass('active');
         } else if (interfaceText === 'wlan0') {
-            // if there is a comma in the history_entries[entry] string, return the right hand portion
             $('#wifi-mode-button').addClass('active');
             if (history_entries[entry].includes(',')) {
                 ipAddressText = history_entries[entry].split(',')[0];
                 intInfoText = 'Wifi Network: ' + history_entries[entry].split(',')[1];
             } else {
-                intInfoText = 'Wifi: Network' + "unknown";
+                intInfoText = 'Wifi: Network unknown';
             }
         } else {
             intInfoText = 'Unknown';
         }
 
-        interface.innerHTML = interfaceText;
-        ipaddress.innerHTML = ipAddressText;
-        intinfo.innerHTML = intInfoText;
+        $row.append($('<td></td>').addClass('interface con-int noselect').html(interfaceText));
+        $row.append($('<td></td>').addClass('ipaddress').html(ipAddressText));
+        $row.append($('<td></td>').addClass('intinfo').html(intInfoText));
+
+        $table.append($row);
     });
+
+    callback(null); // Callback with no error
 }
+
 
 // Show the confirmation dialog
 function confirm(options){
@@ -238,7 +240,7 @@ $(document).ready(function() {
             fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
             return;
         }
-        setInterval(refreshWifiTable, 3000);
+        setInterval(refreshWifiTable, 5000);
     });
 
     refreshHistoryTable(function(err, data) {
@@ -246,10 +248,10 @@ $(document).ready(function() {
             fabmo.notify('error',"failed to retrieve interface history. Network management may not be available on your tool.");
             return;
         }
-        setInterval(refreshWifiTable, 5000);
+        setInterval(refreshHistoryTable, 5000);
     });
 
-    // Action for clicking the SSID
+    // Action for clicking the Wifi SSID to establish a connection
     $('tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
         requestPassword(name, function(passwd){
@@ -281,8 +283,8 @@ $(document).ready(function() {
                             setTimeout(function() {
                                 console.log('Refreshing tables and iframe');
                                 refreshHistoryTable();
-                                window.parent.postMessage("refresh-iframes");
-                            }, 3000); // Added missing duration for setTimeou
+                                //window.parent.postMessage("refresh-iframes");
+                            }, 3000); 
                         }
                     });
         
@@ -302,7 +304,7 @@ $(document).ready(function() {
     });
 
     // Display generic browser info message for buttons not yet functional
-    $('tbody').on('click', 'td.not-implemented', function(evt) {
+    $('tbody').on('click', 'td.con-int', function(evt) {
         var name = evt.target.textContent;
         if (name === 'eth0') {
             fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool."});
@@ -312,7 +314,7 @@ $(document).ready(function() {
             ssid = ssid.replace("Wifi Network: ", "").trim();
             confirm({
                 title : "Disconnect and forget this Wifi Interface ?",
-                description : "Network display will refresh shortly.",
+                description : "",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {
@@ -320,12 +322,11 @@ $(document).ready(function() {
                         if(err) {
                             fabmo.notify('error', err);
                         }
-                        // wait 3 seconds then refresh history
                         setTimeout(function() {
                             console.log('Refreshing tables and iframe');
                             refreshHistoryTable();
-                            window.parent.postMessage("refresh-iframes");
-                        },3000);
+                            //window.parent.postMessage("refresh-iframes");
+                        },5000); // wait 5 sec
                     });
                 }, 
                 cancel : function() {
@@ -333,7 +334,7 @@ $(document).ready(function() {
                 }
             });
         } else if (name === 'wlan0_ap') {
-            $('#ap-mode-button').trigger('click');  
+            $('#ap-mode-button').trigger('click');  // use AP mode toggle
         }
     });
 
@@ -352,7 +353,7 @@ $(document).ready(function() {
         if ($('#ap-mode-button').hasClass('active')) {
             confirm({
                 title : "Turn Off AP (Access Point) Mode ?",
-                description : "Network display will refresh shortly.",
+                description : "",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {
@@ -360,13 +361,13 @@ $(document).ready(function() {
                         if(err) {
                             fabmo.notify('error', err);
                         }
-                        // wait 10 seconds then refresh history and wifi table
+                        // wait 1 seconds then refresh history and wifi table
                         setTimeout(function() {
                             //refreshApps();
                             refreshHistoryTable();
                             //refreshWifiTable();
                             window.parent.postMessage("refresh-iframes");
-                        }, 10000);
+                        }, 1000);
                     });
                 }, 
                 cancel : function() {
@@ -376,7 +377,7 @@ $(document).ready(function() {
         } else {
             confirm({
                 title : "Start AP (Access Point) Mode ?",
-                description : "Network display will refresh shortly.",
+                description : "",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {
@@ -384,13 +385,13 @@ $(document).ready(function() {
                         if(err) {
                             fabmo.notify('error', err);
                         }
-                        // wait 10 seconds then refresh history and wifi table
+                        // wait 1 seconds then refresh history and wifi table
                         setTimeout(function() {
                             //refreshApps();
                             refreshHistoryTable();
                             //refreshWifiTable();
                             window.parent.postMessage("refresh-iframes");
-                        }, 10000);
+                        }, 1000);
                     });
                 }, 
                 cancel : function() {
@@ -406,7 +407,7 @@ $(document).ready(function() {
         if ($('#wifi-mode-button').hasClass('active')) {
             confirm({
                 title : "Turn Off Wifi ?",
-                description : "Also turns off AP Mode. Network display will refresh shortly.",
+                description : "This action also turns off AP Mode and display of the IP address as part of its name.",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {
@@ -414,13 +415,11 @@ $(document).ready(function() {
                         if(err) {
                             fabmo.notify('error', err);
                         }
-                        // wait 3 seconds then refresh history and wifi table
                         setTimeout(function() {
-                            //refreshApps();
                             refreshHistoryTable();
                             refreshWifiTable();
                             window.parent.postMessage("refresh-iframes");
-                        }, 3000);
+                        }, 5000); // wait 5 sec
                     });
                 }, 
                 cancel : function() {
@@ -430,7 +429,7 @@ $(document).ready(function() {
         } else {
             confirm({
                 title : "Turn On Wifi ?",
-                description : "Network display will refresh shortly.",
+                description : "",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {

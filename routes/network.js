@@ -319,6 +319,18 @@ var isOnline = function (req, res, next) {
     });
 };
 
+// Return true if the wifi is ON, false otherwise
+// eslint-disable-next-line no-unused-vars
+var isWifiOn = function (req, res, next) {
+    var network = require("../engine").networkManager;
+    network.isWifiOn(function (err, wifion) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        return res.json({ status: "success", data: { wifion: wifion } });
+    });
+};
+
 // Get network status (???)
 // TODO : What actually is the network status
 // eslint-disable-next-line no-unused-vars
@@ -401,6 +413,7 @@ module.exports = function (server) {
     server.get("/network/identity", getNetworkIdentity);
     server.post("/network/identity", setNetworkIdentity);
     server.get("/network/online", isOnline);
+    server.get("/network/wifi/on", isWifiOn);
     server.post("/network/ethernet/config", setEthernetConfig);
     server.post("/network/wifi/config", setWifiConfig);
     server.get("/network/ethernet/config", getEthernetConfig);

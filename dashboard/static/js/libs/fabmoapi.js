@@ -559,6 +559,10 @@
         this._get("/network/online", callback, callback, "online");
     };
 
+    FabMoAPI.prototype.isWifiOn = function (callback) {
+        this._get("/network/wifion", callback, callback, "wifion");
+    };
+
     FabMoAPI.prototype.getWifiNetworks = function (callback) {
         this._get("/network/wifi/scan", callback, callback, "wifi");
     };

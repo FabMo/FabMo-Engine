@@ -910,6 +910,15 @@ define(function (require) {
         );
 
         this._registerHandler(
+            "isWifiOn",
+            function (data, callback) {
+                this.engine.isWifiOn(function (err, result) {
+                    callback(err, result);
+                });
+            }.bind(this)
+        );
+
+        this._registerHandler(
             "setNetworkIdentity",
             function (data, callback) {
                 this.engine.setNetworkIdentity(
