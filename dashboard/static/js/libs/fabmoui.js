@@ -280,15 +280,16 @@ const { last } = require("underscore");
             }
         });
 
-        // Update big DRO Speed Display (Feedrate and Override)
-        var speed = 0;
-        speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
-        $("#fr-inp").val(speed);
-        if (status.unit === "mm") {
-            $(".feedrate-unit").text("mm/sec");
-        } else {
-            $(".feedrate-unit").text("in/sec");
-        }
+        //#### Need to figure out how to get meaningful speeds in different situations, sbp, gcode, at-rest, in-file
+        // // Update big DRO Speed Display (Feedrate and Override)
+        // var speed = 0;
+        // speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
+        // $("#fr-inp").val(speed);
+        // if (status.unit === "mm") {
+        //     $(".feedrate-unit").text("mm/sec");
+        // } else {
+        //     $(".feedrate-unit").text("in/sec");
+        // }
 
         var cur_req_fro = 100;
         // Feed rate override color displays

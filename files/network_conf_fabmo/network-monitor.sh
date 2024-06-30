@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# LOOKS TO SEE IF THERE IS EITHER A LAN OR DIRECT CONNECTION AVAILABLE AND SWITCHES INTERFACE BETWEEN THE TWO
+# ... Provides secondary nmcli services
+
 INTERFACE="eth0"
 LAN_PROFILE="lan-connection"
 PC_PROFILE="direct-connection"
@@ -9,8 +12,12 @@ LOGFILE="/var/log/network_monitor.log"
 FAIL_COUNT_FILE="/tmp/nm-fail-count"
 LAST_PROFILE=""
 
-log() {
+log_date() {
     /bin/echo "$(/bin/date) - $1" >> $LOGFILE
+}
+
+log() {
+    /bin/echo " - $1" >> $LOGFILE
 }
 
 check_active_profile() {
@@ -86,7 +93,7 @@ monitor_network() {
         STATE=$(/usr/bin/nmcli device status | /bin/grep $INTERFACE | /usr/bin/awk '{print $3}')
         CURRENT_IP=$(get_current_ip)
 
-        log ""
+        log_date "starting network monitor loop ..."
         log "State: $STATE, IP: $CURRENT_IP"
 
         case "$STATE" in
@@ -113,15 +120,8 @@ monitor_network() {
             disconnected|connecting)
                 log "$INTERFACE has disconnected or is trying to connect."
                 log "$INTERFACE is $STATE."
-                if [ -f $FAIL_COUNT_FILE ]; then
-                    FAIL_COUNT=$(cat $FAIL_COUNT_FILE)
-                    FAIL_COUNT=$((FAIL_COUNT + 1))
-                else
-                    FAIL_COUNT=1
-                fi
-                echo $FAIL_COUNT > $FAIL_COUNT_FILE
-                log "Failure count incremented to $FAIL_COUNT"
-                if [ "$FAIL_COUNT" -ge 2 ]; then
+                increment_failure_count
+                                if [ "$FAIL_COUNT" -ge 2 ]; then
                     log "Failure count exceeded. Switching to Direct PC profile."
                     bring_down_profile "$LAN_PROFILE"
                     bring_up_profile "$PC_PROFILE"
@@ -132,6 +132,26 @@ monitor_network() {
                     bring_up_profile "$LAN_PROFILE"
                 fi
                 ;;
+
+            #     if [ -f $FAIL_COUNT_FILE ]; then
+            #         FAIL_COUNT=$(cat $FAIL_COUNT_FILE)
+            #         FAIL_COUNT=$((FAIL_COUNT + 1))
+            #     else
+            #         FAIL_COUNT=1
+            #     fi
+            #     echo $FAIL_COUNT > $FAIL_COUNT_FILE
+            #     log "Failure count incremented to $FAIL_COUNT"
+            #     if [ "$FAIL_COUNT" -ge 2 ]; then
+            #         log "Failure count exceeded. Switching to Direct PC profile."
+            #         bring_down_profile "$LAN_PROFILE"
+            #         bring_up_profile "$PC_PROFILE"
+            #         reset_failure_count
+            #         restart_dnsmasq_if_needed "direct"
+            #     else
+            #         log "Retrying LAN profile."
+            #         bring_up_profile "$LAN_PROFILE"
+            #     fi
+            #     ;;
             unavailable)
                 log "$INTERFACE is $STATE."
                 ;;

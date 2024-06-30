@@ -559,16 +559,16 @@
         this._get("/network/online", callback, callback, "online");
     };
 
-    FabMoAPI.prototype.isWifiOn = function (callback) {
-        this._get("/network/wifion", callback, callback, "wifion");
-    };
-
     FabMoAPI.prototype.getWifiNetworks = function (callback) {
         this._get("/network/wifi/scan", callback, callback, "wifi");
     };
 
     FabMoAPI.prototype.getWifiNetworkHistory = function (callback) {
         this._get("/network/wifi/history", callback, callback, "history");
+    };
+
+    FabMoAPI.prototype.isWifiOn = function (callback) {
+        this._get("/network/wifi/wifion", callback, callback, "wifion");
     };
 
     FabMoAPI.prototype.submitJob = function (job, options, callback) {

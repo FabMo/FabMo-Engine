@@ -892,6 +892,21 @@ define(function (require) {
         );
 
         this._registerHandler(
+            "isWifiOn",
+            function (data, callback) {
+                this.engine.isWifiOn(
+                    function (err, result) {
+                        if (err) {
+                            callback(err);
+                        } else {
+                            callback(null, result);
+                        }
+                    }.bind(this)
+                );
+            }.bind(this)
+        );
+
+        this._registerHandler(
             "getNetworkIdentity",
             function (data, callback) {
                 this.getNetworkIdentity(function (err, result) {
@@ -904,15 +919,6 @@ define(function (require) {
             "isOnline",
             function (data, callback) {
                 this.engine.isOnline(function (err, result) {
-                    callback(err, result);
-                });
-            }.bind(this)
-        );
-
-        this._registerHandler(
-            "isWifiOn",
-            function (data, callback) {
-                this.engine.isWifiOn(function (err, result) {
                     callback(err, result);
                 });
             }.bind(this)

@@ -978,6 +978,10 @@
         this._call("getWifiNetworkHistory", null, callback);
     };
 
+    FabMoDashboard.prototype.isWifiOn = function (callback) {
+        this._call("isWifiOn", null, callback);
+    };
+
     FabMoDashboard.prototype.getNetworkIdentity = function (callback) {
         this._call("getNetworkIdentity", null, callback);
     };
@@ -988,10 +992,6 @@
 
     FabMoDashboard.prototype.isOnline = function (callback) {
         this._call("isOnline", null, callback);
-    };
-
-    FabMoDashboard.prototype.isWifiOn = function (callback) {
-        this._call("isWifiOn", null, callback);
     };
 
     FabMoDashboard.prototype.setAcc = function (callback) {

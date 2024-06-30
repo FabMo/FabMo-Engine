@@ -539,23 +539,35 @@ RaspberryPiNetworkManager.prototype.getWifiHistory = function (callback) {
     callback(null, this.network_history);
 };
 
-// Enter AP mode
-//   callback - Called once the command has been issued (but does not wait for the system to enter AP)
+// Check that radio harware is ON
+RaspberryPiNetworkManager.prototype.isWifiOn = function (callback) {
+    exec("nmcli radio wifi", (error, stdout, stderr) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
+            return callback(error, null);
+        }
+        // a simplistic check; adjust based on actual command output
+        if (stdout.trim() === "enabled") {
+            callback(null, true);
+        } else {
+            callback(null, false);
+        }
+    });
+};
+
+// Enable AP mode
 RaspberryPiNetworkManager.prototype.enableWifiHotspot = function (callback) {
     log.info("Going to turn ON wifi hotspot");
     this._joinAP(callback);
-    //    callback(null);
 };
 
+// Disable AP mode
 RaspberryPiNetworkManager.prototype.disableWifiHotspot = function (callback) {
     log.info("Going to turn off wifi hotspot");
     this._unjoinAP(callback);
-    // this._unjoinAP();
-    // callback(null);
 };
 
 // Get network status
-//   callback - Called with network status or with error if error
 RaspberryPiNetworkManager.prototype.getStatus = function (callback) {
     ifconfig.status(callback);
 };
@@ -616,10 +628,6 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
 // Check to see if this host is online
 //   callback - Called back with the online state, or with error if error
 RaspberryPiNetworkManager.prototype.isOnline = function (callback) {
-    setImmediate(callback, null, this.mode === "station");
-};
-
-RaspberryPiNetworkManager.prototype.isWifiOn = function (callback) {
     setImmediate(callback, null, this.mode === "station");
 };
 

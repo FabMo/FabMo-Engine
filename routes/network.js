@@ -38,40 +38,6 @@ var scan = function (req, res, next) {
     });
 };
 
-// // Connect to the wifi network specified in the request body  *
-// // eslint-disable-next-line no-unused-vars
-// var connectWifi = function (req, res, next) {
-//     var ssid = req.params.ssid;
-//     var key = req.params.key;
-//     if (ssid) {
-//         network.joinWifiNetwork(ssid, key, function (err, data) {
-//             if (err) {
-//                 log.error(err);
-//                 res.json({ status: "error", message: err });
-//             } else {
-//                 // Assuming getWifiIP is an asynchronous function
-//                 network.getWifiIp(ssid, function (ipErr, ipAddress) {
-//                     if (ipErr) {
-//                         // Handle error, maybe IP couldn't be retrieved
-//                         log.error(ipErr);
-//                         res.json({ status: "success", data: { wifi: data, ip: "Unavailable" } });
-//                     } else {
-//                         // Include the IP address in the response
-//                         res.json({ status: "success", data: { wifi: data, ip: ipAddress } });
-//                     }
-//                 });
-//             }
-
-//             // } else {
-//             //     res.json({ status: "success", data: { wifi: data } });
-//             // }
-//         });
-//     } else {
-//         log.error("Not joining a network because no SSID provided.");
-//         res.json({ status: "error", message: "No SSID provided" });
-//     }
-// };
-
 // Connect to the wifi network specified in the request body
 // eslint-disable-next-line no-unused-vars
 var connectWifi = function (req, res, next) {
@@ -307,6 +273,22 @@ var getWifiHistory = function (req, res, next) {
     });
 };
 
+// Return true if the wifi is ON, false otherwise
+// eslint-disable-next-line no-unused-vars
+var isWifiOn = function (req, res, next) {
+    var network = require("../engine").networkManager;
+    var wifion = require("../engine").networkManager;
+    network.isWifiOn(function (err, data) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({
+            status: "success",
+            data: { wifion: data },
+        });
+    });
+};
+
 // Return true if this machine can see the internet, false otherwise
 // eslint-disable-next-line no-unused-vars
 var isOnline = function (req, res, next) {
@@ -316,18 +298,6 @@ var isOnline = function (req, res, next) {
             return res.json({ status: "error", message: err.message });
         }
         return res.json({ status: "success", data: { online: online } });
-    });
-};
-
-// Return true if the wifi is ON, false otherwise
-// eslint-disable-next-line no-unused-vars
-var isWifiOn = function (req, res, next) {
-    var network = require("../engine").networkManager;
-    network.isWifiOn(function (err, wifion) {
-        if (err) {
-            return res.json({ status: "error", message: err.message });
-        }
-        return res.json({ status: "success", data: { wifion: wifion } });
     });
 };
 
@@ -410,10 +380,10 @@ module.exports = function (server) {
     server.post("/network/wifi/connect", connectWifi);
     server.post("/network/wifi/disconnect", disconnectFromWifi);
     server.get("/network/wifi/history", getWifiHistory);
+    server.get("/network/wifi/wifion", isWifiOn);
     server.get("/network/identity", getNetworkIdentity);
     server.post("/network/identity", setNetworkIdentity);
     server.get("/network/online", isOnline);
-    server.get("/network/wifi/on", isWifiOn);
     server.post("/network/ethernet/config", setEthernetConfig);
     server.post("/network/wifi/config", setWifiConfig);
     server.get("/network/ethernet/config", getEthernetConfig);

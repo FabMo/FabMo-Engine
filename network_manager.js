@@ -58,6 +58,11 @@ GenericNetworkManager.prototype.getWifiHistory = function (callback) {
     fail(this, callback);
 };
 
+GenericNetworkManager.prototype.isWifiOn = function (callback) {
+    log.warn("Unimplemented: isWifiOn()");
+    fail(this, callback);
+};
+
 GenericNetworkManager.prototype.setIdentity = function (identity, callback) {
     log.warn("Unimplemented: setIdentity(" + JSON.stringify(identity) + ")");
     fail(this, callback);
@@ -65,11 +70,6 @@ GenericNetworkManager.prototype.setIdentity = function (identity, callback) {
 
 GenericNetworkManager.prototype.isOnline = function (callback) {
     log.warn("Unimplemented: isOnline()");
-    fail(this, callback);
-};
-
-GenericNetworkManager.prototype.isWifiOn = function (callback) {
-    log.warn("Unimplemented: isWiFiOn()");
     fail(this, callback);
 };
 
