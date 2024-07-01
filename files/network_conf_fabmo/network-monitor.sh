@@ -133,25 +133,6 @@ monitor_network() {
                 fi
                 ;;
 
-            #     if [ -f $FAIL_COUNT_FILE ]; then
-            #         FAIL_COUNT=$(cat $FAIL_COUNT_FILE)
-            #         FAIL_COUNT=$((FAIL_COUNT + 1))
-            #     else
-            #         FAIL_COUNT=1
-            #     fi
-            #     echo $FAIL_COUNT > $FAIL_COUNT_FILE
-            #     log "Failure count incremented to $FAIL_COUNT"
-            #     if [ "$FAIL_COUNT" -ge 2 ]; then
-            #         log "Failure count exceeded. Switching to Direct PC profile."
-            #         bring_down_profile "$LAN_PROFILE"
-            #         bring_up_profile "$PC_PROFILE"
-            #         reset_failure_count
-            #         restart_dnsmasq_if_needed "direct"
-            #     else
-            #         log "Retrying LAN profile."
-            #         bring_up_profile "$LAN_PROFILE"
-            #     fi
-            #     ;;
             unavailable)
                 log "$INTERFACE is $STATE."
                 ;;

@@ -238,14 +238,6 @@ $(document).ready(function() {
         setInterval(refreshWifiTable, 5000);
     });
 
-    // refreshHistoryTable(function(err, data) {
-    //     if(err){
-    //         fabmo.notify('error',"failed to retrieve interface history. Network management may not be available on your tool.");
-    //         return;
-    //     }
-    //     setInterval(refreshHistoryTable, 5000);
-    // });
-
     // Action for clicking the Wifi SSID to establish a connection
     $('tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
@@ -329,11 +321,8 @@ $(document).ready(function() {
 
     // Pick up closing of the modal message
     $('fabmo.modalOkay').on('click', function () {
-        //fabmo.on('modal:close', function() {
-        //window.location.reload();
-        //refreshApps();
         refreshHistoryTable();
-        window.parent.postMessage("refresh-iframes");
+        window.parent.postMessage("refresh-iframes");  // needed?
     });
 
     // Toggle Action for clicking the AP mode button
@@ -352,8 +341,6 @@ $(document).ready(function() {
                         }
                         // wait 1 seconds then refresh history and wifi table
                         setTimeout(function() {
-                            //refreshApps();
-                            //refreshHistoryTable();
                             refreshWifiTable();
                             window.parent.postMessage("refresh-iframes");
                         }, 1000);
@@ -376,8 +363,6 @@ $(document).ready(function() {
                         }
                         // wait 1 seconds then refresh history and wifi table
                         setTimeout(function() {
-                            //refreshApps();
-                            //refreshHistoryTable();
                             refreshWifiTable();
                             window.parent.postMessage("refresh-iframes");
                         }, 1000);
@@ -428,9 +413,7 @@ $(document).ready(function() {
                         }
                         // wait 3 seconds then refresh history and wifi table
                         setTimeout(function() {
-                            //refreshApps();
                             refreshHistoryTable();
-                            //refreshWifiTable();
                             window.parent.postMessage("refresh-iframes");
                         }, 3000);
                     });
