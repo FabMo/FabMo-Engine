@@ -8,11 +8,26 @@ var log = require("../log").logger("network");
 var config = require("../config");
 var util = require("../util");
 
+var LOGFILE = "/var/log/network_monitor.log";
+var fs = require("fs");
+var network = require("../engine").networkManager;
+
+// Function to read the latest log entry
+const readLatestLogEntry = (callback) => {
+    fs.readFile(LOGFILE, "utf8", (err, data) => {
+        if (err) {
+            return callback(err);
+        }
+        const lines = data.trim().split("\n");
+        const lastLine = lines.slice(-1)[0];
+        callback(null, lastLine);
+    });
+};
+
 // Return a list of wifi networks that are currently visible.
 // TODO - This is a bad route name, because retrieving it doesn't actually trigger a scan
 // eslint-disable-next-line no-unused-vars
 var scan = function (req, res, next) {
-    var network = require("../engine").networkManager;
     network.getAvailableWifiNetworks(function (err, data) {
         if (err) {
             log.error(err);
@@ -28,14 +43,23 @@ var scan = function (req, res, next) {
 var connectWifi = function (req, res, next) {
     var ssid = req.params.ssid;
     var key = req.params.key;
-    var network = require("../engine").networkManager;
     if (ssid) {
-        network.connectToAWifiNetwork(ssid, key, function (err, data) {
+        network.joinWifiNetwork(ssid, key, function (err, data) {
             if (err) {
                 log.error(err);
                 res.json({ status: "error", message: err });
             } else {
-                res.json({ status: "success", data: { wifi: data } });
+                // Assuming getWifiIP is an asynchronous function
+                network.getWifiIp(ssid, function (ipErr, ipAddress) {
+                    if (ipErr) {
+                        // Handle error, maybe IP couldn't be retrieved
+                        log.error(ipErr);
+                        res.json({ status: "success", data: { wifi: data, ip: "Unavailable" } });
+                    } else {
+                        // Include the IP address in the response
+                        res.json({ status: "success", data: { wifi: data, ip: ipAddress } });
+                    }
+                });
             }
         });
     } else {
@@ -46,18 +70,18 @@ var connectWifi = function (req, res, next) {
 
 // Disconnect from the current wifi network
 // eslint-disable-next-line no-unused-vars
-var disconnectWifi = function (req, res, next) {
-    var state = req.params.disconnect;
+var disconnectFromWifi = function (req, res, next) {
+    var ssid = req.params.ssid;
     var network = require("../engine").networkManager;
-    if (state === true) {
+    if (ssid) {
         // eslint-disable-next-line no-unused-vars
-        network.disconnectFromAWifiNetwork(function (err, data) {
+        network.forgetWifi(ssid, function (err, data) {
             if (err) {
                 res.json({ status: "error", message: err.message });
             } else {
                 res.json({ status: "success" });
             }
-            res.json({ status: "success" });
+            //        res.json({ status: "success" });
         });
     } else {
         // TODO this could be more informative
@@ -65,25 +89,25 @@ var disconnectWifi = function (req, res, next) {
     }
 };
 
-// Forget the wifi network with the SSID provided in the post body
-// eslint-disable-next-line no-unused-vars
-var forgetWifi = function (req, res, next) {
-    var ssid = req.params.ssid;
-    var network = require("../engine").networkManager;
+// // Forget the wifi network with the SSID provided in the post body *
+// // eslint-disable-next-line no-unused-vars
+// var forgetWifi = function (req, res, next) {
+//     var ssid = req.params.ssid;
+//     var network = require("../engine").networkManager;
 
-    if (ssid) {
-        // eslint-disable-next-line no-unused-vars
-        network.forgetAWifiNetwork(ssid, function (err, data) {
-            if (err) {
-                res.json({ status: "error", message: err.message });
-            } else {
-                res.json({ status: "success" });
-            }
-        });
-    } else {
-        res.json({ status: "error", message: "No SSID provided" });
-    }
-};
+//     if (ssid) {
+//         // eslint-disable-next-line no-unused-vars
+//         network.forgetWifiNetwork(ssid, function (err, data) {
+//             if (err) {
+//                 res.json({ status: "error", message: err.message });
+//             } else {
+//                 res.json({ status: "success" });
+//             }
+//         });
+//     } else {
+//         res.json({ status: "error", message: "No SSID provided" });
+//     }
+// };
 
 // Enable or disable the wifi, depending on the value of the `enabled` attribute in the POST body
 // eslint-disable-next-line no-unused-vars
@@ -113,30 +137,94 @@ var wifiState = function (req, res, next) {
     }
 };
 
+// const hotspotState = (req, res, next) => {
+//     const state = req.body.enabled; // Use req.body for POST data
+
+//     const sendResponse = (err) => {
+//         if (err) {
+//             return res.json({ status: "error", message: err.message });
+//         }
+//         res.json({ status: "success" });
+//     };
+
+//     if (state === true || state === "true") {
+//         network.enableWifiHotspot((err) => {
+//             if (err) {
+//                 return sendResponse(err);
+//             }
+//             // Log the action for the monitoring script
+//             readLatestLogEntry((logErr, lastLog) => {
+//                 if (logErr) {
+//                     console.error("Failed to read log:", logErr);
+//                 } else {
+//                     console.log("Last log entry:", lastLog);
+//                 }
+//                 sendResponse(null);
+//             });
+//         });
+//     } else if (state === false || state === "false") {
+//         network.disableWifiHotspot((err) => {
+//             if (err) {
+//                 return sendResponse(err);
+//             }
+//             // Log the action for the monitoring script
+//             readLatestLogEntry((logErr, lastLog) => {
+//                 if (logErr) {
+//                     console.error("Failed to read log:", logErr);
+//                 } else {
+//                     console.log("Last log entry:", lastLog);
+//                 }
+//                 sendResponse(null);
+//             });
+//         });
+//     } else {
+//         res.json({ status: "error", message: "Invalid state value" });
+//     }
+// };
+
 // Enable or disable AP mode, depending on the value of the `enabled` attribute in the POST body
-// eslint-disable-next-line no-unused-vars
-var hotspotState = function (req, res, next) {
-    var state = req.params.enabled;
-    var network = require("../engine").networkManager;
+const hotspotState = (req, res, next) => {
+    const state = req.body.enabled; // Use req.body for POST data
+
+    const sendResponse = (err) => {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({ status: "success" });
+    };
 
     if (state === true || state === "true") {
-        network.turnWifiHotspotOn(function (err) {
+        network.enableWifiHotspot((err) => {
             if (err) {
-                res.json({ status: "error", message: err.message });
-            } else {
-                res.json({ status: "success" });
+                return sendResponse(err);
             }
+            // Log the action for the monitoring script
+            readLatestLogEntry((logErr, lastLog) => {
+                if (logErr) {
+                    console.error("Failed to read log:", logErr);
+                } else {
+                    console.log("Last log entry:", lastLog);
+                }
+                sendResponse(null);
+            });
         });
     } else if (state === false || state === "false") {
-        network.turnWifiHotspotOff(function (err) {
+        network.disableWifiHotspot((err) => {
             if (err) {
-                res.json({ status: "error", message: err.message });
-            } else {
-                res.json({ status: "success" });
+                return sendResponse(err);
             }
+            // Log the action for the monitoring script
+            readLatestLogEntry((logErr, lastLog) => {
+                if (logErr) {
+                    console.error("Failed to read log:", logErr);
+                } else {
+                    console.log("Last log entry:", lastLog);
+                }
+                sendResponse(null);
+            });
         });
     } else {
-        res.json({ status: "error", message: "wrong POST command sent !" });
+        res.json({ status: "error", message: "Invalid state value" });
     }
 };
 
@@ -181,6 +269,22 @@ var getWifiHistory = function (req, res, next) {
         res.json({
             status: "success",
             data: { history: data },
+        });
+    });
+};
+
+// Return true if the wifi is ON, false otherwise
+// eslint-disable-next-line no-unused-vars
+var isWifiOn = function (req, res, next) {
+    var network = require("../engine").networkManager;
+    var wifion = require("../engine").networkManager;
+    network.isWifiOn(function (err, data) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({
+            status: "success",
+            data: { wifion: data },
         });
     });
 };
@@ -267,14 +371,16 @@ var getWifiConfig = function (req, res, next) {
     });
 };
 
+module.exports = { hotspotState };
+
 module.exports = function (server) {
     server.post("/network/wifi/state", wifiState);
     server.post("/network/hotspot/state", hotspotState);
     server.get("/network/wifi/scan", scan);
     server.post("/network/wifi/connect", connectWifi);
-    server.post("/network/wifi/disconnect", disconnectWifi);
-    server.post("/network/wifi/forget", forgetWifi);
+    server.post("/network/wifi/disconnect", disconnectFromWifi);
     server.get("/network/wifi/history", getWifiHistory);
+    server.get("/network/wifi/wifion", isWifiOn);
     server.get("/network/identity", getNetworkIdentity);
     server.post("/network/identity", setNetworkIdentity);
     server.get("/network/online", isOnline);

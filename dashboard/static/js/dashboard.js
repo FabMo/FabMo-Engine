@@ -773,21 +773,6 @@ define(function (require) {
             "disconnectFromWifi",
             function (data, callback) {
                 this.engine.disconnectFromWifi(
-                    function (err, result) {
-                        if (err) {
-                            callback(err);
-                        } else {
-                            callback(null, result);
-                        }
-                    }.bind(this)
-                );
-            }.bind(this)
-        );
-
-        this._registerHandler(
-            "forgetWifi",
-            function (data, callback) {
-                this.engine.forgetWifi(
                     data.ssid,
                     function (err, result) {
                         if (err) {
@@ -799,6 +784,22 @@ define(function (require) {
                 );
             }.bind(this)
         );
+
+        // this._registerHandler(
+        //     "forgetWifi",
+        //     function (data, callback) {
+        //         this.engine.forgetWifi(
+        //             data.ssid,
+        //             function (err, result) {
+        //                 if (err) {
+        //                     callback(err);
+        //                 } else {
+        //                     callback(null, result);
+        //                 }
+        //             }.bind(this)
+        //         );
+        //     }.bind(this)
+        // );
 
         this._registerHandler(
             "enableWifi",
@@ -879,6 +880,21 @@ define(function (require) {
             "getWifiNetworkHistory",
             function (data, callback) {
                 this.engine.getWifiNetworkHistory(
+                    function (err, result) {
+                        if (err) {
+                            callback(err);
+                        } else {
+                            callback(null, result);
+                        }
+                    }.bind(this)
+                );
+            }.bind(this)
+        );
+
+        this._registerHandler(
+            "isWifiOn",
+            function (data, callback) {
+                this.engine.isWifiOn(
                     function (err, result) {
                         if (err) {
                             callback(err);

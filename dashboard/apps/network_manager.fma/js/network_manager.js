@@ -7,18 +7,42 @@ const { info } = require('toastr');
 var fabmo = new Fabmo;
 
 var networks = {};
+var wifi_state = false;
 var network_history = {};
 
 // Get networks from the tool, and add entries to the table
 function refreshWifiTable(callback){
-	callback = callback || function() {};
-	fabmo.getWifiNetworks(function(err, networks) {
-		if(err) {return callback(err);}
-		addWifiEntries(networks);
-		callback(null, networks);
-	});
+    callback = callback || function() {};
+    // Check if wifi is ON
+    // Check wifi by correctly calling fabmo.isWifiOn() and not by checking the button state
+    // This is because the button state may not be in sync with the actual wifi state
+    fabmo.isWifiOn(function(err, wifion) {
+        if(err) {
+            //fabmo.notify('error',"Failed to retrieve data from tool."); // too annoying a report
+            return callback(err);
+        }
+        if(wifion) {
+            wifi_state = true;
+            $('#wifi-mode-button').html("Wifi /<strong>ON</strong>-off");
+                fabmo.getWifiNetworks(function(err, networks) {
+                if(err) {
+                    fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
+                    return callback(err);
+                }
+                addWifiEntries(networks);
+                callback(null, networks);
+            });
+        } else {
+            networks = {};
+            wifi_state = false;
+            $('#wifi-mode-button').html("Wifi /on-<strong>OFF</strong>");
+            callback(null, {});
+        }
+        refreshHistoryTable();
+    });
 }
 
+// Manage the network table entries and signal strength
 function addWifiEntries(network_entries, callback) {
 	callback = callback || function() {};
 	var table = document.getElementById('wifi_table');
@@ -27,22 +51,20 @@ function addWifiEntries(network_entries, callback) {
             return;
         }
         networks[entry.ssid] = entry;
-
+        // Now parsing the signal strength from nmcli which is in % on a 0-100(strongest) scale: converting to 1-4
         var rawStrength = entry.signalLevel;
-        var strengthNumber;
-
-        if(rawStrength > -45) { 
-            strengthNumber = 4;
-        } else if(rawStrength <= -45 && rawStrength > -55) {
-            strengthNumber = 3;
-        } else if(rawStrength <= -55 && rawStrength > -65) {
-            strengthNumber = 2;
-        } else if(rawStrength <= -65 && rawStrength > -75) {
-            strengthNumber = 1;
-        } else {
+        var strengthNumber = 0;
+        if(rawStrength < 20) { 
             strengthNumber = 0;
+        } else if(rawStrength > 20 && rawStrength < 45) {
+            strengthNumber = 1;
+        } else if(rawStrength > 45 && rawStrength < 65) {
+            strengthNumber = 2;
+        } else if(rawStrength > 65 && rawStrength < 90) {
+            strengthNumber = 3;
+        } else if(rawStrength > 90) {
+            strengthNumber = 4;
         }
-
         // Add to table only if strength is above threshold, strengthNumber
         if (strengthNumber > 1) {
             var row = table.insertRow(table.rows.length);
@@ -52,10 +74,8 @@ function addWifiEntries(network_entries, callback) {
             security.className = 'security noselect';
             var strength = row.insertCell(2);
             strength.className = 'wifi' + strengthNumber;
-
             var ssidText = entry.ssid || '<Hidden SSID>';
             var securityText = entry.flags ? entry.flags : '';
-
             ssid.innerHTML = ssidText;
             security.innerHTML = securityText;
         }
@@ -66,7 +86,7 @@ function addWifiEntries(network_entries, callback) {
 function refreshHistoryTable(callback){
     callback = callback || function() {};
     fabmo.getWifiNetworkHistory(function(err, networks) {
-        console.log(networks);
+        // console.log(networks);
         if(err) {return callback(err);}
         if(Object.keys(networks).length > 0) {	
             addHistoryEntries(networks);            
@@ -81,62 +101,45 @@ function refreshHistoryTable(callback){
 // Add history entries (retrieved from the tool) to the HTML table in the UI, hack the wifi ssid
 function addHistoryEntries(history_entries, callback) {
     callback = callback || function() {};
-    var table = document.getElementById('history_table');
-    Object.keys(history_entries).forEach(function (entry) {
-        var row = table.insertRow(table.rows.length);
-        var interface = row.insertCell(0);
-        interface.className = 'interface not-implemented noselect'
-        var ipaddress = row.insertCell(1);
-        ipaddress.className = 'ipaddress'
-        var intinfo = row.insertCell(2);
-        intinfo.className = 'intinfo'
-
+    var $table = $('#history_table');
+    // Clear existing table rows, except for the header if it exists
+    $table.find('tr:gt(0)').remove(); // Assuming the first row is a header
+    $('#ap-mode-button').removeClass('active'); // clear the AP mode flag by default
+    Object.keys(history_entries).forEach(function(entry) {
+        var $row = $('<tr></tr>');
         var interfaceText = entry || '';
         var ipAddressText = history_entries[entry] || '';
         var intInfoText = '';
+
         if (interfaceText === 'eth0') {
-            intInfoText = 'Ethernet: LAN or direct PC connection';
-        } else if (interfaceText === 'uap0') {
-            intInfoText = 'Access Point (AP)';
-        } else if (interfaceText === 'wlan0') {
-            // if there is a comma in the history_entries[entry] string, return the right hand portion
+            intInfoText = 'Ethernet: a LAN or direct PC connection';
+        }
+        if (interfaceText === 'wlan0_ap') {
+            intInfoText = 'Access Point (AP mode) ACTIVE';
+            $('#ap-mode-button').addClass('active');
+            $('#ap-mode-button').html("AP Mode /<strong>ENABLED</strong>-disabled")
+        } else {
+            $('#ap-mode-button').removeClass('active');
+            $('#ap-mode-button').html("AP Mode /enabled-<strong>DISABLED</strong>")
+        }
+        if (interfaceText === 'wlan0') {
+            $('#wifi-mode-button').addClass('active');
             if (history_entries[entry].includes(',')) {
                 ipAddressText = history_entries[entry].split(',')[0];
-                intInfoText = 'Wireless: ' + history_entries[entry].split(',')[1];
+                intInfoText = 'Wifi Network: ' + history_entries[entry].split(',')[1];
             } else {
-                intInfoText = 'Wireless: ' + "unknown";
+                intInfoText = 'Wifi: Network unknown';
             }
-        } else {
-            intInfoText = 'Unknown';
         }
-
-        interface.innerHTML = interfaceText;
-        ipaddress.innerHTML = ipAddressText;
-        intinfo.innerHTML = intInfoText;
+        $row.append($('<td></td>').addClass('interface con-int noselect').html(interfaceText));
+        $row.append($('<td></td>').addClass('ipaddress').html(ipAddressText));
+        $row.append($('<td></td>').addClass('intinfo').html(intInfoText));
+        $table.append($row);
     });
+
+    callback(null); // Callback with no error
 }
 
-// Confirm, then go to AP mode if requested.
-function enterAPMode(callback) {
-    confirm({
-        title : "Enter AP Mode?",
-        description : "You will lose contact with the dashboard and need to reconnect in Access Point Mode.",
-        ok_message : "Yes",
-        cancel_message : "No",
-        ok : function() {
-            fabmo.enableWifiHotspot(function(err, data) {
-                if(err) {
-                    fabmo.notify('error', err);
-                } else {
-                    fabmo.notify('info', data);
-                }
-            });
-        }, 
-        cancel : function() {
-        	// No action required.
-        }
-    });
-}
 
 // Show the confirmation dialog
 function confirm(options){
@@ -144,7 +147,7 @@ function confirm(options){
     options.cancel = options.cancel || function() {};
 
     $('#confirm-modal-title').text(options.title || '');
-    $('#confirm-modal-description').text(options.description || '');
+    $('#confirm-modal-description').html(options.description || '');
 
     $('#confirm-modal-ok').text(options.ok_message || 'Ok');
     $('#confirm-modal-cancel').text(options.cancel_message || 'Cancel');
@@ -163,6 +166,7 @@ function confirm(options){
            
     $('#confirm-modal').foundation('reveal', 'open');
 }
+
 
 // Prompt for a password with a modal dialog
 let passphrase = '';
@@ -211,17 +215,10 @@ function requestPassword(ssid, callback){
 
     function submit() {
         callback(passphrase);
-    //    callback($('#passphraseInput').val());
-    //  $('#passphraseInput').val('');
       teardown();
       $('#passwd-modal').foundation('reveal', 'close');
-//      $("#passwd-form").trigger('reset');         
     }
-
     $('#btn-connect').one('click', submit);
-    // $('#txt-password').one('click', function() {console.log("only once!")});
-//    $('#txt-password').one('focus', function() {$('#txt-password').attr('type', 'password'); $('#txt-password').attr('name', ssid)});
-
     $('#passwd-modal').bind('closed.fndtn.reveal', function (event) {
       teardown();
     });
@@ -232,24 +229,16 @@ $(document).ready(function() {
     //Foundation Init
     $(document).foundation();
 
-    // Check for new networks initially, and then every 3 seconds
+    // Check for new networks initially, and then every 5 seconds
     refreshWifiTable(function(err, data) {
         if(err){
             fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
             return;
         }
-        setInterval(refreshWifiTable, 3000);
-    });
-
-    refreshHistoryTable(function(err, data) {
-        if(err){
-            fabmo.notify('error',"failed to retrieve interface history. Network management may not be available on your tool.");
-            return;
-        }
         setInterval(refreshWifiTable, 5000);
     });
 
-    // Action for clicking the SSID
+    // Action for clicking the Wifi SSID to establish a connection
     $('tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
         requestPassword(name, function(passwd){
@@ -264,16 +253,23 @@ $(document).ready(function() {
                     fabmo.showModal({message:err});
                 } else {
                     console.log(data);
-                    CUrssid = data.ssid;
-                    fabmo.showModal({message:"Successfully connected! Please go find me on network: " + data.ssid+ " at " + data.ip});
-                    
-                    // How do I pick up the closing of this modal message?
+                    // Remove everything up to and including the first ":" and then trim the result for the variable "address" 
+                    var address = data.ip.replace(/.*:/, "").trim();
+                    fabmo.hideModal();
+                    confirm({
+                        title : "Successfully connected!",
+                        description : "<p>Access your tool on Wifi network:<br> &nbsp&nbsp&nbsp&nbsp" + name + " at IP:  " + address + "<p>",
+                        ok_message : "OK",
+                        ok : function() {
+                            setTimeout(function() {
+                                console.log('Refreshing tables and iframe');
+                                refreshHistoryTable();
+                                //window.parent.postMessage("refresh-iframes");
+                            }, 3000); 
+                        }
+                    });
+        
 
-
-                    // full refresh of this page to get the new ip address to display
-                    // window.location.reload();
-                    // refreshApps();
-                    // refreshHistoryTable();
                 }
             });
         });
@@ -288,25 +284,144 @@ $(document).ready(function() {
         fabmo.showModal({message:"Feature coming soon."});
     });
 
-    // Display generic browser info message for buttons not yet functional
-    $('tbody').on('click', 'td.not-implemented', function() {
-        fabmo.showModal({message:"Feature coming soon."});
+    // Display message for clicks on Interface Entries
+    $('tbody').on('click', 'td.con-int', function(evt) {
+        var name = evt.target.textContent;
+        if (name === 'eth0') {
+            fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool."});
+        } else if (name === 'wlan0') {
+            // Retrieve the SSID from the third column in the same row; pretty ugly but it works
+            var ssid = $(evt.target).closest('tr').find('td').eq(2).text();
+            ssid = ssid.replace("Wifi Network: ", "").trim();
+            confirm({
+                title : "Disconnect and forget this Wifi Interface ?",
+                description : "",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.disconnectFromWifi(ssid, function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        setTimeout(function() {
+                            console.log('Refreshing tables and iframe');
+                            refreshHistoryTable();
+                            //window.parent.postMessage("refresh-iframes");
+                        },5000); // wait 5 sec
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
+                }
+            });
+        } else if (name === 'wlan0_ap') {
+            $('#ap-mode-button').trigger('click');  // use AP mode toggle
+        }
     });
 
     // Pick up closing of the modal message
     $('fabmo.modalOkay').on('click', function () {
-        //fabmo.on('modal:close', function() {
-        window.location.reload();
-        refreshApps();
         refreshHistoryTable();
+        window.parent.postMessage("refresh-iframes");  // needed?
     });
 
-    // Action for clicking the AP mode button
-    // $('#ap-mode-button').on('click', function(evt) {
-    //     enterAPMode();
-    //     evt.preventDefault();
-    //     fabmo.showModal({message:"Your tool is now back in AP mode."});
-    // })
+    // Toggle Action for clicking the AP mode button
+    $('#ap-mode-button').on('click', function(evt) {
+        console.log("-got click on AP");
+        if ($('#ap-mode-button').hasClass('active')) {
+            confirm({
+                title : "Turn Off AP (Access Point) Mode ?",
+                description : "",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.disableWifiHotspot(function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        // wait 1 seconds then refresh history and wifi table
+                        setTimeout(function() {
+                            refreshWifiTable();
+                            window.parent.postMessage("refresh-iframes");
+                        }, 1000);
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
+                }
+            });
+        } else {
+            confirm({
+                title : "Start AP (Access Point) Mode ?",
+                description : "",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.enableWifiHotspot(function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        // wait 1 seconds then refresh history and wifi table
+                        setTimeout(function() {
+                            refreshWifiTable();
+                            window.parent.postMessage("refresh-iframes");
+                        }, 1000);
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
+                }
+            });
+        }
+    })
 
-
-});
+    // Toggle Action for clicking the Wifi mode button
+    $('#wifi-mode-button').on('click', function(evt) {
+        console.log("-got click on wifi");
+        if (wifi_state) { // Wifi is ON
+            confirm({
+                title : "Turn Off Wifi ?",
+                description : "<p>This action also turns off AP Mode and IP address display in the Wifi widget.<br><p>",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.disableWifi(function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        setTimeout(function() {
+                            refreshHistoryTable();
+                            refreshWifiTable();
+                            window.parent.postMessage("refresh-iframes");
+                        }, 5000); // wait 5 sec
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
+                }
+            });
+        } else {
+            confirm({
+                title : "Turn On Wifi ?",
+                description : "",
+                ok_message : "OK",
+                cancel_message : "Cancel",
+                ok : function() {
+                    fabmo.enableWifi(function(err, data) {
+                        if(err) {
+                            fabmo.notify('error', err);
+                        }
+                        // wait 3 seconds then refresh history and wifi table
+                        setTimeout(function() {
+                            refreshHistoryTable();
+                            window.parent.postMessage("refresh-iframes");
+                        }, 3000);
+                    });
+                }, 
+                cancel : function() {
+                	// No action required.
+                }
+            });
+        }
+    })
+})

@@ -946,13 +946,13 @@
         this._call("connectToWifi", { ssid: ssid, key: key }, callback);
     };
 
-    FabMoDashboard.prototype.disconnectFromWifi = function (callback) {
-        this._call("disconnectFromWifi", null, callback);
+    FabMoDashboard.prototype.disconnectFromWifi = function (ssid, callback) {
+        this._call("disconnectFromWifi", { ssid: ssid }, callback);
     };
 
-    FabMoDashboard.prototype.forgetWifi = function (ssid, key, callback) {
-        this._call("forgetWifi", { ssid: ssid }, callback);
-    };
+    // FabMoDashboard.prototype.forgetWifi = function (ssid, key, callback) {
+    //     this._call("forgetWifi", { ssid: ssid }, callback);
+    // };
 
     FabMoDashboard.prototype.enableWifi = function (callback) {
         this._call("enableWifi", null, callback);
@@ -976,6 +976,10 @@
 
     FabMoDashboard.prototype.getWifiNetworkHistory = function (callback) {
         this._call("getWifiNetworkHistory", null, callback);
+    };
+
+    FabMoDashboard.prototype.isWifiOn = function (callback) {
+        this._call("isWifiOn", null, callback);
     };
 
     FabMoDashboard.prototype.getNetworkIdentity = function (callback) {

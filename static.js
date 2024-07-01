@@ -50,8 +50,7 @@ function serveStatic(options) {
     function serveFileFromStats(file, err, stats, isGzip, req, res, next) {
         if (
             typeof req.connectionState === "function" &&
-            (req.connectionState() === "close" ||
-                req.connectionState() === "aborted")
+            (req.connectionState() === "close" || req.connectionState() === "aborted")
         ) {
             next(false);
             return;
@@ -80,8 +79,7 @@ function serveStatic(options) {
             res.set("Last-Modified", stats.mtime);
 
             if (opts.charSet) {
-                var type =
-                    res.getHeader("Content-Type") + "; charset=" + opts.charSet;
+                var type = res.getHeader("Content-Type") + "; charset=" + opts.charSet;
                 res.setHeader("Content-Type", type);
             }
 
@@ -106,15 +104,7 @@ function serveStatic(options) {
                 // Serve an index.html page or similar
                 var filePath = path.join(file, opts.default);
                 fs.stat(filePath, function (dirErr, dirStats) {
-                    serveFileFromStats(
-                        filePath,
-                        dirErr,
-                        dirStats,
-                        false,
-                        req,
-                        res,
-                        next
-                    );
+                    serveFileFromStats(filePath, dirErr, dirStats, false, req, res, next);
                 });
             } else {
                 serveFileFromStats(file, err, stats, false, req, res, next);
@@ -146,24 +136,15 @@ function serveStatic(options) {
             file = path.join(opts.directory, decodeURIComponent(opts.file));
         } else {
             if (opts.appendRequestPath) {
-                file = path.join(
-                    opts.directory,
-                    decodeURIComponent(req.path())
-                );
+                file = path.join(opts.directory, decodeURIComponent(req.path()));
             } else {
                 var dirBasename = path.basename(opts.directory);
                 var reqpathBasename = path.basename(req.path());
 
-                if (
-                    path.extname(req.path()) === "" &&
-                    dirBasename === reqpathBasename
-                ) {
+                if (path.extname(req.path()) === "" && dirBasename === reqpathBasename) {
                     file = opts.directory;
                 } else {
-                    file = path.join(
-                        opts.directory,
-                        decodeURIComponent(path.basename(req.path()))
-                    );
+                    file = path.join(opts.directory, decodeURIComponent(path.basename(req.path())));
                 }
             }
         }

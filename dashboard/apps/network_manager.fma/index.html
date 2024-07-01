@@ -58,21 +58,17 @@
               <!-- <span class="exit-button" id="exit_small">X</span></a> -->
             </li>
         </ul>
-          <section class="top-bar-section">
+            <section class="top-bar-section">
             <ul class="left">
-              <li><a id="eth-mode-button" class="submit-button not-implemented" href="#">Set Connection Type</a></li>
-            </ul>  
-          </section>
-          <section class="top-bar-section">
-            <ul class="left">
-              <li><a id="ap-mode-button" class="submit-button not-implemented" href="#">Toggle AP Mode to OFF</a></li>
+              <li><a id="wifi-mode-button" class="submit-button" title="Toggle Wifi Power" href="#">Wifi /<strong>ON</strong>-OFF</a></li>
+              <li><a id="ap-mode-button" class="submit-button" title="Toggle AP Mode Presence" href="#">AP Mode /<strong>ENABLED</strong>-DISABLED</a></li>
             </ul>  
           </section>
       </nav>
 
-        <h1>Wireless Networks Available<span class="tooltip">i<span class="tooltiptext">
+        <h1>Wifi Networks Available<span class="tooltip">i<span class="tooltiptext">
             Wifi networks available to your tool. 
-            Click on SSID name to set up a wifi interface.</span></span>
+            Click on SSID name to set up a new wifi interface.</span></span>
         </h1>
        
         <div class="table-outer">
@@ -92,7 +88,7 @@
 
             <h1>Connected Interfaces<span class="tooltip">i<span class="tooltiptext">
                 Your tool is connected to each of these interfaces. The favored interface is shown on the mini-screen
-                (if attached). Click on any interface to remove it (coming).</span></span>
+                (if attached). Click on any interface to remove it.</span></span>
             </h1>
 
           <div class="table-outer">
@@ -112,7 +108,7 @@
     </section>
 
   <!-- Javascript inclusions -->
-    <script src="../../static/js/libs/modernizr.js"></script>
+  <!--  <script src="../../static/js/libs/modernizr.js"></script> -->
     <script src="../../network_manager.js"></script>
 
 </body>

@@ -25,13 +25,13 @@ h1 {
 #confirm-modal-title {
   font-size: 150%;
   font-weight: 700;
-  font-style: oblique;
+  /* font-style: oblique; */
   color: #2E3865;
 }
 
 #confirm-modal-description {
   color: black;
-  font-style: italic;
+  /* font-style: italic; */
 }
 
 /* NEXT 2, kludge for some media split */

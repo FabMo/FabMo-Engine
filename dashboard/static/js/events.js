@@ -255,23 +255,25 @@ function handleKeyEvent(key) {
             $frOverride.trigger('change');
             break;
     }
-    console.log('Second Received key: ' + key);
+    //console.log('Second Received key: ' + key);
 }
 // In the main window
 window.addEventListener('keyup', function (event) {
     // Handle the keystroke
-    console.log('First Received key: ' + event.key);
+    //console.log('First Received key: ' + event.key);
     handleKeyEvent(event.key);
 });
 //---------------------------------------------------------------
 
 // Receive parallel events from apps
 window.addEventListener('message', function(event) {
-    console.log('Received key: ' + event.data.key);
+    //console.log('Received key: ' + event.data.key);
     // Check the origin of the message
     //    if (event.origin !== 'http://example.com') return;
-    // Process the event.detail.keys
     handleKeyEvent(event.data.key);
+    if (event.data === "refresh-iframes") {
+        location.reload();
+    }   
     //console.log('origin >> ' + event.origin);
 
 });

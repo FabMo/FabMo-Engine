@@ -1019,6 +1019,7 @@ function setConnectionStrength(level) {
 }
 
 var signal_window = [];
+signal_window = [3, 3, 3, 3, 3]; // preload circular buffer with 4s
 var err_count = 0;
 
 function ping() {

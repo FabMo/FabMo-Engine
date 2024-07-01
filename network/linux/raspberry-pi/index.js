@@ -7,28 +7,27 @@ var child_process = require("child_process");
 var exec = child_process.exec;
 var util = require("util");
 var NetworkManager = require("../../../network_manager").NetworkManager;
-// TODO:  Add networking logging instead of useing console.log
 
 var ifconfig = require("wireless-tools/ifconfig");
 var iwconfig = require("wireless-tools/iwconfig");
-var wpa_cli = require("wireless-tools/wpa_cli");
-var udhcpc = require("wireless-tools/udhcpc");
+//var wpa_cli = require("wireless-tools/wpa_cli");
+//var udhcpc = require("wireless-tools/udhcpc");
 
 const commands = require("./commands.js");
 
-var wifiInterface = "wlan0"; // test assigning wlan1 to wifiInterface ???
-var ethernetInterface = "eth0";
+//var wifiInterface = "wlan0"; // test assigning wlan1 to wifiInterface ???
+//var ethernetInterface = "eth0";
 
 //var last_name = "";
 
 // eslint-disable-next-line no-unused-vars
-var CUR_UAP0_SSID = "";
+// var CUR_UAP0_SSID = "";
 
-var DEFAULT_NETMASK = "255.255.255.0";
-var DEFAULT_BROADCAST = "192.168.1.255";
-// This is how long the system will wait for DHCP before going into "magic mode" (ms)
-var DHCP_MAGIC_TTL = 5000;
-var ETHERNET_SCAN_INTERVAL = 2000;
+// var DEFAULT_NETMASK = "255.255.255.0";
+// var DEFAULT_BROADCAST = "192.168.1.255";
+// // This is how long the system will wait for DHCP before going into "magic mode" (ms)
+// var DHCP_MAGIC_TTL = 5000;
+// var ETHERNET_SCAN_INTERVAL = 2000;
 var NETWORK_HEALTH_RETRIES = 8;
 
 var RaspberryPiNetworkManager = function () {
@@ -52,28 +51,25 @@ RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
     // ... this will be used as the default name for the FabMo
     // ... and will be used (with IP) as the default SSID for the FabMo until set by the user.
     // ... Once defined, it will subsequently be read from the config file.
-    exec(
-        "cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2",
-        function (err, result) {
-            if (err) {
-                var name = { name: "fabmo-?" };
-                // this is an indication of a bad name from config file
-                config.engine.update(name, function () {
-                    callback(name);
-                });
-            } else {
-                ////## Get Serial Number for name and clear out 0's to simplfy; do this here rather than later
-                // At some point, might want to stick to just the first batch of 0's
-                log.debug("At RPI naming from SerialNum - ");
-                result = result.split("0").join("").split("\n").join("").trim();
-                log.debug("modifiedSerial- " + result);
-                name = { name: "FabMo-" + result };
-                config.engine.update(name, function () {
-                    callback(name);
-                });
-            }
+    exec("cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2", function (err, result) {
+        if (err) {
+            var name = { name: "fabmo-?" };
+            // this is an indication of a bad name from config file
+            config.engine.update(name, function () {
+                callback(name);
+            });
+        } else {
+            ////## Get Serial Number for name and clear out 0's to simplfy; do this here rather than later
+            // At some point, might want to stick to just the first batch of 0's
+            log.debug("At RPI naming from SerialNum - ");
+            result = result.split("0").join("").split("\n").join("").trim();
+            log.debug("modifiedSerial- " + result);
+            name = { name: "FabMo-" + result };
+            config.engine.update(name, function () {
+                callback(name);
+            });
         }
-    );
+    });
 };
 
 // return an object containing {ipaddress:'',mode:''}
@@ -93,6 +89,40 @@ RaspberryPiNetworkManager.prototype.getInfo = function (interface, callback) {
     });
 };
 
+// Retun the single IP address for the interface specified by the SSID name
+//   ssid - The SSID name to get the IP address for
+//   callback - Called back with the IP address or error if there was an error
+// RaspberryPiNetworkManager.prototype.getWifiIp = function (ssid, callback) {
+//     // Get the IP address for the interface specified by the SSID name
+//     ifconfig.status("wlan0", function (err, ifstatus) {
+//         if (err) return callback(err);
+//         iwconfig.status("wlan0", function (err, iwstatus) {
+//             if (err) return callback(err);
+//             if (iwstatus.ssid === ssid) {
+//                 callback(null, ifstatus.ipv4_address);
+//             } else {
+//                 callback(null, null);
+//             }
+//         });
+//     });
+// };
+
+RaspberryPiNetworkManager.prototype.getWifiIp = function (ssid, callback) {
+    const getIpCommand = `nmcli -t -f IP4.ADDRESS dev show wlan0`;
+    exec(getIpCommand, (err, stdout, stderr) => {
+        if (err) {
+            console.error(`Error getting IP address: ${stderr}`);
+            return callback(err);
+        }
+        const ipAddress = stdout.trim().split("/")[0]; // Extract the IP address
+        if (ipAddress) {
+            callback(null, ipAddress);
+        } else {
+            callback(new Error("IP address not found"), null);
+        }
+    });
+};
+
 // Return a list of IP addresses (the local IP for all interfaces)
 RaspberryPiNetworkManager.prototype.getLocalAddresses = function () {
     var retval = [];
@@ -104,17 +134,51 @@ RaspberryPiNetworkManager.prototype.getLocalAddresses = function () {
     return retval;
 };
 
+//=========================================================================================
+
 // Get the current "scan results"
 // (A list of wifi networks that are visible to this client)
 //   callback - Called with the network list or with an error if error
 RaspberryPiNetworkManager.prototype.getNetworks = function (callback) {
-    wpa_cli.scan_results(wifiInterface, callback);
+    exec("nmcli -t -f IN-USE,BSSID,SSID,SIGNAL,SECURITY dev wifi", (err, stdout, stderr) => {
+        if (err) {
+            callback(err);
+            return;
+        }
+        const networks = stdout
+            .split("\n")
+            .filter(Boolean)
+            .map((line) => {
+                const match = line.match(/([^:]*):((?:[^:\\]|\\.)*):((?:[^:\\]|\\.)*):([^:]*):(.*)/);
+                if (!match) {
+                    return null;
+                }
+                const [, inUse, bssid, ssid, signal, security] = match;
+                let signalLevel = parseInt(signal, 10);
+                signalLevel = isNaN(signalLevel) ? 0 : signalLevel; // default to 0 if not a number
+                return {
+                    bssid: bssid.replace(/\\/g, ""), // remove backslashes
+                    ssid: ssid.replace(/\\/g, ""),
+                    signalLevel,
+                    flags: security,
+                };
+            })
+            .filter(Boolean); // remove nulls
+
+        callback(null, networks);
+    });
 };
 
 // Intiate a wifi network scan (site survey)
 //   callback - Called when scan is complete (may take a while) or with error if error
 RaspberryPiNetworkManager.prototype.scan = function (callback) {
-    wpa_cli.scan(wifiInterface, callback);
+    exec("nmcli dev wifi rescan", (err, stdout, stderr) => {
+        if (err) {
+            callback(err);
+            return;
+        }
+        callback(null);
+    });
 };
 
 RaspberryPiNetworkManager.prototype.returnWifiNetworks = function () {
@@ -125,6 +189,7 @@ RaspberryPiNetworkManager.prototype.returnWifiNetworks = function () {
                 this.getNetworks(
                     function (err, data) {
                         if (!err) {
+                            this.networks = [];
                             var new_network_names = [];
                             for (var i in data) {
                                 var ssid = data[i].ssid;
@@ -148,44 +213,6 @@ RaspberryPiNetworkManager.prototype.returnWifiNetworks = function () {
     );
 };
 
-// Check SSID of the current uap0 interface; then call final name-check and joinAP if needed
-RaspberryPiNetworkManager.prototype._checkSSID = function (callback) {
-    exec("iw uap0 info | grep ssid", (error, stdout, stderr) => {
-        if (error) {
-            log.error(`Execution error: ${error}`);
-            CUR_UAP0_SSID = "";
-            //                callback(null)
-            //                return;
-        } else if (stderr) {
-            log.error(`Error: ${stderr}`);
-            CUR_UAP0_SSID = "";
-            //                callback(null)
-            //                return;
-        } else {
-            log.debug(`Current SSID of uap0: ${stdout}`);
-            // Check if the result is what we expect before replacing
-            if (stdout.includes("ssid")) {
-                // clean up ssid value by removing "ssid" and blanks
-                CUR_UAP0_SSID = stdout.replace(/ssid\s*/i, "").trim();
-                //                    let CUR_UAP0_SSID = stdout.replace(/ssid\s*/i, "").trim();
-                //                log.debug("NEXT LINE IS FIRST READ OF CUR_UAP0_SSID");
-                //                log.debug(CUR_UAP0_SSID);
-            } else {
-                log.debug("Unexpected result:", stdout);
-            }
-        }
-        callback(
-            this._joinAP(function (err) {
-                if (err) {
-                    log.warn("Could not bring back up AP");
-                } else {
-                    log.info("AP back up after responding to relevant change");
-                }
-            })
-        );
-    });
-};
-
 RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     var interfaces = os.networkInterfaces();
     // var wlan0Int = interfaces.wlan0;
@@ -193,29 +220,13 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     //var wiredInt = "eth0";
     log.debug("##############-------- >>>>>> CALL to checkWifiHealth");
 
-    //    log.debug("##-------------------- >> Initial Screen");
-    // Cases below should force us to consider updating the AP SSID
-    // if (
-    //     !this.network_history || // first time through
-    //     (!this.network_history[wiredInt] && // no history
-    //         interfaces[wiredInt]?.[0]?.address) ||
-    //     (this.network_history[wiredInt] && !interfaces[wiredInt]) || //
-    //     (this.network_history[wiredInt] &&
-    //         interfaces[wiredInt] && // we have history and a current value, BUT...
-    //         this.network_history[wiredInt] != interfaces[wiredInt][0].address) // ... they are different
-    // ) {
-    //     //        var forceSSIDupdate = 1;
-    //     //        log.debug("##-------------got a FORCED UPDATE");
-    // }
-
     //    log.debug("##-------------------- >> Update History for Re-Screen");
     this.network_history = {};
     Object.keys(interfaces).forEach(
         function (interface) {
             if (interface !== "lo") {
                 if (interfaces[interface]) {
-                    this.network_history[interface] =
-                        interfaces[interface][0].address;
+                    this.network_history[interface] = interfaces[interface][0].address;
                 }
             }
         }.bind(this)
@@ -229,22 +240,10 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
         const json = JSON.parse(data);
         const ssid = json.ssid;
         this.network_history.wlan0 = this.network_history.wlan0 + " ," + ssid;
-        log.debug("SSID:", this.network_history.wlan0);
+        log.debug("SSID: " + this.network_history.wlan0);
     } else {
-        log.debug(
-            "wlan0 interface not found or it does not have an IP address"
-        );
+        log.debug("wlan0 interface not found or it does not have an IP address");
     }
-};
-
-RaspberryPiNetworkManager.prototype.checkEthernetHealth = function () {
-    ifconfig.status(ethernetInterface, function (err, status) {
-        if (err) {
-            log.error(err);
-        } else {
-            log.info(status);
-        }
-    });
 };
 
 RaspberryPiNetworkManager.prototype.confirmIP = function (callback) {
@@ -274,225 +273,172 @@ RaspberryPiNetworkManager.prototype.confirmIP = function (callback) {
     }, 1000);
 };
 
-// // Actually do the work of joining AP mode AND updating AP name
-// RaspberryPiNetworkManager.prototype._joinAP = function (
-//     callback,
-//     CUR_UAP0_SSID
-// ) {
-//     var interfaces = os.networkInterfaces();
-//     var wlan0Int = interfaces.wlan0;
-//     var eth0Int = interfaces.eth0;
-//     var name = config.engine.get("name"); // should already be simplified
-//     //var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
-//     var full_name;
-//     var ext;
-
-//     // Updating AP-Name
-//     // Then, restarting AP if we get name change; this should drop AP momentarily!
-//     ext = ":";
-//     if (eth0Int) {
-//         ext = ext + eth0Int[0].address;
-//     } else if (wlan0Int) {
-//         ext = ext + wlan0Int[0].address;
-//     } else {
-//         ext = ">AP:192.168.42.1";
-//     }
-//     full_name = name + ext;
-//     //    log.debug("CHECKING NAMES full_name: " + full_name);
-//     //    log.debug("CHECKING NAMES last_name: " + last_name);
-//     if (
-//         full_name !== last_name ||
-//         (CUR_UAP0_SSID &&
-//             (!CUR_UAP0_SSID.includes(":") ||
-//                 CUR_UAP0_SSID === "FabMo-???>AP:192.168.42.1" ||
-//                 full_name != CUR_UAP0_SSID))
-//     ) {
-//         //        log.debug("///////////###-------- >>>>>> CALL REJOIN-AP");
-//         log.debug(
-//             'Changing SSID from "' + last_name + '" to "' + full_name + '"'
-//         );
-//         // SSID is limited to 32 char; so makes long names challenging, as in:
-//         // 'ted-dev:169.254.225.224:192.168.1.109'
-//         // So best to prioritize display for ethernet, until a better idea ...
-//         //     TODO: chop tool names that are too long
-//         var network_config = config.engine.get("network");
-//         network_config.wifi.mode = "ap";
-//         config.engine.set("network", network_config);
-//         commands.takeDown("uap0", (err, result) => {
-//             log.debug("taken down AP");
-//             console.log(err);
-//             console.log(result);
-//             commands.addApInterface((err, result) => {
-//                 log.debug("Adding AP int");
-//                 console.log(err);
-//                 console.log(result);
-//                 commands.bringUp("uap0", (err, result) => {
-//                     log.debug("bringing up");
-//                     console.log(err);
-//                     console.log(result);
-//                     commands.configureApIp("192.168.42.1", (err, result) => {
-//                         log.debug("configure");
-//                         console.log(err);
-//                         console.log(result);
-//                         commands.hostapd(
-//                             {
-//                                 ssid: full_name,
-//                             },
-//                             () => {
-//                                 log.debug("hostAPD up");
-//                                 //   commands.dnsmasq({ interface: "uap0" }, () => {
-//                                 //       console.log("should be up and running AP");
-//                                 //       callback(err, result);
-//                                 //   });
-//                             }
-//                         );
-//                     });
-//                 });
-//             });
-//         });
-//     }
-//     last_name = full_name;
-// };
-
+// Turns off all Wifi; this includes AP and Station modes (may not want to use)
 RaspberryPiNetworkManager.prototype._disableWifi = function (callback) {
     log.info("Disabling wifi...");
-    // eslint-disable-next-line no-unused-vars
-    exec("systemctl stop hostapd wpa_supplicant", function (err, result) {
-        if (err) log.warn(err);
-        ifconfig.down(wifiInterface, function (err, result) {
-            if (!err) {
-                log.info("Wifi disabled.");
-            }
-            callback(err, result);
-        });
+    async.series(
+        [
+            // Stop the hostapd service
+            function (callback) {
+                exec("systemctl stop hostapd", function (err, result) {
+                    if (err) {
+                        log.warn(`Error stopping hostapd: ${err}`);
+                        callback(err);
+                    } else {
+                        callback(null, result);
+                    }
+                });
+            },
+            // Disable the WiFi interface using nmcli
+            function (callback) {
+                exec(`nmcli radio wifi off`, function (err, result) {
+                    if (err) {
+                        log.warn(`Error disabling wifi with nmcli: ${err}`);
+                        callback(err);
+                    } else {
+                        callback(null, result);
+                    }
+                });
+            },
+            // Bring down the WiFi interface using ifconfig
+            function (callback) {
+                ifconfig.down("wlan0", function (err, result) {
+                    if (err) {
+                        log.warn(`Error bringing down wifi interface: ${err}`);
+                        callback(err);
+                    } else {
+                        log.info("Wifi disabled.");
+                        callback(null, result);
+                    }
+                });
+            },
+        ],
+        function (err, results) {
+            callback(err, results);
+        }
+    );
+};
+
+// RaspberryPiNetworkManager.prototype._joinWifi = function (ssid, password, callback) {
+//     var network_config = config.engine.get("network");
+//     network_config.wifi.mode = "station";
+//     network_config.wifi.wifi_networks = [{ ssid: ssid, password: password }];
+//     config.engine.set("network", network_config);
+//     var PSK = password;
+//     var SSID = ssid;
+
+//     async.series(
+//         [
+//             // Add a new WiFi connection
+//             function (callback) {
+//                 exec(`nmcli dev wifi connect "${SSID}" password "${PSK}"`, function (error, stdout, stderr) {
+//                     if (error) {
+//                         console.error(`Error adding WiFi connection: ${stderr}`);
+//                         callback(error);
+//                     } else {
+//                         console.log(`WiFi connection added: ${stdout}`);
+//                         callback(null, stdout);
+//                     }
+//                 });
+//             },
+//             // Bring up the network
+//             function (callback) {
+//                 exec(`nmcli con up id "${SSID}"`, function (error, stdout, stderr) {
+//                     if (error) {
+//                         console.error(`Error bringing up the network: ${stderr}`);
+//                         callback(error);
+//                     } else {
+//                         console.log(`Network brought up: ${stdout}`);
+//                         callback(null, stdout);
+//                     }
+//                 });
+//             },
+//         ],
+//         function (errs, results) {
+//             if (errs) {
+//                 callback(errs); // errs = [err1, err2]
+//             } else {
+//                 this.confirmIP((err, ipaddress) => {
+//                     if (err) {
+//                         callback(err);
+//                     } else {
+//                         var wifiInfo = {
+//                             ssid: SSID,
+//                             ip: ipaddress,
+//                         };
+//                         callback(null, wifiInfo);
+//                     }
+//                 });
+//             }
+//         }.bind(this)
+//     );
+// };
+
+// Join a WiFi network
+RaspberryPiNetworkManager.prototype.joinWifiNetwork = function (ssid, password, callback) {
+    log.info(`Joining WiFi network: ${ssid}`);
+    commands.joinWifiNetwork(ssid, password, (err, result) => {
+        if (err) {
+            log.error(`Failed to join WiFi network ${ssid}:`, err);
+            return callback(err);
+        }
+        log.info(`Successfully joined WiFi network ${ssid}`);
+        callback(null, result);
     });
 };
 
-RaspberryPiNetworkManager.prototype._joinWifi = function (
-    ssid,
-    password,
-    callback
-) {
-    var network_config = config.engine.get("network");
-    network_config.wifi.mode = "station";
-    network_config.wifi.wifi_networks = [{ ssid: ssid, password: password }];
-    config.engine.set("network", network_config);
-    var PSK = password;
-    var SSID = ssid;
-    exec(
-        "wpa_cli -i wlan0 add_network",
-        // eslint-disable-next-line no-unused-vars
-        function (error, stdout, stderr) {
-            if (error !== null) {
-                console.log("error: " + error);
-            } else {
-                async.series(
-                    [
-                        function (callback) {
-                            exec(
-                                "wpa_cli  -i wlan0 set_network 0 ssid '\"" +
-                                    SSID +
-                                    "\"'",
-                                function (error, stdout) {
-                                    if (error) {
-                                        console.error(error);
-                                    } else {
-                                        console.log("SSID result: " + stdout);
-                                        callback(null, stdout);
-                                    }
-                                }
-                            );
-                        },
-                        function (callback) {
-                            exec(
-                                "wpa_cli -i wlan0 set_network 0 psk '\"" +
-                                    PSK +
-                                    "\"'",
-                                function (error, stdout) {
-                                    if (error) {
-                                        console.error(error);
-                                    } else {
-                                        console.log("PSK result: " + stdout);
-                                        callback(null, stdout);
-                                    }
-                                }
-                            );
-                        },
-                        function (callback) {
-                            exec(
-                                "wpa_cli -i wlan0 enable_network 0",
-                                function (error, stdout) {
-                                    if (error) {
-                                        console.error(error);
-                                    } else {
-                                        console.log(
-                                            "enable_network result: " + stdout
-                                        );
-                                        callback(null, stdout);
-                                    }
-                                }
-                            );
-                        },
-                        function (callback) {
-                            exec(
-                                "wpa_cli -i wlan0 save_config",
-                                function (error, stdout) {
-                                    if (error) {
-                                        console.error(error);
-                                    } else {
-                                        console.log(
-                                            "save_config result: " + stdout
-                                        );
-                                        callback(null, stdout);
-                                    }
-                                }
-                            );
-                        },
-                    ],
-                    // eslint-disable-next-line no-unused-vars
-                    function (errs, results) {
-                        if (errs) throw errs; // errs = [err1, err2, err3]
-                        exec(
-                            "wpa_cli -i wlan0 reconfigure",
-                            // eslint-disable-next-line no-unused-vars
-                            function (error, stdout) {
-                                if (error) {
-                                    log.error(error);
-                                } else {
-                                    this.confirmIP((err, ipaddress) => {
-                                        if (err) {
-                                            callback(err);
-                                        } else {
-                                            var wifiInfo = {
-                                                ssid: SSID,
-                                                ip: ipaddress,
-                                            };
-                                            callback(null, wifiInfo);
-                                        }
-                                    });
-                                }
-                            }.bind(this)
-                        );
-                    }.bind(this)
-                );
-            }
-        }.bind(this)
-    );
+// Forget a WiFi network
+RaspberryPiNetworkManager.prototype.forgetWifi = function (ssid, callback) {
+    log.info(`Forgetting WiFi network: ${ssid}`);
+    commands.forgetWifiNetwork(ssid, (err, result) => {
+        if (err) {
+            log.error(`Failed to forget WiFi network ${ssid}:`, err);
+            return callback(err);
+        }
+        log.info(`Successfully forgot WiFi network ${ssid}`);
+        callback(null, result);
+    });
 };
+
+//=========================================================================================
 
 // Do the actual work of dropping out of AP mode
 //   callback - Callback called when AP mode has been exited or with error if error
 RaspberryPiNetworkManager.prototype._unjoinAP = function (callback) {
-    log.info("Turning off AP mode...");
+    log.info("Turning OFF AP mode...");
     // eslint-disable-next-line no-unused-vars
     commands.stopAP((err, result) => {
         if (err) {
             callback(err);
-        } else {
-            commands.takeDown("uap0", (err, result) => {
-                callback(err, result);
-            });
         }
+        commands.takeDown("wlan0_ap", (err, result) => {
+            if (err) {
+                log.error("Failed to disconnect interface:", err);
+                return callback(err);
+            }
+            log.info("Interface disconnected successfully:");
+            callback(null, result);
+        });
+    });
+};
+
+// Do actual work of restarting AP mode (this is the workhorse function)
+//   callback - Callback called when AP mode has been entered or with error if error
+RaspberryPiNetworkManager.prototype._joinAP = function (callback) {
+    log.info("Turning ON AP mode...");
+    // eslint-disable-next-line no-unused-vars
+    commands.startAP((err, result) => {
+        if (err) {
+            return callback(err);
+        }
+        commands.bringUp("wlan0_ap", (err, result) => {
+            if (err) {
+                log.error("Failed to bring up wlan0_ap:", err);
+                return callback(err);
+            }
+            log.info("Interface wlan0_ap connected successfully");
+            callback(null, result);
+        });
     });
 };
 
@@ -503,7 +449,7 @@ RaspberryPiNetworkManager.prototype.applyWifiConfig = function () {
     var network_config = config.engine.get("network");
     switch (network_config.wifi.mode) {
         case "ap":
-            this.unjoinAP();
+            this._unjoinAP();
             break;
         case "station":
             if (network_config.wifi.wifi_networks.length > 0) {
@@ -526,75 +472,65 @@ RaspberryPiNetworkManager.prototype.applyWifiConfig = function () {
  */
 
 // Initialize the network manager.  This kicks off the state machines that process commands from here on out
+// Programmatically speaking, this is the entry point for the network manager; DO REGULAR CHECKS !
 RaspberryPiNetworkManager.prototype.init = function () {
     setInterval(() => {
         this.returnWifiNetworks();
         this.checkWifiHealth();
-        // this.checkEthernetHealth();
-        // this.runEthernet();
     }, 10000);
 };
 
 // Get a list of the available wifi networks.  (The "scan results")
 //   callback - Called with list of wifi networks or error if error
-RaspberryPiNetworkManager.prototype.getAvailableWifiNetworks = function (
-    callback
-) {
+RaspberryPiNetworkManager.prototype.getAvailableWifiNetworks = function (callback) {
     // TODO should use setImmediate here
     callback(null, this.networks);
 };
 
-// Connect to the specified wifi network.
-//   ssid - The network ssid to connect to
-//    key - The network key
-RaspberryPiNetworkManager.prototype.connectToAWifiNetwork = function (
-    ssid,
-    key,
-    callback
-) {
-    // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
-    this._joinWifi(ssid, key, callback);
-};
+// // Connect to the specified wifi network.
+// //   ssid - The network ssid to connect to
+// //    key - The network key
+// RaspberryPiNetworkManager.prototype.connectToAWifiNetwork = function (ssid, key, callback) {
+//     // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
+//     this._joinWifi(ssid, key, callback);
+// };
 
-// Stubbing this in as a new forget function based on some stubbs already in place for call
-// Forget a specified wifi network.
-//   ssid - The network ssid to connect to
-//    key - The network key
-RaspberryPiNetworkManager.prototype.forgetAWifiNetwork = function (
-    ssid,
-    key,
-    callback
-) {
-    // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
-    this._forgetWifi(ssid, key, callback);
-};
+// // Stubbing this in as a new forget function based on some stubbs already in place for call
+// // Forget a specified wifi network.
+// //   ssid - The network ssid to connect to
+// //    key - The network key
+// RaspberryPiNetworkManager.prototype.disconnectFromNetwork = function (ssid, key, callback) {
+//     // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
+//     this._forgetWifi(ssid, key, callback);
+// };
 
 // Enable the wifi
 //   callback - Called when wifi is enabled or with error if error
 RaspberryPiNetworkManager.prototype.turnWifiOn = function (callback) {
-    ifconfig.status(
-        wifiInterface,
-        function (err, status) {
-            if (!status.up) {
-                ifconfig.up(
-                    wifiInterface,
-                    // eslint-disable-next-line no-unused-vars
-                    function (err, data) {
-                        callback(err);
-                    }.bind(this)
-                );
-            } else {
-                callback();
-            }
-        }.bind(this)
-    );
+    log.info("Turning on Wifi...");
+    commands.startWifi((err, result) => {
+        if (err) {
+            log.error("Failed to turn on Wifi:", err);
+            return callback(err);
+        }
+        log.info("Wifi turned on successfully");
+        callback(null, result);
+    });
 };
 
 // Disable the wifi
 //   callback - Called when wifi is disabled or with error if error
 // eslint-disable-next-line no-unused-vars
 RaspberryPiNetworkManager.prototype.turnWifiOff = function (callback) {
-    this.disableWifi();
+    log.info("Turning off Wifi...");
+    commands.stopWifi((err, result) => {
+        if (err) {
+            log.error("Failed to turn off Wifi:", err);
+            return callback(err);
+        }
+        log.info("Wifi turned off successfully");
+        callback(null, result);
+    });
 };
 
 // Get the history of connected wifi networks
@@ -603,16 +539,35 @@ RaspberryPiNetworkManager.prototype.getWifiHistory = function (callback) {
     callback(null, this.network_history);
 };
 
-// Enter AP mode
-//   callback - Called once the command has been issued (but does not wait for the system to enter AP)
-RaspberryPiNetworkManager.prototype.turnWifiHotspotOn = function (callback) {
-    log.info("Going to turn wifi hotspot");
-    this.joinAP();
-    callback(null);
+// Check that radio harware is ON
+RaspberryPiNetworkManager.prototype.isWifiOn = function (callback) {
+    exec("nmcli radio wifi", (error, stdout, stderr) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
+            return callback(error, null);
+        }
+        // a simplistic check; adjust based on actual command output
+        if (stdout.trim() === "enabled") {
+            callback(null, true);
+        } else {
+            callback(null, false);
+        }
+    });
+};
+
+// Enable AP mode
+RaspberryPiNetworkManager.prototype.enableWifiHotspot = function (callback) {
+    log.info("Going to turn ON wifi hotspot");
+    this._joinAP(callback);
+};
+
+// Disable AP mode
+RaspberryPiNetworkManager.prototype.disableWifiHotspot = function (callback) {
+    log.info("Going to turn off wifi hotspot");
+    this._unjoinAP(callback);
 };
 
 // Get network status
-//   callback - Called with network status or with error if error
 RaspberryPiNetworkManager.prototype.getStatus = function (callback) {
     ifconfig.status(callback);
 };
@@ -622,10 +577,7 @@ RaspberryPiNetworkManager.prototype.getStatus = function (callback) {
 //    identity - Object of this format {name : 'thisismyname', password : 'thisismypassword'}
 //               Identity need not contain both values - only the values specified will be changed
 //    callback - Called when identity has been changed or with error if error
-RaspberryPiNetworkManager.prototype.setIdentity = function (
-    identity,
-    callback
-) {
+RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) {
     async.series(
         [
             function set_name(callback) {
@@ -646,9 +598,7 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (
 
             function set_password(callback) {
                 if (identity.password) {
-                    log.info(
-                        "Setting network password to " + identity.password
-                    );
+                    log.info("Setting network password to " + identity.password);
                 } else {
                     callback(null);
                 }
@@ -681,340 +631,12 @@ RaspberryPiNetworkManager.prototype.isOnline = function (callback) {
     setImmediate(callback, null, this.mode === "station");
 };
 
-// Turn the ethernet interface on
-//   callback - Called when the ethernet interface is up or with error if error
-RaspberryPiNetworkManager.prototype.turnEthernetOn = function (callback) {
-    ifconfig.up(ethernetInterface, callback);
-};
-
-// Turn the ethernet interface off
-//   callback - Called when the ethernet interface is up or with error if error
-RaspberryPiNetworkManager.prototype.turnEthernetOff = function (callback) {
-    ifconfig.down(ethernetInterface, callback);
-};
-
-// Enable DHCP for the provided interface
-//   interface - The interface to update
-//   callback - Called when complete, or with error if error
-RaspberryPiNetworkManager.prototype.enableDHCP = function (
-    interface,
-    callback
-) {
-    log.debug("Enabling DHCP on " + interface);
-    udhcpc.enable({ interface: interface }, callback);
-};
-
-// Disable DHCP for the provided interface
-//   interface - The interface to update
-//    callback - Called when complete, or with error if error
-RaspberryPiNetworkManager.prototype.disableDHCP = function (
-    interface,
-    callback
-) {
-    log.debug("Disabling DHCP on " + interface);
-    udhcpc.disable(interface, callback);
-};
-
-// Start the internal DHCP server on the provided interface
-//   interface - The interface on which to start the DHCP server
-//    callback - Called when the DHCP server has been started, or with error if error
-RaspberryPiNetworkManager.prototype.startDHCPServer = function () /* interface,
-    callback */
-{
-    // rmackie: invocation of udhcpd removed because this is now handled by the OS and R-Pi UI
-};
-
-// Stop the internal DHCP server on the provided interface
-//   interface - The interface on which to stop the DHCP server
-//    callback - Called when the DHCP server has been stopped, or with error if error
-RaspberryPiNetworkManager.prototype.stopDHCPServer = function () /* interface,
-    callback */
-{
-    // rmackie: deliberately removed code - this is now handled by the OS services and the
-    // rotary switch
-};
-
-// Set the ip address for the provided interface to the provided value
-//   interface - The interface to update
-//          ip - The IP address, eg: '192.168.44.50'
-//    callback - Called when the address has been set or with error if error
-RaspberryPiNetworkManager.prototype.setIpAddress = function (
-    interface,
-    ip,
-    callback
-) {
-    if (!ip) return callback("no ip specified !");
-    ifconfig.status(interface, function (err, status) {
-        if (err) return callback(err, status);
-        var options = {
-            interface: interface,
-            ipv4_address: ip,
-            ipv4_broadcast: status.ipv4_broadcast || DEFAULT_BROADCAST,
-            ipv4_subnet_mask: status.ipv4_subnet_mask || DEFAULT_NETMASK,
-        };
-        ifconfig.up(options, callback);
-    });
-};
-
-// Set the netmask for the provided interface to the provided value
-//   interface - The interface to update
-//     netmask - The netmask, eg: '255.255.255.0'
-//    callback - Called when the netmask has been set or with error if error
-RaspberryPiNetworkManager.prototype.setNetmask = function (
-    interface,
-    netmask,
-    callback
-) {
-    if (!netmask) return callback("no netmask specified !");
-    ifconfig.status(interface, function (err, status) {
-        if (err) return callback(err, status);
-        if (!status.ipv4_address)
-            return callback("interface ip address not configured !");
-        var options = {
-            interface: interface,
-            ipv4_address: status.ipv4_address,
-            ipv4_broadcast: netmask,
-            ipv4_subnet_mask: status.ipv4_subnet_mask || DEFAULT_NETMASK,
-        };
-        ifconfig.up(options, callback);
-    });
-};
-// Set the gateway IP for the provided interface to the provided value
-//   interface - The interface to update
-//     gateway - The gateway, eg: '255.255.255.0'
-//    callback - Called when the gateway has been set or with error if error
-RaspberryPiNetworkManager.prototype.setGateway = function (gateway, callback) {
-    // eslint-disable-next-line no-unused-vars
-    exec("route add default gw " + gateway, function (s) {
-        callback(null);
-    });
-};
-
 // Take the configuration stored in the network config and apply it to the currently running instance
 // This function returns immediately
 RaspberryPiNetworkManager.prototype.applyNetworkConfig = function () {
     this.applyWifiConfig();
     // TODO - Why is this commented out?
     // this.applyEthernetConfig();
-};
-
-// Take the ethernet configuration stored in the network config and apply it to the currently running instance
-// TODO - Cleanup indentation below
-// This function returns immediately (but takes a while to complete)
-RaspberryPiNetworkManager.prototype.applyEthernetConfig = function () {
-    var self = this;
-    var ethernet_config = config.engine.get("network").ethernet;
-    ifconfig.status(
-        ethernetInterface,
-        function (err, status) {
-            if (status.up && status.running) {
-                async.series(
-                    [
-                        self.disableDHCP.bind(this, ethernetInterface),
-                        self.stopDHCPServer.bind(this, ethernetInterface),
-                    ],
-                    // eslint-disable-next-line no-unused-vars
-                    function (err, results) {
-                        if (err) {
-                            log.warn(err);
-                        }
-                        this.emit("network", { mode: "ethernet" });
-                        log.info(
-                            "ethernet is in " + ethernet_config.mode + " mode"
-                        );
-                        switch (ethernet_config.mode) {
-                            case "static":
-                                async.series(
-                                    [
-                                        self.setIpAddress.bind(
-                                            this,
-                                            ethernetInterface,
-                                            ethernet_config.default_config
-                                                .ip_address
-                                        ),
-                                        self.setNetmask.bind(
-                                            this,
-                                            ethernetInterface,
-                                            ethernet_config.default_config
-                                                .netmask
-                                        ),
-                                        self.setGateway.bind(
-                                            this,
-                                            ethernet_config.default_config
-                                                .gateway
-                                        ),
-                                    ],
-                                    // eslint-disable-next-line no-unused-vars
-                                    function (err, results) {
-                                        if (err) log.warn(err);
-                                        else
-                                            log.info(
-                                                "Ethernet static configuration is set"
-                                            );
-                                    }
-                                );
-                                break;
-
-                            case "dhcp":
-                                self.enableDHCP(
-                                    ethernetInterface,
-                                    function (err) {
-                                        if (err) return log.warn(err);
-                                        log.info(
-                                            "Ethernet dynamic configuration is set"
-                                        );
-                                    }
-                                );
-                                break;
-
-                            case "magic":
-                                self.enableDHCP(
-                                    ethernetInterface,
-                                    // eslint-disable-next-line no-unused-vars
-                                    function (err) {
-                                        setTimeout(
-                                            function () {
-                                                ifconfig.status(
-                                                    ethernetInterface,
-                                                    function (err, status) {
-                                                        if (err) log.warn(err);
-                                                        if (
-                                                            status.ipv4_address !==
-                                                            undefined
-                                                        ) {
-                                                            // we got a lease !
-                                                            this.networkInfo.wired =
-                                                                status.ipv4_address;
-                                                            log.info(
-                                                                "[magic mode] An ip address was assigned to the ethernet interface : " +
-                                                                    status.ipv4_address
-                                                            );
-                                                            return;
-                                                        } else {
-                                                            // no lease, stop the dhcp client, set a static config and launch a dhcp server.
-                                                            async.series(
-                                                                [
-                                                                    self.disableDHCP.bind(
-                                                                        this,
-                                                                        ethernetInterface
-                                                                    ),
-                                                                    self.setIpAddress.bind(
-                                                                        this,
-                                                                        ethernetInterface,
-                                                                        ethernet_config
-                                                                            .default_config
-                                                                            .ip_address
-                                                                    ),
-                                                                    self.setNetmask.bind(
-                                                                        this,
-                                                                        ethernetInterface,
-                                                                        ethernet_config
-                                                                            .default_config
-                                                                            .netmask
-                                                                    ),
-                                                                    self.setGateway.bind(
-                                                                        this,
-                                                                        ethernet_config
-                                                                            .default_config
-                                                                            .gateway
-                                                                    ),
-                                                                    self.startDHCPServer.bind(
-                                                                        this,
-                                                                        ethernetInterface
-                                                                    ),
-                                                                ],
-                                                                function (
-                                                                    err,
-                                                                    // eslint-disable-next-line no-unused-vars
-                                                                    results
-                                                                ) {
-                                                                    if (err)
-                                                                        log.warn(
-                                                                            err
-                                                                        );
-                                                                    else
-                                                                        log.info(
-                                                                            "[magic mode] No dhcp server found, switched to static configuration and launched a dhcp server..."
-                                                                        );
-                                                                }
-                                                            );
-                                                        }
-                                                    }.bind(this)
-                                                );
-                                            }.bind(this),
-                                            DHCP_MAGIC_TTL
-                                        );
-                                    }.bind(this)
-                                );
-                                break;
-
-                            case "off":
-                            default:
-                                break;
-                        }
-                    }.bind(this)
-                );
-            }
-        }.bind(this)
-    );
-};
-
-// This function is the main process for ethernet.
-// Basically, it looks for media to be plugged or unplugged, and applies the correct
-// configuration accordingly.
-RaspberryPiNetworkManager.prototype.runEthernet = function () {
-    function checkEthernetState() {
-        var oldState = this.ethernetState;
-        ifconfig.status(
-            ethernetInterface,
-            function (err, status) {
-                if (!err && status.up && status.running) {
-                    try {
-                        this.network_history[null] = {
-                            ssid: null,
-                            ipaddress: status.ipv4_address,
-                            last_seen: Date.now(),
-                        };
-                        this.networkInfo.wired = status.ipv4_address;
-                    } catch (e) {
-                        log.warn(
-                            "Could not save ethernet address in network history."
-                        );
-                    }
-                    this.ethernetState = "plugged";
-                    var network_config = config.engine.get("network");
-                    try {
-                        if (!network_config.wifi.enabled) {
-                            if (this.wifiStatus != "disabled") {
-                                this.turnWifiOff();
-                            }
-                        }
-                    } catch (e) {
-                        log.error(e);
-                    }
-                } else {
-                    this.ethernetState = "unplugged";
-                }
-                if (this.ethernetState !== oldState) {
-                    switch (this.ethernetState) {
-                        case "plugged":
-                            log.info("ethernet cable was plugged");
-                            this.applyEthernetConfig();
-                            break;
-                        case "unplugged":
-                            log.info("Ethernet cable was unplugged.");
-                            this.enableWifi();
-                            break;
-                        default:
-                            log.error("Unknown ethernet state. (Bad error)");
-                            break;
-                    }
-                }
-            }.bind(this)
-        );
-    }
-    checkEthernetState.bind(this)();
-    setInterval(checkEthernetState.bind(this), ETHERNET_SCAN_INTERVAL);
 };
 
 exports.NetworkManager = RaspberryPiNetworkManager;
