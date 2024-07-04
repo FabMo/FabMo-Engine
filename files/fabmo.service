@@ -6,8 +6,6 @@ ExecStart=/usr/bin/node /fabmo/server.js &
 Type=simple
 User=root
 Restart=always
-StandardOutput=syslog
-StandardError=syslog
 SyslogIdentifier=FBMO
 WorkingDirectory = /fabmo/
 
