@@ -6,7 +6,6 @@ After=network.target
 ExecStart=/fabmo/dashboard/apps/video.fma/camera-server -a 0.0.0.0 -p 3141 -c 0
 User=root
 Restart=always
-StandardOutput=null
 
 [Install]
 WantedBy=multi-user.target
