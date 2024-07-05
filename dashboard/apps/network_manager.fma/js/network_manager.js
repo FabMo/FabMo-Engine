@@ -140,7 +140,6 @@ function addHistoryEntries(history_entries, callback) {
     callback(null); // Callback with no error
 }
 
-
 // Show the confirmation dialog
 function confirm(options){
     options.ok = options.ok || function() {};
@@ -167,8 +166,7 @@ function confirm(options){
     $('#confirm-modal').foundation('reveal', 'open');
 }
 
-
-// Prompt for a password with a modal dialog
+// Prompt for a password with a modal dialog on adding a Wifi
 let passphrase = '';
 function requestPassword(ssid, callback){
     $('#passwd-modal').foundation('reveal', 'open');
@@ -224,6 +222,8 @@ function requestPassword(ssid, callback){
     });
 }
 
+
+
 $(document).ready(function() {
 
     //Foundation Init
@@ -258,7 +258,7 @@ $(document).ready(function() {
                     fabmo.hideModal();
                     confirm({
                         title : "Successfully connected!",
-                        description : "<p>Access your tool on Wifi network:<br> &nbsp&nbsp&nbsp&nbsp" + name + " at IP:  " + address + "<p>",
+                        description : "<p>Access your tool on Wifi network:<br>  &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp" + name + " at IP:  " + address + "<p>",
                         ok_message : "OK",
                         ok : function() {
                             setTimeout(function() {
@@ -288,7 +288,7 @@ $(document).ready(function() {
     $('tbody').on('click', 'td.con-int', function(evt) {
         var name = evt.target.textContent;
         if (name === 'eth0') {
-            fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool."});
+            fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool. Always allow 10 seconds before reconnecting another cable."});
         } else if (name === 'wlan0') {
             // Retrieve the SSID from the third column in the same row; pretty ugly but it works
             var ssid = $(evt.target).closest('tr').find('td').eq(2).text();
