@@ -12,9 +12,12 @@ systemctl --no-pager status fabmo-updater.service
 echo " "
 echo "----User Networking-----------------------------------------"
 systemctl --no-pager status network-monitor.service
+systemctl --no-pager status setup-wlan0_ap.service
 echo " "
 echo "----System Networking---------------------------------------"
 systemctl --no-pager status NetworkManager
+systemctl --no-pager status dnsmasq
+systemctl --no-pager status hostapd
 
 
 
