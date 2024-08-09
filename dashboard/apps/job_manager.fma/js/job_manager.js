@@ -826,6 +826,10 @@ $(document).ready(function() {
     setupDropTarget();
     runNext();
 
+    // Because the job-manager may be changed by another client device, we need to update the queue manually
+    // ... it is not efficient to use the status report to update the queue as it is not always sent or too frequently sent
+    // Try an interval of 2 seconds for updateQueue
+    setInterval(updateQueue, 2000); 
 
 ////## th - experiment on FLOW back re: Sb4 and similar apps
 

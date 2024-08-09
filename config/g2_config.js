@@ -178,6 +178,7 @@ G2Config.prototype.configureStatusReports = function (callback) {
     // see g2 spindle.h (no other documentation)
     // also see DIO defs in g2core >gpio.h (for setting number and analog, PWM?)
     // fro is feed rate override
+    // feed is current/last feed rate
     if (this.driver) {
         this.driver.command({
             sr: {
@@ -219,6 +220,7 @@ G2Config.prototype.configureStatusReports = function (callback) {
                 out11: true,
                 out12: true,
                 fro: true,
+                feed: true,
             },
         });
         this.driver.command({ qv: 0 });

@@ -671,16 +671,18 @@ function triggerSliderEvent(value) {
     }
 }
 
-// Key action in from keyboard in Modal Keypad
+// Key action from keyboard in Modal Keypad
 $(document).on("keydown", function (e) {
     // escape key press to quit the engine
     if (e.key === "Escape") {
-        console.warn("ESC key pressed - quitting manual mode.");
-        calledFromModal = "";
-        dashboard.engine.manualExit(); // not checking for modal active as useful to a button to send a "kill" to G2 for general clear
-        // alt + k enters manual (only if not in iframe)
+        // do this only if in manual mode
+        if (last_state_seen === "manual") {
+            console.warn("ESC key pressed - quitting manual mode.");
+            calledFromModal = "";
+            dashboard.engine.manualExit();
+        }
     } else if (e.key === "k" && e.altKey) {
-        // changed to alt but still not very useful only working outside iframe
+        // changed to alt but still not very useful, only working outside iframe
         calledFromModal = "";
         dashboard.engine.manualEnter();
         // toggle "Fixed" moves

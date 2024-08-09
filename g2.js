@@ -529,6 +529,10 @@ G2.prototype.handleStatusReport = function (response) {
             if (key === "unit") {
                 value = value === 0 ? "in" : "mm";
             }
+            // // for case of key = posa, posb, or posc then divide value by 0.0393701 to convert to inches ////##A
+            // if (key === "posa" || key === "posb" || key === "posc") {
+            //     value = value * 0.0393701;
+            // }
             this.status[key] = value;
         }
 

@@ -44,10 +44,11 @@
         this._setupMessageListener();
         // listen for escape key press to quit the engine
         document.onkeydown = function (e) {
-            if (e.keyCode === 27) {
-                console.warn("ESC key pressed - quitting engine.");
-                this.stop();
-            } else if (e.keyCode === 75 && e.ctrlKey) {
+            // if (e.keyCode === 27) {  ////## removing allows for ESC to be used in manual mode
+            //     console.warn("ESC key pressed - quitting engine.");
+            //     this.stop();
+            if (e.keyCode === 75 && e.ctrlKey) {
+                // } else if (e.keyCode === 75 && e.ctrlKey) {
                 this.manualEnter();
             }
         }.bind(this);
