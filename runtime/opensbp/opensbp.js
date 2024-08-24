@@ -79,7 +79,6 @@ function SBPRuntime() {
     this.lastNoZPullup = 0;
     this.continue_callback = null;
     this.vs_change = 0;
-    this.units = null;
     this.absoluteMode = true;
 
     this.lastFilename = "";
@@ -420,7 +419,6 @@ SBPRuntime.prototype.runStream = function (text_stream) {
 // This prevents changes made to critical settings in files from being permanent (unless we want them to be)
 SBPRuntime.prototype._loadConfig = function () {
     var settings = config.opensbp.getMany([
-        "units",
         "movexy_speed",
         "movez_speed",
         "movea_speed",
@@ -440,7 +438,6 @@ SBPRuntime.prototype._loadConfig = function () {
         "c_maxjerk",
         "safeZpullUp",
     ]);
-    this.units = settings.units;
     this.movespeed_xy = settings.movexy_speed;
     this.movespeed_z = settings.movez_speed;
     this.movespeed_a = settings.movea_speed;
@@ -483,7 +480,6 @@ SBPRuntime.prototype._saveConfig = async function (callback) {
     sbp_values.b_maxjerk = this.maxjerk_b;
     sbp_values.c_maxjerk = this.maxjerk_c;
     sbp_values.safeZpullUp = this.safeZpullUp;
-    sbp_values.units = this.units;
     try {
         await config.opensbp.setManyWrapper(sbp_values);
         callback();
@@ -1520,13 +1516,18 @@ SBPRuntime.prototype.setPreferredUnits = function (units, callback) {
     this._saveConfig(callback);
 };
 
-// Set the current units to the provided value
-// (Converts internal state to the specified unit system)
+// Convert, Update, and Set parameters to the new current units
+// (Converts internal state to the specified unit system; which is saved to disc)
 SBPRuntime.prototype._setUnits = function (units) {
-    units = u.unitType(units);
+    // UNIT Primary Value is machine.units (e.g. config.machine.get("units")); though internal state is represented in multiple objects for convenience
+    this.units = config.machine.get("last_units"); // current preferred units from last update
+    units = u.unitType(units); // new version of unitType
+
     if (units === this.units) {
         return;
     }
+
+    // Handle the update to new units and their display; using OpenSBP runtime for convenience, even it user may not use OpenSBP
     var convert = units === "in" ? u.mm2in : u.in2mm;
     var convertR = units === "in" ? u.mm2inR : u.in2mmR; // Round to keep display of speeds clean
     this.movespeed_xy = convertR(this.movespeed_xy);
@@ -1550,7 +1551,11 @@ SBPRuntime.prototype._setUnits = function (units) {
     this.cmd_posx = convert(this.cmd_posx);
     this.cmd_posy = convert(this.cmd_posy);
     this.cmd_posz = convert(this.cmd_posz);
-    this.units = units;
+    // if other axes are linear, then convert their commanded positions ???
+    this.units = units; // object representation of the current units
+    config.machine.set("units", units); // Primary Storage of the current units in machine
+    // See G2.js for call to update units display values
+    config.machine.set("last_units", units);
 };
 
 // Compile an index of all the labels in the program

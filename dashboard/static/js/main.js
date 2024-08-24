@@ -118,7 +118,7 @@ engine.getVersion(function (err, version) {
             // Create a FabMo object for the dashboard
             dashboard.setEngine(engine);
             console.log("Configuring this FabMo ...");
-            setUpManual(); // Configures all axis displays
+            ////##            setUpManual(); // Configures all axis displays
             dashboard.ui = new FabMoUI(dashboard.engine);
             dashboard.getNetworkIdentity();
 

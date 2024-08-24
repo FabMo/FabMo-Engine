@@ -1113,10 +1113,9 @@ G2.prototype.sendMore = function () {
 // Set the position of the motion system using the G28.3 code (on start)
 // position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function (position, callback) {
-    var axes = ["x", "y", "z", "a", "b", "c", "u", "v", "w"];
+    var axes = ["x", "y", "z", "a", "b", "c"];
     var gcodes = new stream.Readable();
     let mult = this.status.unit === "mm" ? 1 : 1 / 25.4; // Convert saved position from mm to current for restore
-
     // ** UPDATE INITIAL LOCATION (offsets + values) **
     gcodes.push("G55 \n"); // Set coordinate system to G55 to match FabMo
     axes.forEach(function (axis) {
@@ -1126,10 +1125,28 @@ G2.prototype.setMachinePosition = function (position, callback) {
         }
     });
     gcodes.push(null);
-
-    //TODO: Set manualPrime false once uvw enabled
     this.runStream(gcodes, true).then(function () {
         callback && callback();
+    });
+};
+
+G2.prototype.updateMachinePosition = function () {
+    // This is a hack to work around a bug in the g2 firmware that prevents updating the displayed location after a UNITS CHANGE.
+    // STRATEGY: Make a small (one step), incremental(G91) move in Z-axis, then reverse in order to FORCE the UPDATE
+    log.debug(" G2 HACK to >>> Update Machine Position");
+    var self = this;
+    var d, s;
+    this.get("3su", function (err, result) {
+        // use unit value to determine Z step size (channel 3)
+        if (err) {
+            log.error("ERROR: Unable to get 1su value from G2");
+            return;
+        }
+        d = (1.1 / result).toFixed(5); // get 1 step+ in current units
+        s = "G91 \nG01 Z" + d + "F100 \nG01 X-" + d + " \nG90 \nM30";
+        self.gcode_queue.enqueue(s);
+        self._primed = true;
+        self.sendMore();
     });
 };
 
@@ -1146,7 +1163,6 @@ G2.prototype.setMachinePosition = function (position, callback) {
 //
 // In the above example, when the next change of state happens, the appropriate callback is called in the case
 // that the new state is either STAT_END or STAT_PAUSE.  If the new state is neither, other_callback is called.
-
 G2.prototype.expectStateChange = function (callbacks) {
     if ("timeout" in callbacks) {
         var fn = callbacks.timeout;

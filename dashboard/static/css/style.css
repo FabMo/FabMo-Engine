@@ -2050,6 +2050,7 @@ input[type='range']:focus {
     top: 50%;
     left: 50%;
     font-size: xx-large;
+	text-align: center;
     transform: translate(-50%, -50%);
 }
 

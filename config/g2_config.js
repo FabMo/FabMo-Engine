@@ -7,6 +7,9 @@ const { truncate } = require("fs");
  * g2_config.js
  *
  * This module defines the configuration object that manages the settings in G2.
+ * Note that for Units to update correctly modified _am items must be read first in config lists
+ * (e.g. aam, bam, etc) before distance-related current values are calculated.
+ * Put list in correct order starting in default profiles.
  */
 async = require("async");
 util = require("util");

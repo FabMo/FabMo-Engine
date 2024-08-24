@@ -39,9 +39,7 @@ var interlockBypass = false;
 var runtime = null;
 var spindle = require("./spindle1");
 
-//var sbpConfig = require("./config/opensbp_config");
-
-////## total temp KLUDGES because of difficulty in figuring out a couple of quick comms between modules
+////## temp KLUDGES because of difficulty in figuring out a couple of quick comms between modules
 global.CUR_RUNTIME;
 global.CLIENT_DISCONNECTED = false; // Special purpose kludge to stop any ongoing keypad or keyboard actions if client disconnects
 
@@ -886,7 +884,7 @@ Machine.prototype.runJob = function (job) {
 
 // Set the preferred units to the provided value ('in' or 'mm')
 // Changing the preferred units is a heavy duty operation. See below.
-Machine.prototype.setPreferredUnits = function (units, callback) {
+Machine.prototype.setPreferredUnits = async function (units, callback) {
     try {
         if (config.driver.changeUnits) {
             units = u.unitType(units); // Normalize units
@@ -907,28 +905,43 @@ Machine.prototype.setPreferredUnits = function (units, callback) {
                     break;
             }
             if (uv !== null) {
-                // Change units on the driver
-                config.driver.changeUnits(
-                    uv,
-                    function () {
-                        log.info("Done setting driver units");
-                        // Change units on each runtime in turn
-                        async.eachSeries(
-                            this.runtimes,
-                            function runtime_set_units(item, callback) {
-                                log.info("Setting preferred units for " + item);
-                                if (item.setPreferredUnits) {
-                                    return item.setPreferredUnits(uv, callback);
+                // Wrap asynchronous operations in a Promise to get updated G2 position dispaly at right time
+                await new Promise((resolve, reject) => {
+                    config.driver.changeUnits(
+                        uv,
+                        function () {
+                            log.info("Done setting driver units");
+
+                            async.eachSeries(
+                                this.runtimes,
+                                function runtime_set_units(item, callback) {
+                                    log.info("Setting preferred units for " + item);
+                                    if (item.setPreferredUnits) {
+                                        return item.setPreferredUnits(uv, callback);
+                                    }
+                                    callback();
+                                }.bind(this),
+                                function (err) {
+                                    if (err) {
+                                        reject(err);
+                                    } else {
+                                        log.debug("All runtimes have set units.");
+                                        resolve();
+                                    }
                                 }
-                                callback();
-                            }.bind(this),
-                            callback
-                        );
-                    }.bind(this)
-                );
+                            );
+                        }.bind(this)
+                    );
+                });
+
+                // After all async operations complete, trigger the update
+                log.debug("Triggering machine position update after all configurations.");
+                this.driver.updateMachinePosition(); // Trigger the update once
+            } else {
+                if (callback) callback(null);
             }
         } else {
-            return callback(null);
+            if (callback) callback(null);
         }
         this.emit("status", this.status); // emit a status change
     } catch (e) {
@@ -937,9 +950,10 @@ Machine.prototype.setPreferredUnits = function (units, callback) {
         try {
             this.driver.setUnits(uv);
         } catch (e) {
-            callback(e);
+            if (callback) callback(e);
         }
     }
+    if (callback) callback(null);
 };
 
 // Retrieve the G-Code output for a specific file ID.

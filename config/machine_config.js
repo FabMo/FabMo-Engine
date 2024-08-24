@@ -55,10 +55,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
 
             ["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"].forEach(
                 function (key) {
-                    this._cache.envelope[key] = round(
-                        this._cache.envelope[key] * conv,
-                        new_units
-                    );
+                    this._cache.envelope[key] = round(this._cache.envelope[key] * conv, new_units);
                 }.bind(this)
             );
 
@@ -76,10 +73,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
                 "z_slow_speed",
             ].forEach(
                 function (key) {
-                    this._cache.manual[key] = round(
-                        this._cache.manual[key] * conv,
-                        new_units
-                    );
+                    this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);
                 }.bind(this)
             );
         }
@@ -147,9 +141,7 @@ MachineConfig.prototype.apply = function (callback) {
     }
 
     // Apply units (The machine will only apply these if there was an actual change)
-    this.machine.setPreferredUnits(this.get("units"), function () {
-        callback();
-    });
+    this.machine.setPreferredUnits(this.get("units"), callback);
 };
 
 exports.MachineConfig = MachineConfig;

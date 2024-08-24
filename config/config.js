@@ -192,6 +192,12 @@ Config.prototype.save = function (callback) {
                     log.error(err);
                     callback(err);
                 } else {
+                    ////##
+                    // If there is a units key in the 'opensbp' cache, we want to delete it
+                    // ... to avoid reduncancy in saved data with 'machine' cache
+                    if (this.config_name === "opensbp" && this._cache.hasOwnProperty("units")) {
+                        delete this._cache.units;
+                    }
                     var cfg = Buffer.from(JSON.stringify(this._cache, null, 4));
                     fs.write(
                         fd,
@@ -213,15 +219,10 @@ Config.prototype.save = function (callback) {
                                             log.info("config sync failed");
                                             log.error(err);
                                         } else {
-                                            log.info(
-                                                "config fsync succeeded: " +
-                                                    config_file
-                                            );
+                                            log.info("config fsync succeeded: " + config_file);
                                         }
                                         fs.closeSync(fd); // no error reporting
-                                        log.debug(
-                                            "  fsync done " + config_file
-                                        );
+                                        log.debug("  fsync done " + config_file);
                                         callback(err);
                                     }.bind(this)
                                 );
@@ -259,11 +260,7 @@ Config.prototype.init = function (callback) {
                     function (err, data) {
                         if (err) {
                             if (err.code === "ENOENT") {
-                                log.warn(
-                                    "Configuration file " +
-                                        config_file +
-                                        " not found."
-                                );
+                                log.warn("Configuration file " + config_file + " not found.");
                                 this._loaded = true;
                                 this.save(callback, true);
                             } else {
@@ -389,10 +386,7 @@ Config.deleteUserConfig = function (callback) {
         }
         try {
             files.forEach(function (file) {
-                if (
-                    file.search(/auth_secret|engine\.json|updater\.json$/i) ===
-                    -1
-                ) {
+                if (file.search(/auth_secret|engine\.json|updater\.json$/i) === -1) {
                     var p = path.join(config_dir, file);
                     fs.removeSync(p);
                 }
@@ -421,16 +415,10 @@ Config.createDataDirectories = function (callback) {
         dir = Config.getDataDir(dir);
         isDirectory(dir, function (isdir) {
             if (!isdir) {
-                log.warn(
-                    'Directory "' +
-                        dir +
-                        '" does not exist.  Creating a new one.'
-                );
+                log.warn('Directory "' + dir + '" does not exist.  Creating a new one.');
                 fs.mkdir(dir, function (err) {
                     if (!err) {
-                        log.info(
-                            'Successfully created directory "' + dir + '"'
-                        );
+                        log.info('Successfully created directory "' + dir + '"');
                     }
                     callback(err);
                 });
