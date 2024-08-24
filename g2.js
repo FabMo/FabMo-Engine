@@ -1143,7 +1143,7 @@ G2.prototype.updateMachinePosition = function () {
             return;
         }
         d = (1.1 / result).toFixed(5); // get 1 step+ in current units
-        s = "G91 \nG01 Z" + d + "F100 \nG01 X-" + d + " \nG90 \nM30";
+        s = "G91 \nG01 Z" + d + "F100 \nG01 Z-" + d + " \nG90 \nM30";
         self.gcode_queue.enqueue(s);
         self._primed = true;
         self.sendMore();
