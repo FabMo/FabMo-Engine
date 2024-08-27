@@ -141,7 +141,7 @@ MachineConfig.prototype.apply = function (callback) {
     }
 
     // Apply units (The machine will only apply these if there was an actual change)
-    this.machine.setPreferredUnits(this.get("units"), callback);
+    this.machine.setPreferredUnits(this.get("units"), this.get("last_units"), callback);
 };
 
 exports.MachineConfig = MachineConfig;

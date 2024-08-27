@@ -1133,13 +1133,13 @@ G2.prototype.setMachinePosition = function (position, callback) {
 G2.prototype.updateMachinePosition = function () {
     // This is a hack to work around a bug in the g2 firmware that prevents updating the displayed location after a UNITS CHANGE.
     // STRATEGY: Make a small (one step), incremental(G91) move in Z-axis, then reverse in order to FORCE the UPDATE
-    log.debug(" G2 HACK to >>> Update Machine Position");
+    log.debug(" G2 HACK to >>> Update Machine Position Display");
     var self = this;
     var d, s;
     this.get("3su", function (err, result) {
         // use unit value to determine Z step size (channel 3)
         if (err) {
-            log.error("ERROR: Unable to get 1su value from G2");
+            log.error("ERROR: Unable to get 3su value from G2");
             return;
         }
         d = (1.1 / result).toFixed(5); // get 1 step+ in current units

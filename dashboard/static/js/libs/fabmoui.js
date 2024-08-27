@@ -271,6 +271,7 @@ const { last } = require("underscore");
                         posText = " ";
                     }
                     posText = posText + status[pos].toFixed(digits); // <================ LOCATION DISPLAY
+                    console.log("posText: " + posText);
                 } catch (e) {
                     var posText = (pos + "." + pos + pos + pos).toUpperCase();
                 }

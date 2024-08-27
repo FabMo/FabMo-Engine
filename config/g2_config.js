@@ -42,7 +42,7 @@ G2Config.prototype.changeUnits = function (newUnits, callback) {
                 callback(err);
             } else {
                 if (parseInt(newUnits) === parseInt(currentUnits)) {
-                    callback("no unit change needed");
+                    callback();
                 } else {
                     this.driver.setUnits(
                         newUnits,

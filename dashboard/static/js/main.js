@@ -62,28 +62,50 @@ engine.getCurrentUser(function (err, user) {
 });
 
 var setUpManual = function () {
-    calledFromModal = "";
-    // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
-    $(".drive-button").removeClass("drive-button-fixed");
-    $(".slidecontainer").show();
-    $(".fixed-input-container").hide();
-    $(".fixed-switch input").prop("checked", false);
+    return new Promise((resolve, reject) => {
+        calledFromModal = "";
+        // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
+        $(".drive-button").removeClass("drive-button-fixed");
+        $(".slidecontainer").show();
+        $(".fixed-input-container").hide();
+        $(".fixed-switch input").prop("checked", false);
+
+        // Function to set location displays and then set video style
+        function setLocationAndVideoStyle() {
+            setLocationDisplays();
+            setVideoStyle();
+            resolve(); // Resolve the promise after setting location displays and video style
+        }
+
+        engine.getConfig(function (err, config) {
+            if (err) {
+                console.log(err);
+            } else {
+                var manual_config = config.machine.manual;
+                if (manual_config.xy_increment) {
+                    $(".xy-fixed").val(manual_config.xy_increment);
+                    $(".z-fixed").val(manual_config.z_increment);
+                    $(".abc-fixed").val(manual_config.abc_increment);
+                } else {
+                    $(".xy-fixed").val(0.1);
+                    $(".z-fixed").val(0.01);
+                }
+                $("#manual-move-speed").val(manual_config.xy_speed);
+                $("#manual-move-speed").attr("min", manual_config.xy_min);
+                $("#manual-move-speed").attr("max", manual_config.xy_max);
+            }
+            // Call the function to set location displays and video style
+            setLocationAndVideoStyle();
+        });
+    });
+};
+
+// Set the location displays by triggering an enable update
+function setLocationDisplays() {
     engine.getConfig(function (err, config) {
         if (err) {
             console.log(err);
         } else {
-            var manual_config = config.machine.manual;
-            if (manual_config.xy_increment) {
-                $(".xy-fixed").val(manual_config.xy_increment);
-                $(".z-fixed").val(manual_config.z_increment);
-                $(".abc-fixed").val(manual_config.abc_increment);
-            } else {
-                $(".xy-fixed").val(0.1);
-                $(".z-fixed").val(0.01);
-            }
-            $("#manual-move-speed").val(manual_config.xy_speed);
-            $("#manual-move-speed").attr("min", manual_config.xy_min);
-            $("#manual-move-speed").attr("max", manual_config.xy_max);
             ///hack to get extra axes to show up
             var enabledAxes = {};
             var checkEnabled = ["xam", "yam", "zam", "aam", "bam", "cam"];
@@ -93,7 +115,10 @@ var setUpManual = function () {
             engine.setConfig({ driver: enabledAxes }, function (err, data) {});
         }
     });
-    // Customize for video
+}
+
+// Customize for video
+function setVideoStyle() {
     let current_App = localStorage.getItem("currentapp");
     let app_has_video = localStorage.getItem("fabmo_sb4_has_video");
     if (current_App === "video" || (current_App === "fabmo-sb4" && app_has_video === "true")) {
@@ -106,7 +131,7 @@ var setUpManual = function () {
         $(".manual-drive-modal").css("background-color", "#ffda29");
         $(".modalDim").css("background-color", "rgba(0,0,0,0.45)");
     }
-};
+}
 
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
@@ -145,6 +170,8 @@ engine.getVersion(function (err, version) {
                     context.apps.fetch();
                 }
             });
+
+            setLocationDisplays();
 
             // ------------------------------------------------------------ STATUS HANDLER
             dashboard.engine.on("status", function (status) {
@@ -618,8 +645,13 @@ $(".manual-drive-exit").on("click", function () {
 });
 
 $(".manual-drive-enter").on("click", function () {
-    setUpManual();
-    dashboard.engine.manualEnter();
+    setUpManual()
+        .then(() => {
+            dashboard.engine.manualEnter();
+        })
+        .catch((err) => {
+            console.error("Error in setUpManual:", err);
+        });
 });
 
 function showDaisy(callback) {

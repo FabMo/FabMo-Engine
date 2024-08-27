@@ -222,7 +222,7 @@ function Machine(control_path, callback) {
     config.driver.on(
         "change",
         function (update) {
-            ["x", "y", "z", "a", "b", "c", "u", "v", "w"].forEach(
+            ["x", "y", "z", "a", "b", "c"].forEach(
                 function (axis) {
                     var mode = axis + "am";
                     var pos = "pos" + axis;
@@ -232,7 +232,10 @@ function Machine(control_path, callback) {
                             delete this.status[pos];
                         } else {
                             log.debug("Enabling display for " + axis + " axis.");
-                            this.status[pos] = 0;
+                            if (this.status[pos] === undefined) {
+                                // Don't overwrite the position if it's already set
+                                this.status[pos] = null;
+                            }
                         }
                     }
                 }.bind(this)
@@ -884,9 +887,19 @@ Machine.prototype.runJob = function (job) {
 
 // Set the preferred units to the provided value ('in' or 'mm')
 // Changing the preferred units is a heavy duty operation. See below.
-Machine.prototype.setPreferredUnits = async function (units, callback) {
+Machine.prototype.setPreferredUnits = async function (units, lastunits, callback) {
+    let callbackCalled = false; // Flag to track if callback has been called
+
+    const safeCallback = (err) => {
+        if (!callbackCalled && callback) {
+            callbackCalled = true;
+            callback(err);
+        }
+    };
+
     try {
-        if (config.driver.changeUnits) {
+        // check to see whether the driver has a changeUnits argument that = null or undefined and if so, skip the change
+        if (lastunits !== units && config.driver.changeUnits) {
             units = u.unitType(units); // Normalize units
             var uv = null;
             switch (units) {
@@ -933,15 +946,14 @@ Machine.prototype.setPreferredUnits = async function (units, callback) {
                         }.bind(this)
                     );
                 });
-
                 // After all async operations complete, trigger the update
                 log.debug("Triggering machine position update after all configurations.");
-                this.driver.updateMachinePosition(); // Trigger the update once
+                this.driver.updateMachinePosition();
             } else {
-                if (callback) callback(null);
+                safeCallback(null);
             }
         } else {
-            if (callback) callback(null);
+            safeCallback(null);
         }
         this.emit("status", this.status); // emit a status change
     } catch (e) {
@@ -950,10 +962,10 @@ Machine.prototype.setPreferredUnits = async function (units, callback) {
         try {
             this.driver.setUnits(uv);
         } catch (e) {
-            if (callback) callback(e);
+            safeCallback(e);
         }
     }
-    if (callback) callback(null);
+    safeCallback(null);
 };
 
 // Retrieve the G-Code output for a specific file ID.

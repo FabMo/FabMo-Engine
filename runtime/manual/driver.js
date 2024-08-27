@@ -386,7 +386,7 @@ ManualDriver.prototype._handleNudges = function () {
             this.keep_moving = false;
             var axis = move.axis.toUpperCase();
 
-            if ("XYZABCUVW".indexOf(axis) >= 0) {
+            if ("XYZABC".indexOf(axis) >= 0) {
                 var moves = ["G91 G61.1"]; // set to exact fixed distance
                 if (move.second_axis) {
                     var second_axis = move.second_axis.toUpperCase();
