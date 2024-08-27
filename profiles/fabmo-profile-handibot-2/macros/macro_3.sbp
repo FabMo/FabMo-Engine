@@ -16,7 +16,7 @@
 SU,0                         ' Set to Inches; Units will auto-revert to current starting units at end of file
 
 '--- Settings ---            ' Initializes permanent variables if not already set
-$current_cutter_Zoffset := .25
+$sb_current_cutter_Zoffset := .25
 $x_backoff = .075
 $y_backoff = .075
 $z_backoff = .075
@@ -52,7 +52,7 @@ offset_z_cutter:
    ' Comment (') out the PAUSE Line if you do not want the User Query about Z offset
    ' Or, comment out call to this subroutine if you NEVER want to include the cutter offset in your zeroing routine
     PAUSE "Click RESUME to Set Z to most recent Cutter Offset; QUIT to leave Z set at 0"
-    VA,,, $current_cutter_Zoffset
+    VA,,, $sb_current_cutter_Zoffset
     RETURN
   
 home_x:
