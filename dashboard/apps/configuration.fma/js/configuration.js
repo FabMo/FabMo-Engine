@@ -70,13 +70,14 @@ function update() {
     if(err) {
       console.error(err);
     } else {
+      let decimals = '';
       configData = data;
-      ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
+      ['driver', 'engine', 'machine', 'opensbp'].forEach(function(branchname) {
           branch = flattenObject(data[branchname]);
-          let decimals = ''; 
           for(key in branch) {
-            if ( key === 'units') {decimals = input.val == "mm" ? 100 : 1000};
             v = branch[key];
+            if ( key === 'units') {decimals = v == "mm" ? 100 : 1000};
+
             input = $('#' + branchname + '-' + key);
             if(input.length) {
                 if (input.is(':checkbox')){
@@ -103,7 +104,7 @@ function update() {
                 $('#' + branchname + '-' + 'y_maxjerk').val(String(v));
             }
           }
-      });
+        });
       var profiles = data['profiles'] || {}
       var profilesList = $('#profile-listbox');
       profilesList.empty();

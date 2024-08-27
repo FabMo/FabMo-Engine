@@ -1401,7 +1401,9 @@ define(function (require) {
         if (options["input"]) {
             $("#inputVar").val(options["input"]["name"]);
             $("#inputType").val(options["input"]["type"]);
+            $("#inputVal").val("");
             $(".modalInput").show();
+            $("#inputVal").trigger("focus");
         } else {
             $(".modalInput").hide();
         }

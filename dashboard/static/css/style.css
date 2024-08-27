@@ -292,7 +292,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	padding-right: 10px;
 }
 
-.machine-pos .rotunits {
+.machine-pos .a-rotunits, .b-rotunits, .c-rotunits {
     font-size: 10px;
     text-transform: lowercase;
     vertical-align: text-top;
@@ -1435,7 +1435,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .manual-drive-exit {
     position: absolute;
     top: 10px;
-    right: 10px;
+    right: 2px;
     border-radius: 50%;
     height: 35px;
     width: 35px;
@@ -2050,6 +2050,7 @@ input[type='range']:focus {
     top: 50%;
     left: 50%;
     font-size: xx-large;
+	text-align: center;
     transform: translate(-50%, -50%);
 }
 
@@ -2444,7 +2445,7 @@ input[type='range']:focus {
 }
 
 .modalInput{
-	width: 50%;
+	width: 75%;
 	padding-left: 25%;
 }
 

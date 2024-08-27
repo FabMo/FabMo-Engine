@@ -150,12 +150,7 @@ ManualDriver.prototype.exit = function () {
 //          speed - The speed in current units
 //    second_axis - The second axis to move
 //   second_speed - The second axis speed
-ManualDriver.prototype.startMotion = function (
-    axis,
-    speed,
-    second_axis,
-    second_speed
-) {
+ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_speed) {
     var dir = speed < 0 ? -1.0 : 1.0;
     var second_dir = second_speed < 0 ? -1.0 : 1.0;
     speed = Math.abs(speed);
@@ -197,9 +192,7 @@ ManualDriver.prototype.startMotion = function (
         // Length of the moves we pump the queue with, based on speed vector
         this.renewDistance = speed * (T_RENEW / 60000) * SAFETY_FACTOR;
         // Make sure we're in relative moves and the speed is set
-        this.stream.write(
-            "G91 F" + this.currentSpeed.toFixed(3) + "\n" + "G61" + "\n"
-        );
+        this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n" + "G61" + "\n");
 
         // Start pumping moves
         this._renewMoves("start");
@@ -329,34 +322,25 @@ ManualDriver.prototype.set = function (pos) {
                         console.log(key);
                         switch (key) {
                             case "X":
-                                toSet.g55x = Number(
-                                    (MPO.x * unitConv - pos[key]).toFixed(5)
-                                );
+                                toSet.g55x = Number((MPO.x * unitConv - pos[key]).toFixed(5));
                                 break;
                             case "Y":
-                                toSet.g55y = Number(
-                                    (MPO.y * unitConv - pos[key]).toFixed(5)
-                                );
+                                toSet.g55y = Number((MPO.y * unitConv - pos[key]).toFixed(5));
                                 break;
                             case "Z":
-                                toSet.g55z = Number(
-                                    (MPO.z * unitConv - pos[key]).toFixed(5)
-                                );
+                                toSet.g55z = Number((MPO.z * unitConv - pos[key]).toFixed(5));
                                 break;
                             case "A":
                                 toSet.g55a = Number(
+                                    //(MPO.a * unitConv - pos[key]).toFixed(5) ////##A
                                     (MPO.a * 1 - pos[key]).toFixed(5)
                                 );
                                 break;
                             case "B":
-                                toSet.g55b = Number(
-                                    (MPO.b * 1 - pos[key]).toFixed(5)
-                                );
+                                toSet.g55b = Number((MPO.b * 1 - pos[key]).toFixed(5));
                                 break;
                             case "C":
-                                toSet.g55c = Number(
-                                    (MPO.c * 1 - pos[key]).toFixed(5)
-                                );
+                                toSet.g55c = Number((MPO.c * 1 - pos[key]).toFixed(5));
                                 break;
                             default:
                                 log.error("don't understand axis");
@@ -402,7 +386,7 @@ ManualDriver.prototype._handleNudges = function () {
             this.keep_moving = false;
             var axis = move.axis.toUpperCase();
 
-            if ("XYZABCUVW".indexOf(axis) >= 0) {
+            if ("XYZABC".indexOf(axis) >= 0) {
                 var moves = ["G91 G61.1"]; // set to exact fixed distance
                 if (move.second_axis) {
                     var second_axis = move.second_axis.toUpperCase();
@@ -431,21 +415,9 @@ ManualDriver.prototype._handleNudges = function () {
                     }
                 } else {
                     if (move.speed) {
-                        moves.push(
-                            "G1 " +
-                                axis +
-                                move.distance.toFixed(5) +
-                                " F" +
-                                move.speed.toFixed(3)
-                        );
+                        moves.push("G1 " + axis + move.distance.toFixed(5) + " F" + move.speed.toFixed(3));
                     } else {
-                        moves.push(
-                            "G0 " +
-                                axis +
-                                move.distance.toFixed(5) +
-                                " F" +
-                                move.speed.toFixed(3)
-                        );
+                        moves.push("G0 " + axis + move.distance.toFixed(5) + " F" + move.speed.toFixed(3));
                     }
                 }
                 moves.forEach(
@@ -471,13 +443,7 @@ ManualDriver.prototype._handleNudges = function () {
 //          distance - The length of the nudge
 //       second_axis - The second axis to move
 //   second_distance - The second axis speed
-ManualDriver.prototype.nudge = function (
-    axis,
-    speed,
-    distance,
-    second_axis,
-    second_distance
-) {
+ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, second_distance) {
     if (this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
         log.warn("fixedMove(): Move queue is already full!");
         return;
@@ -519,11 +485,8 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 ////## added to prevent runaway; TODO: sovled this without global!
                 this.keep_moving = false;
             }
-            var segment =
-                this.currentDirection * (this.renewDistance / RENEW_SEGMENTS);
-            var second_segment =
-                this.second_currentDirection *
-                (this.renewDistance / RENEW_SEGMENTS);
+            var segment = this.currentDirection * (this.renewDistance / RENEW_SEGMENTS);
+            var second_segment = this.second_currentDirection * (this.renewDistance / RENEW_SEGMENTS);
             var moves = [];
             if (this.second_axis) {
                 for (var i = 0; i < RENEW_SEGMENTS; i++) {
@@ -540,8 +503,7 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 // eslint-disable-next-line no-redeclare
                 for (var i = 0; i < RENEW_SEGMENTS; i++) {
                     // eslint-disable-next-line no-redeclare
-                    var move =
-                        "G1" + this.currentAxis + segment.toFixed(4) + "\n";
+                    var move = "G1" + this.currentAxis + segment.toFixed(4) + "\n";
                     moves.push(move);
                 }
             }

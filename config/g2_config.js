@@ -7,6 +7,9 @@ const { truncate } = require("fs");
  * g2_config.js
  *
  * This module defines the configuration object that manages the settings in G2.
+ * Note that for Units to update correctly modified _am items must be read first in config lists
+ * (e.g. aam, bam, etc) before distance-related current values are calculated.
+ * Put list in correct order starting in default profiles.
  */
 async = require("async");
 util = require("util");
@@ -39,7 +42,7 @@ G2Config.prototype.changeUnits = function (newUnits, callback) {
                 callback(err);
             } else {
                 if (parseInt(newUnits) === parseInt(currentUnits)) {
-                    callback("no unit change needed");
+                    callback();
                 } else {
                     this.driver.setUnits(
                         newUnits,
@@ -178,6 +181,7 @@ G2Config.prototype.configureStatusReports = function (callback) {
     // see g2 spindle.h (no other documentation)
     // also see DIO defs in g2core >gpio.h (for setting number and analog, PWM?)
     // fro is feed rate override
+    // feed is current/last feed rate
     if (this.driver) {
         this.driver.command({
             sr: {
@@ -219,6 +223,7 @@ G2Config.prototype.configureStatusReports = function (callback) {
                 out11: true,
                 out12: true,
                 fro: true,
+                feed: true,
             },
         });
         this.driver.command({ qv: 0 });
