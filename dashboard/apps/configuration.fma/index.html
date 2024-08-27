@@ -86,7 +86,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">Default Unit System<div class="tool-tip">i</div></label>
+                <label data-tip="The distance units that will be used for motion and display and in supported apps.">Unit System<div class="tool-tip">i</div></label>
                 <select id="machine-units" class="machine-input">
                     <option value="in">in</option>
                     <option value="mm">mm</option>
@@ -189,6 +189,11 @@
       <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel2">
         <div class="row">
           <fieldset>
+            <legend>AXIS CONFIGURATIONS</legend>
+          </fieldset>
+        </div>
+        <div class="row">
+          <fieldset>
             <legend>X-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
@@ -235,7 +240,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-xam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -295,7 +300,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-yam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -355,7 +360,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-zam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -415,10 +420,12 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
+                <label data-tip="The movement mode for this axis. Linear axes are controlled in the default linear unit system. Rotary axes are controlled in degrees rotation. Speed/Radius axes are rotary and controlled by set radius.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-aam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
+                  <option value="2">Linear</option>
+                  <option value="3">Speed/Radius</option>
                 </select>
               </div>
             </div>
@@ -475,10 +482,12 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
+                <label data-tip="The movement mode for this axis. Linear axes are controlled in the default linear unit system. Rotary axes are controlled in degrees rotation. Speed/Radius axes are rotary and controlled by set radius.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-bam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
+                  <option value="2">Linear</option>
+                  <option value="3">Speed/Radius</option>
                 </select>
               </div>
             </div>
@@ -535,10 +544,12 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
+                <label data-tip="The movement mode for this axis. Linear axes are controlled in the default linear unit system. Rotary axes are controlled in degrees rotation. Speed/Radius axes are rotary and controlled by set radius.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-cam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
+                  <option value="2">Linear</option>
+                  <option value="3">Speed/Radius</option>
                 </select>
               </div>
             </div>
@@ -1031,7 +1042,7 @@
                   <input type="text" id="driver-1su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">steps/units</span>
+                  <span class="postfix">steps/unit</span>
                 </div>
               </div>
             </div>
@@ -1098,7 +1109,7 @@
                   <input type="text" id="driver-2su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">steps/units</span>
+                  <span class="postfix">steps/unit</span>
                 </div>
               </div>
             </div>
@@ -1166,7 +1177,7 @@
                   <input type="text" id="driver-3su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">steps/units</span>
+                  <span class="postfix">steps/unit</span>
                 </div>
               </div>
             </div>
@@ -1234,7 +1245,7 @@
                   <input type="text" id="driver-4su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">steps/units</span>
+                  <span class="postfix">steps/unit</span>
                 </div>
               </div>
             </div>
@@ -1302,7 +1313,7 @@
                   <input type="text" id="driver-5su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">steps/units</span>
+                  <span class="postfix">steps/unit</span>
                 </div>
               </div>
             </div>
@@ -1370,7 +1381,7 @@
                   <input type="text" id="driver-6su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">steps/units</span>
+                  <span class="postfix">steps/unit</span>
                 </div>
               </div>
             </div>
@@ -1741,9 +1752,20 @@
                     <option value="11">Input 11</option>
                     <option value="12">Input 12</option>
                   </select>
-
               </div>
-
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Planning Mode</legend>
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label data-tip="Speeds based on 2D or 3D vector.">Planning Mode Selection<div class="tool-tip">i</div>
+                </label>
+                  <select id="driver-plmo" class="driver-input">
+                    <option value="2">2-d mode</option>
+                    <option value="3">3-d mode (default)</option>
+                  </select>
+              </div>
             </div>
           </fieldset>
 

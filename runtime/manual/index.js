@@ -117,9 +117,7 @@ ManualRuntime.prototype.executeCode = function (code) {
             break;
         default:
             if (!this.helper) {
-                log.warn(
-                    "Can't accept command '" + code.cmd + "' - not entered."
-                );
+                log.warn("Can't accept command '" + code.cmd + "' - not entered.");
                 return;
             }
             switch (code.cmd) {
@@ -129,12 +127,7 @@ ManualRuntime.prototype.executeCode = function (code) {
                     break;
 
                 case "start":
-                    this.helper.startMotion(
-                        code.axis,
-                        code.speed,
-                        code.second_axis,
-                        code.second_speed
-                    );
+                    this.helper.startMotion(code.axis, code.speed, code.second_axis, code.second_speed);
                     break;
 
                 case "stop":
@@ -169,13 +162,7 @@ ManualRuntime.prototype.executeCode = function (code) {
                     if (!this.helper) {
                         this.enter();
                     }
-                    this.helper.nudge(
-                        code.axis,
-                        code.speed,
-                        code.dist,
-                        code.second_axis,
-                        code.second_dist
-                    );
+                    this.helper.nudge(code.axis, code.speed, code.dist, code.second_axis, code.second_dist);
                     break;
 
                 case "raw":
@@ -183,11 +170,7 @@ ManualRuntime.prototype.executeCode = function (code) {
                     break;
 
                 default:
-                    log.error(
-                        "Don't know what to do with '" +
-                            code.cmd +
-                            "' in manual command."
-                    );
+                    log.error("Don't know what to do with '" + code.cmd + "' in manual command.");
                     break;
             }
     }
