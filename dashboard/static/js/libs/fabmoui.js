@@ -239,8 +239,24 @@ const { last } = require("underscore");
             that.updateText($(that.units_selector), unit);
         }
 
+        if (this.tool.config.driver.aam === 1) {
+            $(".a-rotunits").show();
+        } else {
+            $(".a-rotunits").hide();
+        }
+        if (this.tool.config.driver.bam === 1) {
+            $(".b-rotunits").show();
+        } else {
+            $(".b-rotunits").hide();
+        }
+        if (this.tool.config.driver.cam === 1) {
+            $(".c-rotunits").show();
+        } else {
+            $(".c-rotunits").hide();
+        }
+
         // What follows is a bit of a kludge to make sure key display items keep updated
-        // Key DRO display stuff
+        // Keypad DRO display stuff
         ["x", "y", "z", "a", "b", "c"].forEach(function (axis) {
             var pos = "pos" + axis;
             if (pos in status) {
@@ -271,7 +287,6 @@ const { last } = require("underscore");
                         posText = " ";
                     }
                     posText = posText + status[pos].toFixed(digits); // <================ LOCATION DISPLAY
-                    console.log("posText: " + posText);
                 } catch (e) {
                     var posText = (pos + "." + pos + pos + pos).toUpperCase();
                 }
