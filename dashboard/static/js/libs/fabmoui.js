@@ -239,20 +239,21 @@ const { last } = require("underscore");
             that.updateText($(that.units_selector), unit);
         }
 
+        // Set the degree symbol in the main app for ABC
         if (this.tool.config.driver.aam === 1) {
-            $(".a-rotunits").show();
+            $(".a-rotunits").html("o&nbsp");
         } else {
-            $(".a-rotunits").hide();
+            $(".a-rotunits").html("&nbsp");
         }
         if (this.tool.config.driver.bam === 1) {
-            $(".b-rotunits").show();
+            $(".b-rotunits").html("o&nbsp");
         } else {
-            $(".b-rotunits").hide();
+            $(".b-rotunits").html("&nbsp");
         }
         if (this.tool.config.driver.cam === 1) {
-            $(".c-rotunits").show();
+            $(".c-rotunits").html("o&nbsp");
         } else {
-            $(".c-rotunits").hide();
+            $(".c-rotunits").html("&nbsp");
         }
 
         // What follows is a bit of a kludge to make sure key display items keep updated

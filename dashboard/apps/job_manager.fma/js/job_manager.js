@@ -956,28 +956,36 @@ $(document).ready(function() {
 
     // Update settings on change
     $('.driver-input').change( function() {
-       var parts = this.id.split("-");
-       var new_config = {};
-       new_config.driver = {};
-       var v = parts[1];
-       if(v === "gdi") {
-           new_config.driver.gdi = this.value;
-           if (this.value == 0) { fabmo.runGCode("G90"); }
-           else { fabmo.runGCode("G91"); }
-           fabmo.setConfig(new_config, function(err, data) {
-               notifyChange(err, data.driver.gid);
-               setTimeout(update, 500);
-           });
-       }
-       else {
-           setConfig(this.id, this.value);
-       }
-       // How to send G90 or G91 from here?
-    });
+      var parts = this.id.split("-");
+      var new_config = {};
+      new_config.driver = {};
+      var v = parts[1];
+      if(v === "gdi") {
+          new_config.driver.gdi = this.value;
+          if (this.value == 0) { fabmo.runGCode("G90"); }
+          else { fabmo.runGCode("G91"); }
+          fabmo.setConfig(new_config, function(err, data) {
+              notifyChange(err, data.driver.gid);
+              setTimeout(update, 500);
+          });
+      // Handle getting the driver input value from seconds to min before saving to g2.config
+      } else if(v === "xfr" || v === "yfr" || v === "zfr" || v === "afr" || v === "bfr" || v === "cfr") {
+          new_config.driver[v] = this.value * 60;
+          setConfig(this.id,  new_config.driver[v]);
+          }    
+      else {
+          setConfig(this.id, this.value);
+      }
+      // How to send G90 or G91 from here?
+  });
 
-    $('.opensbp-input').change( function() {
-       setConfig(this.id, this.value);
-    });
+  $('.opensbp-input').change( function() {
+    // // Handle special case of representing jogs in config manager display as dist/min
+    // if ( this.id.substring(8,11) === 'jog' ) {
+    //     this.value = this.value;
+    // }
+    setConfig(this.id, this.value);
+});
 
     $('.opensbp-values').change( function() {
        var parts = this.id.split("-");

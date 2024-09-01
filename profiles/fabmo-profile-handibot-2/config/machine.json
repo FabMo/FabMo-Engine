@@ -13,7 +13,7 @@
     "di9_def": "none",
     "di10_def": "none",
     "di11_def": "none",
-    "di12_def": "interlock",
+    "di12_def": "none",
 	"default_app" : "fabmo-sb4",
 	"envelope" : {
 		"xmin" : 0,

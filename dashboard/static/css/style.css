@@ -292,7 +292,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	padding-right: 10px;
 }
 
-.machine-pos .a-rotunits, .b-rotunits, .c-rotunits {
+.machine-pos .a-rotunits, .machine-pos .b-rotunits, .machine-pos .c-rotunits {
     font-size: 10px;
     text-transform: lowercase;
     vertical-align: text-top;
@@ -2094,7 +2094,7 @@ input[type='range']:focus {
 	margin-right: 10px;
 }
 
-.read-out-container .units, .read-out-container .rotunits {
+.read-out-container .units, .read-out-container .a-rotunits, .read-out-container .b-rotunits, .read-out-container .c-rotunits {
 		font-size: 12px;
 		text-transform: lowercase;
 		vertical-align: baseline;

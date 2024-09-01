@@ -456,6 +456,12 @@ SBPRuntime.prototype._loadConfig = function () {
     this.maxjerk_b = settings.b_maxjerk;
     this.maxjerk_c = settings.c_maxjerk;
     this.safeZpullUp = settings.safeZpullUp;
+
+    // need these to control conversion or not of ABC axis for case of rotary mode
+    var axis_types = config.driver.getMany(["aam", "bam", "cam"]);
+    this.axis_a = axis_types.aam;
+    this.axis_b = axis_types.bam;
+    this.axis_c = axis_types.cam;
 };
 
 // Save runtime configuration settings to the opensbp settings file
@@ -1532,26 +1538,36 @@ SBPRuntime.prototype._setUnits = function (units) {
     var convertR = units === "in" ? u.mm2inR : u.in2mmR; // Round to keep display of speeds clean
     this.movespeed_xy = convertR(this.movespeed_xy);
     this.movespeed_z = convertR(this.movespeed_z);
-    this.movespeed_a = convertR(this.movespeed_a);
-    this.movespeed_b = convertR(this.movespeed_b);
-    this.movespeed_c = convertR(this.movespeed_c);
     this.jogspeed_xy = convertR(this.jogspeed_xy);
     this.jogspeed_y = convertR(this.jogspeed_xy);
     this.jogspeed_z = convertR(this.jogspeed_z);
-    this.jogspeed_a = convertR(this.jogspeed_a);
-    this.jogspeed_b = convertR(this.jogspeed_b);
-    this.jogspeed_c = convertR(this.jogspeed_c);
     this.maxjerk_xy = convertR(this.maxjerk_xy);
     this.maxjerk_y = convertR(this.maxjerk_xy);
     this.maxjerk_z = convertR(this.maxjerk_z);
-    this.maxjerk_a = convertR(this.maxjerk_a);
-    this.maxjerk_b = convertR(this.maxjerk_b);
-    this.maxjerk_c = convertR(this.maxjerk_c);
     this.safeZpullUp = convertR(this.safeZpullUp);
     this.cmd_posx = convert(this.cmd_posx);
     this.cmd_posy = convert(this.cmd_posy);
     this.cmd_posz = convert(this.cmd_posz);
-    // if other axes are linear, then convert their commanded positions ???
+    // Only convert A, B, and C if they are in use as linear axes (#2)
+    if (this.axis_a === 2) {
+        this.movespeed_a = convertR(this.movespeed_a);
+        this.jogspeed_a = convertR(this.jogspeed_a);
+        this.maxjerk_a = convertR(this.maxjerk_a);
+        this.cmd_posa = convert(this.cmd_posa);
+        this.safeApullUp = convertR(this.safeApullUp);
+    }
+    if (this.axis_b === 2) {
+        this.movespeed_b = convertR(this.movespeed_b);
+        this.jogspeed_b = convertR(this.jogspeed_b);
+        this.maxjerk_b = convertR(this.maxjerk_b);
+        this.cmd_posb = convert(this.cmd_posb);
+    }
+    if (this.axis_c === 2) {
+        this.movespeed_c = convertR(this.movespeed_c);
+        this.jogspeed_c = convertR(this.jogspeed_c);
+        this.maxjerk_c = convertR(this.maxjerk_c);
+        this.cmd_posc = convert(this.cmd_posc);
+    }
     this.units = units; // object representation of the current units
     config.machine.set("units", units); // Primary Storage of the current units in machine
     // See G2.js for call to update units display values
