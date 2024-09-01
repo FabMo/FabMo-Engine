@@ -245,23 +245,6 @@ function Machine(control_path, callback) {
         }.bind(this)
     );
 
-    // config.OpenSBPConfig.on(
-    //     "configChanged",
-    //     function () {
-    //         log.debug("Opensbp change detected -- UPDATING STATUS");
-    //         this.emit("status", this.status); // emit a status similarly on any opensbp change
-    //     }.bind(this)
-    // );
-
-    // // Update status for client on any opensbp change to deal with keypad, etc
-    // config.opensbp.on(
-    //     "change",
-    //     function () {
-    //         log.debug("Opensbp change detected -- UPDATING STATUS");
-    //         this.emit("status", this.status); // emit a status similarly on any opensbp change
-    //     }.bind(this)
-    // );
-
     // This handler deals with inputs that are selected for special functions (authorize, ok, quit, etc)
     this.driver.on(
         "status",

@@ -7,23 +7,29 @@ var moment = require('../../../static/js/libs/moment.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 
+// Having ABC operate differently than XYZ and G2 makes this axis overloaded with special cases
+// ... and using ips rather than G2's mps makes it even more complicated; lots of fussing here
+// For jerk values, we stick with "per minute" reports as these values don't have intuitive meaning
+// ... and it just makes it easier to stay consistent with G2
+
+
 $('body').bind('focusin focus', function(e){
   e.preventDefault();
 })
-var unit_label_index = {}
 
+var axis_modes = {
+  a_mode: 0, // For ABC axis mode:   0=disable; 1=degrees; 2=linear; 3=speed/radius(not implemented)
+  b_mode: 0,
+  c_mode: 0,
+};
+
+var unit_label_index = {}
 var registerUnitLabel = function(label, in_label, mm_label) {
   var labels = {
     'in' : in_label,
     'mm' : mm_label
   }
   unit_label_index[label] = labels;
-}
-
-var updateLabels = function(unit) {
-	$.each(unit_label_index, function(key, value) {
-        $(key).html(value[unit]);
-	});
 }
 
 var flattenObject = function(ob) {
@@ -76,8 +82,12 @@ function update() {
           branch = flattenObject(data[branchname]);
           for(key in branch) {
             v = branch[key];
+            // for managing decimal places
             if ( key === 'units') {decimals = v == "mm" ? 100 : 1000};
-
+            // Get ABC axis modes for later use
+            if ( key === 'aam') {axis_modes["a_mode"] = v}
+            if ( key === 'bam') {axis_modes["b_mode"] = v}
+            if ( key === 'cam') {axis_modes["c_mode"] = v}  
             input = $('#' + branchname + '-' + key);
             if(input.length) {
                 if (input.is(':checkbox')){
@@ -89,26 +99,52 @@ function update() {
                 } else {
                   if ( key != 'jogy_speed' &&  key != 'y_maxjerk' ) {    // ...ugly way to handle, per below
                     input.val(String(v));                                // Most values updated here    
-                  }
-                }
+                      
+                      if (key.substring(1,3) === 'fr') {                // Handle special case of feedrate values
+                          input.val((Math.round(String(v) * 100) / (60 * 100)));
+                      }  
+                    }
+                }  
             }
-            // Handle special case of representing jogs in config manager display in dist/min
+            // Handle special case of representing jogs in config manager display in units/sec
             if ( key.substring(0,3) === 'jog' && key != 'jogy_speed') {
-                input.val((Math.round(String(v) * 60 * decimals) / decimals));
+                input.val((Math.round(String(v) * decimals) / decimals));
             }    
             // Handle special case that some Y axis values are linked to X axis in FabMo
             if ( key === 'jogxy_speed' ) {
-                $('#' + branchname + '-' + 'jogy_speed').val((Math.round(String(v) * 60 * decimals) / decimals));
+                $('#' + branchname + '-' + 'jogy_speed').val((Math.round(String(v) * decimals) / decimals));
             }
             if ( key === 'xy_maxjerk' ) {
                 $('#' + branchname + '-' + 'y_maxjerk').val(String(v));
             }
           }
         });
+      // Update all the labels based on the current unit setting
+      var unit = data.machine.units;
+      $.each(unit_label_index, function(key, value) {  // handles units for XYZ
+          $(key).html(value[unit]);
+      });
+      for (var key in axis_modes) {                    // handles units for ABC
+        if (axis_modes.hasOwnProperty(key)) {
+          var axis = key.substring(0,1);
+          var mode = axis_modes[key];
+          if (mode === 2) { // if linear
+            if (unit === "in") {
+              $("." + axis + "-axis-unit").html("in/sec");
+              $("." + axis + "-axis-jerk-unit").html("in/min<sup>3</sup>");
+            } else {
+              $("." + axis + "-axis-unit").html("mm/sec");
+              $("." + axis + "-axis-jerk-unit").html("mm/min<sup>3</sup>");
+            }
+          } else {
+            $("." + axis + "-axis-unit").html("degs/sec");
+            $("." + axis + "-axis-jerk-unit").html("deg/min<sup>3</sup>");
+          }
+        }
+      }
       var profiles = data['profiles'] || {}
       var profilesList = $('#profile-listbox');
       profilesList.empty();
-      //profilesList.empty();
       if(profiles) {
         for(var name in profiles) {
           profilesList.append(
@@ -270,14 +306,16 @@ $(document).ready(function() {
     registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');
 
     fabmo.on('status', function(status) {
-        updateLabels(status.unit);
+      update();
     });
+    
+    // Trigger a status update to get the ball rolling
     fabmo.requestStatus();
 
     // Populate Settings
     update();
 
-    ///tool tip logic
+    // tool tip logic
     $('.tool-tip').click(function(){
         var tip =$(this).parent().data('tip');
         var eTop = $(this).offset().top;
@@ -318,11 +356,23 @@ $(document).ready(function() {
                 notifyChange(err, data.driver.gid);
                 setTimeout(update, 500);
             });
-        }
-        else {
+
+        // Handle getting the driver input value from seconds to min before saving to g2.config
+        } else if(v === "xfr" || v === "yfr" || v === "zfr" || v === "afr" || v === "bfr" || v === "cfr") {
+            new_config.driver[v] = this.value * 60;
+            setConfig(this.id,  new_config.driver[v]);
+        
+        // Fix up the symbol and label for ABC axis mode
+        } else if (v === "aam" || v === "bam" || v === "cam") {
+            console.log ("Got a new Axis Mode - " + (v) + " - " + this.value); 
             setConfig(this.id, this.value);
-        }
-        // How to send G90 or G91 from here?
+            update();
+
+         // General "driver-input" updates  
+         } else {
+            setConfig(this.id, this.value);
+         }
+
     });
 
     $('#engine-version').click(function(evt) {
@@ -355,10 +405,6 @@ $(document).ready(function() {
     });
 
     $('.opensbp-input').change( function() {
-        // Handle special case of representing jogs in config manager display as dist/min
-        if ( this.id.substring(8,11) === 'jog' ) {
-            this.value = this.value / 60;
-        }
         setConfig(this.id, this.value);
     });
 

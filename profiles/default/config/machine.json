@@ -1,6 +1,7 @@
 {
 	"units" : "in",
 	"time_units" : "s",
+	"last_units" : "in",
 	"quit_input": 0,
 	"auth_timeout" : 30,
 	"auth_required": true,

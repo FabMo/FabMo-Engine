@@ -7,12 +7,12 @@ var order = [];
 var notApp = [];
 var newOrder = [];
 
-
-
+var profile;
+fabmo.getConfig(function(err, data) {
+    profile = data.engine.profile;
+});    
 
 setupAppManager();
-
-    
 
 
 
@@ -118,7 +118,12 @@ function refreshApps(callback) {
                             clearTimeout(timeoutId);
                         });
                         
-                        
+                        if (profile === "Default" || profile === "default") {
+                            $("#app_container_message").show();
+                        } else {
+                            $("#app_container_message").css("display", "none");
+                        }
+
                         callback(null,apps);
                     } else {
                         callback(err);

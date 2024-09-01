@@ -100,6 +100,25 @@ var setUpManual = function () {
     });
 };
 
+var startManualExit = function () {
+    return new Promise((resolve, reject) => {
+        calledFromModal = "";
+        // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
+        $(".drive-button").removeClass("drive-button-fixed");
+        $(".slidecontainer").show();
+        $(".fixed-input-container").hide();
+        $(".fixed-switch input").prop("checked", false);
+
+        // Function to set location displays and then set video style
+        function setLocationAndVideoStyle() {
+            setLocationDisplays();
+            setVideoStyle();
+            resolve(); // Resolve the promise after setting location displays and video style
+        }
+        setLocationAndVideoStyle();
+    });
+};
+
 // Set the location displays by triggering an enable update
 function setLocationDisplays() {
     engine.getConfig(function (err, config) {
@@ -633,15 +652,27 @@ $(".action-button").on("click", function () {
             calledFromModal = "macro79";
             break;
     }
-    dashboard.engine.manualExit();
+    startManualExit()
+        .then(() => {
+            dashboard.engine.manualExit();
+        })
+        .catch((err) => {
+            console.error("Error in ManualExit:", err);
+        });
 });
 
 $(".manual-drive-exit").on("click", function () {
     $("#title_goto").css("visibility", "visible");
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
-    calledFromModal = "";
-    dashboard.engine.manualExit();
+
+    startManualExit()
+        .then(() => {
+            dashboard.engine.manualExit();
+        })
+        .catch((err) => {
+            console.error("Error in ManualExit:", err);
+        });
 });
 
 $(".manual-drive-enter").on("click", function () {
@@ -683,8 +714,13 @@ const modalKeyPad = document.getElementById("keypad-modal");
 function handleClickOutside(event) {
     if (modalKeyPad && !modalKeyPad.contains(event.target) && modalKeyPad.style.display === "block") {
         if (last_state_seen === "manual") {
-            calledFromModal = "";
-            dashboard.engine.manualExit();
+            startManualExit()
+                .then(() => {
+                    dashboard.engine.manualExit();
+                })
+                .catch((err) => {
+                    console.error("Error in ManualExit:", err);
+                });
         }
     }
 }
@@ -710,13 +746,17 @@ $(document).on("keydown", function (e) {
         // do this only if in manual mode
         if (last_state_seen === "manual") {
             console.warn("ESC key pressed - quitting manual mode.");
-            calledFromModal = "";
-            dashboard.engine.manualExit();
+            startManualExit()
+                .then(() => {
+                    dashboard.engine.manualExit();
+                })
+                .catch((err) => {
+                    console.error("Error in ManualExit:", err);
+                });
         }
     } else if (e.key === "k" && e.altKey) {
         // changed to alt but still not very useful, only working outside iframe
-        calledFromModal = "";
-        dashboard.engine.manualEnter();
+        setUpManual();
         // toggle "Fixed" moves
     } else if (e.key === "f") {
         $(".fixed-switch").trigger("click");
