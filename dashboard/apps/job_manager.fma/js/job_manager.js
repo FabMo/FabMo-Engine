@@ -6,15 +6,7 @@ var Sortable = require('./Sortable.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 // ... there remains lots of old "tour" stuff here, needs to be carefully cleaned
-// var step;
-// var testFileSubmitted = "false";
-// var cameFromTour = false;
-// var firstRun = true;
-// var jobLoading = false; 
-// var isTestJob = '';
-// var tourComplete = false;
-// var numberJobs = 0;
-// var x = 0;
+// eg > var cameFromTour = false;
 
 // Current position in the history browser
 var historyStart = 0;
@@ -248,7 +240,7 @@ function addQueueEntries(jobs) {
       }
     });
   }
-//  setStep(tour);
+
 }
 
 
@@ -826,7 +818,8 @@ $(document).ready(function() {
     setupDropTarget();
     runNext();
 
-    ////## this does not fix issue with another client TODO // look for some sort of change 
+    ////## this did not fix issue with another client
+    ////## TODO // look for some sort of change 
     // Because the job-manager may be changed by another client device, we need to update the queue manually
     // ... it is not efficient to use the status report to update the queue as it is not always sent or too frequently sent
     // Try an interval of 2 seconds for updateQueue
@@ -980,10 +973,6 @@ $(document).ready(function() {
   });
 
   $('.opensbp-input').change( function() {
-    // // Handle special case of representing jogs in config manager display as dist/min
-    // if ( this.id.substring(8,11) === 'jog' ) {
-    //     this.value = this.value;
-    // }
     setConfig(this.id, this.value);
 });
 

@@ -32,30 +32,6 @@ var registerUnitLabel = function(label, in_label, mm_label) {
   unit_label_index[label] = labels;
 }
 
-// var updateLabels = function(unit) {
-// 	$.each(unit_label_index, function(key, value) {  // handles units for XYZ
-//         $(key).html(value[unit]);
-// 	});
-//   for (var key in axis_modes) {                    // handles units for ABC
-//     if (axis_modes.hasOwnProperty(key)) {
-//       var axis = key.substring(0,1);
-//       var mode = axis_modes[key];
-//       if (mode === 2) { // if linear
-//         if (unit === "in") {
-//           $("." + axis + "-axis-unit").html("in/sec");
-//           $("." + axis + "-axis-jerk-unit").html("in/sec<sup>3</sup>");
-//         } else {
-//           $("." + axis + "-axis-unit").html("mm/sec");
-//           $("." + axis + "-axis-jerk-unit").html("mm/sec<sup>3</sup>");
-//         }
-//       } else {
-//         $("." + axis + "-axis-unit").html("degs/sec");
-//         $("." + axis + "-axis-jerk-unit").html("deg/sec<sup>3</sup>");
-//       }
-//     }
-//   }
-// }
-
 var flattenObject = function(ob) {
   var toReturn = {};
   for (var i in ob) {
@@ -132,12 +108,10 @@ function update() {
             }
             // Handle special case of representing jogs in config manager display in units/sec
             if ( key.substring(0,3) === 'jog' && key != 'jogy_speed') {
-                // input.val((Math.round(String(v) * 60 * decimals) / decimals));  // display per minute
                 input.val((Math.round(String(v) * decimals) / decimals));
             }    
             // Handle special case that some Y axis values are linked to X axis in FabMo
             if ( key === 'jogxy_speed' ) {
-                // $('#' + branchname + '-' + 'jogy_speed').val((Math.round(String(v) * 60 * decimals) / decimals)); // display per minute
                 $('#' + branchname + '-' + 'jogy_speed').val((Math.round(String(v) * decimals) / decimals));
             }
             if ( key === 'xy_maxjerk' ) {
@@ -171,7 +145,6 @@ function update() {
       var profiles = data['profiles'] || {}
       var profilesList = $('#profile-listbox');
       profilesList.empty();
-      //profilesList.empty();
       if(profiles) {
         for(var name in profiles) {
           profilesList.append(
@@ -334,8 +307,6 @@ $(document).ready(function() {
 
     fabmo.on('status', function(status) {
       update();
-//      local_units = status.unit;  
-//      updateLabels(status.unit);
     });
     
     // Trigger a status update to get the ball rolling
@@ -396,7 +367,6 @@ $(document).ready(function() {
             console.log ("Got a new Axis Mode - " + (v) + " - " + this.value); 
             setConfig(this.id, this.value);
             update();
-//            updateLabels(local_units);
 
          // General "driver-input" updates  
          } else {
@@ -435,10 +405,6 @@ $(document).ready(function() {
     });
 
     $('.opensbp-input').change( function() {
-        // Handle special case of representing jogs in config manager display as dist/min
-        // if ( this.id.substring(8,11) === 'jog' ) {
-        //     this.value = this.value;
-        // }
         setConfig(this.id, this.value);
     });
 
