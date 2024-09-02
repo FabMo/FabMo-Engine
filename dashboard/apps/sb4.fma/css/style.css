@@ -1,0 +1,553 @@
+/*
+  height: 400px;
+  margin-top: 0px;
+  overflow: auto;
+*/
+
+#sb4app {
+    height: 100%;
+/*    margin-top: 0px;
+    margin-bottom: 0px;
+*/
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+/* Removes default dropdown arrow from menu buttons so better collapse behavior */
+@media only screen and (min-width: 40.0625em) {
+.top-bar-section .has-dropdown>a {
+    padding-right: 0.9375rem !important;
+}
+}
+
+#sb4app::-webkit-scrollbar { 
+    display: none;
+}
+
+body {
+    height: 100%;
+}
+
+canvas[resize] {
+    width: 100%;
+    height: 60%;
+    display: block;
+}
+
+div {
+    padding: 0px;
+}
+
+/*div.row {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}*/
+
+.main-row {
+    padding-top: 7px;
+    padding-bottom: 0px;
+}
+
+/* Get spacing between left and right panels */
+@media only screen and (min-width: 64.0625em) {
+.row.large-uncollapse>.column, .row.large-uncollapse>.columns {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+    margin-bottom: 8px;
+    float: left;
+    }
+}
+
+/*
+row.large-uncollapse>.columns {
+    padding-left: .4rem;
+    padding-right: .4rem;
+}*/
+
+.panel-label {
+    margin-top: .4rem;
+    background-color: rgb(206, 207, 209);
+    border-radius: 10px;
+    border-color: rgb(136, 171, 190);
+
+}
+
+#macro-panel-label {
+    color: #4D4D4D;
+    font-size: 0.875rem;
+    font-weight: normal;
+    line-height: 1.5;
+    margin-bottom: 0;
+    
+}
+
+#macro-panel,
+#cmd-panel,
+#speed-panel {
+    background-color: rgb(206, 207, 209);
+    border-radius: 10px;
+    border-color: rgb(136, 171, 190);
+}
+
+#macro-panel {
+    padding-top: 5px;
+    padding-bottom: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    margin-bottom: 7px;
+}
+
+.macro-button {
+    margin-top:.35rem;
+    margin-bottom:.45rem;
+}
+
+#cmd-panel {
+    padding-top: 0rem;
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+    padding-bottom: 1.1rem;
+    margin-bottom: 8px;
+}
+
+/* =============================================== MENU WORK */
+
+.spindle-display {
+    position: absolute;
+    right: 120px;
+    cursor: default;
+}
+input#spindle-speed {
+    position: absolute;
+    display: flex;
+    left: 100px;
+    width: 100px;
+    margin-top: -1px;
+    margin-bottom: 0px;
+    background-color: rgb(151, 150, 150);
+    border-color: rgb(151, 50, 50);
+    border-radius: 3px;
+    border-width: 0px;
+    font-weight:bold;
+}
+
+
+/*#cmd-panel .row.medium-collapse {
+    margin-bottom: 0px;
+}*/
+
+input.cmds {
+    color: rgb(113, 233, 241);
+    background-color: rgb(117, 126, 128);
+    border-color: rgb(136, 171, 190);
+    border-radius: 5px;
+    margin-top: .20rem;
+    margin-bottom: .6rem;
+  }
+  
+.logo-box {
+    padding-top: .25rem;
+    padding-bottom: 0rem;
+    padding-left: 0rem;
+    padding-right: 0rem;
+}
+
+#sb-logo {
+    position: absolute;
+    top: 15px;
+    left: 0px;
+    margin-bottom: .25rem;
+    opacity: 0.85;
+}
+
+#speed-panel {
+    padding: 2px;
+    margin-bottom: 5px;
+}
+
+.move-speed-box {
+    margin-top: -5px;
+    padding-top: .25rem;
+    padding-bottom: .35rem;
+}
+
+
+/* ============================================== FILL-IN STYLE WORK */
+
+.reveal-modal {
+    top: 130px !important;
+}
+
+.reveal-modal-bg {
+    position: fixed;
+}
+
+#fi-modal {
+    background-color: rgb(255,250, 203);
+/*    background-color: rgb(240,235, 189); */
+    border-radius: 10px;
+    border-color: rgb(136, 171, 190);
+    padding-top: .3rem;
+    padding-bottom: .4rem;
+    max-width: 700px;
+    max-height: 700px;
+}
+
+#fi_container {
+    display: flex;
+    flex-direction: column;
+    padding: 0px;
+}
+
+#fill_in_table,
+#fill_in_table table {
+    background-color: rgb(255,250, 203);
+    align-self: center;
+    width: 350px;
+    max-height: 280px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    margin-bottom: 20px;
+    border:none;
+    border-left: 2px double rgb(231, 85, 27);
+}
+
+.fi-params,
+.fi-params td {
+    background-color: rgb(255,250, 203);
+    border: none;
+    height: 50%;
+    padding: 0rem;
+}
+
+.fi_name,
+.fi_name td {
+    border: none;
+    float: right;
+}
+
+.fi_name input {
+    margin: 2px;
+    padding: 0rem;
+    height: 50%;
+    border: none;
+    text-align: right;
+    background-color: rgb(255,250, 203);
+    border-bottom: 2px solid cadetblue;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.fi_val input {
+    margin: 2px;
+    padding: 0rem;
+    height: 50%;
+    border-top-style: hidden;
+    border-left-style: hidden;
+    border-right-style: hidden;
+    text-align: center;
+    color:#4e3cf2;
+    background-color: rgb(255,250, 203);
+    border-bottom: 2px solid cadetblue;
+    box-shadow: none;
+}
+
+table td tr {
+    padding: 0px;
+    margin: 0px;
+    background-color: rgb(255,250, 203);
+}
+
+table tr:nth-of-type(even) {
+    background: rgb(255,250, 203);
+}
+
+.fi-title {
+    color: rgb(221, 98, 10);
+    margin-top:.1rem;
+    margin-bottom: .25rem;
+}
+
+#fi_cur_info {
+    color: #327c7e;
+}
+
+
+/* ============================================== SPEED DISPLAYS */
+
+input.opensbp_input_formattedspeeds {
+  color: rgb(113, 233, 241);
+  background-color: rgb(143, 148, 150);
+  border-color: rgb(136, 171, 190);
+  border-radius: 5px;
+  margin-bottom: .25rem;
+}
+
+#insert-input {
+  color: rgb(113, 233, 241);
+  background-color: rgb(143, 148, 150);
+  border-color: rgb(136, 171, 190);
+  border-radius: 5px;
+}
+
+input[type="text"]:focus {
+  color: rgb(221, 98, 10);
+  background: rgb(245, 235, 189);
+  font-weight: bolder;
+}
+
+#cmd-help {
+    visibility: hidden;
+    color: rgb(113, 233, 241);
+    background-color: rgb(143, 148, 150);
+    border-color: rgb(136, 171, 190);
+    border-radius: 5px;
+    font-size: .8rem;
+    margin-left: -1rem;
+    margin-bottom: .25rem;
+    margin-top: 2rem;
+    padding: .2rem;
+}
+
+label.speed-labels,
+.cmds {
+  color: #4D4D4D;
+  cursor: default;
+}
+
+p.at-foot {
+  position: relative;
+  top: 35px;
+  color: #4D4D4D;
+  font-size: .75rem;
+  margin-bottom: 0rem;
+}
+#copyright {
+    position: relative;
+    left: -250px;
+    top: 0px;
+}
+
+#vid-button {
+    position: absolute;
+    z-index: 1;
+    cursor: pointer;
+    top: 5px; 
+    right: -40px;
+    height: 20px;
+    width: 20px;
+}
+
+.vid-button-on {
+    background-color: #c60f133d;
+    opacity: 1.0;
+}
+
+.vid-button-off {
+    background-color: none;
+    opacity: 1.0;
+}
+
+.vid-button-disabled {
+    background-color:rgb(206,207,209);
+    opacity: .15;
+}
+
+#sbp-container {
+    resize: both;
+    overflow: hidden;
+    overflow-wrap: none;
+}
+
+.video-container {
+    position: relative;
+/*    width: 100%;
+    height: 100vh; */
+    resize: both;
+    overflow: hidden;
+    overflow-wrap: none;
+    word-wrap: none;
+    border-radius: 5px;
+  
+}
+
+.video-container video {
+    visibility: hidden;
+    opacity: .5;
+    position: absolute;
+/*    min-width: 100%;
+    height: 100%;  */
+    object-fit: fill;
+    z-index: -1;
+    border-radius: 5px;
+}
+
+#video {
+    height:inherit;
+}
+
+#video1 {
+    height:inherit;
+}   
+
+.content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; 
+    display: flex;
+    align-items: left;
+    justify-content: top;
+    background-color: transparent;
+    border-radius: 5px;
+}
+
+#file_txt_area {
+  width: 100%;
+  height: 100%; 
+  box-sizing: border-box;  
+  background: #327c7e;
+  /*background: transparent; */
+  border: 1px solid #646464;
+  /*color: rgb(191, 196, 184);*/
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  overflow-wrap: none;
+  word-wrap: none;
+  overflow: hidden;
+  border-radius: 5px;
+}
+
+
+/*#file_txt_area {
+  background: rgb(255,250, 203, 0.1);
+  border: 1px solid #646464;
+  color: rgb(191, 196, 184);
+  overflow-wrap: none;
+  word-wrap: none;
+  overflow: hidden;
+  border-radius: 5px;
+}*/
+
+
+#cut_part_call {
+    background: #008000;
+    border-radius: 5px;
+    width: -webkit-fill-available;
+}
+#to_job_manager {
+    background: #a3c2a3;
+    border-radius: 5px;
+    width: -webkit-fill-available;
+}
+#to_job_manager .icon {
+    display: inline-block;
+    position:absolute;
+    margin-top: -8.5%;
+    margin-left: -15%;
+    width: 10%;
+    height: 100%;
+    background: url("../assets/icon_jobs_w.png") no-repeat center/contain;
+    margin-right: 5px;
+ }
+
+#to_job_manager:hover {
+    color:rgb(255,250, 203);
+    background: #014101; 
+
+}
+.cmd-button.button.small {
+    border-radius: 5px;
+    padding: .7rem;
+    margin: .3rem;
+    width: auto;
+}
+#first_macro_button,
+#second_macro_button {
+  border-radius: 5px;
+  background-color: rgb(235 202 47);
+  opacity: .70;
+  width: -webkit-fill-available;
+}
+
+#third_macro_button,
+#fourth_macro_button,
+#fifth_macro_button {
+    border-radius: 5px;
+    width: -webkit-fill-available;
+}
+
+#cut_part_call,
+#to_job_manager {
+    opacity: .65;
+    border-radius: 5px;
+    width: -webkit-fill-available;
+}
+
+#first_macro_button:hover,
+#second_macro_button:hover,
+#cut_part_call:hover,
+#to_job_manager:hover {
+    opacity: 1.0;
+    filter: brightness(1.1);
+    /*background-color: rgb(146, 142, 142);*/
+}
+
+
+/* Setting for Mo-Pad; derived from gopher and first-reach-manual */
+
+#canvasArea {
+    margin-top: 5%;
+    background-color: transparent;
+    border-width: 0px;
+}
+
+#rmanCanvas {
+    border-width: 3px;
+    background: #156ed350;
+    border-style: solid;
+    border-color: #7ab6fc;
+    border-radius: 5%;
+}
+
+#padCloseX {
+  position: absolute;
+  margin-top: -25%;
+  font-size: 5em;
+  color: #76c7e7ed;
+}
+
+#pad_icon_1 {
+  position: relative;
+  left: 0;
+}
+
+#pad_icon_2 {
+  position: relative;
+  left: 0;
+  opacity: 1;
+}
+
+#pad_icon_3 {
+  position: relative;
+  left: 0;
+  opacity: 0.5;
+}
+
+#infoIcon {
+    position: relative;
+    margin-top: 25%;
+    top: 50%;
+    left: 35%;
+    opacity: .5;
+}
+
+#settingsIcon {
+    position: relative;
+    margin-top: 25%;
+    top: 50%;
+    left: 35%;
+    opacity: .5;
+}
