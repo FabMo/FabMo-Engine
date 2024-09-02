@@ -1,5 +1,4 @@
 {
-	"units" : "in",
     "limits_on" : false,
     "softlimits_on" : false,
     "di1_def": "none",
@@ -13,7 +12,7 @@
     "di9_def": "none",
     "di10_def": "none",
     "di11_def": "none",
-    "di12_def": "interlock",
+    "di12_def": "none",
 	"default_app" : "fabmo-sb4",
 	"envelope" : {
 		"xmin" : 0,
@@ -24,7 +23,6 @@
 		"zmax" : 6
 	},
 	"manual" : {
-        "xy_speed": 3,
-        "xy_max": 6
+        "xy_speed": 3
 	}
 }

@@ -1,0 +1,110 @@
+#wheelPad {
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+#config-system-config {
+	font-family: monospace;
+	word-wrap: break-word;
+}
+
+p {
+  font-family: Helvetica, Arial, Sans-serif;
+  text-align: center;
+  color: #0f69cd;
+}
+
+
+
+#jog_dial_one_knob {
+  background: #95c7ff;
+  -webkit-border-radius: 50px;
+  -moz-border-radius: 50px;
+  -ms-border-radius: 50px;
+  -o-border-radius: 50px;
+  border-radius: 50px;
+}
+
+#jog_dial_one_meter {
+  position: relative;
+  left: 0;
+  top: 60%;
+  width: 190px;
+  height: 10px;
+  margin: 20px auto 30px;
+  background: #95c7ff;
+  overflow: hidden;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px;
+}
+
+#jog_dial_one_meter div {
+  position: relative;
+  width: 0;
+  height: 100%;
+  background: #0f69cd;
+}
+
+#jog_dial_axis_sel {
+  position: relative;
+  left: 0;
+  top: 100px;
+  width:80px;
+  height: 80px;
+  margin: 5px auto;
+  border-style: solid;
+  border-width: 2px;
+  background-color: #76c7e713;
+  border-color: #76c7e7ed;
+  -webkit-border-radius: 40px;
+  -moz-border-radius: 40px;
+  -ms-border-radius: 40px;
+  -o-border-radius: 40px;
+  border-radius: 40px;
+}
+
+#jog_dial_sel_char {
+  position: relative;
+  z-index: 999;
+  left: 0px;
+  top: 1px;
+  font-size: 3em;
+  background-color: #76c7e713;
+  color: #76c7e7ed;
+}
+
+#jog_dial_location {
+  position: relative;
+  left: 0%;
+  top: 60%;
+}
+
+#jog_dial_loc_trgt {
+  font-size: 2em;
+  text-align: center;
+  background: transparent;
+  outline: none;
+  border-color: #95c7ff;
+  color: #95c7ff;
+}
+
+#jog_dial_follower {
+  position: relative;
+  left: 0;
+  top: 0;
+  width:20%;
+  height: 20%;
+  background: #ffef9527;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #ffef95c7;
+  -webkit-border-radius: 50px;
+  -moz-border-radius: 50px;
+  -ms-border-radius: 50px;
+  -o-border-radius: 50px;
+  border-radius: 50px;
+}
+

@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DESKTOP</title>
+    <!-- Foundation 5.5.3 -->
+    <link rel="stylesheet" href="css/foundation.min.css"> 
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/tips.css">
+
+    <!-- <link rel="stylesheet" href="css/stylejogdial.css"> -->
+
+    <script src="js/lib/jquery.js"></script>
+    <script src="js/lib/foundation.min.js"></script>
+    <script src="js/lib/foundation.dropdown.js"></script>
+    <script src="js/lib/modernizr.js"></script>
+    <script src="js/lib/fastclick.js" async></script>
+    <script src="js/lib/haptics.js"></script>
+    <script src="js/lib/fabmo.js"></script>
+    
+    <!--Note that paperjs is not ES6; mo_pad is run in paperscript, not javascript-->
+    <script src="js/lib/paper-full.min.js" defer></script>
+    <script type="text/paperscript" src="js/mo_pad.js" canvas="rmanCanvas" defer></script>
+
+    <script src="js/tool_config.js"></script>
+    <script src="js/sb_app.js"></script>
+    <script src="js/init_setActions.js"></script>
+    <script src="js/motion.js" defer></script>
+    <script src="js/message_g2.js" defer></script>
+
+<!--    <script src="js/video.js"></script> -->  <!-- for video streaming -->
+
+    <script> let fabmo = new FabMoDashboard(); </script>
+
+</head>
+
+<body id="sb4app" style="background-color:rgb(151, 150, 150)">
+
+    <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
+    <ul class="title-area">
+      <li class="name"></li>
+      <li class="toggle-topbar menu-icon"><a href="#"><span>menu</span></a></li>
+    </ul>
+
+    <section class="top-bar-section">
+      <ul class="left">
+        <li class="divider"></li>
+        <li class="has-dropdown">
+          <a style="background-color:rgb(92, 90, 90)" title="CUT, Edit, or Preview PART FILES"><strong>F</strong>iles</a>
+          <ul class="dropdown" id="menu_files">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider"></li>
+        <li class="has-dropdown">
+          <a style="background-color:rgb(92, 90, 90)" title="Basic Movement Commands"><strong>M</strong>oves</a>
+          <ul class="dropdown" id="menu_moves">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider"></li>
+        <li class="has-dropdown">
+          <a style="background-color:rgb(92, 90, 90)" title="Jog or Rapid Motion Commands"><strong>J</strong>ogs</a>
+          <ul class="dropdown" id="menu_jogs">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider"></li>
+        <li class="has-dropdown">
+          <a style="background-color:rgb(92, 90, 90)" title="Simple Cut Commands and Custom Macros"><strong>C</strong>uts</a>
+          <ul class="dropdown" id="menu_cuts">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider"></li>
+        <li class="has-dropdown">
+          <a style="background-color:rgb(92, 90, 90)" title="Zero an Axis or Axes at its Current Location"><strong>Z</strong>ero</a>
+          <ul class="dropdown" id="menu_zero">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider hide-for-large-down"></li>
+        <li class="has-dropdown hide-for-large-down">
+          <a style="background-color:rgb(92, 90, 90)" class="hide-for-large-down" title="Input or Change a Setting"><strong>S</strong>ettings</a>
+          <ul class="dropdown" id="menu_settings">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider hide-for-large-down"></li>
+        <li class="has-dropdown hide-for-large-down">
+          <a style="background-color:rgb(92, 90, 90)" class="hide-for-large-down" title="Set or Change Current Configuration Values"><strong>V</strong>alues</a>
+          <ul class="dropdown" id="menu_values">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider"></li>
+
+        <li class="has-dropdown">
+          <a style="background-color:rgb(92, 90, 90)" title="Tools for Special Purposes"><strong>T</strong>ools</a>
+          <ul class="dropdown" id="menu_tools">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider"></li>
+
+        <li class="has-dropdown">
+          <a style="background-color:rgb(92, 90, 90)" title="Use a web-based CAD/CAM Design program"><strong>D</strong>esign</a>
+          <ul class="dropdown" id="menu_design">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider"></li>
+
+        <li class="has-dropdown">
+          <a style="background-color:rgb(92, 90, 90)" title="Get Help for ShopBot"><strong>H</strong>elp</a>
+          <ul class="dropdown" id="menu_help">
+            <li></li>
+          </ul>
+        </li>
+        <li class="divider"></li>
+      </ul>
+    </section>
+    <span class="spindle-display">spindle-RPM <input type="number" placeholder="0" id="spindle-speed" class="text-right" readonly></span>
+</nav>
+
+
+  <form style="display:none;" id="fileform">
+    <input name="uploadFile" type="file" id="file">
+    <button onclick="loadFileAsText()"></button>
+  </form>
+
+  <!-- Grid Layout -->
+  <div class="row">
+<!--    <p> </p> -->
+    <div class="small-12 medium-12 large-12 columns">
+      <div class="row main-row small-collapse medium-collapse large-uncollapse">
+
+        <!-- LEFT SIDE  -->
+        <!-- Macro Button Panel  -->
+        <div class="small-5 medium-3 large-3 columns">
+            <div class="callout panel" id="macro-panel">
+              <!-- Buttons (actions) -->
+              <div class="macros">
+              <h9 class="panel-label" id="macro-panel-label"><strong>Standard Workflow</strong><span class="tooltip">i<span class="tooltiptext">
+                Access the normal steps for starting-up your tool and Cutting or Managing your Part Files.</span></span>
+              </h9>
+              <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button">1 - Home X & Y [C3]</button>
+              <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button">2 - Set Z Zero [C2]</button>
+              <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" title="Pick a Single Part to Cut"><strong>3 - CUT PART [FP]</strong></button>
+              <button type="button" class="macro-button success button small medium-expanded" id="to_job_manager" title="Select and Order Parts to Cut (Job Manager)"><span class="icon"></span><strong>(3) MANAGE PARTS</strong></button>
+              </div>
+              <div class="other-macros">
+              <!-- <label class="panel-label show-for-medium-up" title="Access other helpful macros and quick command calls; User configurable in ..."><strong>Other Helpful Macros</strong></label> -->
+              <label class="panel-label show-for-medium-up"><strong>Other Helpful Macros</strong></label>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button1" title="Jog Home (X and Y; Z Safe Height)">JH</button>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button2" title="zero Z axis">ZZ</button>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button3" title="Move to Park location">Park (C79)</button>
+              <button type="button" class="macro-button secondary button small medium-expanded" id="third_macro_button">Square Gantry (C10)</button>
+              <!-- <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button">Test Cut (C210)</button> -->
+              <button type="button" class="macro-button secondary button small medium-expanded" id="fifth_macro_button">First Project - Bit Holder (C211)</button>
+              </div>
+            </div>
+        </div>  
+
+        <!-- RIGHT SIDE  -->
+        <div class="small-7 medium-9 large-9 columns">
+        
+            <!-- Command Input and File Display Panel  -->
+            <div class="callout panel" id="cmd-panel">
+                <form>
+                <div class="row">
+                    <div class="small-11  medium-11 large-11 columns">
+                    <label class="show-for-small-only"><strong>Cmd</strong></label>
+                    <h9 class="panel-label show-for-medium-up cmds"><strong>Individual Command Input</strong><span class="tooltip">i<span class="tooltiptext">
+                        Run specific OpenSBP Commands. Select from menu above or type directly here. See: Help > Command Reference.</span></span>
+                    </h9>
+                    <img class="right" id="vid-button" "vid-button-off" title="Toggle Video" style="height:20px; width:20px; position:absolute; top:5px; right:-40px" src="./assets/icon_video.png">
+                    <form><strong>
+                        <input class="cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" font-weight="bold" placeholder="2-Letter OpenSBP Command, {followed by parameters ...}" value="" />
+                <!--      <input class="show-for-medium-up cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" placeholder="2-Letter OpenSBP Command, {followed by parameters ...}" value="" />
+                        <input class="show-for-small-only cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" placeholder="{2-Letters...}" value="" /> -->
+                    </strong></form>
+                    </div>
+                    <div class="medium-1 large-1 columns">
+                        <button type="button" class="secondary button small hide-for-small-only medium-expanded" title="Get Command Help in OpenSBP Reference." id="cmd-help">?--</button>
+                    </div>
+                </div>
+                
+                <!-- display panel  -->
+                <div class="row">
+                    <div class="large-12 columns">
+
+
+                        <div id="sbp-container" class="video-container show-for-medium-up running" rows="6" cols="50" no-scroll no-wrap>
+                            <img src="" id="video" alt="Video"/><img src="" id="video1" alt="Video1"/> 
+
+                            <div class="content">
+                                <textarea class="show-for-medium-up running" name="textarea_filedisplay" id="file_txt_area" readonly no-scroll no-wrap style="font-family:'Courier New', Courier, monospace"></textarea>
+                            </div>
+                        </div>
+                    
+                        <!-- Load your video.js script -->
+                        <script src="js/video.js"></script>
+                    
+
+                    </div>
+                </div>
+                </form>
+            </div>
+
+            <!-- Speed and Copyright Panel  -->
+            <div class="callout panel" id="speed-panel">
+                <form>
+                <div class="row">
+                    <div class="large-12 columns">
+
+                        <div class="logo-box small-6 medium-4 large-4 columns">
+                            <span class="tooltip tooltip-logo">i<span class="tooltiptext">
+                               This app is ShopBot's CNC interface for setting up your tool and
+                               cutting Part Files (left panel). You can also send individual Commands in the OpenSBP language (top right panel). See HELP > 
+                               Command Reference for info on OpenSBP language.</span></span>
+                            <img panel-label class="top" tabindex="1" id="sb-logo" src="./assets/image6b_transparent.png">   
+                            <p class="small show-for-medium-up text-left at-foot">[ ESC backs out; 'K' opens Keypad; F11 (or right-click) exits fullscreen ]</p>
+                        </div> 
+
+                        <div class="move-speed-box small-11 medium-8 large-8 columns">
+                            <div class="row">
+                                <div class="large-6 medium-6 columns">
+                                    <label class="right speed-labels show-for-medium-up">Default Move Speed X / Y</label>
+                                    <label class="right speed-labels show-for-small-only">Move Speed X/Y</label>
+                                    <input type="text" placeholder="0.00" id="formatted_movexy_speed" class=" text-right opensbp_input_formattedspeeds" />
+                                </div>
+                                <div class="large-6 medium-6 columns">
+                                    <label class="right speed-labels show-for-medium-up"> Default Move Speed Z &nbsp;&nbsp;</label>
+                                    <label class="right speed-labels show-for-small-only">Move Speed Z</label>
+                                    <input type="text" placeholder="0.00" id="formatted_movez_speed" class="text-right opensbp_input_formattedspeeds" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="large-6 medium-6 columns">
+                                    <label class="right speed-labels show-for-medium-up"> Default Jog Speed X / Y</label>
+                                    <label class="right speed-labels show-for-small-only">Jog Speed X/Y</label>
+                                    <input type="text" placeholder="0.00" id="formatted_jogxy_speed" class="text-right opensbp_input_formattedspeeds" />
+                                </div>
+                                <div class="large-6 medium-6 columns">
+                                    <label class="right speed-labels show-for-medium-up"> Default Jog Speed Z &nbsp;&nbsp;</label>
+                                    <label class="right speed-labels show-for-small-only">Jog Speed Z</label>
+                                    <input type="text" placeholder="0.00" id="formatted_jogz_speed" class="text-right opensbp_input_formattedspeeds" />
+                                </div>
+                            </div>
+                            <div>
+                                <p class="small text-left at-foot show-for-medium-up" id="copyright">© Copyright ShopBot Tools 2024.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>    
+                </form>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    
+  <a href="#" data-reveal-id="moPad">beta MOtion-PAD</a><br>
+  <a href="#" data-reveal-id="insertStream">beta INSERT</a>
+
+
+ <!-- needed this setting here to prevent closing; left in later for redundancy -->
+ <script>Foundation.libs.reveal.settings.close_on_background_click = false;</script>
+ <script>Foundation.libs.reveal.settings.close_on_esc = true;</script>
+
+
+    <!-- Fill-In Sheet -->
+    <div id="fi-modal" class="reveal-modal" data-reveal role="dialog">
+      <form autocomplete="off">
+        <h3 class="fi-title" id="fi_modal_title">File Ready to Run</h3>
+        <p class="fi-title" id="fi_cur_info"></p>
+        
+        <div id="fi_container">
+            <div id="fill_in_table"><table>
+                <tbody class="fi-params fi-listing"></tbody>
+            </table></div>
+        </div>
+
+        <ul class="button-group">
+            <li><a class="secondary button fi-button" role="button" id="btn_ok_run" tabindex="0" style="background-color:green; color:white">OK-RUN</a></li>
+            <li><a class="secondary button fi-button" role="button" id="btn_adv_file" title="handle in Job Manager; Queue, Preview, Edit, Scale, etc..">Advanced Functions</a></li>
+            <li><a class="secondary button fi-button" role="button" id="btn_cmd_quit">Close</a></li>
+        </ul>
+      </form>
+
+    </div>
+
+
+    <!-- Provide Info Sheets in Help -->
+    <div id="helpModal" class="reveal-modal" data-reveal role="dialog">
+        <h2>Config Values and Persistent Variables ('esc' to close)</h2>
+        <p> <pre id="full-config">No configuration loaded yet.</pre> </p>
+    </div>
+
+
+    <!-- INSERT BETA -->
+    <div id="insertStream" class="reveal-modal" data-reveal role="dialog">
+        <h2 id="fi_modal_title">Insert Command Into G2 Stream:</h2>
+        <input class="inserts" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="insert-input" font-weight="bold" placeholder="RAW: g2 json OR g-code (& = end-line; ^ = kill; # = reset-G2)" value="" />
+    </div>
+
+    <!-- MOTION PAD BETA -->
+    <div class="row">
+        <div id="moPad" class="reveal-modal-bg full" data-reveal
+            data-options="close_on_background_click:true;close_on_esc:true;" style="display: none" role="dialog">
+
+            <div class="small-2 medium-2 large-2 columns">
+                <!--<img id="pad_icon_1" src="./assets/pad_icon_01.png">-->
+                <div>
+                    <p>
+                        <img id="infoIcon" src="./assets/info_icon.png" height="50" width="50">
+                        <img id="settingsIcon" src="./assets/settings_icon.png" height="50" width="50">
+                    </p>
+                </div>
+                <img id="pad_icon_2" src="./assets/pad_icon_02.png">
+                <img id="pad_icon_3" src="./assets/pad_icon_03.png">
+            </div>
+
+            <div class="small-9 medium-9 large-9 columns">
+                <div class="panel" id="canvasArea"> 
+                    <canvas id="rmanCanvas" resize="true" keepalive="true" resize></canvas>
+                </div>
+            </div>
+
+            <div class="small-1 medium-1 large-1 columns">
+                <a id="padCloseX" class="close-reveal-modal" aria-label="Close" style="z-index:999">&#215;</a>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>
+
+
+

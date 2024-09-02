@@ -1,3 +1,4 @@
+/* prettier-ignore */
 /*
  * profiles.js
  *
@@ -8,9 +9,7 @@
  *
  * System profiles are packaged with the engine - they live in the /profiles directory
  * at the top level.  Like other mutable parts of the engine, profiles are copied to the
- * /opt/fabmo directory on startup, and hosted from there, ultimately.  The expectation is
- * that in the future, profiles will be editable, and modified profiles could be saved,
- * downloaded, etc.
+ * /opt/fabmo directory on startup, and hosted from there, ultimately.
  *
  * When a profile is selected, the machine's macros, settings, and apps are obliterated,
  * and subsequently replaced with the profile contents.  When this is done, the engine
@@ -58,10 +57,7 @@ var load = function (callback) {
                 for (var i = 0; i < localfiles.length; i++) {
                     if (files.indexOf(localfiles[i]) === -1) {
                         try {
-                            fs.copySync(
-                                "./profiles/" + localfiles[i],
-                                profileDir + "/" + localfiles[i]
-                            );
+                            fs.copySync("./profiles/" + localfiles[i], profileDir + "/" + localfiles[i]);
                             files.push(localfiles[i]);
                             log.info("Copied " + localfiles[i] + " into opt");
                         } catch (err) {
@@ -79,26 +75,19 @@ var load = function (callback) {
                             fs.stat(profilePath, function (err, stats) {
                                 if (err) callback(err);
                                 if (stats.isDirectory()) {
-                                    readProfileInfo(
-                                        profilePath,
-                                        function (err, profile) {
-                                            try {
-                                                if (err) {
-                                                    log.error(err);
-                                                } else {
-                                                    log.debug(
-                                                        "Read profile " +
-                                                            profile.name
-                                                    );
-                                                    profiles[profile.name] =
-                                                        profile;
-                                                }
-                                            } catch (e) {
-                                                log.error(e);
+                                    readProfileInfo(profilePath, function (err, profile) {
+                                        try {
+                                            if (err) {
+                                                log.error(err);
+                                            } else {
+                                                log.debug("Read profile " + profile.name);
+                                                profiles[profile.name] = profile;
                                             }
-                                            callback(null);
+                                        } catch (e) {
+                                            log.error(e);
                                         }
-                                    );
+                                        callback(null);
+                                    });
                                 } else {
                                     callback(null);
                                 }
@@ -122,34 +111,20 @@ var load = function (callback) {
 // callback - Gets the profile info object, or error:
 //            eg: {name :'Desktop MAX', description : 'A 24x18" supertool', dir:'/opt/fabmo/profiles/Desktop MAX'}
 var readProfileInfo = function (profileDir, callback) {
-    fs.readFile(
-        path.join(profileDir, "package.json"),
-        "utf8",
-        function (err, data) {
-            if (err)
-                return callback(
-                    new Error("Could not read profile package.json: " + err)
-                );
-            try {
-                var obj = JSON.parse(data);
-            } catch (e) {
-                return callback(
-                    new Error(
-                        "Profile " +
-                            profileDir +
-                            " does not have a valid package.json"
-                    )
-                );
-            }
-            if (!obj["name"])
-                throw new Error("Profile package.json does not have a name");
-            callback(null, {
-                name: obj["name"],
-                description: obj["description"] || "",
-                dir: profileDir,
-            });
+    fs.readFile(path.join(profileDir, "package.json"), "utf8", function (err, data) {
+        if (err) return callback(new Error("Could not read profile package.json: " + err));
+        try {
+            var obj = JSON.parse(data);
+        } catch (e) {
+            return callback(new Error("Profile " + profileDir + " does not have a valid package.json"));
         }
-    );
+        if (!obj["name"]) throw new Error("Profile package.json does not have a name");
+        callback(null, {
+            name: obj["name"],
+            description: obj["description"] || "",
+            dir: profileDir,
+        });
+    });
 };
 
 // Apply the named profile
@@ -194,38 +169,26 @@ var apply = function (profileName, callback) {
                     }
 
                     // ...and replace it with the configuration provided by the profile
-                    log.debug(
-                        "Copying profile configuration directory " +
-                            profileConfigDir
-                    );
-                    ncp(
-                        profileConfigDir,
-                        config.getDataDir(dir),
-                        function (err) {
-                            if (err) {
-                                return callback(err);
-                            } else {
-                                log.debug("...done copying.");
-                                // Copy auth secret back if we moved it.
-                                if (authSecretExists) {
-                                    fs.copySync(
-                                        "/opt/fabmo/tmp/auth_secret",
-                                        authPath
-                                    );
-                                    fs.remove("/opt/fabmo/tmp", function (err) {
-                                        if (err) {
-                                            log.error(err);
-                                        } else {
-                                            log.debug(
-                                                "copied auth_secret and removed tmp dir"
-                                            );
-                                        }
-                                    });
-                                }
-                                callback();
+                    log.debug("Copying profile configuration directory " + profileConfigDir);
+                    ncp(profileConfigDir, config.getDataDir(dir), function (err) {
+                        if (err) {
+                            return callback(err);
+                        } else {
+                            log.debug("...done copying.");
+                            // Copy auth secret back if we moved it.
+                            if (authSecretExists) {
+                                fs.copySync("/opt/fabmo/tmp/auth_secret", authPath);
+                                fs.remove("/opt/fabmo/tmp", function (err) {
+                                    if (err) {
+                                        log.error(err);
+                                    } else {
+                                        log.debug("copied auth_secret and removed tmp dir");
+                                    }
+                                });
                             }
+                            callback();
                         }
-                    );
+                    });
                 });
             },
             // eslint-disable-next-line no-unused-vars
@@ -238,10 +201,7 @@ var apply = function (profileName, callback) {
                             files.forEach(function (file) {
                                 fs.renameSync(
                                     path.join(appsDir, file),
-                                    path.join(
-                                        appsDir,
-                                        util.createUniqueFilename(file)
-                                    )
+                                    path.join(appsDir, util.createUniqueFilename(file))
                                 );
                             });
                             util.diskSync(function () {
