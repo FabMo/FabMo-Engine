@@ -4,7 +4,7 @@
     "softlimits_on" : false,
     "di1_def": "none",
     "di2_def": "none",
-    "di3_def": "limit",
+    "di3_def": "none",
     "di4_def": "stop",
     "di5_def": "none",
     "di6_def": "none",
