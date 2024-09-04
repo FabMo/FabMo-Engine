@@ -430,7 +430,8 @@ input#override {
 .input, .output, .inoutLabel, .inOutSwitch {
 	/* width: 1rem; */
 	display: inline-block;
-	margin-right: 2px;
+	margin-right: 4px;
+	letter-spacing: -1px;
 	/* margin-right: 10px;  */
 	text-align: center;
 	/* border: 0.5px solid transparent; */

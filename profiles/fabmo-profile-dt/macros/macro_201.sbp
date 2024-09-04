@@ -1,6 +1,7 @@
 '!FABMO!name: STANDARD FABMO MACRO VARIABLES
 '!FABMO!description: Set Values for Standard Variables used in many Macros
 '!FABMO!enabled:true
+'MODIFIED FOR INSTALLER
 '   2022/03/10 - Refactored (th)
 '   Standard Macro Variables are defined and read from Macro #201 (variables are stored as persistent)
 '
