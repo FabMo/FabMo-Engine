@@ -256,7 +256,8 @@ $("#restore_conf_file").change(function() {
       });
 
     $('#btn-update').click(function(){
-        $('#update-input').trigger('click');
+      fabmo.navigate('/updater');  // for the moment, let's just go to updater to check for updates
+      //  $('#update-input').trigger('click');
     });
 
     $('#update-input').change(function(evt) {
@@ -276,23 +277,23 @@ $("#restore_conf_file").change(function() {
         });
       });
     
-      // Upload a package file manually
-      $('#firmware-input').change(function(evt) {
-        var files = [];
-        for(var i=0; i<evt.target.files.length; i++) {
-          files.push({file:evt.target.files[i]});
-        }
-        fabmo.submitFirmwareUpdate(files, {}, function(err, data) {
-            if(err){
-                console.log(err)
-            }else {
-                console.log(data);
-            }
-         
-        }, function(progress) {
-          console.log(progress);
-        });
+    // Upload a package file manually
+    $('#firmware-input').change(function(evt) {
+      var files = [];
+      for(var i=0; i<evt.target.files.length; i++) {
+        files.push({file:evt.target.files[i]});
+      }
+      fabmo.submitFirmwareUpdate(files, {}, function(err, data) {
+          if(err){
+              console.log(err)
+          }else {
+              console.log(data);
+          }
+        
+      }, function(progress) {
+        console.log(progress);
       });
+    });
 
 $(document).ready(function() {
     $(document).foundation();
