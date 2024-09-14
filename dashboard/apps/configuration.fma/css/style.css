@@ -404,6 +404,11 @@ table {
 
 .hidden, .hide { display:none; }
 
+#btn-flash-firm {
+  background-color: lightgray;
+  color: white;
+}
+
 
 #modal-title {
   font-weight: 700;

@@ -90,9 +90,9 @@ var setUpManual = function () {
                     $(".xy-fixed").val(0.1);
                     $(".z-fixed").val(0.01);
                 }
-                $("#manual-move-speed").val(manual_config.xy_speed);
                 $("#manual-move-speed").attr("min", manual_config.xy_min);
                 $("#manual-move-speed").attr("max", manual_config.xy_max);
+                $("#manual-move-speed").val(manual_config.xy_speed);
             }
             // Call the function to set location displays and video style
             setLocationAndVideoStyle();
@@ -1156,4 +1156,4 @@ $(".icon_sign_out").on("click", function (e) {
     });
 });
 
-//setUpManual();
+setUpManual(); // occasionally not getting keypad set from apps, this helps
