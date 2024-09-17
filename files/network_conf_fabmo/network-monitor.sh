@@ -1,23 +1,15 @@
 #!/bin/bash
 
-# LOOKS TO SEE IF THERE IS EITHER A LAN OR DIRECT CONNECTION AVAILABLE AND SWITCHES INTERFACE BETWEEN THE TWO
-# ... Provides secondary nmcli services
-
 INTERFACE="eth0"
 LAN_PROFILE="lan-connection"
 PC_PROFILE="direct-connection"
-WIFI_PROFILE="wifi-connection"  # Add the WiFi profile name here
 DIRECT_IP="192.168.44.1"
 LOGFILE="/var/log/network_monitor.log"
 FAIL_COUNT_FILE="/tmp/nm-fail-count"
 LAST_PROFILE=""
 
-log_date() {
-    /bin/echo "$(/bin/date) - $1" >> $LOGFILE
-}
-
 log() {
-    /bin/echo " - $1" >> $LOGFILE
+    /bin/echo "$(/bin/date) - $1" >> $LOGFILE
 }
 
 check_active_profile() {
@@ -26,37 +18,12 @@ check_active_profile() {
 
 bring_down_profile() {
     log "Bringing down profile $1"
-    /usr/bin/nmcli connection down "$1" >> $LOGFILE 2>&1
+    /usr/bin/nmcli connection down "$1"
 }
 
 bring_up_profile() {
     log "Bringing up profile $1"
-    /usr/bin/nmcli connection up "$1" >> $LOGFILE 2>&1
-}
-
-enable_wifi_device() {
-    log "Enabling WiFi device wlan0"
-    /usr/bin/nmcli radio wifi on >> $LOGFILE 2>&1
-    /usr/bin/nmcli device set wlan0 managed yes >> $LOGFILE 2>&1
-    /usr/bin/nmcli device connect wlan0 >> $LOGFILE 2>&1
-}
-
-disable_wifi_device() {
-    log "Disabling WiFi device wlan0"
-    /usr/bin/nmcli device disconnect wlan0 >> $LOGFILE 2>&1
-    /usr/bin/nmcli radio wifi off >> $LOGFILE 2>&1
-}
-
-remove_all_wifi_connections() {
-    log "Removing all saved WiFi connections"
-    /usr/bin/nmcli --fields UUID,TYPE con show | /bin/grep wifi | /usr/bin/awk '{print $1}' | while read -r uuid; do
-        /usr/bin/nmcli con delete uuid "$uuid" >> $LOGFILE 2>&1
-        if [ $? -eq 0 ]; then
-            log "Successfully removed WiFi connection with UUID: $uuid"
-        else
-            log "Failed to remove WiFi connection with UUID: $uuid"
-        fi
-    done
+    /usr/bin/nmcli connection up "$1"
 }
 
 get_current_ip() {
@@ -93,7 +60,7 @@ monitor_network() {
         STATE=$(/usr/bin/nmcli device status | /bin/grep $INTERFACE | /usr/bin/awk '{print $3}')
         CURRENT_IP=$(get_current_ip)
 
-        log_date "starting network monitor loop ..."
+        log ""
         log "State: $STATE, IP: $CURRENT_IP"
 
         case "$STATE" in
@@ -118,10 +85,17 @@ monitor_network() {
                 reset_failure_count
                 ;;
             disconnected|connecting)
-                log "$INTERFACE has disconnected or is trying to connect."
+                log "$INTERFACE is has disconnected or trying to connect."
                 log "$INTERFACE is $STATE."
-                increment_failure_count
-                                if [ "$FAIL_COUNT" -ge 2 ]; then
+                if [ -f $FAIL_COUNT_FILE ]; then
+                    FAIL_COUNT=$(cat $FAIL_COUNT_FILE)
+                    FAIL_COUNT=$((FAIL_COUNT + 1))
+                else
+                    FAIL_COUNT=1
+                fi
+                echo $FAIL_COUNT > $FAIL_COUNT_FILE
+                log "Failure count incremented to $FAIL_COUNT"
+                if [ "$FAIL_COUNT" -ge 2 ]; then
                     log "Failure count exceeded. Switching to Direct PC profile."
                     bring_down_profile "$LAN_PROFILE"
                     bring_up_profile "$PC_PROFILE"
@@ -132,7 +106,6 @@ monitor_network() {
                     bring_up_profile "$LAN_PROFILE"
                 fi
                 ;;
-
             unavailable)
                 log "$INTERFACE is $STATE."
                 ;;
@@ -145,29 +118,5 @@ monitor_network() {
     done
 }
 
-# Handle specific actions passed as arguments
-case "$1" in
-    bring_up_profile)
-        log "Command: bring_up_profile $2"
-        if [ "$2" = "$WIFI_PROFILE" ]; then
-            enable_wifi_device
-        fi
-        bring_up_profile "$2"
-        ;;
-    bring_down_profile)
-        log "Command: bring_down_profile $2"
-        bring_down_profile "$2"
-        if [ "$2" = "$WIFI_PROFILE" ]; then
-            disable_wifi_device
-        fi
-        ;;
-    *)
-        log "Invalid command: $1"
-        ;;
-esac
-
-# If no arguments are provided, run the monitor_network function
-if [ -z "$1" ]; then
-    log "Starting network monitor script."
-    monitor_network
-fi
+log "Starting network monitor script."
+monitor_network

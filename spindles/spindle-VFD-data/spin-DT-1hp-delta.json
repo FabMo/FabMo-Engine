@@ -1,7 +1,7 @@
 {
   "VFD_Settings": {
     "Name": "spin-DT-1hp-delta",
-    "COM_PORT": "/dev/vfdACM_controller1",
+    "COM_PORT": "/dev/vfdUSB_controller1",
     "MB_ADDRESS": 3,
     "BAUDRATE": 9600,
     "BYTESIZE": 8,

@@ -11,10 +11,10 @@ import json
 #       then> 1) change the title of the display window
 #             2) change the displayed IP as it becomes available
 #             3) change the ssid name of the AP display (wlan0_ap) to provide info to the user's device
-# ... updated for Bookworm and NetworkManager 6/24
+#             4) restart hostapd (and anything else required) to effect and cleanup the name change
 
-syslog.syslog('###=> Launching IP Address Display App ... (in 6 sec)')
-time.sleep(6)  # Wait for 6 seconds for network to stabilize before starting
+syslog.syslog('###=> Launching IP Address Display App ... (in 10sec)')
+time.sleep(6)  # Wait for 6 seconds for network to stabilize before starting; was 10s
 
 #-------------------------------------------Initialize wifi/AP at full power
 cmd = "sudo /sbin/iwconfig wlan0 power off"
@@ -29,7 +29,6 @@ class NetworkConfigApp:
         self.tool_name = "FabMo-####" 
         self.last_name = ""
         self.last_ssid = ""
-        self.changing_ssid = False
         self.last_ip_address_wifi = ""
         self.name_file = "/opt/fabmo/config/engine.json"
         self.initialize_ui()
@@ -46,8 +45,6 @@ class NetworkConfigApp:
         frame = tk.Frame(self.root)
         frame.pack(padx=10, pady=10)
         self.ip_var = tk.StringVar()
-        ip_label = tk.Label(frame, textvariable=self.ip_var, font=("Arial", 18))
-        ip_label.pack(pady=5)
 
         # Set the window position to top right corner
         screen_width = self.root.winfo_screenwidth()
@@ -59,6 +56,9 @@ class NetworkConfigApp:
         # Create the label explaining the use of the IP address
         mode_label1 = tk.Label(frame, text="Enter this IP address in your browser\nto access ShopBot.", font=("Arial", 16))
         mode_label1.pack(pady=5)
+
+        ip_label = tk.Label(frame, textvariable=self.ip_var, font=("Arial", 18))
+        ip_label.pack(pady=5)
 
         mode_label2 = tk.Label(frame, text="- When switching wired connections wait 10 sec\n after disengaging before connecting new cable.", font=("Arial", 12))
         mode_label2.pack(pady=5)
@@ -95,23 +95,40 @@ class NetworkConfigApp:
             print("###=== X Trouble with reading tool_name!")
             syslog.syslog("###=== X Trouble with reading tool_name!") 
             return "no-name"
-    
-    def get_ip_address(self, interface='wlan0', retries=4, delay=3):  # was 2 ; 3 & 4
-        cmd = f"nmcli -t -f IP4.ADDRESS dev show {interface} | grep IP4.ADDRESS | cut -d: -f2"
+        
+    def get_ip_address(self, interface='wlan0', retries=4, delay=4):
+        check_cmd = f"nmcli -t -f GENERAL.STATE dev show {interface} | grep 'connected' || true"
         for _ in range(retries):
             try:
-                ip_address = subprocess.check_output(cmd, shell=True).decode("utf-8").strip()
-                ip_address = ip_address.split("/")[0]  # remove /24
-                if ip_address:
-                    print(f"    => ip-check: {interface}  {ip_address}") 
-                    return ip_address
-            except subprocess.CalledProcessError:
-                pass
-            time.sleep(delay)
-        print(f"    => failed to find ip for - {interface}")
-        syslog.syslog(f"    => failed to find ip for - {interface}")
-        return "-waiting-"
+                # First check if the interface is connected
+                result = subprocess.check_output(check_cmd, shell=True).decode("utf-8").strip()
+                if "connected" in result:
+                    # Get the IP address
+                    cmd = f"nmcli -t -f IP4.ADDRESS dev show {interface}"
+                    ip_output = subprocess.check_output(cmd, shell=True).decode("utf-8").strip()
 
+                    if ip_output and ":" in ip_output:
+                        ip_address = ip_output.split(":")[1].split("/")[0].strip()  # Extract IP and remove subnet mask
+                        if ip_address:
+                            print(f"    => ip-check: {interface}  {ip_address}")
+                            return ip_address
+                    #else:
+                    #    print(f"Unexpected IP output format: {ip_output}")
+                    #    syslog.syslog(f"Unexpected IP output format: {ip_output}")
+
+            except subprocess.CalledProcessError as e:
+                print(f"Command failed: {e}")
+                syslog.syslog(f"Command failed: {e}")
+            except Exception as e:
+                print(f"General exception: {e}")
+                syslog.syslog(f"General exception: {e}")
+
+            time.sleep(delay)
+        
+        print(f"    => failed to find ip - {interface}")
+        syslog.syslog(f"    => failed to find ip - {interface}")
+        return "-waiting-"
+    
     def is_eth0_active(self):
         cmd = "nmcli -t -f DEVICE,STATE dev status | grep eth0 | grep -q connected"
         result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True, shell=True)
@@ -134,43 +151,39 @@ class NetworkConfigApp:
             syslog.syslog(f"Failed to write WiFi information to {file_path}: {e }")
 
     def change_ssid(self, new_ssid):
-        ap_connection_name = "wlan0_ap"
+        ap_connection_name = "wlan0_ap"  # Replace with your actual connection name
         cmd_modify = f"nmcli con modify {ap_connection_name} 802-11-wireless.ssid {new_ssid}"
-        cmd_reload = "sudo nmcli connection reload"
         cmd_down = f"nmcli con down {ap_connection_name}"
         cmd_up = f"nmcli con up {ap_connection_name}"
         try:
-            syslog.syslog(f"###=> Changing AP Name; NewName={new_ssid}")
-            print(f"###=> Changing AP Name; NewName={new_ssid}")
             subprocess.run(cmd_modify, shell=True, check=True)
-            # Reload the NetworkManager configuration
-            subprocess.run(cmd_reload, shell=True, check=True)
             subprocess.run(cmd_down, shell=True, check=True)
             subprocess.run(cmd_up, shell=True, check=True)
+            syslog.syslog(f"###=> Changing AP Name; NewName={new_ssid}")
+            print(f"###=> Changing AP Name; NewName={new_ssid}")
         except subprocess.CalledProcessError as e:
             syslog.syslog(f"###=> Error changing AP Name: {e}")
             print(f"###=> Error changing AP Name: {e}")
 
     # -------------------------------------------------------------  Main Loop
     def update_ip_display(self):
-        syslog.syslog("###=> IP Update Sequence Starting ...")
-        print("###=> IP Update Sequence Starting ...")
-        # first stop for a bit if we are waiting for a change to take effect
-        if self.changing_ssid:
-            syslog.syslog(f"###=> PAUSING for ssid changes")
-            print(f"###=> PAUSING for ssid changes")
-            time.sleep(15)
-            self.changing_ssid = False
+        syslog.syslog("")
+        print("")
+        syslog.syslog("###=> IP Udate Sequence Starting ...")
+        print("###=> IP Udate Sequence Starting ...")
 
         self.tool_name = self.read_tool_name()
         ip_address = self.get_ip_address("eth0")
         ip_address_wifi = self.get_ip_address("wlan0")
         ip_address_wlan0_ap = self.get_ip_address("wlan0_ap")
+
         ssid = self.get_wlan0_ssid()
-        wifi_info = {"ip_address": ip_address_wifi, "ssid": ssid if ssid else ""}
+        wifi_info = {
+            "ip_address": ip_address_wifi,
+            "ssid": ssid if ssid else ""
+        }
         
-        # Write wifi info to json file if ssid or ip_address_wifi has changed
-        if ssid != self.last_ssid or ip_address_wifi != self.last_ip_address_wifi and ip_address_wifi != "-waiting-":    
+        if ssid != self.last_ssid or ip_address_wifi != self.last_ip_address_wifi:    
             self.write_wifi_info_to_json(wifi_info)
             self.last_ip_address_wifi = ip_address_wifi
             self.last_ssid = ssid
@@ -180,8 +193,8 @@ class NetworkConfigApp:
         print(f"###=> Checking eth0 = {eth}")
         syslog.syslog(f"###=> ip_address eth0: {ip_address}")
         print(f"###=> ip_address eth0: {ip_address}")
-        syslog.syslog(f"###=> wlan0ssid: {ssid}")
-        print(f"###=> wlan0ssid: {ssid}")
+        syslog.syslog(f"###=> wlan0 ssid: {ssid}")
+        print(f"###=> wlan0 ssid: {ssid}")
         syslog.syslog(f"###=> ip_address_wifi: {ip_address_wifi}")
         print(f"###=> ip_address_wifi: {ip_address_wifi}")
         syslog.syslog(f"###=> ip_address_wlan0_ap: {ip_address_wlan0_ap}")
@@ -189,21 +202,21 @@ class NetworkConfigApp:
 
         if eth:
             if ip_address.endswith(".44.1"):
-                self.root.title("- DIRECT COMPUTER CONNECTION - ")
+                self.root.title("using: DIRECT (ethernet) PC CONNECTION    ")
                 self.name = self.tool_name + "-PC@192.168.44.1"
                 self.ip_var.set("192.168.44.1")
             else:
-                self.root.title("- LOCAL NETWORK (LAN) CONNECTION -")
+                self.root.title("using: LOCAL NETWORK (ethernet) CONNECTION    ")
                 self.name = self.tool_name + "-LAN@" + ip_address
                 self.ip_var.set(f"{ip_address}")
         elif ssid:
-            str_title = "- " + ssid + "- NETWORK WiFi CONNECTION -"
+            str_title = "using: " + ssid + " NETWORK WiFi    "
             self.root.title(str_title)
             self.name = self.tool_name + "-wifi@" + ip_address_wifi
             self.ip_var.set(f"{ip_address_wifi}")
         else:
             if ip_address_wlan0_ap.endswith(".42.1"):
-                self.root.title("- AP Mode CONNECTION - ")
+                self.root.title("using: AP Mode CONNECTION from PC    ")
                 self.name = self.tool_name + "-AP@192.168.42.1"
                 self.ip_var.set("192.168.42.1")
             else:
@@ -211,17 +224,14 @@ class NetworkConfigApp:
                 self.name = "UNKNOWN@-"
                 self.ip_var.set("no-identified-network-ip")
 
-        # this is where we check to see if we need to change the ssid name of the AP display
-        syslog.syslog(f"###=> name={self.name} last_name={self.last_name}")
-        print(f"###=> name={self.name} last_name={self.last_name}")
-
-        if "-waiting-" not in self.name and self.last_name != self.name:
-            # set a change-in-progress flag
-            self.changing_ssid = True
-            syslog.syslog(f"###------=> !!! CHANGE NAME in SSID !!! ... to: {self.name}")
-            print(f"###------=> !!! CHANGE NAME in SSID !!! ... to: {self.name}")
+        if self.last_name != self.name:
             self.change_ssid(self.name)
             self.last_name = self.name
+
+        syslog.syslog(f"###=> name={self.name} last_name={self.last_name}")
+        syslog.syslog(f"      ip={self.ip_var.get()}")
+        print(f"###=> name={self.name} last_name={self.last_name}")
+        print(f"      ip={self.ip_var.get()}")
 
         self.root.after(5000, self.update_ip_display)  # Schedule next IP update
 
