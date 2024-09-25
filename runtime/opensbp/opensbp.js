@@ -1323,7 +1323,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                     modalParams = u.packageModalParams({ message: message }, modalParams);
                 }
                 // Example of modal customization. Adds input param, sets ok button text to Submit, removes cancel/quit button.
-                // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel button s detailed below.
+                // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel buttons detailed below.
                 if (input_var) {
                     var inputParams = {
                         input_var: input_var,
@@ -1366,21 +1366,36 @@ SBPRuntime.prototype._execute = function (command, callback) {
 // &Tool == &TOOL == &TOoL
 //   identifier - The identifier to check
 SBPRuntime.prototype._varExists = function (identifier) {
-    if (identifier.type == "user_variable") {
-        // User variable
+    if (identifier.type == "user_variable" || identifier.type == "persistent_variable") {
+        const variableName = identifier.name;
+        const accessPath = identifier.access || [];
+        let variables;
 
-        // Handle weird &Tool Exception case
-        // (which exists because of old shopbot case insensitivity)
-        if (identifier.expr.toUpperCase() === "&TOOL") {
-            identifier.expr = "&TOOL";
+        if (identifier.type == "user_variable") {
+            variables = config.opensbp._cache["tempVariables"];
+        } else {
+            variables = config.opensbp._cache["variables"];
         }
 
-        return config.opensbp.hasTempVariable(identifier.expr);
-    }
+        if (!(variableName in variables)) {
+            return false;
+        }
 
-    if (identifier.type == "persistent_variable") {
-        // Persistent variable
-        return config.opensbp.hasVariable(identifier.expr);
+        let value = variables[variableName];
+        for (let part of accessPath) {
+            let key;
+            if (part.type === "index") {
+                key = this._eval(part.value);
+            } else if (part.type === "property") {
+                key = part.name;
+            }
+            if (value && key in value) {
+                value = value[key];
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
     return false;
 };
@@ -1390,57 +1405,133 @@ SBPRuntime.prototype._varExists = function (identifier) {
 //        value - The new value
 //     callback - Called once the assignment has been made
 SBPRuntime.prototype._assign = async function (identifier, value, callback) {
-    if (identifier.type == "user_variable") {
-        // User Variable
+    if (identifier.type === "user_variable" || identifier.type === "persistent_variable") {
+        let variableName = identifier.name;
+        const accessPath = identifier.access || [];
+        let variables;
 
-        // Handle TOOL exception case
-        if (identifier.expr.toUpperCase() === "&TOOL") {
-            identifier.expr = "&TOOL";
+        if (identifier.type === "user_variable") {
+            variables = config.opensbp._cache["tempVariables"];
+            variableName = "&" + variableName.toUpperCase();
+        } else {
+            variables = config.opensbp._cache["variables"];
+            variableName = "$" + variableName.toUpperCase();
         }
 
-        // Assign with persistence using the configuration module
-        try {
-            await config.opensbp.setTempVariableWrapper(identifier.expr, value);
-            callback();
-        } catch (error) {
-            log.error(error);
+        if (accessPath.length === 0) {
+            // Simple variable assignment
+            try {
+                if (identifier.type === "user_variable") {
+                    await config.opensbp.setTempVariableWrapper(variableName, value);
+                } else {
+                    await config.opensbp.setVariableWrapper(variableName, value);
+                }
+                callback();
+            } catch (error) {
+                log.error(error);
+                throw error;
+            }
+        } else {
+            // Nested variable assignment
+            if (!(variableName in variables)) {
+                variables[variableName] = {};
+            }
+
+            setNestedValue.call(this, variables[variableName], accessPath, value);
+
+            // Update the configuration
+            try {
+                if (identifier.type === "user_variable") {
+                    await config.opensbp.setTempVariableWrapper(variableName, variables[variableName]);
+                } else {
+                    await config.opensbp.setVariableWrapper(variableName, variables[variableName]);
+                }
+                callback();
+            } catch (error) {
+                log.error(error);
+                throw error;
+            }
         }
-        return;
+    } else {
+        throw new Error("Cannot assign to " + identifier);
     }
-
-    if (identifier.type == "persistent_variable") {
-        // Persistent variable
-
-        // Assign with persistence using the configuration module
-        try {
-            await config.opensbp.setVariableWrapper(identifier.expr, value);
-            callback();
-        } catch (error) {
-            log.error(error);
-        }
-        return;
-    }
-
-    throw new Error("Cannot assign to " + identifier);
 };
+
+function setNestedValue(obj, accessPath, value) {
+    if (!accessPath.length) {
+        throw new Error("Invalid assignment target.");
+    }
+    let current = obj;
+    for (let i = 0; i < accessPath.length - 1; i++) {
+        const part = accessPath[i];
+        let key;
+        if (part.type === "index") {
+            key = this._eval(part.value);
+        } else if (part.type === "property") {
+            key = part.name;
+        }
+        if (!(key in current)) {
+            current[key] = {};
+        }
+        current = current[key];
+    }
+    const lastPart = accessPath[accessPath.length - 1];
+    let lastKey;
+    if (lastPart.type === "index") {
+        lastKey = this._eval(lastPart.value);
+    } else if (lastPart.type === "property") {
+        lastKey = lastPart.name;
+    }
+    current[lastKey] = value;
+}
 
 // Return the actual value of an expression.
 // This function is for evaluating the leaves of the expression trees, which are either
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function (expr) {
-    if (Object.prototype.hasOwnProperty.call(expr, "type")) {
-        switch (expr.type) {
-            case "user_variable":
-                return this.evaluateUserVariable(expr);
-            case "system_variable":
-                return this.evaluateSystemVariable(expr);
-            case "persistent_variable":
-                return this.evaluatePersistentVariable(expr);
-        }
+    if (expr.type === "user_variable" || expr.type === "persistent_variable") {
+        return this._getVariableValue(expr);
+    }
+    if (expr.type === "system_variable") {
+        return this.evaluateSystemVariable(expr);
     }
     var n = Number(String(expr));
     return isNaN(n) ? expr : n;
+};
+
+SBPRuntime.prototype._getVariableValue = function (identifier) {
+    let variableName = identifier.name;
+    const accessPath = identifier.access || [];
+    let variables;
+
+    if (identifier.type === "user_variable") {
+        variables = config.opensbp._cache["tempVariables"];
+        variableName = "&" + variableName.toUpperCase();
+    } else {
+        variables = config.opensbp._cache["variables"];
+        variableName = "$" + variableName.toUpperCase();
+    }
+
+    if (!(variableName in variables)) {
+        throw new Error("Variable " + variableName + " is not defined.");
+    }
+
+    let value = variables[variableName];
+    for (let part of accessPath) {
+        let key;
+        if (part.type === "index") {
+            key = this._eval(part.value);
+        } else if (part.type === "property") {
+            key = part.name;
+        }
+        if (value && key in value) {
+            value = value[key];
+        } else {
+            throw new Error("Property or index " + key + " not found in variable " + variableName + ".");
+        }
+    }
+    return value;
 };
 
 // Evaluate an expression.  Return the result.

@@ -539,7 +539,10 @@ function decideNextAction(
         default:
             result_arm_obj["error_thrown"] = new Error(
                 "Cannot arm the machine from the " + current_state_in + " state."
+                // SEEMS TO BE A HANGUP SPOT for STAT 3, "Running"
             );
+            this.current_runtime.executeCode({ cmd: "exit" });
+
             break;
     }
 

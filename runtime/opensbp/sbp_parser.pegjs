@@ -79,13 +79,16 @@ argument
 mnemonic = code: ([_A-Za-z][_A-Za-z0-9\#]) {return code.join('').replace('#','_POUND');}
 
 identifier
-   = id:([a-zA-Z_]+[A-Za-z0-9_]*) {return id[0].join("") + id[1].join(""); }
+  = first:[a-zA-Z_] rest:[A-Za-z0-9_]* {
+      return [first].concat(rest).join('');
+    }
 
 label
    = id:identifier ":" {return {type:"label", value:id.toUpperCase()};}
 
 decimal
   = digits:[0-9]+ { return digits.join(""); }
+
 integer "integer"
   = dec:('-'? decimal) { return parseInt(dec.join(""), 10); }
 
@@ -99,19 +102,33 @@ quotedstring
   = '"' s:[^\"\n]+ '"' {return s.join("")}
 
 variable
-  = (user_variable / system_variable / persistent_variable)
+  = user_variable
+  / persistent_variable
+  / system_variable
 
 user_variable
-  = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("").toUpperCase()}}
+  = "&" name:identifier access:property_access* {
+      return { "type": "user_variable", "name": name, "access": access };
+    }
 
 persistent_variable
-  = v:("$" identifier ) {return {"type":"persistent_variable", "expr":v.join("").toUpperCase()}}
+  = "$" name:identifier access:property_access* {
+      return { "type": "persistent_variable", "name": name, "access": access };
+    }
 
 system_variable
-  = "%" "(" __ e:expression __ ")" {return {"type":"system_variable", "expr":e}}
+  = "%" "(" __ e:expression __ ")" { return { "type": "system_variable", "expr": e } }
+
+property_access
+  = "[" __ e:expression __ "]" {
+      return { "type": "index", "value": e };
+    }
+  / "." propName:identifier {
+      return { "type": "property", "name": propName };
+    }
 
 assignment
-  = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}
+  = v:variable __ "=" __ e:expression { return { "type": "assign", "var": v, "expr": e } }
 
 weak_assignment
   = v:variable __ ":=" __ e:expression {return {"type": "weak_assign", "var":v, "expr":e}}
