@@ -1,12 +1,11 @@
 // This is the working PEG for generating the OpenSBP parser
-// Currently still using the peg.js 0.7.0 version TODO: update to peggyjs
+// Currently using PEGGYJS v4.0.3
 
 {
-
    function buildLeftAssocTree(l, r) {
    	if(!l.length) { return r; }
-	var last = l.pop();
-	return {left:buildLeftAssocTree(l, last[0]), right:r, op : last[1][1]}
+    	var last = l.pop();
+    	return {left:buildLeftAssocTree(l, last[0]), right:r, op : last[1][1]}
    }
 
    function buildRightAssocTree(l, r) {
@@ -14,14 +13,21 @@
       	var first = r.shift()	      
       return {left : l, op : first[1], right : buildRightAssocTree(first[3], r)};
    }
-
 }
 
+// Whitespace rules
+whitespace = [ \t\r\n]
+
+_ = whitespace*   // Zero or more whitespace (optional)
+__ = whitespace*  // Zero or more whitespace (optional)
+___ = whitespace+ // One or more whitespace (required)
+
 start
-   = __ stmt:statement __ {return stmt}
+   = stmt:statement __ !. { return stmt }
 
 statement
-   = (label / single / fail / jump / pause / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / command / __)
+   = assignment
+   / invalid
 
 custom_cut
    = [Cc] index:integer __ ","?
@@ -74,14 +80,13 @@ jump
      {return {type:cmd.toLowerCase(), label:lbl.toUpperCase()};}
 
 argument
-   = (expression / float / integer / barestring / quotedstring / "")
+   = (expression / float / integer / barestring / quotedstring )
 
-mnemonic = code: ([_A-Za-z][_A-Za-z0-9\#]) {return code.join('').replace('#','_POUND');}
+mnemonic
+  = code:[A-Za-z][A-Za-z0-9#]* { return code.join('').replace('#', '_POUND'); }
 
 identifier
-  = first:[a-zA-Z_] rest:[A-Za-z0-9_]* {
-      return [first].concat(rest).join('');
-    }
+  = $([a-zA-Z_][A-Za-z0-9_]*)
 
 label
    = id:identifier ":" {return {type:"label", value:id.toUpperCase()};}
@@ -120,7 +125,7 @@ system_variable
   = "%" "(" __ e:expression __ ")" { return { "type": "system_variable", "expr": e } }
 
 property_access
-  = "[" __ e:expression __ "]" {
+  = "[" _ e:expression _ "]" {
       return { "type": "index", "value": e };
     }
   / "." propName:identifier {
@@ -128,7 +133,7 @@ property_access
     }
 
 assignment
-  = v:variable __ "=" __ e:expression { return { "type": "assign", "var": v, "expr": e } }
+  = v:variable "=" e:expression { return { "type": "assign", "var": v, "expr": e } }
 
 weak_assignment
   = v:variable __ ":=" __ e:expression {return {"type": "weak_assign", "var":v, "expr":e}}
@@ -141,6 +146,9 @@ comparison
 
 expression
   = e1
+
+invalid
+   = !. { throw new Error("Invalid input at position " + location().start.offset); }
 
 e1
   = l:(e2 (__ add_op __ ))* r:e2 {
@@ -163,10 +171,3 @@ factor
 mul_op = "*" / "/"
 add_op = "+" / "-"
 cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "=" / "<>"
-
-
-whitespace
-   = [ \t]
-
-__ = whitespace*
-___ = whitespace+
