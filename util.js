@@ -183,24 +183,17 @@ function allowed_file(filename) {
 }
 
 function isGCodeFile(pathname) {
-    return (
-        GCODE_EXTENSIONS.indexOf(path.extname(pathname).toLowerCase()) !== -1
-    );
+    return GCODE_EXTENSIONS.indexOf(path.extname(pathname).toLowerCase()) !== -1;
 }
 
 function isOpenSBPFile(pathname) {
-    return (
-        OPENSBP_EXTENSIONS.indexOf(path.extname(pathname).toLowerCase()) !== -1
-    );
+    return OPENSBP_EXTENSIONS.indexOf(path.extname(pathname).toLowerCase()) !== -1;
 }
 
 // Return true if this is an allowable file to contain an app.
 // TODO - This check should live in the app manager, really.
 function allowedAppFile(filename) {
-    if (
-        ALLOWED_APP_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !==
-        -1
-    ) {
+    if (ALLOWED_APP_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1) {
         return true;
     } else {
         return false;
@@ -232,11 +225,7 @@ var move = function (src, dest, cb) {
             return cb(null);
         },
         function (err) {
-            log.warn(
-                "io.move: standard rename failed, trying stream pipe... (" +
-                    err +
-                    ")"
-            );
+            log.warn("io.move: standard rename failed, trying stream pipe... (" + err + ")");
 
             // rename didn't work, try pumping
             var is = fs.createReadStream(src),
@@ -295,8 +284,7 @@ function serveStatic(opts) {
             res.set("Content-Type", mime.lookup(file));
             res.set("Last-Modified", stats.mtime);
             if (opts.charSet) {
-                var type =
-                    res.getHeader("Content-Type") + "; charset=" + opts.charSet;
+                var type = res.getHeader("Content-Type") + "; charset=" + opts.charSet;
                 res.setHeader("Content-Type", type);
             }
             if (opts.etag) {
@@ -316,15 +304,7 @@ function serveStatic(opts) {
                 // Serve an index.html page or similar
                 file = path.join(file, opts.default);
                 fs.stat(file, function (dirErr, dirStats) {
-                    serveFileFromStats(
-                        file,
-                        dirErr,
-                        dirStats,
-                        false,
-                        req,
-                        res,
-                        next
-                    );
+                    serveFileFromStats(file, dirErr, dirStats, false, req, res, next);
                 });
             } else {
                 serveFileFromStats(file, err, stats, false, req, res, next);
@@ -487,10 +467,7 @@ function Watchdog(timeout, exit_code) {
 
 // Convenience function for getting the client IP address from a restify request.
 var getClientAddress = function (req) {
-    return (
-        (req.headers["x-forwarded-for"] || "").split(",")[0] ||
-        req.connection.remoteAddress
-    );
+    return (req.headers["x-forwarded-for"] || "").split(",")[0] || req.connection.remoteAddress;
 };
 
 // Check to see if something is a number (strings that parse to numbers, for example)
@@ -658,14 +635,15 @@ var addNoButtonParam = function (noButton, params = {}) {
 // More info on MODAL display options (not yet supporting options from SBP file)
 // Function packageModalParams(<new parameters>, <current info object>)
 // This function accepts a set of optional new parameters and optional current status['info'] object ready for send to front end.
-// If called without arguments a basic info object with 'message': 'Paused.' will be created.
+// If called without arguments, a basic info object with 'message': 'Paused.' will be created.
 // Current functionality is built around use for OpenSBP Pause display on the client but can see expanded use.
+
 // Current Info Object should be the output of a prior execution of this function or the info section of a status update object prior to transmission.
 // New Parameters is an object with one or more of the available customization parameters defined as below:
 //     timer:  INT Sets Timer param (used to determine if modal should display) and message text to display timer length.
 //         NOTE: if Timer is included only TIMER and Message params will be set. Timer is intended for timed pause and should not be used in conjunction with other customizations.
-//     message: STRING sets the message to be displayed inthe modal to the provided string.
-//     input: FABMO VARIABLE OBJECT object with name and type properties defining a variable to be provided by the user and set to proviided value on resume.
+//     message: STRING sets the message to be displayed in the modal to the provided string.
+//     input: FABMO VARIABLE OBJECT object with name and type properties defining a variable to be provided by the user and set to provided value on resume.
 //     okText: STRING sets the text on the green "ok" button on modal.
 //         NOTE: Defaults to "ok" if set to Falsy value green "ok" button will not display.
 //     okFunc: STRING sets the onclick action for the green "ok" button on modal.
@@ -676,17 +654,13 @@ var addNoButtonParam = function (noButton, params = {}) {
 //         NOTE: To set cancelFunc cancelText MUST be defined as well.  Accepts 'resume' or 'quit' other text will result in the button closing modal with no further action.
 //     detail: STRING HTML String that will be displayed below Message and Input in it's own Div. If ommited nothing is displayed.
 //     title: STRING title of Modal box.  If ommited nothing is displayed.
-//     noButton: BOOLEAN if set to a truthy value will ensure not buttons are displayed on the modal.
+//     noButton: BOOLEAN if set to a truthy value will ensure no buttons are displayed on the modal.
 //         NOTE: With No Buttons there is not a way to close the modal.
 // TODO: Implement Image Param?  Image Param is available on modal and parsed by dashboard.showModal() but would require a valid image source provided by this param.
 // TODO: noLogo option can be parsed by dashboard.showModal() but is not implemented by this function, the client status parser, or the modal HTML.
 // TODO: Add packaging for error info on implementation of error handling
 var packageModalParams = function (params = {}, modalParams = {}) {
-    if (
-        Object.prototype.hasOwnProperty.call(params, "timer") &&
-        params["timer"] &&
-        isANumber(params["timer"])
-    ) {
+    if (Object.prototype.hasOwnProperty.call(params, "timer") && params["timer"] && isANumber(params["timer"])) {
         return addTimerParam(params["timer"]);
     }
     if (Object.prototype.hasOwnProperty.call(params, "message")) {
@@ -699,28 +673,16 @@ var packageModalParams = function (params = {}, modalParams = {}) {
     }
     if (Object.prototype.hasOwnProperty.call(params, "okText")) {
         if (Object.prototype.hasOwnProperty.call(params, "okFunc")) {
-            modalParams = addOkParam(
-                { text: params["okText"], func: params["okFunc"] },
-                modalParams
-            );
+            modalParams = addOkParam({ text: params["okText"], func: params["okFunc"] }, modalParams);
         } else {
-            modalParams = addOkParam(
-                { text: params["okText"], func: "resume" },
-                modalParams
-            );
+            modalParams = addOkParam({ text: params["okText"], func: "resume" }, modalParams);
         }
     }
     if (Object.prototype.hasOwnProperty.call(params, "cancelText")) {
         if (Object.prototype.hasOwnProperty.call(params, "cancelFunc")) {
-            modalParams = addCancelParam(
-                { text: params["cancelText"], func: params["cancelFunc"] },
-                modalParams
-            );
+            modalParams = addCancelParam({ text: params["cancelText"], func: params["cancelFunc"] }, modalParams);
         } else {
-            modalParams = addCancelParam(
-                { text: params["cancelText"], func: "quit" },
-                modalParams
-            );
+            modalParams = addCancelParam({ text: params["cancelText"], func: "quit" }, modalParams);
         }
     }
     if (Object.prototype.hasOwnProperty.call(params, "detail")) {
