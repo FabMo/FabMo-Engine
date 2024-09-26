@@ -1,20 +1,19 @@
 // This is the working PEG for generating the OpenSBP parser
-// Currently still using the peg.js 0.7.0 version TODO: update to peggyjs
+// peg.js 0.7.0 version BEING MIGRATED TO; peggy.js 4.0.3; th started 9/26/24
+// -- known issue with __ and ___ potentially not being recognized as whitespace in the way we want; see last lines
 
 {
-
    function buildLeftAssocTree(l, r) {
-   	if(!l.length) { return r; }
-	var last = l.pop();
-	return {left:buildLeftAssocTree(l, last[0]), right:r, op : last[1][1]}
+      if (!l.length) { return r; }
+      var last = l.pop();
+      return {left: buildLeftAssocTree(l, last[0]), right: r, op: last[1][1]};
    }
 
    function buildRightAssocTree(l, r) {
-      if(!r.length) { return l; }
-      	var first = r.shift()	      
-      return {left : l, op : first[1], right : buildRightAssocTree(first[3], r)};
+      if (!r.length) { return l; }
+      var first = r.shift();
+      return {left: l, op: first[1], right: buildRightAssocTree(first[3], r)};
    }
-
 }
 
 start
@@ -36,13 +35,14 @@ event
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 command 
-   = m:mnemonic arg1:((","/whitespace?) __ argument)?
-     args:(("," __ (arg:argument) __ ){return arg;})* 
+   = m:mnemonic arg1:(("," / whitespace?) __ argument)?
+     args:("," __ arg:argument __ { return arg; })* 
      {
-      if(arg1) {
+      if (arg1) {
         args.unshift(arg1[2]);
       }
-      return {type:"cmd","cmd":m,"args":args};}
+      return { type: "cmd", cmd: m, args: args };
+     }
 
 single
    = name:("RETURN"i / "END"i) 
@@ -146,7 +146,6 @@ factor
 mul_op = "*" / "/"
 add_op = "+" / "-"
 cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "=" / "<>"
-
 
 whitespace
    = [ \t]
