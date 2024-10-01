@@ -446,7 +446,8 @@ G2.prototype.onData = function (data) {
                 this.onMessage(obj);
             } catch (e) {
                 this.handleExceptionReport(e);
-                throw e;
+                log.error("Error parsing JSON in onData:", e);
+                // TODO: Decide whether to continue or abort
             } finally {
                 // if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
                 // and if we fail to parse, we still clear the line and start anew.
@@ -1055,17 +1056,17 @@ G2.prototype.prime = function () {
     this.sendMore();
 };
 
-// TODO - This was mostly an informational thing that should no longer be needed
-G2.prototype.getInfo = function () {
-    return (
-        "G2: primed:" +
-        (this._primed ? "1" : "0") +
-        " l2s:" +
-        this.lines_to_send +
-        " gcq:" +
-        this.gcode_queue.getLength()
-    );
-};
+// // TODO - This was mostly an informational thing that should no longer be needed
+// G2.prototype.getInfo = function () {
+//     return (
+//         "G2: primed:" +
+//         (this._primed ? "1" : "0") +
+//         " l2s:" +
+//         this.lines_to_send +
+//         " gcq:" +
+//         this.gcode_queue.getLength()
+//     );
+// };
 
 // This function is called internally when it's time to send more g-codes or commands from the queue.
 // This implements the so-called "linemode" protocol (see G2 source documentation for more info)

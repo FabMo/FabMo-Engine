@@ -253,7 +253,6 @@ SBPRuntime.prototype.needsAuth = function (s) {
 //      enough not to count at all.
 // TODO At the very least, this function should simply take the string provided and stream it into runStream - they do the same thing.
 //          s - The string to run
-//   callback - Called when the program has ended
 SBPRuntime.prototype.runString = function (s) {
     try {
         // Initialize the program
@@ -321,7 +320,6 @@ SBPRuntime.prototype.runString = function (s) {
 
 // Run the provided stream of text in OpenSBP
 // See documentation above for runString - this works the same way.
-//   callback - Called when run is complete or with error if there was an error.
 SBPRuntime.prototype.runStream = function (text_stream) {
     try {
         try {
@@ -508,7 +506,6 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 
 // Run a file on disk.
 //   filename - Full path to file on disk
-//   callback - Called when file is done running or with error if error
 SBPRuntime.prototype.runFile = function (filename) {
     this.lastFilename = filename;
     var st = fs.createReadStream(filename);
@@ -679,7 +676,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
     switch (cmd.type) {
         case "cmd":
             // Commands have a means of automatically specifying whether or not they break the stack.  If their command handler
-            // accepts a second argument (presumed to be a callback) in addition to their argument list, they are stack breaking.
+            //// ## DESCRIBE New ... accepts a second argument (presumed to be a callback) in addition to their argument list, they are stack breaking.
             var name = cmd.cmd;
             if (name in this && typeof this[name] == "function") {
                 var f = this[name];
@@ -701,7 +698,6 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             // TODO: These should only break the stack if they assign to or read from expressions that break the stack
             result = true;
             break;
-        //return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 
         case "custom":
             // Macro calls should break the stack
@@ -776,7 +772,30 @@ SBPRuntime.prototype._run = function () {
             return;
         }
         switch (stat) {
+            // case this.driver.STAT_STOP:
+            //     // ## A STAT 3, can be a problematic issue ...
+            //     // Only update and call execute next if we're waiting on pending gcodes or probing
+            //     // ... and expecting this stat:3
+            //     // For probing we do not turn off the pending if we have not passed the Initialization phase
+            //     if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
+            //         this.driver.status.targetHit = false;
+            //         this.probingPending = false;
+            //         this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
+            //         this.prime();
+            //         //log.debug("COMPLETETED PENDING PROBING =(cleared)============####")
+            //         this._executeNext();
+            //         break;
+            //     }
+            //     if (this.gcodesPending) {
+            //         this.gcodesPending = false;
+            //         //log.debug("COMPLETETED PENDING GCODES =(cleared)============####")
+            //         this._executeNext();
+            //         break;
+            //     }
+            //     break;
+
             case this.driver.STAT_STOP:
+                // # A STAT 3, can be a problematic issue ...
                 // Only update and call execute next if we're waiting on pending gcodes or probing
                 // ... and expecting this stat:3
                 // For probing we do not turn off the pending if we have not passed the Initialization phase
@@ -785,17 +804,22 @@ SBPRuntime.prototype._run = function () {
                     this.probingPending = false;
                     this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
                     this.prime();
-                    //log.debug("COMPLETETED PENDING PROBING =(cleared)============####")
-                    this._executeNext();
+                    this._executeNext().catch((err) => {
+                        log.error("Error in _executeNext during STAT_STOP handling:", err);
+                        this._abort(err);
+                    });
                     break;
                 }
                 if (this.gcodesPending) {
                     this.gcodesPending = false;
-                    //log.debug("COMPLETETED PENDING GCODES =(cleared)============####")
-                    this._executeNext();
+                    this._executeNext().catch((err) => {
+                        log.error("Error in _executeNext during STAT_STOP handling:", err);
+                        this._abort(err);
+                    });
                     break;
                 }
                 break;
+
             case this.driver.STAT_HOLDING:
                 this.feedhold = true;
                 if (this.machine.pauseTimer) {
@@ -833,6 +857,7 @@ SBPRuntime.prototype._run = function () {
                 break;
             // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
             //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
+            // STAT_END = 4
             // case this.driver.STAT_END:
             //     this._end();
             //     break;
@@ -877,23 +902,19 @@ SBPRuntime.prototype.isInSubProgram = function () {
 
 // Continue running the current program (until the next stack break)
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
-SBPRuntime.prototype._executeNext = function () {
-    // Copy values from the machine to our local state variables
+SBPRuntime.prototype._executeNext = async function () {
     this._update();
 
-    // _executeNext is only for resuming an already running program.  It's not a substitute for _run()
     if (!this.started) {
         log.warn("Got a _executeNext() but not started");
         return;
     }
 
-    // do not continue execution if there is a pending error
     if (this.pending_error || this.end_message) {
         log.warn("got a _execute next with pending Error or in Fail condition");
         return;
     }
 
-    // If _executeNext is called but we're paused, stay paused. (We'll call _executeNext again on resume)
     if (this.paused) {
         log.info("Program is paused.");
         return;
@@ -905,92 +926,47 @@ SBPRuntime.prototype._executeNext = function () {
     }
 
     if (this.pc >= this.program.length) {
-        log.info("End of program reached. (pc = " + this.pc + ")");
-        // Here we've reached the end of the program, but there's possibly not enough
-        // g-codes queued up for the driver to want to send them out, so go ahead and prime it
-        // to send out those last few.
-        this.prime();
-
-        // this.gcodesPending gets set when we emit_gcode, and cleared when the tool reaches the STAT_STOP
-        // state (because it's run everything that it's recieved) - If pending is true, that means there's
-        // more work to do before finishing out the program.  We prime()d above, so those instructions will
-        // get executed (and the stat handler will call _executeNext again once the machine stops moving)
-        if ((this.gcodesPending && this.driver) || (this.probingPending && this.driver)) {
-            log.debug("GCodes or Probing is still pending...");
-            return;
-        }
-
-        // Handle the end of program differently if we're a subprogram
-        if (this.isInSubProgram()) {
-            log.debug("This is a nested end.  Popping the file stack.");
-            // Pop the stack (which will restore the program state, including pc to the calling program)
-            this._popFileStack();
-            // Increment the pc and execute, as normal
-            this.pc += 1;
-            setImmediate(this._executeNext.bind(this));
+        // Handle end of program
+        if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
+            // There are pending operations, prime the driver
+            log.debug("Priming driver for pending operations before ending program.");
+            this.prime();
+            // Wait for the driver to finish processing
+            // The driver should call _executeNext() again when done
             return;
         } else {
-            log.debug("This is not a nested end.  No stack.");
-            // This ends the machining cycle
-
-            // If no driver, we just go straight to the _end() (as in simulation)
-            if (!this.driver) {
-                this._end();
-            } else {
-                // EOF send M30.
-                this.emit_gcode("M30");
-            }
+            // No pending operations, safe to end the program
+            this._end();
             return;
         }
     }
 
-    // Below here we're NOT at the end of the program,
-    // so it's time to actually execute the next instruction
-    // Pull the current line of the program from the list
     var line = this.program[this.pc];
     var breaksTheStack = this._breaksStack(line);
 
     if (breaksTheStack) {
-        log.debug("Stack break: " + JSON.stringify(line));
         this.prime();
 
-        // Broadly, if the next instruction is a stack breaking command, we're only
-        // allowed to execute it if everything up till now has finished executing
-        // (there are no instructions pending in the motion system)
-        // We request a status report, just to catch the case where there are non-motion
-        // g-codes executing, and we might not have gotten a report that indicates that the machine
-        // has stopped executing stuff.  Of course we only do that if there's a driver (we're not simulating)
-
-        if (this.probingPending && this.driver) {
-            log.debug("Deferring because still PROBING ......");
-            return; // We can return knowing that we'll be called again when the system enters STAT_STOP
-        } else if (this.gcodesPending && this.driver) {
-            log.debug("Deferring because g-codes PENDING ......");
-            return; // We can return knowing that we'll be called again when the system enters STAT_STOP
+        if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
+            log.debug("Deferring because pending operations...");
+            return;
         } else {
-            // G2 is stopped, execute stack breaking command now
             try {
-                log.debug("executing: " + JSON.stringify(line));
-                this._execute(line, this._executeNext.bind(this));
-                return;
+                await this._execute(line);
+                this._executeNext();
             } catch (e) {
-                // log error and trigger abort
                 log.error(e);
-                return this._abort(e);
+                this._abort(e);
             }
+            return;
         }
     } else {
-        // If this is a non-stack-breaking command, go ahead and execute it.
-        // Mostly, these commands will call emit_gcode, which will push instructions into the stream
-        // that drives the motion controller.
         try {
-            this._execute(line);
-            // Keep on executing!  No reason not to.
-            setImmediate(this._executeNext.bind(this));
+            await this._execute(line);
+            this._executeNext();
         } catch (e) {
-            // log error and trigger abort
             log.error(e);
-            return this._abort(e);
+            this._abort(e);
         }
     }
 };
@@ -1083,89 +1059,70 @@ SBPRuntime.prototype._end = function (error) {
 
 // Execute the specified command
 //    command - The command object to execute
-//   callback - Called when execution is complete or with error if error
-SBPRuntime.prototype._executeCommand = function (command, callback) {
+/* eslint-disable */
+SBPRuntime.prototype._executeCommand = async function (command) {
     if (command.cmd in this && typeof this[command.cmd] == "function") {
-        // Command is valid and has a registered handler
-
         // Evaluate the command arguments and extract the handler
         var args = this._evaluateArguments(command.cmd, command.args);
         var f = this[command.cmd].bind(this);
 
         if (f.length > 1) {
-            // Stack breakers have the callback passed in, to be called when done.
-            try {
-                f(
-                    args,
-                    function commandComplete() {
-                        // advance the pc and do the callback to mvoe on to next instruction
-                        // TODO - We should allow commands to use an errback?  This would allow
-                        //        for asynchronous errors in addition to the throw
-                        this.pc += 1;
-                        callback();
-                    }.bind(this)
-                );
-            } catch (e) {
-                // TODO - Should we throw the error here?!  This feels like an issue. (Sturmer, 5 years ago)
-                // Update(th-6/15/23): Yes, we should throw the error here.  Otherwise, the error is
-                //         swallowed and the program continues to run. Done.
-                log.error("Error in a stack-breaking command");
-                var e_more = e + " (in [" + command.cmd + "] Line-" + this.pc + ").";
-                log.error(e_more);
-                throw e_more;
-            }
-            return true;
+            // Stack-breaking commands expect a callback as the second parameter
+            //try {
+                await new Promise((resolve, reject) => {
+                    f(args, (err) => {
+                        if (err) {
+                            log.error("Error in a stack-breaking command");
+                            reject(err);
+                        } else {
+                            this.pc += 1;
+                            resolve();
+                        }
+                    });
+                });
+            //} catch (e) {
+//                throw e;
+            //}
         } else {
-            // This is NOT a stack breaker, run immediately, increment PC, call the callback.
-            try {
+            // Non-stack-breaking commands
+//            try {
                 f(args);
-            } catch (e) {
-                log.error("Error in a non-stack-breaking command");
-                log.error(e);
-                throw e;
-            }
-            this.pc += 1;
-            // We use the callback, stack breaker or not
-            if (callback != undefined) {
-                setImmediate(callback);
-            }
-            return false;
+                this.pc += 1;
+//            } catch (e) {
+                // log.error("Error in a non-stack-breaking command");
+                // throw e;
+//            }
         }
     } else {
-        // We don't know what this is.  Whatever it is, it doesn't break the stack.
+        // Unhandled command
         this._unhandledCommand(command);
         this.pc += 1;
-        return false;
     }
 };
+/* eslint-enable */
 
 // Run a custom cut (macro).  This function can be called from within another program or to start one.
 //     number - The macro number to run
-//   callback - Hmm.  Callback is called in simulation (and the macro is simply skipped) but not in for real times
-SBPRuntime.prototype.runCustomCut = function (number, callback) {
+SBPRuntime.prototype.runCustomCut = async function (number) {
     if (this.machine) {
         var macro = macros.get(number);
         if (macro) {
-            // TODO: Should this just display the macro identifier or name?
-            // log.debug("Running macro: " + JSON.stringify(macro));
             this._pushFileStack();
-            this.runFile(macro.filename);
+            await this.runFile(macro.filename); // Assuming runFile is async
         } else {
             throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found at " + (this.pc + 1));
         }
     } else {
         this.pc += 1;
-        callback();
     }
-    return true;
 };
 
 // Execute the provided command
+////## DESCRIBE NEW STACK handling
 // Returns true if execution breaks the stack (and calls the callback upon command completion)
 // Returns false if execution does not break the stack (and callback is never called)
 //   command - A single parsed line of OpenSBP code
-
-SBPRuntime.prototype._execute = function (command, callback) {
+SBPRuntime.prototype._execute = async function (command) {
     // Just skip over blank lines, undefined, etc.
     if (!command) {
         this.pc += 1;
@@ -1174,20 +1131,14 @@ SBPRuntime.prototype._execute = function (command, callback) {
 
     // All correctly parsed commands have a type
     switch (command.type) {
-        // A ShopBot Comand (M2, ZZ, etc...)
         case "cmd":
-            var broke = this._executeCommand(command, callback);
-            if (!broke) {
-                if (callback != undefined) {
-                    setImmediate(callback);
-                }
-            }
-            return broke;
+            await this._executeCommand(command);
+            return;
 
         // A C# command (custom cut)
         case "custom":
-            this.runCustomCut(command.index, callback);
-            return true;
+            await this.runCustomCut(command.index);
+            return;
 
         // A line of raw g-code
         case "gcode":
@@ -1195,21 +1146,19 @@ SBPRuntime.prototype._execute = function (command, callback) {
             log.debug(command.gcode);
             this.emit_gcode(command.gcode);
             this.pc += 1;
-            return false;
+            return;
 
         case "return":
             if (this.stack.length) {
                 this.pc = this.stack.pop();
-                setImmediate(callback);
-                return true;
+                return;
             } else {
                 throw new Error("Runtime Error: Return with no GOSUB at " + (this.pc + 1));
             }
 
         case "end":
             this.pc = this.program.length;
-            setImmediate(callback);
-            return true;
+            return;
 
         case "fail":
             this.pc = this.program.length;
@@ -1217,16 +1166,14 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 this.end_message = command.message;
                 throw new Error(command.message);
             }
-            setImmediate(callback);
-            return true;
+            return;
 
         case "goto":
             if (command.label in this.label_index) {
                 var pc = this.label_index[command.label];
                 log.debug("Hit a GOTO: Going to line " + pc + "(Label: " + command.label + ")");
                 this.pc = pc;
-                setImmediate(callback);
-                return true;
+                return;
             } else {
                 throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
             }
@@ -1236,8 +1183,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 this.stack.push(this.pc + 1);
                 log.debug("Pushing the current PC onto the stack (" + (this.pc + 1) + ")");
                 this.pc = this.label_index[command.label];
-                setImmediate(callback);
-                return true;
+                return;
             } else {
                 throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
             }
@@ -1245,71 +1191,76 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "assign":
             this.pc += 1;
             var value = this._eval(command.expr);
-            this._assign(command.var, value, function () {
-                callback();
-            });
-            return true;
+            try {
+                await this._assign(command.var, value);
+            } catch (err) {
+                log.error("Error during assignment: " + err);
+                throw err;
+            }
+            return;
 
         case "weak_assign":
             this.pc += 1;
             if (!this._varExists(command.var)) {
-                // eslint-disable-next-line no-redeclare
-                var value = this._eval(command.expr);
-                this._assign(command.var, value, function () {
-                    callback();
-                });
+                value = this._eval(command.expr);
+                try {
+                    await this._assign(command.var, value);
+                } catch (err) {
+                    log.error("Error during weak assignment: " + err);
+                    throw err; // Consistent error handling
+                }
             } else {
-                setImmediate(callback);
+                log.debug("Weak assignment skipped because variable already exists.");
             }
-            return true;
+            return;
 
         case "cond":
             if (this._eval(command.cmp)) {
-                return this._execute(command.stmt, callback); // Warning RECURSION!
+                await this._execute(command.stmt); // Await recursive call
+                return;
             } else {
                 this.pc += 1;
-                setImmediate(callback);
-                return true;
+                return;
             }
 
         case "comment":
             var comment = command.comment.join("").trim();
             if (comment != "") {
                 //this.emit_gcode('( ' + comment + ' )') // TODO allow for comments
+            } else {
+                log.debug("Comment skipped because it was empty.");
             }
             this.pc += 1;
-            return false;
+            return;
 
         case "label":
         case undefined:
             this.pc += 1;
-            return false;
+            return;
 
         case "pause":
-            // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
+            // PAUSE is somewhat overloaded. In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = this._eval(command.expr);
             var input_var = command.var;
             if (u.isANumber(arg)) {
-                // If argument is a number set pause with timer and default message.
-                // In simulation, just don't do anything
+                // If argument is a number, set pause with timer and default message.
+                // In simulation, just don't do anything.
                 if (!this.machine) {
-                    setImmediate(callback);
                     return true;
                 }
                 this.paused = true;
                 this.machine.setState(this, "paused", u.packageModalParams({ timer: arg }));
-                return true;
+                return;
             } else {
-                // In simulation, just don't do anything
+                // In simulation, just don't do anything.
                 if (!this.machine) {
-                    setImmediate(callback);
                     return true;
                 }
-                // If a message is provided, pause with a dialog
+                // If a message is provided, pause with a dialog.
                 var message = arg;
                 if (!message) {
-                    // If a message is not provided, use the comment from the previous line
+                    // If a message is not provided, use the comment from the previous line.
                     var last_command = this.program[this.pc - 2];
                     if (last_command && last_command.type === "comment") {
                         message = last_command.comment.join("").trim();
@@ -1323,18 +1274,19 @@ SBPRuntime.prototype._execute = function (command, callback) {
                     modalParams = u.packageModalParams({ message: message }, modalParams);
                 }
                 // Example of modal customization. Adds input param, sets ok button text to Submit, removes cancel/quit button.
-                // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel button s detailed below.
+                // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel buttons detailed below.
+                ////## custom modal example
                 if (input_var) {
                     var inputParams = {
                         input_var: input_var,
                         okText: "Submit",
-                        cancelText: false, // remove or set new text to display cancel/quit button.
-                        cancelFunc: false, // remove to enable quit job onclick
+                        cancelText: false, // Remove or set new text to display cancel/quit button.
+                        cancelFunc: false, // Remove to enable quit job on click.
                     };
                     modalParams = u.packageModalParams(inputParams, modalParams);
                 }
                 this.paused = true;
-                //Set driver in paused state
+                // Set driver in paused state.
                 this.machine.driver.pause_hold = true;
                 this.machine.setState(this, "paused", modalParams);
                 return true;
@@ -1349,15 +1301,9 @@ SBPRuntime.prototype._execute = function (command, callback) {
             );
 
         default:
-            // Just skip over commands we don't recognize
-            // TODO - Maybe this isn't the best behavior?
-            try {
-                log.error("Unknown command: " + JSON.stringify(command));
-            } catch (e) {
-                log.error("Unknown command: " + command);
-            }
+            log.error("Unknown command: " + JSON.stringify(command));
             this.pc += 1;
-            return false;
+            return;
     }
 };
 
@@ -1366,62 +1312,95 @@ SBPRuntime.prototype._execute = function (command, callback) {
 // &Tool == &TOOL == &TOoL
 //   identifier - The identifier to check
 SBPRuntime.prototype._varExists = function (identifier) {
-    if (identifier.type == "user_variable") {
-        // User variable
+    if (identifier.type == "user_variable" || identifier.type == "persistent_variable") {
+        const variableName = identifier.name.toUpperCase();
+        const accessPath = identifier.access || [];
+        let variables;
 
-        // Handle weird &Tool Exception case
-        // (which exists because of old shopbot case insensitivity)
-        if (identifier.expr.toUpperCase() === "&TOOL") {
-            identifier.expr = "&TOOL";
+        if (identifier.type == "user_variable") {
+            variables = config.opensbp._cache["tempVariables"];
+        } else {
+            variables = config.opensbp._cache["variables"];
         }
 
-        return config.opensbp.hasTempVariable(identifier.expr);
-    }
+        if (!(variableName in variables)) {
+            return false;
+        }
 
-    if (identifier.type == "persistent_variable") {
-        // Persistent variable
-        return config.opensbp.hasVariable(identifier.expr);
+        let value = variables[variableName];
+        for (let part of accessPath) {
+            let key;
+            if (part.type === "index") {
+                key = this._eval(part.value);
+            } else if (part.type === "property") {
+                key = part.name;
+            }
+            if (value && key in value) {
+                value = value[key];
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
     return false;
 };
 
-// Assign a variable to a value
+// Assign a variable a value
 //   identifier - The variable to assign
 //        value - The new value
-//     callback - Called once the assignment has been made
-SBPRuntime.prototype._assign = async function (identifier, value, callback) {
-    if (identifier.type == "user_variable") {
-        // User Variable
+SBPRuntime.prototype._assign = async function (identifier, value) {
+    log.debug("**-> Assigning variable: " + identifier.name + " Value:" + value);
+    const variableName = identifier.name.toUpperCase();
+    let accessPath = identifier.access || [];
 
-        // Handle TOOL exception case
-        if (identifier.expr.toUpperCase() === "&TOOL") {
-            identifier.expr = "&TOOL";
-        }
+    // Evaluate accessPath
+    accessPath = this._evaluateAccessPath(accessPath);
 
-        // Assign with persistence using the configuration module
-        try {
-            await config.opensbp.setTempVariableWrapper(identifier.expr, value);
-            callback();
-        } catch (error) {
-            log.error(error);
-        }
-        return;
+    // Update the variable in the config
+    if (identifier.type === "user_variable") {
+        await config.opensbp.setTempVariableWrapper({ name: variableName, access: accessPath }, value);
+    } else {
+        await config.opensbp.setVariableWrapper({ name: variableName, access: accessPath }, value);
     }
+};
 
-    if (identifier.type == "persistent_variable") {
-        // Persistent variable
-
-        // Assign with persistence using the configuration module
-        try {
-            await config.opensbp.setVariableWrapper(identifier.expr, value);
-            callback();
-        } catch (error) {
-            log.error(error);
+SBPRuntime.prototype._evaluateAccessPath = function (access) {
+    return access.map((part) => {
+        if (part.type === "index") {
+            const key = this._eval(part.value);
+            return { type: part.type, value: key };
+        } else if (part.type === "property") {
+            return { type: part.type, value: part.name };
+        } else {
+            throw new Error("Unknown access part type: " + part.type);
         }
-        return;
-    }
+    });
+};
 
-    throw new Error("Cannot assign to " + identifier);
+SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
+    let current = obj;
+    for (let i = 0; i < accessPath.length - 1; i++) {
+        const part = accessPath[i];
+        let key;
+        if (part.type === "index") {
+            key = this._eval(part.value);
+        } else if (part.type === "property") {
+            key = part.name;
+        }
+        if (!(key in current)) {
+            current[key] = {};
+        }
+        current = current[key];
+    }
+    const lastPart = accessPath[accessPath.length - 1];
+    let lastKey;
+    if (lastPart.type === "index") {
+        lastKey = this._eval(lastPart.value);
+    } else if (lastPart.type === "property") {
+        lastKey = lastPart.name;
+    }
+    current[lastKey] = value;
 };
 
 // Return the actual value of an expression.
@@ -1429,22 +1408,63 @@ SBPRuntime.prototype._assign = async function (identifier, value, callback) {
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function (expr) {
-    if (Object.prototype.hasOwnProperty.call(expr, "type")) {
-        switch (expr.type) {
-            case "user_variable":
-                return this.evaluateUserVariable(expr);
-            case "system_variable":
-                return this.evaluateSystemVariable(expr);
-            case "persistent_variable":
-                return this.evaluatePersistentVariable(expr);
-        }
+    log.debug("**-> Evaluating value: " + expr);
+    if (typeof expr === "object" && (expr.type === "user_variable" || expr.type === "persistent_variable")) {
+        return this._getVariableValue(expr);
+    }
+    if (typeof expr === "object" && expr.type === "system_variable") {
+        return this.evaluateSystemVariable(expr);
     }
     var n = Number(String(expr));
-    return isNaN(n) ? expr : n;
+    if (!isNaN(n)) {
+        return n;
+    }
+    // If expr is a string that matches a command, return it as is
+    if (typeof expr === "string" && this[expr]) {
+        return expr;
+    }
+    return expr;
+};
+
+SBPRuntime.prototype._getVariableValue = function (identifier) {
+    const variableName = identifier.name.toUpperCase();
+    const accessPath = identifier.access || [];
+    let variables;
+
+    if (identifier.type === "user_variable") {
+        variables = config.opensbp._cache["tempVariables"];
+    } else {
+        variables = config.opensbp._cache["variables"];
+    }
+
+    if (!(variableName in variables)) {
+        throw new Error(`Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} is not defined.`);
+    }
+
+    let value = variables[variableName];
+    value = this._navigateAccessPath(value, accessPath);
+    return value;
+};
+
+SBPRuntime.prototype._navigateAccessPath = function (value, accessPath) {
+    for (let part of accessPath) {
+        let key;
+        if (part.type === "index") {
+            key = this._eval(part.value);
+        } else if (part.type === "property") {
+            key = part.name;
+        }
+        if (value && key in value) {
+            value = value[key];
+        } else {
+            throw new Error(`Property or index '${key}' not found.`);
+        }
+    }
+    return value;
 };
 
 // Evaluate an expression.  Return the result.
-// TODO - Make this robust to undefined user variables
+// TODO - Are we robust enough to undefined variables
 //   expr - The expression to evaluate.  This is a *parsed* expression object
 SBPRuntime.prototype._eval = function (expr) {
     // log.debug("Evaluating expression: " + JSON.stringify(expr));
@@ -2116,17 +2136,16 @@ SBPRuntime.prototype.resume = function (input = false) {
     if (this.resumeAllowed) {
         if (this.paused) {
             if (input) {
-                // eslint-disable-next-line no-unused-vars
-                var callback = function (err, data) {
-                    if (err) {
-                        log.error(err);
-                    } else {
+                this._assign(input.var, input.val)
+                    .then(() => {
                         this.paused = false;
                         this._executeNext();
                         this.driver.resume();
-                    }
-                }.bind(this);
-                this._assign(input.var, input.val, callback);
+                    })
+                    .catch((err) => {
+                        log.error("Error during resume assignment: " + err);
+                        return this._abort(err);
+                    });
             } else {
                 this.paused = false;
                 this._executeNext();

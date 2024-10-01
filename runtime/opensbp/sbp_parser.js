@@ -319,17 +319,17 @@ function peg$parse(input, options) {
   var peg$f20 = function(s) { return s.join("").trim() || undefined; };
   var peg$f21 = function(s) {return s.join("")};
   var peg$f22 = function(name, access) {
-      return { "type": "user_variable", "name": name, "access": access };
+      return { "type": "user_variable", "name": name.toUpperCase(), "access": access };
     };
   var peg$f23 = function(name, access) {
-      return { "type": "persistent_variable", "name": name, "access": access };
+      return { "type": "persistent_variable", "name": name.toUpperCase(), "access": access };
     };
   var peg$f24 = function(e) { return { "type": "system_variable", "expr": e } };
   var peg$f25 = function(e) {
       return { "type": "index", "value": e };
     };
   var peg$f26 = function(propName) {
-      return { "type": "property", "name": propName };
+      return { "type": "property", "name": propName.toUpperCase() };
     };
   var peg$f27 = function(v, e) {return {"type": "assign", "var":v, "expr":e}};
   var peg$f28 = function(v, e) {return {"type": "weak_assign", "var":v, "expr":e}};

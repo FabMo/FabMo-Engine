@@ -55,19 +55,24 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
                 return callback(e);
             }
             if (Object.prototype.hasOwnProperty.call(data, "tempVariables")) {
-                delete data["tempVariables"];
+                data["tempVariables"] = {};
             }
             this.update(
                 data,
                 function (err, d) {
-                    callback(err, data);
-                },
+                    if (err) {
+                        return callback(err);
+                    }
+                    // Ensure the changes are persisted
+                    fs.writeFile(this._filename, JSON.stringify(this._cache, null, 2), "utf8", function (err) {
+                        callback(err, data);
+                    });
+                }.bind(this),
                 true
             );
         }.bind(this)
     );
 };
-
 // Update the tree with the provided data. Deal with values shared by runtime with G2
 ////## xy version of values is kludge for SBP legacy compatibility with dummy 'y' entry
 OpenSBPConfig.prototype.update = function (data, callback, force) {
@@ -164,41 +169,89 @@ OpenSBPConfig.prototype.update = function (data, callback, force) {
     });
 };
 
+// SetMany remains the same
 OpenSBPConfig.prototype.setMany = OpenSBPConfig.prototype.update;
 
-// Apply this configuration.  Currently this is a NOOP
+// Apply this configuration. Currently this is a NOOP
 OpenSBPConfig.prototype.apply = function (callback) {
     setImmediate(callback, null);
 };
 
-// Return the value of the variable with the specified name
-//   name - The variable name to retrieve the value for, with or without the dollar sign.
-OpenSBPConfig.prototype.getVariable = function (name) {
-    var scrubbedName = name.replace("$", "");
-    var variables = this._cache["variables"];
-    if (variables && scrubbedName in variables) {
-        return variables[scrubbedName];
-    } else {
-        throw new Error("Variable " + name + " was used but not defined.");
+// Helper function to navigate the access path
+function navigateAccessPath(value, accessPath) {
+    for (let part of accessPath) {
+        let key = part.value;
+        if (value && key in value) {
+            value = value[key];
+        } else {
+            throw new Error("Property or index '" + key + "' not found.");
+        }
     }
+    return value;
+}
+
+// Helper function to set a value at a nested path
+function setNestedValue(obj, accessPath, value) {
+    let current = obj;
+    for (let i = 0; i < accessPath.length - 1; i++) {
+        const key = accessPath[i].value;
+        if (!(key in current)) {
+            current[key] = {};
+        }
+        current = current[key];
+    }
+    const lastKey = accessPath[accessPath.length - 1].value;
+    current[lastKey] = value;
+}
+
+// Return the value of the variable with the specified identifier
+//   identifier - An object with 'name' and 'access' properties
+OpenSBPConfig.prototype.getVariable = function (identifier) {
+    const variableName = identifier.name.toUpperCase();
+    const accessPath = identifier.access || [];
+    const variables = this._cache["variables"];
+
+    if (!variables || !(variableName in variables)) {
+        throw new Error("Variable $" + variableName + " was used but not defined.");
+    }
+
+    let value = variables[variableName];
+
+    value = navigateAccessPath(value, accessPath);
+
+    return value;
 };
 
-// Set the variable named to the provided value.
-// TODO - Sanitize the variable name (you could set super illegal dumb stuff here)
-//       name - The name of the variable to set, with or without a dollar sign
-//      value - The value to assign
-//   callback - Called with an object mapping key to value, or error if error.
-OpenSBPConfig.prototype.setVariable = function (name, value, callback) {
-    name = name.replace("$", "");
-    var u = { variables: {} };
-    u.variables[name] = value;
+// Set the variable identified by 'identifier' to the provided value.
+//   identifier - An object with 'name' and 'access' properties
+//       value - The value to assign
+//    callback - Called when the variable has been set
+OpenSBPConfig.prototype.setVariable = function (identifier, value, callback) {
+    const variableName = identifier.name;
+    const accessPath = identifier.access || [];
+    let variables = this._cache["variables"] || {};
+
+    if (!(variableName in variables)) {
+        variables[variableName] = {};
+    }
+
+    if (accessPath.length === 0) {
+        // Simple variable assignment
+        variables[variableName] = value;
+    } else {
+        // Nested variable assignment
+        setNestedValue(variables[variableName], accessPath, value);
+    }
+
+    // Update the cache
+    var u = { variables: variables };
     this.update(u, callback, true);
 };
 
 // Promise wrapper to allow async/await
-OpenSBPConfig.prototype.setVariableWrapper = async function (expr, value) {
-    return await new Promise((resolve, reject) => {
-        this.setVariable(expr, value, function (err, result) {
+OpenSBPConfig.prototype.setVariableWrapper = async function (identifier, value) {
+    return new Promise((resolve, reject) => {
+        this.setVariable(identifier, value, function (err, result) {
             if (err) {
                 reject(err);
             } else {
@@ -208,40 +261,77 @@ OpenSBPConfig.prototype.setVariableWrapper = async function (expr, value) {
     });
 };
 
-// Return true if the provided variable has been defined (with or without dollar sign)
-OpenSBPConfig.prototype.hasVariable = function (name) {
-    name = name.replace("$", "");
-    return name in this._cache.variables;
-};
+// Return true if the provided variable has been defined
+//   identifier - An object with 'name' and 'access' properties
+OpenSBPConfig.prototype.hasVariable = function (identifier) {
+    const variableName = identifier.name.toUpperCase();
+    const accessPath = identifier.access || [];
+    const variables = this._cache["variables"];
 
-// Return the value of the temp variable with the specified name
-//   name - The temp variable name to retrieve the value for, with or without the ampersand.
-OpenSBPConfig.prototype.getTempVariable = function (name) {
-    var scrubbedName = name.replace("&", "");
-    var tempVariables = this._cache["tempVariables"];
-    if (tempVariables && scrubbedName in tempVariables) {
-        return tempVariables[scrubbedName];
-    } else {
-        throw new Error("Temp Variable " + name + " was used but not defined.");
+    if (!variables || !(variableName in variables)) {
+        return false;
+    }
+
+    let value = variables[variableName];
+
+    try {
+        value = navigateAccessPath(value, accessPath);
+        return value !== undefined;
+    } catch (e) {
+        return false;
     }
 };
 
-// Set the temp variable named to the provided value.
-// TODO - Sanitize the temp variable name (you could set super illegal dumb stuff here)
-//       name - The name of the variable to set, with or without a ampersand
-//      value - The value to assign
-//   callback - Called with an object mapping key to value, or error if error.
-OpenSBPConfig.prototype.setTempVariable = function (name, value, callback) {
-    name = name.replace("&", "");
-    var u = { tempVariables: {} };
-    u.tempVariables[name] = value;
+// TEMP VARIABLES
+
+// Return the value of the temp variable with the specified identifier
+//   identifier - An object with 'name' and 'access' properties
+OpenSBPConfig.prototype.getTempVariable = function (identifier) {
+    const variableName = identifier.name.toUpperCase();
+    const accessPath = identifier.access || [];
+    const tempVariables = this._cache["tempVariables"];
+
+    if (!tempVariables || !(variableName in tempVariables)) {
+        throw new Error("Temp Variable &" + variableName + " was used but not defined.");
+    }
+
+    let value = tempVariables[variableName];
+
+    value = navigateAccessPath(value, accessPath);
+
+    return value;
+};
+
+// Set the temp variable identified by 'identifier' to the provided value.
+//   identifier - An object with 'name' and 'access' properties
+//       value - The value to assign
+//    callback - Called when the variable has been set
+OpenSBPConfig.prototype.setTempVariable = function (identifier, value, callback) {
+    const variableName = identifier.name;
+    const accessPath = identifier.access || [];
+    let tempVariables = this._cache["tempVariables"] || {};
+
+    if (!(variableName in tempVariables)) {
+        tempVariables[variableName] = {};
+    }
+
+    if (accessPath.length === 0) {
+        // Simple variable assignment
+        tempVariables[variableName] = value;
+    } else {
+        // Nested variable assignment
+        setNestedValue(tempVariables[variableName], accessPath, value);
+    }
+
+    // Update the cache
+    var u = { tempVariables: tempVariables };
     this.update(u, callback, true);
 };
 
 // Promise wrapper to allow async/await
-OpenSBPConfig.prototype.setTempVariableWrapper = async function (expr, value) {
-    return await new Promise((resolve, reject) => {
-        this.setTempVariable(expr, value, function (err, result) {
+OpenSBPConfig.prototype.setTempVariableWrapper = async function (identifier, value) {
+    return new Promise((resolve, reject) => {
+        this.setTempVariable(identifier, value, function (err, result) {
             if (err) {
                 reject(err);
             } else {
@@ -251,10 +341,176 @@ OpenSBPConfig.prototype.setTempVariableWrapper = async function (expr, value) {
     });
 };
 
-// Return true if the provided temp variable has been defined (with or without ampersand)
-OpenSBPConfig.prototype.hasTempVariable = function (name) {
-    name = name.replace("&", "");
-    return name in this._cache.tempVariables;
+// Return true if the provided temp variable has been defined
+//   identifier - An object with 'name' and 'access' properties
+OpenSBPConfig.prototype.hasTempVariable = function (identifier) {
+    const variableName = identifier.name.toUpperCase();
+    const accessPath = identifier.access || [];
+    const tempVariables = this._cache["tempVariables"];
+
+    if (!tempVariables || !(variableName in tempVariables)) {
+        return false;
+    }
+
+    let value = tempVariables[variableName];
+
+    try {
+        value = navigateAccessPath(value, accessPath);
+        return value !== undefined;
+    } catch (e) {
+        return false;
+    }
 };
 
 exports.OpenSBPConfig = OpenSBPConfig;
+
+// OpenSBPConfig.prototype.setMany = OpenSBPConfig.prototype.update;
+
+// // Apply this configuration.  Currently this is a NOOP
+// OpenSBPConfig.prototype.apply = function (callback) {
+//     setImmediate(callback, null);
+// };
+
+// // Return the value of the variable with the specified name
+// //   name - The variable name to retrieve the value for, with or without the dollar sign.
+// // OpenSBPConfig.prototype.getVariable = function (name) {
+// //     var scrubbedName = name.replace("$", "");
+// //     var variables = this._cache["variables"];
+// //     if (variables && scrubbedName in variables) {
+// //         return variables[scrubbedName];
+// //     } else {
+// //         throw new Error("Variable " + name + " was used but not defined.");
+// //     }
+// // };
+// OpenSBPConfig.prototype.getVariable = function (name) {
+//     var scrubbedName = name.replace("$", "");
+//     var variables = this._cache["variables"];
+//     if (!variables) {
+//         throw new Error("No variables defined.");
+//     }
+
+//     // Parse the variable name to handle nested properties
+//     var value = parseVariablePath(variables, scrubbedName);
+
+//     if (value !== undefined) {
+//         return value;
+//     } else {
+//         throw new Error("Variable " + name + " was used but not defined.");
+//     }
+// };
+
+// function parseVariablePath(obj, path) {
+//     var parts = path.replace(/\[(\w+)\]/g, ".$1").split(".");
+//     for (var i = 0; i < parts.length; i++) {
+//         if (obj && parts[i] in obj) {
+//             obj = obj[parts[i]];
+//         } else {
+//             return undefined;
+//         }
+//     }
+//     return obj;
+// }
+
+// // Set the variable named to the provided value.
+// // TODO - Sanitize the variable name (you could set super illegal dumb stuff here)
+// //       name - The name of the variable to set, with or without a dollar sign
+// //      value - The value to assign
+// //   callback - Called with an object mapping key to value, or error if error.
+// // OpenSBPConfig.prototype.setVariable = function (name, value, callback) {
+// //     name = name.replace("$", "");
+// //     var u = { variables: {} };
+// //     u.variables[name] = value;
+// //     this.update(u, callback, true);
+// // };
+// OpenSBPConfig.prototype.setVariable = function (name, value, callback) {
+//     name = name.replace("$", "");
+//     var variables = this._cache["variables"] || {};
+
+//     // Set the value at the nested path
+//     setVariablePath(variables, name, value);
+
+//     // Update the cache
+//     var u = { variables: variables };
+//     this.update(u, callback, true);
+// };
+
+// function setVariablePath(obj, path, value) {
+//     var parts = path.replace(/\[(\w+)\]/g, ".$1").split(".");
+//     var last = parts.pop();
+//     for (var i = 0; i < parts.length; i++) {
+//         if (!(parts[i] in obj)) {
+//             obj[parts[i]] = {};
+//         }
+//         obj = obj[parts[i]];
+//     }
+//     obj[last] = value;
+// }
+
+// // Promise wrapper to allow async/await
+// OpenSBPConfig.prototype.setVariableWrapper = async function (expr, value) {
+//     return await new Promise((resolve, reject) => {
+//         this.setVariable(expr, value, function (err, result) {
+//             if (err) {
+//                 reject(err);
+//             } else {
+//                 resolve(result);
+//             }
+//         });
+//     });
+// };
+
+// // Return true if the provided variable has been defined (with or without dollar sign)
+// // OpenSBPConfig.prototype.hasVariable = function (name) {
+// //     name = name.replace("$", "");
+// //     return name in this._cache.variables;
+// // };
+// OpenSBPConfig.prototype.hasVariable = function (name) {
+//     name = name.replace("$", "");
+//     var variables = this._cache["variables"];
+//     return parseVariablePath(variables, name) !== undefined;
+// };
+// //
+// //
+// // Temp Variables
+// // Return the value of the temp variable with the specified name
+// //   name - The temp variable name to retrieve the value for, with or without the ampersand.
+// OpenSBPConfig.prototype.getTempVariable = function (name) {
+//     var scrubbedName = name.replace("&", "");
+//     var tempVariables = this._cache["tempVariables"];
+//     if (tempVariables && scrubbedName in tempVariables) {
+//         return tempVariables[scrubbedName];
+//     } else {
+//         throw new Error("Temp Variable " + name + " was used but not defined.");
+//     }
+// };
+
+// // Set the temp variable named to the provided value.
+// // TODO - Sanitize the temp variable name (you could set super illegal dumb stuff here)
+// //       name - The name of the variable to set, with or without a ampersand
+// //      value - The value to assign
+// //   callback - Called with an object mapping key to value, or error if error.
+// OpenSBPConfig.prototype.setTempVariable = function (name, value, callback) {
+//     name = name.replace("&", "");
+//     var u = { tempVariables: {} };
+//     u.tempVariables[name] = value;
+//     this.update(u, callback, true);
+// };
+
+// // Promise wrapper to allow async/await
+// OpenSBPConfig.prototype.setTempVariableWrapper = async function (expr, value) {
+//     return await new Promise((resolve, reject) => {
+//         this.setTempVariable(expr, value, function (err, result) {
+//             if (err) {
+//                 reject(err);
+//             } else {
+//                 resolve(result);
+//             }
+//         });
+//     });
+// };
+
+// // Return true if the provided temp variable has been defined (with or without ampersand)
+// OpenSBPConfig.prototype.hasTempVariable = function (name) {
+//     name = name.replace("&", "");
+//     return name in this._cache.tempVariables;
+// };

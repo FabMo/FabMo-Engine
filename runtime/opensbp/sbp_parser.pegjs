@@ -102,23 +102,14 @@ quotedstring
 variable
   = (user_variable / system_variable / persistent_variable)
 
-//user_variable
-//  = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("").toUpperCase()}}
-//
-//persistent_variable
-//  = v:("$" identifier ) {return {"type":"persistent_variable", "expr":v.join("").toUpperCase()}}
-//
-//system_variable
-//  = "%" "(" __ e:expression __ ")" {return {"type":"system_variable", "expr":e}}
-//
 user_variable
   = "&" name:identifier access:property_access* {
-      return { "type": "user_variable", "name": name, "access": access };
+      return { "type": "user_variable", "name": name.toUpperCase(), "access": access };
     }
 
 persistent_variable
   = "$" name:identifier access:property_access* {
-      return { "type": "persistent_variable", "name": name, "access": access };
+      return { "type": "persistent_variable", "name": name.toUpperCase(), "access": access };
     }
 
 system_variable
@@ -129,7 +120,7 @@ property_access
       return { "type": "index", "value": e };
     }
   / "." propName:identifier {
-      return { "type": "property", "name": propName };
+      return { "type": "property", "name": propName.toUpperCase() };
     }
 
 assignment
