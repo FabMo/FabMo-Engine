@@ -1,7 +1,13 @@
 const parser = require("./sbp_parser");
 
 // Test inputs
-const testInputs = ["&var=2", "$tools[1].x = 100", "$config.settings.speed = 500", "$unknown[5] = 2"];
+const testInputs = [
+    "&var=2",
+    "$tools[1].x = 100",
+    "$config.settings.speed = 500",
+    "$unknown[5] = 2",
+    "$loc[&i] = { x: 1.1, y: 2.2 }",
+];
 
 // Function to test parsing of inputs
 function testParser(inputs) {

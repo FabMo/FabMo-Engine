@@ -4,296 +4,408 @@
 
 /* NOTE(th): This file is a modified version of the codemirror simplemode example file.  It is used to define 
   * the syntax highlighting rules for the OpenSBP language.  The original file can be found here: 
-  * 1/16/2024 UPDATES ARE STILL A WORK IN PROGRESS FOT NEW HIGHLIGHT FEATURES ... have added more comments to help understand
+  * 1/16/2024 UPDATES ARE STILL A WORK IN PROGRESS FOR NEW HIGHLIGHT FEATURES ... have added more comments to help understand
   * the processing path of the code.  Also added a few more states to handle the new features.  Still need to refine a few things
-  * that are quite right. 
+  * that are not quite right. 
   */
+
+// This version is 5.14.3 (there is a newer version available); in general v5 is still supported though v6 is the latest
+// There is a more sophisticated mode available in codemirror.js
+
+/* Updated CodeMirror mode for OpenSBP with proper handling of variables and access paths */
+
+/* Complete CodeMirror mode for OpenSBP with corrections and all necessary elements */
 
 var CodeMirror = require('./codemirror.js');
 
-CodeMirror.defineSimpleMode("gcode", {
-  // The start state contains the rules that are intially used
-  start: [                                               //start state > CHECK GCODE first
-    {regex: /\([^\)]*\)/i, token: "comment"},            //anything in parens is a comment
-    {regex: /[GM]\d+/i, token: "keyword"},               //any G or M command is a keyword
-    // You can match multiple tokens at once. Note that the captured
-    // groups must span the whole string in this case
-    {regex: /([A-FH-LN-Z])([+\-]?[0-9]+(?:\.[0-9]+)?)/i, //match a letter followed by a number 
-     token: ["variable", "number"]},                     //the letter is a variable, the number is a number
-    {regex: /\?.*/, token: "comment"},                   //anything after a ? is a comment
-    {regex: /[^\w\s]/, token: "error"}                   //anything else is an error
-  ],
-  // The meta property contains global information about the mode. It
-  // can contain properties like lineComment, which are supported by
-  // all modes, and also directives like dontIndentStates, which are
-  // specific to simple modes.
-  meta: {
-    dontIndentStates: ["comment"],
-    lineComment: "?"
-  }
-});
-
-// Set up some basic checks for OpenSBP syntax
-var CMD_REGEX = /^[A-Z](?:[A-Z]|[0-9]+|C\#)\b/i        //match a command
-var LINENO_REGEX = /^N[0-9]+\b/i                       //match a line number
-var LABEL_REGEX = /^[A-Z_][A-Z0-9_]*\:/i               //match a label
-var WORD_REGEX = /^[A-Z_][A-Z0-9_]*/i                  //match a word (label or variable)
-var STRING_REGEX = /^"(?:[^\\]|\\.)*?"/                //match a string
-var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i
-                                                       //match a number
+// Regular expressions for matching various tokens
+var CMD_REGEX = /^[A-Z](?:[A-Z]|[0-9]+|C#)\b/i;
+var LINENO_REGEX = /^N[0-9]+\b/i;
+var LABEL_REGEX = /^[A-Z_][A-Z0-9_]*:/i;
+var IDENTIFIER_REGEX = /[A-Z_][A-Z0-9_]*/i;
+var WORD_REGEX = /[A-Z_][A-Z0-9_]*/i;
+var STRING_REGEX = /^"(?:[^\\"]|\\.)*"/;
+var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i;
 var SYS_VAR_REGEX = /^\%\(([ \t]*((&|\$)[A-Z_][A-Z0-9_]*)|[0-9]+[ \t]*)\)/i;
-                                                       //match a system variable (with or without a value) 
-var USR_VAR_REGEX = /^\&[A-Z_][A-Z0-9_]*/i             //match a user variable (with or without a value)
-var PERSIST_VAR_REGEX = /^\$[A-Z_][A-Z0-9_]*/i         //match a persistent variable (with or without a value) 
-var BARE_REGEX = /^[IOT]/i                             //match a bare word (I, O, or T; inside outside or true?)  
-var COMMENT_REGEX = /^'.*/i                            //match an opensbp comment (starts with a single quote)
-var OPERATOR_REGEX = /^[\+\-\*\/\^\!\(\)\=\>\<|\=\:]/i //match an operator (math, logic, or assignment) 
+var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b', 'i');
+var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\b', 'i');
+var BARE_REGEX = /^[IOT]/i;
+var COMMENT_REGEX = /^'.*/i;
+var OPERATOR_REGEX = /^[+\-*/^!<>=]/i;
 
-// Checks for match of the contents of next part of the stream  
-function matchExpression(stream) {
-  if(stream.match(SYS_VAR_REGEX)) {
-    return "variable"; // Return token for a match
-  }
-  if(stream.match(USR_VAR_REGEX)) {
-    return "variable-2";
-  }
-  if(stream.match(PERSIST_VAR_REGEX)) {
-    return "variable-3";
-  } 
-  if(stream.match(NUMBER_REGEX)) {
+function matchExpression(stream, state) {
+  if (stream.match(SYS_VAR_REGEX)) {
+    state.tokenize = tokenVariableAccess("variable");
+    return state.tokenize(stream, state);
+  } else if (stream.match(USR_VAR_REGEX)) {
+    state.tokenize = tokenVariableAccess("variable-2");
+    return state.tokenize(stream, state);
+  } else if (stream.match(PERSIST_VAR_REGEX)) {
+    state.tokenize = tokenVariableAccess("variable-3");
+    return state.tokenize(stream, state);
+  } else if (stream.match(NUMBER_REGEX)) {
     return "number";
-  }
-  if(stream.match(STRING_REGEX)) {
+  } else if (stream.match(STRING_REGEX)) {
     return "string";
+  } else if (stream.match(OPERATOR_REGEX)) {
+    return "operator";
+  } else if (stream.match(/^\{/)) {
+    state.tokenize = tokenObjectLiteral;
+    return "bracket";
+  } else if (stream.match(/^\}/)) {
+    return "bracket";
+  } else if (stream.match(/^\(/)) {
+    return "bracket";
+  } else if (stream.match(/^\)/)) {
+    return "bracket";
+  } else if (stream.match(IDENTIFIER_REGEX)) {
+    return "variable"; // For constants or function names
+  } else {
+    stream.next();
+    return "error";
   }
-  if(stream.match(OPERATOR_REGEX)) {
+}
+
+function tokenObjectLiteral(stream, state) {
+  if (stream.eatSpace()) {
+    return null;
+  }
+  if (stream.match(/^\{/)) {
+    return "bracket";
+  }
+  if (stream.match(/^\}/)) {
+    state.tokenize = null; // Exit object literal
+    return "bracket";
+  }
+  if (stream.match(STRING_REGEX) || stream.match(IDENTIFIER_REGEX)) {
+    return "property";
+  }
+  if (stream.match(/^\:/)) {
     return "operator";
   }
-  return null;
+  if (stream.match(/^\,/)) {
+    return null;
+  }
+  var match = matchExpression(stream, state);
+  if (match) {
+    return match;
+  }
+  stream.next();
+  return "error";
 }
 
-// Checks for a match of the next 'argument' in the stream (comma separated)
-function matchArgument(stream) {
-  var match = matchExpression(stream);
-  if(match) { return match; }                         // If we match an expression from above, return it immediately 
-  if(stream.match(BARE_REGEX)) { return "atom"; }     // If we match a bare word, return it immediately (I, O, or T) 
-  return null;   
+function tokenVariableAccess(variableType) {
+  return function(stream, state) {
+    if (stream.eatSpace()) {
+      return null;
+    }
+    if (stream.match(/^\./)) {
+      return "operator";
+    }
+    if (stream.match(IDENTIFIER_REGEX)) {
+      return "property";
+    }
+    if (stream.match(/^\[/)) {
+      state.bracketNesting = (state.bracketNesting || 0) + 1;
+      return "bracket";
+    }
+    if (stream.match(/^\]/)) {
+      state.bracketNesting--;
+      if (state.bracketNesting < 0) {
+        state.tokenize = null; // Exit variable access
+        return "error";
+      }
+      return "bracket";
+    }
+    if (state.bracketNesting > 0) {
+      // Inside brackets, parse expression
+      var match = matchExpression(stream, state);
+      if (match) {
+        return match;
+      }
+    } else {
+      // No more access path
+      state.tokenize = null;
+      return variableType;
+    }
+    stream.next();
+    return "error";
+  };
 }
 
-// CHECKING CURRENT EDITOR TEXT STARTS HERE 
+function matchArgument(stream, state) {
+  var match = matchExpression(stream, state);
+  if (match) {
+    return match;
+  }
+  if (stream.match(BARE_REGEX)) {
+    return "atom";
+  }
+  stream.next();
+  return "error";
+}
 
 CodeMirror.defineMode("opensbp", function() {
   return {
     startState: function() {
       return {
-        name : "sol",                                 // Start off in the start of line state
-      }
+        name: "sol",
+        tokenize: null,
+        bracketNesting: 0
+      };
     },
-
-    token: function(stream, state) {                  // Tokenize the stream based on the current state of the editor 
-      if(stream.sol()) {                              // If we're at the start of a line, reset the state
+    token: function(stream, state) {
+      if (state.tokenize) {
+        var result = state.tokenize(stream, state);
+        if (!state.tokenize) {
+          state.bracketNesting = 0; // Reset bracket nesting when exiting variable access
+        }
+        return result;
+      }
+      if (stream.sol()) {
         state.name = "sol";
       }
-      if(stream.eatSpace()) {                         // If we're eating space, return null
+      if (stream.eatSpace()) {
         return null;
       }
-      if(stream.eat("'")) {                           // If we're eating a comment, skip to the end of the line
+      if (stream.match(COMMENT_REGEX)) {
         stream.skipToEnd();
         return 'comment';
       }
 
-      switch(state.name) {                            // Otherwise, tokenize based on the CURRENT state of the editor 
-
-        case "sol":                                   // START OF LINE STATE ======== (most common) 
-          if(stream.eatSpace()) {                     // Eat space
-            return null;  
+      switch (state.name) {
+        case "sol":
+          if (stream.match(LABEL_REGEX)) {
+            return "label";
           }
-          if(stream.match(COMMENT_REGEX)) {           // If we match a comment, skip to the end of the line and return the token 
-            return "comment";
-          }
-          if(stream.match("ON")) {                    // If we match ON from "ON INPUT", change to the ON state and return the token 
+          if (stream.match(/^ON\b/i)) {
             state.name = "on";
             return "keyword";
-          } 
-          // LHS of an assignment (note that a system variable can not be assigned)
-          // if(stream.match(SYS_VAR_REGEX)) {
-          //   state.name = "property";
-          //   return "systemvar";
-          // } 
-          if(stream.match(USR_VAR_REGEX)) {           // If we match a [user variable], change to the ASSIGN state and return the token 
+          }
+          if (stream.match(USR_VAR_REGEX)) {
+            state.tokenize = tokenVariableAccess("variable-2");
             state.name = "assign";
             return "variable-2";
-          } 
-          if(stream.match(PERSIST_VAR_REGEX)) {       // If we match a [persistent variable], change to the ASSIGN state and return the token 
+          }
+          if (stream.match(PERSIST_VAR_REGEX)) {
+            state.tokenize = tokenVariableAccess("variable-3");
             state.name = "assign";
             return "variable-3";
-          } 
-          if(stream.match(LABEL_REGEX)) {             // If we match a [label] return the token 
-            return "property";
           }
-          if(stream.match(/^IF/i)) {                  // If we match an [if statement], change to the TEST state and return the token
+          if (stream.match(/^IF\b/i)) {
             state.name = "test";
-            return "keyword"
-          }
-          if(stream.match(LINENO_REGEX)) {            // If we match a [line number], change to the GCODE state and return the token
-          	state.name = "gcode";
-          	return "property";
-          }
-          if(stream.match(CMD_REGEX)) {               // If we match a [two-letter command], change to the ARGS state and return the token
-            state.name = "args";    
-            return "cmd";
-          } 
-          if(stream.match(/^PAUSE\s*/i)) {            // If we match a [pause command], change to the ARGS state and return the token
-            state.name = "args";
-            return "keyword"
-          }
-          if(stream.match(/^FAIL/i)) {               // If we match a [fail command], change to the FAIL state and return the token
-            state.name = "fail";
-            return "keyword"
-          }
-          if(stream.match(/^GOTO|GOSUB/i)) {         // If we match a [goto command], change to the GOTO state and return the token
-            state.name = "goto";
-            return "keyword"
-          }
-          if(stream.match(/^RETURN|END/i)) {         // If we match a [return or end command], change to the SINGLE state and return the token
-            state.name = "single";
             return "keyword";
           }
-          stream.skipToEnd();                        // If we get here a [no match] , so just skip a character 
-          break;
-
-        case "single":                               // SINGLE STATE ======== (return or end)  
-          break;
-
-        case "args":                                 // ARGS STATE ======== (arguments to a command)
-          if(stream.eat(',')) {
-            return null
-          }
-          if (stream.match(SYS_VAR_REGEX)) {         // If we match a [system variable], change to the SYSTEM VARIABLE state and return the token
-            state.name = "sysvariable";
-            return "variable";
-          }
-          var match = matchArgument(stream);         // Check for a match of the next argument in the stream
-          if(match) { return match; }                // If we match an argument, return it immediately to influence stream state
-          break;
-
-        case "assign":                               // ASSIGN STATE ======== (assignment to a variable) 
-          var match = matchExpression(stream);
-          if(match) { return match;}
-          stream.skipToEnd();
-          return 'error';
-           
-        case "sysvariable":                          // SYSTEM VARIABLE STATE ======== (system variable assignment)
-          //consume any number of spaces before the closing parenthesis
-          if (stream.peek() === ')') { 
-            stream.next(); // Consume the closing parenthesis
-            state.name = "sol";
-            return "operator";
-          }
-                  
-        case "test":                                 // TEST STATE ======== (handle if statement)
-          var match = matchExpression(stream);
-          if(match) { return match;}
-          if(stream.match(/^THEN/i)) {
-            state.name = "then"; // Change to a new state to handle post-THEN syntax
-            return "keyword";
-          } 
-          if(stream.match(/^GOTO|GOSUB/i)) {
-            state.name = "goto"
-            return "keyword";
-          }        
-          if(stream.match(LABEL_REGEX)) {
+          if (stream.match(LINENO_REGEX)) {
+            state.name = "gcode";
             return "property";
           }
-          break;
-
-        case "then":                                 // THEN STATE ======== (handle the action statement)
-          if(stream.match(/^RETURN|END/i)) {
-            state.name = "single";
-            return "keyword";
+          if (stream.match(CMD_REGEX)) {
+            state.name = "args";
+            return "cmd";
           }
-          if(stream.match(/^FAIL/i)) {
-            state.name = "fail";
-            return "keyword";
-          }
-          if(stream.match(/^PAUSE/i)) {
+          if (stream.match(/^PAUSE\b/i)) {
             state.name = "pause";
             return "keyword";
           }
-          if(stream.match(SYS_VAR_REGEX) || stream.match(USR_VAR_REGEX) || stream.match(PERSIST_VAR_REGEX)) {
-            state.name = "assign";
-            return stream.match(SYS_VAR_REGEX) ? "variable" : stream.match(USR_VAR_REGEX) ? "variable-2" : "variable-3";
+          if (stream.match(/^FAIL\b/i)) {
+            state.name = "fail";
+            return "keyword";
           }
-          if(stream.match(CMD_REGEX)) {
+          if (stream.match(/^GOTO\b|GOSUB\b/i)) {
+            state.name = "goto";
+            return "keyword";
+          }
+          if (stream.match(/^RETURN\b|END\b/i)) {
+            return "keyword";
+          }
+          stream.next();
+          return "error";
+
+        case "assign":
+          if (stream.eatSpace()) {
+            return null;
+          }
+          if (stream.match('=')) {
+            state.name = "expression";
+            return "operator";
+          }
+          stream.next();
+          return "error";
+
+        case "expression":
+          if (stream.eatSpace()) {
+            return null;
+          }
+          if (stream.eol()) {
+            state.name = "sol";
+            return null;
+          }
+          var match = matchExpression(stream, state);
+          if (match) {
+            return match;
+          }
+          stream.next();
+          return "error";
+
+        case "test":
+          if (stream.eatSpace()) {
+            return null;
+          }
+          if (stream.match(/^THEN\b/i)) {
+            state.name = "then";
+            return "keyword";
+          }
+          var match = matchExpression(stream, state);
+          if (match) {
+            return match;
+          }
+          stream.next();
+          return "error";
+
+        case "then":
+          if (stream.eatSpace()) {
+            return null;
+          }
+          if (stream.match(/^GOTO\b|GOSUB\b/i)) {
+            state.name = "goto";
+            return "keyword";
+          }
+          if (stream.match(USR_VAR_REGEX)) {
+            state.tokenize = tokenVariableAccess("variable-2");
+            state.name = "assign";
+            return "variable-2";
+          }
+          if (stream.match(PERSIST_VAR_REGEX)) {
+            state.tokenize = tokenVariableAccess("variable-3");
+            state.name = "assign";
+            return "variable-3";
+          }
+          if (stream.match(CMD_REGEX)) {
             state.name = "args";
             return "cmd";
           }
-          if(stream.match(/^GOTO|GOSUB/i)) {
-            state.name = "goto"
+          if (stream.match(/^RETURN\b|END\b/i)) {
+            state.name = "sol";
             return "keyword";
-          }        
-          if(stream.match(LABEL_REGEX)) {
+          }
+          stream.next();
+          return "error";
+
+        case "goto":
+          if (stream.eatSpace()) {
+            return null;
+          }
+          if (stream.match(WORD_REGEX)) {
+            state.name = "sol";
             return "property";
           }
-          break;
+          stream.next();
+          return "error";
 
-        case "goto":                                 // GOTO STATE ======== 
-          if(stream.match(WORD_REGEX)) {
-            state.name = "sol"                       // Change to a new state to handle post-THEN syntax
-            return "property"            
-          }                
-          break;
-
-        case "on":                                   // ON STATE ========
-          if(stream.eat(',')) {
+        case "on":
+          if (stream.eatSpace()) {
             return null;
-          }          
-          if(stream.match(/INP(?:UT)?/i)) {
-            return "keyword";
-          }   
-          if(stream.match(/(?:GOTO)|(?:GOSUB)/i)) {
-            state.name = "goto"
-            return "keyword";
-          }   
-          if(stream.match(/\(|\)/)) {
-            return "operator";
           }
-          if(stream.match(/\d+/)) {
+          if (stream.eol()) {
+            state.name = "sol";
+            return null;
+          }
+          if (stream.match(/INP(?:UT)?\b/i)) {
+            return "keyword";
+          }
+          if (stream.match(/\d+/)) {
             return "number";
           }
-          break;
-
-        case "pause":                                // PAUSE STATE ========
-          if(stream.eatSpace()) {
+          if (stream.match(/GOTO\b|GOSUB\b/i)) {
+            state.name = "goto";
+            return "keyword";
+          }
+          if (stream.match(/,/)) {
             return null;
           }
-          var match = matchExpression(stream);
-          if(match) { return match; }
-          break;
+          stream.next();
+          return "error";
 
+        case "args":
+          if (stream.eatSpace()) {
+            return null;
+          }
+          if (stream.eol()) {
+            state.name = "sol";
+            return null;
+          }
+          if (stream.match(/,/)) {
+            return null;
+          }
+          var match = matchArgument(stream, state);
+          if (match) {
+            return match;
+          }
+          stream.next();
+          return "error";
+
+        case "pause":
+          if (stream.eatSpace()) {
+              return null;
+          }
+          if (stream.eol()) {
+              state.name = "sol";
+              return null;
+          }
+          if (stream.match(NUMBER_REGEX)) {
+              return "number";
+          }
+          if (stream.match(STRING_REGEX)) {
+              return "string";
+          }
+          if (stream.match(OPERATOR_REGEX) && stream.current() === "+") {
+              return "operator";
+          }
+          if (stream.match(USR_VAR_REGEX)) {
+              state.tokenize = tokenVariableAccess("variable-2");
+              return "variable-2";
+          }
+          if (stream.match(PERSIST_VAR_REGEX)) {
+              state.tokenize = tokenVariableAccess("variable-3");
+              return "variable-3";
+          }
+          if (stream.match(SYS_VAR_REGEX)) {
+              state.tokenize = tokenVariableAccess("variable");
+              return "variable";
+          }
+          if (stream.match(/,/)) {
+              return "operator";
+          }
+          stream.next();
+          return "error";
+                    
         case "fail":
-          if(stream.eatSpace()) {
+          if (stream.eatSpace()) {
             return null;
           }
-          var match = matchExpression(stream);
-          if(match) { return match; }
-          break;
+          if (stream.eol()) {
+            state.name = "sol";
+            return null;
+          }
+          var match = matchArgument(stream, state);
+          if (match) {
+            return match;
+          }
+          stream.next();
+          return "error";
 
         case "gcode":
-        	stream.skipToEnd();
-        	return null;
+          stream.skipToEnd();
+          state.name = "sol";
+          return null;
 
         default:
-          console.error("Unknown state: ", state)
-  
+          stream.next();
+          return "error";
       }
-
-
-      stream.next();                                  // If we get here, we didn't match anything, so just skip a character and return an error 
-      return "error";
-
     }
-  }
+  };
 });
-CodeMirror.defineMIME("text/x-opensbp","opensbp")
 
+CodeMirror.defineMIME("text/x-opensbp", "opensbp");

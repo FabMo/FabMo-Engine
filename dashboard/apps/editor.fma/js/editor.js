@@ -161,6 +161,18 @@ require('./cm-fabmo-modes.js');
       });
     }
 
+    function update() {
+      // Refresh the editor content if needed
+      editor.refresh();
+      // Other relevant UI elements?
+      if (job_title) {
+        $('#edit-filename').text(job_title + " ]");
+      }
+      if (job_description) {
+        $('#job-description').text(job_description);
+      }
+    }
+    
     function save(callback) {
       var callback = callback || function() {};
       switch(source) {

@@ -123,6 +123,25 @@ property_access
       return { "type": "property", "name": propName.toUpperCase() };
     }
 
+object_literal
+  = "{" __ properties:property_list __ "}" { return properties; }
+
+property_list
+  = first:property rest:("," __ property)* {
+      let props = {};
+      props[first.name] = first.value;
+      rest.forEach(p => {
+        let prop = p[2]; // Extract the property from the match array
+        props[prop.name] = prop.value;
+      });
+      return props;
+    }
+
+property
+  = name:identifier __ ":" __ value:expression {
+      return { name: name.toUpperCase(), value: value };
+    }
+    
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}
 
@@ -138,7 +157,6 @@ comparison
 expression
   = e1
 
-//added
 invalid
    = !. { throw new Error("Invalid input at position " + location().start.offset); }
 
@@ -157,6 +175,7 @@ factor
   / float
   / integer
   / variable
+  / object_literal
   / quotedstring
   / barestring
 

@@ -1349,8 +1349,23 @@ SBPRuntime.prototype._varExists = function (identifier) {
 // Assign a variable a value
 //   identifier - The variable to assign
 //        value - The new value
+// SBPRuntime.prototype._assign = async function (identifier, value) {
+//     log.debug("**-> Assigning variable: " + identifier.name + " Value:" + value);
+//     const variableName = identifier.name.toUpperCase();
+//     let accessPath = identifier.access || [];
+
+//     // Evaluate accessPath
+//     accessPath = this._evaluateAccessPath(accessPath);
+
+//     // Update the variable in the config
+//     if (identifier.type === "user_variable") {
+//         await config.opensbp.setTempVariableWrapper({ name: variableName, access: accessPath }, value);
+//     } else {
+//         await config.opensbp.setVariableWrapper({ name: variableName, access: accessPath }, value);
+//     }
+// };
 SBPRuntime.prototype._assign = async function (identifier, value) {
-    log.debug("**-> Assigning variable: " + identifier.name + " Value:" + value);
+    log.debug("**-> Assigning variable: " + identifier.name + " Value:", value);
     const variableName = identifier.name.toUpperCase();
     let accessPath = identifier.access || [];
 
@@ -1358,10 +1373,24 @@ SBPRuntime.prototype._assign = async function (identifier, value) {
     accessPath = this._evaluateAccessPath(accessPath);
 
     // Update the variable in the config
+    let variables;
     if (identifier.type === "user_variable") {
-        await config.opensbp.setTempVariableWrapper({ name: variableName, access: accessPath }, value);
+        variables = config.opensbp._cache["tempVariables"];
     } else {
-        await config.opensbp.setVariableWrapper({ name: variableName, access: accessPath }, value);
+        variables = config.opensbp._cache["variables"];
+    }
+
+    if (!(variableName in variables)) {
+        // Initialize the variable if it doesn't exist
+        variables[variableName] = {};
+    }
+
+    if (accessPath.length === 0) {
+        // Direct assignment
+        variables[variableName] = value;
+    } else {
+        // Nested assignment
+        this._setNestedValue(variables[variableName], accessPath, value);
     }
 };
 
@@ -1378,28 +1407,42 @@ SBPRuntime.prototype._evaluateAccessPath = function (access) {
     });
 };
 
+// SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
+//     let current = obj;
+//     for (let i = 0; i < accessPath.length - 1; i++) {
+//         const part = accessPath[i];
+//         let key;
+//         if (part.type === "index") {
+//             key = this._eval(part.value);
+//         } else if (part.type === "property") {
+//             key = part.name;
+//         }
+//         if (!(key in current)) {
+//             current[key] = {};
+//         }
+//         current = current[key];
+//     }
+//     const lastPart = accessPath[accessPath.length - 1];
+//     let lastKey;
+//     if (lastPart.type === "index") {
+//         lastKey = this._eval(lastPart.value);
+//     } else if (lastPart.type === "property") {
+//         lastKey = lastPart.name;
+//     }
+//     current[lastKey] = value;
+// };
 SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
     let current = obj;
     for (let i = 0; i < accessPath.length - 1; i++) {
         const part = accessPath[i];
-        let key;
-        if (part.type === "index") {
-            key = this._eval(part.value);
-        } else if (part.type === "property") {
-            key = part.name;
-        }
+        const key = part.value;
         if (!(key in current)) {
             current[key] = {};
         }
         current = current[key];
     }
     const lastPart = accessPath[accessPath.length - 1];
-    let lastKey;
-    if (lastPart.type === "index") {
-        lastKey = this._eval(lastPart.value);
-    } else if (lastPart.type === "property") {
-        lastKey = lastPart.name;
-    }
+    const lastKey = lastPart.value;
     current[lastKey] = value;
 };
 

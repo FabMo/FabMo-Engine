@@ -102,7 +102,6 @@ var setUpManual = function () {
 
 var startManualExit = function () {
     return new Promise((resolve, reject) => {
-        calledFromModal = "";
         // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
         $(".drive-button").removeClass("drive-button-fixed");
         $(".slidecontainer").show();
@@ -285,7 +284,7 @@ engine.getVersion(function (err, version) {
                     if (status.currentCmd === "exit" && calledFromModal && status.stat === 4) {
                         // Institute a 0.5 second delay to allow G2 to get back to idle
                         setTimeout(function () {
-                            // Sort out the tpe of action requested
+                            // Sort out the type of action requested
                             console.log("Action called From Modal: " + calledFromModal);
                             var match = calledFromModal.match(/(\d{1,2})$|([a-zA-Z]{2})$/);
                             if (match) {
@@ -304,6 +303,7 @@ engine.getVersion(function (err, version) {
                         }, 500);
                     } else {
                         $("#position input").attr("disabled", false);
+                        //##calledFromModal = "";
                         // authenticate.setIsRunning(false);
                     }
                 }

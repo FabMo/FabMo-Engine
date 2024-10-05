@@ -443,9 +443,11 @@ G2.prototype.onData = function (data) {
             try {
                 // Responses from G2 are in JSON format (always) so we parse them out, and handle the messages
                 var obj = JSON.parse(json_string);
+                log.debug("Parsed Object:", obj);
                 this.onMessage(obj);
             } catch (e) {
                 this.handleExceptionReport(e);
+                log.debug("string: " + json_string);
                 log.error("Error parsing JSON in onData:", e);
                 // TODO: Decide whether to continue or abort
             } finally {
