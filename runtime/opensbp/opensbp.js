@@ -1510,7 +1510,7 @@ SBPRuntime.prototype._navigateAccessPath = function (value, accessPath) {
 // TODO - Are we robust enough to undefined variables
 //   expr - The expression to evaluate.  This is a *parsed* expression object
 SBPRuntime.prototype._eval = function (expr) {
-    // log.debug("Evaluating expression: " + JSON.stringify(expr));
+    log.debug("Evaluating expression: " + JSON.stringify(expr));
     if (expr === undefined) {
         return undefined;
     }
