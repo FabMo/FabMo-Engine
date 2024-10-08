@@ -91,11 +91,11 @@ Job.prototype.start = function (callback) {
     this.save(callback);
 };
 
-Job.prototype.finish = function (callback) {
+Job.prototype.finish = async function () {
     log.info("Finishing job id " + this._id ? this._id : "<volatile job>");
     this.state = "finished";
     this.finished_at = Date.now();
-    this.save(callback);
+    await this.save();
 };
 
 Job.prototype.fail = function (callback) {
@@ -105,17 +105,14 @@ Job.prototype.fail = function (callback) {
     this.save(callback);
 };
 
-Job.prototype.cancel = function (callback) {
+Job.prototype.cancel = async function (callback) {
     if (this.state === "running") {
         log.debug("Cancelling running job id " + this._id);
         this.state = "cancelled";
         this.finished_at = Date.now();
-        this.save(callback);
+        await this.save();
     } else {
-        setImmediate(
-            callback,
-            new Error("Cannot cancel a job that is " + this.state)
-        );
+        setImmediate(callback, new Error("Cannot cancel a job that is " + this.state));
     }
 };
 
@@ -126,10 +123,7 @@ Job.prototype.trash = function (callback) {
         this.finished_at = Date.now();
         this.save(callback);
     } else {
-        setImmediate(
-            callback,
-            new Error("Cannot trash a job that is " + this.state)
-        );
+        setImmediate(callback, new Error("Cannot trash a job that is " + this.state));
     }
 };
 
@@ -259,9 +253,7 @@ Job.getFileForJobId = function (id, callback) {
                         if (file) {
                             callback(null, file);
                         } else {
-                            callback(
-                                new Error("Could not find file in database.")
-                            );
+                            callback(new Error("Could not find file in database."));
                         }
                     }
                 });
@@ -426,10 +418,7 @@ File.clearTrash = function (callback) {
             for (var j = 0; j < files.length - 1; j++) {
                 var keepFile = false;
                 for (var i = 0; i < jobs.length - 1; i++) {
-                    if (
-                        jobs[i].state !== "trash" &&
-                        parseInt(files[j]._id) === parseInt(jobs[i].file_id)
-                    ) {
+                    if (jobs[i].state !== "trash" && parseInt(files[j]._id) === parseInt(jobs[i].file_id)) {
                         keepFile = true;
                         break;
                     }
@@ -470,10 +459,7 @@ File.getTotalFileSize = function (callback) {
                         });
                     });
                     size2b.then(function (val) {
-                        files.update(
-                            { _id: file._id },
-                            { $set: { size: val } }
-                        );
+                        files.update({ _id: file._id }, { $set: { size: val } });
                         totalSize += val;
                     });
                 } else {
@@ -486,19 +472,10 @@ File.getTotalFileSize = function (callback) {
 
 // Update the "last run" time (use the current time)
 File.prototype.saverun = function () {
-    files.update(
-        { _id: this._id },
-        { $set: { last_run: Date.now() }, $inc: { run_count: 1 } }
-    );
+    files.update({ _id: this._id }, { $set: { last_run: Date.now() }, $inc: { run_count: 1 } });
 };
 
-File.writeToDisk = function (
-    pathname,
-    full_path,
-    friendly_filename,
-    hash,
-    callback
-) {
+File.writeToDisk = function (pathname, full_path, friendly_filename, hash, callback) {
     util.move(pathname, full_path, function (err) {
         if (err) {
             return callback(err);
@@ -509,9 +486,7 @@ File.writeToDisk = function (
             function (err) {
                 if (err) {
                     // Failure to delete the temporary file is bad, but non-fatal
-                    log.warn(
-                        "failed to remove the job from temporary folder: " + err
-                    );
+                    log.warn("failed to remove the job from temporary folder: " + err);
                 }
 
                 var file = new File(friendly_filename, full_path);
@@ -521,13 +496,7 @@ File.writeToDisk = function (
                         if (err) {
                             return callback(err);
                         }
-                        log.info(
-                            "Saved a file: " +
-                                file.filename +
-                                " (" +
-                                file.path +
-                                ")"
-                        );
+                        log.info("Saved a file: " + file.filename + " (" + file.path + ")");
 
                         callback(null, file);
                     }.bind(this)
@@ -548,11 +517,7 @@ File.add = function (friendly_filename, pathname, callback) {
         // Check to see if the hash is already found in the database
         files.findOne({ hash: hash }, function (err, document) {
             if (document) {
-                log.info(
-                    "Using file with hash of " +
-                        hash +
-                        " which already exists in the database."
-                );
+                log.info("Using file with hash of " + hash + " which already exists in the database.");
                 var file = document;
                 file.__proto__ = File.prototype;
                 callback(null, file);
@@ -587,19 +552,13 @@ File.add = function (friendly_filename, pathname, callback) {
                                     }
                                 });
                             } else {
-                                File.writeToDisk(
-                                    pathname,
-                                    full_path,
-                                    friendly_filename,
-                                    hash,
-                                    function (err, file) {
-                                        if (err) {
-                                            throw err;
-                                        } else {
-                                            callback(null, file);
-                                        }
+                                File.writeToDisk(pathname, full_path, friendly_filename, hash, function (err, file) {
+                                    if (err) {
+                                        throw err;
+                                    } else {
+                                        callback(null, file);
                                     }
-                                );
+                                });
                             }
                         }
                     }.bind(this)
@@ -697,21 +656,13 @@ Thumbnail.prototype.update = function (callback) {
 
     File.getByID(that.file_id, function (err, file) {
         if (err) {
-            callback(
-                new Error("Cannot find file with id = " + that.file_id),
-                that
-            );
+            callback(new Error("Cannot find file with id = " + that.file_id), that);
             return;
         }
         var machine = require("./machine").machine;
         machine.getGCodeForFile(file.path, function (err, gcode) {
             if (err) {
-                callback(
-                    new Error(
-                        "Cannot find G-Code for file with id = " + file.fileId
-                    ),
-                    that
-                );
+                callback(new Error("Cannot find G-Code for file with id = " + file.fileId), that);
                 return;
             }
             var gcodeString = gcode.toString("utf8");
@@ -723,13 +674,7 @@ Thumbnail.prototype.update = function (callback) {
             // eslint-disable-next-line no-unused-vars
             thumbnails.update(query, modifications, function (err, thumbnail) {
                 if (err) {
-                    callback(
-                        new Error(
-                            "Cannot update thumbnail with file_id = " +
-                                that.file_id
-                        ),
-                        that
-                    );
+                    callback(new Error("Cannot update thumbnail with file_id = " + that.file_id), that);
                     return;
                 }
                 that.image = modifications.image;
@@ -764,15 +709,7 @@ Thumbnail.createImage = function (gcode, title) {
     var width = 100;
     var height = 100;
     var lineThickness = 2;
-    return cnctosvg.createSVG(
-        gcode,
-        colors,
-        title,
-        width,
-        height,
-        lineThickness,
-        true
-    );
+    return cnctosvg.createSVG(gcode, colors, title, width, height, lineThickness, true);
 };
 
 // Generates the thumbnail and insert it in the database
@@ -792,27 +729,18 @@ Thumbnail.generate = function (fileId, callback) {
             var machine = require("./machine").machine;
             machine.getGCodeForFile(file.path, function (err, gcode) {
                 if (err) {
-                    callback(
-                        new Error(
-                            "Cannot find G-Code for file with id = " + fileId
-                        )
-                    );
+                    callback(new Error("Cannot find G-Code for file with id = " + fileId));
                     return;
                 }
                 var gcodeString = gcode.toString("utf8");
                 var newThumbnail = new Thumbnail();
                 newThumbnail.file_id = fileId;
                 newThumbnail.version = cnctosvg.VERSION;
-                newThumbnail.image = Thumbnail.createImage(
-                    gcodeString,
-                    file.filename
-                );
+                newThumbnail.image = Thumbnail.createImage(gcodeString, file.filename);
                 // eslint-disable-next-line no-unused-vars
                 thumbnails.insert(newThumbnail, function (err, records) {
                     if (err) {
-                        callback(
-                            new Error("Cannot insert thumbnail in database")
-                        );
+                        callback(new Error("Cannot insert thumbnail in database"));
                     } else {
                         callback(null, newThumbnail);
                     }
@@ -828,9 +756,7 @@ Thumbnail.generate = function (fileId, callback) {
 Thumbnail.getFromFileId = function (fileId, callback) {
     thumbnails.findOne({ file_id: fileId }, function (err, thumbnail) {
         if (err) {
-            callback(
-                new Error("Cannot find thumbnail with file_id = " + fileId)
-            );
+            callback(new Error("Cannot find thumbnail with file_id = " + fileId));
             return;
         }
         if (!thumbnail) {
@@ -865,12 +791,7 @@ function checkCollection(collection, callback) {
     // eslint-disable-next-line no-unused-vars
     collection.find().toArray(function (err, data) {
         if (err) {
-            log.error(
-                "Error reading " +
-                    collection.collectionName +
-                    " from the database: " +
-                    err
-            );
+            log.error("Error reading " + collection.collectionName + " from the database: " + err);
             callback(err);
         } else {
             callback(null);
@@ -941,33 +862,20 @@ function reConfig(callback) {
             if (err) {
                 log.error("There was a database corruption issue!");
                 var src = config.getDataDir("db");
-                var dest =
-                    config.getDataDir("debug") +
-                    "/bad-db-" +
-                    new Date().getTime();
+                var dest = config.getDataDir("debug") + "/bad-db-" + new Date().getTime();
                 ncp(src, dest, function (err) {
                     if (err) {
-                        log.error(
-                            "The database could not be successfully backed up: " +
-                                err
-                        );
+                        log.error("The database could not be successfully backed up: " + err);
                         callback(null);
                     } else {
-                        log.debug(
-                            "The database has been successfully copied to the debug directory for inspection."
-                        );
+                        log.debug("The database has been successfully copied to the debug directory for inspection.");
                         fs.remove(src, function (err) {
                             if (err) {
-                                log.error(
-                                    "Could not delete the corrupted database:" +
-                                        err
-                                );
+                                log.error("Could not delete the corrupted database:" + err);
                                 callback(null);
                             } else {
                                 // TODO: More helpful logging
-                                log.debug(
-                                    "Everythign is terrible shutting down"
-                                );
+                                log.debug("Everythign is terrible shutting down");
                                 process.exit(1);
                             }
                         });
@@ -1004,47 +912,29 @@ exports.configureDB = function (callback) {
             if (err) {
                 log.error("There was a database corruption issue!");
                 var src = config.getDataDir("db");
-                var dest =
-                    config.getDataDir("debug") +
-                    "/bad-db-" +
-                    new Date().getTime();
+                var dest = config.getDataDir("debug") + "/bad-db-" + new Date().getTime();
                 ncp(src, dest, function (err) {
                     if (err) {
-                        log.error(
-                            "The database could not be successfully backed up: " +
-                                err
-                        );
+                        log.error("The database could not be successfully backed up: " + err);
                         callback(null);
                     } else {
-                        log.debug(
-                            "The database has been successfully copied to the debug directory for inspection."
-                        );
+                        log.debug("The database has been successfully copied to the debug directory for inspection.");
                         fs.remove(src, function (err) {
                             if (err) {
-                                log.error(
-                                    "Could not delete the corrupted database:" +
-                                        err
-                                );
+                                log.error("Could not delete the corrupted database:" + err);
                                 callback(null);
                             } else {
-                                log.debug(
-                                    "The corrupted database has been deleted.  Inserting Backup and re-config"
-                                );
+                                log.debug("The corrupted database has been deleted.  Inserting Backup and re-config");
                                 //process.exit(1);
                                 src = config.getDataDir("backup/db");
                                 dest = config.getDataDir("db");
 
                                 ncp(src, dest, function (err) {
                                     if (err) {
-                                        log.error(
-                                            "The backup could not be copied engine shutting down because " +
-                                                err
-                                        );
+                                        log.error("The backup could not be copied engine shutting down because " + err);
                                         process.exit(1);
                                     } else {
-                                        log.debug(
-                                            "Backup copied over re-trying config"
-                                        );
+                                        log.debug("Backup copied over re-trying config");
                                         reConfig(callback);
                                     }
                                 });
@@ -1073,9 +963,7 @@ exports.cleanup = function (callback) {
             } else {
                 if (result > 1) {
                     log.warn(
-                        "Found more than one (" +
-                            result +
-                            ") running job in the db.  This is a database inconsistency!"
+                        "Found more than one (" + result + ") running job in the db.  This is a database inconsistency!"
                     );
                 } else if (result == 1) {
                     log.info("Cleaned up a single failed job.");

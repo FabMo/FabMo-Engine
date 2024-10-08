@@ -443,13 +443,14 @@ G2.prototype.onData = function (data) {
             try {
                 // Responses from G2 are in JSON format (always) so we parse them out, and handle the messages
                 var obj = JSON.parse(json_string);
-                log.debug("<<<Parsing G2 return:");
+                //log.debug("<<<Parsing G2 return:");
                 // log.debug(JSON.stringify(obj, null, 4));
                 this.onMessage(obj);
             } catch (e) {
                 this.handleExceptionReport(e);
                 log.debug("string: " + json_string);
-                log.error("Error parsing JSON in onData:", e);
+                log.error("Error parsing JSON in onData:", e.message);
+                log.error(e.stack);
                 // TODO: Decide whether to continue or abort
             } finally {
                 // if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
@@ -461,7 +462,6 @@ G2.prototype.onData = function (data) {
         }
     }
 };
-
 // The footer is the part of the JSON response message that contains error information
 // If the footer indicates an error code, we do a lookup on the error message and emit an error event
 // Note that G2_ERRORS must be up-to-date with the current firmware in order for the lookup to be meaningful.

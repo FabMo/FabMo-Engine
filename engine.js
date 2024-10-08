@@ -111,9 +111,7 @@ function EngineConfigFirstTime(callback) {
  */
 Engine.prototype.setTime = function (time) {
     if (this.time_synced) {
-        log.warn(
-            "Not accepting an externally provided time.  Local time is trusted."
-        );
+        log.warn("Not accepting an externally provided time.  Local time is trusted.");
         return;
     } else {
         var m = moment.unix(time / 1000.0);
@@ -173,22 +171,16 @@ Engine.prototype.getVersion = function (callback) {
                 "utf8",
                 function (err, data) {
                     if (err) {
-                        log.debug(
-                            " ... no version file ... using git and dev info"
-                        );
+                        log.debug(" ... no version file ... using git and dev info");
                         this.version.type = "dev";
                         this.version.number = this.version.number + "-dev";
-                        var random =
-                            Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                        var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
                         log.info("Adding random prefix to dev engine version");
-                        this.version.number =
-                            random.toString() + "-" + this.version.number;
+                        this.version.number = random.toString() + "-" + this.version.number;
                         return callback(null, this.version);
                     }
                     try {
-                        log.debug(
-                            " ... found json version file ... this is a RELEASE VERSION"
-                        );
+                        log.debug(" ... found json version file ... this is a RELEASE VERSION");
                         data = JSON.parse(data);
                         if (data.number) {
                             this.version.number = data.number;
@@ -196,15 +188,12 @@ Engine.prototype.getVersion = function (callback) {
                         }
                     } catch (e) {
                         log.debug(" ... can't parse version file!");
-                        this.version.number =
-                            this.version.number + "-dev-fault";
+                        this.version.number = this.version.number + "-dev-fault";
                         this.version.type = "dev";
                         // eslint-disable-next-line no-redeclare
-                        var random =
-                            Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                        var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
                         log.info("Adding random prefix to dev engine version");
-                        this.version.number =
-                            random.toString() + "-" + this.version.number;
+                        this.version.number = random.toString() + "-" + this.version.number;
                     } finally {
                         callback(null, this.version);
                     }
@@ -305,18 +294,14 @@ Engine.prototype.start = function (callback) {
                 if (profile) {
                     return callback();
                 } else {
-                    fs.readFile(
-                        "../site/.default",
-                        "utf8",
-                        function (err, content) {
-                            if (err) {
-                                def = "Default";
-                            } else {
-                                def = content;
-                            }
-                            config.engine.set("profile", def, callback);
+                    fs.readFile("../site/.default", "utf8", function (err, content) {
+                        if (err) {
+                            def = "Default";
+                        } else {
+                            def = content;
                         }
-                    );
+                        config.engine.set("profile", def, callback);
+                    });
                 }
             }.bind(this),
 
@@ -330,10 +315,7 @@ Engine.prototype.start = function (callback) {
                             this.version = "";
                             return callback();
                         }
-                        log.info(
-                            "Got engine version: " +
-                                JSON.stringify(this.version)
-                        );
+                        log.info("Got engine version: " + JSON.stringify(this.version));
                         this.version = data;
                         callback();
                     }.bind(this)
@@ -347,29 +329,19 @@ Engine.prototype.start = function (callback) {
             // See dashboard/app_manager.js for more about the approot.
             function clear_approot(callback) {
                 var flg_clr_approot = false;
-                var last_time_version = (
-                    config.engine.get("version") || ""
-                ).trim();
-                var this_time_version = (
-                    this.version.hash ||
-                    this.version.number ||
-                    ""
-                ).trim();
+                var last_time_version = (config.engine.get("version") || "").trim();
+                var this_time_version = (this.version.hash || this.version.number || "").trim();
                 log.debug("Previous engine version: " + last_time_version);
                 log.debug(" Current engine version: " + this_time_version);
                 if (last_time_version != this_time_version) {
-                    log.info(
-                        "Engine version has changed - flag to clear the approot."
-                    );
+                    log.info("Engine version has changed - flag to clear the approot.");
                     flg_clr_approot = true;
                 } else {
                     log.info("Engine version is unchanged since last run.");
                     //callback();
                 }
                 if ("debug" in argv) {
-                    log.info(
-                        "Running in debug mode - flag to clear the approot."
-                    );
+                    log.info("Running in debug mode - flag to clear the approot.");
                     flg_clr_approot = true;
                 }
                 if (flg_clr_approot) {
@@ -445,10 +417,7 @@ Engine.prototype.start = function (callback) {
             // special care to apply - see g2.js for details.
             function set_units(callback) {
                 if (this.machine.isConnected()) {
-                    this.machine.driver.setUnits(
-                        config.machine.get("units"),
-                        callback
-                    );
+                    this.machine.driver.setUnits(config.machine.get("units"), callback);
                 } else {
                     callback(null);
                 }
@@ -463,9 +432,7 @@ Engine.prototype.start = function (callback) {
                         // eslint-disable-next-line no-unused-vars
                         function (err, data) {
                             if (err) {
-                                log.error(
-                                    "There were problems loading the G2 configuration."
-                                );
+                                log.error("There were problems loading the G2 configuration.");
                             }
                             callback(null);
                         }
@@ -489,11 +456,7 @@ Engine.prototype.start = function (callback) {
                         ["fb", "fbs", "fbc"],
                         function (err, value) {
                             if (err) {
-                                log.error(
-                                    "Could not get the G2 firmware build. (" +
-                                        err +
-                                        ")"
-                                );
+                                log.error("Could not get the G2 firmware build. (" + err + ")");
                             } else {
                                 log.info("G2 Firmware Information: " + value);
                                 this.firmware.build = value[0];
@@ -503,21 +466,15 @@ Engine.prototype.start = function (callback) {
                                 // Our version tags in git are prefixed with "v",
                                 // The rrequirement is to display without the "v"
                                 // We have old versions without the "v" prefix
-                                if (
-                                    this.firmware.version.substring(0, 1) ===
-                                    "v"
-                                ) {
-                                    this.firmware.version =
-                                        this.firmware.version.substring(1);
+                                if (this.firmware.version.substring(0, 1) === "v") {
+                                    this.firmware.version = this.firmware.version.substring(1);
                                 }
                             }
                             callback(null);
                         }.bind(this)
                     );
                 } else {
-                    log.warn(
-                        "Skipping G2 firmware version check due to no connection."
-                    );
+                    log.warn("Skipping G2 firmware version check due to no connection.");
                     callback(null);
                 }
             }.bind(this),
@@ -573,9 +530,7 @@ Engine.prototype.start = function (callback) {
             // in the openSBP runtime.  See runtime/opensbp/opensbp.js for what this entails.
             function load_opensbp_commands(callback) {
                 if (!this.machine.isConnected()) {
-                    log.warn(
-                        "Not loading SBP Commands due to no connection to motion system."
-                    );
+                    log.warn("Not loading SBP Commands due to no connection to motion system.");
                     return callback(null);
                 }
                 log.info("Loading OpenSBP Commands...");
@@ -585,9 +540,7 @@ Engine.prototype.start = function (callback) {
             // Apply the OpenSBP runtime config.  See config/opensbp_config.js for what this entails.
             function load_opensbp_config(callback) {
                 if (!this.machine.isConnected()) {
-                    log.warn(
-                        "Not configuring SBP due to no connection to motion system."
-                    );
+                    log.warn("Not configuring SBP due to no connection to motion system.");
                     return callback(null);
                 }
                 log.info("Configuring OpenSBP runtime...");
@@ -626,9 +579,7 @@ Engine.prototype.start = function (callback) {
             // See config/instance_config.js for more details.
             function load_instance_config(callback) {
                 if (!this.machine.isConnected()) {
-                    log.warn(
-                        "Not configuring instance due to no connection to motion system."
-                    );
+                    log.warn("Not configuring instance due to no connection to motion system.");
                     return callback(null);
                 }
                 log.info("Loading instance info...");
@@ -637,9 +588,7 @@ Engine.prototype.start = function (callback) {
 
             function apply_instance_config(callback) {
                 if (!this.machine.isConnected()) {
-                    log.warn(
-                        "Not applying instance config due to no connection to motion system."
-                    );
+                    log.warn("Not applying instance config due to no connection to motion system.");
                     return callback(null);
                 }
                 log.info("Applying instance configuration...");
@@ -663,9 +612,7 @@ Engine.prototype.start = function (callback) {
 
                         // If not, generate, save and use a new one
                         log.info("Generating a new secret key.");
-                        this.auth_secret = crypto
-                            .randomBytes(256)
-                            .toString("hex");
+                        this.auth_secret = crypto.randomBytes(256).toString("hex");
                         fs.writeFile(
                             secret_file,
                             this.auth_secret,
@@ -690,10 +637,7 @@ Engine.prototype.start = function (callback) {
                         this.networkManager.on(
                             "network",
                             function (evt) {
-                                if (
-                                    evt.mode === "station" ||
-                                    evt.mode === "ethernet"
-                                ) {
+                                if (evt.mode === "station" || evt.mode === "ethernet") {
                                     // 30 Second delay is used here to make sure timesyncd has enough time to update network time
                                     // before trying to pull an update (https requests will fail with an inaccurate system time)
                                     log.info(
@@ -744,10 +688,7 @@ Engine.prototype.start = function (callback) {
                 log.info("Configuring cross-origin requests...");
                 server.use(function crossOrigin(req, res, next) {
                     res.header("Access-Control-Allow-Origin", "*");
-                    res.header(
-                        "Access-Control-Allow-Headers",
-                        "X-Requested-With"
-                    );
+                    res.header("Access-Control-Allow-Headers", "X-Requested-With");
                     return next();
                 });
 
@@ -762,9 +703,7 @@ Engine.prototype.start = function (callback) {
                         setTimeout(next, 500 * Math.random());
                     });
                 } else {
-                    log.info(
-                        "NORMAL EXEC ! Not configuring deliberate latency."
-                    );
+                    log.info("NORMAL EXEC ! Not configuring deliberate latency.");
                 }
 
                 // If in 'debug' mode, do some extra logging of HTTP requests
@@ -833,12 +772,7 @@ Engine.prototype.start = function (callback) {
 
                 // Configure authentication
                 log.info("Configuring authentication...");
-                log.info(
-                    "Secret Key: " +
-                        this.auth_secret.slice(0, 5) +
-                        "..." +
-                        this.auth_secret.slice(-5)
-                );
+                log.info("Secret Key: " + this.auth_secret.slice(0, 5) + "..." + this.auth_secret.slice(-5));
                 server.cookieSecret = this.auth_secret;
                 server.use(
                     sessions({
@@ -874,14 +808,10 @@ Engine.prototype.start = function (callback) {
                 var routes = require("./routes")(server);
                 // Kick off the server listening for connections
                 // 0.0.0.0 causes us to listen on ALL interfaces (so the engine can be seen over ethernet, wifi, etc.)
-                server.listen(
-                    config.engine.get("server_port"),
-                    "0.0.0.0",
-                    function () {
-                        log.info(server.name + " listening at " + server.url);
-                        callback(null, server);
-                    }
-                );
+                server.listen(config.engine.get("server_port"), "0.0.0.0", function () {
+                    log.info(server.name + " listening at " + server.url);
+                    callback(null, server);
+                });
 
                 // TODO - should this be done after server.listen, or before? (or does it matter?)
                 authentication.configure();

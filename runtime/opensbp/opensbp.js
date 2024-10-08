@@ -88,6 +88,7 @@ function SBPRuntime() {
     this.driver = null;
 
     this.inManualMode = false;
+    this.waitPendingOps = false;
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -254,162 +255,121 @@ SBPRuntime.prototype.needsAuth = function (s) {
 // TODO At the very least, this function should simply take the string provided and stream it into runStream - they do the same thing.
 //          s - The string to run
 SBPRuntime.prototype.runString = function (s) {
-    try {
-        // Initialize the program
-        this.pc = 0;
-        this.program = [];
-        // Break the string into lines
-        var lines = s.split("\n");
+    return new Promise((resolve, reject) => {
+        try {
+            this.pc = 0;
+            this.program = [];
 
-        // The machine status `nb_lines` indicates the total number of lines in the currently running file
-        // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
-        if (this.machine) {
-            if (this.file_stack.length === 0) {
+            const lines = s.split("\n");
+            if (this.machine && this.file_stack.length === 0) {
                 this.machine.status.nb_lines = lines.length - 1;
             }
-        }
 
-        // Parse the program.  Bail with a useful error message if parsing fails.
-        // "Useful" is relative.  The PegJS errors are pretty arcane... TODO - we could probably do better.
-        // We catch parse errors separately from other errors because the *parser reports line numbers differently* than
-        // they will be accessed once the program has been parsed (and we want to report the line number always when we have an error)
-        try {
-            this.program = parser.parse(s);
+            try {
+                this.program = parser.parse(s);
+            } catch (e) {
+                log.error(e);
+                this._end(e.message);
+                return reject(e);
+            } finally {
+                log.tock("Parse file");
+            }
+
+            this._setupTransforms();
+            //this.init();
+            this._loadConfig();
+            this._analyzeLabels();
+            this._analyzeGOTOs();
+
+            // Start running the actual code  ////## Do we want the "end" check here?
+            this._run()
+                .then(() => {
+                    this.once("end", () => {
+                        resolve();
+                    });
+                })
+                .catch((e) => {
+                    this._handleRunStringError(e, reject);
+                });
         } catch (e) {
-            log.error(e);
-            this._end(e.message);
-        } finally {
-            log.tock("Parse file");
+            this._handleRunStringError(e, reject);
         }
+    });
+};
 
-        ////##
-        // TODO Bad bad bad - re-using lines above (the list of lines in the file) as the number of lines here.
-        //      It looks like we can just remove this.  It doesn't seem to be used.
-        ////##        lines = this.program.length;
-        // Configure affine transformations on the file
-        this._setupTransforms();
-
-        // Initialize the runtime state
-        this.init();
-
-        // Copy the general config settings into runtime memory
-        this._loadConfig();
-
-        // Build a map of labels to line numbers
-        // This step unfortunately requires the whole file
-        this._analyzeLabels();
-        log.debug("Labels analyzed...");
-
-        // Check all the GOTO/GOSUBs against the label table
-        this._analyzeGOTOs();
-        log.debug("GOTOs analyzed...");
-
-        // Start running the actual code, now that everything is prepped
-        return this._run();
-    } catch (e) {
-        // A failure at any stage (except parsing) will land us here
-        if (this.isInSubProgram()) {
-            log.error(e);
-            this._abort(e);
-        } else {
-            log.error(e);
-            this._end(e.message);
-        }
+SBPRuntime.prototype._handleRunStringError = function (e, reject) {
+    if (this.isInSubProgram()) {
+        log.error(e);
+        this._abort(e);
+    } else {
+        log.error(e);
+        this._end(e.message);
     }
+    reject(e);
 };
 
 // Run the provided stream of text in OpenSBP
 // See documentation above for runString - this works the same way.
 SBPRuntime.prototype.runStream = function (text_stream) {
-    try {
+    return new Promise((resolve, reject) => {
         try {
             // Initialize the program
             this.pc = 0;
             this.program = [];
-            // Even though we're "streaming" in this function, we still have to parse
-            // the entire body of data before we can continue processing the file.
-            // That's why the business end of this function occurs in the 'end' handler
-            var st = parser.parseStream(text_stream);
 
-            // The stream produced by parser.parseStream produces fully parsed program lines,
-            // which can just be added to the program as they come in.
-            st.on(
-                "data",
-                function (data) {
-                    this.program.push(data);
-                }.bind(this)
-            );
+            const st = parser.parseStream(text_stream);
 
-            // Stream is fully processed
-            st.on(
-                "end",
-                function () {
-                    try {
-                        log.tock("Parse file");
+            st.on("data", (data) => {
+                this.program.push(data);
+            });
 
-                        // The machine status `nb_lines` indicates the total number of lines in the currently running file
-                        // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
-                        // TODO I've never liked nb_lines as a name
-                        var lines = this.program.length;
-                        if (this.machine) {
-                            if (this.file_stack.length === 0) {
-                                this.machine.status.nb_lines = lines - 1;
-                            }
-                        }
+            st.on("end", async () => {
+                try {
+                    log.tock("Parse file");
 
-                        // Configure affine transformations on the file
-                        this._setupTransforms();
-
-                        // Initialize the runtime state
-                        this.init();
-
-                        // Copy the general config settings into runtime memory
-                        this._loadConfig();
-
-                        log.tick();
-                        // Build a map of labels to line numbers
-                        // This step unfortunately requires the whole file
-                        this._analyzeLabels();
-                        log.tock("Labels analyzed...");
-
-                        // Check all the GOTO/GOSUBs against the label table
-                        this._analyzeGOTOs();
-                        log.debug("GOTOs analyzed...");
-                        log.tock("Analyzed GOTOs");
-
-                        // Start running the actual code, now that everything is prepped
-                        return this._run();
-                    } catch (e) {
-                        if (this.isInSubProgram()) {
-                            log.error(e);
-                            this._abort(e);
-                        } else {
-                            log.error(e);
-                            this._end(e.message);
-                        }
+                    const lines = this.program.length;
+                    if (this.machine && this.file_stack.length === 0) {
+                        this.machine.status.nb_lines = lines - 1;
                     }
-                }.bind(this)
-            );
-            return undefined;
+
+                    this._setupTransforms();
+                    //this.init();
+                    this._loadConfig();
+
+                    this._analyzeLabels();
+                    this._analyzeGOTOs();
+
+                    // Start running the actual code
+                    await this._run();
+
+                    // Wait for the 'end' event to resolve the promise  ////## Do we want the "end" check here?
+                    this.once("end", () => {
+                        resolve();
+                    });
+                } catch (e) {
+                    this._handleRunStreamError(e, reject);
+                }
+            });
+
+            st.on("error", (err) => {
+                log.error(err);
+                reject(err);
+            });
         } catch (e) {
-            if (this.isInSubProgram()) {
-                log.error(e);
-                this._abort(e);
-            } else {
-                log.error(e);
-                this._end(e.message);
-            }
+            this._handleRunStreamError(e, reject);
         }
-        return st;
-    } catch (e) {
-        if (this.isInSubProgram()) {
-            log.error(e);
-            this._abort(e);
-        } else {
-            log.error(e);
-            this._end(e.message);
-        }
+    });
+};
+
+SBPRuntime.prototype._handleRunStreamError = function (e, reject) {
+    if (this.isInSubProgram()) {
+        log.error(e);
+        this._abort(e);
+    } else {
+        log.error(e);
+        this._end(e.message);
     }
+    reject(e);
 };
 
 // Internal function to copy config settings to local fields of this runtime
@@ -506,10 +466,10 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 
 // Run a file on disk.
 //   filename - Full path to file on disk
-SBPRuntime.prototype.runFile = function (filename) {
+SBPRuntime.prototype.runFile = async function (filename) {
     this.lastFilename = filename;
     var st = fs.createReadStream(filename);
-    this.runStream(st);
+    await this.runStream(st);
 };
 
 // Simulate the provided file, returning the result as g-code string
@@ -517,22 +477,37 @@ SBPRuntime.prototype.runFile = function (filename) {
 // TODO - this function could return a stream, and you could stream this back to the client to speed up simulation
 //          s - OpenSBP string to run
 //   callback - Called with the g-code output or with error if error
-SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
-    this.cmd_StartX = x; // need to capture these for processing commands outside of runtime
+SBPRuntime.prototype.simulateString = async function (s, x, y, z) {
+    this.cmd_StartX = x; // Capture these for processing commands outside of runtime
     this.cmd_StartY = y;
     this.cmd_StartZ = z;
-    if (this.ok_to_disconnect) {
+
+    if (!this.ok_to_disconnect) {
+        throw new Error("Cannot simulate while OpenSBP runtime is busy.");
+    }
+
+    try {
         this.disconnect();
-        var st = this.runString(s);
-        var chunks = [];
-        st.on("data", function (chunk) {
-            chunks.push(chunk);
-        });
-        st.on("end", function () {
-            callback(null, chunks.join(""));
-        });
-    } else {
-        callback(new Error("Cannot simulate while OpenSBP runtime is busy."));
+
+        // Set simulate mode
+        this.simulate = true;
+
+        // Initialize the output buffer
+        this.output = [];
+
+        // Run the command string
+        await this.runString(s);
+
+        // Collect the simulated output
+        const output = this.output.join("");
+
+        // Reset simulate mode
+        this.simulate = false;
+
+        return output;
+    } catch (error) {
+        this.simulate = false;
+        throw error;
     }
 };
 
@@ -720,6 +695,8 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             break;
 
         case "fail":
+        case "quit":
+        case "endall":
         case "end":
             // These statements update the system state and need to wait for the machine to stop to execute
             result = true;
@@ -750,149 +727,155 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
 // This function is called ONCE at the beginning of a program, and is not called again until the program
 // completes, except if a macro (subprogram) is encountered, in which case it is called for that program as well.
 SBPRuntime.prototype._run = function () {
-    // Set state variables to kick things off
-    this.started = true;
-    this.waitingForStackBreak = false;
-    this.gcodesPending = false;
-    this.probingInitialized = false;
-    this.probingPending = false;
-    this.probePin = null;
-    log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
-    if (this.machine) {
-        this.machine.setState(this, "running");
-    }
-
-    // Create a stat handler that does a few things:
-    // 1. Call _executeNext when the motion system is out of moves to feed it more program
-    // 2. Set the machine state to paused or running based on the state of the motion system
-    // 3. Handle a feedhold edge case (feedhold issued while system was not executing motion)
-    var onStat = function (stat) {
-        log.debug("onSTAT ..." + stat);
-        if (this.inManualMode) {
-            return;
+    return new Promise((resolve, reject) => {
+        // Set state variables
+        this.started = true;
+        this.waitingForStackBreak = false;
+        this.gcodesPending = false;
+        this.probingInitialized = false;
+        this.probingPending = false;
+        this.probePin = null;
+        log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
+        if (this.machine) {
+            this.machine.setState(this, "running");
         }
-        switch (stat) {
-            // case this.driver.STAT_STOP:
-            //     // ## A STAT 3, can be a problematic issue ...
-            //     // Only update and call execute next if we're waiting on pending gcodes or probing
-            //     // ... and expecting this stat:3
-            //     // For probing we do not turn off the pending if we have not passed the Initialization phase
-            //     if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
-            //         this.driver.status.targetHit = false;
-            //         this.probingPending = false;
-            //         this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
-            //         this.prime();
-            //         //log.debug("COMPLETETED PENDING PROBING =(cleared)============####")
-            //         this._executeNext();
-            //         break;
-            //     }
-            //     if (this.gcodesPending) {
-            //         this.gcodesPending = false;
-            //         //log.debug("COMPLETETED PENDING GCODES =(cleared)============####")
-            //         this._executeNext();
-            //         break;
-            //     }
-            //     break;
 
-            case this.driver.STAT_STOP:
-                // # A STAT 3, can be a problematic issue ...
-                // Only update and call execute next if we're waiting on pending gcodes or probing
-                // ... and expecting this stat:3
-                // For probing we do not turn off the pending if we have not passed the Initialization phase
-                if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
-                    this.driver.status.targetHit = false;
-                    this.probingPending = false;
-                    this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
-                    this.prime();
-                    this._executeNext().catch((err) => {
-                        log.error("Error in _executeNext during STAT_STOP handling:", err);
-                        this._abort(err);
-                    });
+        const onStat = (stat) => {
+            log.debug("onSTAT ..." + stat);
+            if (this.inManualMode) {
+                return;
+            }
+            if (!this.driver) {
+                log.error("No driver in _run");
+                return;
+            }
+
+            if (this.waitPendingOps) {
+                // Check if the driver has finished processing
+                if (stat === this.driver.STAT_END || stat === this.driver.STAT_STOP) {
+                    this.waitPendingOps = false; // Clear the flag
+                    this._executeNext(); // Resume execution
+                }
+            }
+
+            switch (stat) {
+                // case this.driver.STAT_STOP:
+                //     // ## A STAT 3, can be a problematic issue ...
+                //     // Only update and call execute next if we're waiting on pending gcodes or probing
+                //     // ... and expecting this stat:3
+                //     // For probing we do not turn off the pending if we have not passed the Initialization phase
+                //     if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
+                //         this.driver.status.targetHit = false;
+                //         this.probingPending = false;
+                //         this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
+                //         this.prime();
+                //         //log.debug("COMPLETETED PENDING PROBING =(cleared)============####")
+                //         this._executeNext();
+                //         break;
+                //     }
+                //     if (this.gcodesPending) {
+                //         this.gcodesPending = false;
+                //         //log.debug("COMPLETETED PENDING GCODES =(cleared)============####")
+                //         this._executeNext();
+                //         break;
+                //     }
+                //     break;
+
+                case this.driver.STAT_STOP:
+                    // # A STAT 3, can be a problematic issue ...
+                    // Only update and call execute next if we're waiting on pending gcodes or probing
+                    // ... and expecting this stat:3
+                    // For probing we do not turn off the pending if we have not passed the Initialization phase
+                    if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
+                        this.driver.status.targetHit = false;
+                        this.probingPending = false;
+                        this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
+                        this.prime();
+                        this._executeNext().catch((err) => {
+                            log.error("Error in _executeNext during STAT_STOP handling:", err);
+                            this._abort(err);
+                        });
+                        break;
+                    }
+                    if (this.gcodesPending) {
+                        this.gcodesPending = false;
+                        this._executeNext().catch((err) => {
+                            log.error("Error in _executeNext during STAT_STOP handling:", err);
+                            this._abort(err);
+                        });
+                        break;
+                    }
                     break;
-                }
-                if (this.gcodesPending) {
-                    this.gcodesPending = false;
-                    this._executeNext().catch((err) => {
-                        log.error("Error in _executeNext during STAT_STOP handling:", err);
-                        this._abort(err);
-                    });
+
+                case this.driver.STAT_HOLDING:
+                    this.feedhold = true;
+                    if (this.machine.pauseTimer) {
+                        clearTimeout(this.machine.pauseTimer);
+                        this.machine.pauseTimer = false;
+                        this.machine.setState(this, "paused", {
+                            message: "Paused by user.",
+                        });
+                    } else {
+                        this.machine.setState(this, "paused");
+                    }
                     break;
-                }
-                break;
 
-            case this.driver.STAT_HOLDING:
-                this.feedhold = true;
-                if (this.machine.pauseTimer) {
-                    clearTimeout(this.machine.pauseTimer);
-                    this.machine.pauseTimer = false;
-                    this.machine.setState(this, "paused", {
-                        message: "Paused by user.",
-                    });
-                } else {
-                    this.machine.setState(this, "paused");
-                }
-                break;
+                case this.driver.STAT_PROBE:
+                    //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
+                    this.probingInitialized = false;
+                    this.machine.setState(this, "probing");
+                    break;
 
-            case this.driver.STAT_PROBE:
-                //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
-                this.probingInitialized = false;
-                this.machine.setState(this, "probing");
-                break;
-
-            case this.driver.STAT_RUNNING:
-                if (!this.inManualMode) {
-                    if (this.machine.status.state != "running") {
-                        //Do not set state to running until opensbp pause is complete
-                        if (this.paused) {
-                            return;
-                        }
-                        this.machine.setState(this, "running");
-                        if (this.pendingFeedhold) {
-                            this.pendingFeedhold = false;
-                            this.driver.feedHold();
-                            this.machine.status.inFeedHold = false;
+                case this.driver.STAT_RUNNING:
+                    if (!this.inManualMode) {
+                        if (this.machine.status.state != "running") {
+                            //Do not set state to running until opensbp pause is complete
+                            if (this.paused) {
+                                return;
+                            }
+                            this.machine.setState(this, "running");
+                            if (this.pendingFeedhold) {
+                                this.pendingFeedhold = false;
+                                this.driver.feedHold();
+                                this.machine.status.inFeedHold = false;
+                            }
                         }
                     }
-                }
-                break;
-            // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
-            //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
-            // STAT_END = 4
-            // case this.driver.STAT_END:
-            //     this._end();
-            //     break;
-            default:
-                log.warn("OpenSBP Runtime Unhandled Stat: " + stat);
+                    break;
+                // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
+                //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
+                // STAT_END = 4
+                // case this.driver.STAT_END:
+                //     this._end();
+                //     break;
+                default:
+                    log.warn("OpenSBP Runtime Unhandled Stat: " + stat);
+            }
+        };
+
+        if (this.isInSubProgram()) {
+            // If this function was called and we're in a subprogram, just execute the next instruction
+            log.debug("Running Subprogram");
+            this._executeNext().then(resolve).catch(reject);
+        } else {
+            this.stream = new stream.PassThrough();
+            if (this.driver) {
+                this.driver
+                    .runStream(this.stream)
+                    .on("stat", onStat.bind(this))
+                    .then(
+                        function () {
+                            // Only call _end() when the main program completes
+                            if (!this.isInSubProgram()) {
+                                this.file_stack = [];
+                                this._end();
+                            }
+                        }.bind(this)
+                    );
+            }
+            this._executeNext().then(resolve).catch(reject);
         }
-    };
-
-    if (this.isInSubProgram()) {
-        // If this function was called and we're in a subprogram, just execute the next instruction
-        log.debug("Running Subprogram");
-        this._executeNext();
-    } else {
-        // If this is a top level run, create a pass-through stream to receive the data
-        // and start executing with it.  As the program is processed the stream will be fed
-        this.stream = new stream.PassThrough();
-        if (this.driver) {
-            this.driver
-                .runStream(this.stream)
-                .on("stat", onStat.bind(this))
-                .then(
-                    function () {
-                        // This ensures we run _end on driver stream end
-                        this.file_stack = [];
-                        this._end();
-                    }.bind(this)
-                );
-        }
-
-        // Actually begin program execution
-        this._executeNext();
-    }
-
-    // This function returns the pass-through stream (but it's also saved as this.stream)
-    return this.stream;
+    });
 };
 
 // Return true if this is not the "top level" program (ie: we're in a macro call.)
@@ -911,7 +894,7 @@ SBPRuntime.prototype._executeNext = async function () {
     }
 
     if (this.pending_error || this.end_message) {
-        log.warn("got a _execute next with pending Error or in Fail condition");
+        log.warn("Got a _executeNext() with pending Error or in Fail condition");
         return;
     }
 
@@ -926,18 +909,28 @@ SBPRuntime.prototype._executeNext = async function () {
     }
 
     if (this.pc >= this.program.length) {
-        // Handle end of program
-        if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
-            // There are pending operations, prime the driver
-            log.debug("Priming driver for pending operations before ending program.");
-            this.prime();
-            // Wait for the driver to finish processing
-            // The driver should call _executeNext() again when done
+        if (this.isInSubProgram()) {
+            // We're in a subprogram that has finished
+            this._popFileStack();
+            this.pc += 1; // Move to the next instruction in the main program
+            await this._executeNext();
             return;
         } else {
-            // No pending operations, safe to end the program
-            this._end();
-            return;
+            // We've reached the end of the main program
+            if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
+                // There are pending operations, prime the driver
+                log.debug("Priming driver for pending operations before ending program.");
+                this.prime();
+                this.waitPendingOps = true;
+                // Wait for the driver to finish processing sendmore
+                return;
+            } else {
+                // If no pending operations, safe to end the program
+                if (!this.waitPendingOps) {
+                    this._end();
+                }
+                return;
+            }
         }
     }
 
@@ -953,7 +946,7 @@ SBPRuntime.prototype._executeNext = async function () {
         } else {
             try {
                 await this._execute(line);
-                this._executeNext();
+                await this._executeNext();
             } catch (e) {
                 log.error(e);
                 this._abort(e);
@@ -963,7 +956,7 @@ SBPRuntime.prototype._executeNext = async function () {
     } else {
         try {
             await this._execute(line);
-            this._executeNext();
+            await this._executeNext();
         } catch (e) {
             log.error(e);
             this._abort(e);
@@ -982,19 +975,27 @@ SBPRuntime.prototype.prime = function () {
 // The pending error is picked up by _executeNext and the program is ended as a result.
 //   error - The error message
 SBPRuntime.prototype._abort = function (error) {
-    this.pending_error = error;
-    this.driver.quit();
+    if (error !== undefined && error !== null) {
+        this.pending_error = error;
+    } else {
+        this.pending_error = null; // No error
+    }
+    // Clear the file stack to exit any subprograms
+    this.file_stack = [];
+    // Now call _end()
+    this._end(this.pending_error);
 };
 
 // End the program
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
-SBPRuntime.prototype._end = function (error) {
-    // No Error populate with any pending error
+SBPRuntime.prototype._end = async function (error) {
+    // Populate with any pending error
     if (!error && this.pending_error) {
         error = this.pending_error;
     }
-    // Normalize the error and ending state
+
+    // Normalize the error message
     let error_msg = null;
     if (error) {
         if (Object.prototype.hasOwnProperty.call(error, "message")) {
@@ -1003,57 +1004,73 @@ SBPRuntime.prototype._end = function (error) {
             error_msg = error;
         }
     }
-    // Fail command message
+
+    // Use the end message if no error message is present
     if (!error_msg && this.end_message) {
         error_msg = this.end_message;
     }
 
     log.debug("Calling the non-nested (toplevel) end");
-    // Log the error for posterity
     if (error) {
         log.error(error);
     }
 
-    // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
-    var cleanup = function (error) {
-        if (this.machine && error) {
-            this.machine.setState(this, "stopped", { error: error });
-        }
-        // TODO: verify if this is needed
-        if (!this.machine) {
-            this.stream.end();
-        }
-        // Clear the internal state of the runtime (restore it to its initial state)
-        //TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
-        this.ok_to_disconnect = true;
-        this.init();
-        //TODO: G2 stream should be closed when this triggers keep as safety?
-        this.emit("end", this);
-    }.bind(this);
-    //TODO: Is all this needed here? Do we need to reset state? Can this be done without nested callbacks?
+    // Clear runtime state
+    this.resetRuntimeState();
+
+    // Clear the internal state of the runtime
+    this.init();
+
+    // Handle machine state restoration
     if (this.machine) {
         this.resumeAllowed = false;
-        this.machine.restoreDriverState(
-            // eslint-disable-next-line no-unused-vars
-            function (err, result) {
-                this.resumeAllowed = true;
-                if (this.machine.status.job) {
-                    this.machine.status.job.finish(
-                        // eslint-disable-next-line no-unused-vars
-                        function (err, job) {
-                            this.machine.status.job = null;
-                            cleanup(error_msg);
-                            this.machine.setState(this, "idle");
-                        }.bind(this)
-                    );
-                } else {
-                    cleanup(error_msg);
-                    this.machine.setState(this, "idle");
-                }
-            }.bind(this)
-        );
+        try {
+            await this.machine.restoreDriverState();
+
+            this.resumeAllowed = true;
+
+            if (this.machine.status.job) {
+                await this.machine.status.job.finish();
+                this.machine.status.job = null;
+            }
+
+            // Set the machine state
+            if (error_msg) {
+                this.machine.setState(this, "stopped", { error: error_msg });
+            } else {
+                this.machine.setState(this, "idle");
+            }
+        } catch (err) {
+            log.error("Error during machine state restoration:", err);
+            // Even if there's an error during restoration, ensure the machine state is set
+            this.machine.setState(this, "stopped", { error: error_msg || err.message });
+        }
     } else {
-        cleanup(error_msg);
+        // If there's no machine, close the stream if necessary
+        if (this.stream) {
+            this.stream.end();
+        }
+    }
+
+    // Emit the 'end' event
+    this.emit("end", this);
+};
+
+SBPRuntime.prototype.resetRuntimeState = function () {
+    // Clear paused and feedhold states
+    this.paused = false;
+    this.feedhold = false;
+    this.pending_error = null;
+    this.pendingFeedhold = false;
+    this.quit_pending = false;
+    this.resumeAllowed = true;
+    this.ok_to_disconnect = true;
+
+    if (this.machine) {
+        this.machine.status.inFeedHold = false;
+        if (this.machine.driver) {
+            this.machine.driver.pause_hold = false;
+        }
     }
 };
 
@@ -1108,7 +1125,8 @@ SBPRuntime.prototype.runCustomCut = async function (number) {
         var macro = macros.get(number);
         if (macro) {
             this._pushFileStack();
-            await this.runFile(macro.filename); // Assuming runFile is async
+            await this.runFile(macro.filename);
+            // Do not increment this.pc here; it will be handled in _executeNext()
         } else {
             throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found at " + (this.pc + 1));
         }
@@ -1157,7 +1175,20 @@ SBPRuntime.prototype._execute = async function (command) {
             }
 
         case "end":
-            this.pc = this.program.length;
+            if (this.isInSubProgram()) {
+                // If in a subprogram, exit the subprogram
+                this._popFileStack();
+                this.pc += 1; // Move to the next instruction in the main program
+                await this._executeNext();
+            } else {
+                // If in the main program, end the runtime
+                this._end();
+            }
+            return;
+
+        case "endall":
+            // Terminate the entire runtime
+            this._end();
             return;
 
         case "fail":
@@ -1451,7 +1482,7 @@ SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function (expr) {
-    log.debug("**-> Evaluating value: " + expr);
+    // log.debug("**-> Evaluating value: " + expr);
     if (typeof expr === "object" && (expr.type === "user_variable" || expr.type === "persistent_variable")) {
         return this._getVariableValue(expr);
     }
@@ -1510,7 +1541,7 @@ SBPRuntime.prototype._navigateAccessPath = function (value, accessPath) {
 // TODO - Are we robust enough to undefined variables
 //   expr - The expression to evaluate.  This is a *parsed* expression object
 SBPRuntime.prototype._eval = function (expr) {
-    log.debug("Evaluating expression: " + JSON.stringify(expr));
+    // log.debug("Evaluating expression: " + JSON.stringify(expr));
     if (expr === undefined) {
         return undefined;
     }
@@ -1552,22 +1583,29 @@ SBPRuntime.prototype._eval = function (expr) {
 
 // Initialize the runtime (set its internal state variables to their startup states)
 SBPRuntime.prototype.init = function () {
+    this.resetRuntimeState();
     this.pc = 0;
     this.coordinateSystem = "G55";
     this.start_of_the_chunk = 0;
-    this.stack = [];
+    this.output = [];
+
+    // Only reset this.stack if not in a subprogram
+    if (!this.isInSubProgram()) {
+        this.stack = [];
+    }
+
     this.label_index = {};
     this.current_chunk = [];
     this.started = false;
     this.sysvar_evaluated = false;
-    this.output = []; // Used in simulation mode only ??meaning??
-    this.quit_pending = false;
+    this.output = [];
+    //this.quit_pending = false;
     this.end_message = null;
-    this.paused = false;
-    this.feedhold = false;
+    //this.paused = false;
+    //this.feedhold = false;
     this.units = config.machine.get("units");
-    this.pending_error = null;
-    this.pendingFeedhold = false;
+    //this.pending_error = null;
+    //this.pendingFeedhold = false;
 
     if (this.transforms != null && this.transforms.level.apply === true) {
         this.leveler = new Leveler(this.transforms.level.ptDataFile);
@@ -1939,22 +1977,25 @@ SBPRuntime.prototype._unhandledCommand = function (command) {
 // Create an execution frame for the current program context and push it onto this.file_stack
 // The program context here means things like which coordinate system, speeds, the current PC, etc.
 SBPRuntime.prototype._pushFileStack = function () {
-    var frame = {};
-    frame.coordinateSystem = this.coordinateSystem;
-    frame.movespeed_xy = this.movespeed_xy;
-    frame.movespeed_z = this.movespeed_z;
-    frame.pc = this.pc;
-    frame.movexy;
-    frame.program = this.program;
-    frame.stack = this.stack;
-    frame.end_message = this.end_message;
-    frame.label_index = this.label_index;
+    var frame = {
+        coordinateSystem: this.coordinateSystem,
+        movespeed_xy: this.movespeed_xy,
+        movespeed_z: this.movespeed_z,
+        pc: this.pc,
+        program: this.program,
+        stack: this.stack.slice(), // Ensure a copy is made
+        end_message: this.end_message,
+        label_index: this.label_index,
+    };
     this.file_stack.push(frame);
 };
 
 // Retrieve the execution frame on top of this.file_stack and restore the program context from it
 // The program context here means things like which coordinate system, speeds, the current PC, etc.
 SBPRuntime.prototype._popFileStack = function () {
+    if (this.file_stack.length === 0) {
+        throw new Error("File stack is empty, cannot pop");
+    }
     var frame = this.file_stack.pop();
     this.movespeed_xy = frame.movespeed_xy;
     this.movespeed_z = frame.movespeed_z;
@@ -1962,7 +2003,7 @@ SBPRuntime.prototype._popFileStack = function () {
     this.coordinateSystem = frame.coordinateSystem;
     this.emit_gcode(this.coordinateSystem);
     this.program = frame.program;
-    this.stack = frame.stack;
+    this.stack = frame.stack.slice();
     this.label_index = frame.label_index;
     this.end_message = frame.end_message;
 };
@@ -1970,19 +2011,23 @@ SBPRuntime.prototype._popFileStack = function () {
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word
 SBPRuntime.prototype.emit_gcode = function (s) {
-    // An N-Word is added to this code to indicate the line number in the original OpenSBP file
-    // that generated these codes.  We only track line numbers for the top level program.
+    var n;
     if (this.file_stack.length > 0) {
-        var n = this.file_stack[0].pc;
+        n = this.file_stack[0].pc;
     } else {
-        // eslint-disable-next-line no-redeclare
-        var n = this.pc;
+        n = this.pc;
     }
     this.gcodesPending = true;
-    var temp_n = n + 20; ////## save low numbers for prepend/postpend; being done in util for gcode?
-    var gcode = "N" + temp_n + " " + s;
-    gcode = gcode + "\n";
-    this.stream.write(gcode);
+    var temp_n = n + 20; // Save low numbers for prepend/postpend
+    var gcode = "N" + temp_n + " " + s + "\n";
+
+    if (this.simulate) {
+        // Collect the G-code in the output array
+        this.output.push(gcode);
+    } else {
+        // Write to the stream as usual
+        this.stream.write(gcode);
+    }
 };
 
 // Helper function used by M_ commands that generates a movement code (G1,G0)
@@ -2169,8 +2214,12 @@ SBPRuntime.prototype.pause = function () {
 // Quit the currently running program
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function () {
-    // Send Quit to g2.js driver.
-    this.driver.quit();
+    // Send Quit to the driver
+    if (this.driver) {
+        this.driver.quit();
+    }
+    // Abort the program execution
+    this._abort(null);
 };
 
 // Resume a program from the paused state

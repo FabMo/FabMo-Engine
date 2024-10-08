@@ -4,6 +4,7 @@ var log = require("../../log").logger("gcode");
 var config = require("../../config");
 var countLineNumbers = require("../../util").countLineNumbers;
 var LineNumberer = require("../../util").LineNumberer;
+const util = require("util");
 
 function GCodeRuntime() {
     this.machine = null;
@@ -127,23 +128,25 @@ GCodeRuntime.prototype._fail = function (message) {
     }
 };
 
-GCodeRuntime.prototype._idle = function () {
+GCodeRuntime.prototype._idle = async function () {
     this.machine.status.current_file = null;
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
     var job = this.machine.status.job;
+    this.driver.setUnitsAsync = util.promisify(this.driver.setUnits);
     // Set the machine state to idle and return the units to their default configuration
-    var finishUp = function () {
-        this.driver.setUnits(
-            config.machine.get("units"),
-            function () {
-                var callback = this.completeCallback || function () {};
-                this.ok_to_disconnect = true;
-                this.completeCallback = null;
-                this.machine.setState(this, "idle");
-                callback();
-            }.bind(this)
-        );
+    var finishUp = async function () {
+        try {
+            await this.driver.setUnitsAsync(config.machine.get("units"));
+            var callback = this.completeCallback || function () {};
+            this.ok_to_disconnect = true;
+            this.completeCallback = null;
+            this.machine.setState(this, "idle");
+            callback();
+        } catch (err) {
+            log.error("Error in finishUp:", err);
+            // Handle the error appropriately
+        }
     }.bind(this);
 
     if (job) {
@@ -209,8 +212,7 @@ GCodeRuntime.prototype.runStream = function (st) {
         this.machine.setState(this, "running");
     }
     this.machine.status.line = 1;
-    var manualPrime =
-        this.machine.status.nb_lines < this.driver.primedThreshold;
+    var manualPrime = this.machine.status.nb_lines < this.driver.primedThreshold;
     var ln = new LineNumberer();
     return this.driver
         .runStream(st.pipe(ln), manualPrime) ////## This is where we might put prepend RE: Rob
@@ -221,10 +223,7 @@ GCodeRuntime.prototype.runStream = function (st) {
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function (filename) {
     this._file_or_stream_in_progress = true;
-    if (
-        this.machine.status.state === "idle" ||
-        this.machine.status.state === "armed"
-    ) {
+    if (this.machine.status.state === "idle" || this.machine.status.state === "armed") {
         //  TODO:  Can we count line numbers before streaming without reading the file twice?
         countLineNumbers(
             filename,
@@ -239,10 +238,7 @@ GCodeRuntime.prototype.runFile = function (filename) {
 
 // Run the provided string
 GCodeRuntime.prototype.runString = function (string) {
-    if (
-        this.machine.status.state === "idle" ||
-        this.machine.status.state === "armed"
-    ) {
+    if (this.machine.status.state === "idle" || this.machine.status.state === "armed") {
         // count lines and set file length
         var lines = string.match(/\n/g) || "";
         this.machine.status.nb_lines = lines.length;
