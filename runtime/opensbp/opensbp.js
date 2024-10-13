@@ -28,9 +28,7 @@ var ManualDriver = require("../manual").ManualDriver;
 // Constructor for the OpenSBP runtime
 // The SBPRuntime object is responsible for running OpenSBP code.
 // For more info and command reference: http://www.opensbp.com/
-// Note that not ALL of the OpenSBP standard listed at the above URL is supported.
-// FabMo supports a limited subset of the original standard, as not all commands make sense
-// to use in the FabMo universe.
+// Note that not ALL of the OpenSBP standard listed at the above URL is currently supported in FabMo.
 function SBPRuntime() {
     // Handle Inheritance
     events.EventEmitter.call(this);
@@ -43,6 +41,7 @@ function SBPRuntime() {
     this.label_index = {};
     this.stack = [];
     this.file_stack = [];
+    this.loopStack = [];
 
     this.output = [];
     this.running = false;
@@ -80,7 +79,6 @@ function SBPRuntime() {
     this.continue_callback = null;
     this.vs_change = 0;
     this.absoluteMode = true;
-
     this.lastFilename = "";
 
     // Physical machine state
@@ -97,7 +95,6 @@ SBPRuntime.prototype.toString = function () {
 };
 
 // This must be called at least once before instantiating an SBPRuntime object
-// TODO Make this a "class method" rather than an instance method
 SBPRuntime.prototype.loadCommands = function (callback) {
     var commands = require("./commands").load();
     var proto = Object.getPrototypeOf(this);
@@ -230,7 +227,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
 };
 
 // Check whether the code needs auth
-// There are lots of SBP commands that do not require authorization to run,
+// There are lots of SBP commands that need not require authorization to run,
 // but we've kept it simple here and only green-lit Zeroing (Z) commands
 SBPRuntime.prototype.needsAuth = function (s) {
     var lines = s.split("\n");
@@ -611,7 +608,6 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
             }
         }
     } else {
-        // TODO - is this really the right behavior here?
         scrubbed_args = [];
     }
 
@@ -662,6 +658,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             result = false;
             break;
 
+        case "dialog":
         case "pause":
             return true;
 
@@ -759,30 +756,8 @@ SBPRuntime.prototype._run = function () {
             }
 
             switch (stat) {
-                // case this.driver.STAT_STOP:
-                //     // ## A STAT 3, can be a problematic issue ...
-                //     // Only update and call execute next if we're waiting on pending gcodes or probing
-                //     // ... and expecting this stat:3
-                //     // For probing we do not turn off the pending if we have not passed the Initialization phase
-                //     if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
-                //         this.driver.status.targetHit = false;
-                //         this.probingPending = false;
-                //         this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
-                //         this.prime();
-                //         //log.debug("COMPLETETED PENDING PROBING =(cleared)============####")
-                //         this._executeNext();
-                //         break;
-                //     }
-                //     if (this.gcodesPending) {
-                //         this.gcodesPending = false;
-                //         //log.debug("COMPLETETED PENDING GCODES =(cleared)============####")
-                //         this._executeNext();
-                //         break;
-                //     }
-                //     break;
-
                 case this.driver.STAT_STOP:
-                    // # A STAT 3, can be a problematic issue ...
+                    // # A STAT 3, can always be a problematic issue ... watch this spot
                     // Only update and call execute next if we're waiting on pending gcodes or probing
                     // ... and expecting this stat:3
                     // For probing we do not turn off the pending if we have not passed the Initialization phase
@@ -1084,31 +1059,22 @@ SBPRuntime.prototype._executeCommand = async function (command) {
         var f = this[command.cmd].bind(this);
 
         if (f.length > 1) {
-            // Stack-breaking commands expect a callback as the second parameter
-            //try {
-                await new Promise((resolve, reject) => {
-                    f(args, (err) => {
-                        if (err) {
-                            log.error("Error in a stack-breaking command");
-                            reject(err);
-                        } else {
-                            this.pc += 1;
-                            resolve();
-                        }
-                    });
+            // Stack-breaking commands need to be resolved 
+            await new Promise((resolve, reject) => {
+                f(args, (err) => {
+                    if (err) {
+                        log.error("Error in a stack-breaking command");
+                        reject(err);
+                    } else {
+                        this.pc += 1;
+                        resolve();
+                    }
                 });
-            //} catch (e) {
-//                throw e;
-            //}
+            });
         } else {
-            // Non-stack-breaking commands
-//            try {
-                f(args);
-                this.pc += 1;
-//            } catch (e) {
-                // log.error("Error in a non-stack-breaking command");
-                // throw e;
-//            }
+        // Non-stack-breaking commands
+            f(args);
+            this.pc += 1;
         }
     } else {
         // Unhandled command
@@ -1136,7 +1102,6 @@ SBPRuntime.prototype.runCustomCut = async function (number) {
 };
 
 // Execute the provided command
-////## DESCRIBE NEW STACK handling
 // Returns true if execution breaks the stack (and calls the callback upon command completion)
 // Returns false if execution does not break the stack (and callback is never called)
 //   command - A single parsed line of OpenSBP code
@@ -1269,59 +1234,91 @@ SBPRuntime.prototype._execute = async function (command) {
             this.pc += 1;
             return;
 
+        case "dialog":
         case "pause":
-            // PAUSE is somewhat overloaded. In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
-            var arg = this._eval(command.expr);
+            var arg = command.expr ? this._eval(command.expr) : null;
             var input_var = command.var;
-            if (u.isANumber(arg)) {
-                // If argument is a number, set pause with timer and default message.
-                // In simulation, just don't do anything.
-                if (!this.machine) {
-                    return true;
+            var params = command.params || {};
+            // console.log("PAUSE command parameters:", params);
+
+            // Normalize params keys to lowercase
+            var normalizedParams = {};
+            for (var key in params) {
+                if (Object.prototype.hasOwnProperty.call(params, key)) {
+                    normalizedParams[key.toLowerCase()] = params[key];
                 }
-                this.paused = true;
-                this.machine.setState(this, "paused", u.packageModalParams({ timer: arg }));
-                return;
-            } else {
-                // In simulation, just don't do anything.
-                if (!this.machine) {
-                    return true;
-                }
-                // If a message is provided, pause with a dialog.
-                var message = arg;
-                if (!message) {
-                    // If a message is not provided, use the comment from the previous line.
-                    var last_command = this.program[this.pc - 2];
-                    if (last_command && last_command.type === "comment") {
-                        message = last_command.comment.join("").trim();
-                    }
-                    if (!message) {
-                        message = "Pause Command No Message.";
-                    }
-                }
-                var modalParams = {};
-                if (message) {
-                    modalParams = u.packageModalParams({ message: message }, modalParams);
-                }
-                // Example of modal customization. Adds input param, sets ok button text to Submit, removes cancel/quit button.
-                // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel buttons detailed below.
-                ////## custom modal example
-                if (input_var) {
-                    var inputParams = {
-                        input_var: input_var,
-                        okText: "Submit",
-                        cancelText: false, // Remove or set new text to display cancel/quit button.
-                        cancelFunc: false, // Remove to enable quit job on click.
-                    };
-                    modalParams = u.packageModalParams(inputParams, modalParams);
-                }
-                this.paused = true;
-                // Set driver in paused state.
-                this.machine.driver.pause_hold = true;
-                this.machine.setState(this, "paused", modalParams);
+            }
+            // In simulation, just don't do anything.
+            if (!this.machine) {
                 return true;
             }
+
+            var modalParams = {};
+            // Handle TIMER parameter
+            if (u.isANumber(arg)) {
+                // Old syntax: PAUSE 5
+                normalizedParams.timer = arg;
+            }
+
+            // Handle message
+            var message = arg;
+            if (u.isANumber(arg)) {
+                // If arg is a number, default message
+                message = "Paused for " + arg + " seconds.";
+            }
+            if (!message && !normalizedParams.timer) {
+                // If a message is not provided and this is not a timer, use the comment from the previous line.
+                var last_command = this.program[this.pc - 2];
+                if (last_command.length > 0 && last_command.type === "comment") {
+                    message = last_command.comment.join("").trim();
+                } else {
+                    message = "Paused ...";
+                }
+            }
+            if (normalizedParams.message) {
+                message = normalizedParams.message;
+            }
+            modalParams.message = message;
+
+            // Handle input variable
+            if (input_var) {
+                modalParams.input_var = input_var;
+            } else if (normalizedParams.input) {
+                modalParams.input_var = normalizedParams.input;
+            }
+
+            // Handle optional parameters
+            if (normalizedParams.title) {
+                modalParams.title = normalizedParams.title;
+            }
+            if (Object.prototype.hasOwnProperty.call(normalizedParams, "oktext")) {
+                modalParams.okText = normalizedParams.oktext; // Assign the value even if it's false
+                modalParams.okFunc = normalizedParams.okfunc || "resume";
+            }
+            if (Object.prototype.hasOwnProperty.call(normalizedParams, "canceltext")) {
+                modalParams.cancelText = normalizedParams.canceltext; // Assign the value even if it's false
+                modalParams.cancelFunc = normalizedParams.cancelfunc || "quit";
+            }
+            if (normalizedParams.detail) {
+                modalParams.detail = normalizedParams.detail;
+            }
+            if (normalizedParams.nobutton !== undefined) {
+                modalParams.noButton = normalizedParams.nobutton;
+            }
+            if (normalizedParams.timer !== undefined) {
+                modalParams.timer = normalizedParams.timer;
+            }
+
+            // console.log("Modal Parameters before packaging:", modalParams);
+            // Use utility function to package modal parameters
+            modalParams = u.packageModalParams(modalParams);
+            // console.log("Modal Parameters after packaging:", modalParams);
+
+            this.paused = true;
+            this.machine.driver.pause_hold = true;
+            this.machine.setState(this, "paused", modalParams);
+            return true;
 
         case "event":
             // Throw a useful exception for the no-longer-supported ON INPUT command
@@ -1330,6 +1327,19 @@ SBPRuntime.prototype._execute = async function (command) {
                 "ON INPUT is no longer a supported command.  Make sure the program you are using is up to date.  Line: " +
                     (this.pc + 1)
             );
+
+        case "for":
+            await this._executeFor(command);
+            break;
+        case "next":
+            await this._executeForNext(command);
+            break;
+        case "while":
+            await this._executeWhile(command);
+            break;
+        case "wend":
+            await this._executeWhileEnd(command);
+            break;
 
         default:
             log.error("Unknown command: " + JSON.stringify(command));
@@ -1380,24 +1390,19 @@ SBPRuntime.prototype._varExists = function (identifier) {
 // Assign a variable a value
 //   identifier - The variable to assign
 //        value - The new value
-// SBPRuntime.prototype._assign = async function (identifier, value) {
-//     log.debug("**-> Assigning variable: " + identifier.name + " Value:" + value);
-//     const variableName = identifier.name.toUpperCase();
-//     let accessPath = identifier.access || [];
-
-//     // Evaluate accessPath
-//     accessPath = this._evaluateAccessPath(accessPath);
-
-//     // Update the variable in the config
-//     if (identifier.type === "user_variable") {
-//         await config.opensbp.setTempVariableWrapper({ name: variableName, access: accessPath }, value);
-//     } else {
-//         await config.opensbp.setVariableWrapper({ name: variableName, access: accessPath }, value);
-//     }
-// };
 SBPRuntime.prototype._assign = async function (identifier, value) {
-    log.debug("**-> Assigning variable: " + identifier.name + " Value:", value);
-    const variableName = identifier.name.toUpperCase();
+    // Determine the variable name
+    let variableName;
+    if (identifier.name) {
+        variableName = identifier.name.toUpperCase();
+    } else if (identifier.expr) {
+        // Evaluate the expression to get the variable name
+        variableName = this._eval(identifier.expr).toUpperCase();
+    } else {
+        throw new Error("Invalid identifier: missing 'name' and 'expr'");
+    }
+
+    log.debug("**-> Assigning variable: " + variableName + " Value:", value);
     let accessPath = identifier.access || [];
 
     // Evaluate accessPath
@@ -1425,6 +1430,118 @@ SBPRuntime.prototype._assign = async function (identifier, value) {
     }
 };
 
+SBPRuntime.prototype._executeFor = async function (command) {
+    // Evaluate start, end, step
+    const startVal = this._eval(command.start);
+    const endVal = this._eval(command.end);
+    const stepVal = command.step ? this._eval(command.step) : 1;
+
+    // Assign start value to loop variable
+    await this._assign(command.variable, startVal);
+
+    // Push loop context onto the stack
+    this.loopStack.push({
+        type: "for",
+        variable: command.variable,
+        end: endVal,
+        step: stepVal,
+        pc: this.pc,
+        bodyEndPc: this._findMatchingNext(this.pc),
+    });
+
+    this.pc += 1;
+};
+
+SBPRuntime.prototype._executeForNext = async function () {
+    // Get current loop context
+    const loopContext = this.loopStack[this.loopStack.length - 1];
+
+    if (!loopContext || loopContext.type !== "for") {
+        throw new Error(`NEXT without matching FOR at line ${this.pc + 1}`);
+    }
+
+    // Increment loop variable
+    const currentVal = this._eval({ type: "user_variable", name: loopContext.variable.name });
+    const newVal = currentVal + loopContext.step;
+    await this._assign(loopContext.variable, newVal);
+
+    // Check if loop should continue
+    const stepPositive = loopContext.step > 0;
+    const continueLoop = stepPositive ? newVal <= loopContext.end : newVal >= loopContext.end;
+
+    if (continueLoop) {
+        // Jump back to the start of the loop body
+        this.pc = loopContext.pc + 1;
+    } else {
+        // Loop finished
+        this.loopStack.pop();
+        this.pc += 1;
+    }
+};
+
+SBPRuntime.prototype._executeWhile = async function (command) {
+    const condition = this._eval(command.condition);
+    if (condition) {
+        // Push loop context onto the stack
+        this.loopStack.push({
+            type: "while",
+            pc: this.pc,
+            bodyEndPc: this._findMatchingWend(this.pc),
+        });
+        this.pc += 1;
+    } else {
+        // Skip to after WEND
+        this.pc = this._findMatchingWend(this.pc) + 1;
+    }
+};
+
+SBPRuntime.prototype._executeWhileEnd = function () {
+    // Get current loop context
+    const loopContext = this.loopStack[this.loopStack.length - 1];
+
+    if (!loopContext || loopContext.type !== "while") {
+        throw new Error(`WEND without matching WHILE at line ${this.pc + 1}`);
+    }
+
+    // Jump back to the WHILE condition
+    this.pc = loopContext.pc;
+    this.loopStack.pop();
+};
+
+SBPRuntime.prototype._findMatchingNext = function (startPc) {
+    let nesting = 0;
+    for (let i = startPc + 1; i < this.program.length; i++) {
+        const cmd = this.program[i];
+        if (cmd.type === "for") {
+            nesting++;
+        } else if (cmd.type === "next") {
+            if (nesting === 0) {
+                return i;
+            } else {
+                nesting--;
+            }
+        }
+    }
+    throw new Error(`NEXT not found for FOR at line ${startPc + 1}`);
+};
+
+SBPRuntime.prototype._findMatchingWend = function (startPc) {
+    let nesting = 0;
+    for (let i = startPc + 1; i < this.program.length; i++) {
+        const cmd = this.program[i];
+        if (cmd.type === "while") {
+            nesting++;
+        } else if (cmd.type === "wend") {
+            if (nesting === 0) {
+                return i;
+            } else {
+                nesting--;
+            }
+        }
+    }
+    throw new Error(`WEND not found for WHILE at line ${startPc + 1}`);
+};
+
 SBPRuntime.prototype._evaluateAccessPath = function (access) {
     return access.map((part) => {
         if (part.type === "index") {
@@ -1438,30 +1555,6 @@ SBPRuntime.prototype._evaluateAccessPath = function (access) {
     });
 };
 
-// SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
-//     let current = obj;
-//     for (let i = 0; i < accessPath.length - 1; i++) {
-//         const part = accessPath[i];
-//         let key;
-//         if (part.type === "index") {
-//             key = this._eval(part.value);
-//         } else if (part.type === "property") {
-//             key = part.name;
-//         }
-//         if (!(key in current)) {
-//             current[key] = {};
-//         }
-//         current = current[key];
-//     }
-//     const lastPart = accessPath[accessPath.length - 1];
-//     let lastKey;
-//     if (lastPart.type === "index") {
-//         lastKey = this._eval(lastPart.value);
-//     } else if (lastPart.type === "property") {
-//         lastKey = lastPart.name;
-//     }
-//     current[lastKey] = value;
-// };
 SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
     let current = obj;
     for (let i = 0; i < accessPath.length - 1; i++) {
@@ -1587,7 +1680,6 @@ SBPRuntime.prototype.init = function () {
     this.pc = 0;
     this.coordinateSystem = "G55";
     this.start_of_the_chunk = 0;
-    this.output = [];
 
     // Only reset this.stack if not in a subprogram
     if (!this.isInSubProgram()) {
@@ -1599,13 +1691,8 @@ SBPRuntime.prototype.init = function () {
     this.started = false;
     this.sysvar_evaluated = false;
     this.output = [];
-    //this.quit_pending = false;
     this.end_message = null;
-    //this.paused = false;
-    //this.feedhold = false;
     this.units = config.machine.get("units");
-    //this.pending_error = null;
-    //this.pendingFeedhold = false;
 
     if (this.transforms != null && this.transforms.level.apply === true) {
         this.leveler = new Leveler(this.transforms.level.ptDataFile);
@@ -2126,7 +2213,6 @@ SBPRuntime.prototype._setupTransforms = function () {
 // - by type of transform
 // - to the tform function we are passing the to-be-transformed object and other parameters needed for calc
 // - the possible presence of gcode arcs (with relative values and absent start point) makes this messy
-
 let prevPt = {
     // for rotating an arc we need to have the starting point, the previous EndPt
     xIni: 0, // ... these should be initialized to current location

@@ -472,9 +472,12 @@ var getClientAddress = function (req) {
 
 // Check to see if something is a number (strings that parse to numbers, for example)
 var isANumber = function (n) {
+    if (n === null) {
+        return false;
+    }
     try {
         n = Number(n);
-        return n == n;
+        return !Number.isNaN(n);
     } catch (e) {
         return false;
     }
@@ -572,17 +575,19 @@ var countLineNumbers = function (filename, callback) {
 
 var addTimerParam = function (timer, params = {}) {
     params["timer"] = timer;
-    params["message"] = "Pause " + params["timer"] + " Seconds.";
+    if (params["message"] == null || params["message"] === undefined) {
+        params["message"] = "Pausing for " + params["timer"] + " Seconds ...";
+    }
     return params;
 };
 
-var addMessageParam = function (message, params = {}) {
-    params["message"] = message;
-    return params;
-};
+// var addMessageParam = function (message, params = {}) {
+//     params["message"] = message;
+//     return params;
+// };
 
 var addInputParam = function (input_var, params = {}) {
-    params["input"] = { name: input_var.expr, type: input_var.type };
+    params["input"] = { name: input_var.name, type: input_var.type };
     return params;
 };
 
@@ -632,17 +637,21 @@ var addNoButtonParam = function (noButton, params = {}) {
     return params;
 };
 
-// More info on MODAL display options (not yet supporting options from SBP file)
-// Function packageModalParams(<new parameters>, <current info object>)
-// This function accepts a set of optional new parameters and optional current status['info'] object ready for send to front end.
-// If called without arguments, a basic info object with 'message': 'Paused.' will be created.
-// Current functionality is built around use for OpenSBP Pause display on the client but can see expanded use.
+// PAUSE/DIALOG MODAL DISPLAY OPTIONS
+// The flexible MODAL display options are based on function:  packageModalParams(<new parameters>, <current info object>)
 
-// Current Info Object should be the output of a prior execution of this function or the info section of a status update object prior to transmission.
+// This function accepts a set of optional new parameters and optional current status['info'] as an object ready for send to front end.
+// If called without arguments, a basic info object with 'message': 'Paused ...' will be created.
+// Functionality is built around use for OpenSBP PAUSE display on the client, but can be very flexible.
+
+// Current Info Object should be the output of a prior execution of PAUSE/DIALOGUE or the info section of a status update object prior to transmission.
 // New Parameters is an object with one or more of the available customization parameters defined as below:
-//     timer:  INT Sets Timer param (used to determine if modal should display) and message text to display timer length.
-//         NOTE: if Timer is included only TIMER and Message params will be set. Timer is intended for timed pause and should not be used in conjunction with other customizations.
+//     timer:  INT Sets Timer param (only greater than 10 sec will display) and message text to accompany duration number.
+// TIMER_DISPLAY_CUTOFF is controlling variable for display of PAUSE modal.
+// NOTE: if Timer is included only TIMER and Message params will be set. Timer is intended for timed pause and should not be used in
+//               conjunction with other customizations.
 //     message: STRING sets the message to be displayed in the modal to the provided string.
+
 //     input: FABMO VARIABLE OBJECT object with name and type properties defining a variable to be provided by the user and set to provided value on resume.
 //     okText: STRING sets the text on the green "ok" button on modal.
 //         NOTE: Defaults to "ok" if set to Falsy value green "ok" button will not display.
@@ -657,42 +666,59 @@ var addNoButtonParam = function (noButton, params = {}) {
 //     noButton: BOOLEAN if set to a truthy value will ensure no buttons are displayed on the modal.
 //         NOTE: With No Buttons there is not a way to close the modal.
 // TODO: Implement Image Param?  Image Param is available on modal and parsed by dashboard.showModal() but would require a valid image source provided by this param.
-// TODO: noLogo option can be parsed by dashboard.showModal() but is not implemented by this function, the client status parser, or the modal HTML.
+// TODO: noLogo option (?) can be parsed by dashboard.showModal() but is not implemented by this function, the client status parser, or the modal HTML.
 // TODO: Add packaging for error info on implementation of error handling
 var packageModalParams = function (params = {}, modalParams = {}) {
-    if (Object.prototype.hasOwnProperty.call(params, "timer") && params["timer"] && isANumber(params["timer"])) {
-        return addTimerParam(params["timer"]);
-    }
+    // Handle message first
     if (Object.prototype.hasOwnProperty.call(params, "message")) {
-        modalParams = addMessageParam(params["message"], modalParams);
-    } else if (!Object.prototype.hasOwnProperty.call(modalParams, "message")) {
-        modalParams = addMessageParam("Paused.", modalParams);
+        modalParams.message = params["message"];
+    }
+    // Handle timer
+    if (Object.prototype.hasOwnProperty.call(params, "timer")) {
+        modalParams = addTimerParam(params["timer"], modalParams);
     }
     if (Object.prototype.hasOwnProperty.call(params, "input_var")) {
         modalParams = addInputParam(params["input_var"], modalParams);
     }
+
+    // Handle okText
     if (Object.prototype.hasOwnProperty.call(params, "okText")) {
-        if (Object.prototype.hasOwnProperty.call(params, "okFunc")) {
-            modalParams = addOkParam({ text: params["okText"], func: params["okFunc"] }, modalParams);
+        if (params["okText"]) {
+            // okText is truthy; add the OK button
+            var okFunc = Object.prototype.hasOwnProperty.call(params, "okFunc") ? params["okFunc"] : "resume";
+            modalParams = addOkParam({ text: params["okText"], func: okFunc }, modalParams);
         } else {
-            modalParams = addOkParam({ text: params["okText"], func: "resume" }, modalParams);
+            // okText is falsy; explicitly set custom.ok to null
+            if (!Object.prototype.hasOwnProperty.call(modalParams, "custom")) {
+                modalParams["custom"] = {};
+            }
+            modalParams.custom["ok"] = null;
         }
     }
+
+    // Handle cancelText
     if (Object.prototype.hasOwnProperty.call(params, "cancelText")) {
-        if (Object.prototype.hasOwnProperty.call(params, "cancelFunc")) {
-            modalParams = addCancelParam({ text: params["cancelText"], func: params["cancelFunc"] }, modalParams);
+        if (params["cancelText"]) {
+            // cancelText is truthy; add the Cancel button
+            var cancelFunc = Object.prototype.hasOwnProperty.call(params, "cancelFunc") ? params["cancelFunc"] : "quit";
+            modalParams = addCancelParam({ text: params["cancelText"], func: cancelFunc }, modalParams);
         } else {
-            modalParams = addCancelParam({ text: params["cancelText"], func: "quit" }, modalParams);
+            // cancelText is falsy; explicitly set custom.cancel to null
+            if (!Object.prototype.hasOwnProperty.call(modalParams, "custom")) {
+                modalParams["custom"] = {};
+            }
+            modalParams.custom["cancel"] = null;
         }
     }
+
     if (Object.prototype.hasOwnProperty.call(params, "detail")) {
-        modalParams = addDetailParam(params["detail"]);
+        modalParams = addDetailParam(params["detail"], modalParams);
     }
     if (Object.prototype.hasOwnProperty.call(params, "title")) {
-        modalParams = addTitleParam(params["title"]);
+        modalParams = addTitleParam(params["title"], modalParams);
     }
     if (Object.prototype.hasOwnProperty.call(params, "noButton")) {
-        modalParams = addNoButtonParam(params["noButton"]);
+        modalParams = addNoButtonParam(params["noButton"], modalParams);
     }
     return modalParams;
 };

@@ -7,6 +7,17 @@ const testInputs = [
     "$config.settings.speed = 500",
     "$unknown[5] = 2",
     "$loc[&i] = { x: 1.1, y: 2.2 }",
+    "PAUSE",
+    'PAUSE "Please configm action"',
+    'PAUSE "Please configm action", &Var',
+    'PAUSE "Confirm?", TITLE="Confirmation", OKTEXT="Yes", CANCELTEXT="No", NOBUTTON=FALSE',
+    "PAUSE INPUT=&UserInput",
+    'PAUSE MESSAGE="Wait...", TIMER=5',
+    'PAUSE "Processing...", TIMER=10',
+    'PAUSE "Just a message."',
+    "PAUSE TIMER=5",
+    'PAUSE &varName, MESSAGE="Input required", TITLE="Data Entry"',
+    'DIALOG "Please enter your name:", INPUT=&name, OKTEXT="Submit"',
 ];
 
 // Function to test parsing of inputs

@@ -1316,10 +1316,8 @@ define(function (require) {
     };
 
     //Show Modal
-
+    // Show Modal
     Dashboard.prototype.showModal = function (options) {
-        // var modal = function (options) {
-
         modalIsShown = true;
 
         $(".modalDim").show();
@@ -1354,43 +1352,38 @@ define(function (require) {
             $(".modalDialogue").css("width", "100%");
         }
 
-        if (options["okText"]) {
+        // Handle OK button
+        if (options.ok && options.okText) {
             $(".modalOkay").show();
             $(".modalOkay").text(options.okText);
+            $(".modalOkay")
+                .off("click")
+                .on("click", function () {
+                    options.ok();
+                    $(".newModal").hide();
+                    $(".modalDim").hide();
+                });
         } else {
             $(".modalOkay").hide();
         }
 
-        if (options["ok"]) {
-            $(".modalOkay").off();
-            $(".modalOkay").on("click", function () {
-                options.ok();
-                $(".newModal").hide();
-                $(".modalDim").hide();
-            });
+        // Handle Cancel button
+        if (options.cancel && options.cancelText) {
+            $(".modalCancel").show();
+            $(".modalCancel").text(options.cancelText);
+            $(".modalCancel")
+                .off("click")
+                .on("click", function () {
+                    options.cancel();
+                    $(".newModal").hide();
+                    $(".modalDim").hide();
+                });
         } else {
-            $(".modalOkay").off();
-            $(".modalOkay").on("click", function () {
-                $(".newModal").hide();
-                $(".modalDim").hide();
-            });
+            $(".modalCancel").hide();
         }
 
-        if (options["cancel"]) {
-            $(".modalCancel").off();
-            $(".modalCancel").on("click", function () {
-                options.cancel();
-                $(".newModal").hide();
-                $(".modalDim").hide();
-            });
-        } else {
-            $(".modalCancel").off();
-            $(".modalCancel").on("click", function () {
-                $(".newModal").hide();
-                $(".modalDim").hide();
-            });
-        }
-
+        // Note: This block seems redundant since it's already handled above
+        // You may consider removing it if it's not needed
         if (options["cancelText"]) {
             $(".modalCancel").show();
             $(".modalCancel").text(options.cancelText);
@@ -1408,11 +1401,13 @@ define(function (require) {
             $(".modalInput").hide();
         }
 
+        // In the case of both buttons missing, provide a quit to prevent a jam
         if (!options["okText"] && !options["cancelText"]) {
             $(".modalOkay").off();
             $(".modalOkay").show();
-            $(".modalOkay").text("Okay");
+            $(".modalOkay").text("Quit");
             $(".modalOkay").on("click", function () {
+                options.cancel(); // Use options.cancel() here
                 $(".newModal").hide();
                 $(".modalDim").hide();
             });
@@ -1421,11 +1416,118 @@ define(function (require) {
                 $(".modalCancel").hide();
                 $(".modalOkay").hide();
             }
+
             if (options["noLogo"] === true) {
                 $(".modalLogo").hide();
             }
         }
     };
+
+    // Dashboard.prototype.showModal = function (options) {
+    //     // var modal = function (options) {
+
+    //     modalIsShown = true;
+
+    //     $(".modalDim").show();
+    //     $(".newModal").show();
+    //     $(".modalLogo").show();
+    //     if (options["title"]) {
+    //         $(".modalTitle").html(options.title).show();
+    //     } else {
+    //         $(".modalTitle").hide();
+    //     }
+
+    //     if (options["message"]) {
+    //         $(".modalDialogue").html(options.message).show();
+    //     } else {
+    //         $(".modalDialogue").hide();
+    //     }
+
+    //     if (options["detail"]) {
+    //         $(".modalDetail").html(options.detail).show();
+    //     } else {
+    //         $(".modalDetail").hide();
+    //     }
+
+    //     if (options["image"]) {
+    //         $(".modalImage img").attr("src", options.image);
+    //         $(".modalImage").show();
+    //         $(".modalImage").css("width", "25%");
+    //         $(".modalDialogue").css("width", "65%");
+    //     } else {
+    //         $(".modalImage").hide();
+    //         $(".modalImage").css("width", "0%");
+    //         $(".modalDialogue").css("width", "100%");
+    //     }
+
+    //     // Handle OK button
+    //     if (modalOptions.ok && modalOptions.okText) {
+    //         $(".modalOkay").show();
+    //         $(".modalOkay").text(modalOptions.okText);
+    //         $(".modalOkay")
+    //             .off("click")
+    //             .on("click", function () {
+    //                 modalOptions.ok();
+    //                 $(".newModal").hide();
+    //                 $(".modalDim").hide();
+    //             });
+    //     } else {
+    //         $(".modalOkay").hide();
+    //     }
+
+    //     // Handle Cancel button
+    //     if (modalOptions.cancel && modalOptions.cancelText) {
+    //         $(".modalCancel").show();
+    //         $(".modalCancel").text(modalOptions.cancelText);
+    //         $(".modalCancel")
+    //             .off("click")
+    //             .on("click", function () {
+    //                 modalOptions.cancel();
+    //                 $(".newModal").hide();
+    //                 $(".modalDim").hide();
+    //             });
+    //     } else {
+    //         $(".modalCancel").hide();
+    //     }
+
+    //     if (options["cancelText"]) {
+    //         $(".modalCancel").show();
+    //         $(".modalCancel").text(options.cancelText);
+    //     } else {
+    //         $(".modalCancel").hide();
+    //     }
+
+    //     if (options["input"]) {
+    //         $("#inputVar").val(options["input"]["name"]);
+    //         $("#inputType").val(options["input"]["type"]);
+    //         $("#inputVal").val("");
+    //         $(".modalInput").show();
+    //         $("#inputVal").trigger("focus");
+    //     } else {
+    //         $(".modalInput").hide();
+    //     }
+
+    //     // In the case of both buttons missing, provide a quit to prevent a jam
+    //     if (!options["okText"] && !options["cancelText"]) {
+    //         $(".modalOkay").off();
+    //         $(".modalOkay").show();
+    //         $(".modalOkay").text("Quit");
+    //         $(".modalOkay").on("click", function () {
+    //             modalOptions.cancel(); // Quits the job for safety in this case
+    //             $(".newModal").hide();
+    //             $(".modalDim").hide();
+    //         });
+
+    //         if (options["noButton"] === true) {
+    //             $(".modalCancel").hide();
+    //             $(".modalOkay").hide();
+    //         }
+
+    //         if (options["noLogo"] === true) {
+    //             $(".modalLogo").hide();
+    //         }
+    //     }
+    // };
 
     //Hide Modal
     Dashboard.prototype.hideModal = function () {

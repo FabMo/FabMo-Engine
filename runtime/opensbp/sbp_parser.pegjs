@@ -20,7 +20,7 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / fail / jump / pause / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / command / __)
+   = (label / single / fail / jump / pause / dialog / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / command / __)
 
 custom_cut
    = [Cc] index:integer __ ","?
@@ -51,18 +51,102 @@ single
 fail
   = name:("FAIL"i) __ message:quotedstring? {return {"type" : "fail", "message": message}}
 
+boolean
+   = "TRUE"i { return true; } / "FALSE"i { return false; }
+
+pause_param_name
+   = "INPUT"i / "TITLE"i / "OKTEXT"i / "OKFUNC"i / "CANCELTEXT"i / "CANCELFUNC"i / "DETAIL"i / "NOBUTTON"i / "MESSAGE"i / "TIMER"i
+
+pause_param_value
+   = boolean
+   / variable
+   / quotedstring
+   / integer
+   / barestring
+
+pause_param
+   = name:pause_param_name __ "=" __ value:pause_param_value {
+        return {name: name.toUpperCase(), value: value};
+     }
+
+pause_arg
+   = param:pause_param { return { type: 'param', name: param.name, value: param.value }; }
+   / variable_expr:variable { return { type: 'var', value: variable_expr }; }
+   / expr:expression { return { type: 'expr', value: expr }; }
+
+pause_args
+   = first:pause_arg rest:((__ ","? __) pause_arg)* {
+        var args = [first].concat(rest.map(function(r) { return r[1]; }));
+        var result = {};
+        args.forEach(function(arg) {
+            if (arg.type === 'expr' && !result.expr) {
+                result['expr'] = arg.value;
+            } else if (arg.type === 'var' && !result.var) {
+                result['var'] = arg.value;
+            } else if (arg.type === 'param') {
+                if (!result.params) result.params = {};
+                result.params[arg.name] = arg.value;
+            }
+        });
+        return result;
+   }
+ / '' { return {}; }  // No arguments
+
 pause
-   = name:("PAUSE"i)  __ ","? __  arg:(e:expression {return {expr: e}})? __ ","? __ arg2:(v:variable {return {var: v}})? {
-    var arg = arg || {};
-    var arg2 = arg2 || {};
-    if(arg['expr'] && arg2['var']) {return {'type' : 'pause', 'expr' : arg.expr, 'var': arg2.var}}
-    else if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
-    else {return {'type':'pause'}};
+   = name:("PAUSE"i) __ args:pause_args? {
+      var result = {'type':'pause'};
+      result['expr'] = null;
+      result['var'] = null;
+      result['params'] = {};
+      if (args) {
+          if (args.expr !== undefined) {
+              result['expr'] = args.expr;
+          }
+          if (args.var !== undefined) {
+              result['var'] = args.var;
+          }
+          if (args.params !== undefined) {
+              result['params'] = args.params;
+          }
+      }
+      return result;
+   }
+
+dialog
+   = name:("DIALOG"i) __ args:pause_args? {
+      var result = {'type':'dialog'};
+      result['expr'] = null;
+      result['var'] = null;
+      result['params'] = {};
+      if (args) {
+          if (args.expr !== undefined) {
+              result['expr'] = args.expr;
+          }
+          if (args.var !== undefined) {
+              result['var'] = args.var;
+          }
+          if (args.params !== undefined) {
+              result['params'] = args.params;
+          }
+      }
+      return result;
    }
 
 conditional
    = "IF"i ___ cmp:comparison ___ "THEN"i ___ stmt:(jump / single / fail / pause / assignment / command) 
      { return {"type":"cond", "cmp":cmp, "stmt":stmt}; }
+
+string
+  = '"' chars:([^"]*) '"' { return chars.join(''); }
+
+number
+  = [0-9]+ ("." [0-9]+)?
+
+userVariable
+  = '&' name:identifier { return { type: 'user_variable', name: name.toUpperCase(), access: [] }; }
+
+end_of_line
+  = ("\n" / "\r\n" / "\r")    
 
 open
    = "OPEN"i ___ pth:quotedstring ___ "FOR"i ___ mode:("INPUT"i / "OUTPUT"i / "APPEND"i) ___ "AS"i ___ "#"num:[1-9] 
@@ -84,7 +168,7 @@ identifier
 label
    = id:identifier ":" {return {type:"label", value:id.toUpperCase()};}
 
-decimal
+decimal "decimal"
   = digits:[0-9]+ { return digits.join(""); }
 
 integer "integer"
@@ -97,7 +181,7 @@ barestring
   = s:[^,\n"]+ { return s.join("").trim() || undefined; }
 
 quotedstring
-  = '"' s:[^\"\n]+ '"' {return s.join("")}
+  = '"' s:[^"\n]* '"' {return s.join("")}
 
 variable
   = (user_variable / system_variable / persistent_variable)
