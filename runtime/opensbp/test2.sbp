@@ -1,0 +1,8 @@
+'more complex test
+PAUSE "This is a statement"
+&var=3.4
+mx, &var
+jh
+IF &var > 3 then GOTO last
+last:
+END

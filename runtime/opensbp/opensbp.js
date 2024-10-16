@@ -129,8 +129,7 @@ SBPRuntime.prototype.connect = function (machine) {
     this.cmd_StartC = this.posc;
 
     this.connected = true;
-    this.ok_to_disconnect = false; ////## remove was temp fix for cannot-disconnect ?
-    ////## ... in any case does not seem right place; should be state change
+    this.ok_to_disconnect = false; ////## remove is a temp fix for cannot-disconnect ?
     log.info("Connected OpenSBP runtime.");
 };
 
@@ -158,10 +157,16 @@ SBPRuntime.prototype.disconnect = function () {
 // If it is an object, interpret it as a manual drive command
 //          s - The command to execute (string or object)
 //   callback - Called once the command is issued (or with error if error) - NOT when the command is done executing
-SBPRuntime.prototype.executeCode = function (s, callback) {
+SBPRuntime.prototype.executeCode = function (s) {
     if (typeof s === "string" || s instanceof String) {
         // Plain old string interprets as OpenSBP code segment
-        this.runString(s, callback);
+        this.runString(s)
+            .then(() => {
+                // STRING RUNNER DOES NOT RETURN ANYTHING
+            })
+            .catch((err) => {
+                console.error("Error in code: ", err);
+            });
     } else {
         // If we're in manual mode, interpret an object as a command for that mode
         // The OpenSBP runtime can enter manual mode with the 'SK' command so we have this code here to mimick that mode
@@ -265,20 +270,30 @@ SBPRuntime.prototype.runString = function (s) {
             try {
                 this.program = parser.parse(s);
             } catch (e) {
-                log.error(e);
-                this._end(e.message);
+                log.error("Parsing error:", e);
+                e.message = `Error@line- ${e.line}(${e.location.start.column}): ${e.message}`;
+
+                try {
+                    this._end(e.message);
+                } catch (endError) {
+                    log.error("Error during _end:", endError);
+                }
+
                 return reject(e);
-            } finally {
-                log.tock("Parse file");
             }
 
-            this._setupTransforms();
-            //this.init();
-            this._loadConfig();
-            this._analyzeLabels();
-            this._analyzeGOTOs();
+            try {
+                this._setupTransforms();
+                // this.init();
+                this._loadConfig();
+                this._analyzeLabels();
+                this._analyzeGOTOs();
+            } catch (e) {
+                this._handleRunStringError(e, reject);
+                return;
+            }
 
-            // Start running the actual code  ////## Do we want the "end" check here?
+            // Start running the actual code
             this._run()
                 .then(() => {
                     this.once("end", () => {
@@ -288,8 +303,12 @@ SBPRuntime.prototype.runString = function (s) {
                 .catch((e) => {
                     this._handleRunStringError(e, reject);
                 });
-        } catch (e) {
-            this._handleRunStringError(e, reject);
+
+            resolve();
+        } catch (err) {
+            console.error("Bad Spot -- Error executing code:", err);
+            log.error("Exception has occurred:", err);
+            reject(err);
         }
     });
 };
@@ -299,8 +318,12 @@ SBPRuntime.prototype._handleRunStringError = function (e, reject) {
         log.error(e);
         this._abort(e);
     } else {
-        log.error(e);
-        this._end(e.message);
+        try {
+            log.error(e);
+            this._end(e.message);
+        } catch (endError) {
+            log.error("Error during _end:", endError);
+        }
     }
     reject(e);
 };
@@ -330,19 +353,18 @@ SBPRuntime.prototype.runStream = function (text_stream) {
                     }
 
                     this._setupTransforms();
-                    //this.init();
                     this._loadConfig();
 
                     this._analyzeLabels();
                     this._analyzeGOTOs();
 
-                    // Start running the actual code
-                    await this._run();
-
-                    // Wait for the 'end' event to resolve the promise  ////## Do we want the "end" check here?
+                    // Set the 'end' event listener before calling _run
                     this.once("end", () => {
                         resolve();
                     });
+
+                    // Start running the actual code
+                    await this._run();
                 } catch (e) {
                     this._handleRunStreamError(e, reject);
                 }
@@ -364,7 +386,11 @@ SBPRuntime.prototype._handleRunStreamError = function (e, reject) {
         this._abort(e);
     } else {
         log.error(e);
-        this._end(e.message);
+        try {
+            this._end(e.message);
+        } catch (endError) {
+            log.error("Error during _end:", endError);
+        }
     }
     reject(e);
 };
@@ -843,10 +869,19 @@ SBPRuntime.prototype._run = function () {
                             // Only call _end() when the main program completes
                             if (!this.isInSubProgram()) {
                                 this.file_stack = [];
-                                this._end();
+                                try {
+                                    this._end();
+                                } catch (err) {
+                                    log.error("Error during _end:", err);
+                                }
                             }
                         }.bind(this)
-                    );
+                    )
+                    .catch((err) => {
+                        log.error("Error in driver.runStream chain:", err);
+                        this._handleRunError(err);
+                        reject(err); // Reject the outer Promise to propagate the error
+                    });
             }
             this._executeNext().then(resolve).catch(reject);
         }
@@ -902,7 +937,11 @@ SBPRuntime.prototype._executeNext = async function () {
             } else {
                 // If no pending operations, safe to end the program
                 if (!this.waitPendingOps) {
-                    this._end();
+                    try {
+                        this._end();
+                    } catch (err) {
+                        log.error("Error during _end:", err);
+                    }
                 }
                 return;
             }
@@ -958,7 +997,11 @@ SBPRuntime.prototype._abort = function (error) {
     // Clear the file stack to exit any subprograms
     this.file_stack = [];
     // Now call _end()
-    this._end(this.pending_error);
+    try {
+        this._end();
+    } catch (err) {
+        log.error("Error during _end:", err);
+    }
 };
 
 // End the program
@@ -1011,7 +1054,7 @@ SBPRuntime.prototype._end = async function (error) {
 
             // Set the machine state
             if (error_msg) {
-                this.machine.setState(this, "stopped", { error: error_msg });
+                this.machine.setState(this, "idle", { error: error_msg });
             } else {
                 this.machine.setState(this, "idle");
             }
@@ -1027,7 +1070,7 @@ SBPRuntime.prototype._end = async function (error) {
         }
     }
 
-    // Emit the 'end' event
+    // Emit an 'end'; a sort of general purpose callback
     this.emit("end", this);
 };
 
@@ -1147,13 +1190,21 @@ SBPRuntime.prototype._execute = async function (command) {
                 await this._executeNext();
             } else {
                 // If in the main program, end the runtime
-                this._end();
+                try {
+                    this._end();
+                } catch (err) {
+                    log.error("Error during _end:", err);
+                }
             }
             return;
 
         case "endall":
             // Terminate the entire runtime
-            this._end();
+            try {
+                this._end();
+            } catch (err) {
+                log.error("Error during _end:", err);
+            }
             return;
 
         case "fail":
