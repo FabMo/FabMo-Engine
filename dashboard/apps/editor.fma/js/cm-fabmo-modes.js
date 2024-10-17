@@ -17,9 +17,8 @@ var WORD_REGEX = /[A-Z_][A-Z0-9_]*/i;
 var STRING_REGEX = /^"(?:[^\\"]|\\.)*"/;
 var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i;
 var SYS_VAR_REGEX = /^\%\(([ \t]*((&|\$)[A-Z_][A-Z0-9_]*)|[0-9]+[ \t]*)\)/i;
-//var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b', 'i');
-var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i')
-var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\b', 'i');
+var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i');
+var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i');
 var BARE_REGEX = /^[IOT]/i;
 var COMMENT_REGEX = /^'.*/i;
 var OPERATOR_REGEX = /^(<=|>=|==|!=|<|>|\+|\-|\*|\/|\^|!|=)/i;

@@ -1275,7 +1275,7 @@ SBPRuntime.prototype._execute = async function (command) {
             if (comment != "") {
                 //this.emit_gcode('( ' + comment + ' )') // TODO allow for comments
             } else {
-                log.debug("Comment skipped because it was empty.");
+                //log.debug("Comment skipped because it was empty.");
             }
             this.pc += 1;
             return;
