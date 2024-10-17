@@ -17,55 +17,56 @@ var WORD_REGEX = /[A-Z_][A-Z0-9_]*/i;
 var STRING_REGEX = /^"(?:[^\\"]|\\.)*"/;
 var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i;
 var SYS_VAR_REGEX = /^\%\(([ \t]*((&|\$)[A-Z_][A-Z0-9_]*)|[0-9]+[ \t]*)\)/i;
-var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b', 'i');
+//var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b', 'i');
+var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i')
 var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\b', 'i');
 var BARE_REGEX = /^[IOT]/i;
 var COMMENT_REGEX = /^'.*/i;
-var OPERATOR_REGEX = /^[+\-*/^!<>=]/i;
+var OPERATOR_REGEX = /^(<=|>=|==|!=|<|>|\+|\-|\*|\/|\^|!|=)/i;
 
 // Tokenizer for variable access paths (e.g., &var3[1].z)
 function tokenVariableAccess(variableType) {
   return function(stream, state) {
-    if (stream.eatSpace()) {
-      return null;
-    }
-
-    if (stream.match(/^\./)) {
-      return "operator"; // Highlight '.'
-    }
-
-    if (stream.match(IDENTIFIER_REGEX)) {
-      return "property"; // Highlight property name after '.'
-    }
-
-    if (stream.match(/^\[/)) {
-      state.bracketNesting = (state.bracketNesting || 0) + 1;
-      return "bracket"; // Highlight '['
-    }
-
-    if (stream.match(/^\]/)) {
-      state.bracketNesting--;
-      if (state.bracketNesting < 0) {
-        state.tokenize = null; // Exit variable access
-        return "error";
+      if (stream.eatSpace()) {
+          return null;
       }
-      return "bracket"; // Highlight ']'
-    }
 
-    if (state.bracketNesting > 0) {
-      // Inside brackets, parse expression
-      var match = matchExpression(stream, state);
-      if (match) {
-        return match;
+      if (stream.match(/^\./)) {
+          return "operator"; // Highlight '.'
       }
-    } else {
-      // No more access path
-      state.tokenize = null;
-      return variableType;
-    }
 
-    stream.next();
-    return "error";
+      if (stream.match(IDENTIFIER_REGEX)) {
+          return "property"; // Highlight property name after '.'
+      }
+
+      if (stream.match(/^\[/)) {
+          state.bracketNesting = (state.bracketNesting || 0) + 1;
+          return "bracket"; // Highlight '['
+      }
+
+      if (stream.match(/^\]/)) {
+          state.bracketNesting--;
+          if (state.bracketNesting < 0) {
+              state.tokenize = null; // Exit variable access
+              return "error";
+          }
+          return "bracket"; // Highlight ']'
+      }
+
+      if (state.bracketNesting > 0) {
+          // Inside brackets, parse expression
+          var match = matchExpression(stream, state);
+          if (match) {
+              return match;
+          }
+      } else {
+          // No more access path
+          state.tokenize = null;
+          return variableType;
+      }
+
+      stream.next();
+      return "error";
   };
 }
 
@@ -108,34 +109,34 @@ function tokenObjectLiteral(stream, state) {
 // Function to match expressions, including variables, numbers, strings, etc.
 function matchExpression(stream, state) {
   if (stream.match(SYS_VAR_REGEX)) {
-    state.tokenize = tokenVariableAccess("variable");
-    return state.tokenize(stream, state);
+      state.tokenize = tokenVariableAccess("variable");
+      return state.tokenize(stream, state);
   } else if (stream.match(USR_VAR_REGEX)) {
-    state.tokenize = tokenVariableAccess("variable-2");
-    return state.tokenize(stream, state);
+      state.tokenize = tokenVariableAccess("variable-2");
+      return state.tokenize(stream, state);
   } else if (stream.match(PERSIST_VAR_REGEX)) {
-    state.tokenize = tokenVariableAccess("variable-3");
-    return state.tokenize(stream, state);
+      state.tokenize = tokenVariableAccess("variable-3");
+      return state.tokenize(stream, state);
   } else if (stream.match(NUMBER_REGEX)) {
-    return "number"; // Highlight numbers
+      return "number"; // Highlight numbers
   } else if (stream.match(STRING_REGEX)) {
-    return "string"; // Highlight strings
+      return "string"; // Highlight strings
   } else if (stream.match(OPERATOR_REGEX)) {
-    return "operator"; // Highlight operators
+      return "operator"; // Highlight operators
   } else if (stream.match(/^\{/)) {
-    state.tokenize = tokenObjectLiteral;
-    return "bracket"; // Highlight '{'
+      state.tokenize = tokenObjectLiteral;
+      return "bracket"; // Highlight '{'
   } else if (stream.match(/^\}/)) {
-    return "bracket"; // Highlight '}'
+      return "bracket"; // Highlight '}'
   } else if (stream.match(/^\(/)) {
-    return "bracket"; // Highlight '('
+      return "bracket"; // Highlight '('
   } else if (stream.match(/^\)/)) {
-    return "bracket"; // Highlight ')'
+      return "bracket"; // Highlight ')'
   } else if (stream.match(IDENTIFIER_REGEX)) {
-    return "variable"; // Highlight variables or function names
+      return "variable"; // Highlight variables or function names
   } else {
-    stream.next();
-    return "error"; // Highlight unknown tokens as errors
+      stream.next();
+      return "error"; // Highlight unknown tokens as errors
   }
 }
 
