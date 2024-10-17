@@ -1321,10 +1321,14 @@ SBPRuntime.prototype._execute = async function (command) {
             if (!message && !normalizedParams.timer) {
                 // If a message is not provided and this is not a timer, use the comment from the previous line.
                 var last_command = this.program[this.pc - 2];
-                if (last_command.length > 0 && last_command.type === "comment") {
-                    message = last_command.comment.join("").trim();
-                } else {
-                    message = "Paused ...";
+                if (last_command && last_command.type === "comment") {
+                    var commandTextArray = last_command["comment"];
+                    var commandText = commandTextArray.join("");
+                    if (commandText && commandText.length > 0) {
+                        message = commandText.trim();
+                    } else {
+                        message = "Paused ...";
+                    }
                 }
             }
             if (normalizedParams.message) {
