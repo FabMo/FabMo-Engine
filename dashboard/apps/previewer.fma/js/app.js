@@ -77,8 +77,7 @@ function nowGetStatus() {                  // Need to make sure we have current 
 }
 
 function nowPreviewJob() {
-
-    fabmo.getAppArgs(function(err, args) {
+  fabmo.getAppArgs(function(err, args) {
     if (err) console.log(err);
 
     // Args

@@ -601,29 +601,17 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
     var scrubbed_args = [];
     if (command in sb3_commands) {
         var params = sb3_commands[command].params || [];
-
-        // This is a possibly helpful warning, but is spuriously issued in some cases where commands take no arguments (depending on whitespace, etc.)
-        // TODO - fix that
-        if (args.length > params.length) {
-            if (params.length === 0 && args.length === 1 && args[0] === "") {
-                log.debug(" -- a no-parameter command");
-            } else {
+        // This is a convenience warning as you can always have fewer arguments than parameters
+        // ... and, at the moment, we just ignore extra arguments; first check default first argument
+        if (args.length === 1 && (args[0] === "" || args[0] === undefined)) {
+            log.debug(" -- a no-parameter command");
+        } else {
+            if (args.length > params.length) {
                 log.warn(
-                    "More parameters passed into " +
-                        command +
-                        " (" +
-                        args.length +
-                        ")" +
-                        "(" +
-                        params +
-                        ")" +
-                        " than are supported by the command. (" +
-                        params.length +
-                        ")"
+                    `More parameters passed into ${command} (${args.length}) than are supported by the command. (${params.length})`
                 );
             }
         }
-
         for (var i = 0; i < params.length; i++) {
             if (args[i] !== undefined && args[i] !== "") {
                 // Arguments that have meat to them are added into the scrubbed list
@@ -1457,7 +1445,6 @@ SBPRuntime.prototype._assign = async function (identifier, value) {
         throw new Error("Invalid identifier: missing 'name' and 'expr'");
     }
 
-    log.debug("**-> Assigning variable: " + variableName + " Value:", value);
     let accessPath = identifier.access || [];
 
     // Evaluate accessPath
