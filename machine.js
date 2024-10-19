@@ -955,37 +955,37 @@ Machine.prototype.setPreferredUnits = async function (units, lastunits, callback
 // If the file is a g-code file, just return its contents.
 // If the file is a shopbot file, instantiate a SBPRuntime, run it in simulation, and return the result
 Machine.prototype.getGCodeForFile = function (filename, callback) {
-    var ext = null;
-    fs.readFile(
-        filename,
-        "utf8",
-        function (err, data) {
-            if (err) {
-                log.error("Error reading file " + filename);
-                log.error(err);
-                return;
-            } else {
-                ext = path.extname(filename).toLowerCase();
+    var ext = path.extname(filename).toLowerCase();
 
-                if (ext == ".sbp") {
-                    /*
-				if(this.status.state != 'idle') {
-					return callback(new Error('Cannot generate G-Code from OpenSBP while machine is running.'));
-				}*/
+    if (ext === ".sbp") {
+        // For .sbp files, use createReadStream to handle file streaming, similar to real motion processing
+        try {
+            var tx = this.driver.status.posx;
+            var ty = this.driver.status.posy;
+            var tz = this.driver.status.posz;
 
-                    //this.setRuntime(null, function() {});
+            var st = fs.createReadStream(filename, { encoding: "utf8" });
 
-                    // Because preview is not a real runtime, we need to insert and track start points for SBP commands
-                    var tx = this.driver.status.posx;
-                    var ty = this.driver.status.posy;
-                    var tz = this.driver.status.posz;
-                    new SBPRuntime().simulateString(data, tx, ty, tz, callback);
-                } else {
-                    fs.readFile(filename, callback);
-                }
-            }
-        }.bind(this)
-    );
+            // Use a new method simulateStream to process the stream and generate the G-code for preview
+            new SBPRuntime()
+                .simulateStream(st, tx, ty, tz)
+                .then((gcodeOutput) => {
+                    callback(null, gcodeOutput); // Pass the G-code back through the callback
+                })
+                .catch((err) => {
+                    log.error("Error processing file " + filename);
+                    log.error(err);
+                    callback(err); // Pass the error back through the callback
+                });
+        } catch (err) {
+            log.error("Error processing file " + filename);
+            log.error(err);
+            return callback(err);
+        }
+    } else {
+        // For non-SBP files, keep the original fs.readFile behavior
+        fs.readFile(filename, "utf8", callback);
+    }
 };
 
 // Run a file given a filename on disk.  Choose the runtime that is appropriate for that file.

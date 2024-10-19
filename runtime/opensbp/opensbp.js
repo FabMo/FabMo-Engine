@@ -496,42 +496,44 @@ SBPRuntime.prototype.runFile = async function (filename) {
 };
 
 // Simulate the provided file, returning the result as g-code string
-////## A primary spot for preview enhancement ???
-// TODO - this function could return a stream, and you could stream this back to the client to speed up simulation
-//          s - OpenSBP string to run
-//   callback - Called with the g-code output or with error if error
-SBPRuntime.prototype.simulateString = async function (s, x, y, z) {
-    this.cmd_StartX = x; // Capture these for processing commands outside of runtime
-    this.cmd_StartY = y;
-    this.cmd_StartZ = z;
+// ... possible spot for preview speed improvement ?
+SBPRuntime.prototype.simulateStream = function (stream, tx, ty, tz) {
+    return new Promise((resolve, reject) => {
+        let gcodeChunks = "";
+        let isStreamEnded = false;
 
-    if (!this.ok_to_disconnect) {
-        throw new Error("Cannot simulate while OpenSBP runtime is busy.");
-    }
-
-    try {
-        this.disconnect();
-
-        // Set simulate mode
         this.simulate = true;
-
-        // Initialize the output buffer
         this.output = [];
 
-        // Run the command string
-        await this.runString(s);
+        this.cmd_StartX = tx; // Capture these for processing commands outside of runtime
+        this.cmd_StartY = ty;
+        this.cmd_StartZ = tz;
 
-        // Collect the simulated output
-        const output = this.output.join("");
+        stream.on("data", (chunk) => {
+            this.runString(chunk)
+                .then(() => {
+                    // We are ignoring these OpenSBP commands here, just processing the stream
+                })
+                .catch((err) => reject(err));
+        });
 
-        // Reset simulate mode
-        this.simulate = false;
+        this.once("simulation_complete", (gcode) => {
+            gcodeChunks = gcode; // Capture the accumulated G-code
+            if (!isStreamEnded) {
+                isStreamEnded = true;
+                resolve(gcodeChunks); // Resolve with the accumulated G-code
+            }
+        });
 
-        return output;
-    } catch (error) {
-        this.simulate = false;
-        throw error;
-    }
+        stream.on("end", () => {
+            if (!isStreamEnded) {
+                log.warn("Stream ended before simulation completed");
+                reject(new Error("Stream ended prematurely"));
+            }
+        });
+
+        stream.on("error", (err) => reject(err));
+    });
 };
 
 // Handler for G2 status reports
@@ -747,6 +749,7 @@ SBPRuntime.prototype._run = function () {
         this.probingPending = false;
         this.probePin = null;
         log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
+
         if (this.machine) {
             this.machine.setState(this, "running");
         }
@@ -847,31 +850,53 @@ SBPRuntime.prototype._run = function () {
             log.debug("Running Subprogram");
             this._executeNext().then(resolve).catch(reject);
         } else {
+            // If we're in the main program, set up the stream and run it
             this.stream = new stream.PassThrough();
-            if (this.driver) {
-                this.driver
-                    .runStream(this.stream)
-                    .on("stat", onStat.bind(this))
-                    .then(
-                        function () {
-                            // Only call _end() when the main program completes
-                            if (!this.isInSubProgram()) {
-                                this.file_stack = [];
-                                try {
-                                    this._end();
-                                } catch (err) {
-                                    log.error("Error during _end:", err);
+
+            if (this.simulate) {
+                // --> Simulation for previewer, we only need to capture the output
+                log.info("Running in simulation mode...");
+                let gcodeChunks = ""; // Initialize an empty string to accumulate G-code
+
+                this.on("emit_gcode", () => {
+                    const chunk = this.output.join("\n"); // Get the current G-code chunk
+                    gcodeChunks += chunk + "\n"; // Accumulate the chunks in gcodeChunk
+                    this.output = []; // Clear the output buffer after processing
+                });
+
+                this._executeNext()
+                    .then(() => {
+                        // log.info("Full G-code generated in simulation for preview: " + gcodeChunks);
+                        this.emit("simulation_complete", gcodeChunks); // Emit event when done
+                    })
+                    .catch(reject);
+            } else {
+                // --> Regular motion execution
+                if (this.driver) {
+                    this.driver
+                        .runStream(this.stream)
+                        .on("stat", onStat.bind(this))
+                        .then(
+                            function () {
+                                // Only call _end() when the main program completes
+                                if (!this.isInSubProgram()) {
+                                    this.file_stack = [];
+                                    try {
+                                        this._end();
+                                    } catch (err) {
+                                        log.error("Error during _end:", err);
+                                    }
                                 }
-                            }
-                        }.bind(this)
-                    )
-                    .catch((err) => {
-                        log.error("Error in driver.runStream chain:", err);
-                        this._handleRunError(err);
-                        reject(err); // Reject the outer Promise to propagate the error
-                    });
+                            }.bind(this)
+                        )
+                        .catch((err) => {
+                            log.error("Error in driver.runStream chain:", err);
+                            this._handleRunError(err);
+                            reject(err); // Reject the outer Promise to propagate the error
+                        });
+                    this._executeNext().then(resolve).catch(reject);
+                }
             }
-            this._executeNext().then(resolve).catch(reject);
         }
     });
 };
@@ -1106,6 +1131,13 @@ SBPRuntime.prototype._executeCommand = async function (command) {
         // Non-stack-breaking commands
             f(args);
             this.pc += 1;
+
+            // Ensure G-code is emitted in simulation mode
+            if (this.simulate) {
+                // Emit the G-code as it would be in regular motion
+                const gcode = `Generated G-code for ${command.cmd}`;
+                this.emit("emit_gcode", gcode);
+            }
         }
     } else {
         // Unhandled command
