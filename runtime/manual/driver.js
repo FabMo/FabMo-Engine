@@ -83,8 +83,8 @@ ManualDriver.prototype.enter = function () {
     switch (this.mode) {
         case "normal":
             // Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
-            var jerkXY = config.machine._cache.manual.xy_jerk || 250;
-            var jerkZ = config.machine._cache.manual.z_jerk || 250;
+            var jerkXY = config.machine._cache.manual.xy_jerk || 100;
+            var jerkZ = config.machine._cache.manual.z_jerk || 100;
             this.stream.write("M100.1 ({xjm:" + jerkXY + "})\n");
             this.stream.write("M100.1 ({yjm:" + jerkXY + "})\n");
             this.stream.write("M100.1 ({zjm:" + jerkZ + "})\n");
@@ -122,7 +122,13 @@ ManualDriver.prototype.exit = function () {
         this.driver.manual_hold = false; // PROBLEM area for exiting SK when used in file
         switch (this.mode) {
             case "normal":
-                // Potential additional Manual Keypad post-pend commands
+                // Restore the sbp_runtime config settings for jerk
+                var jerkXY = config.machine.machine.sbp_runtime.maxjerk_xy || 100;
+                var jerkZ = config.machine.machine.sbp_runtime.maxjerk_z || 100;
+                this.stream.write("M100.1 ({xjm:" + jerkXY + "})\n");
+                this.stream.write("M100.1 ({yjm:" + jerkXY + "})\n");
+                this.stream.write("M100.1 ({zjm:" + jerkZ + "})\n");
+                // Other potential additional Manual Keypad post-pend commands
                 break;
             case "raw":
                 // Potential additional Manual 'raw' post-pend commands

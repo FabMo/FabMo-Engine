@@ -11,11 +11,7 @@ var submitJob = function (req, res, next) {
         var uploads = upload.files;
         // Single file only, for now
         if (uploads.length > 1) {
-            log.warn(
-                "Got an upload of " +
-                    uploads.length +
-                    " files for a submitted job when only one is allowed."
-            );
+            log.warn("Got an upload of " + uploads.length + " files for a submitted job when only one is allowed.");
         }
 
         // eslint-disable-next-line no-undef
@@ -23,19 +19,14 @@ var submitJob = function (req, res, next) {
             uploads,
             function create_job(item, index, callback) {
                 var file = item.file;
-                var filename =
-                    item.filename || !file.name || file.name === "blob"
-                        ? item.filename
-                        : file.name;
+                var filename = item.filename || !file.name || file.name === "blob" ? item.filename : file.name;
                 item.filename = filename;
                 item.name = item.name || filename;
                 item.index = index;
 
                 // Reject disallowed files
                 if (!util.allowed_file(filename)) {
-                    return callback(
-                        new Error("File " + filename + " is not allowed.")
-                    );
+                    return callback(new Error("File " + filename + " is not allowed."));
                 }
 
                 // Create a job and respond
@@ -44,9 +35,7 @@ var submitJob = function (req, res, next) {
                 });
             }, // create_job
             function on_complete(err, jobs) {
-                log.info(
-                    "Just completed upload of " + uploads.length + " jobs."
-                );
+                log.info("Just completed upload of " + uploads.length + " jobs.");
                 if (err) {
                     log.error(err.message);
                     return res.json({
@@ -432,10 +421,7 @@ var getJobFile = function (req, res, next) {
         } else {
             fs.readFile(file.path, function (err, data) {
                 res.header("Content-Type", "text/plain");
-                res.header(
-                    "Content-Disposition",
-                    'attachment; filename="' + file.filename + '"'
-                );
+                res.header("Content-Disposition", 'attachment; filename="' + file.filename + '"');
                 res.status(200);
                 res.write(data);
                 res.end();
@@ -461,10 +447,7 @@ var getJobGCode = function (req, res, next) {
                     return res.send(403, err.message);
                 }
                 res.setHeader("content-type", "applications/octet-stream");
-                res.setHeader(
-                    "content-disposition",
-                    'filename="' + gcode_filename + '"'
-                );
+                res.setHeader("content-disposition", 'filename="' + gcode_filename + '"');
                 res.send(gcode);
             });
         }

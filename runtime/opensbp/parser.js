@@ -6,14 +6,16 @@
  * NOTE - if you change the grammar, you must re-generate sbp_parser.js by running pegjs sbp_parser.pegjs
  *       and then re-run the tests to make sure everything still works.
  *
- * NOTE 1/11/24 PEGJS is dead. It is being replaced by PEGGYJS. I have tried both the first version of PEGGYJS and the
- * latest version of PEGJS and neither of them produce a working parser. So for the moment we are continuing to use
- * PEGJS v0.7.0. This is available from NPM using: npm install -g pegjs@0.7.0 (use the global flag to install it)
- * ... then you can run the parser generator using: pegjs sbp_parser.pegjs sbp_parser.js.
+ * NOTE 1/11/24 PEGJS is dead (used PEGJS v0.7.0). It is being replaced by PEGGYJS.
+ * ~9/25/24 Changed to PEGGY.js v4.0.3; Installed globally using npm install -g peggy@4.0.3
+ *
+ * Run the parser generator using:         peggy -o sbp_parser.js sbp_parser.pegjs
+ *   ... test varioius definitions with:   node ./test_parser.js
  *
  * This module wraps the parsing functions with convenience methods and objects and provides some additional
  * parsing functionality (sanitizing inputs, optimized parsing for certain commands, working with streams, etc)
  */
+
 var fs = require("fs");
 var stream = require("stream");
 var util = require("util");
@@ -106,7 +108,18 @@ function parseLine(line) {
         if (match) {
             obj = { type: "assign", var: match[1], expr: match[2] };
         } else {
-            throw e; // Or if not, throw the exception like we should do anyway
+            if (e instanceof sbp_parser.SyntaxError) {
+                const normalizedError = normalizePeggyError(e);
+                throw normalizedError; // Re-throw the normalized error
+            } else {
+                throw e; // Re-throw other exceptions
+            }
+            // Now you can use normalizedError.offset, normalizedError.line, etc.
+            //throw e; // Or if not, throw the exception like we should do anyway
+            //const normalizedError = normalizePeggyError(e);
+            ////throw new Error(normalizedError);
+            //throw normalizedError;
+            //////* handleError(normalizedError);
         }
     }
 
@@ -137,41 +150,74 @@ function parseLine(line) {
     return obj;
 }
 
+function normalizePeggyError(err) {
+    if (err instanceof sbp_parser.SyntaxError) {
+        // Extract properties from the new error object
+        err.offset = err.location.start.offset;
+        err.line = err.location.start.line;
+        err.column = err.location.start.column;
+        err.expected = err.expected || [];
+        err.found = err.found || null;
+        err.message = err.message || sbp_parser.SyntaxError.buildMessage(err.expected, err.found);
+        err.name = "SyntaxError";
+        return err;
+    }
+    // If it's not a SyntaxError, rethrow it
+    throw err;
+}
+
 // Parse a string or array of strings
 // Returns a list of parsed statements
 //   data - The string or array input to parse
 function parse(data) {
     var output = [];
-    // Parse from a string or an array of strings
-    if (Array.isArray(data)) {
-        var lines = data;
-    } else {
-        lines = data.split("\n");
-    }
+    var lines = Array.isArray(data) ? data : data.split("\n");
 
-    // Iterate over lines and parse one by one.  Throw an error if any don't parse.
     for (var i = 0; i < lines.length; i++) {
         try {
             output.push(parseLine(lines[i]));
         } catch (err) {
-            if (err.name == "SyntaxError") {
+            if (err.name === "SyntaxError") {
                 log.error("Syntax Error on line " + (i + 1));
-                log.error(
-                    "Expected " +
-                        JSON.stringify(err.expected) +
-                        " but found " +
-                        err.found
-                );
-                err.line = i + 1;
-                log.error(err.line);
+                err.line = i + 1; // Update line number if necessary
+                log.error("(LINE-" + err.line + ") " + err.message);
             } else {
                 log.error(err);
             }
-            throw err;
+            throw err; // Rethrow the error after logging
         }
     }
     return output;
 }
+// function parse(data) {
+//     var output = [];
+//     // Parse from a string or an array of strings
+//     if (Array.isArray(data)) {
+//         var lines = data;
+//     } else {
+//         lines = data.split("\n");
+//     }
+
+//     // Iterate over lines and parse one by one.  Throw an error if any don't parse.
+//     for (var i = 0; i < lines.length; i++) {
+//         try {
+//             output.push(parseLine(lines[i]));
+//         } catch (err) {
+//             if (err.name == "SyntaxError") {
+//                 log.error("Syntax Error on line " + (i + 1));
+//                 err.line = i + 1;
+//                 log.error(
+//                     "(LINE-" + err.line + ") Expected " + JSON.stringify(err.expected) + " but found " + err.found
+//                 );
+//                 log.error(err.line);
+//             } else {
+//                 log.error(err);
+//             }
+//             throw err;
+//         }
+//     }
+//     return output;
+// }
 
 // Constructor for Parser object
 // Parser is a transform stream that accepts string input and streams out parsed statement objects
@@ -199,7 +245,7 @@ Parser.prototype._transform = function (chunk, enc, cb) {
             if (str[i] === "\n") {
                 var substr = str.substring(start, i);
                 let parsedline = parseLine(substr);
-                //Skip entries that are metadata (Used to prune header metadata on macros)
+                // Skip entries that are metadata
                 if (parsedline.type != "metadata") {
                     this.push(parsedline);
                 }
@@ -208,11 +254,34 @@ Parser.prototype._transform = function (chunk, enc, cb) {
         }
         this.scrap = str.substring(start);
     } catch (e) {
-        log.error(e);
+        this.emit("error", e); // Emit the error to be handled by the consumer of the stream
     }
     this.resume();
     cb();
 };
+//Parser.prototype._transform = function (chunk, enc, cb) {
+//     var str = this.scrap + chunk.toString();
+//     this.pause();
+//     try {
+//         var start = 0;
+//         for (var i = 0; i < str.length; i++) {
+//             if (str[i] === "\n") {
+//                 var substr = str.substring(start, i);
+//                 let parsedline = parseLine(substr);
+//                 //Skip entries that are metadata (Used to prune header metadata on macros)
+//                 if (parsedline.type != "metadata") {
+//                     this.push(parsedline);
+//                 }
+//                 start = i + 1;
+//             }
+//         }
+//         this.scrap = str.substring(start);
+//     } catch (e) {
+//         log.error(e);
+//     }
+//     this.resume();
+//     cb();
+// };
 
 // Handle a stream flush
 Parser.prototype._flush = function (done) {
@@ -251,6 +320,7 @@ function parseFile(filename, callback) {
 }
 
 // Below here are some functions for testing the parser functions
+//   -use: node parser.js filename.sbp
 // --------------------------------------------------------------
 
 // eslint-disable-next-line no-unused-vars
@@ -294,7 +364,7 @@ var main2 = function () {
 };
 
 if (require.main === module) {
-    //    main();
+    // main();
     main2();
 }
 

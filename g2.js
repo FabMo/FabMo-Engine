@@ -443,10 +443,15 @@ G2.prototype.onData = function (data) {
             try {
                 // Responses from G2 are in JSON format (always) so we parse them out, and handle the messages
                 var obj = JSON.parse(json_string);
+                //log.debug("<<<Parsing G2 return:");
+                // log.debug(JSON.stringify(obj, null, 4));
                 this.onMessage(obj);
             } catch (e) {
                 this.handleExceptionReport(e);
-                throw e;
+                log.debug("string: " + json_string);
+                log.error("Error parsing JSON in onData:", e.message);
+                log.error(e.stack);
+                // TODO: Decide whether to continue or abort
             } finally {
                 // if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
                 // and if we fail to parse, we still clear the line and start anew.
@@ -457,7 +462,6 @@ G2.prototype.onData = function (data) {
         }
     }
 };
-
 // The footer is the part of the JSON response message that contains error information
 // If the footer indicates an error code, we do a lookup on the error message and emit an error event
 // Note that G2_ERRORS must be up-to-date with the current firmware in order for the lookup to be meaningful.
@@ -1055,17 +1059,17 @@ G2.prototype.prime = function () {
     this.sendMore();
 };
 
-// TODO - This was mostly an informational thing that should no longer be needed
-G2.prototype.getInfo = function () {
-    return (
-        "G2: primed:" +
-        (this._primed ? "1" : "0") +
-        " l2s:" +
-        this.lines_to_send +
-        " gcq:" +
-        this.gcode_queue.getLength()
-    );
-};
+// // TODO - This was mostly an informational thing that should no longer be needed
+// G2.prototype.getInfo = function () {
+//     return (
+//         "G2: primed:" +
+//         (this._primed ? "1" : "0") +
+//         " l2s:" +
+//         this.lines_to_send +
+//         " gcq:" +
+//         this.gcode_queue.getLength()
+//     );
+// };
 
 // This function is called internally when it's time to send more g-codes or commands from the queue.
 // This implements the so-called "linemode" protocol (see G2 source documentation for more info)

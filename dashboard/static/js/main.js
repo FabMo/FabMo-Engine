@@ -102,7 +102,6 @@ var setUpManual = function () {
 
 var startManualExit = function () {
     return new Promise((resolve, reject) => {
-        calledFromModal = "";
         // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
         $(".drive-button").removeClass("drive-button-fixed");
         $(".slidecontainer").show();
@@ -285,7 +284,7 @@ engine.getVersion(function (err, version) {
                     if (status.currentCmd === "exit" && calledFromModal && status.stat === 4) {
                         // Institute a 0.5 second delay to allow G2 to get back to idle
                         setTimeout(function () {
-                            // Sort out the tpe of action requested
+                            // Sort out the type of action requested
                             console.log("Action called From Modal: " + calledFromModal);
                             var match = calledFromModal.match(/(\d{1,2})$|([a-zA-Z]{2})$/);
                             if (match) {
@@ -304,6 +303,7 @@ engine.getVersion(function (err, version) {
                         }, 500);
                     } else {
                         $("#position input").attr("disabled", false);
+                        //##calledFromModal = "";
                         // authenticate.setIsRunning(false);
                     }
                 }
@@ -321,17 +321,25 @@ engine.getVersion(function (err, version) {
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
                             console.log(status["info"]);
+
                             // Default modal options for backwards compatibility
                             modalOptions = {
                                 message: status.info.message,
                             };
+                            // Initialize modalOptions.ok and modalOptions.cancel to null
+                            modalOptions.ok = null;
+                            modalOptions.cancel = null;
+                            modalOptions.okText = null;
+                            modalOptions.cancelText = null;
+
+                            // Default resume and cancel functions
                             var resumeFunction = function () {
                                 dashboard.engine.resume();
                             };
                             var cancelFunction = function () {
                                 dashboard.engine.quit();
                             };
-                            //set up input submit
+                            // Set up input submit
                             if (status["info"]["input"]) {
                                 modalOptions["input"] = status["info"]["input"];
                                 resumeFunction = function () {
@@ -343,59 +351,130 @@ engine.getVersion(function (err, version) {
                                         type: inputType,
                                         val: inputVal,
                                     });
-                                    //  TODO: stop modal from closing on click so we can validate.
-                                    // if(inputVal != '') {
-                                    //     $('.inputError').hide();
-                                    //     dashboard.engine.resume({'var': inputVar, 'val': inputVal});
-                                    // } else {
-                                    //     $('.inputError').show();
-                                    // }
                                 };
                             }
-                            (modalOptions.okText = "Resume"),
-                                (modalOptions.cancelText = "Quit"),
-                                (modalOptions.ok = resumeFunction),
-                                (modalOptions.cancel = cancelFunction);
+
+                            // Check for custom parameters
+
+                            // Eventually we may want to be able set both buttons to off, but at the moment, just prevet a lockup
+                            // SO, first deal with case that both OK and Cancel are set to null; for now, we will reset Cancel
+                            //   with the "text" "Close ..." and the "func" "quit"
                             if (status.info["custom"]) {
-                                // Custom button action and text
-                                if (status.info.custom["ok"]) {
-                                    modalOptions.okText = status.info.custom.ok["text"];
-                                    switch (status.info.custom.ok["func"]) {
-                                        case "resume":
-                                            modalOptions.ok = resumeFunction;
-                                            break;
-                                        case "quit":
-                                            modalOptions.ok = cancelFunction;
-                                            break;
-                                        default:
-                                            modalOptions.ok = false;
-                                    }
+                                var okExists = false;
+                                var cancelExists = false;
+                                if (Object.prototype.hasOwnProperty.call(status.info.custom, "ok")) {
+                                    okExists = true;
                                 }
-                                if (status.info.custom["cancel"]) {
-                                    modalOptions.cancelText = status.info.custom.cancel["text"];
-                                    switch (status.info.custom.cancel["func"]) {
-                                        case "resume":
-                                            modalOptions.cancel = resumeFunction;
-                                            break;
-                                        case "quit":
-                                            modalOptions.cancel = cancelFunction;
-                                            break;
-                                        default:
-                                            modalOptions.cancel = function () {
-                                                modalIsShown = false;
-                                            };
-                                    }
+                                if (Object.prototype.hasOwnProperty.call(status.info.custom, "cancel")) {
+                                    cancelExists = true;
                                 }
-                                if (status.info.custom["detail"]) {
-                                    modalOptions["detail"] = status.info.custom["detail"];
+                                // ... now checking present but NULL
+                                if (okExists && cancelExists && !status.info.custom.ok && !status.info.custom.cancel) {
+                                    status.info.custom = {
+                                        cancel: {
+                                            text: "Close ... [no choice defined]",
+                                            func: "quit",
+                                        },
+                                    };
                                 }
+                            }
+
+                            if (status.info["custom"]) {
+                                // Handle custom title
                                 if (status.info.custom["title"]) {
                                     modalOptions["title"] = status.info.custom["title"];
                                 }
+
+                                // Handle custom detail
+                                if (status.info.custom["detail"]) {
+                                    modalOptions["detail"] = status.info.custom["detail"];
+                                }
+
+                                // Handle noButton
                                 if (status.info.custom["noButton"]) {
                                     modalOptions.noButton = true;
                                 }
+
+                                // Handle OK button
+                                if (Object.prototype.hasOwnProperty.call(status.info.custom, "ok")) {
+                                    if (status.info.custom.ok) {
+                                        // OK button should be displayed
+                                        modalOptions.okText = status.info.custom.ok["text"];
+                                        switch (status.info.custom.ok["func"]) {
+                                            case "resume":
+                                                modalOptions.ok = resumeFunction;
+                                                break;
+                                            case "quit":
+                                                modalOptions.ok = cancelFunction;
+                                                break;
+                                            default:
+                                                modalOptions.ok = function () {
+                                                    modalIsShown = false;
+                                                };
+                                        }
+                                    } else {
+                                        // OK button should be hidden
+                                        modalOptions.ok = null;
+                                        modalOptions.okText = null;
+                                    }
+                                    // } else {
+                                    //     // Default OK button
+                                    //     modalOptions.okText = "Resume";
+                                    //     modalOptions.ok = resumeFunction;
+                                }
+
+                                // Handle Cancel button
+                                if (Object.prototype.hasOwnProperty.call(status.info.custom, "cancel")) {
+                                    if (status.info.custom.cancel) {
+                                        // Cancel button should be displayed
+                                        modalOptions.cancelText = status.info.custom.cancel["text"];
+                                        switch (status.info.custom.cancel["func"]) {
+                                            case "resume":
+                                                modalOptions.cancel = resumeFunction;
+                                                break;
+                                            case "quit":
+                                                modalOptions.cancel = cancelFunction;
+                                                break;
+                                            default:
+                                                modalOptions.cancel = function () {
+                                                    modalIsShown = false;
+                                                };
+                                        }
+                                    } else {
+                                        // Cancel button should be hidden
+                                        modalOptions.cancel = null;
+                                        modalOptions.cancelText = null;
+                                    }
+                                    // } else {
+                                    //     // Default Cancel button
+                                    //     modalOptions.cancelText = "Quit";
+                                    //     modalOptions.cancel = cancelFunction;
+                                }
+
+                                // Set defaults if buttons are still null
+                                // if (
+                                //     modalOptions.ok === null &&
+                                //     !Object.prototype.hasOwnProperty.call(status.info.custom, "ok")
+                                // ) {
+                                //     modalOptions.okText = "Resume";
+                                //     modalOptions.ok = resumeFunction;
+                                // }
+                                // if (
+                                //     modalOptions.cancel === null &&
+                                //     !Object.prototype.hasOwnProperty.call(status.info.custom, "cancel")
+                                // ) {
+                                //     modalOptions.cancelText = "Quit";
+                                //     modalOptions.cancel = cancelFunction;
+                                // }
+                            } else {
+                                // No custom parameters; use default buttons
+                                modalOptions.okText = "Resume";
+                                modalOptions.cancelText = "Quit";
+                                modalOptions.ok = resumeFunction;
+                                modalOptions.cancel = cancelFunction;
                             }
+
+                            // Show the modal
                             dashboard.showModal(modalOptions);
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();

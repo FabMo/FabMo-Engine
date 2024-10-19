@@ -2493,8 +2493,10 @@ input[type='range']:focus {
     cursor: pointer;
     display: inline-block;
     height: 50px;
-    width: 30%;
-    text-align: center;
+    min-width: 30%;
+	padding-left: 2em;
+	padding-right: 2em;
+	text-align: center;
     background-color: #5DAA35;
     border-radius: 5px;
     margin-bottom: 1em;
@@ -2506,7 +2508,9 @@ input[type='range']:focus {
     cursor: pointer;
     display: inline-block;
     height: 50px;
-    width: 30%;
+    min-width: 30%;
+    padding-left: 2em;
+	padding-right: 2em;
     text-align: center;
     background-color: #9C210C;
     border-radius: 5px;

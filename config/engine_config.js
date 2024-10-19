@@ -34,12 +34,7 @@ EngineConfig.prototype.update = function (data, callback) {
                 // (Which will probably make a bunch of sweeping configuration changes)
                 if (key in this._cache && data[key] != this._cache[key]) {
                     try {
-                        log.info(
-                            "Profile changed from " +
-                                this._cache[key] +
-                                " to " +
-                                data[key]
-                        );
+                        log.info("Profile changed from " + this._cache[key] + " to " + data[key]);
                     } catch (err) {
                         console.warn("EngineConfig update failed");
                     }
@@ -70,7 +65,6 @@ EngineConfig.prototype.update = function (data, callback) {
         });
     }
     // If the profile changed above, we apply it, and if that was successful, we abort the process.
-    ////## This is where we are generating the object-object error during startup??
     if (profile_changed) {
         log.warn("Engine profile changed - engine will be restarted.");
         // eslint-disable-next-line no-unused-vars
