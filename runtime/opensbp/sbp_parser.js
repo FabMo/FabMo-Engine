@@ -3048,8 +3048,85 @@ function peg$parse(input, options) {
 
     return s0;
   }
+  function peg$f_list_assign(listName, startIdx, endIdx, value) {
+    // Assume we have access to a global list dictionary or similar structure
+    if (typeof window[listName] !== 'undefined') {
+        let list = window[listName];
+        for (let i = startIdx; i <= endIdx; i++) {
+            list[i] = value;
+        }
+        return { "type": "list_assignment", "list": listName, "start": startIdx, "end": endIdx, "value": value };
+    } else {
+        throw new Error(`${listName} is not defined`);
+    }
+  } 
+  function peg$parselist_assignment() {
+    var s0, s1, s2, s3, s4, s5;
 
+    s0 = peg$currPos;
+    s1 = peg$parseidentifier(); // Parse the list name
+    if (s1 !== peg$FAILED) {
+        if (input.charCodeAt(peg$currPos) === 91) {
+            s2 = "[";
+            peg$currPos++;
+        } else {
+            s2 = peg$FAILED;
+        }
+        if (s2 !== peg$FAILED) {
+            s3 = peg$parseinteger(); // Parse the start index
+            if (s3 !== peg$FAILED) {
+                if (input.charCodeAt(peg$currPos) === 58) {
+                    s4 = ":";
+                    peg$currPos++;
+                } else {
+                    s4 = peg$FAILED;
+                }
+                if (s4 !== peg$FAILED) {
+                    s5 = peg$parseinteger(); // Parse the end index
+                    if (s5 !== peg$FAILED) {
+                        if (input.charCodeAt(peg$currPos) === 93) {
+                            s6 = "]";
+                            peg$currPos++;
+                            s7 = peg$parseassignment_value(); // Parse the value to assign
+                            if (s7 !== peg$FAILED) {
+                                peg$savedPos = s0;
+                                s0 = peg$f_list_assign(s1, s3, s5, s7); // Call the assignment function
+                            } else {
+                                s0 = peg$FAILED;
+                            }
+                        } else {
+                            s0 = peg$FAILED;
+                        }
+                    } else {
+                        s0 = peg$FAILED;
+                    }
+                } else {
+                    s0 = peg$FAILED;
+                }
+            } else {
+                s0 = peg$FAILED;
+            }
+        } else {
+            s0 = peg$FAILED;
+        }
+    } else {
+        s0 = peg$FAILED;
+    }
 
+    return s0;
+  }
+  function peg$f_list_assign(listName, startIdx, endIdx, value) {
+    // Assume we have access to a global list dictionary or similar structure
+    if (typeof window[listName] !== 'undefined') {
+        let list = window[listName];
+        for (let i = startIdx; i <= endIdx; i++) {
+            list[i] = value;
+        }
+        return { "type": "list_assignment", "list": listName, "start": startIdx, "end": endIdx, "value": value };
+    } else {
+        throw new Error(`${listName} is not defined`);
+    }
+  }
    function buildLeftAssocTree(l, r) {
       if (!l.length) { return r; }
       var last = l.pop();

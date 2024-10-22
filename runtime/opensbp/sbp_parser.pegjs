@@ -14,13 +14,31 @@
       var first = r.shift();
       return {left: l, op: first[1], right: buildRightAssocTree(first[3], r)};
    }
+
+   function assignList(listName, startIdx, endIdx, value) {
+      if (typeof window[listName] !== 'undefined') {
+          let list = window[listName];
+          for (let i = startIdx; i <= endIdx; i++) {
+              list[i] = value;
+          }
+          return { "type": "list_assignment", "list": listName, "start": startIdx, "end": endIdx, "value": value };
+      } else {
+          throw new Error(`${listName} is not defined`);
+      }
+   }
 }
 
 start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / fail / jump / pause / dialog / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / command / __)
+   = (label / single / fail / jump / pause / dialog / conditional / list_assignment / assignment / weak_assignment / event / open / custom_cut / gcode_line / command / __)
+
+list_assignment
+   = list:identifier "[" startIdx:integer ":" endIdx:integer "]" __ "=" __ value:expression
+   {
+      return assignList(list, startIdx, endIdx, value);
+   }
 
 custom_cut
    = [Cc] index:integer __ ","?

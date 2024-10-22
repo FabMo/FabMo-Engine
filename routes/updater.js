@@ -1,3 +1,5 @@
+// This file launches the fabmo updater utility that runs ocncurently and seperately to the main fabmo process
+
 var log = require("../log").logger("wifi");
 var upload = require("./util").upload;
 var exec = require("child_process").exec;
