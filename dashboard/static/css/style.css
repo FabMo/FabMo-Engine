@@ -2460,7 +2460,7 @@ input[type='range']:focus {
     text-align: center;
     display: inline-block;
     margin-right: 1em;
-    width: 65%;
+    width: 100%;
     padding: 0;
 }
 
