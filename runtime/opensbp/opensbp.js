@@ -944,7 +944,7 @@ SBPRuntime.prototype._executeNext = async function () {
                 // There are pending operations, prime the driver
                 log.debug("Priming driver for pending operations before ending program.");
                 this.prime();
-                this.waitPendingOps = true;
+                // DOES REMOVAL BREAK file endings fixed 3 weeks ago ...   #### this.waitPendingOps = true;
                 // Wait for the driver to finish processing sendmore
                 return;
             } else {
