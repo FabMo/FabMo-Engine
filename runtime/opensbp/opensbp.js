@@ -967,8 +967,11 @@ SBPRuntime.prototype._executeNext = async function () {
     if (breaksTheStack) {
         this.prime();
 
+        // log.debug("========Stack-breaking command ====>  " + JSON.stringify(line));
+
         if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
             log.debug("Deferring because pending operations...");
+            this.waitPendingOps = true;
             return;
         } else {
             try {

@@ -218,7 +218,7 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     // var wlan0Int = interfaces.wlan0;
     // var apInt = interfaces.uap0;
     //var wiredInt = "eth0";
-    log.debug("##############-------- >>>>>> CALL to checkWifiHealth");
+    //log.debug("##############-------- >>>>>> CALL to checkWifiHealth");
 
     //    log.debug("##-------------------- >> Update History for Re-Screen");
     this.network_history = {};
@@ -242,7 +242,7 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
         this.network_history.wlan0 = this.network_history.wlan0 + " ," + ssid;
         log.debug("SSID: " + this.network_history.wlan0);
     } else {
-        log.debug("wlan0 interface not found or it does not have an IP address");
+        // log.debug("wlan0 interface not found or it does not have an IP address");
     }
 };
 

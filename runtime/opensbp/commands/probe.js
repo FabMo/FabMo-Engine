@@ -16,6 +16,8 @@
 
 //const { SBPRuntime } = require("..");
 
+// Model:  P_, target(absolute), feedrate, input
+
 function probe(runtime, opts) {
     var name = "prbin";
     var input = opts.inp;
@@ -40,11 +42,7 @@ function probe(runtime, opts) {
     }
     // Or, the input is already active (ON); then, also generate an error and terminate file
     if (runtime.machine.status["in" + input]) {
-        throw (
-            "Input#" +
-            opts.inp +
-            " is already active (ON) so cannot be used for Probing request "
-        );
+        throw "Input#" + opts.inp + " is already active (ON) so cannot be used for Probing request ";
     }
 
     var cmd2 = ["G38.3"];
