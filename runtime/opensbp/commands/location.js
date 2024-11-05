@@ -29,7 +29,8 @@ function offsets(args, callback) {
             var setVA_G2 = {};
             var unitConv = 1;
             let updtG55axes = "";
-            if (this.CUR_RUNTIME.units === "in") {
+            if (this.config.machine._cache.units === "in") {
+                // if (this.CUR_RUNTIME.units === "in") {  //* runtime.units is not available here on first call
                 // to inches
                 unitConv = 0.039370079;
             }
