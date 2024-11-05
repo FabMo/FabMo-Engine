@@ -29,7 +29,8 @@ function offsets(args, callback) {
             var setVA_G2 = {};
             var unitConv = 1;
             let updtG55axes = "";
-            if (this.CUR_RUNTIME.units === "in") {
+            if (this.config.machine._cache.units === "in") {
+                // if (this.CUR_RUNTIME.units === "in") {  //* runtime.units is not available here on first call
                 // to inches
                 unitConv = 0.039370079;
             }
@@ -60,22 +61,14 @@ function offsets(args, callback) {
             if (args[3] !== undefined) {
                 //A location
                 if (args[9] !== undefined) MPO.a = args[9];
-
-                setVA_G2.g55z = Number((MPO.a * unitConv - args[3]).toFixed(5));
-                ////##A
-                // setVA_G2.g55a = Number(
-                //     (MPO.a * 1.0 /*unitConv*/ - args[3]).toFixed(5) // no units for rotary
-                // );
-
+                setVA_G2.g55a = Number((MPO.a * unitConv - args[3]).toFixed(5));
                 updtG55axes += "A" + setVA_G2.g55a + " ";
                 this.cmd_posa = this.posa = args[3];
             }
             if (args[4] !== undefined) {
                 //B location
                 if (args[10] !== undefined) MPO.b = args[10];
-                //setVA_G2.g55b = Number((MPO.b * 1.0 /*unitConv*/ - args[4]).toFixed(5));
-                setVA_G2.g55z = Number((MPO.a * unitConv - args[3]).toFixed(5));
-
+                setVA_G2.g55b = Number((MPO.b * 1.0 /*unitConv*/ - args[4]).toFixed(5));
                 updtG55axes += "B" + setVA_G2.g55b + " ";
                 this.cmd_posb = this.posb = args[4];
             }

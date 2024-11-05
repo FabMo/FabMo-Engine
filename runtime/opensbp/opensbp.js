@@ -944,7 +944,7 @@ SBPRuntime.prototype._executeNext = async function () {
                 // There are pending operations, prime the driver
                 log.debug("Priming driver for pending operations before ending program.");
                 this.prime();
-                this.waitPendingOps = true;
+                // DOES REMOVAL BREAK file endings fixed 3 weeks ago ...   #### this.waitPendingOps = true;
                 // Wait for the driver to finish processing sendmore
                 return;
             } else {
@@ -967,8 +967,11 @@ SBPRuntime.prototype._executeNext = async function () {
     if (breaksTheStack) {
         this.prime();
 
+        // log.debug("========Stack-breaking command ====>  " + JSON.stringify(line));
+
         if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
             log.debug("Deferring because pending operations...");
+            this.waitPendingOps = true;
             return;
         } else {
             try {

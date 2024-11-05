@@ -418,7 +418,9 @@ G2.prototype.setUnits = function (units, callback) {
 G2.prototype.requestStatusReport = function (callback) {
     // Register the callback to be called when the next status report comes in
     typeof callback === "function" && this.once("status", callback);
-    this.command({ sr: null });
+    if (!this.status.resumeFlag) {
+        this.command({ sr: null });
+    }
 };
 
 // Called for every chunk of data returned from G2
