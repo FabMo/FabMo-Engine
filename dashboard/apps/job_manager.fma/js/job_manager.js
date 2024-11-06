@@ -282,7 +282,6 @@ function updateHistory(callback) {
     // Eliminate entries in the table and repopulate with fresh data
     clearHistory();
     addHistoryEntries(jobs.data);
-
     // Store mostRecentJob in local browser storage for use in other apps; _id seems to be the most reliable unique identifier 
     if (jobs.data.length > 0) {
       mostRecentJob = {
@@ -293,19 +292,8 @@ function updateHistory(callback) {
       mostRecentJob = {"id": null, "name": null};
     }
     localStorage.setItem('mostRecentJob', JSON.stringify(mostRecentJob));
-
     typeof callback === 'function' && callback();
   });
-  // // store mostRecentJob in local browser storage for use in other apps 
-  // if (jobs.length > 0) {
-  //   mostRecentJob = {
-  //     id: jobs[0]._id,
-  //     name: jobs[0].name,
-  //   };
-  // } else {
-  //   mostRecentJob = {"id": null, "name": null};
-  // }
-  // localStorage.setItem('mostRecentJob', JSON.stringify(mostRecentJob));
 }
 
 function historyPreviousPage(callback) {
