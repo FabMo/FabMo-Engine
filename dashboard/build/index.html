@@ -22,12 +22,16 @@
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="/img/favicon/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
-    <!--<link rel="stylesheet" href="css/normalize.css" />
-      <link rel="stylesheet" href="css/font-awesome.min.css" />
-      <link rel="stylesheet" href="css/foundation.min.css" />
-      <link rel="stylesheet" href="css/style.css" />
-      <link rel="stylesheet" href="css/toastr.min.css" />-->
-    <link rel="stylesheet" href="css/dashboard.css"/>
+    <!-- These are the stylesheets that are included in the dashboard and need to be "required" in main.js -->
+    <!--  <link rel="stylesheet" href="css/normalize.css" />
+          <link rel="stylesheet" href="css/font-awesome.min.css" />
+          <link rel="stylesheet" href="css/foundation.min.css" />
+          <link rel="stylesheet" href="css/style.css" />
+          <link rel="stylesheet" href="css/toastr.min.css" />
+          <link rel="stylesheet" href="css/tips.css" />-->
+    <!-- Apps can then simply reference css/dashboard.css and any additional local style sheets needed -->
+          <link rel="stylesheet" href="css/dashboard.css"/>
+
   </head>
   <body id="body">
     <div id='mainContent'>
@@ -95,11 +99,11 @@
           <!-- ***** Tool Position Section ***** -->
           
           <section class="right show-for-small-up fabmo-status" id="right-position-container">
-            <div class="manual-drive-enter show-for-small-up fabmo-status right" id="man-start" title="Click to open Motion Keypad"">
+            <div class="manual-drive-enter show-for-small-up fabmo-status right" id="man-start" title="Click to open Motion Keypad">
                 <img src="../img/icon_keypad.png" id="icon_keypad"></img>
             </div>
 
-            <div class="DRO-button" id="dro-tab" title="Click to open larger Display">
+            <div class="DRO-button" id="dro-tab" title="Click to open larger Info Display">
                 <img src="../img/icon_DROout.png" id="icon_DROin-out">
             </div>
             
@@ -216,7 +220,7 @@
           <div class="dro-addons fabmo-status">
               <div class="dro-addon" id="dro-addon-1">
                   <div class="dro-addon-spacer-row"></div>
-                  <div class="dro-addon-label"> OUTPUTS (Toggle) </div>
+                  <div class="dro-addon-label" title="Click to turn Outputs ON/OFF; Output #4 is reserved for enabling the spindle in files."> OUTPUTS (Toggle) </div>
                   <div class="dro-addon-outputs">
                     <div class="out1 output toggle-out off"> 1 </div>
                     <div class="out2 output toggle-out off"> 2 </div>
@@ -238,18 +242,24 @@
               </div>
               <div class="dro-addon" id="dro-addon-2">
                 <div class="dro-addon-spacer-row""></div>
-                <div class="dro-addon-label"> MOVE SPEED X/Y (Feedrate) </div>
-                <div class="dro-addon-value feedrate"><span class="sub-label feedrate-input"> in/sec </span><input id="fr-inp" type="number" step="0.10" min="0" max="50" placeholder="--tbd--"></div>
+                <div class="dro-addon-label"> MOVE SPEED  (Feedrate)  <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 26px; top:0px">i<span class="tooltiptext">
+                  When a file is running, the move-speed/feedrate of the moving axis is shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br> 
+                  Override will decrease or increase the assigned speed in a file (down to 5%, up to 300%).<br></span></span></div>
+                <div class="dro-addon-value feedrate"><span class="sub-label feedrate-input"> in/sec </span><input id="fr-inp" type="number" step="0.10" min="0" max="50" placeholder="--tbd--" readonly></div>
               <!--  <div class="dro-addon-value feedrate"><span class="sub-label feedrate-input"> in/sec </span><input id="fr-inp" type="number" step="0.10" min="0" max="50" value="--tbd--"></div> -->
-                <div class="dro-addon-value ovr-ride"><span class="sub-label ov-ride">Override %</span><input id="override" type="number" step="5" min="5" max="200" value="100"></div>
+                <div class="dro-addon-value ovr-ride"><span class="sub-label ov-ride">Override %</span><input id="override" type="number" step="5" min="5" max="300" value="100"></div>
               </div>
+
               <div class="dro-addon" id="dro-addon-3">
                 <div class="dro-addon-spacer-row"></div>
-                <div class="dro-addon-label"> Spindle-1 </div>
-                <div class="dro-addon-value spindle-speed"><span class="sub-label"> RPM </span><input id="sp-speed" type="number" step="100" min="0" max="18000" value="0"></div>
+                <div class="dro-addon-label"> Spindle-1 <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 65px; top:0px">i<span class="tooltiptext">
+                  Set spindle RPM. Black values indicate commanded RPM; blue values indicate achieved RPM.<br><br> 
+                  AMP value displays the spindle load expressed as current in amps.</span></span><br></div>
+                <div class="dro-addon-value spindle-speed"><span class="sub-label"> RPM </span><input id="sp-speed" type="number" step="100" min="0" max="18000" placeholder="- No Connection -"></div>
                 <div class="dro-addon-value spindle-power"><span class="sub-label"> AMP </span><input type="number" value="0.00" readonly></div>
               </div>
-          </div>    
+
+            </div>    
 
       </aside>
 
@@ -297,7 +307,7 @@
       <div class="manual-drive-container">
         <div>
           <label class="noselect" id="title_goto" title="Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000">
-              Click to: 'GoTo' location or 'Set' location
+              Select and change to: 'GoTo' location or 'Set' location
           </label>
         </div>
         <div class="read-out-container">
@@ -365,7 +375,7 @@
           <div id="keypad" class="fabmo-manual-control keypad " style="text-align: center;">
             <div class="slidecontainer">
               <input type="range"  step="0.1" class="slider" id="manual-move-speed">
-              <label><u><</u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XY Move Speed&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<u>></u></label>
+              <label title="use Alt&lt and Alt&gt for speed up/dn"><u><</u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XY Move Speed&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<u>></u></label>
             </div>
             <div class="fixed-input-container ">
               <div>

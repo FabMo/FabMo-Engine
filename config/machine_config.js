@@ -38,13 +38,15 @@ function round(number, units) {
 
 //
 MachineConfig.prototype.update = function (data, callback, force) {
-    var current_units = this.get("units");
+    //    var current_units = this.get("units");
+    ////## trouble with Zeroing and Speed Changes in Sb4; don't know if this helped
 
     try {
         u.extend(this._cache, data, force);
     } catch (e) {
         return callback(e);
     }
+    var current_units = this.get("units");
 
     // Convert internal values that are in length units back and forth between the two unit
     // systems if the unit systems has changed.

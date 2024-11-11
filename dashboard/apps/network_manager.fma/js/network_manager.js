@@ -132,8 +132,8 @@ function addHistoryEntries(history_entries, callback) {
             }
         }
         $row.append($('<td></td>').addClass('interface con-int noselect').html(interfaceText));
-        $row.append($('<td></td>').addClass('ipaddress').html(ipAddressText));
-        $row.append($('<td></td>').addClass('intinfo').html(intInfoText));
+        $row.append($('<td></td>').addClass('ipaddress').html(ipAddressText).css("cursor", "default"));
+        $row.append($('<td></td>').addClass('intinfo').html(intInfoText).css("cursor", "default"));
         $table.append($row);
     });
 

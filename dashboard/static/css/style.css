@@ -413,6 +413,7 @@ input#override {
 	width:50%;
 	height: 1.5rem;
 	text-align: right;
+	padding: 0px;
 	margin-bottom: 5px;
 	margin-left: 20px;
 	margin-right: 5px;
