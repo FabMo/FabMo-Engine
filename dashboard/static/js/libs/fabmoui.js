@@ -49,16 +49,15 @@ const { last } = require("underscore");
 
         this.file_control = true;
 
-        //display move speed
-        $("#manual-move-speed").on("input", function (e) {
+        //display move speed from slider
+        $("#manual-move-speed").on("mouseenter", function (e) {
             $(".speed_read_out").show();
             $(".speed_read_out").html($("#manual-move-speed").val());
-            setTimeout(function () {
-                $(".speed_read_out").hide();
-            }, 750);
         });
-
-        $("#manual-move-speed").on("mouseup touchend", function () {
+        $("#manual-move-speed").on("input", function (e) {
+            $(".speed_read_out").html($("#manual-move-speed").val());
+        });
+        $("#manual-move-speed").on("mouseleave", function (e) {
             $(".speed_read_out").hide();
             $(this).blur();
         });
@@ -70,7 +69,7 @@ const { last } = require("underscore");
                     $("#right-position-container").removeClass("dropped");
                 }, 200);
                 $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
-                $("#dro-tab").attr("title", "Click to open larger Display");
+                $("#dro-tab").attr("title", "Click to open larger Info Display");
             } else {
                 $(".dro-dropdown").addClass("dropped");
                 $("#right-position-container").addClass("dropped");
@@ -297,16 +296,31 @@ const { last } = require("underscore");
             }
         });
 
-        //#### Need to figure out how to get meaningful speeds in different situations, sbp, gcode, at-rest, in-file
-        // // Update big DRO Speed Display (Feedrate and Override)
-        // var speed = 0;
-        // speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
-        // $("#fr-inp").val(speed);
-        // if (status.unit === "mm") {
-        //     $(".feedrate-unit").text("mm/sec");
-        // } else {
-        //     $(".feedrate-unit").text("in/sec");
-        // }
+        // Update big DRO Speed Display (Feedrate and Override)
+        if (status.state != "idle") {
+            const feedrate = Number(status.feed) * Number(status.fro);
+            $("#fr-inp").css("color", "#42e6f5");
+            if (status.unit === "mm") {
+                $(".feedrate-unit").text("mm/sec");
+                const displayValue = (feedrate / 60).toFixed(2);
+                $("#fr-inp").val(displayValue);
+            } else {
+                $(".feedrate-unit").text("in/sec");
+                const displayValue = (feedrate / 1524).toFixed(2);
+                $("#fr-inp").val(displayValue);
+            }
+        } else {
+            var speed = 0;
+            $("#fr-inp").css("color", "black");
+            speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
+            if (status.unit === "mm") {
+                $(".feedrate-unit").text("mm/sec");
+                $("#fr-inp").val(speed);
+            } else {
+                $(".feedrate-unit").text("in/sec");
+                $("#fr-inp").val(speed);
+            }
+        }
 
         var cur_req_fro = 100;
         // Feed rate override color displays
@@ -327,8 +341,10 @@ const { last } = require("underscore");
             /* do the color */
             if (cur_req_fro > 100) {
                 $("#override").css("color", "yellow");
+                $("#fr-inp").css("color", "yellow");
             } else if (cur_req_fro < 100) {
                 $("#override").css("color", "blue");
+                $("#fr-inp").css("color", "blue");
             } else {
                 $("#override").css("color", "gray");
             }

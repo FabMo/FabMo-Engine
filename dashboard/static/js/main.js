@@ -5,9 +5,11 @@
  */
 require("../css/font-awesome.css");
 require("../css/normalize.css");
+require("../css/fonts.css");
 require("../css/foundation.min.css");
 require("../css/style.css");
 require("../css/toastr.min.css");
+require("../css/tips.css");
 
 // context is the application context
 // dashboard is the bridge between the application context and the apps
@@ -840,22 +842,28 @@ $(document).on("keydown", function (e) {
     } else if (e.key === "f") {
         $(".fixed-switch").trigger("click");
         // increase or decrease speed
-    } else if (e.key === ">" || e.key === "<") {
+    } else if ((e.key === "," || e.key === ".") && e.altKey) {
+        // this is the alt+< and alt+> for speed up/dn
         let newSpeed;
         let adder = 0.1;
         if (dashboard.engine.status.unit === "mm") {
             adder = 1.0;
         }
         switch (e.key) {
-            case ">":
+            case ".":
                 newSpeed = parseFloat($("#manual-move-speed").val()) + adder;
                 triggerSliderEvent(newSpeed);
                 break;
-            case "<":
+            case ",":
                 newSpeed = parseFloat($("#manual-move-speed").val()) - adder;
                 triggerSliderEvent(newSpeed);
                 break;
         }
+        $(".speed_read_out").show();
+        $(".speed_read_out").html($("#manual-move-speed").val());
+        setTimeout(function () {
+            $(".speed_read_out").hide();
+        }, 1500);
     }
 });
 
@@ -1069,7 +1077,8 @@ var overrideFeedRate = function (new_override) {
 $("#override").on("change", function (evt) {
     if (engine.status.state != "idle") {
         var new_override = parseFloat($("#override").val());
-        if (new_override > 4 && new_override < 201) {
+        // Check against: feedrate override range
+        if (new_override > 4 && new_override < 301) {
             overrideFeedRate(new_override);
         }
     }

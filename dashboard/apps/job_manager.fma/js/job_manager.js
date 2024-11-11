@@ -282,6 +282,16 @@ function updateHistory(callback) {
     // Eliminate entries in the table and repopulate with fresh data
     clearHistory();
     addHistoryEntries(jobs.data);
+    // Store mostRecentJob in local browser storage for use in other apps; _id seems to be the most reliable unique identifier 
+    if (jobs.data.length > 0) {
+      mostRecentJob = {
+        id: jobs.data[0]._id,
+        name: jobs.data[0].name,
+      };
+    } else {
+      mostRecentJob = {"id": null, "name": null};
+    }
+    localStorage.setItem('mostRecentJob', JSON.stringify(mostRecentJob));
     typeof callback === 'function' && callback();
   });
 }
@@ -318,15 +328,16 @@ var mostRecentJob = {};
 function addHistoryEntries(jobs) {
   var table = document.getElementById('history_table');
   // Assuming the most recent job is the first in the array
-  if (jobs.length > 0) {
-    mostRecentJob = {
-      id: jobs[0]._id,
-      name: jobs[0].name,
-      // Add other necessary details here
-    };
-  }
-  // store mostRecentJob in local browser storage for use in other apps 
-  localStorage.setItem('mostRecentJob', JSON.stringify(mostRecentJob));
+  // if (jobs.length > 0) {
+  //   mostRecentJob = {
+  //     id: jobs[0]._id,
+  //     name: jobs[0].name,
+  //   };
+  // } else {
+  //   mostRecentJob = {};
+  // }
+  // // store mostRecentJob in local browser storage for use in other apps 
+  // localStorage.setItem('mostRecentJob', JSON.stringify(mostRecentJob));
 
   jobs.forEach(function(job) {
     var row = table.insertRow(table.rows.length);
@@ -345,27 +356,6 @@ function addHistoryEntries(jobs) {
   });
   bindMenuEvents();
 }
-
-// function addHistoryEntries(jobs) {
-//   var table = document.getElementById('history_table');
-//   jobs.forEach(function(job) {
-//     var row = table.insertRow(table.rows.length);
-//     var menu = row.insertCell(0);
-//     menu.className += ' actions-control';
-//     var thumbnail = row.insertCell(1);
-//     thumbnail.style.width = "60px";
-//     var name = row.insertCell(2);
-//     var done = row.insertCell(3);
-//     var time = row.insertCell(4);
-
-//     menu.innerHTML = createHistoryMenu(job._id);
-//     // thumbnail.innerHTML = createPreviewThumbnail(job, 50, 50);
-//     name.innerHTML = '<div class="job-' + job.state + '">' + job.name + '</div>';
-//     done.innerHTML = moment(job.finished_at).fromNow();
-//     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
-//   });
-//   bindMenuEvents();
-// }
 
 function hideDropDown() {
   $('.dropDownWrapper').hide();

@@ -34,7 +34,7 @@ define(function(require) {
      var setRightMenuBehavior = function() {
         if ($('#right-menu').css('right') === '0px') {
             $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
-            $("#dro-tab").attr("title", "Click to open larger Display");
+            $("#dro-tab").attr("title", "Click to open larger Info Display");
             localStorage.setItem('pinRight', true);
             if ($(window).width() < 900) {
                 closeDROover();
@@ -63,7 +63,7 @@ define(function(require) {
             $('#app_menu_container').css('padding-right', '0px');
             $('#waiting_container').css('padding-right', '0px');
             $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
-            $("#dro-tab").attr("title", "Click to open larger Display");
+            $("#dro-tab").attr("title", "Click to open larger Info Display");
         }
     }
     $('.DRO-button').on('click', function(evt) {

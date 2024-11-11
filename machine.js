@@ -124,6 +124,7 @@ function Machine(control_path, callback) {
         out11: 0,
         out12: 0,
         fro: 1.0,
+        feed: 0.0,
         job: null,
         info: null,
         unit: null,
@@ -1439,7 +1440,8 @@ Machine.prototype.spindleSpeed = function (new_RPM) {
 // Set a Feed Rate Override Request for injection into G2 "driver"
 // ... handle this with a debounce type procedure so that the driver is not overwhelmed with commands and G2 has time to update
 Machine.prototype.frOverride = function (new_override) {
-    if (new_override >= 5 && new_override <= 200) {
+    // Second check against: Override range
+    if (new_override >= 5 && new_override <= 300) {
         try {
             log.info("----> new override CMD sent: " + new_override);
             // Set the new override value and format for the driver

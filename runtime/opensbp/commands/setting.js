@@ -21,9 +21,7 @@ exports.SC = function (args, callback) {
                 cs = "G55";
                 break;
             default:
-                throw new Error(
-                    "Invalid coordinate system specified: " + args[0]
-                );
+                throw new Error("Invalid coordinate system specified: " + args[0]);
         }
         this.emit_gcode(cs);
         this.coordinateSystem = cs;
@@ -160,14 +158,15 @@ exports.SV = function (args, callback) {
                     if (err) {
                         log.error(err);
                     }
-                    config.machine.set(
-                        "units",
-                        this.units,
-                        // eslint-disable-next-line no-unused-vars
-                        function (err, data) {
-                            callback();
-                        }
-                    );
+                    ////## this seemed to be an issue with individual commands & messing up units; WATCH
+                    // config.machine.set(
+                    //     "units",
+                    //     this.units,
+                    //     // eslint-disable-next-line no-unused-vars
+                    //     function (err, data) {
+                    callback();
+                    //     }
+                    // );
                 }.bind(this)
             );
         }.bind(this)

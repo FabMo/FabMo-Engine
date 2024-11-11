@@ -760,6 +760,7 @@ SBPRuntime.prototype._run = function () {
                 return;
             }
             if (!this.driver) {
+                ////## Not sure what is going on here; potentially an issue with commands called outside files ???
                 log.error("No driver in _run");
                 return;
             }
