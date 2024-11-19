@@ -141,19 +141,39 @@ $(document).ready(function () {
 
     initVideo();
 
-    // Manage video container size
-    // ... using click to pick up the resize for the moment
-    $('#sbp-container').on('click', function () {
-        console.log("got resize click");
-        // ... then define a max-width that is 5% less than full width of "#cmd-panel"
-        var maxWidth = $("#cmd-panel").width() * 0.95;  
-        if ($(this).width() > maxWidth) { $(this).width() = maxWidth };
-        g.COnt_Width = $(this).width();
-        g.COnt_Height = $(this).height();
-        console.log("width: " + g.COnt_Width + " height: " + g.COnt_Height);
-        resetAppConfig();
-    });
+    // Manage video/text container size using ResizeObserver (older attempt to manage container below; click not consistent)
 
+    // ... should probably just have done it all interms of the window container size
+    const sbpContainer = document.getElementById('sbp-container');
+    const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            //console.log("got resize event on sbp-container");
+            // Define a max-width that is 5% less than full width of "#cmd-panel"
+            const maxWidth = document.getElementById('cmd-panel').clientWidth * 0.95;
+            if (entry.contentRect.width != maxWidth) {
+                sbpContainer.style.width = `${maxWidth}px`;
+            }
+            g.COnt_Width = sbpContainer.clientWidth;
+            g.COnt_Height = sbpContainer.clientHeight;
+            //console.log("width: " + g.COnt_Width + " height: " + g.COnt_Height);
+            resetAppConfig();
+        }
+    });
+    // Observe the sbp-container for resize events
+    resizeObserver.observe(sbpContainer);
+    // Observe the app windo for resize events
+    window.addEventListener('resize', function () {
+        //console.log("got resize event on window");
+        // Define a max-width that is 5% less than full width of "#cmd-panel"
+        const maxWidth = document.getElementById('cmd-panel').clientWidth * 0.95;
+        if (sbpContainer.clientWidth != maxWidth) {
+            sbpContainer.style.width = `${maxWidth}px`;
+        }
+        g.COnt_Width = sbpContainer.clientWidth;
+        g.COnt_Height = sbpContainer.clientHeight;
+        //console.log("width: " + g.COnt_Width + " height: " + g.COnt_Height);
+        resetAppConfig();
+    });   
 
     // ** Set-Up Response to Command Entry; first key management
 
@@ -177,45 +197,35 @@ $(document).ready(function () {
         }
     });
 
-    $('.opensbp_input').change(function () {                  // Handle and Bind generic UI textboxes
-        setConfig(this.id, this.value);
+    $('.opensbp_input_formattedspeeds').on('keyup', function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();  // Prevent the unwanted default action for Enter key on other items ???
+            event.stopPropagation(); // Stop the event from propagating; effectiveness ???
+            $(this).trigger('change'); // Manually trigger the change event
+        }
     });
-
-    $('.opensbp_input_formattedspeeds').change(function () {  // Handle and Bind updates from formatted SPEED textboxes
+    
+    $('.opensbp_input_formattedspeeds').change(function (event) {  // Handle and Bind updates from formatted SPEED textboxes
+        event.preventDefault();  // Prevent the default action
+        event.stopPropagation(); // Stop the event from propagating
         switch (this.id) {
             case 'formatted_movexy_speed':
-                var mult_cmds = [
-                    'VS,' + this.value,
-                    'SV'
-                ].join("\n");
-                //console.log("Commands are: \n" + mult_cmds);
-                fabmo.runSBP(mult_cmds);
+                var thisSpeedCmd = 'VS,' + this.value;
                 break;
             case 'formatted_movez_speed':
-                var mult_cmds = [
-                    'VS,,' + this.value,
-                    'SV'
-                ].join("\n");
-                fabmo.runSBP(mult_cmds);
+                var thisSpeedCmd = 'VS,,' + this.value;
                 break;
             case 'formatted_jogxy_speed':
-                var mult_cmds = [
-                    'VS,,,,,,' + this.value,
-                    'SV'
-                ].join("\n");
-                fabmo.runSBP(mult_cmds);
-                break;
+                var thisSpeedCmd = 'VS,,,,,,' + this.value;
+                break;    
             case 'formatted_jogz_speed':
-                var mult_cmds = [
-                    'VS,,,,,,,' + this.value,
-                    'SV'
-                ].join("\n");
-                fabmo.runSBP(mult_cmds);
-                break;
+                var thisSpeedCmd = 'VS,,,,,,,' + this.value;
+                break;    
         }
+        var mult_cmds = [thisSpeedCmd, 'SV'].join("\n");
+        fabmo.runSBP(mult_cmds);
         console.log("changed speeds ...");
         updateSpeedsFromEngineConfig();
-        setSafeCmdFocus(1);
     });
 
     // ** Set-Up Response to Command Entry; first key management 
@@ -227,7 +237,8 @@ $(document).ready(function () {
                 $("#cmd-input").val("");
                 break                
             case 13:          // ENTER key; Second part of ENTER-ENTER behavior for repeating as well
-               // if the fill-in modal is open for FP or FL, then run the command 
+                // If the fill-in modal is open for FP or FL, then run the command 
+                //console.log("got to ENTER key");
                 if ($('#fi-modal').hasClass('open')) {
                     let ckFile = $('#fi_modal_title').text().substring(0,4);
                     if (ckFile === "File" || ckFile === "Reru") {
@@ -282,16 +293,16 @@ $(document).ready(function () {
         lastLn = 0;
         upDating = false;
     
-        console.log("got entry");
-        console.log(evt);
-        console.log("file- " + curFile);
+        //console.log("got entry");
+        //console.log(evt);
+        //console.log("file- " + curFile);
         lastLn = 0;
         let file = document.getElementById("file").files[0];
         let fileReader = new FileReader();
         fileReader.onload = function (fileLoadedEvent) {
             lines = fileLoadedEvent.target.result.split('\n');
             for (let line = 0; line < lines.length; line++) {
-                //  console.log(line + ">>>" + lines[line]);
+                //console.log(line + ">>>" + lines[line]);
             }
             curFile = file
         };
@@ -360,7 +371,7 @@ $(document).ready(function () {
 //    });
     
     $("#btn_cmd_quit").click(function (event) {          // QUIT
-        console.log("Not Run");
+        //console.log("Not Run");
         $('#fi-modal').foundation('reveal', 'close');
         curFile = "";
         curFilename = "";
@@ -368,21 +379,25 @@ $(document).ready(function () {
     });
 
     $("#btn_adv_file").click(function (event) {         // ADVANCED
-        console.log("Advanced - curFilename");
+        //console.log("Advanced - curFilename");
         $('#fi-modal').foundation('reveal', 'close');
-        fabmo.clearJobQueue(function (err, data) {
-            if (err) {
-                cosole.log(err);
-            } else {
-                job = curFilename.replace('.sbp', '');
-                fabmo.submitJob({
-                    file: curFile,
-                    filename: curFilename,
-                    name: job,
-                    description: '... called from Sb4'
-                });
-            }
-        });
+        if (!curFilename) { // if no file then this is FL or recent file to run, already loaded from sb_app
+            fabmo.launchApp('job-manager', { stayHere: true });
+        } else { 
+            fabmo.clearJobQueue(function (err, data) {
+                if (err) {
+                    cosole.log(err);
+                } else {
+                    job = curFilename.replace('.sbp', '');
+                    fabmo.submitJob({
+                        file: curFile,
+                        filename: curFilename,
+                        name: job,
+                        description: '... called from Sb4'
+                    });
+                }    
+            });
+        }    
     });
 
     // ** STATUS: Report Ongoing and Clear Command Line after a status report is recieved    ## Need a clear after esc too
@@ -401,8 +416,8 @@ $(document).ready(function () {
             if (globals.FAbMo_state === "manual") { fabmo.manualExit() }         // #??? making sure we aren't stuck ??
         } else {
             if (!globals.INject_inputbox_open) {
-                $("#cmd-input").blur();
-                parent.focus();
+            //    $("#cmd-input").blur();            ////## lines may be required to for focus on leaving INSERT box; but they disrupt display in MACROs
+            //    parent.focus();
             } else {
                 $("#insert-input").focus();
             }                                                                    // this allows focus to work right when manual start
@@ -463,11 +478,14 @@ $(document).ready(function () {
         // Show spindle-speed if DRO is visible and spindle is present in status object and is on (vfdAchvFreq > 0) or is commanded on (vfdDesgFreq > 0) 
         if (globals.FAbMo_state != "running" && globals.FAbMo_state != "paused") {
             $("#file_txt_area").text("");
-            updateSpeedsFromEngineConfig();   //#### also testing checking on &HOMED status
-            $(".top-bar").click();    // click to clear any dropdowns
-            setSafeCmdFocus(4);
+            updateSpeedsFromEngineConfig();
+            // Prevent an ENTER that starting an FL if issues too soon ...
+            // ... Insert a 3/4 second delay before click and setSafeCmdFocus (ultimately needed to clear dropdowns and set focus)
+            setTimeout(function () {
+                $(".top-bar").click();
+                setSafeCmdFocus(1);
+            }, 750);
         }
-   
     });
 
     $("#vid-button").click(function () {      // Toggle video
@@ -674,57 +692,6 @@ $(document).ready(function () {
             // beep(20, 1800, 1);
             fabmo.requestStatus();                                                      // another update when we open pad
             globals.UPdateMoPadState();
-            
-            //fabmo.hideDRO();  **if needed?
-
-            //   $("#jog_dial_sel_char").click(function(e) {                       //... toggle through AXES with click on selector
-            //     //  console.log("got click",($('#jog_dial_sel_char')));           //... ## could make this a little more concise
-            //       axis = $('#jog_dial_sel_char').text();
-            //       beep(30,3000, 30);
-            //       switch (axis) {
-            //         case "X":
-            //           if (excluded_axes_str.indexOf("Y") == -1) {
-            //             $("#jog_dial_sel_char").text("Y");
-            //             globals.JOg_Axis = "Y"
-            //             break;
-            //           }
-            //         case "Y":
-            //           if (excluded_axes_str.indexOf("Z") == -1) {
-            //             $("#jog_dial_sel_char").text("Z");
-            //             globals.JOg_Axis = "Z"
-            //             break;
-            //           }
-            //         case "Z":
-            //           if (excluded_axes_str.indexOf("A") == -1) {
-            //             $("#jog_dial_sel_char").text("A");
-            //             globals.JOg_Axis = "A"
-            //             break;
-            //           }
-            //         case "A":
-            //           if (excluded_axes_str.indexOf("B") == -1) {
-            //             $("#jog_dial_sel_char").text("B");
-            //             globals.JOg_Axis = "B"
-            //             break;
-            //           }
-            //         case "B":
-            //           if (excluded_axes_str.indexOf("C") == -1) {
-            //             $("#jog_dial_sel_char").text("C");
-            //             globals.JOg_Axis = "C"
-            //             break;
-            //           }
-            //         case "C":
-            //           if (excluded_axes_str.indexOf("X") == -1) {
-            //             $("#jog_dial_sel_char").text("X");
-            //             globals.JOg_Axis = "X"
-            //             break;
-            //           }
-            //         default:
-            //           $("#jog_dial_sel_char").text("X");
-            //           globals.JOg_Axis = "X"
-            //       }
-            //       let axis_start_str = "TOol_" +  (globals.JOg_Axis.toLowerCase());
-            //       $('#jog_dial_loc_trgt').val(globals[axis_start_str].toFixed(3));           //... set loc display
-            //   });
 
         }
 
@@ -737,7 +704,7 @@ $(document).ready(function () {
         }    
 
         $('#padCloseX').click(function (event) {
-            console.log('got close click')
+            //console.log('got close click')
             $('#modal').foundation('reveal', 'close');
         });
 
@@ -753,18 +720,18 @@ $(document).ready(function () {
         if ($(this).context.id === "fi-modal") {
             globals.FIll_In_Open = false;
             $('#fi-params').value = "";
-            console.log('got Fill-In closing; did Exit from manual')
+            //console.log('got Fill-In closing; did Exit from manual')
         };
         if ($(this).context.id === "moPad") {
             globals.MO_pad_open = false;
             gotOnce = false;
             fabmo.manualExit();
-            console.log('got moPad closing; did Exit from manual')
+            //console.log('got moPad closing; did Exit from manual')
         };
         if ($(this).context.id === "insertStream") {
             globals.INject_inputbox_open = false;
             fabmo.manualExit();
-            console.log('got insertStream closing; did Exit from manual')
+            //console.log('got insertStream closing; did Exit from manual')
         };
     })
 

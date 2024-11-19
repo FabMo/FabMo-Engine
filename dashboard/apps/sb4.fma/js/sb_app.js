@@ -4,8 +4,9 @@
 
 // Main Entry for 2-Letter Commands from the Sb4 Console
 function sendCmd(command) {
-    if ($('#cmd-input').val() === '' && (typeof command === 'undefined') && globals.FIll_In_Open === false) {  // If nothing entered, take a shot at this being a re-run of the last file
-        command = "FL";
+    //check for focus and if nothing entered, take a shot at this being a re-run of the last file
+    if (($('cmd-input').focus) && ($('#cmd-input').val() === '') && (typeof command === 'undefined') && (globals.FIll_In_Open === false)) {  // If nothing entered, take a shot at this being a re-run of the last file
+            command = "FL";
         processCommandInput(command);
     } else {
         var thisCmd = command || $('#cmd-input').val();
@@ -66,14 +67,14 @@ function postSbpAction(action) {
     200);
 }
 
-// Try and Keep Focus in the Command Input Box
+// Try and Keep Focus in the Command Input Box; except when it should not be
 function setSafeCmdFocus(site) {     // too easy to walk on Manual Keypad (not sure why?); so protect
   console.log("got safeCheck", site) // site for debugging flow
     if (globals.FAbMo_state === "manual") {
         return;
     }
     if (globals.FIll_In_Open === true) {    // let fill-in keep focus
-//        $("#fi_1").focus();
+        //  $("#fi_1").focus();
         return;
     }
     if (globals.INject_inputbox_open) {
@@ -249,20 +250,25 @@ function processCommandInput(command) {
             break;
         case "FL": 
             $("#cmd-input").val("... downloading file to tool ...");  // ... just a little message to show we're working
-            var mostRecentJob = JSON.parse(localStorage.getItem('mostRecentJob'));    
-            if (mostRecentJob && mostRecentJob.id) {
-                fabmo.resubmitJob(mostRecentJob.id, { stayHere: true }, function(err, result) {
+            fabmo.clearJobQueue(function (err, data) {
                 if (err) {
-                    console.error("Error resubmitting job:", err);
+                    cosole.log(err);
                 } else {
-                    console.log("Job resubmitted successfully:", mostRecentJob.name);
-                    // Optionally, update the UI here to reflect the job being re-run
+                    var mostRecentJob = JSON.parse(localStorage.getItem('mostRecentJob'));    
+                    if (mostRecentJob && mostRecentJob.id) {
+                        fabmo.resubmitJob(mostRecentJob.id, { stayHere: true }, function(err, result) {
+                            if (err) {
+                                console.error("Error resubmitting job:", err);
+                            } else {
+                                console.log("Job resubmitted successfully:", mostRecentJob.name);
+                            }
+                        });
+                    } else {
+                        console.log("No recent job to rerun.");
+                    }
+                    displayFillIn("", "Rerun File; Ready to Run", mostRecentJob.name);
                 }
-                });
-            } else {
-                console.log("No recent job to rerun.");
-            }
-            displayFillIn("", "Rerun File; Ready to Run", mostRecentJob.name);
+            });
             break;
         case "FE":
             var mostRecentJob = JSON.parse(localStorage.getItem('mostRecentJob'));    

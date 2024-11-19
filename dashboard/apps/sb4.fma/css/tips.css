@@ -1,15 +1,42 @@
-/* To Implement a Tooltip in FabMo -- (no dependencies) -- 
-        - reference this sheet;
-        - add class="tooltip" to the element you want to have a tooltip;
+/* Copied from dashboard master version 11/12/24 */
+/* To Implement simple a Tooltips in FabMo -- (there are no dependencies in this system) --
+          {Tooltips provide info on an area or functionality of interface; use title-tips for brief popup info on buttons}
+      STYLE
+        - reference this style sheet (all CSS is compiled into the dashboard.css file by webpack);
+             > so for Dashboard: reference tips in dashboard.css, e.g. <link rel="stylesheet" href="css/dashboard.css">
+             > so for apps: reference tips in parent dashboard.css <link rel="stylesheet" href="../../css/dashboard.css">
+      HTML
+        - add class="tooltip" to the element you want to have a tooltip -- this will be a CIRCLE WITH AN "i" INSIDE;
         - add class="tooltiptext" to the element you want to be the tooltip text;
-        - add the text you want to be the tooltip text between the opening and closing tags of the element with class="tooltiptext"
-        - add class="tooltip-below" to the element you want to have a tooltip below the element;
+
+        - add the TEXT you want to be the tooltip text between the opening and closing tags of the element with class="tooltiptext"
+        - by default the tool tip will display above the text box element and slightly to the right;
+        - add class="tooltip-below" to the element you want to have a tooltip text display below the element;
+        - add class="tooltip-left" to the element you want to have a tooltip text display towards the left of the element;
+
+      EXAMPLE
+        <h1>Wifi Networks Available<span class="tooltip tooltiptext::after">i<span class="tooltiptext">
+            Wifi networks available to your tool. 
+            Click on SSID name to set up a new wifi interface.</span></span>
+        </h1>
+
+                <div class="dro-addon-label"> Spindle-1 <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 63px; top:0px">i<span class="tooltiptext">
+                  Set spindle RPM. Black values indicate commanded RPM; blue values indicate achieved RPM.<br> 
+                  AMP value is a display of the spindle load as current in amps.</span></span></div>
+
+
+      DESIGN  
+        - further style the span to adjust fit and appearance; e.g.::after
+            <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 63px; top:0px">i<span class="tooltiptext"> ...
+
+        - at some point we may want to put all the tips and data into a single JSON object to make this easier to manage;
+        - for now, I find the tips easier to locate and work on in the HTML ...;
 */
 
-/* Tooltip container */
+/* Tooltip elements */
 
 .tooltip {
-    background-color: #bdbdbd;
+    background-color: #bdbdbd90;
     position: relative;
     left: 5px;
     top: -5px;
@@ -20,7 +47,7 @@
     height: 18px;
     width: 18px;
     line-height: 100%;
-    color: #eee;
+    color: #eeeeeeee;
     text-align: center;
     font-size: 1rem;
     font-family: serif;
@@ -35,6 +62,7 @@
     /* Tooltip text */
     .tooltip .tooltiptext {
       visibility: hidden;
+      width: max-content;
       max-width: 500px;
       background-color: #bdbdbd;
       color: #fff;
@@ -53,8 +81,9 @@
       left: 50%;
       margin-left: -60px;
       /* Fade in tooltip */
+      transition: opacity 0.2s ease-in-out 0.2s, visibility 0.2s ease-in-out 0.2s;
       opacity: 0;
-      transition: opacity 1s;
+      visibility: hidden;
     }
     
     /* Tooltip arrow */
@@ -77,12 +106,22 @@
       width: max-content;
       max-width: 500px;
       opacity: 1;
+      transition: opacity 0.2s ease-in-out, visibility 0.2s;
     }
   
     /* Tooltip-below container */
     .tooltip-below .tooltiptext {
       top: 130%; /* Position below the trigger element */
       bottom: auto; /* Remove the bottom property */
+    }
+  
+    /* Tooltip-left container */
+    .tooltip-left .tooltiptext {
+      left: -425px; /* Position left of the trigger element */
+    }
+    /* Adjust the left property of the arrow for better alignment */
+    .tooltip-left .tooltiptext::after {
+      left: 90%;
     }
   
     /* Tooltip-below arrow */
