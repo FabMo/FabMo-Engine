@@ -6,17 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DESKTOP</title>
     <!-- Foundation 5.5.3 -->
+    <script src="js/lib/modernizr.js"></script>
+
     <link rel="stylesheet" href="css/foundation.min.css"> 
     <link rel="stylesheet" href="css/normalize.css">
     <link rel="stylesheet" href="css/style.css">
+    
     <link rel="stylesheet" href="css/tips.css">
-
+    <!-- Can't use standard dashboard.css because of conflicts with foundation here -->
+    <!-- <link rel="stylesheet" href="../../css/dashboard.css"> --> 
     <!-- <link rel="stylesheet" href="css/stylejogdial.css"> -->
 
     <script src="js/lib/jquery.js"></script>
     <script src="js/lib/foundation.min.js"></script>
     <script src="js/lib/foundation.dropdown.js"></script>
-    <script src="js/lib/modernizr.js"></script>
+<!--  <script src="js/lib/modernizr.js"></script> seems to fix mordernizr issue -->
     <script src="js/lib/fastclick.js" async></script>
     <script src="js/lib/haptics.js"></script>
     <script src="js/lib/fabmo.js"></script>
@@ -143,15 +147,29 @@
         <div class="small-5 medium-3 large-3 columns">
             <div class="callout panel" id="macro-panel">
               <!-- Buttons (actions) -->
+
               <div class="macros">
-              <h9 class="panel-label" id="macro-panel-label"><strong>Standard Workflow</strong><span class="tooltip">i<span class="tooltiptext">
-                Access the normal steps for starting-up your tool and Cutting or Managing your Part Files.</span></span>
-              </h9>
-              <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button">1 - Home X & Y [C3]</button>
-              <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button">2 - Set Z Zero [C2]</button>
-              <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" title="Pick a Single Part to Cut"><strong>3 - CUT PART [FP]</strong></button>
-              <button type="button" class="macro-button success button small medium-expanded" id="to_job_manager" title="Select and Order Parts to Cut (Job Manager)"><span class="icon"></span><strong>(3) MANAGE PARTS</strong></button>
+                <h9 class="panel-label" id="macro-panel-label"><strong>Standard Workflow</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
+                    This panel accesses the normal steps for starting-up your tool and Cutting or Managing your Part Files.<br><br>
+                    &nbsp;&nbsp;Click to download a detailed workflow checklist.</span></span>
+                </h9>
+                    <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button">
+                        1 - Home X & Y [C3] 
+                        <span class="tog-homed" id="tog-xy-homed" style="color: grey;">&#10680;</span>
+                    </button>
+                    <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button">
+                        2 - Set Z Zero [C2] 
+                        <span class="tog-homed" id="tog-z-homed" style="color: grey;">&#10680;</span>
+                    </button>
+                    <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" title="Pick a Single Part to Cut">
+                        <strong>3 - CUT PART [FP]</strong>
+                    </button>
+                    <button type="button" class="macro-button success button small medium-expanded" id="to_job_manager" title="Select and Order Parts in Job Manager">
+                        <span class="icon"></span>
+                        <strong>(3) MANAGE PARTS</strong>
+                    </button>
               </div>
+
               <div class="other-macros">
               <!-- <label class="panel-label show-for-medium-up" title="Access other helpful macros and quick command calls; User configurable in ..."><strong>Other Helpful Macros</strong></label> -->
               <label class="panel-label show-for-medium-up"><strong>Other Helpful Macros</strong></label>
@@ -174,8 +192,8 @@
                 <div class="row">
                     <div class="small-11  medium-11 large-11 columns">
                     <label class="show-for-small-only"><strong>Cmd</strong></label>
-                    <h9 class="panel-label show-for-medium-up cmds"><strong>Individual Command Input</strong><span class="tooltip">i<span class="tooltiptext">
-                        Run specific OpenSBP Commands. Select from menu above or type directly here. See: Help > Command Reference.</span></span>
+                    <h9 class="panel-label show-for-medium-up cmds"><strong>Individual Command Input</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
+                        Run specific OpenSBP Commands. Select from menu above or type directly here.<br><br> See: Help > Command Reference.<br><br></span></span>
                     </h9>
                     <img class="right" id="vid-button" "vid-button-off" title="Toggle Video" style="height:20px; width:20px; position:absolute; top:5px; right:-40px" src="./assets/icon_video.png">
                     <form><strong>

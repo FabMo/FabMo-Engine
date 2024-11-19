@@ -15,6 +15,7 @@ $sb_standard_variables_PRESENT := 0								  ' Define test variable if it does n
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 
 ' === Main Program ===
+&zHOMED = false
 GOSUB initialize_variables
 &last_cutter_offset = $sb_current_cutter_Zoffset
 ZZ    ' Set current Z location to 0.00 as a working starting point
@@ -23,6 +24,7 @@ GOSUB check_plate_clearance
 GOSUB first_home_z_toProx
 GOSUB find_z_zero_plate
 GOSUB finish
+&zHOMED = true
 END
 '==============================
 

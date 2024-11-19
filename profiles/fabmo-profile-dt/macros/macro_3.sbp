@@ -18,6 +18,7 @@ $sb_standard_variables_PRESENT := 0								  ' Define test variable if it does n
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 
 ' === Main Program ===
+&xyHOMED = false
 GOSUB initialize_variables
 ' --- Main Program Sequence ---
 Z3    ' zeoring all axes at their current location (sets worst case homing distances)l  ##TABLE BASE?
@@ -26,6 +27,7 @@ GOSUB home_z
 GOSUB home_x
 GOSUB home_y
 GOSUB offset_z_cutter  ' Adds the offset for Z cutter; ONLY USEFUL if CUTTER and MATERIAL HAVE NOT BEEN CHANGED
+&xyHOMED = true
 END
 '==============================
 

@@ -28,20 +28,49 @@ function updateUIFromEngineConfig() {
     });
 }
 
-function updateSpeedsFromEngineConfig() {
-  var temp = 0;
-  fabmo.getConfig(function(err, data) {
-    $('#formatted_movexy_speed').val(data.opensbp.movexy_speed.toFixed(2));
-    $('#formatted_movez_speed').val(data.opensbp.movez_speed.toFixed(2));
-    // Note that for g2, jog speeds are handled differently than move speeds (they are drived from G2 velocity max)
-    $('#formatted_jogxy_speed').val(data.opensbp.jogxy_speed.toFixed(2));
-    $('#formatted_jogz_speed').val(data.opensbp.jogz_speed.toFixed(2));
-    $('#formatted_joga_speed').val(data.opensbp.joga_speed.toFixed(2));
-    var xyHomedStatus = data?.opensbp?.tempVariables?.HOMED;
-    if (!xyHomedStatus || xyHomedStatus == "false") {
-        $('#first_macro_button').css('filter', 'brightness(1.2)');
-    }
-  });
+function updateSpeedsFromEngineConfig() {  // ALSO update HOMING status at the same time
+    fabmo.getConfig(function(err, data) {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        $('#formatted_movexy_speed').val(data.opensbp.movexy_speed.toFixed(2));
+        $('#formatted_movez_speed').val(data.opensbp.movez_speed.toFixed(2));
+        // Note that for g2, jog speeds are handled differently than move speeds (they are drived from G2 velocity max)
+        $('#formatted_jogxy_speed').val(data.opensbp.jogxy_speed.toFixed(2));
+        $('#formatted_jogz_speed').val(data.opensbp.jogz_speed.toFixed(2));
+        $('#formatted_joga_speed').val(data.opensbp.joga_speed.toFixed(2));
+
+
+        var xyHomedStatus = data?.opensbp?.tempVariables?.XYHOMED || null;
+        if (!xyHomedStatus || xyHomedStatus == "false") {
+            $("#first_macro_button").addClass("info");
+            $("#first_macro_button").removeClass("disabled");
+            fabmo.setConfig({"opensbp": {"tempVariables": {"XYHOMED": "false"}}}, function(err, data) {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        } else {
+            $("#first_macro_button").addClass("disabled");
+            $("#first_macro_button").removeClass("info");
+        }
+
+        var zHomedStatus = data?.opensbp?.tempVariables?.ZHOMED || null;
+        if (!zHomedStatus || zHomedStatus == "false") {
+            $("#second_macro_button").addClass("info");
+            $("#second_macro_button").removeClass("disabled");
+            fabmo.setConfig({"opensbp": {"tempVariables": {"ZHOMED": "false"}}}, function(err, data) {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        } else {
+            $("#second_macro_button").addClass("disabled");
+            $("#second_macro_button").removeClass("info");
+        }
+
+    });
 }
 
 // AXis = ["", "X", "Y", "Z", "A", "B", "C", "U", "V", "W" ]
@@ -135,26 +164,30 @@ function setConfig(id, value) {
 }
 
 /**
- *  Manage App Config and Variables
+ * Manage App Config and Variables                      // Note that this info in stored in the app, approot/approot/generatedName/config.json
+ * Much of this might be better handled with local storage in the browser, but I wanted to explore app specific variables storage would work. This storage
+ * transends the client side app, but is not shared with other apps.
  **/ 
+
 function updateAppState() {
     fabmo.getAppConfig(function (err, config) {
         if (err) {
             console.error(err);
         } else {
-            console.log("App Config", config);
+            //console.log("App Config", config);
+            //console.log("first read ", config["COnt_Height"]);
             if (config["cont-height"]) {
                 g.COnt_Height = config["cont-height"];
             } else {
-                g.COnt_Height = "200px";
+                g.COnt_Height = "200";
             }
-            if (config["cont-width"]) {
-                g.COnt_Width = config["cont-width"];
-            } else {
-                g.COnt_Width = "400px";
-            }   
+            // if (config["cont-width"]) {
+            //     g.COnt_Width = config["cont-width"];
+            // } else {
+            //     g.COnt_Width = "400px";
+            // }   
             $("#sbp-container").css("height", g.COnt_Height);
-            $("#sbp-container").css("width", g.COnt_Width);
+            // $("#sbp-container").css("width", g.COnt_Width);
             if (config["vi-display"] === null || config["vi-display"] === 0) {
                 g.VI_display = 0;
             } else {
@@ -179,7 +212,7 @@ function updateAppState() {
                 $("#vid-button").removeClass("vid-button-disabled");
                 g.VI_display = 3;                                    // Assume both feeds at moment
                 localStorage.setItem("videos", 2);                   // ... redundant to system; needs to be generated
-                localStorage.setItem("fabmo_sb4_has_video", "true");   // ... inform system for transparent keypad
+                localStorage.setItem("fabmo_sb4_has_video", "true"); // ... inform system for transparent keypad
                 $("#sbp-container").click();                         // ... refresh the form; a hack, but it works
             } else {
                 $("#file_txt_area").css("background", "#327c7e");
