@@ -9,9 +9,7 @@ define(function (require) {
 
     views.Authentication = Backbone.View.extend({
         el: "#mainContent",
-        template: _.template(
-            require("text-loader!./templates/authentication.html")
-        ),
+        template: _.template(require("text-loader!./templates/authentication.html")),
         initialize: function () {
             this.render();
         },
@@ -35,6 +33,7 @@ define(function (require) {
             var url = this.model.get("app_url") || "about:blank";
             var client_container = jQuery(this.el);
             ////##			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>'
+            // allowfullscreen is correctly written here
             var src =
                 '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin allow-downloads allow-popups" allowfullscreen></iframe>';
             client_container.html(src);
