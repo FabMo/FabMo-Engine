@@ -282,16 +282,6 @@ function updateHistory(callback) {
     // Eliminate entries in the table and repopulate with fresh data
     clearHistory();
     addHistoryEntries(jobs.data);
-    // Store mostRecentJob in local browser storage for use in other apps; _id seems to be the most reliable unique identifier 
-    if (jobs.data.length > 0) {
-      mostRecentJob = {
-        id: jobs.data[0]._id,
-        name: jobs.data[0].name,
-      };
-    } else {
-      mostRecentJob = {"id": null, "name": null};
-    }
-    localStorage.setItem('mostRecentJob', JSON.stringify(mostRecentJob));
     typeof callback === 'function' && callback();
   });
 }
@@ -322,23 +312,8 @@ function createHistoryMenu(id) {
   return menu.replace(/JOBID/g, id)
 }
 
-// Global variable to store the most recent job's information
-var mostRecentJob = {};
-
 function addHistoryEntries(jobs) {
   var table = document.getElementById('history_table');
-  // Assuming the most recent job is the first in the array
-  // if (jobs.length > 0) {
-  //   mostRecentJob = {
-  //     id: jobs[0]._id,
-  //     name: jobs[0].name,
-  //   };
-  // } else {
-  //   mostRecentJob = {};
-  // }
-  // // store mostRecentJob in local browser storage for use in other apps 
-  // localStorage.setItem('mostRecentJob', JSON.stringify(mostRecentJob));
-
   jobs.forEach(function(job) {
     var row = table.insertRow(table.rows.length);
     var menu = row.insertCell(0);
