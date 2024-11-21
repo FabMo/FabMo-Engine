@@ -4,9 +4,9 @@
   "icon": "icon.png",
   "icon_color": "#327c7e",
   "author": "Ted Hall",
-  "version": "4.0.69",
+  "version": "4.0.71",
   "website": "http://www.shopbottools.com",
-  "description": "Retro ShopBot CNC Interface - Sb4",
+  "description": "ShopBot CNC Interface - Sb4",
   "id": "fabmo-sb4",
   "devDependencies": {
     "grunt": "^0.4.5",

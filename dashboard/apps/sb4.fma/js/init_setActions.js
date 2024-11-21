@@ -182,6 +182,7 @@ $(document).ready(function () {
     // ... this is not necessary for feedrate override because fabmo main window already has that during file running
     window.addEventListener('keyup', function(event) {
         var commandInputText = $("#cmd-input").val();
+        console.log("FIRST EVENT in Sb4: " + event.key);
         if (commandInputText.length < 1) {  // ... only if we have not started a line          
             // If the key is either the + or the _ , then send the key code to the parent window
             //console.log("GOT SOME EVENT in Sb4: " + event.key);
@@ -192,7 +193,6 @@ $(document).ready(function () {
             } else {
                 // pass any other key events to the command input
                 console.log("GOT SOME EVENT in Sb4: " + event.key);
-                //$("#cmd-input").focus();
             }
         }
     });
@@ -285,35 +285,29 @@ $(document).ready(function () {
 
     $('#file').change(function (evt) {
         //document.getElementById('file').addEventListener('input', function(evt) {
-        evt.preventDefault();
+//        evt.preventDefault();
 //        $("#cmd-input").val("");
         $("#cmd-input").val("... downloading file to tool ...");  // ... just a little message to show we're working
         $("#cmd-input").blur();
 
         lastLn = 0;
         upDating = false;
-    
-        //console.log("got entry");
-        //console.log(evt);
-        //console.log("file- " + curFile);
-        lastLn = 0;
         let file = document.getElementById("file").files[0];
         let fileReader = new FileReader();
         fileReader.onload = function (fileLoadedEvent) {
             lines = fileLoadedEvent.target.result.split('\n');
-            for (let line = 0; line < lines.length; line++) {
+            //for (let line = 0; line < lines.length; line++) {
                 //console.log(line + ">>>" + lines[line]);
-            }
+            //}
             curFile = file
         };
         fileReader.readAsText(file, "UTF-8");
         curFilename = evt.target.files[0].name;
-        //$('#fi_modal_title').empty();
-        $("#cmd-input").val("");
+        $("#cmd-input").val("FP");
         $('#fi_modal_title').append("File Ready to Run");
         //$("#fi_cur_info").text(curFilename);
         //$('#fi-modal').foundation('reveal', 'open');
-         displayFillIn("", "File Ready to Run", curFilename);
+        displayFillIn("", "File Ready to Run", curFilename);
     })
 
     $("#btn_ok_run").click(function (event) {                 // RUN THE FILE
@@ -336,15 +330,16 @@ $(document).ready(function () {
                 }
             });
         
-        } else if (ckFile === "Reru") {                      // or RE-RUN-LAST
+        } else if (ckFile === "Reru") {                      // or RE-RUN-LAST; Identify then Load here
             // check history to identify last job
             fabmo.getJobHistory({
                 start: 0,
                 count: 0
                 }, function(err, jobs) {
                     var arr = jobs.data;
+                    // Identify the last job
                     var lastJob = arr[0];
-                    // split the data from the lastJob into lines
+                    // Load and Split the data from the lastJob into lines
                     var url = '/job/' + lastJob._id + '/file';           
                     $.get(url,function(data, status) {
                     lines = data.split('\n');
@@ -366,6 +361,14 @@ $(document).ready(function () {
             sendCmd();
         }
     });
+
+    // // Get an ENTER on the #fi-modal box to run the command
+    // $('#fi-params').keypress(function (e) {
+    //     if (e.which == 13) {
+    //         $('#btn_ok_run').click();
+    //         return false;    //<---- Add this line ??
+    //     }
+    // });
 
 //    $("#btn_cmd_run").click(function (event) {
 //    });
@@ -625,11 +628,20 @@ $(document).ready(function () {
         fabmo.navigate(location, { target: '_blank' });
     });
 
-    // ** If enter key hit in #fi-params, then click the Run button 
-    $('#fi-params').keypress(function (e) {
-        if (e.which == 13) {
-            $('#btn_ok_run').click();
-            return false;    //<---- Add this line ?
+    // // ** If enter key hit in #fi-params, then click the Run button 
+    // $('#fi-params').keypress(function (e) {
+    //     if (e.which == 13) {
+    //         $('#btn_ok_run').click();
+    //         return false;    //<---- Add this line ?
+    //     }
+    // });
+
+    ////## this system for entry not working!
+    let enterKeyPressed = false;
+    // ** Listen for the keydown event on the input fields
+    $('#fi_container').on('keydown', '.fi_val', function(event) {
+        if (event.key === "Enter") {
+     //       enterKeyPressed = true;
         }
     });
 
@@ -639,16 +651,21 @@ $(document).ready(function () {
         let thisFullCmd = "";
 
         for (let index = 1; index < cmds[thisCurCmd].params.length; index++) {   //try to fix extra cmd
-        //for (let index = 1; index <= cmds[thisCurCmd].params.length; index++) {
             let thisValue = "";
             let theFieldName = ("fi_" + index) ;  // can also get from id
             if ($("#" + theFieldName).val()) {thisValue = $("#" + theFieldName).val()};     
             thisFullCmd += thisValue + ", ";
         };
 
-        console.log(thisCurCmd + ", " + thisFullCmd);
-
+        //console.log(thisCurCmd + ", " + thisFullCmd);
         $("#cmd-input").val(thisCurCmd + ", " + thisFullCmd);  // updated command line
+        ////## per above, this is not working as expected
+        // Check if the change was triggered by the Enter key
+        if (enterKeyPressed) {
+            $("#cmd-input").focus();  // Set focus to #cmd-input
+            enterKeyPressed = false;  // Reset the flag
+        }
+
     });
 
 
