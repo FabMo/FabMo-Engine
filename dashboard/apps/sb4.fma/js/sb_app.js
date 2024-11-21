@@ -6,7 +6,7 @@
 function sendCmd(command) {
     //check for focus and if nothing entered, take a shot at this being a re-run of the last file
     if (($('cmd-input').focus) && ($('#cmd-input').val() === '') && (typeof command === 'undefined') && (globals.FIll_In_Open === false)) {  // If nothing entered, take a shot at this being a re-run of the last file
-            command = "FL";
+        command = "FL"; // First part of ENTER-ENTER to re-run last file
         processCommandInput(command);
     } else {
         var thisCmd = command || $('#cmd-input').val();
@@ -73,7 +73,7 @@ function setSafeCmdFocus(site) {     // too easy to walk on Manual Keypad (not s
     if (globals.FAbMo_state === "manual") {
         return;
     }
-    if (globals.FIll_In_Open === true) {    // let fill-in keep focus
+    if (globals.FIll_In_Open === true) {    // let fill-in keep focus ;;; was problematic with ENTER
         //  $("#fi_1").focus();
         return;
     }
@@ -82,6 +82,23 @@ function setSafeCmdFocus(site) {     // too easy to walk on Manual Keypad (not s
     } else {
         $("#cmd-input").focus();
     }
+}
+
+function getLastJob(callback) {
+    // check history to identify last job
+    fabmo.getJobHistory({
+        start: 0,
+        count: 0
+    }, function(err, jobs) {
+        if (err) {
+            console.error(err);
+            callback(err, null);
+            return;
+        }
+        var arr = jobs.data;
+        var lastJob = arr[0];
+        callback(null, lastJob);
+    });
 }
 
 // Display Fill-In Dialog Box for certain Commands
@@ -149,7 +166,9 @@ function displayFillIn(command, title, info) {
     $('#fi-modal').trigger("reset");
     $('#fi-modal').foundation('reveal', 'open');
     globals.FIll_In_Open = true;
-}
+    $("#cmd-input").val(command);
+    $("#cmd-input").focus();         // put focus here to collect an ENTER as a RUN
+}k
 
 // MAIN COMMAND HANDLER for 2-Letter Commands
 function processCommandInput(command) {
@@ -208,7 +227,6 @@ function processCommandInput(command) {
             break;
         }
 
-//    } else if ((command.length == 2) && (globals.LIcmds).includes(command)) {
     } else if (command.length == 2) {
         // HANDLE COMMANDS (that are direct action single commands; NO STOP for ENTER)                                        
         switch (command) {
@@ -254,31 +272,47 @@ function processCommandInput(command) {
                 if (err) {
                     cosole.log(err);
                 } else {
-                    var mostRecentJob = JSON.parse(localStorage.getItem('mostRecentJob'));    
-                    if (mostRecentJob && mostRecentJob.id) {
-                        fabmo.resubmitJob(mostRecentJob.id, { stayHere: true }, function(err, result) {
-                            if (err) {
-                                console.error("Error resubmitting job:", err);
+                    getLastJob(function(err, lastJob) {
+                        if (err) {
+                            console.error("Error fetching last job:", err);
+                        } else {
+                            console.log("Last job:", lastJob);
+                            if (lastJob && lastJob._id) {
+                                fabmo.resubmitJob(lastJob._id, { stayHere: true }, function(err, result) {
+                                    if (err) {
+                                        console.error("Error resubmitting job:", err);
+                                    } else {
+                                        console.log("Job resubmitted successfully:", lastJob.name);
+                                    }
+                                });
+                                displayFillIn("", "Rerun File; Ready to Run", lastJob.name);
                             } else {
-                                console.log("Job resubmitted successfully:", mostRecentJob.name);
+                                console.log("No recent job to rerun.");
+                                fabmo.notify("info", "No recent job to rerun!");
+                                $('#cmd-input').val("");    // remove 
                             }
-                        });
-                    } else {
-                        console.log("No recent job to rerun.");
-                    }
-                    displayFillIn("", "Rerun File; Ready to Run", mostRecentJob.name);
+                        }
+                    })
                 }
             });
             break;
         case "FE":
-            var mostRecentJob = JSON.parse(localStorage.getItem('mostRecentJob'));    
-            if (mostRecentJob && mostRecentJob.id) {
-            fabmo.launchApp('editor', {
-                'job': mostRecentJob.id
-              });
-            } else {
-                console.log("No recent job to edit.");
-            }
+            getLastJob(function(err, lastJob) {
+                if (err) {
+                    console.error("Error fetching last job:", err);
+                } else {
+                    console.log("Last job:", lastJob);
+                    if (lastJob && lastJob._id) {
+                        fabmo.launchApp('editor', {
+                            'job': lastJob._id
+                        });
+                    } else {
+                        console.log("No recent job to edit.");
+                        fabmo.notify("info", "No recent job to edit!");
+                        $('#cmd-input').val("");    // remove 
+                    }
+                }
+            })
             break;
         case "FN":
             fabmo.launchApp('editor', {
@@ -306,6 +340,7 @@ function processCommandInput(command) {
                 let titleCmd = "", parameters = "";
                 titleCmd = command + ": " + cmds[command].name;
                 displayFillIn(command, titleCmd, "");
+                $("#cmd-input").focus();
                 break;
         }
 
