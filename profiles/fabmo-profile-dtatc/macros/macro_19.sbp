@@ -1,0 +1,79 @@
+'!FABMO!name:proto tool change - Josh
+'!FABMO!description:Macro Description
+'!FABMO!enabled:true
+'Auto tool change setup program for Desktop ATC Max
+'Shopbot tools
+'2024
+'Joshua Ayers
+
+'tool pos1: 33.5, 4.461, -4.25 
+'tool pos2: 33.5, 7.806, -4.25
+'tool pos3: 33.5, 10.614, -4.25
+
+'HOME TOOL AND LOAD ATC TOOLCHANGEER VARIABLES
+C3	'HOME TOOL
+so,	8,0
+'C11 'TOOL VARIABLES	
+'C12	'TOOL SETTINGS
+&tool0Y = 4.875
+&toolbarXTarget = 33.7
+&toolbarZtarget = -4.125
+&hardY = 3
+&softXoffset = 5
+'Cycle through the tools
+
+&currentTool = 0
+&toolSelection = 0
+gosub replaceTool
+gosub foo
+gosub getTool
+    
+&currentTool = 1
+&toolSelection = 1
+gosub replaceTool
+gosub foo
+gosub getTool
+
+&currentTool = 2
+&toolSelection = 2
+gosub replaceTool
+gosub foo
+gosub getTool
+
+'End the main code 
+end
+'--- Functions for tool changes
+ replaceTool:
+	'Goto an ofset from the current tool 3 in infront of the tool holder
+    if &currentTool == -1 then return
+    j3, &toolbarxtarget-&softXoffset,&tool0y+&currentTool*&hardY,&toolbarZtarget	
+    ms, 0.5
+    mx, %(1) + &softXoffset'move into the tool holder and release the tool
+    gosub ReleaseTool
+	j3, &toolbarXtarget-5,&tool0y+&currentTool*&hardY,&toolbarZtarget	
+    &currentTool = -1
+    return
+getTool: 
+	if (&currentTool != -1) then gosub replaceTool
+	j3, &toolbarxtarget-&softXoffset,&tool0y+&toolSelection*&hardY,&toolbarZtarget
+    j3, &toolbarxtarget,&tool0y+&toolSelection*&hardY,-1
+    ms, 0.5
+    mz, &toolbarZtarget 'toolbarZtarget will always be negative relative to the z 0 position thus subtracting it will result in an accent
+	gosub NeumaticCollection
+    mx,%(1)-&softXoffset
+    &currentTool = &toolSelection
+    return
+ReleaseTool: 
+	so, 8,1
+    mz, &toolbarZtarget 'offset the z axis to clear the tool chuck  
+    so, 8,0
+    return
+NeumaticCollection:
+	so, 8,1
+    MZ, &toolbarZtarget
+    so, 8,0
+    'so, 8,1
+    return
+foo:
+	j3, 12,12,-1
+    return

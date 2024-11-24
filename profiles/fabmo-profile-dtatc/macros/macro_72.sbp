@@ -1,0 +1,84 @@
+'!FABMO!name:ATC Measure Tool
+'!FABMO!description:Macro Description
+'!FABMO!enabled:true
+&SkipInput = 1
+&AUTOMATED = 0
+TOP:
+IF &SkipInput = 1 THEN GOTO SKIP_INPUT
+PAUSE "Bit number to Zero:" &tool
+SKIP_INPUT:
+IF &tool = "" THEN GOTO INVALID_TOOL
+IF &tool = 0 THEN &AUTOMATED = 0
+IF &tool = 0 THEN GOTO ALL_TOOLS
+IF &tool < 0  THEN GOTO INVALID_TOOL
+IF &tool > $ATC.NumClips THEN GOTO INVALID_TOOL
+IF &tool <= $ATC.NumClips THEN GOTO OKTOOL
+GOTO INVALID_TOOL
+OKTOOL:
+AUTOMATED:
+C71
+&homeOff_Z = $sb_homeOff_Z * $unitMultiplier
+MS,,$zFast    'Change move speed to .75
+SF, 0         'Deactivate software limits
+VN, 0        'Turn limit switch OFF
+'IF %($ToolBar_Sensor) = 0 THEN GOTO MANUAL_BIT_MEASUREMENT
+&check = %(106) + %(3)
+PZ, &check, $zFast, $Z_Prox
+IF %(3) < &check THEN GOTO Z_PROX_SUCCESS
+GOTO Z_PROX_FAILURE
+Z_PROX_SUCCESS:
+ZZ
+MZ,-1*&homeOff_Z
+
+
+VA,,,$smallBackOff
+MZ,0
+JY, $ATC_zZeroY - %(8)
+JX, $ATC_zZeroX - %(7)       'XY Location for Z Zeroing (Enter X&Y Location of Fixed Zero plate)
+'Set the contact switch action ... Plate NOW SET FOR Input Switch #1
+&check = %(3) - %(106)
+PZ, &check, $zSlow, $ZZero_Sensor
+IF %(3) > &check THEN GOTO CONTACT_REGISTERED
+GOTO CONTACT_ERROR
+CONTACT_REGISTERED:
+ 
+MANUAL_ZERO_FINISHED:
+
+$tools[&tool].H = %(3)
+
+VA,,,-1 * $ATC.PlateOffset,,,,,  'Set Z height of bit relative to table surface from Table Base Coordinates
+JZ,$smallBackOff - $ATC.PlateOffset
+IF &AUTOMATED > 0 THEN GOTO ALL_TOOLS
+IF &SkipInput = 1 THEN GOTO SKIP_QUESTION
+PAUSE "Do you wish to zero another cutter <Y or N>: " &gototop
+If &gototop = "Y" Then GoTo TOP 
+SKIP_QUESTION:
+VN,0
+J2, %(1) - 5 * $unitMultiplier
+FINISHED:
+END
+'================================================================Subroutines
+CONTACT_ERROR:
+MZ,%(3) + $smallBackOff
+PAUSE "Failed to make contact with Z Zero plate. (M-0153)"
+END
+
+Z_PROX_FAILURE:
+PAUSE "Failed to locate Z Limit Switch. Home tool and retry. (M-0152)"
+END
+
+ALL_TOOLS:
+&AUTOMATED = &AUTOMATED + 1
+IF &AUTOMATED > $ATC.NumClips THEN GOTO AUTOMATED_FINISHED
+&tool = &AUTOMATED
+GOTO AUTOMATED
+
+AUTOMATED_FINISHED:
+&tool = 0
+C71
+GOTO FINISHED
+
+INVALID_TOOL:
+'Invalid tool number or no tool number, exiting routine.
+PAUSE
+END

@@ -1,0 +1,13 @@
+'!FABMO!name:ATC Plate Offset
+'!FABMO!description:Macro Description
+'!FABMO!enabled:true
+&loadVariables = 1
+IF &loadVariables = 0 THEN GOTO START
+C70
+START:
+C3
+PAUSE "The keypad will now open, move your spindle to your preferred Z Zeroing location" 
+SK
+C2
+PAUSE "Offset is " + %(9)
+$ATC.PlateOffset = %(9) - $tools[$ATC.ToolIn].H

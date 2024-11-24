@@ -1,0 +1,45 @@
+'!FABMO!name:ATC Status Check
+'!FABMO!description:Macro Description
+'!FABMO!enabled:true
+&LOAD_VARS = 0
+IF &LOAD_VARS = 0 THEN GOTO START
+'ATC Vars For Testing
+$ATC.ToolIn = 1
+$ATC.Dropped = 0
+$ATC.PlateOffset = -2
+$ATC.Tool_Length = -5
+$ATC.numClips = 3
+$ATC.MaxDepth = -0.02
+C70
+START:
+$ATC.ToolIn := 1
+$ATC.Dropped := 0
+$ATC.Status = "OK"
+$ATC.ToolBar = "ATTACHED"
+IF %($ToolBar_Status) = 1 THEN GOTO TOOLBAR_ATTACHED
+$ATC.ToolBar = "NOT ATTACHED"
+
+TOOLBAR_ATTACHED:
+IF %($Drawbar_Sensor_Status) = 0 THEN GOTO DRAWBAR_OK
+$ATC.Status = "DRAWBAR STUCK OPEN"
+END
+
+DRAWBAR_OK:
+IF %($Tool_Sensor_Status) = 1 THEN GOTO CHECK_OUT
+GOTO CHECK_IN
+
+CHECK_IN:
+$ATC.ToolIn = 0
+IF $ATC.Dropped = 1 THEN GOTO OK
+$ATC.Dropped = 1
+'$ATC.Status = "TOOL NOT FOUND IN SPINDLE - REHOME MACHINE"
+GOTO OK
+
+CHECK_OUT:
+IF $ATC.Dropped = 0 THEN GOTO OK
+$ATC.Status = "UNKNOWN TOOL IN SPINDLE, REMOVE TOOL AND REHOME MACHINE"
+END
+
+OK:
+$ATC.Status = "OK"
+END
