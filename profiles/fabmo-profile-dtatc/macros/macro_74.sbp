@@ -1,0 +1,134 @@
+'!FABMO!name:ATC Calibrate
+'!FABMO!description:Macro Description
+'!FABMO!enabled:true
+$unitMultiplier = 1
+IF %(25) == 0 THEN GOTO SETUPVALUES
+$unitMultiplier = 25.4
+SETUPVALUES:
+&loadVariables = 1
+IF &loadVariables = 0 THEN GOTO START
+C70
+START:
+GOSUB ERROR_DEFINITIONS
+$ATC.ToolIn := 0
+$tools[0].H := -5
+$ATC.Dropped := 1
+$ATC.PlateOffset := -2
+$ATC.Tool_Length := -5
+$ATC.numClips := 3
+$ATC.MaxDepth := -0.02
+$ATC.Type := 7
+C3
+VN,0
+SF,0
+&errorEnum = 0
+JS,$xyJog,$zJog
+PAUSE "How many positions exist on your toolbar" &count
+$ATC.numClips = &count
+J2,$firstClipX - %(7),$firstClipY - %(8)
+PAUSE "Insert an empty tool holder in the spindle (no collet or nut)... (M-0051)"
+PAUSE "...Insert an empty tool holder upside down in the #1 clip (no collet or nut)... (M-0052)"
+PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 and the other end on the fixed z zero plate. Click OK when ready to proceed! (M-0055)"
+
+CHECK_Z_PLATE:
+IF %($ZZero_Status) == 1 THEN GOTO ERROR
+&check = %(3) - %(106)
+PZ, %(3) - %(106), $xySlow, $ZZero_Sensor
+IF %(3) > &check THEN GOTO SET_CLIP_HEIGHT
+MZ,%(3) + $smallBackOff
+&errorEnum = 1
+GOTO ERROR
+
+SET_CLIP_HEIGHT:
+PAUSE "Click OK"
+&Z_clipbase = %(3) - $ATC_holderHeight
+PAUSE "Click OK"
+JZ, %(3) + $smallBackOff
+JY,%(2) - $ToolBar_Probe_Offset
+GOTO FIND_HOLDER
+FIND_HOLDER:  
+&start_X = %(1)
+&start_Y = %(2)
+&start_Z = %(3)
+&alignment_height = %(3) - $ATC_holderAlignmentHeight - $smallBackOff
+JZ,&alignment_height
+&check = $firstClipY - %(8)
+PAUSE "Click OK"
+PY, $firstClipY - %(8), $xySlow, $ZZero_Sensor
+IF %(2) < &check THEN GOTO FOUND_LEFT_EDGE
+MY,%(2) - $smallBackOff
+&errorEnum = 2
+GOTO ERROR
+
+FOUND_LEFT_EDGE:
+PAUSE 0.1
+&LEFTSTART = %(2)
+JY, &LEFTSTART - $smallBackOff
+JZ, %(3) + $safe_lift
+JY, &LEFTSTART + $TOOL_OFFSET
+JZ,&alignment_height
+PAUSE "Click OK"
+PY, &LEFTSTART, $xySlow, $ZZero_Sensor
+IF %(2) > &LEFTSTART THEN GOTO FOUND_RIGHT_EDGE
+MY,%(2) + $smallBackOff
+&errorEnum = 3
+GOTO ERROR
+	
+FOUND_RIGHT_EDGE:
+PAUSE 0.1
+&RIGHTSTART = %(2)
+JY,&RIGHTSTART + $smallBackOff
+JZ, %(3) + $safe_lift
+&CENTER_Y = &LEFTSTART + ((&RIGHTSTART - &LEFTSTART) / 2)
+J2,$firstClipX - $TOOL_OFFSET - %(7), &CENTER_Y
+JZ,&alignment_height
+&check = $firstClipX - %(7)
+PAUSE "Click OK"
+PX,$firstClipX - %(7), $xySlow, $ZZero_Sensor
+IF %(1) < &check THEN GOTO FOUND_FRONT_EDGE
+MX,%(1) - $smallBackOff
+&errorEnum = 4
+GOTO ERROR
+
+FOUND_FRONT_EDGE:
+PAUSE 0.1
+&X_EDGE = %(1)
+JX,&X_EDGE - $smallBackOff
+&CENTER_X = &X_EDGE + $HOLDER_RADIUS * 2
+JZ,%(3) + $safe_lift
+JX,&CENTER_X                      
+
+&center_X = (&center_X - $sb_homeOff_X * $unitMultiplier) / $unitMultiplier
+&center_Y = (&center_Y - $sb_homeOff_Y * $unitMultiplier) / $unitMultiplier
+&thisZ = (&Z_clipbase + %(9)) / $unitMultiplier
+
+&toolIdx = 1
+TOOL_POS_LOOP:
+$tools[&toolIdx].X = &center_X 
+$tools[&toolIdx].Y = &center_Y + $TOOL_OFFSET * (&toolIdx - 1)
+$tools[&toolIdx].Z = &thisZ
+$tools[&toolIdx].H = -5
+IF &toolIdx = $ATC.numClips THEN GOTO FINISHED
+&toolIdx = &toolIdx + 1
+GOTO TOOL_POS_LOOP
+
+FINISHED:
+$ATC_zZeroX = %(1) / $unitMultiplier
+$ATC_zZeroY = (%(2) - 4.125 * $unitMultiplier) / $unitMultiplier
+J2,0,0
+PAUSE "Calibration complete (M-0151)"
+END
+
+'---------------------------------------SUBROUTINES--------------------------------------------
+ERROR_DEFINITIONS:
+&error[0] = "Your Z Zero input is already triggered, if the z zero plate on your gantry is plugged in, please unplug and press OK. (M-0164)"
+&error[1] = "Failed to detect contact with inverted tool holder in tool clip 1, make sure that grounding clip is connecting tool holder to fixed z zero plate"
+&error[2] = "Failed to detect contact with inverted tool holder in tool clip 1, make sure that grounding clip is connecting tool holder to fixed z zero plate"
+&error[3] = "Failed to detect contact with inverted tool holder in tool clip 1, make sure that grounding clip is connecting tool holder to fixed z zero plate"
+&error[4] = "Failed to detect contact with inverted tool holder in tool clip 1, make sure that grounding clip is connecting tool holder to fixed z zero plate"
+RETURN
+
+ERROR:
+PAUSE "Error: " + &error[&errorEnum]
+IF &errorEnum == 0 THEN GOTO CHECK_Z_PLATE
+END

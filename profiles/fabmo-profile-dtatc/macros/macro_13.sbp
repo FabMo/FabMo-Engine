@@ -1,0 +1,27 @@
+'!FABMO!name:ATC Variables
+'!FABMO!description:Tool Clip Positions
+'!FABMO!enabled:true
+'$NUMCLIPS = 7
+$Xmod = 0
+$Ymod = 0
+$CLIP1_X = 33.7
+$CLIP1_Y = 4.742
+$CLIP1_Z = -4.237
+$CLIP2_X = 35.853
+$CLIP2_Y = 7.742
+$CLIP2_Z = -4.237
+$CLIP3_X = 35.853
+$CLIP3_Y = 10.742
+$CLIP3_Z = -4.237
+$CLIP4_X = 35.853
+$CLIP4_Y = 13.742
+$CLIP4_Z = -4.237
+$CLIP5_X = 35.853
+$CLIP5_Y = 16.742
+$CLIP5_Z = -4.237
+$CLIP6_X = 35.853
+$CLIP6_Y = 19.742
+$CLIP6_Z = -4.237
+$CLIP7_X = 35.853
+$CLIP7_Y = 22.742
+$CLIP7_Z = -4.237

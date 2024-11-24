@@ -1,0 +1,18 @@
+'!FABMO!name:PICK UP TOOL
+'!FABMO!description:PICK UP TOOL 1
+'!FABMO!enabled:true
+C13
+
+J2, $CLIP1_X,$CLIP1_Y
+
+SO, 8, 1
+
+JZ, $CLIP1_Z
+
+SO, 8, 0
+
+MX, 34
+
+JZ, -1
+
+J2, 0,0

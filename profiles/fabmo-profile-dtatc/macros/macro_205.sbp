@@ -1,0 +1,8 @@
+'!FABMO!name:Release Tool and Move away
+'!FABMO!description:Test Change
+'!FABMO!enabled:true
+SO, 8,1
+JZ, $CLIP1_Z + $thClearance
+SO, 8,0
+
+J2,0,0

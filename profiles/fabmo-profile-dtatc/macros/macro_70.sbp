@@ -1,0 +1,77 @@
+'!FABMO!name:ATC Settings
+'!FABMO!description:Macro Description
+'!FABMO!enabled:true
+$ATC.Type = 7
+$tools[0].X = 0
+$tools[0].Y = 0
+$tools[0].Z = 0
+$tools[0].H = 0
+$tools[1].X := 0
+$tools[1].Y := 0
+$tools[1].Z := 0
+$tools[1].H := -5
+
+$unitMultiplier = 1
+IF %(25) = 0 THEN GOTO SETUPVALUES
+$unitMultiplier = 25.4
+SETUPVALUES:
+'Motion values
+$zSlow = 0.4 * $unitMultiplier
+$zFast = 0.75 * $unitMultiplier
+$zJog = 1.0 * $unitMultiplier
+
+$xySlow = 0.4 * $unitMultiplier
+$xyFast = 1.0 * $unitMultiplier
+$xyJog = 6.0 * $unitMultiplier
+
+$smallBackOff = 0.5 * $unitMultiplier
+$bigBackOff = 2.0 * $unitMultiplier
+
+'Inputs
+$ZZero_Sensor = 1    'EXPOSE
+$X_Prox = 3			 'EXPOSE
+$Y_Prox = 3			 'EXPOSE
+$Z_Prox = 3			 'EXPOSE
+$ToolBar_Sensor = 6  'EXPOSE
+$Tool_Sensor = 7     'EXPOSE 
+$DrawBar_Sensor = 8  'EXPOSE
+
+$ZZero_Status = 51   'EXPOSE
+$X_Prox_Status = 53  'EXPOSE
+$Y_Prox_Status = 53  'EXPOSE
+$Z_Prox_Status = 53  'EXPOSE
+$ToolBar_Status = 56  'EXPOSE
+$Tool_Sensor_Status = 57  'EXPOSE
+$Drawbar_Sensor_Status = 58  'EXPOSE
+
+$X_State = 1  'EXPOSE
+$Y_State = 1  'EXPOSE
+$Z_State = 1  'EXPOSE
+
+'Outputs
+$DrawBar = 8 'EXPOSE
+
+'Positions
+$manual_change_X = 15 * $unitMultiplier 'X location for manual tool changes  'EXPOSE
+$manual_change_Y = 0 * $unitMultiplier 'Y location for manual tool changes  'EXPOSE
+
+
+'Toolbar parameters
+$ATC_X_Prox_Clear = -2.0 * $unitMultiplier 
+$TOOLBAR_LENGTH = 15 * $unitMultiplier 
+$TOOL_OFFSET = 3 * $unitMultiplier        'EXPOSE
+$Transit_Height = -1 * $unitMultiplier
+$clipPullout = 0.75 * $unitMultiplier
+$ATC_clipSafe = -1.75 * $unitMultiplier
+$thClearance = 0.25 * $unitMultiplier
+
+'Calibration parameters
+$ATC_holderHeight = 1.575 * $unitMultiplier
+$ATC_holderAlignmentHeight = 0.69 * $unitMultiplier
+$holder_radius = 0.56 * $unitMultiplier
+$stylus_dia = .25 * $unitMultiplier
+$ToolBar_Probe_Offset = 1.5 * $unitMultiplier
+$firstClipX = 39.25 * $unitMultiplier 'Location of first clip in X for calibration
+$firstClipY = 5.0 * $unitMultiplier 'Location of first clip in Y for calibration
+$firstClipZ = 3 * $unitMultiplier 'Location of first clip in Z for calibration
+$safe_lift = 1 * $unitMultiplier

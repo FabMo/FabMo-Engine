@@ -1,0 +1,37 @@
+'!FABMO!name:ATC Toolchange -- User Initiated
+'!FABMO!description:Macro Description
+'!FABMO!enabled:true
+C70
+&type = $ATC.type
+If &type = 7 Then GoTo IsDTATC
+If &type = 6 Then GoTo IsATC
+If &type = 5 Then GoTo IsMTC
+If &type = 4 Then GoTo IsATC
+If &type = 3 Then GoTo IsATC
+If &type = 2 Then GoTo IsATC
+If &type = 1 Then GoTo IsATC
+If &type = 0 Then GoTo IsMTC
+
+GOTO Tool_Type_Error
+
+IsMTC:
+	C9
+	GoTo IsDone
+
+IsATC:
+	PAUSE "Enter the desired tool number" &tool
+	C71
+	GoTo IsDone
+
+IsDTATC:
+	PAUSE "Enter the desired tool number" &tool
+	C71
+	GoTo IsDone
+
+IsDone:
+END
+
+Tool_Type_Error:
+'Tool type not set, please check your ShopBot setup to make sure you have selected a tool type. 
+PAUSE
+GOTO IsDone
