@@ -1023,13 +1023,22 @@ $("#connection-strength-indicator").on("click", function (evt) {
 
 // RIGHT DRO Actions (OUTPUTS, FEEDRATE, SPINDLE-SPEED) .........................................................
 
-// * Note awkward js patterns to get the right API calls to work
 // Toggle Outputs
 $(".toggle-out").on("click", function (evt) {
-    var output = $(this).text(); // get switch number
-    var state = $(this).hasClass("on"); // ... and state
+    // get switch number and trim spaces at beginning and end
+    var output = $(this).text().trim(); // get switch number
+    var state = $(this).hasClass("on"); // ... and switchstate
+    var base_command = "";
+    var mult_cmds = [];
     if (state) {
-        dashboard.handlers.runSBP("SO, " + output + ", 0", function (err, result) {
+        base_command = "SO ," + output + ", 0";
+        // 1 and 2 need to be made permanent so they don't just turn off when toggeled on
+        if (output === "1" || output === "2") {
+            mult_cmds = [base_command, "SV"].join("\n"); // SV makes permanent
+        } else {
+            mult_cmds = [base_command].join("\n");
+        }
+        dashboard.handlers.runSBP(mult_cmds, function (err, result) {
             if (err) {
                 console.error("An error occurred:", err);
             } else {
@@ -1038,7 +1047,13 @@ $(".toggle-out").on("click", function (evt) {
         });
     }
     if (!state) {
-        dashboard.handlers.runSBP("SO, " + output + ", 1", function (err, result) {
+        base_command = "SO ," + output + ", 1";
+        if (output === "1" || output === "2") {
+            mult_cmds = [base_command, "SV"].join("\n"); // SV makes permanent
+        } else {
+            mult_cmds = [base_command].join("\n");
+        }
+        dashboard.handlers.runSBP(mult_cmds, function (err, result) {
             if (err) {
                 console.error("An error occurred:", err);
             } else {
