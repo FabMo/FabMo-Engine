@@ -718,6 +718,7 @@ function setupKeypad() {
 
 $(".action-button").on("click", function () {
     // get the action from the button
+    var exitKeypad = true;
     var action = $(this).attr("id");
     switch (action) {
         case "action-1":
@@ -732,14 +733,25 @@ $(".action-button").on("click", function () {
         case "action-4":
             calledFromModal = "macro79";
             break;
+        case "action-5": {
+            exitKeypad = false;
+            // This approach uses the "raw" system of the Manual Runtime
+            let out = { output: 1, value: 1 };
+            dashboard.engine.output(out);
+            setTimeout(function () {}, 1000);
+            break;
+        }
     }
-    startManualExit()
-        .then(() => {
-            dashboard.engine.manualExit();
-        })
-        .catch((err) => {
-            console.error("Error in ManualExit:", err);
-        });
+    if (exitKeypad) {
+        // for most actions we need to exit the keypad
+        startManualExit()
+            .then(() => {
+                dashboard.engine.manualExit();
+            })
+            .catch((err) => {
+                console.error("Error in ManualExit:", err);
+            });
+    }
 });
 
 $(".manual-drive-exit").on("click", function () {
@@ -1025,6 +1037,7 @@ $("#connection-strength-indicator").on("click", function (evt) {
 
 // Toggle Outputs
 $(".toggle-out").on("click", function (evt) {
+    event.stopPropagation();
     // get switch number and trim spaces at beginning and end
     var output = $(this).text().trim(); // get switch number
     var state = $(this).hasClass("on"); // ... and switchstate
@@ -1121,7 +1134,15 @@ function startBlurTimer() {
         // ... but, dont' blur if in the middle of selecting text
         if (!document.activeElement.classList.contains("spindle-speed") && !window.getSelection().toString()) {
             $("#sp-speed").blur();
-            $(".spindle-speed input").val(engine.status.spindle.vfdDesgFreq); // reset to current speed
+            if (typeof engine.status.spindle === "undefined") {
+                $(".spindle-speed input").val("- disabled -");
+            } else {
+                if (engine.status.spindle.vfdDesgFreq < 0) {
+                    $(".spindle-speed input").val("- disabled -");
+                } else {
+                    $(".spindle-speed input").val(engine.status.spindle.vfdDesgFreq); // reset to current speed
+                }
+            }
         }
     }, 2000);
 }
