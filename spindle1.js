@@ -9,7 +9,8 @@ const fs = require("fs");
 const log = require("./log").logger("spindleVFD");
 
 // At this time only using the Modbus-Serial library for VFD control of RPM and reading registers and status
-// RUN/STOP is still implemented as and OUPUT 1 from FabMo to RUN input on VFD (Delta = M1); FWD/REV is optional, also to be implemented as OUTPUT#? (Delta=M0)
+// RUN/STOP is still implemented as and OUPUT 1 from FabMo to RUN input on VFD (Delta = M1); FWD/REV is optional,
+// ... also to be implemented as OUTPUT#? (Delta=M0)
 // Only Spin is implemented for spindle1'spindleVFD1; spindleVFD2 is a placeholder for future expansion
 
 // Constructor for Spin
@@ -35,7 +36,7 @@ Spin.prototype.loadVFDSettings = function() {
     return new Promise((resolve, reject) => {
         fs.readFile(configFile, "utf8", (err, data) => {
             if (err) {
-                log.error("Failed to load VFD settings from settings file:", err);
+                log.error("Failed to load VFD settings from settings file: " + err + "\nDisabling Spindle RPM Control for this session!");
                 reject(err);
             } else {
                 this.settings = JSON.parse(data);
@@ -70,8 +71,7 @@ Spin.prototype.connectVFD = function() {
             resolve();
         })
         .catch((error) => {
-            log.error("***Error connecting to VFD:", error);
-            log.debug(settings.MB_ADDRESS)
+            log.error("***Error connecting to VFD:  " + error + "\nDisabling Spindle RPM Control for this session!");
             reject(error);
         });
     });
@@ -80,7 +80,9 @@ Spin.prototype.connectVFD = function() {
 // Set up 1-second UPDATES to spindleVFD status (sort of a model for other accessory drivers)
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
-    setInterval(() => {
+    let vfdFailures = 0;
+    var MAX_VFD_FAILS = 3;
+    const intervalId = setInterval(() => {
         if (this.vfdBusy) {
             log.error("VFD is busy; skipping update");
             this.vfdBusy = false;  // ? really turn off busy flag here?
@@ -108,7 +110,33 @@ Spin.prototype.startSpindleVFD = function() {
             // log.info("VFD update:" + JSON.stringify(this.status));
         })
         .catch((error) => {
-            log.error("Error reading VFD:" + error);
+            vfdFailures++;
+            //log.error("Error reading VFD:" + error);
+            // Aggregate and handle VFD errors here
+            if (vfdFailures >= MAX_VFD_FAILS) {
+                log.error("Too many Spindle/VFD/MODBUS errors (3).");
+                log.error("Last Error: " + error + "\nDisabling Spindle RPM Control for this session!");
+                this.status.vfdDesgFreq = -1;
+                this.updateStatus(this.status);
+
+                clearInterval(intervalId); // Stop the interval
+
+                // ** explore why not working
+                // disconnectVFD()
+                //     .then(() => {
+                //         log.info("Disconnected from VFD");
+                //         this.emit('statusChanged', this.status); // Emit status change to trigger event on machine
+                //     })
+                //     .catch((error) => {
+                //         log.error("Error disconnecting from VFD: " + error);
+                //     });
+
+                // Notify clients about the error
+                //** NOTIFY is actually of no use here because it occurs before client is up; I would like to figure out how
+                //  to make it work and use the NOTIFY-toaster from the server side */
+                // const server = require("./server"); 
+                // server.io.of("/private").emit("vfd_error", { message: 'Too many VFD errors; stopping updates. Last Error: ' + error.message });
+            }
         });
     }, 1000);
 };
@@ -168,7 +196,6 @@ Spin.prototype.setFrequency = function(data) {
 
 
 // ------------------- Calls to ModbusRTU ------------------
-
 function readVFD(data, length) {
     return new Promise((resolve, reject) => {
         client.readHoldingRegisters(data, length)

@@ -1421,7 +1421,8 @@ Machine.prototype.startAccessories = async function () {
             this.emit("status", this.status);
         });
     } catch (error) {
-        log.error("Failed to create a spindle instance:" + error);
+        //log.error("Failed to create a spindle connection:" + error);
+        log.error("Spindle RPM Failed as accessory.");
     }
 };
 
