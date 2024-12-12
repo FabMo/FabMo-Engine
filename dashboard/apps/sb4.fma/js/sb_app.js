@@ -168,7 +168,7 @@ function displayFillIn(command, title, info) {
     globals.FIll_In_Open = true;
     $("#cmd-input").val(command);
     $("#cmd-input").focus();         // put focus here to collect an ENTER as a RUN
-}k
+}
 
 // MAIN COMMAND HANDLER for 2-Letter Commands
 function processCommandInput(command) {
