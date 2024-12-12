@@ -19,4 +19,5 @@ dashboard/apps/home.fma/js/Sortable.js
 dashboard/apps/editor.fma/js/codemirror.js
 dashboard/apps/editor.fma/js/cm-addon/**
 spindle.js
+dashboard/static/js/libs/keyboard.js
 

@@ -114,6 +114,8 @@ SBPRuntime.prototype.connect = function (machine) {
     this.status_report = {};
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
+
+    this.init();
     this._update();
     this.cmd_posx = this.posx;
     this.cmd_posy = this.posy;
@@ -129,7 +131,7 @@ SBPRuntime.prototype.connect = function (machine) {
     this.cmd_StartC = this.posc;
 
     this.connected = true;
-    this.ok_to_disconnect = false; ////## remove is a temp fix for cannot-disconnect ?
+    this.ok_to_disconnect = false; ////## remove; this is a temp fix for cannot-disconnect ?
     log.info("Connected OpenSBP runtime.");
 };
 
@@ -761,7 +763,7 @@ SBPRuntime.prototype._run = function () {
             }
             if (!this.driver) {
                 ////## Not sure what is going on here; potentially an issue with commands called outside files ???
-                log.error("No driver in _run");
+                log.debug("No driver in _run - Potential ERROR?"); //ERROR?
                 return;
             }
 
@@ -944,9 +946,10 @@ SBPRuntime.prototype._executeNext = async function () {
             if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
                 // There are pending operations, prime the driver
                 log.debug("Priming driver for pending operations before ending program.");
+                ////##
                 this.prime();
-                // DOES REMOVAL BREAK file endings fixed 3 weeks ago ...   #### this.waitPendingOps = true;
-                // Wait for the driver to finish processing sendmore
+                // DOES REMOVAL BREAK file endings fixed 3 weeks ago ...   ####
+                // Wait for the driver to finish processing sendmore; this.waitPendingOps = true;
                 return;
             } else {
                 // If no pending operations, safe to end the program
@@ -968,7 +971,7 @@ SBPRuntime.prototype._executeNext = async function () {
     if (breaksTheStack) {
         this.prime();
 
-        // log.debug("========Stack-breaking command ====>  " + JSON.stringify(line));
+        //log.debug("========Stack-breaking command ====>  " + JSON.stringify(line));
 
         if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
             log.debug("Deferring because pending operations...");

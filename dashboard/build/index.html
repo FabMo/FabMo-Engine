@@ -222,7 +222,7 @@
                   <div class="dro-addon-spacer-row"></div>
                   <div class="dro-addon-label" title="Click to turn Outputs ON/OFF; Output #4 is reserved for enabling the spindle in files."> OUTPUTS (Toggle) </div>
                   <div class="dro-addon-outputs">
-                    <div class="out1 output toggle-out off"> 1 </div>
+                    <div class="out1 output toggle-out off" id="spindle-1"> 1 </div>
                     <div class="out2 output toggle-out off"> 2 </div>
                     <div class="out3 output toggle-out off"> 3 </div>
                     <div class="out4 output toggle-out off"> 4 </div>
@@ -253,9 +253,9 @@
               <div class="dro-addon" id="dro-addon-3">
                 <div class="dro-addon-spacer-row"></div>
                 <div class="dro-addon-label"> Spindle-1 <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 65px; top:0px">i<span class="tooltiptext">
-                  Set spindle RPM. Black values indicate commanded RPM; blue values indicate achieved RPM.<br><br> 
+                  Set spindle RPM. Gray/Black values indicate commanded RPM; Blue values indicate Achieved RPM.<br><br> 
                   AMP value displays the spindle load expressed as current in amps.</span></span><br></div>
-                <div class="dro-addon-value spindle-speed"><span class="sub-label"> RPM </span><input id="sp-speed" type="number" step="100" min="0" max="18000" placeholder="- No Connection -"></div>
+                <div class="dro-addon-value spindle-speed"><span class="sub-label"> RPM </span><input id="sp-speed" type="number" step="100" min="0" max="18000" placeholder="- No VFD/USB -  "></div>
                 <div class="dro-addon-value spindle-power"><span class="sub-label"> AMP </span><input type="number" value="0.00" readonly></div>
               </div>
 
@@ -307,7 +307,7 @@
       <div class="manual-drive-container">
         <div>
           <label class="noselect" id="title_goto" title="Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000">
-              Select and change to: 'GoTo' location or 'Set' location
+              Select and change a value in order to: 'GoTo' a location or 'Set' a location
           </label>
         </div>
         <div class="read-out-container">
@@ -362,11 +362,15 @@
                 <div class="zero-button zero-c" title="set this axis to zero">zero</div>
             </div>
 
+            <!--<img src="../img/icon_keypad.png" id="icon_keypad"></img>-->
+
             <div class="keypad-actions">
               <div class="action-button" id="action-1" title="Do Z-Zero (Macro C2)">C2</div>
               <div class="action-button" id="action-2" title="Do XYZ-Homing (Macro C3)">C3</div>
               <div class="action-button" id="action-3" title="JH (Jog Home in XY)">JH</div>
               <div class="action-button" id="action-4" title="Goto Park Location (Macro C#79; Settings in C#210)">P</div>
+              <div>....</div>
+              <div class="action-button" id="action-5" title="Toggle Spindle ON/OFF"><img src="../img/icon_spindle_off.png" style="max-width:70%;"></img></div>
             </div>
 
           </div>

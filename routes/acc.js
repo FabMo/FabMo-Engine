@@ -4,7 +4,7 @@ var machine = require("../machine").machine;
  * @api {post}  // Direct control of accessories like spindles
  * @apiGroup acc  // *have not figured out how to make these calls work as groups
  * @apiDescription Execute the POSTed acc request
- * @apiParam {Object} acc ITEM.  Currently suppored: `spindle-speed`
+ * @apiParam {Object} acc ITEM.  Currently supported: `spindle-speed`
  * @apiParam {Object} new RPM.
  * @apiError {String} status `error`
  * @apiError {Object} message Error message

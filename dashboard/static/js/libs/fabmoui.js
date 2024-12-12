@@ -350,23 +350,45 @@ const { last } = require("underscore");
             }
         }
 
-        // Update Spindle Speed Display
+        // Update Spindle Speed Display from status
+        // ... first making sure this field will handle string or number
+        function updateSpindleSpeed(value) {
+            const inputField = $(".spindle-speed input");
+            if (typeof value === "string") {
+                inputField.attr("type", "text");
+                inputField.val(value);
+            } else if (typeof value === "number") {
+                inputField.attr("type", "number");
+                inputField.val(value);
+            }
+        }
         if ("spindle" in status) {
-            if (status.spindle.vfdAchvFreq !== 0) {
-                $(".spindle-speed input").css("color", "#42e6f5");
-            } else {
-                $(".spindle-speed input").css("color", "gray");
+            const spindleSpeedInput = $(".spindle-speed input");
+            if (!spindleSpeedInput.is(":focus")) {
+                if (status.spindle.vfdAchvFreq !== 0) {
+                    $(".spindle-speed input").css("color", "#42e6f5");
+                    $(".spindle-power input").css("color", "black");
+                    updateSpindleSpeed(status.spindle.vfdAchvFreq);
+                } else {
+                    $(".spindle-speed input").css("color", "gray");
+                    $(".spindle-power input").css("color", "gray");
+                    if (status.spindle.vfdDesgFreq < 0) {
+                        updateSpindleSpeed("- disabled -  ");
+                    } else {
+                        updateSpindleSpeed(status.spindle.vfdDesgFreq);
+                    }
+                }
+                var pwrDraw = status.spindle.vfdAmps;
+                var formattedDraw = (pwrDraw * 0.01).toFixed(2);
+                if (status.spindle.vfdAmps !== 0) {
+                    $(".spindle-power input").css("color", "black");
+                }
+                $(".spindle-power input").val(formattedDraw);
             }
-            // If spindle speed display is at 0 then set it to the current designated freq from the VFD, ck if exists ???
-            if ($(".spindle-speed input").val() === "0") {
-                $(".spindle-speed input").val(status.spindle.vfdDesgFreq);
-            }
-            var pwrDraw = status.spindle.vfdAmps;
-            var formattedDraw = (pwrDraw * 0.01).toFixed(2);
-            $(".spindle-power input").val(formattedDraw);
         } else {
-            $(".spindle-speed input").val("0");
-            $(".spindle-power input").val("0.00");
+            updateSpindleSpeed("- No VFD/USB -  ");
+            $(".spindle-speed input").css("color", "gray");
+            $(".spindle-power input").css("color", "gray");
         }
 
         //Current File or job

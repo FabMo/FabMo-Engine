@@ -229,10 +229,10 @@ function Machine(control_path, callback) {
                     var pos = "pos" + axis;
                     if (mode in update) {
                         if (update[mode] === 0) {
-                            log.debug("Disabling display for " + axis + " axis.");
+                            //log.debug("Disabling display for " + axis + " axis.");
                             delete this.status[pos];
                         } else {
-                            log.debug("Enabling display for " + axis + " axis.");
+                            //log.debug("Enabling display for " + axis + " axis.");
                             if (this.status[pos] === undefined) {
                                 // Don't overwrite the position if it's already set
                                 this.status[pos] = null;
@@ -1091,7 +1091,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                             break;
                         default:
                             // [We should be in some state other than idle, but allow redundancy
-                            // ... for a few cases such as coming our of probing on Stop input]
+                            // ... for a few cases such as coming out of probing on Stop input]
                             log.debug("... otherwise send final lines from machine");
                             this.driver.command({ out4: 0 }); // Permissive relay
                             this.driver.command({ gc: "m30" }); // Generate End

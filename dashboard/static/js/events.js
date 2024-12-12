@@ -232,17 +232,18 @@ define(function(require) {
 
 //----------------------------------- These two routines are enough to communicate events from dash during running
 // Function to handle key events
+////## need to debounce these to give a little runway for spinning
 function handleKeyEvent(key) {
     switch (key) {
         case "+":
             var $spinner = $('.spindle-speed input');
             $spinner.val(parseInt($spinner.val(), 10) + 100);
-            $spinner.trigger('change');
+            $spinner.trigger('input');
             break;
         case "_":
             var $spinner = $('.spindle-speed input');
             $spinner.val(parseInt($spinner.val(), 10) - 100);
-            $spinner.trigger('change');
+            $spinner.trigger('input');
             break
         case ">":
             var $frOverride = $('#override');

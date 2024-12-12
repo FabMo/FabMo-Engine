@@ -10,7 +10,7 @@ const log = require("./log").logger("spindleVFD");
 
 // At this time only using the Modbus-Serial library for VFD control of RPM and reading registers and status
 // RUN/STOP is still implemented as and OUPUT 1 from FabMo to RUN input on VFD (Delta = M1); FWD/REV is optional,
-// ... also to be implemented as OUTPUT#? (Delta=M0)
+// ... also to be implemented as OUTPUT#? (Delta=M0) [see Lenze notes for info on that VFD]
 // Only Spin is implemented for spindle1'spindleVFD1; spindleVFD2 is a placeholder for future expansion
 
 // Constructor for Spin
@@ -77,68 +77,66 @@ Spin.prototype.connectVFD = function() {
     });
 };
 
-// Set up 1-second UPDATES to spindleVFD status (sort of a model for other accessory drivers)
+let vfdFailures = 0;
+let vfdEnabled = true;  // start enabled
+// Set up 1-second UPDATES to spindleVFD status 
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
-    let vfdFailures = 0;
-    var MAX_VFD_FAILS = 3;
-    const intervalId = setInterval(() => {
-        if (this.vfdBusy) {
-            log.error("VFD is busy; skipping update");
-            this.vfdBusy = false;  // ? really turn off busy flag here?
-            return;
-        }
-        Promise.race([
-            readVFD(settings.Registers.TRIG_READ_FREQ, settings.READ_LENGTH), // <<==== YOUR BASIC DATA READ
-            new Promise((_, reject) => setTimeout(() => reject(new Error("VFD not responding > ON? PRESENT?")), 5000)) // 5 seconds timeout
-        ])
-        .then((data) => {
-            // DELTA (uses the exact numbers provided in manual)
-            // LENZE (uses the numbers described as the "driver registers" not MODBUS registers or mults)
-            // See additional notes on VFDs and Spindles in Spindle folder
-            this.status.vfdDesgFreq = data[0] * settings.Registers.RPM_MULT;
-            this.status.vfdAchvFreq = data[1] * settings.Registers.RPM_MULT;
-            if (settings.Registers.READ_AMPS_HI === true) {
-                // get the high byte of data[2] shifted low for single byte for vfdAmps (LENZE)
-                var vCur = ((data[2] >> 8) & 0xFF);
-            } else {
-                var vCur = data[2];
+    const MAX_VFD_FAILS = 3;
+    if (vfdEnabled) {
+        const intervalId = setInterval(() => {
+            if (this.vfdBusy) {
+                log.error("VFD is busy; skipping update");
+                this.vfdBusy = false;  // ? really turn off busy flag here?
+                return;
             }
-            vCur = vCur * settings.Registers.AMP_MULT;
-            this.status.vfdAmps = vCur;
-            this.updateStatus(this.status); // initiate change-check and global status change if warranted
-            // log.info("VFD update:" + JSON.stringify(this.status));
-        })
-        .catch((error) => {
-            vfdFailures++;
-            //log.error("Error reading VFD:" + error);
-            // Aggregate and handle VFD errors here
             if (vfdFailures >= MAX_VFD_FAILS) {
                 log.error("Too many Spindle/VFD/MODBUS errors (3).");
-                log.error("Last Error: " + error + "\nDisabling Spindle RPM Control for this session!");
+                log.error("Disabling Spindle RPM Control for this session!");
+                //log.error("Last Error: " + error + "\nDisabling Spindle RPM Control for this session!");
+                vfdEnabled = false;
                 this.status.vfdDesgFreq = -1;
                 this.updateStatus(this.status);
-
                 clearInterval(intervalId); // Stop the interval
-
-                // ** explore why not working
-                // disconnectVFD()
-                //     .then(() => {
-                //         log.info("Disconnected from VFD");
-                //         this.emit('statusChanged', this.status); // Emit status change to trigger event on machine
-                //     })
-                //     .catch((error) => {
-                //         log.error("Error disconnecting from VFD: " + error);
-                //     });
-
-                // Notify clients about the error
-                //** NOTIFY is actually of no use here because it occurs before client is up; I would like to figure out how
-                //  to make it work and use the NOTIFY-toaster from the server side */
-                // const server = require("./server"); 
-                // server.io.of("/private").emit("vfd_error", { message: 'Too many VFD errors; stopping updates. Last Error: ' + error.message });
-            }
-        });
-    }, 1000);
+                // disconnectVFD() does not work here, probably worth understanding why
+            } else {
+                Promise.race([
+                    readVFD(settings.Registers.TRIG_READ_FREQ, settings.READ_LENGTH), // <<==== YOUR BASIC DATA READ
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("VFD not responding > USB?")), 5000)) // 5 seconds timeout
+                ])
+                    .then((data) => {
+                        // DELTA (uses the exact numbers provided in manual)
+                        // LENZE (uses the numbers described as the "driver registers" not MODBUS registers or mults)
+                        // See additional notes on VFDs and Spindles in Spindle folder; setting up parameters for different VFD's and USB-RS485s is fussy!
+                        this.status.vfdDesgFreq = data[0] * settings.Registers.RPM_MULT;
+                        this.status.vfdAchvFreq = data[1] * settings.Registers.RPM_MULT;
+                        if (settings.Registers.READ_AMPS_HI === true) {
+                            // get the high byte of data[2] shifted low for single byte for vfdAmps (for LENZE)
+                            var vCur = ((data[2] >> 8) & 0xFF);
+                        } else {
+                            var vCur = data[2];
+                        }
+                        vCur = vCur * settings.Registers.AMP_MULT;
+                        this.status.vfdAmps = vCur;
+                        this.updateStatus(this.status); // initiate change-check and global status change if warranted
+                        vfdFailures = 0; // we're OK, reset the failure count
+                        // log.info("VFD update:" + JSON.stringify(this.status));
+                    })
+                    .catch((error) => {
+                        // Aggregate sequential VFD errors
+                        vfdFailures++;
+                        if (vfdFailures >= MAX_VFD_FAILS) {
+                            log.error("Last Error (of 3) : " + error);
+                        }
+                            // Notify clients about errors
+                            //** NOTIFY does not work here and would actually of no use here because it occurs before client is up; I would like to figure out how
+                            // ... to make it work and use the NOTIFY-toaster from the server side */
+                            // const server = require("./server"); 
+                            // server.io.of("/private").emit("vfd_error", { message: 'Too many VFD errors; stopping updates. Last Error: ' + error.message });
+                   });
+                };
+        }, 1000);
+    }
 };
   
 // Method to update VFD status Globally via "machine"

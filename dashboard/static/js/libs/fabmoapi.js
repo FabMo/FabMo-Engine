@@ -142,6 +142,15 @@
             this.socket.on("user_change", function (user) {
                 this.emit("user_change", user);
             });
+
+            this.socket.on("vfd_error", (data) => {
+                displayNotification(data.message);
+            });
+        }
+
+        function displayNotification(message) {
+            // Use the existing "toaster"-based notify system
+            toastr.error(message);
         }
     };
 
@@ -448,6 +457,10 @@
 
     FabMoAPI.prototype.set = function (move, callback) {
         this.executeRuntimeCode("manual", { cmd: "set", move: move });
+    };
+
+    FabMoAPI.prototype.output = function (out, callback) {
+        this.executeRuntimeCode("manual", { cmd: "output", out: out });
     };
 
     FabMoAPI.prototype.executeRuntimeCode = function (runtime, code, callback) {

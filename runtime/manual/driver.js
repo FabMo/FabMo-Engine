@@ -263,7 +263,6 @@ ManualDriver.prototype.resumeMove = function () {
 
 ManualDriver.prototype.runGCode = function (code) {
     if (this.mode == "raw") {
-        this.driver.mode = "raw";
         ////## section for betaInsert
         log.debug("... possibly converting special codes in betaInsert");
         code = code.replace(/&/g, "\n"); // for use in creating multiple lines
@@ -305,9 +304,19 @@ ManualDriver.prototype.goto = function (pos) {
     this.stream.write(move);
 };
 
+// Toggle an output in manual [currenting only doing output1 for spindle]
+//   out - Output as a state, eg: {"1":1} or {"1":0} (i.e. using g-code json format)
+//   ... such that the short hand version looks like {out1:1}
+ManualDriver.prototype.output = function (out, val) {
+    var newOut = "{out" + out + ":" + val + "}\n";
+    log.info("ManualDriver.output called with: " + newOut);
+    this.mode = "raw"; // or this.driver.mode = "raw"
+    this.stream.write(newOut);
+    this.mode = "normal"; // or this.driver.mode = "normal";
+};
+
 // Set the machine position to the specified "location"
 // TODO: Is it possible that timing could produce an inaccurate position update here???
-// TODO: ** pretty scary to reset location after zeroing and not do it by offset???
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function (pos) {
     var toSet = {};
