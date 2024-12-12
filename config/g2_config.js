@@ -178,6 +178,7 @@ G2Config.prototype.restoreSome = function (keys, callback) {
 G2Config.prototype.configureStatusReports = function (callback) {
     // Added spc for spindle state
     // spc=0 [OFF]; =1 or =2 [ON]; =3 [PAUSED-OFF in hold]; =4 [RESUMING]
+    //     * spc=3 and spc=4 don't seem to be working in G2
     // see g2 spindle.h (no other documentation)
     // also see DIO defs in g2core >gpio.h (for setting number and analog, PWM?)
     // fro is feed rate override

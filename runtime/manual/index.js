@@ -100,7 +100,8 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
 // {cmd:"maint"} - Maintain motion along the current vector // 9/2023 now in server, see elsewhere
 // {cmd:"goto",move:{X:1,Y:2,Z:3}} - Go to x,y,z = 1,2,3
 // {cmd:"set", move:{X:1,Y:2,Z:3}} - Set current x,y,z to 1,2,3 (No movement)
-//
+// {cmd:"output", output:out, value:val} - Set output to value, also uses raw, see driver
+// {cmd:"raw", code:code - Runs raw GCode (code.code) on the machine
 ManualRuntime.prototype.executeCode = function (code) {
     currentCmd = code.cmd;
     // Don't honor commands if we're not in a position to do so
@@ -163,6 +164,15 @@ ManualRuntime.prototype.executeCode = function (code) {
                         this.enter();
                     }
                     this.helper.nudge(code.axis, code.speed, code.dist, code.second_axis, code.second_dist);
+                    break;
+
+                case "output":
+                    if (!code.out || typeof code.out !== "object") {
+                        log.error("Invalid 'out' field in the command:", code);
+                        return;
+                    }
+                    // this is a little awkward using the raw system here too, but it's the best way to get the output
+                    this.helper.output(code.out.output, code.out.value);
                     break;
 
                 case "raw":

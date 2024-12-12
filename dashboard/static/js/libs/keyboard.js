@@ -1,5 +1,8 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
+/* pretty-ignore */
+// All turned off for this module
+
 (function (root, factory) {
     /* CommonJS */
     if (typeof module == "object" && module.exports) module.exports = factory();

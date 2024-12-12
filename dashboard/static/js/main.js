@@ -735,8 +735,18 @@ $(".action-button").on("click", function () {
             break;
         case "action-5": {
             exitKeypad = false;
+            var newValue;
+            if (dashboard.engine.status.out1 === 0) {
+                $("#action-5 img").attr("src", "../img/icon_spindle_on.png");
+                newValue = 1;
+                $("#action-5").css("background-color", "orangered");
+            } else {
+                $("#action-5 img").attr("src", "../img/icon_spindle_off.png");
+                newValue = 0;
+                $("#action-5").css("background-color", "#ce6402");
+            }
             // This approach uses the "raw" system of the Manual Runtime
-            let out = { output: 1, value: 1 };
+            let out = { output: 1, value: newValue };
             dashboard.engine.output(out);
             setTimeout(function () {}, 1000);
             break;
@@ -1076,7 +1086,7 @@ $(".toggle-out").on("click", function (evt) {
     }
 });
 
-// Feed Rate (move speed)
+// UI for SPEED AND OVERRIDE (%) -------------------------------------------------
 var changeFeedRate = function (new_feedrate) {
     if (new_feedrate > 0 && new_feedrate < 1000) {
         dashboard.handlers.runSBP("MS, " + new_feedrate, function (err, result) {
@@ -1092,7 +1102,6 @@ $("#feed-rate").on("change", function (evt) {
     var new_feedrate = parseFloat($("#feed-rate").val());
     changeFeedRate(new_feedrate);
 });
-
 // Requested OVERRIDE Feed Rate via setUix process (see uix.js)
 var overrideFeedRate = function (new_override) {
     try {
@@ -1111,8 +1120,28 @@ $("#override").on("change", function (evt) {
         }
     }
 });
+// ... get FOCUS out of OVERRIDE BOX if done
+var ovBlurTimer;
+function startOvBlurTimer() {
+    clearTimeout(ovBlurTimer);
+    ovBlurTimer = setTimeout(function () {
+        $("#override").blur();
+    }, 2500);
+}
+// Listener for focus on the overide input box
+$("#override").on("focus", function (evt) {
+    startOvBlurTimer();
+});
+// Listeners for activity in the override input box to restart the timer
+$("#override").on("input keypress mousemove", function (evt) {
+    startOvBlurTimer();
+});
+// -------------------------------------------------------------------------------
 
-// Spindle Speed
+// UI for Spindle Speed (RPM & AMP) -----------------------------------------------
+const debouncedChangeSpindleSpeed = debounce(function (new_RPM) {
+    changeSpindleSpeed(new_RPM);
+}, 1500);
 var changeSpindleSpeed = function (new_RPM) {
     try {
         console.log("----> new speed: " + new_RPM);
@@ -1121,55 +1150,31 @@ var changeSpindleSpeed = function (new_RPM) {
         console.log("Failed to pass new RPM: " + error);
     }
 };
-$(".spindle-speed").on("change", function (evt) {
-    var new_RPM = $(".spindle-speed input").val();
-    changeSpindleSpeed(new_RPM);
+function debounce(func, delay) {
+    let timer;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+$(".spindle-speed input").on("input", function (evt) {
+    const latestValue = $(this).val();
+    $(".spindle-speed input").css("color", "black");
+    debouncedChangeSpindleSpeed(latestValue);
 });
-
 // ... get FOCUS out of SPINDLE BOX if done
 var blurTimer;
 function startBlurTimer() {
     clearTimeout(blurTimer);
     blurTimer = setTimeout(function () {
-        // ... but, dont' blur if in the middle of selecting text
-        if (!document.activeElement.classList.contains("spindle-speed") && !window.getSelection().toString()) {
-            $("#sp-speed").blur();
-            if (typeof engine.status.spindle === "undefined") {
-                $(".spindle-speed input").val("- disabled -");
-            } else {
-                if (engine.status.spindle.vfdDesgFreq < 0) {
-                    $(".spindle-speed input").val("- disabled -");
-                } else {
-                    $(".spindle-speed input").val(engine.status.spindle.vfdDesgFreq); // reset to current speed
-                }
-            }
-        }
-    }, 2000);
+        $("#sp-speed").blur();
+    }, 3000);
 }
-// Listener for focus on the input box
-$("#sp-speed").on("focus", function (evt) {
+// By listening for update in the spindle input box to clear focus
+$("#sp-speed").on("input", function (evt) {
     startBlurTimer();
 });
-// Listeners for activity in the input box to restart the timer
-$("#sp-speed").on("input keypress mousemove", function (evt) {
-    startBlurTimer();
-});
-// ... get FOCUS out of OVERRIDE BOX if done
-var ovBlurTimer;
-function startOvBlurTimer() {
-    clearTimeout(ovBlurTimer);
-    ovBlurTimer = setTimeout(function () {
-        $("#override").blur();
-    }, 2000);
-}
-// Listener for focus on the input box
-$("#override").on("focus", function (evt) {
-    startOvBlurTimer();
-});
-// Listeners for activity in the input box to restart the timer
-$("#override").on("input keypress mousemove", function (evt) {
-    startOvBlurTimer();
-});
+// -------------------------------------------------------------------------
 
 // ENGINE INTERACTIONS ========================================================
 
