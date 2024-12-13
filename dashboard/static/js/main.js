@@ -71,6 +71,8 @@ var setUpManual = function () {
         $(".slidecontainer").show();
         $(".fixed-input-container").hide();
         $(".fixed-switch input").prop("checked", false);
+        $("#action-5 img").attr("src", "../img/icon_spindle_off.png"); // probably not useful
+        $("#action-5").css("background-color", "#ce6402");
 
         // Function to set location displays and then set video style
         function setLocationAndVideoStyle() {
@@ -109,6 +111,9 @@ var startManualExit = function () {
         $(".slidecontainer").show();
         $(".fixed-input-container").hide();
         $(".fixed-switch input").prop("checked", false);
+        // Clean up spindle which will automatically turn off
+        $("#action-5 img").attr("src", "../img/icon_spindle_off.png");
+        $("#action-5").css("background-color", "#ce6402");
 
         // Function to set location displays and then set video style
         function setLocationAndVideoStyle() {
@@ -670,7 +675,6 @@ function setupKeyboard() {
 function setupKeypad() {
     var keypad = new Keypad("#keypad");
     // Make sure the spindle icon is off when entering manual mode
-    $("#action-5 img").attr("src", "../img/icon_spindle_off.png");
     keypad.on("go", function (move) {
         if (move.second_axis) {
             dashboard.engine.manualStart(
