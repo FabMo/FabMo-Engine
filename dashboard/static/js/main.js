@@ -669,6 +669,8 @@ function setupKeyboard() {
 
 function setupKeypad() {
     var keypad = new Keypad("#keypad");
+    // Make sure the spindle icon is off when entering manual mode
+    $("#action-5 img").attr("src", "../img/icon_spindle_off.png");
     keypad.on("go", function (move) {
         if (move.second_axis) {
             dashboard.engine.manualStart(

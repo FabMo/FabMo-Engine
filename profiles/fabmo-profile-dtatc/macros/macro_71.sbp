@@ -7,7 +7,7 @@ $unitMultiplier = 25.4
 SETUPVALUES:
 &loadVariables = 1
 IF &loadVariables = 0 THEN GOTO START
-JS,6,6
+JS,8,8
 C70
 START:
 &MANUAL_CHANGE = 0
@@ -17,7 +17,6 @@ JZ,&ATC_safeclear
   'Preliminary Checks..............................................................................................
 
  'Check ATC STATUS?
- C75
     If $ATC.Status = "OK" Then GoTo OK_SWAP_TOOLS
 	If $ATC.ToolIn >= 1000 THEN GOTO OK_SWAP_TOOLS
     If $ATC.Status = "EMPTY" Then GoTo settool0
