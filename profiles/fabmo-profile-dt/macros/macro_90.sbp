@@ -1,7 +1,0 @@
-'!FABMO!name: Settings-OBS
-'!FABMO!description: LEGACY: Default variable settings
-' Name: Settings
-' Description: LEGACY: Load default variable settings
-
-' This macro was previously used to load default settings. Now being done in FabMo as part of the tool "Profile"
-' The macro is called by some existing Vectric posts so just stubbed-in here to prevent error

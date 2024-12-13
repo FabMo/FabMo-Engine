@@ -77,8 +77,8 @@ $sb_slowSearchSpeed_Z    = 0.25     '- (m2,m3,?)
 '$sb_slowSearchSpeed_A
 '$sb_slowSearchSpeed_B
 '$sb_slowSearchSpeed_C
-$sb_searchDist_X         = 26       '- (m2,m3,?)
-$sb_searchDist_Y         = 20       '- (m2,m3,?)
+$sb_searchDist_X         = 36       '- (m2,m3,?)
+$sb_searchDist_Y         = 26       '- (m2,m3,?)
 $sb_searchDist_Z         = 6        '- (m2,m3,?)
 '$sb_searchDist_A
 '$sb_searchDist_B
