@@ -9,21 +9,94 @@
 var CodeMirror = require('./codemirror.js');
 
 // Regular expressions for matching various tokens
+var OPERATOR_REGEX = /^(<=|>=|==|!=|<|>|\+|\-|\*|\/|\^|!|=|:=)/i;
 var CMD_REGEX = /^[A-Z](?:[A-Z0-9]+|C#)\b/i;
 var LINENO_REGEX = /^N[0-9]+\b/i;
 var LABEL_REGEX = /^[A-Z_][A-Z0-9_]*:/i;
-var IDENTIFIER_REGEX = /[A-Z_][A-Z0-9_]*/i;
+//var IDENTIFIER_REGEX = /[A-Z_][A-Z0-9_]*/i;
+var IDENTIFIER_REGEX = /[A-Z_][A-Z0-9_]*(\[[^\]]*\]|(\.[A-Z_][A-Z0-9_]*)*)*/i;
 var WORD_REGEX = /[A-Z_][A-Z0-9_]*/i;
 var STRING_REGEX = /^"(?:[^\\"]|\\.)*"/;
 var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i;
-var SYS_VAR_REGEX = /^\%\(([ \t]*((&|\$)[A-Z_][A-Z0-9_]*)|[0-9]+[ \t]*)\)/i;
+var SYS_VAR_REGEX = /^\%\(([ \t]*((\$|&)[A-Z_][A-Z0-9_]*|[0-9]+)([ \t]*)\))[ \t]*/i;
 var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i');
 var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i');
 var BARE_REGEX = /^[IOT]/i;
 var COMMENT_REGEX = /^'.*/i;
-var OPERATOR_REGEX = /^(<=|>=|==|!=|<|>|\+|\-|\*|\/|\^|!|=)/i;
 
 // Tokenizer for variable access paths (e.g., &var3[1].z)
+
+// function tokenVariableAccess(variableType) {
+//   return function(stream, state) {
+//       if (stream.eatSpace()) {
+//           return null; // Always allow and ignore spaces
+//       }
+
+//       // Match array indices and properties with dot notation
+//       if (stream.match(/^\[/)) {
+//           state.subState = 'array';
+//           return "bracket";
+//       } else if (stream.match(/^\./)) {
+//           state.subState = 'property';
+//           return "operator";
+//       } else if (state.subState === 'array' && stream.match(/^\d+/)) {
+//           if (stream.peek() === ']') {
+//               stream.next(); // Consume the closing bracket
+//               state.subState = ''; // Reset subState
+//               return "number"; // Highlight the index number
+//           }
+//       } else if (state.subState === 'property' && stream.match(/^[A-Z_][A-Z0-9_]*/i)) {
+//           state.subState = ''; // Reset subState
+//           return "property"; // Highlight the property name
+//       }
+
+//       // Match variable names initially
+//       if (stream.match(variableType === 'variable-2' ? USR_VAR_REGEX : PERSIST_VAR_REGEX)) {
+//           return variableType; // Highlight the variable
+//       }
+
+//       // If no valid continuation, clear the tokenizer and allow default handling
+//       state.tokenize = null;
+//       stream.next(); // Move the stream forward to avoid getting stuck
+//       return "error"; // Highlight unexpected characters as errors
+//   };
+// }
+
+// function tokenVariableAccess(variableType) {
+//   return function(stream, state) {
+//       if (stream.eatSpace()) {
+//           return null;
+//       }
+
+//       if (stream.match(/^\[/)) {
+//           return "bracket"; // Highlight array opening bracket
+//       }
+
+//       if (stream.match(/^\]/)) {
+//           return "bracket"; // Highlight array closing bracket
+//       }
+
+//       if (stream.match(/^\./)) {
+//           return "operator"; // Highlight dot for property access
+//       }
+
+//       if (stream.match(/[A-Z_][A-Z0-9_]*/i)) {
+//           return "property"; // Highlight property name
+//       }
+
+//       // After processing a property or bracket, check if there are more properties or array indexes
+//       if (variableType === "variable-2" && stream.match(USR_VAR_REGEX)) {
+//           return "variable-2";  // User variable
+//       } else if (variableType === "variable-3" && stream.match(PERSIST_VAR_REGEX)) {
+//           return "variable-3";  // Persistent variable
+//       }
+
+//       // Return the type of variable (user or persistent)
+//       state.tokenize = null;
+//       return variableType;
+//   };
+// }
+
 function tokenVariableAccess(variableType) {
   return function(stream, state) {
       if (stream.eatSpace()) {
@@ -105,11 +178,10 @@ function tokenObjectLiteral(stream, state) {
   return "error";
 }
 
-// Function to match expressions, including variables, numbers, strings, etc.
 function matchExpression(stream, state) {
   if (stream.match(SYS_VAR_REGEX)) {
-      state.tokenize = tokenVariableAccess("variable");
-      return state.tokenize(stream, state);
+    state.tokenize = tokenVariableAccess("variable");
+    return state.tokenize(stream, state);
   } else if (stream.match(USR_VAR_REGEX)) {
       state.tokenize = tokenVariableAccess("variable-2");
       return state.tokenize(stream, state);
@@ -329,18 +401,36 @@ CodeMirror.defineMode("opensbp", function() {
           stream.next();
           return "error";
 
+        // Adjust the tokenizer within the assignment or variable handling state
         case "assign":
-          // Handle assignment operator '='
+          // Handle assignment operators
           if (stream.eatSpace()) {
             return null;
+          }
+          if (stream.match(/:=/)) {
+            state.name = "expression"; // Transition to handling the expression after assignment
+            return "operator"; // Correctly highlight ':=' as an operator
           }
           if (stream.match('=')) {
             state.name = "expression";
             return "operator";
           }
-          // If '=' not found, highlight as error
+          // If no appropriate assignment operator is found, highlight as error
           stream.next();
           return "error";
+
+        // case "assign":
+        //   // Handle assignment operator '='
+        //   if (stream.eatSpace()) {
+        //     return null;
+        //   }
+        //   if (stream.match('=')) {
+        //     state.name = "expression";
+        //     return "operator";
+        //   }
+        //   // If '=' not found, highlight as error
+        //   stream.next();
+        //   return "error";
 
         case "expression":
           // Handle expressions after assignment
