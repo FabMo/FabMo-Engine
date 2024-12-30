@@ -1,5 +1,5 @@
 '!FABMO!name:ATC Plate Offset
-'!FABMO!description:Macro Description
+'!FABMO!description:Set distance from ATC Measurement Plate to Material
 '!FABMO!enabled:true
 &loadVariables = 1
 IF &loadVariables = 0 THEN GOTO START
