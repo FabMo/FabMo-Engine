@@ -152,7 +152,8 @@ require('./cm-fabmo-modes.js');
               set_language('opensbp');
               break;
             default:
-              set_language('gcode');
+              //set_language('gcode');
+              set_language('opensbp');
               break;
           }
         } else {
@@ -160,6 +161,9 @@ require('./cm-fabmo-modes.js');
         }
       });
     }
+
+    var isDirty = false; // Flag to track if the editor has unsaved changes
+    var isMenuClick = false;  // and disregard save menu clicks
 
     function update() {
       // Refresh the editor content if needed
@@ -183,12 +187,14 @@ require('./cm-fabmo-modes.js');
             pos = editor.getCursor();
             localStorage.fabmo_editor_position = JSON.stringify(pos);
           }
+          isDirty = false;
           callback();
           break;
 
         case "macro":
           fabmo.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
             fabmo.notify('info', "Macro '" + source_data.name + "' saved.");
+            isDirty = false;
             callback();
           });
           break;
@@ -198,6 +204,28 @@ require('./cm-fabmo-modes.js');
           break;
       }
     }
+
+    // Function to prompt the user to save their work
+    function promptSaveWork(callback) {
+      if (isDirty) {
+          fabmo.showModal({
+              title: 'Unsaved Changes',
+              message: 'You have unsaved changes. Do you want to save before leaving?',
+              okText: 'Yes',
+              cancelText: 'No (exit again without saving)',
+              ok: function() {
+                  save(callback); // Save the work and then call the callback
+              },
+              cancel: function() {
+                  callback(); // Call the callback without saving
+              }
+          });
+      } else {
+          callback(); // Call the callback if there are no unsaved changes
+      }
+    }
+
+
 
     $(document).ready(function() {
       $(document).foundation();
@@ -231,40 +259,53 @@ require('./cm-fabmo-modes.js');
       editor.on('blur', function(cm) {
           if(!source) {
             save();
-          }
+          } else if (isDirty && !isMenuClick) {
+            promptSaveWork();
+          }  
         });
 
+      // Add event listener to track changes in the editor
+      editor.on("change", function() {
+        isDirty = true;
+      });
 
-////## th - experiment on FLOW back re: Sb4 and similar apps
+      // Probably need to refine these per key and for edited job file saving
+      $('.menu-item').on('mousedown', function() {
+        isMenuClick = true;
+      });
 
-    // get info for setting up exit-back behavior
-    let this_App = "editor";
-    let default_App = localStorage.getItem("defaultapp");
-    let back_App = localStorage.getItem("backapp");
-    let current_App = localStorage.getItem("currentapp");
-    // do nothing if current (e.g. refreshes and returns)
-    if (this_App != current_App) {
-        back_App = current_App;
-        if (back_App === null || back_App === "") {back_App = default_App};
-        current_App = this_App;
-        localStorage.setItem("currentapp", current_App);
-        localStorage.setItem("backapp", back_App);
-    } 
+      $('.menu-item').on('mouseup', function() {
+        isMenuClick = false;
+      });
 
-    $(".exit-button").on("click", function(){
-        fabmo.launchApp(back_App);
-    });
- 
-    document.onkeyup = function (evt) {
-        if (evt.key === "Escape") {
-            evt.preventDefault();
+
+      ////## th - experiment on FLOW back re: Sb4 and similar apps
+        // get info for setting up exit-back behavior
+        let this_App = "editor";
+        let default_App = localStorage.getItem("defaultapp");
+        let back_App = localStorage.getItem("backapp");
+        let current_App = localStorage.getItem("currentapp");
+        // do nothing if current (e.g. refreshes and returns)
+        if (this_App != current_App) {
+            back_App = current_App;
+            if (back_App === null || back_App === "") {back_App = default_App};
+            current_App = this_App;
+            localStorage.setItem("currentapp", current_App);
+            localStorage.setItem("backapp", back_App);
+        } 
+
+        $(".exit-button").on("click", function(){
             fabmo.launchApp(back_App);
-        }
-    };
+        });
+    
+        document.onkeyup = function (evt) {
+            if (evt.key === "Escape") {
+                evt.preventDefault();
+                fabmo.launchApp(back_App);
+            }
+        };
 
-    // set focus at the end of 'ready'.
-
-////##
+      ////##
 
       setup();
 
@@ -281,7 +322,8 @@ require('./cm-fabmo-modes.js');
       resize();
       $(window).trigger("focus");
 
-    }); // document.ready
+    }); // END document.ready -----------------
+
 
     $("#topbar").on("dragstart", function(evt) {
       evt.preventDefault();

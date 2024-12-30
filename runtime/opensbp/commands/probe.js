@@ -21,7 +21,7 @@
 function probe(runtime, opts) {
     var name = "prbin";
     var input = opts.inp;
-    var input_action = this.config.machine.get("di" + input + "_def");
+    var input_action = this.config.machine.get("di" + input + "ac");
     var cmd1 = {};
     cmd1[name] = opts.inp;
 

@@ -469,10 +469,10 @@ const { last } = require("underscore");
                 let assignedAction = "none";
                 if (
                     this.tool.config.machine !== undefined &&
-                    this.tool.config.machine["di" + i + "_def"] !== undefined &&
-                    typeof that.tool.config.machine["di" + i + "_def"] === "string"
+                    this.tool.config.machine["di" + i + "ac"] !== undefined &&
+                    typeof that.tool.config.machine["di" + i + "ac"] === "string"
                 ) {
-                    assignedAction = that.tool.config.machine["di" + i + "_def"];
+                    assignedAction = that.tool.config.machine["di" + i + "ac"];
                 }
                 if (ival) {
                     // input is ON
