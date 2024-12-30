@@ -51,7 +51,7 @@ home_z:
     JZ, (-1 * &homeOff_Z)										' Pull back from prox
     &target_ck = &homeOff_Z + &ooch								' New target for detecting error just past prox
     PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z				' Slowly probe for prox in final accurate check
-    IF %(3) == &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
+    IF %(3)== &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
     ZZ
     JZ, (-1 * &homeOff_Z)
     VA,,,0,,,,,,0,,,                                            ' Set 0 location and Table Base Zero
@@ -61,14 +61,14 @@ home_z:
 	RETURN
 
 home_x:
-    PX, (-1 * &searchDist_X), &searchSpeed_XY, &proxNum_X       ' PX "probes" for a switch or contact in the Z axis 
+    PX, (-1 * &searchDist_X), &searchSpeed_XY, &proxNum_X       ' PX "probes" for a switch or contact in the X axis 
     ZX															' Reset working zero
     JX, &homePullBack											' Pull back from prox
     &target_ck = (-1 * (&homeOff_X + &ooch))					' New target for detecting error just past prox
     PX, &target_ck, &slowSearchSpeed_XY, &proxNum_X				' Slowly probe for prox in final accurate check
-    IF %(1) == &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
+    IF %(1)== &target_ck THEN GOSUB fail_missed_target			' Look at current X location to see if we went past the target
     ZX
-    &change_Offset_X = %(7) + &homeOff_X 						' How different than last ?
+    &change_Offset_X = %(7)+ &homeOff_X 						' How different than last ?
     JX, &homeOff_X
 	VA,0,,,,,,0,,,,,											' Set 0 location and Table Base Zero                                   
 	RETURN
@@ -79,9 +79,9 @@ home_y:
     JY, &homePullBack
     &target_ck = (-1 * (&homeOff_Y + &ooch))               
     PY, &target_ck, &slowSearchSpeed_XY, &proxNum_Y 
-    IF %(2) == &target_ck THEN GOTO fail_missed_target
+    IF %(2)== &target_ck THEN GOTO fail_missed_target
     ZY
-    &change_Offset_Y = %(8) + &homeOff_Y
+    &change_Offset_Y = %(8)+ &homeOff_Y
     JY, &homeOff_Y
 	VA,,0,,,,,,0,,,,                                     
 	RETURN
@@ -104,9 +104,9 @@ offset_z_cutter:
       RETURN
 
   checkProxs:
-      IF %(&check_prox_Z) == 1 THEN GOSUB onProx
-      IF %(&check_prox_X) == 1 THEN GOSUB onProx
-      IF %(&check_prox_Y) == 1 THEN GOSUB onProx
+      IF %(&check_prox_Z)== 1 THEN GOSUB onProx
+      IF %(&check_prox_X)== 1 THEN GOSUB onProx
+      IF %(&check_prox_Y)== 1 THEN GOSUB onProx
       RETURN
   onProx:
       &proxTriggered = 1
@@ -140,7 +140,7 @@ initialize_variables:
   'Adjust to current UNITS of tool (handles whether tool Macro Variables are for INCHES or MM)
 	&dist_mult = 1.0
 	&Zoff_mult = 1.0
-	IF %(25) == 1 THEN GOTO tool_MM							  ' Read UNIT of Tool; System Variable #25
+	IF %(25)== 1 THEN GOTO tool_MM							  ' Read UNIT of Tool; System Variable #25
 	  tool_IN:
 	    $sb_current_cutter_Zoffset := .25                     ' Initialize variable in IN for case tool cutter not zeroed
 		$sb_current_cutter_Zoffset_Units := 0
