@@ -8,7 +8,7 @@
  * The MACHINE configuration stores information about the tool as a CNC machine - settings related
  *  to speeds, tool dimensions, how things are setup. Some of this information is shared with and used by
  *  the G2 firmware and must be kept "harmonized". In some cases, the shared data is just copied (e.g. envelope values);
- *  in other cases, it is modified for use in G2 (e.g. input definitions in machine {di#_def} are converted to action
+ *  in other cases, it is modified for use in G2 (e.g. input definitions in machine {di#ac} are converted to action
  *  definitions {di#ac} in G2). This action all happens in: MachineConfig.prototype.update.
  *  [Note that there are a few similar shares between the openSBP runtime and G2].
  */
@@ -86,7 +86,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
     //  Define Inputs for G2 -- Input functionality in FabMo and G2 overlap but differ in detail.
     //      For G2 use, the actions are simplified as none, stop, or fast-stop and current G2 values are set here.
     for (let i = 1; i < MAX_INPUTS + 1; i++) {
-        let diDef = "di" + i + "_def";
+        let diDef = "di" + i + "ac";
         if (diDef in this._cache) {
             let g2inpAction = 0; // G2 action defaults to none
             switch (this._cache[diDef]) {

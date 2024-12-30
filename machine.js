@@ -604,7 +604,7 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 // Locking/Interlocking Inputs are inputs defined as Stop(stop), FastStop(faststop), Interlock(interlock), or Limit(limit)
 // These inputs are fucntionally similar as they produce a feedhold in G2 when effected, BUT they have different user displays and for LIMIT
 // a different follow-on action -- so they are distinct for FabMo vs G2 (G2 has some similar functions we do not use because of conflicts)
-// Input definitions are stored in machine.json and = "machine: di#_def" in the configuration tree
+// Input definitions are stored in machine.json and = "machine: di#ac" in the configuration tree
 // ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold (and variations)
 // TABLE:
 // interlock
@@ -620,7 +620,7 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 function checkForInterlocks(thisMachine, action) {
     let getInterlockState = "";
     for (let pin = 1; pin < 13; pin++) {
-        let checkAssignedInput = config.machine.get("di" + pin + "_def");
+        let checkAssignedInput = config.machine.get("di" + pin + "ac");
         // Check assignedInput for "none" in letters of any case; then set value to ""
         if (checkAssignedInput) {
             if (checkAssignedInput.toLowerCase() === "none") {
