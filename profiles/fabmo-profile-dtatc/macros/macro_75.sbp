@@ -1,45 +1,85 @@
 '!FABMO!name:ATC Status Check
-'!FABMO!description:Macro Description
+'!FABMO!description:Check ATC Status in a file
 '!FABMO!enabled:true
-&LOAD_VARS = 0
-IF &LOAD_VARS = 0 THEN GOTO START
-'ATC Vars For Testing
+' ATC STATUS CHECK FOR NORMAL ATC FUNCTIONS
+
+' SPECIAL CASE: ATC Vars For Testing various scenarios -------------------------
+&tool := 1
+&th := 0
+&MANUAL_CHANGE := 0
+
+&LOAD_TEST_VARS = 0                                                   ' >> Set this variable to 1 for testing
+IF &LOAD_TEST_VARS== 0 THEN GOTO START
 $ATC.ToolIn = 1
-$ATC.Dropped = 0
+$ATC.Dropped = 1
 $ATC.PlateOffset = -2
 $ATC.Tool_Length = -5
 $ATC.numClips = 3
 $ATC.MaxDepth = -0.02
-C70
+
+' Initialize ------------------------------------------------------------------
 START:
-$ATC.ToolIn := 1
-$ATC.Dropped := 0
+'PAUSE "Ready for ATC status check ..."
+C70
+$ATC.ToolIn := 0
+$ATC.Dropped := 1
 $ATC.Status = "OK"
 $ATC.ToolBar = "ATTACHED"
-IF %($ToolBar_Status) = 1 THEN GOTO TOOLBAR_ATTACHED
-$ATC.ToolBar = "NOT ATTACHED"
+IF %($ToolBar_Status)== 0 THEN GOTO toolbarNotAttached                                           ' ERROR
 
-TOOLBAR_ATTACHED:
-IF %($Drawbar_Sensor_Status) = 0 THEN GOTO DRAWBAR_OK
-$ATC.Status = "DRAWBAR STUCK OPEN"
-END
+' MAIN =======================================================================
+			&AtNow = "beforeALL"
+            'gosub STATE
+        GOSUB DRAWBAR_CHECK                                                ' >> Make sure drawbar is not jammed open
+        ' Evaluate Tool Presence and Consistency with ATC.Drop Expectation
+			&AtNow = "beforeABSENTtest"
+            'gosub STATE
+		IF %($Tool_Sensor_Status)== 0 THEN GOSUB CASE_TOOL_ABSENT          ' >> Check our ABSENT expectations
+			&AtNow = "beforePRESENTtest "
+            'gosub STATE
+        IF %($Tool_Sensor_Status)== 1 THEN GOSUB CASE_TOOL_PRESENT         ' >> Check our PRESENT expections
+            &AtNow = "Check-DONE "
+            'gosub STATE
+            
+		END
 
-DRAWBAR_OK:
-IF %($Tool_Sensor_Status) = 1 THEN GOTO CHECK_OUT
-GOTO CHECK_IN
+' Subroutines ----------------------------------------------------------------
+DRAWBAR_CHECK:
+    IF %($Drawbar_Sensor_Status)= 0 THEN RETURN
+    GOSUB drawbarStuck                                                                            ' ERROR drawbar is stuck
 
-CHECK_IN:
-$ATC.ToolIn = 0
-IF $ATC.Dropped = 1 THEN GOTO OK
-$ATC.Dropped = 1
-'$ATC.Status = "TOOL NOT FOUND IN SPINDLE - REHOME MACHINE"
-GOTO OK
+CASE_TOOL_ABSENT:
+	IF $ATC.ToolIn != 0 THEN GOSUB unexpectedTool                                                 ' ERROR we have a record there is a tool, but nothing in spindle
+    IF $ATC.Dropped == 0 THEN GOSUB unexpectedTool                                                 ' ERROR we have not DROPPED off a tool, nothing in spindle but we did not do a Drop
+	$ATC.Status = "OK"                                                  ' >> Empty as expected
+	RETURN
 
-CHECK_OUT:
-IF $ATC.Dropped = 0 THEN GOTO OK
-$ATC.Status = "UNKNOWN TOOL IN SPINDLE, REMOVE TOOL AND REHOME MACHINE"
-END
+CASE_TOOL_PRESENT:
+    IF $ATC.ToolIn == 0 THEN GOSUB unexpectedTool                                                 ' ERROR we do not have a record of the tool in spindle
+    IF $ATC.Dropped== 1 THEN GOSUB unexpectedTool                                                 ' ERROR we think we Dropped off a tool but there is something there
+	$ATC.Status = "OK"
+	RETURN
 
-OK:
-$ATC.Status = "OK"
-END
+
+' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+STATE: ' Report State at points in ATC Sequence
+    PAUSE "STATE:" + &AtNow + " ATC-Status:" + $ATC.Status + " tool:" + &tool + " ATC.Dropped:" + $ATC.Dropped + " ToolIn:" + $ATC.ToolIn + " Length:" + &th + " Manual:" + &MANUAL_CHANGE + " Drawbar:" + %($Drawbar_Sensor_Status) + " ToolSensor:" + %($Tool_Sensor_Status)
+    RETURN
+' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+' ERROR HANDLING ------------------------------------------------------------
+toolbarNotAttached:
+	$ATC.ToolBar = "NOT ATTACHED"
+    PAUSE "Currently Not Supporting Un-attached Tool Holder!", CANCELTEXT="Quit"
+    END
+
+drawbarStuck:
+	$ATC.Status = "DRAWBAR STUCK OPEN"
+    PAUSE "Drawbar seems stuck. Confirm adequate pressure and that Bar is opening and closing and try again.", CANCELTEXT="Quit"
+    END
+
+unexpectedTool:
+	PAUSE "ATC is confused about what should be in Spindle. Start over with empty spindle! ToolIn=" + $ATC.ToolIn + " Dropped=" + $ATC.Dropped, CANCELTEXT="Quit"
+	$ATC.Dropped = 1
+    END

@@ -1,5 +1,5 @@
 '!FABMO!name: Tool Change
-'!FABMO!description: Handles Manual Tool Change -- MTC (settings in #201
+'!FABMO!description: Handles Manual Tool Change -- MTC - settings in #201 -
 '!FABMO!enabled:true
 ' Name: Manual Tool Change
 ' Description: Handles Manual Tool Change (MTC) from current Vectric posts and tracks tool# [C9]

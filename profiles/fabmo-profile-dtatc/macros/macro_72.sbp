@@ -1,5 +1,5 @@
 '!FABMO!name:ATC Measure Tool
-'!FABMO!description:Macro Description
+'!FABMO!description:Measure the length of ATC cutting tools
 '!FABMO!enabled:true
 &SkipInput = 0
 &AUTOMATED = 0

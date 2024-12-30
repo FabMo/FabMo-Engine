@@ -1,5 +1,5 @@
 '!FABMO!name:ATC Toolchange -- User Initiated
-'!FABMO!description:Macro Description
+'!FABMO!description:Swaps  tools using Automatic Tool Changer - ATC
 '!FABMO!enabled:true
 C70
 &type = $ATC.type
@@ -19,12 +19,12 @@ IsMTC:
 	GoTo IsDone
 
 IsATC:
-	PAUSE "Enter the desired tool number" &tool
+	PAUSE "<p>Request Tool # to Load <br> (or: 0 = Return Current Tool; -1 = Manual Change)</p>", &tool
 	C71
 	GoTo IsDone
 
 IsDTATC:
-	PAUSE "Enter the desired tool number" &tool
+	PAUSE "<p>Request Tool # to Load <br> (or: 0 = Return Current Tool; -1 = Manual Change)</p>", &tool
 	C71
 	GoTo IsDone
 

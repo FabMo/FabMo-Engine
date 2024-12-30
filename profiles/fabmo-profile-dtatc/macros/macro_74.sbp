@@ -1,5 +1,5 @@
 '!FABMO!name:ATC Calibrate
-'!FABMO!description:Macro Description
+'!FABMO!description:Initial calibration of Tool-Clip location for ATC
 '!FABMO!enabled:true
 $unitMultiplier = 1
 IF %(25) == 0 THEN GOTO SETUPVALUES
