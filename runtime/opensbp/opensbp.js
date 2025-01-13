@@ -258,59 +258,113 @@ SBPRuntime.prototype.needsAuth = function (s) {
 //      enough not to count at all.
 // TODO At the very least, this function should simply take the string provided and stream it into runStream - they do the same thing.
 //          s - The string to run
+// SBPRuntime.prototype.runString = function (s) {
+//     return new Promise((resolve, reject) => {
+//         try {
+//             this.pc = 0;
+//             this.program = [];
+
+//             const lines = s.split("\n");
+//             if (this.machine && this.file_stack.length === 0) {
+//                 this.machine.status.nb_lines = lines.length - 1;
+//             }
+
+//             try {
+//                 this.program = parser.parse(s);
+//             } catch (e) {
+//                 log.error("Parsing error:", e);
+//                 e.message = `@line-${e.line}(${e.location.start.column + 1}): ${e.message}`;
+
+//                 try {
+//                     this._end(e.message);
+//                 } catch (endError) {
+//                     log.error("Error during _end:", endError);
+//                 }
+
+//                 return reject(e);
+//             }
+
+//             try {
+//                 this._setupTransforms();
+//                 // this.init();
+//                 this._loadConfig();
+//                 this._analyzeLabels();
+//                 this._analyzeGOTOs();
+//             } catch (e) {
+//                 this._handleRunStringError(e, reject);
+//                 return;
+//             }
+
+//             // Start running the actual code
+//             this._run()
+//                 .then(() => {
+//                     this.once("end", () => {
+//                         resolve();
+//                     });
+//                 })
+//                 .catch((e) => {
+//                     this._handleRunStringError(e, reject);
+//                 });
+
+//             resolve();
+//         } catch (err) {
+//             console.error("Bad Spot -- Error executing code:", err);
+//             log.error("Exception has occurred:", err);
+//             reject(err);
+//         }
+//     });
+// };
+
 SBPRuntime.prototype.runString = function (s) {
     return new Promise((resolve, reject) => {
         try {
             this.pc = 0;
             this.program = [];
 
-            const lines = s.split("\n");
-            if (this.machine && this.file_stack.length === 0) {
-                this.machine.status.nb_lines = lines.length - 1;
-            }
+            // Simulate a stream using a Readable
+            const { Readable } = require("stream");
+            const stream = new Readable();
+            stream.push(s);
+            stream.push(null); // End the stream
 
-            try {
-                this.program = parser.parse(s);
-            } catch (e) {
-                log.error("Parsing error:", e);
-                e.message = `Error@line- ${e.line}(${e.location.start.column}): ${e.message}`;
+            const st = parser.parseStream(stream);
 
+            st.on("data", (data) => {
+                this.program.push(data);
+            });
+
+            st.on("end", async () => {
                 try {
-                    this._end(e.message);
-                } catch (endError) {
-                    log.error("Error during _end:", endError);
-                }
+                    log.tock("Parse string");
 
-                return reject(e);
-            }
+                    const lines = this.program.length;
+                    if (this.machine && this.file_stack.length === 0) {
+                        this.machine.status.nb_lines = lines - 1;
+                    }
 
-            try {
-                this._setupTransforms();
-                // this.init();
-                this._loadConfig();
-                this._analyzeLabels();
-                this._analyzeGOTOs();
-            } catch (e) {
-                this._handleRunStringError(e, reject);
-                return;
-            }
+                    this._setupTransforms();
+                    this._loadConfig();
 
-            // Start running the actual code
-            this._run()
-                .then(() => {
+                    this._analyzeLabels();
+                    this._analyzeGOTOs();
+
                     this.once("end", () => {
                         resolve();
                     });
-                })
-                .catch((e) => {
-                    this._handleRunStringError(e, reject);
-                });
 
-            resolve();
-        } catch (err) {
-            console.error("Bad Spot -- Error executing code:", err);
-            log.error("Exception has occurred:", err);
-            reject(err);
+                    // Start running the actual code
+                    await this._run();
+                } catch (e) {
+                    this._handleRunStringError(e, reject);
+                }
+            });
+
+            st.on("error", (err) => {
+                log.error("Error in runString stream:", err);
+                this._handleRunStringError(err, reject);
+            });
+        } catch (e) {
+            this._handleRunStringError(e, reject);
         }
     });
 };
@@ -322,6 +376,7 @@ SBPRuntime.prototype._handleRunStringError = function (e, reject) {
     } else {
         try {
             log.error(e);
+            e.message = `@line-${e.line}(${e.location.start.column + 1}):  ${e.message}`;
             this._end(e.message);
         } catch (endError) {
             log.error("Error during _end:", endError);
@@ -381,6 +436,21 @@ SBPRuntime.prototype.runStream = function (text_stream) {
         }
     });
 };
+
+// SBPRuntime.prototype._handleRunStringError = function (e, reject) {
+//     if (this.isInSubProgram()) {
+//         log.error(e);
+//         this._abort(e);
+//     } else {
+//         try {
+//             log.error(e);
+//             this._end(e.message);
+//         } catch (endError) {
+//             log.error("Error during _end:", endError);
+//         }
+//     }
+//     reject(e);
+// };
 
 SBPRuntime.prototype._handleRunStreamError = function (e, reject) {
     if (this.isInSubProgram()) {
@@ -652,76 +722,7 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 SBPRuntime.prototype._breaksStack = function (cmd) {
     var result;
 
-    // Any command that has an expression in one of its arguments that breaks the stack, breaks the stack.
-    if (cmd.args) {
-        for (var i = 0; i < cmd.args.length; i++) {
-            if (this._exprBreaksStack(cmd.args[i])) {
-                log.warn("STACK BREAK for an expression: " + JSON.stringify(cmd.args[i]));
-                return true;
-            }
-        }
-    }
-
-    switch (cmd.type) {
-        case "cmd":
-            // Commands have a means of automatically specifying whether or not they break the stack.  If their command handler
-            //// ## DESCRIBE New ... accepts a second argument (presumed to be a callback) in addition to their argument list, they are stack breaking.
-            var name = cmd.cmd;
-            if (name in this && typeof this[name] == "function") {
-                var f = this[name];
-                if (f && f.length > 1) {
-                    return true;
-                }
-            }
-            result = false;
-            break;
-
-        case "dialog":
-        case "pause":
-            return true;
-
-        case "cond":
-            //TODO , we should check the expression for a stack break, as well as the .stmt
-            return true;
-        case "weak_assign":
-        case "assign":
-            // TODO: These should only break the stack if they assign to or read from expressions that break the stack
-            result = true;
-            break;
-
-        case "custom":
-            // Macro calls should break the stack
-            result = true;
-            break;
-
-        case "return":
-        case "goto":
-        case "gosub":
-            // TODO - Control flow needn't necessarily break the stack
-            result = true;
-            break;
-
-        case "open":
-            result = true;
-            break;
-
-        case "event":
-            result = true; // TODO DEPRECATE
-            break;
-
-        case "fail":
-        case "quit":
-        case "endall":
-        case "end":
-            // These statements update the system state and need to wait for the machine to stop to execute
-            result = true;
-            break;
-
-        default:
-            result = false;
-            break;
-    }
-    return result;
+    return false; //TODO:  This is a temporary fix to allow the system to run without stack-breaking checks in place
 };
 
 // Returns true if this expression breaks the stack.
@@ -874,7 +875,7 @@ SBPRuntime.prototype._run = function () {
                     })
                     .catch(reject);
             } else {
-                // --> Regular motion execution
+                // --> Regular motion execution in G2
                 if (this.driver) {
                     this.driver
                         .runStream(this.stream)
@@ -953,14 +954,15 @@ SBPRuntime.prototype._executeNext = async function () {
                 return;
             } else {
                 // If no pending operations, safe to end the program
-                if (!this.waitPendingOps) {
-                    try {
-                        this._end();
-                    } catch (err) {
-                        log.error("Error during _end:", err);
-                    }
-                }
-                return;
+                // if (!this.waitPendingOps) {
+                //     try {
+                //         this._end();
+                //     } catch (err) {
+                //         log.error("Error during _end:", err);
+                //     }
+                // }
+                this.waitPendingOps = true;
+                //return;
             }
         }
     }
@@ -1072,12 +1074,16 @@ SBPRuntime.prototype._end = async function (error) {
                 this.machine.status.job = null;
             }
 
-            // Set the machine state
+            // Set the machine state to "idle" (going into idle triggers condition updates)
             if (error_msg) {
+                // The following should allow for a clean up on finding errors during running
+                this.driver.queueFlush(); // Flush the queue to remove any pending commands
                 this.machine.setState(this, "idle", { error: error_msg });
             } else {
                 this.machine.setState(this, "idle");
             }
+
+            log.debug("Machine state restored.");
         } catch (err) {
             log.error("Error during machine state restoration:", err);
             // Even if there's an error during restoration, ensure the machine state is set
@@ -1566,6 +1572,7 @@ SBPRuntime.prototype._getVariableValue = function (identifier) {
     const variableName = identifier.name.toUpperCase();
     const accessPath = identifier.access || [];
     let variables;
+    let atLine = this.pc + 1;
 
     if (identifier.type === "user_variable") {
         variables = config.opensbp._cache["tempVariables"];
@@ -1574,7 +1581,11 @@ SBPRuntime.prototype._getVariableValue = function (identifier) {
     }
 
     if (!(variableName in variables)) {
-        throw new Error(`Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} is not defined.`);
+        throw new Error(
+            `@line-${atLine}:  Variable ${
+                identifier.type === "user_variable" ? "&" : "$"
+            }${variableName} is not defined.`
+        );
     }
 
     let value = variables[variableName];
@@ -1645,7 +1656,7 @@ SBPRuntime.prototype._eval = function (expr) {
 
 // Initialize the runtime (set its internal state variables to their startup states)
 SBPRuntime.prototype.init = function () {
-    this.resetRuntimeState();
+    // just called before init    this.resetRuntimeState();
     this.pc = 0;
     this.coordinateSystem = "G55";
     this.start_of_the_chunk = 0;
@@ -1774,7 +1785,8 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
                     } else {
                         // Add one to the line number so they start at 1
                         ////## right now, in a macro, you need to add 3; FIX and show all lines
-                        throw new Error("Undefined label " + line.label + " on line " + (i + 1));
+                        throw new Error(`@line-${i + 1}: Undefined label ` + line.label);
+                        //throw new Error("Undefined label " + line.label + " on line " + (i + 1));
                     }
                     break;
                 default:

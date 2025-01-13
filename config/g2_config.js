@@ -135,12 +135,21 @@ G2Config.prototype.update = function (data, callback) {
                 return callback(err);
             }
             var retval = {};
+
             for (var i = 0; i < keys.length; i++) {
-                key = keys[i];
-                value = results[i];
+                var key = keys[i];
+                var value = results[i];
+                console.log(`Mapping key: ${key} to value: ${value}`);
                 this._cache[key] = value;
                 retval[key] = value;
             }
+
+            // for (var i = 0; i < keys.length; i++) {
+            //     key = keys[i];
+            //     value = results[i];
+            //     this._cache[key] = value;
+            //     retval[key] = value;
+            // }
             this.save(
                 function (err, result) {
                     if (err) {
