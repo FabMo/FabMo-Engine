@@ -128,25 +128,23 @@ GCodeRuntime.prototype._fail = function (message) {
     }
 };
 
-GCodeRuntime.prototype._idle = async function () {
+GCodeRuntime.prototype._idle = function () {
     this.machine.status.current_file = null;
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
     var job = this.machine.status.job;
-    this.driver.setUnitsAsync = util.promisify(this.driver.setUnits);
     // Set the machine state to idle and return the units to their default configuration
-    var finishUp = async function () {
-        try {
-            await this.driver.setUnitsAsync(config.machine.get("units"));
-            var callback = this.completeCallback || function () {};
-            this.ok_to_disconnect = true;
-            this.completeCallback = null;
-            this.machine.setState(this, "idle");
-            callback();
-        } catch (err) {
-            log.error("Error in finishUp:", err);
-            // Handle the error appropriately
-        }
+    var finishUp = function () {
+        this.driver.setUnits(
+            config.machine.get("units"),
+            function () {
+                var callback = this.completeCallback || function () {};
+                this.ok_to_disconnect = true;
+                this.completeCallback = null;
+                this.machine.setState(this, "idle");
+                callback();
+            }.bind(this)
+        );
     }.bind(this);
 
     if (job) {

@@ -70,11 +70,7 @@ function configureUser(callback) {
     exports.user.load(userFile, function (err, data) {
         if (err) {
             if (err.code === "ENOENT") {
-                log.warn(
-                    "Configuration file " +
-                        userFile +
-                        " not found. Setting up first user"
-                );
+                log.warn("Configuration file " + userFile + " not found. Setting up first user");
                 exports.user.setUpFile(function (err) {
                     if (err) {
                         log.error(err);
@@ -83,12 +79,7 @@ function configureUser(callback) {
                     }
                 });
             } else {
-                log.warn(
-                    'Problem loading the user configuration file INDEX "' +
-                        userFile +
-                        '": ' +
-                        err.message
-                );
+                log.warn('Problem loading the user configuration file INDEX "' + userFile + '": ' + err.message);
             }
         } else {
             exports.user.initUsers(data, function (msg) {
@@ -110,9 +101,11 @@ function configureDriver(driver, callback) {
         async.series(
             [
                 function (callback) {
+                    log.debug("Initializing driver configuration...");
                     exports.driver.init(driver, callback);
                 },
                 function (callback) {
+                    log.debug("Synchronizing driver configuration...");
                     exports.driver.configureStatusReports(callback);
                 },
             ],
