@@ -204,6 +204,8 @@ function setNestedValue(obj, accessPath, value) {
     current[lastKey] = value;
 }
 
+// PERMANENT VARIABLES ("$" VARIABLES)
+
 // Return the value of the variable with the specified identifier
 //   identifier - An object with 'name' and 'access' properties
 OpenSBPConfig.prototype.getVariable = function (identifier) {
@@ -282,7 +284,7 @@ OpenSBPConfig.prototype.hasVariable = function (identifier) {
     }
 };
 
-// TEMP VARIABLES
+// TEMP VARIABLES ("&" VARIABLES)
 
 // Return the value of the temp variable with the specified identifier
 //   identifier - An object with 'name' and 'access' properties

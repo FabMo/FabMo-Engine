@@ -1309,7 +1309,9 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "pause":
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
-            var arg = this._eval(command.expr);
+            if (command.expr) {
+                var arg = this._eval(command.expr);
+            }
             var input_var = command.var;
             if (u.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
@@ -1422,7 +1424,7 @@ SBPRuntime.prototype._assign = async function (identifier, value, callback) {
 
         // Assign with persistence using the configuration module
         try {
-            await config.opensbp.setTempVariableWrapper(identifier.name, value);
+            await config.opensbp.setTempVariableWrapper(identifier, value);
             callback();
         } catch (error) {
             log.error(error);
@@ -1435,7 +1437,7 @@ SBPRuntime.prototype._assign = async function (identifier, value, callback) {
 
         // Assign with persistence using the configuration module
         try {
-            await config.opensbp.setVariableWrapper(identifier.name, value);
+            await config.opensbp.setVariableWrapper(identifier, value);
             callback();
         } catch (error) {
             log.error(error);
@@ -1874,7 +1876,7 @@ SBPRuntime.prototype.evaluateUserVariable = function (v) {
     if (v.name.toUpperCase() === "&TOOL") {
         v.name = "&TOOL";
     }
-    return config.opensbp.getTempVariable(v.name);
+    return config.opensbp.getTempVariable({ name: v.name, access: v.access || [] });
 };
 
 // Return the value for the provided persistent variable
