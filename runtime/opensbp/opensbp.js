@@ -277,21 +277,16 @@ SBPRuntime.prototype.runString = function (s) {
             this.program = parser.parse(s);
         } catch (e) {
             log.error(e);
-            this._abort(e.message);
+            this._abort(e);
         } finally {
             log.tock("Parse file");
         }
-
-        ////##
-        // TODO Bad bad bad - re-using lines above (the list of lines in the file) as the number of lines here.
-        //      It looks like we can just remove this.  It doesn't seem to be used.
-        ////##        lines = this.program.length;
 
         // Configure affine transformations on the file
         this._setupTransforms();
 
         // Initialize the runtime state
-        //                this.init();
+        this.init();
 
         // Copy the general config settings into runtime memory
         this._loadConfig();
@@ -314,7 +309,7 @@ SBPRuntime.prototype.runString = function (s) {
             this._abort(e);
         } else {
             log.error(e);
-            this._end(e.message);
+            this._end(e);
         }
     }
 };
@@ -386,7 +381,7 @@ SBPRuntime.prototype.runStream = function (text_stream) {
                         this._abort(e);
                     } else {
                         log.error(e);
-                        this._end(e.message);
+                        this._end(e);
                     }
                 }
             }.bind(this)
@@ -401,7 +396,7 @@ SBPRuntime.prototype.runStream = function (text_stream) {
                     this._abort(e);
                 } else {
                     log.error(e);
-                    this._end(e.message);
+                    this._end(e);
                 }
             }.bind(this)
         );
@@ -413,7 +408,7 @@ SBPRuntime.prototype.runStream = function (text_stream) {
             this._abort(e);
         } else {
             log.error(e);
-            this._end(e.message);
+            this._end(e);
         }
     }
 };
@@ -775,6 +770,10 @@ SBPRuntime.prototype._run = function () {
     // 2. Set the machine state to paused or running based on the state of the motion system
     // 3. Handle a feedhold edge case (feedhold issued while system was not executing motion)
     var onStat = function (stat) {
+        if (!this.driver) {
+            log.warn("OpenSBP Runtime got a status report while disconnected.");
+            return;
+        }
         log.debug("onSTAT ..." + stat);
         if (this.inManualMode) {
             return;
@@ -837,9 +836,10 @@ SBPRuntime.prototype._run = function () {
                 break;
             // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
             //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
-            // case this.driver.STAT_END:
-            //     this._end();
-            //     break;
+            case this.driver.STAT_END:
+                log.debug("STAT_END: Cycle Ending ... no handling");
+                break;
+
             default:
                 log.warn("OpenSBP Runtime Unhandled Stat: " + stat);
         }
@@ -861,7 +861,7 @@ SBPRuntime.prototype._run = function () {
                     function () {
                         // This ensures we run _end on driver stream end
                         this.file_stack = [];
-                        this._end();
+                        //                       this._end();
                     }.bind(this)
                 );
         }
@@ -935,14 +935,21 @@ SBPRuntime.prototype._executeNext = function () {
             return;
         } else {
             log.debug("This is not a nested end.  No stack.");
+
             // This ends the machining cycle
 
             // If no driver, we just go straight to the _end() (as in simulation)
             if (!this.driver) {
                 this._end();
             } else {
-                // EOF send M30.
-                this.emit_gcode("M30");
+                if (!this.quit_pending) {
+                    // EOF send M30.
+                    this.emit_gcode("M30");
+                    // ... _end triggers exit from this runtime
+                    this._end();
+                    // ... quit_pending is a local runtime flag to prevent multiple M30s etc
+                    this.quit_pending = true;
+                }
             }
             return;
         }
@@ -1031,17 +1038,24 @@ SBPRuntime.prototype._end = function (error) {
         return;
     }
 
-    // Normalize the error and ending state
+    // Normalize the error ending state; pass as much information as possible to report
+    // Standardizing reporting format to:
+    //                    An Error Occurred!
+    //         @line-<line number>:  <error message>
+    // ... with some variations
     this.pending_error = error;
-
     let error_msg = null;
+    //error.line = this.pc + 1;
     if (error) {
-        if (Object.prototype.hasOwnProperty.call(error, "message")) {
-            error_msg = error.message;
+        if (Object.prototype.hasOwnProperty.call(error, "offset")) {
+            error_msg = `@line-${error.offset}(${error.column}):  ${error.message}`;
+        } else if (Object.prototype.hasOwnProperty.call(error, "message")) {
+            error_msg = `@line-${this.pc + 1}:  ${error.message}`;
         } else {
             error_msg = error;
         }
     }
+
     // Fail command message
     if (!error_msg && this.end_message) {
         error_msg = this.end_message;
@@ -1522,7 +1536,7 @@ SBPRuntime.prototype.init = function () {
     this.started = false;
     this.sysvar_evaluated = false;
     this.output = []; // Used in simulation mode only ??meaning??
-    this.quit_pending = false;
+    this.quit_pending = false; // this is runtime specific, not the global G2 driver "quit_pending"
     this.end_message = null;
     this.paused = false;
     this.feedhold = false;
@@ -1609,9 +1623,7 @@ SBPRuntime.prototype._analyzeLabels = function () {
             switch (line.type) {
                 case "label":
                     if (line.value in this.label_index) {
-                        throw new Error(
-                            "Duplicate labels on lines " + this.label_index[line.value] + " and " + (i + 1)
-                        );
+                        throw new Error(`@line-${this.label_index[line.value]} and @line-${i + 1}: Duplicate labels `);
                     }
                     this.label_index[line.value] = i;
                     break;
@@ -1640,8 +1652,7 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
                         // pass
                     } else {
                         // Add one to the line number so they start at 1
-                        ////## right now, in a macro, you need to add 3; FIX and show all lines
-                        throw new Error("Undefined label " + line.label + " on line " + (i + 1));
+                        throw new Error(`@line-${i + 1}: Undefined label ` + line.label);
                     }
                     break;
                 default:
@@ -1812,7 +1823,9 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         // PLANNING for Movespeeds starting at 121
 
         default:
-            throw new Error("Unknown System Variable: " + JSON.stringify(v) + " on line " + (this.pc + 1));
+            //throw new Error("Unknown System Variable: " + JSON.stringify(v) + " on line " + (this.pc + 1));
+            // Add one to the line number so they start at 1
+            throw new Error(`@line-${this.pc + 1}: Unknown System Variable:` + JSON.stringify(v));
     }
 };
 
@@ -1888,7 +1901,7 @@ SBPRuntime.prototype.evaluatePersistentVariable = function (v) {
     if (v.type != "persistent_variable") {
         return undefined;
     }
-    return config.opensbp.getVariable(v.expr);
+    return config.opensbp.getVariable({ name: v.name, access: v.access || [] });
 };
 
 // Called for any valid shopbot mnemonic that doesn't have a handler registered
@@ -2130,7 +2143,8 @@ SBPRuntime.prototype.pause = function () {
 // Quit the currently running program
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function () {
-    // Send Quit to g2.js driver.
+    // Start the process of ending the runtime and send Quit message to g2.js driver.
+    this._end(); // this seems important for clean exit after quits
     this.driver.quit();
 };
 
