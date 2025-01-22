@@ -689,6 +689,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             result = false;
             break;
 
+        case "dialog":
         case "pause":
             return true;
 
@@ -1412,12 +1413,14 @@ SBPRuntime.prototype._varExists = function (identifier) {
             identifier.name = "&TOOL";
         }
 
-        return config.opensbp.hasTempVariable(identifier.name);
+        return config.opensbp.hasTempVariable(identifier);
+        //return config.opensbp.hasTempVariable(identifier.name);
     }
 
     if (identifier.type == "persistent_variable") {
         // Persistent variable
-        return config.opensbp.hasVariable(identifier.name);
+        return config.opensbp.hasVariable(identifier);
+        //return config.opensbp.hasVariable(identifier.name);
     }
     return false;
 };

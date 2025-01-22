@@ -15,9 +15,17 @@ require('./cm-fabmo-modes.js');
     var job_title=null;
     var job_filename=null;
 
+    var isDirty = false; // Flag to track if the editor has unsaved changes
+    let isSaveAndSubmitClick = false;
+    let isRunCodeImmediatelyClick = false;
+    let overrideDirty = false; // Flag to override the dirty check
+
+
+
     function execute() {
       $("#execute-menu").hide();
       var text = editor.getValue();
+      overrideDirty = false; // only over-ride once
       switch(lang) {
         case "gcode":
           fabmo.notify('info', 'Executing G-Code program.');
@@ -86,6 +94,7 @@ require('./cm-fabmo-modes.js');
             $('#app-content').text("[ editor scratchpad ]");
             $(".exit-button").css("visibility", "hidden");
             editor.setValue(content);
+            isDirty = false; // Reset the dirty flag after loading content
         }
         var pos;
         try {
@@ -107,6 +116,7 @@ require('./cm-fabmo-modes.js');
               editor.setValue(data, -1);
               //editor.clearSelection();
               source = "job";
+              isDirty = false; // Reset the dirty flag after loading content
               fabmo.getJobInfo(args.job, function(err, info) {
                 if(!err) {
                     job_title = info.name || info.file.filename || null;
@@ -134,6 +144,7 @@ require('./cm-fabmo-modes.js');
             $('#app-content').text("[macro: #" + args.macro);
             $('#edit-filename').text("{" + macro.name + " } ]");
             editor.setValue(macro.content, -1);
+            isDirty = false; // Reset the dirty flag after loading content
             //editor.clearSelection();
             source = "macro";
             source_data = macro;
@@ -144,6 +155,7 @@ require('./cm-fabmo-modes.js');
           });
         } else if('new' in args) {
           editor.setValue(args.content || '', -1);
+          isDirty = false; // Reset the dirty flag after loading content
           //editor.clearSelection();
           source = null;
           switch(args.language) {
@@ -161,9 +173,6 @@ require('./cm-fabmo-modes.js');
         }
       });
     }
-
-    var isDirty = false; // Flag to track if the editor has unsaved changes
-    var isMenuClick = false;  // and disregard save menu clicks
 
     function update() {
       // Refresh the editor content if needed
@@ -212,23 +221,26 @@ require('./cm-fabmo-modes.js');
               title: 'Unsaved Changes',
               message: 'You have unsaved changes. Do you want to save before leaving?',
               okText: 'Yes',
-              cancelText: 'No (exit again without saving)',
+              cancelText: 'No (exit to run or leave again without saving)',
               ok: function() {
-                  save(callback); // Save the work and then call the callback
+                  submitJob(callback); // Save the work and then call the callback
               },
               cancel: function() {
-                  callback(); // Call the callback without saving
+                  overrideDirty = true; // overrides dirty until next dirty-ing
               }
           });
       } else {
-          callback(); // Call the callback if there are no unsaved changes
+          callback(); 
       }
     }
 
 
-
     $(document).ready(function() {
       $(document).foundation();
+      isDirty = false; // Flag to track if the editor has unsaved changes
+      isSaveAndSubmitClick = false;
+      isRunCodeImmediatelyClick = false;
+      overrideDirty = false; // Flag to override the dirty check
 
       editor = CodeMirror(function(elt) {
         var div = document.getElementById('editor');
@@ -256,30 +268,54 @@ require('./cm-fabmo-modes.js');
           }
         })
 
-      editor.on('blur', function(cm) {
-          if(!source) {
-            save();
-          } else if (isDirty && !isMenuClick) {
-            promptSaveWork();
-          }  
+        editor.on('blur', function(cm) {
+          console.log("Got BLURR");
+          if (!source) {
+              save();
+          } else if (isDirty && !isSaveAndSubmitClick && !isRunCodeImmediatelyClick) {
+              promptSaveWork();
+          } else if (isRunCodeImmediatelyClick) {
+              // Prevent running the code if there are unsaved changes
+              if (isDirty) {
+                  promptSaveWork();
+                  isRunCodeImmediatelyClick = false;
+              } else {
+                  // Run the code immediately if there are no unsaved changes
+                  overrideDirty = false;
+                  save();
+              }
+          }
+          isSaveAndSubmitClick = false;
+        });
+        
+        // Track changes in the editor
+        editor.on("change", function() {
+          isDirty = true;
+          overrideDirty = false;
         });
 
-      // Add event listener to track changes in the editor
-      editor.on("change", function() {
-        isDirty = true;
-      });
 
-      // Probably need to refine these per key and for edited job file saving
-      $('.menu-item').on('mousedown', function() {
-        isMenuClick = true;
-      });
+        // First EVENT HANDLER for exiting/saving/running; picks up a user choice before BLUR
+        // Add event listener for "Save and Submit as a Separate New Job" button
+        $(document).on('mousedown', '#submit-job', function() {
+          console.log("Save and Submit from mouse down");
+          isSaveAndSubmitClick = true;
+        });
+        $(document).on('mouseup', '#submit-job', function() {
+          isSaveAndSubmitClick = false;
+        });
 
-      $('.menu-item').on('mouseup', function() {
-        isMenuClick = false;
-      });
+        // Add event listener for "Run Code Immediately" button
+        $(document).on('mousedown', '#submit-immediate', function() {
+          console.log("Run Code Immediately from mouse down");
+          isRunCodeImmediatelyClick = true;
+        });
+        $(document).on('mouseup', '#submit-immediate', function() {
+          isRunCodeImmediatelyClick = false;
+        });
 
 
-      ////## th - experiment on FLOW back re: Sb4 and similar apps
+      ////## th - experiment on FLOW back re: Sb4 and similar apps; e.g. being able to back out of things with ESC
         // get info for setting up exit-back behavior
         let this_App = "editor";
         let default_App = localStorage.getItem("defaultapp");
@@ -293,18 +329,15 @@ require('./cm-fabmo-modes.js');
             localStorage.setItem("currentapp", current_App);
             localStorage.setItem("backapp", back_App);
         } 
-
         $(".exit-button").on("click", function(){
             fabmo.launchApp(back_App);
         });
-    
         document.onkeyup = function (evt) {
             if (evt.key === "Escape") {
                 evt.preventDefault();
                 fabmo.launchApp(back_App);
             }
         };
-
       ////##
 
       setup();
@@ -329,15 +362,18 @@ require('./cm-fabmo-modes.js');
       evt.preventDefault();
     });
     
+    // Handle regular menu submission if not operating on dirty/blur
     $("#submit-immediate").click(function(evt) {
+      if (!isDirty || overrideDirty) {
+        console.log("Run Code Immediately from click");
+        execute();
+      }
       evt.preventDefault();
-      execute();
     });
-
     $("#submit-job").click(function(evt) {
-      evt.preventDefault();
-      //submit_job();
+      console.log("Save and Submit from click");
       submitJob();
+      evt.preventDefault();
     });
 
     $("#lang-opensbp").click(function(evt) {
