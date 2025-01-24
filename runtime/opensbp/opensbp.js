@@ -130,7 +130,7 @@ SBPRuntime.prototype.connect = function (machine) {
 
     this.connected = true;
     this.ok_to_disconnect = false; ////## remove; this is a temp fix for cannot-disconnect ?
-    log.info("Connected OpenSBP runtime.");
+    log.info("####=Connected OpenSBP runtime.");
 };
 
 // Disconnect this runtime from the machine model.
@@ -146,7 +146,7 @@ SBPRuntime.prototype.disconnect = function () {
         this.machine = null;
         this.driver = null;
         this.connected = false;
-        log.info("Disconnected OpenSBP runtime.");
+        log.info("####=Disconnected OpenSBP runtime.");
     } else {
         throw new Error("Cannot disconnect OpenSBP runtime.");
     }
@@ -158,6 +158,7 @@ SBPRuntime.prototype.disconnect = function () {
 //          s - The command to execute (string or object)
 //   callback - Called once the command is issued (or with error if error) - NOT when the command is done executing
 SBPRuntime.prototype.executeCode = function (s, callback) {
+    log.info("####=.executeCode");
     this.init();
 
     if (typeof s === "string" || s instanceof String) {
@@ -254,6 +255,7 @@ SBPRuntime.prototype.needsAuth = function (s) {
 //          s - The string to run
 //   callback - Called when the program has ended
 SBPRuntime.prototype.runString = function (s) {
+    log.info("####=.runString");
     try {
         // Initialize the program
         this.pc = 0;
@@ -318,6 +320,7 @@ SBPRuntime.prototype.runString = function (s) {
 // See documentation above for runString - this works the same way.
 //   callback - Called when run is complete or with error if there was an error.
 SBPRuntime.prototype.runStream = function (text_stream) {
+    log.info("####=.runStream");
     try {
         // Initialize the program
         this.pc = 0;
@@ -509,6 +512,7 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 //   filename - Full path to file on disk
 //   callback - Called when file is done running or with error if error
 SBPRuntime.prototype.runFile = function (filename) {
+    log.info("####=.runFile");
     this.lastFilename = filename;
     var st = fs.createReadStream(filename);
     this.runStream(st);
@@ -664,6 +668,7 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 //   cmd - Command object to evaluate
 SBPRuntime.prototype._breaksStack = function (cmd) {
     var result;
+    log.info("####=._breaksStack");
 
     // Any command that has an expression in one of its arguments that breaks the stack, breaks the stack.
     if (cmd.args) {
@@ -724,6 +729,8 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             break;
 
         case "fail":
+        case "quit":
+        case "endall":
         case "end":
             // These statements update the system state and need to wait for the machine to stop to execute
             result = true;
@@ -755,6 +762,8 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
 // completes, except if a macro (subprogram) is encountered, in which case it is called for that program as well.
 SBPRuntime.prototype._run = function () {
     // Set state variables to kick things off
+    log.info("####=._run");
+
     this.started = true;
     this.waitingForStackBreak = false;
     this.gcodesPending = false;
@@ -795,7 +804,7 @@ SBPRuntime.prototype._run = function () {
                 }
                 if (this.gcodesPending) {
                     this.gcodesPending = false;
-                    //log.debug("COMPLETETED PENDING GCODES =(cleared)============####")
+                    log.debug("COMPLETETED PENDING GCODES =(cleared)============####");
                     this._executeNext();
                     break;
                 }
@@ -884,6 +893,7 @@ SBPRuntime.prototype.isInSubProgram = function () {
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._executeNext = function () {
     // Copy values from the machine to our local state variables
+    log.info("####=._executeNext");
     this._update();
 
     // _executeNext is only for resuming an already running program.  It's not a substitute for _run()
@@ -1009,6 +1019,7 @@ SBPRuntime.prototype._executeNext = function () {
 
 // Prime the driver associated with this runtime, if it exists.
 SBPRuntime.prototype.prime = function () {
+    log.info("####=.prime");
     if (this.driver) {
         this.driver.prime();
     }
@@ -1019,6 +1030,7 @@ SBPRuntime.prototype.prime = function () {
 //   error - The error message
 SBPRuntime.prototype._abort = function (error) {
     // this.pending_error = error;
+    log.info("####=._abort");
     this.driver.quit();
     this._end(error);
 };
@@ -1028,6 +1040,7 @@ SBPRuntime.prototype._abort = function (error) {
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = function (error) {
     // No Error populate with any pending error
+    log.info("####=._end");
     if (!error && this.pending_error) {
         error = this.pending_error;
     }
@@ -1123,6 +1136,7 @@ SBPRuntime.prototype._end = function (error) {
 SBPRuntime.prototype._executeCommand = function (command, callback) {
     if (command.cmd in this && typeof this[command.cmd] == "function") {
         // Command is valid and has a registered handler
+        log.info("####=._executeCommand");
 
         // Evaluate the command arguments and extract the handler
         var args = this._evaluateArguments(command.cmd, command.args);
@@ -1203,6 +1217,7 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
 
 SBPRuntime.prototype._execute = function (command, callback) {
     // Just skip over blank lines, undefined, etc.
+    log.info("####=._execute");
     if (!command) {
         this.pc += 1;
         return;
@@ -1243,8 +1258,28 @@ SBPRuntime.prototype._execute = function (command, callback) {
             }
 
         case "end":
-            this.pc = this.program.length;
-            setImmediate(callback);
+            if (this.isInSubProgram()) {
+                // If in a subprogram, exit the subprogram
+                this._popFileStack();
+                this.pc += 1; // Move to the next instruction in the main program
+                this._executeNext();
+            } else {
+                // If in the main program, end the runtime
+                try {
+                    this._end();
+                } catch (err) {
+                    log.error("Error during _end:", err);
+                }
+            }
+            return true;
+
+        case "endall":
+            // Terminate the entire runtime
+            try {
+                this._end();
+            } catch (err) {
+                log.error("Error during _end:", err);
+            }
             return true;
 
         case "fail":
@@ -1428,41 +1463,71 @@ SBPRuntime.prototype._varExists = function (identifier) {
 // Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
-//     callback - Called once the assignment has been made
-SBPRuntime.prototype._assign = async function (identifier, value, callback) {
-    if (identifier.type == "user_variable") {
-        // User Variable
-
-        // Handle TOOL exception case
-        //if (identifier.expr.toUpperCase() === "&TOOL") {
-        if (identifier.name.toUpperCase() === "&TOOL") {
-            identifier.name = "&TOOL";
-        }
-
-        // Assign with persistence using the configuration module
-        try {
-            await config.opensbp.setTempVariableWrapper(identifier, value);
-            callback();
-        } catch (error) {
-            log.error(error);
-        }
-        return;
+SBPRuntime.prototype._assign = function (identifier, value) {
+    // Determine the variable name
+    let variableName;
+    if (identifier.name) {
+        variableName = identifier.name.toUpperCase();
+    } else if (identifier.expr) {
+        // Evaluate the expression to get the variable name
+        variableName = this._eval(identifier.expr).toUpperCase();
+    } else {
+        throw new Error("Invalid identifier: missing 'name' and 'expr'");
     }
 
-    if (identifier.type == "persistent_variable") {
-        // Persistent variable
+    let accessPath = identifier.access || [];
 
-        // Assign with persistence using the configuration module
-        try {
-            await config.opensbp.setVariableWrapper(identifier, value);
-            callback();
-        } catch (error) {
-            log.error(error);
-        }
-        return;
+    // Evaluate accessPath
+    accessPath = this._evaluateAccessPath(accessPath);
+
+    // Update the variable in the config
+    let variables;
+    if (identifier.type === "user_variable") {
+        variables = config.opensbp._cache["tempVariables"];
+    } else {
+        variables = config.opensbp._cache["variables"];
     }
 
-    throw new Error("Cannot assign to " + identifier);
+    if (!(variableName in variables)) {
+        // Initialize the variable if it doesn't exist
+        variables[variableName] = {};
+    }
+
+    if (accessPath.length === 0) {
+        // Direct assignment
+        variables[variableName] = value;
+    } else {
+        // Nested assignment
+        this._setNestedValue(variables[variableName], accessPath, value);
+    }
+};
+
+SBPRuntime.prototype._evaluateAccessPath = function (access) {
+    return access.map((part) => {
+        if (part.type === "index") {
+            const key = this._eval(part.value);
+            return { type: part.type, value: key };
+        } else if (part.type === "property") {
+            return { type: part.type, value: part.name };
+        } else {
+            throw new Error("Unknown access part type: " + part.type);
+        }
+    });
+};
+
+SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
+    let current = obj;
+    for (let i = 0; i < accessPath.length - 1; i++) {
+        const part = accessPath[i];
+        const key = part.value;
+        if (!(key in current)) {
+            current[key] = {};
+        }
+        current = current[key];
+    }
+    const lastPart = accessPath[accessPath.length - 1];
+    const lastKey = lastPart.value;
+    current[lastKey] = value;
 };
 
 // Return the actual value of an expression.
@@ -1470,18 +1535,59 @@ SBPRuntime.prototype._assign = async function (identifier, value, callback) {
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function (expr) {
-    if (Object.prototype.hasOwnProperty.call(expr, "type")) {
-        switch (expr.type) {
-            case "user_variable":
-                return this.evaluateUserVariable(expr);
-            case "system_variable":
-                return this.evaluateSystemVariable(expr);
-            case "persistent_variable":
-                return this.evaluatePersistentVariable(expr);
-        }
+    // log.debug("**-> Evaluating value: " + expr);
+    if (typeof expr === "object" && (expr.type === "user_variable" || expr.type === "persistent_variable")) {
+        return this._getVariableValue(expr);
+    }
+    if (typeof expr === "object" && expr.type === "system_variable") {
+        return this.evaluateSystemVariable(expr);
     }
     var n = Number(String(expr));
-    return isNaN(n) ? expr : n;
+    if (!isNaN(n)) {
+        return n;
+    }
+    // If expr is a string that matches a command, return it as is
+    if (typeof expr === "string" && this[expr]) {
+        return expr;
+    }
+    return expr;
+};
+
+SBPRuntime.prototype._getVariableValue = function (identifier) {
+    const variableName = identifier.name.toUpperCase();
+    const accessPath = identifier.access || [];
+    let variables;
+
+    if (identifier.type === "user_variable") {
+        variables = config.opensbp._cache["tempVariables"];
+    } else {
+        variables = config.opensbp._cache["variables"];
+    }
+
+    if (!(variableName in variables)) {
+        throw new Error(`Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} is not defined.`);
+    }
+
+    let value = variables[variableName];
+    value = this._navigateAccessPath(value, accessPath);
+    return value;
+};
+
+SBPRuntime.prototype._navigateAccessPath = function (value, accessPath) {
+    for (let part of accessPath) {
+        let key;
+        if (part.type === "index") {
+            key = this._eval(part.value);
+        } else if (part.type === "property") {
+            key = part.name;
+        }
+        if (value && key in value) {
+            value = value[key];
+        } else {
+            throw new Error(`Property or index '${key}' not found.`);
+        }
+    }
+    return value;
 };
 
 // Evaluate an expression.  Return the result.
@@ -2157,17 +2263,16 @@ SBPRuntime.prototype.resume = function (input = false) {
     if (this.resumeAllowed) {
         if (this.paused) {
             if (input) {
-                // eslint-disable-next-line no-unused-vars
-                var callback = function (err, data) {
-                    if (err) {
-                        log.error(err);
-                    } else {
+                this._assign(input.var, input.val)
+                    .then(() => {
                         this.paused = false;
                         this._executeNext();
                         this.driver.resume();
-                    }
-                }.bind(this);
-                this._assign(input.var, input.val, callback);
+                    })
+                    .catch((err) => {
+                        log.error("Error during resume assignment: " + err);
+                        return this._abort(err);
+                    });
             } else {
                 this.paused = false;
                 this._executeNext();
