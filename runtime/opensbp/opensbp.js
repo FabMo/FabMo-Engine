@@ -48,7 +48,6 @@ function SBPRuntime() {
     this.running = false;
     this.quit_pending = false;
     this.cmd_result = 0;
-
     this.cmd_posx = undefined; // tracker for new commanded positions as file is processed
     this.cmd_posy = undefined;
     this.cmd_posz = undefined;
@@ -81,11 +80,13 @@ function SBPRuntime() {
     this.continue_callback = null;
     this.vs_change = 0;
     this.absoluteMode = true;
+
     this.lastFilename = "";
 
     // Physical machine state
     this.machine = null;
     this.driver = null;
+
     this.inManualMode = false;
 }
 util.inherits(SBPRuntime, events.EventEmitter);
@@ -279,7 +280,7 @@ SBPRuntime.prototype.runString = function (s) {
             this.program = parser.parse(s);
         } catch (e) {
             log.error(e);
-            this._abort(e);
+            this._end(e.message);
         } finally {
             log.tock("Parse file");
         }
@@ -311,7 +312,7 @@ SBPRuntime.prototype.runString = function (s) {
             this._abort(e);
         } else {
             log.error(e);
-            this._end(e);
+            this._end(e.message);
         }
     }
 };
@@ -846,10 +847,9 @@ SBPRuntime.prototype._run = function () {
                 break;
             // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
             //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
-            case this.driver.STAT_END:
-                log.debug("STAT_END: Cycle Ending ... no handling");
-                break;
-
+            // case this.driver.STAT_END:
+            //     this._end();
+            //     break;
             default:
                 log.warn("OpenSBP Runtime Unhandled Stat: " + stat);
         }
@@ -871,7 +871,7 @@ SBPRuntime.prototype._run = function () {
                     function () {
                         // This ensures we run _end on driver stream end
                         this.file_stack = [];
-                        //                       this._end();
+                        this._end();
                     }.bind(this)
                 );
         }
@@ -1011,7 +1011,7 @@ SBPRuntime.prototype._executeNext = function () {
             setImmediate(this._executeNext.bind(this));
         } catch (e) {
             // log error and trigger abort
-            //log.error(e);
+            log.error(e);
             return this._abort(e);
         }
     }
@@ -1059,7 +1059,6 @@ SBPRuntime.prototype._end = function (error) {
     // ... with some variations
     this.pending_error = error;
     let error_msg = null;
-    //error.line = this.pc + 1;
     if (error) {
         if (Object.prototype.hasOwnProperty.call(error, "offset")) {
             error_msg = `@line-${error.offset}(${error.column}):  ${error.message}`;
@@ -1095,38 +1094,54 @@ SBPRuntime.prototype._end = function (error) {
         this.ok_to_disconnect = true;
 
         this.init();
-        //TODO: G2 stream should be closed when this triggers keep as safety?
+        //TODO: G2 stream should be closed when this triggers -- keep as safety?
         this.emit("end", this);
     }.bind(this);
 
     //TODO: Is all this needed here? Do we need to reset state? Can this be done without nested callbacks?
     if (this.machine !== null) {
-        this.resumeAllowed = false;
-        this.machine.restoreDriverState(
-            // eslint-disable-next-line no-unused-vars
-            function (err, result) {
-                this.resumeAllowed = true;
-                // log.debug("Driver state restored" + JSON.stringify(this.machine.status));
-                // log.debug("this.machine.status.job:" + JSON.stringify(this.machine.status.job));
-                if (this.machine.status.job !== null && this.machine.status.job !== undefined) {
-                    log.debug("Job is not null or undefined");
-                    this.machine.status.job.finish(
-                        // eslint-disable-next-line no-unused-vars
-                        function (err, job) {
-                            this.machine.status.job = null;
-                            cleanup(error_msg);
-                            this.machine.setState(this, "idle");
-                        }.bind(this)
-                    );
-                } else {
-                    cleanup(error_msg);
-                    this.machine.setState(this, "idle");
-                }
-            }.bind(this)
-        );
-    } else {
+        log.debug("Machine is not null, proceeding with restoreDriverState to > CLOSE OUT!");
+        this.resumeAllowed = true;
+        // If this was a job, clean it up ...
+        if (this.machine.status.job !== null && this.machine.status.job !== undefined) {
+            this.machine.status.job = null;
+            log.debug("Job finished");
+        }
+        // Otherwise ...
         cleanup(error_msg);
-        log.debug("Exiting _end method");
+        this.machine.setState(this, "idle");
+        log.info("####=> Exiting _end method setting IDLE state");
+
+        //         this.machine.restoreDriverState(
+        //             // eslint-disable-next-line no-unused-vars
+        //             function (err, result) {
+        //                 this.resumeAllowed = true;
+        //                 log.debug("Driver state restored");
+        //                 log.debug("this.connected: " + this.connected);
+        // //                log.debug("this.machine: " + JSON.stringify(this.machine));
+        // //                log.debug("this.machine.status: " + JSON.stringify(this.machine ? this.machine.status : null));
+        //                 if (this.connected && this.machine && this.machine.status && this.machine.status.job !== null && this.machine.status.job !== undefined) {
+        //                     log.debug("Job is not null or undefined");
+        //                     this.machine.status.job.finish(
+        //                         // eslint-disable-next-line no-unused-vars
+        //                         function (err, job) {
+        //                             log.debug("Job finished");
+        //                             this.machine.status.job = null;
+        //                             cleanup(error_msg);
+        //                             this.machine.setState(this, "idle");
+        //                         }.bind(this)
+        //                     );
+        //                 } else {
+        //                     log.debug("Job is null or undefined, cleaning up");
+        //                     cleanup(error_msg);
+        //                     this.machine.setState(this, "idle");
+        //                 }
+        //             }.bind(this)
+        //         );
+    } else {
+        log.info("####=> In ._end but Machine is null, cleaning up and exiting");
+        // does this need a resumeAllowed?
+        cleanup(error_msg);
     }
 };
 
@@ -1217,6 +1232,7 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
 
 SBPRuntime.prototype._execute = function (command, callback) {
     // Just skip over blank lines, undefined, etc.
+    console.log("Executing line: " + command.type);
     log.info("####=._execute");
     if (!command) {
         this.pc += 1;
@@ -1258,6 +1274,9 @@ SBPRuntime.prototype._execute = function (command, callback) {
             }
 
         case "end":
+            //            this.pc = this.program.length;
+            //            setImmediate(callback);
+
             if (this.isInSubProgram()) {
                 // If in a subprogram, exit the subprogram
                 this._popFileStack();
@@ -1280,6 +1299,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
             } catch (err) {
                 log.error("Error during _end:", err);
             }
+
             return true;
 
         case "fail":
@@ -1316,6 +1336,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "assign":
             this.pc += 1;
             var value = this._eval(command.expr);
+            this._assign(command.var, value);
+            if (callback) {
+                log.info("calling callback");
+                callback();
+            }
             this._assign(command.var, value, function () {
                 callback();
             });
@@ -1463,7 +1488,7 @@ SBPRuntime.prototype._varExists = function (identifier) {
 // Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
-SBPRuntime.prototype._assign = function (identifier, value) {
+SBPRuntime.prototype._assign = function (identifier, value, callback) {
     // Determine the variable name
     let variableName;
     if (identifier.name) {
@@ -1535,59 +1560,18 @@ SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function (expr) {
-    // log.debug("**-> Evaluating value: " + expr);
-    if (typeof expr === "object" && (expr.type === "user_variable" || expr.type === "persistent_variable")) {
-        return this._getVariableValue(expr);
-    }
-    if (typeof expr === "object" && expr.type === "system_variable") {
-        return this.evaluateSystemVariable(expr);
+    if (Object.prototype.hasOwnProperty.call(expr, "type")) {
+        switch (expr.type) {
+            case "user_variable":
+                return this.evaluateUserVariable(expr);
+            case "system_variable":
+                return this.evaluateSystemVariable(expr);
+            case "persistent_variable":
+                return this.evaluatePersistentVariable(expr);
+        }
     }
     var n = Number(String(expr));
-    if (!isNaN(n)) {
-        return n;
-    }
-    // If expr is a string that matches a command, return it as is
-    if (typeof expr === "string" && this[expr]) {
-        return expr;
-    }
-    return expr;
-};
-
-SBPRuntime.prototype._getVariableValue = function (identifier) {
-    const variableName = identifier.name.toUpperCase();
-    const accessPath = identifier.access || [];
-    let variables;
-
-    if (identifier.type === "user_variable") {
-        variables = config.opensbp._cache["tempVariables"];
-    } else {
-        variables = config.opensbp._cache["variables"];
-    }
-
-    if (!(variableName in variables)) {
-        throw new Error(`Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} is not defined.`);
-    }
-
-    let value = variables[variableName];
-    value = this._navigateAccessPath(value, accessPath);
-    return value;
-};
-
-SBPRuntime.prototype._navigateAccessPath = function (value, accessPath) {
-    for (let part of accessPath) {
-        let key;
-        if (part.type === "index") {
-            key = this._eval(part.value);
-        } else if (part.type === "property") {
-            key = part.name;
-        }
-        if (value && key in value) {
-            value = value[key];
-        } else {
-            throw new Error(`Property or index '${key}' not found.`);
-        }
-    }
-    return value;
+    return isNaN(n) ? expr : n;
 };
 
 // Evaluate an expression.  Return the result.

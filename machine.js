@@ -449,6 +449,7 @@ Machine.prototype.die = function (err_msg) {
 // This function restores the driver configuration to what is stored in the g2 configuration on disk
 // It is typically used after, for instance, a running file has altered the configuration in memory.
 // This is used to ensure that when the machine returns to idle the driver is in a "known" configuration
+//Machine.prototype.restoreDriverState =  async function (callback) {
 Machine.prototype.restoreDriverState = function (callback) {
     this.driver.setUnits(
         config.machine.get("units"),
