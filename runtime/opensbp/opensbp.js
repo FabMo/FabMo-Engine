@@ -1038,7 +1038,7 @@ SBPRuntime.prototype._abort = function (error) {
 // End the program
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
-SBPRuntime.prototype._end = function (error) {
+SBPRuntime.prototype._end = async function (error) {
     // No Error populate with any pending error
     log.info("####=._end");
     if (!error && this.pending_error) {
@@ -1098,50 +1098,63 @@ SBPRuntime.prototype._end = function (error) {
         this.emit("end", this);
     }.bind(this);
 
-    //TODO: Is all this needed here? Do we need to reset state? Can this be done without nested callbacks?
-    if (this.machine !== null) {
-        log.debug("Machine is not null, proceeding with restoreDriverState to > CLOSE OUT!");
-        this.resumeAllowed = true;
-        // If this was a job, clean it up ...
-        if (this.machine.status.job !== null && this.machine.status.job !== undefined) {
-            this.machine.status.job = null;
-            log.debug("Job finished");
-        }
-        // Otherwise ...
-        cleanup(error_msg);
-        this.machine.setState(this, "idle");
-        log.info("####=> Exiting _end method setting IDLE state");
+    // Clear runtime state
+    this.resetRuntimeState();
 
-        //         this.machine.restoreDriverState(
-        //             // eslint-disable-next-line no-unused-vars
-        //             function (err, result) {
-        //                 this.resumeAllowed = true;
-        //                 log.debug("Driver state restored");
-        //                 log.debug("this.connected: " + this.connected);
-        // //                log.debug("this.machine: " + JSON.stringify(this.machine));
-        // //                log.debug("this.machine.status: " + JSON.stringify(this.machine ? this.machine.status : null));
-        //                 if (this.connected && this.machine && this.machine.status && this.machine.status.job !== null && this.machine.status.job !== undefined) {
-        //                     log.debug("Job is not null or undefined");
-        //                     this.machine.status.job.finish(
-        //                         // eslint-disable-next-line no-unused-vars
-        //                         function (err, job) {
-        //                             log.debug("Job finished");
-        //                             this.machine.status.job = null;
-        //                             cleanup(error_msg);
-        //                             this.machine.setState(this, "idle");
-        //                         }.bind(this)
-        //                     );
-        //                 } else {
-        //                     log.debug("Job is null or undefined, cleaning up");
-        //                     cleanup(error_msg);
-        //                     this.machine.setState(this, "idle");
-        //                 }
-        //             }.bind(this)
-        //         );
+    // Clear the internal state of the runtime
+    this.init();
+
+    // Handle machine state restoration
+    if (this.machine) {
+        this.resumeAllowed = false;
+        try {
+            await this.machine.restoreDriverState();
+
+            this.resumeAllowed = true;
+
+            if (this.machine.status.job) {
+                await this.machine.status.job.finish();
+                this.machine.status.job = null;
+            }
+
+            // Set the machine state
+            if (error_msg) {
+                this.machine.setState(this, "idle", { error: error_msg });
+            } else {
+                this.machine.setState(this, "idle");
+            }
+        } catch (err) {
+            log.error("Error during machine state restoration:", err);
+            // Even if there's an error during restoration, ensure the machine state is set
+            this.machine.setState(this, "stopped", { error: error_msg || err.message });
+        }
     } else {
-        log.info("####=> In ._end but Machine is null, cleaning up and exiting");
-        // does this need a resumeAllowed?
-        cleanup(error_msg);
+        // If there's no machine, close the stream if necessary
+        if (this.stream) {
+            this.stream.end();
+        }
+    }
+
+    // Emit an 'end'; a sort of general purpose callback
+    this.emit("end", this);
+};
+
+SBPRuntime.prototype.resetRuntimeState = function () {
+    // Clear paused and feedhold states
+    log.info("####=.resetRuntimeState");
+    this.paused = false;
+    this.feedhold = false;
+    this.pending_error = null;
+    this.pendingFeedhold = false;
+    this.quit_pending = false;
+    this.resumeAllowed = true;
+    this.ok_to_disconnect = true;
+
+    if (this.machine) {
+        this.machine.status.inFeedHold = false;
+        if (this.machine.driver) {
+            this.machine.driver.pause_hold = false;
+        }
     }
 };
 
