@@ -1394,6 +1394,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
             this.pc += 1;
             return false;
 
+        case "dialog":
         case "pause":
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
@@ -1517,23 +1518,36 @@ SBPRuntime.prototype._execute = function (command, callback) {
 // &Tool == &TOOL == &TOoL
 //   identifier - The identifier to check
 SBPRuntime.prototype._varExists = function (identifier) {
-    if (identifier.type == "user_variable") {
-        // User variable
+    if (identifier.type == "user_variable" || identifier.type == "persistent_variable") {
+        const variableName = identifier.name.toUpperCase();
+        const accessPath = identifier.access || [];
+        let variables;
 
-        // Handle weird &Tool Exception case
-        // (which exists because of old shopbot case insensitivity)
-        if (identifier.name.toUpperCase() === "&TOOL") {
-            identifier.name = "&TOOL";
+        if (identifier.type == "user_variable") {
+            variables = config.opensbp._cache["tempVariables"];
+        } else {
+            variables = config.opensbp._cache["variables"];
         }
 
-        return config.opensbp.hasTempVariable(identifier);
-        //return config.opensbp.hasTempVariable(identifier.name);
-    }
+        if (!(variableName in variables)) {
+            return false;
+        }
 
-    if (identifier.type == "persistent_variable") {
-        // Persistent variable
-        return config.opensbp.hasVariable(identifier);
-        //return config.opensbp.hasVariable(identifier.name);
+        let value = variables[variableName];
+        for (let part of accessPath) {
+            let key;
+            if (part.type === "index") {
+                key = this._eval(part.value);
+            } else if (part.type === "property") {
+                key = part.name;
+            }
+            if (value && key in value) {
+                value = value[key];
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
     return false;
 };
@@ -1541,9 +1555,8 @@ SBPRuntime.prototype._varExists = function (identifier) {
 // Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
-// eslint-disable-next-line no-undef, no-unused-vars
+//     callback - Called when the assignment is complete ??
 SBPRuntime.prototype._assign = function (identifier, value, callback) {
-    //SBPRuntime.prototype._assign = function (identifier, value) {
     // Determine the variable name
     let variableName;
     if (identifier.name) {
@@ -1580,6 +1593,11 @@ SBPRuntime.prototype._assign = function (identifier, value, callback) {
         // Nested assignment
         this._setNestedValue(variables[variableName], accessPath, value);
     }
+
+    // If callback is provided, call it
+    if (callback) {
+        callback();
+    }
 };
 
 SBPRuntime.prototype._evaluateAccessPath = function (access) {
@@ -1615,18 +1633,59 @@ SBPRuntime.prototype._setNestedValue = function (obj, accessPath, value) {
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function (expr) {
-    if (Object.prototype.hasOwnProperty.call(expr, "type")) {
-        switch (expr.type) {
-            case "user_variable":
-                return this.evaluateUserVariable(expr);
-            case "system_variable":
-                return this.evaluateSystemVariable(expr);
-            case "persistent_variable":
-                return this.evaluatePersistentVariable(expr);
-        }
+    // log.debug("**-> Evaluating value: " + expr);
+    if (typeof expr === "object" && (expr.type === "user_variable" || expr.type === "persistent_variable")) {
+        return this._getVariableValue(expr);
+    }
+    if (typeof expr === "object" && expr.type === "system_variable") {
+        return this.evaluateSystemVariable(expr);
     }
     var n = Number(String(expr));
-    return isNaN(n) ? expr : n;
+    if (!isNaN(n)) {
+        return n;
+    }
+    // If expr is a string that matches a command, return it as is
+    if (typeof expr === "string" && this[expr]) {
+        return expr;
+    }
+    return expr;
+};
+
+SBPRuntime.prototype._getVariableValue = function (identifier) {
+    const variableName = identifier.name.toUpperCase();
+    const accessPath = identifier.access || [];
+    let variables;
+
+    if (identifier.type === "user_variable") {
+        variables = config.opensbp._cache["tempVariables"];
+    } else {
+        variables = config.opensbp._cache["variables"];
+    }
+
+    if (!(variableName in variables)) {
+        throw new Error(`Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} is not defined.`);
+    }
+
+    let value = variables[variableName];
+    value = this._navigateAccessPath(value, accessPath);
+    return value;
+};
+
+SBPRuntime.prototype._navigateAccessPath = function (value, accessPath) {
+    for (let part of accessPath) {
+        let key;
+        if (part.type === "index") {
+            key = this._eval(part.value);
+        } else if (part.type === "property") {
+            key = part.name;
+        }
+        if (value && key in value) {
+            value = value[key];
+        } else {
+            throw new Error(`Property or index '${key}' not found.`);
+        }
+    }
+    return value;
 };
 
 // Evaluate an expression.  Return the result.
@@ -2301,21 +2360,16 @@ SBPRuntime.prototype.quit = function () {
 SBPRuntime.prototype.resume = function (input = false) {
     if (this.resumeAllowed) {
         if (this.paused) {
-            if (input) {
-                this._assign(input.var, input.val)
-                    .then(() => {
-                        this.paused = false;
-                        this._executeNext();
-                        this.driver.resume();
-                    })
-                    .catch((err) => {
-                        log.error("Error during resume assignment: " + err);
-                        return this._abort(err);
-                    });
-            } else {
+            try {
+                if (input) {
+                    this._assign(input.var, input.val);
+                }
                 this.paused = false;
                 this._executeNext();
                 this.driver.resume();
+            } catch (err) {
+                log.error("Error during resume assignment: " + err);
+                return this._abort(err);
             }
         } else {
             this.driver.resume();
@@ -2324,6 +2378,35 @@ SBPRuntime.prototype.resume = function (input = false) {
         }
     }
 };
+
+// // Resume a program from the paused state
+// //   TODO - make some indication that this action was successful (resume is not always allowed, and sometimes it fails)
+// SBPRuntime.prototype.resume = function (input = false) {
+//     if (this.resumeAllowed) {
+//         if (this.paused) {
+//             if (input) {
+//                 this._assign(input.var, input.val)
+//                     .then(() => {
+//                         this.paused = false;
+//                         this._executeNext();
+//                         this.driver.resume();
+//                     })
+//                     .catch((err) => {
+//                         log.error("Error during resume assignment: " + err);
+//                         return this._abort(err);
+//                     });
+//             } else {
+//                 this.paused = false;
+//                 this._executeNext();
+//                 this.driver.resume();
+//             }
+//         } else {
+//             this.driver.resume();
+//             this.machine.status.inFeedHold = false;
+//             this.feedhold = false;
+//         }
+//     }
+// };
 
 // Enter the manual state
 // This function is called by the SK command in order to bring up the keypad
