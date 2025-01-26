@@ -1080,23 +1080,23 @@ SBPRuntime.prototype._end = async function (error) {
         log.error(error);
     }
 
-    // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
-    var cleanup = function (error) {
-        if (this.machine && error) {
-            this.machine.setState(this, "stopped", { error: error });
-        }
-        // TODO: verify if this is needed
-        if (!this.machine) {
-            this.stream.end();
-        }
-        // Clear the internal state of the runtime (restore it to its initial state)
-        //TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
-        this.ok_to_disconnect = true;
+    // // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
+    // var cleanup = function (error) {
+    //     if (this.machine && error) {
+    //         this.machine.setState(this, "stopped", { error: error });
+    //     }
+    //     // TODO: verify if this is needed
+    //     if (!this.machine) {
+    //         this.stream.end();
+    //     }
+    //     // Clear the internal state of the runtime (restore it to its initial state)
+    //     //TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
+    //     this.ok_to_disconnect = true;
 
-        this.init();
-        //TODO: G2 stream should be closed when this triggers -- keep as safety?
-        this.emit("end", this);
-    }.bind(this);
+    //     this.init();
+    //     //TODO: G2 stream should be closed when this triggers -- keep as safety?
+    //     this.emit("end", this);
+    // }.bind(this);
 
     // Clear runtime state
     this.resetRuntimeState();
@@ -1397,59 +1397,99 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "pause":
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
-            if (command.expr) {
-                var arg = this._eval(command.expr);
-            }
+            var arg = command.expr ? this._eval(command.expr) : null;
             var input_var = command.var;
-            if (u.isANumber(arg)) {
-                // If argument is a number set pause with timer and default message.
-                // In simulation, just don't do anything
-                if (!this.machine) {
-                    setImmediate(callback);
-                    return true;
+            var params = command.params || {};
+            // console.log("PAUSE command parameters:", params);
+
+            // Normalize params keys to lowercase
+            var normalizedParams = {};
+            for (var key in params) {
+                if (Object.prototype.hasOwnProperty.call(params, key)) {
+                    normalizedParams[key.toLowerCase()] = params[key];
                 }
-                this.paused = true;
-                this.machine.setState(this, "paused", u.packageModalParams({ timer: arg }));
-                return true;
-            } else {
-                // In simulation, just don't do anything
-                if (!this.machine) {
-                    setImmediate(callback);
-                    return true;
-                }
-                // If a message is provided, pause with a dialog
-                var message = arg;
-                if (!message) {
-                    // If a message is not provided, use the comment from the previous line
-                    var last_command = this.program[this.pc - 2];
-                    if (last_command && last_command.type === "comment") {
-                        message = last_command.comment.join("").trim();
-                    }
-                    if (!message) {
-                        message = "Pause Command No Message.";
-                    }
-                }
-                var modalParams = {};
-                if (message) {
-                    modalParams = u.packageModalParams({ message: message }, modalParams);
-                }
-                // Example of modal customization. Adds input param, sets ok button text to Submit, removes cancel/quit button.
-                // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel button s detailed below.
-                if (input_var) {
-                    var inputParams = {
-                        input_var: input_var,
-                        okText: "Submit",
-                        cancelText: false, // remove or set new text to display cancel/quit button.
-                        cancelFunc: false, // remove to enable quit job onclick
-                    };
-                    modalParams = u.packageModalParams(inputParams, modalParams);
-                }
-                this.paused = true;
-                //Set driver in paused state
-                this.machine.driver.pause_hold = true;
-                this.machine.setState(this, "paused", modalParams);
+            }
+
+            // In simulation, just don't do anything
+            if (!this.machine) {
+                setImmediate(callback);
                 return true;
             }
+            var modalParams = {};
+
+            // Handle TIMER parameter
+            if (u.isANumber(arg)) {
+                // Old syntax: PAUSE 5
+                normalizedParams.timer = arg;
+            }
+
+            // Handle message
+            var message = arg;
+            if (u.isANumber(arg)) {
+                // If arg is a number, default message
+                message = "Paused for " + arg + " seconds.";
+            }
+            if (!message && !normalizedParams.timer) {
+                // If a message is not provided and this is not a timer, use the comment from the previous line.
+                var last_command = this.program[this.pc - 2];
+                if (last_command && last_command.type === "comment") {
+                    var commandTextArray = last_command["comment"];
+                    var commandText = commandTextArray.join("");
+                    if (commandText && commandText.length > 0) {
+                        message = commandText.trim();
+                    } else {
+                        message = "Paused ...";
+                    }
+                } else {
+                    message = "Paused ...";
+                }
+            }
+            if (normalizedParams.message) {
+                message = normalizedParams.message;
+            }
+            modalParams.message = message;
+
+            // Handle input variable
+            if (input_var) {
+                modalParams.input_var = input_var;
+            } else if (normalizedParams.input) {
+                modalParams.input_var = normalizedParams.input;
+            }
+
+            // Handle optional parameters
+            if (normalizedParams.title) {
+                modalParams.title = normalizedParams.title;
+            }
+            if (Object.prototype.hasOwnProperty.call(normalizedParams, "oktext")) {
+                modalParams.okText = normalizedParams.oktext; // Assign the value even if it's false
+                modalParams.okFunc = normalizedParams.okfunc || "resume";
+            }
+            if (Object.prototype.hasOwnProperty.call(normalizedParams, "canceltext")) {
+                modalParams.cancelText = normalizedParams.canceltext; // Assign the value even if it's false
+                modalParams.cancelFunc = normalizedParams.cancelfunc || "quit";
+            }
+            if (normalizedParams.detail) {
+                modalParams.detail = normalizedParams.detail;
+            }
+            if (normalizedParams.nobutton !== undefined) {
+                modalParams.noButton = normalizedParams.nobutton;
+            }
+            if (normalizedParams.timer !== undefined) {
+                modalParams.timer = normalizedParams.timer;
+            }
+
+            // console.log("Modal Parameters before packaging:", modalParams);
+            // Use utility function to package modal parameters
+            modalParams = u.packageModalParams(modalParams);
+            // console.log("Modal Parameters after packaging:", modalParams);
+
+            this.paused = true;
+
+            //Set driver in paused state
+
+            this.machine.driver.pause_hold = true;
+            this.machine.setState(this, "paused", modalParams);
+            return true;
 
         case "event":
             // Throw a useful exception for the no-longer-supported ON INPUT command
@@ -1501,7 +1541,9 @@ SBPRuntime.prototype._varExists = function (identifier) {
 // Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
+// eslint-disable-next-line no-undef, no-unused-vars
 SBPRuntime.prototype._assign = function (identifier, value, callback) {
+    //SBPRuntime.prototype._assign = function (identifier, value) {
     // Determine the variable name
     let variableName;
     if (identifier.name) {
