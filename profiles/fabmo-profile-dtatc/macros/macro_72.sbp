@@ -1,79 +1,94 @@
 '!FABMO!name:ATC Measure Tool
 '!FABMO!description:Measure the length of ATC cutting tools
 '!FABMO!enabled:true
-&SkipInput = 0
-&AUTOMATED = 0
-TOP:
-IF &SkipInput = 1 THEN GOTO SKIP_INPUT
-PAUSE "Bit number to Zero:" &tool
-SKIP_INPUT:
-IF &tool = "" THEN GOTO INVALID_TOOL
-IF &tool = 0 THEN &AUTOMATED = 0
-IF &tool = 0 THEN GOTO ALL_TOOLS
-IF &tool < 0  THEN GOTO INVALID_TOOL
-IF &tool > $ATC.NumClips THEN GOTO INVALID_TOOL
-IF &tool <= $ATC.NumClips THEN GOTO OKTOOL
-GOTO INVALID_TOOL
-OKTOOL:
-AUTOMATED:
-C71
-MS,,$zFast    'Change move speed to .75
-SF, 0         'Deactivate software limits
-VN, 0        'Turn limit switch OFF
-'IF %($ToolBar_Sensor) = 0 THEN GOTO MANUAL_BIT_MEASUREMENT
-&check = %(106) + %(3)
-PZ, &check, $zFast, $Z_Prox
-IF %(3) < &check THEN GOTO Z_PROX_SUCCESS
-GOTO Z_PROX_FAILURE
-Z_PROX_SUCCESS:
-VA,,,0,,,,,,0
-MZ,-1 * $smallBackOff
-JY, $ATC_zZeroY - %(8)
-JX, $ATC_zZeroX - %(7)       'XY Location for Z Zeroing (Enter X&Y Location of Fixed Zero plate)
-'Set the contact switch action ... Plate NOW SET FOR Input Switch #1
-&check = %(3) - %(106)
-PZ, &check, $zSlow, $ZZero_Sensor
-IF %(3) > &check THEN GOTO CONTACT_REGISTERED
-GOTO CONTACT_ERROR
-CONTACT_REGISTERED:
- 
-MANUAL_ZERO_FINISHED:
+' ATC Measure Tool; for recording the bit lengths of tools used by the ATC system
+' Brian Owen
 
-$tools[&tool].H = %(3)
+' Main =========================================================================================
+START:
+	&ALL_TOOLS = 0																				' >> This variable will be set to "1" if the user elects to measure all tools in the toolbar
+	&MANUAL_MEASUREMENT = 0																		' >> This variable will be set to "1" if the user selects a tool that is not on the toolbar (or the toolbar is unplugged)
+	&VALID_TOOL = 0																				' >> This variable will be set to "1" if the user selects a valid tool number
+	GOSUB CHOOSE_TOOL																			' >> Send to subroutine to prompt for tool selection
+	IF &VALID_TOOL = 0 THEN PAUSE "Tool selection invalid. Please choose a valid tool number"	' >> If selection is invalid, warn user...
+	IF &VALID_TOOL = 0 THEN GOSUB CHOOSE_TOOL													' >> ...and let them try again
+	IF &VALID_TOOL = 0 THEN GOSUB INVALID_TOOL													' >> If selection is still invalid; exit routine
 
-VA,,,-1 * $ATC.PlateOffset,,,,,  'Set Z height of bit relative to table surface from Table Base Coordinates
-JZ,$smallBackOff - $ATC.PlateOffset
-IF &AUTOMATED > 0 THEN GOTO ALL_TOOLS
-IF &SkipInput = 1 THEN GOTO SKIP_QUESTION
-PAUSE "Do you wish to zero another cutter <Y or N>: " &gototop
-If &gototop = "Y" Then GoTo TOP 
-SKIP_QUESTION:
-VN,0
-J2, %(1) - 5 * $unitMultiplier
+PREPARE_FOR_MEASUREMENT:
+	IF &ALL_TOOLS > $ATC.NumClips THEN GOTO FINISHED											' >> The &ALL_TOOLS variable is incremented by 1 each time we go through this routine. Once we have measured all tools in toolbar, we're done.
+	IF &ALL_TOOLS > 0 THEN &tool = &ALL_TOOLS													' >> If we're measuring all tools, we assign the incremeted value of &ALL_TOOLS to the &tool variable before calling a tool change.
+	IF &ALL_TOOLS > 0 THEN &ALL_TOOLS = &ALL_TOOLS + 1											' >> If we're measuring all tools, increment the value of &ALL_TOOLS for the next go-round.						'
+	C71																							' >> Call toolchange
+	MS,,$zSlow 																					' >> Set Z speed low so as to not damage the bit
+    SF, 0  																						' >> Deactivate software limits
+	VN, 0       																				' >> Turn off limit switches
+	&check = %(106) + %(3)																		' >> Determine maximum range of Z motion to set target for probe
+	PZ, &check, $zFast, $Z_Prox																	' >> Probe Z limit
+	IF %(3) >= &check THEN GOSUB Z_PROX_FAILURE													' >> If we got to our check value without triggering limit, then we've failed -- exit with error.
+	VA,,,0 + $smallBackOff																						' >> After successful probe, reset z values
+   	JZ, 0																		' >> Back off limit switch
+	IF $ATC.ToolIn > $ATC.NumClips THEN GOSUB MANUAL_POSITION									' >> If we're measuring an "off toolbar" tool, go to the manual measurement subroutine
+	IF $ATC.ToolIn <= $ATC.NumClips THEN GOSUB AUTO_POSITION									' >> If we're measuring an "on toolbar" tool, go to the normal auto measurement subroutine
+	IF %($Toolbar_Status) == 0 THEN GOSUB MANUAL_POSITION										' >> If toolbar is unplugged, auto-measure will kick us back here and we'll be sent to manual measurement
+
+	'MEASURE_BIT
+	&check = %(3) - %(106)																		' >> Determine maxium range of Z motion for probe of z zero plate
+	PZ, &check, $zSlow, $ZZero_Sensor															' >> Probe Z Zero plate
+	IF %(3) <= &check THEN GOTO CONTACT_ERROR													' >> If we reached target value then we've failed. Exit with error.
+
+	'RECORD_LENGTH
+	IF &MANUAL_MEASUREMENT  == 1 THEN GOSUB MANUAL_BACKOFF 										' >> If this was a manual measurement, we need to move up to the height of the fixed Z Plate before recording length of bit.
+	$tools[&tool].H = %(3)																		' >> Record length of bit.
+	VA,,,-1 * $ATC.PlateOffset,,,,,  															' >> Set Z height of bit
+	JZ,$smallBackOff - $ATC.PlateOffset																	' >> Lift up off of plate
+
+	IF &ALL_TOOLS > 0 THEN GOTO PREPARE_FOR_MEASUREMENT											' >> If we're measuring all the bits, go back to the start of measurement and run again
+	PAUSE "Do you wish to zero another cutter <Y or N>: " &AGAIN								' >> If we're measuring one at a time, ask user if they want to measure another
+	IF &AGAIN = "Y" THEN GOTO START																' >> If user replied "Y" then go again
+	
 FINISHED:
-END
-'================================================================Subroutines
+	JZ, -1 * %(9) - $smallBackOff																' >> We're done, lift to maximum safe height
+	J2, %(1) - 5 * $unitMultiplier																' >> Move forward to clear rear limit switch
+  	VN,0																						' >> Turn limits back on
+	END				
+
+' Subroutines ==================================================================================
+MANUAL_POSITION:
+	&MANUAL_MEASUREMENT = 1																		' >> Set manual measurement flag so that we know we're doing a manual bit measurement
+	PAUSE "The keypad will now open. Move to an open space on your work area; then close the keypad"
+	SK																							' >> Open keypad to allow user to move to their desired location
+    PAUSE "Plug in your Z Zero plate and position it under your bit. Attach the grounding clip to your tool holder"
+	RETURN
+
+AUTO_POSITION:
+	IF %($ToolBar_Status) == 0 THEN RETURN														' >> If the toolbar is unplugged, send us back to be routed to manual tool measurement
+	JY, $ATC_zZeroY - %(8)																		' >> For safety, do the Y move first
+	JX, $ATC_zZeroX - %(7)																		' >> Then the X move to the Z Zero plate
+	RETURN
+
+CHOOSE_TOOL:
+	PAUSE "Bit number to Zero:" &tool															' >> Prompt user for desired tool
+	IF &tool >= 0 THEN &VALID_TOOL = 1															' >> If the tool is greater than or equal to 0 then it is valid
+	IF &tool == 0 THEN &ALL_TOOLS = 1															' >> If the tool is 0 then we're measuring all tools
+	RETURN
+    
+MANUAL_BACKOFF:
+	JZ,%(3) - $ATC.PlateOffset - $sb_zPlateThick
+    RETURN
+
+'Error Handlers ================================================================================
 CONTACT_ERROR:
-MZ,%(3) + $smallBackOff
-PAUSE "Failed to make contact with Z Zero plate. (M-0153)"
-END
+	MZ,%(3) + $smallBackOff																	
+	PAUSE "Failed to make contact with Z Zero plate. (M-0153)"
+	END
+	RETURN
 
 Z_PROX_FAILURE:
-PAUSE "Failed to locate Z Limit Switch. Home tool and retry. (M-0152)"
-END
-
-ALL_TOOLS:
-&AUTOMATED = &AUTOMATED + 1
-IF &AUTOMATED > &MaxTool THEN GOTO AUTOMATED_FINISHED
-&tool = &AUTOMATED
-GOTO AUTOMATED
-
-AUTOMATED_FINISHED:
-&tool = 0
-C71
-GOTO FINISHED
+	PAUSE "Failed to locate Z Limit Switch. Home tool and retry. (M-0152)"
+	END
+	RETURN
 
 INVALID_TOOL:
-'Invalid tool number or no tool number, exiting routine.
-PAUSE
-END
+	PAUSE "Invalid tool number or no tool number, exiting routine."
+	END
+	RETURN

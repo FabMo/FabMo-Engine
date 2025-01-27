@@ -4,222 +4,225 @@
 ' ATC Toolchange; Core routine for swapping out tools
 ' ... this called by C1(user), or by C?, C?. C? 
 ' FabMo Version from 12/15/24
-' Brian Owen, Josh Ayres
+' Brian Owen, Josh Ayers
 ' edited: TH, 12/21/24
 
-'??? I don't understand SPECIAL so I have not implemented anything yet ???
-
-
 ' Initialize ------------------------------------------------------------------------------------------
- C75                                         ' Load primary ATC variables and ck status
- JS, $XYJOG, $ZJOG                           ' Set Jog speed for approaches (are units right here and following ???)              .
- &ATC_safeclear = -1 * %(9) - $smallBackOff
- &th := 0                                    ' These need predefined only for STATE Display
- &MANUAL_CHANGE := 0
- 
-
+    &AtNow = "Initialize"
+    C75                                                               ' >> Load primary ATC variables and ck status
+    JS, $XYJOG, $ZJOG                                                 ' >> Set Jog speed for approaches (are units right here and following ???)
+    &th := 0                                                          ' >> These need predefined only for STATE Display
+    &Z_OFFSET = %(9) - (&th + $ATC.PlateOffset)                       ' >> Record current Z Offset if any
+    JZ, -1 * %(9) - $smallBackOff                                     ' >> Pull up as initial move indicating
+    
 ' MAIN ==================================================================================================
-        ' (comment-in or -out DIAGNOSTIC REPORTS; using "gosub STATE")
-
-        GOSUB StartATCsequence  '  Initialize the ATC work
-            &AtNow = "Pre-Start"
-            'gosub STATE
-        IF &MANUAL_CHANGE == 0 THEN GOSUB NormalChange
-        IF &MANUAL_CHANGE > 0 THEN GOSUB ManualChange 
-            &AtNow = "Pre-FINISH"
-            'gosub STATE
-        GOSUB FinishToolChange
-            &AtNow = "Pre-END"
-            'gosub STATE
-        END
+    &AtNow = "Toolchange Start"
+    IF &tool == $ATC.ToolIn THEN GOSUB Same_Tool                      ' >> No toolchange needed, exit ASAP
+    IF $ATC.ToolIN > $ATC.NumClips THEN GOSUB ManualStash_Tool        ' >> Current tool needs to be manually removed
+    IF %($ToolBar_Status) == 0 THEN GOSUB ManualStash_Tool            ' >> Toolbar is unplugged so we can't insert into toolbar
+    IF &tool > $ATC.NumClips THEN GOSUB ManualGrab_Tool               ' >> Next tool must be manually inserted
+    IF %($ToolBar_Status) == 0 THEN GOSUB ManualGrab_Tool             ' >> Toolbar is unplugged so we can't grab from toolbar
+    IF $ATC.ToolIn > 0 THEN GOSUB StashTool                           ' >> Normal drop off of tool in toolbar
+    IF $ATC.ToolIn == 0 THEN GOSUB GrabTool                           ' >> Normal pickup of tool from toolbar
+    GOSUB FinishToolChange
     
-    '----------------------------------------------------------------------
-        ' MODULE FOR NORMAL CHANGE
-            NormalChange:
-                        &AtNow = "Pre-STASH Ck-NORMAL"
-                        'gosub STATE
-                    GOSUB StashTool
-                        &AtNow = "Pre-GRAB Ck-NORMAL"
-                        'gosub STATE
-                    GOSUB GrabTool
-                RETURN
-                
-        ' MODULE FOR MANUAL CHANGE
-            ManualChange:
-                'maybe theres a way for a regular STASH and GRAB with early exits, then could have one method
-                    IF MANUAL_CHANGE < 2 THEN GOSUB StashTool         ' >> Remove a regular tool
-                        &AtNow = "Pre-STASH Ck-MANUAL"
-                        gosub STATE
-                    GOSUB ManualStash_Tool
-                        &AtNow = "Post-STASH Ck-MANUAL"
-                        gosub STATE
-                    GOSUB GrabTool
-                        &AtNow = "Post-GRAB Ck-MANUAL"
-                        gosub STATE
-                    GOSUB ManualGrab_Tool
-
-                RETURN
-
-    
-    '---------------------------------------------------------------------
 ' =======================================================================================================
 
 ' Primary Subroutines -----------------------------------------------------------------------------------
-
-StartATCsequence:
-    JZ, &ATC_safeclear                                                ' >> Pull up as initial move indicating
-    IF &tool == $ATC.ToolIN THEN GOSUB Same_Tool                      ' >> Bail on this 
-                                                                      ' (?) >> What is protocol for having a manual tool in spindle; could be undefined or # above ??
-    IF &tool < 0 THEN &MANUAL_CHANGE = 1                              ' 
-    IF &tool > $ATC.NumClips THEN &MANUAL_CHANGE = &MANUAL_CHANGE + 2 ' (?) (would we want to use 3 for something?)
-    IF $ATC.ToolIn >= 1000 THEN GOSUB Special_Tool                    ' (?) I don't understand what this is yet
-    IF $ATC.Status == "OK" THEN RETURN
-    $ATC.Status = "EMPTY"  ' ??are we automatically empty here??                                           ' (?) spindle is empty; should we have checked this out?
-    IF $ATC.Status == "EMPTY" THEN GOSUB SetTool0  'get dummy values for no-tool
-    RETURN
-
-StashTool: '  PUT A TOOL BACK INTO ITS CLIP if necessary
-    ' For the current tool, copy into a set of operative variables the exact location of its clip, REMOVING ...
-    ' ... any working offsets and offsets of 0 from homing prox switches!
-    &tx = $tools[$ATC.ToolIn].X - %(7) + $sb_homeOff_X * $unitMultiplier
-    &ty = $tools[$ATC.ToolIn].Y - %(8) + $sb_homeOff_Y * $unitMultiplier
-    &tz = $tools[$ATC.ToolIn].Z - %(9)
-    &th = $tools[$ATC.ToolIn].H + 0
-    &Z_OFFSET = %(9)- (&th + $ATC.PlateOffset)
-    &sx = $tools[$ATC.ToolIn].X + $ATC_clipSafe - %(7)
-    IF $ATC.ToolIN == 0 THEN RETURN  ' Nothing to stash so we'll return 
-
+StashTool: '  PUT A TOOL BACK INTO ITS CLIP
+    IF $ATC.ToolIN == 0 THEN RETURN                                 ' >> Skip this if there's no tool in the spindle.
+    &AtNow = "Before Auto-Drop-Off"                                 
+    &INDEX = $ATC.ToolIn                                            ' >> Parameter for GET_TOOL_DATA
+    GOSUB GET_TOOL_DATA                                             ' >> Loads tool clip location and tool length
     ' BEGIN Physical STASH
-        'IF %(1)< &sx THEN JX, &sx                                  ' (?) what is this about? why do we need to bother??
-        J2, &sx, &ty                                                ' >> Move to safe spot in front of intended clip
-        JZ, &tz                                                     ' >> Jog to Z height for intended clip 
-        JX, &tx + $ATC_clipSafe / 4                                 ' >> Move partway in ...              ?? partially in; opening now why ??
-        SO, $DrawBar, 1                                             ' >> Open toolholder chuck            ?? opening now ??
-        MX, &tx                                                     ' >> Final Move into clip
-        IF %($Drawbar_Sensor_Status)== 0 THEN GOTO BAR_NOT_OPEN      ' >> Ck draw bar -- it should be OPEN!                  --ELSE ERROR!--
-        JZ, %(3)+ $thClearance * 2                                  ' >> Pull up to twice the clearance height for toolholder
+    	IF %(1) > &tx + $ATC_clipSafe THEN JX, &tx + $ATC_clipSafe  ' >> If we're behind toolbar for some reason. Move in X only to clear toolbar
+    	J2, &tx + $ATC_clipSafe, &ty                                ' >> Move to safe spot in front of intended clip
+    	JZ, &tz                                                     ' >> Jog to Z height for intended clip 
+    	JX, &tx + $ATC_clipSafe / 4                                 ' >> Move partway in ...
+    	SO, $DrawBar, 1                                             ' >> Open toolholder chuck
+    	MX, &tx                                                     ' >> Final Move into clip
+    	JZ, &tz + $thClearance                                      ' >> Pull up to twice the clearance height for toolholder
         SO, $DrawBar,0                                              ' >> And Close the toolholder chuck
-        &ATC_safeclear = -1 * %(9) + $Transit_Height                 ' >> Define a safe transit height     ?? why are we doing this here ??
-        JZ,&ATC_safeclear                                           ' >> Jog to safe transit height
-        IF %($Tool_Sensor_Status)== 1 THEN GOTO TOOL_RELEASE_ERROR  ' >> Ck to confirm tool not stuck in spindle            --ELSE ERROR!--
-        $ATC.ToolIN = 0                                             ' >> NOw there is No Tool!
+        PAUSE 0.25
+        &State = 1                                                  ' >> Set proper tool sensor state for check_tool subroutine
+        IF &Debug == 0 THEN GOSUB AUTO_CHECK_TOOL                   ' >> Check if tool is still in spindle!
+        IF %($Drawbar_Sensor_Status) = 1 THEN GOSUB BAR_NOT_CLOSE   ' >> Drawbar is still open
+        JZ, -1 * %(9) + $Transit_Height                             ' >> Jog to safe transit height
+        $ATC.ToolIN = 0                                             ' >> Now there is No Tool!
+        &AtNow = "After Auto-Drop-Off"
         RETURN
 
 GrabTool: '  REMOVE A TOOL FROM ITS CLIP
-    &COUNT = 0                                                      ' (?) zero these for error counting; not implemented yet
-    &BIGCOUNT = 0
-    IF &MANUAL_CHANGE > 0 THEN RETURN                               ' (?) DOES A MANUAL CHANGE USE MEASURED TOOLS
-    IF &tool == 0 THEN $ATC.Dropped = 1
-	IF &tool == 0 THEN RETURN                                        ' (?) Putting away and Leaving the spindle EMPTY
-     
-    &th = $tools[&tool].H                                           ' >> Get the tool length for new tool and other data ...
-    &new_curZ = %(3)- ((&th + $ATC.PlateOffset) + &Z_OFFSET - %(9)) ' >> ... update Z based on current offset and length ... 
-    VA,,,&new_curZ                                                  ' >> ... set it with VA
-    &tx = $tools[&tool].X - %(7) + $sb_homeOff_X * $unitMultiplier   ' >> then the working clip location for the new tool 
-    &ty = $tools[&tool].Y - %(8) + $sb_homeOff_Y * $unitMultiplier
-    &tz = $tools[&tool].Z - %(9)
-    &sx = $tools[&tool].X + $ATC_clipSafe - %(7)
-
+    IF $ATC.ToolIN > 0 THEN RETURN                                  ' >> Skip this if we already have a tool in the spindle
+    &AtNow = "Before Auto-Pickup"
+    &INDEX = &tool                                                  ' >> Parameter for GET_TOOL_DATA
+    GOSUB GET_TOOL_DATA                                             ' >> Get the tool length for new tool and other data ...
+    
+    IF &tool == 0 THEN GOSUB FinishToolChange                       ' >> No pickup required, leave with spindle empty
     ' BEGIN Physical Grab
-        JZ, &ATC_safeclear                                         ' >> Should already be here; just in case jog to safe transit height
-        J2, &tx, &ty                                               ' >> ... move to the clip location 
-        JZ, &tz + $thClearance * 2                                 ' >> Get clear in Z then 
-        SO, $DrawBar,1                                             ' >> Open toolholder chuck
-        MZ, &tz                                                    ' >> ## Move Onto Toolholder ##
-        SO, $DrawBar,0                                             ' >> Close toolholder chuck
-        PAUSE 0.25                                                 ' >> Pause for toolholder to close
-        If %($Drawbar_Sensor_Status) == 1 Then GOSUB BAR_STUCK_ERROR' >> Ck draw bar -- it should have CLOSED!              --ELSE ERROR!--
-        MX, &tx + $ATC_clipSafe / 4                                ' >> Gently move out a tad ...
-		$ATC.Dropped = 0 
-        PAUSE 0.1
-        JX, &tx + $ATC_clipSafe                                    ' >> ... then finish move outside front of clip
-        JX, &sx
-        &ATC_safeclear = -1 * %(9) - $smallBackOff
-        JZ, &ATC_safeclear
-    RETURN
+        J2, &tx, &ty                                                ' >> ... move to the clip location 
+        JZ, &tz + $thClearance                                      ' >> Get clear in Z then 
+        SO, $DrawBar,1                                              ' >> Open toolholder chuck
+        IF &Debug == 0 THEN GOSUB AUTO_CHECK_BAR_OPEN               ' >> Give 3 tries to check if drawbar opened properly
+        MZ, &tz                                                     ' >> ## Move Onto Toolholder ##
+        SO, $DrawBar,0                                              ' >> Close toolholder chuck
+        &State = 1                                                  ' >> Set proper tool sensor state for check_tool subroutine
+        IF &Debug == 0 THEN GOSUB AUTO_CHECK_TOOL                   ' >> Give 3 tries to check if tool clamped properly
+        $ATC.ToolIN = &tool                                         ' >> Update value of ToolIn
+        VA,,,&tz - ((&th + $ATC.PlateOffset) + &Z_OFFSET) + %(9)    ' >> ... set it with VA
+        JX, &tx + $ATC_clipSafe
+        JZ, -1 * %(9) - $smallBackOff
+        &AtNow = "After Auto-Pickup"
+        GOSUB FinishToolChange
+        RETURN
+        
+' Manual Subroutines -----------------------------------------------------------------------------------
+ManualStash_Tool:
+  IF $ATC.ToolIN == 0 THEN RETURN                                    ' >> Skip this if there is no tool in the spindle
+  &AtNow = "Before Manual Dropoff"
+  J2, $manual_change_X - %(7), $manual_change_Y - %(8)               ' >> Jog to the user's desired location for manual toolchanges
+  &TRY = 0                                                           ' >> Reset our "try" counter for user removal
+  GOSUB MAN_CHECK_TOOL_OUT                                           ' >> Check to see if they've removed the tool.
+  IF &TRY = 1 THEN GOSUB MAN_CHECK_TOOL_OUT                          ' >> Give them one more chance if they didn't remove the tool.
+  IF &TRY = 2 THEN GOSUB TOOL_NOT_REMOVED                            ' >> Too many attempts ... exit file.
+  &TRY = 0                                                           ' >> Reset try counter for cleanliness.
+  &Z_OFFSET = %(9) - (&th + $ATC.PlateOffset)                        ' >> Record current Z Offset if any
+  $ATC.ToolIN = 0                                                    ' >> Tool removed, update ToolIn
+  &AtNow = "After Manual Dropoff"
+  RETURN
 
+ManualGrab_Tool:
+  IF $ATC.ToolIN > 0 THEN RETURN                                     ' >> Skip this if there is already a tool in the spindle
+  &AtNow = "Before Manual Pickup"
+  J2,$manual_change_X - %(7),$manual_change_Y - %(8)                 ' >> Jog to the user's desired locaiton for manual toolchanges
+  &TRY = 0															' >> Reset our "try" counter for user insertion
+  GOSUB MAN_CHECK_TOOL_IN                                            ' >> Check to see if they've inserted the tool.
+  IF &TRY = 1 THEN GOSUB MAN_CHECK_TOOL_IN                           ' >> Give them one more chance if they didn't insert the tool.
+  IF &TRY = 2 THEN GOSUB TOOL_NOT_INSERTED                           ' >> Too many attempts ... exit file.
+  &TRY = 0                                                           ' >> Reset try counter for cleanliness
+  &INDEX = &tool                                                     ' >> Parameter for GET_TOOL_DATA
+  GOSUB GET_TOOL_DATA                                                ' >> Get the tool length for new tool and other data ...
+  &new_curZ = %(3)- ((&th + $ATC.PlateOffset) + &Z_OFFSET - %(9))    ' >> ... update Z based on current offset and length ... 
+  VA,,,&new_curZ                                                     ' >> ... set it with VA
+  $ATC.ToolIN = &tool                                                ' >> Update ToolIn to current Tool
+  &AtNow = "After Manual Pickup"
+  GOSUB FinishToolChange                                             ' >> We're done -- leave ASAP
+  RETURN
+
+' End of Toolchange -------------------------------------------------------------------------------------
 FinishToolChange:
-    ' (?) Do we want to better manage putting all the tools away?
-    JZ, &ATC_safeclear
-    JX, &sx + $ATC_clipSafe
-    '$ATC.Dropped = 0
-    &ATC_safeclear = -1 * %(9) - $smallBackOff
-    JZ, &ATC_safeclear
-    $ATC.ToolIN = &tool
-    &TL = &th + $ATC.PlateOffset + $ATC.MaxDepth
-    VL,,,,,&TL                                                     ' (?) changing for limits???
+    &AtNow = "Wrapping Up"
+    &TL = &th + $ATC.PlateOffset + $ATC.MaxDepth                     ' >> Figure out Z limit to prevent cutting into table
+    VL,,,,,&TL                                                       ' >> Update Z limits.
+    &AtNow = "Finished"
+    IF $ATC.ToolIN == 0 THEN GOSUB JOG_HOME
+    END
     RETURN
 
+JOG_HOME:
+    J2,&tx,&ty
+    RETURN
 ' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 STATE: ' Report State at points in ATC Sequence
-    PAUSE "STATE:" + &AtNow + " ATC-Status:" + $ATC.Status + " tool:" + &tool + " ATC.Dropped:" + $ATC.Dropped + " ToolIn:" + $ATC.ToolIn + " Length:" + &th + " Manual:" + &MANUAL_CHANGE + " Drawbar:" + %($Drawbar_Sensor_Status) + " ToolSensor:" + %($Tool_Sensor_Status)
+    PAUSE "STATE:" + &AtNow + " ATC-Status:" + $ATC.Status + " tool:" + &tool + " ATC.Dropped:" + $ATC.Dropped + " ToolIn:" + $ATC.ToolIn + " Length:" + &th + " Drawbar:" + %($Drawbar_Sensor_Status) + " ToolSensor:" + %($Tool_Sensor_Status)
+    RETURN
+' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+GET_TOOL_DATA:
+    &tx = $tools[&INDEX].X - %(7) + $sb_homeOff_X * $unitMultiplier    ' >> Tool Clip X Location
+    &ty = $tools[&INDEX].Y - %(8) + $sb_homeOff_Y * $unitMultiplier    ' >> Tool Clip Y Location
+    &tz = $tools[&INDEX].Z - %(9)                                      ' >> Tool Clip Z Location
+    &th = $tools[&INDEX].H + 0                                         ' >> Tool Height
     RETURN
 ' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ' Special Cases -----------------------------------------------------------------------------------------
-SetTool0:
-        &AtNow = "Spindle set EMPTY"
-        'gosub STATE
-    &tx = $tools[0].X - %(7)
-    &ty = $tools[0].Y - %(8)
-    &tz = $tools[0].Z - %(9)
-    &th = $tools[0].H
-    &sx = $tools[0].X + $ATC_clipSafe - %(7)
-    RETURN
-
 Same_Tool:
-    &ATC_safeclear = -1 * %(9)- $smallBackOff
-    JZ, &ATC_safeclear
-    PAUSE "Requested Tool seems to already be in Spindle! (ToolIn:" + $ATC.ToolIN + ")", OKTEXT="Continue for suggestions ...", CANCELTEXT="Quit"
-    PAUSE "Maybe try requesting a different tool or resetting the current ATC.ToolIN ..."
-    END  
+    'PAUSE "Requested Tool seems to already be in Spindle! (ToolIn:" + $ATC.ToolIN + ")", OKTEXT="Continue for suggestions ...", CANCELTEXT="Quit"
+    'PAUSE "Maybe try requesting a different tool or resetting the current ATC.ToolIN ..."
+    'END
+    GOSUB FinishToolChange
     RETURN
-
-ManualStash_Tool:
-  PAUSE "Ready for a manually REMOVE Tool #" + $ATC.ToolIN
-  J2, $manual_change_X - %(7), $manual_change_Y - %(8)
-  PAUSE "Press green button on gantry to remove current tool. (M-0139)"
-  IF %($Tool_Sensor_Status)== 1 THEN GOSUB TOOL_NOT_REMOVED
-  $ATC.Dropped = 1
+    
+' SENSOR CHECKS -----------------------------------------------------------------------------------------
+MAN_CHECK_TOOL_IN:
+  PAUSE "Press green button on gantry and insert tool " + &tool          ' >> Prompt user to insert the desired tool
+  IF %($Tool_Sensor_Status) = 1 THEN RETURN                              ' >> If sensor shows that tool is in -- return to main routine
+  &TRY = &TRY + 1	                                                 ' >> If sensor does not show that tool is in, increment try counter.
+  PAUSE "Tool insertion failed; try again."                              ' >> Show error message before returning to main and prompting user to try again
   RETURN
 
-ManualGrab_Tool:
-  PAUSE "Ready to manually INSERT Tool #" + $ATC.ToolIN
-  J2,$manual_change_X - %(7),$manual_change_Y - %(8)
-  PAUSE "Press green button on gantry and insert tool"
-  $ATC.Dropped = 0
+MAN_CHECK_TOOL_OUT:
+  PAUSE "Press green button on gantry to remove tool " + $ATC.ToolIN     ' >> Prompt user to remove current tool
+  IF %($Tool_Sensor_Status) = 0 THEN RETURN                              ' >> If sensor shows that tool is removed -- return to main routine
+  &TRY = &TRY + 1                                                        ' >> If sensor shows that tool is still present, increment try counter.	
+  PAUSE "Tool removal failed; try again."                                ' >> Show error message before returning to main and prompting user to try again
+  RETURN
+
+AUTO_CHECK_TOOL:
+  &TRY = 0                                                               ' >> Initialize try counter
+  GOSUB CHECK_TOOL                                                       ' >> Check if tool is in
+  IF &TRY == 1 THEN SO,$Drawbar,1                                        ' >> If tool is not in, reopen drawbar...
+  IF &TRY == 1 THEN GOSUB CHECK_TOOL                                     ' >> ...and check again
+  IF &TRY == 2 THEN SO,$Drawbar,1                                        ' >> If tool is still not in, reopent drawbar one more time...
+  IF &TRY == 2 THEN GOSUB CHECK_TOOL                                     ' >> ...and check again
+  IF &TRY == 3 THEN GOSUB TOOL_ERROR                                     ' >> If tool is still not in, then we have a problem, send to error message and end
+  &TRY = 0                                                               ' >> Reset try counter for cleanliness
   RETURN
   
-Special_Tool:
-    '  C79 'Special Tool Change?
-    '  If &SpecialError = 1 Then GoTo SpecialError
-    '  If $ATC.ToolIn >= 1000 Then GoTo ZeroToolDrop
-    '  If &tool >= 1000 Then GoTo Finish_ToolChange
-    '  GoTo SpecialError
-    PAUSE "Special Tool ???"
-    RETURN
+CHECK_TOOL:
+  PAUSE 1 '$DrawbarDelay                                                 ' >> Wait for some time to allow drawbar to fully open (maybe only if drawbar has been opened...?)
+  SO,$Drawbar,0                                                          ' >> Close drawbar if open
+  PAUSE 1 '$DrawbarDelay                                                 ' >> Wait for some time to allow drawbar to fully close.
+  IF %($Tool_Sensor_Status) == &State THEN RETURN                        ' >> Check if tool is clamped, if so return
+  &TRY = &TRY + 1                                                        ' >> If not, increment try counter and return
+  RETURN
   
+AUTO_CHECK_BAR_OPEN:												
+  &TRY = 0                                                               ' >> Initialize try counter
+  GOSUB CHECK_BAR_OPEN                                                   ' >> Check if the drawbar is open
+  IF &TRY = 1 THEN SO,$Drawbar,0                                         ' >> If drawbar is open, open it again (before trying to close it again) ...
+  IF &TRY = 1 THEN GOSUB CHECK_BAR_OPEN                                  ' >> Check if it worked
+  IF &TRY = 2 THEN SO,$Drawbar,0                                         ' >> If drawbar still is stuck open, open again and check again...
+  IF &TRY = 2 THEN GOSUB CHECK_BAR_OPEN                                  ' >> Check if it worked
+  IF &TRY = 3 THEN GOSUB TOOL_NOT_REMOVED                                ' >> We can't get drawbar closed, display error and end
+  &TRY = 0                                                               ' >> Reset try counter for cleanliness
+  RETURN  
 
+CHECK_BAR_OPEN:
+  PAUSE 1 '$DrawbarDelay                                                 ' >> Give time for drawbar to open
+  SO,$Drawbar,1                                                          ' >> Close drawbar
+  PAUSE 1 '$DrawbarDelay                                                 ' >> Give time for drawbar to close
+  IF %($Drawbar_Sensor_Status) == 1 THEN RETURN                          ' >> Read drawbar sensor, if closed then return!
+  &TRY = &TRY + 1                                                        ' >> If still open then increment try counter and return
+  RETURN
+  
 ' ERROR HANDLING ----------------------------------------------------------------------------------------
+
 TOOL_NOT_REMOVED:
-  DIALOG "Tool removal failed. Check the sensor and try again.", CANCELTEXT = "Quit"
+  DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit"
   END
+  RETURN
+  
+TOOL_NOT_INSERTED:
+  DIALOG "Tool insertion failed again. Exiting file.", CANCELTEXT = "Quit"
+  END
+  RETURN
+
+TOOL_ERROR:
+  IF &State == 0 THEN DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit"	' >> If we were trying to remove a tool then display this message
+  IF &State == 1 THEN DIALOG "Tool insertion failed again. Exiting file.", CANCELTEXT = "Quit"	' >> If we were trying to insert a tool then display this message
+  END
+  RETURN
 
 BAR_NOT_OPEN:
-  DIALOG "Tool-Bar is not open!", CANCELTEXT = "Quit"
+  DIALOG "Drawbar did not open!", CANCELTEXT = "Quit"
   END
+  RETURN
 
-TOOL_RELEASE_ERROR:
-  DIALOG "Tool not released!", CANCELTEXT = "Quit"
-  END
-
-BAR_STUCK_ERROR:
-  DIALOG "Tool not released!", CANCELTEXT = "Quit"
-  END
-
-ATC_ERROR:
-  DIALOG "Problem with ATC, remove tool and re-home machine.", CANCELTEXT = "Quit"
-  END
+BAR_NOT_CLOSE:
+  DIALOG "Drawbar did not close!", CANCELTEXT = "Quit"
+  END 
+  RETURN
 
 ' DICTIONARY ===========================================================
 '   h,H                         ( H = general reference to the measured length of a tool )

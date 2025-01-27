@@ -19,15 +19,9 @@ IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 $ATC.type := 0                                                    ' Set ATC.type designation if it does not exist
 
 ' === ATC Status Checks ===
-'C70
+C70
 IF $ATC.Type == 0 THEN GOTO OK
 C75
-IF $ATC.Status = "OK" THEN GOTO OK
-IF $ATC.Status = "TOOL NOT FOUND IN SPINDLE - REHOME MACHINE" THEN GOTO NO_TOOL
-PAUSE "Error: " + $ATC.Status
-END
-NO_TOOL:
-$ATC.ToolIn = 0
 OK:
 
 ' === Main Program ===
@@ -54,9 +48,11 @@ home_z:
     IF %(3)== &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
     ZZ
     JZ, (-1 * &homeOff_Z)
+    IF $ATC.Type > 0 THEN GOTO Z_OFFSET
     VA,,,0,,,,,,0,,,                                            ' Set 0 location and Table Base Zero
-    IF $ATC.Type = 0 THEN GOTO NO_Z_OFFSET
-    VA,,,-1*($tools[$ATC.ToolIn].H + $ATC.PlateOffset)
+    Z_OFFSET:
+    IF $ATC.Type = 0 THEN GOTO NO_Z_OFFSET      
+    VA,,,-1*($tools[$ATC.ToolIn].H + $ATC.PlateOffset),,,,,,0
     NO_Z_OFFSET:
 	RETURN
 
@@ -100,7 +96,7 @@ offset_z_cutter:
       IF &proxTriggered == 1 THEN GOSUB handleBackOff
       &proxTriggered = 0
       GOSUB checkProxs
-      IF &proxTriggered == 1 THEN GOTO fail_no_clear
+      IF &proxTriggered == 1 THEN GOSUB fail_no_clear
       RETURN
 
   checkProxs:
@@ -119,6 +115,7 @@ offset_z_cutter:
   fail_no_clear:
       PAUSE "Proximity Switch Not Clear! (A switch is stuck on.)" ' Could not clear.
       END
+      RETURN
 
   fail_missed_target:
       PAUSE "Target Not Triggered! Center and Try C3 again."      ' Did not hit target.
@@ -140,7 +137,7 @@ initialize_variables:
   'Adjust to current UNITS of tool (handles whether tool Macro Variables are for INCHES or MM)
 	&dist_mult = 1.0
 	&Zoff_mult = 1.0
-	IF %(25)== 1 THEN GOTO tool_MM							  ' Read UNIT of Tool; System Variable #25
+	IF %(25) == 1 THEN GOTO tool_MM							  ' Read UNIT of Tool; System Variable #25
 	  tool_IN:
 	    $sb_current_cutter_Zoffset := .25                     ' Initialize variable in IN for case tool cutter not zeroed
 		$sb_current_cutter_Zoffset_Units := 0
