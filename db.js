@@ -91,11 +91,11 @@ Job.prototype.start = function (callback) {
     this.save(callback);
 };
 
-Job.prototype.finish = async function () {
+Job.prototype.finish = function (callback) {
     log.info("Finishing job id " + this._id ? this._id : "<volatile job>");
     this.state = "finished";
     this.finished_at = Date.now();
-    await this.save();
+    this.save(callback);
 };
 
 Job.prototype.fail = function (callback) {
@@ -105,12 +105,12 @@ Job.prototype.fail = function (callback) {
     this.save(callback);
 };
 
-Job.prototype.cancel = async function (callback) {
+Job.prototype.cancel = function (callback) {
     if (this.state === "running") {
         log.debug("Cancelling running job id " + this._id);
         this.state = "cancelled";
         this.finished_at = Date.now();
-        await this.save();
+        this.save(callback);
     } else {
         setImmediate(callback, new Error("Cannot cancel a job that is " + this.state));
     }

@@ -259,29 +259,6 @@ Parser.prototype._transform = function (chunk, enc, cb) {
     this.resume();
     cb();
 };
-//Parser.prototype._transform = function (chunk, enc, cb) {
-//     var str = this.scrap + chunk.toString();
-//     this.pause();
-//     try {
-//         var start = 0;
-//         for (var i = 0; i < str.length; i++) {
-//             if (str[i] === "\n") {
-//                 var substr = str.substring(start, i);
-//                 let parsedline = parseLine(substr);
-//                 //Skip entries that are metadata (Used to prune header metadata on macros)
-//                 if (parsedline.type != "metadata") {
-//                     this.push(parsedline);
-//                 }
-//                 start = i + 1;
-//             }
-//         }
-//         this.scrap = str.substring(start);
-//     } catch (e) {
-//         log.error(e);
-//     }
-//     this.resume();
-//     cb();
-// };
 
 // Handle a stream flush
 Parser.prototype._flush = function (done) {

@@ -11,6 +11,9 @@
  * and control of systems not conventionally accessible to the g-code canonical machine.
  */
 
+// Turn on "####=" logging for execution flow details
+// Turn on "Executing line:" logging for line-by-line execution details
+
 var parser = require("./parser");
 var fs = require("fs");
 var log = require("../../log").logger("sbp");
@@ -28,7 +31,9 @@ var ManualDriver = require("../manual").ManualDriver;
 // Constructor for the OpenSBP runtime
 // The SBPRuntime object is responsible for running OpenSBP code.
 // For more info and command reference: http://www.opensbp.com/
-// Note that not ALL of the OpenSBP standard listed at the above URL is currently supported in FabMo.
+// Note that not ALL of the OpenSBP standard listed at the above URL is supported.
+// FabMo supports a limited subset of the original standard, as not all commands make sense
+// to use in the FabMo universe.
 function SBPRuntime() {
     // Handle Inheritance
     events.EventEmitter.call(this);
@@ -41,7 +46,6 @@ function SBPRuntime() {
     this.label_index = {};
     this.stack = [];
     this.file_stack = [];
-    this.loopStack = [];
 
     this.output = [];
     this.running = false;
@@ -79,6 +83,7 @@ function SBPRuntime() {
     this.continue_callback = null;
     this.vs_change = 0;
     this.absoluteMode = true;
+
     this.lastFilename = "";
 
     // Physical machine state
@@ -86,7 +91,6 @@ function SBPRuntime() {
     this.driver = null;
 
     this.inManualMode = false;
-    this.waitPendingOps = false;
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -114,8 +118,6 @@ SBPRuntime.prototype.connect = function (machine) {
     this.status_report = {};
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
-
-    this.init();
     this._update();
     this.cmd_posx = this.posx;
     this.cmd_posy = this.posy;
@@ -132,7 +134,7 @@ SBPRuntime.prototype.connect = function (machine) {
 
     this.connected = true;
     this.ok_to_disconnect = false; ////## remove; this is a temp fix for cannot-disconnect ?
-    log.info("Connected OpenSBP runtime.");
+    //log.info("####=Connected OpenSBP runtime.");
 };
 
 // Disconnect this runtime from the machine model.
@@ -148,7 +150,7 @@ SBPRuntime.prototype.disconnect = function () {
         this.machine = null;
         this.driver = null;
         this.connected = false;
-        log.info("Disconnected OpenSBP runtime.");
+        //log.info("####=Disconnected OpenSBP runtime.");
     } else {
         throw new Error("Cannot disconnect OpenSBP runtime.");
     }
@@ -159,16 +161,13 @@ SBPRuntime.prototype.disconnect = function () {
 // If it is an object, interpret it as a manual drive command
 //          s - The command to execute (string or object)
 //   callback - Called once the command is issued (or with error if error) - NOT when the command is done executing
-SBPRuntime.prototype.executeCode = function (s) {
+SBPRuntime.prototype.executeCode = function (s, callback) {
+    //log.info("####=.executeCode");
+    this.init();
+
     if (typeof s === "string" || s instanceof String) {
         // Plain old string interprets as OpenSBP code segment
-        this.runString(s)
-            .then(() => {
-                // STRING RUNNER DOES NOT RETURN ANYTHING
-            })
-            .catch((err) => {
-                console.error("Error in code: ", err);
-            });
+        this.runString(s, callback);
     } else {
         // If we're in manual mode, interpret an object as a command for that mode
         // The OpenSBP runtime can enter manual mode with the 'SK' command so we have this code here to mimick that mode
@@ -258,143 +257,168 @@ SBPRuntime.prototype.needsAuth = function (s) {
 //      enough not to count at all.
 // TODO At the very least, this function should simply take the string provided and stream it into runStream - they do the same thing.
 //          s - The string to run
+//   callback - Called when the program has ended
 SBPRuntime.prototype.runString = function (s) {
-    return new Promise((resolve, reject) => {
-        try {
-            this.pc = 0;
-            this.program = [];
+    //log.info("####=.runString");
+    try {
+        // Initialize the program
+        this.pc = 0;
+        this.program = [];
+        // Break the string into lines
+        var lines = s.split("\n");
 
-            const lines = s.split("\n");
-            if (this.machine && this.file_stack.length === 0) {
+        // The machine status `nb_lines` indicates the total number of lines in the currently running file
+        // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
+        if (this.machine) {
+            if (this.file_stack.length === 0) {
                 this.machine.status.nb_lines = lines.length - 1;
             }
-
-            try {
-                this.program = parser.parse(s);
-            } catch (e) {
-                log.error("Parsing error:", e);
-                e.message = `Error@line- ${e.line}(${e.location.start.column}): ${e.message}`;
-
-                try {
-                    this._end(e.message);
-                } catch (endError) {
-                    log.error("Error during _end:", endError);
-                }
-
-                return reject(e);
-            }
-
-            try {
-                this._setupTransforms();
-                // this.init();
-                this._loadConfig();
-                this._analyzeLabels();
-                this._analyzeGOTOs();
-            } catch (e) {
-                this._handleRunStringError(e, reject);
-                return;
-            }
-
-            // Start running the actual code
-            this._run()
-                .then(() => {
-                    this.once("end", () => {
-                        resolve();
-                    });
-                })
-                .catch((e) => {
-                    this._handleRunStringError(e, reject);
-                });
-
-            resolve();
-        } catch (err) {
-            console.error("Bad Spot -- Error executing code:", err);
-            log.error("Exception has occurred:", err);
-            reject(err);
         }
-    });
-};
 
-SBPRuntime.prototype._handleRunStringError = function (e, reject) {
-    if (this.isInSubProgram()) {
-        log.error(e);
-        this._abort(e);
-    } else {
+        // Parse the program.  Bail with a useful error message if parsing fails.
+        // "Useful" is relative.  The PegJS errors are pretty arcane... TODO - we could probably do better.
+        // We catch parse errors separately from other errors because the *parser reports line numbers differently* than
+        // they will be accessed once the program has been parsed (and we want to report the line number always when we have an error)
         try {
+            this.program = parser.parse(s);
+        } catch (e) {
+            log.error(e);
+            e.message = `Error@line- ${e.line}(${e.location.start.column}): ${e.message}`;
+            this._end(e.message);
+        } finally {
+            log.tock("Parse file");
+        }
+
+        // Configure affine transformations on the file
+        this._setupTransforms();
+
+        // Initialize the runtime state
+        this.init();
+
+        // Copy the general config settings into runtime memory
+        this._loadConfig();
+
+        // Build a map of labels to line numbers
+        // This step unfortunately requires the whole file
+        this._analyzeLabels();
+        log.debug("Labels analyzed...");
+
+        // Check all the GOTO/GOSUBs against the label table
+        this._analyzeGOTOs();
+        log.debug("GOTOs analyzed...");
+
+        // Start running the actual code, now that everything is prepped
+        return this._run();
+    } catch (e) {
+        // A failure at any stage (except parsing) will land us here
+        if (this.isInSubProgram()) {
+            log.error(e);
+            this._abort(e);
+        } else {
             log.error(e);
             this._end(e.message);
-        } catch (endError) {
-            log.error("Error during _end:", endError);
         }
     }
-    reject(e);
 };
 
 // Run the provided stream of text in OpenSBP
 // See documentation above for runString - this works the same way.
+//   callback - Called when run is complete or with error if there was an error.
 SBPRuntime.prototype.runStream = function (text_stream) {
-    return new Promise((resolve, reject) => {
-        try {
-            // Initialize the program
-            this.pc = 0;
-            this.program = [];
+    //log.info("####=.runStream");
+    try {
+        // Initialize the program
+        this.pc = 0;
+        this.program = [];
+        // Even though we're "streaming" in this function, we still have to parse
+        // the entire body of data before we can continue processing the file.
+        // That's why the business end of this function occurs in the 'end' handler
+        var st = parser.parseStream(text_stream);
 
-            const st = parser.parseStream(text_stream);
-
-            st.on("data", (data) => {
+        // The stream produced by parser.parseStream produces fully parsed program lines,
+        // which can just be added to the program as they come in.
+        st.on(
+            "data",
+            function (data) {
                 this.program.push(data);
-            });
+            }.bind(this)
+        );
 
-            st.on("end", async () => {
+        // Stream is fully processed
+        st.on(
+            "end",
+            function () {
                 try {
                     log.tock("Parse file");
 
-                    const lines = this.program.length;
-                    if (this.machine && this.file_stack.length === 0) {
-                        this.machine.status.nb_lines = lines - 1;
+                    // The machine status `nb_lines` indicates the total number of lines in the currently running file
+                    // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
+                    // TODO I've never liked nb_lines as a name
+                    var lines = this.program.length;
+                    if (this.machine) {
+                        if (this.file_stack.length === 0) {
+                            this.machine.status.nb_lines = lines - 1;
+                        }
                     }
 
+                    // Configure affine transformations on the file
                     this._setupTransforms();
+
+                    // Initialize the runtime state
+                    this.init();
+
+                    // Copy the general config settings into runtime memory
                     this._loadConfig();
 
+                    log.tick();
+                    // Build a map of labels to line numbers
+                    // This step unfortunately requires the whole file
                     this._analyzeLabels();
+                    log.tock("Labels analyzed...");
+
+                    // Check all the GOTO/GOSUBs against the label table
                     this._analyzeGOTOs();
+                    log.debug("GOTOs analyzed...");
+                    log.tock("Analyzed GOTOs");
 
-                    // Set the 'end' event listener before calling _run
-                    this.once("end", () => {
-                        resolve();
-                    });
-
-                    // Start running the actual code
-                    await this._run();
+                    // Start running the actual code, now that everything is prepped
+                    return this._run();
                 } catch (e) {
-                    this._handleRunStreamError(e, reject);
+                    if (this.isInSubProgram()) {
+                        log.error(e);
+                        this._abort(e);
+                    } else {
+                        log.error(e);
+                        this._end(e);
+                    }
                 }
-            });
+            }.bind(this)
+        );
 
-            st.on("error", (err) => {
-                log.error(err);
-                reject(err);
-            });
-        } catch (e) {
-            this._handleRunStreamError(e, reject);
-        }
-    });
-};
+        // Add error handling for the stream
+        st.on(
+            "error",
+            function (e) {
+                if (this.isInSubProgram()) {
+                    log.error(e);
+                    this._abort(e);
+                } else {
+                    log.error(e);
+                    this._end(e);
+                }
+            }.bind(this)
+        );
 
-SBPRuntime.prototype._handleRunStreamError = function (e, reject) {
-    if (this.isInSubProgram()) {
-        log.error(e);
-        this._abort(e);
-    } else {
-        log.error(e);
-        try {
-            this._end(e.message);
-        } catch (endError) {
-            log.error("Error during _end:", endError);
+        return undefined;
+    } catch (e) {
+        if (this.isInSubProgram()) {
+            log.error(e);
+            this._abort(e);
+        } else {
+            log.error(e);
+            this._end(e);
         }
     }
-    reject(e);
 };
 
 // Internal function to copy config settings to local fields of this runtime
@@ -491,51 +515,36 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 
 // Run a file on disk.
 //   filename - Full path to file on disk
-SBPRuntime.prototype.runFile = async function (filename) {
+//   callback - Called when file is done running or with error if error
+SBPRuntime.prototype.runFile = function (filename) {
+    //log.info("####=.runFile");
     this.lastFilename = filename;
     var st = fs.createReadStream(filename);
-    await this.runStream(st);
+    this.runStream(st);
 };
 
 // Simulate the provided file, returning the result as g-code string
-// ... possible spot for preview speed improvement ?
-SBPRuntime.prototype.simulateStream = function (stream, tx, ty, tz) {
-    return new Promise((resolve, reject) => {
-        let gcodeChunks = "";
-        let isStreamEnded = false;
-
-        this.simulate = true;
-        this.output = [];
-
-        this.cmd_StartX = tx; // Capture these for processing commands outside of runtime
-        this.cmd_StartY = ty;
-        this.cmd_StartZ = tz;
-
-        stream.on("data", (chunk) => {
-            this.runString(chunk)
-                .then(() => {
-                    // We are ignoring these OpenSBP commands here, just processing the stream
-                })
-                .catch((err) => reject(err));
+////## A primary spot for preview enhancement ???
+// TODO - this function could return a stream, and you could stream this back to the client to speed up simulation
+//          s - OpenSBP string to run
+//   callback - Called with the g-code output or with error if error
+SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
+    this.cmd_StartX = x; // need to capture these for processing commands outside of runtime
+    this.cmd_StartY = y;
+    this.cmd_StartZ = z;
+    if (this.ok_to_disconnect) {
+        this.disconnect();
+        var st = this.runString(s);
+        var chunks = [];
+        st.on("data", function (chunk) {
+            chunks.push(chunk);
         });
-
-        this.once("simulation_complete", (gcode) => {
-            gcodeChunks = gcode; // Capture the accumulated G-code
-            if (!isStreamEnded) {
-                isStreamEnded = true;
-                resolve(gcodeChunks); // Resolve with the accumulated G-code
-            }
+        st.on("end", function () {
+            callback(null, chunks.join(""));
         });
-
-        stream.on("end", () => {
-            if (!isStreamEnded) {
-                log.warn("Stream ended before simulation completed");
-                reject(new Error("Stream ended prematurely"));
-            }
-        });
-
-        stream.on("error", (err) => reject(err));
-    });
+    } else {
+        callback(new Error("Cannot simulate while OpenSBP runtime is busy."));
+    }
 };
 
 // Handler for G2 status reports
@@ -605,17 +614,29 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
     var scrubbed_args = [];
     if (command in sb3_commands) {
         var params = sb3_commands[command].params || [];
-        // This is a convenience warning as you can always have fewer arguments than parameters
-        // ... and, at the moment, we just ignore extra arguments; first check default first argument
-        if (args.length === 1 && (args[0] === "" || args[0] === undefined)) {
-            log.debug(" -- a no-parameter command");
-        } else {
-            if (args.length > params.length) {
+
+        // This is a possibly helpful warning, but is spuriously issued in some cases where commands take no arguments (depending on whitespace, etc.)
+        // TODO - fix that
+        if (args.length > params.length) {
+            if (params.length === 0 && args.length === 1 && args[0] === "") {
+                log.debug(" -- a no-parameter command");
+            } else {
                 log.warn(
-                    `More parameters passed into ${command} (${args.length}) than are supported by the command. (${params.length})`
+                    "More parameters passed into " +
+                        command +
+                        " (" +
+                        args.length +
+                        ")" +
+                        "(" +
+                        params +
+                        ")" +
+                        " than are supported by the command. (" +
+                        params.length +
+                        ")"
                 );
             }
         }
+
         for (var i = 0; i < params.length; i++) {
             if (args[i] !== undefined && args[i] !== "") {
                 // Arguments that have meat to them are added into the scrubbed list
@@ -626,6 +647,7 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
             }
         }
     } else {
+        // TODO - is this really the right behavior here?
         scrubbed_args = [];
     }
 
@@ -651,6 +673,7 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 //   cmd - Command object to evaluate
 SBPRuntime.prototype._breaksStack = function (cmd) {
     var result;
+    //log.info("####=._breaksStack");
 
     // Any command that has an expression in one of its arguments that breaks the stack, breaks the stack.
     if (cmd.args) {
@@ -665,7 +688,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
     switch (cmd.type) {
         case "cmd":
             // Commands have a means of automatically specifying whether or not they break the stack.  If their command handler
-            //// ## DESCRIBE New ... accepts a second argument (presumed to be a callback) in addition to their argument list, they are stack breaking.
+            // accepts a second argument (presumed to be a callback) in addition to their argument list, they are stack breaking.
             var name = cmd.cmd;
             if (name in this && typeof this[name] == "function") {
                 var f = this[name];
@@ -688,6 +711,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             // TODO: These should only break the stack if they assign to or read from expressions that break the stack
             result = true;
             break;
+        //return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 
         case "custom":
             // Macro calls should break the stack
@@ -742,166 +766,126 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
 // This function is called ONCE at the beginning of a program, and is not called again until the program
 // completes, except if a macro (subprogram) is encountered, in which case it is called for that program as well.
 SBPRuntime.prototype._run = function () {
-    return new Promise((resolve, reject) => {
-        // Set state variables
-        this.started = true;
-        this.waitingForStackBreak = false;
-        this.gcodesPending = false;
-        this.probingInitialized = false;
-        this.probingPending = false;
-        this.probePin = null;
-        log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
+    // Set state variables to kick things off
+    //log.info("####=._run");
 
-        if (this.machine) {
-            this.machine.setState(this, "running");
+    this.started = true;
+    this.waitingForStackBreak = false;
+    this.gcodesPending = false;
+    this.probingInitialized = false;
+    this.probingPending = false;
+    this.probePin = null;
+    log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
+    if (this.machine) {
+        this.machine.setState(this, "running");
+    }
+
+    // Create a stat handler that does a few things:
+    // 1. Call _executeNext when the motion system is out of moves to feed it more program
+    // 2. Set the machine state to paused or running based on the state of the motion system
+    // 3. Handle a feedhold edge case (feedhold issued while system was not executing motion)
+    var onStat = function (stat) {
+        if (!this.driver) {
+            log.warn("OpenSBP Runtime got a status report while disconnected.");
+            return;
         }
-
-        const onStat = (stat) => {
-            log.debug("onSTAT ..." + stat);
-            if (this.inManualMode) {
-                return;
-            }
-            if (!this.driver) {
-                ////## Not sure what is going on here; potentially an issue with commands called outside files ???
-                log.debug("No driver in _run - Potential ERROR?"); //ERROR?
-                return;
-            }
-
-            if (this.waitPendingOps) {
-                // Check if the driver has finished processing
-                if (stat === this.driver.STAT_END || stat === this.driver.STAT_STOP) {
-                    this.waitPendingOps = false; // Clear the flag
-                    this._executeNext(); // Resume execution
+        log.debug("onSTAT ..." + stat);
+        if (this.inManualMode) {
+            return;
+        }
+        switch (stat) {
+            case this.driver.STAT_STOP:
+                // Only update and call execute next if we're waiting on pending gcodes or probing
+                // ... and expecting this stat:3
+                // For probing we do not turn off the pending if we have not passed the Initialization phase
+                if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
+                    this.driver.status.targetHit = false;
+                    this.probingPending = false;
+                    this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
+                    this.prime();
+                    //log.debug("COMPLETETED PENDING PROBING =(cleared)============####")
+                    this._executeNext();
+                    break;
                 }
-            }
-
-            switch (stat) {
-                case this.driver.STAT_STOP:
-                    // # A STAT 3, can always be a problematic issue ... watch this spot
-                    // Only update and call execute next if we're waiting on pending gcodes or probing
-                    // ... and expecting this stat:3
-                    // For probing we do not turn off the pending if we have not passed the Initialization phase
-                    if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
-                        this.driver.status.targetHit = false;
-                        this.probingPending = false;
-                        this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
-                        this.prime();
-                        this._executeNext().catch((err) => {
-                            log.error("Error in _executeNext during STAT_STOP handling:", err);
-                            this._abort(err);
-                        });
-                        break;
-                    }
-                    if (this.gcodesPending) {
-                        this.gcodesPending = false;
-                        this._executeNext().catch((err) => {
-                            log.error("Error in _executeNext during STAT_STOP handling:", err);
-                            this._abort(err);
-                        });
-                        break;
-                    }
+                if (this.gcodesPending) {
+                    this.gcodesPending = false;
+                    log.debug("COMPLETETED PENDING GCODES =(cleared)============####");
+                    this._executeNext();
                     break;
+                }
+                break;
+            case this.driver.STAT_HOLDING:
+                this.feedhold = true;
+                if (this.machine.pauseTimer) {
+                    clearTimeout(this.machine.pauseTimer);
+                    this.machine.pauseTimer = false;
+                    this.machine.setState(this, "paused", {
+                        message: "Paused by user.",
+                    });
+                } else {
+                    this.machine.setState(this, "paused");
+                }
+                break;
 
-                case this.driver.STAT_HOLDING:
-                    this.feedhold = true;
-                    if (this.machine.pauseTimer) {
-                        clearTimeout(this.machine.pauseTimer);
-                        this.machine.pauseTimer = false;
-                        this.machine.setState(this, "paused", {
-                            message: "Paused by user.",
-                        });
-                    } else {
-                        this.machine.setState(this, "paused");
-                    }
-                    break;
+            case this.driver.STAT_PROBE:
+                //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
+                this.probingInitialized = false;
+                this.machine.setState(this, "probing");
+                break;
 
-                case this.driver.STAT_PROBE:
-                    //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
-                    this.probingInitialized = false;
-                    this.machine.setState(this, "probing");
-                    break;
-
-                case this.driver.STAT_RUNNING:
-                    if (!this.inManualMode) {
-                        if (this.machine.status.state != "running") {
-                            //Do not set state to running until opensbp pause is complete
-                            if (this.paused) {
-                                return;
-                            }
-                            this.machine.setState(this, "running");
-                            if (this.pendingFeedhold) {
-                                this.pendingFeedhold = false;
-                                this.driver.feedHold();
-                                this.machine.status.inFeedHold = false;
-                            }
+            case this.driver.STAT_RUNNING:
+                if (!this.inManualMode) {
+                    if (this.machine.status.state != "running") {
+                        //Do not set state to running until opensbp pause is complete
+                        if (this.paused) {
+                            return;
+                        }
+                        this.machine.setState(this, "running");
+                        if (this.pendingFeedhold) {
+                            this.pendingFeedhold = false;
+                            this.driver.feedHold();
+                            this.machine.status.inFeedHold = false;
                         }
                     }
-                    break;
-                // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
-                //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
-                // STAT_END = 4
-                // case this.driver.STAT_END:
-                //     this._end();
-                //     break;
-                default:
-                    log.warn("OpenSBP Runtime Unhandled Stat: " + stat);
-            }
-        };
-
-        if (this.isInSubProgram()) {
-            // If this function was called and we're in a subprogram, just execute the next instruction
-            log.debug("Running Subprogram");
-            this._executeNext().then(resolve).catch(reject);
-        } else {
-            // If we're in the main program, set up the stream and run it
-            this.stream = new stream.PassThrough();
-
-            if (this.simulate) {
-                // --> Simulation for previewer, we only need to capture the output
-                log.info("Running in simulation mode...");
-                let gcodeChunks = ""; // Initialize an empty string to accumulate G-code
-
-                this.on("emit_gcode", () => {
-                    const chunk = this.output.join("\n"); // Get the current G-code chunk
-                    gcodeChunks += chunk + "\n"; // Accumulate the chunks in gcodeChunk
-                    this.output = []; // Clear the output buffer after processing
-                });
-
-                this._executeNext()
-                    .then(() => {
-                        // log.info("Full G-code generated in simulation for preview: " + gcodeChunks);
-                        this.emit("simulation_complete", gcodeChunks); // Emit event when done
-                    })
-                    .catch(reject);
-            } else {
-                // --> Regular motion execution
-                if (this.driver) {
-                    this.driver
-                        .runStream(this.stream)
-                        .on("stat", onStat.bind(this))
-                        .then(
-                            function () {
-                                // Only call _end() when the main program completes
-                                if (!this.isInSubProgram()) {
-                                    this.file_stack = [];
-                                    try {
-                                        this._end();
-                                    } catch (err) {
-                                        log.error("Error during _end:", err);
-                                    }
-                                }
-                            }.bind(this)
-                        )
-                        .catch((err) => {
-                            log.error("Error in driver.runStream chain:", err);
-                            this._handleRunError(err);
-                            reject(err); // Reject the outer Promise to propagate the error
-                        });
-                    this._executeNext().then(resolve).catch(reject);
                 }
-            }
+                break;
+            // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
+            //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
+            // case this.driver.STAT_END:
+            //     this._end();
+            //     break;
+            default:
+                log.warn("OpenSBP Runtime Unhandled Stat: " + stat);
         }
-    });
+    };
+
+    if (this.isInSubProgram()) {
+        // If this function was called and we're in a subprogram, just execute the next instruction
+        log.debug("Running Subprogram");
+        this._executeNext();
+    } else {
+        // If this is a top level run, create a pass-through stream to receive the data
+        // and start executing with it.  As the program is processed the stream will be fed
+        this.stream = new stream.PassThrough();
+        if (this.driver) {
+            this.driver
+                .runStream(this.stream)
+                .on("stat", onStat.bind(this))
+                .then(
+                    function () {
+                        // This ensures we run _end on driver stream end
+                        this.file_stack = [];
+                        this._end();
+                    }.bind(this)
+                );
+        }
+
+        // Actually begin program execution
+        this._executeNext();
+    }
+
+    // This function returns the pass-through stream (but it's also saved as this.stream)
+    return this.stream;
 };
 
 // Return true if this is not the "top level" program (ie: we're in a macro call.)
@@ -911,19 +895,24 @@ SBPRuntime.prototype.isInSubProgram = function () {
 
 // Continue running the current program (until the next stack break)
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
-SBPRuntime.prototype._executeNext = async function () {
+SBPRuntime.prototype._executeNext = function () {
+    // Copy values from the machine to our local state variables
+    //log.info("####=._executeNext");
     this._update();
 
+    // _executeNext is only for resuming an already running program.  It's not a substitute for _run()
     if (!this.started) {
         log.warn("Got a _executeNext() but not started");
         return;
     }
 
+    // do not continue execution if there is a pending error
     if (this.pending_error || this.end_message) {
-        log.warn("Got a _executeNext() with pending Error or in Fail condition");
+        log.warn("got a _execute next with pending Error or in Fail condition");
         return;
     }
 
+    // If _executeNext is called but we're paused, stay paused. (We'll call _executeNext again on resume)
     if (this.paused) {
         log.info("Program is paused.");
         return;
@@ -935,71 +924,106 @@ SBPRuntime.prototype._executeNext = async function () {
     }
 
     if (this.pc >= this.program.length) {
+        log.info("End of program reached. (pc = " + this.pc + ")");
+        // Here we've reached the end of the program, but there's possibly not enough
+        // g-codes queued up for the driver to want to send them out, so go ahead and prime it
+        // to send out those last few.
+        this.prime();
+
+        // this.gcodesPending gets set when we emit_gcode, and cleared when the tool reaches the STAT_STOP
+        // state (because it's run everything that it's recieved) - If pending is true, that means there's
+        // more work to do before finishing out the program.  We prime()d above, so those instructions will
+        // get executed (and the stat handler will call _executeNext again once the machine stops moving)
+        if ((this.gcodesPending && this.driver) || (this.probingPending && this.driver)) {
+            log.debug("GCodes or Probing is still pending...");
+            return;
+        }
+
+        // Handle the end of program differently if we're a subprogram
         if (this.isInSubProgram()) {
-            // We're in a subprogram that has finished
+            log.debug("This is a nested end.  Popping the file stack.");
+            // Pop the stack (which will restore the program state, including pc to the calling program)
             this._popFileStack();
-            this.pc += 1; // Move to the next instruction in the main program
-            await this._executeNext();
+            // Increment the pc and execute, as normal
+            this.pc += 1;
+            setImmediate(this._executeNext.bind(this));
             return;
         } else {
-            // We've reached the end of the main program
-            if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
-                // There are pending operations, prime the driver
-                log.debug("Priming driver for pending operations before ending program.");
-                ////##
-                this.prime();
-                // DOES REMOVAL BREAK file endings fixed 3 weeks ago ...   ####
-                // Wait for the driver to finish processing sendmore; this.waitPendingOps = true;
-                return;
+            log.debug("This is not a nested end.  No stack.");
+
+            // This ends the machining cycle
+
+            // If no driver, we just go straight to the _end() (as in simulation)
+            if (!this.driver) {
+                this._end();
             } else {
-                // If no pending operations, safe to end the program
-                if (!this.waitPendingOps) {
-                    try {
-                        this._end();
-                    } catch (err) {
-                        log.error("Error during _end:", err);
-                    }
+                if (!this.quit_pending) {
+                    // EOF send M30.
+                    this.emit_gcode("M30");
+                    // ... _end triggers exit from this runtime
+                    this._end();
+                    // ... quit_pending is a local runtime flag to prevent multiple M30s etc
+                    this.quit_pending = true;
                 }
-                return;
             }
+            return;
         }
     }
 
+    // Below here we're NOT at the end of the program,
+    // so it's time to actually execute the next instruction
+    // Pull the current line of the program from the list
     var line = this.program[this.pc];
     var breaksTheStack = this._breaksStack(line);
 
     if (breaksTheStack) {
+        log.debug("Stack break: " + JSON.stringify(line));
         this.prime();
 
-        //log.debug("========Stack-breaking command ====>  " + JSON.stringify(line));
+        // Broadly, if the next instruction is a stack breaking command, we're only
+        // allowed to execute it if everything up till now has finished executing
+        // (there are no instructions pending in the motion system)
+        // We request a status report, just to catch the case where there are non-motion
+        // g-codes executing, and we might not have gotten a report that indicates that the machine
+        // has stopped executing stuff.  Of course we only do that if there's a driver (we're not simulating)
 
-        if ((this.probingPending && this.driver) || (this.gcodesPending && this.driver)) {
-            log.debug("Deferring because pending operations...");
-            this.waitPendingOps = true;
-            return;
+        if (this.probingPending && this.driver) {
+            log.debug("Deferring because still PROBING ......");
+            return; // We can return knowing that we'll be called again when the system enters STAT_STOP
+        } else if (this.gcodesPending && this.driver) {
+            log.debug("Deferring because g-codes PENDING ......");
+            return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else {
+            // G2 is stopped, execute stack breaking command now
             try {
-                await this._execute(line);
-                await this._executeNext();
+                log.debug("executing: " + JSON.stringify(line));
+                this._execute(line, this._executeNext.bind(this));
+                return;
             } catch (e) {
+                // log error and trigger abort
                 log.error(e);
-                this._abort(e);
+                return this._abort(e);
             }
-            return;
         }
     } else {
+        // If this is a non-stack-breaking command, go ahead and execute it.
+        // Mostly, these commands will call emit_gcode, which will push instructions into the stream
+        // that drives the motion controller.
         try {
-            await this._execute(line);
-            await this._executeNext();
+            this._execute(line);
+            // Keep on executing!  No reason not to.
+            setImmediate(this._executeNext.bind(this));
         } catch (e) {
+            // log error and trigger abort
             log.error(e);
-            this._abort(e);
+            return this._abort(e);
         }
     }
 };
 
 // Prime the driver associated with this runtime, if it exists.
 SBPRuntime.prototype.prime = function () {
+    //log.info("####=.prime");
     if (this.driver) {
         this.driver.prime();
     }
@@ -1009,49 +1033,74 @@ SBPRuntime.prototype.prime = function () {
 // The pending error is picked up by _executeNext and the program is ended as a result.
 //   error - The error message
 SBPRuntime.prototype._abort = function (error) {
-    if (error !== undefined && error !== null) {
-        this.pending_error = error;
-    } else {
-        this.pending_error = null; // No error
-    }
-    // Clear the file stack to exit any subprograms
-    this.file_stack = [];
-    // Now call _end()
-    try {
-        this._end();
-    } catch (err) {
-        log.error("Error during _end:", err);
-    }
+    // this.pending_error = error;
+    //log.info("####=._abort");
+    this.driver.quit();
+    this._end(error);
 };
 
 // End the program
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = async function (error) {
-    // Populate with any pending error
+    // No Error populate with any pending error
+    //log.info("####=._end");
     if (!error && this.pending_error) {
         error = this.pending_error;
     }
 
-    // Normalize the error message
+    if (this.pending_error) {
+        log.error("Pending error: " + this.pending_error);
+        //cleanup("early abort");
+        log.debug("Exiting _end method on ABORT");
+        return;
+    }
+
+    // Normalize the error ending state; pass as much information as possible to report
+    // Standardizing reporting format to:
+    //                    An Error Occurred!
+    //         @line-<line number>:  <error message>
+    // ... with some variations
+    this.pending_error = error;
     let error_msg = null;
     if (error) {
-        if (Object.prototype.hasOwnProperty.call(error, "message")) {
-            error_msg = error.message;
+        if (Object.prototype.hasOwnProperty.call(error, "offset")) {
+            error_msg = `@line-${error.offset}(${error.column}):  ${error.message}`;
+        } else if (Object.prototype.hasOwnProperty.call(error, "message")) {
+            error_msg = `@line-${this.pc + 1}:  ${error.message}`;
         } else {
             error_msg = error;
         }
     }
 
-    // Use the end message if no error message is present
+    // Fail command message
     if (!error_msg && this.end_message) {
         error_msg = this.end_message;
     }
 
     log.debug("Calling the non-nested (toplevel) end");
+    // Log the error for posterity
     if (error) {
         log.error(error);
     }
+
+    // // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
+    // var cleanup = function (error) {
+    //     if (this.machine && error) {
+    //         this.machine.setState(this, "stopped", { error: error });
+    //     }
+    //     // TODO: verify if this is needed
+    //     if (!this.machine) {
+    //         this.stream.end();
+    //     }
+    //     // Clear the internal state of the runtime (restore it to its initial state)
+    //     //TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
+    //     this.ok_to_disconnect = true;
+
+    //     this.init();
+    //     //TODO: G2 stream should be closed when this triggers -- keep as safety?
+    //     this.emit("end", this);
+    // }.bind(this);
 
     // Clear runtime state
     this.resetRuntimeState();
@@ -1096,6 +1145,7 @@ SBPRuntime.prototype._end = async function (error) {
 
 SBPRuntime.prototype.resetRuntimeState = function () {
     // Clear paused and feedhold states
+    //log.info("####=.resetRuntimeState");
     this.paused = false;
     this.feedhold = false;
     this.pending_error = null;
@@ -1114,69 +1164,93 @@ SBPRuntime.prototype.resetRuntimeState = function () {
 
 // Execute the specified command
 //    command - The command object to execute
-/* eslint-disable */
-SBPRuntime.prototype._executeCommand = async function (command) {
+//   callback - Called when execution is complete or with error if error
+SBPRuntime.prototype._executeCommand = function (command, callback) {
     if (command.cmd in this && typeof this[command.cmd] == "function") {
+        // Command is valid and has a registered handler
+        //log.info("####=._executeCommand");
+
         // Evaluate the command arguments and extract the handler
         var args = this._evaluateArguments(command.cmd, command.args);
         var f = this[command.cmd].bind(this);
 
         if (f.length > 1) {
-            // Stack-breaking commands need to be resolved 
-            await new Promise((resolve, reject) => {
-                f(args, (err) => {
-                    if (err) {
-                        log.error("Error in a stack-breaking command");
-                        reject(err);
-                    } else {
+            // Stack breakers have the callback passed in, to be called when done.
+            try {
+                f(
+                    args,
+                    function commandComplete() {
+                        // advance the pc and do the callback to mvoe on to next instruction
+                        // TODO - We should allow commands to use an errback?  This would allow
+                        //        for asynchronous errors in addition to the throw
                         this.pc += 1;
-                        resolve();
-                    }
-                });
-            });
-        } else {
-        // Non-stack-breaking commands
-            f(args);
-            this.pc += 1;
-
-            // Ensure G-code is emitted in simulation mode
-            if (this.simulate) {
-                // Emit the G-code as it would be in regular motion
-                const gcode = `Generated G-code for ${command.cmd}`;
-                this.emit("emit_gcode", gcode);
+                        callback();
+                    }.bind(this)
+                );
+            } catch (e) {
+                // TODO - Should we throw the error here?!  This feels like an issue. (Sturmer, 5 years ago)
+                // Update(th-6/15/23): Yes, we should throw the error here.  Otherwise, the error is
+                //         swallowed and the program continues to run. Done.
+                log.error("Error in a stack-breaking command");
+                var e_more = e + " (in [" + command.cmd + "] Line-" + this.pc + ").";
+                log.error(e_more);
+                throw e_more;
             }
+            return true;
+        } else {
+            // This is NOT a stack breaker, run immediately, increment PC, call the callback.
+            try {
+                f(args);
+            } catch (e) {
+                log.error("Error in a non-stack-breaking command");
+                log.error(e);
+                throw e;
+            }
+            this.pc += 1;
+            // We use the callback, stack breaker or not
+            if (callback != undefined) {
+                setImmediate(callback);
+            }
+            return false;
         }
     } else {
-        // Unhandled command
+        // We don't know what this is.  Whatever it is, it doesn't break the stack.
         this._unhandledCommand(command);
         this.pc += 1;
+        return false;
     }
 };
-/* eslint-enable */
 
 // Run a custom cut (macro).  This function can be called from within another program or to start one.
 //     number - The macro number to run
-SBPRuntime.prototype.runCustomCut = async function (number) {
+//   callback - Hmm.  Callback is called in simulation (and the macro is simply skipped) but not in for real times
+SBPRuntime.prototype.runCustomCut = function (number, callback) {
     if (this.machine) {
         var macro = macros.get(number);
         if (macro) {
+            // TODO: Should this just display the macro identifier or name?
+            // log.debug("Running macro: " + JSON.stringify(macro));
             this._pushFileStack();
-            await this.runFile(macro.filename);
-            // Do not increment this.pc here; it will be handled in _executeNext()
+            this.runFile(macro.filename);
         } else {
             throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found at " + (this.pc + 1));
         }
     } else {
         this.pc += 1;
+        callback();
     }
+    return true;
 };
 
 // Execute the provided command
 // Returns true if execution breaks the stack (and calls the callback upon command completion)
 // Returns false if execution does not break the stack (and callback is never called)
 //   command - A single parsed line of OpenSBP code
-SBPRuntime.prototype._execute = async function (command) {
+
+SBPRuntime.prototype._execute = function (command, callback) {
     // Just skip over blank lines, undefined, etc.
+    //console.log("Executing line: " + command.type + " " + JSON.stringify(command));
+    //log.info("####=._execute");
     if (!command) {
         this.pc += 1;
         return;
@@ -1184,14 +1258,20 @@ SBPRuntime.prototype._execute = async function (command) {
 
     // All correctly parsed commands have a type
     switch (command.type) {
+        // A ShopBot Comand (M2, ZZ, etc...)
         case "cmd":
-            await this._executeCommand(command);
-            return;
+            var broke = this._executeCommand(command, callback);
+            if (!broke) {
+                if (callback != undefined) {
+                    setImmediate(callback);
+                }
+            }
+            return broke;
 
         // A C# command (custom cut)
         case "custom":
-            await this.runCustomCut(command.index);
-            return;
+            this.runCustomCut(command.index, callback);
+            return true;
 
         // A line of raw g-code
         case "gcode":
@@ -1199,22 +1279,26 @@ SBPRuntime.prototype._execute = async function (command) {
             log.debug(command.gcode);
             this.emit_gcode(command.gcode);
             this.pc += 1;
-            return;
+            return false;
 
         case "return":
             if (this.stack.length) {
                 this.pc = this.stack.pop();
-                return;
+                setImmediate(callback);
+                return true;
             } else {
                 throw new Error("Runtime Error: Return with no GOSUB at " + (this.pc + 1));
             }
 
         case "end":
+            //            this.pc = this.program.length;
+            //            setImmediate(callback);
+
             if (this.isInSubProgram()) {
                 // If in a subprogram, exit the subprogram
                 this._popFileStack();
                 this.pc += 1; // Move to the next instruction in the main program
-                await this._executeNext();
+                this._executeNext();
             } else {
                 // If in the main program, end the runtime
                 try {
@@ -1223,7 +1307,7 @@ SBPRuntime.prototype._execute = async function (command) {
                     log.error("Error during _end:", err);
                 }
             }
-            return;
+            return true;
 
         case "endall":
             // Terminate the entire runtime
@@ -1232,7 +1316,8 @@ SBPRuntime.prototype._execute = async function (command) {
             } catch (err) {
                 log.error("Error during _end:", err);
             }
-            return;
+
+            return true;
 
         case "fail":
             this.pc = this.program.length;
@@ -1240,14 +1325,16 @@ SBPRuntime.prototype._execute = async function (command) {
                 this.end_message = command.message;
                 throw new Error(command.message);
             }
-            return;
+            setImmediate(callback);
+            return true;
 
         case "goto":
             if (command.label in this.label_index) {
                 var pc = this.label_index[command.label];
                 log.debug("Hit a GOTO: Going to line " + pc + "(Label: " + command.label + ")");
                 this.pc = pc;
-                return;
+                setImmediate(callback);
+                return true;
             } else {
                 throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
             }
@@ -1257,7 +1344,8 @@ SBPRuntime.prototype._execute = async function (command) {
                 this.stack.push(this.pc + 1);
                 log.debug("Pushing the current PC onto the stack (" + (this.pc + 1) + ")");
                 this.pc = this.label_index[command.label];
-                return;
+                setImmediate(callback);
+                return true;
             } else {
                 throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
             }
@@ -1265,55 +1353,54 @@ SBPRuntime.prototype._execute = async function (command) {
         case "assign":
             this.pc += 1;
             var value = this._eval(command.expr);
-            try {
-                await this._assign(command.var, value);
-            } catch (err) {
-                log.error("Error during assignment: " + err);
-                throw err;
+            this._assign(command.var, value);
+            if (callback) {
+                log.info("calling callback");
+                callback();
             }
-            return;
+            this._assign(command.var, value, function () {
+                callback();
+            });
+            return true;
 
         case "weak_assign":
             this.pc += 1;
             if (!this._varExists(command.var)) {
-                value = this._eval(command.expr);
-                try {
-                    await this._assign(command.var, value);
-                } catch (err) {
-                    log.error("Error during weak assignment: " + err);
-                    throw err; // Consistent error handling
-                }
+                // eslint-disable-next-line no-redeclare
+                var value = this._eval(command.expr);
+                this._assign(command.var, value, function () {
+                    callback();
+                });
             } else {
-                log.debug("Weak assignment skipped because variable already exists.");
+                setImmediate(callback);
             }
-            return;
+            return true;
 
         case "cond":
             if (this._eval(command.cmp)) {
-                await this._execute(command.stmt); // Await recursive call
-                return;
+                return this._execute(command.stmt, callback); // Warning RECURSION!
             } else {
                 this.pc += 1;
-                return;
+                setImmediate(callback);
+                return true;
             }
 
         case "comment":
             var comment = command.comment.join("").trim();
             if (comment != "") {
                 //this.emit_gcode('( ' + comment + ' )') // TODO allow for comments
-            } else {
-                //log.debug("Comment skipped because it was empty.");
             }
             this.pc += 1;
-            return;
+            return false;
 
         case "label":
         case undefined:
             this.pc += 1;
-            return;
+            return false;
 
         case "dialog":
         case "pause":
+            // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = command.expr ? this._eval(command.expr) : null;
             var input_var = command.var;
@@ -1327,12 +1414,14 @@ SBPRuntime.prototype._execute = async function (command) {
                     normalizedParams[key.toLowerCase()] = params[key];
                 }
             }
-            // In simulation, just don't do anything.
+
+            // In simulation, just don't do anything
             if (!this.machine) {
+                setImmediate(callback);
                 return true;
             }
-
             var modalParams = {};
+
             // Handle TIMER parameter
             if (u.isANumber(arg)) {
                 // Old syntax: PAUSE 5
@@ -1356,6 +1445,8 @@ SBPRuntime.prototype._execute = async function (command) {
                     } else {
                         message = "Paused ...";
                     }
+                } else {
+                    message = "Paused ...";
                 }
             }
             if (normalizedParams.message) {
@@ -1398,6 +1489,9 @@ SBPRuntime.prototype._execute = async function (command) {
             // console.log("Modal Parameters after packaging:", modalParams);
 
             this.paused = true;
+
+            //Set driver in paused state
+
             this.machine.driver.pause_hold = true;
             this.machine.setState(this, "paused", modalParams);
             return true;
@@ -1410,23 +1504,16 @@ SBPRuntime.prototype._execute = async function (command) {
                     (this.pc + 1)
             );
 
-        case "for":
-            await this._executeFor(command);
-            break;
-        case "next":
-            await this._executeForNext(command);
-            break;
-        case "while":
-            await this._executeWhile(command);
-            break;
-        case "wend":
-            await this._executeWhileEnd(command);
-            break;
-
         default:
-            log.error("Unknown command: " + JSON.stringify(command));
+            // Just skip over commands we don't recognize
+            // TODO - Maybe this isn't the best behavior?
+            try {
+                log.error("Unknown command: " + JSON.stringify(command));
+            } catch (e) {
+                log.error("Unknown command: " + command);
+            }
             this.pc += 1;
-            return;
+            return false;
     }
 };
 
@@ -1469,10 +1556,11 @@ SBPRuntime.prototype._varExists = function (identifier) {
     return false;
 };
 
-// Assign a variable a value
+// Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
-SBPRuntime.prototype._assign = async function (identifier, value) {
+//     callback - Called when the assignment is complete ??
+SBPRuntime.prototype._assign = function (identifier, value, callback) {
     // Determine the variable name
     let variableName;
     if (identifier.name) {
@@ -1508,6 +1596,11 @@ SBPRuntime.prototype._assign = async function (identifier, value) {
     } else {
         // Nested assignment
         this._setNestedValue(variables[variableName], accessPath, value);
+    }
+
+    // If callback is provided, call it
+    if (callback) {
+        callback();
     }
 };
 
@@ -1600,7 +1693,7 @@ SBPRuntime.prototype._navigateAccessPath = function (value, accessPath) {
 };
 
 // Evaluate an expression.  Return the result.
-// TODO - Are we robust enough to undefined variables
+// TODO - Make this robust to undefined user variables
 //   expr - The expression to evaluate.  This is a *parsed* expression object
 SBPRuntime.prototype._eval = function (expr) {
     // log.debug("Evaluating expression: " + JSON.stringify(expr));
@@ -1645,23 +1738,22 @@ SBPRuntime.prototype._eval = function (expr) {
 
 // Initialize the runtime (set its internal state variables to their startup states)
 SBPRuntime.prototype.init = function () {
-    this.resetRuntimeState();
     this.pc = 0;
     this.coordinateSystem = "G55";
     this.start_of_the_chunk = 0;
-
-    // Only reset this.stack if not in a subprogram
-    if (!this.isInSubProgram()) {
-        this.stack = [];
-    }
-
+    this.stack = [];
     this.label_index = {};
     this.current_chunk = [];
     this.started = false;
     this.sysvar_evaluated = false;
-    this.output = [];
+    this.output = []; // Used in simulation mode only ??meaning??
+    this.quit_pending = false; // this is runtime specific, not the global G2 driver "quit_pending"
     this.end_message = null;
+    this.paused = false;
+    this.feedhold = false;
     this.units = config.machine.get("units");
+    this.pending_error = null;
+    this.pendingFeedhold = false;
 
     if (this.transforms != null && this.transforms.level.apply === true) {
         this.leveler = new Leveler(this.transforms.level.ptDataFile);
@@ -1742,9 +1834,7 @@ SBPRuntime.prototype._analyzeLabels = function () {
             switch (line.type) {
                 case "label":
                     if (line.value in this.label_index) {
-                        throw new Error(
-                            "Duplicate labels on lines " + this.label_index[line.value] + " and " + (i + 1)
-                        );
+                        throw new Error(`@line-${this.label_index[line.value]} and @line-${i + 1}: Duplicate labels `);
                     }
                     this.label_index[line.value] = i;
                     break;
@@ -1773,8 +1863,7 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
                         // pass
                     } else {
                         // Add one to the line number so they start at 1
-                        ////## right now, in a macro, you need to add 3; FIX and show all lines
-                        throw new Error("Undefined label " + line.label + " on line " + (i + 1));
+                        throw new Error(`@line-${i + 1}: Undefined label ` + line.label);
                     }
                     break;
                 default:
@@ -1945,7 +2034,9 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         // PLANNING for Movespeeds starting at 121
 
         default:
-            throw new Error("Unknown System Variable: " + JSON.stringify(v) + " on line " + (this.pc + 1));
+            //throw new Error("Unknown System Variable: " + JSON.stringify(v) + " on line " + (this.pc + 1));
+            // Add one to the line number so they start at 1
+            throw new Error(`@line-${this.pc + 1}: Unknown System Variable:` + JSON.stringify(v));
     }
 };
 
@@ -2006,10 +2097,10 @@ SBPRuntime.prototype.evaluateUserVariable = function (v) {
     if (v.type != "user_variable") {
         return undefined;
     }
-    if (v.expr.toUpperCase() === "&TOOL") {
-        v.expr = "&TOOL";
+    if (v.name.toUpperCase() === "&TOOL") {
+        v.name = "&TOOL";
     }
-    return config.opensbp.getTempVariable(v.expr);
+    return config.opensbp.getTempVariable({ name: v.name, access: v.access || [] });
 };
 
 // Return the value for the provided persistent variable
@@ -2021,7 +2112,7 @@ SBPRuntime.prototype.evaluatePersistentVariable = function (v) {
     if (v.type != "persistent_variable") {
         return undefined;
     }
-    return config.opensbp.getVariable(v.expr);
+    return config.opensbp.getVariable({ name: v.name, access: v.access || [] });
 };
 
 // Called for any valid shopbot mnemonic that doesn't have a handler registered
@@ -2033,25 +2124,22 @@ SBPRuntime.prototype._unhandledCommand = function (command) {
 // Create an execution frame for the current program context and push it onto this.file_stack
 // The program context here means things like which coordinate system, speeds, the current PC, etc.
 SBPRuntime.prototype._pushFileStack = function () {
-    var frame = {
-        coordinateSystem: this.coordinateSystem,
-        movespeed_xy: this.movespeed_xy,
-        movespeed_z: this.movespeed_z,
-        pc: this.pc,
-        program: this.program,
-        stack: this.stack.slice(), // Ensure a copy is made
-        end_message: this.end_message,
-        label_index: this.label_index,
-    };
+    var frame = {};
+    frame.coordinateSystem = this.coordinateSystem;
+    frame.movespeed_xy = this.movespeed_xy;
+    frame.movespeed_z = this.movespeed_z;
+    frame.pc = this.pc;
+    frame.movexy;
+    frame.program = this.program;
+    frame.stack = this.stack;
+    frame.end_message = this.end_message;
+    frame.label_index = this.label_index;
     this.file_stack.push(frame);
 };
 
 // Retrieve the execution frame on top of this.file_stack and restore the program context from it
 // The program context here means things like which coordinate system, speeds, the current PC, etc.
 SBPRuntime.prototype._popFileStack = function () {
-    if (this.file_stack.length === 0) {
-        throw new Error("File stack is empty, cannot pop");
-    }
     var frame = this.file_stack.pop();
     this.movespeed_xy = frame.movespeed_xy;
     this.movespeed_z = frame.movespeed_z;
@@ -2059,7 +2147,7 @@ SBPRuntime.prototype._popFileStack = function () {
     this.coordinateSystem = frame.coordinateSystem;
     this.emit_gcode(this.coordinateSystem);
     this.program = frame.program;
-    this.stack = frame.stack.slice();
+    this.stack = frame.stack;
     this.label_index = frame.label_index;
     this.end_message = frame.end_message;
 };
@@ -2067,23 +2155,19 @@ SBPRuntime.prototype._popFileStack = function () {
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word
 SBPRuntime.prototype.emit_gcode = function (s) {
-    var n;
+    // An N-Word is added to this code to indicate the line number in the original OpenSBP file
+    // that generated these codes.  We only track line numbers for the top level program.
     if (this.file_stack.length > 0) {
-        n = this.file_stack[0].pc;
+        var n = this.file_stack[0].pc;
     } else {
-        n = this.pc;
+        // eslint-disable-next-line no-redeclare
+        var n = this.pc;
     }
     this.gcodesPending = true;
-    var temp_n = n + 20; // Save low numbers for prepend/postpend
-    var gcode = "N" + temp_n + " " + s + "\n";
-
-    if (this.simulate) {
-        // Collect the G-code in the output array
-        this.output.push(gcode);
-    } else {
-        // Write to the stream as usual
-        this.stream.write(gcode);
-    }
+    var temp_n = n + 20; ////## save low numbers for prepend/postpend; being done in util for gcode?
+    var gcode = "N" + temp_n + " " + s;
+    gcode = gcode + "\n";
+    this.stream.write(gcode);
 };
 
 // Helper function used by M_ commands that generates a movement code (G1,G0)
@@ -2182,6 +2266,7 @@ SBPRuntime.prototype._setupTransforms = function () {
 // - by type of transform
 // - to the tform function we are passing the to-be-transformed object and other parameters needed for calc
 // - the possible presence of gcode arcs (with relative values and absent start point) makes this messy
+
 let prevPt = {
     // for rotating an arc we need to have the starting point, the previous EndPt
     xIni: 0, // ... these should be initialized to current location
@@ -2269,12 +2354,9 @@ SBPRuntime.prototype.pause = function () {
 // Quit the currently running program
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function () {
-    // Send Quit to the driver
-    if (this.driver) {
-        this.driver.quit();
-    }
-    // Abort the program execution
-    this._abort(null);
+    // Start the process of ending the runtime and send Quit message to g2.js driver.
+    this._end(); // this seems important for clean exit after quits
+    this.driver.quit();
 };
 
 // Resume a program from the paused state
@@ -2282,21 +2364,16 @@ SBPRuntime.prototype.quit = function () {
 SBPRuntime.prototype.resume = function (input = false) {
     if (this.resumeAllowed) {
         if (this.paused) {
-            if (input) {
-                this._assign(input.var, input.val)
-                    .then(() => {
-                        this.paused = false;
-                        this._executeNext();
-                        this.driver.resume();
-                    })
-                    .catch((err) => {
-                        log.error("Error during resume assignment: " + err);
-                        return this._abort(err);
-                    });
-            } else {
+            try {
+                if (input) {
+                    this._assign(input.var, input.val);
+                }
                 this.paused = false;
                 this._executeNext();
                 this.driver.resume();
+            } catch (err) {
+                log.error("Error during resume assignment: " + err);
+                return this._abort(err);
             }
         } else {
             this.driver.resume();

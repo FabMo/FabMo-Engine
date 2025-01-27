@@ -178,8 +178,30 @@ module.exports = function(container) {
 
 
   self.updateStatus = function(line, position) {
+    // TODO this is a problem as the line number being reported is a relatively arbitrary
+    // ... gcode N number, not the actual line number in the file
+    // ... and the previewer lines are just an array of lines that are previewer executable
+    // ... which does not include a number of sbp type lines
+    // SO ... as a very crude first approximation, we just look for the gcode start and go from there
+    // DO THAT BY Extracting the line number from the first element of the gcode array
+    const gcodeLine = self.path.gcode[0];
+    const match = gcodeLine.match(/^N(\d+)/);
+    let baseLineNumber = match ? parseInt(match[1], 10) : 0;
+
+    //console.log('line: ', line);
+    //console.log('gcodeLine: ', gcodeLine);
+    //console.log('baseLineNumber: ', baseLineNumber);
+
+    // Subtract the extracted line number from the input line number
+    line = line - baseLineNumber;
+
+    // Update the move line position
     self.path.setMoveLinePosition(line, position);
   }
+  // self.updateStatus = function(line, position) {
+  //   line = line - 20; // Subtract the minimum line number for gcode starting point
+  //   self.path.setMoveLinePosition(line, position);
+  // }
 
 
   self.jobStarted = function () {container.addClass('live')}

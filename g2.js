@@ -418,9 +418,7 @@ G2.prototype.setUnits = function (units, callback) {
 G2.prototype.requestStatusReport = function (callback) {
     // Register the callback to be called when the next status report comes in
     typeof callback === "function" && this.once("status", callback);
-    if (!this.status.resumeFlag) {
-        this.command({ sr: null });
-    }
+    this.command({ sr: null });
 };
 
 // Called for every chunk of data returned from G2
@@ -450,10 +448,7 @@ G2.prototype.onData = function (data) {
                 this.onMessage(obj);
             } catch (e) {
                 this.handleExceptionReport(e);
-                log.debug("string: " + json_string);
-                log.error("Error parsing JSON in onData:", e.message);
-                log.error(e.stack);
-                // TODO: Decide whether to continue or abort
+                throw e;
             } finally {
                 // if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
                 // and if we fail to parse, we still clear the line and start anew.
@@ -464,6 +459,7 @@ G2.prototype.onData = function (data) {
         }
     }
 };
+
 // The footer is the part of the JSON response message that contains error information
 // If the footer indicates an error code, we do a lookup on the error message and emit an error event
 // Note that G2_ERRORS must be up-to-date with the current firmware in order for the lookup to be meaningful.
