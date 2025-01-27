@@ -2,84 +2,65 @@
 '!FABMO!description:Check ATC Status in a file
 '!FABMO!enabled:true
 ' ATC STATUS CHECK FOR NORMAL ATC FUNCTIONS
+' Main =================================================================
+C70																		' >> Load ATC Varibles
+IF $ATC.ToolIn > 0 THEN GOSUB CHECK_TOOL_IN								' >> If we think we have a tool inserted, check to make sure
+IF $ATC.ToolIn == 0 THEN GOSUB CHECK_TOOL_OUT							' >> If we think we hace no tool inserted, check to make sure
+END
 
-' SPECIAL CASE: ATC Vars For Testing various scenarios -------------------------
-&tool := 1
-&th := 0
-&MANUAL_CHANGE := 0
-
-&LOAD_TEST_VARS = 0                                                   ' >> Set this variable to 1 for testing
-IF &LOAD_TEST_VARS== 0 THEN GOTO START
-$ATC.ToolIn = 1
-$ATC.Dropped = 1
-$ATC.PlateOffset = -2
-$ATC.Tool_Length = -5
-$ATC.numClips = 3
-$ATC.MaxDepth = -0.02
-
-' Initialize ------------------------------------------------------------------
-START:
-'PAUSE "Ready for ATC status check ..."
-C70
-$ATC.ToolIn := 0
-$ATC.Dropped := 1
-$ATC.Status = "OK"
-$ATC.ToolBar = "ATTACHED"
-IF %($ToolBar_Status)== 0 THEN GOTO toolbarNotAttached                                           ' ERROR
-
-' MAIN =======================================================================
-			&AtNow = "beforeALL"
-            'gosub STATE
-        GOSUB DRAWBAR_CHECK                                                ' >> Make sure drawbar is not jammed open
-        ' Evaluate Tool Presence and Consistency with ATC.Drop Expectation
-			&AtNow = "beforeABSENTtest"
-            'gosub STATE
-		IF %($Tool_Sensor_Status)== 0 THEN GOSUB CASE_TOOL_ABSENT          ' >> Check our ABSENT expectations
-			&AtNow = "beforePRESENTtest "
-            'gosub STATE
-        IF %($Tool_Sensor_Status)== 1 THEN GOSUB CASE_TOOL_PRESENT         ' >> Check our PRESENT expections
-            &AtNow = "Check-DONE "
-            'gosub STATE
-            
-		END
-
-' Subroutines ----------------------------------------------------------------
-DRAWBAR_CHECK:
-    IF %($Drawbar_Sensor_Status)= 0 THEN RETURN
-    GOSUB drawbarStuck                                                                            ' ERROR drawbar is stuck
-
-CASE_TOOL_ABSENT:
-	IF $ATC.ToolIn != 0 THEN GOSUB unexpectedTool                                                 ' ERROR we have a record there is a tool, but nothing in spindle
-    IF $ATC.Dropped == 0 THEN GOSUB unexpectedTool                                                 ' ERROR we have not DROPPED off a tool, nothing in spindle but we did not do a Drop
-	$ATC.Status = "OK"                                                  ' >> Empty as expected
+' Subroutines ==========================================================
+CHECK_TOOL_IN:
+	IF %($Tool_Sensor_Status) == 0 THEN $ATC.ToolIn = 0					' >> Check tool present sensor to confirm tool present; if no tool then set ToolIn = 0
 	RETURN
 
-CASE_TOOL_PRESENT:
-    IF $ATC.ToolIn == 0 THEN GOSUB unexpectedTool                                                 ' ERROR we do not have a record of the tool in spindle
-    IF $ATC.Dropped== 1 THEN GOSUB unexpectedTool                                                 ' ERROR we think we Dropped off a tool but there is something there
-	$ATC.Status = "OK"
+CHECK_TOOL_OUT:
+	IF %($Tool_Sensor_Status) == 1 THEN GOSUB REMOVE_TOOL				' >> If there's a tool in the spindle, we don't know what it is, tell user to remove it
+    $ATC.ToolIn = 0														' >> Set ToolIn to 0
+    IF &ERROR = 1 THEN GOSUB HOME_Z										' >> We have no idea about z offset so re-home Z
 	RETURN
 
+REMOVE_TOOL:
+	&ERROR = 1															' >> Flag the fact we've had an error so we can know to rehome Z afterwards
+	&TRY = 0															' >> Reset our "try" counter for user removal
+  	GOSUB ASK_REMOVE                 		                   			' >> Check to see if they've removed the tool.
+  	IF &TRY = 1 THEN GOSUB ASK_REMOVE         	        				' >> Give them one more chance if they didn't remove the tool.
+  	IF &TRY = 2 THEN GOSUB TOOL_NOT_REMOVED				  				' >> Too many attempts ... exit file.
+  	&TRY = 0															' >> Reset try counter for cleanliness.
+	RETURN
 
+ASK_REMOVE:
+  	PAUSE "Unknown tool in spindle. Press green button on gantry to remove tool."	' >> Prompt user to remove current tool
+  	IF %($Tool_Sensor_Status) = 0 THEN RETURN							' >> If sensor shows that tool is removed -- return to main routine
+  	&TRY = &TRY + 1														' >> If sensor shows that tool is still present, increment try counter.	
+  	PAUSE "Tool removal failed; try again."								' >> Show error message before returning to main and prompting user to try again
+  	RETURN
+
+HOME_Z:
+	PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z						' >> PZ "probes" for a switch or contact in the Z axis
+    ZZ																	' >> Reset working zero
+    JZ, (-1 * &homeOff_Z)												' >> Pull back from prox
+    &target_ck = &homeOff_Z + &ooch										' >> New target for detecting error just past prox
+    PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z						' >> Slowly probe for prox in final accurate check
+    IF %(3)== &target_ck THEN GOSUB fail_missed_target					' >> Look at current Z location to see if we went past the target
+    ZZ
+    JZ, (-1 * &homeOff_Z)
+    VA,,,0,,,,,,0,,,                                            		' >> Set 0 location and Table Base Zero
+    VA,,,-1*($tools[$ATC.ToolIn].H + $ATC.PlateOffset)					' >> Apply Offset for no tool
+    PAUSE "Z Home location has been recovered using Z Limit switch"		' >> Let user know that we've reset their Z home due to a problem. 
+	RETURN
+
+' Error Messages =======================================================
+TOOL_NOT_REMOVED:
+  	DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit" ' >> Didn't remove tool
+  	END
+  	RETURN
+    
+fail_missed_target:
+    PAUSE "Target Not Triggered! Lower Z Axis and run C3 (XYZ Homing)." ' >> Did not hit target.
+    END
+    
 ' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 STATE: ' Report State at points in ATC Sequence
     PAUSE "STATE:" + &AtNow + " ATC-Status:" + $ATC.Status + " tool:" + &tool + " ATC.Dropped:" + $ATC.Dropped + " ToolIn:" + $ATC.ToolIn + " Length:" + &th + " Manual:" + &MANUAL_CHANGE + " Drawbar:" + %($Drawbar_Sensor_Status) + " ToolSensor:" + %($Tool_Sensor_Status)
     RETURN
 ' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-' ERROR HANDLING ------------------------------------------------------------
-toolbarNotAttached:
-	$ATC.ToolBar = "NOT ATTACHED"
-    PAUSE "Currently Not Supporting Un-attached Tool Holder!", CANCELTEXT="Quit"
-    END
-
-drawbarStuck:
-	$ATC.Status = "DRAWBAR STUCK OPEN"
-    PAUSE "Drawbar seems stuck. Confirm adequate pressure and that Bar is opening and closing and try again.", CANCELTEXT="Quit"
-    END
-
-unexpectedTool:
-	PAUSE "ATC is confused about what should be in Spindle. Start over with empty spindle! ToolIn=" + $ATC.ToolIn + " Dropped=" + $ATC.Dropped, CANCELTEXT="Quit"
-	$ATC.Dropped = 1
-    END

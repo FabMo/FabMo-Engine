@@ -1,28 +1,35 @@
 '!FABMO!name:ATC Settings
 '!FABMO!description:Macro Description
 '!FABMO!enabled:true
+&Debug = 1
+&Error = 0
+$ATC.ToolIn := 0
+$ATC.numClips := 7
 $ATC.Type = 7
-$tools[0].X = 0
-$tools[0].Y = 0
-$tools[0].Z = 0
-$tools[0].H = 0
-$tools[1].X := 0
-$tools[1].Y := 0
-$tools[1].Z := 0
-$tools[1].H := -5
 
 $unitMultiplier = 1
 IF %(25)== 0 THEN GOTO SETUPVALUES
 $unitMultiplier = 25.4
 SETUPVALUES:
+'Initial Values
+$ATC.MaxDepth := -0.02 * $unitMultiplier
+$ATC.PlateOffset := -2 * $unitMultiplier
+$tools[0].X = 0 * $unitMultiplier
+$tools[0].Y = 0 * $unitMultiplier
+$tools[0].Z = 0 * $unitMultiplier
+$tools[0].H = -5 * $unitMultiplier
+$tools[1].X := 0 * $unitMultiplier
+$tools[1].Y := 0 * $unitMultiplier
+$tools[1].Z := 0 * $unitMultiplier
+$tools[1].H := -5 * $unitMultiplier
 'Motion values
 $zSlow = 0.4 * $unitMultiplier
 $zFast = 0.75 * $unitMultiplier
-$zJog = 2.0 * $unitMultiplier
+$zJog = 4.0 * $unitMultiplier
 
 $xySlow = 0.4 * $unitMultiplier
 $xyFast = 2.0 * $unitMultiplier
-$xyJog = 5.0 * $unitMultiplier
+$xyJog = 6.0 * $unitMultiplier
 
 $smallBackOff = 0.5 * $unitMultiplier
 $bigBackOff = 2.0 * $unitMultiplier
@@ -63,7 +70,8 @@ $TOOL_OFFSET = 3 * $unitMultiplier        'EXPOSE
 $Transit_Height = -1 * $unitMultiplier
 $clipPullout = 0.75 * $unitMultiplier
 $ATC_clipSafe = -1.75 * $unitMultiplier
-$thClearance = 0.25 * $unitMultiplier
+$thClearance = 0.375 * $unitMultiplier
+$DrawbarDelay = 0.75
 
 'Calibration parameters
 $ATC_holderHeight = 1.575 * $unitMultiplier
