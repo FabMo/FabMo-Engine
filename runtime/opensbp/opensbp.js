@@ -11,6 +11,9 @@
  * and control of systems not conventionally accessible to the g-code canonical machine.
  */
 
+// Turn on "####=" logging for execution flow details
+// Turn on "Executing line:" logging for line-by-line execution details
+
 var parser = require("./parser");
 var fs = require("fs");
 var log = require("../../log").logger("sbp");
@@ -131,7 +134,7 @@ SBPRuntime.prototype.connect = function (machine) {
 
     this.connected = true;
     this.ok_to_disconnect = false; ////## remove; this is a temp fix for cannot-disconnect ?
-    log.info("####=Connected OpenSBP runtime.");
+    //log.info("####=Connected OpenSBP runtime.");
 };
 
 // Disconnect this runtime from the machine model.
@@ -147,7 +150,7 @@ SBPRuntime.prototype.disconnect = function () {
         this.machine = null;
         this.driver = null;
         this.connected = false;
-        log.info("####=Disconnected OpenSBP runtime.");
+        //log.info("####=Disconnected OpenSBP runtime.");
     } else {
         throw new Error("Cannot disconnect OpenSBP runtime.");
     }
@@ -159,7 +162,7 @@ SBPRuntime.prototype.disconnect = function () {
 //          s - The command to execute (string or object)
 //   callback - Called once the command is issued (or with error if error) - NOT when the command is done executing
 SBPRuntime.prototype.executeCode = function (s, callback) {
-    log.info("####=.executeCode");
+    //log.info("####=.executeCode");
     this.init();
 
     if (typeof s === "string" || s instanceof String) {
@@ -256,7 +259,7 @@ SBPRuntime.prototype.needsAuth = function (s) {
 //          s - The string to run
 //   callback - Called when the program has ended
 SBPRuntime.prototype.runString = function (s) {
-    log.info("####=.runString");
+    //log.info("####=.runString");
     try {
         // Initialize the program
         this.pc = 0;
@@ -280,6 +283,7 @@ SBPRuntime.prototype.runString = function (s) {
             this.program = parser.parse(s);
         } catch (e) {
             log.error(e);
+            e.message = `Error@line- ${e.line}(${e.location.start.column}): ${e.message}`;
             this._end(e.message);
         } finally {
             log.tock("Parse file");
@@ -321,7 +325,7 @@ SBPRuntime.prototype.runString = function (s) {
 // See documentation above for runString - this works the same way.
 //   callback - Called when run is complete or with error if there was an error.
 SBPRuntime.prototype.runStream = function (text_stream) {
-    log.info("####=.runStream");
+    //log.info("####=.runStream");
     try {
         // Initialize the program
         this.pc = 0;
@@ -513,7 +517,7 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 //   filename - Full path to file on disk
 //   callback - Called when file is done running or with error if error
 SBPRuntime.prototype.runFile = function (filename) {
-    log.info("####=.runFile");
+    //log.info("####=.runFile");
     this.lastFilename = filename;
     var st = fs.createReadStream(filename);
     this.runStream(st);
@@ -669,7 +673,7 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 //   cmd - Command object to evaluate
 SBPRuntime.prototype._breaksStack = function (cmd) {
     var result;
-    log.info("####=._breaksStack");
+    //log.info("####=._breaksStack");
 
     // Any command that has an expression in one of its arguments that breaks the stack, breaks the stack.
     if (cmd.args) {
@@ -763,7 +767,7 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
 // completes, except if a macro (subprogram) is encountered, in which case it is called for that program as well.
 SBPRuntime.prototype._run = function () {
     // Set state variables to kick things off
-    log.info("####=._run");
+    //log.info("####=._run");
 
     this.started = true;
     this.waitingForStackBreak = false;
@@ -893,7 +897,7 @@ SBPRuntime.prototype.isInSubProgram = function () {
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._executeNext = function () {
     // Copy values from the machine to our local state variables
-    log.info("####=._executeNext");
+    //log.info("####=._executeNext");
     this._update();
 
     // _executeNext is only for resuming an already running program.  It's not a substitute for _run()
@@ -1019,7 +1023,7 @@ SBPRuntime.prototype._executeNext = function () {
 
 // Prime the driver associated with this runtime, if it exists.
 SBPRuntime.prototype.prime = function () {
-    log.info("####=.prime");
+    //log.info("####=.prime");
     if (this.driver) {
         this.driver.prime();
     }
@@ -1030,7 +1034,7 @@ SBPRuntime.prototype.prime = function () {
 //   error - The error message
 SBPRuntime.prototype._abort = function (error) {
     // this.pending_error = error;
-    log.info("####=._abort");
+    //log.info("####=._abort");
     this.driver.quit();
     this._end(error);
 };
@@ -1040,7 +1044,7 @@ SBPRuntime.prototype._abort = function (error) {
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = async function (error) {
     // No Error populate with any pending error
-    log.info("####=._end");
+    //log.info("####=._end");
     if (!error && this.pending_error) {
         error = this.pending_error;
     }
@@ -1141,7 +1145,7 @@ SBPRuntime.prototype._end = async function (error) {
 
 SBPRuntime.prototype.resetRuntimeState = function () {
     // Clear paused and feedhold states
-    log.info("####=.resetRuntimeState");
+    //log.info("####=.resetRuntimeState");
     this.paused = false;
     this.feedhold = false;
     this.pending_error = null;
@@ -1164,7 +1168,7 @@ SBPRuntime.prototype.resetRuntimeState = function () {
 SBPRuntime.prototype._executeCommand = function (command, callback) {
     if (command.cmd in this && typeof this[command.cmd] == "function") {
         // Command is valid and has a registered handler
-        log.info("####=._executeCommand");
+        //log.info("####=._executeCommand");
 
         // Evaluate the command arguments and extract the handler
         var args = this._evaluateArguments(command.cmd, command.args);
@@ -1245,8 +1249,8 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
 
 SBPRuntime.prototype._execute = function (command, callback) {
     // Just skip over blank lines, undefined, etc.
-    console.log("Executing line: " + command.type);
-    log.info("####=._execute");
+    //console.log("Executing line: " + command.type + " " + JSON.stringify(command));
+    //log.info("####=._execute");
     if (!command) {
         this.pc += 1;
         return;
@@ -2378,35 +2382,6 @@ SBPRuntime.prototype.resume = function (input = false) {
         }
     }
 };
-
-// // Resume a program from the paused state
-// //   TODO - make some indication that this action was successful (resume is not always allowed, and sometimes it fails)
-// SBPRuntime.prototype.resume = function (input = false) {
-//     if (this.resumeAllowed) {
-//         if (this.paused) {
-//             if (input) {
-//                 this._assign(input.var, input.val)
-//                     .then(() => {
-//                         this.paused = false;
-//                         this._executeNext();
-//                         this.driver.resume();
-//                     })
-//                     .catch((err) => {
-//                         log.error("Error during resume assignment: " + err);
-//                         return this._abort(err);
-//                     });
-//             } else {
-//                 this.paused = false;
-//                 this._executeNext();
-//                 this.driver.resume();
-//             }
-//         } else {
-//             this.driver.resume();
-//             this.machine.status.inFeedHold = false;
-//             this.feedhold = false;
-//         }
-//     }
-// };
 
 // Enter the manual state
 // This function is called by the SK command in order to bring up the keypad
