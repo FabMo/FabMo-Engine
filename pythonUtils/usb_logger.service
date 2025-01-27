@@ -1,0 +1,11 @@
+[Unit]
+Description=USB Thumb Drive Monitor for FABMO Status
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /fabmo/pythonUtils/usb_logger.py
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target

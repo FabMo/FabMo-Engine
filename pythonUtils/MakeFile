@@ -1,0 +1,64 @@
+# Variables
+INSTALL_PATH = /fabmo/pythonUtils
+SERVICE_PATH = /etc/systemd/system
+LOG_DIR = /var/log
+SCRIPT_NAME = usb_logger.py
+SERVICE_NAME = usb_logger.service
+JSON_DIR = /opt/fabmo/config
+
+.PHONY: all install uninstall clean
+
+# Default target
+all: install
+
+install: $(INSTALL_PATH)/$(SCRIPT_NAME) $(SERVICE_PATH)/$(SERVICE_NAME)
+	@echo "System status service installed successfully."
+
+$(INSTALL_PATH)/$(SCRIPT_NAME): $(SCRIPT_NAME)
+	@echo "Installing the Python script..."
+	@sudo mkdir -p $(INSTALL_PATH)
+	@sudo cp $(SCRIPT_NAME) $(INSTALL_PATH)/
+	@sudo chmod +x $(INSTALL_PATH)/$(SCRIPT_NAME)
+
+$(SERVICE_PATH)/$(SERVICE_NAME): $(SERVICE_NAME)
+	@echo "Installing the systemd service..."
+	@sudo mkdir -p $(SERVICE_PATH)
+	@sudo cp $(SERVICE_NAME) $(SERVICE_PATH)/
+	@sudo systemctl daemon-reload
+	@sudo systemctl enable $(SERVICE_NAME)
+	@sudo systemctl start $(SERVICE_NAME)
+
+$(SERVICE_NAME): 
+	@echo "Creating the systemd service file..."
+	@echo "[Unit]" > $(SERVICE_NAME)
+	@echo "Description=USB Thumb Drive Monitor for FABMO Status" >> $(SERVICE_NAME)
+	@echo "After=network.target" >> $(SERVICE_NAME)
+	@echo "" >> $(SERVICE_NAME)
+	@echo "[Service]" >> $(SERVICE_NAME)
+	@echo "ExecStart=/usr/bin/python3 $(INSTALL_PATH)/$(SCRIPT_NAME)" >> $(SERVICE_NAME)
+	@echo "Restart=always" >> $(SERVICE_NAME)
+	@echo "User=root" >> $(SERVICE_NAME)
+	@echo "" >> $(SERVICE_NAME)
+	@echo "[Install]" >> $(SERVICE_NAME)
+	@echo "WantedBy=multi-user.target" >> $(SERVICE_NAME)
+
+uninstall:
+	@echo "Uninstalling the system status service..."
+	@sudo systemctl stop $(SERVICE_NAME) || true
+	@sudo systemctl disable $(SERVICE_NAME) || true
+	@sudo rm -f $(SERVICE_PATH)/$(SERVICE_NAME)
+	@sudo rm -f $(INSTALL_PATH)/$(SCRIPT_NAME)
+	@sudo rm -f $(LOG_DIR)/usb_logger.log
+	@sudo systemctl daemon-reload
+	@echo "Service uninstalled successfully."
+
+clean:
+	@echo "Cleaning up generated files..."
+	@rm -f $(SERVICE_NAME)
+	@echo "Cleanup complete."
+
+# Ensure the required directories exist
+$(JSON_DIR):
+	@echo "Creating the JSON configuration directory..."
+	@sudo mkdir -p $(JSON_DIR)
+	@sudo chmod 755 $(JSON_DIR)
