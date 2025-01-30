@@ -21,6 +21,10 @@ sudo git clone https://github.com/fabmo/fabmo-engine ./fabmo
 cd /fabmo
 echo
 
+cd pythonUtils
+make -f MakeFile
+cd ..
+
 echo "--> Setting Branch"
 sudo git checkout master
 git status
