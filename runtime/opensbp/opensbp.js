@@ -1358,9 +1358,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 log.info("calling callback");
                 callback();
             }
-            this._assign(command.var, value, function () {
-                callback();
-            });
             return true;
 
         case "weak_assign":
@@ -1368,9 +1365,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
             if (!this._varExists(command.var)) {
                 // eslint-disable-next-line no-redeclare
                 var value = this._eval(command.expr);
-                this._assign(command.var, value, function () {
+                this._assign(command.var, value);
+                if (callback) {
+                    log.info("calling callback");
                     callback();
-                });
+                }
             } else {
                 setImmediate(callback);
             }
@@ -1559,8 +1558,7 @@ SBPRuntime.prototype._varExists = function (identifier) {
 // Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
-//     callback - Called when the assignment is complete ??
-SBPRuntime.prototype._assign = function (identifier, value, callback) {
+SBPRuntime.prototype._assign = async function (identifier, value) {
     // Determine the variable name
     let variableName;
     if (identifier.name) {
@@ -1596,11 +1594,6 @@ SBPRuntime.prototype._assign = function (identifier, value, callback) {
     } else {
         // Nested assignment
         this._setNestedValue(variables[variableName], accessPath, value);
-    }
-
-    // If callback is provided, call it
-    if (callback) {
-        callback();
     }
 };
 
