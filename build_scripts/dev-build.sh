@@ -22,7 +22,7 @@ cd /fabmo
 echo
 
 cd pythonUtils
-make
+make -f MakeFile
 cd ..
 
 echo "--> Setting Branch"
