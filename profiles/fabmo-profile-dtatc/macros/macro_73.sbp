@@ -1,13 +1,28 @@
 '!FABMO!name:ATC Plate Offset
 '!FABMO!description:Set distance from ATC Measurement Plate to Material
 '!FABMO!enabled:true
-&loadVariables = 1
-IF &loadVariables = 0 THEN GOTO START
-C70
-START:
-C3
+C70																		' >> Load all ATC Settings
+GOSUB HOME_Z															' >> Home the Z Axis (this is the only axis that we're referencing with this routine, so no need to home X and Y
 PAUSE "The keypad will now open, move your spindle to your preferred Z Zeroing location" 
-SK
-C2
-PAUSE "Offset is " + %(9)
-$ATC.PlateOffset = %(9) - $tools[$ATC.ToolIn].H
+SK																		' >> Keypad open
+C2																		' >> Zero Z Axis to Z Zero Plate
+PAUSE "Offset is " + %(9)												' >> Display offset for user's reference
+$ATC.PlateOffset = %(9) - $tools[$ATC.ToolIn].H							' >> Record Offset in config
+
+' Subroutines ==========================================================
+HOME_Z:
+	PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z						' >> PZ "probes" for a switch or contact in the Z axis
+    ZZ																	' >> Reset working zero
+    JZ, (-1 * &homeOff_Z)												' >> Pull back from prox
+    &target_ck = &homeOff_Z + &ooch										' >> New target for detecting error just past prox
+    PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z						' >> Slowly probe for prox in final accurate check
+    IF %(3)== &target_ck THEN GOSUB fail_missed_target					' >> Look at current Z location to see if we went past the target
+    ZZ
+    JZ, (-1 * &homeOff_Z)
+    VA,,,-1*($tools[$ATC.ToolIn].H + $ATC.PlateOffset)					' >> Apply Offset for no tool
+	RETURN
+
+' Error Messages =======================================================
+fail_missed_target:
+    PAUSE "Target Not Triggered! Lower Z Axis and run C3 (XYZ Homing)." ' >> Did not hit target.
+    END

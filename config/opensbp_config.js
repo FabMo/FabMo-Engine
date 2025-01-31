@@ -204,6 +204,8 @@ function setNestedValue(obj, accessPath, value) {
     current[lastKey] = value;
 }
 
+// PERMANENT VARIABLES ("$" VARIABLES)
+
 // Return the value of the variable with the specified identifier
 //   identifier - An object with 'name' and 'access' properties
 OpenSBPConfig.prototype.getVariable = function (identifier) {
@@ -212,13 +214,11 @@ OpenSBPConfig.prototype.getVariable = function (identifier) {
     const variables = this._cache["variables"];
 
     if (!variables || !(variableName in variables)) {
-        throw new Error("Variable $" + variableName + " was used but not defined.");
+        throw new Error("Permanent Variable $" + variableName + " was used but not defined.");
     }
 
     let value = variables[variableName];
-
     value = navigateAccessPath(value, accessPath);
-
     return value;
 };
 
@@ -282,7 +282,7 @@ OpenSBPConfig.prototype.hasVariable = function (identifier) {
     }
 };
 
-// TEMP VARIABLES
+// TEMP VARIABLES ("&" VARIABLES)
 
 // Return the value of the temp variable with the specified identifier
 //   identifier - An object with 'name' and 'access' properties
@@ -296,9 +296,7 @@ OpenSBPConfig.prototype.getTempVariable = function (identifier) {
     }
 
     let value = tempVariables[variableName];
-
     value = navigateAccessPath(value, accessPath);
-
     return value;
 };
 

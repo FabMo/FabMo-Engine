@@ -115,7 +115,7 @@ G2Config.prototype.reverseUpdate = function (keys, callback) {
 //       data - Object mapping keys to update to values
 //   callback - Called with an object mapping keys to all values updated (after sync with G2)
 G2Config.prototype.update = function (data, callback) {
-    keys = Object.keys(data);
+    const keys = Object.keys(data);
     // TODO: We can probably replace this with a `setMany()`
     async.mapSeries(
         keys,
@@ -134,10 +134,16 @@ G2Config.prototype.update = function (data, callback) {
             if (err) {
                 return callback(err);
             }
-            var retval = {};
-            for (var i = 0; i < keys.length; i++) {
-                key = keys[i];
-                value = results[i];
+            const retval = {};
+            for (let i = 0; i < keys.length; i++) {
+                // key = keys[i];
+                // value = results[i];
+                // 1/18/2025 there is a bug that causes the axis type to change somehow related to call to keypad; this is part of debugging that
+                //  ... the variable definition additions may have been an issue; there is an unusual, typically a bug situation, that causes failure.
+                const key = keys[i];
+                const value = results[i];
+                // console.log(`Mapping key: ${key} to value: ${value}`);
+
                 this._cache[key] = value;
                 retval[key] = value;
             }

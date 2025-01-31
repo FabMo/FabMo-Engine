@@ -315,6 +315,10 @@ window.addEventListener('message', function(event) {
         toastr.options.showMethod = 'slideDown';
         toastr.options.hideMethod = 'slideUp';
         toastr.options.preventDuplicates = false;
+        // don't know if we are controlling the duration here or not
+        toastr.options.timeout = 2; // How long the toast will display without user interaction
+    //    toastr.options.hideDuration = 2000;
+    //    toastr.options.closeDuration = 2000;
 
 
         //Click & Swipe listener
