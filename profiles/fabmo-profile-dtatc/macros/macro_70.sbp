@@ -5,6 +5,8 @@
 &Error = 0
 $ATC.ToolIn := 0
 $ATC.numClips := 7
+$ATC.Status := 0
+$ATC.Dropped := 0
 $ATC.Type = 7
 
 $unitMultiplier = 1
@@ -80,6 +82,6 @@ $holder_radius = 0.56 * $unitMultiplier
 $stylus_dia = .25 * $unitMultiplier
 $ToolBar_Probe_Offset = 1.5 * $unitMultiplier
 $firstClipX = 39.25 * $unitMultiplier 'Location of first clip in X for calibration
-$firstClipY = 4.875 * $unitMultiplier 'Location of first clip in Y for calibration (modified for th tool)
+$firstClipY = 5.0 * $unitMultiplier 'Location of first clip in Y for calibration
 $firstClipZ = 3 * $unitMultiplier 'Location of first clip in Z for calibration
 $safe_lift = 1 * $unitMultiplier
