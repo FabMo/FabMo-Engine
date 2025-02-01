@@ -18,6 +18,8 @@ require('./cm-fabmo-modes.js');
     var isDirty = false; // Flag to track if the editor has unsaved changes
     let isSaveAndSubmitClick = false;
     let isRunCodeImmediatelyClick = false;
+    let isMacroSaveClick = false;
+    let isMacroSaveAndCloseClick = false;
     let overrideDirty = false; // Flag to override the dirty check
 
 
@@ -240,6 +242,8 @@ require('./cm-fabmo-modes.js');
       isDirty = false; // Flag to track if the editor has unsaved changes
       isSaveAndSubmitClick = false;
       isRunCodeImmediatelyClick = false;
+      isMacroSaveClick = false;
+      isMacroSaveAndCloseClick = false; 
       overrideDirty = false; // Flag to override the dirty check
 
       editor = CodeMirror(function(elt) {
@@ -272,10 +276,11 @@ require('./cm-fabmo-modes.js');
           console.log("Got BLURR");
           if (!source) {
               save();
-          } else if (isDirty && !isSaveAndSubmitClick && !isRunCodeImmediatelyClick) {
+              // Case of clicking outside and not one of the special buttons          
+            } else if (isDirty && !isSaveAndSubmitClick && !isRunCodeImmediatelyClick && !isMacroSaveClick && !isMacroSaveAndCloseClick) {
               promptSaveWork();
           } else if (isRunCodeImmediatelyClick) {
-              // Prevent running the code if there are unsaved changes
+              // Prompt and prevent running the code once if there are unsaved changes
               if (isDirty) {
                   promptSaveWork();
                   isRunCodeImmediatelyClick = false;
@@ -284,8 +289,21 @@ require('./cm-fabmo-modes.js');
                   overrideDirty = false;
                   save();
               }
+            } else if (isMacroSaveAndCloseClick) {
+              // Prompt and prevent running the code once if there are unsaved changes
+              if (isDirty) {
+                  //promptSaveWork();
+                  isMacroSaveAndCloseClick = false;
+              } else {
+                  // Run the code immediately if there are no unsaved changes
+                  overrideDirty = false;
+                  //save();
+              }
           }
           isSaveAndSubmitClick = false;
+          isRunCodeImmediatelyClick = false;
+          isMacroSaveClick = false;
+          isMacroSaveAndCloseClick = false;
         });
         
         // Track changes in the editor
@@ -296,7 +314,7 @@ require('./cm-fabmo-modes.js');
 
 
         // First EVENT HANDLER for exiting/saving/running; picks up a user choice before BLUR
-        // Add event listener for "Save and Submit as a Separate New Job" button
+        // Event listeners for specially handled keys such as "Save and Submit as a Separate New Job" button
         $(document).on('mousedown', '#submit-job', function() {
           console.log("Save and Submit from mouse down");
           isSaveAndSubmitClick = true;
@@ -305,14 +323,30 @@ require('./cm-fabmo-modes.js');
           isSaveAndSubmitClick = false;
         });
 
-        // Add event listener for "Run Code Immediately" button
+        // And for "Run Code Immediately" button
         $(document).on('mousedown', '#submit-immediate', function() {
-          console.log("Run Code Immediately from mouse down");
           isRunCodeImmediatelyClick = true;
         });
         $(document).on('mouseup', '#submit-immediate', function() {
           isRunCodeImmediatelyClick = false;
         });
+
+        // And for "Macro Save" button
+        $(document).on('mousedown', '#macro-save', function() {
+          isMacroSaveClick = true;
+        });
+        $(document).on('mouseup', '#macro-save', function() {
+          isMacroSaveClick = false;
+        });
+
+        // And for "Macro Save and Close" button
+        $(document).on('mousedown', '#macro-save-and-close', function() {
+          isMacroSaveAndCloseClick = true;
+        });
+        $(document).on('mouseup', '#macro-save-and-close', function() {
+          isMacroSaveAndCloseClick = false;
+        });
+
 
 
       ////## th - experiment on FLOW back re: Sb4 and similar apps; e.g. being able to back out of things with ESC
