@@ -55,8 +55,8 @@ FINISHED:
 ' Subroutines ==================================================================================
 MANUAL_POSITION:
 	&MANUAL_MEASUREMENT = 1																		' >> Set manual measurement flag so that we know we're doing a manual bit measurement
-	PAUSE "The keypad will now open. Move to an open space on your work area; then close the keypad"
-	SK																							' >> Open keypad to allow user to move to their desired location
+	PAUSE "The keypad will now open. Move to an open space on your work area."
+	SK, "Close Keypad when finished positioning."                                               ' >> Open keypad to allow user to move to their desired location
     PAUSE "Plug in your Z Zero plate and position it under your bit. Attach the grounding clip to your tool holder"
 	RETURN
 

@@ -118,6 +118,8 @@ SBPRuntime.prototype.connect = function (machine) {
     this.status_report = {};
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
+
+    this.init();
     this._update();
     this.cmd_posx = this.posx;
     this.cmd_posy = this.posy;
@@ -163,7 +165,7 @@ SBPRuntime.prototype.disconnect = function () {
 //   callback - Called once the command is issued (or with error if error) - NOT when the command is done executing
 SBPRuntime.prototype.executeCode = function (s, callback) {
     //log.info("####=.executeCode");
-    this.init();
+    //this.init();
 
     if (typeof s === "string" || s instanceof String) {
         // Plain old string interprets as OpenSBP code segment

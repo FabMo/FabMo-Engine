@@ -9,9 +9,11 @@
 
 ' Initialize ------------------------------------------------------------------------------------------
     &AtNow = "Initialize"
-    C75                                                               ' >> Load primary ATC variables and ck status
+	C75                                                               ' >> Load primary ATC variables and ck status
     JS, $XYJOG, $ZJOG                                                 ' >> Set Jog speed for approaches (are units right here and following ???)
-    &th := 0                                                          ' >> These need predefined only for STATE Display
+    &tool := ""                                                       ' >> Define as something initially
+    &INDEX := 0                                                       ' >> Need to initialize tool data
+    GOSUB GET_TOOL_DATA                                               ' >> ... by reading table
     &Z_OFFSET = %(9) - (&th + $ATC.PlateOffset)                       ' >> Record current Z Offset if any
     JZ, -1 * %(9) - $smallBackOff                                     ' >> Pull up as initial move indicating
     
