@@ -1,9 +1,6 @@
 '!FABMO!name: Park
 '!FABMO!description: Move Tool to a Parking Location 
 '!FABMO!enabled:true
-C1
-END
-
 
 ' Name: Park
 ' Description: Move Tool to a Parking Location (typically to back)
