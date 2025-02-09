@@ -37,7 +37,6 @@ var CMD_TIMEOUT = 100000;
 var EXPECT_TIMEOUT = 300000;
 
 var _promiseCounter = 1;
-var resumePending = false;
 var intendedClose = false;
 var THRESH = 1;
 var PRIMED_THRESHOLD = 10;
@@ -165,6 +164,8 @@ function G2() {
     this.hold = null;
     this.manual_hold = false;
 
+    this.resumePending = false;
+
     // Readers and callbacks
     this.expectations = [];
     this.readers = {};
@@ -269,11 +270,13 @@ G2.prototype._createCycleContext = function () {
     st.on("pipe", function (/* chunk */) {
         log.debug("Stream PIPE event");
     });
+
     // Create the promise that resolves when the machining cycle ends.
     var promise = this._createStatePromise([STAT_END]).then(
         function () {
             this.context = null;
             this._primed = false;
+            log.debug("Cycle context promise resolved.");
             return this;
         }.bind(this)
     );
@@ -648,10 +651,10 @@ G2.prototype.handleStatusReport = function (response) {
 
         //If an input induced feedhold is received during a resume then adjust so that
         // another resume can be received and feedhold can be properly reestablished.
-        if (this.hold > 0 && resumePending) {
+        if (this.hold > 0 && this.resumePending) {
             //Set resumeFlag to false so that resume/quit will display in the UI
             this.status.resumeFlag = false;
-            resumePending = false;
+            this.resumePending = false;
             this.pause_flag = true;
         }
     }
@@ -717,7 +720,7 @@ G2.prototype.manualFeedHold = function (callback) {
 
 G2.prototype.manualResume = function () {
     this.status.resumeFlag = true;
-    resumePending = true;
+    this.resumePending = true;
     log.debug("Processing manualResume");
 };
 
@@ -751,12 +754,12 @@ G2.prototype.queueFlush = function (callback) {
 G2.prototype.resume = function () {
     this.status.resumeFlag = true;
     var thisPromise = _promiseCounter;
-    if (resumePending) {
+    if (this.resumePending) {
         return;
     }
-    log.info("Creating promise " + thisPromise);
+    log.info("Creating promise from resume " + thisPromise);
     _promiseCounter += 1;
-    resumePending = true;
+    this.resumePending = true;
     var deferred = Q.defer();
     var that = this;
     var onStat = function (stat) {
@@ -765,8 +768,8 @@ G2.prototype.resume = function () {
                 return;
             }
             that.removeListener("stat", onStat);
-            log.info("Resolving promise (resume): " + thisPromise);
-            resumePending = false;
+            //            log.info("Resolving promise (resume): " + thisPromise);
+            this.resumePending = false;
             deferred.resolve(stat);
         }
     };
@@ -1000,7 +1003,7 @@ G2.prototype.command = function (obj) {
 G2.prototype._createStatePromise = function (states) {
     // Track the promise created (debug)
     var thisPromise = _promiseCounter;
-    log.info("Creating promise " + thisPromise);
+    log.info("Creating promise from start " + thisPromise);
     _promiseCounter += 1;
     var deferred = Q.defer();
     var that = this;

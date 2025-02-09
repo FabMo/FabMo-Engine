@@ -1097,6 +1097,8 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                             this.driver.command({ out4: 0 }); // Permissive relay
                             this.driver.command({ gc: "m30" }); // Generate End
                             log.debug("call MPO from machine");
+                            this.driver._primed = false; // * important to clear for unusual endings
+                            this.driver.resumePending = false; // * important to clear for unusual endings
                             this.driver.get("mpo", function (err, mpo) {
                                 if (config.instance) {
                                     config.instance.update({
@@ -1201,6 +1203,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                     }
                 });
                 this.pauseTimer = false;
+                this.driver.resumePending = false;
             }.bind(this),
             this.status.info["timer"] * 1000
         );
@@ -1316,7 +1319,8 @@ Machine.prototype.resume = function (callback, input = false) {
     if (callback) {
         callback(null, "resumed");
     } else {
-        log.debug("Undefined callback passed to resume");
+        this.driver.resumePending = false; // * important to clear for multiple stackbreaks
+        log.debug("Undefined callback passed to resume; cleared .resumePending");
     }
 };
 
