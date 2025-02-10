@@ -11,8 +11,8 @@
  * and control of systems not conventionally accessible to the g-code canonical machine.
  */
 
-// Turn on "####=" logging for execution flow details
-// Turn on "Executing line:" logging for line-by-line execution details
+// Turn on "####="" logging for execution flow details
+// Turn on " line:" logging for line-by-line execution details
 
 var parser = require("./parser");
 var fs = require("fs");
@@ -675,8 +675,6 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 //   cmd - Command object to evaluate
 SBPRuntime.prototype._breaksStack = function (cmd) {
     var result;
-    //log.info("####=._breaksStack");
-
     // Any command that has an expression in one of its arguments that breaks the stack, breaks the stack.
     if (cmd.args) {
         for (var i = 0; i < cmd.args.length; i++) {
@@ -723,8 +721,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
         case "return":
         case "goto":
         case "gosub":
-            // TODO - Control flow needn't necessarily break the stack
-            result = true;
+            result = false;
             break;
 
         case "open":
@@ -747,6 +744,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             result = false;
             break;
     }
+    //log.info("####=._breaksStack? " + cmd.type + " = " + result);
     return result;
 };
 
@@ -800,18 +798,23 @@ SBPRuntime.prototype._run = function () {
                 // Only update and call execute next if we're waiting on pending gcodes or probing
                 // ... and expecting this stat:3
                 // For probing we do not turn off the pending if we have not passed the Initialization phase
+                if (this.driver.resumePending) {
+                    log.debug("Awaiting RESUME PENDING ...");
+                    this.driver.resumePending = false;
+                    break;
+                }
                 if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
                     this.driver.status.targetHit = false;
                     this.probingPending = false;
                     this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
                     this.prime();
-                    //log.debug("COMPLETETED PENDING PROBING =(cleared)============####")
+                    log.debug("COMPLETED PENDING PROBING =(cleared)============####");
                     this._executeNext();
                     break;
                 }
                 if (this.gcodesPending) {
                     this.gcodesPending = false;
-                    log.debug("COMPLETETED PENDING GCODES =(cleared)============####");
+                    log.debug("COMPLETED PENDING GCODES =(cleared)============####");
                     this._executeNext();
                     break;
                 }
@@ -992,13 +995,15 @@ SBPRuntime.prototype._executeNext = function () {
         if (this.probingPending && this.driver) {
             log.debug("Deferring because still PROBING ......");
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
+        } else if (this.driver && this.driver.resumePending) {
+            log.debug("Deferring because RESUME PENDING ......");
+            return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else if (this.gcodesPending && this.driver) {
             log.debug("Deferring because g-codes PENDING ......");
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else {
             // G2 is stopped, execute stack breaking command now
             try {
-                log.debug("executing: " + JSON.stringify(line));
                 this._execute(line, this._executeNext.bind(this));
                 return;
             } catch (e) {
@@ -1182,7 +1187,7 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
                 f(
                     args,
                     function commandComplete() {
-                        // advance the pc and do the callback to mvoe on to next instruction
+                        // advance the pc and do the callback to move on to next instruction
                         // TODO - We should allow commands to use an errback?  This would allow
                         //        for asynchronous errors in addition to the throw
                         this.pc += 1;
@@ -1251,8 +1256,9 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
 
 SBPRuntime.prototype._execute = function (command, callback) {
     // Just skip over blank lines, undefined, etc.
-    //console.log("Executing line: " + command.type + " " + JSON.stringify(command));
     //log.info("####=._execute");
+    //log.info("    line: #" + this.pc);
+    //log.info("    " + command.type + " " + JSON.stringify(command));
     if (!command) {
         this.pc += 1;
         return;
@@ -1286,15 +1292,16 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "return":
             if (this.stack.length) {
                 this.pc = this.stack.pop();
-                setImmediate(callback);
+                // After making goto and gosub non-stackbreaking, this seems no longer needed
+                //  setImmediate(callback);
                 return true;
             } else {
                 throw new Error("Runtime Error: Return with no GOSUB at " + (this.pc + 1));
             }
 
         case "end":
-            //            this.pc = this.program.length;
-            //            setImmediate(callback);
+            //this.pc = this.program.length;
+            //setImmediate(callback);
 
             if (this.isInSubProgram()) {
                 // If in a subprogram, exit the subprogram
@@ -1335,7 +1342,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 var pc = this.label_index[command.label];
                 log.debug("Hit a GOTO: Going to line " + pc + "(Label: " + command.label + ")");
                 this.pc = pc;
-                setImmediate(callback);
+                if (typeof callback === "function") {
+                    setImmediate(callback);
+                } else {
+                    log.debug("Callback is not a function in GOTO command");
+                }
                 return true;
             } else {
                 throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
@@ -1346,7 +1357,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 this.stack.push(this.pc + 1);
                 log.debug("Pushing the current PC onto the stack (" + (this.pc + 1) + ")");
                 this.pc = this.label_index[command.label];
-                setImmediate(callback);
+                if (typeof callback === "function") {
+                    setImmediate(callback);
+                } else {
+                    log.debug("Callback is not a function in GOSUB command");
+                }
                 return true;
             } else {
                 throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
@@ -2270,7 +2285,7 @@ let prevPt = {
     yRot: 0,
 };
 SBPRuntime.prototype.transformation = function (TranPt) {
-    if (this.transforms.rotate.apply !== false) {
+    if (this.transforms.rotate.apply != false) {
         if ("X" in TranPt || "Y" in TranPt) {
             if (!("X" in TranPt)) {
                 TranPt.X = this.cmd_posx;
