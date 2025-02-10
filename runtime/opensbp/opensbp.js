@@ -1292,7 +1292,8 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "return":
             if (this.stack.length) {
                 this.pc = this.stack.pop();
-                setImmediate(callback);
+                // After making goto and gosub non-stackbreaking, this seems no longer needed
+                //  setImmediate(callback);
                 return true;
             } else {
                 throw new Error("Runtime Error: Return with no GOSUB at " + (this.pc + 1));
@@ -2284,7 +2285,7 @@ let prevPt = {
     yRot: 0,
 };
 SBPRuntime.prototype.transformation = function (TranPt) {
-    if (this.transforms.rotate.apply !== false) {
+    if (this.transforms.rotate.apply != false) {
         if ("X" in TranPt || "Y" in TranPt) {
             if (!("X" in TranPt)) {
                 TranPt.X = this.cmd_posx;
