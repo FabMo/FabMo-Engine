@@ -82,6 +82,6 @@ $holder_radius = 0.56 * $unitMultiplier
 $stylus_dia = .25 * $unitMultiplier
 $ToolBar_Probe_Offset = 1.5 * $unitMultiplier
 $firstClipX = 39.25 * $unitMultiplier 'Location of first clip in X for calibration
-$firstClipY = 5.0 * $unitMultiplier 'Location of first clip in Y for calibration
+$firstClipY = 4.875 * $unitMultiplier 'Location of first clip in Y for calibration
 $firstClipZ = 3 * $unitMultiplier 'Location of first clip in Z for calibration
 $safe_lift = 1 * $unitMultiplier

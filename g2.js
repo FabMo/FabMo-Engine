@@ -781,11 +781,13 @@ G2.prototype.resume = function () {
         this.context.resume();
     }
 
-    this.requestStatusReport(
-        function () {
-            this.pause_flag = false;
-        }.bind(this)
-    );
+    this.pause_flag = false;
+    // Was getting too many SR's competing with stack-breaking, so ...
+    // this.requestStatusReport(
+    //     function () {
+    //         this.pause_flag = false;
+    //     }.bind(this)
+    // );
 
     return deferred.promise;
 };
