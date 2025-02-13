@@ -23,6 +23,7 @@ echo
 
 cd pythonUtils
 make -f MakeFile
+sh run_i2c_display.sh &
 cd ..
 
 echo "--> Setting Branch"
