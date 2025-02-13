@@ -38,6 +38,7 @@ cd ..
 
 echo "--> Ready for npm install"
 sudo npm install
+sudo npm install multer # Used for the usb fileFilesRoutes.js to serve the usb files
 
 echo
 echo "================================================="
