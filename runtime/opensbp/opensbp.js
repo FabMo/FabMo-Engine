@@ -167,6 +167,9 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
     //log.info("####=.executeCode");
     //this.init();
 
+    log.info("MANUAL CODE - from in FILE!!");
+    log.info(JSON.stringify(s));
+
     if (typeof s === "string" || s instanceof String) {
         // Plain old string interprets as OpenSBP code segment
         this.runString(s, callback);
@@ -206,11 +209,18 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             this.helper.quitMove();
                             break;
 
+                        case "resume":
+                            this.helper.resumeMove();
+                            this.machine.status.state = "manual";
+                            break;
+
                         case "maint":
                             this.helper.maintainMotion();
                             break;
 
                         case "goto":
+                            this.machine.status.currentCmd = s.cmd; // need to update client display inFile
+                            this.machine.emit("status", this.machine.status);
                             this.helper.goto(s.move);
                             break;
 
@@ -667,7 +677,6 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 // comparison that needs to read the position of the tool breaks the stack.  Certain control flow statements break the stack.
 // Macro calls break the stack.  Currently conditional evaluations break the stack (IF statements) even though they should really only
 // break the stack if the expression being evaluated breaks the stack.  (TODO - fix that.)
-// TODO - System variable evaluations should break the stack
 // TODO - we should probably distinguish between the two meanings of "command" here - the cmd argument to this function is the object
 //        that represents a single line of the program but isn't necessarily one of the two-character OpenSBP commands. (Could be an IF
 //        statement or GOTO or whatever)  The command type "cmd" refers specifically to the two-character OpenSBP commands.

@@ -647,7 +647,8 @@ G2.prototype.handleStatusReport = function (response) {
                 this.context.emit("stat", response.sr.stat);
             }
         }
-        this.emit("status", this.status);
+
+        this.emit("status", this.status); // ##==> Primary low level 'g2.status' update; communicated to 'machine.status'
 
         //If an input induced feedhold is received during a resume then adjust so that
         // another resume can be received and feedhold can be properly reestablished.
