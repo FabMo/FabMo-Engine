@@ -292,11 +292,25 @@ ManualDriver.prototype.runGCode = function (code) {
 // The speed will be vectored based on the current speed setting on the slider; but limited to axis maximums
 ManualDriver.prototype.goto = function (pos) {
     // We may want to consider whether GOTOs are moves or jogs; for now, they're moves w/speed set by slider (safer)
+    var hasZABC = false;
     var move = "G90\nG1 ";
     for (var key in pos) {
         if (Object.prototype.hasOwnProperty.call(pos, key)) {
             move += key + pos[key] + " ";
+            if (key === "Z" || key === "A" || key === "B" || key === "C") {
+                // To see if we should set a lower speed; check to see is this special axis is actually a move given the current location of the axis
+                var testa = this.driver.status["pos" + key.toLowerCase()];
+                var testb = pos[key];
+                if (Math.abs(testa - testb) > 0.001) {
+                    hasZABC = true;
+                }
+            }
         }
+    }
+    if (hasZABC) {
+        move += "F" + 60 * config.machine._cache.manual.z_fast_speed;
+    } else {
+        move += "F" + 60 * config.machine._cache.manual.xy_speed;
     }
     this.gotoModeHold = true;
     move += "\nM0\nG91\n";
@@ -370,7 +384,7 @@ ManualDriver.prototype.set = function (pos) {
                         this.stream.write("G91\nG0\nX0\nG91");
                         this.driver.prime();
                         config.driver.reverseUpdate(
-                            ["g55x", "g55y", "g55z", "g55a", "g55b"],
+                            ["g55x", "g55y", "g55z", "g55a", "g55b", "g55c"],
                             // eslint-disable-next-line no-unused-vars
                             function (err, data) {}
                         );
