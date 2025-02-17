@@ -13,14 +13,9 @@ function getFilesRecursively(directory) {
     items.forEach((item) => {
       const fullPath = path.join(directory, item.name);
       if (item.isDirectory()) {
-        // Recursively get files from subdirectory
         files = files.concat(getFilesRecursively(fullPath));
       } else {
-        // Add file to the list
-        files.push({
-          name: item.name,
-          fullPath,
-        });
+        files.push({ name: item.name, fullPath });
       }
     });
   } catch (err) {
@@ -62,7 +57,7 @@ function generateHTMLPage(files) {
         <td>
           <a href="/usb_files/read/${encodeURIComponent(file.name)}" target="_blank">View</a> | 
           <a href="/usb_files/download/${encodeURIComponent(file.name)}">Download</a> | 
-          <a href="/usb_files/delete/${encodeURIComponent(file.name)}" style="color: red;">Delete</a>
+          <a href="#" onclick="deleteFile('${file.name}')" style="color: red;">Delete</a>
         </td>
       </tr>`;
   });
@@ -70,6 +65,19 @@ function generateHTMLPage(files) {
   html += `
         </tbody>
       </table>
+      <script>
+        function deleteFile(fileName) {
+          if (confirm("Are you sure you want to delete " + fileName + "?")) {
+            fetch("/usb_files/delete/" + encodeURIComponent(fileName), { method: "DELETE" })
+              .then(response => response.json())
+              .then(data => {
+                alert(data.message);
+                location.reload();
+              })
+              .catch(err => alert("Error deleting file: " + err));
+          }
+        }
+      </script>
     </body>
     </html>`;
   
@@ -94,16 +102,15 @@ function updateHTMLCache() {
 // Update cache every 500ms
 setInterval(updateHTMLCache, 500);
 
-// Define the USB file routes
 module.exports = function (server) {
-  // Route to serve the HTML page
+  // Serve the HTML page
   server.get("/usb_files", (req, res, next) => {
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(cachedHTML);
     return next();
   });
 
-  // NEW: Route to return JSON file list
+  // Return JSON file list
   server.get("/usb_files/list", (req, res, next) => {
     try {
       let files = [];
@@ -120,28 +127,21 @@ module.exports = function (server) {
     return next();
   });
 
-  // Route to read a file
+  // Read a file
   server.get("/usb_files/read/:fileName", (req, res, next) => {
     const { fileName } = req.params;
     for (const mediaDir of MEDIA_DIRECTORIES) {
       const files = getFilesRecursively(mediaDir);
       const file = files.find((f) => f.name === fileName);
       if (file) {
-        fs.createReadStream(file.fullPath)
-          .on("error", (err) => {
-            console.error(`Error reading file: ${err.message}`);
-            res.send(500, { error: "Failed to read file" });
-            return next();
-          })
-          .pipe(res);
-        return next();
+        return fs.createReadStream(file.fullPath).pipe(res);
       }
     }
     res.send(404, { error: "File not found" });
     return next();
   });
 
-  // Route to download a file
+  // Download a file
   server.get("/usb_files/download/:fileName", (req, res, next) => {
     const { fileName } = req.params;
     for (const mediaDir of MEDIA_DIRECTORIES) {
@@ -150,21 +150,14 @@ module.exports = function (server) {
       if (file) {
         res.setHeader("Content-Disposition", `attachment; filename="${file.name}"`);
         res.setHeader("Content-Type", "application/octet-stream");
-        fs.createReadStream(file.fullPath)
-          .on("error", (err) => {
-            console.error(`Error reading file: ${err.message}`);
-            res.send(500, { error: "Failed to read file" });
-            return next();
-          })
-          .pipe(res);
-        return next();
+        return fs.createReadStream(file.fullPath).pipe(res);
       }
     }
     res.send(404, { error: "File not found" });
     return next();
   });
 
-  // Route to delete a file
+  // Delete a file
   server.del("/usb_files/delete/:fileName", (req, res, next) => {
     const { fileName } = req.params;
     for (const mediaDir of MEDIA_DIRECTORIES) {
@@ -172,7 +165,7 @@ module.exports = function (server) {
       if (fs.existsSync(fullPath)) {
         try {
           fs.unlinkSync(fullPath);
-          res.redirect("/usb_files");
+          res.send(200, { message: `${fileName} deleted successfully!` });
           return next();
         } catch (err) {
           res.send(500, { error: `Failed to delete file: ${err.message}` });
@@ -184,7 +177,7 @@ module.exports = function (server) {
     return next();
   });
 
-  // Route to upload a file
+  // Upload a file
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
       for (const dir of MEDIA_DIRECTORIES) {
