@@ -322,12 +322,14 @@ engine.getVersion(function (err, version) {
                             $(".manual-drive-message").show();
                             $(".manual-drive-message").html(status.info.message);
                             $(".manual-drive-message").addClass("blinking-text");
+                            $("#action-1").css("visibility", "hidden");
+                            $("#action-2").css("visibility", "hidden");
+                            $("#action-3").css("visibility", "hidden");
+                            $("#action-4").css("visibility", "hidden");
                         } else if (status.info["timer"] && status.info["timer"] <= TIMER_DISPLAY_CUTOFF) {
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
                         } else {
-                            // Remove the blink class if the state is not manual
-                            $(".manual-drive-message").removeClass("blinkking-text");
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
                             console.log(status["info"]);
@@ -774,9 +776,15 @@ $(".action-button").on("click", function () {
 });
 
 $(".manual-drive-exit").on("click", function () {
+    // Remove changes for running manual from within a file
     $("#title_goto").css("visibility", "visible");
+    $("#action-1").css("visibility", "visible");
+    $("#action-2").css("visibility", "visible");
+    $("#action-3").css("visibility", "visible");
+    $("#action-4").css("visibility", "visible");
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
+    $(".manual-drive-message").removeClass("blinking-text");
 
     startManualExit()
         .then(() => {

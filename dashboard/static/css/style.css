@@ -2634,7 +2634,7 @@ input[type='range']:focus {
 	100% {opacity: 1;}
 }
 .blinking-text {
-	animation: blink 1.0s linear infinite;
+	animation: blink 2.0s linear infinite;
 }
 
 .logout_link_container{

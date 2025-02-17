@@ -234,10 +234,22 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             break;
 
                         case "fixed":
+                            if (s.dist == null) {
+                                break;
+                            }
                             if (!this.helper) {
                                 this.enter();
                             }
                             this.helper.nudge(s.axis, s.speed, s.dist, s.second_axis, s.second_dist);
+                            break;
+
+                        case "output":
+                            if (!s.out || typeof s.out !== "object") {
+                                log.error("Invalid 'out' field in the command:", s);
+                                return;
+                            }
+                            // this is a little awkward using the raw system here too, but it's the best way to get the output
+                            this.helper.output(s.out.output, s.out.value);
                             break;
 
                         default:
