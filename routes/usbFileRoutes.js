@@ -204,3 +204,81 @@ module.exports = function (server) {
     });
   });
 };
+// Define destination path for FabMo scripts
+const FABMO_SCRIPTS_DIR = "/opt/fabmo/scripts";
+
+// Ensure the FabMo scripts directory exists
+if (!fs.existsSync(FABMO_SCRIPTS_DIR)) {
+    fs.mkdirSync(FABMO_SCRIPTS_DIR, { recursive: true });
+}
+
+// Function to copy job files from USB to FabMo scripts directory
+function copyFilesToFabmo(files) {
+    let copiedFiles = [];
+    files.forEach(file => {
+        const srcPath = file.fullPath;
+        const destPath = path.join(FABMO_SCRIPTS_DIR, file.name);
+
+        try {
+            fs.copyFileSync(srcPath, destPath);
+            copiedFiles.push(destPath);
+            console.log(`Copied ${file.name} to ${FABMO_SCRIPTS_DIR}`);
+        } catch (err) {
+            console.error(`Error copying ${file.name}: ${err.message}`);
+        }
+    });
+    return copiedFiles;
+}
+
+// Endpoint to import job files from USB to FabMo and queue them
+module.exports = function (server) {
+    server.post("/usb_files/import_jobs", (req, res, next) => {
+        try {
+            let jobFiles = [];
+
+            // Get list of valid G-code and SBP files
+            MEDIA_DIRECTORIES.forEach(mediaDir => {
+                if (fs.existsSync(mediaDir)) {
+                    let allFiles = getFilesRecursively(mediaDir);
+                    let filteredFiles = allFiles.filter(file => file.name.endsWith(".gcode") || file.name.endsWith(".sbp"));
+                    jobFiles = jobFiles.concat(filteredFiles);
+                }
+            });
+
+            if (jobFiles.length === 0) {
+                res.send(404, { error: "No valid job files found on USB." });
+                return next();
+            }
+
+            // Copy files to FabMo scripts directory
+            let copiedFiles = copyFilesToFabmo(jobFiles);
+
+            // Submit each copied job to the queue
+            copiedFiles.forEach(filePath => {
+                const jobData = {
+                    file: filePath,
+                    name: path.basename(filePath),
+                    description: "Imported from USB"
+                };
+
+                fetch('http://localhost:8080/fabmo/submit_job', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(jobData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(`Job added to queue: ${jobData.name}`);
+                })
+                .catch(err => console.error(`Error adding job ${jobData.name}: ${err.message}`));
+            });
+
+            res.send(200, { message: `${copiedFiles.length} job(s) imported successfully.` });
+            return next();
+        } catch (err) {
+            console.error(`Error importing jobs: ${err.message}`);
+            res.send(500, { error: "Internal server error while importing jobs." });
+            return next();
+        }
+    });
+};
