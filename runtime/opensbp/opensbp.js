@@ -2411,7 +2411,8 @@ SBPRuntime.prototype.manualEnter = function (message, callback) {
     this._update();
 
     if (this.machine) {
-        this.machine.setState(this, "manual", message ? { message: message } : undefined);
+        this.machine.setState(this, "manual");
+        //this.machine.setState(this, "manual", message ? { message: message } : undefined);
         this.machine.authorize();
     }
 
