@@ -321,10 +321,13 @@ engine.getVersion(function (err, version) {
                             $("#title_goto").css("visibility", "hidden");
                             $(".manual-drive-message").show();
                             $(".manual-drive-message").html(status.info.message);
+                            $(".manual-drive-message").addClass("blinking-text");
                         } else if (status.info["timer"] && status.info["timer"] <= TIMER_DISPLAY_CUTOFF) {
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
                         } else {
+                            // Remove the blink class if the state is not manual
+                            $(".manual-drive-message").removeClass("blinkking-text");
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
                             console.log(status["info"]);

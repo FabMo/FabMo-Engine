@@ -198,6 +198,9 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             break;
 
                         case "start":
+                            this.machine.status.currentCmd = s.cmd; // needed to update client display in a File
+                            this.machine.status.running = true;
+                            this.machine.emit("status", this.machine.status);
                             this.helper.startMotion(s.axis, s.speed, s.second_axis, s.second_speed);
                             break;
 
@@ -219,7 +222,9 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             break;
 
                         case "goto":
-                            this.machine.status.currentCmd = s.cmd; // need to update client display inFile
+                            this.machine.status.currentCmd = s.cmd; // needed to update client display in a File
+                            this.machine.status.stat = 5;
+                            this.machine.status.running = true;
                             this.machine.emit("status", this.machine.status);
                             this.helper.goto(s.move);
                             break;
@@ -2411,8 +2416,7 @@ SBPRuntime.prototype.manualEnter = function (message, callback) {
     this._update();
 
     if (this.machine) {
-        this.machine.setState(this, "manual");
-        //this.machine.setState(this, "manual", message ? { message: message } : undefined);
+        this.machine.setState(this, "manual", message ? { message: message } : undefined);
         this.machine.authorize();
     }
 
