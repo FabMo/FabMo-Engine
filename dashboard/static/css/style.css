@@ -1994,8 +1994,13 @@ input[type='range']:focus {
 	position: relative;
 }
 
+#keypad:focus {
+    outline: none;
+}
 
-
+#keypad-modal:focus {
+    outline: none;
+}
 
 .go-to-container, #keypad{
 	display: block;

@@ -298,7 +298,7 @@
 
     <!-- The Dialog -->
     <div class="modalDim"></div>
-    <div class="manual-drive-modal" id="keypad-modal" oncontextmenu="return false;">
+    <div class="manual-drive-modal" id="keypad-modal" tabindex="0" oncontextmenu="return false;">
       <div class="manual-drive-exit"><i class="fa fa-times"></i></div>
       <div class="speed_read_out">
         100
@@ -376,7 +376,7 @@
           </div>
         </div>
         <div class="manual-right-side-container">
-          <div id="keypad" class="fabmo-manual-control keypad " style="text-align: center;">
+          <div id="keypad" tabindex="0" class="fabmo-manual-control keypad " style="text-align: center;">
             <div class="slidecontainer">
               <input type="range"  step="0.1" class="slider" id="manual-move-speed">
               <label title="use Alt&lt and Alt&gt for speed up/dn"><u><</u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XY Move Speed&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<u>></u></label>
