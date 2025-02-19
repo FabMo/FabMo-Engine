@@ -167,6 +167,9 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
     //log.info("####=.executeCode");
     //this.init();
 
+    log.info("MANUAL CODE - from in FILE!!");
+    log.info(JSON.stringify(s));
+
     if (typeof s === "string" || s instanceof String) {
         // Plain old string interprets as OpenSBP code segment
         this.runString(s, callback);
@@ -195,6 +198,9 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             break;
 
                         case "start":
+                            this.machine.status.currentCmd = s.cmd; // needed to update client display in a File
+                            this.machine.status.running = true;
+                            this.machine.emit("status", this.machine.status);
                             this.helper.startMotion(s.axis, s.speed, s.second_axis, s.second_speed);
                             break;
 
@@ -206,11 +212,20 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             this.helper.quitMove();
                             break;
 
+                        case "resume":
+                            this.helper.resumeMove();
+                            this.machine.status.state = "manual";
+                            break;
+
                         case "maint":
                             this.helper.maintainMotion();
                             break;
 
                         case "goto":
+                            this.machine.status.currentCmd = s.cmd; // needed to update client display in a File
+                            this.machine.status.stat = 5;
+                            this.machine.status.running = true;
+                            this.machine.emit("status", this.machine.status);
                             this.helper.goto(s.move);
                             break;
 
@@ -219,10 +234,22 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                             break;
 
                         case "fixed":
+                            if (s.dist == null) {
+                                break;
+                            }
                             if (!this.helper) {
                                 this.enter();
                             }
                             this.helper.nudge(s.axis, s.speed, s.dist, s.second_axis, s.second_dist);
+                            break;
+
+                        case "output":
+                            if (!s.out || typeof s.out !== "object") {
+                                log.error("Invalid 'out' field in the command:", s);
+                                return;
+                            }
+                            // this is a little awkward using the raw system here too, but it's the best way to get the output
+                            this.helper.output(s.out.output, s.out.value);
                             break;
 
                         default:
@@ -667,7 +694,6 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 // comparison that needs to read the position of the tool breaks the stack.  Certain control flow statements break the stack.
 // Macro calls break the stack.  Currently conditional evaluations break the stack (IF statements) even though they should really only
 // break the stack if the expression being evaluated breaks the stack.  (TODO - fix that.)
-// TODO - System variable evaluations should break the stack
 // TODO - we should probably distinguish between the two meanings of "command" here - the cmd argument to this function is the object
 //        that represents a single line of the program but isn't necessarily one of the two-character OpenSBP commands. (Could be an IF
 //        statement or GOTO or whatever)  The command type "cmd" refers specifically to the two-character OpenSBP commands.

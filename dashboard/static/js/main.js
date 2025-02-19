@@ -218,7 +218,7 @@ engine.getVersion(function (err, version) {
                     if (!status["hideKeypad"]) {
                         $(".modalDim").show();
                         $(".manual-drive-modal").show();
-                        // if currently running a goto command in manual keypad and have stopped and resumed
+                        console.log("Status: " + status.state + "  Cmd: " + status.currentCmd);
                         if (status.stat === 5 && (status.currentCmd === "goto" || status.currentCmd === "resume")) {
                             $(".manual-stop").show();
                             $(".go-to, .set-coordinates").hide();
@@ -321,6 +321,11 @@ engine.getVersion(function (err, version) {
                             $("#title_goto").css("visibility", "hidden");
                             $(".manual-drive-message").show();
                             $(".manual-drive-message").html(status.info.message);
+                            $(".manual-drive-message").addClass("blinking-text");
+                            $("#action-1").css("visibility", "hidden");
+                            $("#action-2").css("visibility", "hidden");
+                            $("#action-3").css("visibility", "hidden");
+                            $("#action-4").css("visibility", "hidden");
                         } else if (status.info["timer"] && status.info["timer"] <= TIMER_DISPLAY_CUTOFF) {
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
@@ -486,6 +491,8 @@ engine.getVersion(function (err, version) {
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
                         }
+
+                        $("#keypad-modal").focus();
                     } else if (status.info["error"]) {
                         if (dashboard.engine.status.job) {
                             var detailHTML =
@@ -662,6 +669,7 @@ function setupKeyboard() {
     });
 
     keyboard.on("nudge", function (nudge) {
+        fixedTimeStart = Date.now(); // for measuring keypad response latency
         dashboard.engine.manualMoveFixed(
             nudge.axis,
             60 * getManualMoveSpeed(nudge),
@@ -719,6 +727,7 @@ function setupKeypad() {
         }
     });
 
+    $("#keypad").focus();
     return keypad;
 }
 
@@ -771,9 +780,15 @@ $(".action-button").on("click", function () {
 });
 
 $(".manual-drive-exit").on("click", function () {
+    // Remove changes for running manual from within a file
     $("#title_goto").css("visibility", "visible");
+    $("#action-1").css("visibility", "visible");
+    $("#action-2").css("visibility", "visible");
+    $("#action-3").css("visibility", "visible");
+    $("#action-4").css("visibility", "visible");
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
+    $(".manual-drive-message").removeClass("blinking-text");
 
     startManualExit()
         .then(() => {
@@ -1179,6 +1194,48 @@ function startBlurTimer() {
 // By listening for update in the spindle input box to clear focus
 $("#sp-speed").on("input", function (evt) {
     startBlurTimer();
+});
+// -------------------------------------------------------------------------
+
+// IFRAME COMMUNICATION =====================================================
+
+// This is an exploratory effort to communicate happenings from the dash to the iframe app
+// Function to sanitize the data and ensure only serializable properties are included
+function sanitizeData(data) {
+    const sanitizedData = {};
+    for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            const value = data[key];
+            if (
+                typeof value === "string" ||
+                typeof value === "number" ||
+                typeof value === "boolean" ||
+                value === null
+            ) {
+                sanitizedData[key] = value;
+            }
+        }
+    }
+    return sanitizedData;
+}
+
+// Add event listener to capture click events in the parent window
+document.addEventListener("mousedown", function (event) {
+    //console.log("Mouse down on:", event.target);
+
+    // Sanitize the data before sending it via postMessage
+    const sanitizedData = sanitizeData({
+        type: "click",
+        target: event.target.tagName,
+        id: event.target.id,
+        className: event.target.className,
+    });
+
+    // Send the sanitized data to the current iframe
+    var iframe = document.getElementById("app-iframe");
+    if (iframe) {
+        iframe.contentWindow.postMessage(sanitizedData, "*");
+    }
 });
 // -------------------------------------------------------------------------
 

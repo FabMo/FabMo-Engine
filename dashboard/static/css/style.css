@@ -1454,7 +1454,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-size: 1.2rem;
 	font-weight: bold;
 	display: none;
-	color: #313366;
+	color: #0f6ccb;
 	width: 100%;
 	height: auto;
 	text-align: center;
@@ -1994,8 +1994,13 @@ input[type='range']:focus {
 	position: relative;
 }
 
+#keypad:focus {
+    outline: none;
+}
 
-
+#keypad-modal:focus {
+    outline: none;
+}
 
 .go-to-container, #keypad{
 	display: block;
@@ -2627,14 +2632,14 @@ input[type='range']:focus {
 	}
   }
 
-/* for feed rate override */  
+/* for feed rate override and keypad message */  
 @keyframes blink {
 	0% {opacity: 1;}
 	50% {opacity: 0;}
 	100% {opacity: 1;}
 }
 .blinking-text {
-	animation: blink .25s linear infinite;
+	animation: blink 2.0s linear infinite;
 }
 
 .logout_link_container{

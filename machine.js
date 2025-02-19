@@ -1191,7 +1191,8 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
     } else {
         log.warn("Got a state change from a runtime that's not the current one. (" + source + ")");
     }
-    this.emit("status", this.status);
+    this.emit("status", this.status); // ##==> Emit STATUS REPORT // primary; also from runtimes
+
     if (this.status.info && this.status.info["timer"]) {
         this.pauseTimer = setTimeout(
             function () {

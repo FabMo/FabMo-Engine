@@ -21,7 +21,7 @@ require('./cm-fabmo-modes.js');
     let isMacroSaveClick = false;
     let isMacroSaveAndCloseClick = false;
     let overrideDirty = false; // Flag to override the dirty check
-
+    let alreadyBlurred = false; // Flag to prevent multiple blur events
 
 
     function execute() {
@@ -218,12 +218,12 @@ require('./cm-fabmo-modes.js');
 
     // Function to prompt the user to save their work
     function promptSaveWork(callback) {
-      if (isDirty) {
+      if (isDirty && !overrideDirty) {
           fabmo.showModal({
               title: 'Unsaved Changes',
-              message: 'You have unsaved changes. Do you want to save before leaving?',
+              message: 'You have unsaved changes. Do you want to save before next action?',
               okText: 'Yes',
-              cancelText: 'No (exit to run or leave again without saving)',
+              cancelText: 'No (click action again)',
               ok: function() {
                   submitJob(callback); // Save the work and then call the callback
               },
@@ -232,10 +232,11 @@ require('./cm-fabmo-modes.js');
               }
           });
       } else {
-          callback(); 
+          if (callback) {
+            callback(); 
+          }
       }
     }
-
 
     $(document).ready(function() {
       $(document).foundation();
@@ -257,6 +258,9 @@ require('./cm-fabmo-modes.js');
         mode: 'text'
       });
 
+      // Ensure the editor element is focusable
+      $('#editor').attr('tabindex', '0');
+
       editor.addKeyMap({
           "Cmd-Enter": function(cm) {
             execute();
@@ -270,48 +274,84 @@ require('./cm-fabmo-modes.js');
           "Cmd-s": function(cm) {
             save();
           }
-        })
+      })
 
-        editor.on('blur', function(cm) {
-          console.log("Got BLURR");
-          if (!source) {
-              save();
-              // Case of clicking outside and not one of the special buttons          
-            } else if (isDirty && !isSaveAndSubmitClick && !isRunCodeImmediatelyClick && !isMacroSaveClick && !isMacroSaveAndCloseClick) {
-              promptSaveWork();
-          } else if (isRunCodeImmediatelyClick) {
-              // Prompt and prevent running the code once if there are unsaved changes
-              if (isDirty) {
-                  promptSaveWork();
-                  isRunCodeImmediatelyClick = false;
-              } else {
-                  // Run the code immediately if there are no unsaved changes
-                  overrideDirty = false;
-                  save();
-              }
-            } else if (isMacroSaveAndCloseClick) {
-              // Prompt and prevent running the code once if there are unsaved changes
-              if (isDirty) {
-                  //promptSaveWork();
-                  isMacroSaveAndCloseClick = false;
-              } else {
-                  // Run the code immediately if there are no unsaved changes
-                  overrideDirty = false;
-                  //save();
-              }
-          }
-          isSaveAndSubmitClick = false;
-          isRunCodeImmediatelyClick = false;
-          isMacroSaveClick = false;
-          isMacroSaveAndCloseClick = false;
-        });
-        
+      // Attach the blur event handler
+      editor.on('blur', function(cm) {
+        handleEditorBlur();
+      });
+
+      // Problem here of being inside or outside editor iframe and needing different protection in different situations
+      function handleEditorBlur() {
+        if (alreadyBlurred) {
+          return;
+        }
+        alreadyBlurred = true;
+        console.log("Got BLURR");
+        // DEAL WITH ALL EDITOR CASES of lost focus
+        // If Scratchpad (i.e. not a Macro or Job) always just save to browser
+        if (!source) {
+            save();
+        // If Macro or Job,     
+        // ... and dirty, AND outside one of the special buttons handled separately, prompt to saveWork          
+        } else if (isDirty && !isSaveAndSubmitClick && !isRunCodeImmediatelyClick && !isMacroSaveClick && !isMacroSaveAndCloseClick) {
+            promptSaveWork();
+        // SPECIAL CASES    
+        } else if (isRunCodeImmediatelyClick) {
+            // Prompt and prevent running the code once if there are unsaved changes
+            if (isDirty) {
+                promptSaveWork();
+                isRunCodeImmediatelyClick = false;
+            } else {
+                // Run the code immediately if there are no unsaved changes
+                overrideDirty = false;
+                save();
+                isRunCodeImmediatelyClick = false;
+            }
+        } else if (isMacroSaveAndCloseClick) {
+            // Prompt and prevent running the code once if there are unsaved changes
+            if (isDirty) {
+                //promptSaveWork();
+                isMacroSaveAndCloseClick = false;
+            } else {
+                // Run the code immediately if there are no unsaved changes
+                overrideDirty = false;
+                //save();
+            }
+        }
+        alreadyBlurred = false;
+        isSaveAndSubmitClick = false;
+        isRunCodeImmediatelyClick = false;
+        isMacroSaveClick = false;
+        isMacroSaveAndCloseClick = false;
+      }
+            
         // Track changes in the editor
         editor.on("change", function() {
           isDirty = true;
           overrideDirty = false;
         });
 
+        // Listen for messages from the parent window
+        window.addEventListener('message', function(event) {
+          var eventId = event.data.id;
+          var origin = event.data.origin;
+          if (event.data.type === 'click') {
+            var eventId = event.data.id;
+            var origin = event.data.origin;
+                console.log("Clicked element outside iframe:", event.data);
+                console.log("Last clicked element:", eventId);
+
+            if (eventId === 'icon_def' || eventId === 'icon_folder' || eventId === 'icon_editor' || eventId === 'icon_jobs' || eventId === 'icon_settings' || eventId === 'icon_video') {
+              // Prompt and prevent running the code once if there are unsaved changes
+              if (isDirty && !overrideDirty) {
+                promptSaveWork();
+              } else {
+                overrideDirty = false;
+              }     
+            }
+          }
+        });
 
         // First EVENT HANDLER for exiting/saving/running; picks up a user choice before BLUR
         // Event listeners for specially handled keys such as "Save and Submit as a Separate New Job" button
@@ -326,7 +366,12 @@ require('./cm-fabmo-modes.js');
         // And for "Run Code Immediately" button
         $(document).on('mousedown', '#submit-immediate', function() {
           isRunCodeImmediatelyClick = true;
-        });
+          // Manually call the blur handler if the editor is not in focus
+          if (!editor.hasFocus() && !alreadyBlurred) {
+            handleEditorBlur();
+          }
+          alreadyBlurred = false;
+       });
         $(document).on('mouseup', '#submit-immediate', function() {
           isRunCodeImmediatelyClick = false;
         });
@@ -347,9 +392,7 @@ require('./cm-fabmo-modes.js');
           isMacroSaveAndCloseClick = false;
         });
 
-
-
-      ////## th - experiment on FLOW back re: Sb4 and similar apps; e.g. being able to back out of things with ESC
+        ////## th - experiment on FLOW back re: Sb4 and similar apps; e.g. being able to back out of things with ESC
         // get info for setting up exit-back behavior
         let this_App = "editor";
         let default_App = localStorage.getItem("defaultapp");

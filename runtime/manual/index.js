@@ -109,7 +109,7 @@ ManualRuntime.prototype.executeCode = function (code) {
         case "stopped":
             return;
     }
-    log.info("CODE!!");
+    log.info("MANUAL CODE!!");
     log.info(JSON.stringify(code));
     switch (code.cmd) {
         case "enter":
