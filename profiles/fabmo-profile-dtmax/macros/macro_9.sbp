@@ -1,0 +1,182 @@
+'!FABMO!name: Tool Change
+'!FABMO!description: Handles Manual Tool Change -- MTC - settings in #201 -
+'!FABMO!enabled:true
+' Name: Manual Tool Change
+' Description: Handles Manual Tool Change (MTC) from current Vectric posts and tracks tool# [C9]
+' Platform: Desktop/Desktop MAX
+' Author: Ted Hall, Ryan Sturmer
+' History:
+'   2017/09/13 - Refactored (th)
+'   2018/06/07 - Expanded to support desktop preferences (rs)
+'   2018/06/29 - Minor bugfixes - add support for FAIL command (rs) NOTE: now broken
+'   2021/09/25 - Refactored for latest FabMo (th)... Update "FAIL" when fixed
+'   2022/03/10
+
+'--- Check to make sure Standard Macro Variables have been read
+$sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
+IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+IF $ATC.Type = 0 THEN GOTO MANUAL_CHANGE
+C71
+GOTO END_CHANGE
+' === Main Program ===
+MANUAL_CHANGE:
+GOSUB initialize_variables
+IF &mtc_skip_first_tool_change == "YES" THEN GOSUB MTCSkip
+IF &mtc_mode == "IGNORE" THEN GOSUB MTCIgnore
+IF &mtc_mode == "MTC" THEN GOSUB MTCRun
+IF &mtc_mode == "QUIT" THEN GOSUB MTCQuit
+END_CHANGE:
+END
+'====================
+
+'--- Primary Subroutines ---
+MTCIgnore:
+    ' This option is dedicated to Bill Young - Just pretend like we didn't even see this tool change function.
+    RETURN
+
+MTCQuit:
+    'FAIL "A tool change has been encountered in Quit Mode.  The file will now quit.  You can change this behavior in the desktop preferences."
+    PAUSE "A Tool Change request has been encountered in Quit Mode. You can Quit now. You can change this behavior in the Desktop-HELP app or by editing Macro#201."
+	' This will work more appropriately and force a quit when embedded files are set to work with END and EXIT.
+    END
+    
+MTCSkip:
+	' Skip the first MTC call because this is usally a new cutter at betinning of file.
+    &current_tool = &Tool               'update tool
+    &mtc_skip_first_tool_change = "NO"  'change local flag
+	$sb_TOOLcurrent = &current_tool     'update system        
+	RETURN
+
+MTCRun:
+    ' If no &Tool was specified, that's an error
+    IF &Tool == -1 THEN GOTO NoToolError
+
+    ' No need to execute the change if we're already carrying the right tool
+    IF &Tool == &current_tool THEN GOTO DoneMTCRun
+    
+    ' Save the current XY position
+    Pause .5
+    &xpos = %(1)
+    &ypos = %(2)
+    
+    ' Turn the spindle off
+    C7
+    
+    ' Pull up to defined spot
+    if &mtc_z_mode == "MAX" THEN GOSUB GotoMaxZ
+    if &mtc_z_mode == "FIXED" THEN GOSUB GotoFixedZ
+    
+    ' Move to the tool change location ("STAY" choice to be ignored)
+    if &mtc_xy_mode == "FIXED" THEN GOSUB GotoFixedXY
+
+    'Change tools using the specified method
+    if &mtc_zero_mode == "MACRO" THEN GOSUB ZZeroWithMacro
+    if &mtc_zero_mode == "DRO" THEN GOSUB ZZeroWithDRO
+
+    ' Pull up to Safe Z Height
+    JZ, &safe_Z
+
+    ' Return to the XY position we started from
+    J2, &xpos, &ypos
+    
+    ' Set the current tool to the tool requested (assume if we got this far that the tool change was made successfully)
+	&current_tool = &Tool               'update local #
+	$sb_TOOLcurrent = &current_tool     'update system #       
+    
+    ' Spindle back on
+    C6
+    
+    DoneMTCRun:
+    RETURN
+    
+' --- Secondary Subroutines & Errors ---
+
+GotoMaxZ: ' check to make sure not a bad offset
+    IF &current_cutter_Zoffset > &safe_Z THEN GOTO pullup_to_offset
+	JZ, &safe_Z
+	RETURN
+    pullup_to_offset:
+	JZ, &current_cutter_Zoffset
+    RETURN
+    
+GotoFixedZ:
+    JZ, &tool_change_z
+    RETURN
+    
+GotoFixedXY:
+    J2, &tool_change_x, &tool_change_y
+    RETURN
+    
+ZZeroWithMacro:
+    SK, "Change to Tool# " + &Tool + " and position it above the Z-Zero plate"
+    C2
+    PAUSE "Press resume to continue with this tool, or quit to exit."
+    RETURN
+
+ZZeroWithDRO:
+    SK, "Change to Tool# " + &Tool + " and set the the zero position of the new Tool."
+    C78  ' Set Current Z offset
+    RETURN
+
+NoToolError:
+    'FAIL "A tool change was encountered, but no Tool Number was specified."
+    PAUSE "A tool change was encountered, but no Tool Number was specified."
+    END
+    
+NoChange:
+    END
+
+no_variables:
+    C201
+    RETURN
+
+
+initialize_variables:
+'--- Initialize Variables and Adjust Standard Macro Variables for Current Tool and Conditions as Needed
+	&Tool := -1
+	&current_tool = $sb_TOOLcurrent        
+	&mtc_mode = $sb_MTCmode
+	&mtc_xy_mode = $sb_MTC_XY_mode
+	&mtc_z_mode = $sb_MTC_Z_mode
+	&mtc_zero_mode = $sb_MTC_Zero_mode
+	&mtc_skip_first_tool_change = $sb_MTC_skip_first
+	&safe_Z = $sb_safe_Z            ' at the moment, units are managed inside FabMo
+
+  'Adjust to current UNITS of tool (handles whether tool Macro Variables are for INCHES or MM)
+    &dist_mult = 1.0
+    IF %(25) == 1 THEN GOTO tool_MM   		                  ' Read UNIT of Tool; System Variable #25
+      tool_IN:
+		$sb_current_cutter_Zoffset := .25                     ' Initialize this variables in IN for case tool cutter not yet zeroed
+        $sb_current_cutter_Zoffset_Units := "IN"
+        IF $sb_varTableUNITS == "IN" THEN GOTO continue_with_variables
+        &dist_mult = 0.0393701                                ' Defined in MM: Multiplier to redefine distances from mm to inches 
+        GOTO continue_with_variables
+      tool_MM:
+        $sb_current_cutter_Zoffset := 6.35                    ' Initialize this variable in MM for case tool cutter not zeroed
+        $sb_current_cutter_Zoffset_Units := "MM"
+        IF $sb_varTableUNITS == "MM" THEN GOTO continue_with_variables
+        &dist_mult = 25.4                                     ' Defined in IN: Multiplier to redefine distances from inches to mm 
+        GOTO continue_with_variables
+  'continue adjusting units for current working variables ...
+	continue_with_variables:                                  '*TOOL UNIT and OFFSET UNIT may be DIFFERENT / fix local unit
+    IF %(25) == 1 THEN GOTO tool_MM_zoff   	                  ' Read UNIT of Tool; System Variable #25
+     tool_IN_zoff:
+        IF $sb_current_cutter_Zoffset_Units == "MM" THEN GOTO continue_with_zoff_variables_MMtoIN
+        &current_cutter_Zoffset = $sb_current_cutter_Zoffset
+        GOTO continue_with_zoff_variables
+	   continue_with_zoff_variables_MMtoIN:
+        &current_cutter_Zoffset = 0.0393701 * $sb_current_cutter_Zoffset  ' Redefine offset distance from mm to inches 
+        GOTO continue_with_zoff_variables
+     tool_MM_zoff:
+        IF $sb_current_cutter_Zoffset_Units == "IN" THEN GOTO continue_with_zoff_variables_INtoMM
+        &current_cutter_Zoffset = $sb_current_cutter_Zoffset
+       continue_with_zoff_variables_INtoMM:
+        &current_cutter_Zoffset = 25.4 * $sb_current_cutter_Zoffset       ' Redefine distances from inches to mm 
+        GOTO continue_with_zoff_variables
+  'continue adjusting units for current working variables ...
+	continue_with_zoff_variables:
+		&tool_change_x = $sb_changePos_X * &dist_mult
+		&tool_change_y = $sb_changePos_Y * &dist_mult
+		&tool_change_z = $sb_changePos_Z * &dist_mult
+
+	RETURN
