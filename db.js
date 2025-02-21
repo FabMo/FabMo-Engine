@@ -18,6 +18,8 @@ var path = require("path");
 var process = require("process");
 var cnctosvg = require("cnctosvg");
 
+var db = require("./db");
+
 // Connect to TingoDB database that stores the files
 // Confusingly called "Engine" but not to be confused with the FabMo engine
 var Engine = require("tingodb")();
@@ -406,8 +408,10 @@ File.obliterate = function (file, callback) {
         }
     });
 
-    // TODO: figure out why this is commented out - if we obliterate a file, we should probably trash its thumbnail, yeah?
-    //thumbnails.remove({file_id : id},function(err){if(!err)callback();else callback(err);});
+    thumbnails.remove({ file_id: id }, function (err) {
+        if (!err) callback();
+        else callback(err);
+    });
 };
 
 // TODO Update docs
@@ -556,7 +560,12 @@ File.add = function (friendly_filename, pathname, callback) {
                                     if (err) {
                                         throw err;
                                     } else {
-                                        callback(null, file);
+                                        db.Thumbnail.generate(file._id, (err, thumbnail) => {
+                                            if (err) {
+                                                log.error("Failed to generate thumbnail:", err);
+                                            }
+                                            callback(null, file);
+                                        });
                                     }
                                 });
                             }
@@ -705,10 +714,10 @@ Thumbnail.prototype.checkUpdateAndReturn = function (callback) {
 // @param {string} title
 // @return {string} the image
 Thumbnail.createImage = function (gcode, title) {
-    var colors = { G1: "#000000", G2G3: "#000000" };
-    var width = 100;
-    var height = 100;
-    var lineThickness = 2;
+    var colors = { G1: "#3e40b6", G2G3: "#3e40b6" };
+    var width = 70; //100
+    var height = 50; //100
+    var lineThickness = 1; //2
     return cnctosvg.createSVG(gcode, colors, title, width, height, lineThickness, true);
 };
 

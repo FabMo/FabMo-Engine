@@ -139,7 +139,8 @@ function makeActions() {
   return actions;
 }
 
-// Returns an img string DOM element for holding the job preview thumbnail.
+// I'm thinking that originally there was no previewer and the thumbnail served that purpose, now were repurposing the thumbnail
+// // Returns an img string DOM element for holding the job preview thumbnail.
 // function createPreviewThumbnail(job, width, height) {
 //   var img = document.createElement("img");
 //   img.style.marginRight = "4px";
@@ -187,7 +188,7 @@ function addQueueEntries(jobs) {
         listItem.setAttribute("data-id", jobs[i]._id);
         table.appendChild(listItem);
         var id = document.getElementById(jobs[i]._id);
-        id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div><div class="created-date">'+ moment(jobs[i].created_at).fromNow(); +'</div>';
+        id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + '<img src="/job/' + jobs[i]._id + '/thumbnail" alt="Thumbnail not available" onerror="this.style.display=\'none\'" />' + '</div><div class="description">' + jobs[i].description + '</div><div class="created-date">'+ moment(jobs[i].created_at).fromNow() + '</div>';
         var menu = id.firstChild;
         menu.innerHTML = createQueueMenu(jobs[i]._id);
       // }

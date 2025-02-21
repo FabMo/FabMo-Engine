@@ -454,6 +454,26 @@ var getJobGCode = function (req, res, next) {
     });
 };
 
+var getThumbnailImage = function (req, res, next) {
+    var jobId = req.params.id;
+    db.Job.getById(jobId, function (err, job) {
+        if (err || !job) {
+            res.writeHead(500, { "Content-Type": "text/plain" });
+            res.end("Job not found");
+            return;
+        }
+        db.Thumbnail.getFromFileId(job.file_id, function (err, thumbnail) {
+            if (err || !thumbnail) {
+                res.writeHead(500, { "Content-Type": "text/plain" });
+                res.end("Thumbnail not found");
+                return;
+            }
+            res.writeHead(200, { "Content-Type": "image/svg+xml" });
+            res.end(thumbnail.image);
+        });
+    });
+};
+
 module.exports = function (server) {
     server.post("/job", submitJob);
     server.get("/jobs", getAllJobs);
@@ -463,7 +483,7 @@ module.exports = function (server) {
     server.post("/job/:id", resubmitJob);
     server.get("/job/:id/file", getJobFile);
     server.get("/job/:id/gcode", getJobGCode);
-    //server.get('/job/:id/thumbnail', getThumbnailImage);
+    server.get("/job/:id/thumbnail", getThumbnailImage);
 
     server.get("/jobs/queue", getQueue);
     server.del("/jobs/queue", clearQueue);
