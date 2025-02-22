@@ -31,6 +31,7 @@ var crypto = require("crypto");
 var moment = require("moment");
 //other util
 var Util = require("util");
+require("./config_watcher");
 
 var PACKAGE_CHECK_DELAY = 30; // Seconds
 
@@ -296,7 +297,7 @@ Engine.prototype.start = function (callback) {
                 } else {
                     fs.readFile("../site/.default", "utf8", function (err, content) {
                         if (err) {
-                            def = "Default";
+                            def = "default";
                         } else {
                             def = content;
                         }

@@ -908,6 +908,7 @@ exports.configureDB = function (callback) {
             },
         ],
         // eslint-disable-next-line no-unused-vars
+        // TODO maybe consider using chokidar to watch the db directory for changes (used for configs)
         function (err, results) {
             if (err) {
                 log.error("There was a database corruption issue!");

@@ -19,7 +19,7 @@ var UserConfig = require("./user_config").UserConfig;
 var G2Config = require("./g2_config").G2Config;
 var OpenSBPConfig = require("./opensbp_config").OpenSBPConfig;
 var MachineConfig = require("./machine_config").MachineConfig;
-var DashboardCofnig = require("./dashboard_config").DashboardConfig;
+var DashboardConfig = require("./dashboard_config").DashboardConfig;
 var InstanceConfig = require("./instance_config").InstanceConfig;
 var ProfileConfig = require("./profile_config").ProfileConfig;
 
