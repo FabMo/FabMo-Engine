@@ -693,8 +693,8 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 // they are able to execute.  It is similar to the difference in g-code between M100 and M101.  Any command, expression evaluation, or
 // comparison that needs to read the position of the tool breaks the stack.  Certain control flow statements break the stack.
 // Macro calls break the stack.  Currently conditional evaluations break the stack (IF statements) even though they should really only
-// break the stack if the expression being evaluated breaks the stack.  (TODO - fix that.)
-// TODO - we should probably distinguish between the two meanings of "command" here - the cmd argument to this function is the object
+// break the stack if the expression being evaluated breaks the stack.
+//      * We should distinguish between the two meanings of "command" here - the cmd argument to this function is the object
 //        that represents a single line of the program but isn't necessarily one of the two-character OpenSBP commands. (Could be an IF
 //        statement or GOTO or whatever)  The command type "cmd" refers specifically to the two-character OpenSBP commands.
 // Returns true if the command breaks the stack, false otherwise
@@ -722,6 +722,15 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
                     return true;
                 }
             }
+            // Check if the command itself contains any expressions that break the stack
+            if (cmd.args) {
+                for (i = 0; i < cmd.args.length; i++) {
+                    if (this._exprBreaksStack(cmd.args[i])) {
+                        log.warn("STACK BREAK for an expression in command: " + JSON.stringify(cmd.args[i]));
+                        return true;
+                    }
+                }
+            }
             result = false;
             break;
 
@@ -730,14 +739,20 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             return true;
 
         case "cond":
-            //TODO , we should check the expression for a stack break, as well as the .stmt
+            // Check the expression for a stack break, as well as the .stmt
+            if (this._exprBreaksStack(cmd.cmp) || this._exprBreaksStack(cmd.stmt)) {
+                return true;
+            }
             return true;
+
         case "weak_assign":
         case "assign":
-            // TODO: These should only break the stack if they assign to or read from expressions that break the stack
+            // Check if the assignment involves expressions that break the stack
+            if (this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)) {
+                return true;
+            }
             result = true;
             break;
-        //return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 
         case "custom":
             // Macro calls should break the stack
@@ -781,7 +796,14 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
         return false;
     }
     if (expr.op === undefined) {
-        return expr[0] == "%"; // For now, all system variable evaluations are stack-breaking
+        log.debug("Evaluating expression: " + JSON.stringify(expr));
+        if (typeof expr === "string") {
+            return expr[0] == "%"; // For now, all system variable evaluations are stack-breaking
+        } else if (typeof expr === "object" && expr.type === "system_variable") {
+            return true; // System variable evaluations are stack-breaking
+        } else {
+            return false;
+        }
     } else {
         return this._exprBreaksStack(expr.left) || this._exprBreaksStack(expr.right);
     }

@@ -73,19 +73,18 @@ G2Config.prototype.changeUnits = function (newUnits, callback) {
 //   callback - Called with an object containing all values retrieved
 G2Config.prototype.getFromDriver = function (callback) {
     var keys = Object.keys(this._cache);
-    this.driver.get(Object.keys(this._cache), function (err, values) {
+    this.driver.get(keys, function (err, values) {
         if (err) {
             callback(err);
+        } else if (!values || keys.length !== values.length) {
+            callback(new Error("Mismatch between keys and values length"));
         } else {
-            if (keys.length != values.length) {
-                callback(new Error("Something went wrong when getting values from G2"));
-            } else {
-                var obj = {};
-                for (var i = 0; i < keys.length; i++) {
-                    obj[keys[i]] = values[i];
-                }
-                callback(null, obj);
+            var obj = {};
+            for (var i = 0; i < keys.length; i++) {
+                log.debug(`Retrieved from driver: ${keys[i]} = ${values[i]}`);
+                obj[keys[i]] = values[i];
             }
+            callback(null, obj);
         }
     });
 };
@@ -99,9 +98,12 @@ G2Config.prototype.reverseUpdate = function (keys, callback) {
         function (err, data) {
             if (err) {
                 callback(err);
+            } else if (!data || keys.length !== data.length) {
+                callback(new Error("Mismatch between keys and data length"));
             } else {
                 keys.forEach(
                     function (key, i) {
+                        log.debug(`Updating cache: ${key} = ${data[i]}`);
                         this._cache[key] = data[i];
                     }.bind(this)
                 );
@@ -116,10 +118,9 @@ G2Config.prototype.reverseUpdate = function (keys, callback) {
 //   callback - Called with an object mapping keys to all values updated (after sync with G2)
 G2Config.prototype.update = function (data, callback) {
     const keys = Object.keys(data);
-    // TODO: We can probably replace this with a `setMany()`
     async.mapSeries(
         keys,
-        // Call driver.set() for each item in the collection of data that was passed in.
+        // Call driver.set() for each item in the collection of data that was passed in
         function iterator(key, cb) {
             if (this.driver) {
                 this.driver.set(key, data[key], function (err, data) {
@@ -133,17 +134,17 @@ G2Config.prototype.update = function (data, callback) {
         function done(err, results) {
             if (err) {
                 return callback(err);
+            } else if (!results || keys.length !== results.length) {
+                return callback(new Error("Mismatch between keys and results length"));
             }
             const retval = {};
             for (let i = 0; i < keys.length; i++) {
-                // key = keys[i];
-                // value = results[i];
-                // 1/18/2025 there is a bug that causes the axis type to change somehow related to call to keypad; this is part of debugging that
-                //  ... the variable definition additions may have been an issue; there is an unusual, typically a bug situation, that causes failure.
+                // 1/18/2025 there is a bug causing the axis type to change somehow, in calls to keypad
+                //  ... variable definition additions may have been an issue;
+                //  ... but it is a rare bug situation, that causes failure; so don't know if this fixes
                 const key = keys[i];
                 const value = results[i];
-                // console.log(`Mapping key: ${key} to value: ${value}`);
-
+                log.debug(`Updating cache: ${key} = ${value}`);
                 this._cache[key] = value;
                 retval[key] = value;
             }
