@@ -461,6 +461,7 @@ Machine.prototype.restoreDriverState = function (callback) {
                             this.status[key] = status[key];
                         }
                     }
+                    log.debug("Restoring G2 from disk cache after run ...");
                     config.driver.restore(function () {
                         if (callback) {
                             callback();

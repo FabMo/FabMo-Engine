@@ -22,7 +22,7 @@ function debounce(func, wait) {
 const createBackup = debounce((filePath) => {
     const relativePath = path.relative(watchDir, filePath);
     const backupPath = path.join(backupDir, relativePath);
-    log.info(`Creating backup for ${filePath} at ${backupPath}`);
+    //log.info(`Creating backup for ${filePath} at ${backupPath}`);
     fs.copy(filePath, backupPath, (err) => {
         if (err) {
             log.error(`Error creating backup for ${filePath}:`, err);
