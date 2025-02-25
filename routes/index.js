@@ -1,6 +1,7 @@
 var fs = require("fs");
 var path = require("path");
 var log = require("../log").logger("routes");
+require("../log").setGlobalLevel("info");
 var config = require("../config");
 var getStaticServeFunction = require("../static");
 
@@ -10,10 +11,7 @@ module.exports = function (server) {
     var files = fs.readdirSync(routeDir);
     files.forEach(function (file) {
         var filePath = path.resolve("./", routeDir, file);
-        if (
-            path.extname(filePath) == ".js" &&
-            path.basename(filePath) != "index.js"
-        ) {
+        if (path.extname(filePath) == ".js" && path.basename(filePath) != "index.js") {
             try {
                 var routes = require(filePath);
                 if (typeof routes == "function") {

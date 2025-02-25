@@ -16,6 +16,7 @@ util = require("util");
 Config = require("./config").Config;
 
 var log = require("../log").logger("g2config");
+require("../log").setGlobalLevel("info");
 
 // A G2Config is the configuration object that stores the configuration values for G2.
 // G2 configuration data is *already* JSON formatted, so G2Config objects are easy to create from config files using `load()`

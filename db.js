@@ -85,7 +85,7 @@ Job.prototype.update_order = function (order, callback) {
 // Note that they don't *do* anything other than manage state.
 
 Job.prototype.start = function (callback) {
-    log.info("Starting job id " + this._id ? this._id : "<volatile job>");
+    log.info("Starting job id " + (this._id ? this._id : "<volatile job>"));
     this.state = "running";
     this.started_at = Date.now();
     this.save(callback);

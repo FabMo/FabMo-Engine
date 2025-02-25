@@ -35,6 +35,7 @@ var fs = require("fs-extra");
 var path = require("path");
 var PLATFORM = require("process").platform;
 var log = require("../log").logger("config");
+require("../log").setGlobalLevel("info");
 var EventEmitter = require("events").EventEmitter;
 var util = require("util");
 

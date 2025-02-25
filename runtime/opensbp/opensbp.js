@@ -17,6 +17,7 @@
 var parser = require("./parser");
 var fs = require("fs");
 var log = require("../../log").logger("sbp");
+require("../../log").setGlobalLevel("info");
 var sb3_commands = require("./sb3_commands");
 var events = require("events");
 var tform = require("./transformation");
@@ -856,13 +857,13 @@ SBPRuntime.prototype._run = function () {
                     this.probingPending = false;
                     this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
                     this.prime();
-                    log.debug("COMPLETED PENDING PROBING =(cleared)============####");
+                    log.info("COMPLETED PENDING PROBING =(cleared)============####");
                     this._executeNext();
                     break;
                 }
                 if (this.gcodesPending) {
                     this.gcodesPending = false;
-                    log.debug("COMPLETED PENDING GCODES =(cleared)============####");
+                    log.info("COMPLETED PENDING GCODES =(cleared)============####");
                     this._executeNext();
                     break;
                 }
@@ -1139,27 +1140,6 @@ SBPRuntime.prototype._end = async function (error) {
         log.error(error);
     }
 
-    // // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
-    // var cleanup = function (error) {
-    //     if (this.machine && error) {
-    //         this.machine.setState(this, "stopped", { error: error });
-    //     }
-    //     // TODO: verify if this is needed
-    //     if (!this.machine) {
-    //         this.stream.end();
-    //     }
-    //     // Clear the internal state of the runtime (restore it to its initial state)
-    //     //TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
-    //     this.ok_to_disconnect = true;
-
-    //     this.init();
-    //     //TODO: G2 stream should be closed when this triggers -- keep as safety?
-    //     this.emit("end", this);
-    // }.bind(this);
-
-    // Clear runtime state
-    this.resetRuntimeState();
-
     // Clear the internal state of the runtime
     this.init();
 
@@ -1168,6 +1148,16 @@ SBPRuntime.prototype._end = async function (error) {
         this.resumeAllowed = false;
         try {
             await this.machine.restoreDriverState();
+
+            // this._saveConfig(
+            //     // eslint-disable-next-line no-unused-vars
+            //     function (err, values) {
+            //         if (err) {
+            //             log.error(err);
+            //         }
+            //         callback();
+            //     }.bind(this)
+            // );
 
             this.resumeAllowed = true;
 
@@ -1420,7 +1410,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
             var value = this._eval(command.expr);
             this._assign(command.var, value);
             if (callback) {
-                log.info("calling callback");
+                //log.info("calling callback");
                 callback();
             }
             return true;
@@ -1432,7 +1422,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 var value = this._eval(command.expr);
                 this._assign(command.var, value);
                 if (callback) {
-                    log.info("calling callback");
+                    //log.info("calling callback");
                     callback();
                 }
             } else {
