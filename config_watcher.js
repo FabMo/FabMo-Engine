@@ -22,7 +22,7 @@ function debounce(func, wait) {
 const createBackup = debounce((filePath) => {
     const relativePath = path.relative(watchDir, filePath);
     const backupPath = path.join(backupDir, relativePath);
-    //log.info(`Creating backup for ${filePath} at ${backupPath}`);
+    log.info(`Creating backup for ${filePath} at ${backupPath}`);
     fs.copy(filePath, backupPath, (err) => {
         if (err) {
             log.error(`Error creating backup for ${filePath}:`, err);
@@ -30,35 +30,70 @@ const createBackup = debounce((filePath) => {
             log.info(`Backup created for ${filePath}`);
         }
     });
-}, 100); // Adjust the debounce wait time here
+}, 10); // Adjust the debounce wait time here
 
-// Initialize watcher
-const watcher = chokidar.watch(watchDir, {
-    persistent: true,
-    ignoreInitial: false,
-});
-
-// Watch for file changes
-watcher
-    .on("add", (filePath) => {
-        log.info(`File added: ${filePath}`);
-        createBackup(filePath);
-    })
-    .on("change", (filePath) => {
-        log.info(`File changed: ${filePath}`);
-        createBackup(filePath);
-    })
-    .on("unlink", (filePath) => {
-        log.info(`File removed: ${filePath}`);
-        const relativePath = path.relative(watchDir, filePath);
-        const backupPath = path.join(backupDir, relativePath);
-        fs.remove(backupPath, (err) => {
-            if (err) {
-                log.error(`Error removing backup for ${filePath}:`, err);
-            } else {
-                log.info(`Backup removed for ${filePath}`);
-            }
-        });
+// Function to start the watcher
+function startWatcher() {
+    // Initialize watcher with awaitWriteFinish
+    const watcher = chokidar.watch(watchDir, {
+        persistent: true,
+        ignoreInitial: false,
+        awaitWriteFinish: {
+            stabilityThreshold: 500, // Adjust this value as needed
+            pollInterval: 50,
+        },
     });
 
-log.info(`Watching for changes in ${watchDir}`);
+    // Watch for file changes
+    watcher
+        .on("add", (filePath) => {
+            log.info(`File added: ${filePath}`);
+            createBackup(filePath);
+        })
+        .on("change", (filePath) => {
+            log.info(`File changed: ${filePath}`);
+            createBackup(filePath);
+        })
+        .on("unlink", (filePath) => {
+            log.info(`File removed: ${filePath}`);
+            const relativePath = path.relative(watchDir, filePath);
+            const backupPath = path.join(backupDir, relativePath);
+            fs.remove(backupPath, (err) => {
+                if (err) {
+                    log.error(`Error removing backup for ${filePath}:`, err);
+                } else {
+                    log.info(`Backup removed for ${filePath}`);
+                }
+            });
+        });
+
+    log.info(`Watching for changes in ${watchDir}`);
+
+    // Function to gracefully shut down the watcher
+    function shutdownWatcher() {
+        log.info("Shutting down file watcher...");
+        watcher
+            .close()
+            .then(() => {
+                log.info("File watcher shut down successfully.");
+                process.exit(0);
+            })
+            .catch((err) => {
+                log.error("Error shutting down file watcher:", err);
+                process.exit(1);
+            });
+    }
+
+    // Handle process events for graceful shutdown
+    process.on("exit", shutdownWatcher);
+    process.on("SIGINT", shutdownWatcher);
+    process.on("SIGTERM", shutdownWatcher);
+    process.on("uncaughtException", (err) => {
+        log.error("Uncaught exception:", err);
+        shutdownWatcher();
+    });
+}
+
+module.exports = {
+    startWatcher,
+};

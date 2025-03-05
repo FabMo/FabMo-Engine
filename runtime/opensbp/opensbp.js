@@ -1140,6 +1140,9 @@ SBPRuntime.prototype._end = async function (error) {
         log.error(error);
     }
 
+    //// Clear runtime state
+    this.resetRuntimeState();
+
     // Clear the internal state of the runtime
     this.init();
 
@@ -1149,15 +1152,14 @@ SBPRuntime.prototype._end = async function (error) {
         try {
             await this.machine.restoreDriverState();
 
-            // this._saveConfig(
-            //     // eslint-disable-next-line no-unused-vars
-            //     function (err, values) {
-            //         if (err) {
-            //             log.error(err);
-            //         }
-            //         callback();
-            //     }.bind(this)
-            // );
+            // Trigger the save process without making any specific updates
+            config.opensbp.update({}, (err) => {
+                if (err) {
+                    log.error("Failed to save opensbp.json:", err);
+                } else {
+                    log.info("opensbp.json saved successfully");
+                }
+            });
 
             this.resumeAllowed = true;
 

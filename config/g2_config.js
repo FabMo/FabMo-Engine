@@ -96,16 +96,16 @@ G2Config.prototype.getFromDriver = function (callback) {
 G2Config.prototype.reverseUpdate = function (keys, callback) {
     this.driver.get(
         keys,
-        function (err, data) {
+        function (err, values) {
             if (err) {
                 callback(err);
-            } else if (!data || keys.length !== data.length) {
-                callback(new Error("Mismatch between keys and data length"));
+            } else if (!values || keys.length !== values.length) {
+                callback(new Error("Mismatch between keys and values length"));
             } else {
                 keys.forEach(
                     function (key, i) {
-                        log.debug(`Updating cache: ${key} = ${data[i]}`);
-                        this._cache[key] = data[i];
+                        log.debug(`Updating cache: ${key} = ${values[i]}`);
+                        this._cache[key] = values[i];
                     }.bind(this)
                 );
                 this.save(callback);

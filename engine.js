@@ -32,7 +32,7 @@ var crypto = require("crypto");
 var moment = require("moment");
 //other util
 var Util = require("util");
-require("./config_watcher");
+var configWatcher = require("./config_watcher"); // Import the config_watcher module
 
 var PACKAGE_CHECK_DELAY = 30; // Seconds
 
@@ -828,6 +828,10 @@ Engine.prototype.start = function (callback) {
                 typeof callback === "function" && callback(err);
             } else {
                 typeof callback === "function" && callback(null, this);
+
+                // Start the file watcher after the engine startup process is completed
+                log.info("Starting the config watcher...");
+                configWatcher.startWatcher();
             }
         }.bind(this)
     );
