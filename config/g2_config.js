@@ -16,7 +16,6 @@ util = require("util");
 Config = require("./config").Config;
 
 var log = require("../log").logger("g2config");
-require("../log").setGlobalLevel("info");
 
 // A G2Config is the configuration object that stores the configuration values for G2.
 // G2 configuration data is *already* JSON formatted, so G2Config objects are easy to create from config files using `load()`
@@ -104,7 +103,7 @@ G2Config.prototype.reverseUpdate = function (keys, callback) {
             } else {
                 keys.forEach(
                     function (key, i) {
-                        log.debug(`Updating cache: ${key} = ${values[i]}`);
+                        //log.debug(`Updating cache: ${key} = ${values[i]}`);
                         this._cache[key] = values[i];
                     }.bind(this)
                 );
@@ -140,12 +139,9 @@ G2Config.prototype.update = function (data, callback) {
             }
             const retval = {};
             for (let i = 0; i < keys.length; i++) {
-                // 1/18/2025 there is a bug causing the axis type to change somehow, in calls to keypad
-                //  ... variable definition additions may have been an issue;
-                //  ... but it is a rare bug situation, that causes failure; so don't know if this fixes
                 const key = keys[i];
                 const value = results[i];
-                log.debug(`Updating cache: ${key} = ${value}`);
+                //log.debug(`Updating cache: ${key} = ${value}`);
                 this._cache[key] = value;
                 retval[key] = value;
             }

@@ -13,7 +13,6 @@
  *      the direct calls for developing other manual motion handlers beyond the normal keypad
  */
 var log = require("../../log").logger("manual");
-require("../../log").setGlobalLevel("info");
 var config = require("../../config");
 var util = require("util");
 var events = require("events");

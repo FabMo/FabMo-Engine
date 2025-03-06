@@ -64,7 +64,6 @@ var ncp = require("ncp").ncp;
 var fs = require("fs-extra");
 var async = require("async");
 var log = require("../log").logger("app_manager");
-require("../log").setGlobalLevel("info");
 var util = require("../util");
 var glob = require("glob");
 var config = require("../config");

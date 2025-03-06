@@ -26,7 +26,6 @@ var config = require("./config");
 var async = require("async");
 var fs = require("fs-extra");
 var log = require("./log").logger("profiles");
-require("./log").setGlobalLevel("info");
 var ncp = require("ncp").ncp;
 var path = require("path");
 var util = require("./util");

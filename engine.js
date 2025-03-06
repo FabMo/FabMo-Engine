@@ -9,7 +9,6 @@
 var restify = require("restify");
 var util = require("./util");
 var events = require("events");
-//var socketio = require('socket.io');
 var async = require("async");
 var process = require("process");
 var machine = require("./machine");
@@ -17,7 +16,6 @@ var config = require("./config");
 var OS = process.platform;
 var PLATFORM = process.env.PLATFORM;
 var log = require("./log").logger("engine");
-require("./log").setGlobalLevel("info");
 var db = require("./db");
 var macros = require("./macros");
 var dashboard = require("./dashboard");

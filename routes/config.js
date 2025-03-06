@@ -2,7 +2,6 @@ var util = require("../util");
 var machine = require("../machine").machine;
 var config = require("../config");
 var log = require("../log").logger("config-routes");
-require("../log").setGlobalLevel("info");
 var engine = require("../engine");
 var profiles = require("../profiles");
 

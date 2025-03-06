@@ -1,7 +1,6 @@
 var fs = require("fs");
 var path = require("path");
 var log = require("../../../log").logger("opensbp");
-require("../../../log").setGlobalLevel("info");
 
 // Load all the files in the 'routes' directory and process them as route-producing modules
 exports.load = function () {

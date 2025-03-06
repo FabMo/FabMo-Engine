@@ -1,7 +1,6 @@
 var fs = require("fs");
 var path = require("path");
 var log = require("../log").logger("routes");
-require("../log").setGlobalLevel("info");
 var config = require("../config");
 var getStaticServeFunction = require("../static");
 

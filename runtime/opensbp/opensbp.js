@@ -17,7 +17,6 @@
 var parser = require("./parser");
 var fs = require("fs");
 var log = require("../../log").logger("sbp");
-require("../../log").setGlobalLevel("info");
 var sb3_commands = require("./sb3_commands");
 var events = require("events");
 var tform = require("./transformation");
@@ -169,7 +168,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
     //this.init();
 
     log.info("MANUAL CODE - from in FILE!!");
-    log.info(JSON.stringify(s));
+    log.debug(JSON.stringify(s));
 
     if (typeof s === "string" || s instanceof String) {
         // Plain old string interprets as OpenSBP code segment

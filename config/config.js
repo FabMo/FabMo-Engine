@@ -35,7 +35,6 @@ var fs = require("fs-extra");
 var path = require("path");
 var PLATFORM = require("process").platform;
 var log = require("../log").logger("config");
-require("../log").setGlobalLevel("info");
 var EventEmitter = require("events").EventEmitter;
 var util = require("util");
 
@@ -185,12 +184,12 @@ Config.prototype.load = function (filename, callback) {
     const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
     const originalUserProfileFile = path.join(originalProfileDir, currentProfile, "config/", path.basename(filename));
 
-    log.info(`Loading configuration from: ${filename}`);
-    log.info(`Backup file path: ${backupFile}`);
-    log.info(`Default profile file path: ${defaultProfileFile}`);
-    log.info(`User profile file path: ${userProfileFile}`);
-    log.info(`Original default profile file path: ${originalDefaultProfileFile}`);
-    log.info(`Original user profile file path: ${originalUserProfileFile}`);
+    //log.info(`Loading configuration from: ${filename}`);
+    //log.info(`Backup file path: ${backupFile}`);
+    //log.info(`Default profile file path: ${defaultProfileFile}`);
+    //log.info(`User profile file path: ${userProfileFile}`);
+    //log.info(`Original default profile file path: ${originalDefaultProfileFile}`);
+    //log.info(`Original user profile file path: ${originalUserProfileFile}`);
 
     const tryLoadFile = (filePath, next) => {
         fs.readFile(filePath, "utf8", (err, data) => {

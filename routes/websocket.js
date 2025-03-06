@@ -1,7 +1,6 @@
 var util = require("../util");
 var machine = require("../machine").machine;
 var log = require("../log").logger("websocket");
-require("../log").setGlobalLevel("info");
 var authentication = require("../authentication");
 var sessions = require("client-sessions");
 var parseCookie = require("./util").parseCookie;
