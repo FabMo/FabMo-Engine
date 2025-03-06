@@ -127,28 +127,15 @@ AppManager.prototype.readAppPackageInfo = function (app_info, callback) {
 
             try {
                 app_info.name = package_info.name;
-                app_info.config_path = path.join(
-                    app_info.app_path,
-                    ".config.json"
-                );
+                app_info.config_path = path.join(app_info.app_path, ".config.json");
                 app_info.icon_path = app_info.app_path + package_info.icon;
-                app_info.icon_background_color =
-                    package_info.icon_color || "blue";
+                app_info.icon_background_color = package_info.icon_color || "blue";
                 app_info.icon_display = package_info.icon_display;
-                app_info.app_url = path.join(
-                    "approot",
-                    pathname,
-                    package_info.main
-                );
-                app_info.icon_url = path.join(
-                    "approot",
-                    pathname,
-                    package_info.icon
-                );
+                app_info.app_url = path.join("approot", pathname, package_info.main);
+                app_info.icon_url = path.join("approot", pathname, package_info.icon);
                 app_info.id = package_info.id || id;
                 app_info.version = package_info.version || "";
-                app_info.description =
-                    package_info.description || "No description";
+                app_info.description = package_info.description || "No description";
                 callback(null, app_info);
             } catch (e) {
                 callback(e);
@@ -229,11 +216,7 @@ AppManager.prototype.getAppConfig = function (id) {
 // callback - Called once the new configuration has been written to disk (error if error)
 AppManager.prototype.setAppConfig = function (id, config, callback) {
     this.app_configs[id] = config || {};
-    fs.writeFile(
-        this.apps_index[id].config_path,
-        JSON.stringify(config),
-        callback
-    );
+    fs.writeFile(this.apps_index[id].config_path, JSON.stringify(config), callback);
 };
 
 // Reconstruct the list of apps from the app_index
@@ -293,23 +276,13 @@ AppManager.prototype.loadApp = function (pathname, options, callback) {
             }
             if (stat.isDirectory()) {
                 // Copy if it's a directory
-                return this.copyApp(
-                    pathname,
-                    this.approot_directory,
-                    options,
-                    callback
-                );
+                return this.copyApp(pathname, this.approot_directory, options, callback);
             }
 
             var ext = path.extname(pathname).toLowerCase();
             if (ext === ".fma" || ext === ".zip") {
                 // Decompress if it's a compressed app file
-                return this.decompressApp(
-                    pathname,
-                    this.approot_directory,
-                    options,
-                    callback
-                );
+                return this.decompressApp(pathname, this.approot_directory, options, callback);
             } else {
                 // Error if it's a file, but the wrong kind
                 return callback(new Error(pathname + " is not an app."));
@@ -346,10 +319,7 @@ AppManager.prototype.deleteApp = function (id, callback) {
                                 if (index > -1) {
                                     this.apps_list.splice(index, 1);
                                 } else {
-                                    log.warn(
-                                        "Inconsistency in the app index observed when removing app " +
-                                            app_id
-                                    );
+                                    log.warn("Inconsistency in the app index observed when removing app " + app_id);
                                 }
                                 callback(null, app_info);
                                 this.notifyChange();
@@ -379,9 +349,7 @@ AppManager.prototype.copyApp = function (src, dest, options, callback) {
         var exists = fs.existsSync(app_info.app_path);
 
         if (exists && !options.force) {
-            log.debug(
-                'Not copying app "' + src + '" because it already exists.'
-            );
+            log.debug('Not copying app "' + src + '" because it already exists.');
             this.readAppMetadata(
                 app_info,
                 function (err, app_metadata) {
@@ -440,9 +408,7 @@ AppManager.prototype.decompressApp = function (src, dest, options, callback) {
         };
         var exists = fs.existsSync(app_info.app_path);
         if (exists && !options.force) {
-            log.debug(
-                'Not decompressing app "' + src + '" because it already exists.'
-            );
+            log.debug('Not decompressing app "' + src + '" because it already exists.');
             this.readAppMetadata(
                 app_info,
                 function (err, app_metadata) {
@@ -503,18 +469,12 @@ AppManager.prototype.installAppArchive = function (pathname, name, callback) {
         function (err) {
             log.debug("Done with a move");
             if (err) {
-                callback(
-                    new Error(
-                        "Failed to move the app from the temporary folder to the installation folder."
-                    )
-                );
+                callback(new Error("Failed to move the app from the temporary folder to the installation folder."));
             }
             // delete the temporary file (no longer needed)
             fs.unlink(pathname, function (err) {
                 if (err) {
-                    log.warn(
-                        "failed to remove the app from temporary folder: " + err
-                    );
+                    log.warn("failed to remove the app from temporary folder: " + err);
                 }
             }); // unlink
 
@@ -548,12 +508,7 @@ AppManager.prototype.getAppPaths = function (callback) {
                     glob(
                         profile_pattern,
                         function (err, profile_files) {
-                            callback(
-                                null,
-                                system_files
-                                    .concat(user_files)
-                                    .concat(profile_files)
-                            );
+                            callback(null, system_files.concat(user_files).concat(profile_files));
                         }.bind(this)
                     );
                 }.bind(this)

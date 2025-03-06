@@ -46,11 +46,11 @@ function updateSpeedsFromEngineConfig() {  // ALSO update HOMING status at the s
         if (!xyHomedStatus || xyHomedStatus == "false") {
             $("#first_macro_button").addClass("info");
             $("#first_macro_button").removeClass("disabled");
-            fabmo.setConfig({"opensbp": {"tempVariables": {"XYHOMED": "false"}}}, function(err, data) {
-                if (err) {
-                    console.error(err);
-                }
-            });
+            // fabmo.setConfig({"opensbp": {"tempVariables": {"XYHOMED": "false"}}}, function(err, data) {
+            //     if (err) {
+            //         console.error(err);
+            //     }
+            // });
         } else {
             $("#first_macro_button").addClass("disabled");
             $("#first_macro_button").removeClass("info");
@@ -60,11 +60,11 @@ function updateSpeedsFromEngineConfig() {  // ALSO update HOMING status at the s
         if (!zHomedStatus || zHomedStatus == "false") {
             $("#second_macro_button").addClass("info");
             $("#second_macro_button").removeClass("disabled");
-            fabmo.setConfig({"opensbp": {"tempVariables": {"ZHOMED": "false"}}}, function(err, data) {
-                if (err) {
-                    console.error(err);
-                }
-            });
+            // fabmo.setConfig({"opensbp": {"tempVariables": {"ZHOMED": "false"}}}, function(err, data) {
+            //     if (err) {
+            //         console.error(err);
+            //     }
+            // });
         } else {
             $("#second_macro_button").addClass("disabled");
             $("#second_macro_button").removeClass("info");

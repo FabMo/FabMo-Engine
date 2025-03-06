@@ -10,10 +10,7 @@ module.exports = function (server) {
     var files = fs.readdirSync(routeDir);
     files.forEach(function (file) {
         var filePath = path.resolve("./", routeDir, file);
-        if (
-            path.extname(filePath) == ".js" &&
-            path.basename(filePath) != "index.js"
-        ) {
+        if (path.extname(filePath) == ".js" && path.basename(filePath) != "index.js") {
             try {
                 var routes = require(filePath);
                 if (typeof routes == "function") {

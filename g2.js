@@ -261,7 +261,7 @@ G2.prototype._createCycleContext = function () {
             this._primed = true;
             this._streamDone = true;
             this.sendMore();
-            log.debug("***Stream END event.");
+            log.info("***Stream END event.");
         }.bind(this)
     );
 

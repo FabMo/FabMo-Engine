@@ -7,6 +7,19 @@
  * Defines the superclass for all configuration objects, along with a number of
  * functions that support configuration in the FabMo system.
  *
+ * Directory Structure:
+ * - Profiles Directory: /opt/fabmo/profiles/
+ *   - Default Profile: /opt/fabmo/profiles/default/
+ *   - User Profiles: /opt/fabmo/profiles/<profile_name>/
+ * - Working Config Directory: /opt/fabmo/config/
+ * - Backup Config Directory: /opt/fabmo_backup/config/
+ *
+ * Configuration Loading Priority:
+ * 1. Load from backup directory (/opt/fabmo_backup/config/)
+ * 2. Rebuild from working repository of profiles (/opt/fabmo/profiles/)
+ *    - Load default profile first, then update with user profile
+ * 3. Fallback to original profiles in installation directory (/fabmo/profiles/)
+ *
  * A Config object is essentially a JSON object wrapped up with some functions for saving and loading.
  * Methods are provided for updating keys/values in the object easily, in such a way that configuration changes
  * coming from a client or from files on disk can be easily merged into an active configuration.
@@ -154,33 +167,110 @@ Config.prototype.getData = function () {
 //  callback - called when complete with the loaded data (or error)
 Config.prototype.load = function (filename, callback) {
     this._filename = filename;
-    fs.readFile(
-        filename,
-        "utf8",
-        function (err, data) {
+
+    const backupDir = "/opt/fabmo_backup/config/";
+    const workingProfileDir = "/opt/fabmo/profiles/";
+    const originalProfileDir = __dirname + "/../profiles/";
+
+    if (!filename) {
+        log.error("Filename is undefined");
+        return callback(new Error("Filename is undefined"));
+    }
+
+    const backupFile = path.join(backupDir, path.basename(filename));
+    const defaultProfileFile = path.join(workingProfileDir, "default/config/", path.basename(filename));
+    const currentProfile = Config.getCurrentProfile() || "default";
+    const userProfileFile = path.join(workingProfileDir, currentProfile, "config/", path.basename(filename));
+    const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
+    const originalUserProfileFile = path.join(originalProfileDir, currentProfile, "config/", path.basename(filename));
+
+    //log.info(`Loading configuration from: ${filename}`);
+    //log.info(`Backup file path: ${backupFile}`);
+    //log.info(`Default profile file path: ${defaultProfileFile}`);
+    //log.info(`User profile file path: ${userProfileFile}`);
+    //log.info(`Original default profile file path: ${originalDefaultProfileFile}`);
+    //log.info(`Original user profile file path: ${originalUserProfileFile}`);
+
+    const tryLoadFile = (filePath, next) => {
+        fs.readFile(filePath, "utf8", (err, data) => {
             if (err) {
-                return callback(err);
+                return next(err);
             }
             try {
                 data = JSON.parse(data);
+                this.update(
+                    data,
+                    (err, d) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        callback(null, data);
+                    },
+                    true
+                );
             } catch (e) {
                 log.error(e);
-                return callback(e);
+                next(e);
             }
-            this.update(
-                data,
-                function (err, d) {
-                    callback(err, data);
-                },
-                true
-            );
-        }.bind(this)
+        });
+    };
+
+    const loadFromBackup = (next) => {
+        log.info(`Attempting to load from backup: ${backupFile}`);
+        tryLoadFile(backupFile, next);
+    };
+
+    const loadFromWorkingProfile = (next) => {
+        log.info(`Attempting to rebuild from working profile: ${defaultProfileFile} and ${userProfileFile}`);
+        async.series([(cb) => tryLoadFile(defaultProfileFile, cb), (cb) => tryLoadFile(userProfileFile, cb)], next);
+    };
+
+    const loadFromOriginalProfile = (next) => {
+        log.info(
+            `Attempting to rebuild from original profile: ${originalDefaultProfileFile} and ${originalUserProfileFile}`
+        );
+        async.series(
+            [(cb) => tryLoadFile(originalDefaultProfileFile, cb), (cb) => tryLoadFile(originalUserProfileFile, cb)],
+            next
+        );
+    };
+
+    async.series(
+        [
+            (next) =>
+                tryLoadFile(filename, (err) => {
+                    if (err) {
+                        log.warn(`Failed to load config file: ${filename}, trying backup.`);
+                        return loadFromBackup(next);
+                    }
+                    callback(null);
+                }),
+            (next) =>
+                loadFromWorkingProfile((err) => {
+                    if (err) {
+                        log.warn(`Failed to load from working profile, trying original profile.`);
+                        return loadFromOriginalProfile(next);
+                    }
+                    callback(null);
+                }),
+        ],
+        (err) => {
+            if (err) {
+                log.error(`Failed to load configuration from all sources: ${err.message}`);
+                callback(err);
+            } else {
+                callback(null);
+            }
+        }
     );
 };
 
 // Write this configuration object to disk
 //   callback - Called with null once the configuration is saved (or with error if error)
 Config.prototype.save = function (callback) {
+    ////## for further debugging of start and save sequencing and timing!!
+    //log.debug("Entering save function for " + this.config_name);
+    //log.stack();
     var config_file = this.getConfigFile();
     if (this._loaded && config_file) {
         log.debug("Saving config to " + config_file);
@@ -306,7 +396,7 @@ Config.prototype.getDefaultConfigFile = function () {
     return Config.getDefaultProfileDir("config") + this.config_name + ".json";
 };
 
-// TODO I think this function is a relic from an earlier version of profiles.
+// Return the path to the file containing the profile-specific values for this configuration
 Config.prototype.getProfileConfigFile = function () {
     return Config.getProfileDir("config") + this.config_name + ".json";
 };
@@ -318,20 +408,21 @@ Config.prototype.getConfigFile = function () {
 
 // "Static Methods"
 
-// TODO - Probably factor out, old profile
+// Get the directory for the current profile
 Config.getProfileDir = function (d) {
     var profile = Config.getCurrentProfile() || "default";
-    return __dirname + "/../profiles/" + profile + "/" + (d ? d + "/" : "");
+    return "/opt/fabmo/profiles/" + profile + "/" + (d ? d + "/" : "");
 };
 
-// TODO - Probably factor out, old profile stuff
+// Get the directory for the default profile
 Config.getDefaultProfileDir = function (d) {
-    return __dirname + "/../profiles/default/" + (d ? d + "/" : "");
+    return "/opt/fabmo/profiles/default/" + (d ? d + "/" : "");
 };
 
 // Get the mutable data directory for FabMo
 // On unix-like systems, this is /opt/fabmo
 Config.getDataDir = function (name) {
+    var base;
     switch (PLATFORM) {
         case "win32":
         case "win64":
@@ -341,22 +432,20 @@ Config.getDataDir = function (name) {
             base = "/opt/fabmo";
     }
     if (name) {
-        dir = base + path.sep + name;
+        return base + path.sep + name;
     } else {
-        dir = base;
+        return base;
     }
-    return dir;
 };
 
-// TODO probably not needed anymore
+// Get the current profile name
 Config.getCurrentProfile = function () {
     var cfg = require("./index");
-    return cfg.engine.get("profile");
+    var profile = cfg.engine.get("profile");
+    return profile ? profile.toLowerCase() : undefined;
 };
 
 // Delete all macros
-// TODO - Should this just be in the macros module?
-// TODO this removeSync pattern is bad, should we do this with proper asynchronous calls?
 Config.deleteUserMacros = function (callback) {
     var installedMacrosDir = Config.getDataDir("macros");
     fs.readdir(installedMacrosDir, function (err, files) {
@@ -377,7 +466,6 @@ Config.deleteUserMacros = function (callback) {
 };
 
 // Delete all user configuration files, except for auth_secret and engine/updater.json
-// TODO this removeSync pattern is bad, should we do this with proper asynchronous calls?
 Config.deleteUserConfig = function (callback) {
     var config_dir = Config.getDataDir("config");
     fs.readdir(config_dir, function (err, files) {
@@ -399,7 +487,7 @@ Config.deleteUserConfig = function (callback) {
     });
 };
 
-// Clear configura
+// Clear configuration
 Config.deleteProfileData = function (callback) {
     Config.deleteUserConfig(function (err, data) {
         if (err) {

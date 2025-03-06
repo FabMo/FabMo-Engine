@@ -57,7 +57,7 @@
 		"@babel/preset-env": "^7.13.15",
 		"assert-plus": "1.0.0",
 		"babel-loader": "^8.2.2",
-		"chokidar": "3.5.1",
+		"chokidar": "^3.5.1",
 		"clean-webpack-plugin": "3.0.0",
 		"css-loader": "^5.2.4",
 		"eslint-config-prettier": "^8.5.0",

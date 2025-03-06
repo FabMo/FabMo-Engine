@@ -341,6 +341,23 @@ ManualDriver.prototype.set = function (pos) {
     } else {
         unitConv = 1;
     }
+    // Deal with unit conversion for ABC which can be rotary(1);linear(2);radius(3) [these are ints!]
+    if (config.driver._cache.aam === 1) {
+        var unitConvA = 1; //never a converion for rotary
+    } else {
+        unitConvA = unitConv; // linear use current units
+    }
+    if (config.driver._cache.bam === 1) {
+        var unitConvB = 1;
+    } else {
+        unitConvB = unitConv;
+    }
+    if (config.driver._cache.cam === 1) {
+        var unitConvC = 1;
+    } else {
+        unitConvC = unitConv;
+    }
+
     if (this.mode === "normal") {
         // var gc = 'G10 L20 P2 ';
         this.driver.get(
@@ -348,7 +365,7 @@ ManualDriver.prototype.set = function (pos) {
             function (err, MPO) {
                 Object.keys(pos).forEach(
                     function (key) {
-                        console.log(key);
+                        log.debug(key);
                         switch (key) {
                             case "X":
                                 toSet.g55x = Number((MPO.x * unitConv - pos[key]).toFixed(5));
@@ -360,16 +377,13 @@ ManualDriver.prototype.set = function (pos) {
                                 toSet.g55z = Number((MPO.z * unitConv - pos[key]).toFixed(5));
                                 break;
                             case "A":
-                                toSet.g55a = Number(
-                                    //(MPO.a * unitConv - pos[key]).toFixed(5) ////##A
-                                    (MPO.a * 1 - pos[key]).toFixed(5)
-                                );
+                                toSet.g55a = Number((MPO.a * unitConvA - pos[key]).toFixed(5));
                                 break;
                             case "B":
-                                toSet.g55b = Number((MPO.b * 1 - pos[key]).toFixed(5));
+                                toSet.g55b = Number((MPO.b * unitConvB - pos[key]).toFixed(5));
                                 break;
                             case "C":
-                                toSet.g55c = Number((MPO.c * 1 - pos[key]).toFixed(5));
+                                toSet.g55c = Number((MPO.c * unitConvC - pos[key]).toFixed(5));
                                 break;
                             default:
                                 log.error("don't understand axis");

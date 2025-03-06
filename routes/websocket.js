@@ -116,20 +116,14 @@ var onPrivateConnect = function (socket) {
         socket.emit("user_change", data);
     });
 
-    authentication.eventEmitter.on(
-        "user_kickout",
-        function user_kickout_listener(user) {
-            authentication.eventEmitter.removeListener(
-                "user_kickout",
-                user_kickout_listener
-            );
-            if (user.username == userId) {
-                socket.emit("authentication_failed", "kicked out");
-                log.info("disconnect - kickedout auth");
-                return socket.disconnect();
-            }
+    authentication.eventEmitter.on("user_kickout", function user_kickout_listener(user) {
+        authentication.eventEmitter.removeListener("user_kickout", user_kickout_listener);
+        if (user.username == userId) {
+            socket.emit("authentication_failed", "kicked out");
+            log.info("disconnect - kickedout auth");
+            return socket.disconnect();
         }
-    );
+    });
 
     var client_address = util.getClientAddress(socket.client.request);
     log.info("Client #" + userId + " at " + client_address + " connected.");
@@ -145,10 +139,7 @@ var onPrivateConnect = function (socket) {
             cookie["session"]
         );
 
-        if (
-            !authentication.getCurrentUser() ||
-            authentication.getCurrentUser().username != userId
-        ) {
+        if (!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId) {
             log.error(userId);
             log.error(authentication.getCurrentUser());
             socket.emit("authentication_failed", "not authenticated");
@@ -165,10 +156,7 @@ var onPrivateConnect = function (socket) {
     });
 
     socket.on("cmd", function (data, callback) {
-        if (
-            !authentication.getCurrentUser() ||
-            authentication.getCurrentUser().username != userId
-        ) {
+        if (!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId) {
             log.error(userId);
             log.error(authentication.getCurrentUser());
             socket.emit("authentication_failed", "not authenticated");
@@ -187,12 +175,7 @@ var onPrivateConnect = function (socket) {
                     break;
 
                 case "resume":
-                    if (
-                        data.args &&
-                        data.args.var &&
-                        data.args.type &&
-                        data.args.val
-                    ) {
+                    if (data.args && data.args.var && data.args.type && data.args.val) {
                         machine.resume(callback, {
                             var: { expr: data.args.var, type: data.args.type },
                             val: data.args.val,

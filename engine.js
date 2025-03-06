@@ -9,7 +9,6 @@
 var restify = require("restify");
 var util = require("./util");
 var events = require("events");
-//var socketio = require('socket.io');
 var async = require("async");
 var process = require("process");
 var machine = require("./machine");
@@ -31,6 +30,7 @@ var crypto = require("crypto");
 var moment = require("moment");
 //other util
 var Util = require("util");
+var configWatcher = require("./config_watcher"); // Import the config_watcher module
 
 var PACKAGE_CHECK_DELAY = 30; // Seconds
 
@@ -296,7 +296,7 @@ Engine.prototype.start = function (callback) {
                 } else {
                     fs.readFile("../site/.default", "utf8", function (err, content) {
                         if (err) {
-                            def = "Default";
+                            def = "default";
                         } else {
                             def = content;
                         }
@@ -826,6 +826,10 @@ Engine.prototype.start = function (callback) {
                 typeof callback === "function" && callback(err);
             } else {
                 typeof callback === "function" && callback(null, this);
+
+                // Start the file watcher after the engine startup process is completed
+                log.info("Starting the config watcher...");
+                configWatcher.startWatcher();
             }
         }.bind(this)
     );

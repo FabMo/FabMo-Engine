@@ -85,7 +85,7 @@ Job.prototype.update_order = function (order, callback) {
 // Note that they don't *do* anything other than manage state.
 
 Job.prototype.start = function (callback) {
-    log.info("Starting job id " + this._id ? this._id : "<volatile job>");
+    log.info("Starting job id " + (this._id ? this._id : "<volatile job>"));
     this.state = "running";
     this.started_at = Date.now();
     this.save(callback);
@@ -908,6 +908,7 @@ exports.configureDB = function (callback) {
             },
         ],
         // eslint-disable-next-line no-unused-vars
+        // TODO maybe consider using chokidar to watch the db directory for changes (used for configs)
         function (err, results) {
             if (err) {
                 log.error("There was a database corruption issue!");

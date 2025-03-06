@@ -1,6 +1,7 @@
 var util = require("../util");
 var machine = require("../machine").machine;
 var config = require("../config");
+var log = require("../log").logger("config-routes");
 var engine = require("../engine");
 var profiles = require("../profiles");
 
@@ -116,33 +117,30 @@ var post_config = function (req, res, next) {
     }
 
     if ("driver" in req.params) {
-        config.driver.setMany(
-            util.fixJSON(req.params.driver),
-            function (err, result) {
-                if (!setMany_remaining) return;
-                if (err) {
+        config.driver.setMany(util.fixJSON(req.params.driver), function (err, result) {
+            if (!setMany_remaining) return;
+            if (err) {
+                answer = {
+                    status: "fail",
+                    data: {
+                        body: "the configuration data you submitted is not valid",
+                    },
+                };
+                res.json(answer);
+                setMany_remaining = 0;
+                return;
+            } else {
+                final_result.driver = result;
+                setMany_remaining--;
+                if (!setMany_remaining) {
                     answer = {
-                        status: "fail",
-                        data: {
-                            body: "the configuration data you submitted is not valid",
-                        },
+                        status: "success",
+                        data: final_result,
                     };
                     res.json(answer);
-                    setMany_remaining = 0;
-                    return;
-                } else {
-                    final_result.driver = result;
-                    setMany_remaining--;
-                    if (!setMany_remaining) {
-                        answer = {
-                            status: "success",
-                            data: final_result,
-                        };
-                        res.json(answer);
-                    }
                 }
             }
-        );
+        });
     }
 
     if ("opensbp" in req.params) {

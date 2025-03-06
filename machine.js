@@ -461,6 +461,7 @@ Machine.prototype.restoreDriverState = function (callback) {
                             this.status[key] = status[key];
                         }
                     }
+                    log.debug("Restoring G2 from disk cache after run ...");
                     config.driver.restore(function () {
                         if (callback) {
                             callback();
@@ -838,7 +839,7 @@ Machine.prototype.deauthorize = function () {
     if (this._authTimer) {
         clearTimeout(this._authTimer);
     }
-    log.info("Machine is deauthorized.");
+    log.debug("Machine is deauthorized.");
     this.status.auth = false;
 };
 

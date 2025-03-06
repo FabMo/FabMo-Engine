@@ -1437,7 +1437,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .manual-drive-exit {
     position: absolute;
     top: 10px;
-    right: 2px;
+    right: 15px;
     border-radius: 50%;
     height: 35px;
     width: 35px;
@@ -1445,6 +1445,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding: 0.2rem;
     color: #313366;
 	background-color: #ffda29;
+	z-index: 1;
     line-height: 20px;
     text-align: center;
     cursor: pointer;
@@ -1655,7 +1656,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .speed_read_out {
 	position: relative;
-	top: 0%;
+	top: 10%;
 	left: 73%;
 	color: #422001;
 	display: none;
@@ -2062,9 +2063,10 @@ input[type='range']:focus {
 }
 
 #title_goto {
+	position: relative;
     font-size: 1rem;
 	visibility: visible;
-    top: 1rem;
+    top: -1.5rem;
 	left: 5%;
 	padding-bottom: 1rem;
     margin-top: -2rem;
@@ -2184,6 +2186,7 @@ input[type='range']:focus {
 
 #action-5.action-button{
 	max-width: 70%;
+	margin-top: -1.5%;
 	background-color: #ce6402;
 	color:#035b1c;
 }

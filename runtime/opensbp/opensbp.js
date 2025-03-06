@@ -168,7 +168,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
     //this.init();
 
     log.info("MANUAL CODE - from in FILE!!");
-    log.info(JSON.stringify(s));
+    log.debug(JSON.stringify(s));
 
     if (typeof s === "string" || s instanceof String) {
         // Plain old string interprets as OpenSBP code segment
@@ -693,8 +693,8 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
 // they are able to execute.  It is similar to the difference in g-code between M100 and M101.  Any command, expression evaluation, or
 // comparison that needs to read the position of the tool breaks the stack.  Certain control flow statements break the stack.
 // Macro calls break the stack.  Currently conditional evaluations break the stack (IF statements) even though they should really only
-// break the stack if the expression being evaluated breaks the stack.  (TODO - fix that.)
-// TODO - we should probably distinguish between the two meanings of "command" here - the cmd argument to this function is the object
+// break the stack if the expression being evaluated breaks the stack.
+//      * We should distinguish between the two meanings of "command" here - the cmd argument to this function is the object
 //        that represents a single line of the program but isn't necessarily one of the two-character OpenSBP commands. (Could be an IF
 //        statement or GOTO or whatever)  The command type "cmd" refers specifically to the two-character OpenSBP commands.
 // Returns true if the command breaks the stack, false otherwise
@@ -722,6 +722,15 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
                     return true;
                 }
             }
+            // Check if the command itself contains any expressions that break the stack
+            if (cmd.args) {
+                for (i = 0; i < cmd.args.length; i++) {
+                    if (this._exprBreaksStack(cmd.args[i])) {
+                        log.warn("STACK BREAK for an expression in command: " + JSON.stringify(cmd.args[i]));
+                        return true;
+                    }
+                }
+            }
             result = false;
             break;
 
@@ -730,14 +739,20 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             return true;
 
         case "cond":
-            //TODO , we should check the expression for a stack break, as well as the .stmt
+            // Check the expression for a stack break, as well as the .stmt
+            if (this._exprBreaksStack(cmd.cmp) || this._exprBreaksStack(cmd.stmt)) {
+                return true;
+            }
             return true;
+
         case "weak_assign":
         case "assign":
-            // TODO: These should only break the stack if they assign to or read from expressions that break the stack
+            // Check if the assignment involves expressions that break the stack
+            if (this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)) {
+                return true;
+            }
             result = true;
             break;
-        //return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 
         case "custom":
             // Macro calls should break the stack
@@ -781,7 +796,14 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
         return false;
     }
     if (expr.op === undefined) {
-        return expr[0] == "%"; // For now, all system variable evaluations are stack-breaking
+        log.debug("Evaluating expression: " + JSON.stringify(expr));
+        if (typeof expr === "string") {
+            return expr[0] == "%"; // For now, all system variable evaluations are stack-breaking
+        } else if (typeof expr === "object" && expr.type === "system_variable") {
+            return true; // System variable evaluations are stack-breaking
+        } else {
+            return false;
+        }
     } else {
         return this._exprBreaksStack(expr.left) || this._exprBreaksStack(expr.right);
     }
@@ -834,13 +856,13 @@ SBPRuntime.prototype._run = function () {
                     this.probingPending = false;
                     this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
                     this.prime();
-                    log.debug("COMPLETED PENDING PROBING =(cleared)============####");
+                    log.info("COMPLETED PENDING PROBING =(cleared)============####");
                     this._executeNext();
                     break;
                 }
                 if (this.gcodesPending) {
                     this.gcodesPending = false;
-                    log.debug("COMPLETED PENDING GCODES =(cleared)============####");
+                    log.info("COMPLETED PENDING GCODES =(cleared)============####");
                     this._executeNext();
                     break;
                 }
@@ -1117,25 +1139,7 @@ SBPRuntime.prototype._end = async function (error) {
         log.error(error);
     }
 
-    // // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
-    // var cleanup = function (error) {
-    //     if (this.machine && error) {
-    //         this.machine.setState(this, "stopped", { error: error });
-    //     }
-    //     // TODO: verify if this is needed
-    //     if (!this.machine) {
-    //         this.stream.end();
-    //     }
-    //     // Clear the internal state of the runtime (restore it to its initial state)
-    //     //TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
-    //     this.ok_to_disconnect = true;
-
-    //     this.init();
-    //     //TODO: G2 stream should be closed when this triggers -- keep as safety?
-    //     this.emit("end", this);
-    // }.bind(this);
-
-    // Clear runtime state
+    //// Clear runtime state
     this.resetRuntimeState();
 
     // Clear the internal state of the runtime
@@ -1146,6 +1150,15 @@ SBPRuntime.prototype._end = async function (error) {
         this.resumeAllowed = false;
         try {
             await this.machine.restoreDriverState();
+
+            // Trigger the save process without making any specific updates
+            config.opensbp.update({}, (err) => {
+                if (err) {
+                    log.error("Failed to save opensbp.json:", err);
+                } else {
+                    log.info("opensbp.json saved successfully");
+                }
+            });
 
             this.resumeAllowed = true;
 
@@ -1398,7 +1411,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
             var value = this._eval(command.expr);
             this._assign(command.var, value);
             if (callback) {
-                log.info("calling callback");
+                //log.info("calling callback");
                 callback();
             }
             return true;
@@ -1410,7 +1423,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 var value = this._eval(command.expr);
                 this._assign(command.var, value);
                 if (callback) {
-                    log.info("calling callback");
+                    //log.info("calling callback");
                     callback();
                 }
             } else {
