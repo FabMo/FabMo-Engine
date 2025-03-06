@@ -26,7 +26,7 @@ LEVELS = {
 	'error' : 4,
 };
 
-// Default log levels for loggers with specific names.
+// Default log levels for loggers with specific names. LIST EACH specific name for filtering to work.
 LOG_LEVELS = {
 	'g2' : 'debug',
 	'gcode' : 'debug',
@@ -35,9 +35,18 @@ LOG_LEVELS = {
 	'manual' : 'debug',
 	'api' : 'debug',
 	'detection' :'debug',
+	'config' : 'debug',
 	'config_loader' : 'debug',
 	'settings' : 'debug',
-	'log':'debug'
+	'log':'debug',
+	'config-routes':'info',
+	'routes':'info',
+	'g2config':'info',
+	'engine':'info',
+	'profiles':'info',
+	'websocket':'info',
+	'app_manager':'info',
+	'opensbp':'info'
 };
 
 /*
@@ -272,7 +281,6 @@ Logger.prototype.uncaught = function(err) {
 	log_buffer.push(err.stack);
 }
 
-// TODO - Not sure what this is, probably should be removed
 Logger.prototype.startProfile
 // Factory function for producing a new, named logger object
 var logger = function(name) {
@@ -291,6 +299,7 @@ var logger = function(name) {
 var _log = logger('log');
 
 // Cleanup operations that happen on program exit.
+// TODO are we really ever getting a program exit with typical power off of RPi's? Mabye do cleanup on starts?
 // Mainly:
 //  - Write to the current log file so we don't miss anything if the engine crashed
 //  - Write out the contents of the current flight recording
