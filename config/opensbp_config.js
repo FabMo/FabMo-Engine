@@ -15,14 +15,8 @@ var util = require("util");
 var extend = require("../util").extend;
 var PLATFORM = require("process").platform;
 var log = require("../log").logger("config");
-//var EventEmitter = require("events").EventEmitter;
 
 var Config = require("./config").Config;
-// var Config = function (name) {
-//     EventEmitter.call(this);
-//     this.name = name;
-//     this._cache = {}; // Assuming some kind of internal state
-// };
 
 // The OpenSBP configuration object manages the settings related to the OpenSBP runtime.
 // Importantly, it keeps a field called `variables` which is a map of variable names to values
@@ -38,39 +32,100 @@ var OpenSBPConfig = function () {
 util.inherits(OpenSBPConfig, Config);
 
 // Overide of Config.prototype.load removing tempVariables on load.  See config.js
-// TODO:  This is duplicated code from config.js as a work around for the cache not being accesible in callbacks.
+//   *This is duplicated code from config.js as a work around for the cache not being accesible in callbacks.
 OpenSBPConfig.prototype.load = function (filename, callback) {
     this._filename = filename;
-    fs.readFile(
-        filename,
-        "utf8",
-        function (err, data) {
+
+    const backupDir = "/opt/fabmo_backup/config/";
+    const workingProfileDir = "/opt/fabmo/profiles/";
+    const originalProfileDir = __dirname + "/../profiles/";
+
+    if (!filename) {
+        log.error("Filename is undefined");
+        return callback(new Error("Filename is undefined"));
+    }
+
+    const backupFile = path.join(backupDir, path.basename(filename));
+    const defaultProfileFile = path.join(workingProfileDir, "default/config/", path.basename(filename));
+    const currentProfile = Config.getCurrentProfile() || "default";
+    const userProfileFile = path.join(workingProfileDir, currentProfile, "config/", path.basename(filename));
+    const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
+    const originalUserProfileFile = path.join(originalProfileDir, currentProfile, "config/", path.basename(filename));
+
+    const tryLoadFile = (filePath, next) => {
+        fs.readFile(filePath, "utf8", (err, data) => {
             if (err) {
-                return callback(err);
+                return next(err);
             }
             try {
                 data = JSON.parse(data);
+                if (Object.prototype.hasOwnProperty.call(data, "tempVariables")) {
+                    data["tempVariables"] = {};
+                }
+                this.update(
+                    data,
+                    (err, d) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        callback(null, data);
+                    },
+                    true
+                );
             } catch (e) {
                 log.error(e);
-                return callback(e);
+                next(e);
             }
-            if (Object.prototype.hasOwnProperty.call(data, "tempVariables")) {
-                data["tempVariables"] = {};
-            }
-            this.update(
-                data,
-                function (err, d) {
+        });
+    };
+
+    const loadFromBackup = (next) => {
+        log.info(`Attempting to load from backup: ${backupFile}`);
+        tryLoadFile(backupFile, next);
+    };
+
+    const loadFromWorkingProfile = (next) => {
+        log.info(`Attempting to rebuild from working profile: ${defaultProfileFile} and ${userProfileFile}`);
+        async.series([(cb) => tryLoadFile(defaultProfileFile, cb), (cb) => tryLoadFile(userProfileFile, cb)], next);
+    };
+
+    const loadFromOriginalProfile = (next) => {
+        log.info(
+            `Attempting to rebuild from original profile: ${originalDefaultProfileFile} and ${originalUserProfileFile}`
+        );
+        async.series(
+            [(cb) => tryLoadFile(originalDefaultProfileFile, cb), (cb) => tryLoadFile(originalUserProfileFile, cb)],
+            next
+        );
+    };
+
+    async.series(
+        [
+            (next) =>
+                tryLoadFile(filename, (err) => {
                     if (err) {
-                        return callback(err);
+                        log.warn(`Failed to load config file: ${filename}, trying backup.`);
+                        return loadFromBackup(next);
                     }
-                    // Ensure the changes are persisted
-                    fs.writeFile(this._filename, JSON.stringify(this._cache, null, 2), "utf8", function (err) {
-                        callback(err, data);
-                    });
-                }.bind(this),
-                true
-            );
-        }.bind(this)
+                    callback(null);
+                }),
+            (next) =>
+                loadFromWorkingProfile((err) => {
+                    if (err) {
+                        log.warn(`Failed to load from working profile, trying original profile.`);
+                        return loadFromOriginalProfile(next);
+                    }
+                    callback(null);
+                }),
+        ],
+        (err) => {
+            if (err) {
+                log.error(`Failed to load configuration from all sources: ${err.message}`);
+                callback(err);
+            } else {
+                callback(null);
+            }
+        }
     );
 };
 // Update the tree with the provided data. Deal with values shared by runtime with G2
@@ -82,12 +137,7 @@ OpenSBPConfig.prototype.update = function (data, callback, force) {
         return callback(e);
     }
     // Update Jerk Values to current G2, no longer saved in g2.json
-    ////## Maybe skip these if just doing temp vars?
-    //     ... not clear why called for a variable updates
-
     if (!data.tempVariables && !data.variables) {
-        // don't do full list for variables
-
         if ("xy_maxjerk" in this._cache) {
             config.machine.machine.driver.command({
                 xjm: this._cache["xy_maxjerk"],

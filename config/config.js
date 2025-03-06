@@ -268,6 +268,9 @@ Config.prototype.load = function (filename, callback) {
 // Write this configuration object to disk
 //   callback - Called with null once the configuration is saved (or with error if error)
 Config.prototype.save = function (callback) {
+    ////## for further debugging of start and save sequencing and timing!!
+    //log.debug("Entering save function for " + this.config_name);
+    //log.stack();
     var config_file = this.getConfigFile();
     if (this._loaded && config_file) {
         log.debug("Saving config to " + config_file);
