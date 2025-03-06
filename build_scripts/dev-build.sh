@@ -10,8 +10,7 @@ echo "--> ... clearing all Fabmo dirs"
 sudo systemctl stop fabmo
 echo "--> ... Stopped fabmo service"
 
-sudo rm -rf /fabmo
-sudo rm -rf /opt/fabmo
+sudo rm -rf /fabmo && sudo rm -rf /opt/fabmo
 echo
 
 echo "--> Cloning current version of FabMo Engine from GitHub"
@@ -21,17 +20,25 @@ sudo git clone https://github.com/fabmo/fabmo-engine ./fabmo
 cd /fabmo
 echo
 
-cd pythonUtils
-make -f MakeFile
-cd ..
-
 echo "--> Setting Branch"
 sudo git checkout master
 git status
 echo
 
+# starts the 
+cd pythonUtils
+make -f MakeFile # installs usb status logger deamon
+sudo apt-get install i2c-tools # ensures i2c serial tools are avalible
+output=$(i2cdetect -y 1) 
+if echo "$output" | grep -q "3c"; then # checks if display is connected
+    sh run_i2c_display.sh & # Runs line in background
+fi
+unset $output
+cd ..
+
 echo "--> Ready for npm install"
 sudo npm install
+sudo npm install multer # Used for the usb fileFilesRoutes.js to serve the usb files
 
 echo
 echo "================================================="
