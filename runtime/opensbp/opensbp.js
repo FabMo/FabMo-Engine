@@ -12,6 +12,7 @@
  */
 
 // Turn on "####="" logging for execution flow details
+// Turn on "####+" logging for evaulating expressions
 // Turn on " line:" logging for line-by-line execution details
 
 var parser = require("./parser");
@@ -796,7 +797,8 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
         return false;
     }
     if (expr.op === undefined) {
-        log.debug("Evaluating expression: " + JSON.stringify(expr));
+        //####+
+        //log.debug("Evaluating expression: " + JSON.stringify(expr));
         if (typeof expr === "string") {
             return expr[0] == "%"; // For now, all system variable evaluations are stack-breaking
         } else if (typeof expr === "object" && expr.type === "system_variable") {

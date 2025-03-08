@@ -30,7 +30,11 @@ function setupAuthentication(svr) {
             },
             cookie["session"]
         );
-        if (handshakeData.sessionID.content.passport !== undefined) {
+        if (
+            handshakeData.sessionID &&
+            handshakeData.sessionID.content &&
+            handshakeData.sessionID.content.passport !== undefined
+        ) {
             var user = handshakeData.sessionID.content.passport.user;
             if (user != undefined) {
                 authentication.getUserById(user, function (err, data) {
@@ -105,7 +109,7 @@ var onPublicConnect = function (socket) {
 };
 
 var onPrivateConnect = function (socket) {
-    if (!socket.request.sessionID.content.passport) {
+    if (!socket.request.sessionID || !socket.request.sessionID.content || !socket.request.sessionID.content.passport) {
         log.info("disconnect - no passport");
         return socket.disconnect();
     }

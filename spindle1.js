@@ -178,7 +178,9 @@ Spin.prototype.setSpindleVFDFreq = function(data) {
             .catch(error => {
                 log.error("Error in setting frequency: ", error);
                 this.vfdBusy = false;
-                reject(error);
+                // Lets just log and continue for the moment
+                resolve (null);
+                //reject(error);
             });
     });
 };
@@ -218,7 +220,9 @@ function writeVFD(reg, data) {
             .then(() => resolve(data))
             .catch(error => {
                 log.error("***Error writing VFD:", error);
-                reject(error);
+                // Lets just log and continue for the moment
+                resolve (null);
+                //reject(error);
             });
     });
 }

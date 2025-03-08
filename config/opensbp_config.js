@@ -80,13 +80,25 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
     };
 
     const loadFromBackup = (next) => {
-        log.info(`Attempting to load from backup: ${backupFile}`);
-        tryLoadFile(backupFile, next);
+        fs.access(backupDir, fs.constants.F_OK, (err) => {
+            if (err) {
+                log.warn(`Backup directory does not exist: ${backupDir}`);
+                return next();
+            }
+            log.info(`Attempting to load from backup: ${backupFile}`);
+            tryLoadFile(backupFile, next);
+        });
     };
 
     const loadFromWorkingProfile = (next) => {
-        log.info(`Attempting to rebuild from working profile: ${defaultProfileFile} and ${userProfileFile}`);
-        async.series([(cb) => tryLoadFile(defaultProfileFile, cb), (cb) => tryLoadFile(userProfileFile, cb)], next);
+        fs.access(workingProfileDir, fs.constants.F_OK, (err) => {
+            if (err) {
+                log.warn(`Working profile directory does not exist: ${workingProfileDir}`);
+                return next();
+            }
+            log.info(`Attempting to rebuild from working profile: ${defaultProfileFile} and ${userProfileFile}`);
+            async.series([(cb) => tryLoadFile(defaultProfileFile, cb), (cb) => tryLoadFile(userProfileFile, cb)], next);
+        });
     };
 
     const loadFromOriginalProfile = (next) => {

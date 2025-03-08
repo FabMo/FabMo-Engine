@@ -16,6 +16,9 @@ var config = require("./config");
 var OS = process.platform;
 var PLATFORM = process.env.PLATFORM;
 var log = require("./log").logger("engine");
+//developer adjust next:, comment, un-comment as needed to track startup
+// ... also see enginge_config.js for another set point
+require("./log").setGlobalLevel("g2");
 var db = require("./db");
 var macros = require("./macros");
 var dashboard = require("./dashboard");
@@ -560,7 +563,6 @@ Engine.prototype.start = function (callback) {
             },
 
             // Load the apps, see dashboard/app_manager.js for what this entails.
-            // TODO: Would this be better to just be included in the dashboard configuration function?
             function load_apps(callback) {
                 log.info("Loading dashboard apps...");
                 dashboard.loadApps(function (err, result) {
