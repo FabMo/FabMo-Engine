@@ -416,7 +416,7 @@ Config.getProfileDir = function (d) {
 
 // Get the directory for the default profile
 Config.getDefaultProfileDir = function (d) {
-    return "/opt/fabmo/profiles/default/" + (d ? d + "/" : "");
+    return "/fabmo/profiles/default/" + (d ? d + "/" : "");
 };
 
 // Get the mutable data directory for FabMo

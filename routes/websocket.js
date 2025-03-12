@@ -30,7 +30,13 @@ function setupAuthentication(svr) {
             },
             cookie["session"]
         );
-        if (handshakeData.sessionID.content.passport !== undefined) {
+
+        log.debug("SessionID: " + JSON.stringify(handshakeData.sessionID));
+        if (
+            handshakeData.sessionID &&
+            handshakeData.sessionID.content &&
+            handshakeData.sessionID.content.passport !== undefined
+        ) {
             var user = handshakeData.sessionID.content.passport.user;
             if (user != undefined) {
                 authentication.getUserById(user, function (err, data) {
@@ -52,6 +58,8 @@ function setupAuthentication(svr) {
                 }
             }
         } else {
+            //log.error("Session content is undefined or passport is missing.");
+            //next(new Error("Session content is undefined or passport is missing."));
             next();
         }
     });
