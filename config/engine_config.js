@@ -89,7 +89,8 @@ EngineConfig.prototype.update = function (data, callback) {
 //   callback - Called when settings have been applied or with error if error
 EngineConfig.prototype.apply = function (callback) {
     try {
-        LogTool.setGlobalLevel(this.get("log_level"));
+        LogTool.setGlobalLevel(this.get("g2"));
+        //LogTool.setGlobalLevel(this.get("log_level"));
         callback(null, this);
     } catch (e) {
         callback(e);

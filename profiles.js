@@ -7,7 +7,7 @@
  * A machine profile is a collection of settings, macros, and apps that can be loaded
  * to realize a sensible default machine state.
  *
- * System profiles are packaged with the engine - they live in the /profiles directory
+ * System profiles are packaged with the fabmo-engine - they live in the /profiles directory
  * at the top level.  Like other mutable parts of the engine, profiles are copied to the
  * /opt/fabmo directory on startup, and hosted from there, ultimately.
  *
@@ -20,7 +20,9 @@
  * when profile data is copied over.  (If a profile specifies a config value it is used, but if
  * not, the default is used instead.)
  *
- * The 'default' profile comes with the engine source - it is the fallback if no other profile is selected.
+ * The 'default' profile comes with the engine source - it is the fallback if no other profile is selected
+ * and it is the start point for building out the configs that may be modified when the specific profile is
+ * applied.
  */
 var config = require("./config");
 var async = require("async");

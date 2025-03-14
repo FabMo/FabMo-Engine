@@ -113,7 +113,7 @@ var onPublicConnect = function (socket) {
 };
 
 var onPrivateConnect = function (socket) {
-    if (!socket.request.sessionID.content.passport) {
+    if (!socket.request.sessionID || !socket.request.sessionID.content || !socket.request.sessionID.content.passport) {
         log.info("disconnect - no passport");
         return socket.disconnect();
     }

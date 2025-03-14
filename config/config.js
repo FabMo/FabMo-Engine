@@ -342,7 +342,7 @@ Config.prototype.save = function (callback) {
 };
 
 // There are some redundancies here in how default and then specific machine files are loaded
-// ... asw well as in the normal start-up sequence. Consider refactoring for efficiency.
+// ... as well as in the normal start-up sequence. Consider refactoring for efficiency.
 // ... Currently, this seems reliable.
 // The init function performs an initial load() from the configuration's settings files.
 // For this to work, the Config object has to have a default_config_file and config_file member
