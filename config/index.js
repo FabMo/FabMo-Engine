@@ -169,7 +169,6 @@ function clearAppRoot(callback) {
 }
 
 // These are created on module initialization
-// TODO: Why?  Why not create them above like the others?  (Or why not creat them down here?)
 exports.machine = new MachineConfig();
 exports.driver = new G2Config();
 exports.profiles = new ProfileConfig();
@@ -189,5 +188,4 @@ exports.getProfileDir = Config.getProfileDir;
 exports.getLockFile = getLockFile;
 exports.clearAppRoot = clearAppRoot;
 
-// TODO Silly?
 exports.platform = require("process").platform;

@@ -127,16 +127,12 @@ var readProfileInfo = function (profileDir, callback) {
     });
 };
 
-// Apply the named profile
-// This obliterates all of the configuration, apps, and macro information for the current installation
-// and replaces it with the information found in the named profile.
+// This handling of the initial profile and the shift to the selected profile is pretty convoluted and
+// ... could use some refactoring. But, for the momement is seems relaible.
+// Apply the named profile handling whether we are the default or the user selected profile that builds on default.
 //   profileName - The name of the profile to apply.  Must be one of the loaded profiles
 //      callback - Gets an error if there was a problem.
 var apply = function (profileName, callback) {
-    // Make sure this is a profile that actually occurs in the list
-    //    if (Object.keys(profiles).length === 0) {
-    //        this.load();
-    //    }
     if (profileName in profiles) {
         log.debug("Switching profiles to " + profileName);
         // Get the profile data
@@ -220,7 +216,8 @@ var apply = function (profileName, callback) {
             }
         );
     } else {
-        callback(new Error(profiles + " is not a valid profile."));
+        log.warn(profileName + ", user selected profile.");
+        callback(null, "not default profile"); // Continue without error
     }
 };
 

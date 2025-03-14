@@ -72,8 +72,11 @@ EngineConfig.prototype.update = function (data, callback) {
             if (err) {
                 log.error(err);
                 callback(err);
+            } else if (data === "not default profile") {
+                log.warn("Continuing restart with selected profile.");
+                save(callback);
             } else {
-                log.info("shutting down");
+                log.info("Profile issue!");
                 process.exit(1);
             }
         });

@@ -53,19 +53,19 @@ function startWatcher() {
         .on("change", (filePath) => {
             log.info(`File changed: ${filePath}`);
             createBackup(filePath);
-        })
-        .on("unlink", (filePath) => {
-            log.info(`File removed: ${filePath}`);
-            const relativePath = path.relative(watchDir, filePath);
-            const backupPath = path.join(backupDir, relativePath);
-            fs.remove(backupPath, (err) => {
-                if (err) {
-                    log.error(`Error removing backup for ${filePath}:`, err);
-                } else {
-                    log.info(`Backup removed for ${filePath}`);
-                }
-            });
         });
+    // .on("unlink", (filePath) => {
+    //     log.info(`File removed: ${filePath}`);
+    //     const relativePath = path.relative(watchDir, filePath);
+    //     const backupPath = path.join(backupDir, relativePath);
+    //     fs.remove(backupPath, (err) => {
+    //         if (err) {
+    //             log.error(`Error removing backup for ${filePath}:`, err);
+    //         } else {
+    //             log.info(`Backup removed for ${filePath}`);
+    //         }
+    //     });
+    // });
 
     log.info(`Watching for changes in ${watchDir}`);
 
