@@ -16,6 +16,9 @@ var config = require("./config");
 var OS = process.platform;
 var PLATFORM = process.env.PLATFORM;
 var log = require("./log").logger("engine");
+//developer adjust next:, comment, un-comment as needed to track startup at deepest level
+// ... also see enginge_config.js for another set point
+require("./log").setGlobalLevel("g2");
 var db = require("./db");
 var macros = require("./macros");
 var dashboard = require("./dashboard");

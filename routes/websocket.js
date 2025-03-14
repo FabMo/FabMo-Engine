@@ -59,8 +59,8 @@ function setupAuthentication(svr) {
             }
         } else {
             //log.error("Session content is undefined or passport is missing.");
-            //next(new Error("Session content is undefined or passport is missing."));
-            next();
+            next(new Error("Session content is undefined or passport is missing."));
+            //next();
         }
     });
 }

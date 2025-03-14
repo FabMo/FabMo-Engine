@@ -134,6 +134,9 @@ var readProfileInfo = function (profileDir, callback) {
 //      callback - Gets an error if there was a problem.
 var apply = function (profileName, callback) {
     // Make sure this is a profile that actually occurs in the list
+    //    if (Object.keys(profiles).length === 0) {
+    //        this.load();
+    //    }
     if (profileName in profiles) {
         log.debug("Switching profiles to " + profileName);
         // Get the profile data
