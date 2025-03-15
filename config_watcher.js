@@ -4,7 +4,8 @@ const path = require("path");
 const log = require("./log").logger("watcher");
 
 // Directories to watch
-const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/", "/opt/fabmo/approot/"];
+//const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/", "/opt/fabmo/approot/"];
+const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/"];
 
 // Directory to store backups
 const backupBaseDir = "/opt/fabmo_backup/";
@@ -24,12 +25,12 @@ const createBackup = debounce((filePath) => {
     const relativePath = path.relative(watchDir, filePath);
     const backupDir = path.join(backupBaseDir, path.basename(watchDir));
     const backupPath = path.join(backupDir, relativePath);
-    log.info(`Creating backup for ${filePath} at ${backupPath}`);
+    log.debug(`Creating backup for ${filePath} at ${backupPath}`);
     fs.copy(filePath, backupPath, (err) => {
         if (err) {
             log.error(`Error creating backup for ${filePath}:`, err);
         } else {
-            log.info(`Backup created for ${filePath}`);
+            log.debug(`Backup created for ${filePath}`);
         }
     });
 }, 10); // Adjust the debounce wait time here

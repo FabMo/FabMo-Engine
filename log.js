@@ -46,7 +46,8 @@ LOG_LEVELS = {
 	'profiles':'info',
 	'websocket':'info',
 	'app_manager':'info',
-	'opensbp':'info'
+	'opensbp':'info',
+	'watcher':'info'
 };
 
 /*

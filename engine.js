@@ -18,7 +18,7 @@ var PLATFORM = process.env.PLATFORM;
 var log = require("./log").logger("engine");
 //developer adjust next:, comment, un-comment as needed to track startup at deepest level
 // ... also see enginge_config.js, last section, for another set point that can create a log level at start
-require("./log").setGlobalLevel("g2");
+//require("./log").setGlobalLevel("g2");
 var db = require("./db");
 var macros = require("./macros");
 var dashboard = require("./dashboard");

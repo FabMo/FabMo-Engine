@@ -71,7 +71,7 @@ var setUpManual = function () {
         $(".slidecontainer").show();
         $(".fixed-input-container").hide();
         $(".fixed-switch input").prop("checked", false);
-        $("#action-5 img").attr("src", "../img/icon_spindle_off.png"); // probably not useful
+        //        $("#action-5 img").attr("src", "../img/icon_spindle_off.png"); // probably not useful
         $("#action-5").css("background-color", "#ce6402");
 
         // Function to set location displays and then set video style
