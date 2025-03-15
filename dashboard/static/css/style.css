@@ -2066,9 +2066,8 @@ input[type='range']:focus {
 	position: relative;
     font-size: 1rem;
 	visibility: visible;
-    top: -1.5rem;
-	left: 5%;
-	padding-bottom: 1rem;
+    top: -5%;
+	padding-bottom: 1.5rem;
     margin-top: -2rem;
 	margin-bottom: 1.2rem;
 }
@@ -2319,7 +2318,7 @@ input[type='range']:focus {
 
     #title_goto {
 		visibility: visible;
-		left: 15%;
+		top: -5%;
 		margin-top: 0rem;
         margin-bottom: -0.5rem;    
     }
@@ -2356,8 +2355,8 @@ input[type='range']:focus {
     }
 
 	.speed_read_out {
-		top: 40%;
-		left: 40%;
+		top: 55%;
+		left: 20%;
 		padding-top: 35px;
 		padding-left: 35px;
 	}

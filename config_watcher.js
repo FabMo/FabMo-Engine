@@ -2,6 +2,7 @@ const chokidar = require("chokidar");
 const fs = require("fs-extra");
 const path = require("path");
 const log = require("./log").logger("watcher");
+var machine = require("./machine"); // source for status info
 
 // Directories to watch
 //const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/", "/opt/fabmo/approot/"];
@@ -19,18 +20,41 @@ function debounce(func, wait) {
     };
 }
 
+// Track the last backup time
+let lastBackupTime = 0;
+
+// Function to check tool state
+function isToolBusy(callback) {
+    const isBusy = machine.machine.status.state === "running" || machine.machine.status.state === "manual";
+    callback(isBusy);
+}
+
 // Function to create a backup
 const createBackup = debounce((filePath) => {
-    const watchDir = watchDirs.find((dir) => filePath.startsWith(dir));
-    const relativePath = path.relative(watchDir, filePath);
-    const backupDir = path.join(backupBaseDir, path.basename(watchDir));
-    const backupPath = path.join(backupDir, relativePath);
-    log.debug(`Creating backup for ${filePath} at ${backupPath}`);
-    fs.copy(filePath, backupPath, (err) => {
-        if (err) {
-            log.error(`Error creating backup for ${filePath}:`, err);
+    const currentTime = Date.now();
+    if (currentTime - lastBackupTime < 10000) {
+        log.debug("Backup request ignored due to 10-second delay constraint.");
+        return;
+    }
+
+    isToolBusy((busy) => {
+        if (busy) {
+            log.debug("Tool is busy. Delaying backup request.");
+            setTimeout(() => createBackup(filePath), 10000); // Retry after 10 seconds
         } else {
-            log.debug(`Backup created for ${filePath}`);
+            const watchDir = watchDirs.find((dir) => filePath.startsWith(dir));
+            const relativePath = path.relative(watchDir, filePath);
+            const backupDir = path.join(backupBaseDir, path.basename(watchDir));
+            const backupPath = path.join(backupDir, relativePath);
+            log.debug(`Creating backup for ${filePath} at ${backupPath}`);
+            fs.copy(filePath, backupPath, (err) => {
+                if (err) {
+                    log.error(`Error creating backup for ${filePath}:`, err);
+                } else {
+                    log.debug(`Backup created for ${filePath}`);
+                    lastBackupTime = currentTime;
+                }
+            });
         }
     });
 }, 10); // Adjust the debounce wait time here
