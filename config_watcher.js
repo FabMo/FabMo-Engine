@@ -65,6 +65,35 @@ function copyExistingFiles() {
     });
 }
 
+// Function to copy backup at the start of the session
+function copyBackupAtStart(callback) {
+    const atStartDir = "/opt/fabmo_backup_atStart/";
+    fs.pathExists(backupBaseDir, (err, exists) => {
+        if (err) {
+            log.error(`Error checking existence of ${backupBaseDir}:`, err);
+            callback(err);
+            return;
+        }
+        if (!exists) {
+            log.info(`Backup base directory ${backupBaseDir} does not exist. Skipping backup.`);
+            callback();
+            return;
+        }
+        log.info(`Ensuring directory exists: ${atStartDir}`);
+        fs.ensureDirSync(atStartDir);
+        log.info(`Copying backup from ${backupBaseDir} to ${atStartDir}`);
+        fs.copy(backupBaseDir, atStartDir, (err) => {
+            if (err) {
+                log.error(`Error copying backup to ${atStartDir}:`, err);
+                callback(err);
+            } else {
+                log.info(`Backup copied to ${atStartDir}`);
+                callback();
+            }
+        });
+    });
+}
+
 // Function to start the watcher
 function startWatcher() {
     // Copy existing files to the backup directory at the start
@@ -132,4 +161,5 @@ function startWatcher() {
 
 module.exports = {
     startWatcher,
+    copyBackupAtStart,
 };
