@@ -103,4 +103,4 @@ RETURN
 CONTACT_ERROR:
 PAUSE "Unable to make contact with tool holder, check that grounding cable is connecting pull stud to fixed z zero plate."
 END
-RETURN
+RETURNEND
