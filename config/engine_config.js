@@ -64,7 +64,7 @@ EngineConfig.prototype.update = function (data, callback) {
             }
         });
     }
-    // If the profile changed above, we apply it, and if that was successful, we abort the process.
+    // If the profile changed above, we apply it, and if that was not successful, we abort the process.
     if (profile_changed) {
         log.warn("Engine profile changed - engine will be restarted.");
         // eslint-disable-next-line no-unused-vars
@@ -72,8 +72,11 @@ EngineConfig.prototype.update = function (data, callback) {
             if (err) {
                 log.error(err);
                 callback(err);
+            } else if (data === "not default profile") {
+                log.warn("Continuing restart with selected profile.");
+                save(callback);
             } else {
-                log.info("shutting down");
+                log.info("Profile issue!");
                 process.exit(1);
             }
         });
@@ -86,6 +89,7 @@ EngineConfig.prototype.update = function (data, callback) {
 //   callback - Called when settings have been applied or with error if error
 EngineConfig.prototype.apply = function (callback) {
     try {
+        LogTool.setGlobalLevel(this.get("g2"));
         LogTool.setGlobalLevel(this.get("log_level"));
         callback(null, this);
     } catch (e) {

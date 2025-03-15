@@ -16,6 +16,9 @@ var config = require("./config");
 var OS = process.platform;
 var PLATFORM = process.env.PLATFORM;
 var log = require("./log").logger("engine");
+//developer adjust next:, comment, un-comment as needed to track startup at deepest level
+// ... also see enginge_config.js, last section, for another set point that can create a log level at start
+//require("./log").setGlobalLevel("g2");
 var db = require("./db");
 var macros = require("./macros");
 var dashboard = require("./dashboard");
@@ -560,7 +563,6 @@ Engine.prototype.start = function (callback) {
             },
 
             // Load the apps, see dashboard/app_manager.js for what this entails.
-            // TODO: Would this be better to just be included in the dashboard configuration function?
             function load_apps(callback) {
                 log.info("Loading dashboard apps...");
                 dashboard.loadApps(function (err, result) {
@@ -816,7 +818,21 @@ Engine.prototype.start = function (callback) {
                 // TODO - should this be done after server.listen, or before? (or does it matter?)
                 authentication.configure();
             }.bind(this),
+
+            // Copy backup at the start of the session and then start the watcher
+            function copy_backup_and_start_watcher(callback) {
+                log.debug("Copying backup and starting watcher...");
+                // Copy backup at the start of the session
+                configWatcher.copyBackupAtStart((err) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    configWatcher.startWatcher();
+                    callback();
+                });
+            },
         ],
+
         // Print some kind of sane debugging information if anything above fails
         // eslint-disable-next-line no-unused-vars
         function (err, results) {
@@ -826,10 +842,6 @@ Engine.prototype.start = function (callback) {
                 typeof callback === "function" && callback(err);
             } else {
                 typeof callback === "function" && callback(null, this);
-
-                // Start the file watcher after the engine startup process is completed
-                log.info("Starting the config watcher...");
-                configWatcher.startWatcher();
             }
         }.bind(this)
     );

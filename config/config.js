@@ -47,6 +47,8 @@ var Config = function (config_name) {
     this._loaded = false;
     this.userConfigLoaded = false;
     EventEmitter.call(this);
+    this.newAppsNeeded = false;
+    this.newMacrosNeeded = false;
 };
 util.inherits(Config, EventEmitter);
 
@@ -216,13 +218,25 @@ Config.prototype.load = function (filename, callback) {
     };
 
     const loadFromBackup = (next) => {
-        log.info(`Attempting to load from backup: ${backupFile}`);
-        tryLoadFile(backupFile, next);
+        fs.access(backupDir, fs.constants.F_OK, (err) => {
+            if (err) {
+                log.warn(`Backup directory does not exist: ${backupDir}`);
+                return next();
+            }
+            log.info(`Attempting to load from backup: ${backupFile}`);
+            tryLoadFile(backupFile, next);
+        });
     };
 
     const loadFromWorkingProfile = (next) => {
-        log.info(`Attempting to rebuild from working profile: ${defaultProfileFile} and ${userProfileFile}`);
-        async.series([(cb) => tryLoadFile(defaultProfileFile, cb), (cb) => tryLoadFile(userProfileFile, cb)], next);
+        fs.access(workingProfileDir, fs.constants.F_OK, (err) => {
+            if (err) {
+                log.warn(`Working profile directory does not exist: ${workingProfileDir}`);
+                return next();
+            }
+            log.info(`Attempting to rebuild from working profile: ${defaultProfileFile} and ${userProfileFile}`);
+            async.series([(cb) => tryLoadFile(defaultProfileFile, cb), (cb) => tryLoadFile(userProfileFile, cb)], next);
+        });
     };
 
     const loadFromOriginalProfile = (next) => {
@@ -256,7 +270,7 @@ Config.prototype.load = function (filename, callback) {
         ],
         (err) => {
             if (err) {
-                log.error(`Failed to load configuration from all sources: ${err.message}`);
+                log.warn(`Failed to load configuration from all sources: ${err.message}`);
                 callback(err);
             } else {
                 callback(null);
@@ -327,6 +341,9 @@ Config.prototype.save = function (callback) {
     }
 };
 
+// There are some redundancies here in how default and then specific machine files are loaded
+// ... as well as in the normal start-up sequence. Consider refactoring for efficiency.
+// ... Currently, this seems reliable.
 // The init function performs an initial load() from the configuration's settings files.
 // For this to work, the Config object has to have a default_config_file and config_file member
 Config.prototype.init = function (callback) {
@@ -416,7 +433,7 @@ Config.getProfileDir = function (d) {
 
 // Get the directory for the default profile
 Config.getDefaultProfileDir = function (d) {
-    return "/opt/fabmo/profiles/default/" + (d ? d + "/" : "");
+    return "/fabmo/profiles/default/" + (d ? d + "/" : "");
 };
 
 // Get the mutable data directory for FabMo
@@ -507,6 +524,30 @@ Config.createDataDirectories = function (callback) {
                 fs.mkdir(dir, function (err) {
                     if (!err) {
                         log.info('Successfully created directory "' + dir + '"');
+                        if (dir.includes("/opt/fabmo/apps")) {
+                            this.newAppsNeeded = true;
+                            if (fs.existsSync("/opt/fabmo_backup/apps")) {
+                                fs.copy("/opt/fabmo_backup/apps", "/opt/fabmo/apps", function (err) {
+                                    if (err) {
+                                        log.error(err);
+                                    } else {
+                                        log.debug("Successfully copied apps from backup to /opt/fabmo/apps");
+                                    }
+                                });
+                            }
+                        }
+                        if (dir.includes("/opt/fabmo/macros")) {
+                            this.newMacrosNeeded = true;
+                            if (fs.existsSync("/opt/fabmo_backup/macros")) {
+                                fs.copy("/opt/fabmo_backup/macros", "/opt/fabmo/macros", function (err) {
+                                    if (err) {
+                                        log.error(err);
+                                    } else {
+                                        log.debug("Successfully copied macros from backup to /opt/fabmo/macros");
+                                    }
+                                });
+                            }
+                        }
                     }
                     callback(err);
                 });

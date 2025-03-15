@@ -7,7 +7,7 @@
  * A machine profile is a collection of settings, macros, and apps that can be loaded
  * to realize a sensible default machine state.
  *
- * System profiles are packaged with the engine - they live in the /profiles directory
+ * System profiles are packaged with the fabmo-engine - they live in the /profiles directory
  * at the top level.  Like other mutable parts of the engine, profiles are copied to the
  * /opt/fabmo directory on startup, and hosted from there, ultimately.
  *
@@ -20,7 +20,9 @@
  * when profile data is copied over.  (If a profile specifies a config value it is used, but if
  * not, the default is used instead.)
  *
- * The 'default' profile comes with the engine source - it is the fallback if no other profile is selected.
+ * The 'default' profile comes with the engine source - it is the fallback if no other profile is selected
+ * and it is the start point for building out the configs that may be modified when the specific profile is
+ * applied.
  */
 var config = require("./config");
 var async = require("async");
@@ -127,13 +129,12 @@ var readProfileInfo = function (profileDir, callback) {
     });
 };
 
-// Apply the named profile
-// This obliterates all of the configuration, apps, and macro information for the current installation
-// and replaces it with the information found in the named profile.
+// This handling of the initial profile and the shift to the selected profile is pretty convoluted and
+// ... could use some refactoring. But, for the momement is seems relaible.
+// Apply the named profile handling whether we are the default or the user selected profile that builds on default.
 //   profileName - The name of the profile to apply.  Must be one of the loaded profiles
 //      callback - Gets an error if there was a problem.
 var apply = function (profileName, callback) {
-    // Make sure this is a profile that actually occurs in the list
     if (profileName in profiles) {
         log.debug("Switching profiles to " + profileName);
         // Get the profile data
@@ -217,7 +218,8 @@ var apply = function (profileName, callback) {
             }
         );
     } else {
-        callback(new Error(profiles + " is not a valid profile."));
+        log.warn(profileName + ", user selected profile.");
+        callback(null, "not default profile"); // Continue without error
     }
 };
 
