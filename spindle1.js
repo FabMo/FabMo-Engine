@@ -17,6 +17,7 @@ const log = require("./log").logger("spindleVFD");
 function Spin() {
     EventEmitter.call(this);
     this.status = {
+        vfdEnabled: true,
         vfdDesgFreq: 0,
         vfdAchvFreq: 0,
         vfdAmps: 0
@@ -78,12 +79,11 @@ Spin.prototype.connectVFD = function() {
 };
 
 let vfdFailures = 0;
-let vfdEnabled = true;  // start enabled
 // Set up 1-second UPDATES to spindleVFD status 
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
     const MAX_VFD_FAILS = 3;
-    if (vfdEnabled) {
+    if (this.status.vfdEnabled) {
         const intervalId = setInterval(() => {
             if (this.vfdBusy) {
                 log.error("VFD is busy; skipping update");
@@ -94,7 +94,7 @@ Spin.prototype.startSpindleVFD = function() {
                 log.error("Too many Spindle/VFD/MODBUS errors (3).");
                 log.error("Disabling Spindle RPM Control for this session!");
                 //log.error("Last Error: " + error + "\nDisabling Spindle RPM Control for this session!");
-                vfdEnabled = false;
+                this.status.vfdEnabled = false;
                 this.status.vfdDesgFreq = -1;
                 this.updateStatus(this.status);
                 clearInterval(intervalId); // Stop the interval
