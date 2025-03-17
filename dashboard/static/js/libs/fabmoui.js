@@ -362,7 +362,7 @@ const { last } = require("underscore");
                 inputField.val(value);
             }
         }
-        if ("spindle" in status) {
+        if (status.spindle.vfdEnabled) {
             const spindleSpeedInput = $(".spindle-speed input");
             if (!spindleSpeedInput.is(":focus")) {
                 if (status.spindle.vfdAchvFreq !== 0) {
@@ -384,11 +384,14 @@ const { last } = require("underscore");
                     $(".spindle-power input").css("color", "black");
                 }
                 $(".spindle-power input").val(formattedDraw);
+                $("#dro-addon-3").css("visibility", "visible");
             }
         } else {
             updateSpindleSpeed("- No VFD/USB -  ");
             $(".spindle-speed input").css("color", "gray");
             $(".spindle-power input").css("color", "gray");
+            // hide display when no VFD
+            $("#dro-addon-3").css("visibility", "hidden");
         }
 
         //Current File or job
