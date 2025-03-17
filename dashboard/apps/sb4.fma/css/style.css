@@ -171,6 +171,12 @@ input.cmds {
     padding-bottom: .35rem;
 }
 
+#cmd-input::placeholder {
+    color: rgb(168, 168, 168);
+    font-weight: 600;
+}
+
+
 
 /* ============================================== FILL-IN STYLE WORK */
 
