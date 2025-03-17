@@ -180,31 +180,37 @@ $(document).ready(function () {
     // Key handler for triggering special "key" (shortcut) events in the dashboard
     // ... here we add a case for handing spindle speed increments and decrements
     // ... this is not necessary for feedrate override because fabmo main window already has that during file running
+    window.addEventListener('keydown', function(event) {
+        var commandInputText = $("#cmd-input").val();
+        console.log("FIRST EVENT in Sb4: " + event.key);
+        if (commandInputText.length < 1) {  // ... only if we have not started a line
+            // If the key is either the + or the - , then send the key code to the parent window
+            if (event.key === "+" || event.key === "_") {  // increment or decrement spindle speed
+                if (!event.repeat) {  // Check if the key is not repeating
+                    window.parent.postMessage({ key: event.key }, '*');
+                }
+                event.stopPropagation();
+                event.preventDefault();
+            }
+        }
+    });
+    
     window.addEventListener('keyup', function(event) {
         var commandInputText = $("#cmd-input").val();
         console.log("FIRST EVENT in Sb4: " + event.key);
-        if (commandInputText.length < 1) {  // ... only if we have not started a line          
-            // If the key is either the + or the _ , then send the key code to the parent window
-            //console.log("GOT SOME EVENT in Sb4: " + event.key);
-            if (event.key === "+" || event.key === "_") {  // increment or decrement spindle speed
-                window.parent.postMessage({ key: event.key }, '*');
+        if (commandInputText.length < 1) {  // ... only if we have not started a line
+            if (event.key === "k" || event.key === "K") {  // toggle keypad AND get focus on it for data entry
                 event.stopPropagation();
                 event.preventDefault();
+                window.parent.postMessage({ key: event.key }, '*');
+                window.parent.focus();
             } else {
                 // pass any other key events to the command input
                 console.log("GOT SOME EVENT in Sb4: " + event.key);
             }
         }
     });
-
-    $('.opensbp_input_formattedspeeds').on('keyup', function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();  // Prevent the unwanted default action for Enter key on other items ???
-            event.stopPropagation(); // Stop the event from propagating; effectiveness ???
-            $(this).trigger('change'); // Manually trigger the change event
-        }
-    });
-    
+        
     $('.opensbp_input_formattedspeeds').change(function (event) {  // Handle and Bind updates from formatted SPEED textboxes
         event.preventDefault();  // Prevent the default action
         event.stopPropagation(); // Stop the event from propagating
