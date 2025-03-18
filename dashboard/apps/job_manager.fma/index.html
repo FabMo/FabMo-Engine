@@ -74,6 +74,30 @@
 				</div>
 			</div>
 		<div style="width:98%" id="queue_table"></div>
+
+    <!-- ...existing code... -->
+
+<div id="usb-file-manager">
+  <h2>USB File Manager</h2>
+  <button onclick="fetchUSBFileList()">Refresh USB File List</button>
+  <table>
+      <thead>
+          <tr>
+              <th>File Name</th>
+              <th>Actions</th>
+          </tr>
+      </thead>
+      <tbody id="usb-file-list">
+          <!-- USB file list will be populated here -->
+      </tbody>
+  </table>
+</div>
+
+<!-- Include the job_manager.js script -->
+<script src="js/job_manager.js"></script>
+
+
+<!-- ...existing code... -->
  	</div>
 		<!-- JOB HISTORY LISTING -->
     <div class="content" id="tabhistory">

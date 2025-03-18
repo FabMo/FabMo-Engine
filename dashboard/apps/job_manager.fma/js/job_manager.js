@@ -261,6 +261,56 @@ function setFirstCard() {
 }
 
 
+// ...existing code...
+
+function fetchUSBFileList() {
+  fetch('/usb_files/list')
+      .then(response => response.json())
+      .then(data => {
+          if (data.files) {
+              displayUSBFileList(data.files);
+          } else {
+              console.error('Failed to fetch USB file list');
+          }
+      })
+      .catch(err => console.error('Error fetching USB file list:', err));
+}
+
+function displayUSBFileList(files) {
+  const usbFileListContainer = document.getElementById('usb-file-list');
+  usbFileListContainer.innerHTML = '';
+
+  files.forEach(file => {
+      const fileRow = document.createElement('tr');
+      fileRow.innerHTML = `
+          <td>${file.name}</td>
+          <td>
+              <a href="/usb_files/read/${encodeURIComponent(file.name)}" target="_blank">View</a> | 
+              <a href="/usb_files/download/${encodeURIComponent(file.name)}">Download</a> | 
+              <a href="#" onclick="importUSBFile('${file.name}')" style="color: green;">Import</a>
+          </td>
+      `;
+      usbFileListContainer.appendChild(fileRow);
+  });
+}
+
+function importUSBFile(fileName) {
+  fetch(`/usb_files/import_jobs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName })
+  })
+  .then(response => response.json())
+  .then(data => {
+      alert(data.message);
+      // Optionally, refresh the job list or perform other actions
+  })
+  .catch(err => alert('Error importing file:', err));
+}
+
+// ...existing code...
+
+
 /*
  * -----------
  *   HISTORY
