@@ -78,6 +78,61 @@ function setupDropTarget() {
 }
 
 
+
+// USB-drive file input
+function setupUSBFileInput() {
+  // Find the file input container
+  const fileInput = document.querySelector('.submitWrapper');
+  if (!fileInput) return;
+  
+  // Create the USB button with compatible styling
+  const usbButton = document.createElement('button');
+  usbButton.type = 'button';
+  usbButton.className = 'btn btn-primary usb-file-button';
+  usbButton.innerHTML = '<i class="fa fa-usb"></i> USB';
+  usbButton.style.marginLeft = '10px';
+  
+  // Add click handler
+  usbButton.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // Show loading indicator
+    usbButton.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> USB';
+    usbButton.disabled = true;
+    
+    // Call the FabMo API to show the USB file browser
+    fabmo.showUSBFileBrowser(function(err, result) {
+      // Reset button state
+      usbButton.innerHTML = '<i class="fa fa-usb"></i> USB';
+      usbButton.disabled = false;
+      
+      if (err) {
+        console.error('Error loading file from USB:', err);
+        // Show error notification
+        fabmo.notify('error', 'Failed to load file from USB: ' + (err.message || err));
+      } else if (result && result.job) {
+        console.log('File loaded from USB:', result.job);
+        // Show success notification
+        fabmo.notify('success', 'File "' + result.job.filename + '" loaded from USB');
+        // Refresh job queue
+        refreshJobQueue();
+      }
+    });
+  });
+  
+  // Insert the USB button after the file input
+  fileInput.parentNode.insertBefore(usbButton, fileInput.nextSibling);
+}
+
+// Call this at the end of your document ready handler
+document.addEventListener('DOMContentLoaded', function() {
+  setupUSBFileInput();
+});
+
+// If you already have a document ready handler, just add the setupUSBFileInput() call to it
+
+
+
 function updateQueue(callback) {
   callback = callback || function() {};
   // Update the queue display.

@@ -644,6 +644,66 @@
 
     FabMoDashboard.prototype.submitJobs = FabMoDashboard.prototype.submitJob;
 
+    /**
+     * Get a list of connected USB drives.
+     *
+     * @method getUSBDevices
+     * @param {function} callback
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object[]} callback.devices List of connected USB devices
+     */
+    FabMoDashboard.prototype.getUSBDevices = function (callback) {
+        this._call("getUSBDevices", null, callback);
+    };
+
+    /**
+     * Get the contents of a directory on a USB drive.
+     *
+     * @method getUSBDirectory
+     * @param {String} path The path to list
+     * @param {function} callback
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object[]} callback.contents Directory contents
+     */
+    FabMoDashboard.prototype.getUSBDirectory = function (path, callback) {
+        this._call("getUSBDirectory", { path: path }, callback);
+    };
+
+    /**
+     * Submit a file from USB as a job.
+     *
+     * @method submitUSBFile
+     * @param {String} path Path to the file on the USB drive
+     * @param {Object} options Job submission options
+     * @param {function} callback
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object} callback.job Job info if submission was successful
+     */
+    FabMoDashboard.prototype.submitUSBFile = function (path, options, callback) {
+        if (typeof options === "function") {
+            callback = options;
+            options = {};
+        }
+        this._call("submitUSBFile", { path: path, options: options || {} }, callback);
+    };
+
+    /**
+     * Show a file browser for selecting files from connected USB drives.
+     *
+     * @method showUSBFileBrowser
+     * @param {Object} options Options for the file browser
+     * @param {function} callback
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object} callback.result Result object if file was selected
+     */
+    FabMoDashboard.prototype.showUSBFileBrowser = function (options, callback) {
+        if (typeof options === "function") {
+            callback = options;
+            options = {};
+        }
+        this._call("showUSBFileBrowser", options || {}, callback);
+    };
+
     FabMoDashboard.prototype.submitFirmwareUpdate = function (file, options, callback, progress) {
         this._call("submitFirmwareUpdate", file, callback);
     };
