@@ -362,7 +362,7 @@ const { last } = require("underscore");
                 inputField.val(value);
             }
         }
-        if (status.spindle.vfdEnabled) {
+        if (status.spindle && status.spindle.vfdEnabled) {
             const spindleSpeedInput = $(".spindle-speed input");
             if (!spindleSpeedInput.is(":focus")) {
                 if (status.spindle.vfdAchvFreq !== 0) {
