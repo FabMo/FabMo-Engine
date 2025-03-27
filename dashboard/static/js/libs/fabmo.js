@@ -265,14 +265,18 @@
     }; // _download
 
     FabMoDashboard.prototype._call = function (name, data, callback) {
+        console.log("FabMoDashboard _call", name, data);
+
         if (this.isPresent()) {
-            message = { call: name, data: data };
+            var message = { call: name, data: data };
+            console.log("Sending message to parent:", message);
             if (callback) {
                 message.id = this._id++;
                 this._handlers[message.id] = callback;
             }
             this.target.postMessage(message, "*");
         } else {
+            console.log("Not present, simulating call");
             this._simulateCall(name, data, callback);
         }
     };
@@ -281,52 +285,53 @@
         toaster();
         var toast = document.getElementById("alert-toaster");
         var text = document.getElementById("alert-text");
-        switch (name) {
-            case "submitJob":
-                var files = [];
-                data.jobs.forEach(
-                    function (job) {
-                        var name = job.filename || job.file.name;
-                        this._download(job.file, name, "text/plain");
-                        files.push(name);
-                    }.bind(this)
-                );
 
-                // Data.length
-                if (data.jobs.length === 1) {
-                    var msg = "Job Submitted: " + data.jobs[0].filename;
-                } else {
-                    var msg = data.jobs.length + " Jobs Submitted: " + files.join(",");
-                }
-                text.textContent = msg;
+        switch (name) {
+            // Add these cases
+            case "getUSBDevices":
+                text.textContent = "Getting USB devices...";
+                showToaster(toast);
+                callback(null, { devices: [] });
+                break;
+
+            case "getUSBDirectory":
+                text.textContent = "Getting USB directory...";
+                showToaster(toast);
+                callback(null, { contents: [] });
+                break;
+
+            case "submitUSBFile":
+                text.textContent = "Submitting USB file...";
                 showToaster(toast);
                 callback(null, {});
                 break;
 
-            case "showDRO":
-                text.textContent = "DRO Shown.";
+            case "showUSBFileBrowser":
+                text.textContent = "USB File Browser would be shown here";
                 showToaster(toast);
+
+                // Create a simple dialog as a simulation
+                var simDialog = document.createElement("div");
+                simDialog.style.position = "fixed";
+                simDialog.style.top = "50%";
+                simDialog.style.left = "50%";
+                simDialog.style.transform = "translate(-50%, -50%)";
+                simDialog.style.backgroundColor = "white";
+                simDialog.style.padding = "20px";
+                simDialog.style.border = "1px solid #ccc";
+                simDialog.style.zIndex = "10000";
+                simDialog.innerHTML =
+                    '<h3>USB File Browser Simulation</h3><p>This is a simulation of the USB file browser.</p><button id="sim-close">Close</button>';
+                document.body.appendChild(simDialog);
+
+                document.getElementById("sim-close").addEventListener("click", function () {
+                    document.body.removeChild(simDialog);
+                    callback(null, { cancelled: true });
+                });
                 break;
 
-            case "hideDRO":
-                text.textContent = "DRO Hidden.";
-                showToaster(toaster);
-                break;
-
-            case "runGCode":
-                text.textContent = "GCode sent to tool: " + data;
-                showToaster(toast);
-                break;
-
-            case "runSBP":
-                text.textContent = "OpenSBP sent to tool: " + data;
-                showToaster(toast);
-                break;
-
-            default:
-                text.textContent = name + " called.";
-                showToaster(toast);
-                break;
+            // Existing cases...
+            // ...
         }
     };
 
@@ -696,12 +701,33 @@
      * @param {Error} callback.err Error object if there was an error.
      * @param {Object} callback.result Result object if file was selected
      */
-    FabMoDashboard.prototype.showUSBFileBrowser = function (options, callback) {
-        if (typeof options === "function") {
-            callback = options;
-            options = {};
-        }
-        this._call("showUSBFileBrowser", options || {}, callback);
+    FabMoDashboard.prototype.showUSBFileBrowser = function (callback) {
+        console.log("FabMoDashboard.showUSBFileBrowser called - simplified version");
+
+        // Create a simple dialog directly
+        var simpleDialog = document.createElement("div");
+        simpleDialog.style.position = "fixed";
+        simpleDialog.style.top = "50%";
+        simpleDialog.style.left = "50%";
+        simpleDialog.style.transform = "translate(-50%, -50%)";
+        simpleDialog.style.backgroundColor = "white";
+        simpleDialog.style.padding = "20px";
+        simpleDialog.style.border = "1px solid #ccc";
+        simpleDialog.style.boxShadow = "0 0 10px rgba(0,0,0,0.5)";
+        simpleDialog.style.zIndex = "10000";
+        simpleDialog.innerHTML =
+            '<h3>Simple USB Browser Test</h3><p>This is a test dialog created directly in the iframe.</p><button id="test-close">Close</button>';
+        document.body.appendChild(simpleDialog);
+
+        document.getElementById("test-close").addEventListener("click", function () {
+            document.body.removeChild(simpleDialog);
+            if (callback) callback(null, { success: true, message: "Dialog was shown" });
+        });
+
+        // Still try to call the server in case that works
+        this._call("showUSBFileBrowser", null, function (err, result) {
+            console.log("Server response:", err, result);
+        });
     };
 
     FabMoDashboard.prototype.submitFirmwareUpdate = function (file, options, callback, progress) {
@@ -1269,5 +1295,15 @@
             document.body.removeChild(toaster);
         }, 1000);
     };
+
+    // Add this at the end of fabmo.js
+    console.log(
+        "FabMoDashboard methods added:",
+        typeof FabMoDashboard.prototype.getUSBDevices === "function",
+        typeof FabMoDashboard.prototype.getUSBDirectory === "function",
+        typeof FabMoDashboard.prototype.submitUSBFile === "function",
+        typeof FabMoDashboard.prototype.showUSBFileBrowser === "function"
+    );
+
     return FabMoDashboard;
 });

@@ -79,57 +79,555 @@ function setupDropTarget() {
 
 
 
-// USB-drive file input
+// USB-drive file input - this implements a self-contained USB file browser
 function setupUSBFileInput() {
+  console.log("Setting up USB File Input");
+  
   // Find the file input container
   const fileInput = document.querySelector('.submitWrapper');
   if (!fileInput) return;
   
+  // Create a container for our USB button
+  const usbButtonContainer = document.createElement('div');
+  usbButtonContainer.style.display = 'inline-block';
+  usbButtonContainer.style.marginLeft = '10px';
+  
   // Create the USB button with compatible styling
   const usbButton = document.createElement('button');
   usbButton.type = 'button';
+  usbButton.id = 'usb-file-button';
   usbButton.className = 'btn btn-primary usb-file-button';
   usbButton.innerHTML = '<i class="fa fa-usb"></i> USB';
-  usbButton.style.marginLeft = '10px';
   
-  // Add click handler
-  usbButton.addEventListener('click', function(e) {
+  // Add the button to the container
+  usbButtonContainer.appendChild(usbButton);
+  
+  // Add click handler with debugging
+  usbButton.onclick = function(e) {
     e.preventDefault();
+    e.stopPropagation();
     
-    // Show loading indicator
-    usbButton.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> USB';
-    usbButton.disabled = true;
+    // Show the USB browser dialog
+    showUSBBrowser(function(err, result) {
+      if (err) {
+        console.error("USB browser error:", err);
+        fabmo.notify('error', 'Error accessing USB: ' + err.message);
+      } else if (result && result.filePath) {
+        submitUSBFile(result.filePath, function(err, job) {
+          if (err) {
+            console.error("Error submitting USB file:", err);
+            fabmo.notify('error', 'Error submitting file: ' + err.message);
+          } else {
+            console.log("File submitted successfully:", job);
+            fabmo.notify('success', 'File loaded successfully from USB');
+            updateQueue();
+            updateHistory();
+            updateOrder();
     
-    // Call the FabMo API to show the USB file browser
-    fabmo.showUSBFileBrowser(function(err, result) {
-      // Reset button state
+          }
+        });
+      }
+    });
+    
+    return false;
+  };
+  
+  // Insert the USB button container after the file input
+  fileInput.parentNode.insertBefore(usbButtonContainer, fileInput.nextSibling);
+  console.log("USB button added to DOM");
+  
+  // Create and add the modal to the DOM
+  createUSBBrowserModal();
+}
+
+// Create the USB browser modal
+function createUSBBrowserModal() {
+  if (document.getElementById('usb-file-browser-modal')) {
+    return;
+  }
+  
+  const modalHtml = `
+    <div id="usb-file-browser-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close">&times;</span>
+          <h2>USB File Browser</h2>
+        </div>
+        <div class="modal-body">
+          <div class="usb-devices-section">
+            <h3>USB Devices</h3>
+            <div id="usb-devices-list" class="usb-devices-list">
+              <p>No USB devices detected.</p>
+            </div>
+            <button id="usb-refresh-button" class="usb-refresh-button">Refresh Devices</button>
+          </div>
+          <div class="usb-files-section">
+            <div class="usb-path-bar">
+              <span id="usb-current-path">No device selected</span>
+            </div>
+            <div id="usb-file-list" class="usb-file-list">
+              <p>Select a USB device to browse files.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="usb-cancel-button" class="usb-cancel-button">Cancel</button>
+          <button id="usb-select-button" class="usb-select-button" disabled>Select File</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const modalStyle = `
+    <style>
+      #usb-file-browser-modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+      }
+      
+      #usb-file-browser-modal .modal-content {
+        background-color: #fefefe;
+        margin: 10% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 800px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+      
+      #usb-file-browser-modal .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+      }
+      
+      #usb-file-browser-modal .modal-body {
+        padding: 20px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      #usb-file-browser-modal .modal-footer {
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      
+      #usb-file-browser-modal .close {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      
+      #usb-file-browser-modal .close:hover {
+        color: black;
+      }
+      
+      #usb-file-browser-modal .usb-devices-section {
+        margin-bottom: 20px;
+      }
+      
+      #usb-file-browser-modal .usb-devices-list {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      
+      #usb-file-browser-modal .usb-device-item {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      
+      #usb-file-browser-modal .usb-device-item:hover {
+        background-color: #f0f0f0;
+      }
+      
+      #usb-file-browser-modal .usb-device-item.selected {
+        background-color: #e3f2fd;
+        border-color: #2196F3;
+      }
+      
+      #usb-file-browser-modal .usb-path-bar {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        overflow: auto;
+        white-space: nowrap;
+      }
+      
+      #usb-file-browser-modal .usb-file-list {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      
+      #usb-file-browser-modal .usb-file-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+      }
+      
+      #usb-file-browser-modal .usb-file-item:last-child {
+        border-bottom: none;
+      }
+      
+      #usb-file-browser-modal .usb-file-item:hover {
+        background-color: #f5f5f5;
+      }
+      
+      #usb-file-browser-modal .usb-file-item.selected {
+        background-color: #e3f2fd;
+      }
+      
+      #usb-file-browser-modal .usb-file-icon {
+        margin-right: 10px;
+      }
+      
+      #usb-file-browser-modal .usb-file-name {
+        flex-grow: 1;
+      }
+      
+      #usb-file-browser-modal .usb-file-size {
+        color: #777;
+        font-size: 0.8em;
+      }
+      
+      #usb-file-browser-modal .usb-refresh-button, 
+      #usb-file-browser-modal .usb-cancel-button, 
+      #usb-file-browser-modal .usb-select-button {
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      
+      #usb-file-browser-modal .usb-refresh-button {
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+      }
+      
+      #usb-file-browser-modal .usb-cancel-button {
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+      }
+      
+      #usb-file-browser-modal .usb-select-button {
+        background-color: #2196F3;
+        border: 1px solid #1976D2;
+        color: white;
+      }
+      
+      #usb-file-browser-modal .usb-select-button:disabled {
+        background-color: #9e9e9e;
+        border: 1px solid #757575;
+        cursor: not-allowed;
+      }
+      
+      #usb-file-browser-modal .loading {
+        text-align: center;
+        padding: 20px;
+      }
+    </style>
+  `;
+  
+  // Append modal and styles to document
+  const modalContainer = document.createElement('div');
+  modalContainer.innerHTML = modalHtml + modalStyle;
+  document.body.appendChild(modalContainer);
+  
+  // Set up event listeners
+  setupUSBBrowserEventListeners();
+}
+
+// Set up event listeners for the modal
+function setupUSBBrowserEventListeners() {
+  // Close button
+  const closeBtn = document.querySelector('#usb-file-browser-modal .close');
+  closeBtn.addEventListener('click', hideUSBBrowser);
+  
+  // Cancel button
+  const cancelBtn = document.getElementById('usb-cancel-button');
+  cancelBtn.addEventListener('click', hideUSBBrowser);
+  
+  // Select button
+  const selectBtn = document.getElementById('usb-select-button');
+  selectBtn.addEventListener('click', selectCurrentFile);
+  
+  // Refresh button
+  const refreshBtn = document.getElementById('usb-refresh-button');
+  refreshBtn.addEventListener('click', loadUSBDevices);
+  
+  // Close when clicking outside the modal
+  const modal = document.getElementById('usb-file-browser-modal');
+  window.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      hideUSBBrowser();
+    }
+  });
+}
+
+// Current state
+let currentPath = null;
+let usbBrowserCallback = null;
+
+// Show the USB browser
+function showUSBBrowser(callback) {
+  usbBrowserCallback = callback;
+  document.getElementById('usb-file-browser-modal').style.display = 'block';
+  loadUSBDevices();
+}
+
+// Hide the USB browser
+function hideUSBBrowser() {
+  document.getElementById('usb-file-browser-modal').style.display = 'none';
+  if (usbBrowserCallback) {
+    usbBrowserCallback(null, { cancelled: true });
+    usbBrowserCallback = null;
+  }
+}
+
+// Load USB devices
+function loadUSBDevices() {
+  const devicesList = document.getElementById('usb-devices-list');
+  devicesList.innerHTML = '<p class="loading">Loading devices...</p>';
+  
+  // Make AJAX request to get USB devices
+  $.ajax({
+    url: '/usb/devices',
+    type: 'GET',
+    dataType: 'json',
+    success: function(response) {
+      if (response.status === 'success' && response.data.devices) {
+        const devices = response.data.devices;
+        
+        if (devices.length === 0) {
+          devicesList.innerHTML = '<p>No USB devices detected. Please connect a USB drive and click Refresh.</p>';
+          return;
+        }
+        
+        let html = '';
+        devices.forEach(function(device) {
+          html += '<div class="usb-device-item" data-path="' + device.path + '">';
+          html += '<div class="usb-device-name">' + device.name + '</div>';
+          html += '</div>';
+        });
+        
+        devicesList.innerHTML = html;
+        
+        // Add click handlers to device items
+        const deviceItems = document.querySelectorAll('.usb-device-item');
+        deviceItems.forEach(function(item) {
+          item.addEventListener('click', function() {
+            // Update selected device
+            deviceItems.forEach(function(el) {
+              el.classList.remove('selected');
+            });
+            item.classList.add('selected');
+            
+            // Load directory contents
+            const path = item.getAttribute('data-path');
+            loadUSBDirectory(path);
+          });
+        });
+      } else {
+        devicesList.innerHTML = '<p>Error loading USB devices. Please try again.</p>';
+      }
+    },
+    error: function(err) {
+      console.error('Error loading USB devices:', err);
+      devicesList.innerHTML = '<p>Error loading USB devices. Please try again.</p>';
+    }
+  });
+}
+
+// Load USB directory
+function loadUSBDirectory(path) {
+  currentPath = path;
+  
+  // Update path display
+  document.getElementById('usb-current-path').textContent = path;
+  
+  // Show loading
+  const fileList = document.getElementById('usb-file-list');
+  fileList.innerHTML = '<p class="loading">Loading files...</p>';
+  
+  // Make AJAX request to get directory contents
+  $.ajax({
+    url: '/usb/dir?path=' + encodeURIComponent(path),
+    type: 'GET',
+    dataType: 'json',
+    success: function(response) {
+      if (response.status === 'success' && response.data.contents) {
+        const contents = response.data.contents;
+        
+        if (contents.length === 0) {
+          fileList.innerHTML = '<p>This directory is empty.</p>';
+          return;
+        }
+        
+        let html = '';
+        
+        // Add parent directory option if not at root
+        if (path !== '/media/pi' && path !== '/media/root' && path !== '/mnt') {
+          const parentPath = path.split('/').slice(0, -1).join('/') || '/';
+          
+          html += '<div class="usb-file-item" data-path="' + parentPath + '" data-is-dir="true">';
+          html += '<span class="usb-file-icon">📁</span>';
+          html += '<span class="usb-file-name">..</span>';
+          html += '</div>';
+        }
+        
+        // Add directories first
+        contents.filter(function(file) {
+          return file.isDirectory;
+        }).forEach(function(dir) {
+          html += '<div class="usb-file-item" data-path="' + dir.path + '" data-is-dir="true">';
+          html += '<span class="usb-file-icon">📁</span>';
+          html += '<span class="usb-file-name">' + dir.name + '</span>';
+          html += '</div>';
+        });
+        
+        // Then add files
+        contents.filter(function(file) {
+          return !file.isDirectory;
+        }).forEach(function(file) {
+          html += '<div class="usb-file-item" data-path="' + file.path + '" data-is-dir="false">';
+          html += '<span class="usb-file-icon">📄</span>';
+          html += '<span class="usb-file-name">' + file.name + '</span>';
+          html += '<span class="usb-file-size">' + formatFileSize(file.size) + '</span>';
+          html += '</div>';
+        });
+        
+        fileList.innerHTML = html;
+        
+        // Add click handlers to file items
+        const fileItems = document.querySelectorAll('.usb-file-item');
+        fileItems.forEach(function(item) {
+          item.addEventListener('click', function() {
+            const isDir = item.getAttribute('data-is-dir') === 'true';
+            const itemPath = item.getAttribute('data-path');
+            
+            if (isDir) {
+              // Navigate to directory
+              loadUSBDirectory(itemPath);
+            } else {
+              // Select file
+              fileItems.forEach(function(el) {
+                el.classList.remove('selected');
+              });
+              item.classList.add('selected');
+              
+              // Enable select button
+              document.getElementById('usb-select-button').disabled = false;
+            }
+          });
+          
+          // Add double-click handler
+          item.addEventListener('dblclick', function() {
+            const isDir = item.getAttribute('data-is-dir') === 'true';
+            const itemPath = item.getAttribute('data-path');
+            
+            if (isDir) {
+              // Navigate to directory
+              loadUSBDirectory(itemPath);
+            } else {
+              // Select and submit file
+              selectFile(itemPath);
+            }
+          });
+        });
+      } else {
+        fileList.innerHTML = '<p>Error loading directory. Please try again.</p>';
+      }
+    },
+    error: function(err) {
+      console.error('Error loading directory:', err);
+      fileList.innerHTML = '<p>Error loading directory. Please try again.</p>';
+    }
+  });
+}
+
+// Select current file
+function selectCurrentFile() {
+  const selectedFile = document.querySelector('.usb-file-item.selected');
+  if (selectedFile && selectedFile.getAttribute('data-is-dir') === 'false') {
+    const filePath = selectedFile.getAttribute('data-path');
+    selectFile(filePath);
+  }
+}
+
+// Select file
+function selectFile(filePath) {
+  const callback = usbBrowserCallback;
+  hideUSBBrowser();
+  if (callback) {
+    callback(null, { filePath: filePath });
+  }
+}
+
+// Submit USB file
+function submitUSBFile(filePath, callback) {
+  // Show the regular spinner while submitting
+  const usbButton = document.getElementById('usb-file-button');
+  usbButton.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> USB';
+  usbButton.disabled = true;
+  
+  // Make AJAX request to submit file
+  $.ajax({
+    url: '/usb/submit',
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({ path: filePath }),
+    dataType: 'json',
+    success: function(response) {
       usbButton.innerHTML = '<i class="fa fa-usb"></i> USB';
       usbButton.disabled = false;
       
-      if (err) {
-        console.error('Error loading file from USB:', err);
-        // Show error notification
-        fabmo.notify('error', 'Failed to load file from USB: ' + (err.message || err));
-      } else if (result && result.job) {
-        console.log('File loaded from USB:', result.job);
-        // Show success notification
-        fabmo.notify('success', 'File "' + result.job.filename + '" loaded from USB');
-        // Refresh job queue
-        refreshJobQueue();
+      if (response.status === 'success' && response.data.job) {
+        callback(null, response.data.job);
+      } else {
+        callback(new Error('Failed to submit job'));
       }
-    });
+    },
+    error: function(err) {
+      usbButton.innerHTML = '<i class="fa fa-usb"></i> USB';
+      usbButton.disabled = false;
+      console.error('Error submitting USB file:', err);
+      callback(err);
+    }
   });
-  
-  // Insert the USB button after the file input
-  fileInput.parentNode.insertBefore(usbButton, fileInput.nextSibling);
 }
 
-// Call this at the end of your document ready handler
-document.addEventListener('DOMContentLoaded', function() {
-  setupUSBFileInput();
-});
-
-// If you already have a document ready handler, just add the setupUSBFileInput() call to it
+// Format file size
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 
 
@@ -837,6 +1335,8 @@ $(document).ready(function() {
 
     setupDropTarget();
     runNext();
+
+    setupUSBFileInput()
 
     ////## this did not fix issue with another client
     ////## TODO // look for some sort of change 

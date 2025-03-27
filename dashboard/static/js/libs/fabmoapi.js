@@ -647,6 +647,25 @@
     };
 
     FabMoAPI.prototype.showUSBFileBrowser = function (options, callback) {
+        console.log("FabMoAPI showUSBFileBrowser called");
+
+        // Direct DOM test - add a visible element to confirm this code runs
+        var testEl = document.createElement("div");
+        testEl.id = "usb-test-element";
+        testEl.style.position = "fixed";
+        testEl.style.top = "50px";
+        testEl.style.left = "50px";
+        testEl.style.padding = "20px";
+        testEl.style.backgroundColor = "red";
+        testEl.style.color = "white";
+        testEl.style.zIndex = "9999";
+        testEl.innerHTML = "USB API Called";
+        document.body.appendChild(testEl);
+
+        setTimeout(function () {
+            document.body.removeChild(testEl);
+        }, 3000);
+
         var that = this;
         // Create modal if it doesn't exist
         if (!document.getElementById("usb-file-browser-modal")) {
