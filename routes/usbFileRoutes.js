@@ -222,20 +222,41 @@ module.exports = function (server) {
                         const fullPath = path.join(mountPoint, entry);
 
                         fs.stat(fullPath, function (err, stats) {
-                            processedEntries++;
-
                             if (err) {
                                 logger.error(`Error checking ${fullPath}:`, err);
-                            } else if (stats.isDirectory()) {
-                                // Simple heuristic - if it's a directory under a mount point, consider it a USB drive
-                                devices.push({
-                                    name: entry,
-                                    path: fullPath,
-                                });
+                                processedEntries++;
+                                if (processedEntries >= entries.length) {
+                                    checkComplete();
+                                }
+                                return;
                             }
 
-                            if (processedEntries >= entries.length) {
-                                checkComplete();
+                            if (stats.isDirectory()) {
+                                // Check if the directory has any visible content
+                                hasDriveContent(fullPath, function (err, hasContent) {
+                                    processedEntries++;
+
+                                    if (err) {
+                                        logger.error(`Error checking contents of ${fullPath}:`, err);
+                                    } else if (hasContent) {
+                                        // Only add drives that have actual content
+                                        devices.push({
+                                            name: entry,
+                                            path: fullPath,
+                                        });
+                                    } else {
+                                        logger.info(`Skipping empty drive: ${entry} at ${fullPath}`);
+                                    }
+
+                                    if (processedEntries >= entries.length) {
+                                        checkComplete();
+                                    }
+                                });
+                            } else {
+                                processedEntries++;
+                                if (processedEntries >= entries.length) {
+                                    checkComplete();
+                                }
                             }
                         });
                     });
@@ -249,42 +270,24 @@ module.exports = function (server) {
         }
     }
 
+    // Check if a drive has any visible content (non-hidden files/directories)
+    function hasDriveContent(dirPath, callback) {
+        fs.readdir(dirPath, function (err, entries) {
+            if (err) {
+                return callback(err, false);
+            }
+
+            // Filter out hidden files/folders (starting with .)
+            const visibleEntries = entries.filter((entry) => !entry.startsWith("."));
+
+            // If there are any visible entries, the drive has content
+            callback(null, visibleEntries.length > 0);
+        });
+    }
+
     // Helper function to check if path is within a USB mount point
     function isValidUSBPath(testPath) {
         return USB_MOUNT_POINTS.some((mountPoint) => testPath.startsWith(mountPoint));
-    }
-
-    // Helper function to check if a directory is likely a USB drive
-    async function isUSBDrive(dirPath) {
-        try {
-            // First, a simple heuristic - if it's directly under a known mount point
-            for (const mountPoint of USB_MOUNT_POINTS) {
-                if (
-                    dirPath.startsWith(mountPoint) &&
-                    dirPath.split(path.sep).length === mountPoint.split(path.sep).length + 1
-                ) {
-                    return true;
-                }
-            }
-
-            // For more complex cases, try to use lsblk
-            try {
-                const { stdout } = await exec(
-                    `lsblk -o MOUNTPOINT | grep -q "^${dirPath}$" && echo "true" || echo "false"`
-                );
-                return stdout.trim() === "true";
-            } catch (err) {
-                // If lsblk fails, use a fallback approach - check for typical USB drive content
-                const entries = await fs.readdir(dirPath);
-                const typicalUsbFiles = ["System Volume Information", ".Spotlight-V100", ".fseventsd", ".Trashes"];
-
-                // If any typical USB system files are found, it's likely a USB drive
-                return entries.some((entry) => typicalUsbFiles.includes(entry));
-            }
-        } catch (err) {
-            console.error("Error checking if directory is USB drive:", err);
-            return false;
-        }
     }
 
     // Helper function to list directory contents

@@ -150,16 +150,19 @@ function createUSBBrowserModal() {
     <div id="usb-file-browser-modal" class="modal" style="display: none;">
       <div class="modal-content">
         <div class="modal-header">
-          <span class="close">&times;</span>
-          <h2>USB File Browser</h2>
+          <h3>USB Devices</h3>
+          <div class="header-actions">
+            <button id="usb-refresh-button" class="usb-refresh-button" title="Refresh devices">
+              <i class="fa fa-refresh"></i>
+            </button>
+            <span class="close">&times;</span>
+          </div>
         </div>
         <div class="modal-body">
           <div class="usb-devices-section">
-            <h3>USB Devices</h3>
             <div id="usb-devices-list" class="usb-devices-list">
               <p>No USB devices detected.</p>
             </div>
-            <button id="usb-refresh-button" class="usb-refresh-button">Refresh Devices</button>
           </div>
           <div class="usb-files-section">
             <div class="usb-path-bar">
@@ -194,7 +197,7 @@ function createUSBBrowserModal() {
       #usb-file-browser-modal .modal-content {
         background-color: #fefefe;
         margin: 10% auto;
-        padding: 20px;
+        padding: 0;
         border: 1px solid #888;
         width: 80%;
         max-width: 800px;
@@ -206,28 +209,40 @@ function createUSBBrowserModal() {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background-color: #f5f5f5;
+        padding: 10px 15px;
         border-bottom: 1px solid #ddd;
-        padding-bottom: 10px;
+        border-radius: 5px 5px 0 0;
+      }
+      
+      #usb-file-browser-modal .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      
+      #usb-file-browser-modal .modal-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: bold;
       }
       
       #usb-file-browser-modal .modal-body {
-        padding: 20px 0;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+        padding: 15px;
       }
       
       #usb-file-browser-modal .modal-footer {
         border-top: 1px solid #ddd;
-        padding-top: 10px;
+        padding: 10px 15px;
         display: flex;
         justify-content: flex-end;
         gap: 10px;
+        border-radius: 0 0 5px 5px;
       }
       
       #usb-file-browser-modal .close {
         color: #aaa;
-        font-size: 28px;
+        font-size: 22px;
         font-weight: bold;
         cursor: pointer;
       }
@@ -237,7 +252,7 @@ function createUSBBrowserModal() {
       }
       
       #usb-file-browser-modal .usb-devices-section {
-        margin-bottom: 20px;
+        margin-bottom: 15px;
       }
       
       #usb-file-browser-modal .usb-devices-list {
@@ -248,9 +263,9 @@ function createUSBBrowserModal() {
       }
       
       #usb-file-browser-modal .usb-device-item {
-        padding: 10px;
+        padding: 8px 12px;
         border: 1px solid #ddd;
-        border-radius: 5px;
+        border-radius: 4px;
         cursor: pointer;
         transition: background-color 0.2s;
       }
@@ -266,22 +281,24 @@ function createUSBBrowserModal() {
       
       #usb-file-browser-modal .usb-path-bar {
         background-color: #f5f5f5;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 10px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        margin-bottom: 8px;
         overflow: auto;
         white-space: nowrap;
+        font-size: 13px;
+        border: 1px solid #ddd;
       }
       
       #usb-file-browser-modal .usb-file-list {
         border: 1px solid #ddd;
-        border-radius: 5px;
+        border-radius: 4px;
         max-height: 300px;
         overflow-y: auto;
       }
       
       #usb-file-browser-modal .usb-file-item {
-        padding: 10px;
+        padding: 8px 12px;
         border-bottom: 1px solid #eee;
         cursor: pointer;
         display: flex;
@@ -313,17 +330,28 @@ function createUSBBrowserModal() {
         font-size: 0.8em;
       }
       
-      #usb-file-browser-modal .usb-refresh-button, 
-      #usb-file-browser-modal .usb-cancel-button, 
-      #usb-file-browser-modal .usb-select-button {
-        padding: 8px 16px;
-        border-radius: 4px;
+      #usb-file-browser-modal .usb-refresh-button {
+        background: none;
+        border: none;
         cursor: pointer;
+        color: #555;
+        font-size: 16px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       
-      #usb-file-browser-modal .usb-refresh-button {
-        background-color: #f0f0f0;
-        border: 1px solid #ddd;
+      #usb-file-browser-modal .usb-refresh-button:hover {
+        color: #000;
+      }
+      
+      #usb-file-browser-modal .usb-cancel-button, 
+      #usb-file-browser-modal .usb-select-button {
+        padding: 6px 14px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
       }
       
       #usb-file-browser-modal .usb-cancel-button {
@@ -345,7 +373,7 @@ function createUSBBrowserModal() {
       
       #usb-file-browser-modal .loading {
         text-align: center;
-        padding: 20px;
+        padding: 15px;
       }
     </style>
   `;
@@ -392,9 +420,25 @@ let usbBrowserCallback = null;
 
 // Show the USB browser
 function showUSBBrowser(callback) {
+  document.getElementById('usb-current-path').textContent = 'No device selected';
+  document.getElementById('usb-file-list').innerHTML = '<p>Select a USB device to browse files.</p>';
+  document.getElementById('usb-select-button').disabled = true;
+  currentPath = null;
   usbBrowserCallback = callback;
   document.getElementById('usb-file-browser-modal').style.display = 'block';
   loadUSBDevices();
+}
+
+// Function to get the last used USB path
+function getLastUsedUSBPath() {
+  return localStorage.getItem('fabmo_last_usb_path');
+}
+
+// Function to save the last used USB path
+function saveLastUsedUSBPath(path) {
+  if (path) {
+    localStorage.setItem('fabmo_last_usb_path', path);
+  }
 }
 
 // Hide the USB browser
@@ -404,12 +448,17 @@ function hideUSBBrowser() {
     usbBrowserCallback(null, { cancelled: true });
     usbBrowserCallback = null;
   }
+  // Note: We're not clearing lastUsedUSBPath, preserving it for next time
 }
 
 // Load USB devices
 function loadUSBDevices() {
   const devicesList = document.getElementById('usb-devices-list');
   devicesList.innerHTML = '<p class="loading">Loading devices...</p>';
+  
+  // Reset file list and path when refreshing devices
+  const fileList = document.getElementById('usb-file-list');
+  const pathDisplay = document.getElementById('usb-current-path');
   
   // Make AJAX request to get USB devices
   $.ajax({
@@ -422,6 +471,17 @@ function loadUSBDevices() {
         
         if (devices.length === 0) {
           devicesList.innerHTML = '<p>No USB devices detected. Please connect a USB drive and click Refresh.</p>';
+          
+          // Reset file list and path display when no devices are found
+          fileList.innerHTML = '<p>Select a USB device to browse files.</p>';
+          pathDisplay.textContent = 'No device selected';
+          
+          // Disable select button
+          document.getElementById('usb-select-button').disabled = true;
+          
+          // Clear currentPath
+          currentPath = null;
+          
           return;
         }
         
@@ -449,13 +509,60 @@ function loadUSBDevices() {
             loadUSBDirectory(path);
           });
         });
+        
+        // Auto-select the first drive or the last used path if available
+        let deviceToSelect = null;
+        const lastUsedUSBPath = getLastUsedUSBPath();
+        
+        // First, try to find and select the last used path
+        if (lastUsedUSBPath) {
+          for (let i = 0; i < devices.length; i++) {
+            if (lastUsedUSBPath.startsWith(devices[i].path)) {
+              deviceToSelect = deviceItems[i];
+              break;
+            }
+          }
+        }
+        
+        // If last path not found or not set, select the first device
+        if (!deviceToSelect && deviceItems.length > 0) {
+          deviceToSelect = deviceItems[0];
+        }
+        
+        // Trigger click on the selected device to load its contents
+        if (deviceToSelect) {
+          deviceToSelect.classList.add('selected');
+          const path = deviceToSelect.getAttribute('data-path');
+          
+          // If we have a remembered path that's deeper than the device root
+          // and it belongs to the selected device, use that
+          if (lastUsedUSBPath && lastUsedUSBPath.startsWith(path) && lastUsedUSBPath !== path) {
+            loadUSBDirectory(lastUsedUSBPath);
+          } else {
+            loadUSBDirectory(path);
+          }
+        }
       } else {
         devicesList.innerHTML = '<p>Error loading USB devices. Please try again.</p>';
+        
+        // Reset file list and path display on error
+        fileList.innerHTML = '<p>Select a USB device to browse files.</p>';
+        pathDisplay.textContent = 'No device selected';
+        
+        // Disable select button
+        document.getElementById('usb-select-button').disabled = true;
       }
     },
     error: function(err) {
       console.error('Error loading USB devices:', err);
       devicesList.innerHTML = '<p>Error loading USB devices. Please try again.</p>';
+      
+      // Reset file list and path display on error
+      fileList.innerHTML = '<p>Select a USB device to browse files.</p>';
+      pathDisplay.textContent = 'No device selected';
+      
+      // Disable select button
+      document.getElementById('usb-select-button').disabled = true;
     }
   });
 }
@@ -463,6 +570,9 @@ function loadUSBDevices() {
 // Load USB directory
 function loadUSBDirectory(path) {
   currentPath = path;
+  
+  // Save this path as the last used path
+  saveLastUsedUSBPath(path);
   
   // Update path display
   document.getElementById('usb-current-path').textContent = path;
@@ -578,6 +688,12 @@ function selectCurrentFile() {
 
 // Select file
 function selectFile(filePath) {
+  // Update lastUsedUSBPath to the directory containing this file
+  const directory = filePath.substring(0, filePath.lastIndexOf('/'));
+  if (directory) {
+    saveLastUsedUSBPath(directory);
+  }
+  
   const callback = usbBrowserCallback;
   hideUSBBrowser();
   if (callback) {
