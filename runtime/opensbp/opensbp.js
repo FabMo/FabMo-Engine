@@ -1460,7 +1460,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = command.expr ? this._eval(command.expr) : null;
-            var input_var = command.var;
+            var input_var = command.var || {}; //#### this may not be right!
             var params = command.params || {};
             // console.log("PAUSE command parameters:", params);
 
@@ -1511,11 +1511,22 @@ SBPRuntime.prototype._execute = function (command, callback) {
             }
             modalParams.message = message;
 
-            // Handle input variable
+            // Handle input variable, this is ugly
             if (input_var) {
                 modalParams.input_var = input_var;
             } else if (normalizedParams.input) {
-                modalParams.input_var = normalizedParams.input;
+                // To avoid having modifying the parser, make an object like the command.var object and assign it to the modalParams
+                //input_var = {};    // NOTE THIS IS ALREADY DECLARED AND SET UP
+                if (normalizedParams.input[0] == "&") {
+                    input_var.type = "user_variable";
+                } else if (normalizedParams.input[0] == "$") {
+                    input_var.type = "persistent_variable";
+                } else {
+                    throw new Error("Invalid variable name: " + normalizedParams.input);
+                }
+                input_var.name = normalizedParams.input.substring(1).toUpperCase(); // remove type designator
+                input_var.access = [];
+                modalParams.input_var = input_var;
             }
 
             // Handle optional parameters

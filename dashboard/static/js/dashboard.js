@@ -1317,6 +1317,8 @@ define(function (require) {
 
     //Show Modal
     Dashboard.prototype.showModal = function (options) {
+        console.log("showModal called with options:", options); // Log the options object
+
         modalIsShown = true;
 
         $(".modalDim").show();
@@ -1351,6 +1353,50 @@ define(function (require) {
             $(".modalDialogue").css("width", "100%");
         }
 
+        let selectedValue = null; // Variable to store the selected YES-NO value
+
+        // Special case for "user_variable" (name starts with "&")
+        if (options.input && options.input.name && options["input"]["type"] === "user_variable") {
+            console.log("Detected user_variable input:", options.input); // Log detection of user_variable
+            $(".modalInput").hide();
+            $(".modalButtons").html(`
+                <div class="yes-no-buttons" style="margin-bottom: 10px;">
+                    <div class="modalYes" style="display: inline-block; margin-right: 10px; cursor: pointer;"><span>Yes</span></div>
+                    <div class="modalNo" style="display: inline-block; cursor: pointer;"><span>No</span></div>
+                </div>
+                <div class="ok-cancel-buttons">
+                    <div class="modalCancel" style="display: inline-block; margin-right: 10px;"><span>Cancel</span></div>
+                    <div class="modalOkay" style="display: inline-block;"><span>Okay</span></div>
+                </div>
+            `);
+
+            $(".modalYes")
+                .off("click")
+                .on("click", function () {
+                    selectedValue = "YES";
+                    $(".modalYes").css("font-weight", "bold");
+                    $(".modalNo").css("font-weight", "normal");
+                });
+
+            $(".modalNo")
+                .off("click")
+                .on("click", function () {
+                    selectedValue = "NO";
+                    $(".modalNo").css("font-weight", "bold");
+                    $(".modalYes").css("font-weight", "normal");
+                });
+        } else if (options["input"]) {
+            console.log("Detected normal input:", options.input); // Log detection of normal input
+            $("#inputVar").val(options["input"]["name"]);
+            $("#inputType").val(options["input"]["type"]);
+            $("#inputVal").val("");
+            $(".modalInput").show();
+            $("#inputVal").trigger("focus");
+        } else {
+            console.log("No input detected, hiding modal input."); // Log case where no input is detected
+            $(".modalInput").hide();
+        }
+
         // Handle OK button
         if (options.ok && options.okText) {
             $(".modalOkay").show();
@@ -1358,7 +1404,11 @@ define(function (require) {
             $(".modalOkay")
                 .off("click")
                 .on("click", function () {
-                    options.ok();
+                    if (options.input?.name && options.input.name.startsWith("&") && selectedValue) {
+                        options.ok(selectedValue); // Pass the selected YES-NO value to the OK callback
+                    } else {
+                        options.ok();
+                    }
                     $(".newModal").hide();
                     $(".modalDim").hide();
                 });
@@ -1381,24 +1431,24 @@ define(function (require) {
             $(".modalCancel").hide();
         }
 
-        // Note: This block seems redundant since it's already handled above
-        // You may consider removing it if it's not needed
-        if (options["cancelText"]) {
-            $(".modalCancel").show();
-            $(".modalCancel").text(options.cancelText);
-        } else {
-            $(".modalCancel").hide();
-        }
+        // // Note: This block seems redundant since it's already handled above
+        // // You may consider removing it if it's not needed
+        // if (options["cancelText"]) {
+        //     $(".modalCancel").show();
+        //     $(".modalCancel").text(options.cancelText);
+        // } else {
+        //     $(".modalCancel").hide();
+        // }
 
-        if (options["input"]) {
-            $("#inputVar").val(options["input"]["name"]);
-            $("#inputType").val(options["input"]["type"]);
-            $("#inputVal").val("");
-            $(".modalInput").show();
-            $("#inputVal").trigger("focus");
-        } else {
-            $(".modalInput").hide();
-        }
+        // if (options["input"]) {
+        //     $("#inputVar").val(options["input"]["name"]);
+        //     $("#inputType").val(options["input"]["type"]);
+        //     $("#inputVal").val("");
+        //     $(".modalInput").show();
+        //     $("#inputVal").trigger("focus");
+        // } else {
+        //     $(".modalInput").hide();
+        // }
 
         // In the case of both buttons missing, provide a quit to prevent a jam
         if (!options["okText"] && !options["cancelText"]) {

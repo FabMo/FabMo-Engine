@@ -677,6 +677,8 @@ var packageModalParams = function (params = {}, modalParams = {}) {
     if (Object.prototype.hasOwnProperty.call(params, "timer")) {
         modalParams = addTimerParam(params["timer"], modalParams);
     }
+
+    // Handle input ("input")
     if (Object.prototype.hasOwnProperty.call(params, "input_var")) {
         modalParams = addInputParam(params["input_var"], modalParams);
     }

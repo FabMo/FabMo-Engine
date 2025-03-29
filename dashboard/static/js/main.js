@@ -49,6 +49,9 @@ var in_goto_flag = false;
 var fixedTimeStart = 0; // variable for measuring response latency in keypad fixed moves
 var fixedTimeEnd = 0;
 
+// Declare a variable to track the current input being processed
+let currentInputName = null;
+
 // move timer cutoff to var so it can be set in settings later
 var TIMER_DISPLAY_CUTOFF = 5;
 // Detect touch screen
@@ -352,19 +355,64 @@ engine.getVersion(function (err, version) {
                                 dashboard.engine.quit();
                             };
                             // Set up input submit
-                            if (status["info"]["input"]) {
-                                modalOptions["input"] = status["info"]["input"];
-                                resumeFunction = function () {
-                                    var inputVar = $("#inputVar").val();
-                                    var inputType = $("#inputType").val();
-                                    var inputVal = $.trim($("#inputVal").val());
-                                    dashboard.engine.resume({
-                                        var: inputVar,
-                                        type: inputType,
-                                        val: inputVal,
-                                    });
-                                };
-                            }
+                            engine.getStatus(function (err, status) {
+                                if (status["info"] && status["info"]["input"]) {
+                                    const input = status["info"]["input"];
+                                    console.log("Detected input in status:", input); // Log the input detected in status
+
+                                    // Check if the input is already being processed
+                                    if (currentInputName === input.name) {
+                                        console.log("Input already being processed:", input.name);
+                                        return; // Prevent redundant modal calls
+                                    }
+
+                                    currentInputName = input.name; // Set the current input being processed
+
+                                    if (input.name.startsWith("&")) {
+                                        // Check for "user_variable"
+                                        dashboard.showModal({
+                                            title: "Confirmation",
+                                            message: "Please select Yes or No.",
+                                            input: input,
+                                            ok: function (value) {
+                                                engine.resume({
+                                                    var: input.name, // Save back as "user_variable"
+                                                    type: "string",
+                                                    val: value,
+                                                });
+                                                currentInputName = null; // Reset after processing
+                                            },
+                                            cancel: function () {
+                                                engine.quit();
+                                                currentInputName = null; // Reset after processing
+                                            },
+                                        });
+                                    } else {
+                                        dashboard.showModal({
+                                            title: "Input Required",
+                                            message: "Please provide the required input.",
+                                            input: input,
+                                            ok: function () {
+                                                const inputVar = $("#inputVar").val();
+                                                const inputType = $("#inputType").val();
+                                                const inputVal = $.trim($("#inputVal").val());
+                                                engine.resume({
+                                                    var: inputVar,
+                                                    type: inputType,
+                                                    val: inputVal,
+                                                });
+                                                currentInputName = null; // Reset after processing
+                                            },
+                                            cancel: function () {
+                                                engine.quit();
+                                                currentInputName = null; // Reset after processing
+                                            },
+                                        });
+                                    }
+                                } else {
+                                    console.log("No input detected in status."); // Log case where no input is detected
+                                }
+                            });
 
                             // Check for custom parameters
 
