@@ -1353,9 +1353,10 @@ define(function (require) {
             $(".modalDialogue").css("width", "100%");
         }
 
+        // Set up the input field if provided as a Yes-No option or as a normal input
         let selectedValue = null; // Variable to store the selected YES-NO value
 
-        // Special case for "user_variable" (name starts with "&")
+        // Special input case for Yes-No option triggered by user_variable "&LAST_Y-N")
         if (options.input && options.input.name && options["input"]["type"] === "user_variable") {
             console.log("Detected user_variable input:", options.input); // Log detection of user_variable
             $(".modalInput").hide();
@@ -1385,6 +1386,7 @@ define(function (require) {
                     $(".modalNo").css("font-weight", "bold");
                     $(".modalYes").css("font-weight", "normal");
                 });
+            // Normal input case
         } else if (options["input"]) {
             console.log("Detected normal input:", options.input); // Log detection of normal input
             $("#inputVar").val(options["input"]["name"]);

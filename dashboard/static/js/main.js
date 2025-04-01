@@ -349,70 +349,80 @@ engine.getVersion(function (err, version) {
 
                             // Default resume and cancel functions
                             var resumeFunction = function () {
-                                dashboard.engine.resume();
+                                var value = arguments[0]; // Extract the first argument
+                                console.log("Extracted value:", value); // Debugging: Log the extracted value
+                                dashboard.engine.resume({
+                                    var: status["info"]["input"].name, // Save back as "user_variable"
+                                    type: "string",
+                                    val: value || "",
+                                });
                             };
                             var cancelFunction = function () {
                                 dashboard.engine.quit();
                             };
-                            // Set up input submit
-                            engine.getStatus(function (err, status) {
-                                if (status["info"] && status["info"]["input"]) {
-                                    const input = status["info"]["input"];
-                                    console.log("Detected input in status:", input); // Log the input detected in status
 
-                                    // Check if the input is already being processed
-                                    if (currentInputName === input.name) {
-                                        console.log("Input already being processed:", input.name);
-                                        return; // Prevent redundant modal calls
-                                    }
+                            // For INPUT set up input submit Y-N buttons or std variable input
+                            if (status["info"] && status["info"]["input"]) {
+                                const input = status["info"]["input"];
+                                console.log("Detected input in status:", input); // Log the input detected in status
 
-                                    currentInputName = input.name; // Set the current input being processed
-
-                                    if (input.name.startsWith("&")) {
-                                        // Check for "user_variable"
-                                        dashboard.showModal({
-                                            title: "Confirmation",
-                                            message: "Please select Yes or No.",
-                                            input: input,
-                                            ok: function (value) {
-                                                engine.resume({
-                                                    var: input.name, // Save back as "user_variable"
-                                                    type: "string",
-                                                    val: value,
-                                                });
-                                                currentInputName = null; // Reset after processing
-                                            },
-                                            cancel: function () {
-                                                engine.quit();
-                                                currentInputName = null; // Reset after processing
-                                            },
-                                        });
-                                    } else {
-                                        dashboard.showModal({
-                                            title: "Input Required",
-                                            message: "Please provide the required input.",
-                                            input: input,
-                                            ok: function () {
-                                                const inputVar = $("#inputVar").val();
-                                                const inputType = $("#inputType").val();
-                                                const inputVal = $.trim($("#inputVal").val());
-                                                engine.resume({
-                                                    var: inputVar,
-                                                    type: inputType,
-                                                    val: inputVal,
-                                                });
-                                                currentInputName = null; // Reset after processing
-                                            },
-                                            cancel: function () {
-                                                engine.quit();
-                                                currentInputName = null; // Reset after processing
-                                            },
-                                        });
-                                    }
-                                } else {
-                                    console.log("No input detected in status."); // Log case where no input is detected
+                                // Check if the input is already being processed
+                                if (currentInputName === input.name) {
+                                    console.log("Input already being processed:", input.name);
+                                    return; // Prevent redundant modal calls
                                 }
-                            });
+
+                                currentInputName = input.name; // Set the current input being processed
+
+                                // For Y-N modal and response only allow a temporary variable
+                                var tempName = status["info"]["input"].name;
+                                // strip first letter designator if '&' or '$'
+                                if (tempName.charAt(0) === "&" || tempName.charAt(0) === "$") {
+                                    tempName = tempName.substring(1);
+                                }
+                                modalOptions = {
+                                    title: status["info"].title,
+                                    message: status["info"].message,
+                                    input: input,
+                                    ok: function (value) {
+                                        engine.resume({
+                                            var: status["info"]["input"].name, // Save back as "user_variable"
+                                            type: "user_variable",
+                                            val: value,
+                                        });
+                                        currentInputName = null;
+                                    },
+                                    cancel: function () {
+                                        engine.quit();
+                                        currentInputName = null;
+                                    },
+                                };
+                                //     } else {
+                                //         dashboard.showModal({
+                                //             title: "Input Required",
+                                //             message: "Please provide the required input.",
+                                //             input: input,
+                                //             ok: function () {
+                                //                 const inputVar = $("#inputVar").val();
+                                //                 const inputType = $("#inputType").val();
+                                //                 const inputVal = $.trim($("#inputVal").val());
+                                //                 engine.resume({
+                                //                     var: inputVar,
+                                //                     type: inputType,
+                                //                     val: inputVal,
+                                //                 });
+                                //                 currentInputName = null; // Reset after processing
+                                //             },
+                                //             cancel: function () {
+                                //                 engine.quit();
+                                //                 currentInputName = null; // Reset after processing
+                                //             },
+                                //         });
+                                //     }
+                                // } else {
+                                //     console.log("No input detected in status."); // Log case where no input is detected
+                            }
+                            //});
 
                             // Check for custom parameters
 

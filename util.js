@@ -586,10 +586,14 @@ var addTimerParam = function (timer, params = {}) {
 //     return params;
 // };
 
-var addInputParam = function (input_var, params = {}) {
-    params["input"] = { name: input_var.name, type: input_var.type };
+var addInputParam = function (input, params = {}) {
+    params["input"] = { name: input.name, type: input.type };
     return params;
 };
+// var addInputParam = function (input_var, params = {}) {
+//     params["input"] = { name: input_var.name, type: input_var.type };
+//     return params;
+// };
 
 var addOkParam = function (ok, params = {}) {
     if (!Object.prototype.hasOwnProperty.call(params, "custom")) {
@@ -638,7 +642,7 @@ var addNoButtonParam = function (noButton, params = {}) {
 };
 
 // PAUSE/DIALOG MODAL DISPLAY OPTIONS
-// The flexible MODAL display options are based on function:  packageModalParams(<new parameters>, <current info object>)
+// The flexible MODAL display options are based on a function:  packageModalParams(<new parameters>, <current info object>)
 
 // This function accepts a set of optional new parameters and optional current status['info'] as an object ready for send to front end.
 // If called without arguments, a basic info object with 'message': 'Paused ...' will be created.
@@ -679,9 +683,12 @@ var packageModalParams = function (params = {}, modalParams = {}) {
     }
 
     // Handle input ("input")
-    if (Object.prototype.hasOwnProperty.call(params, "input_var")) {
-        modalParams = addInputParam(params["input_var"], modalParams);
+    if (Object.prototype.hasOwnProperty.call(params, "input")) {
+        modalParams = addInputParam(params["input"], modalParams);
     }
+    // if (Object.prototype.hasOwnProperty.call(params, "input_var")) {
+    //     modalParams = addInputParam(params["input_var"], modalParams);
+    // }
 
     // Handle okText
     if (Object.prototype.hasOwnProperty.call(params, "okText")) {
