@@ -4,6 +4,10 @@ var Foundation = require('../../../static/js/libs/foundation.min.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 var CodeMirror = require('./codemirror.js');
+require('./cm-addons/search.js'); // Include the search addon
+require('./cm-addons/searchcursor.js'); // Include the search cursor addon
+require('./cm-addons/dialog.js'); // Include the dialog addon
+
 const { updateLocale } = require('moment/moment.js');
 require('./simple.js');
 require('./cm-fabmo-modes.js');
@@ -262,7 +266,7 @@ require('./cm-fabmo-modes.js');
       $('#editor').attr('tabindex', '0');
 
       editor.addKeyMap({
-          "Cmd-Enter": function(cm) {
+          "Cmd-Enter": function(CodeMirror) {
             execute();
           },
           "Ctrl-Enter": function(cm) {
@@ -273,6 +277,12 @@ require('./cm-fabmo-modes.js');
           },
           "Cmd-s": function(cm) {
             save();
+          },
+          "Ctrl-f": function(CodeMirror) {
+            find();
+          },
+          "Cmd-f": function(cm) {
+            find();
           }
       })
 

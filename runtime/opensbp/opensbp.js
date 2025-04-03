@@ -1459,13 +1459,15 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "pause":
             // PAUSE as a word is overloaded.  In a perfect world there would be distinct states
             // ... for pause and feedhold, but here describes both the file-initiated and the user-initiated stop.
+
             // In simulation, just don't do anything
             if (!this.machine) {
                 setImmediate(callback);
                 return true;
             }
+
             this.pc += 1;
-            var arg = command.expr ? this._eval(command.expr) : null; // collecto for handing TIMER in old style
+            var arg = command.expr ? this._eval(command.expr) : null; // collect for handing TIMER in old style
             var input_var = command.var; // collect for handling INPUT in old style
             var params = command.params || {};
             log.debug("####1PAUSE command parameters: " + JSON.stringify(params));
@@ -1494,7 +1496,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 }
             }
 
-            // Try to construct the model display object with current options
+            // Try to construct the new form of modal display object with current options
             // Normalize params keys to lowercase
             var normalizedParams = {};
             for (var key in params) {
@@ -1517,7 +1519,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                     name: null, // Nested property for input name
                     type: null, // Nested property for input type
                 },
-                input_var: null, // Default value for input_var
                 okText: null, // Default value for okText
                 cancelText: null, // Default value for cancelText
                 // other properties?
@@ -1530,14 +1531,13 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 message = normalizedParams.message;
             }
             modalParams.message = message;
-            //modalParams.input.name = null; // Default to no input variable
 
             log.debug("####2PAUSE modalParams: " + JSON.stringify(modalParams));
 
             // Handle input variable, this is ugly
             if (input_var) {
                 // old style input variable request
-                modalParams.input_var = input_var;
+                modalParams.input.name = input_var;
             } else if (normalizedParams.input) {
                 // New input request options (Y/N) are constructed here rather than in parser
                 if (normalizedParams.input[0] == "&") {
@@ -1550,9 +1550,9 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 //input_var.name = normalizedParams.input.substring(1).toUpperCase(); // remove type designator
                 //input_var.access = [];
                 //modalParams.input_var = normalizedParams.input.substring(1).toUpperCase();
-                modalParams.input.name = "&last_Y-N"; //"&amp;last_Y-N"
+                modalParams.input.name = normalizedParams.input; //"&last_Y-N"; //"&amp;last_Y-N"
                 log.debug(modalParams.input.name);
-                modalParams.input.type = "user_variable"; //normalizedParams.type; // user or persistent
+                //modalParams.input.type = "user_variable"; //normalizedParams.type; // user or persistent
             }
             log.debug("####3PAUSE modalParams before optional: " + JSON.stringify(modalParams));
 
@@ -2447,8 +2447,7 @@ SBPRuntime.prototype.quit = function () {
     this.driver.quit();
 };
 
-// Resume a program from the paused state
-//   TODO - make some indication that this action was successful (resume is not always allowed, and sometimes it fails)
+// Resume a program from the paused state, covering the possibility of Y-N or a normal input varialbe
 SBPRuntime.prototype.resume = function (input = false) {
     if (this.resumeAllowed) {
         if (this.paused) {

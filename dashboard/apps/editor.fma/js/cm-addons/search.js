@@ -11,9 +11,9 @@
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS
-    mod(require("../../lib/codemirror"), require("./searchcursor"), require("../dialog/dialog"));
+    mod(require("../../js/codemirror"), require("./searchcursor"), require("./dialog"));
   else if (typeof define == "function" && define.amd) // AMD
-    define(["../../lib/codemirror", "./searchcursor", "../dialog/dialog"], mod);
+    define(["../../js/codemirror", "./searchcursor", "../dialog/dialog"], mod);
   else // Plain browser env
     mod(CodeMirror);
 })(function(CodeMirror) {
