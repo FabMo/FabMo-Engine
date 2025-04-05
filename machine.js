@@ -1437,17 +1437,17 @@ Machine.prototype.startAccessories = async function () {
 Machine.prototype.startUSBDriveManager = function () {
     this.usbDriveChecker = setInterval(() => {
         try {
-            log.debug("Checking for USB drive...");
+            //log.debug("Checking for USB drive...");
             this.checkUSBDrive((err, drive) => {
                 if (err) {
                     log.error("Error checking for USB drive: " + err);
                 } else {
                     if (drive) {
-                        log.info("USB drive detected: " + drive);
+                        //log.info("USB drive detected: " + drive);
                         this.status.usbDrive = drive;
                         this.emit("status", this.status);
                     } else {
-                        log.info("No USB drive detected.");
+                        //log.info("No USB drive detected.");
                         if (this.status.usbDrive) {
                             delete this.status.usbDrive;
                             this.emit("status", this.status); // Emit status to clear the USB drive
@@ -1458,7 +1458,7 @@ Machine.prototype.startUSBDriveManager = function () {
         } catch (error) {
             log.error("Exception while checking for USB drive: " + error);
         }
-    }, 10000);
+    }, 5000);
 };
 
 let notReported = true;

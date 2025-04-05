@@ -80,6 +80,7 @@ function setupDropTarget() {
 
 
 // USB-drive file input - this implements a self-contained USB file browser
+// ... is used for selection when available, and falls back to the standard file input otherwise
 function setupUSBFileInput() {
   console.log("Setting up USB File Input");
   
@@ -91,6 +92,10 @@ function setupUSBFileInput() {
   const usbButtonContainer = document.createElement('div');
   usbButtonContainer.style.display = 'inline-block';
   usbButtonContainer.style.marginLeft = '10px';
+  // Hide this container in case we might want to sometime use it
+  usbButtonContainer.className = 'usb-file-button-container';
+  // hide it
+  usbButtonContainer.style.display = 'none';   //usbButtonContainer.style.opacity = '0';
   
   // Create the USB button with compatible styling
   const usbButton = document.createElement('button');
@@ -1514,12 +1519,20 @@ $(document).ready(function() {
         });
     });
 
-    $('.submit-button').click(function(evt) {
-        jQuery('#file').trigger('click');
+    // FILE SELECTION AND LOADING ----------------
+
+    $('.submit-button').click(function(evt) {       // TRIGGER POINT FOR FILE SELECTION PROCESS
+        // Start file submit sequence by checking for presence of USB-drive; present on status.usbDrive
+        if (status && status.usbDrive) {
+            jQuery('#usb-file-button').trigger('click');
+        } else {
+            // USB browser not available, fallback to standard computer file input
+            jQuery('#file').trigger('click');
+        }
     });
 
     $('.without-job').click(function(evt) {
-        jQuery('#file').trigger('click');
+      jQuery('.submit-button').trigger('click'); // start everything from the submit button
     });
 
     $('#file').change(function(evt) {
@@ -1652,17 +1665,26 @@ $(document).ready(function() {
         updateHistory();
     });
 
-    fabmo.on('status', function(status) {
-        updateLabels(status.unit);     // for trnasforms
-        handleStatusReport(status);
+    // Define a global variable to store status to improve accessibility
+    let status = null;
+
+    // Update the status variable whenever a status report is received
+    fabmo.on('status', function(newStatus) {
+        status = newStatus; // Persist the status globally
+        updateLabels(status.unit); // Update labels for transforms
+        handleStatusReport(status); // Handle the status report
+
+        // Update UI elements based on the status
         if (status.job == null && status.state != 'idle') {
-        $('.play-button').hide();
-        $('.play').removeClass('loading');
+            $('.play-button').hide();
+            $('.play').removeClass('loading');
         } else if (status.state == 'idle' && el.firstChild) {
-        $('.play-button').show();
-        } 
+            $('.play-button').show();
+        }
     });
-    fabmo.requestStatus(); ////##right place for this status?
+
+    // Request the initial status to populate the `status` variable
+    fabmo.requestStatus();
 
     function resetFormElement(e) {
         e.wrap('<form>').closest('form').get(0).reset();
