@@ -678,6 +678,21 @@ Engine.prototype.start = function (callback) {
                 callback();
             }.bind(this),
 
+            // Start the USB-drive manager to track whether there is a USB drive inserted;
+            // ... presence or absence will be used to set the search location for job file loading.
+            function start_usb_drive_manager(callback) {
+                log.info("Starting USB drive manager...");
+                try {
+                    this.machine.startUSBDriveManager();
+                    log.info("USB drive manager started.");
+                    return callback(null);
+                } catch (e) {
+                    log.error("Exception while starting USB drive manager: " + e.message);
+                    log.error(e.stack);
+                    return callback(null); // Proceed with startup despite the exception
+                }
+            }.bind(this),
+
             // Kick off the server if all of the above went OK.
             function start_server(callback) {
                 log.info("Setting up the webserver...");

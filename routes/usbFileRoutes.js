@@ -1,237 +1,350 @@
-const fs = require("fs");
+// /fabmo/routes/usbFileRoutes.js
+const fs = require("fs-extra"); // Using fs-extra for more features
 const path = require("path");
-const multer = require("multer");
-const fetch = require("node-fetch");
+const util = require("../util");
+const exec = require("child_process").exec;
+const crypto = require("crypto");
+const db = require("../db");
+const logger = require("../log").logger("routes");
+const config = require("../config");
 
-const MEDIA_DIRECTORIES = ["/media/pi", "/mnt"];
-const FABMO_SCRIPTS_DIR = "/opt/fabmo/scripts";
-let cachedHTML = "";
+// USB mount points are typically under /media/pi or /mnt in Raspbian/Bookworm
+const USB_MOUNT_POINTS = ["/media/pi", "/media/root", "/mnt"];
 
-// Ensure the FabMo scripts directory exists
-if (!fs.existsSync(FABMO_SCRIPTS_DIR)) {
-    fs.mkdirSync(FABMO_SCRIPTS_DIR, { recursive: true });
-}
-
-// Function to recursively get files from USB directories
-function getFilesRecursively(directory) {
-    let files = [];
-    try {
-        const items = fs.readdirSync(directory, { withFileTypes: true });
-        items.forEach((item) => {
-            const fullPath = path.join(directory, item.name);
-            if (item.isDirectory()) {
-                files = files.concat(getFilesRecursively(fullPath));
-            } else {
-                files.push({ name: item.name, fullPath });
-            }
-        });
-    } catch (err) {
-        console.error(`Error reading directory ${directory}: ${err.message}`);
-    }
-    return files;
-}
-
-// Function to generate USB File Listing HTML
-function generateHTMLPage(files) {
-    let html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>USB Media Files</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid #ddd; }
-        th { background-color: #f4f4f4; }
-        a { text-decoration: none; color: blue; }
-        a:hover { text-decoration: underline; }
-      </style>
-    </head>
-    <body>
-      <h1>USB Media Files</h1>
-      <table>
-        <thead>
-          <tr><th>File Name</th><th>Actions</th></tr>
-        </thead>
-        <tbody>`;
-
-    files.forEach((file) => {
-        html += `
-          <tr>
-            <td>${file.name}</td>
-            <td>
-              <a href="/usb_files/read/${encodeURIComponent(file.name)}" target="_blank">View</a> | 
-              <a href="/usb_files/download/${encodeURIComponent(file.name)}">Download</a> | 
-              <a href="#" onclick="deleteFile('${file.name}')" style="color: red;">Delete</a>
-            </td>
-          </tr>`;
-    });
-
-    html += `
-        </tbody>
-      </table>
-      <script>
-        function deleteFile(fileName) {
-          if (confirm("Are you sure you want to delete " + fileName + "?")) {
-            fetch("/usb_files/delete/" + encodeURIComponent(fileName), { method: "DELETE" })
-              .then(response => response.json())
-              .then(data => {
-                alert(data.message);
-                location.reload();
-              })
-              .catch(err => alert("Error deleting file: " + err));
-          }
-        }
-      </script>
-    </body>
-    </html>`;
-
-    return html;
-}
-
-// Update cached HTML every 500ms
-function updateHTMLCache() {
-    try {
-        let files = [];
-        MEDIA_DIRECTORIES.forEach((mediaDir) => {
-            if (fs.existsSync(mediaDir)) {
-                files = files.concat(getFilesRecursively(mediaDir));
-            }
-        });
-        cachedHTML = generateHTMLPage(files);
-    } catch (err) {
-        console.error(`Error updating HTML cache: ${err.message}`);
-    }
-}
-
-setInterval(updateHTMLCache, 500);
-
-// Function to copy job files to FabMo scripts directory
-function copyFilesToFabmo(files) {
-    let copiedFiles = [];
-    files.forEach(file => {
-        const srcPath = file.fullPath;
-        const destPath = path.join(FABMO_SCRIPTS_DIR, file.name);
-
-        try {
-            fs.copyFileSync(srcPath, destPath);
-            copiedFiles.push(destPath);
-            console.log(`Copied ${file.name} to ${FABMO_SCRIPTS_DIR}`);
-        } catch (err) {
-            console.error(`Error copying ${file.name}: ${err.message}`);
-        }
-    });
-    return copiedFiles;
-}
-
-// Function to submit jobs to FabMo
-async function submitJobToFabmo(filePath, fileName) {
-    const jobData = {
-        file: filePath,
-        name: fileName,
-        description: "Imported from USB"
-    };
-
-    try {
-        const response = await fetch("http://localhost:8080/fabmo/submit_job", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(jobData)
-        });
-
-        if (!response.ok) {
-            throw new Error(`FabMo Job Submission Failed: ${await response.text()}`);
-        }
-
-        console.log(`Job added: ${fileName}`);
-    } catch (err) {
-        console.error(`Error submitting job ${fileName}: ${err.message}`);
-    }
-}
-
-// Exporting routes
 module.exports = function (server) {
-    // Serve USB file listing HTML
-    server.get("/usb_files", (req, res, next) => {
-        res.writeHead(200, { "Content-Type": "text/html" });
-        res.end(cachedHTML);
-        return next();
-    });
+    // Get list of connected USB drives
+    server.get("/usb/devices", function (req, res, next) {
+        getConnectedUSBDevices(function (err, usbDevices) {
+            if (err) {
+                logger.error("Error listing USB devices:", err);
+                return res.json({
+                    status: "fail",
+                    data: {
+                        message: "Failed to list USB devices",
+                        error: err.message,
+                    },
+                });
+            }
 
-    // Return JSON list of USB files
-    server.get("/usb_files/list", (req, res, next) => {
-        try {
-            let files = [];
-            MEDIA_DIRECTORIES.forEach(mediaDir => {
-                if (fs.existsSync(mediaDir)) {
-                    files = files.concat(getFilesRecursively(mediaDir));
-                }
+            res.json({
+                status: "success",
+                data: {
+                    devices: usbDevices,
+                },
             });
-            res.send(200, { files });
-        } catch (err) {
-            console.error(`Error listing USB files: ${err.message}`);
-            res.send(500, { error: "Failed to retrieve file list" });
-        }
-        return next();
+        });
     });
 
-    // Read a file
-    server.get("/usb_files/read/:fileName", (req, res, next) => {
-        const { fileName } = req.params;
-        for (const mediaDir of MEDIA_DIRECTORIES) {
-            const files = getFilesRecursively(mediaDir);
-            const file = files.find(f => f.name === fileName);
-            if (file) {
-                return fs.createReadStream(file.fullPath).pipe(res);
-            }
+    // List directory contents on USB drive
+    server.get("/usb/dir", function (req, res, next) {
+        const { path: dirPath } = req.query;
+
+        if (!dirPath) {
+            return res.status(400).json({
+                status: "fail",
+                data: {
+                    message: "Directory path is required",
+                },
+            });
         }
-        res.send(404, { error: "File not found" });
-        return next();
+
+        // Validate path is within USB mount point (security check)
+        if (!isValidUSBPath(dirPath)) {
+            return res.status(403).json({
+                status: "fail",
+                data: {
+                    message: "Invalid USB path",
+                },
+            });
+        }
+
+        listDirectory(dirPath, function (err, contents) {
+            if (err) {
+                logger.error("Error listing directory:", err);
+                return res.status(500).json({
+                    status: "fail",
+                    data: {
+                        message: "Failed to list directory",
+                        error: err.message,
+                    },
+                });
+            }
+
+            res.json({
+                status: "success",
+                data: {
+                    contents: contents,
+                },
+            });
+        });
     });
 
-    // Download a file
-    server.get("/usb_files/download/:fileName", (req, res, next) => {
-        const { fileName } = req.params;
-        for (const mediaDir of MEDIA_DIRECTORIES) {
-            const files = getFilesRecursively(mediaDir);
-            const file = files.find(f => f.name === fileName);
-            if (file) {
-                res.setHeader("Content-Disposition", `attachment; filename="${file.name}"`);
-                res.setHeader("Content-Type", "application/octet-stream");
-                return fs.createReadStream(file.fullPath).pipe(res);
-            }
+    // Submit a file from USB drive as a job
+    server.post("/usb/submit", function (req, res, next) {
+        const { path: filePath } = req.body;
+
+        if (!filePath) {
+            return res.status(400).json({
+                status: "fail",
+                data: {
+                    message: "File path is required",
+                },
+            });
         }
-        res.send(404, { error: "File not found" });
-        return next();
+
+        // Validate path is within USB mount point (security check)
+        if (!isValidUSBPath(filePath)) {
+            return res.status(403).json({
+                status: "fail",
+                data: {
+                    message: "Invalid USB path",
+                },
+            });
+        }
+
+        // Check if file exists and is readable
+        fs.access(filePath, fs.constants.R_OK, function (err) {
+            if (err) {
+                return res.status(404).json({
+                    status: "fail",
+                    data: {
+                        message: "File not found or not readable",
+                    },
+                });
+            }
+
+            const fileName = path.basename(filePath);
+
+            // Reject disallowed files
+            if (typeof util.allowed_file === "function" && !util.allowed_file(fileName)) {
+                logger.error(`File ${fileName} is not allowed.`);
+                return res.status(400).json({
+                    status: "fail",
+                    data: {
+                        message: `File ${fileName} is not allowed.`,
+                    },
+                });
+            }
+
+            // Copy file to temporary location
+            const tempDir = config.getDataDir("tmp");
+            const tempPath = path.join(tempDir, "usb-" + Date.now() + "-" + fileName);
+
+            fs.copy(filePath, tempPath, function (err) {
+                if (err) {
+                    logger.error("Error copying file from USB:", err);
+                    return res.status(500).json({
+                        status: "fail",
+                        data: {
+                            message: "Failed to copy file from USB",
+                            error: err.message,
+                        },
+                    });
+                }
+
+                // Create job options
+                const jobOptions = {
+                    filename: fileName,
+                    name: fileName,
+                    description: `Loaded from USB: ${fileName}`,
+                    index: 0, // Default index for order calculation
+                };
+
+                // Create file object
+                const fileObject = {
+                    name: fileName,
+                    path: tempPath,
+                };
+
+                // Submit job
+                db.createJob(fileObject, jobOptions, function (err, job) {
+                    if (err) {
+                        logger.error("Error creating job:", err);
+                        return res.status(500).json({
+                            status: "fail",
+                            data: {
+                                message: "Failed to create job",
+                                error: err.message,
+                            },
+                        });
+                    }
+
+                    logger.info("Created job from USB file: " + fileName);
+                    return res.json({
+                        status: "success",
+                        data: {
+                            job: job,
+                        },
+                    });
+                });
+            });
+        });
     });
 
-    // Import jobs from USB to FabMo scripts and queue them
-    server.post("/usb_files/import_jobs", async (req, res, next) => {
-        let jobFiles = [];
+    // Helper function to get connected USB devices
+    function getConnectedUSBDevices(callback) {
+        const devices = [];
+        let checkedCount = 0;
+        let mountPointCount = USB_MOUNT_POINTS.length;
 
-        MEDIA_DIRECTORIES.forEach(mediaDir => {
-            if (fs.existsSync(mediaDir)) {
-                let allFiles = getFilesRecursively(mediaDir);
-                let filteredFiles = allFiles.filter(file => file.name.endsWith(".gcode") || file.name.endsWith(".sbp"));
-                jobFiles = jobFiles.concat(filteredFiles);
+        // Check if all mount points have been processed
+        function checkComplete() {
+            checkedCount++;
+            if (checkedCount >= mountPointCount) {
+                callback(null, devices);
             }
+        }
+
+        // Process each mount point
+        USB_MOUNT_POINTS.forEach(function (mountPoint) {
+            fs.access(mountPoint, fs.constants.F_OK, function (err) {
+                if (err) {
+                    // Mount point doesn't exist, skip it
+                    checkComplete();
+                    return;
+                }
+
+                fs.readdir(mountPoint, function (err, entries) {
+                    if (err) {
+                        logger.error(`Error reading ${mountPoint}:`, err);
+                        checkComplete();
+                        return;
+                    }
+
+                    let processedEntries = 0;
+
+                    if (entries.length === 0) {
+                        checkComplete();
+                        return;
+                    }
+
+                    entries.forEach(function (entry) {
+                        const fullPath = path.join(mountPoint, entry);
+
+                        fs.stat(fullPath, function (err, stats) {
+                            if (err) {
+                                logger.error(`Error checking ${fullPath}:`, err);
+                                processedEntries++;
+                                if (processedEntries >= entries.length) {
+                                    checkComplete();
+                                }
+                                return;
+                            }
+
+                            if (stats.isDirectory()) {
+                                // Check if the directory has any visible content
+                                hasDriveContent(fullPath, function (err, hasContent) {
+                                    processedEntries++;
+
+                                    if (err) {
+                                        logger.error(`Error checking contents of ${fullPath}:`, err);
+                                    } else if (hasContent) {
+                                        // Only add drives that have actual content
+                                        devices.push({
+                                            name: entry,
+                                            path: fullPath,
+                                        });
+                                    } else {
+                                        logger.info(`Skipping empty drive: ${entry} at ${fullPath}`);
+                                    }
+
+                                    if (processedEntries >= entries.length) {
+                                        checkComplete();
+                                    }
+                                });
+                            } else {
+                                processedEntries++;
+                                if (processedEntries >= entries.length) {
+                                    checkComplete();
+                                }
+                            }
+                        });
+                    });
+                });
+            });
         });
 
-        if (jobFiles.length === 0) {
-            res.send(404, { error: "No valid job files found on USB." });
-            return next();
+        // If no mount points are found at all, return empty array
+        if (mountPointCount === 0) {
+            callback(null, []);
         }
+    }
 
-        let copiedFiles = copyFilesToFabmo(jobFiles);
+    // Check if a drive has any visible content (non-hidden files/directories)
+    function hasDriveContent(dirPath, callback) {
+        fs.readdir(dirPath, function (err, entries) {
+            if (err) {
+                return callback(err, false);
+            }
 
-        // Submit copied jobs to FabMo queue
-        for (let filePath of copiedFiles) {
-            await submitJobToFabmo(filePath, path.basename(filePath));
-        }
+            // Filter out hidden files/folders (starting with .)
+            const visibleEntries = entries.filter((entry) => !entry.startsWith("."));
 
-        res.send(200, { message: `${copiedFiles.length} job(s) imported successfully.` });
-        return next();
-    });
+            // If there are any visible entries, the drive has content
+            callback(null, visibleEntries.length > 0);
+        });
+    }
+
+    // Helper function to check if path is within a USB mount point
+    function isValidUSBPath(testPath) {
+        return USB_MOUNT_POINTS.some((mountPoint) => testPath.startsWith(mountPoint));
+    }
+
+    // Helper function to list directory contents
+    function listDirectory(dirPath, callback) {
+        fs.readdir(dirPath, function (err, entries) {
+            if (err) {
+                return callback(err);
+            }
+
+            const contents = [];
+            let processedCount = 0;
+
+            if (entries.length === 0) {
+                return callback(null, contents);
+            }
+
+            entries.forEach(function (entry) {
+                // Skip hidden files and directories
+                if (entry.startsWith(".")) {
+                    processedCount++;
+                    if (processedCount >= entries.length) {
+                        callback(null, sortDirectoryContents(contents));
+                    }
+                    return;
+                }
+
+                const fullPath = path.join(dirPath, entry);
+
+                fs.stat(fullPath, function (err, stats) {
+                    processedCount++;
+
+                    if (err) {
+                        logger.error(`Error getting stats for ${fullPath}:`, err);
+                    } else {
+                        contents.push({
+                            name: entry,
+                            path: fullPath,
+                            size: stats.size,
+                            isDirectory: stats.isDirectory(),
+                            modifiedTime: stats.mtime,
+                        });
+                    }
+
+                    if (processedCount >= entries.length) {
+                        callback(null, sortDirectoryContents(contents));
+                    }
+                });
+            });
+        });
+    }
+
+    // Helper function to sort directory contents (directories first, then files)
+    function sortDirectoryContents(contents) {
+        return contents.sort(function (a, b) {
+            if (a.isDirectory && !b.isDirectory) return -1;
+            if (!a.isDirectory && b.isDirectory) return 1;
+            return a.name.localeCompare(b.name);
+        });
+    }
 };

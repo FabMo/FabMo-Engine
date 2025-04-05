@@ -1433,6 +1433,91 @@ Machine.prototype.startAccessories = async function () {
     }
 };
 
+// Set up the USB-drive checker
+Machine.prototype.startUSBDriveManager = function () {
+    this.usbDriveChecker = setInterval(() => {
+        try {
+            //log.debug("Checking for USB drive...");
+            this.checkUSBDrive((err, drive) => {
+                if (err) {
+                    log.error("Error checking for USB drive: " + err);
+                } else {
+                    if (drive) {
+                        //log.info("USB drive detected: " + drive);
+                        this.status.usbDrive = drive;
+                        this.emit("status", this.status);
+                    } else {
+                        //log.info("No USB drive detected.");
+                        if (this.status.usbDrive) {
+                            delete this.status.usbDrive;
+                            this.emit("status", this.status); // Emit status to clear the USB drive
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            log.error("Exception while checking for USB drive: " + error);
+        }
+    }, 5000);
+};
+
+let notReported = true;
+// Function to determine if a USB drive is currently mounted on this Raspberry Pi server
+Machine.prototype.checkUSBDrive = function (callback) {
+    const usbMountPath = "/media"; // Base mount point for USB drives on Linux
+
+    fs.readdir(usbMountPath, (err, entries) => {
+        if (err) {
+            log.error(`Error reading USB mount directory (${usbMountPath}): ${err.message}`);
+            return callback(null, false); // No USB drive detected
+        }
+
+        // Filter out hidden files and directories (those starting with ".")
+        const visibleEntries = entries.filter((entry) => !entry.startsWith("."));
+
+        // Check each subdirectory under /media for USB drives with content
+        const checkSubdirectories = (index) => {
+            if (index >= visibleEntries.length) {
+                log.info("No USB drive with content detected.");
+                return callback(null, false); // No USB drive with content found
+            }
+
+            const subdirectoryPath = path.join(usbMountPath, visibleEntries[index]);
+
+            fs.readdir(subdirectoryPath, (err, subEntries) => {
+                if (err || !subEntries || subEntries.length === 0) {
+                    checkSubdirectories(index + 1);
+                } else {
+                    // Check each entry in the subdirectory for USB drives with content
+                    const checkContent = (subIndex) => {
+                        if (subIndex >= subEntries.length) {
+                            // No valid USB drive found in this subdirectory, move to the next one
+                            return checkSubdirectories(index + 1);
+                        }
+
+                        const usbDrivePath = path.join(subdirectoryPath, subEntries[subIndex]);
+
+                        fs.readdir(usbDrivePath, (err, driveContents) => {
+                            if (err || !driveContents || driveContents.length === 0) {
+                                // If the drive is empty or inaccessible, check the next entry
+                                checkContent(subIndex + 1);
+                            } else {
+                                // Found a USB drive with content
+                                log.info(`USB drive with content detected at: ${usbDrivePath}`);
+                                return callback(null, usbDrivePath);
+                            }
+                        });
+                    };
+
+                    checkContent(0); // Start checking entries in the subdirectory
+                }
+            });
+        };
+
+        checkSubdirectories(0); // Start checking subdirectories under /media
+    });
+};
+
 // Directly set the spindle speed as an accessory ignoring runtimes
 Machine.prototype.spindleSpeed = function (new_RPM) {
     if (new_RPM >= 5000 && new_RPM <= 30000) {
