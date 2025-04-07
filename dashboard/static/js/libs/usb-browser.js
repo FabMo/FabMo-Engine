@@ -79,7 +79,6 @@
                     overflow: auto;
                     background-color: rgba(0,0,0,0.4);
                 }
-                
                 .usb-modal-content {
                     background-color: #fefefe;
                     margin: 10% auto;
@@ -90,7 +89,6 @@
                     border-radius: 5px;
                     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
                 }
-                
                 .usb-modal-header {
                     display: flex;
                     justify-content: space-between;
@@ -100,23 +98,19 @@
                     border-bottom: 1px solid #ddd;
                     border-radius: 5px 5px 0 0;
                 }
-                
                 .usb-header-actions {
                     display: flex;
                     align-items: center;
                     gap: 15px;
                 }
-                
                 .usb-modal-header h3 {
                     margin: 0;
                     font-size: 16px;
                     font-weight: bold;
                 }
-                
                 .usb-modal-body {
                     padding: 15px;
                 }
-                
                 .usb-modal-footer {
                     border-top: 1px solid #ddd;
                     padding: 10px 15px;
@@ -125,29 +119,24 @@
                     gap: 10px;
                     border-radius: 0 0 5px 5px;
                 }
-                
                 .usb-close {
                     color: #aaa;
                     font-size: 22px;
                     font-weight: bold;
                     cursor: pointer;
                 }
-                
                 .usb-close:hover {
                     color: black;
                 }
-                
                 .usb-devices-section {
                     margin-bottom: 15px;
                 }
-                
                 .usb-devices-list {
                     display: flex;
                     gap: 10px;
                     flex-wrap: wrap;
                     margin-bottom: 10px;
                 }
-                
                 .usb-device-item {
                     padding: 8px 12px;
                     border: 1px solid #ddd;
@@ -155,16 +144,13 @@
                     cursor: pointer;
                     transition: background-color 0.2s;
                 }
-                
                 .usb-device-item:hover {
                     background-color: #f0f0f0;
                 }
-                
                 .usb-device-item.selected {
                     background-color: #e3f2fd;
                     border-color: #2196F3;
                 }
-                
                 .usb-path-bar {
                     background-color: #f5f5f5;
                     padding: 8px 12px;
@@ -175,14 +161,12 @@
                     font-size: 13px;
                     border: 1px solid #ddd;
                 }
-                
                 .usb-file-list {
                     border: 1px solid #ddd;
                     border-radius: 4px;
                     max-height: 300px;
                     overflow-y: auto;
                 }
-                
                 .usb-file-item {
                     padding: 8px 12px;
                     border-bottom: 1px solid #eee;
@@ -190,32 +174,25 @@
                     display: flex;
                     align-items: center;
                 }
-                
                 .usb-file-item:last-child {
                     border-bottom: none;
                 }
-                
                 .usb-file-item:hover {
                     background-color: #f5f5f5;
                 }
-                
                 .usb-file-item.selected {
                     background-color: #e3f2fd;
                 }
-                
                 .usb-file-icon {
                     margin-right: 10px;
                 }
-                
                 .usb-file-name {
                     flex-grow: 1;
                 }
-                
                 .usb-file-size {
                     color: #777;
                     font-size: 0.8em;
                 }
-                
                 .usb-refresh-button {
                     background: none;
                     border: none;
@@ -227,11 +204,9 @@
                     align-items: center;
                     justify-content: center;
                 }
-                
                 .usb-refresh-button:hover {
                     color: #000;
                 }
-                
                 .usb-cancel-button, 
                 .usb-select-button {
                     padding: 6px 14px;
@@ -239,24 +214,20 @@
                     cursor: pointer;
                     font-size: 14px;
                 }
-                
                 .usb-cancel-button {
                     background-color: #f0f0f0;
                     border: 1px solid #ddd;
                 }
-                
                 .usb-select-button {
                     background-color: #2196F3;
                     border: 1px solid #1976D2;
                     color: white;
                 }
-                
                 .usb-select-button:disabled {
                     background-color: #9e9e9e;
                     border: 1px solid #757575;
                     cursor: not-allowed;
                 }
-                
                 .usb-loading {
                     text-align: center;
                     padding: 15px;
@@ -605,7 +576,6 @@
      */
     USBBrowser.prototype.formatFileSize = function (bytes) {
         if (bytes === 0) return "0 B";
-
         var k = 1024;
         var sizes = ["B", "KB", "MB", "GB", "TB"];
         var i = Math.floor(Math.log(bytes) / Math.log(k));

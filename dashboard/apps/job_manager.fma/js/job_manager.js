@@ -78,90 +78,11 @@ function setupDropTarget() {
 }
 
 
-
-// USB-drive file input - this implements a self-contained USB file browser
-// ... is used for selection when available, and falls back to the standard file input otherwise
-function setupUSBFileInput() {
-  console.log("Setting up USB File Input");
-  
-  // Find the file input container
-  const fileInput = document.querySelector('.submitWrapper');
-  if (!fileInput) return;
-  
-  // Create a container for our USB button
-  const usbButtonContainer = document.createElement('div');
-  usbButtonContainer.style.display = 'inline-block';
-  usbButtonContainer.style.marginLeft = '10px';
-  // Hide this container in case we might want to sometime use it
-  usbButtonContainer.className = 'usb-file-button-container';
-  // hide it
-  usbButtonContainer.style.display = 'none';   //usbButtonContainer.style.opacity = '0';
-  
-  // Create the USB button with compatible styling
-  const usbButton = document.createElement('button');
-  usbButton.type = 'button';
-  usbButton.id = 'usb-file-button';
-  usbButton.className = 'btn btn-primary usb-file-button';
-  usbButton.innerHTML = '<i class="fa fa-usb"></i> USB';
-  
-  // Add the button to the container
-  usbButtonContainer.appendChild(usbButton);
-  
-  // Add click handler with debugging
-  usbButton.onclick = function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-            // // Show loading state
-            // //usbButton.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Loading...';
-            // //usbButton.disabled = true;
-            
-            // // Open the USB file browser
-            fabmo.showUSBFileBrowser(function(err, result) {
-                // Reset button state
-                usbButton.innerHTML = '<i class="fa fa-usb"></i> Browse USB';
-                usbButton.disabled = false;
-                
-                if (err) {
-                    console.error("Error browsing USB:", err);
-                    fabmo.notify('error', 'Error accessing USB: ' + err.message);
-                } else if (result && !result.cancelled) {
-                    // File was successfully submitted
-                    fabmo.notify('success', 'File loaded successfully from USB');
-                    
-
-                    fabmo.submitUSBFile(result.filePath, function(err, job) {
-                      if (err) {
-                        console.error("Error submitting USB file:", err);
-                        fabmo.notify('error', 'Error submitting file: ' + err.message);
-                      } else {
-                        console.log("File submitted successfully:", job);
-                        fabmo.notify('success', 'File loaded successfully from USB');
-                        updateQueue();
-                        updateHistory();
-                        updateOrder();
-                
-                      }
-                    });
-                }
-            });
-    
-   
-    return false;
-  };
-  
-
- 
-  // Insert the USB button container after the file input
-  fileInput.parentNode.insertBefore(usbButtonContainer, fileInput.nextSibling);
-  console.log("USB button added to DOM");
-  
-  // Create and add the modal to the DOM
-  //createUSBBrowserModal();
-}
-
-
-
+/*
+ * -----------
+ *   QUEUE / JOBS
+ * -----------
+ */
 
 function updateQueue(callback) {
   callback = callback || function() {};
@@ -328,7 +249,6 @@ function addQueueEntries(jobs) {
 
 }
 
-
 function setFirstCard() {
   var firstId = $('.job_item').first().attr('id');
   var el = document.getElementById(firstId);
@@ -487,9 +407,7 @@ function bindMenuEvents() {
     var dd = $(this).nextAll();
     dd.show();
   });
-
 }
-
 
 function noJob() {
   $('.with-job').data('job', false);
@@ -844,7 +762,6 @@ var notifyChange = function(err,id){
   setTimeout(function(){$('#'+id).removeClass("flash-red flash-green")},500);
 };
 
-
 var configData = null;
 $(document).ready(function() {
     $(document).foundation();
@@ -867,8 +784,6 @@ $(document).ready(function() {
 
     setupDropTarget();
     runNext();
-
-    setupUSBFileInput()
 
     ////## this did not fix issue with another client
     ////## TODO // look for some sort of change 
@@ -907,7 +822,7 @@ $(document).ready(function() {
 
     // set focus at the end of 'ready'.
 
-////##
+
 
 
     $('#history_page_next').click(function(evt) {
@@ -930,15 +845,19 @@ $(document).ready(function() {
         });
     });
 
-    // FILE SELECTION AND LOADING ----------------
+    
+/*
+ * -----------
+ *   FILE SELECTION & LOADING
+ * -----------
+ */
 
-    $('.submit-button').click(function(evt) {       // TRIGGER POINT FOR FILE SELECTION PROCESS
+    $('.submit-button').click(function(evt) {       // TRIGGER POINT FOR FILE SELECTION PROCESS:  USE USB BROWSER OR STD INPUT:FILE system
         // Start file submit sequence by checking for presence of USB-drive; present on status.usbDrive
         if (status && status.usbDrive) {
-            jQuery('#usb-file-button').trigger('click');
+          fabmo.showUSBFileBrowser();
         } else {
-            // USB browser not available, fallback to standard computer file input
-            jQuery('#file').trigger('click');
+          jQuery('#file').trigger('click');
         }
     });
 
@@ -1034,7 +953,7 @@ $(document).ready(function() {
 
   $('.opensbp-input').change( function() {
     setConfig(this.id, this.value);
-});
+  });
 
     $('.opensbp-values').change( function() {
        var parts = this.id.split("-");
@@ -1124,6 +1043,20 @@ $(document).ready(function() {
           event.stopPropagation();
           event.preventDefault();
       }
+    });
+
+    // Listen for messages from the parent window
+    window.addEventListener("message", function (event) {
+        if (event.data && event.data.type === "updateQueueEvent") {
+            console.log("updateQueueEvent received via postMessage. Updating job queue...");
+            updateQueue(function (err) {
+                if (err) {
+                    console.error("Failed to update job queue:", err);
+                } else {
+                    console.log("Job queue updated successfully.");
+                }
+            });
+        }
     });
 
 });

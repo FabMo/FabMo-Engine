@@ -422,6 +422,17 @@ define(function (require) {
                                                         callback(submitErr);
                                                     } else {
                                                         callback(null, submitResult);
+
+                                                        // Send a message to the job manager iframe to trigger updateQueue
+                                                        var jobManagerIframe = document.querySelector(
+                                                            'iframe[src*="job_manager.fma"]'
+                                                        );
+                                                        if (jobManagerIframe) {
+                                                            jobManagerIframe.contentWindow.postMessage(
+                                                                { type: "updateQueueEvent" },
+                                                                "*"
+                                                            );
+                                                        }
                                                     }
                                                 }
                                             );
