@@ -389,6 +389,110 @@ define(function (require) {
             }.bind(this)
         );
 
+        this._registerHandler(
+            "showUSBFileBrowser",
+            function (data, callback) {
+                console.log("Dashboard handler for showUSBFileBrowser called with:", data);
+
+                // Extract options from the data
+                var options = data.options || {};
+
+                // Check if the USB browser module is available, or try to load it
+                this._ensureUSBBrowserModuleLoaded(
+                    function (moduleLoaded) {
+                        if (moduleLoaded && window.USBBrowser && typeof window.USBBrowser.getInstance === "function") {
+                            try {
+                                var browser = window.USBBrowser.getInstance();
+                                console.log("Got USB Browser instance in dashboard handler");
+
+                                // Show the browser UI
+                                browser.show(
+                                    function (err, result) {
+                                        console.log("USB Browser show callback in dashboard:", err, result);
+
+                                        if (err) {
+                                            callback(err);
+                                        } else if (result && result.filePath) {
+                                            // If a file was selected, submit it
+                                            this.engine.submitUSBFile(
+                                                result.filePath,
+                                                options,
+                                                function (submitErr, submitResult) {
+                                                    if (submitErr) {
+                                                        callback(submitErr);
+                                                    } else {
+                                                        callback(null, submitResult);
+                                                    }
+                                                }
+                                            );
+                                        } else {
+                                            // User canceled or no file selected
+                                            callback(null, { cancelled: true });
+                                        }
+                                    }.bind(this)
+                                );
+                            } catch (e) {
+                                console.error("Error showing USB browser from dashboard:", e);
+                                this._showFallbackBrowser(options, callback);
+                            }
+                        } else {
+                            console.log("USB Browser module not available in dashboard, using fallback");
+                            //this._showFallbackBrowser(options, callback);
+                        }
+                    }.bind(this)
+                );
+            }.bind(this)
+        );
+
+        /* Helper method to ensure the USB Browser module is loaded
+         * Tries to load it if not already available
+         */
+        Dashboard.prototype._ensureUSBBrowserModuleLoaded = function (callback) {
+            // If already loaded, return immediately
+            if (window.USBBrowser && typeof window.USBBrowser.getInstance === "function") {
+                console.log("USB Browser module already loaded");
+                callback(true);
+                return;
+            }
+
+            console.log("USB Browser module not loaded, attempting to load it");
+
+            // Try to load the module
+            var script = document.createElement("script");
+            script.src = "/js/libs/usb-browser.js";
+
+            // Set timeout for loading
+            var loadTimeout = setTimeout(function () {
+                console.error("Timeout loading USB Browser module");
+                callback(false);
+            }, 3000);
+
+            script.onload = function () {
+                clearTimeout(loadTimeout);
+                console.log("USB Browser module loaded successfully");
+
+                // Give it a moment to initialize
+                setTimeout(function () {
+                    if (typeof USBBrowser !== "undefined") {
+                        window.USBBrowser = USBBrowser;
+                        console.log("USBBrowser attached to window object");
+                        callback(true);
+                    } else {
+                        console.error("USBBrowser not defined after script load");
+                        callback(false);
+                    }
+                }, 100);
+            };
+
+            script.onerror = function () {
+                clearTimeout(loadTimeout);
+                console.error("Failed to load USB Browser module");
+                callback(false);
+            };
+
+            document.head.appendChild(script);
+        };
+
         // Get the list of jobs in the queue
         this._registerHandler(
             "getJobsInQueue",
