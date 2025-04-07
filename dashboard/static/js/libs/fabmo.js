@@ -675,14 +675,47 @@
     };
 
     /**
-     * Submit a file from USB as a job.
+     * Show a file browser for selecting files from connected USB drives.
+     *
+     * @method showUSBFileBrowser
+     * @param {Object} options Options for the file browser
+     * @param {function} callback Called with the result
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object} callback.result Result object if file was selected
+     */
+    FabMoDashboard.prototype.showUSBFileBrowser = function (options, callback) {
+        console.log("FabMoDashboard.showUSBFileBrowser called");
+
+        // Handle case where options is actually the callback
+        if (typeof options === "function") {
+            callback = options;
+            options = {};
+        }
+
+        // Ensure options is an object
+        options = options || {};
+
+        // Store callback ID for later retrieval
+        var callbackId = null;
+        if (callback) {
+            callbackId = this._id++;
+            this._handlers[callbackId] = callback;
+        }
+
+        // Send only serializable data to the dashboard
+        this._call("showUSBFileBrowser", {
+            options: options,
+            callbackId: callbackId,
+        });
+    };
+
+    /**
+     * Submit a file from USB drive as a job
      *
      * @method submitUSBFile
      * @param {String} path Path to the file on the USB drive
      * @param {Object} options Job submission options
-     * @param {function} callback
-     * @param {Error} callback.err Error object if there was an error.
-     * @param {Object} callback.job Job info if submission was successful
+     * @param {Function} callback Called with the result
      */
     FabMoDashboard.prototype.submitUSBFile = function (path, options, callback) {
         if (typeof options === "function") {
@@ -690,44 +723,6 @@
             options = {};
         }
         this._call("submitUSBFile", { path: path, options: options || {} }, callback);
-    };
-
-    /**
-     * Show a file browser for selecting files from connected USB drives.
-     *
-     * @method showUSBFileBrowser
-     * @param {Object} options Options for the file browser
-     * @param {function} callback
-     * @param {Error} callback.err Error object if there was an error.
-     * @param {Object} callback.result Result object if file was selected
-     */
-    FabMoDashboard.prototype.showUSBFileBrowser = function (callback) {
-        console.log("FabMoDashboard.showUSBFileBrowser called - simplified version");
-
-        // Create a simple dialog directly
-        var simpleDialog = document.createElement("div");
-        simpleDialog.style.position = "fixed";
-        simpleDialog.style.top = "50%";
-        simpleDialog.style.left = "50%";
-        simpleDialog.style.transform = "translate(-50%, -50%)";
-        simpleDialog.style.backgroundColor = "white";
-        simpleDialog.style.padding = "20px";
-        simpleDialog.style.border = "1px solid #ccc";
-        simpleDialog.style.boxShadow = "0 0 10px rgba(0,0,0,0.5)";
-        simpleDialog.style.zIndex = "10000";
-        simpleDialog.innerHTML =
-            '<h3>Simple USB Browser Test</h3><p>This is a test dialog created directly in the iframe.</p><button id="test-close">Close</button>';
-        document.body.appendChild(simpleDialog);
-
-        document.getElementById("test-close").addEventListener("click", function () {
-            document.body.removeChild(simpleDialog);
-            if (callback) callback(null, { success: true, message: "Dialog was shown" });
-        });
-
-        // Still try to call the server in case that works
-        this._call("showUSBFileBrowser", null, function (err, result) {
-            console.log("Server response:", err, result);
-        });
     };
 
     FabMoDashboard.prototype.submitFirmwareUpdate = function (file, options, callback, progress) {

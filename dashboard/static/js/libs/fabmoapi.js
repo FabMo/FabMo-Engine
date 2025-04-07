@@ -647,473 +647,84 @@
     };
 
     FabMoAPI.prototype.showUSBFileBrowser = function (options, callback) {
-        console.log("FabMoAPI showUSBFileBrowser called");
+        console.log("FabMoAPI.showUSBFileBrowser called with options:", options);
 
-        // Direct DOM test - add a visible element to confirm this code runs
-        var testEl = document.createElement("div");
-        testEl.id = "usb-test-element";
-        testEl.style.position = "fixed";
-        testEl.style.top = "50px";
-        testEl.style.left = "50px";
-        testEl.style.padding = "20px";
-        testEl.style.backgroundColor = "red";
-        testEl.style.color = "white";
-        testEl.style.zIndex = "9999";
-        testEl.innerHTML = "USB API Called";
-        document.body.appendChild(testEl);
+        if (typeof options === "function") {
+            callback = options;
+            options = {};
+        }
+        options = options || {};
+        callback = callback || function () {};
 
-        setTimeout(function () {
-            document.body.removeChild(testEl);
-        }, 3000);
+        // Extract the callback ID if it was passed from the FabMoDashboard
+        var callbackId = options.callbackId;
 
-        var that = this;
-        // Create modal if it doesn't exist
-        if (!document.getElementById("usb-file-browser-modal")) {
-            this._createUSBFileBrowserModal();
+        // Look for the USB browser module in the global scope
+        if (typeof window !== "undefined" && typeof window.USBBrowser !== "undefined") {
+            try {
+                console.log("USBBrowser found in global scope");
+                var browser = window.USBBrowser.getInstance();
+                if (browser) {
+                    console.log("Got browser instance, showing browser UI");
+                    browser.show(
+                        function (err, result) {
+                            console.log("Browser show callback, err:", err, "result:", result);
+                            if (err) {
+                                callback(err);
+                            } else if (result && result.filePath) {
+                                this.submitUSBFile(result.filePath, options, callback);
+                            } else {
+                                callback(null, { cancelled: true });
+                            }
+                        }.bind(this)
+                    );
+                    return;
+                } else {
+                    console.error("Browser instance creation failed");
+                }
+            } catch (e) {
+                console.error("Error showing USB browser:", e);
+            }
+        } else {
+            console.log("USBBrowser not found in global scope, using fallback");
         }
 
-        // Show the modal and set up callbacks
-        this._showUSBFileBrowserModal(function (filePath) {
-            if (filePath) {
-                that.submitUSBFile(filePath, options, callback);
-            } else {
-                callback(null, { cancelled: true });
-            }
-        });
-    };
+        // Fallback implementation - simple dialog
+        console.log("Using fallback implementation");
+        var simpleDialog = document.createElement("div");
+        simpleDialog.style.position = "fixed";
+        simpleDialog.style.top = "50%";
+        simpleDialog.style.left = "50%";
+        simpleDialog.style.transform = "translate(-50%, -50%)";
+        simpleDialog.style.backgroundColor = "white";
+        simpleDialog.style.padding = "20px";
+        simpleDialog.style.border = "1px solid #ccc";
+        simpleDialog.style.boxShadow = "0 0 10px rgba(0,0,0,0.5)";
+        simpleDialog.style.zIndex = "10000";
+        simpleDialog.innerHTML =
+            '<h3>USB Browser</h3><p>The USB Browser module is not available. Would you like to browse the server for files?</p><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;"><button id="debug-browse">Browse Server</button><button id="debug-close">Cancel</button></div>';
+        document.body.appendChild(simpleDialog);
 
-    // Helper methods for USB File Browser UI
-    FabMoAPI.prototype._createUSBFileBrowserModal = function () {
-        var modalHtml = `
-            <div id="usb-file-browser-modal" class="modal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <span class="close">&times;</span>
-                        <h2>USB File Browser</h2>
-                    </div>
-                    <div class="modal-body">
-                        <div class="usb-devices-section">
-                            <h3>USB Devices</h3>
-                            <div id="usb-devices-list" class="usb-devices-list">
-                                <p>No USB devices detected.</p>
-                            </div>
-                            <button id="usb-refresh-button" class="usb-refresh-button">Refresh Devices</button>
-                        </div>
-                        <div class="usb-files-section">
-                            <div class="usb-path-bar">
-                                <span id="usb-current-path">No device selected</span>
-                            </div>
-                            <div id="usb-file-list" class="usb-file-list">
-                                <p>Select a USB device to browse files.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button id="usb-cancel-button" class="usb-cancel-button">Cancel</button>
-                        <button id="usb-select-button" class="usb-select-button" disabled>Select File</button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        var modalStyle = `
-            <style>
-                .modal {
-                    display: none;
-                    position: fixed;
-                    z-index: 1000;
-                    left: 0;
-                    top: 0;
-                    width: 100%;
-                    height: 100%;
-                    overflow: auto;
-                    background-color: rgba(0,0,0,0.4);
-                }
-                
-                .modal-content {
-                    background-color: #fefefe;
-                    margin: 10% auto;
-                    padding: 20px;
-                    border: 1px solid #888;
-                    width: 80%;
-                    max-width: 800px;
-                    border-radius: 5px;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                }
-                
-                .modal-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 1px solid #ddd;
-                    padding-bottom: 10px;
-                }
-                
-                .modal-body {
-                    padding: 20px 0;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 20px;
-                }
-                
-                .modal-footer {
-                    border-top: 1px solid #ddd;
-                    padding-top: 10px;
-                    display: flex;
-                    justify-content: flex-end;
-                    gap: 10px;
-                }
-                
-                .close {
-                    color: #aaa;
-                    font-size: 28px;
-                    font-weight: bold;
-                    cursor: pointer;
-                }
-                
-                .close:hover {
-                    color: black;
-                }
-                
-                .usb-devices-section {
-                    margin-bottom: 20px;
-                }
-                
-                .usb-devices-list {
-                    display: flex;
-                    gap: 10px;
-                    flex-wrap: wrap;
-                    margin-bottom: 10px;
-                }
-                
-                .usb-device-item {
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    transition: background-color 0.2s;
-                }
-                
-                .usb-device-item:hover {
-                    background-color: #f0f0f0;
-                }
-                
-                .usb-device-item.selected {
-                    background-color: #e3f2fd;
-                    border-color: #2196F3;
-                }
-                
-                .usb-path-bar {
-                    background-color: #f5f5f5;
-                    padding: 10px;
-                    border-radius: 5px;
-                    margin-bottom: 10px;
-                    overflow: auto;
-                    white-space: nowrap;
-                }
-                
-                .usb-file-list {
-                    border: 1px solid #ddd;
-                    border-radius: 5px;
-                    max-height: 300px;
-                    overflow-y: auto;
-                }
-                
-                .usb-file-item {
-                    padding: 10px;
-                    border-bottom: 1px solid #eee;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                }
-                
-                .usb-file-item:last-child {
-                    border-bottom: none;
-                }
-                
-                .usb-file-item:hover {
-                    background-color: #f5f5f5;
-                }
-                
-                .usb-file-item.selected {
-                    background-color: #e3f2fd;
-                }
-                
-                .usb-file-icon {
-                    margin-right: 10px;
-                }
-                
-                .usb-file-name {
-                    flex-grow: 1;
-                }
-                
-                .usb-file-size {
-                    color: #777;
-                    font-size: 0.8em;
-                }
-                
-                .usb-refresh-button, .usb-cancel-button, .usb-select-button {
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
-                
-                .usb-refresh-button {
-                    background-color: #f0f0f0;
-                    border: 1px solid #ddd;
-                }
-                
-                .usb-cancel-button {
-                    background-color: #f0f0f0;
-                    border: 1px solid #ddd;
-                }
-                
-                .usb-select-button {
-                    background-color: #2196F3;
-                    border: 1px solid #1976D2;
-                    color: white;
-                }
-                
-                .usb-select-button:disabled {
-                    background-color: #9e9e9e;
-                    border: 1px solid #757575;
-                    cursor: not-allowed;
-                }
-                
-                .loading {
-                    text-align: center;
-                    padding: 20px;
-                }
-            </style>
-        `;
-
-        // Append modal and styles to document
-        var modalContainer = document.createElement("div");
-        modalContainer.innerHTML = modalHtml + modalStyle;
-        document.body.appendChild(modalContainer);
-
-        // Set up event listeners
-        this._setupUSBFileBrowserEventListeners();
-    };
-
-    FabMoAPI.prototype._setupUSBFileBrowserEventListeners = function () {
-        var that = this;
-
-        // Close button
-        var closeBtn = document.querySelector("#usb-file-browser-modal .close");
-        closeBtn.addEventListener("click", function () {
-            that._hideUSBFileBrowserModal();
-        });
-
-        // Cancel button
-        var cancelBtn = document.getElementById("usb-cancel-button");
-        cancelBtn.addEventListener("click", function () {
-            that._hideUSBFileBrowserModal();
-        });
-
-        // Select button
-        var selectBtn = document.getElementById("usb-select-button");
-        selectBtn.addEventListener("click", function () {
-            that._selectCurrentFile();
-        });
-
-        // Refresh button
-        var refreshBtn = document.getElementById("usb-refresh-button");
-        refreshBtn.addEventListener("click", function () {
-            that._loadUSBDevices();
-        });
-
-        // Close when clicking outside the modal
-        var modal = document.getElementById("usb-file-browser-modal");
-        window.addEventListener("click", function (event) {
-            if (event.target === modal) {
-                that._hideUSBFileBrowserModal();
-            }
-        });
-    };
-
-    FabMoAPI.prototype._showUSBFileBrowserModal = function (callback) {
-        this._usbFileSelectionCallback = callback;
-        document.getElementById("usb-file-browser-modal").style.display = "block";
-        this._loadUSBDevices();
-    };
-
-    FabMoAPI.prototype._hideUSBFileBrowserModal = function () {
-        document.getElementById("usb-file-browser-modal").style.display = "none";
-        if (this._usbFileSelectionCallback) {
-            this._usbFileSelectionCallback(null);
-            this._usbFileSelectionCallback = null;
-        }
-    };
-
-    FabMoAPI.prototype._loadUSBDevices = function () {
-        var that = this;
-        var devicesList = document.getElementById("usb-devices-list");
-        devicesList.innerHTML = '<p class="loading">Loading devices...</p>';
-
-        this.getUSBDevices(function (err, devices) {
-            if (err) {
-                devicesList.innerHTML = "<p>Error loading USB devices. Please try again.</p>";
-                return;
-            }
-
-            if (!devices || devices.length === 0) {
-                devicesList.innerHTML = "<p>No USB devices detected. Please connect a USB drive and click Refresh.</p>";
-                return;
-            }
-
-            var html = "";
-            devices.forEach(function (device) {
-                html += '<div class="usb-device-item" data-path="' + device.path + '">';
-                html += '<div class="usb-device-name">' + device.name + "</div>";
-                html += "</div>";
-            });
-
-            devicesList.innerHTML = html;
-
-            // Add click handler to device items
-            var deviceItems = document.querySelectorAll(".usb-device-item");
-            deviceItems.forEach(function (item) {
-                item.addEventListener("click", function () {
-                    // Update selected device
-                    deviceItems.forEach(function (el) {
-                        el.classList.remove("selected");
-                    });
-                    item.classList.add("selected");
-
-                    // Load directory contents
-                    var path = item.getAttribute("data-path");
-                    that._loadUSBDirectory(path);
-                });
-            });
-        });
-    };
-
-    FabMoAPI.prototype._loadUSBDirectory = function (path) {
-        var that = this;
-        this._currentPath = path;
-
-        // Update path display
-        document.getElementById("usb-current-path").textContent = path;
-
-        // Show loading
-        var fileList = document.getElementById("usb-file-list");
-        fileList.innerHTML = '<p class="loading">Loading files...</p>';
-
-        this.getUSBDirectory(path, function (err, contents) {
-            if (err) {
-                fileList.innerHTML = "<p>Error loading directory. Please try again.</p>";
-                return;
-            }
-
-            if (!contents || contents.length === 0) {
-                fileList.innerHTML = "<p>This directory is empty.</p>";
-                return;
-            }
-
-            var html = "";
-
-            // Add parent directory option if not at root
-            if (path !== "/media/pi" && path !== "/media/root" && path !== "/mnt") {
-                var parentPath = path.split("/").slice(0, -1).join("/");
-                if (!parentPath) parentPath = "/";
-
-                html += '<div class="usb-file-item" data-path="' + parentPath + '" data-is-dir="true">';
-                html += '<span class="usb-file-icon">📁</span>';
-                html += '<span class="usb-file-name">..</span>';
-                html += "</div>";
-            }
-
-            // Add directories first
-            contents
-                .filter(function (file) {
-                    return file.isDirectory;
-                })
-                .forEach(function (dir) {
-                    html += '<div class="usb-file-item" data-path="' + dir.path + '" data-is-dir="true">';
-                    html += '<span class="usb-file-icon">📁</span>';
-                    html += '<span class="usb-file-name">' + dir.name + "</span>";
-                    html += "</div>";
-                });
-
-            // Then add files
-            contents
-                .filter(function (file) {
-                    return !file.isDirectory;
-                })
-                .forEach(function (file) {
-                    html += '<div class="usb-file-item" data-path="' + file.path + '" data-is-dir="false">';
-                    html += '<span class="usb-file-icon">📄</span>';
-                    html += '<span class="usb-file-name">' + file.name + "</span>";
-                    html += '<span class="usb-file-size">' + that._formatFileSize(file.size) + "</span>";
-                    html += "</div>";
-                });
-
-            fileList.innerHTML = html;
-
-            // Add click handler to file items
-            var fileItems = document.querySelectorAll(".usb-file-item");
-            fileItems.forEach(function (item) {
-                item.addEventListener("click", function () {
-                    var isDir = item.getAttribute("data-is-dir") === "true";
-                    var itemPath = item.getAttribute("data-path");
-
-                    if (isDir) {
-                        // Navigate to directory
-                        that._loadUSBDirectory(itemPath);
+        document.getElementById("debug-browse").addEventListener(
+            "click",
+            function () {
+                document.body.removeChild(simpleDialog);
+                // Let's try to list devices directly
+                this.getUSBDevices(function (err, result) {
+                    if (err) {
+                        callback(err);
                     } else {
-                        // Select file
-                        fileItems.forEach(function (el) {
-                            el.classList.remove("selected");
-                        });
-                        item.classList.add("selected");
-
-                        // Enable select button
-                        document.getElementById("usb-select-button").disabled = false;
+                        console.log("USB Devices:", result);
+                        callback(null, { browsedServer: true, devices: result });
                     }
                 });
+            }.bind(this)
+        );
 
-                // Add double-click handler
-                item.addEventListener("dblclick", function () {
-                    var isDir = item.getAttribute("data-is-dir") === "true";
-                    var itemPath = item.getAttribute("data-path");
-
-                    if (isDir) {
-                        // Navigate to directory
-                        that._loadUSBDirectory(itemPath);
-                    } else {
-                        // Select and submit file
-                        that._selectFile(itemPath);
-                    }
-                });
-            });
+        document.getElementById("debug-close").addEventListener("click", function () {
+            document.body.removeChild(simpleDialog);
+            callback(null, { cancelled: true });
         });
-    };
-
-    FabMoAPI.prototype._selectCurrentFile = function () {
-        var selectedFile = document.querySelector(".usb-file-item.selected");
-        if (selectedFile && selectedFile.getAttribute("data-is-dir") === "false") {
-            var filePath = selectedFile.getAttribute("data-path");
-            this._selectFile(filePath);
-        }
-    };
-
-    FabMoAPI.prototype._selectFile = function (filePath) {
-        var callback = this._usbFileSelectionCallback;
-        this._hideUSBFileBrowserModal();
-        if (callback) {
-            callback(filePath);
-        }
-    };
-
-    FabMoAPI.prototype._formatFileSize = function (bytes) {
-        if (bytes === 0) return "0 B";
-
-        var k = 1024;
-        var sizes = ["B", "KB", "MB", "GB", "TB"];
-        var i = Math.floor(Math.log(bytes) / Math.log(k));
-
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     };
 
     FabMoAPI.prototype._url = function (path) {
