@@ -49,6 +49,9 @@ var in_goto_flag = false;
 var fixedTimeStart = 0; // variable for measuring response latency in keypad fixed moves
 var fixedTimeEnd = 0;
 
+// Declare a variable to track the current input being processed
+let currentInputName = null;
+
 // move timer cutoff to var so it can be set in settings later
 var TIMER_DISPLAY_CUTOFF = 5;
 // Detect touch screen
@@ -334,40 +337,141 @@ engine.getVersion(function (err, version) {
                             keyboard.setEnabled(false);
                             console.log(status["info"]);
 
-                            // Default modal options for backwards compatibility
+                            // MODAL DISPLAY::  System for displaying modal "options" honoring older modal behavior but adding new features
                             modalOptions = {
                                 message: status.info.message,
                             };
-                            // Initialize modalOptions.ok and modalOptions.cancel to null
+                            // Initialize modalOptions
                             modalOptions.ok = null;
                             modalOptions.cancel = null;
                             modalOptions.okText = null;
                             modalOptions.cancelText = null;
 
-                            // Default resume and cancel functions
-                            var resumeFunction = function () {
-                                dashboard.engine.resume();
+                            // "Resume" and "Cancel" functions happening after the MODAL is shown
+                            // ... the first for handling an input variable "input-variable" request and saving back to the server
+                            var resumeFunction = function (args) {
+                                var value = args;
+                                console.log("Extracted value: ", value);
+                                console.log("Name: ", modalOptions.input.name);
+                                console.log("Type: ", modalOptions.input.type);
+                                dashboard.engine.resume({
+                                    var: modalOptions.input.name,
+                                    type: modalOptions.input.type,
+                                    val: value || "",
+                                });
                             };
                             var cancelFunction = function () {
                                 dashboard.engine.quit();
                             };
-                            // Set up input submit
-                            if (status["info"]["input"]) {
-                                modalOptions["input"] = status["info"]["input"];
-                                resumeFunction = function () {
-                                    var inputVar = $("#inputVar").val();
-                                    var inputType = $("#inputType").val();
-                                    var inputVal = $.trim($("#inputVal").val());
-                                    dashboard.engine.resume({
-                                        var: inputVar,
-                                        type: inputType,
-                                        val: inputVal,
-                                    });
-                                };
+
+                            // // For INPUT set up input submit Y-N buttons or std variable input
+                            // if (status["info"] && status["info"]["input"]) {
+                            //     const input = status["info"]["input"];
+                            //     console.log("Detected input in status:", input); // Log the input detected in status
+
+                            //     // Check if the input is already being processed
+                            //     if (currentInputName === input.name) {
+                            //         console.log("Input already being processed:", input.name);
+                            //         return; // Prevent redundant modal calls
+                            //     }
+
+                            //     //currentInputName = input.name; // Set the current input being processed
+
+                            //     // For Y-N modal and response only allow a temporary variable
+                            //     var tempName = status["info"]["input"].name;
+                            //     // strip first letter designator if '&' or '$'
+                            //     if (tempName.charAt(0) === "&" || tempName.charAt(0) === "$") {
+                            //         tempName = tempName.substring(1);
+                            //     }
+                            //     modalOptions = {
+                            //         title: status["info"].title,
+                            //         message: status["info"].message,
+                            //         input: input,
+                            //         ok: function (value) {
+                            //             engine.resume({
+                            //                 var: tempName,
+                            //                 type: "user_variable",
+                            //                 val: value,
+                            //             });
+                            //             currentInputName = null;
+                            //         },
+                            //         cancel: function () {
+                            //             engine.quit();
+                            //             currentInputName = null;
+                            //         },
+                            //     };
+                            //     //     } else {
+                            //     //         dashboard.showModal({
+                            //     //             title: "Input Required",
+                            //     //             message: "Please provide the required input.",
+                            //     //             input: input,
+                            //     //             ok: function () {
+                            //     //                 const inputVar = $("#inputVar").val();
+                            //     //                 const inputType = $("#inputType").val();
+                            //     //                 const inputVal = $.trim($("#inputVal").val());
+                            //     //                 engine.resume({
+                            //     //                     var: inputVar,
+                            //     //                     type: inputType,
+                            //     //                     val: inputVal,
+                            //     //                 });
+                            //     //                 currentInputName = null; // Reset after processing
+                            //     //             },
+                            //     //             cancel: function () {
+                            //     //                 engine.quit();
+                            //     //                 currentInputName = null; // Reset after processing
+                            //     //             },
+                            //     //         });
+                            //     //     }
+                            //     // } else {
+                            //     //     console.log("No input detected in status."); // Log case where no input is detected
+                            // }
+                            // //});
+
+                            // Check for presence of an "input" request
+                            if (status.info["input"]) {
+                                var wrkName = status.info.input["name"] || ""; // Use the name from the input object
+
+                                if (!modalOptions.input) {
+                                    modalOptions.input = {}; // Ensure the input property exists
+                                }
+                                if (wrkName.substring(1).toUpperCase === "LAST_Y-N") {
+                                    if (wrkName.charAt(0) === "&") {
+                                        modalOptions.input.type = "user_variable"; // Set the type for user_variable
+                                        wrkName = wrkName.substring(1); // Remove the '&' prefix
+                                    } else if (wrkName.charAt(0) === "$") {
+                                        modalOptions.input.type = "user_variable"; // for now, Y-N is always user_variable
+                                        wrkName = wrkName.substring(1); // Remove the '$' prefix
+                                    } else {
+                                        // Handle inputs without a variable indicator; for now default to user_variable
+                                        console.warn(
+                                            "Unknown input variable type, defaulting to user_variable for: ",
+                                            wrkName
+                                        );
+                                        modalOptions.input.type = "user_variable"; // Default to user_variable
+                                    }
+                                    modalOptions.input.name = wrkName;
+                                } else {
+                                    if (wrkName.charAt(0) === "&") {
+                                        modalOptions.input.type = "user_variable"; // Set the type for user_variable
+                                        wrkName = wrkName.substring(1);
+                                    } else if (wrkName.charAt(0) === "$") {
+                                        modalOptions.input.type = "permanent_variable";
+                                        wrkName = wrkName.substring(1); // Remove the '$' prefix
+                                    } else {
+                                        // Handle inputs without a variable indicator; for now default to user_variable
+                                        console.warn(
+                                            "Unknown input variable type, defaulting to user_variable for: ",
+                                            wrkName
+                                        );
+                                        modalOptions.input.type = "user_variable"; // Default to user_variable
+                                    }
+                                    modalOptions.input.name = wrkName;
+                                }
+                                console.log("I got the name > ", modalOptions.input["name"]); // Debugging: Log the input name
+                                console.log("I got the type > ", modalOptions.input["type"]); // Debugging: Log the input type
                             }
 
-                            // Check for custom parameters
-
+                            // Check for other "custom" display parameters
                             // Eventually we may want to be able set both buttons to off, but at the moment, just prevet a lockup
                             // SO, first deal with case that both OK and Cancel are set to null; for now, we will reset Cancel
                             //   with the "text" "Close ..." and the "func" "quit"

@@ -2501,13 +2501,13 @@ input[type='range']:focus {
 
 .modalButtons {
     margin-top: 10px;
-    font-size: 20px;
+    font-size: 25px;
     text-align: center;
 }
 
 .modalOkay{
 	color: #fff;
-    padding-top: .5em;
+    padding-top: .3em;
     cursor: pointer;
     display: inline-block;
     height: 50px;
