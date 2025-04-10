@@ -15,7 +15,9 @@
 '--- Check to make sure Standard Macro Variables have been read
 $sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
-IF $ATC.Type = 0 THEN GOTO MANUAL_CHANGE
+
+$ATC.Type := 0                                                    ' Set ATC if does not exist
+IF $ATC.type = 0 THEN GOTO MANUAL_CHANGE
 C71
 GOTO END_CHANGE
 ' === Main Program ===
