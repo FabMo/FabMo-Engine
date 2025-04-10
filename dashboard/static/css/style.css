@@ -2522,7 +2522,7 @@ input[type='range']:focus {
 
 .modalCancel{
 	color: #fff;
-    padding-top: .5em;
+    padding-top: .3em;
     cursor: pointer;
     display: inline-block;
     height: 50px;

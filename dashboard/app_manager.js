@@ -517,11 +517,18 @@ AppManager.prototype.getAppPaths = function (callback) {
     );
 };
 
-// Load all of the apps from all of the app archive locations
+// Load all of the apps from all of the app archive locations, excluding "selftest.fma"
 //   callback - Called with a list containing all app_info objects, or error if error.
 AppManager.prototype.loadApps = function (callback) {
     this.getAppPaths(
         function (err, files) {
+            if (err) {
+                return callback(err);
+            }
+
+            // Temporarily Filter out "selftest.fma" until further developed
+            files = files.filter((file) => !file.endsWith("selftest.fma"));
+
             async.mapSeries(
                 files,
                 function (file, callback) {
@@ -530,8 +537,7 @@ AppManager.prototype.loadApps = function (callback) {
                         {},
                         function (err, result) {
                             if (err) {
-                                // Rather than allowing errors to halt the async.map operation that is loading the apps
-                                // we swallow them and simply stick a 'null' in the output array (that we cull out at the end)
+                                // Swallow errors and insert null in the output array
                                 return callback(null, null);
                             } else {
                                 return callback(null, result);
@@ -540,6 +546,8 @@ AppManager.prototype.loadApps = function (callback) {
                     );
                 }.bind(this),
                 function (err, results) {
+                    // Filter out null results
+                    results = results.filter((result) => result !== null);
                     callback(err, results);
                 }.bind(this)
             );
