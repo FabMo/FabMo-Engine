@@ -1461,7 +1461,8 @@ Machine.prototype.startUSBDriveManager = function () {
     }, 5000);
 };
 
-let notReported = true;
+let drivePresenceReported = false;
+let driveAbsenceReported = false;
 // Function to determine if a USB drive is currently mounted on this Raspberry Pi server
 Machine.prototype.checkUSBDrive = function (callback) {
     const usbMountPath = "/media"; // Base mount point for USB drives on Linux
@@ -1478,7 +1479,11 @@ Machine.prototype.checkUSBDrive = function (callback) {
         // Check each subdirectory under /media for USB drives with content
         const checkSubdirectories = (index) => {
             if (index >= visibleEntries.length) {
-                log.info("No USB drive with content detected.");
+                if (!driveAbsenceReported) {
+                    log.info("No USB drive with content detected.");
+                    drivePresenceReported = false;
+                    driveAbsenceReported = true;
+                }
                 return callback(null, false); // No USB drive with content found
             }
 
@@ -1503,7 +1508,11 @@ Machine.prototype.checkUSBDrive = function (callback) {
                                 checkContent(subIndex + 1);
                             } else {
                                 // Found a USB drive with content
-                                log.info(`USB drive with content detected at: ${usbDrivePath}`);
+                                if (!drivePresenceReported) {
+                                    log.info(`USB drive with content detected at: ${usbDrivePath}`);
+                                    driveAbsenceReported = false;
+                                    drivePresenceReported = true;
+                                }
                                 return callback(null, usbDrivePath);
                             }
                         });

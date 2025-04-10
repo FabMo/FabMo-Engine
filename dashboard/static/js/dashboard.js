@@ -1445,6 +1445,13 @@ define(function (require) {
             $(".modalTitle").hide();
         }
 
+        if (options["input"]) {
+            $(".modalDialogue").html(options.input).show();
+        } else {
+            $(".modalDialogue").html(options.input).hide();
+            $(".modalDialogue").hide();
+        }
+
         if (options["message"]) {
             $(".modalDialogue").html(options.message).show();
         } else {
@@ -1468,39 +1475,80 @@ define(function (require) {
             $(".modalDialogue").css("width", "100%");
         }
 
-        // Set up the input field if provided as a Yes-No option or as a normal input
-        let selectedValue = null; // Variable to store the selected YES-NO value
+        // Set up the variable input field, if provided, as a Yes-No option or as a normal input
+        // ... first determine if we have a special YES_NO input case and what kind (this is to test Brian's pref for 0/1)
+        let selectedValue = null; // Variable to store the selected YES_NO value    ** DETECTION Y-N HERE! ***
+        let inputPresent = false;
+        let inputType = "text";
+        if (options.input && options.input.name) {
+            let ckInput = options.input.name.toUpperCase();
+            if (ckInput === "LAST_YN") {
+                inputPresent = true;
+                inputType = "text";
+            } else if (ckInput == "YN") {
+                inputPresent = true;
+                inputType = "numeric";
+            }
+        }
 
-        // Special input case for Yes-No option triggered by user_variable "&LAST_Y-N"  ** DETECTION Y-N HERE! ***
-        if (options.input && options.input.name && options.input.name.toUpperCase() === "LAST_Y-N") {
-            console.log("Detected Y-N input:", options.input); // Log detection of user_variable
+        // Special input case for Yes-No option triggered by user_variable "&LAST_YN". But possibly using &YN trigger for numeric value
+        //         if (options.input && options.input.name && options.input.name.toUpperCase() === "LAST_YN") {
+        if (inputPresent) {
+            console.log("Detected YN input:", options.input); // Log detection of user_variable
+            selectedValue = "";
             $(".modalInput").hide();
             $(".modalButtons").html(`
                 <div class="yes-no-buttons" style="margin-bottom: 10px;">
-                    <div class="modalYes" style="display: inline-block; margin-right: 10px; cursor: pointer; border: 1px solid blue; padding: 5px;"><span>Yes</span></div>
-                    <div class="modalNo" style="display: inline-block; cursor: pointer; border: 1px solid blue; padding: 5px;"><span>No</span></div>
+                    <div class="modalYes" style="display: inline-block; margin-right: 10px; cursor: pointer; border: 1px solid lightgray; padding: 5px;"><span>Yes</span></div>
+                    <div class="modalNo" style="display: inline-block; cursor: pointer; border: 1px solid lightgray; padding: 5px;"><span>No</span></div>
                 </div>
                 <div class="ok-cancel-buttons">
-                    <div class="modalCancel" style="display: inline-block; margin-right: 10px; border: 1px solid blue; padding: 5px;"><span>Cancel</span></div>
-                    <div class="modalOkay" style="display: inline-block; border: 1px solid blue; padding: 5px;"><span>Okay</span></div>
+                    <div class="ok-cancel-buttons" style="display: inline-block; margin-right: 10px;">
+                    <div class="modalCancel" style="display: inline-block"><span>Cancel</span></div>
+                    <div class="modalOkay" style="display: inline-block"><span>Okay</span></div>
                 </div>
             `);
+
+            //set the "ok-button" to disabled; leave the Cancel button enabled
+            $(".modalOkay").css("pointer-events", "none");
+            $(".modalOkay").css("opacity", "0.5");
 
             $(".modalYes")
                 .off("click")
                 .on("click", function () {
-                    selectedValue = "YES";
+                    if (inputType === "numeric") {
+                        selectedValue = 1;
+                    } else {
+                        selectedValue = "YES";
+                    }
                     $(".modalYes").css("font-weight", "bold");
+                    $(".modalYes").css("color", "white");
+                    $(".modalYes").css("background-color", "#5Daa35");
                     $(".modalNo").css("font-weight", "normal");
+                    $(".modalNo").css("color", "black");
+                    $(".modalNo").css("background-color", "transparent");
+                    $(".modalOkay").css("pointer-events", "all");
+                    $(".modalOkay").css("opacity", "1.0");
                 });
 
             $(".modalNo")
                 .off("click")
                 .on("click", function () {
-                    selectedValue = "NO";
+                    if (inputType === "numeric") {
+                        selectedValue = 0;
+                    } else {
+                        selectedValue = "NO";
+                    }
                     $(".modalNo").css("font-weight", "bold");
+                    $(".modalNo").css("color", "white");
+                    $(".modalNo").css("background-color", "#5Daa35");
                     $(".modalYes").css("font-weight", "normal");
+                    $(".modalYes").css("background-color", "transparent");
+                    $(".modalYes").css("color", "black");
+                    $(".modalOkay").css("pointer-events", "all");
+                    $(".modalOkay").css("opacity", "1.0");
                 });
+
             // Normal input case
         } else if (options["input"]) {
             console.log("Detected normal input:", options.input); // Log detection of normal input
@@ -1509,20 +1557,31 @@ define(function (require) {
             $("#inputVal").val("");
             $(".modalInput").show();
             $("#inputVal").trigger("focus");
+            $(".modalOkay").css("pointer-events", "none");
+            $(".modalOkay").css("opacity", "0.5");
         } else {
             console.log("No input detected, hiding modal input."); // Log case where no input is detected
+            $("#inputVal").val("");
             $(".modalInput").hide();
+            $(".modalOkay").css("pointer-events", "all");
+            $(".modalOkay").css("opacity", "1.0");
         }
 
         // Handle OK button
         if (options.ok && options.okText) {
             $(".modalOkay").show();
             $(".modalOkay").text(options.okText);
+            //            $(".modalOkay").css("pointer-events", "none");
+            //            $(".modalOkay").css("opacity", "0.5");
+            $("#inputVal").on("input", function () {
+                $(".modalOkay").css("pointer-events", "all");
+                $(".modalOkay").css("opacity", "1.0");
+            });
             $(".modalOkay")
                 .off("click")
                 .on("click", function () {
                     if (options.input?.name && options.input.type && selectedValue) {
-                        options.ok(selectedValue); // Pass the selected YES-NO value OR variable value to the OK callback
+                        options.ok(selectedValue); // Pass the selected YES_NO value OR variable value to the OK callback
                     } else {
                         // option needs to pick up the value of the input box
                         let inputValue = $("#inputVal").val(); // Get the value from the input box
@@ -1531,6 +1590,7 @@ define(function (require) {
                         }
                         options.ok(inputValue); // Pass a normal input value to the OK callback
                     }
+                    $("#inputVal").val("");
                     $(".newModal").hide();
                     $(".modalDim").hide();
                     $(".yes-no-buttons").remove(); // Clean up the yes-no buttons if they were used
@@ -1549,6 +1609,7 @@ define(function (require) {
                 .off("click")
                 .on("click", function () {
                     options.cancel();
+                    $("#inputVal").val("");
                     $(".newModal").hide();
                     $(".modalDim").hide();
                     $(".yes-no-buttons").remove(); // Clean up the yes-no buttons if they were used
@@ -1572,15 +1633,15 @@ define(function (require) {
                 $(".modalYes").remove(); // Clean up the yes-no buttons if they were used
                 $(".modalNo").remove(); // Clean up the yes-no buttons if they were used
             });
+        }
 
-            if (options["noButton"] === true) {
-                $(".modalCancel").hide();
-                $(".modalOkay").hide();
-            }
+        if (options["noButton"] === true) {
+            $(".modalCancel").hide();
+            $(".modalOkay").hide();
+        }
 
-            if (options["noLogo"] === true) {
-                $(".modalLogo").hide();
-            }
+        if (options["noLogo"] === true) {
+            $(".modalLogo").hide();
         }
     };
 

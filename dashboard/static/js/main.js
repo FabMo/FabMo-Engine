@@ -346,100 +346,42 @@ engine.getVersion(function (err, version) {
                             modalOptions.cancel = null;
                             modalOptions.okText = null;
                             modalOptions.cancelText = null;
+                            modalOptions.input = null;
 
                             // "Resume" and "Cancel" functions happening after the MODAL is shown
                             // ... the first for handling an input variable "input-variable" request and saving back to the server
                             var resumeFunction = function (args) {
                                 var value = args;
                                 console.log("Extracted value: ", value);
-                                console.log("Name: ", modalOptions.input.name);
-                                console.log("Type: ", modalOptions.input.type);
-                                dashboard.engine.resume({
-                                    var: modalOptions.input.name,
-                                    type: modalOptions.input.type,
-                                    val: value || "",
-                                });
+                                if (modalOptions.input && modalOptions.input.name) {
+                                    console.log("Name: ", modalOptions.input.name);
+                                    console.log("Type: ", modalOptions.input.type);
+                                    dashboard.engine.resume({
+                                        var: modalOptions.input.name,
+                                        type: modalOptions.input.type,
+                                        val: value || "",
+                                    });
+                                } else {
+                                    dashboard.engine.resume();
+                                }
                             };
                             var cancelFunction = function () {
                                 dashboard.engine.quit();
                             };
 
-                            // // For INPUT set up input submit Y-N buttons or std variable input
-                            // if (status["info"] && status["info"]["input"]) {
-                            //     const input = status["info"]["input"];
-                            //     console.log("Detected input in status:", input); // Log the input detected in status
-
-                            //     // Check if the input is already being processed
-                            //     if (currentInputName === input.name) {
-                            //         console.log("Input already being processed:", input.name);
-                            //         return; // Prevent redundant modal calls
-                            //     }
-
-                            //     //currentInputName = input.name; // Set the current input being processed
-
-                            //     // For Y-N modal and response only allow a temporary variable
-                            //     var tempName = status["info"]["input"].name;
-                            //     // strip first letter designator if '&' or '$'
-                            //     if (tempName.charAt(0) === "&" || tempName.charAt(0) === "$") {
-                            //         tempName = tempName.substring(1);
-                            //     }
-                            //     modalOptions = {
-                            //         title: status["info"].title,
-                            //         message: status["info"].message,
-                            //         input: input,
-                            //         ok: function (value) {
-                            //             engine.resume({
-                            //                 var: tempName,
-                            //                 type: "user_variable",
-                            //                 val: value,
-                            //             });
-                            //             currentInputName = null;
-                            //         },
-                            //         cancel: function () {
-                            //             engine.quit();
-                            //             currentInputName = null;
-                            //         },
-                            //     };
-                            //     //     } else {
-                            //     //         dashboard.showModal({
-                            //     //             title: "Input Required",
-                            //     //             message: "Please provide the required input.",
-                            //     //             input: input,
-                            //     //             ok: function () {
-                            //     //                 const inputVar = $("#inputVar").val();
-                            //     //                 const inputType = $("#inputType").val();
-                            //     //                 const inputVal = $.trim($("#inputVal").val());
-                            //     //                 engine.resume({
-                            //     //                     var: inputVar,
-                            //     //                     type: inputType,
-                            //     //                     val: inputVal,
-                            //     //                 });
-                            //     //                 currentInputName = null; // Reset after processing
-                            //     //             },
-                            //     //             cancel: function () {
-                            //     //                 engine.quit();
-                            //     //                 currentInputName = null; // Reset after processing
-                            //     //             },
-                            //     //         });
-                            //     //     }
-                            //     // } else {
-                            //     //     console.log("No input detected in status."); // Log case where no input is detected
-                            // }
-                            // //});
-
-                            // Check for presence of an "input" request
-                            if (status.info["input"]) {
-                                var wrkName = status.info.input["name"] || ""; // Use the name from the input object
+                            // Check for presence of an "input" request in "name"
+                            if (status.info["input"] && status.info.input["name"]) {
+                                var wrkName = status.info.input["name"] || "";
 
                                 if (!modalOptions.input) {
                                     modalOptions.input = {}; // Ensure the input property exists
                                 }
-                                if (wrkName.substring(1).toUpperCase === "LAST_Y-N") {
+                                if (wrkName.substring(1).toUpperCase === "LAST_YN") {
                                     if (wrkName.charAt(0) === "&") {
                                         modalOptions.input.type = "user_variable"; // Set the type for user_variable
                                         wrkName = wrkName.substring(1); // Remove the '&' prefix
                                     } else if (wrkName.charAt(0) === "$") {
-                                        modalOptions.input.type = "user_variable"; // for now, Y-N is always user_variable
+                                        modalOptions.input.type = "user_variable"; // for now, YN is always user_variable
                                         wrkName = wrkName.substring(1); // Remove the '$' prefix
                                     } else {
                                         // Handle inputs without a variable indicator; for now default to user_variable
@@ -475,25 +417,32 @@ engine.getVersion(function (err, version) {
                             // Eventually we may want to be able set both buttons to off, but at the moment, just prevet a lockup
                             // SO, first deal with case that both OK and Cancel are set to null; for now, we will reset Cancel
                             //   with the "text" "Close ..." and the "func" "quit"
-                            if (status.info["custom"]) {
-                                var okExists = false;
-                                var cancelExists = false;
-                                if (Object.prototype.hasOwnProperty.call(status.info.custom, "ok")) {
-                                    okExists = true;
-                                }
-                                if (Object.prototype.hasOwnProperty.call(status.info.custom, "cancel")) {
-                                    cancelExists = true;
-                                }
-                                // ... now checking present but NULL
-                                if (okExists && cancelExists && !status.info.custom.ok && !status.info.custom.cancel) {
-                                    status.info.custom = {
-                                        cancel: {
-                                            text: "Close ... [no choice defined]",
-                                            func: "quit",
-                                        },
-                                    };
-                                }
-                            }
+                            // if (status.info["custom"]) {
+                            //     var okExists = false;
+                            //     var cancelExists = false;
+                            //     if (Object.prototype.hasOwnProperty.call(status.info.custom, "ok")) {
+                            //         okExists = true;
+                            //     }
+                            //     if (Object.prototype.hasOwnProperty.call(status.info.custom, "cancel")) {
+                            //         cancelExists = true;
+                            //     }
+                            //     //... now checking present but NULL
+                            //     if (okExists && cancelExists && !status.info.custom.ok && !status.info.custom.cancel) {
+                            //         status.info.custom = {
+                            //             ok: {
+                            //                 text: "Resume",
+                            //                 func: "ok",
+                            //             },
+                            //             cancel: {
+                            //                 text: "Quit",
+                            //                 func: "cancel",
+                            //             // cancel: {
+                            //             //     text: "Close ... [no choice defined]",
+                            //             //     func: "quit",
+                            //             },
+                            //         };
+                            //     }
+                            // }
 
                             if (status.info["custom"]) {
                                 // Handle custom title
@@ -567,18 +516,18 @@ engine.getVersion(function (err, version) {
                                     //     modalOptions.cancel = cancelFunction;
                                 }
 
-                                // Set defaults if buttons are still null
-                                // if (
-                                //     modalOptions.ok === null &&
-                                //     !Object.prototype.hasOwnProperty.call(status.info.custom, "ok")
-                                // ) {
+                                //Set defaults if both buttons are still null
+                                if (modalOptions.ok === null && modalOptions.cancel === null) {
+                                    modalOptions.okText = "Resume";
+                                    modalOptions.ok = resumeFunction;
+                                    modalOptions.cancelText = "Quit";
+                                    modalOptions.cancel = cancelFunction;
+                                }
+                                // if (modalOptions.ok === null) {
                                 //     modalOptions.okText = "Resume";
                                 //     modalOptions.ok = resumeFunction;
                                 // }
-                                // if (
-                                //     modalOptions.cancel === null &&
-                                //     !Object.prototype.hasOwnProperty.call(status.info.custom, "cancel")
-                                // ) {
+                                // if (modalOptions.cancel === null) {
                                 //     modalOptions.cancelText = "Quit";
                                 //     modalOptions.cancel = cancelFunction;
                                 // }

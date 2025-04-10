@@ -1479,8 +1479,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
             if (u.isANumber(arg)) {
                 message = "Paused for " + arg + " seconds.";
             }
+            // Try to construct the new form of modal display object with current options
+
             // Deal with the old stye previous comment line if it exists and we have no other data
-            if (!message && !normalizedParams.timer) {
+            //            if (!message && !normalizedParams && !normalizedParams.timer) {
+            if (!message && !normalizedParams) {
                 // If a message is not provided and this is not a timer, use the comment from the previous line.
                 var last_command = this.program[this.pc - 2];
                 if (last_command && last_command.type === "comment") {
@@ -1496,7 +1499,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 }
             }
 
-            // Try to construct the new form of modal display object with current options
             // Normalize params keys to lowercase
             var normalizedParams = {};
             for (var key in params) {
@@ -1504,6 +1506,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                     normalizedParams[key.toLowerCase()] = params[key];
                 }
             }
+
             log.debug("####1.5PAUSE command parameters: " + JSON.stringify(normalizedParams));
 
             // Make Our list for modal display and start by bringing in old TIMER and MESSAGE format
@@ -1550,7 +1553,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 //input_var.name = normalizedParams.input.substring(1).toUpperCase(); // remove type designator
                 //input_var.access = [];
                 //modalParams.input_var = normalizedParams.input.substring(1).toUpperCase();
-                modalParams.input.name = normalizedParams.input; //"&last_Y-N"; //"&amp;last_Y-N"
+                modalParams.input.name = normalizedParams.input; //"&last_YN"
                 log.debug(modalParams.input.name);
                 //modalParams.input.type = "user_variable"; //normalizedParams.type; // user or persistent
             }

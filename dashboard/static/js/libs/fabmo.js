@@ -265,7 +265,7 @@
     }; // _download
 
     FabMoDashboard.prototype._call = function (name, data, callback) {
-        console.log("FabMoDashboard _call", name, data);
+        //console.log("FabMoDashboard _call", name, data);
 
         if (this.isPresent()) {
             var message = { call: name, data: data };
