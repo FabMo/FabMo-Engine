@@ -1460,12 +1460,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
             // PAUSE as a word is overloaded.  In a perfect world there would be distinct states
             // ... for pause and feedhold, but here describes both the file-initiated and the user-initiated stop.
 
-            // In simulation, just don't do anything
-            if (!this.machine) {
-                setImmediate(callback);
-                return true;
-            }
-
             this.pc += 1;
             var arg = command.expr ? this._eval(command.expr) : null; // collect for handing TIMER in old style
             var input_var = command.var; // collect for handling INPUT in old style
@@ -1473,6 +1467,12 @@ SBPRuntime.prototype._execute = function (command, callback) {
             log.debug("####1PAUSE command parameters: " + JSON.stringify(params));
             //log.debug("PAUSE command arg: " + JSON.stringify(arg));
             //log.debug("PAUSE command: " + JSON.stringify(command));
+
+            // In simulation/PREVIEW, just don't do anything
+            if (!this.machine) {
+                setImmediate(callback);
+                return true;
+            }
 
             // Handle an old style TIMER message
             var message = arg;
