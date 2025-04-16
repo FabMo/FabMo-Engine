@@ -2539,6 +2539,14 @@ input[type='range']:focus {
     opacity:0.9 !important;
 }
 
+#toast-container {
+	pointer-events: none;  /* Allow clicks to pass through */
+}
+  
+#toast-container > div {
+	pointer-events: auto;  /* But allow interaction with the toast itself */
+}
+  
 .loader {
 	position: absolute;
   	width: 100%;
