@@ -2,6 +2,8 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const tmp = require("tmp");
 
+var config = require("../../../config");
+
 // Heavily modified to work with the Raspberry Pi 5, Bookworm, and NetworkManager
 //  ... some functions unused and historic
 class commands {
@@ -90,24 +92,6 @@ class commands {
         });
     }
 
-    // Start AP by starting hostapd and dnsmasq, then bring up the interface
-    static startAP(callback) {
-        this.executeMonitoringScript("bring_up_profile", "wlan0_ap", (err, stdout) => {
-            if (err) {
-                return callback(err);
-            }
-            exec("systemctl start hostapd dnsmasq", (err, stdout, stderr) => {
-                if (err) {
-                    console.error(`Error starting hostapd and dnsmasq: ${stderr}`);
-                    return callback(err);
-                }
-                console.log(`hostapd and dnsmasq started: ${stdout}`);
-                callback(null, stdout);
-            });
-        });
-    }
-
-    // Stop AP by stopping hostapd and dnsmasq, then bring down the interface
     static stopAP(callback) {
         exec("systemctl stop hostapd dnsmasq", (err, stdout, stderr) => {
             if (err) {
@@ -115,8 +99,157 @@ class commands {
                 return callback(err);
             }
             console.log(`hostapd and dnsmasq stopped: ${stdout}`);
-            this.executeMonitoringScript("bring_down_profile", "wlan0_ap", callback);
+            exec("nmcli connection down wlan0_ap", (err, stdout, stderr) => {
+                if (err) {
+                    console.error(`Error bringing down wlan0_ap: ${stderr}`);
+                    return callback(err);
+                }
+                console.log(`wlan0_ap brought down: ${stdout}`);
+
+                // // Update the configuration
+                // const config = require("../../../config");
+                // config.engine.set("network.wifi.enabled", false, (err) => {
+                //     if (err) {
+                //         console.error("Failed to update AP mode state in config:", err);
+                //         return callback(err);
+                //     }
+                //     console.log("AP mode state updated in config: disabled");
+                //     callback(null, stdout);
+                // });
+                // Update the configuration
+                const networkConfig = config.engine.get("network") || {};
+                networkConfig.wifi = networkConfig.wifi || {};
+                networkConfig.wifi.enabled = false; // Update the nested property
+                config.engine.set("network", networkConfig, (err) => {
+                    if (err) {
+                        console.error("Failed to update network configuration:", err);
+                        return callback(err);
+                    }
+                    console.log("Network configuration updated successfully.");
+                    callback(null, stdout);
+                });
+            });
         });
+    }
+
+    // static startAP(callback) {
+    //     // Check if the wlan0_ap profile exists
+    //     exec("nmcli connection show wlan0_ap", (err, stdout, stderr) => {
+    //         if (err) {
+    //             console.error(`wlan0_ap profile not found. Recreating...`);
+    //             // Recreate the wlan0_ap profile
+    //             // const createProfileCommand = `
+    //             //     nmcli connection add type wifi ifname wlan0 con-name wlan0_ap autoconnect no ssid YourSSID &&
+    //             //     nmcli connection modify wlan0_ap 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared &&
+    //             //     nmcli connection modify wlan0_ap wifi-sec.key-mgmt wpa-psk wifi-sec.psk "YourPassword"
+    //             // `;
+    //             // const createProfileCommand = `
+    //             //     nmcli connection add type wifi ifname wlan0 con-name wlan0_ap autoconnect no &&
+    //             //     nmcli connection modify wlan0_ap 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared &&
+    //             // `;
+
+    //             const createProfileCommand = `
+    //                 iw dev wlan0 interface add wlan0_ap type __ap
+    //             `;
+
+    //             exec(createProfileCommand, (err, stdout, stderr) => {
+    //                 if (err) {
+    //                     console.error(`Error creating wlan0_ap profile: ${stderr}`);
+    //                     return callback(err);
+    //                 }
+    //                 console.log(`wlan0_ap profile created: ${stdout}`);
+    //                 // Proceed to bring up the AP
+    //                 commands._bringUpAP(callback);
+    //             });
+    //         } else {
+    //             // Profile exists, proceed to bring up the AP
+    //             commands._bringUpAP(callback);
+    //         }
+    //     });
+    // }
+
+    // // Helper method to bring up the AP
+    // static _bringUpAP(callback) {
+    //     exec("nmcli connection up wlan0_ap", (err, stdout, stderr) => {
+    //         if (err) {
+    //             console.error(`Error bringing up wlan0_ap: ${stderr}`);
+    //             return callback(err);
+    //         }
+    //         console.log(`wlan0_ap brought up: ${stdout}`);
+    //         exec("systemctl start hostapd dnsmasq", (err, stdout, stderr) => {
+    //             if (err) {
+    //                 console.error(`Error starting hostapd and dnsmasq: ${stderr}`);
+    //                 return callback(err);
+    //             }
+    //             console.log(`hostapd and dnsmasq started: ${stdout}`);
+    //             // Update the configuration
+    //             const networkConfig = config.engine.get("network") || {};
+    //             networkConfig.wifi = networkConfig.wifi || {};
+    //             networkConfig.wifi.enabled = true; // Update the nested property
+    //             config.engine.set("network", networkConfig, (err) => {
+    //                 if (err) {
+    //                     console.error("Failed to update network configuration:", err);
+    //                 } else {
+    //                     console.log("Network configuration updated successfully.");
+    //                 }
+    //                 callback(null, stdout);
+    //             });
+    //         });
+    //     });
+    // }
+
+    static startAP(callback) {
+        // Step 1: Ensure the wlan0_ap interface exists
+        exec("iw dev | grep wlan0_ap", (err, stdout, stderr) => {
+            if (err) {
+                // If the interface does not exist, try to create it
+                exec("iw dev wlan0 interface add wlan0_ap type __ap", (err, stdout, stderr) => {
+                    if (err && !stderr.includes("File exists")) {
+                        // Ignore "File exists" error
+                        console.error(`Error creating wlan0_ap interface: ${stderr}`);
+                        return callback(err);
+                    }
+                    console.log(`wlan0_ap interface created: ${stdout || stderr}`);
+                    proceedToStep2(); // Proceed to the next step
+                });
+            } else {
+                console.log("wlan0_ap interface already exists.");
+                proceedToStep2(); // Proceed to the next step
+            }
+        });
+
+        // Step 2: Bring up the wlan0_ap connection
+        function proceedToStep2() {
+            exec("nmcli connection up wlan0_ap", (err, stdout, stderr) => {
+                if (err) {
+                    console.error(`Error bringing up wlan0_ap: ${stderr}`);
+                    return callback(err);
+                }
+                console.log(`wlan0_ap brought up: ${stdout}`);
+
+                // Step 3: Start or restart hostapd and dnsmasq
+                exec("systemctl restart hostapd dnsmasq", (err, stdout, stderr) => {
+                    if (err) {
+                        console.error(`Error starting hostapd and dnsmasq: ${stderr}`);
+                        return callback(err);
+                    }
+                    console.log(`hostapd and dnsmasq started: ${stdout}`);
+
+                    // Step 4: Update the configuration
+                    const networkConfig = config.engine.get("network") || {};
+                    networkConfig.wifi = networkConfig.wifi || {};
+                    networkConfig.wifi.enabled = true; // Update the nested property
+                    config.engine.set("network", networkConfig, (err) => {
+                        if (err) {
+                            console.error("Failed to update network configuration:", err);
+                            return callback(err);
+                        }
+                        console.log("Network configuration updated successfully.");
+                        callback(null, stdout);
+                    });
+                });
+            });
+        }
     }
 
     // Join a WiFi network

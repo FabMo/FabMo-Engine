@@ -10,24 +10,9 @@ var NetworkManager = require("../../../network_manager").NetworkManager;
 
 var ifconfig = require("wireless-tools/ifconfig");
 var iwconfig = require("wireless-tools/iwconfig");
-//var wpa_cli = require("wireless-tools/wpa_cli");
-//var udhcpc = require("wireless-tools/udhcpc");
 
 const commands = require("./commands.js");
 
-//var wifiInterface = "wlan0"; // test assigning wlan1 to wifiInterface ???
-//var ethernetInterface = "eth0";
-
-//var last_name = "";
-
-// eslint-disable-next-line no-unused-vars
-// var CUR_UAP0_SSID = "";
-
-// var DEFAULT_NETMASK = "255.255.255.0";
-// var DEFAULT_BROADCAST = "192.168.1.255";
-// // This is how long the system will wait for DHCP before going into "magic mode" (ms)
-// var DHCP_MAGIC_TTL = 5000;
-// var ETHERNET_SCAN_INTERVAL = 2000;
 var NETWORK_HEALTH_RETRIES = 8;
 
 var RaspberryPiNetworkManager = function () {
@@ -88,24 +73,6 @@ RaspberryPiNetworkManager.prototype.getInfo = function (interface, callback) {
         });
     });
 };
-
-// Retun the single IP address for the interface specified by the SSID name
-//   ssid - The SSID name to get the IP address for
-//   callback - Called back with the IP address or error if there was an error
-// RaspberryPiNetworkManager.prototype.getWifiIp = function (ssid, callback) {
-//     // Get the IP address for the interface specified by the SSID name
-//     ifconfig.status("wlan0", function (err, ifstatus) {
-//         if (err) return callback(err);
-//         iwconfig.status("wlan0", function (err, iwstatus) {
-//             if (err) return callback(err);
-//             if (iwstatus.ssid === ssid) {
-//                 callback(null, ifstatus.ipv4_address);
-//             } else {
-//                 callback(null, null);
-//             }
-//         });
-//     });
-// };
 
 RaspberryPiNetworkManager.prototype.getWifiIp = function (ssid, callback) {
     const getIpCommand = `nmcli -t -f IP4.ADDRESS dev show wlan0`;
@@ -319,61 +286,6 @@ RaspberryPiNetworkManager.prototype._disableWifi = function (callback) {
     );
 };
 
-// RaspberryPiNetworkManager.prototype._joinWifi = function (ssid, password, callback) {
-//     var network_config = config.engine.get("network");
-//     network_config.wifi.mode = "station";
-//     network_config.wifi.wifi_networks = [{ ssid: ssid, password: password }];
-//     config.engine.set("network", network_config);
-//     var PSK = password;
-//     var SSID = ssid;
-
-//     async.series(
-//         [
-//             // Add a new WiFi connection
-//             function (callback) {
-//                 exec(`nmcli dev wifi connect "${SSID}" password "${PSK}"`, function (error, stdout, stderr) {
-//                     if (error) {
-//                         console.error(`Error adding WiFi connection: ${stderr}`);
-//                         callback(error);
-//                     } else {
-//                         console.log(`WiFi connection added: ${stdout}`);
-//                         callback(null, stdout);
-//                     }
-//                 });
-//             },
-//             // Bring up the network
-//             function (callback) {
-//                 exec(`nmcli con up id "${SSID}"`, function (error, stdout, stderr) {
-//                     if (error) {
-//                         console.error(`Error bringing up the network: ${stderr}`);
-//                         callback(error);
-//                     } else {
-//                         console.log(`Network brought up: ${stdout}`);
-//                         callback(null, stdout);
-//                     }
-//                 });
-//             },
-//         ],
-//         function (errs, results) {
-//             if (errs) {
-//                 callback(errs); // errs = [err1, err2]
-//             } else {
-//                 this.confirmIP((err, ipaddress) => {
-//                     if (err) {
-//                         callback(err);
-//                     } else {
-//                         var wifiInfo = {
-//                             ssid: SSID,
-//                             ip: ipaddress,
-//                         };
-//                         callback(null, wifiInfo);
-//                     }
-//                 });
-//             }
-//         }.bind(this)
-//     );
-// };
-
 // Join a WiFi network
 RaspberryPiNetworkManager.prototype.joinWifiNetwork = function (ssid, password, callback) {
     log.info(`Joining WiFi network: ${ssid}`);
@@ -405,40 +317,34 @@ RaspberryPiNetworkManager.prototype.forgetWifi = function (ssid, callback) {
 // Do the actual work of dropping out of AP mode
 //   callback - Callback called when AP mode has been exited or with error if error
 RaspberryPiNetworkManager.prototype._unjoinAP = function (callback) {
-    log.info("Turning OFF AP mode...");
-    // eslint-disable-next-line no-unused-vars
-    commands.stopAP((err, result) => {
+    log.info("Disabling AP mode...");
+    commands.stopAP((err) => {
         if (err) {
-            callback(err);
+            log.error("Failed to stop AP mode:", err);
+            return callback(err);
         }
-        commands.takeDown("wlan0_ap", (err, result) => {
-            if (err) {
-                log.error("Failed to disconnect interface:", err);
-                return callback(err);
-            }
-            log.info("Interface disconnected successfully:");
-            callback(null, result);
-        });
+        log.info("AP mode stopped successfully.");
+        //this.takeDown("wlan0_ap", callback); // Ensure this does not conflict with stopAP
     });
 };
 
 // Do actual work of restarting AP mode (this is the workhorse function)
 //   callback - Callback called when AP mode has been entered or with error if error
 RaspberryPiNetworkManager.prototype._joinAP = function (callback) {
-    log.info("Turning ON AP mode...");
+    //   log.info("Turning ON AP mode...");
     // eslint-disable-next-line no-unused-vars
     commands.startAP((err, result) => {
         if (err) {
             return callback(err);
         }
-        commands.bringUp("wlan0_ap", (err, result) => {
-            if (err) {
-                log.error("Failed to bring up wlan0_ap:", err);
-                return callback(err);
-            }
-            log.info("Interface wlan0_ap connected successfully");
-            callback(null, result);
-        });
+        // commands.bringUp("wlan0_ap", (err, result) => {
+        //     if (err) {
+        //         log.error("Failed to bring up wlan0_ap:", err);
+        //         return callback(err);
+        //     }
+        //     log.info("Interface wlan0_ap connected successfully");
+        //     callback(null, result);
+        // });
     });
 };
 
@@ -474,6 +380,34 @@ RaspberryPiNetworkManager.prototype.applyWifiConfig = function () {
 // Initialize the network manager.  This kicks off the state machines that process commands from here on out
 // Programmatically speaking, this is the entry point for the network manager; DO REGULAR CHECKS !
 RaspberryPiNetworkManager.prototype.init = function () {
+    let apModeEnabled = config.engine.get("network").wifi.enabled;
+    if (apModeEnabled === undefined) {
+        apModeEnabled = true; // Default to enabled
+        const networkConfig = config.engine.get("network") || {};
+        networkConfig.wifi = networkConfig.wifi || {};
+        networkConfig.wifi.enabled = true; // Default to true
+        config.engine.set("network", networkConfig, (err) => {
+            if (err) {
+                console.error("Failed to update network configuration:", err);
+            } else {
+                console.log("Network configuration updated successfully.");
+            }
+        });
+    }
+
+    if (apModeEnabled) {
+        log.info("AP mode is enabled. Starting AP...");
+        this._joinAP((err) => {
+            if (err) {
+                log.error("Failed to start AP mode on boot:", err);
+            } else {
+                log.info("AP mode started successfully on boot.");
+            }
+        });
+    } else {
+        log.info("AP mode is disabled. Not starting AP on boot.");
+    }
+
     setInterval(() => {
         this.returnWifiNetworks();
         this.checkWifiHealth();
@@ -486,23 +420,6 @@ RaspberryPiNetworkManager.prototype.getAvailableWifiNetworks = function (callbac
     // TODO should use setImmediate here
     callback(null, this.networks);
 };
-
-// // Connect to the specified wifi network.
-// //   ssid - The network ssid to connect to
-// //    key - The network key
-// RaspberryPiNetworkManager.prototype.connectToAWifiNetwork = function (ssid, key, callback) {
-//     // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
-//     this._joinWifi(ssid, key, callback);
-// };
-
-// // Stubbing this in as a new forget function based on some stubbs already in place for call
-// // Forget a specified wifi network.
-// //   ssid - The network ssid to connect to
-// //    key - The network key
-// RaspberryPiNetworkManager.prototype.disconnectFromNetwork = function (ssid, key, callback) {
-//     // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
-//     this._forgetWifi(ssid, key, callback);
-// };
 
 // Enable the wifi
 //   callback - Called when wifi is enabled or with error if error
@@ -557,14 +474,37 @@ RaspberryPiNetworkManager.prototype.isWifiOn = function (callback) {
 
 // Enable AP mode
 RaspberryPiNetworkManager.prototype.enableWifiHotspot = function (callback) {
-    log.info("Going to turn ON wifi hotspot");
-    this._joinAP(callback);
+    log.info("Turning ON AP mode...");
+    this._joinAP((err) => {
+        if (!err) {
+            log.info("AP mode enabled successfully.");
+            // config.engine.set("network.wifi.enabled", true, (err) => {
+            //     if (err) {
+            //         log.error("Failed to update AP mode state in config:", err);
+            //     } else {
+            //         log.info("AP mode state updated in config: enabled");
+            //     }
+            // });
+        }
+        callback(err);
+    });
 };
 
-// Disable AP mode
 RaspberryPiNetworkManager.prototype.disableWifiHotspot = function (callback) {
-    log.info("Going to turn off wifi hotspot");
-    this._unjoinAP(callback);
+    log.info("Turning OFF AP mode...");
+    this._unjoinAP((err) => {
+        if (!err) {
+            log.info("AP mode disabled successfully.");
+            // config.engine.set("network.wifi.enabled", false, (err) => {
+            //     if (err) {
+            //         log.error("Failed to update AP mode state in config:", err);
+            //     } else {
+            //         log.info("AP mode state updated in config: enabled");
+            //     }
+            // });
+        }
+        callback(err);
+    });
 };
 
 // Get network status
