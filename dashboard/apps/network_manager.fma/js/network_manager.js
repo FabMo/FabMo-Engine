@@ -381,7 +381,7 @@ $(document).ready(function() {
         if (wifi_state) { // Wifi is ON
             confirm({
                 title : "Turn Off Wifi ?",
-                description : "<p>This action also turns off AP Mode and IP address display in the Wifi widget.<br><p>",
+                description : "<p>WARNING! This action also turns off AP Mode and IP address display. All Wifi Access will be eliminated!<br><p>",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {

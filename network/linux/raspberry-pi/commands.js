@@ -61,37 +61,27 @@ class commands {
     // Start WiFi by enabling the device and bringing up the profile
     static startWifi(callback) {
         // Turn on WiFi radio
-        this.executeMonitoringScript("nmcli radio wifi on", "turn-on-wifi", (err) => {
+        exec("nmcli radio wifi on", (err) => {
             if (err) {
+                console.error(`Error turning off WiFi radio`);
                 return callback(err);
             }
-            // Then bring up the profile
-            this.executeMonitoringScript("bring_up_profile", "wifi-connection", callback);
         });
     }
 
-    // Stop WiFi by bringing down the profile and disabling the device
+    // Stop WiFi by disabling the WiFi radio
     static stopWifi(callback) {
-        // Bring down the profile
-        this.executeMonitoringScript("bring_down_profile", "wifi-connection", (err) => {
+        // Turn off the WiFi radio
+        exec("nmcli radio wifi off", (err, stdout, stderr) => {
             if (err) {
+                console.error(`Error turning off WiFi radio: ${stderr}`);
                 return callback(err);
             }
-            // Remove all saved WiFi connections
-            this.executeMonitoringScript(
-                "nmcli --fields UUID,TYPE con show | grep wifi | awk '{print $1}' | xargs -r nmcli con delete uuid",
-                "remove-wifi-connections",
-                (err) => {
-                    if (err) {
-                        return callback(err);
-                    }
-                    // Finally, turn off WiFi radio
-                    this.executeMonitoringScript("nmcli radio wifi off", "turn-off-wifi", callback);
-                }
-            );
+            console.log(`WiFi radio turned off: ${stdout}`);
         });
     }
 
+    // Stop AP mode
     static stopAP(callback) {
         exec("systemctl stop hostapd dnsmasq", (err, stdout, stderr) => {
             if (err) {
@@ -105,17 +95,6 @@ class commands {
                     return callback(err);
                 }
                 console.log(`wlan0_ap brought down: ${stdout}`);
-
-                // // Update the configuration
-                // const config = require("../../../config");
-                // config.engine.set("network.wifi.enabled", false, (err) => {
-                //     if (err) {
-                //         console.error("Failed to update AP mode state in config:", err);
-                //         return callback(err);
-                //     }
-                //     console.log("AP mode state updated in config: disabled");
-                //     callback(null, stdout);
-                // });
                 // Update the configuration
                 const networkConfig = config.engine.get("network") || {};
                 networkConfig.wifi = networkConfig.wifi || {};
@@ -132,72 +111,7 @@ class commands {
         });
     }
 
-    // static startAP(callback) {
-    //     // Check if the wlan0_ap profile exists
-    //     exec("nmcli connection show wlan0_ap", (err, stdout, stderr) => {
-    //         if (err) {
-    //             console.error(`wlan0_ap profile not found. Recreating...`);
-    //             // Recreate the wlan0_ap profile
-    //             // const createProfileCommand = `
-    //             //     nmcli connection add type wifi ifname wlan0 con-name wlan0_ap autoconnect no ssid YourSSID &&
-    //             //     nmcli connection modify wlan0_ap 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared &&
-    //             //     nmcli connection modify wlan0_ap wifi-sec.key-mgmt wpa-psk wifi-sec.psk "YourPassword"
-    //             // `;
-    //             // const createProfileCommand = `
-    //             //     nmcli connection add type wifi ifname wlan0 con-name wlan0_ap autoconnect no &&
-    //             //     nmcli connection modify wlan0_ap 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared &&
-    //             // `;
-
-    //             const createProfileCommand = `
-    //                 iw dev wlan0 interface add wlan0_ap type __ap
-    //             `;
-
-    //             exec(createProfileCommand, (err, stdout, stderr) => {
-    //                 if (err) {
-    //                     console.error(`Error creating wlan0_ap profile: ${stderr}`);
-    //                     return callback(err);
-    //                 }
-    //                 console.log(`wlan0_ap profile created: ${stdout}`);
-    //                 // Proceed to bring up the AP
-    //                 commands._bringUpAP(callback);
-    //             });
-    //         } else {
-    //             // Profile exists, proceed to bring up the AP
-    //             commands._bringUpAP(callback);
-    //         }
-    //     });
-    // }
-
-    // // Helper method to bring up the AP
-    // static _bringUpAP(callback) {
-    //     exec("nmcli connection up wlan0_ap", (err, stdout, stderr) => {
-    //         if (err) {
-    //             console.error(`Error bringing up wlan0_ap: ${stderr}`);
-    //             return callback(err);
-    //         }
-    //         console.log(`wlan0_ap brought up: ${stdout}`);
-    //         exec("systemctl start hostapd dnsmasq", (err, stdout, stderr) => {
-    //             if (err) {
-    //                 console.error(`Error starting hostapd and dnsmasq: ${stderr}`);
-    //                 return callback(err);
-    //             }
-    //             console.log(`hostapd and dnsmasq started: ${stdout}`);
-    //             // Update the configuration
-    //             const networkConfig = config.engine.get("network") || {};
-    //             networkConfig.wifi = networkConfig.wifi || {};
-    //             networkConfig.wifi.enabled = true; // Update the nested property
-    //             config.engine.set("network", networkConfig, (err) => {
-    //                 if (err) {
-    //                     console.error("Failed to update network configuration:", err);
-    //                 } else {
-    //                     console.log("Network configuration updated successfully.");
-    //                 }
-    //                 callback(null, stdout);
-    //             });
-    //         });
-    //     });
-    // }
-
+    // Start AP mode
     static startAP(callback) {
         // Step 1: Ensure the wlan0_ap interface exists
         exec("iw dev | grep wlan0_ap", (err, stdout, stderr) => {
@@ -217,7 +131,6 @@ class commands {
                 proceedToStep2(); // Proceed to the next step
             }
         });
-
         // Step 2: Bring up the wlan0_ap connection
         function proceedToStep2() {
             exec("nmcli connection up wlan0_ap", (err, stdout, stderr) => {
@@ -226,7 +139,6 @@ class commands {
                     return callback(err);
                 }
                 console.log(`wlan0_ap brought up: ${stdout}`);
-
                 // Step 3: Start or restart hostapd and dnsmasq
                 exec("systemctl restart hostapd dnsmasq", (err, stdout, stderr) => {
                     if (err) {
@@ -234,7 +146,6 @@ class commands {
                         return callback(err);
                     }
                     console.log(`hostapd and dnsmasq started: ${stdout}`);
-
                     // Step 4: Update the configuration
                     const networkConfig = config.engine.get("network") || {};
                     networkConfig.wifi = networkConfig.wifi || {};
@@ -255,12 +166,10 @@ class commands {
     // Join a WiFi network
     static joinWifiNetwork(ssid, password, callback) {
         // Scan for available networks
-
         this.scanForNetworks((err) => {
             if (err) {
                 return callback(err);
             }
-
             // Attempt to connect to the specified SSID
             const addConnectionCommand = `nmcli dev wifi connect "${ssid}" password "${password}" ifname wlan0`;
             exec(addConnectionCommand, (err, stdout, stderr) => {
@@ -272,7 +181,6 @@ class commands {
                 callback(null, stdout);
             });
         });
-        // });
     }
 
     // Forget a WiFi network
