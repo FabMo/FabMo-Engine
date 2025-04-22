@@ -59,15 +59,24 @@
         </ul>
             <section class="top-bar-section">
             <ul class="left">
-              <li><a id="wifi-mode-button" class="submit-button" title="Toggle Wifi Power" href="#">Wifi /<strong>ON</strong>-OFF</a></li>
-              <li><a id="ap-mode-button" class="submit-button" title="Toggle AP Mode Presence" href="#">AP Mode /<strong>ENABLED</strong>-DISABLED</a></li>
-            </ul>  
+              <li>
+                <a id="wifi-mode-button" class="submit-button" title="Toggle Wifi Power" href="#">
+                  <strong>Wifi:</strong><strong style="color: #ffe217;">&nbsp;&nbsp;ON</strong> | 
+                  <span style="color: lightgray; opacity: 0.5;"> off</span>
+                </a>
+              </li>
+              <li>
+                <a id="ap-mode-button" class="submit-button" title="Toggle AP Mode Presence" href="#">
+                  <strong>AP Mode:</strong><strong style="color: #ffe217;">&nbsp;&nbsp;ENABLED</strong> | 
+                  <span style="color: lightgray; opacity: 0.5;"> disabled</span>
+                </a>
+          </ul>  
           </section>
       </nav>
 
         <h1>Wifi Networks Available<span class="tooltip">i<span class="tooltiptext tooltiptext::after">
             Wifi networks available to your tool. 
-            Click on SSID name to set up a new wifi interface connection.</span></span>
+            Click on SSID name to set up a new wifi interface to access your tool.</span></span>
         </h1>
        
         <div class="table-outer">
@@ -85,8 +94,8 @@
 
         <div id="recent" class="hidden">
 
-            <h1>Connected Interfaces<span class="tooltip">i<span class="tooltiptext tooltiptext::after">
-                Your tool is connected to each of these interfaces. The favored interface is shown on the mini-screen
+            <h1>Access Interfaces<span class="tooltip">i<span class="tooltiptext tooltiptext::after">
+                Your tool is connected to each of these interfaces for access. The favored interface access is at the top of the list and is shown on the mini-screen
                 (if attached). To remove an interface, click on its name.</span></span>
             </h1>
 

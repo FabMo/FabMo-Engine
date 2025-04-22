@@ -23,7 +23,7 @@ function refreshWifiTable(callback){
         }
         if(wifion) {
             wifi_state = true;
-            $('#wifi-mode-button').html("Wifi /<strong>ON</strong>-off");
+            $('#wifi-mode-button').html('<strong>Wifi:</strong><strong style="color: #ffe217;">&nbsp;&nbsp;&nbsp;ON</strong> |<span style="color: lightgray; opacity: 0.5;"> off</span>');
                 fabmo.getWifiNetworks(function(err, networks) {
                 if(err) {
                     fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
@@ -35,7 +35,7 @@ function refreshWifiTable(callback){
         } else {
             networks = {};
             wifi_state = false;
-            $('#wifi-mode-button').html("Wifi /on-<strong>OFF</strong>");
+            $('#wifi-mode-button').html('<strong>Wifi:</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">on</span> |<strong style="color: #ffe217;">&nbsp;OFF</strong');
             callback(null, {});
         }
         refreshHistoryTable();
@@ -117,10 +117,10 @@ function addHistoryEntries(history_entries, callback) {
         if (interfaceText === 'wlan0_ap') {
             intInfoText = 'Access Point (AP mode) ACTIVE';
             $('#ap-mode-button').addClass('active');
-            $('#ap-mode-button').html("AP Mode /<strong>ENABLED</strong>-disabled")
+            $('#ap-mode-button').html('<strong>AP Mode:</strong><strong style="color: #ffe217;">&nbsp;&nbsp;&nbsp;ENABLED</strong> |<span style="color: lightgray; opacity: 0.5;"> disabled</span>');
         } else {
             $('#ap-mode-button').removeClass('active');
-            $('#ap-mode-button').html("AP Mode /enabled-<strong>DISABLED</strong>")
+            $('#ap-mode-button').html('<strong>AP Mode:</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">enabled</span> |<strong style="color: #ffe217;">&nbsp;DISABLED</strong');
         }
         if (interfaceText === 'wlan0') {
             $('#wifi-mode-button').addClass('active');
@@ -141,28 +141,34 @@ function addHistoryEntries(history_entries, callback) {
 }
 
 // Show the confirmation dialog
-function confirm(options){
-    options.ok = options.ok || function() {};
-    options.cancel = options.cancel || function() {};
+function confirm(options) {
+    options.ok = options.ok || function () {};
+    options.cancel = options.cancel || function () {};
 
     $('#confirm-modal-title').text(options.title || '');
     $('#confirm-modal-description').html(options.description || '');
 
-    $('#confirm-modal-ok').text(options.ok_message || 'Ok');
-    $('#confirm-modal-cancel').text(options.cancel_message || 'Cancel');
+    // Check if only the cancel button should be displayed
+    if (options.cancelOnly) {
+        $('#confirm-modal-ok').hide(); // Hide the OK button
+        $('#confirm-modal-cancel').text(options.cancel_message || 'Cancel').show();
+    } else {
+        $('#confirm-modal-ok').text(options.ok_message || 'Ok').show();
+        $('#confirm-modal-cancel').text(options.cancel_message || 'Cancel').show();
+    }
 
-    $('#confirm-modal-ok').one('click', function(evt) {
+    $('#confirm-modal-ok').one('click', function (evt) {
         $('#confirm-modal').foundation('reveal', 'close');
         $('#confirm-modal-cancel').off('click');
         options.ok();
     });
 
-    $('#confirm-modal-cancel').one('click', function(evt) {
+    $('#confirm-modal-cancel').one('click', function (evt) {
         $('#confirm-modal').foundation('reveal', 'close');
         $('#confirm-modal-ok').off('click');
         options.cancel();
     });
-           
+
     $('#confirm-modal').foundation('reveal', 'open');
 }
 
@@ -288,7 +294,17 @@ $(document).ready(function() {
     $('tbody').on('click', 'td.con-int', function(evt) {
         var name = evt.target.textContent;
         if (name === 'eth0') {
-            fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool. Always allow 10 seconds before reconnecting another cable."});
+            confirm({
+                title : "",
+                description : "To remove a LAN or direct PC interface; disconnect the Ethernet cable from your tool. Always allow 10 seconds before reconnecting another cable.",
+                cancel_message : "Close",
+                cancelOnly : true,
+                cancel : function() {
+                	// No action required.
+                }
+            });
+
+            //fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool. Always allow 10 seconds before reconnecting another cable."});
         } else if (name === 'wlan0') {
             // Retrieve the SSID from the third column in the same row; pretty ugly but it works
             var ssid = $(evt.target).closest('tr').find('td').eq(2).text();
@@ -381,7 +397,7 @@ $(document).ready(function() {
         if (wifi_state) { // Wifi is ON
             confirm({
                 title : "Turn Off Wifi ?",
-                description : "<p>This action also turns off AP Mode and IP address display in the Wifi widget.<br><p>",
+                description : "<p>WARNING! This action also turns off AP Mode and IP address display. All Wifi Access will be eliminated!<br><p>",
                 ok_message : "OK",
                 cancel_message : "Cancel",
                 ok : function() {
