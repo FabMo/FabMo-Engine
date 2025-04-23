@@ -24,6 +24,11 @@ $('body').bind('focusin focus', function(e){
     e.preventDefault();
 })
 
+// Listen for the custom event from usb-browser.js for shifting to computer selection
+window.top.document.addEventListener("usbFileSelection", function (event) {
+  jQuery("#file").trigger("click");
+});
+
 function fileUploadProgress(progress) {
   var pg = (progress * 100).toFixed(0) + '%';
   $('.progressbar .bar-fill').width(pg);
@@ -709,11 +714,16 @@ function update() {
                 if (v===true) {ckTransform = true};
             }
             if (ckTransform === true) {
-                $('#nav-transforms').text('TRANSFORMS - ON');
-                $('#nav-transforms').css('color', '#FF4013');
+                $('#nav-transforms').html(
+                  '<strong>Transforms:</strong>' +
+                  '<strong style="color: #FF4013;">&nbsp;&nbsp;ON</strong>' +
+                  ' |<span style="color: lightgray; opacity: 0.5;"> off</span>'
+                );
             } else {
-                $('#nav-transforms').text('TRANSFORMS - OFF');
-                $('#nav-transforms').css('color', 'grey')
+                $('#nav-transforms').html(
+                  'Transforms:&nbsp;&nbsp;' +
+                  '<span style="color: lightgray; opacity: 0.5;">on</span>' +
+                  ' |<span style="color: lightgray;">&nbsp;OFF</span');
             }
 
             input = $('#' + branchname + '-' + key);
