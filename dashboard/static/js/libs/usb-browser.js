@@ -90,7 +90,7 @@
                 .usb-modal-content {
                     position: fixed; /* Ensure the modal content is fixed relative to the viewport */
                     top: -80px;
-                    left: 60px;
+                    left: 120px;
                     background-color: #fefefe;
                     margin: 10% auto;
                     padding: 0;
