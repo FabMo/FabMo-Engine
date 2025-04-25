@@ -531,9 +531,14 @@
         // Get the selected file filter
         var fileFilter = document.getElementById("file-filter-select").value;
 
+        // Debugging: Log the path and filter
+        console.log("Loading directory for path:", path);
+        console.log("Selected file filter:", fileFilter);
+
         // Use Fetch API
         fetch("/usb/dir?path=" + encodeURIComponent(path))
             .then(function (response) {
+                console.log("Directory response:", response); // Debugging
                 return response.json();
             })
             .then(function (response) {
@@ -550,7 +555,6 @@
                     // Add parent directory option if not at root
                     if (path !== "/media/pi" && path !== "/media/root" && path !== "/mnt") {
                         var parentPath = path.split("/").slice(0, -1).join("/") || "/";
-
                         html += '<div class="usb-file-item" data-path="' + parentPath + '" data-is-dir="true">';
                         html += '<span class="usb-file-icon">📁</span>';
                         html += '<span class="usb-file-name">..</span>';
@@ -569,7 +573,7 @@
                             html += "</div>";
                         });
 
-                    // Then add files based on the selected filter
+                    // Add files based on the selected filter
                     contents
                         .filter(function (file) {
                             if (file.isDirectory) return false;
@@ -623,11 +627,12 @@
                         });
                     });
                 } else {
+                    console.error("Error loading directory:", response); // Debugging
                     fileList.innerHTML = "<p>Error loading directory. Please try again.</p>";
                 }
             })
             .catch(function (err) {
-                console.error("Error loading directory:", err);
+                console.error("Fetch error:", err); // Debugging
                 fileList.innerHTML = "<p>Error loading directory. Please try again.</p>";
             });
     };
