@@ -8,9 +8,9 @@ LOGFILE="/var/log/network_monitor.log"
 FAIL_COUNT_FILE="/tmp/nm-fail-count"
 LAST_PROFILE=""
 
-log() {
-    /bin/echo "$(/bin/date) - $1" >> $LOGFILE
-}
+#log() {
+#    /bin/echo "$(/bin/date) - $1" >> $LOGFILE
+#}
 
 check_active_profile() {
     /usr/bin/nmcli -t -f NAME connection show --active | /bin/grep -q "$1"
