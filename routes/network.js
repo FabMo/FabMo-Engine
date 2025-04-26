@@ -89,26 +89,6 @@ var disconnectFromWifi = function (req, res, next) {
     }
 };
 
-// // Forget the wifi network with the SSID provided in the post body *
-// // eslint-disable-next-line no-unused-vars
-// var forgetWifi = function (req, res, next) {
-//     var ssid = req.params.ssid;
-//     var network = require("../engine").networkManager;
-
-//     if (ssid) {
-//         // eslint-disable-next-line no-unused-vars
-//         network.forgetWifiNetwork(ssid, function (err, data) {
-//             if (err) {
-//                 res.json({ status: "error", message: err.message });
-//             } else {
-//                 res.json({ status: "success" });
-//             }
-//         });
-//     } else {
-//         res.json({ status: "error", message: "No SSID provided" });
-//     }
-// };
-
 // Enable or disable the wifi, depending on the value of the `enabled` attribute in the POST body
 // eslint-disable-next-line no-unused-vars
 var wifiState = function (req, res, next) {
@@ -137,6 +117,8 @@ var wifiState = function (req, res, next) {
     }
 };
 
+// Enable or disable AP mode, depending on the value of the `enabled` attribute in the POST body
+//#### first version contribrutes to a diagnostic log that seems excessive now
 // const hotspotState = (req, res, next) => {
 //     const state = req.body.enabled; // Use req.body for POST data
 
@@ -182,7 +164,6 @@ var wifiState = function (req, res, next) {
 //     }
 // };
 
-// Enable or disable AP mode, depending on the value of the `enabled` attribute in the POST body
 const hotspotState = (req, res, next) => {
     const state = req.body.enabled; // Use req.body for POST data
 
@@ -198,30 +179,14 @@ const hotspotState = (req, res, next) => {
             if (err) {
                 return sendResponse(err);
             }
-            // Log the action for the monitoring script
-            readLatestLogEntry((logErr, lastLog) => {
-                if (logErr) {
-                    console.error("Failed to read log:", logErr);
-                } else {
-                    console.log("Last log entry:", lastLog);
-                }
-                sendResponse(null);
-            });
+            sendResponse(null); // Directly send the response without logging
         });
     } else if (state === false || state === "false") {
         network.disableWifiHotspot((err) => {
             if (err) {
                 return sendResponse(err);
             }
-            // Log the action for the monitoring script
-            readLatestLogEntry((logErr, lastLog) => {
-                if (logErr) {
-                    console.error("Failed to read log:", logErr);
-                } else {
-                    console.log("Last log entry:", lastLog);
-                }
-                sendResponse(null);
-            });
+            sendResponse(null); // Directly send the response without logging
         });
     } else {
         res.json({ status: "error", message: "Invalid state value" });

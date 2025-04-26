@@ -103,7 +103,7 @@ def decode_path(path):
             i += 1
     return result
 
-def write_to_usb(mount_point, ip_address, fabmo_status, fabmo_updater_status, heat_volts_status, json_content):
+def write_to_usb(mount_point, ip_address, fabmo_status, fabmo_updater_status, heat_volts_status, json_content, html_written_drives):
     """Write the status log file and HTML access file to the USB drive."""
     try:
         # Decode the mount point to handle escaped characters like \040 for space
@@ -132,7 +132,7 @@ def write_to_usb(mount_point, ip_address, fabmo_status, fabmo_updater_status, he
             print(f"Mount point does not exist: {real_mount_point} (from {mount_point})")
             return
 
-        # Try to write the log file
+        # Write the log file (always)
         logging.info(f"Attempting to write log file to: {real_mount_point}")
         print(f"Attempting to write log file to: {real_mount_point}")
         
@@ -155,8 +155,9 @@ def write_to_usb(mount_point, ip_address, fabmo_status, fabmo_updater_status, he
         logging.info(f"Log file '{log_file}' updated successfully.")
         print(f"Log file '{log_file}' updated successfully.")
         
-        # Create HTML file with clickable link
-        html_content = f"""<!DOCTYPE html>
+        # Write the HTML file only if it hasn't been written for this drive
+        if real_mount_point not in html_written_drives:
+            html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -215,39 +216,39 @@ def write_to_usb(mount_point, ip_address, fabmo_status, fabmo_updater_status, he
 </body>
 </html>
 """
-        
-        try:
-            with open(html_file, "w") as f:
-                f.write(html_content)
-                f.flush()
-                os.fsync(f.fileno())
-            logging.info(f"HTML access file created successfully at {html_file}")
-            print(f"HTML access file created successfully at {html_file}")
-        except Exception as e:
-            logging.error(f"Error creating HTML access file: {e}")
-            print(f"Error creating HTML access file: {e}")
+            try:
+                with open(html_file, "w") as f:
+                    f.write(html_content)
+                    f.flush()
+                    os.fsync(f.fileno())
+                logging.info(f"HTML access file created successfully at {html_file}")
+                print(f"HTML access file created successfully at {html_file}")
+                html_written_drives.add(real_mount_point)  # Mark this drive as having the HTML written
+            except Exception as e:
+                logging.error(f"Error creating HTML access file: {e}")
+                print(f"Error creating HTML access file: {e}")
         
         logging.info(f"Successfully wrote files to USB at decoded path: {real_mount_point}")
     except Exception as e:
         logging.error(f"Error writing to USB drive: {e}")
         print(f"Error writing to USB drive: {e}")
-
+        
 def monitor_usb(json_directory):
     """Monitor for USB drive insertion and continuously update log file."""
     mounted_drives = set()
+    html_written_drives = set()  # Track drives where HTML has been written
 
     while True:
         # List all mounted devices
         with open("/proc/mounts", "r") as f:
             lines = f.readlines()
 
-        # Extract mount points - important: keep them exactly as they appear in /proc/mounts
+        # Extract mount points
         current_drives = set()
         for line in lines:
             if "/media/" in line or "/mnt/" in line:
                 parts = line.split()
                 if len(parts) >= 2:
-                    # Use the mount point directly, without modifications
                     current_drives.add(parts[1])
         
         # Detect mounted drives and update them
@@ -260,7 +261,7 @@ def monitor_usb(json_directory):
             fabmo_updater_status = get_fabmo_updater_status()
             heat_volts_status = get_heat_volts_status()
             json_content = read_and_concatenate_json_files(json_directory)
-            write_to_usb(drive, ip_address, fabmo_status, fabmo_updater_status, heat_volts_status, json_content)
+            write_to_usb(drive, ip_address, fabmo_status, fabmo_updater_status, heat_volts_status, json_content, html_written_drives)
 
         # Detect newly inserted drives
         new_drives = current_drives - mounted_drives
@@ -273,7 +274,7 @@ def monitor_usb(json_directory):
                 fabmo_updater_status = get_fabmo_updater_status()
                 heat_volts_status = get_heat_volts_status()
                 json_content = read_and_concatenate_json_files(json_directory)
-                write_to_usb(drive, ip_address, fabmo_status, fabmo_updater_status, heat_volts_status, json_content)
+                write_to_usb(drive, ip_address, fabmo_status, fabmo_updater_status, heat_volts_status, json_content, html_written_drives)
                 mounted_drives.add(drive)
 
         # Detect removed drives
@@ -282,11 +283,12 @@ def monitor_usb(json_directory):
             for drive in removed_drives:
                 logging.info(f"USB drive removed: {drive}")
                 mounted_drives.remove(drive)
+                html_written_drives.discard(drive)  # Reset HTML tracking for removed drives
 
         # Wait for 20 seconds before updating again
         time.sleep(20)
-
-def toggle_logging(enable=True):
+        
+def toggle_logging(enable=False):
     """Enable or disable logging to a server file."""
     logger = logging.getLogger()
     if enable:
