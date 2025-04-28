@@ -49,8 +49,8 @@
                         <div id="usb-devices-list" class="usb-devices-list">
                             <p>No USB devices detected.</p>
                         </div>
-                            <button id="usb-computer-button" class="usb-computer-button" title="Select from Computer instead">Computer</button>
-                        </div>
+                        <button id="usb-computer-button" class="usb-computer-button" title="Select from Computer instead">Computer</button>
+                    </div>
                     <div class="usb-files-section">
                         <div class="usb-path-bar">
                             <span id="usb-current-path">No device selected</span>
@@ -59,7 +59,8 @@
                             <p>Select a USB device to browse files.</p>
                         </div>
                         <div class="usb-file-filter">
-                                <label for="file-filter-select" style="margin-top: -15px;">Filter by type:</label>                            <select id="file-filter-select">
+                            <label for="file-filter-select" style="margin-top: -15px;">Filter by type:</label>
+                            <select id="file-filter-select">
                                 <option value=".sbp">.sbp (ShopBot format files)</option>
                                 <option value=".nc, .gcode, .tap, .cnc">.nc, .gcode, .tap, .cnc (gcode format files)</option>
                                 <option value="all">All</option>
@@ -73,13 +74,12 @@
                 </div>
             </div>
         </div>
-        `;
+    `;
 
         var modalStyle = `
             <style id="usb-browser-styles">
                 .usb-modal {
                     position: fixed;
-                    z-index: 9999;
                     left: 0;
                     top: 0;
                     width: 100%;
@@ -88,11 +88,11 @@
                     background-color: rgba(0,0,0,0.4);
                 }
                 .usb-modal-content {
-                    position: fixed; /* Ensure the modal content is fixed relative to the viewport */
-                    top: -80px;
-                    left: 120px;
+                    position: absolute; /* Change from fixed to absolute for draggable behavior */
+                    z-index: 999999;
+                    top: 100px;  /*initial*/
+                    left: 100px;
                     background-color: #fefefe;
-                    margin: 10% auto;
                     padding: 0;
                     border: 1px solid #888;
                     width: 80%;
@@ -112,6 +112,7 @@
                     color: #666; /* Set dark gray color for all text and icons */
                     font-size: 16px;
                     font-weight: bold;
+                    cursor: grab; /* Indicate that the header is draggable */
                 }
                 .usb-header-actions {
                     display: flex;
@@ -280,17 +281,22 @@
                     font-size: 14px;
                 }
                 .usb-cancel-button {
-                    background-color: #f0f0f0;
-                    border: 1px solid #ddd;
+                    background-color:rgb(125, 125, 125);
+                    border: 1px solid rgb(90, 90, 90);
                 }
                 .usb-select-button {
-                    background-color: #2196F3;
+                    background-color:#2196f3;
                     border: 1px solid #1976D2;
                     color: white;
                 }
                 .usb-select-button:disabled {
                     background-color: #9e9e9e;
-                    border: 1px solid #757575;
+                    border: 1px solid #9e9e9e;
+                    cursor: not-allowed;
+                }
+                .usb-select-button:disabled:hover {
+                    background-color: #9e9e9e;
+                    border: 1px solid #9e9e9e;
                     cursor: not-allowed;
                 }
                 .usb-loading {
@@ -314,7 +320,60 @@
         }
 
         this.modalElement = document.getElementById("usb-file-browser-modal");
+        this.makeModalDraggable();
         this.setupEventListeners();
+    };
+
+    USBBrowser.prototype.makeModalDraggable = function () {
+        var self = this;
+        var modalContent = this.modalElement.querySelector(".usb-modal-content"); // Target the modal content
+        var header = modalContent.querySelector(".usb-modal-header");
+
+        var isDragging = false;
+        var offsetX = 0;
+        var offsetY = 0;
+
+        // Mouse down event on the header
+        header.addEventListener("mousedown", function (event) {
+            isDragging = true;
+
+            // Get the current position of the modal relative to the document
+            var rect = modalContent.getBoundingClientRect();
+
+            // Calculate offsets relative to the mouse position
+            offsetX = event.clientX - rect.left;
+            offsetY = event.clientY - rect.top;
+
+            // Ensure `top` and `left` are explicitly set
+            var computedStyle = window.getComputedStyle(modalContent);
+            modalContent.style.left = computedStyle.left;
+            modalContent.style.top = computedStyle.top;
+            modalContent.style.position = "absolute"; // Ensure absolute positioning for dragging
+
+            header.style.cursor = "grabbing"; // Change cursor to indicate dragging
+            event.preventDefault(); // Prevent text selection
+        });
+
+        // Mouse move event on the document
+        document.addEventListener("mousemove", function (event) {
+            if (isDragging) {
+                var newLeft = event.clientX - offsetX;
+                var newTop = event.clientY - offsetY;
+                if (newTop < -15) newTop = 0; // Prevent dragging above the viewport; others seem managed
+
+                // Update modal content position
+                modalContent.style.left = `${newLeft}px`;
+                modalContent.style.top = `${newTop}px`;
+            }
+        });
+
+        // Mouse up event on the document
+        document.addEventListener("mouseup", function () {
+            if (isDragging) {
+                isDragging = false;
+                header.style.cursor = "grab"; // Reset cursor
+            }
+        });
     };
 
     /**
@@ -532,13 +591,13 @@
         var fileFilter = document.getElementById("file-filter-select").value;
 
         // Debugging: Log the path and filter
-        console.log("Loading directory for path:", path);
-        console.log("Selected file filter:", fileFilter);
+        //console.log("Loading directory for path:", path);
+        //console.log("Selected file filter:", fileFilter);
 
         // Use Fetch API
         fetch("/usb/dir?path=" + encodeURIComponent(path))
             .then(function (response) {
-                console.log("Directory response:", response); // Debugging
+                //console.log("Directory response:", response); // Debugging
                 return response.json();
             })
             .then(function (response) {
@@ -627,12 +686,12 @@
                         });
                     });
                 } else {
-                    console.error("Error loading directory:", response); // Debugging
+                    //console.error("Error loading directory:", response); // Debugging
                     fileList.innerHTML = "<p>Error loading directory. Please try again.</p>";
                 }
             })
             .catch(function (err) {
-                console.error("Fetch error:", err); // Debugging
+                //console.error("Fetch error:", err); // Debugging
                 fileList.innerHTML = "<p>Error loading directory. Please try again.</p>";
             });
     };
