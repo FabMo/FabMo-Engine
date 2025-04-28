@@ -25,6 +25,8 @@ BAD="${RED}YES${NC}"
 #Get Status, extract hex
 STATUS=$(vcgencmd get_throttled)
 STATUS=${STATUS#*=}
+
+echo " "
 echo "=================== Volt & Temp Fail Report "
 echo "------------------- "
 echo -n "Status: "
@@ -54,4 +56,4 @@ for id in core sdram_c sdram_i sdram_p ; do
     echo -e "$id:\t$(vcgencmd measure_volts $id)"
 done
 echo "=================== "
-
+echo " "

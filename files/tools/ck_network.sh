@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script opens multiple terminal windows to monitor network-related services and commands.
+# It uses lxterminal to create new terminal windows and execute commands in them. 
+# SO THIS NEEDS TO BE RUN FROM LXDE DESKTOP ENVIRONMENT on THE RPI from the terminal.
+
 # Function to open a new terminal window and execute a command
 open_terminal() {
   local title="$1"
