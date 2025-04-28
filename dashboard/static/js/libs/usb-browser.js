@@ -591,13 +591,13 @@
         var fileFilter = document.getElementById("file-filter-select").value;
 
         // Debugging: Log the path and filter
-        console.log("Loading directory for path:", path);
-        console.log("Selected file filter:", fileFilter);
+        //console.log("Loading directory for path:", path);
+        //console.log("Selected file filter:", fileFilter);
 
         // Use Fetch API
         fetch("/usb/dir?path=" + encodeURIComponent(path))
             .then(function (response) {
-                console.log("Directory response:", response); // Debugging
+                //console.log("Directory response:", response); // Debugging
                 return response.json();
             })
             .then(function (response) {
@@ -686,12 +686,12 @@
                         });
                     });
                 } else {
-                    console.error("Error loading directory:", response); // Debugging
+                    //console.error("Error loading directory:", response); // Debugging
                     fileList.innerHTML = "<p>Error loading directory. Please try again.</p>";
                 }
             })
             .catch(function (err) {
-                console.error("Fetch error:", err); // Debugging
+                //console.error("Fetch error:", err); // Debugging
                 fileList.innerHTML = "<p>Error loading directory. Please try again.</p>";
             });
     };
