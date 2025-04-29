@@ -4,6 +4,7 @@
 # modified slightly ...
 # using: vcgencmd get_throttled
 #          throttled=0x50005
+# New info for Rpi5: https://forums.raspberrypi.com/viewtopic.php?t=370719
 
 #Flag Bits
 UNDERVOLTED=0x1
@@ -25,9 +26,11 @@ BAD="${RED}YES${NC}"
 #Get Status, extract hex
 STATUS=$(vcgencmd get_throttled)
 STATUS=${STATUS#*=}
-echo "=================== Volt & Temp Fail Report "
-echo "------------------- "
-echo -n "Status: "
+
+echo " "
+echo "================== Volt & Temp Fail Report "
+echo "------------------------------------------ "
+echo -n "Status (other than 0 means throttling): "
 (($STATUS!=0)) && echo "${RED}${STATUS}${NC}" || echo "${GREEN}${STATUS}${NC}"
 
 echo "Undervolted:"
@@ -36,7 +39,7 @@ echo -n "   Now: "
 echo -n "  Past: "
 ((($STATUS&HAS_UNDERVOLTED)!=0)) && echo "${BAD}" || echo "${GOOD}"
 
-echo "Throttled:"
+echo "Throttled (voltage OK? then throttling from temp):"
 echo -n "   Now: "
 ((($STATUS&THROTTLED)!=0)) && echo "${BAD}" || echo "${GOOD}"
 echo -n "  Past: "
@@ -47,11 +50,11 @@ echo -n "   Now: "
 ((($STATUS&CAPPED)!=0)) && echo "${BAD}" || echo "${GOOD}"
 echo -n "  Past: "
 ((($STATUS&HAS_CAPPED)!=0)) && echo "${BAD}" || echo "${GOOD}"
-echo "------------------- "
-echo "volts ============= "
+echo "------------------------------------------ "
+echo "volts ==(core Pi4~0.8-1.2V;Pi5~0.7-0.9V)== "
 # Loop through each id and echo the voltage
 for id in core sdram_c sdram_i sdram_p ; do
     echo -e "$id:\t$(vcgencmd measure_volts $id)"
 done
-echo "=================== "
-
+echo "========================================== "
+echo " "
