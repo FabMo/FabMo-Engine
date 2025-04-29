@@ -5,8 +5,8 @@
 
 
 echo " "
-echo "LOADING G2 FIRMWARE ========================================"
-echo " - card should be powered, and fresh or just reset"
+echo "LOADING G2 INITIAL FIRMWARE ================================"
+echo " - press red button while starting; hold 10 sec"
 echo " "
 cd /fabmo
 until bossac -w -v ./firmware/g2.bin; do

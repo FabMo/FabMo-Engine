@@ -28,10 +28,10 @@ STATUS=$(vcgencmd get_throttled)
 STATUS=${STATUS#*=}
 
 echo " "
-echo "================== Volt & Temp Fail Report "
-echo "------------------------------------------ "
-echo -n "Status (other than 0 means throttling): "
+echo "================================ Volt & Temp Fail Report "
+echo -n "Status (combined in binary; > 0 means throttling): "
 (($STATUS!=0)) && echo "${RED}${STATUS}${NC}" || echo "${GREEN}${STATUS}${NC}"
+echo "----------------------------------------------decoded--- "
 
 echo "Undervolted:"
 echo -n "   Now: "
@@ -50,11 +50,11 @@ echo -n "   Now: "
 ((($STATUS&CAPPED)!=0)) && echo "${BAD}" || echo "${GOOD}"
 echo -n "  Past: "
 ((($STATUS&HAS_CAPPED)!=0)) && echo "${BAD}" || echo "${GOOD}"
-echo "------------------------------------------ "
-echo "volts ==(core Pi4~0.8-1.2V;Pi5~0.7-0.9V)== "
+echo "-------------------------------------------------------- "
+echo "volts ===============(core Pi4~0.8-1.2V; Pi5~0.7-0.9V)== "
 # Loop through each id and echo the voltage
 for id in core sdram_c sdram_i sdram_p ; do
     echo -e "$id:\t$(vcgencmd measure_volts $id)"
 done
-echo "========================================== "
+echo "======================================================== "
 echo " "
