@@ -4,7 +4,7 @@
 	"last_units" : "in",
 	"quit_input": 0,
 	"auth_timeout" : 30,
-	"auth_required": true,
+	"auth_required": false,
 	"auth_input" : 0,
 	"ap_input" : 0,
 	"ap_time" : 8,
