@@ -111,9 +111,11 @@ function update() {
                 input.val((Math.round(String(v) * decimals) / decimals));
             }    
             // Handle special case that some Y axis values are linked to X axis in FabMo
+            // ... for Jog speed
             if ( key === 'jogxy_speed' ) {
                 $('#' + branchname + '-' + 'jogy_speed').val((Math.round(String(v) * decimals) / decimals));
             }
+
             if ( key === 'xy_maxjerk' ) {
                 $('#' + branchname + '-' + 'y_maxjerk').val(String(v));
             }
@@ -405,8 +407,14 @@ $(document).ready(function() {
             setConfig(this.id, this.value);
     });
 
-    $('.opensbp-input').change( function() {
+    $('.opensbp-input').change( function() {  // speccial case for XY jerk and jog speed
         setConfig(this.id, this.value);
+        if (this.id === "opensbp-xy_maxjerk") {
+            setConfig("opensbp-y_maxjerk", this.value);
+        }
+        if (this.id === "opensbp-jogxy_speed") {
+            setConfig("opensbp-jogy_speed", this.value);
+        }
     });
 
     $('.opensbp-values').change( function() {

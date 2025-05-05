@@ -1,4 +1,4 @@
-/* To Implement simple a Tooltips in FabMo -- (there are no dependencies in this system) --
+/* To Implement simple Tooltips in FabMo -- (there are no dependencies in this system) --
           {Tooltips provide info on an area or functionality of interface; use title-tips for brief popup info on buttons}
       STYLE
         - reference this style sheet (all CSS is compiled into the dashboard.css file by webpack);
@@ -46,7 +46,7 @@
   height: 18px;
   width: 18px;
   line-height: 100%;
-  color: #eeeeeeee;
+  color: #ffffff;
   text-align: center;
   font-size: 1rem;
   font-family: serif;

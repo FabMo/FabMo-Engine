@@ -123,11 +123,19 @@ ManualDriver.prototype.exit = function () {
         switch (this.mode) {
             case "normal":
                 // Restore the sbp_runtime config settings for jerk
-                var jerkXY = config.machine.machine.sbp_runtime.maxjerk_xy || 100;
-                var jerkZ = config.machine.machine.sbp_runtime.maxjerk_z || 100;
+                var jerkXY = config.opensbp._cache.xy_maxjerk || 75;
+                var jerkZ = config.opensbp._cache.z_maxjerk || 75;
                 this.stream.write("M100.1 ({xjm:" + jerkXY + "})\n");
                 this.stream.write("M100.1 ({yjm:" + jerkXY + "})\n");
                 this.stream.write("M100.1 ({zjm:" + jerkZ + "})\n");
+                // Restore generic feedrate (this is mostly for appearance of first move if a rapid)
+                var feedXY = config.opensbp._cache.movexy_speed || 3;
+                var uMult = 1;
+                if (config.machine._cache.units === "in") {
+                    uMult = 25.4;
+                }
+                feedXY = feedXY * uMult * 60; // convert to mm/min
+                this.stream.write("M100.1 ({feed:" + feedXY + "})\n");
                 // Other potential additional Manual Keypad post-pend commands
                 break;
             case "raw":

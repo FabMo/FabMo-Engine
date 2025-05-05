@@ -497,8 +497,7 @@ require('./cm-fabmo-modes.js');
           case 'gcode':
             $('#jobsubmit-name').val(job_filename || 'editor.nc');
             $('#jobsubmit-description').val(job_description || 'G-Code job from the editor');
-            $('#jobsubmit-filename').val(job_filename || 'editor.nc');
-            break;
+            $('#jobsubmit-filename').val(job_filename); break;
           case 'opensbp':
             $('#jobsubmit-name').val(job_filename || 'editor.sbp');
             $('#jobsubmit-description').val(job_description || 'OpenSBP job from the editor');
@@ -518,6 +517,16 @@ require('./cm-fabmo-modes.js');
           var filename = $('#jobsubmit-name').val();
 
           var text = editor.getValue();
+
+          // check filename for extension (maybe should allow other gcode exts ?).
+          if (!filename.endsWith('.nc') && !filename.endsWith('.sbp')) {
+            if (lang === 'gcode') {
+              filename += '.nc';
+            } else if (lang === 'opensbp') {
+              filename += '.sbp';
+            }
+          }
+          name = filename; // let's just keep consistent for now
 
           fabmo.submitJob({
               file : text,
