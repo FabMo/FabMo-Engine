@@ -82,21 +82,23 @@ ManualDriver.prototype.enter = function () {
     this.driver.manual_hold = true;
     switch (this.mode) {
         case "normal":
+            // Disable the spindle off during feedhold in manual mode
+            this.stream.write("M100 ({spph:false})\n");
             // Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
             var jerkXY = config.machine._cache.manual.xy_jerk || 100;
             var jerkZ = config.machine._cache.manual.z_jerk || 100;
-            this.stream.write("M100.1 ({xjm:" + jerkXY + "})\n");
-            this.stream.write("M100.1 ({yjm:" + jerkXY + "})\n");
-            this.stream.write("M100.1 ({zjm:" + jerkZ + "})\n");
+            this.stream.write("M100 ({xjm:" + jerkXY + "})\n");
+            this.stream.write("M100 ({yjm:" + jerkXY + "})\n");
+            this.stream.write("M100 ({zjm:" + jerkZ + "})\n");
             // Turn off z-lift, set incremental mode, and send a
             // "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
-            //			this.stream.write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n'); ////## no longer need to turn off z-lift?
+            //			this.stream.write('M100 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n'); ////## no longer need to turn off z-lift?
             this.driver.prime();
             break;
         case "raw":
             this.stream.write("M0\n");
-            //			this.stream.write('M100.1 ({zl:0})\nM0\n');                    ////## no longer need to turn off z-lift?
+            //			this.stream.write('M100 ({zl:0})\nM0\n');                    ////## no longer need to turn off z-lift?
             this.driver.prime();
             break;
         default:
@@ -125,17 +127,19 @@ ManualDriver.prototype.exit = function () {
                 // Restore the sbp_runtime config settings for jerk
                 var jerkXY = config.opensbp._cache.xy_maxjerk || 75;
                 var jerkZ = config.opensbp._cache.z_maxjerk || 75;
-                this.stream.write("M100.1 ({xjm:" + jerkXY + "})\n");
-                this.stream.write("M100.1 ({yjm:" + jerkXY + "})\n");
-                this.stream.write("M100.1 ({zjm:" + jerkZ + "})\n");
+                this.stream.write("M100 ({xjm:" + jerkXY + "})\n");
+                this.stream.write("M100 ({yjm:" + jerkXY + "})\n");
+                this.stream.write("M100 ({zjm:" + jerkZ + "})\n");
                 // Restore generic feedrate (this is mostly for appearance of first move if a rapid)
                 var feedXY = config.opensbp._cache.movexy_speed || 3;
+                // Restore spindle on during feedhold
+                this.stream.write("M100 ({spph:true})\n");
                 var uMult = 1;
                 if (config.machine._cache.units === "in") {
                     uMult = 25.4;
                 }
                 feedXY = feedXY * uMult * 60; // convert to mm/min
-                this.stream.write("M100.1 ({feed:" + feedXY + "})\n");
+                this.stream.write("M100 ({feed:" + feedXY + "})\n");
                 // Other potential additional Manual Keypad post-pend commands
                 break;
             case "raw":
@@ -151,6 +155,7 @@ ManualDriver.prototype.exit = function () {
         } else {
             this.stream.write("M30\n");
             this.stream.write("{out4:0}\n");
+            this.stream.write("{out1:0}\n"); // just in case, turn off spindle
         }
         this.driver.removeListener("status", this.status_handler);
         this.exited = true;
