@@ -62,7 +62,7 @@
   .tooltip .tooltiptext {
     visibility: hidden;
     width: max-content;
-    max-width: 500px;
+    max-width: 900px;
     background-color: #bdbdbd;
     color: #fff;
     font-family: "Helvetica Neue",Helvetica,Roboto,Arial,sans-serif;
@@ -103,7 +103,7 @@
     visibility: visible;
     display: inline-block;
     width: max-content;
-    max-width: 500px;
+    max-width: 900px;
     opacity: 1;
     transition: opacity 0.2s ease-in-out, visibility 0.2s;
   }

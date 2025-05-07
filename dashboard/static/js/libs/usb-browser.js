@@ -543,21 +543,22 @@
                     // Trigger click on the selected device to load its contents
                     if (deviceToSelect) {
                         deviceToSelect.classList.add("selected");
-                        var path = deviceToSelect.getAttribute("data-path");
+                        var currentDrivePath = deviceToSelect.getAttribute("data-path");
 
-                        // If we have a remembered path that's deeper than the device root
-                        // and it belongs to the selected device, use that
-                        if (lastUsedUSBPath && lastUsedUSBPath.startsWith(path) && lastUsedUSBPath !== path) {
-                            self.loadUSBDirectory(lastUsedUSBPath);
-                        } else {
-                            self.loadUSBDirectory(path);
+                        // Validate the last used path
+                        var pathToLoad = currentDrivePath; // Default to the current drive path
+                        if (lastUsedUSBPath && lastUsedUSBPath.startsWith(currentDrivePath + "/")) {
+                            pathToLoad = lastUsedUSBPath; // Use the last used path if valid
                         }
+
+                        // Load the directory
+                        self.loadUSBDirectory(pathToLoad);
+                    } else {
+                        devicesList.innerHTML = "<p>Error loading USB devices. Please try again.</p>";
+                        fileList.innerHTML = "<p>Select a USB device to browse files.</p>";
+                        pathDisplay.textContent = "No device selected";
+                        document.getElementById("usb-select-button").disabled = true;
                     }
-                } else {
-                    devicesList.innerHTML = "<p>Error loading USB devices. Please try again.</p>";
-                    fileList.innerHTML = "<p>Select a USB device to browse files.</p>";
-                    pathDisplay.textContent = "No device selected";
-                    document.getElementById("usb-select-button").disabled = true;
                 }
             })
             .catch(function (err) {

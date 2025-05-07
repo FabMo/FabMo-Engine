@@ -490,7 +490,7 @@ require('./cm-fabmo-modes.js');
     });
 
     
-    ////## modified to test idea of only using having a file name and showing or not the extension ... as opposed to 2 names
+    ////## modified to test idea of only using a file name and showing or not the extension ... as opposed to 2 names
     function submitJob(){
         $('#modal-title').text('Submit Job');
         switch(lang) {

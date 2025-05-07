@@ -98,7 +98,6 @@
                 <label>Unit System <span class="tooltip tooltip-left">i
                   <span class="tooltiptext">
                     The distance units that will be used for motion and display and in supported apps.<br>
-                    Changing this setting will restart FabMo and reset Configuration.<br>
                   </span>
                 </span>
                 </label>  
@@ -114,7 +113,7 @@
                   <span class="tooltiptext">
                     Absolute distance means the tool moves to specified coordinates.<br>
                     Relative distance means the tool moves from its current position <br>
-                    by the specified distance. (Relative is rarely used in modern CNC)<br>
+                    -by- the specified distance. (Relative is rarely used in modern CNC.)<br>
                     This setting applies primarily to g-code files. Relative can be <br>
                     applied if needed in an OpenSBP file by using the [SR] command.<br>
                   </span>
@@ -207,15 +206,34 @@
 
         <div class="row">
           <fieldset>
-            <legend>AXIS CONFIGURATIONS</legend>
+            <legend>AXIS CONFIGURATIONS <span class="tooltip tooltip-below">i
+                <span class="tooltiptext">
+                This page contains default/current settings for Axis characteristics: <br><br>
+                <strong>Feedrate Maximum:</strong> The maximum allowable feedrate for this machine in a move <br>
+                &nbsp;&nbsp;&nbsp; speed command ([M] commands in OpenSBP; G1 commands in g-code).<br>
+                <strong>Jog Velocity:</strong> The speed of Jog or rapid-traverse comands ([J]og commands <br>
+                &nbsp;&nbsp;&nbsp;in OpenSBP; G0 command in g-code). May be greater than Feedrate Maximum.<br>
+                <strong>Maximum Jerk:</strong> "Jerk" is technically the 3rd derivative of position -- it is the <br>
+                &nbsp;&nbsp;&nbsp;rate of change in acceleration/deceleration and determines how quickly your tool changes <br>
+                &nbsp;&nbsp;&nbsp;from one speed/direction to another. A higher value here creates more aggressive motion. <br>
+                &nbsp;&nbsp;&nbsp;[recommended settings: in inches 50 - 250; in mm 1270 - 6350 ((units/ min&sup3;) * 1,000,000)] <br>
+                &nbsp;&nbsp;&nbsp;FabMo calculates a smooth, S-shaped speed curve that limits jerk to this setting. <br>
+                <strong>High Brake Jerk:</strong> The "jerk" setting creating an abrupt stop for special <br>
+                &nbsp;&nbsp;&nbsp;situations such as homing and unprogrammed STOPS. If this value is too <br>
+                &nbsp;&nbsp;&nbsp;high or loads heavy, position accuracy may be lost. <br>
+                <strong>Axis Mode:</strong> The movement mode for this axis. Linear axes are controlled in the <br>
+                &nbsp;&nbsp;&nbsp;default linear unit system. Rotary axes are controlled in degrees rotation. <br>
+                <br>
+              </span>
+            </span>
+            </legend>
           </fieldset>
-        </div>
-        <div class="row">
+
           <fieldset>
             <legend>X-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
+                <label>Feedrate Maximum</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-xfr" class="driver-input" />
                 </div>
@@ -226,7 +244,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
+                <label>Jog Velocity</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-jogxy_speed" class="opensbp-input" />
                 </div>
@@ -237,7 +255,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
+                <label>Maximum Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-xy_maxjerk" class="opensbp-input" />
                 </div>
@@ -248,7 +266,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                  <label data-tip="">High Speed Jerk</label>                <div class="small-9 columns">
+                  <label data-tip="">High Brake Jerk</label>                <div class="small-9 columns">
                   <input type="text" id="driver-xjh" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
@@ -258,7 +276,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.">Axis Mode<div class="tool-tip">i</div></label>
+                <label>Axis Mode</label>
                 <select id="driver-xam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -266,15 +284,12 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-
-        <div class="row">
           <fieldset>
             <legend>Y-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
+                <label>Feedrate Maximum</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-yfr" class="driver-input" />
                 </div>
@@ -285,7 +300,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP). This value yoked to to X Axis setting.">Jog Velocity<div class="tool-tip">i</div></label>
+                <label>Jog Velocity</label>    
                 <div class="small-9 columns">
                   <input type="text" disabled="disabled" id="opensbp-jogy_speed" class="opensbp-input" />
                 </div>
@@ -296,7 +311,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads. This value yoked to to X Axis setting.'>Maximum Jerk<div class="tool-tip">i</div></label>
+                <label>Maximum Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" disabled="disabled" id="opensbp-y_maxjerk" class="opensbp-input" />
                 </div>
@@ -307,7 +322,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="">High Speed Jerk</label>
+                <label data-tip="">High Brake Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-yjh" class="driver-input" />
                 </div>
@@ -318,7 +333,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.">Axis Mode<div class="tool-tip">i</div></label>
+                <label>Axis Mode</label>
                 <select id="driver-yam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -326,15 +341,12 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-
-        <div class="row">
           <fieldset>
             <legend>Z-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
+                <label>Feedrate Maximum</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-zfr" class="driver-input" />
                 </div>
@@ -345,7 +357,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
+                <label>Jog Velocity</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-jogz_speed" class="opensbp-input" />
                 </div>
@@ -356,7 +368,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
+                <label>Maximum Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-z_maxjerk" class="opensbp-input" />
                 </div>
@@ -367,7 +379,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="">High Speed Jerk</label>
+                <label data-tip="">High Brake Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-zjh" class="driver-input" />
                 </div>
@@ -378,7 +390,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.">Axis Mode<div class="tool-tip">i</div></label>
+                <label>Axis Mode</label>
                 <select id="driver-zam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -386,15 +398,12 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-
-        <div class="row">
           <fieldset>
             <legend>A-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
+                <label>Feedrate Maximum</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-afr" class="driver-input" />
                 </div>
@@ -405,7 +414,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
+                <label>Jog Velocity</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-joga_speed" class="opensbp-input" />
                 </div>
@@ -416,7 +425,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
+                <label>Maximum Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-a_maxjerk" class="opensbp-input" />
                 </div>
@@ -427,7 +436,7 @@
             </div>
             <div class="large-4 columns">
                 <div class="row collapse">
-                  <label data-tip="">High Speed Jerk</label>
+                  <label data-tip="">High Brake Jerk</label>
                   <div class="small-9 columns">
                     <input type="text" id="driver-ajh" class="driver-input" />
                   </div>
@@ -438,7 +447,7 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis. Linear axes are controlled in the default linear unit system. Rotary axes are controlled in degrees rotation. Speed/Radius axes are rotary and controlled by set radius.">Axis Mode<div class="tool-tip">i</div></label>
+                <label>Axis Mode</label>
                 <select id="driver-aam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
@@ -448,15 +457,12 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-
-        <div class="row">
           <fieldset>
             <legend>B-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
+                <label>Feedrate Maximum</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-bfr" class="driver-input" />
                 </div>
@@ -467,7 +473,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
+                <label>Jog Velocity</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-jogb_speed" class="opensbp-input" />
                 </div>
@@ -478,7 +484,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
+                <label>Maximum Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-b_maxjerk" class="opensbp-input" />
                 </div>
@@ -489,7 +495,7 @@
             </div>
             <div class="large-4 columns">
                 <div class="row collapse">
-                  <label data-tip="">High Speed Jerk</label>
+                  <label data-tip="">High Brake Jerk</label>
                   <div class="small-9 columns">
                     <input type="text" id="driver-bjh" class="driver-input" />
                   </div>
@@ -500,7 +506,7 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis. Linear axes are controlled in the default linear unit system. Rotary axes are controlled in degrees rotation. Speed/Radius axes are rotary and controlled by set radius.">Axis Mode<div class="tool-tip">i</div></label>
+                <label>Axis Mode</label>
                 <select id="driver-bam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
@@ -510,15 +516,12 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-
-        <div class="row">
           <fieldset>
             <legend>C-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
+                <label>Feedrate Maximum</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-cfr" class="driver-input" />
                 </div>
@@ -529,7 +532,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
+                <label>Jog Velocity</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-jogc_speed" class="opensbp-input" />
                 </div>
@@ -540,7 +543,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-               <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
+                <label>Maximum Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="opensbp-c_maxjerk" class="opensbp-input" />
                 </div>
@@ -551,7 +554,7 @@
             </div>
             <div class="large-4 columns">
                 <div class="row collapse">
-                  <label data-tip="">High Speed Jerk</label>
+                  <label data-tip="">High Brake Jerk</label>
                   <div class="small-9 columns">
                     <input type="text" id="driver-cjh" class="driver-input" />
                   </div>
@@ -562,7 +565,7 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The movement mode for this axis. Linear axes are controlled in the default linear unit system. Rotary axes are controlled in degrees rotation. Speed/Radius axes are rotary and controlled by set radius.">Axis Mode<div class="tool-tip">i</div></label>
+                <label>Axis Mode</label>
                 <select id="driver-cam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
@@ -581,10 +584,18 @@
 
         <div class="row">
           <fieldset>
-            <legend>Input 1</legend>
+            <legend>Input 1 <span class="tooltip">i
+              <span class="tooltiptext">
+                These settings define the functionality of each of your tools Input lines <br>
+              </span>
+            </span></legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label>Enabled  <span class="tooltip tooltip-below">i
+                  <span class="tooltiptext">
+                    Determines whether the Input is enabled or not.<br>
+                  </span>
+                </span>
                   <select id="driver-di1en" class="driver-input">
                     <option value="false">False</option>
                     <option value="true">True</option>
@@ -594,7 +605,16 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label>Action   <span class="tooltip tooltip-below">i
+                  <span class="tooltiptext">
+                    Defines the action of the Input: <br><br>
+                    &nbsp;&nbsp;<Strong>None:</Strong> No specific action but icon will display when active. <br>
+                    &nbsp;&nbsp;<Strong>Stop:</Strong> Tool will come to a controlled Stop if Input is activated.<br>
+                    &nbsp;&nbsp;<Strong>Stop-Fast:</Strong> Tool will stop quickly using the High-Brake Jerk setting.<br>
+                    &nbsp;&nbsp;<Strong>Interlock:</Strong> Input will function as a Safety Interlock.<br>
+                    &nbsp;&nbsp;<Strong>Limit:</Strong> Input will function as a Limit switch.<br>
+                  </span>
+                </span>
                   <select id="machine-di1ac" class="machine-input">
                     <option value="none">None</option>
                     <option value="stop">Stop</option>
@@ -607,7 +627,13 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label>Polarity   <span class="tooltip tooltip-below">i
+                  <span class="tooltiptext">
+                    Voltage level for activation. <br>
+                    High = Normally low; Active when changed to High. <br>
+                    Low = Normally high; Active when changed to Low. <br>
+                  </span>
+                </span>
                   <select id="driver-di1po" class="driver-input">
                     <option value="0">Low</option>
                     <option value="1">High</option>
@@ -616,9 +642,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 2</legend>
             <div class="large-4 columns">
@@ -655,9 +679,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 3</legend>
             <div class="large-4 columns">
@@ -694,9 +716,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 4</legend>
             <div class="large-4 columns">
@@ -733,9 +753,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 5</legend>
             <div class="large-4 columns">
@@ -772,10 +790,8 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
-          <fieldset>
+         <fieldset>
             <legend>Input 6</legend>
             <div class="large-4 columns">
               <div class="row collapse">
@@ -811,9 +827,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 7</legend>
             <div class="large-4 columns">
@@ -850,9 +864,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 8</legend>
             <div class="large-4 columns">
@@ -889,9 +901,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 9</legend>
             <div class="large-4 columns">
@@ -928,9 +938,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 10</legend>
             <div class="large-4 columns">
@@ -967,9 +975,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 11</legend>
             <div class="large-4 columns">
@@ -1006,9 +1012,7 @@
               </div>
             </div>
           </fieldset>
-        </div>
 
-        <div class="row">
           <fieldset>
             <legend>Input 12</legend>
             <div class="large-4 columns">
@@ -1064,7 +1068,7 @@
                 is responsible for setting how far the tool travels per <br>
                 requested move. If a tool is consistently travelling a <br>
                 proportionally incorrect distance, the Unit Value is <br>
-                likely incorrect.<br>
+                likely incorrect.<br><br>
                 For ShopBot's Desktop tools, the correct Unit Value is: <br>
                 &nbsp;&nbsp;&nbsp;&nbsp;4000 steps/inch | 157.48031 steps/mm<br>
               </span>

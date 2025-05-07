@@ -7,6 +7,7 @@ var child_process = require("child_process");
 var exec = child_process.exec;
 var util = require("util");
 var NetworkManager = require("../../../network_manager").NetworkManager;
+var dns = require("dns");
 
 var ifconfig = require("wireless-tools/ifconfig");
 var iwconfig = require("wireless-tools/iwconfig");
@@ -535,11 +536,23 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
     );
 };
 
-// Check to see if this host is online
+// Check to see if this host is connected to the internet
 //   callback - Called back with the online state, or with error if error
 RaspberryPiNetworkManager.prototype.isOnline = function (callback) {
-    setImmediate(callback, null, this.mode === "station");
+    dns.resolve("google.com", (err) => {
+        if (err) {
+            console.error("No internet connection:", err);
+            callback(false); // Not online
+        } else {
+            console.log("Internet connection is active.");
+            callback(true); // Online
+        }
+    });
 };
+
+// isOnline = function (callback) {
+//     setImmediate(callback, null, this.mode === "station");
+// };
 
 // Take the configuration stored in the network config and apply it to the currently running instance
 // This function returns immediately
