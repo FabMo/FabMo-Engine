@@ -915,6 +915,12 @@ function triggerSliderEvent(value) {
         slider.dispatchEvent(inputEvent);
     }
 }
+// Ensure the slider loses focus after a key-up event to prevent other keys from moving speed
+if (slider) {
+    slider.addEventListener("keyup", function () {
+        slider.blur(); // Remove focus from the slider
+    });
+}
 
 // Key action from keyboard in Modal Keypad
 $(document).on("keydown", function (e) {
