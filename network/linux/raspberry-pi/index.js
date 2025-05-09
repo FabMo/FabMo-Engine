@@ -542,17 +542,13 @@ RaspberryPiNetworkManager.prototype.isOnline = function (callback) {
     dns.resolve("google.com", (err) => {
         if (err) {
             console.error("No internet connection:", err);
-            callback(false); // Not online
+            callback(err, false); // Not online
         } else {
             console.log("Internet connection is active.");
-            callback(true); // Online
+            callback(null, true); // Online
         }
     });
 };
-
-// isOnline = function (callback) {
-//     setImmediate(callback, null, this.mode === "station");
-// };
 
 // Take the configuration stored in the network config and apply it to the currently running instance
 // This function returns immediately

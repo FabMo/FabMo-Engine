@@ -489,6 +489,22 @@ require('./cm-fabmo-modes.js');
       return false;
     });
 
+    // This is STANDARD TEMPLATE FOR doc reference call in Tooltip system ... for location in PDF: ... .pdf#'tag'
+    // Here you are in the editor app, but action via fabmoAPI (fabmo.navigate) ["_blank" or "_self"; new tab or this tab]
+    $("#cmd-ref").click(function(evt) {
+      fabmo.navigate("docs/No_Internet.pdf", {target: "_blank"}, "https://www.dropbox.com/s/dkdsnwqjj9nq04m/SBG00353%20FabMo%20OpenSBP%20Command%20Reference.docx?dl=0",  function (err) {
+        if (err) {
+            console.error("Navigation failed:", err);
+        }
+      });
+    });
+    $("#sys-vars").click(function(evt) {
+      fabmo.navigate("docs/No_Internet.pdf", {target: "_blank"}, "https://docs.google.com/spreadsheets/d/1g9X5Sd_3ijWfdN9Hk3xVbwkPs4eA1xqbRRzuoZxiD3Y/edit?usp=sharing",  function (err) {
+        if (err) {
+            console.error("Navigation failed:", err);
+        }
+      });
+    });
     
     ////## modified to test idea of only using a file name and showing or not the extension ... as opposed to 2 names
     function submitJob(){
