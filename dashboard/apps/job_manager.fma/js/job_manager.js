@@ -723,7 +723,7 @@ function update() {
                 $('#nav-transforms').html(
                   'Transforms:&nbsp;&nbsp;' +
                   '<span style="color: lightgray; opacity: 0.5;">on</span>' +
-                  ' |<span style="color: lightgray;">&nbsp;OFF</span');
+                  ' |<span style="color: lightgray;"><strong>&nbsp;OFF</strong></span');
             }
 
             input = $('#' + branchname + '-' + key);

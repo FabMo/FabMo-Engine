@@ -939,6 +939,30 @@ table {
   transform: rotate(90deg);
 }
 
+/* Manage Transform section */
+.scale-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: 20px; /* Add spacing between columns */
+  margin-bottom: 20px; /* Add spacing between rows */
+}
+
+/* Ensure columns take up equal space */
+.scale-row .columns {
+  flex: 1;
+}
+
+/* Enable/Disable box size */
+.apply {
+  width: 150px;
+}
+
+.transform-heading {
+  font-size: 18pt;
+  background: transparent;
+  color: #696767;
+}
+
 
 
 

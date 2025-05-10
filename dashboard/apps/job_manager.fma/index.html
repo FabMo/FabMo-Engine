@@ -27,7 +27,7 @@
         <ul class="left" role="tablist" data-tab>
         <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
         <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
-        <li class=""><a id="nav-transforms" href="#tabpanel8"  text-align="right">Transforms:&nbsp;&nbsp;on | OFF</a></li>
+        <li class=""><a id="nav-transforms" href="#tabpanel8"  text-align="right">Transforms:&nbsp;&nbsp;on | <strong>OFF</strong></a></li>
         </ul>
         <ul class="right">    
         <h2 class="exit-button"  id="exit_btn"><strong>X</strong></h2>
@@ -75,8 +75,9 @@
 			</div>
 		<div style="width:98%" id="queue_table"></div>
  	</div>
-		<!-- JOB HISTORY LISTING -->
-    <div class="content" id="tabhistory">
+
+  <!-- JOB HISTORY LISTING -->
+  <div class="content" id="tabhistory">
 		<table class="small-12 columns" style="width:100%" id="history_table">
 		<thead>
 	    <tr>
@@ -90,130 +91,164 @@
 		</table>
 		<div href="#" class="noselect" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
         <div href="#" class="noselect" id="history_page_next"><p>Next &gt;&gt;</p></div>
-    </div>
-		<!-- TEST TRANSFORM SECTION -->
+  </div>
+
+  <!-- TRANSFORM SECTION -->
       <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8">    
-      <!-- Tool tip stand-in -->
-      <div class="tip-output"><span class="tip-text"></span><div class='tipCommentBox'></div></div>
         <div class="row">
           <fieldset>
-            <h4>Scale</h4>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
-                <label>Scale</label>
-                <select id="opensbp-transforms-scale-apply" class="opensbp-input">
-                  <option value="false">Disabled</option>
-                  <option value="true">Enabled</option>
-                </select>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
-                <label>Scale X</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-scale-scalex" class="opensbp-input"/>
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">proportion</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Scale Y</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-scale-scaley" class="opensbp-input"/>
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">proportion&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Scale Z</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-scale-scalez" class="opensbp-input"/>
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">proportion</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>X Scale Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-scale-x" class="opensbp-input"/>
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Y Scale Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-scale-y" class="opensbp-input"/>
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
-                <label>Z Scale Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-scale-z" class="opensbp-input"/>
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-          </fieldset>
-        </div> 
-        <div class="row">
-          <fieldset>
-            <h4>Offset</h4>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset
-                  <select id="opensbp-transforms-move-apply" class="opensbp-input">
+            <legend class ="transform-heading">Transforms <span class="tooltip tooltip-below">i
+              <span class="tooltiptext">
+                The minimum and maximum positions on each axis. <br>
+                These values define the working limits of the tool <br>
+                and are used as software limits. Mechanical stops <br>
+                and homing sensors are usually placed slightly <br>
+                outside these limits.<br>
+              </span>
+            </span>
+            </legend>
+
+            <h4>Scale <span class="tooltip tooltip-below">i
+              <span class="tooltiptext">
+                The minimum and maximum positions on each axis. <br>
+                These values define the working limits of the tool <br>
+                and are used as software limits. Mechanical stops <br>
+                and homing sensors are usually placed slightly <br>
+                outside these limits.<br>
+              </span>
+            </span></h4>
+             <div class="row scale-row">
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <select id="opensbp-transforms-scale-apply" class="opensbp-input apply">
                     <option value="false">Disabled</option>
                     <option value="true">Enabled</option>
                   </select>
-                </label>
+                </div>
               </div>
             </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset X</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-move-x" class="opensbp-input" />
+
+            <!-- First row: Scale X, Y, Z -->
+            <div class="row scale-row">
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>Scale X</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-scale-scalex" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix">prop</span>
+                  </div>
+                </div>
+              </div>
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>Scale Y</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-scale-scaley" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix">prop</span>
+                  </div>
+                </div>
+              </div>
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>Scale Z</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-scale-scalez" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix">prop</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Second row: X Scale Point, Y, Z -->
+            <div class="row scale-row">
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>X Scale Point</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-scale-x" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>Y Scale Point</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-scale-y" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>Z Scale Point</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-scale-z" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </fieldset> 
+
+          <fieldset>
+            <h4>Offset <span class="tooltip tooltip-below">i
+              <span class="tooltiptext">
+                The minimum and maximum positions on each axis. <br>
+                These values define the working limits of the tool <br>
+                and are used as software limits. Mechanical stops <br>
+                and homing sensors are usually placed slightly <br>
+                outside these limits.<br>
+              </span>
+            </span></h4>
+            <div class="row scale-row">
+              <div class="large-3 columns">
+                <div class="row collapse">
+                    <select id="opensbp-transforms-scale-apply" class="opensbp-input apply">
+                      <option value="false">Disabled</option>
+                      <option value="true">Enabled</option>
+                    </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Offset X, Y, Z -->
+            <div class="row scale-row">
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label>Offset X</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-move-x" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label">&nbsp;</span>
+                  </div>
+               </div>
+              </div>
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>Offset Y</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-move-y" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label">&nbsp;</span>
                 </div>
               </div>
             </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset Y</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-move-y" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Offset Z</label>
                 <div class="small-9 columns">
@@ -225,110 +260,141 @@
               </div>
             </div>
           </fieldset>
-        </div>
-        <div class="row">
+
           <fieldset>
-            <h4>Rotation</h4>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Rotate
-                  <select id="opensbp-transforms-rotate-apply" class="opensbp-input">
+            <h4>Rotation <span class="tooltip tooltip-below">i
+              <span class="tooltiptext">
+                The minimum and maximum positions on each axis. <br>
+                These values define the working limits of the tool <br>
+                and are used as software limits. Mechanical stops <br>
+                and homing sensors are usually placed slightly <br>
+                outside these limits.<br>
+              </span>
+            </span></h4>
+            <div class="row scale-row">
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <select id="opensbp-transforms-rotate-apply" class="opensbp-input apply">
                     <option value="false">Disabled</option>
                     <option value="true">Enabled</option>
                   </select>
-                </label>
-              </div>
+                </div>
+              </div>  
             </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Rotation Angle</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input" />
+
+            <!-- Rotation Angle, X, Y -->
+            <div class="row scale-row">
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>Rotation Angle</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix">degrees</span>
+                  </div>
                 </div>
-                <div class="small-3 columns">
-                  <span class="postfix">degrees</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>X Rotation Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Y Rotation Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
+              </div>  
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>X Rotation Point</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label">&nbsp;</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </fieldset>
-        </div>
-        <div class="row">
-        	<fieldset>
-                <h4>Shear X</h4>
-        		<div class="large-4 columns">
-        			<div class="row collapse">
-                        <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
-                        <label>Shear X
-        					<select id="opensbp-transforms-shearx-apply" class="opensbp-input">
+              <div class="large-3 columns">
+                <div class="row collapse">
+                  <label>Y Rotation Point</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
+           </fieldset>
+
+            <fieldset>
+                <h4>Shear X <span class="tooltip tooltip-below">i
+              <span class="tooltiptext">
+                The minimum and maximum positions on each axis. <br>
+                These values define the working limits of the tool <br>
+                and are used as software limits. Mechanical stops <br>
+                and homing sensors are usually placed slightly <br>
+                outside these limits.<br>
+              </span>
+            </span></h4>
+             <div class="row scale-row">
+          		<div class="large-3 columns">
+          			<div class="row collapse">
+        					<select id="opensbp-transforms-shearx-apply" class="opensbp-input apply">
         						<option value="false">Disabled</option>
         						<option value="true">Enabled</option>
         					</select>
-        				</label>
-        			</div>
-        		</div>
-        		<div class="large-4 columns">
-        			<div class="row collapse">
-                        <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
-        				<label>Shear Angle X</label>
-        				<div class="small-9 columns">
-        					<input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
-        				</div>
-        				<div class="small-3 columns">
-        					<span class="postfix">degrees</span>
         				</div>
         			</div>
         		</div>
+
+        		<!-- Shear Angle X -->                
+              <div class="row scale-row">
+            		<div class="large-3 columns">
+            			<div class="row collapse">
+        	    			<label>Shear Angle X</label>
+        			    	<div class="small-9 columns">
+        					    <input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
+        				    </div>
+        				    <div class="small-3 columns">
+        					    <span class="postfix">degrees</span>
+        				    </div>
+        			    </div>
+        		    </div>
+              </div>
+        	</fieldset>
+
+          <fieldset>
+        		<h4>Shear Y <span class="tooltip tooltip-below">i
+              <span class="tooltiptext">
+                The minimum and maximum positions on each axis. <br>
+                These values define the working limits of the tool <br>
+                and are used as software limits. Mechanical stops <br>
+                and homing sensors are usually placed slightly <br>
+                outside these limits.<br>
+              </span>
+            </span></h4>
+            <div class="row scale-row">
+          		<div class="large-3 columns">
+          			<div class="row collapse">
+         					<select id="opensbp-transforms-sheary-apply" class="opensbp-input apply">
+         						<option value="false">Disabled</option>
+       	  					<option value="true">Enabled</option>
+       		  			</select>
+                </div>
+          		</div>
+          	</div>
+        		
+            <div class="row scale-row">
+              <div class="large-3 columns">
+          			<div class="row collapse">
+          				<label>Shear Angle Y</label>
+          				<div class="small-9 columns">
+          					<input type="number" id="opensbp-transforms-sheary-angle" class="opensbp-input"/>
+        	  			</div>
+        		  		<div class="small-3 columns">
+        			  		<span class="postfix">degrees</span>
+        				  </div>
+        		    </div>
+        		  </div>
+            </div>
+
         	</fieldset>
         </div>
-        <div class="row">
-        	<fieldset>
-        		<h4>Shear Y</h4>
-        		<div class="large-4 columns">
-        			<div class="row collapse">
-        				<label>Shear Y
-        					<select id="opensbp-transforms-sheary-apply" class="opensbp-input">
-        						<option value="false">Disabled</option>
-        						<option value="true">Enabled</option>
-        					</select>
-        				</label>
-        			</div>
-        		</div>
-        		<div class="large-4 columns">
-        			<div class="row collapse">
-        				<label>Shear Angle Y</label>
-        				<div class="small-9 columns">
-        					<input type="number" id="opensbp-transforms-sheary-angle" class="opensbp-input"/>
-        				</div>
-        				<div class="small-3 columns">
-        					<span class="postfix">degrees</span>
-        				</div>
-        			</div>
-        		</div>
-        	</fieldset>
-        </div>
-      </section>
+
+      <!-- </section> -->
     </div>
   <div class="dropDownWrapper"></div>
 </div>
