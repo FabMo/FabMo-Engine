@@ -99,22 +99,25 @@
           <fieldset>
             <legend class ="transform-heading">Transforms <span class="tooltip tooltip-below">i
               <span class="tooltiptext">
-                The minimum and maximum positions on each axis. <br>
-                These values define the working limits of the tool <br>
-                and are used as software limits. Mechanical stops <br>
-                and homing sensors are usually placed slightly <br>
-                outside these limits.<br>
+                Transforms can be used to modify a job to be run. <br>
+                When enabled, the job will be Scaled in X, Y, or Z and <br>
+                it may be Offset, Rotated, or an X or Y Shear applied. <br>
+                Each enabled transform will be applied. <br><br>
+                Order of operations: Rotation, Shear, Scale, Offset. <br>
+                The effect of transforms can be seen in the preview. <br>
+                (*In a g-code file that contains arcs, axes must be scaled <br>
+                equally in X and Y.) <br>
               </span>
             </span>
             </legend>
 
             <h4>Scale <span class="tooltip tooltip-below">i
               <span class="tooltiptext">
-                The minimum and maximum positions on each axis. <br>
-                These values define the working limits of the tool <br>
-                and are used as software limits. Mechanical stops <br>
-                and homing sensors are usually placed slightly <br>
-                outside these limits.<br>
+                Each axis may be proportionally scaled. <br>
+                Scaling can be applied about a point in the axis; <br>
+                the default Scale Point is 0 in each axis. <br>
+                (*In a gcode file that contains arcs, axes must be scaled <br>
+                equally in X and Y.) <br>
               </span>
             </span></h4>
              <div class="row scale-row">
@@ -206,11 +209,7 @@
           <fieldset>
             <h4>Offset <span class="tooltip tooltip-below">i
               <span class="tooltiptext">
-                The minimum and maximum positions on each axis. <br>
-                These values define the working limits of the tool <br>
-                and are used as software limits. Mechanical stops <br>
-                and homing sensors are usually placed slightly <br>
-                outside these limits.<br>
+                Positions Offsets can be applied in each axis. <br>
               </span>
             </span></h4>
             <div class="row scale-row">
@@ -264,11 +263,7 @@
           <fieldset>
             <h4>Rotation <span class="tooltip tooltip-below">i
               <span class="tooltiptext">
-                The minimum and maximum positions on each axis. <br>
-                These values define the working limits of the tool <br>
-                and are used as software limits. Mechanical stops <br>
-                and homing sensors are usually placed slightly <br>
-                outside these limits.<br>
+                A Job can be rotated about an X / Y point. <br>
               </span>
             </span></h4>
             <div class="row scale-row">
@@ -322,11 +317,7 @@
             <fieldset>
                 <h4>Shear X <span class="tooltip tooltip-below">i
               <span class="tooltiptext">
-                The minimum and maximum positions on each axis. <br>
-                These values define the working limits of the tool <br>
-                and are used as software limits. Mechanical stops <br>
-                and homing sensors are usually placed slightly <br>
-                outside these limits.<br>
+                Applying a shear will slant the Job along an axis. <br>
               </span>
             </span></h4>
              <div class="row scale-row">
@@ -359,11 +350,7 @@
           <fieldset>
         		<h4>Shear Y <span class="tooltip tooltip-below">i
               <span class="tooltiptext">
-                The minimum and maximum positions on each axis. <br>
-                These values define the working limits of the tool <br>
-                and are used as software limits. Mechanical stops <br>
-                and homing sensors are usually placed slightly <br>
-                outside these limits.<br>
+                Applying a shear will slant the Job along an axis. <br>
               </span>
             </span></h4>
             <div class="row scale-row">

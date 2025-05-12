@@ -33,14 +33,15 @@
 */
 
 /* Tooltip elements */
+/* Lots of fussing around to prevent a tip icon from SHOWING THROUGH, see below, z-index: 15 */
 
 .tooltip {
   background-color: #bdbdbd90;
   position: relative;
+  z-index: 10;
   left: 5px;
   top: -5px;
   display: inline-block;
-  z-index: 50;
   padding: 0px;
   border-radius: 50%;
   height: 18px;
@@ -76,6 +77,8 @@
     border-radius: 6px;
     /* Position the tooltip text */
     position: absolute;
+    z-index: 20;
+    overflow:visible;
     bottom: 125%;
     left: 50%;
     margin-left: -60px;
@@ -100,6 +103,7 @@
   
   /* Show the tooltip text when you mouse over the tooltip container */
   .tooltip:hover .tooltiptext {
+    z-index: 20;
     visibility: visible;
     display: inline-block;
     width: max-content;
@@ -108,8 +112,14 @@
     transition: opacity 0.2s ease-in-out, visibility 0.2s;
   }
 
+  /* This is the parameter that keeps a tooltip from SHOWING THROUGH */
+  .tooltip:hover {
+    z-index: 15;
+  }
+
   /* Tooltip-below container */
   .tooltip-below .tooltiptext {
+    z-index: 20;
     top: 130%; /* Position below the trigger element */
     bottom: auto; /* Remove the bottom property */
   }
@@ -127,6 +137,7 @@
   .tooltip-below .tooltiptext::after {
     content: "";
     position: absolute;
+    z-index: 20;
     bottom: 100%; /* Position the arrow at the bottom of the tooltip when it is above the trigger */
     top: auto; /* Remove the top property */
     left: 50%;
@@ -150,5 +161,9 @@
   .tooltiplink:hover {
     color: #0056b3 !important;
     text-decoration: none;
+  }
+
+  .parent-container {
+    overflow: visible; /* Ensure parent elements do not clip the tooltip text */
   }
   
