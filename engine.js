@@ -775,14 +775,21 @@ Engine.prototype.start = function (callback) {
                     res.json(answer);
                 });
 
-                // Configure local directory for uploading files
-                log.info("Cofiguring upload directory...");
+                // log.info("Configuring upload directory...");
                 server.use(
                     restify.plugins.bodyParser({
                         uploadDir: config.engine.get("upload_dir") || "/tmp",
+                        maxBodySize: 100 * 1024 * 1024, // 100MB
                         mapParams: true,
+                        multiples: true,
+                        deleteUploadedFilesOnEnd: true,
                     })
                 );
+
+                server.on("restifyError", function (req, res, err, callback) {
+                    console.error("Unhandled server error:", err);
+                    return callback();
+                });
 
                 // TODO: What is this path sanitizer doing?
                 server.pre(restify.pre.sanitizePath());
