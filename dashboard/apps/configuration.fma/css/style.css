@@ -115,6 +115,11 @@ button.small, .button.small {
   z-index: 10;
 }
 
+select {
+  position: relative;
+  top: -4px; /* trying to get these boxes to line up with the standard non-select boxes in table */
+}
+
 td input, td select {margin:0 !important;}
 
 td.switch {

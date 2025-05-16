@@ -265,11 +265,9 @@
     }; // _download
 
     FabMoDashboard.prototype._call = function (name, data, callback) {
-        //console.log("FabMoDashboard _call", name, data);
-
         if (this.isPresent()) {
             var message = { call: name, data: data };
-            console.log("Sending message to parent:", message);
+            //console.log("Sending message to parent:", message);
             if (callback) {
                 message.id = this._id++;
                 this._handlers[message.id] = callback;
@@ -1235,24 +1233,55 @@
     };
 
     /**
-     * Control top level navigation for the dashboard.  Usually this is used to open another browser/tab window with a link from within an app,
-     * or more rarely, to navigate away from the dashboard.
+     * Flexible navigation API for the dashboard, usually used to open another tab/window from within an app.
+     *   (This expands on typical "href" features to handle an internet connected or not-connected tool.)
      * @method navigate
-     * @param {String} url The URL to open
+     * @param {String} primaryURL The default URL to open in absence of internet connectivity or absence of remote URL.
      * @param {Object} options Options for top-level navigation.
-     * @param {String} options.target The link target (same as the target argument of `window.open`)
+     *   (Many standard option here, check HTML doc. e.g. "{target : '_blank'}" for new window, "{target : '_self'}" for same window.).
+     * @param {String} alternateRemoteURL The remote URL for when internet-connected.)
+     * @param {function} callback Called once the navigation is complete.
+     * @param {Error} callback.err Error object if there was an error.
+     * EXAMPLE USAGE:
+     * fabmo.navigate("http://example.com", {target: "_blank"}, "http://remote.example.com", function(err, result) {
+     *   if (err) {
+     *     console.error("Error navigating:", err);
+     *   }
+     * )};
      */
-    FabMoDashboard.prototype.navigate = function (url, options, callback) {
-        var loc = window.location.href;
-        this._call(
-            "navigate",
-            {
-                path: loc.substr(0, loc.lastIndexOf("/")) + "/",
-                url: url,
-                options: options || {},
-            },
-            callback
-        );
+    FabMoDashboard.prototype.navigate = function (primaryURL, options, alternateRemoteURL, callback) {
+        const self = this;
+        // Check if the tool is online
+        self.isOnline(function (err, online) {
+            // for testing online = false
+            if (err) {
+                // Fallback to primary URL if there's an error
+                self._call(
+                    "navigate",
+                    {
+                        path: window.location.href.substr(0, window.location.href.lastIndexOf("/")) + "/",
+                        url: primaryURL,
+                        options: options || {},
+                    },
+                    callback
+                );
+                return;
+            }
+
+            // Use the alternate remote URL if online and alternate provided, otherwise use the primary URL
+            const urlToNavigate = online && alternateRemoteURL ? alternateRemoteURL : primaryURL;
+
+            // Perform the navigation
+            self._call(
+                "navigate",
+                {
+                    path: window.location.href.substr(0, window.location.href.lastIndexOf("/")) + "/",
+                    url: urlToNavigate,
+                    options: options || {},
+                },
+                callback
+            );
+        });
     };
 
     FabMoDashboard.prototype.getCurrentUser = function (callback) {

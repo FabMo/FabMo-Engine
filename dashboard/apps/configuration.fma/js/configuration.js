@@ -111,9 +111,11 @@ function update() {
                 input.val((Math.round(String(v) * decimals) / decimals));
             }    
             // Handle special case that some Y axis values are linked to X axis in FabMo
+            // ... for Jog speed
             if ( key === 'jogxy_speed' ) {
                 $('#' + branchname + '-' + 'jogy_speed').val((Math.round(String(v) * decimals) / decimals));
             }
+
             if ( key === 'xy_maxjerk' ) {
                 $('#' + branchname + '-' + 'y_maxjerk').val(String(v));
             }
@@ -193,6 +195,9 @@ var notifyChange = function(err,id){
 
 var configData = null;
 
+
+// Handle Backups
+
 $('#btn-backup').click(function(evt) {
     fabmo.getConfig(function(err,conf){
         if(err){
@@ -203,97 +208,168 @@ $('#btn-backup').click(function(evt) {
     });
 });
 
-
-
 $('#btn-restore').click(function(evt) {
     $('#restore_conf_file').trigger('click');
 });
 
-
 $("#restore_conf_file").change(function() {
-        var files = $(this).prop('files');
-        if(files.length===1){
-            var conf_file = files[0];
-            if(!conf_file)return;
-            if(conf_file.name.split('.').pop()!=='fmc'){
-                fabmo.notify('error','the file you submit is not valid');
-                $("#restore_conf_file").attr("value", "");
-                return;
-            }
-
-           var reader = new FileReader();
-           reader.readAsText(conf_file);
-           reader.onload = function(evt)
-           {
-               try{
-                   conf = JSON.parse(evt.target.result);
-               }catch(ex){
-                fabmo.notify("error","Error reading file : "+ex);
-                $("#restore_conf_file").attr("value", "");
-                return;
-               }
-               fabmo.setConfig(conf,function(err){
-                   if(err){
-                       fabmo.notify("error",err);
-                       $("#restore_conf_file").attr("value", "");
-                       return;
-                   }
-                   fabmo.notify("success","the configuration file have been successfully loaded !");
-                   $("#restore_conf_file").attr("value", "");
-               });
-           }
-           reader.onerror = function (evt) {
-               fabmo.notify("error","Error reading file");
-               $("#restore_conf_file").attr("value", "");
-           }
-
+    var files = $(this).prop('files');
+    if(files.length===1){
+        var conf_file = files[0];
+        if(!conf_file)return;
+        if(conf_file.name.split('.').pop()!=='fmc'){
+            fabmo.notify('error','the file you submitted is not valid');
+            $("#restore_conf_file").attr("value", "");
+            return;
         }
-
-    });
-
-    $('#btn-flash-firm').click(function() {
-        $('#firmware-input').trigger('click');
-      });
-
-    $('#btn-update').click(function(){
-      fabmo.navigate('/updater');  // for the moment, let's just go to updater to check for updates
-      //  $('#update-input').trigger('click');
-    });
-
-    $('#update-input').change(function(evt) {
-        var files = [];
-        for(var i=0; i<evt.target.files.length; i++) {
-          files.push({file:evt.target.files[i]});
-        }
-        fabmo.submitUpdate(files, {}, function(err, data) {
-            if(err){
-                console.log(err)
-            }else {
-                console.log(data);
+        var reader = new FileReader();
+        reader.readAsText(conf_file);
+        reader.onload = function(evt)
+        {
+            try{
+                conf = JSON.parse(evt.target.result);
+            }catch(ex){
+            fabmo.notify("error","Error reading file : "+ex);
+            $("#restore_conf_file").attr("value", "");
+            return;
             }
-         
-        }, function(progress) {
-          console.log(progress);
-        });
-      });
+            fabmo.setConfig(conf,function(err){
+                if(err){
+                    fabmo.notify("error",err);
+                    $("#restore_conf_file").attr("value", "");
+                    return;
+                }
+                fabmo.notify("success","the configuration file have been successfully loaded !");
+                $("#restore_conf_file").attr("value", "");
+            });
+        }
+        reader.onerror = function (evt) {
+            fabmo.notify("error","Error reading file");
+            $("#restore_conf_file").attr("value", "");
+        }
+    }
+});
+
+// Backup Macros
+$('#btn-macros-backup').click(function () {
+  fetch('/macros/backup', {
+      method: 'GET',
+  })
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error('Failed to backup macros');
+        }
+        return response.blob(); // Get the response as a binary Blob
+    })
+    .then((blob) => {
+        // Create a download link for the Blob
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'fabmo_macros_backup.zip'; // Set the file name
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url); // Clean up the URL
+        fabmo.notify('success', 'Macros backup completed successfully!');
+    })
+  .catch((err) => {
+      fabmo.notify('error', 'Failed to backup macros: ' + err.message);
+  });
+});
+
+
+// Restore Macros
+$('#btn-macros-restore').click(function () {
+    $('#restore_macros_dir').trigger('click');
+});
+
+$('#restore_macros_dir').change(function() {
+  const files = $(this).prop('files');
+  if (files.length === 1) {
+    const macroFile = files[0];
+    fabmo.notify('info', 'Uploading and restoring macros...');
+    const formData = new FormData();
+    formData.append('file', macroFile);
     
-    // Upload a package file manually
-    $('#firmware-input').change(function(evt) {
-      var files = [];
-      for(var i=0; i<evt.target.files.length; i++) {
-        files.push({file:evt.target.files[i]});
-      }
-      fabmo.submitFirmwareUpdate(files, {}, function(err, data) {
-          if(err){
-              console.log(err)
-          }else {
-              console.log(data);
-          }
+    $.ajax({
+      url: '/macros/restore',
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      timeout: 120000, // 2-minute timeout
+      success: function(response) {
+        fabmo.notify('success', 'Macros restored successfully!');
+      },
+      error: function(xhr, status, error) {
+        console.error('Upload error:', xhr.responseText);
+        let errorMessage = 'Failed to restore macros';
         
-      }, function(progress) {
-        console.log(progress);
-      });
+        try {
+          const errorObj = JSON.parse(xhr.responseText);
+          if (errorObj && errorObj.message) {
+            errorMessage += ': ' + errorObj.message;
+          }
+        } catch (e) {
+          errorMessage += ': ' + error;
+        }
+        fabmo.notify('error', errorMessage);
+      },
+      complete: function() {
+        // Reset the file input
+        $('#restore_macros_dir').val('');
+        location.reload(); // Uncomment this line to refresh the page
+      }
     });
+  }
+});
+
+// Other Config page functions
+
+$('#btn-flash-firm').click(function() {
+    $('#firmware-input').trigger('click');
+  });
+
+$('#btn-update').click(function(){
+  fabmo.navigate('/updater');  // for the moment, let's just go to updater to check for updates
+  //  $('#update-input').trigger('click');
+});
+
+$('#update-input').change(function(evt) {
+    var files = [];
+    for(var i=0; i<evt.target.files.length; i++) {
+      files.push({file:evt.target.files[i]});
+    }
+    fabmo.submitUpdate(files, {}, function(err, data) {
+        if(err){
+            console.log(err)
+        }else {
+            console.log(data);
+        }
+      
+    }, function(progress) {
+      console.log(progress);
+    });
+  });
+
+// Upload a package file manually
+$('#firmware-input').change(function(evt) {
+  var files = [];
+  for(var i=0; i<evt.target.files.length; i++) {
+    files.push({file:evt.target.files[i]});
+  }
+  fabmo.submitFirmwareUpdate(files, {}, function(err, data) {
+      if(err){
+          console.log(err)
+      }else {
+          console.log(data);
+      }
+    
+  }, function(progress) {
+    console.log(progress);
+  });
+});
 
 $(document).ready(function() {
     $(document).foundation();
@@ -405,8 +481,14 @@ $(document).ready(function() {
             setConfig(this.id, this.value);
     });
 
-    $('.opensbp-input').change( function() {
+    $('.opensbp-input').change( function() {  // speccial case for XY jerk and jog speed
         setConfig(this.id, this.value);
+        if (this.id === "opensbp-xy_maxjerk") {
+            setConfig("opensbp-y_maxjerk", this.value);
+        }
+        if (this.id === "opensbp-jogxy_speed") {
+            setConfig("opensbp-jogy_speed", this.value);
+        }
     });
 
     $('.opensbp-values').change( function() {
@@ -441,7 +523,6 @@ $(document).ready(function() {
             });
         }
     });
-
 
 
     // setupUserManager();

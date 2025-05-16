@@ -244,12 +244,15 @@ G2.prototype._createCycleContext = function () {
     // Set absolute, spindle speed default, units, and turn on output 4 & ...
     // M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4 (needs to be in first 4 commands or vulnerable)
     // ... these conditions are exited when in machine as it goes back to idle
+    ////## {spph:true} makes sure that spindle shutoff and pull up is enabled for feedholds; potentially turned off in manual
     ////## S1000 is default for spindle speed so that m3 (and SO,1,1) will work correctly w/delay w/o speed
     ////## TODO: create default variable for S-value for VFD spindle control, just a dummy here now
     ////## TODO: fix this kludge to get the current_runtime !
     if (global.CUR_RUNTIME != "[IdleRuntime]") {
         log.debug("PREPEND to cycle - " + global.CUR_RUNTIME);
-        st.write("N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "N4 M100 ({out4:1})\n" + "N5 S1000\n");
+        st.write(
+            "N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "N4 M100 ({out4:1})\n" + "N5 M100 ({spph:true})\n" + "N6 S1000\n"
+        );
     }
 
     // Handle a stream finishing or disconnecting.
@@ -735,7 +738,7 @@ G2.prototype.feedHold = function (callback) {
     if (this.context) {
         this.context.pause();
     }
-    this._write("!\n");
+    this._write("!\n"); // ESSENTIAL to terminations in keypad
 };
 
 // Clears the queue, this means both the queue of g-codes in the engine to send,

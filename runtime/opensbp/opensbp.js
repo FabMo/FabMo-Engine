@@ -1464,7 +1464,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
             var arg = command.expr ? this._eval(command.expr) : null; // collect for handing TIMER in old style
             var input_var = command.var; // collect for handling INPUT in old style
             var params = command.params || {};
-            log.debug("####1PAUSE command parameters: " + JSON.stringify(params));
+            //log.debug("####1PAUSE command parameters: " + JSON.stringify(params));
             //log.debug("PAUSE command arg: " + JSON.stringify(arg));
             //log.debug("PAUSE command: " + JSON.stringify(command));
 
@@ -1507,7 +1507,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 }
             }
 
-            log.debug("####1.5PAUSE command parameters: " + JSON.stringify(normalizedParams));
+            //log.debug("####1.5PAUSE command parameters: " + JSON.stringify(normalizedParams));
 
             // Make Our list for modal display and start by bringing in old TIMER and MESSAGE format
             // var modalParams = {};
@@ -1535,7 +1535,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
             }
             modalParams.message = message;
 
-            log.debug("####2PAUSE modalParams: " + JSON.stringify(modalParams));
+            //log.debug("####2PAUSE modalParams: " + JSON.stringify(modalParams));
 
             // Handle input variable, this is ugly
             if (input_var) {
@@ -1557,7 +1557,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 log.debug(modalParams.input.name);
                 //modalParams.input.type = "user_variable"; //normalizedParams.type; // user or persistent
             }
-            log.debug("####3PAUSE modalParams before optional: " + JSON.stringify(modalParams));
+            //log.debug("####3PAUSE modalParams before optional: " + JSON.stringify(modalParams));
 
             // Handle the other optional parameters
             if (normalizedParams.title) {
@@ -1581,11 +1581,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 modalParams.timer = normalizedParams.timer;
             }
 
-            log.debug("####4PAUSE modalParams before packaging: " + JSON.stringify(modalParams));
+            //log.debug("####4PAUSE modalParams before packaging: " + JSON.stringify(modalParams));
 
             // Use utility function to package modal parameters
             modalParams = u.packageModalParams(modalParams);
-            log.debug("####5PAUSE modalParams after packaging: " + JSON.stringify(modalParams));
+            //log.debug("####5PAUSE modalParams after packaging: " + JSON.stringify(modalParams));
             this.paused = true;
 
             //Set driver in paused state with modalParams data
