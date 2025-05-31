@@ -1481,7 +1481,7 @@ define(function (require) {
         let inputPresent = false;
         let inputType = "text";
         if (options.input && options.input.name) {
-            let ckInput = options.input.name.toUpperCase();
+            let ckInput = typeof options.input.name === "string" ? options.input.name.toUpperCase() : "";
             if (ckInput === "LAST_YN") {
                 inputPresent = true;
                 inputType = "text";
