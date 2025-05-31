@@ -1537,7 +1537,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
 
             //log.debug("####2PAUSE modalParams: " + JSON.stringify(modalParams));
 
-            // Handle input variable, this is ugly
+            // Handle the user-inputting of a variable; two methods, two types
             if (input_var) {
                 // old style input variable request
                 modalParams.input.name = input_var;
@@ -1545,19 +1545,19 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 // New input request options (Y/N) are constructed here rather than in parser
                 if (normalizedParams.input[0] == "&") {
                     normalizedParams.type = "user_variable";
+                    // Strip the leading '&' from the variable name
+                    normalizedParams.input = normalizedParams.input.substring(1);
                 } else if (normalizedParams.input[0] == "$") {
                     normalizedParams.type = "persistent_variable";
+                    // Strip the leading '$' from the variable name
+                    normalizedParams.input = normalizedParams.input.substring(1);
                 } else {
                     throw new Error("Invalid variable name: " + normalizedParams.input);
                 }
-                //input_var.name = normalizedParams.input.substring(1).toUpperCase(); // remove type designator
-                //input_var.access = [];
-                //modalParams.input_var = normalizedParams.input.substring(1).toUpperCase();
+                modalParams.input.type = normalizedParams.type;
                 modalParams.input.name = normalizedParams.input; //"&last_YN"
                 log.debug(modalParams.input.name);
-                //modalParams.input.type = "user_variable"; //normalizedParams.type; // user or persistent
             }
-            //log.debug("####3PAUSE modalParams before optional: " + JSON.stringify(modalParams));
 
             // Handle the other optional parameters
             if (normalizedParams.title) {

@@ -337,7 +337,13 @@ engine.getVersion(function (err, version) {
                             keyboard.setEnabled(false);
                             console.log(status["info"]);
 
-                            // MODAL DISPLAY::  System for displaying modal "options" honoring older modal behavior but adding new features
+                            // MODAL DISPLAY SYSTEM:
+                            // This system is responsible for displaying modal dialogs with customizable options.
+                            // It integrates older modal behavior (e.g., default buttons like "Resume" and "Quit")
+                            // with new features such as dynamic input handling, custom titles, and detailed messages.
+                            // The modal options allow for flexible configurations, including hiding buttons,
+                            // defining custom actions for "OK" and "Cancel" buttons, and handling input variables
+                            // for user interaction. This ensures backward compatibility while enabling enhanced functionality.
                             modalOptions = {
                                 message: status.info.message,
                             };
@@ -348,8 +354,13 @@ engine.getVersion(function (err, version) {
                             modalOptions.cancelText = null;
                             modalOptions.input = null;
 
-                            // "Resume" and "Cancel" functions happening after the MODAL is shown
-                            // ... the first for handling an input variable "input-variable" request and saving back to the server
+                            // "Resume" and "Cancel" functions are called after a MODAL is shown to offer to different exits
+                            // or actions.  The "resume" function is used to resume the engine, while the "cancel" function
+                            // is used to quit the engine.  These functions are defined here so that they can be used in the
+                            // modalOptions for the "ok" and "cancel" buttons.
+                            // The "resume" function is used to resume the engine, while the "cancel" function is used to quit the engine.
+                            // If the modal is shown with an "input" request, then the resume function will handle that
+                            // request by extracting the value of a varialbe and its type from the modal input and sending it back to the server.
                             var resumeFunction = function (args) {
                                 var value = args;
                                 console.log("Extracted value: ", value);
@@ -371,78 +382,21 @@ engine.getVersion(function (err, version) {
 
                             // Check for presence of an "input" request in "name"
                             if (status.info["input"] && status.info.input["name"]) {
-                                var wrkName = status.info.input["name"] || "";
-
-                                if (!modalOptions.input) {
-                                    modalOptions.input = {}; // Ensure the input property exists
-                                }
-                                if (wrkName.substring(1).toUpperCase === "LAST_YN") {
-                                    if (wrkName.charAt(0) === "&") {
-                                        modalOptions.input.type = "user_variable"; // Set the type for user_variable
-                                        wrkName = wrkName.substring(1); // Remove the '&' prefix
-                                    } else if (wrkName.charAt(0) === "$") {
-                                        modalOptions.input.type = "user_variable"; // for now, YN is always user_variable
-                                        wrkName = wrkName.substring(1); // Remove the '$' prefix
-                                    } else {
-                                        // Handle inputs without a variable indicator; for now default to user_variable
-                                        console.warn(
-                                            "Unknown input variable type, defaulting to user_variable for: ",
-                                            wrkName
-                                        );
-                                        modalOptions.input.type = "user_variable"; // Default to user_variable
-                                    }
-                                    modalOptions.input.name = wrkName;
+                                var wrkName = status.info.input["name"];
+                                if (typeof wrkName === "object") {
+                                    modalOptions.input = {
+                                        name: wrkName.name,
+                                        type: wrkName.type || "user_variable",
+                                    };
                                 } else {
-                                    if (wrkName.charAt(0) === "&") {
-                                        modalOptions.input.type = "user_variable"; // Set the type for user_variable
-                                        wrkName = wrkName.substring(1);
-                                    } else if (wrkName.charAt(0) === "$") {
-                                        modalOptions.input.type = "permanent_variable";
-                                        wrkName = wrkName.substring(1); // Remove the '$' prefix
-                                    } else {
-                                        // Handle inputs without a variable indicator; for now default to user_variable
-                                        console.warn(
-                                            "Unknown input variable type, defaulting to user_variable for: ",
-                                            wrkName
-                                        );
-                                        modalOptions.input.type = "user_variable"; // Default to user_variable
-                                    }
-                                    modalOptions.input.name = wrkName;
+                                    modalOptions.input = {
+                                        name: wrkName,
+                                        type: status.info.input["type"] || "user_variable",
+                                    };
                                 }
-                                console.log("I got the name > ", modalOptions.input["name"]); // Debugging: Log the input name
-                                console.log("I got the type > ", modalOptions.input["type"]); // Debugging: Log the input type
+                                console.log("Name: ", modalOptions.input.name);
+                                console.log("Type: ", modalOptions.input.type);
                             }
-
-                            // Check for other "custom" display parameters
-                            // Eventually we may want to be able set both buttons to off, but at the moment, just prevet a lockup
-                            // SO, first deal with case that both OK and Cancel are set to null; for now, we will reset Cancel
-                            //   with the "text" "Close ..." and the "func" "quit"
-                            // if (status.info["custom"]) {
-                            //     var okExists = false;
-                            //     var cancelExists = false;
-                            //     if (Object.prototype.hasOwnProperty.call(status.info.custom, "ok")) {
-                            //         okExists = true;
-                            //     }
-                            //     if (Object.prototype.hasOwnProperty.call(status.info.custom, "cancel")) {
-                            //         cancelExists = true;
-                            //     }
-                            //     //... now checking present but NULL
-                            //     if (okExists && cancelExists && !status.info.custom.ok && !status.info.custom.cancel) {
-                            //         status.info.custom = {
-                            //             ok: {
-                            //                 text: "Resume",
-                            //                 func: "ok",
-                            //             },
-                            //             cancel: {
-                            //                 text: "Quit",
-                            //                 func: "cancel",
-                            //             // cancel: {
-                            //             //     text: "Close ... [no choice defined]",
-                            //             //     func: "quit",
-                            //             },
-                            //         };
-                            //     }
-                            // }
 
                             if (status.info["custom"]) {
                                 // Handle custom title
@@ -482,10 +436,6 @@ engine.getVersion(function (err, version) {
                                         modalOptions.ok = null;
                                         modalOptions.okText = null;
                                     }
-                                    // } else {
-                                    //     // Default OK button
-                                    //     modalOptions.okText = "Resume";
-                                    //     modalOptions.ok = resumeFunction;
                                 }
 
                                 // Handle Cancel button
@@ -510,10 +460,6 @@ engine.getVersion(function (err, version) {
                                         modalOptions.cancel = null;
                                         modalOptions.cancelText = null;
                                     }
-                                    // } else {
-                                    //     // Default Cancel button
-                                    //     modalOptions.cancelText = "Quit";
-                                    //     modalOptions.cancel = cancelFunction;
                                 }
 
                                 //Set defaults if both buttons are still null
