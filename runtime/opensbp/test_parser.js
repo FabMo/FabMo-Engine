@@ -18,6 +18,7 @@ const testInputs = [
     "PAUSE TIMER=5",
     'PAUSE &varName, MESSAGE="Input required", TITLE="Data Entry"',
     'DIALOG "Please enter your name:", INPUT=&name, OKTEXT="Submit"',
+    "IF &A = 1 THEN RETURN",
 ];
 
 // Function to test parsing of inputs
