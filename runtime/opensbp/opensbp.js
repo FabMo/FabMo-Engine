@@ -1435,7 +1435,17 @@ SBPRuntime.prototype._execute = function (command, callback) {
 
         case "cond":
             if (this._eval(command.cmp)) {
-                return this._execute(command.stmt, callback); // Warning RECURSION!
+                var result = this._execute(command.stmt, callback);
+                // Only increment pc if the statement did not break the stack
+                // (i.e., result is false)
+                // Commands such as RETURN, GOTO, and handle the stack location themselves
+                if (result === false) {
+                    this.pc += 1;
+                    setImmediate(callback);
+                } else if (result === true) {
+                    setImmediate(callback);
+                }
+                return result;
             } else {
                 this.pc += 1;
                 setImmediate(callback);
@@ -1445,7 +1455,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
         case "comment":
             var comment = command.comment.join("").trim();
             if (comment != "") {
-                //this.emit_gcode('( ' + comment + ' )') // TODO allow for comments
+                //this.emit_gcode('( ' + comment + ' )') // TODO allow for comments in gcode
             }
             this.pc += 1;
             return false;
