@@ -1435,22 +1435,22 @@ SBPRuntime.prototype._execute = function (command, callback) {
 
         case "cond":
             if (this._eval(command.cmp)) {
-                var result = this._execute(command.stmt, callback);
-                // Only increment pc if the statement did not break the stack
-                // (i.e., result is false)
-                // Commands such as RETURN, GOTO, and handle the stack location themselves
-                if (result === false) {
-                    this.pc += 1;
-                    setImmediate(callback);
-                } else if (result === true) {
-                    setImmediate(callback);
+                // This command action is for THEN RETURN, handled as highly special case; should make more consistent with GOTO and GOSUB
+                if (command.stmt && command.stmt.type === "return") {
+                    var result = this._execute(command.stmt, callback);
+                    if (result === true) {
+                        setImmediate(callback);
+                        return result;
+                    }
+                } else {
+                    return this._execute(command.stmt, callback); // Warning RECURSION!
                 }
-                return result;
             } else {
                 this.pc += 1;
                 setImmediate(callback);
                 return true;
             }
+            break; // to keep eslint happy
 
         case "comment":
             var comment = command.comment.join("").trim();
