@@ -327,9 +327,6 @@
                     callback(null, { cancelled: true });
                 });
                 break;
-
-            // Existing cases...
-            // ...
         }
     };
 
