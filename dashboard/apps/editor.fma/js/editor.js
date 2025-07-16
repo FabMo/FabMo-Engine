@@ -492,7 +492,7 @@ require('./cm-fabmo-modes.js');
     // This is STANDARD TEMPLATE FOR doc reference call in Tooltip system ... for location in PDF: ... .pdf#'tag'
     // Here you are in the editor app, but action via fabmoAPI (fabmo.navigate) ["_blank" or "_self"; new tab or this tab]
     $("#cmd-ref").click(function(evt) {
-      fabmo.navigate("docs/No_Internet.pdf", {target: "_blank"}, "https://www.dropbox.com/s/dkdsnwqjj9nq04m/SBG00353%20FabMo%20OpenSBP%20Command%20Reference.docx?dl=0",  function (err) {
+      fabmo.navigate("docs/ComRef.pdf", {target: "_blank"}, "https://www.dropbox.com/scl/fi/pqs1rg2gpcdeo20wpi3nt/ComRef.pdf?rlkey=gjd4hdx1bifwcgewcxet6s4no&st=qo8zbc10&dl=0",  function (err) {
         if (err) {
             console.error("Navigation failed:", err);
         }
