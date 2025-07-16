@@ -206,6 +206,9 @@ GCodeRuntime.prototype._handleStateChange = function (stat) {
 
 // Run a given stream input
 GCodeRuntime.prototype.runStream = function (st) {
+    console.log("=== START OF RUN ===");
+    this.logState();
+
     if (this.machine) {
         this.machine.setState(this, "running");
     }
@@ -250,6 +253,17 @@ GCodeRuntime.prototype.runString = function (string) {
 GCodeRuntime.prototype.executeCode = function (string) {
     this._file_or_stream_in_progress = true;
     return this.runString(string);
+};
+
+GCodeRuntime.prototype.logState = function () {
+    console.log("=== G-CODE RUNTIME STATE ===");
+    console.log("_file_or_stream_in_progress:", this._file_or_stream_in_progress);
+    console.log("ok_to_disconnect:", this.ok_to_disconnect);
+    console.log("completeCallback:", !!this.completeCallback);
+    console.log("Event listeners:", {
+        status: this.driver.listenerCount("status"),
+        error: this.driver.listenerCount("error"),
+    });
 };
 
 exports.GCodeRuntime = GCodeRuntime;

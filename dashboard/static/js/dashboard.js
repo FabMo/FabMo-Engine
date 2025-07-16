@@ -171,21 +171,23 @@ define(function (require) {
                         var id = evt.data.id >= 0 ? evt.data.id : -1;
                         var msg;
                         try {
-                            handler(data, function (err, data) {
+                            handler(data, function (err, data, callbackId) {
+                                // Use callbackId if provided, otherwise fall back to id
+                                var cbid = typeof callbackId !== "undefined" ? callbackId : id;
                                 var msg;
                                 if (err) {
                                     msg = {
                                         status: "error",
                                         type: "cb",
                                         message: JSON.stringify(err),
-                                        id: id,
+                                        id: cbid,
                                     };
                                 } else {
                                     msg = {
                                         status: "success",
                                         type: "cb",
                                         data: data,
-                                        id: id,
+                                        id: cbid,
                                     };
                                 }
                                 if (source) {
@@ -393,11 +395,10 @@ define(function (require) {
             "showUSBFileBrowser",
             function (data, callback) {
                 console.log("Dashboard handler for showUSBFileBrowser called with:", data);
-
-                // Extract options from the data
+                var callbackId = data.callbackId;
                 var options = data.options || {};
+                var app = options.app || "job_manager"; // Default to job_manager if not specified
 
-                // Check if the USB browser module is available, or try to load it
                 this._ensureUSBBrowserModuleLoaded(
                     function (moduleLoaded) {
                         if (moduleLoaded && window.USBBrowser && typeof window.USBBrowser.getInstance === "function") {
@@ -405,39 +406,42 @@ define(function (require) {
                                 var browser = window.USBBrowser.getInstance();
                                 console.log("Got USB Browser instance in dashboard handler");
 
-                                // Show the browser UI
                                 browser.show(
                                     function (err, result) {
                                         console.log("USB Browser show callback in dashboard:", err, result);
 
                                         if (err) {
-                                            callback(err);
+                                            callback(err, null, callbackId);
                                         } else if (result && result.filePath) {
-                                            // If a file was selected, submit it
-                                            this.engine.submitUSBFile(
-                                                result.filePath,
-                                                options,
-                                                function (submitErr, submitResult) {
-                                                    if (submitErr) {
-                                                        callback(submitErr);
-                                                    } else {
-                                                        callback(null, submitResult);
+                                            if (app === "sb4") {
+                                                // Just return the file path to the app's callback
+                                                callback(null, { filePath: result.filePath }, callbackId);
+                                            } else {
+                                                // Default: submit the job and update job_manager
+                                                this.engine.submitUSBFile(
+                                                    result.filePath,
+                                                    options,
+                                                    function (submitErr, submitResult) {
+                                                        if (submitErr) {
+                                                            callback(submitErr);
+                                                        } else {
+                                                            callback(null, submitResult);
 
-                                                        // Send a message to the job manager iframe to trigger updateQueue
-                                                        var jobManagerIframe = document.querySelector(
-                                                            'iframe[src*="job_manager.fma"]'
-                                                        );
-                                                        if (jobManagerIframe) {
-                                                            jobManagerIframe.contentWindow.postMessage(
-                                                                { type: "updateQueueEvent" },
-                                                                "*"
+                                                            // Notify job_manager to update queue
+                                                            var jobManagerIframe = document.querySelector(
+                                                                'iframe[src*="job_manager.fma"]'
                                                             );
+                                                            if (jobManagerIframe) {
+                                                                jobManagerIframe.contentWindow.postMessage(
+                                                                    { type: "updateQueueEvent" },
+                                                                    "*"
+                                                                );
+                                                            }
                                                         }
                                                     }
-                                                }
-                                            );
+                                                );
+                                            }
                                         } else {
-                                            // User canceled or no file selected
                                             callback(null, { cancelled: true });
                                         }
                                     }.bind(this)
@@ -503,6 +507,25 @@ define(function (require) {
 
             document.head.appendChild(script);
         };
+
+        // For use in non-Job Manager apps
+        this._registerHandler(
+            "submitUSBFile",
+            function (data, callback) {
+                // data.path is the USB file path, data.options is options object
+                if (!data || !data.path) {
+                    callback(new Error("No file path provided for submitUSBFile"));
+                    return;
+                }
+                this.engine.submitUSBFile(data.path, data.options || {}, function (err, result) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        callback(null, result);
+                    }
+                });
+            }.bind(this)
+        );
 
         // Get the list of jobs in the queue
         this._registerHandler(

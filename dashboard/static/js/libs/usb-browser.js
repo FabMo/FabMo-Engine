@@ -722,6 +722,8 @@
         var callback = this.callback;
         this.hide();
 
+        console.log("selectFile called, callback is", callback);
+
         if (callback) {
             callback(null, { filePath: filePath });
         }
