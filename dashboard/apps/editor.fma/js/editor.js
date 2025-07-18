@@ -489,23 +489,39 @@ require('./cm-fabmo-modes.js');
       return false;
     });
 
-    // This is STANDARD TEMPLATE FOR doc reference call in Tooltip system ... for location in PDF: ... .pdf#'tag'
-    // Here you are in the editor app, but action via fabmoAPI (fabmo.navigate) ["_blank" or "_self"; new tab or this tab]
+    // This is a template for using fabmo.navigate to open a document in an app 
     $("#cmd-ref").click(function(evt) {
-      fabmo.navigate("docs/ComRef.pdf", {target: "_blank"}, "https://www.dropbox.com/scl/fi/pqs1rg2gpcdeo20wpi3nt/ComRef.pdf?rlkey=gjd4hdx1bifwcgewcxet6s4no&st=qo8zbc10&dl=0",  function (err) {
-        if (err) {
-            console.error("Navigation failed:", err);
-        }
-      });
+        fabmo.navigate(
+            "docs/ComRef.pdf",  // Local file
+            {target: "_blank"}, 
+            "docs/ComRef.pdf",  // Normally the remote file; for now just use dashboard docs version
+            function (err, result) {
+                if (err) {
+                    console.error("Navigation failed:", err);
+                } else {
+                    console.log("Navigation succeeded:", result.action);
+                }
+            }
+        );
+        evt.preventDefault();
     });
+
     $("#sys-vars").click(function(evt) {
-      fabmo.navigate("docs/No_Internet.pdf", {target: "_blank"}, "https://docs.google.com/spreadsheets/d/1g9X5Sd_3ijWfdN9Hk3xVbwkPs4eA1xqbRRzuoZxiD3Y/edit?usp=sharing",  function (err) {
-        if (err) {
-            console.error("Navigation failed:", err);
-        }
-      });
+        fabmo.navigate(
+            "docs/No_Internet.pdf",  // Local file
+            {target: "_blank"}, 
+            "https://docs.google.com/spreadsheets/d/1g9X5Sd_3ijWfdN9Hk3xVbwkPs4eA1xqbRRzuoZxiD3Y/edit?usp=sharing",
+            function (err, result) {
+                if (err) {
+                    console.error("Navigation failed:", err);
+                } else {
+                    console.log("Navigation succeeded:", result.action);
+                }
+            }
+        );
+        evt.preventDefault();
     });
-    
+
     ////## modified to test idea of only using a file name and showing or not the extension ... as opposed to 2 names
     function submitJob(){
         $('#modal-title').text('Submit Job');

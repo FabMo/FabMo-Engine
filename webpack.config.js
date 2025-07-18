@@ -4,6 +4,7 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const lib = "dashboard/static/js/libs";
 const js = "dashboard/static/js";
+const docs = "dashboard/static/docs";
 const webpack = require("webpack");
 const ProvidePlugin = require("webpack").ProvidePlugin;
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
@@ -65,7 +66,7 @@ var config = {
                 ],
             },
             {
-                test: /\.(eot|otf|svg|ttf|woff|woff2|png|jpg|gif)$/,
+                test: /\.(eot|otf|svg|ttf|woff|woff2|png|jpg|gif|pdf)$/,
                 type: "asset",
             },
 
