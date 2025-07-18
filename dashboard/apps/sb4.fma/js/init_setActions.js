@@ -32,6 +32,19 @@ let AXis = ["", "X", "Y", "Z", "A", "B", "C", "U", "V", "W"]
 let LIm_up = new Array(10);                       // x=1
 let LIm_dn = new Array(10);
 let excluded_axes_str = "";
+let lastStatus = {};                            // ... to hold the last status for display purposes
+
+const displayState = {
+    areaWidth: 0,
+    areaHeight: 0,
+    dispLineLen: 0,
+    dispHeight: 0,
+    computedLn: 0,
+    startLn: 0,
+    endLn: 0
+};
+
+const sbpContainer = document.getElementById('sbp-container');
 
 if (!window.Haptics)
     alert("The haptics.js library is not loaded.");
@@ -45,8 +58,22 @@ $(document).ready(function () {
             custom_back_text: false,
             is_hover: false,
             mobile_show_parent_link: true
+        },
+        dropdown: {
+            auto_focus: false,
+            auto_size: false,
+            timeout: 0                    // Disable auto-timeout
         }
     });
+
+    // Prevent dropdown auto-close
+    Foundation.libs.dropdown.settings.hover_timeout = 0;
+    Foundation.libs.dropdown.settings.closing_time = 0;
+
+    restoreUIConfig();
+
+    // Attemp to load line display if Sb4 is started with the status of a file currently running (started elsewhere)
+    if (status.nb_lines > 2 && status.line > 19 )
 
     // Just testing the positioning of this ...
     $(".spindle-display").css("visibility", "hidden");
@@ -136,46 +163,55 @@ $(document).ready(function () {
     updateSpeedsFromEngineConfig();
 
     getAxisLimits();
-
-    updateAppState();
-
+    
     initVideo();
 
-    // Manage video/text container size using ResizeObserver (older attempt to manage container below; click not consistent)
 
-    // ... should probably just have done it all interms of the window container size
-    const sbpContainer = document.getElementById('sbp-container');
-    const resizeObserver = new ResizeObserver(entries => {
-        for (let entry of entries) {
-            //console.log("got resize event on sbp-container");
-            // Define a max-width that is 5% less than full width of "#cmd-panel"
-            const maxWidth = document.getElementById('cmd-panel').clientWidth * 0.95;
-            if (entry.contentRect.width != maxWidth) {
-                sbpContainer.style.width = `${maxWidth}px`;
-            }
-            g.COnt_Width = sbpContainer.clientWidth;
-            g.COnt_Height = sbpContainer.clientHeight;
-            //console.log("width: " + g.COnt_Width + " height: " + g.COnt_Height);
-            resetAppConfig();
-        }
-    });
-    // Observe the sbp-container for resize events
-    resizeObserver.observe(sbpContainer);
-    // Observe the app windo for resize events
-    window.addEventListener('resize', function () {
-        //console.log("got resize event on window");
-        // Define a max-width that is 5% less than full width of "#cmd-panel"
+    function handleResize() {                                           // FabMo Resize Event Handler
         const maxWidth = document.getElementById('cmd-panel').clientWidth * 0.95;
-        if (sbpContainer.clientWidth != maxWidth) {
+        if (sbpContainer.clientWidth !== maxWidth) {
             sbpContainer.style.width = `${maxWidth}px`;
         }
         g.COnt_Width = sbpContainer.clientWidth;
         g.COnt_Height = sbpContainer.clientHeight;
-        //console.log("width: " + g.COnt_Width + " height: " + g.COnt_Height);
-        resetAppConfig();
-    });   
+        calculateDisplayParams();
+//        updateFileLineDisplay(lastStatus, lines);
+        saveUIConfig();
+        console.log("Resize event#1  handled. Width: " + g.COnt_Width + ", Height: " + g.COnt_Height);
+        //resetAppConfig();
+    }
 
-    // ** Set-Up Response to Command Entry; first key management
+    const sbpContainer = document.getElementById('sbp-container');      // Sb4 File Text Area Resize Observer
+    const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            const maxWidth = document.getElementById('cmd-panel').clientWidth * 0.95;
+            if (sbpContainer.clientWidth !== maxWidth) {
+                sbpContainer.style.width = `${maxWidth}px`;
+            }
+            g.COnt_Width = sbpContainer.clientWidth;
+            g.COnt_Height = sbpContainer.clientHeight;
+            calculateDisplayParams(lastStatus, lines);
+            saveUIConfig();
+            console.log("Resize event#2 handled. Width: " + g.COnt_Width + ", Height: " + g.COnt_Height);
+            //resetAppConfig();
+        }
+    });
+
+        function calculateDisplayParams() {
+        const $txtArea = $("#file_txt_area");
+        displayState.areaWidth = $txtArea.width();
+        displayState.areaHeight = $txtArea.height();
+        displayState.dispLineLen = Math.floor(displayState.areaWidth / 8.5);
+        displayState.dispHeight = Math.floor(displayState.areaHeight / 19);
+        updateFileLineDisplay(lastStatus, lines);
+        // Do not reset computedLn/startLn/endLn here; those are set during display
+    }
+
+    resizeObserver.observe(sbpContainer);
+    window.addEventListener('resize', handleResize);
+
+
+    // ** Set-Up Response to Command Entry; first key management **
 
     // Key handler for triggering special "key" (shortcut) events in the dashboard
     // ... here we add a case for handing spindle speed increments and decrements
@@ -283,10 +319,10 @@ $(document).ready(function () {
         }
     });
 
+    
     // ** Final run CALL for FP command; first clears anything in JobQueue then Runs and puts file in JobManager history then clears file remnants
     let curFilename, curFile
     let lines = new Array()
-    let lastLn = 0;
     let upDating = false;
 
     $('#file').change(function (evt) {
@@ -316,70 +352,108 @@ $(document).ready(function () {
         displayFillIn("", "File Ready to Run", curFilename);
     })
 
-    $("#btn_ok_run").click(function (event) {                 // RUN THE FILE
+    $("#btn_ok_run").click(function (event) {
         let ckFile = $('#fi_modal_title').text().substring(0,4);
         $('#fi-modal').foundation('reveal', 'close');
         if (ckFile === "File") {    // handle as file
             fabmo.clearJobQueue(function (err, data) {
                 if (err) {
-                    cosole.log(err);
+                    fabmo.notify('error', err);
                 } else {
-                    fabmo.submitJob({
-                        file: curFile,
-                        name: curFilename,
-                        description: '... called from Sb4'
-                    }, { stayHere: true },
-                        function () {
-                            fabmo.runNext();
-                        }
-                    );
+                    // Helper to fetch last job's file and run it
+                    function fetchAndRun() {
+                        fabmo.getJobHistory({ start: 0, count: 1 }, function(err, jobs) {
+                            if (err || !jobs.data.length) {
+                                fabmo.notify('error', 'Could not get job history');
+                                return;
+                            }
+                            var lastJob = jobs.data[0];
+                            var url = '/job/' + lastJob._id + '/file';
+                            $.get(url, function(data, status) {
+                                lines = data.split('\n');
+                                // Now lines[] is ready for display as job runs
+                                fabmo.runNext(function(runErr) {
+                                    if(runErr) {
+                                        fabmo.notify('error', runErr);
+                                    }
+                                });
+                            });
+                        });
+                    }
+
+                    if(window.curFilePath) { // USB file
+                        fabmo.submitUSBFile(window.curFilePath, {
+                            name: window.curFilename,
+                            description: '... called from Sb4'
+                        }, function(err, result) {
+                            window.curFilePath = undefined;
+                            window.curFilename = undefined;
+                            if(err) {
+                                fabmo.notify('error', err);
+                            } else {
+                                fetchPendingAndRun(function(runErr) {
+                                    // done
+                                });
+                            }
+                        });
+                    } else { // Local file
+                        fabmo.submitJob({
+                            file: curFile,
+                            name: curFilename,
+                            description: '... called from Sb4'
+                        }, { stayHere: true }, function () {
+                            fetchAndRun();
+                        });
+                    }
                 }
             });
-        
-        } else if (ckFile === "Reru") {                      // or RE-RUN-LAST; Identify then Load here
-            // check history to identify last job
-            fabmo.getJobHistory({
-                start: 0,
-                count: 0
-                }, function(err, jobs) {
-                    var arr = jobs.data;
-                    // Identify the last job
-                    var lastJob = arr[0];
-                    // Load and Split the data from the lastJob into lines
-                    var url = '/job/' + lastJob._id + '/file';           
-                    $.get(url,function(data, status) {
-                    lines = data.split('\n');
-                    for (let line = 0; line < lines.length; line++) {
-                        //console.log(line + ">>>" + lines[line]);
-                    }
-                });    
-                fabmo.runNext(function(err, data) {
-                    if (err) {
-                        fabmo.notify(err);
-                    } else {
-                    }
-                });
-              }
-            );    
 
-        } else {                                           // ELSE its a command with parameters from fill in
+        } else if (ckFile === "Reru") { // Rerun last
+            fabmo.getJobHistory({ start: 0, count: 1 }, function(err, jobs) {
+                if (err || !jobs.data.length) {
+                    fabmo.notify('error', 'Could not get job history');
+                    return;
+                }
+                var lastJob = jobs.data[0];
+                var url = '/job/' + lastJob._id + '/file';
+                $.get(url, function(data, status) {
+                    lines = data.split('\n');
+                    fabmo.runNext(function(runErr) {
+                        if(runErr) {
+                            fabmo.notify('error', runErr);
+                        }
+                    });
+                });
+            });
+        } else {
             setSafeCmdFocus();
             sendCmd();
         }
     });
 
-    // // Get an ENTER on the #fi-modal box to run the command
-    // $('#fi-params').keypress(function (e) {
-    //     if (e.which == 13) {
-    //         $('#btn_ok_run').click();
-    //         return false;    //<---- Add this line ??
-    //     }
-    // });
+    function fetchPendingAndRun(callback) {
+        fabmo.getJobsInQueue(function(err, jobs) {
+            if (err || !jobs.pending.length) {
+                fabmo.notify('error', 'No pending jobs found');
+                if(callback) callback(err || new Error('No pending jobs'));
+                return;
+            }
+            var pendingJob = jobs.pending[0];
+            var url = '/job/' + pendingJob._id + '/file';
+            $.get(url, function(data, status) {
+                lines = data.split('\n');
+                fabmo.runNext(function(runErr) {
+                    if(runErr) fabmo.notify('error', runErr);
+                    if(callback) callback(runErr);
+                });
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                fabmo.notify('error', 'Failed to fetch pending job file: ' + errorThrown);
+                if(callback) callback(new Error('Failed to fetch pending job file'));
+            });
+        });
+    }
 
-//    $("#btn_cmd_run").click(function (event) {
-//    });
-    
-    $("#btn_cmd_quit").click(function (event) {          // QUIT
+    $("#btn_cmd_quit").click(function (event) {           // QUIT
         //console.log("Not Run");
         $('#fi-modal').foundation('reveal', 'close');
         curFile = "";
@@ -387,30 +461,62 @@ $(document).ready(function () {
         $("#fi_cur_info").text("");
     });
 
-    $("#btn_adv_file").click(function (event) {         // ADVANCED
-        //console.log("Advanced - curFilename");
+    $("#btn_adv_file").click(function (event) {           // ADVANCED
+        //console.log("Advanced - curFilename");  
         $('#fi-modal').foundation('reveal', 'close');
-        if (!curFilename) { // if no file then this is FL or recent file to run, already loaded from sb_app
+        if (!curFilename && !window.curFilePath) { // if no file then this is FL or recent file to run, already loaded from sb_app
             fabmo.launchApp('job-manager', { stayHere: true });
         } else { 
             fabmo.clearJobQueue(function (err, data) {
                 if (err) {
                     cosole.log(err);
                 } else {
-                    job = curFilename.replace('.sbp', '');
-                    fabmo.submitJob({
-                        file: curFile,
-                        filename: curFilename,
-                        name: job,
-                        description: '... called from Sb4'
-                    });
+                    if(window.curFilePath) {               // If we have a filePath from USB, use submitUSBFile
+                        fabmo.submitUSBFile(window.curFilePath, {
+                            name: window.curFilename,
+                            description: '... called from Sb4'
+                        }, function(err, result) {
+                            window.curFilePath = undefined; // Clear after use
+                            window.curFilename = undefined;
+                            if(err) {
+                                fabmo.notify('error', err);
+                            } else {
+                                fabmo.launchApp('job-manager', { stayHere: true }, function(runErr) {
+                                    if(runErr) {
+                                        fabmo.notify('error', runErr);
+                                    }
+                                });
+                            }
+                        });
+                    } else {                             // Fallback for a regular client file: use submitJob for File/Blob
+                        job = curFilename.replace('.sbp', '');
+                        fabmo.submitJob({
+                            file: curFile,
+                            filename: curFilename,
+                            name: job,
+                            description: '... called from Sb4'
+                        });
+                    }
                 }    
             });
         }    
     });
 
-    // ** STATUS: Report Ongoing and Clear Command Line after a status report is recieved    ## Need a clear after esc too
+    // Tool Tips
+    $("#cmd-ref").click(function(evt) {
+        getUsrResource('docs/ComRef.pdf', 'docs/ComRef.pdf');      // Open the local ComRef.pdf in the dashboard docs folder for the moment 
+    });
+    $("#cmd-ref2").click(function(evt) {
+        getUsrResource('https://shopbottools.com/wp-content/uploads/2025/07/ComRef.pdf', 'docs/ComRef.pdf');      // Testing the online ComRef.pdf
+    });
+    $("#ck-list").click(function(evt) {
+        getUsrResource('docs/ShopBot_checklist.pdf', 'docs/ShopBot_checklist.pdf');      // Open the local ComRef.pdf in the dashboard docs folder for the moment 
+    });
+
+
+    // ** STATUS: Report Ongoing and  Clear Command Line after a status report is recieved **   ## Need a clear after esc too???
     fabmo.on('status', function (status) {
+        lastStatus = status;                                                     // ... save the last status for display purposes
         globals.TOol_x = status.posx;                                            // get LOCATION GLOBALS
         globals.TOol_y = status.posy;
         globals.TOol_z = status.posz;
@@ -419,6 +525,7 @@ $(document).ready(function () {
         globals.TOol_c = status.posc;
         globals.FAbMo_state = status.state;
         globals.G2_stat = status.stat;                                           // 5 means "in motion"
+        globals.usbDrive = status.usbDrive;                                      // ... get the USB drive state
 
         if (globals.DOne_first_status_ck === "false") {
             globals.DOne_first_status_ck = "true";
@@ -438,28 +545,25 @@ $(document).ready(function () {
             globals.UPdateMoPadState();
         }
 
+        // FILE LINE DISPLAY
         if (status.nb_lines > 2 && status.line > 19 ) {                          // ... only if we're running a file (e.g. greater than 1 or 2 commands)
-            const dispLen = 50;
-            let computedLn = 0;
-            computedLn = status.line - 19;
-            lastLn = status.nb_lines;
-            let startLn = computedLn;
-            if (computedLn > 3) {startLn = computedLn - 2};
-            let endLn = computedLn + 12; 
-            if (computedLn + 12 > lastLn) {endLn = lastLn};
-            let lineDisplay = "";
-
-            // update the fileline display
-            for (let i = startLn; i < endLn; i++) {
-                if (i === computedLn) {
-                    lineDisplay += "> " + (i) + "  " + (typeof lines[i - 1] === 'string' ? lines[i - 1].substring(0, dispLen) : '') + '\n';
-                } else {
-                    lineDisplay += "  " + (i) + "  " + (typeof lines[i - 1] === 'string' ? lines[i - 1].substring(0, dispLen) : '') + '\n';
-                }
+            // In case we started somewhere else,
+            // ... try to load values for display from the job or job history
+            if (lines.length < 1 && status.job && !upDating) {
+                upDating = true;  // ... set a flag to prevent multiple calls
+                var runningJob = status.job._id;
+                var url = '/job/' + runningJob + '/file';
+                $.get(url, function(data, status) {
+                    lines = data.split('\n');
+                    upDating = false; // Clear flag when done
+                }).fail(function() {
+                    upDating = false; // Also clear flag on failure
+                });
             }
-            $("#file_txt_area").text(lineDisplay);   ////## could make line number and width adjustable
-        }
+        }    
 
+        updateFileLineDisplay(status, lines);                                    // ... NOW, update the file line display if we have a file running
+        
         if (globals.FAbMo_state === "running") {
             $('#cmd-input').val("");
             $("#cmd-help").css("visibility","hidden");
@@ -488,14 +592,38 @@ $(document).ready(function () {
         if (globals.FAbMo_state != "running" && globals.FAbMo_state != "paused") {
             $("#file_txt_area").text("");
             updateSpeedsFromEngineConfig();
-            // Prevent an ENTER that starting an FL if issues too soon ...
+
+            // Prevent an ENTER that starting an FL if issues too soon ... //# Not exactly sure why this is needed, but it creates a problem of closing the dropdowns early
             // ... Insert a 3/4 second delay before click and setSafeCmdFocus (ultimately needed to clear dropdowns and set focus)
-            setTimeout(function () {
-                $(".top-bar").click();
-                setSafeCmdFocus(1);
-            }, 750);
+            // setTimeout(function () {
+            //     $(".top-bar").click();
+            //     setSafeCmdFocus(1);
+            // }, 750);
         }
     });
+
+    function updateFileLineDisplay(status, lines) {
+        if (status.nb_lines > 2 && status.line > 19) {
+            displayState.computedLn = status.line - 19;
+            let lastLn = status.nb_lines;
+            displayState.startLn = displayState.computedLn;
+            if (displayState.computedLn > 3) { displayState.startLn = displayState.computedLn - 2; }
+            displayState.endLn = displayState.computedLn + displayState.dispHeight;
+            if (displayState.computedLn + displayState.dispHeight > lastLn) { displayState.endLn = lastLn; }
+
+            let lineDisplay = "";
+            if (status.job) {
+                for (let i = displayState.startLn; i < displayState.endLn; i++) {
+                    if (i === displayState.computedLn) {
+                        lineDisplay += "> " + (i) + "  " + (typeof lines[i - 1] === 'string' ? lines[i - 1].substring(0, displayState.dispLineLen) : '') + '\n';
+                    } else {
+                        lineDisplay += "  " + (i) + "  " + (typeof lines[i - 1] === 'string' ? lines[i - 1].substring(0, displayState.dispLineLen) : '') + '\n';
+                    }
+                }
+                $("#file_txt_area").text(lineDisplay);
+            }
+        }
+    }
 
     $("#vid-button").click(function () {      // Toggle video
         // Check for toggle state and change if video present 
@@ -515,7 +643,7 @@ $(document).ready(function () {
             g.VI_display = 3;
             localStorage.setItem("fabmo_sb4_has_video", "true");
         }
-        resetAppConfig();
+        saveUIConfig();
     });
 
     //** Try to restore CMD focus when there is a shift back to app
@@ -556,11 +684,12 @@ $(document).ready(function () {
 
     // ** Process Macro Box Keys
     $("#cut_part_call").click(function () {
-        curFile = "";                           // ... clear out after running
-        curFilename = "";
-        $("#fi_cur_info").text("");
-        $('#file').val('');
-        $('#file').trigger('click');
+        window.getaFile("FP");
+        // curFile = "";                           // ... clear out after running
+        // curFilename = "";
+        // $("#fi_cur_info").text("");
+        // $('#file').val('');
+        // $('#file').trigger('click');
     });
 
     $("#to_job_manager").click(function () {
@@ -630,7 +759,7 @@ $(document).ready(function () {
     $("#cmd-help").click(function () {
         console.log('got cmd-help');
         let thisCmd = $("#cmd-input").val().substring(0, 2);
-        let location = "assets/docs/ComRef.pdf#" + thisCmd;
+        let location = "docs/ComRef.pdf#" + thisCmd;          // for now, just use the ComRef.pdf in the dashboard docs folder
         fabmo.navigate(location, { target: '_blank' });
     });
 
@@ -642,14 +771,14 @@ $(document).ready(function () {
     //     }
     // });
 
-    ////## this system for entry not working!
-    let enterKeyPressed = false;
-    // ** Listen for the keydown event on the input fields
-    $('#fi_container').on('keydown', '.fi_val', function(event) {
-        if (event.key === "Enter") {
-     //       enterKeyPressed = true;
-        }
-    });
+    // ////## this system for entry not working!
+    // let enterKeyPressed = false;
+    // // ** Listen for the keydown event on the input fields
+    // $('#fi_container').on('keydown', '.fi_val', function(event) {
+    //     if (event.key === "Enter") {
+    //  //       enterKeyPressed = true;
+    //     }
+    // });
 
     // ** Allow editing of Fill-In parameters and paste usably into Command Line ready to run
     $('#fi_container').on('change', '.fi_val', function () { // re-enter on each change in fill-in box
@@ -674,8 +803,6 @@ $(document).ready(function () {
 
     });
 
-
-
     // Just for testing stuff ... 
     $("#other").click(function () {
         console.log('got change');
@@ -692,14 +819,15 @@ $(document).ready(function () {
         console.log('FabMo_first_state>' + globals.FAbMo_state);
     });
 
-    // Set up response to changes in the localStorage state (this updates the spindl-RPM display as apporpriate)
+    // Set up response to changes in the localStorage state (this updates the spindle-RPM display as apporpriate)
     window.addEventListener('storage', function (e) {
         if (e.key === 'pinRight') {
             fabmo.requestStatus()
         }
     });
 
-// MANAGING MODAL STUFF
+
+    // MANAGING MODALS
 
     $(document).on('open.fndtn.reveal', '[data-reveal]', function () {                 // ------------------- ON OPENING A MODAL
 
@@ -718,7 +846,7 @@ $(document).ready(function () {
 
         }
 
-        if ($(this).context.id === "insertStream") {                                            // Open G2-Stream Box
+        if ($(this).context.id === "insertStream") {                                    // Open G2-Stream Box
             fabmo.manualEnter({ hideKeypad: true, mode: 'raw' });
             globals.INject_inputbox_open = true;
             // beep(20, 1800, 1);

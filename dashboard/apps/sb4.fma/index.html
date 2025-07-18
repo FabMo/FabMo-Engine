@@ -23,7 +23,8 @@
 <!--  <script src="js/lib/modernizr.js"></script> seems to fix mordernizr issue -->
     <script src="js/lib/fastclick.js" async></script>
     <script src="js/lib/haptics.js"></script>
-    <script src="js/lib/fabmo.js"></script>
+<!--    <script src="js/lib/fabmo.js"></script>  try using local copy -->
+    <script src="/static/js/libs/fabmo.js"></script>
     
     <!--Note that paperjs is not ES6; mo_pad is run in paperscript, not javascript-->
     <script src="js/lib/paper-full.min.js" defer></script>
@@ -152,7 +153,7 @@
 
 
   <form style="display:none;" id="fileform">
-    <input name="uploadFile" type="file" id="file">
+    <input name="uploadFile" type="file" id="file" multiple accept=".sbp, .nc, .gcode, .tap">
     <button onclick="loadFileAsText()"></button>
   </form>
 
@@ -170,8 +171,8 @@
 
               <div class="macros">
                 <h9 class="panel-label" id="macro-panel-label"><strong>Standard Workflow</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
-                    This panel accesses the normal steps for starting-up your tool and Cutting or Managing your Part Files.<br><br>
-                    &nbsp;&nbsp;Click to download a detailed workflow checklist.</span></span>
+                    This panel accesses the steps for starting-up your tool and Cutting or Managing your Part Files.<br><br>
+                    Click to download a detailed file and workflow <span class = "tooltiplink" id="ck-list">Checklist</span>.</span></span>
                 </h9>
                     <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button">
                         1 - Home X & Y [C3] 
@@ -213,7 +214,7 @@
                     <div class="small-11  medium-11 large-11 columns">
                     <label class="show-for-small-only"><strong>Cmd</strong></label>
                     <h9 class="panel-label show-for-medium-up cmds"><strong>Individual Command Input</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
-                        Run specific OpenSBP Commands. Select from menu above or type directly here.<br><br> See: Help > Command Reference.<br><br></span></span>
+                        Run specific OpenSBP Commands. Select from menu above or type directly here.<br><br> See: Help > <span class = "tooltiplink" id="cmd-ref">Command Reference</span><br><br></span></span>
                     </h9>
                     <img class="right" id="vid-button" "vid-button-off" title="Toggle Video" style="height:20px; width:20px; position:absolute; top:5px; right:-40px" src="./assets/icon_video.png">
                     <form><strong>
@@ -259,7 +260,7 @@
                             <span class="tooltip tooltip-logo">i<span class="tooltiptext">
                                This app is ShopBot's CNC interface for setting up your tool and
                                cutting Part Files (left panel). You can also send individual Commands in the OpenSBP language (top right panel). See HELP > 
-                               Command Reference for info on OpenSBP language.</span></span>
+                               <span class = "tooltiplink" id="cmd-ref2">Command Reference</span> for info on OpenSBP language.</span></span>
                             <img panel-label class="top" tabindex="1" id="sb-logo" src="./assets/image6b_transparent.png">   
                             <p class="small show-for-medium-up text-left at-foot">[ ESC backs out; 'K' opens Keypad; F11 (or right-click) exits fullscreen ]</p>
                         </div> 
@@ -291,7 +292,7 @@
                                 </div>
                             </div>
                             <div>
-                                <p class="small text-left at-foot show-for-medium-up" id="copyright">© Copyright ShopBot Tools 2024.</p>
+                                <p class="small text-left at-foot show-for-medium-up" id="copyright">© Copyright ShopBot Tools 2025.</p>
                             </div>
                         </div>
                     </div>

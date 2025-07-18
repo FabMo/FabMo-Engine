@@ -208,10 +208,10 @@ G2.prototype._createCycleContext = function () {
     st.on(
         "data",
         function (chunk) {
-            console.log("=== STREAM DATA RECEIVED ===");
-            console.log("Chunk raw:", JSON.stringify(chunk.toString()));
-            console.log("Chunk length:", chunk.toString().length);
-            console.log("Chunk lines:", chunk.toString().split("\n").length);
+            // console.log("=== STREAM DATA RECEIVED ===");
+            // console.log("Chunk raw:", JSON.stringify(chunk.toString()));
+            // console.log("Chunk length:", chunk.toString().length);
+            // console.log("Chunk lines:", chunk.toString().split("\n").length);
 
             // Stream data comes in "chunks" which are often multiple lines
             chunk = chunk.toString();
