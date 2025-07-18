@@ -1131,8 +1131,8 @@ G2.prototype.sendMore = function () {
         }
     } else {
         var queueLength = this.gcode_queue.getLength();
-        console.log("Queue length:", queueLength, "Type:", typeof queueLength);
-        console.log("Queue length > 0:", queueLength > 0);
+        //console.log("Queue length:", queueLength, "Type:", typeof queueLength);
+        //console.log("Queue length > 0:", queueLength > 0);
 
         if (this.gcode_queue.getLength() > 0) {
             log.debug("Not sending because not primed.");
