@@ -5118,10 +5118,6 @@
       "name": "Design with Autodesk's TinkerCAD"
    },
 
-   "HS": {
-      "cmd": "HS",
-      "name": "SAFETY !"
-   },
    "HQ": {
       "cmd": "HQ",
       "name": "Quick Launch for beginners"
@@ -5136,15 +5132,10 @@
    },
    "HF": {
       "cmd": "HF",
-      "name": "User Forum"
+      "name": "Talk ShopBot User Forum"
    },
    "HW": {
       "cmd": "HW",
       "name": "ShopBot Website"
-   },
-   "HA": {
-      "cmd": "HA",
-      "name": "help About"
    }
-
 }

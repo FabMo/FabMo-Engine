@@ -2,7 +2,7 @@
  ***** Main js functionality for SB4 Commands *****  
  **/
 
-// Main Entry for 2-Letter Commands from the Sb4 Console
+ // Main Entry for 2-Letter Commands from the Sb4 Console
 function sendCmd(command) {
     //check for focus and if nothing entered, take a shot at this being a re-run of the last file
     if (($('cmd-input').focus) && ($('#cmd-input').val() === '') && (typeof command === 'undefined') && (globals.FIll_In_Open === false)) {  // If nothing entered, take a shot at this being a re-run of the last file
@@ -38,25 +38,22 @@ function sendCmd(command) {
     }        
 }   
 
+// For any linked resources, use the fabmo.navigate function to open them
+// This is a simplified STANDARD Call FOR doc reference like Tooltip system ... for location in a PDF: ... .pdf#'tag (if correctly saved in the PDF with Word bookmarks)'
+function getUsrResource(remote, local) { // just a simplified version of fabmo.navigate for sb4
+    fabmo.navigate(
+        local,                           // Local fallback
+        {target: "_blank"},              // Open in new tab
+        remote,                          // Online version
+        function(err, result) {
+            if (err) {
+                console.error("Navigation failed:", err);
+            } else {
+                console.log("Successfully opened documentation");
+            }
+        }
+    );
 
-// Get some Needed info, etc ...
-function getUsrResource(remote, local) {                ////## mucking around here for testing Easel
-  // temporarily only getting local because not detecting error on raspi tablets 
-  //    fabmo.navigate(local,{target : '_blank'});
-
-  fabmo.isOnline(function(err, online) {
-    if(err) {
-      console.log("isOnline Error");
-      return;         
-    }
-    if(online) {
-      //fabmo.navigate(remote,{target : '_blank'});    }
-      fabmo.navigate(remote,{target : '_self'});    }
-    else {
-//      fabmo.navigate(local,{target : '_blank'});
-      fabmo.navigate(remote,{target : '_blank'});
-    }
-  });
   $('#cmd-input').val('');
 }
 
@@ -157,7 +154,6 @@ function displayFillIn(command, title, info) {
     $('#fi_cur_info').empty();
     if (info === "") {
         $('#fi_cur_info').append("Editing Parameters: complete required(*) fields; over-write defaults as needed; and/or provide {optional} values.")
-        // Command details in <a href='assets/docs/ComRef.pdf'>Command Reference</a>, from Help");
     } else {
         $('#fi_cur_info').append(info);
     }
@@ -169,6 +165,32 @@ function displayFillIn(command, title, info) {
     $("#cmd-input").val(command);
     $("#cmd-input").focus();         // put focus here to collect an ENTER as a RUN
 }
+
+function getaFile(command) {
+    if (globals.usbDrive) {
+        fabmo.showUSBFileBrowser({ app: "sb4" }, function(err, result) {
+            if(result && result.filePath) {
+                // Set the global variable for the file path and name
+                window.curFilePath = result.filePath;
+                window.curFilename = result.filePath.split('/').pop();
+                displayFillIn("", "File Ready to Run", window.curFilename);
+            }
+        });
+    } else {
+        $("#fi_cur_info").text("");
+        $("#cmd-input").val(command);
+        $('#file').val('');
+        $('#file').trigger('click');
+        $("#cmd-input").val("... downloading file to tool ...");
+    }
+}
+window.getaFile = getaFile;
+
+// Listen for the custom event from usb-browser.js for shifting to computer selection
+window.top.document.addEventListener("usbFileSelection", function (event) {
+  jQuery("#file").trigger("click");
+});
+
 
 // MAIN COMMAND HANDLER for 2-Letter Commands
 function processCommandInput(command) {
@@ -260,11 +282,7 @@ function processCommandInput(command) {
             sendCmd(command);
             break;
         case "FP":
-            $("#fi_cur_info").text("");
-            $("#cmd-input").val(command);
-            $('#file').val('');
-            $('#file').trigger('click');
-            $("#cmd-input").val("... downloading file to tool ...");  // ... just a little message to show we're working
+            getaFile(command);  // get a file to run
             break;
         case "FL": 
             $("#cmd-input").val("... downloading file to tool ...");  // ... just a little message to show we're working
@@ -352,6 +370,7 @@ function processCommandInput(command) {
             //     let tempip = window.globals.ORigin + ':1880/ui';
             //     getUsrResource(tempip, 'assets/docs/No_Internet.pdf');
             //     break;        
+            // DESIGN PAGE TURNED OFF FOR NOW
             case "DE":                                                             // testing some design stuff ... **added to this sbp3_commands
                 getUsrResource('http://easel.inventables.com/users/sign_in', 'assets/docs/No_Internet.pdf');
                 break;        
@@ -362,47 +381,42 @@ function processCommandInput(command) {
                 //getUsrResource('https://www.tinkercad.com/dashboard', 'assets/docs/No_Internet.pdf'); // also '/join' or '/login'
                 getUsrResource('https://www.tinkercad.com/login', 'assets/docs/No_Internet.pdf');
                 break;        
-            case "HA":
-                // version info for this app from fabmo.js api call to fabmo engine ...  
-                console.log("at HA");
-                $('#cmd-input').val('');
-                fabmo.notify('info', 'About: not getting AppInfo from FabMo');
-                fabmo.getAppInfo(function(err, info) {
-                    console.log("appinfo " + info); 
-                    fabmo.notify('info', 'About: not getting AppInfo from FabMo');
-                });
-                break;
+
+            // Need new version of About for SB4
+            // case "HA":
+            //     // version info for this app from fabmo.js api call to fabmo engine ...  
+            //     console.log("at HA");
+            //     $('#cmd-input').val('');
+            //     fabmo.notify('info', 'About: not getting AppInfo from FabMo');
+            //     fabmo.getAppInfo(function(err, info) {
+            //         console.log("appinfo " + info); 
+            //         fabmo.notify('info', 'About: not getting AppInfo from FabMo');
+            //     });
+            //     break;
             case "HC":
-                    //getUsrResource('http://www.shopbottools.com/ShopBotDocs/files/SBG00253140912CommandRefV3.pdf#CC', 'assets/docs/ComRef.pdf');       
-                    getUsrResource('assets/docs/ComRef.pdf', 'assets/docs/ComRef.pdf');       
-                    break;        
+                getUsrResource('docs/ComRef.pdf', 'docs/ComRef.pdf');      // Open the local ComRef.pdf in the dashboard docs folder for the moment 
+                break;        
+            // Need to be able to click anywhere to close HL
             case "HL":
                     $('#cmd-input').val('');
                     var cachedConfig = null;
                     // Get the configuration from the tool and update
                     var updateConfig = function() {
                         fabmo.getConfig(function(err, config) {
+                            // Update the configuration 
                             cachedConfig = config;
-                            // // Update the tool info statement
-                            //     document.getElementById('tool-name').innerHTML = config.engine.profile;
-                            //     document.getElementById('envelope-x').innerHTML = config.machine.envelope.xmax - config.machine.envelope.xmin;
-                            //     document.getElementById('envelope-y').innerHTML = config.machine.envelope.ymax - config.machine.envelope.ymin;
-                            //     document.getElementById('tool-version').innerHTML = config.engine.version;
-                            //     document.getElementById('tool-units').innerHTML = config.machine.units;
-                            // // Update the configuration 
-                                document.getElementById('full-config').innerHTML = JSON.stringify(config, null, '   ');
+                            document.getElementById('full-config').innerHTML = JSON.stringify(config, null, '   ');
                         });			
                     }
                 // Update it
                 $('#helpModal').foundation('reveal', 'open');
                 updateConfig();
-
                 break;        
             case "HF":
-                getUsrResource('https://handibot.com/forum/list.php?2', 'assets/docs/No_Internet.pdf');
+                getUsrResource('https://www.talkshopbot.com/forum/forum.php', 'assets/docs/No_Internet.pdf');
                 break;        
             case "HW":
-                getUsrResource('https://handibot.com', 'assets/docs/No_Internet.pdf');
+                getUsrResource('https://www.shopbottools.com', 'assets/docs/No_Internet.pdf');
                 break;        
             case "HQ":
                 getUsrResource('http://docs.handibot.com/doc-output/Handibot2_Unboxing.pdf', 'assets/docs/Handibot 2 MANUAL Unboxing Source_v004.pdf');
