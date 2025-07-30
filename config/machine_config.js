@@ -11,6 +11,7 @@
  *  in other cases, it is modified for use in G2 (e.g. input definitions in machine {di#ac} are converted to action
  *  definitions {di#ac} in G2). This action all happens in: MachineConfig.prototype.update.
  *  [Note that there are a few similar shares between the openSBP runtime and G2].
+ *  [Also note that some values that are used in the manual runtime are managed here even though not really conceptually consistent.]
  */
 
 let MAX_INPUTS = 12;
@@ -36,49 +37,57 @@ function round(number, units) {
     return Math.round(number * decimals) / decimals;
 }
 
-//
 MachineConfig.prototype.update = function (data, callback, force) {
-    //    var current_units = this.get("units");
-    ////## trouble with Zeroing and Speed Changes in Sb4; don't know if this helped
-
+    var current_units = this.get("units"); // Get BEFORE extending cache
     try {
         u.extend(this._cache, data, force);
     } catch (e) {
         return callback(e);
     }
-    var current_units = this.get("units");
+    var new_units = this.get("units"); // Get AFTER extending cache
 
-    // Convert internal values that are in length units back and forth between the two unit
+    // Skip conversion if file is a default profile config OR if we're loading an actual config just after a default
+    var isStartupSequence =
+        this._filename &&
+        (this._filename.includes("/profiles/default/") ||
+            (this._filename.includes("/opt/fabmo/config/") && this._lastLoadWasDefault));
+
+    if (this._filename && this._filename.includes("/profiles/default/")) {
+        this._lastLoadWasDefault = true;
+    } else if (this._filename && this._filename.includes("/opt/fabmo/config/")) {
+        this._lastLoadWasDefault = false;
+    }
+
+    // Convert internal values for machine that are in length units back and forth between the two unit
     // systems if the unit systems has changed.
-    if ("units" in data) {
-        new_units = data.units;
-        if (!force && current_units && current_units != new_units) {
-            var conv = new_units == "mm" ? 25.4 : 1 / 25.4;
+    if (current_units && new_units && current_units !== new_units && !isStartupSequence) {
+        var conv = new_units == "mm" ? 25.4 : 1 / 25.4;
 
-            ["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"].forEach(
-                function (key) {
-                    this._cache.envelope[key] = round(this._cache.envelope[key] * conv, new_units);
-                }.bind(this)
-            );
+        ["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"].forEach(
+            function (key) {
+                this._cache.envelope[key] = round(this._cache.envelope[key] * conv, new_units);
+            }.bind(this)
+        );
 
-            [
-                "xy_speed",
-                "z_speed",
-                "xy_increment",
-                "z_increment",
-                "abc_increment",
-                "xy_min",
-                "xy_max",
-                "xy_jerk",
-                "z_jerk",
-                "z_fast_speed",
-                "z_slow_speed",
-            ].forEach(
-                function (key) {
-                    this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);
-                }.bind(this)
-            );
-        }
+        [
+            "xy_speed",
+            "z_speed",
+            "xy_increment",
+            "z_increment",
+            "abc_increment",
+            "xy_min",
+            "xy_max",
+            "xy_jerk",
+            "z_jerk",
+            "z_fast_speed",
+            "z_slow_speed",
+        ].forEach(
+            function (key) {
+                this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);
+            }.bind(this)
+        );
+    } else if (isStartupSequence) {
+        log.debug("Skipping unit conversion during startup sequence");
     }
 
     ////## Re: Rob's 'Harmonize' Project -- These are 'machine' settings that are shared to G2 and maintained here
