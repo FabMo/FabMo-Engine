@@ -148,8 +148,8 @@ function setLocationDisplays() {
 // Customize for video
 function setVideoStyle() {
     let current_App = localStorage.getItem("currentapp");
-    let app_has_video = localStorage.getItem("fabmo_sb4_has_video");
-    if (current_App === "video" || (current_App === "fabmo-sb4" && app_has_video === "true")) {
+    let app_in_video = localStorage.getItem("fabmo_sb4_video_button");
+    if (current_App === "video" || (current_App === "fabmo-sb4" && app_in_video == "2")) {
         // just kludged for moment
         $("#keypad-modal").css("opacity", "0.55");
         $(".manual-drive-modal").css("background-color", "rgba(0,0,0,0)");
