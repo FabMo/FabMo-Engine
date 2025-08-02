@@ -731,10 +731,12 @@ function setupKeypad() {
 }
 
 $(".action-button").on("click", function () {
-    // get the action from the button
+    // Get the action from the generic button
     var exitKeypad = true;
     var action = $(this).attr("id");
-    switch (action) {
+    switch (
+        action // We'll leave keypad to accomplish most of this stuff
+    ) {
         case "action-1":
             calledFromModal = "macro2";
             break;
@@ -759,10 +761,10 @@ $(".action-button").on("click", function () {
                 newValue = 0;
                 $("#action-5").css("background-color", "#ce6402");
             }
-            // This approach uses the "raw" system of the Manual Runtime
+            // This approach uses the "raw" system of the Manual Runtime so we don't need to leave keypad
             let out = { output: 1, value: newValue };
             dashboard.engine.output(out);
-            setTimeout(function () {}, 1000);
+            setTimeout(function () {}, 50);
             break;
         }
     }
