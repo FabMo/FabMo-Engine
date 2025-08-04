@@ -90,6 +90,7 @@ ManualDriver.prototype.enter = function () {
             this.stream.write("M100 ({xjm:" + jerkXY + "})\n");
             this.stream.write("M100 ({yjm:" + jerkXY + "})\n");
             this.stream.write("M100 ({zjm:" + jerkZ + "})\n");
+            this.stream.write("M100 ({spde:0})\n"); // need to turn of spindle dwell to be able to toggle quickly
             // Turn off z-lift, set incremental mode, and send a
             // "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
@@ -127,9 +128,11 @@ ManualDriver.prototype.exit = function () {
                 // Restore the sbp_runtime config settings for jerk
                 var jerkXY = config.opensbp._cache.xy_maxjerk || 75;
                 var jerkZ = config.opensbp._cache.z_maxjerk || 75;
+                var spindleDwell = config.driver._cache.spde || 0;
                 this.stream.write("M100 ({xjm:" + jerkXY + "})\n");
                 this.stream.write("M100 ({yjm:" + jerkXY + "})\n");
                 this.stream.write("M100 ({zjm:" + jerkZ + "})\n");
+                this.stream.write("M100 ({spde:" + spindleDwell + "})\n"); // restore spindle dwell
                 // Restore generic feedrate (this is mostly for appearance of first move if a rapid)
                 var feedXY = config.opensbp._cache.movexy_speed || 3;
                 // Restore spindle on during feedhold
@@ -331,11 +334,21 @@ ManualDriver.prototype.goto = function (pos) {
     this.stream.write(move);
 };
 
+// This function was created to turn outputs on and off from inside the manual runtime
+// ... however, output 1 is a special case for the spindle and it is the only one we are currently handling
+// ... for a spindle we need M3 so that we get both spc and out1 set
 // Toggle an output in manual [currenting only doing output1 for spindle]
 //   out - Output as a state, eg: {"1":1} or {"1":0} (i.e. using g-code json format)
 //   ... such that the short hand version looks like {out1:1}
 ManualDriver.prototype.output = function (out, val) {
-    var newOut = "{out" + out + ":" + val + "}\n";
+    var newOut = "";
+    if (out === 1 && val === 1) {
+        newOut = "m3\n";
+    } else if (out === 1 && val === 0) {
+        newOut = "m5\n";
+    } else {
+        newOut = "{out" + out + ":" + val + "}\n";
+    }
     log.info("ManualDriver.output called with: " + newOut);
     this.mode = "raw"; // or this.driver.mode = "raw"
     this.stream.write(newOut);

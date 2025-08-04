@@ -83,10 +83,13 @@ exports.ST = function (args, callback) {
 };
 
 // Set an Output On or Off (note M-codes only for output 1)
+////## Experimentally allow sending outputs to 18 to allow using the enable line, etc
+////## ... monitoring will need to be done via G2
 exports.SO = function (args) {
     var outnum = parseInt(args[0]);
     var state = parseInt(args[1]);
-    if (outnum >= 1 && outnum <= 12) {
+    if (outnum >= 1 && outnum <= 18) {
+        ////## allow outputs 1-18
         if (state == 1 || state == 0) {
             if (outnum === 1) {
                 if (state === 1) {

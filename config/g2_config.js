@@ -81,7 +81,7 @@ G2Config.prototype.getFromDriver = function (callback) {
         } else {
             var obj = {};
             for (var i = 0; i < keys.length; i++) {
-                log.debug(`Retrieved from driver: ${keys[i]} = ${values[i]}`);
+                //log.debug(`Retrieved from driver: ${keys[i]} = ${values[i]}`);
                 obj[keys[i]] = values[i];
             }
             callback(null, obj);

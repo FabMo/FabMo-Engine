@@ -302,19 +302,52 @@
     </div>
 
     <!-- The Dialog -->
+
+<!--
     <div class="modalDim"></div>
+
     <div class="manual-drive-modal" id="keypad-modal" tabindex="0" oncontextmenu="return false;">
-      <div class="manual-drive-exit"><i class="fa fa-times"></i></div>
+
+      <div class="modal-drag-header">
+          <div class="drag-handle" title="Drag to move keypad">
+              <span class="drag-dots">⋮⋮⋮</span>
+              <span class="modal-title">Motion Keypad</span>
+          </div>
+          <div class="manual-drive-exit"><i class="fa fa-times"></i></div>
+      </div>
       <div class="speed_read_out">
         100
       </div>
       <div class="manual-drive-message">This is where a message will go</div>
-      <div class="manual-drive-container">
-        <div>
-          <label class="noselect" id="title_goto" title="Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000">
-              Select and change a value in order to: 'GoTo' a location or 'Set' a location
-          </label>
+-->
+
+    <div class="manual-drive-modal" id="keypad-modal" tabindex="0" oncontextmenu="return false;">
+
+        <!-- NEW: Minimal drag handle bar -->
+        <div class="modal-drag-bar">
+            <div class="drag-handle" title="Drag to move keypad">
+                <span class="drag-dots">⋮⋮⋮</span>
+            </div>
+            <div class="manual-drive-exit"><i class="fa fa-times"></i></div>
         </div>
+
+        <!-- Content area with the previously hidden elements -->
+        <div class="modal-content-header">
+            <div class="speed_read_out" style="display: none;">
+                100
+            </div>
+            <div class="manual-drive-message" style="display: none;">
+                This is where a message will go
+            </div>
+            <div class="title-container">
+                <class="noselect" id="title_goto" title="Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000">
+                   <p>Select and change a value in order to: 'GoTo' a location or 'Set' a location</p>
+                </class>
+            </div>
+        </div>
+
+
+    <div class="manual-drive-container">
         <div class="read-out-container">
           <div class="read-out-wrapper">
             <!-- 'step' for XY and Z is controlled by the fixed distance move size and set in main.js -->
