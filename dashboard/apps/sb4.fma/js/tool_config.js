@@ -28,8 +28,12 @@ function updateUIFromEngineConfig() {
     });
 }
 
-var previousXYHomedStatus = null;
-var previousZHomedStatus = null;
+
+let previousXYHomedStatus = null;
+let previousZHomedStatus = null;
+let video_button = "0"; // note that the localStorage value is a string, so we use "0", "1", or "2"
+let videoLayout = "none";
+let hasVideo = true;
 
 function updateSpeedsFromEngineConfig() {  // ALSO update HOMING status at the same time
     fabmo.getConfig(function(err, data) {
@@ -164,18 +168,15 @@ function getExcludedAxes(callback) {
 function saveUIConfig() {
     localStorage.setItem("fabmo_sb4_height", g.COnt_Height);
     localStorage.setItem("fabmo_sb4_width", g.COnt_Width);
-    localStorage.setItem("fabmo_sb4_vi", g.VI_display);
-    localStorage.setItem("fabmo_sb4_video_layout", g.VI_layout || "none");
-    console.log("UI Config saved: height=" + g.COnt_Height + ", width=" + g.COnt_Width + ", vi=" + g.VI_display + ", video_layout=" + g.VI_layout);
 }
 
 function restoreUIConfig() {
     const height = localStorage.getItem("fabmo_sb4_height");
     const width = localStorage.getItem("fabmo_sb4_width");
-    const vi = localStorage.getItem("fabmo_sb4_vi");
-    const videoLayout = localStorage.getItem("fabmo_sb4_video_layout");
-    const hasVideo = localStorage.getItem("fabmo_sb4_has_video"); // Check if cameras are available
-    
+    video_button = localStorage.getItem("fabmo_sb4_video_button");  // 0 = disabled, 1 = off, 2 = on
+    videoLayout = localStorage.getItem("fabmo_sb4_video_layout");
+    hasVideo = localStorage.getItem("fabmo_sb4_has_video");
+
     if (width) {
         g.COnt_Width = parseInt(width, 10);
     }
@@ -184,36 +185,41 @@ function restoreUIConfig() {
     } else {
         g.COnt_Height = "200";
     }
-    if (vi) {
-        g.VI_display = parseInt(vi, 10);
+
+    if (hasVideo === "false" || hasVideo === null) {
+       videoLayout = "none"; // No video available
+       console.log("No video available, setting layout to 'none'");
     }
-    if (videoLayout) {
-        g.VI_layout = videoLayout;
-    } else {
-        g.VI_layout = "none";
+    else if (videoLayout != "both" && videoLayout != "cam1" && videoLayout != "cam2") {
+        videoLayout = "both";
+        console.log("Invalid video layout, setting to 'none'");
     }
+    else if (videoLayout === "none") { // if it's already "none", test again
+        videoLayout = "both";
+        console.log("Video layout is 'none', setting to 'both'");
+    }
+    localStorage.setItem("fabmo_sb4_video_layout", videoLayout);
+
     $("#sbp-container").css("height", g.COnt_Height);
 
     // Clear all button classes first
     $("#vid-button").removeClass("vid-button-on vid-button-off vid-button-disabled");
-
     // Check if cameras are available
     if (hasVideo === "false" || hasVideo === null) {
         // NO CAMERAS AVAILABLE - Button disabled
         $("#file_txt_area").css("background", "#327c7e");
         $("#video").css("visibility", "hidden");
         $("#vid-button").addClass("vid-button-disabled");
-        g.VI_display = 0;
+        localStorage.setItem("fabmo_sb4_video_button", 0); // Video button is disabled (grayed out)
         localStorage.setItem("fabmo_sb4_has_video", "false");
     } else {
         // CAMERAS ARE AVAILABLE - Check if video is on or off
-        if (g.VI_display !== 0) {
+        if (video_button == 2) {   // Note: video_button is a string, so we check for "2"
             // VIDEO ON
             $("#video").css("visibility", "visible");
             $("#file_txt_area").css("background", "transparent");
             $("#vid-button").addClass("vid-button-on");
-            g.VI_layout = videoLayout || "both";
-            localStorage.setItem("fabmo_videos", 2);
+            localStorage.setItem("fabmo_sb4_video_button", 2); // Video button is on RED
             localStorage.setItem("fabmo_sb4_has_video", "true");
             $("#sbp-container").click(); // refresh the form
         } else {
@@ -221,7 +227,7 @@ function restoreUIConfig() {
             $("#file_txt_area").css("background", "#327c7e");
             $("#video").css("visibility", "hidden");
             $("#vid-button").addClass("vid-button-off");
-            g.VI_display = 0;
+            localStorage.setItem("fabmo_sb4_video_button", 1); // Button is off but still visible WHITE
             localStorage.setItem("fabmo_sb4_has_video", "true"); // Still true - cameras exist
         }
     }
@@ -252,70 +258,3 @@ function setConfig(id, value) {
 	  updateUIFromEngineConfig();
 	});
 }
-
-
-
-/**
- * Manage App Config and Variables                      // Note that this info in stored in the app, approot/approot/generatedName/config.json
- * Much of this might be better handled with local storage in the browser, but I wanted to explore app specific variables storage would work. This storage
- * transends the client side app, but is not shared with other apps.
- **/ 
-
-// function updateAppState() {
-//     fabmo.getAppConfig(function (err, config) {
-//         if (err) {
-//             console.error(err);
-//         } else {
-//             //console.log("App Config", config);
-//             //console.log("first read ", config["COnt_Height"]);
-//             if (config["cont-height"]) {
-//                 g.COnt_Height = config["cont-height"];
-//             } else {
-//                 g.COnt_Height = "200";
-//             }
-//             // if (config["cont-width"]) {
-//             //     g.COnt_Width = config["cont-width"];
-//             // } else {
-//             //     g.COnt_Width = "400px";
-//             // }   
-//             $("#sbp-container").css("height", g.COnt_Height);
-//             // $("#sbp-container").css("width", g.COnt_Width);
-//             if (config["vi-display"] === null || config["vi-display"] === 0) {
-//                 g.VI_display = 0;
-//             } else {
-//                 g.VI_display = config["vi-display"];
-//             }   
-//         }
-//         // Video state, read from local app storage ... if we have no feed
-//         if (localStorage.getItem("videos") === null || localStorage.getItem("videos") === "0") {
-//             $("#file_txt_area").css("background", "#327c7e");
-//             $("#vid-button").removeClass("vid-button-on");
-//             $("#vid-button").removeClass("vid-button-off");
-//             $("#vid-button").addClass("vid-button-disabled");
-//             localStorage.setItem("fabmo_sb4_has_video", "false");
-//             g.VI_display = 0;
-//         } else {
-//             // ... if we have a feed, look at state of the video toggle button
-//             if (g.VI_display !== 0) {
-//                 $("#video").css("visibility", "visible");
-//                 $("#file_txt_area").css("background", "transparent");
-//                 $("#vid-button").addClass("vid-button-on");
-//                 $("#vid-button").removeClass("vid-button-off");
-//                 $("#vid-button").removeClass("vid-button-disabled");
-//                 g.VI_display = 3;                                    // Assume both feeds at moment
-//                 localStorage.setItem("videos", 2);                   // ... redundant to system; needs to be generated
-//                 localStorage.setItem("fabmo_sb4_has_video", "true"); // ... inform system for transparent keypad
-//                 $("#sbp-container").click();                         // ... refresh the form; a hack, but it works
-//             } else {
-//                 $("#file_txt_area").css("background", "#327c7e");
-//                 $("#video").css("visibility", "hidden");
-//                 $("#vid-button").removeClass("vid-button-on");
-//                 $("#vid-button").addClass("vid-button-off");
-//                 $("#vid-button").removeClass("vid-button-disabled");
-//                 g.VI_display = 0;
-//                 localStorage.setItem("fabmo_sb4_has_video", "false");
-//                 $("#sbp-container").click();
-//             }
-//         }
-//     });
-// }
