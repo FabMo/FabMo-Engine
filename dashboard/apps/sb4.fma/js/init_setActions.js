@@ -326,9 +326,6 @@ $(document).ready(function () {
     let upDating = false;
 
     $('#file').change(function (evt) {
-        //document.getElementById('file').addEventListener('input', function(evt) {
-//        evt.preventDefault();
-//        $("#cmd-input").val("");
         $("#cmd-input").val("... downloading file to tool ...");  // ... just a little message to show we're working
         $("#cmd-input").blur();
 
@@ -347,8 +344,6 @@ $(document).ready(function () {
         curFilename = evt.target.files[0].name;
         $("#cmd-input").val("FP");
         $('#fi_modal_title').append("File Ready to Run");
-        //$("#fi_cur_info").text(curFilename);
-        //$('#fi-modal').foundation('reveal', 'open');
         displayFillIn("", "File Ready to Run", curFilename);
     })
 
@@ -570,23 +565,24 @@ $(document).ready(function () {
         }
 
         // Check the DOM to see if the FabMo DRO is visible and update the spindle speed if it is visible and the spindle is on or commanded on 
-        var droClosed = localStorage.getItem('pinRight');
-        if (droClosed === 'true') {
-            //console.log("The DRO pane is not visible");
-            $(".spindle-display").css("visibility", "visible");
-            if (status.spindle) {
-                if (status.spindle.vfdAchvFreq > 0) {
-                    $("#spindle-speed").css("color", "rgb(113, 233, 241)");
-                    $("#spindle-speed").val(status.spindle.vfdAchvFreq.toFixed(0));
-                } else {
-                    $("#spindle-speed").val(status.spindle.vfdDesgFreq.toFixed(0));
-                    $("#spindle-speed").css("color", "rgb(90, 90, 90)");
-                }
-            }
-        } else {
-            //console.log("The DRO pane is visible");
-            $(".spindle-display").css("visibility", "hidden");
-        }
+        // NOT CURRENTLY USING; Pulling out DRO seems best if user wants full info!
+        // var droClosed = localStorage.getItem('pinRight');
+            // if (droClosed === 'true') {
+            //     //console.log("The DRO pane is not visible");
+            //     $(".spindle-display").css("visibility", "visible");
+            //     if (status.spindle) {
+            //         if (status.spindle.vfdAchvFreq > 0) {
+            //             $("#spindle-speed").css("color", "rgb(113, 233, 241)");
+            //             $("#spindle-speed").val(status.spindle.vfdAchvFreq.toFixed(0));
+            //         } else {
+            //             $("#spindle-speed").val(status.spindle.vfdDesgFreq.toFixed(0));
+            //             $("#spindle-speed").css("color", "rgb(90, 90, 90)");
+            //         }
+            //     }
+            // } else {
+            //     //console.log("The DRO pane is visible");
+            //     $(".spindle-display").css("visibility", "hidden");
+            // }
 
         // Show spindle-speed if DRO is visible and spindle is present in status object and is on (vfdAchvFreq > 0) or is commanded on (vfdDesgFreq > 0) 
         if (globals.FAbMo_state != "running" && globals.FAbMo_state != "paused") {
@@ -626,21 +622,25 @@ $(document).ready(function () {
     }
 
     $("#vid-button").click(function () {      // Toggle video
-        // Check for toggle state and change if video present 
+        // Check for toggle state and change if video present
         if ($("#vid-button").hasClass("vid-button-on")) {
             $("#vid-button").removeClass("vid-button-on");
             $("#vid-button").addClass("vid-button-off");
-            $("#video").css("visibility", "hidden");
-            $("#file_txt_area").css("background", "#327c7e");
-            g.VI_display = 0;
-            localStorage.setItem("fabmo_sb4_has_video", "false");
-        }
-        else {
+            if (localStorage.getItem("fabmo_sb4_has_video") === "true") {
+                $("#video").css("visibility", "visible");
+                $("#file_txt_area").css("background", "#327c7e");
+                localStorage.setItem("fabmo_sb4_video_button", 1); // 1 video present, but not playing; 
+            } else {
+                $("#video").css("visibility", "hidden");
+                $("#file_txt_area").css("background", "#327c7e");
+                localStorage.setItem("fabmo_sb4_video_button", 0); // 0 video disabled
+            }
+        } else {
             $("#vid-button").removeClass("vid-button-off");
             $("#vid-button").addClass("vid-button-on");
             $("#video").css("visibility", "visible");
             $("#file_txt_area").css("background", "transparent");
-            g.VI_display = 3;
+            localStorage.setItem("fabmo_sb4_video_button", 2); // 2 video present and playing
             localStorage.setItem("fabmo_sb4_has_video", "true");
         }
         saveUIConfig();
@@ -776,7 +776,7 @@ $(document).ready(function () {
     // // ** Listen for the keydown event on the input fields
     // $('#fi_container').on('keydown', '.fi_val', function(event) {
     //     if (event.key === "Enter") {
-    //  //       enterKeyPressed = true;
+    //     //    enterKeyPressed = true;
     //     }
     // });
 
