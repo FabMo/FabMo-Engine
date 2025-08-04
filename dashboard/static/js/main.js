@@ -104,6 +104,13 @@ var setUpManual = function () {
             // Call the function to set location displays and video style
             setLocationAndVideoStyle();
         });
+
+        // Initialize drag functionality
+        setTimeout(() => {
+            initializeKeypadModal();
+        }, 100); // Small delay to ensure modal is rendered
+
+        resolve();
     });
 };
 
@@ -151,7 +158,7 @@ function setVideoStyle() {
     let app_in_video = localStorage.getItem("fabmo_sb4_video_button");
     if (current_App === "video" || (current_App === "fabmo-sb4" && app_in_video == "2")) {
         // just kludged for moment
-        $("#keypad-modal").css("opacity", "0.55");
+        $("#keypad-modal").css("opacity", "0.65");
         $(".manual-drive-modal").css("background-color", "rgba(0,0,0,0)");
         $(".modalDim").css("background-color", "rgba(0,0,0,0)");
     } else {
@@ -834,23 +841,70 @@ function hideDaisy(callback) {
     dashboard.hideModal();
 }
 
-// Click outside the modal keypad to close it  //th: don't know if I like this now that it is done?
+// // Click outside the modal keypad to close it  //th: don't know if I like this now that it is done?
+// const modalKeyPad = document.getElementById("keypad-modal");
+// function handleClickOutside(event) {
+//     // Check if modal is visible using multiple methods
+//     const isVisible = modalKeyPad && (
+//         modalKeyPad.offsetParent !== null ||  // Most reliable visibility check
+//         $(modalKeyPad).is(':visible') ||      // jQuery visibility check
+//         modalKeyPad.style.display === "block" // Original check as fallback
+//     );
+
+//     if (isVisible && !modalKeyPad.contains(event.target)) {
+//         if (last_state_seen === "manual") {
+//             console.log('Click outside detected - closing modal'); // Debug log
+//             startManualExit()
+//                 .then(() => {
+//                     dashboard.engine.manualExit();
+//                 })
+//                 .catch((err) => {
+//                     console.error("Error in ManualExit:", err);
+//                 });
+//         }
+//     }
+// }// Attach the event listener to the document
+// document.addEventListener("click", handleClickOutside);
+
 const modalKeyPad = document.getElementById("keypad-modal");
-function handleClickOutside(event) {
-    if (modalKeyPad && !modalKeyPad.contains(event.target) && modalKeyPad.style.display === "block") {
-        if (last_state_seen === "manual") {
-            startManualExit()
-                .then(() => {
-                    dashboard.engine.manualExit();
-                })
-                .catch((err) => {
-                    console.error("Error in ManualExit:", err);
-                });
+
+function setupSimpleClickOutside() {
+    // For clicks in main window outside modal
+    document.addEventListener("click", function (event) {
+        // Use jQuery's :visible selector - most reliable
+        if ($(modalKeyPad).is(":visible") && !modalKeyPad.contains(event.target) && last_state_seen === "manual") {
+            console.log("Click outside modal detected");
+            checkAndCloseModal();
         }
+    });
+
+    // For iframe clicks (detected as window blur)
+    window.addEventListener("blur", function () {
+        if ($(modalKeyPad).is(":visible") && last_state_seen === "manual") {
+            console.log("Window blur detected - closing modal");
+            setTimeout(checkAndCloseModal, 50);
+        }
+    });
+
+    // Prevent modal clicks from bubbling
+    modalKeyPad.addEventListener("click", function (e) {
+        e.stopPropagation();
+    });
+}
+
+function checkAndCloseModal() {
+    if (last_state_seen === "manual" && $(modalKeyPad).is(":visible")) {
+        startManualExit()
+            .then(() => {
+                dashboard.engine.manualExit();
+            })
+            .catch((err) => {
+                console.error("Error in ManualExit:", err);
+            });
     }
 }
-// Attach the event listener to the document
-document.addEventListener("click", handleClickOutside);
+
+setupSimpleClickOutside();
 
 // Access slider for using speed up/dn keys (could not make our jquery work for this, need ui version?)
 const slider = document.getElementById("manual-move-speed");
@@ -1355,4 +1409,160 @@ $(".icon_sign_out").on("click", function (e) {
     });
 });
 
+// ========================================================================================= KEYPAD DRAGABILITY
+// Keypad Modal Drag Functionality
+function makeKeypadDraggable() {
+    const modal = document.getElementById("keypad-modal");
+    const dragHandle = modal.querySelector(".drag-handle");
+
+    if (!dragHandle) {
+        console.warn("Drag handle not found - modal not draggable");
+        return;
+    }
+
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    // Constrain modal to stay within viewport
+    function constrainToViewport(left, top) {
+        const modalRect = modal.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        left = Math.max(0, Math.min(left, viewportWidth - modalRect.width));
+        top = Math.max(0, Math.min(top, viewportHeight - modalRect.height));
+
+        return { left, top };
+    }
+
+    // SINGLE drag handle - no conflicts
+    dragHandle.addEventListener("mousedown", function (e) {
+        if (e.button !== 0) return; // Only left click
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        isDragging = true;
+        modal.classList.add("dragging");
+
+        const modalRect = modal.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        startLeft = modalRect.left;
+        startTop = modalRect.top;
+
+        console.log("Drag start - Modal rect:", modalRect, "Mouse:", { x: startX, y: startY });
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+    });
+
+    function handleMouseMove(e) {
+        if (!isDragging) return;
+
+        e.preventDefault();
+
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        let newLeft = startLeft + deltaX;
+        let newTop = startTop + deltaY;
+
+        const constrained = constrainToViewport(newLeft, newTop);
+
+        modal.style.left = constrained.left + "px";
+        modal.style.top = constrained.top + "px";
+        modal.style.right = "auto";
+        modal.style.bottom = "auto";
+        modal.style.transform = "none";
+        modal.style.margin = "0";
+    }
+
+    function handleMouseUp(e) {
+        if (!isDragging) return;
+
+        console.log("Drag end");
+        isDragging = false;
+        modal.classList.remove("dragging");
+
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+    }
+
+    // Touch support
+    dragHandle.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent("mousedown", {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            button: 0,
+        });
+        dragHandle.dispatchEvent(mouseEvent);
+    });
+
+    document.addEventListener("touchmove", function (e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent("mousemove", {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+        });
+        document.dispatchEvent(mouseEvent);
+    });
+
+    document.addEventListener("touchend", function (e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        const mouseEvent = new MouseEvent("mouseup", {
+            button: 0,
+        });
+        document.dispatchEvent(mouseEvent);
+    });
+}
+
+// Initialize drag functionality when modal is shown
+function initializeKeypadModal() {
+    const modal = document.getElementById("keypad-modal");
+    if (modal && !modal.hasAttribute("data-draggable-initialized")) {
+        makeKeypadDraggable();
+        modal.setAttribute("data-draggable-initialized", "true");
+    }
+}
+
+// Helper functions to manage the top content
+function showSpeedReadout(speed) {
+    const speedElement = document.querySelector(".speed_read_out");
+    speedElement.textContent = speed;
+    speedElement.style.display = "block";
+}
+
+function hideSpeedReadout() {
+    document.querySelector(".speed_read_out").style.display = "none";
+}
+
+function showKeypadMessage(message) {
+    const messageElement = document.querySelector(".manual-drive-message");
+    messageElement.textContent = message;
+    messageElement.style.display = "block";
+    // Hide title when showing message
+    document.getElementById("title_goto").style.display = "none";
+}
+
+function hideKeypadMessage() {
+    document.querySelector(".manual-drive-message").style.display = "none";
+    // Show title when hiding message
+    document.getElementById("title_goto").style.display = "block";
+}
+
+function showTitle() {
+    document.getElementById("title_goto").style.display = "block";
+}
+
+function hideTitle() {
+    document.getElementById("title_goto").style.display = "none";
+}
+
+// ========================================================================================
 setUpManual(); // occasionally not getting keypad set from apps, this helps
