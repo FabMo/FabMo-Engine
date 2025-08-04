@@ -5,6 +5,8 @@
 ' Brian Owen
 
 ' Main =========================================================================
+$ATC.type = 7                                                                   ' >> Set to ATC
+
 C3																				' >> Home machine in XYZ first. 
 VN,0																			' >> Turn off limit switches
 SF,0																			' >> Turn off table limits
@@ -104,4 +106,3 @@ CONTACT_ERROR:
 PAUSE "Unable to make contact with tool holder, check that grounding cable is connecting pull stud to fixed z zero plate."
 END
 RETURN
-END

@@ -15,18 +15,25 @@
 '--- Check to make sure Standard Macro Variables have been read
 $sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
-
-$ATC.Type := 0                                                    ' Set ATC if does not exist
-IF $ATC.type = 0 THEN GOTO MANUAL_CHANGE
+IF $ATC.Type = 0 THEN GOTO MANUAL_CHANGE
 C71
 GOTO END_CHANGE
 ' === Main Program ===
 MANUAL_CHANGE:
 GOSUB initialize_variables
-IF &mtc_skip_first_tool_change == "YES" THEN GOSUB MTCSkip
 IF &mtc_mode == "IGNORE" THEN GOSUB MTCIgnore
-IF &mtc_mode == "MTC" THEN GOSUB MTCRun
-IF &mtc_mode == "QUIT" THEN GOSUB MTCQuit
+&ToolChk = "n"
+&zHOMED = "n"
+DIALOG "Is tool number " + $ToolIn + " currently inserted into the spindle? (y/n)", &ToolChk
+IF &ToolChk = "y" THEN GOTO Tool_In_OK
+IF &ToolChk = "Y" THEN GOTO Tool_In_OK
+GOSUB MTCRun
+Tool_In_OK:
+DIALOG "Have you zeroed the z axis with this bit? (y/n)",&zHOMED
+IF &zHOMED = "y" THEN GOTO END_CHANGE
+IF &zHOMED = "Y" THEN GOTO END_CHANGE
+if &mtc_zero_mode == "MACRO" THEN GOSUB ZZeroWithMacro
+if &mtc_zero_mode == "DRO" THEN GOSUB ZZeroWithDRO
 END_CHANGE:
 END
 '====================
@@ -35,13 +42,7 @@ END
 MTCIgnore:
     ' This option is dedicated to Bill Young - Just pretend like we didn't even see this tool change function.
     RETURN
-
-MTCQuit:
-    'FAIL "A tool change has been encountered in Quit Mode.  The file will now quit.  You can change this behavior in the desktop preferences."
-    PAUSE "A Tool Change request has been encountered in Quit Mode. You can Quit now. You can change this behavior in the Desktop-HELP app or by editing Macro#201."
-	' This will work more appropriately and force a quit when embedded files are set to work with END and EXIT.
-    END
-    
+ 
 MTCSkip:
 	' Skip the first MTC call because this is usally a new cutter at betinning of file.
     &current_tool = &Tool               'update tool
@@ -92,6 +93,9 @@ MTCRun:
     RETURN
     
 ' --- Secondary Subroutines & Errors ---
+change_tools:
+	SK, "<style>.fade-in-1{font-size:40px;animation-name:fade-1;animation-duration:1s}@keyframes fade-1{0%{opacity:0}10%{opacity:0}100%{opacity:1}}.fade-in-2{font-size:40px;animation-name:fade-2;animation-duration:2s}@keyframes fade-2{0%{opacity:0}60%{opacity:0}100%{opacity:1}}</style><span class=fade-in-1>Use the keypad to raise up your Z Axis </span><span class=fade-in-2>and change out your bit </span>"
+	RETURN
 
 GotoMaxZ: ' check to make sure not a bad offset
     IF &current_cutter_Zoffset > &safe_Z THEN GOTO pullup_to_offset

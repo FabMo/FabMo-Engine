@@ -16,6 +16,7 @@
 '--- Check to make sure Standard Macro Variables have been read
 $sb_standard_variables_PRESENT := 0								  ' Define presence-test variable if it does not exist
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+
 $ATC.type := 0                                                    ' Set ATC.type designation if it does not exist
 
 ' === ATC Status Checks ===

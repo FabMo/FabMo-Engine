@@ -63,8 +63,8 @@ find_z_zero_plate:                                              ' Now Offset to 
 	continue_as_mm:
 		$sb_current_cutter_Zoffset_Units = "MM"                 ' RECORD: units for offset of this cutter
     set_z:    
-        JZ, ((-1 * $sb_current_cutter_Zoffset) + &safeZ_pullup) 
-        VA,,, (&safeZ_pullup)                    				' Only setting local Z, not TBC-Z (g55z)
+        JZ, ((-1 * $sb_current_cutter_Zoffset) + &safeZ_pullup + &zPlateThick) 
+        VA,,, (&safeZ_pullup + &zPlateThick)                    				' Only setting local Z, not TBC-Z (g55z)
     RETURN
 
 finish:
