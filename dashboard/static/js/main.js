@@ -841,31 +841,7 @@ function hideDaisy(callback) {
     dashboard.hideModal();
 }
 
-// // Click outside the modal keypad to close it  //th: don't know if I like this now that it is done?
-// const modalKeyPad = document.getElementById("keypad-modal");
-// function handleClickOutside(event) {
-//     // Check if modal is visible using multiple methods
-//     const isVisible = modalKeyPad && (
-//         modalKeyPad.offsetParent !== null ||  // Most reliable visibility check
-//         $(modalKeyPad).is(':visible') ||      // jQuery visibility check
-//         modalKeyPad.style.display === "block" // Original check as fallback
-//     );
-
-//     if (isVisible && !modalKeyPad.contains(event.target)) {
-//         if (last_state_seen === "manual") {
-//             console.log('Click outside detected - closing modal'); // Debug log
-//             startManualExit()
-//                 .then(() => {
-//                     dashboard.engine.manualExit();
-//                 })
-//                 .catch((err) => {
-//                     console.error("Error in ManualExit:", err);
-//                 });
-//         }
-//     }
-// }// Attach the event listener to the document
-// document.addEventListener("click", handleClickOutside);
-
+// Click outside the modal keypad to close it  //th: don't know if I like this now that it is done?
 const modalKeyPad = document.getElementById("keypad-modal");
 
 function setupSimpleClickOutside() {

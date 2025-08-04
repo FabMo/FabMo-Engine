@@ -2216,8 +2216,6 @@ input[type='range']:focus {
 
 
 
-
-
 @-moz-keyframes spin {
     from { -moz-transform: rotate(0deg); }
     to { -moz-transform: rotate(360deg); }
@@ -2246,7 +2244,6 @@ input[type='range']:focus {
 }
 
 
-
 .manual-drive-modal {
 	user-select: none;
 	display: none;
@@ -2266,14 +2263,8 @@ input[type='range']:focus {
     overflow: hidden;
 }
 
-
-
 .manual-drive-container {
 	position: absolute;
-    /* top: 50%; */
-    /* left: 50%; */
-    /*margin-right: -50%; */
-	/* transform: translate(-50%, -50%); */
 	width: 90%;
 	height: 300px;
 }
@@ -2566,8 +2557,6 @@ input[type='range']:focus {
 /* Special Custom Style : rotations et animations */
 
 .spinner {
-
-
 	text-indent: -9999em;
 	width: 2.5em;
 	height: 2.5em;
