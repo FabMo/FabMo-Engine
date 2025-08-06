@@ -1,38 +1,64 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <title>Camera</title>
-
     <style>
-      body {
-        margin: 0;
-        line-height: 0;
-        background: #000;
-        overflow: hidden;
-        text-align: center;
-      }
-      #cam-label {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 15%;
-        padding: 10px;
-        text-align: left;
-        background: transparent;
-        color: #fff;
-        font-size: 14px;
-        font-family: sans-serif;
-      }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html, body { 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        
+        body { 
+            background: #000; 
+            position: fixed; 
+            width: 100vw; 
+            height: 100vh; 
+        }
+        
+        #video-viewport { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        
+        #camera1, #camera2 { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: fill; /* Use 'cover' or 'contain' to maintain aspect ratio rather than 'fill' */
+        }
+        
+        #cam-label { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            color: white; 
+            z-index: 100; 
+            font-family: sans-serif;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
     </style>
-  </head>
-  <body>
-    <div>
-      <h5 id="cam-label">camera 1</h1>
-      <div id="image-container">
-        <img id="camera1"/><img id="camera2"/>
-      </div>
+</head>
+<body>
+    <div id="video-viewport">
+        <img id="camera1" />
+        <img id="camera2" />
+        <div id="cam-label">Loading cameras...</div>
     </div>
     <script src="../../video.js"></script>
-  </body>
+</body>
 </html>

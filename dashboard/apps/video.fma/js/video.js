@@ -5,139 +5,160 @@ var camera1_on = false;
 var camera2_on = false; 
 
 window.onload = function() {
-
-    // set up 2 cameras
     var img1 = document.getElementById('camera1');
     var img2 = document.getElementById('camera2');
 
-    // Get info for setting up EXIT-BACK behavior
+    // Set up EXIT-BACK behavior for app navigation
+    setupAppNavigation();
+
+    // Set up camera configuration and display
+    setupCameras(img1, img2);
+
+    // Lock container size to prevent modal interference
+    setTimeout(lockContainerSize, 100);
+};
+
+function setupAppNavigation() {
     let this_App = "video";
     let default_App = localStorage.getItem("defaultapp");
     let back_App = localStorage.getItem("backapp");
     let current_App = localStorage.getItem("currentapp");
-    // do nothing if current (e.g. refreshes and returns)
+    
     if (this_App != current_App) {
         back_App = current_App;
-        if (back_App === null || back_App === "") {back_App = default_App};
-        back_App = default_App; // * > always to here for video
+        if (back_App === null || back_App === "") { 
+            back_App = default_App;
+        }
+        back_App = default_App;
         current_App = this_App;
         localStorage.setItem("currentapp", current_App);
         localStorage.setItem("backapp", back_App);
     } 
 
+    // Escape key to return to previous app
     document.onkeyup = function (evt) {
         if (evt.key === "Escape") {
             evt.preventDefault();
             fabmo.launchApp(back_App);
         }
     };
+}
 
-    // Analyze available video sources to populate config.engine.video and update local storage
-    // (at the moment, the config is determined manually and set in the config.json file)
-  
-    // Check in config.engine for the existence of a 'video' object
-    // If it exists, use it to populate the video sources
-    // (at the moment, the config is determined manually and set in the config.json file)
-    ////## TODO: add a UI for configuring the video sources
+function setupCameras(img1, img2) {
     fabmo.getConfig(function(err, data) {
         let videos = 0;
-        if (err){
+        
+        if (err) {
             console.log(err);
-        } else {
-          video_config = data.engine.video;
-            if (video_config) { // if video config exists
-                console.log("video_config exists");
-                if (video_config.camera2) {
-                    console.log("video_config.camera2 exists");
-                    localStorage.setItem("camera2", true)
-                    camera2_on = true;
-                    videos += 1;
-                    img2.src = 'http://' + location.hostname + ':3142?' + Math.random();
-                    img1.style.display = 'none';
-                    img2.style.display = 'block';
-                    document.getElementById("cam-label").innerHTML = "camera 2";
-                } else {
-                    console.log("video_config.camera2 not defined");
-                } 
-                if (video_config.camera1) {
-                    console.log("video_config.camera1 exists");
-                    localStorage.setItem("camera1", true)
-                    camera1_on = true;
-                    videos += 1;
-                    img1.src = 'http://' + location.hostname + ':3141?' + Math.random();
-                    img1.style.display = 'block';
-                    img2.style.display = 'none';
-                    document.getElementById("cam-label").innerHTML = "camera 1";
-                } else {  
-                console.log("video_config.camera1 not defined");
-                }
-            } else {
-                videos = 0;
-            }
-
-            if (videos === 0) { // if video config does not exist  
-                console.log("video_config does not exist");
-                document.getElementById("cam-label").innerHTML = "no camera feeds available";
-                videos = 0;
-            }
-
-            localStorage.setItem("fabmo_videos", videos);
+            displayNoCamera();
+            return;
         }
+
+        const video_config = data.engine.video;
+        if (!video_config) {
+            displayNoCamera();
+            return;
+        }
+
+        // Setup camera 2 if available
+        if (video_config.camera2) {
+            console.log("Camera 2 available");
+            localStorage.setItem("camera2", true);
+            camera2_on = true;
+            videos += 1;
+            img2.src = 'http://' + location.hostname + ':3142?' + Math.random();
+            img1.style.display = 'none';
+            img2.style.display = 'block';
+            document.getElementById("cam-label").innerHTML = "camera 2";
+        }
+
+        // Setup camera 1 if available
+        if (video_config.camera1) {
+            console.log("Camera 1 available");
+            localStorage.setItem("camera1", true);
+            camera1_on = true;
+            videos += 1;
+            img1.src = 'http://' + location.hostname + ':3141?' + Math.random();
+            img1.style.display = 'block';
+            img2.style.display = 'none';
+            document.getElementById("cam-label").innerHTML = "camera 1";
+        }
+
+        if (videos === 0) {
+            displayNoCamera();
+        } else {
+            setupCameraToggle(img1, img2, videos);
+        }
+
+        localStorage.setItem("fabmo_videos", videos);
     });
+}
 
-    // Just HARDCODING the 2 cameras for now
-    function resize() {
-        var width = window.innerWidth;
-        var height = window.innerHeight;
-        //var aspect1 = img1.naturalHeight / img1.naturalWidth;
-        //var aspect2 = img2.naturalHeight / img2.naturalWidth;
+function displayNoCamera() {
+    console.log("No camera feeds available");
+    document.getElementById("cam-label").innerHTML = "no camera feeds available";
+}
 
-        if (!width) return;
-        // Size the images to fill the window not considering aspect ratio
-        img1.height = height; 
-        img1.width = width;
-        img2.height = height;
-        img2.width = width;
-        //img1.width = Math.min(width, height / aspect1);
-        //img1.height = Math.min(height, width * aspect1);
-        //img2.width = Math.min(width, height / aspect2);
-        //img2.height = Math.min(height, width * aspect2);
-    }
-
-    function reload() {
-        img1.onload = resize;
-        img2.onload = resize;
-    }
-
-    window.addEventListener('resize', resize, false);
-    
-    // Set or Toggle between full size img1 and img2 on click (for testing)
-    var doToggles = localStorage.getItem("fabmo_videos");
+function setupCameraToggle(img1, img2, videoCount) {
+    // Only setup toggle if there are multiple cameras
+    if (videoCount < 2) return;
 
     img1.onclick = function() {
-        if (doToggles === "1" && camera1_on) {  // on single camera don't toggle
-        img1.style.display = 'block';
-        img2.style.display = 'none';
-        document.getElementById("cam-label").innerHTML = "camera 1 only";
-        } else if (doToggles === "2" || camera2_on) {
-        img1.style.display = 'none';
-        img2.style.display = 'block';
-        document.getElementById("cam-label").innerHTML = "camera 2";
-        } 
-    }
-    img2.onclick = function() {
-        if (doToggles === "1" && camera2_on) {  // on single camera don't toggle
-        img1.style.display = 'none';
-        img2.style.display = 'block';
-        document.getElementById("cam-label").innerHTML = "camera 2 only";
-        } else if (doToggles === "2" || camera1_on) {
-        img1.style.display = 'block';
-        img2.style.display = 'none';
-        document.getElementById("cam-label").innerHTML = "camera 1";
+        if (camera2_on) {
+            img1.style.display = 'none';
+            img2.style.display = 'block';
+            document.getElementById("cam-label").innerHTML = "camera 2";
         }
-    }  
-    reload();
-
-    // set focus at the end of 'ready' ?
-  
+    };
+    
+    img2.onclick = function() {
+        if (camera1_on) {
+            img1.style.display = 'block';
+            img2.style.display = 'none';
+            document.getElementById("cam-label").innerHTML = "camera 1";
+        }
+    };
 }
+
+function lockContainerSize() {
+    const viewport = document.getElementById('video-viewport');
+    
+    if (!viewport) {
+        console.warn('Video viewport not found');
+        return;
+    }
+    
+    // Get current viewport size
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    
+    // Lock viewport to exact pixel dimensions to prevent modal interference
+    viewport.style.position = 'fixed';
+    viewport.style.top = '0px';
+    viewport.style.left = '0px';
+    viewport.style.width = vw + 'px';
+    viewport.style.height = vh + 'px';
+    viewport.style.zIndex = '1';
+}
+
+// Monitor for DOM changes that might affect layout and re-lock if needed
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' || mutation.type === 'childList') {
+            lockContainerSize();
+        }
+    });
+});
+
+// Start observing once DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    const viewport = document.getElementById('video-viewport');
+    if (viewport) {
+        observer.observe(viewport, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+            attributeFilter: ['style', 'class']
+        });
+    }
+});
