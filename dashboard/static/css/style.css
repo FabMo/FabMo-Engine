@@ -423,7 +423,12 @@ input#override {
 	font-weight: bold;
 	background-color: #931B14 !important;
 	display: flex;
-}		
+}
+/* Make spindle power input align like other number inputs */
+.dro-addon-value.spindle-power input {
+    text-align: right !important;
+    padding-right: 18px;
+}
 
 
 /**       Input / Output Display         ## DEAL WITH varied Input DEFINITIONS in Display **/

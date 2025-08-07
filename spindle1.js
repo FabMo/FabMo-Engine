@@ -33,16 +33,21 @@ util.inherits(Spin, EventEmitter);
 
 // Load settings for a VFD
 Spin.prototype.loadVFDSettings = function() {
-    const configFile = "./spindles/spindle1_settings.json"; // contains VFD settings
+    const configFile = "./spindles/spindle1_settings.json";
     return new Promise((resolve, reject) => {
         fs.readFile(configFile, "utf8", (err, data) => {
             if (err) {
-                log.error("Failed to load VFD settings from settings file: " + err + "\nDisabling Spindle RPM Control for this session!");
+                this.disableSpindle(`Settings file error: ${err.message}`, true);
                 reject(err);
             } else {
-                this.settings = JSON.parse(data);
-                log.info("VFD Settings loaded from settings file:", this.settings.VFD_Settings);
-                resolve();
+                try {
+                    this.settings = JSON.parse(data);
+                    log.info("VFD Settings loaded from settings file:", this.settings.VFD_Settings);
+                    resolve();
+                } catch (parseErr) {
+                    this.disableSpindle(`Settings file parse error: ${parseErr.message}`, true);
+                    reject(parseErr);
+                }
             }
         });
     });
@@ -51,7 +56,6 @@ Spin.prototype.loadVFDSettings = function() {
 // Connect to a VFD
 Spin.prototype.connectVFD = function() {
     return new Promise((resolve, reject) => {
-        // Access settings from this.settings.VFD_Settings per JSON file setup
         const settings = this.settings.VFD_Settings;
         this.vfdSettings = settings;
 
@@ -72,7 +76,7 @@ Spin.prototype.connectVFD = function() {
             resolve();
         })
         .catch((error) => {
-            log.error("***Error connecting to VFD:  " + error + "\nDisabling Spindle RPM Control for this session!");
+            this.disableSpindle(`Connection failed: ${error.message}`, true);
             reject(error);
         });
     });
@@ -83,62 +87,71 @@ let vfdFailures = 0;
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
     const MAX_VFD_FAILS = 3;
+    
+    // Store intervalId as instance property so it can be cleared properly
+    if (this.vfdInterval) {
+        clearInterval(this.vfdInterval);
+    }
+    
     if (this.status.vfdEnabled) {
-        const intervalId = setInterval(() => {
+        this.vfdInterval = setInterval(() => {
             if (this.vfdBusy) {
                 log.error("VFD is busy; skipping update");
-                this.vfdBusy = false;  // ? really turn off busy flag here?
+                this.vfdBusy = false;
                 return;
             }
-            if (vfdFailures >= MAX_VFD_FAILS) {
-                log.error("Too many Spindle/VFD/MODBUS errors (3).");
-                log.error("Disabling Spindle RPM Control for this session!");
-                //log.error("Last Error: " + error + "\nDisabling Spindle RPM Control for this session!");
-                this.status.vfdEnabled = false;
-                this.status.vfdDesgFreq = -1;
+            
+            // Check if we've been disabled - stop the interval
+            if (!this.status.vfdEnabled || this.status.vfdDesgFreq === -1) {
+                clearInterval(this.vfdInterval);
+                this.vfdInterval = null;
+                return;
+            }
+            
+            Promise.race([
+                readVFD(settings.Registers.TRIG_READ_FREQ, settings.READ_LENGTH),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("VFD not responding > USB?")), 5000))
+            ])
+            .then((data) => {
+                // Success - process data
+                this.status.vfdDesgFreq = data[0] * settings.Registers.RPM_MULT;
+                this.status.vfdAchvFreq = data[1] * settings.Registers.RPM_MULT;
+                
+                if (settings.Registers.READ_AMPS_HI === true) {
+                    var vCur = ((data[2] >> 8) & 0xFF);
+                } else {
+                    var vCur = data[2];
+                }
+                vCur = vCur * settings.Registers.AMP_MULT;
+                this.status.vfdAmps = vCur;
+                
                 this.updateStatus(this.status);
-                clearInterval(intervalId); // Stop the interval
-                // disconnectVFD() does not work here, probably worth understanding why
-            } else {
-                Promise.race([
-                    readVFD(settings.Registers.TRIG_READ_FREQ, settings.READ_LENGTH), // <<==== YOUR BASIC DATA READ
-                    new Promise((_, reject) => setTimeout(() => reject(new Error("VFD not responding > USB?")), 5000)) // 5 seconds timeout
-                ])
-                    .then((data) => {
-                        // DELTA (uses the exact numbers provided in manual)
-                        // LENZE (uses the numbers described as the "driver registers" not MODBUS registers or mults)
-                        // See additional notes on VFDs and Spindles in Spindle folder; setting up parameters for different VFD's and USB-RS485s is fussy!
-                        this.status.vfdDesgFreq = data[0] * settings.Registers.RPM_MULT;
-                        this.status.vfdAchvFreq = data[1] * settings.Registers.RPM_MULT;
-                        if (settings.Registers.READ_AMPS_HI === true) {
-                            // get the high byte of data[2] shifted low for single byte for vfdAmps (for LENZE)
-                            var vCur = ((data[2] >> 8) & 0xFF);
-                        } else {
-                            var vCur = data[2];
-                        }
-                        vCur = vCur * settings.Registers.AMP_MULT;
-                        this.status.vfdAmps = vCur;
-                        this.updateStatus(this.status); // initiate change-check and global status change if warranted
-                        vfdFailures = 0; // we're OK, reset the failure count
-                        // log.info("VFD update:" + JSON.stringify(this.status));
-                    })
-                    .catch((error) => {
-                        // Aggregate sequential VFD errors
-                        vfdFailures++;
-                        if (vfdFailures >= MAX_VFD_FAILS) {
-                            log.error("Last Error (of 3) : " + error);
-                        }
-                            // Notify clients about errors
-                            //** NOTIFY does not work here and would actually of no use here because it occurs before client is up; I would like to figure out how
-                            // ... to make it work and use the NOTIFY-toaster from the server side */
-                            // const server = require("./server"); 
-                            // server.io.of("/private").emit("vfd_error", { message: 'Too many VFD errors; stopping updates. Last Error: ' + error.message });
-                   });
-                };
+                vfdFailures = 0; // Reset failure count on success
+            })
+            .catch((error) => {
+                // Handle errors here where 'error' is actually defined
+                vfdFailures++;
+                log.error(`***Error reading VFD: ${error.message}`);
+                
+                if (vfdFailures >= MAX_VFD_FAILS) {
+                    log.error(`Last Error (of ${MAX_VFD_FAILS}): ${error.message}`);
+                    
+                    // Handle specific error types
+                    if (error.message.includes("Illegal data address")) {
+                        this.disableSpindle(`Invalid VFD register configuration: ${error.message}`);
+                    } else {
+                        this.disableSpindle(`Too many communication errors (${MAX_VFD_FAILS}): ${error.message}`);
+                    }
+                    
+                    // Clear the interval using instance property
+                    clearInterval(this.vfdInterval);
+                    this.vfdInterval = null;
+                }
+            });
         }, 1000);
     }
 };
-  
+
 // Method to update VFD status Globally via "machine"
 Spin.prototype.updateStatus = function(newStatus) {
     // for the change-check here, probably most efficient to just do this manual comparison
@@ -147,9 +160,38 @@ Spin.prototype.updateStatus = function(newStatus) {
         this.laststatus.vfdAmps !== newStatus.vfdAmps) {
         this.status = Object.assign({}, this.status, newStatus);
         this.emit('statusChanged', this.status); // Emit status change to trigger event on machine
-        log.info("VFD Status Changed:", JSON.stringify(this.status));
+        // log.info("VFD Status Changed: " + JSON.stringify(this.status));
         this.laststatus = {...this.status};
     }
+};
+
+Spin.prototype.disableSpindle = function(reason, isInitialFailure = false) {
+    if (this.status.vfdEnabled === false && this.status.vfdDesgFreq === -1) {
+        // Already disabled, don't spam logs
+        return;
+    }
+    
+    this.status.vfdEnabled = false;
+    this.status.vfdDesgFreq = -1;
+    this.status.vfdAchvFreq = 0;
+    this.status.vfdAmps = 0;
+    
+    // Clear any running interval
+    if (this.vfdInterval) {
+        clearInterval(this.vfdInterval);
+        this.vfdInterval = null;
+    }
+    
+    // Single, clean disable message
+    if (isInitialFailure) {
+        log.warn(`Spindle/VFD initialization failed: ${reason}`);
+        log.info("Spindle RPM control disabled for this session.");
+    } else {
+        log.warn(`Spindle/VFD connection lost: ${reason}`);
+        log.info("Spindle RPM control disabled due to communication errors.");
+    }
+    
+    this.updateStatus(this.status);
 };
 
 Spin.prototype.setSpindleVFDFreq = function(data) {
@@ -208,7 +250,7 @@ function readVFD(data, length) {
                 }
             })
             .catch((error) => {
-                log.error("***Error reading VFD: " + error);
+                // log.error("***Error reading VFD: " + error);
                 reject(error);
             });
     });
