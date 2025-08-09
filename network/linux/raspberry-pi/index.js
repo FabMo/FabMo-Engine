@@ -183,9 +183,7 @@ RaspberryPiNetworkManager.prototype.returnWifiNetworks = function () {
 
 RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     var interfaces = os.networkInterfaces();
-    //log.debug("##############-------- >>>>>> CALL to checkWifiHealth");
 
-    //    log.debug("##-------------------- >> Update History for Re-Screen");
     this.network_history = {};
     Object.keys(interfaces).forEach(
         function (interface) {
@@ -196,18 +194,22 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             }
         }.bind(this)
     );
-    // Check if wlan0 exists and get ssid from outside file if so
+
+    // Check if wlan0 exists and get current SSID from system
     if (interfaces.wlan0) {
-        log.debug("wlan0 interface found");
-        // Read the JSON file to get the SSID name
-        const filePath = "/etc/network_conf_fabmo/recent_wifi.json";
-        const data = fs.readFileSync(filePath, "utf8"); // Read file as a string
-        const json = JSON.parse(data);
-        const ssid = json.ssid;
-        this.network_history.wlan0 = this.network_history.wlan0 + " ," + ssid;
-        log.debug("SSID: " + this.network_history.wlan0);
-    } else {
-        // log.debug("wlan0 interface not found or it does not have an IP address");
+        exec("nmcli -t -f active,ssid dev wifi | grep '^yes' | cut -d: -f2", (err, stdout) => {
+            if (!err && stdout.trim()) {
+                const fullOutput = stdout.trim();
+                const currentSSID = fullOutput.split("\n")[0]; // Get only the first line (WiFi SSID)
+
+                // Store only the clean SSID for network_history
+                this.network_history.wlan0 = this.network_history.wlan0 + "," + currentSSID;
+
+                // Log the full output for debugging
+                // log.debug("Full nmcli output: " + fullOutput);
+                // log.debug("Extracted WiFi SSID: " + currentSSID);
+            }
+        });
     }
 };
 
@@ -293,6 +295,18 @@ RaspberryPiNetworkManager.prototype.joinWifiNetwork = function (ssid, password, 
             return callback(err);
         }
         log.info(`Successfully joined WiFi network ${ssid}`);
+        // Store SSID in network_history with a different key
+        this.network_history.current_ssid = ssid;
+        // Or create a comma-separated list
+        if (!this.network_history.ssid_list) {
+            this.network_history.ssid_list = ssid;
+        } else {
+            // Avoid duplicates
+            const ssids = this.network_history.ssid_list.split(", ");
+            if (!ssids.includes(ssid)) {
+                this.network_history.ssid_list = ssid + ", " + this.network_history.ssid_list;
+            }
+        }
         callback(null, result);
     });
 };
