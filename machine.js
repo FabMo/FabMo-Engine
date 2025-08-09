@@ -1416,22 +1416,48 @@ Machine.prototype.gcode = function (string) {
 // Handle loading and updating any machine accessories such as spindleVFD, etc (this called in the start sequence)
 Machine.prototype.startAccessories = async function () {
     try {
-        //const spindle = new Spin();
-        log.info("Spindle instance created:" + JSON.stringify(spindle));
-        // load VFD settings with wait and complete connection before listening for changes
+        log.info("Initializing spindle system...");
+
         await spindle.loadVFDSettings();
         await spindle.connectVFD();
+
+        // Setup spindle status listener
         spindle.on("statusChanged", (spindlestatus) => {
-            log.info("EMIT New GLOBAL Spindle status : " + JSON.stringify(spindlestatus));
-            // add spindle status to global status object
             this.status.spindle = spindlestatus;
             this.emit("status", this.status);
         });
+
+        log.info("Spindle system ready");
     } catch (error) {
-        //log.error("Failed to create a spindle connection:" + error);
-        log.error("Spindle RPM Failed as accessory.");
+        // Spindle has already logged its own clean error message
+        // Just ensure we have a listener for status updates
+        spindle.on("statusChanged", (spindlestatus) => {
+            this.status.spindle = spindlestatus;
+            this.emit("status", this.status);
+        });
+
+        log.debug("Continuing without spindle functionality");
     }
 };
+
+// Machine.prototype.startAccessories = async function () {
+//     try {
+//         //const spindle = new Spin();
+//         log.info("Spindle instance created:" + JSON.stringify(spindle));
+//         // load VFD settings with wait and complete connection before listening for changes
+//         await spindle.loadVFDSettings();
+//         await spindle.connectVFD();
+//         spindle.on("statusChanged", (spindlestatus) => {
+//             log.info("EMIT New GLOBAL Spindle status : " + JSON.stringify(spindlestatus));
+//             // add spindle status to global status object
+//             this.status.spindle = spindlestatus;
+//             this.emit("status", this.status);
+//         });
+//     } catch (error) {
+//         //log.error("Failed to create a spindle connection:" + error);
+//         log.error("Spindle RPM Failed as accessory.");
+//     }
+// };
 
 // Set up the USB-drive checker
 Machine.prototype.startUSBDriveManager = function () {

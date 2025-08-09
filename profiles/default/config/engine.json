@@ -32,11 +32,5 @@
                 }
             }
         }
-    },
-    "video": {
-        "camera1": true,
-        "index1": 0,
-        "camera2": true,
-        "index2": 2
     }
 }

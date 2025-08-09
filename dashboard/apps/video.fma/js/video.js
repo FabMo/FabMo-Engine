@@ -44,54 +44,48 @@ function setupAppNavigation() {
     };
 }
 
-function setupCameras(img1, img2) {
-    fabmo.getConfig(function(err, data) {
-        let videos = 0;
-        
-        if (err) {
-            console.log(err);
-            displayNoCamera();
-            return;
-        }
-
-        const video_config = data.engine.video;
-        if (!video_config) {
-            displayNoCamera();
-            return;
-        }
-
-        // Setup camera 2 if available
-        if (video_config.camera2) {
-            console.log("Camera 2 available");
-            localStorage.setItem("camera2", true);
-            camera2_on = true;
-            videos += 1;
-            img2.src = 'http://' + location.hostname + ':3142?' + Math.random();
-            img1.style.display = 'none';
-            img2.style.display = 'block';
-            document.getElementById("cam-label").innerHTML = "camera 2";
-        }
-
-        // Setup camera 1 if available
-        if (video_config.camera1) {
-            console.log("Camera 1 available");
-            localStorage.setItem("camera1", true);
-            camera1_on = true;
-            videos += 1;
-            img1.src = 'http://' + location.hostname + ':3141?' + Math.random();
-            img1.style.display = 'block';
-            img2.style.display = 'none';
-            document.getElementById("cam-label").innerHTML = "camera 1";
-        }
-
-        if (videos === 0) {
-            displayNoCamera();
-        } else {
-            setupCameraToggle(img1, img2, videos);
-        }
-
-        localStorage.setItem("fabmo_videos", videos);
-    });
+async function setupCameras(img1, img2) {
+    console.log("Detecting available cameras...");
+    
+    // Use shared video system
+    const cameraStatus = await window.FabMoVideo.getCameraStatus();
+    
+    // Set global flags
+    camera1_on = cameraStatus.camera1;
+    camera2_on = cameraStatus.camera2;
+    
+    console.log(`Detection complete: Camera1=${cameraStatus.camera1}, Camera2=${cameraStatus.camera2}, Total=${cameraStatus.count}`);
+    
+    if (cameraStatus.count === 0) {
+        displayNoCamera();
+        return;
+    }
+    
+    // Set up BOTH camera sources if they're available
+    if (cameraStatus.camera1) {
+        img1.src = `http://${location.hostname}:3141?${Math.random()}`;
+        console.log("Camera 1 source configured");
+    }
+    
+    if (cameraStatus.camera2) {
+        img2.src = `http://${location.hostname}:3142?${Math.random()}`;
+        console.log("Camera 2 source configured");
+    }
+    
+    // Choose which camera to DISPLAY first (prefer camera1, fallback to camera2)
+    if (cameraStatus.camera1) {
+        img1.style.display = 'block';
+        img2.style.display = 'none';
+        document.getElementById("cam-label").innerHTML = "camera 1";
+        console.log("Displaying camera 1");
+    } else if (cameraStatus.camera2) {
+        img1.style.display = 'none';
+        img2.style.display = 'block';
+        document.getElementById("cam-label").innerHTML = "camera 2";
+        console.log("Displaying camera 2");
+    }
+    
+    setupCameraToggle(img1, img2, cameraStatus.count);
 }
 
 function displayNoCamera() {
