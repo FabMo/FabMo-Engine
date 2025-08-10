@@ -394,7 +394,10 @@ function processCommandInput(command) {
             //     });
             //     break;
             case "HC":
-                getUsrResource('docs/ComRef.pdf', 'docs/ComRef.pdf');      // Open the local ComRef.pdf in the dashboard docs folder for the moment 
+                getUsrResource('https://shopbottools.com/wp-content/uploads/2025/07/ComRef.pdf', 'docs/ComRef.pdf');   // Testing the online ShopBot Host w/local 
+                break;        
+            case "HB":
+                getUsrResource('https://shopbottools.com/wp-content/uploads/2025/07/Handbook.pdf', 'assets/docs/No_Internet.pdf');   // Testing the online ShopBot Host no local 
                 break;        
             // Need to be able to click anywhere to close HL
             case "HL":

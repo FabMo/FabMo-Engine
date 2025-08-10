@@ -5126,6 +5126,11 @@
       "cmd": "HC",
       "name": "Command Reference"
    },
+   "HB": {
+      "cmd": "HB",
+      "name": "ShopBot CNC Handbook "
+   },
+
    "HL": {
       "cmd": "HL",
       "name": "List Configs and Variables"
