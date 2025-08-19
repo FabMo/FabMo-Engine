@@ -14,7 +14,7 @@
  * - Working Config Directory: /opt/fabmo/config/
  * - Backup Config Directory: /opt/fabmo_backup/config/
  *
- * Configuration Loading Priority:
+ * Configuration Loading Priority on failed config file:
  * 1. Load from backup directory (/opt/fabmo_backup/config/)
  * 2. Rebuild from working repository of profiles (/opt/fabmo/profiles/)
  *    - Load default profile first, then update with user profile

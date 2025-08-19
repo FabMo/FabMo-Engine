@@ -878,18 +878,18 @@ Engine.prototype.start = function (callback) {
                 authentication.configure();
             }.bind(this),
 
-            // // Copy backup at the start of the session and then start the watcher
-            // function copy_backup_and_start_watcher(callback) {
-            //     log.debug("Copying backup and starting watcher...");
-            //     // Copy backup at the start of the session
-            //     configWatcher.copyBackupAtStart((err) => {
-            //         if (err) {
-            //             return callback(err);
-            //         }
-            //         configWatcher.startWatcher();
-            //         callback();
-            //     });
-            // },
+            // Copy backup at the start of the session and then start the watcher
+            function copy_backup_and_start_watcher(callback) {
+                log.debug("Copying backup and starting watcher...");
+                // Copy backup at the start of the session
+                configWatcher.copyBackupAtStart((err) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    configWatcher.startWatcher();
+                    callback();
+                });
+            },
 
             function apply_auto_profile_if_needed(callback) {
                 if (!this.pending_profile_change) {

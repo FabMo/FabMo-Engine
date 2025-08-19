@@ -6,7 +6,9 @@ var machine = require("./machine"); // source for status info
 
 // Directories to watch
 //const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/", "/opt/fabmo/approot/"];
-const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/"];
+
+//const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/"];
+const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/"]; // skip apps for the moment
 
 // Directory to store backups
 const backupBaseDir = "/opt/fabmo_backup/";
