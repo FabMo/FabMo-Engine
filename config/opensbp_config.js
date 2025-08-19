@@ -4,10 +4,7 @@
  * opensbp_config.js
  *
  * Configuration tree for the OpenSBP runtime.
- * TODO - There should be some kind of thought applied to how configuration tree branches
- *        that apply specifically to runtimes are created/managed. This configuration module
- *        is basically a part of the OpenSBP runtime, but lives in the configuration tree -
- *        it is poor separation of concerns.
+ *
  */
 var fs = require("fs-extra");
 var path = require("path");
@@ -31,7 +28,7 @@ var OpenSBPConfig = function () {
 };
 util.inherits(OpenSBPConfig, Config);
 
-// Overide of Config.prototype.load removing tempVariables on load.  See config.js
+// Overide of Config.prototype.load is removing tempVariables on load.  See config.js
 //   *This is duplicated code from config.js as a work around for the cache not being accesible in callbacks.
 OpenSBPConfig.prototype.load = function (filename, callback) {
     this._filename = filename;
