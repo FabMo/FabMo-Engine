@@ -36,6 +36,14 @@ util.inherits(OpenSBPConfig, Config);
 OpenSBPConfig.prototype.load = function (filename, callback) {
     this._filename = filename;
 
+    // Check if auto-profile change is in progress
+    var profileDef = require("./profile_definition");
+    var skipRecovery = profileDef.isChangeInProgress();
+
+    if (skipRecovery) {
+        log.info("Auto-profile change in progress - skipping backup recovery for: " + filename);
+    }
+
     const backupDir = "/opt/fabmo_backup/config/";
     const workingProfileDir = "/opt/fabmo/profiles/";
     const originalProfileDir = __dirname + "/../profiles/";
@@ -80,6 +88,11 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
     };
 
     const loadFromBackup = (next) => {
+        if (skipRecovery) {
+            log.info("Skipping backup recovery due to auto-profile in progress");
+            return next(new Error("Skipping backup recovery"));
+        }
+
         fs.access(backupDir, fs.constants.F_OK, (err) => {
             if (err) {
                 log.warn(`Backup directory does not exist: ${backupDir}`);
@@ -111,35 +124,30 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
         );
     };
 
-    async.series(
-        [
-            (next) =>
-                tryLoadFile(filename, (err) => {
-                    if (err) {
-                        log.warn(`Failed to load config file: ${filename}, trying backup.`);
-                        return loadFromBackup(next);
-                    }
+    // Try direct load first, then fallback
+    tryLoadFile(filename, (err) => {
+        if (err) {
+            log.warn(`Failed to load config file: ${filename}, trying backup.`);
+
+            async.series([loadFromBackup, loadFromWorkingProfile, loadFromOriginalProfile], (err) => {
+                if (err) {
+                    log.warn(`Failed to load configuration from all sources: ${err.message}`);
+                    callback(err);
+                } else {
                     callback(null);
-                }),
-            (next) =>
-                loadFromWorkingProfile((err) => {
-                    if (err) {
-                        log.warn(`Failed to load from working profile, trying original profile.`);
-                        return loadFromOriginalProfile(next);
-                    }
-                    callback(null);
-                }),
-        ],
-        (err) => {
-            if (err) {
-                log.error(`Failed to load configuration from all sources: ${err.message}`);
-                callback(err);
-            } else {
-                callback(null);
+                }
+            });
+        } else {
+            // Mark auto-profile as complete if we successfully loaded configs
+            if (skipRecovery) {
+                profileDef.markAsApplied(currentProfile);
+                log.info("Auto-profile change completed successfully");
             }
+            callback(null);
         }
-    );
+    });
 };
+
 // Update the tree with the provided data. Deal with values shared by runtime with G2
 ////## xy version of values is kludge for SBP legacy compatibility with dummy 'y' entry
 OpenSBPConfig.prototype.update = function (data, callback, force) {
