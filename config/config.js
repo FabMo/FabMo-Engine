@@ -170,6 +170,14 @@ Config.prototype.getData = function () {
 Config.prototype.load = function (filename, callback) {
     this._filename = filename;
 
+    // Check if auto-profile change is in progress
+    var profileDef = require("./profile_definition");
+    var skipRecovery = profileDef.isChangeInProgress();
+
+    if (skipRecovery) {
+        log.info("Auto-profile change in progress - skipping backup recovery for: " + filename);
+    }
+
     const backupDir = "/opt/fabmo_backup/config/";
     const workingProfileDir = "/opt/fabmo/profiles/";
     const originalProfileDir = __dirname + "/../profiles/";
@@ -185,13 +193,6 @@ Config.prototype.load = function (filename, callback) {
     const userProfileFile = path.join(workingProfileDir, currentProfile, "config/", path.basename(filename));
     const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
     const originalUserProfileFile = path.join(originalProfileDir, currentProfile, "config/", path.basename(filename));
-
-    //log.info(`Loading configuration from: ${filename}`);
-    //log.info(`Backup file path: ${backupFile}`);
-    //log.info(`Default profile file path: ${defaultProfileFile}`);
-    //log.info(`User profile file path: ${userProfileFile}`);
-    //log.info(`Original default profile file path: ${originalDefaultProfileFile}`);
-    //log.info(`Original user profile file path: ${originalUserProfileFile}`);
 
     const tryLoadFile = (filePath, next) => {
         fs.readFile(filePath, "utf8", (err, data) => {
@@ -218,6 +219,11 @@ Config.prototype.load = function (filename, callback) {
     };
 
     const loadFromBackup = (next) => {
+        if (skipRecovery) {
+            log.info("Skipping backup recovery due to auto-profile in progress");
+            return next(new Error("Skipping backup recovery"));
+        }
+
         fs.access(backupDir, fs.constants.F_OK, (err) => {
             if (err) {
                 log.warn(`Backup directory does not exist: ${backupDir}`);
@@ -249,34 +255,28 @@ Config.prototype.load = function (filename, callback) {
         );
     };
 
-    async.series(
-        [
-            (next) =>
-                tryLoadFile(filename, (err) => {
-                    if (err) {
-                        log.warn(`Failed to load config file: ${filename}, trying backup.`);
-                        return loadFromBackup(next);
-                    }
+    // Try direct load first, then fallback
+    tryLoadFile(filename, (err) => {
+        if (err) {
+            log.warn(`Failed to load config file: ${filename}, trying backup.`);
+
+            async.series([loadFromBackup, loadFromWorkingProfile, loadFromOriginalProfile], (err) => {
+                if (err) {
+                    log.warn(`Failed to load configuration from all sources: ${err.message}`);
+                    callback(err);
+                } else {
                     callback(null);
-                }),
-            (next) =>
-                loadFromWorkingProfile((err) => {
-                    if (err) {
-                        log.warn(`Failed to load from working profile, trying original profile.`);
-                        return loadFromOriginalProfile(next);
-                    }
-                    callback(null);
-                }),
-        ],
-        (err) => {
-            if (err) {
-                log.warn(`Failed to load configuration from all sources: ${err.message}`);
-                callback(err);
-            } else {
-                callback(null);
+                }
+            });
+        } else {
+            // Mark auto-profile as complete if we successfully loaded configs
+            if (skipRecovery) {
+                profileDef.markAsApplied(currentProfile);
+                log.info("Auto-profile change completed successfully");
             }
+            callback(null);
         }
-    );
+    });
 };
 
 // Write this configuration object to disk

@@ -308,6 +308,43 @@ Engine.prototype.start = function (callback) {
                 }
             }.bind(this),
 
+            // Check for automatic profile application
+            function check_auto_profile(callback) {
+                var profileDef = require("./config/profile_definition");
+                var definition = profileDef.shouldApplyProfile();
+
+                if (!definition) {
+                    return callback();
+                }
+
+                var targetProfile = definition.auto_profile.profile_name;
+                var currentProfile = config.engine.get("profile") || "Default";
+
+                log.info("Auto-profile requested: " + targetProfile);
+                log.info("Current profile: " + currentProfile);
+
+                // If we're already on the target profile, mark as applied and continue
+                if (currentProfile.toLowerCase() === targetProfile.toLowerCase()) {
+                    log.info("Already on target profile, marking as applied");
+                    profileDef.markAsApplied(targetProfile);
+                    return callback();
+                }
+
+                // If this is the first run (default profile), we need to:
+                // 1. Complete this startup to establish baseline
+                // 2. Schedule profile change and restart
+                if (currentProfile.toLowerCase() === "default") {
+                    log.info("First run detected - will apply profile after baseline setup");
+                    this.pending_profile_change = {
+                        target: targetProfile,
+                        definition: definition,
+                    };
+                    return callback();
+                }
+
+                callback();
+            }.bind(this),
+
             // Read the engine version and hang onto it
             function get_fabmo_version(callback) {
                 log.info("Getting engine version...");
@@ -841,18 +878,86 @@ Engine.prototype.start = function (callback) {
                 authentication.configure();
             }.bind(this),
 
-            // Copy backup at the start of the session and then start the watcher
-            function copy_backup_and_start_watcher(callback) {
-                log.debug("Copying backup and starting watcher...");
-                // Copy backup at the start of the session
-                configWatcher.copyBackupAtStart((err) => {
+            // // Copy backup at the start of the session and then start the watcher
+            // function copy_backup_and_start_watcher(callback) {
+            //     log.debug("Copying backup and starting watcher...");
+            //     // Copy backup at the start of the session
+            //     configWatcher.copyBackupAtStart((err) => {
+            //         if (err) {
+            //             return callback(err);
+            //         }
+            //         configWatcher.startWatcher();
+            //         callback();
+            //     });
+            // },
+
+            function apply_auto_profile_if_needed(callback) {
+                if (!this.pending_profile_change) {
+                    return callback();
+                }
+
+                var targetProfile = this.pending_profile_change.target;
+                var profileDef = require("./config/profile_definition");
+                var profiles = require("./profiles");
+
+                log.info("Applying auto-profile: " + targetProfile);
+
+                profileDef.markAsInProgress(targetProfile, function (err) {
                     if (err) {
-                        return callback(err);
+                        log.error("Failed to mark profile change in progress: " + err.message);
+                        return callback();
                     }
-                    configWatcher.startWatcher();
-                    callback();
+
+                    // Set the profile config first
+                    config.engine.set("profile", targetProfile, function (err) {
+                        if (err) {
+                            log.error("Failed to set profile config: " + err.message);
+                            return callback();
+                        }
+
+                        // Get all profiles and find our target
+                        var allProfiles = profiles.getProfiles();
+                        var targetDisplayName = null;
+
+                        Object.keys(allProfiles).forEach(function (displayName) {
+                            if (allProfiles[displayName].dir.endsWith("/" + targetProfile)) {
+                                targetDisplayName = displayName;
+                            }
+                        });
+
+                        if (!targetDisplayName) {
+                            log.error("Profile not found in loaded profiles: " + targetProfile);
+                            return callback();
+                        }
+
+                        log.info("Applying profile: " + targetDisplayName);
+
+                        // Use the complete profile apply function
+                        profiles.apply(targetDisplayName, function (err) {
+                            if (err) {
+                                log.error("Profile application failed: " + err.message);
+                                return callback();
+                            }
+
+                            // Mark as successfully applied before restarting
+                            profileDef.markAsApplied(
+                                targetProfile,
+                                function (markErr) {
+                                    if (markErr) {
+                                        log.warn("Could not mark profile as applied: " + markErr.message);
+                                    }
+
+                                    log.info("Profile application completed - restarting...");
+                                    setTimeout(function () {
+                                        process.exit(0);
+                                    }, 2000);
+                                },
+                                this
+                            );
+                        });
+                    });
                 });
-            },
+            }.bind(this),
         ],
 
         // Print some kind of sane debugging information if anything above fails

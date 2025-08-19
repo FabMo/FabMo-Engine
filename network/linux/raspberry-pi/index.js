@@ -32,7 +32,7 @@ var RaspberryPiNetworkManager = function () {
 util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
 RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
-    log.info("SETTING FabMo Serial Number from R-Pi for default SSID");
+    log.info("SETTING FabMo Serial Number from R-Pi and used for default SSID");
     // We are putting the R-Pi serial number into the FabMo name
     // ... this will be used as the default name for the FabMo
     // ... and will be used (with IP) as the default SSID for the FabMo until set by the user.
@@ -40,19 +40,28 @@ RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
     exec("cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2", function (err, result) {
         if (err) {
             var name = { name: "fabmo-?" };
-            // this is an indication of a bad name from config file
-            config.engine.update(name, function () {
-                callback(name);
-            });
+            config.engine.update(name, callback);
         } else {
-            ////## Get Serial Number for name and clear out 0's to simplfy; do this here rather than later
-            // At some point, might want to stick to just the first batch of 0's
+            // Get Serial Number for name and clear out 0's to simplify
             log.debug("At RPI naming from SerialNum - ");
             result = result.split("0").join("").split("\n").join("").trim();
             log.debug("modifiedSerial- " + result);
-            name = { name: "FabMo-" + result };
-            config.engine.update(name, function () {
-                callback(name);
+
+            // Update both values in a single call, first 6 digits for SSID name
+            var trunc_result = result.length > 6 ? result.substring(0, 6) : result;
+            var updates = {
+                engine_id: result,
+                name: "FabMo-" + trunc_result,
+            };
+
+            config.engine.update(updates, function (err) {
+                if (err) {
+                    log.error("Failed to update engine config: " + err.message);
+                    callback(err);
+                } else {
+                    log.info("Successfully updated engine_id and name");
+                    callback(null, updates);
+                }
             });
         }
     });

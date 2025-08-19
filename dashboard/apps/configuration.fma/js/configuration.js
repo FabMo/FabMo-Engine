@@ -392,6 +392,15 @@ $(document).ready(function() {
     // Populate Settings
     update();
 
+    // Check for auto-profile status and ensure display is correct
+    updateAutoProfileStatus();
+
+    // Add a delayed check to ensure profile display is correct
+    // (useful for auto-profile scenarios)
+    setTimeout(function() {
+        ensureProfileDisplayCorrect();
+    }, 1000);
+
     // tool tip logic
     $('.tool-tip').click(function(){
         var tip =$(this).parent().data('tip');
@@ -547,4 +556,54 @@ $(document).ready(function() {
 
     setApps(fabmo);
     setUsers(fabmo);
+//    updateAutoProfileStatus();
+
 });
+
+function updateAutoProfileStatus() {
+    // Check if auto-profile was applied
+    fetch('/config/auto-profile-status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success" && data.data.auto_applied) {
+                $('.auto-profile-status').html(
+                    '<div class="alert-box info">Auto-profile applied: ' + 
+                    data.data.profile_name + ' (at startup)</div>'
+                );
+                
+                // Force a full config refresh to update profile display
+                setTimeout(function() {
+                    update(); // This will refresh the entire config display including profile listbox
+                }, 500);
+            }
+        })
+        .catch(err => {
+            console.log('No auto-profile info available:', err);
+        });
+}
+
+function ensureProfileDisplayCorrect() {
+    fabmo.getConfig(function(err, data) {
+        if (err) return;
+        
+        var currentProfileDir = data.engine.profile;
+        var profiles = data['profiles'] || {};
+        
+        // Find display name by matching directory path
+        var displayName = Object.keys(profiles).find(name => {
+            return profiles[name].dir && profiles[name].dir.endsWith('/' + currentProfileDir);
+        });
+        
+        // Handle default case
+        if (!displayName && currentProfileDir === 'default') {
+            displayName = 'Default';
+        }
+        
+        if (displayName) {
+            $('#profile-listbox').val(displayName);
+            console.log('Profile display updated to:', displayName);
+        } else {
+            console.warn('Could not find profile for directory:', currentProfileDir);
+        }
+    });
+}

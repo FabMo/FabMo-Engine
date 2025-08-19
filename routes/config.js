@@ -433,7 +433,37 @@ async function extractAndProcess(zipFilePath, originalFilename, res, next) {
     }
 }
 
-// Module exports
+// Auto-profile status endpoint
+// eslint-disable-next-line no-unused-vars
+var get_auto_profile_status = function (req, res, next) {
+    try {
+        if (fs.existsSync("/opt/fabmo/config/.auto_profile_applied")) {
+            var marker = JSON.parse(fs.readFileSync("/opt/fabmo/config/.auto_profile_applied", "utf8"));
+            res.json({
+                status: "success",
+                data: {
+                    auto_applied: true,
+                    profile_name: marker.profile_applied,
+                    applied_at: marker.applied_at,
+                },
+            });
+        } else {
+            res.json({
+                status: "success",
+                data: { auto_applied: false },
+            });
+        }
+    } catch (err) {
+        log.error("Error reading auto-profile status: " + err.message);
+        res.json({
+            status: "success",
+            data: { auto_applied: false, error: err.message },
+        });
+    }
+    next();
+};
+
+// And update the module.exports section to:
 module.exports = function (server) {
     server.post("/macros/restore", handleMacrosRestore);
     server.get("/macros/backup", backup_macros);
@@ -443,4 +473,5 @@ module.exports = function (server) {
     server.get("/version", get_version);
     server.get("/info", get_info);
     server.get("/profiles", getProfiles);
+    server.get("/config/auto-profile-status", get_auto_profile_status);
 };
