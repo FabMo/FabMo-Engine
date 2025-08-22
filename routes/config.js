@@ -463,6 +463,74 @@ var get_auto_profile_status = function (req, res, next) {
     next();
 };
 
+// Manual profile change endpoint
+// eslint-disable-next-line no-unused-vars
+var post_manual_profile_change = function (req, res, next) {
+    var targetProfile = req.params.profile;
+
+    if (!targetProfile) {
+        return res.json({
+            status: "error",
+            message: "No profile specified",
+        });
+    }
+
+    log.info("Manual profile change requested: " + targetProfile);
+
+    var profileDef = require("../config/profile_definition");
+
+    // If auto-profile is active, disable it permanently
+    if (profileDef.hasAutoProfileDefinition()) {
+        log.info("Disabling auto-profile system due to manual profile change");
+
+        var currentDefinition = profileDef.read();
+        if (currentDefinition && currentDefinition.auto_profile.profile_name) {
+            profileDef.markAsApplied(currentDefinition.auto_profile.profile_name, function (err) {
+                if (err) {
+                    log.warn("Could not disable auto-profile: " + err.message);
+                }
+
+                log.info("Auto-profile disabled - proceeding with manual profile change");
+                applyManualProfileChange(targetProfile, res, next);
+            });
+        } else {
+            applyManualProfileChange(targetProfile, res, next);
+        }
+    } else {
+        // No auto-profile active, proceed normally
+        applyManualProfileChange(targetProfile, res, next);
+    }
+};
+
+// Helper function for manual profile changes
+function applyManualProfileChange(profileName, res, next) {
+    // Set the engine config to the user's choice
+    config.engine.set("profile", profileName, function (err) {
+        if (err) {
+            log.error("Failed to set manual profile: " + err.message);
+            return res.json({
+                status: "error",
+                message: "Failed to set profile: " + err.message,
+            });
+        }
+
+        log.info("Manual profile change completed: " + profileName);
+
+        res.json({
+            status: "success",
+            message: "Profile change initiated",
+        });
+
+        // Restart after a short delay
+        setTimeout(function () {
+            log.info("Restarting for manual profile change...");
+            process.exit(0);
+        }, 1000);
+    });
+
+    next();
+}
+
 // And update the module.exports section to:
 module.exports = function (server) {
     server.post("/macros/restore", handleMacrosRestore);
@@ -474,4 +542,6 @@ module.exports = function (server) {
     server.get("/info", get_info);
     server.get("/profiles", getProfiles);
     server.get("/config/auto-profile-status", get_auto_profile_status);
+
+    server.post("/profile/manual-change", post_manual_profile_change);
 };
