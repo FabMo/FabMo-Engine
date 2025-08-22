@@ -147,6 +147,24 @@ ProfileDefinition.prototype.isChangeInProgress = function () {
     return false;
 };
 
+ProfileDefinition.prototype.isApplied = function (profileName) {
+    try {
+        if (fs.existsSync(this.applied_marker)) {
+            var content = fs.readFileSync(this.applied_marker, "utf8");
+            var marker = JSON.parse(content);
+
+            log.debug("Applied marker content: " + marker.profile_applied + ", checking against: " + profileName);
+
+            // Check if this profile is applied and not in progress
+            return marker.profile_applied === profileName && !marker.in_progress;
+        }
+        return false;
+    } catch (err) {
+        log.warn("Error checking if profile is applied: " + err.message);
+        return false;
+    }
+};
+
 ProfileDefinition.prototype.shouldApplyProfile = function () {
     var definition = this.read();
     if (!definition) return false;
@@ -158,6 +176,28 @@ ProfileDefinition.prototype.shouldApplyProfile = function () {
     }
 
     return definition;
+};
+
+ProfileDefinition.prototype.hasAutoProfileDefinition = function () {
+    try {
+        if (!this.exists()) {
+            return false;
+        }
+
+        var definition = this.read();
+        if (!definition) {
+            return false;
+        }
+
+        // If already applied and not forcing reapply, don't treat as active
+        if (this.isAlreadyApplied() && !definition.auto_profile.force_reapply) {
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        return false;
+    }
 };
 
 module.exports = new ProfileDefinition();

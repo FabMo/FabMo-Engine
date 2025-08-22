@@ -195,7 +195,6 @@ var notifyChange = function(err,id){
 
 var configData = null;
 
-
 // Handle Backups
 
 $('#btn-backup').click(function(evt) {
@@ -393,13 +392,7 @@ $(document).ready(function() {
     update();
 
     // Check for auto-profile status and ensure display is correct
-    updateAutoProfileStatus();
-
-    // Add a delayed check to ensure profile display is correct
-    // (useful for auto-profile scenarios)
-    setTimeout(function() {
-        ensureProfileDisplayCorrect();
-    }, 1000);
+    //updateAutoProfileStatus();
 
     // tool tip logic
     $('.tool-tip').click(function(){
@@ -540,47 +533,43 @@ $(document).ready(function() {
         update();
     });
 
-    $('#profile-listbox').on('change', function(evt) {
-      evt.preventDefault();
-      fabmo.showModal({
+$('#profile-listbox').on('change', function(evt) {
+    evt.preventDefault();
+    fabmo.showModal({
         title : 'Change Profiles?',
         message : 'Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?',
         okText : 'Yes',
         cancelText : 'No',
         ok : function() {
-          fabmo.setConfig({engine : {profile : $("#profile-listbox option:checked").val()}});
+            // NEW: Use the special manual profile change route
+            var selectedProfile = $("#profile-listbox option:checked").val();
+            
+            $.ajax({
+                url: '/profile/manual-change',
+                method: 'POST',
+                data: JSON.stringify({ profile: selectedProfile }),
+                contentType: 'application/json',
+                success: function(response) {
+                    fabmo.notify('info', 'Profile change initiated...');
+                },
+                error: function(xhr, status, error) {
+                    fabmo.notify('error', 'Profile change failed: ' + error);
+                    // Reset the dropdown to current profile if failed
+                    update();
+                }
+            });
         },
-        cancel : function() {}
-      });
+        cancel : function() {
+            // Reset dropdown to current value if user cancels
+            update();
+        }
     });
+});
 
     setApps(fabmo);
     setUsers(fabmo);
-//    updateAutoProfileStatus();
 
 });
-
-function updateAutoProfileStatus() {
-    // Check if auto-profile was applied
-    fetch('/config/auto-profile-status')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === "success" && data.data.auto_applied) {
-                $('.auto-profile-status').html(
-                    '<div class="alert-box info">Auto-profile applied: ' + 
-                    data.data.profile_name + ' (at startup)</div>'
-                );
-                
-                // Force a full config refresh to update profile display
-                setTimeout(function() {
-                    update(); // This will refresh the entire config display including profile listbox
-                }, 500);
-            }
-        })
-        .catch(err => {
-            console.log('No auto-profile info available:', err);
-        });
-}
 
 function ensureProfileDisplayCorrect() {
     fabmo.getConfig(function(err, data) {

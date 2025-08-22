@@ -140,9 +140,21 @@ var apply = function (profileName, callback) {
         // Get the profile data
         var profile = profiles[profileName];
 
+        // Check if this is an auto-profile application
+        var profileDef = require("./config/profile_definition");
+        var isAutoProfile = profileDef.isChangeInProgress() || profileDef.hasAutoProfileDefinition();
+
+        // During auto-profile setup, config files are already complete from config loading
+        // Only copy macros and apps, not config files
+        var dirsToProcess = isAutoProfile ? ["macros", "apps"] : PROFILE_DIRS;
+
+        if (isAutoProfile) {
+            log.info("Auto-profile application - skipping config directory (already complete)");
+        }
+
         // For every directory affected by profiles...
         async.each(
-            PROFILE_DIRS,
+            dirsToProcess, // ← Use filtered list instead of PROFILE_DIRS
             function (dir, callback) {
                 var configDir = config.getDataDir(dir);
                 var profileConfigDir = path.join(profile.dir, dir);
@@ -192,6 +204,7 @@ var apply = function (profileName, callback) {
                     });
                 });
             },
+
             // eslint-disable-next-line no-unused-vars
             function allDone(err) {
                 // eslint-disable-next-line no-unused-vars
