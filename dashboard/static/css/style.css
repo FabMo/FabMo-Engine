@@ -2296,8 +2296,8 @@ input[type='range']:focus {
 	}
 
 	.manual-drive-container {
-		top: 7%;
-		transform: translate(-50%, 0%);
+		top: 10%;
+		transform: translate(-5%, 0%);
 	}
 
 	.read-out-container, .manual-right-side-container{
