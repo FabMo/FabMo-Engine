@@ -310,6 +310,16 @@ Engine.prototype.start = function (callback) {
 
             // Check for automatic profile application
             function check_auto_profile(callback) {
+
+                var configWatcher = require("./config_watcher");
+                configWatcher.createPreAutoProfileBackup(function(err) {
+                    if (err) {
+                        log.warn("Failed to create pre-auto-profile backup: " + err.message);
+                    } else {
+                        log.info("Pre-auto-profile backup created");
+                    }
+                });
+                
                 var profileDef = require("./config/profile_definition");
                 var definition = profileDef.shouldApplyProfile();
 

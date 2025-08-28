@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable no-undef */
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-prototype-builtins */
@@ -170,6 +171,41 @@ Config.prototype.getData = function () {
 Config.prototype.load = function (filename, callback) {
     this._filename = filename;
 
+        // Enhanced profile context detection
+    const getActiveProfile = () => {
+        // Try multiple methods to determine the active profile
+        var profileDef = require("./profile_definition");
+        var definition = profileDef.read();
+        
+        // Method 1: Auto-profile definition
+        if (definition && definition.auto_profile && definition.auto_profile.profile_name) {
+            return definition.auto_profile.profile_name;
+        }
+        
+        // Method 2: Current profile from Config
+        const currentProfile = Config.getCurrentProfile();
+        if (currentProfile && currentProfile !== "default") {
+            return currentProfile;
+        }
+        
+        // Method 3: Engine config (if available and this isn't the engine config itself)
+        if (path.basename(filename) !== 'engine.json' && 
+            typeof config !== 'undefined' && 
+            config.engine && 
+            config.engine.get) {
+            const engineProfile = config.engine.get("profile");
+            if (engineProfile && engineProfile !== "default") {
+                return engineProfile;
+            }
+        }
+        
+        return "default";
+    };
+    
+    const activeProfile = getActiveProfile();
+    log.debug(`Active profile detected for ${path.basename(filename)}: ${activeProfile}`);
+
+
     // Check if auto-profile change is in progress
     var profileDef = require("./profile_definition");
     var definition = profileDef.read();
@@ -269,46 +305,75 @@ Config.prototype.load = function (filename, callback) {
         });
     };
 
-    const loadFromOriginalProfile = (next) => {
-        // ALWAYS try to load from original profiles - this provides baseline defaults
-        // Do NOT check skipRecovery here - we need these defaults even during auto-profile
-        log.info(
-            `Attempting to rebuild from original profile: ${originalDefaultProfileFile} and ${originalUserProfileFile}`
-        );
-
-        // Debug: Check if files exist
-        log.debug(
-            `Checking original default profile: ${originalDefaultProfileFile} - exists: ${fs.existsSync(
-                originalDefaultProfileFile
-            )}`
-        );
-        log.debug(
-            `Checking original user profile: ${originalUserProfileFile} - exists: ${fs.existsSync(
-                originalUserProfileFile
-            )}`
-        );
-
-        async.series(
-            [
-                (cb) => {
-                    log.debug(`Trying to load original default profile: ${originalDefaultProfileFile}`);
-                    tryLoadFile(originalDefaultProfileFile, cb);
-                },
-                (cb) => {
-                    log.debug(`Trying to load original user profile: ${originalUserProfileFile}`);
-                    tryLoadFile(originalUserProfileFile, cb);
-                },
-            ],
-            (err) => {
-                if (err) {
-                    log.error(`Original profile loading failed: ${err.message}`);
-                } else {
-                    log.info(`Original profile loading succeeded`);
-                }
-                next(err);
+const loadFromOriginalProfile = (next) => {
+    // ALWAYS try to load from original profiles - this provides baseline defaults
+    // Do NOT check skipRecovery here - we need these defaults even during auto-profile
+    
+    // ENHANCED: Get the correct target profile from multiple sources
+    let targetProfile = "default"; // ultimate fallback
+    
+    // Method 1: Check auto-profile definition (works during startup)
+    if (definition && definition.auto_profile && definition.auto_profile.profile_name) {
+        targetProfile = definition.auto_profile.profile_name;
+        log.info(`Using auto-profile target: ${targetProfile}`);
+    } 
+    // Method 2: Check current engine profile (works after startup)
+    else {
+        const currentProfile = Config.getCurrentProfile();
+        if (currentProfile && currentProfile !== "default") {
+            targetProfile = currentProfile;
+            log.info(`Using current engine profile: ${targetProfile}`);
+        }
+        // Method 3: Check for active profile from engine config if available
+        else if (typeof config !== 'undefined' && config.engine && config.engine.get) {
+            const engineProfile = config.engine.get("profile");
+            if (engineProfile && engineProfile !== "default") {
+                targetProfile = engineProfile;
+                log.info(`Using engine config profile: ${targetProfile}`);
             }
-        );
-    };
+        }
+    }
+
+    const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
+    const originalTargetProfileFile = path.join(originalProfileDir, targetProfile, "config/", path.basename(filename));
+    
+    log.info(
+        `Attempting to rebuild from original profile: ${originalDefaultProfileFile} and ${originalTargetProfileFile}`
+    );
+
+    // Debug: Check if files exist
+    log.debug(
+        `Checking original default profile: ${originalDefaultProfileFile} - exists: ${fs.existsSync(
+            originalDefaultProfileFile
+        )}`
+    );
+    log.debug(
+        `Checking original target profile: ${originalTargetProfileFile} - exists: ${fs.existsSync(
+            originalTargetProfileFile
+        )}`
+    );
+
+    async.series(
+        [
+            (cb) => {
+                log.debug(`Trying to load original default profile: ${originalDefaultProfileFile}`);
+                tryLoadFile(originalDefaultProfileFile, cb);
+            },
+            (cb) => {
+                log.debug(`Trying to load original target profile: ${originalTargetProfileFile}`);
+                tryLoadFile(originalTargetProfileFile, cb);
+            },
+        ],
+        (err) => {
+            if (err) {
+                log.error(`Original profile loading failed: ${err.message}`);
+            } else {
+                log.info(`Original profile loading succeeded for target: ${targetProfile}`);
+            }
+            next(err);
+        }
+    );
+};
 
     // Try direct load first, then fallback
     tryLoadFile(filename, (err) => {
