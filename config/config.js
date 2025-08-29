@@ -171,24 +171,20 @@ Config.prototype.getData = function () {
 Config.prototype.load = function (filename, callback) {
     this._filename = filename;
 
-        // Enhanced profile context detection
+    // Enhanced profile context detection
     const getActiveProfile = () => {
-        // Try multiple methods to determine the active profile
         var profileDef = require("./profile_definition");
         var definition = profileDef.read();
         
-        // Method 1: Auto-profile definition
         if (definition && definition.auto_profile && definition.auto_profile.profile_name) {
             return definition.auto_profile.profile_name;
         }
         
-        // Method 2: Current profile from Config
         const currentProfile = Config.getCurrentProfile();
         if (currentProfile && currentProfile !== "default") {
             return currentProfile;
         }
         
-        // Method 3: Engine config (if available and this isn't the engine config itself)
         if (path.basename(filename) !== 'engine.json' && 
             typeof config !== 'undefined' && 
             config.engine && 
@@ -205,8 +201,6 @@ Config.prototype.load = function (filename, callback) {
     const activeProfile = getActiveProfile();
     log.debug(`Active profile detected for ${path.basename(filename)}: ${activeProfile}`);
 
-
-    // Check if auto-profile change is in progress
     var profileDef = require("./profile_definition");
     var definition = profileDef.read();
     var skipRecovery = profileDef.isChangeInProgress() || profileDef.hasAutoProfileDefinition();
@@ -225,22 +219,6 @@ Config.prototype.load = function (filename, callback) {
     }
 
     const backupFile = path.join(backupDir, path.basename(filename));
-    const defaultProfileFile = path.join(workingProfileDir, "default/config/", path.basename(filename));
-    const currentProfile = Config.getCurrentProfile() || "default";
-    const userProfileFile = path.join(workingProfileDir, currentProfile, "config/", path.basename(filename));
-    const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
-
-    // Get the actual target profile from auto-profile definition if it exists
-    let actualTargetProfile = currentProfile; // default fallback
-    if (skipRecovery && definition && definition.auto_profile && definition.auto_profile.profile_name) {
-        actualTargetProfile = definition.auto_profile.profile_name;
-    }
-    const originalUserProfileFile = path.join(
-        originalProfileDir,
-        actualTargetProfile,
-        "config/",
-        path.basename(filename)
-    );
 
     const tryLoadFile = (filePath, next) => {
         fs.readFile(filePath, "utf8", (err, data) => {
@@ -253,16 +231,13 @@ Config.prototype.load = function (filename, callback) {
                     data["tempVariables"] = {};
                 }
 
-                // REMOVED: Profile blocking logic
-                // Let normal config merge happen - auto-profile system handles the rest
-
                 this.update(
                     data,
                     (err, d) => {
                         if (err) {
                             return next(err);
                         }
-                        next(); // Continue the chain
+                        next();
                     },
                     true
                 );
@@ -276,13 +251,13 @@ Config.prototype.load = function (filename, callback) {
     const loadFromBackup = (next) => {
         if (skipRecovery) {
             log.info("Skipping backup recovery due to auto-profile in progress");
-            return next(); // Return success, not error
+            return next(new Error("Backup recovery skipped due to auto-profile")); // ← Return ERROR, not success
         }
 
         fs.access(backupDir, fs.constants.F_OK, (err) => {
             if (err) {
                 log.warn(`Backup directory does not exist: ${backupDir}`);
-                return next();
+                return next(new Error("Backup directory does not exist"));
             }
             log.info(`Attempting to load from backup: ${backupFile}`);
             tryLoadFile(backupFile, next);
@@ -292,106 +267,168 @@ Config.prototype.load = function (filename, callback) {
     const loadFromWorkingProfile = (next) => {
         if (skipRecovery) {
             log.info("Skipping working profile recovery due to auto-profile system");
-            return next(); // Return success, not error
+            return next(new Error("Working profile recovery skipped due to auto-profile")); // ← Return ERROR, not success
         }
+
+        const defaultProfileFile = path.join(workingProfileDir, "default/config/", path.basename(filename));
+        
+        let currentProfile = Config.getCurrentProfile() || "default";
+        currentProfile = Config.resolveProfileDirectory(currentProfile);
+        
+        const userProfileFile = path.join(workingProfileDir, currentProfile, "config/", path.basename(filename));
 
         fs.access(workingProfileDir, fs.constants.F_OK, (err) => {
             if (err) {
                 log.warn(`Working profile directory does not exist: ${workingProfileDir}`);
-                return next();
+                return next(new Error("Working profile directory does not exist"));
             }
             log.info(`Attempting to rebuild from working profile: ${defaultProfileFile} and ${userProfileFile}`);
             async.series([(cb) => tryLoadFile(defaultProfileFile, cb), (cb) => tryLoadFile(userProfileFile, cb)], next);
         });
     };
 
-const loadFromOriginalProfile = (next) => {
-    // ALWAYS try to load from original profiles - this provides baseline defaults
-    // Do NOT check skipRecovery here - we need these defaults even during auto-profile
-    
-    // ENHANCED: Get the correct target profile from multiple sources
-    let targetProfile = "default"; // ultimate fallback
-    
-    // Method 1: Check auto-profile definition (works during startup)
-    if (definition && definition.auto_profile && definition.auto_profile.profile_name) {
-        targetProfile = definition.auto_profile.profile_name;
-        log.info(`Using auto-profile target: ${targetProfile}`);
-    } 
-    // Method 2: Check current engine profile (works after startup)
-    else {
-        const currentProfile = Config.getCurrentProfile();
-        if (currentProfile && currentProfile !== "default") {
-            targetProfile = currentProfile;
-            log.info(`Using current engine profile: ${targetProfile}`);
-        }
-        // Method 3: Check for active profile from engine config if available
-        else if (typeof config !== 'undefined' && config.engine && config.engine.get) {
-            const engineProfile = config.engine.get("profile");
-            if (engineProfile && engineProfile !== "default") {
-                targetProfile = engineProfile;
-                log.info(`Using engine config profile: ${targetProfile}`);
+    const loadFromOriginalProfile = (next) => {
+        // Get the correct target profile from multiple sources
+        let targetProfile = "default";
+        
+        if (definition && definition.auto_profile && definition.auto_profile.profile_name) {
+            targetProfile = Config.resolveProfileDirectory(definition.auto_profile.profile_name);
+            log.info(`Using auto-profile target: ${targetProfile}`);
+        } 
+        else {
+            // Check applied marker
+            try {
+                if (fs.existsSync("/opt/fabmo/config/.auto_profile_applied")) {
+                    var marker = JSON.parse(fs.readFileSync("/opt/fabmo/config/.auto_profile_applied", "utf8"));
+                    if (marker.profile_applied && marker.profile_applied !== "default") {
+                        targetProfile = Config.resolveProfileDirectory(marker.profile_applied);
+                        log.info(`Using profile from applied marker: ${targetProfile}`);
+                    }
+                }
+            } catch (err) {
+                // Fall back to engine config
+                const currentProfile = Config.getCurrentProfile();
+                if (currentProfile && currentProfile !== "default") {
+                    targetProfile = Config.resolveProfileDirectory(currentProfile);
+                    log.info(`Using current engine profile: ${targetProfile}`);
+                }
             }
         }
-    }
 
-    const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
-    const originalTargetProfileFile = path.join(originalProfileDir, targetProfile, "config/", path.basename(filename));
-    
-    log.info(
-        `Attempting to rebuild from original profile: ${originalDefaultProfileFile} and ${originalTargetProfileFile}`
-    );
+        const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
+        const originalTargetProfileFile = path.join(originalProfileDir, targetProfile, "config/", path.basename(filename));
+        
+        log.info(`Attempting to rebuild from original profile: ${originalDefaultProfileFile} and ${originalTargetProfileFile}`);
 
-    // Debug: Check if files exist
-    log.debug(
-        `Checking original default profile: ${originalDefaultProfileFile} - exists: ${fs.existsSync(
-            originalDefaultProfileFile
-        )}`
-    );
-    log.debug(
-        `Checking original target profile: ${originalTargetProfileFile} - exists: ${fs.existsSync(
-            originalTargetProfileFile
-        )}`
-    );
+        log.debug(`Checking original default profile: ${originalDefaultProfileFile} - exists: ${fs.existsSync(originalDefaultProfileFile)}`);
+        log.debug(`Checking original target profile: ${originalTargetProfileFile} - exists: ${fs.existsSync(originalTargetProfileFile)}`);
 
-    async.series(
-        [
-            (cb) => {
-                log.debug(`Trying to load original default profile: ${originalDefaultProfileFile}`);
-                tryLoadFile(originalDefaultProfileFile, cb);
-            },
-            (cb) => {
-                log.debug(`Trying to load original target profile: ${originalTargetProfileFile}`);
-                tryLoadFile(originalTargetProfileFile, cb);
-            },
-        ],
-        (err) => {
-            if (err) {
-                log.error(`Original profile loading failed: ${err.message}`);
-            } else {
-                log.info(`Original profile loading succeeded for target: ${targetProfile}`);
+        async.series(
+            [
+                (cb) => {
+                    log.debug(`Trying to load original default profile: ${originalDefaultProfileFile}`);
+                    tryLoadFile(originalDefaultProfileFile, cb);
+                },
+                (cb) => {
+                    log.debug(`Trying to load original target profile: ${originalTargetProfileFile}`);
+                    tryLoadFile(originalTargetProfileFile, cb);
+                },
+            ],
+            (err) => {
+                if (err) {
+                    log.error(`Original profile loading failed: ${err.message}`);
+                } else {
+                    log.info(`Original profile loading succeeded for target: ${targetProfile}`);
+                }
+                next(err);
             }
-            next(err);
-        }
-    );
-};
+        );
+    };
 
-    // Try direct load first, then fallback
+    // Try direct load first, then fallback chain
     tryLoadFile(filename, (err) => {
         if (err) {
             log.warn(`Failed to load config file: ${filename}, trying backup.`);
 
-            async.series([loadFromBackup, loadFromWorkingProfile, loadFromOriginalProfile], (err) => {
-                if (err) {
-                    log.warn(`Failed to load configuration from all sources: ${err.message}`);
-                    callback(err);
-                } else {
-                    callback(null, this._cache); // ✅ Return the cache data
-                }
-            });
+            // FIXED: Try each recovery method in sequence, stopping on first success
+            const tryRecoveryMethods = () => {
+                // Method 1: Try backup first
+                loadFromBackup((backupErr) => {
+                    if (!backupErr) {
+                        log.info("Successfully loaded from backup - stopping recovery chain");
+                        this._loaded = true;
+                        return callback(null, this._cache);
+                    }
+                    
+                    log.debug("Backup recovery failed, trying working profile");
+                    
+                    // Method 2: Try working profile 
+                    loadFromWorkingProfile((workingErr) => {
+                        if (!workingErr) {
+                            log.info("Successfully loaded from working profile - stopping recovery chain");
+                            this._loaded = true;
+                            return callback(null, this._cache);
+                        }
+                        
+                        log.debug("Working profile recovery failed, trying original profile");
+                        
+                        // Method 3: Try original profile (final fallback)
+                        loadFromOriginalProfile((originalErr) => {
+                            if (!originalErr) {
+                                log.info("Successfully loaded from original profile");
+                                this._loaded = true;
+                                return callback(null, this._cache);
+                            } else {
+                                log.warn(`Failed to load configuration from all sources: ${originalErr.message}`);
+                                return callback(originalErr);
+                            }
+                        });
+                    });
+                });
+            };
+            
+            tryRecoveryMethods();
+            
         } else {
-            callback(null, this._cache); // ✅ Return the cache data
+            this._loaded = true;
+            callback(null, this._cache);
         }
     });
+};
+
+// Add this as a static method to Config class
+Config.resolveProfileDirectory = function(profileIdentifier) {
+    if (!profileIdentifier || profileIdentifier === "default") {
+        return "default";
+    }
+    
+    try {
+        // First check if it's already a directory name (fabmo-profile-*)
+        if (profileIdentifier.startsWith("fabmo-profile-")) {
+            return profileIdentifier;
+        }
+        
+        // Try to load the profiles and map display name to directory
+        var profiles = require("../profiles");
+        var allProfiles = profiles.getProfiles();
+        
+        for (var displayName in allProfiles) {
+            if (displayName.toLowerCase() === profileIdentifier.toLowerCase()) {
+                var profileDir = allProfiles[displayName].dir;
+                var dirName = path.basename(profileDir);
+                log.debug(`Resolved '${profileIdentifier}' to directory '${dirName}'`);
+                return dirName;
+            }
+        }
+        
+        // If no mapping found, return as-is (might be a directory name already)
+        log.debug(`No mapping found for '${profileIdentifier}', using as-is`);
+        return profileIdentifier;
+        
+    } catch (err) {
+        log.warn(`Error resolving profile directory for '${profileIdentifier}': ${err.message}`);
+        return profileIdentifier;
+    }
 };
 
 // Write this configuration object to disk
