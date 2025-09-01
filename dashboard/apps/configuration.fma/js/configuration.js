@@ -370,8 +370,9 @@ $('#firmware-input').change(function(evt) {
   });
 });
 
-function checkForBackupRestore() {
-    console.log("DEBUG: checkForBackupRestore called");
+////##
+//function checkForBackupRestore() {
+  //  console.log("DEBUG: checkForBackupRestore called");
     // console.log("DEBUG: fabmo object:", fabmo);
     // console.log("DEBUG: getBackupRestoreStatus method:", typeof fabmo.getBackupRestoreStatus);
     // console.log("DEBUG: restoreBackup method:", typeof fabmo.restoreBackup);
@@ -416,38 +417,38 @@ function checkForBackupRestore() {
     //         sessionStorage.setItem('backup_restore_checked', 'true');
     //     });
     // }, 2000);
-}
+//}
 
-function showBackupRestoreModal(backupInfo) {
-    var backupDate = backupInfo.created_at ? new Date(backupInfo.created_at).toLocaleString() : 'Unknown';
-    var backupType = backupInfo.backup_type || 'Configuration backup';
+// function showBackupRestoreModal(backupInfo) {
+//     var backupDate = backupInfo.created_at ? new Date(backupInfo.created_at).toLocaleString() : 'Unknown';
+//     var backupType = backupInfo.backup_type || 'Configuration backup';
     
-    var message = 
-        'A configuration backup from before the last profile change was found.\n\n' +
-        'Backup created: ' + backupDate + '\n' +
-        'Backup contains: ' + backupType + '\n\n' +
-        'Would you like to restore your previous configuration?';
+//     var message = 
+//         'A configuration backup from before the last profile change was found.\n\n' +
+//         'Backup created: ' + backupDate + '\n' +
+//         'Backup contains: ' + backupType + '\n\n' +
+//         'Would you like to restore your previous configuration?';
     
-    fabmo.showModal({
-        title: 'Configuration Backup Available',
-        message: message,
-        okText: 'Restore Backup',
-        cancelText: 'Keep Current Config',
-        ok: function() {
-            fabmo.notify('info', 'Restoring configuration backup...');
-            fabmo.restoreBackup(function(err, result) {
-                if (err) {
-                    fabmo.notify('error', 'Failed to restore backup: ' + err);
-                } else {
-                    fabmo.notify('success', 'Backup restore initiated - restarting...');
-                }
-            });
-        },
-        cancel: function() {
-            fabmo.notify('info', 'Keeping current configuration');
-        }
-    });
-}
+//     fabmo.showModal({
+//         title: 'Configuration Backup Available',
+//         message: message,
+//         okText: 'Restore Backup',
+//         cancelText: 'Keep Current Config',
+//         ok: function() {
+//             fabmo.notify('info', 'Restoring configuration backup...');
+//             fabmo.restoreBackup(function(err, result) {
+//                 if (err) {
+//                     fabmo.notify('error', 'Failed to restore backup: ' + err);
+//                 } else {
+//                     fabmo.notify('success', 'Backup restore initiated - restarting...');
+//                 }
+//             });
+//         },
+//         cancel: function() {
+//             fabmo.notify('info', 'Keeping current configuration');
+//         }
+//     });
+// }
 
 $(document).ready(function() {
     $(document).foundation();

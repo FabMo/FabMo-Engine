@@ -205,7 +205,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
     
     var backupDate = new Date(backupInfo.created_at).toLocaleString();
     var message = 
-        'A configuration backup from before the last profile change was found.\n\n' +
+        'A configuration backup from before the this FabMo update was found.\n\n' +
         'Backup created: ' + backupDate + '\n' +
         'Backup type: ' + backupInfo.backup_type + '\n\n' +
         'Would you like to restore your previous configuration?';
