@@ -644,6 +644,25 @@ var post_restore_backup = function (req, res, next) {
     
 };
 
+var get_backup_status = function (req, res, next) {
+    var configWatcher = require("../config_watcher");
+    
+    try {
+        var status = configWatcher.getBackupStatus();
+        res.json({
+            status: "success",
+            data: status
+        });
+    } catch (err) {
+        log.error("Error getting backup status: " + err.message);
+        res.json({
+            status: "error",
+            message: "Failed to get backup status: " + err.message
+        });
+    }
+    next();
+};
+
 module.exports = function (server) {
     server.post("/macros/restore", handleMacrosRestore);
     server.get("/macros/backup", backup_macros);
@@ -656,6 +675,9 @@ module.exports = function (server) {
     server.get("/config/auto-profile-status", get_auto_profile_status);
 
     server.post("/profile/manual-change", post_manual_profile_change);
+
+    server.get("/config/backup-status", get_backup_status);
+
     server.get("/config/backup-restore-status", get_backup_restore_status);
     server.post("/config/restore-backup", post_restore_backup);
 };

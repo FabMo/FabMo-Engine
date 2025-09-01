@@ -19,8 +19,10 @@ function debounce(func, wait) {
     };
 }
 
-// Track the last backup time
+// Track the last backup time and pending updates
 let lastBackupTime = 0;
+let pendingUpdates = new Map(); // filepath -> { flagged: true, lastAttempt: timestamp }
+let deferredTimer = null;
 
 // Function to check tool state
 function isToolBusy(callback) {
@@ -28,25 +30,75 @@ function isToolBusy(callback) {
     callback(isBusy);
 }
 
-// Enhanced backup creation with JSON validation
+// Enhanced backup creation with deferred update handling
 const createBackup = debounce((filePath) => {
     const currentTime = Date.now();
+    
+    // Check if we're within the 10-second window
     if (currentTime - lastBackupTime < 10000) {
-        log.debug("Backup request ignored due to 10-second delay constraint.");
+        log.debug(`Backup request for ${filePath} deferred due to 10-second constraint`);
+        
+        // Flag this file for deferred backup
+        pendingUpdates.set(filePath, {
+            flagged: true,
+            lastAttempt: currentTime,
+            originalTime: pendingUpdates.get(filePath)?.originalTime || currentTime
+        });
+        
+        // Set up or reset the deferred timer
+        setupDeferredBackupTimer();
         return;
     }
+    
+    // Clear any pending flag for this file since we're processing it now
+    pendingUpdates.delete(filePath);
+    
+    // Proceed with immediate backup
+    processBackup(filePath, currentTime);
+}, 10);
 
+// Set up timer to handle deferred backups
+function setupDeferredBackupTimer() {
+    if (deferredTimer) {
+        clearTimeout(deferredTimer);
+    }
+    
+    // Wait 12 seconds (10 + 2 buffer) then process all flagged updates
+    deferredTimer = setTimeout(() => {
+        processDeferredBackups();
+    }, 12000);
+}
+
+// Process all flagged deferred backups
+function processDeferredBackups() {
+    const currentTime = Date.now();
+    log.info(`Processing ${pendingUpdates.size} deferred backup(s)`);
+    
+    for (const [filePath, updateInfo] of pendingUpdates.entries()) {
+        if (updateInfo.flagged) {
+            log.info(`Executing deferred backup for: ${filePath}`);
+            processBackup(filePath, currentTime);
+        }
+    }
+    
+    // Clear all pending updates
+    pendingUpdates.clear();
+    deferredTimer = null;
+}
+
+// Extracted backup processing logic
+function processBackup(filePath, currentTime) {
     isToolBusy((busy) => {
         if (busy) {
-            log.debug("Tool is busy. Delaying backup request.");
-            setTimeout(() => createBackup(filePath), 10000);
+            log.debug("Tool is busy. Delaying backup request for " + filePath);
+            setTimeout(() => processBackup(filePath, currentTime), 10000);
         } else {
             // NEW: Validate JSON before backing up
             if (path.extname(filePath) === '.json') {
                 fs.readFile(filePath, 'utf8', (readErr, data) => {
                     if (readErr) {
                         log.warn(`Cannot read file for backup validation: ${filePath} - ${readErr.message}`);
-                        return; // Don't backup invalid files
+                        return;
                     }
                     
                     try {
@@ -54,7 +106,7 @@ const createBackup = debounce((filePath) => {
                         performBackup(filePath, currentTime);
                     } catch (parseErr) {
                         log.warn(`Skipping backup of invalid JSON file: ${filePath} - ${parseErr.message}`);
-                        return; // Don't backup invalid JSON
+                        return;
                     }
                 });
             } else {
@@ -63,9 +115,9 @@ const createBackup = debounce((filePath) => {
             }
         }
     });
-}, 10);
+}
 
-// Helper function to perform the actual backup
+// Enhanced helper function to perform the actual backup
 function performBackup(filePath, currentTime) {
     const watchDir = watchDirs.find((dir) => filePath.startsWith(dir));
     const relativePath = path.relative(watchDir, filePath);
@@ -79,6 +131,14 @@ function performBackup(filePath, currentTime) {
         } else {
             log.debug(`Backup created for ${filePath}`);
             lastBackupTime = currentTime;
+            
+            // Log if this was a deferred backup
+            const wasPending = pendingUpdates.has(filePath);
+            if (wasPending) {
+                const originalTime = pendingUpdates.get(filePath).originalTime;
+                const deferDelay = Math.round((currentTime - originalTime) / 1000);
+                log.info(`Deferred backup completed for ${filePath} (delayed ${deferDelay}s)`);
+            }
         }
     });
 }
@@ -342,13 +402,44 @@ function startWatcher() {
     });
 }
 
+// Enhanced shutdown handling to process pending backups
+function shutdownWatcher() {
+    log.info("Shutting down watcher...");
+    
+    // Process any remaining deferred backups before shutdown
+    if (pendingUpdates.size > 0) {
+        log.info(`Processing ${pendingUpdates.size} pending backup(s) before shutdown`);
+        processDeferredBackups();
+    }
+    
+    if (deferredTimer) {
+        clearTimeout(deferredTimer);
+    }
+    
+    log.info("Watcher shutdown complete");
+}
 
+// Add status reporting for debugging
+function getBackupStatus() {
+    return {
+        lastBackupTime: new Date(lastBackupTime).toISOString(),
+        pendingUpdates: Array.from(pendingUpdates.entries()).map(([path, info]) => ({
+            path: path,
+            flagged: info.flagged,
+            waitingSeconds: Math.round((Date.now() - info.originalTime) / 1000)
+        })),
+        deferredTimerActive: !!deferredTimer
+    };
+}
+
+// Export the status function for debugging
 module.exports = {
     startWatcher,
     copyBackupAtStart,
     createPreAutoProfileBackup,
     restoreFromPreAutoProfileBackup,
     hasPreAutoProfileBackup,
-    getPreAutoProfileBackupInfo
+    getPreAutoProfileBackupInfo,
+    getBackupStatus: getBackupStatus
 };
 
