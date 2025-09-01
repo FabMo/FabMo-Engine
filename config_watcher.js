@@ -87,7 +87,14 @@ function performBackup(filePath, currentTime) {
 function copyExistingFiles() {
     watchDirs.forEach((watchDir) => {
         const backupDir = path.join(backupBaseDir, path.basename(watchDir));
-        fs.ensureDirSync(backupDir);
+        fs.ensureDirSync(backupDir); // Ensure backup directory exists
+        
+        // Check if source directory exists before trying to read it
+        if (!fs.existsSync(watchDir)) {
+            log.debug(`Source directory ${watchDir} does not exist, skipping copy.`);
+            return;
+        }
+        
         fs.readdir(watchDir, (err, files) => {
             if (err) {
                 log.error(`Error reading directory ${watchDir}:`, err);
@@ -96,16 +103,29 @@ function copyExistingFiles() {
             files.forEach((file) => {
                 const srcPath = path.join(watchDir, file);
                 const destPath = path.join(backupDir, file);
+                
+                // Ensure destination directory exists for nested files
+                fs.ensureDirSync(path.dirname(destPath));
+                
                 fs.pathExists(destPath, (exists) => {
                     if (exists) {
                         log.debug(`File already exists at ${destPath}, skipping copy.`);
                     } else {
-                        fs.copy(srcPath, destPath, (err) => {
-                            if (err) {
-                                log.error(`Error copying file from ${srcPath} to ${destPath}:`, err);
-                            } else {
-                                log.debug(`Copied file from ${srcPath} to ${destPath}`);
+                        // Check if source file still exists before copying
+                        fs.pathExists(srcPath, (srcExists) => {
+                            if (!srcExists) {
+                                log.debug(`Source file ${srcPath} no longer exists, skipping copy.`);
+                                return;
                             }
+                            
+                            fs.copy(srcPath, destPath, (copyErr) => {
+                                if (copyErr) {
+                                    // More descriptive error logging
+                                    log.error(`Error copying file from ${srcPath} to ${destPath}: ${copyErr.code} - ${copyErr.message}`);
+                                } else {
+                                    log.debug(`Copied file from ${srcPath} to ${destPath}`);
+                                }
+                            });
                         });
                     }
                 });
@@ -143,98 +163,56 @@ function copyBackupAtStart(callback) {
     });
 }
 
-// NEW: Function to create a pre-auto-profile backup
+// Function to create a pre-auto-profile backup
 function createPreAutoProfileBackup(callback) {
     const preAutoProfileBackupDir = "/opt/fabmo_backup/pre_auto_profile/";
-    const configDir = "/opt/fabmo/config/";
-    const macrosDir = "/opt/fabmo/macros/";
+    const userConfigBackupDir = "/opt/fabmo_backup/config/";
+    const userMacrosBackupDir = "/opt/fabmo_backup/macros/";
+    const liveMacrosDir = "/opt/fabmo/macros/";
     
-    log.info("Creating pre-auto-profile backup at: " + preAutoProfileBackupDir);
+    // Check if user backup data exists - if it does, ALWAYS use it
+    if (!fs.existsSync(userConfigBackupDir)) {
+        log.info("No user backup data exists - skipping pre-auto-profile backup creation");
+        return callback(null);
+    }
+    
+    log.info("Creating pre-auto-profile backup from user data at: " + preAutoProfileBackupDir);
     
     try {
-        // Ensure backup directory exists
+        // Ensure backup directory exists (this will overwrite any existing backup)
         fs.ensureDirSync(preAutoProfileBackupDir + "config/");
         fs.ensureDirSync(preAutoProfileBackupDir + "macros/");
         
-        // NEW: Validate config files before backing up
-        const validateAndCopyConfig = (source, dest, callback) => {
-            fs.readdir(source, (err, files) => {
-                if (err) {
-                    log.warn(`Cannot read config directory: ${err.message}`);
-                    return fs.copy(source, dest, callback); // Fallback to regular copy
-                }
-                
-                let validConfigs = 0;
-                let totalConfigs = files.filter(f => f.endsWith('.json')).length;
-                
-                if (totalConfigs === 0) {
-                    return fs.copy(source, dest, callback); // No JSON files to validate
-                }
-                
-                files.forEach(file => {
-                    if (file.endsWith('.json')) {
-                        const filePath = path.join(source, file);
-                        fs.readFile(filePath, 'utf8', (readErr, data) => {
-                            if (!readErr) {
-                                try {
-                                    JSON.parse(data);
-                                    validConfigs++;
-                                    log.debug(`Valid config file: ${file}`);
-                                } catch (parseErr) {
-                                    log.warn(`Invalid JSON config file detected: ${file} - ${parseErr.message}`);
-                                }
-                            }
-                            
-                            // Check if we've processed all files
-                            if (validConfigs + (totalConfigs - validConfigs) >= totalConfigs) {
-                                if (validConfigs > 0) {
-                                    log.info(`Validated ${validConfigs}/${totalConfigs} config files - proceeding with backup`);
-                                    fs.copy(source, dest, callback);
-                                } else {
-                                    log.warn("No valid config files found - backup may be incomplete");
-                                    fs.copy(source, dest, callback); // Backup anyway for macros
-                                }
-                            }
-                        });
-                    }
-                });
-            });
-        };
-        
-        // Copy and validate config directory
-        validateAndCopyConfig(configDir, preAutoProfileBackupDir + "config/", function(configErr) {
+        // Always create fresh backup from current user data
+        log.info("Copying user config data from: " + userConfigBackupDir);
+        fs.copy(userConfigBackupDir, preAutoProfileBackupDir + "config/", function(configErr) {
             if (configErr) {
-                log.error("Failed to backup config directory: " + configErr.message);
+                log.error("Failed to copy user config backup: " + configErr.message);
                 return callback(configErr);
             }
             
-            // Copy macros directory (no validation needed)
-            fs.copy(macrosDir, preAutoProfileBackupDir + "macros/", function(macrosErr) {
+            log.info("User config data copied successfully");
+            
+            // Copy macros (with fallback)
+            const macrosSource = fs.existsSync(userMacrosBackupDir) ? userMacrosBackupDir : liveMacrosDir;
+            fs.copy(macrosSource, preAutoProfileBackupDir + "macros/", function(macrosErr) {
                 if (macrosErr) {
-                    log.error("Failed to backup macros directory: " + macrosErr.message);
-                    return callback(macrosErr);
+                    log.warn("Failed to copy macros: " + macrosErr.message);
                 }
                 
-                // Create a marker file with timestamp
+                // Create backup info with current timestamp
                 var marker = {
                     created_at: new Date().toISOString(),
-                    backup_type: "pre_auto_profile",
+                    backup_type: "pre_auto_profile", 
+                    source: "user_backup_data",
                     config_files_backed_up: true,
-                    macros_backed_up: true,
-                    validation_performed: true
+                    macros_backed_up: !macrosErr,
+                    note: "Fresh backup created for this auto-profile session"
                 };
                 
-                fs.writeFile(
-                    preAutoProfileBackupDir + "backup_info.json", 
-                    JSON.stringify(marker, null, 2), 
-                    function(markerErr) {
-                        if (markerErr) {
-                            log.warn("Failed to create backup marker file: " + markerErr.message);
-                        }
-                        log.info("Pre-auto-profile backup created successfully with validation");
-                        callback(null);
-                    }
-                );
+                fs.writeFileSync(preAutoProfileBackupDir + "backup_info.json", JSON.stringify(marker, null, 2));
+                log.info("Fresh pre-auto-profile backup created successfully from current user data");
+                callback(null);
             });
         });
     } catch (err) {
@@ -243,7 +221,7 @@ function createPreAutoProfileBackup(callback) {
     }
 }
 
-// NEW: Function to restore from pre-auto-profile backup
+// Function to restore from pre-auto-profile backup
 function restoreFromPreAutoProfileBackup(callback) {
     const preAutoProfileBackupDir = "/opt/fabmo_backup/pre_auto_profile/";
     const configDir = "/opt/fabmo/config/";
@@ -364,11 +342,13 @@ function startWatcher() {
     });
 }
 
+
 module.exports = {
     startWatcher,
     copyBackupAtStart,
-    createPreAutoProfileBackup,           // NEW
-    restoreFromPreAutoProfileBackup,      // NEW  
-    hasPreAutoProfileBackup,              // NEW
-    getPreAutoProfileBackupInfo           // NEW
+    createPreAutoProfileBackup,
+    restoreFromPreAutoProfileBackup,
+    hasPreAutoProfileBackup,
+    getPreAutoProfileBackupInfo
 };
+

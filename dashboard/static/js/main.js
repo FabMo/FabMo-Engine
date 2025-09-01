@@ -168,6 +168,81 @@ function setVideoStyle() {
     }
 }
 
+function checkForGlobalBackupRestore() {
+    console.log("DEBUG: Global dashboard backup restore check");
+
+    setTimeout(function() {
+        console.log("DEBUG: Making global API call to check backup status");
+        
+        $.ajax({
+            url: '/config/backup-restore-status',
+            method: 'GET',
+            success: function(response) {
+                console.log("DEBUG: Global backup status response:", response);
+                
+                // Check both backup_available AND should_prompt
+                if (response.status === 'success' && 
+                    response.data.backup_available && 
+                    response.data.should_prompt) {
+                    console.log("DEBUG: Global backup available and should prompt, showing modal");
+                    showGlobalBackupRestoreModal(response.data.backup_info);
+                } else {
+                    console.log("DEBUG: No global backup available or should not prompt");
+                    if (response.data.backup_available && !response.data.should_prompt) {
+                        console.log("DEBUG: Backup exists but not showing modal (not from recent auto-profile)");
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log("DEBUG: Error in global backup status check:", error);
+            }
+        });
+    }, 3000); 
+}
+
+function showGlobalBackupRestoreModal(backupInfo) {
+    console.log("DEBUG: Showing global backup restore modal");
+    
+    var backupDate = new Date(backupInfo.created_at).toLocaleString();
+    var message = 
+        'A configuration backup from before the last profile change was found.\n\n' +
+        'Backup created: ' + backupDate + '\n' +
+        'Backup type: ' + backupInfo.backup_type + '\n\n' +
+        'Would you like to restore your previous configuration?';
+    
+    dashboard.showModal({
+        title: 'Configuration Backup Available',
+        message: message,
+        okText: 'Restore Backup',
+        cancelText: 'Keep Current Config',
+        ok: function() {
+            console.log("DEBUG: User chose to restore global backup");
+            
+            // Use direct API call
+            $.ajax({
+                url: '/config/restore-backup',
+                method: 'POST',
+                success: function(response) {
+                    console.log("DEBUG: Restore backup response:", response);
+                    if (response.status === 'success') {
+                        dashboard.notification('success', 'Backup restore initiated - restarting...');
+                    } else {
+                        dashboard.notification('error', 'Failed to restore backup: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("DEBUG: Error restoring backup:", error);
+                    dashboard.notification('error', 'Failed to restore backup: ' + error);
+                }
+            });
+        },
+        cancel: function() {
+            console.log("DEBUG: User chose to keep current config");
+            dashboard.notification('info', 'Keeping current configuration');
+        }
+    });
+}
+
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
 
@@ -184,6 +259,9 @@ engine.getVersion(function (err, version) {
 
             keyboard = setupKeyboard();
             keypad = setupKeypad();
+
+            // BACKUP RESTORE CHECK HERE - BEFORE APP ROUTING STARTS
+            checkForGlobalBackupRestore();
 
             // Start the application
             router = new context.Router();

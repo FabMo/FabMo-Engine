@@ -1374,6 +1374,39 @@
         this._call("getUpdaterStatus", null, callback);
     };
 
+    FabMoDashboard.prototype.getBackupRestoreStatus = function(callback) {
+        // Make a direct GET request to the working route
+        fetch('/config/backup-restore-status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    callback(null, data);
+                } else {
+                    callback(new Error(data.message || 'Unknown error'), null);
+                }
+            })
+            .catch(error => callback(error, null));
+    };
+
+    FabMoDashboard.prototype.restoreBackup = function(callback) {
+        // Make a direct POST request to the working route
+        fetch('/config/restore-backup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                callback(null, data);
+            } else {
+                callback(new Error(data.message || 'Unknown error'), null);
+            }
+        })
+        .catch(error => callback(error, null));
+    };
+
     var toaster = function () {
         var el = document.createElement("div");
         el.setAttribute("id", "alert-toaster");
@@ -1390,7 +1423,6 @@
         }, 1000);
     };
 
-    // Add this at the end of fabmo.js
     console.log(
         "FabMoDashboard methods added:",
         typeof FabMoDashboard.prototype.getUSBDevices === "function",

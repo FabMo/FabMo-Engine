@@ -370,6 +370,85 @@ $('#firmware-input').change(function(evt) {
   });
 });
 
+function checkForBackupRestore() {
+    console.log("DEBUG: checkForBackupRestore called");
+    // console.log("DEBUG: fabmo object:", fabmo);
+    // console.log("DEBUG: getBackupRestoreStatus method:", typeof fabmo.getBackupRestoreStatus);
+    // console.log("DEBUG: restoreBackup method:", typeof fabmo.restoreBackup);
+    
+    // // List all available methods starting with 'get' or 'restore'
+    // console.log("DEBUG: Available backup-related methods:");
+    // for (let prop in fabmo) {
+    //     if (prop.toLowerCase().includes('backup') || prop.toLowerCase().includes('restore')) {
+    //         console.log("  " + prop + ": " + typeof fabmo[prop]);
+    //     }
+    // }
+    
+    // // Only check once per session
+    // if (sessionStorage.getItem('backup_restore_checked')) {
+    //     console.log("DEBUG: Already checked for backup in this session");
+    //     return;
+    // }
+    
+    // // Check if the methods exist before calling
+    // if (typeof fabmo.getBackupRestoreStatus !== 'function') {
+    //     console.error("DEBUG: getBackupRestoreStatus method is not available!");
+    //     console.log("DEBUG: This suggests a webpack build issue");
+    //     return;
+    // }
+    
+    // console.log("DEBUG: Starting backup check in 2 seconds...");
+    
+    // // Wait a moment for engine to be fully ready
+    // setTimeout(function() {
+    //     console.log("DEBUG: Making API call to check backup status");
+        
+    //     fabmo.getBackupRestoreStatus(function(err, result) {
+    //         console.log("DEBUG: getBackupRestoreStatus response:", err, result);
+            
+    //         if (!err && result && result.status === 'success' && result.data.backup_available) {
+    //             console.log("DEBUG: Backup available, showing modal");
+    //             showBackupRestoreModal(result.data.backup_info);
+    //         } else {
+    //             console.log("DEBUG: No backup available or error:", err);
+    //         }
+            
+    //         sessionStorage.setItem('backup_restore_checked', 'true');
+    //     });
+    // }, 2000);
+}
+
+function showBackupRestoreModal(backupInfo) {
+    var backupDate = backupInfo.created_at ? new Date(backupInfo.created_at).toLocaleString() : 'Unknown';
+    var backupType = backupInfo.backup_type || 'Configuration backup';
+    
+    var message = 
+        'A configuration backup from before the last profile change was found.\n\n' +
+        'Backup created: ' + backupDate + '\n' +
+        'Backup contains: ' + backupType + '\n\n' +
+        'Would you like to restore your previous configuration?';
+    
+    fabmo.showModal({
+        title: 'Configuration Backup Available',
+        message: message,
+        okText: 'Restore Backup',
+        cancelText: 'Keep Current Config',
+        ok: function() {
+            fabmo.notify('info', 'Restoring configuration backup...');
+            fabmo.restoreBackup(function(err, result) {
+                if (err) {
+                    fabmo.notify('error', 'Failed to restore backup: ' + err);
+                } else {
+                    fabmo.notify('success', 'Backup restore initiated - restarting...');
+                }
+            });
+        },
+        cancel: function() {
+            fabmo.notify('info', 'Keeping current configuration');
+        }
+    });
+}
+
 $(document).ready(function() {
     $(document).foundation();
 
@@ -391,8 +470,9 @@ $(document).ready(function() {
     // Populate Settings
     update();
 
-    // Check for auto-profile status and ensure display is correct
-    //updateAutoProfileStatus();
+    // Check for backup restore opportunity
+    console.log("DEBUG: About to call checkForBackupRestore");
+    checkForBackupRestore();
 
     // tool tip logic
     $('.tool-tip').click(function(){

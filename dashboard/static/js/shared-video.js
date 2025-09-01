@@ -12,7 +12,7 @@ window.FabMoVideo = (function () {
             const timeout = setTimeout(() => {
                 console.log(`Camera ${cameraNum} detection timeout`);
                 resolve(false);
-            }, 5000);
+            }, 2000);
 
             testImg.onload = () => {
                 clearTimeout(timeout);
