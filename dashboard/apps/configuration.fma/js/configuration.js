@@ -370,6 +370,7 @@ $('#firmware-input').change(function(evt) {
   });
 });
 
+
 $(document).ready(function() {
     $(document).foundation();
 
@@ -390,9 +391,6 @@ $(document).ready(function() {
 
     // Populate Settings
     update();
-
-    // Check for auto-profile status and ensure display is correct
-    //updateAutoProfileStatus();
 
     // tool tip logic
     $('.tool-tip').click(function(){
@@ -533,38 +531,38 @@ $(document).ready(function() {
         update();
     });
 
-$('#profile-listbox').on('change', function(evt) {
-    evt.preventDefault();
-    fabmo.showModal({
-        title : 'Change Profiles?',
-        message : 'Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?',
-        okText : 'Yes',
-        cancelText : 'No',
-        ok : function() {
-            // NEW: Use the special manual profile change route
-            var selectedProfile = $("#profile-listbox option:checked").val();
-            
-            $.ajax({
-                url: '/profile/manual-change',
-                method: 'POST',
-                data: JSON.stringify({ profile: selectedProfile }),
-                contentType: 'application/json',
-                success: function(response) {
-                    fabmo.notify('info', 'Profile change initiated...');
-                },
-                error: function(xhr, status, error) {
-                    fabmo.notify('error', 'Profile change failed: ' + error);
-                    // Reset the dropdown to current profile if failed
-                    update();
-                }
-            });
-        },
-        cancel : function() {
-            // Reset dropdown to current value if user cancels
-            update();
-        }
+    $('#profile-listbox').on('change', function(evt) {
+        evt.preventDefault();
+        fabmo.showModal({
+            title : 'Change Profiles?',
+            message : 'Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?',
+            okText : 'Yes',
+            cancelText : 'No',
+            ok : function() {
+                // NEW: Use the special manual profile change route
+                var selectedProfile = $("#profile-listbox option:checked").val();
+                
+                $.ajax({
+                    url: '/profile/manual-change',
+                    method: 'POST',
+                    data: JSON.stringify({ profile: selectedProfile }),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        fabmo.notify('info', 'Profile change initiated...');
+                    },
+                    error: function(xhr, status, error) {
+                        fabmo.notify('error', 'Profile change failed: ' + error);
+                        // Reset the dropdown to current profile if failed
+                        update();
+                    }
+                });
+            },
+            cancel : function() {
+                // Reset dropdown to current value if user cancels
+                update();
+            }
+        });
     });
-});
 
     setApps(fabmo);
     setUsers(fabmo);

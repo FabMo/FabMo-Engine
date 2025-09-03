@@ -310,84 +310,116 @@ Engine.prototype.start = function (callback) {
 
             // Check for automatic profile application
             function check_auto_profile(callback) {
-                var profileDef = require("./config/profile_definition");
-                var definition = profileDef.shouldApplyProfile();
-
-                if (!definition) {
-                    log.debug("No auto-profile definition found");
-                    return callback();
-                }
-
-                var targetProfile = definition.auto_profile.profile_name;
-                var currentProfile = config.engine.get("profile") || "default";
-
-                log.info("Auto-profile requested: " + targetProfile);
-                log.info("Current profile directory: " + currentProfile);
-
-                // Check if auto-profile has already been applied/disabled
-                if (profileDef.isApplied(targetProfile)) {
-                    log.info("Auto-profile already applied or disabled - skipping");
-                    return callback();
-                }
-
-                // NEW: Check if current profile matches target by comparing both display name and directory name
-                var profiles = require("./profiles");
-                var allProfiles = profiles.getProfiles();
-                var targetDisplayName = null;
-                var isCurrentProfileMatchingTarget = false;
-
-                // Find the display name for our target directory
-                Object.keys(allProfiles).forEach(function (displayName) {
-                    if (allProfiles[displayName].dir.endsWith("/" + targetProfile)) {
-                        targetDisplayName = displayName;
+                var configWatcher = require("./config_watcher");
+                
+                // FIRST: Always ensure user backup exists
+                configWatcher.copyBackupAtStart(function(backupErr) {
+                    if (backupErr) {
+                        log.warn("Failed to create user backup: " + backupErr.message);
+                    } else {
+                        log.info("User backup created/verified before auto-profile check");
                     }
-                });
+                    
+                    // NOW: Check if auto-profile should actually run
+                    var profileDef = require("./config/profile_definition");
+                    var definition = profileDef.shouldApplyProfile();
 
-                // Check if current profile matches target (by display name or directory name)
-                var currentProfileLower = currentProfile.toLowerCase();
-                var targetProfileLower = targetProfile.toLowerCase();
+                    if (!definition) {
+                        log.debug("No auto-profile definition found");
+                        return callback();
+                    }
 
-                if (currentProfileLower === targetProfileLower) {
-                    // Direct directory name match
-                    isCurrentProfileMatchingTarget = true;
-                } else if (targetDisplayName && currentProfile === targetDisplayName) {
-                    // Display name match
-                    isCurrentProfileMatchingTarget = true;
-                    log.info(
-                        "Current profile display name matches target directory: " +
-                            currentProfile +
-                            " = " +
-                            targetProfile
-                    );
-                }
+                    var targetProfile = definition.auto_profile.profile_name;
+                    var currentProfile = config.engine.get("profile") || "default";
 
-                if (isCurrentProfileMatchingTarget) {
-                    log.info("Profile already matches target - scheduling auto-profile application for macros/apps");
-                    this.pending_profile_change = {
-                        target: targetProfile,
-                        definition: definition,
-                    };
-                    return callback();
-                }
+                    log.info("Auto-profile requested: " + targetProfile);
+                    log.info("Current profile directory: " + currentProfile);
 
-                // If this is not the first run and doesn't match target, it's a manual change
-                if (currentProfileLower !== "default" && !isCurrentProfileMatchingTarget) {
-                    log.info("Manual profile change detected (" + currentProfile + ") - disabling auto-profile");
-                    profileDef.markAsApplied(targetProfile); // Disable auto-profile
-                    return callback();
-                }
+                    // Check if auto-profile has already been applied/disabled
+                    if (profileDef.isApplied(targetProfile)) {
+                        log.info("Auto-profile already applied or disabled - skipping");
+                        return callback();
+                    }
 
-                // First run detected - schedule auto-profile application
-                if (currentProfileLower === "default") {
-                    log.info("First run detected - will apply profile after baseline setup");
-                    this.pending_profile_change = {
-                        target: targetProfile,
-                        definition: definition,
-                    };
-                    return callback();
-                }
+                    // ONLY NOW: Create pre-auto-profile backup because we're actually going to apply profile
+                    configWatcher.createPreAutoProfileBackup(function(preErr) {
+                        if (preErr) {
+                            log.warn("Failed to create pre-auto-profile backup: " + preErr.message);
+                        } else {
+                            log.info("Pre-auto-profile backup created from user data");
+                        }
+                        
+                        // Continue with auto-profile logic (profile matching checks, etc.)
+                        var profiles = require("./profiles");
+                        var allProfiles = profiles.getProfiles();
+                        var targetDisplayName = null;
+                        var isCurrentProfileMatchingTarget = false;
 
-                callback();
+                        // Find the display name for our target directory
+                        Object.keys(allProfiles).forEach(function (displayName) {
+                            if (allProfiles[displayName].dir.endsWith("/" + targetProfile)) {
+                                targetDisplayName = displayName;
+                            }
+                        });
+
+                        // Check if current profile matches target (by display name or directory name)
+                        var currentProfileLower = currentProfile.toLowerCase();
+                        var targetProfileLower = targetProfile.toLowerCase();
+
+                        if (currentProfileLower === targetProfileLower) {
+                            // Direct directory name match
+                            isCurrentProfileMatchingTarget = true;
+                        } else if (targetDisplayName && currentProfile === targetDisplayName) {
+                            // Display name match
+                            isCurrentProfileMatchingTarget = true;
+                            log.info(
+                                "Current profile display name matches target directory: " +
+                                    currentProfile +
+                                    " = " +
+                                    targetProfile
+                            );
+                        }
+
+                        if (isCurrentProfileMatchingTarget) {
+                            log.info("Profile already matches target - scheduling auto-profile application for macros/apps");
+                            this.pending_profile_change = {
+                                target: targetProfile,
+                                definition: definition,
+                            };
+
+                            // Set backup restore flag for this scenario too
+                            this.backup_restore_pending = true;
+                            log.info("Auto-profile scheduled (profile match) - backup restore will be offered on dashboard load");
+
+                            return callback();
+                        }
+
+                        // If this is not the first run and doesn't match target, it's a manual change
+                        if (currentProfileLower !== "default" && !isCurrentProfileMatchingTarget) {
+                            log.info("Manual profile change detected (" + currentProfile + ") - disabling auto-profile");
+                            profileDef.markAsApplied(targetProfile); // Disable auto-profile
+                            return callback();
+                        }
+
+                        // First run detected - schedule auto-profile application
+                        if (currentProfileLower === "default") {
+                            log.info("First run detected - will apply profile after baseline setup");
+                            this.pending_profile_change = {
+                                target: targetProfile,
+                                definition: definition,
+                            };
+                            
+                            // Set flag that backup restore should be offered after auto-profile completion
+                            this.backup_restore_pending = true;
+                            log.info("Auto-profile scheduled - backup restore will be offered on dashboard load");
+                            
+                            return callback();
+                        }
+
+                        // If we get here, continue with normal startup
+                        callback();
+                    }.bind(this));
+                }.bind(this));
             }.bind(this),
 
             function get_version(callback) {

@@ -5,10 +5,7 @@ const log = require("./log").logger("watcher");
 var machine = require("./machine"); // source for status info
 
 // Directories to watch
-//const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/", "/opt/fabmo/approot/"];
-
-//const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/", "/opt/fabmo/apps/"];
-const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/"]; // skip apps for the moment
+const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/"];
 
 // Directory to store backups
 const backupBaseDir = "/opt/fabmo_backup/";
@@ -22,8 +19,10 @@ function debounce(func, wait) {
     };
 }
 
-// Track the last backup time
+// Track the last backup time and pending updates
 let lastBackupTime = 0;
+let pendingUpdates = new Map(); // filepath -> { flagged: true, lastAttempt: timestamp }
+let deferredTimer = null;
 
 // Function to check tool state
 function isToolBusy(callback) {
@@ -31,41 +30,131 @@ function isToolBusy(callback) {
     callback(isBusy);
 }
 
-// Function to create a backup
+// Enhanced backup creation with deferred update handling
 const createBackup = debounce((filePath) => {
     const currentTime = Date.now();
+    
+    // Check if we're within the 10-second window
     if (currentTime - lastBackupTime < 10000) {
-        log.debug("Backup request ignored due to 10-second delay constraint.");
+        log.debug(`Backup request for ${filePath} deferred due to 10-second constraint`);
+        
+        // Flag this file for deferred backup
+        pendingUpdates.set(filePath, {
+            flagged: true,
+            lastAttempt: currentTime,
+            originalTime: pendingUpdates.get(filePath)?.originalTime || currentTime
+        });
+        
+        // Set up or reset the deferred timer
+        setupDeferredBackupTimer();
         return;
     }
+    
+    // Clear any pending flag for this file since we're processing it now
+    pendingUpdates.delete(filePath);
+    
+    // Proceed with immediate backup
+    processBackup(filePath, currentTime);
+}, 10);
 
+// Set up timer to handle deferred backups
+function setupDeferredBackupTimer() {
+    if (deferredTimer) {
+        clearTimeout(deferredTimer);
+    }
+    
+    // Wait 12 seconds (10 + 2 buffer) then process all flagged updates
+    deferredTimer = setTimeout(() => {
+        processDeferredBackups();
+    }, 12000);
+}
+
+// Process all flagged deferred backups
+function processDeferredBackups() {
+    const currentTime = Date.now();
+    log.info(`Processing ${pendingUpdates.size} deferred backup(s)`);
+    
+    for (const [filePath, updateInfo] of pendingUpdates.entries()) {
+        if (updateInfo.flagged) {
+            log.info(`Executing deferred backup for: ${filePath}`);
+            processBackup(filePath, currentTime);
+        }
+    }
+    
+    // Clear all pending updates
+    pendingUpdates.clear();
+    deferredTimer = null;
+}
+
+// Extracted backup processing logic
+function processBackup(filePath, currentTime) {
     isToolBusy((busy) => {
         if (busy) {
-            log.debug("Tool is busy. Delaying backup request.");
-            setTimeout(() => createBackup(filePath), 10000); // Retry after 10 seconds
+            log.debug("Tool is busy. Delaying backup request for " + filePath);
+            setTimeout(() => processBackup(filePath, currentTime), 10000);
         } else {
-            const watchDir = watchDirs.find((dir) => filePath.startsWith(dir));
-            const relativePath = path.relative(watchDir, filePath);
-            const backupDir = path.join(backupBaseDir, path.basename(watchDir));
-            const backupPath = path.join(backupDir, relativePath);
-            log.debug(`Creating backup for ${filePath} at ${backupPath}`);
-            fs.copy(filePath, backupPath, (err) => {
-                if (err) {
-                    log.error(`Error creating backup for ${filePath}:`, err);
-                } else {
-                    log.debug(`Backup created for ${filePath}`);
-                    lastBackupTime = currentTime;
-                }
-            });
+            // NEW: Validate JSON before backing up
+            if (path.extname(filePath) === '.json') {
+                fs.readFile(filePath, 'utf8', (readErr, data) => {
+                    if (readErr) {
+                        log.warn(`Cannot read file for backup validation: ${filePath} - ${readErr.message}`);
+                        return;
+                    }
+                    
+                    try {
+                        JSON.parse(data); // Validate JSON
+                        performBackup(filePath, currentTime);
+                    } catch (parseErr) {
+                        log.warn(`Skipping backup of invalid JSON file: ${filePath} - ${parseErr.message}`);
+                        return;
+                    }
+                });
+            } else {
+                // Non-JSON files, backup normally
+                performBackup(filePath, currentTime);
+            }
         }
     });
-}, 10); // Adjust the debounce wait time here
+}
+
+// Enhanced helper function to perform the actual backup
+function performBackup(filePath, currentTime) {
+    const watchDir = watchDirs.find((dir) => filePath.startsWith(dir));
+    const relativePath = path.relative(watchDir, filePath);
+    const backupDir = path.join(backupBaseDir, path.basename(watchDir));
+    const backupPath = path.join(backupDir, relativePath);
+    
+    log.debug(`Creating backup for ${filePath} at ${backupPath}`);
+    fs.copy(filePath, backupPath, (err) => {
+        if (err) {
+            log.error(`Error creating backup for ${filePath}:`, err);
+        } else {
+            log.debug(`Backup created for ${filePath}`);
+            lastBackupTime = currentTime;
+            
+            // Log if this was a deferred backup
+            const wasPending = pendingUpdates.has(filePath);
+            if (wasPending) {
+                const originalTime = pendingUpdates.get(filePath).originalTime;
+                const deferDelay = Math.round((currentTime - originalTime) / 1000);
+                log.info(`Deferred backup completed for ${filePath} (delayed ${deferDelay}s)`);
+            }
+        }
+    });
+}
 
 // Function to copy existing files to the backup directory if they do not already exist
 function copyExistingFiles() {
     watchDirs.forEach((watchDir) => {
         const backupDir = path.join(backupBaseDir, path.basename(watchDir));
-        fs.ensureDirSync(backupDir);
+        fs.ensureDirSync(backupDir); // Ensure backup directory exists
+        
+        // Check if source directory exists before trying to read it
+        if (!fs.existsSync(watchDir)) {
+            log.debug(`Source directory ${watchDir} does not exist, skipping copy.`);
+            return;
+        }
+        
         fs.readdir(watchDir, (err, files) => {
             if (err) {
                 log.error(`Error reading directory ${watchDir}:`, err);
@@ -74,16 +163,29 @@ function copyExistingFiles() {
             files.forEach((file) => {
                 const srcPath = path.join(watchDir, file);
                 const destPath = path.join(backupDir, file);
+                
+                // Ensure destination directory exists for nested files
+                fs.ensureDirSync(path.dirname(destPath));
+                
                 fs.pathExists(destPath, (exists) => {
                     if (exists) {
                         log.debug(`File already exists at ${destPath}, skipping copy.`);
                     } else {
-                        fs.copy(srcPath, destPath, (err) => {
-                            if (err) {
-                                log.error(`Error copying file from ${srcPath} to ${destPath}:`, err);
-                            } else {
-                                log.debug(`Copied file from ${srcPath} to ${destPath}`);
+                        // Check if source file still exists before copying
+                        fs.pathExists(srcPath, (srcExists) => {
+                            if (!srcExists) {
+                                log.debug(`Source file ${srcPath} no longer exists, skipping copy.`);
+                                return;
                             }
+                            
+                            fs.copy(srcPath, destPath, (copyErr) => {
+                                if (copyErr) {
+                                    // More descriptive error logging
+                                    log.error(`Error copying file from ${srcPath} to ${destPath}: ${copyErr.code} - ${copyErr.message}`);
+                                } else {
+                                    log.debug(`Copied file from ${srcPath} to ${destPath}`);
+                                }
+                            });
                         });
                     }
                 });
@@ -121,6 +223,132 @@ function copyBackupAtStart(callback) {
     });
 }
 
+// Function to create a pre-auto-profile backup
+function createPreAutoProfileBackup(callback) {
+    const preAutoProfileBackupDir = "/opt/fabmo_backup/pre_auto_profile/";
+    const userConfigBackupDir = "/opt/fabmo_backup/config/";
+    const userMacrosBackupDir = "/opt/fabmo_backup/macros/";
+    const liveMacrosDir = "/opt/fabmo/macros/";
+    
+    // Check if user backup data exists - if it does, ALWAYS use it
+    if (!fs.existsSync(userConfigBackupDir)) {
+        log.info("No user backup data exists - skipping pre-auto-profile backup creation");
+        return callback(null);
+    }
+    
+    log.info("Creating pre-auto-profile backup from user data at: " + preAutoProfileBackupDir);
+    
+    try {
+        // Ensure backup directory exists (this will overwrite any existing backup)
+        fs.ensureDirSync(preAutoProfileBackupDir + "config/");
+        fs.ensureDirSync(preAutoProfileBackupDir + "macros/");
+        
+        // Always create fresh backup from current user data
+        log.info("Copying user config data from: " + userConfigBackupDir);
+        fs.copy(userConfigBackupDir, preAutoProfileBackupDir + "config/", function(configErr) {
+            if (configErr) {
+                log.error("Failed to copy user config backup: " + configErr.message);
+                return callback(configErr);
+            }
+            
+            log.info("User config data copied successfully");
+            
+            // Copy macros (with fallback)
+            const macrosSource = fs.existsSync(userMacrosBackupDir) ? userMacrosBackupDir : liveMacrosDir;
+            fs.copy(macrosSource, preAutoProfileBackupDir + "macros/", function(macrosErr) {
+                if (macrosErr) {
+                    log.warn("Failed to copy macros: " + macrosErr.message);
+                }
+                
+                // Create backup info with current timestamp
+                var marker = {
+                    created_at: new Date().toISOString(),
+                    backup_type: "pre_auto_profile", 
+                    source: "user_backup_data",
+                    config_files_backed_up: true,
+                    macros_backed_up: !macrosErr,
+                    note: "Fresh backup created for this auto-profile session"
+                };
+                
+                fs.writeFileSync(preAutoProfileBackupDir + "backup_info.json", JSON.stringify(marker, null, 2));
+                log.info("Fresh pre-auto-profile backup created successfully from current user data");
+                callback(null);
+            });
+        });
+    } catch (err) {
+        log.error("Error creating pre-auto-profile backup: " + err.message);
+        callback(err);
+    }
+}
+
+// Function to restore from pre-auto-profile backup
+function restoreFromPreAutoProfileBackup(callback) {
+    const preAutoProfileBackupDir = "/opt/fabmo_backup/pre_auto_profile/";
+    const configDir = "/opt/fabmo/config/";
+    const macrosDir = "/opt/fabmo/macros/";
+    
+    log.info("Restoring from pre-auto-profile backup...");
+    
+    // Check if backup exists
+    if (!fs.existsSync(preAutoProfileBackupDir)) {
+        return callback(new Error("No pre-auto-profile backup found"));
+    }
+    
+    try {
+        // Restore config directory
+        fs.copy(preAutoProfileBackupDir + "config/", configDir, function(configErr) {
+            if (configErr) {
+                log.error("Failed to restore config directory: " + configErr.message);
+                return callback(configErr);
+            }
+            
+            // Restore macros directory  
+            fs.copy(preAutoProfileBackupDir + "macros/", macrosDir, function(macrosErr) {
+                if (macrosErr) {
+                    log.error("Failed to restore macros directory: " + macrosErr.message);
+                    return callback(macrosErr);
+                }
+                
+                log.info("Pre-auto-profile backup restored successfully");
+                callback(null);
+            });
+        });
+    } catch (err) {
+        log.error("Error restoring from pre-auto-profile backup: " + err.message);
+        callback(err);
+    }
+}
+
+// NEW: Function to check if pre-auto-profile backup exists
+function hasPreAutoProfileBackup() {
+    const preAutoProfileBackupDir = "/opt/fabmo_backup/pre_auto_profile/";
+    const backupInfoFile = preAutoProfileBackupDir + "backup_info.json";
+    return fs.existsSync(preAutoProfileBackupDir) && fs.existsSync(backupInfoFile);
+}
+
+// NEW: Function to get pre-auto-profile backup info
+function getPreAutoProfileBackupInfo(callback) {
+    const preAutoProfileBackupDir = "/opt/fabmo_backup/pre_auto_profile/";
+    const backupInfoFile = preAutoProfileBackupDir + "backup_info.json";
+    
+    if (!fs.existsSync(backupInfoFile)) {
+        return callback(new Error("No pre-auto-profile backup info found"));
+    }
+    
+    fs.readFile(backupInfoFile, "utf8", function(err, data) {
+        if (err) {
+            return callback(err);
+        }
+        
+        try {
+            const info = JSON.parse(data);
+            callback(null, info);
+        } catch (parseErr) {
+            callback(parseErr);
+        }
+    });
+}
+
 // Function to start the watcher
 function startWatcher() {
     // Copy existing files to the backup directory at the start
@@ -146,18 +374,6 @@ function startWatcher() {
             //log.info(`File changed: ${filePath}`);
             createBackup(filePath);
         });
-    // .on("unlink", (filePath) => {
-    //     log.info(`File removed: ${filePath}`);
-    //     const relativePath = path.relative(watchDirs.find(dir => filePath.startsWith(dir)), filePath);
-    //     const backupPath = path.join(backupDir, relativePath);
-    //     fs.remove(backupPath, (err) => {
-    //         if (err) {
-    //             log.error(`Error removing backup for ${filePath}:`, err);
-    //         } else {
-    //             log.info(`Backup removed for ${filePath}`);
-    //         }
-    //     });
-    // });
 
     log.info(`Watching for changes in ${watchDirs.join(", ")}`);
 
@@ -186,7 +402,65 @@ function startWatcher() {
     });
 }
 
+// Enhanced shutdown handling to process pending backups
+function shutdownWatcher() {
+    log.info("Shutting down watcher...");
+    
+    // Process any remaining deferred backups before shutdown
+    if (pendingUpdates.size > 0) {
+        log.info(`Processing ${pendingUpdates.size} pending backup(s) before shutdown`);
+        processDeferredBackups();
+    }
+    
+    if (deferredTimer) {
+        clearTimeout(deferredTimer);
+    }
+    
+    log.info("Watcher shutdown complete");
+}
+
+// Add status reporting for debugging
+function getBackupStatus() {
+    return {
+        lastBackupTime: new Date(lastBackupTime).toISOString(),
+        pendingUpdates: Array.from(pendingUpdates.entries()).map(([path, info]) => ({
+            path: path,
+            flagged: info.flagged,
+            waitingSeconds: Math.round((Date.now() - info.originalTime) / 1000)
+        })),
+        deferredTimerActive: !!deferredTimer
+    };
+}
+
+// Clean up pre-auto-profile backup (when user dismisses restore)
+function cleanupPreAutoProfileBackup(callback) {
+    const backupDir = '/opt/fabmo_backup/pre_auto_profile';
+    
+    if (!fs.existsSync(backupDir)) {
+        return callback(null);
+    }
+    
+    try {
+        // Remove the entire directory
+        fs.rmSync(backupDir, { recursive: true, force: true });
+        log.info("Pre-auto-profile backup directory removed");
+        callback(null);
+    } catch (err) {
+        log.error("Error removing pre-auto-profile backup: " + err.message);
+        callback(err);
+    }
+}
+
+
+// Export the status function for debugging
 module.exports = {
     startWatcher,
     copyBackupAtStart,
+    createPreAutoProfileBackup,
+    restoreFromPreAutoProfileBackup,
+    hasPreAutoProfileBackup,
+    getPreAutoProfileBackupInfo,
+    getBackupStatus: getBackupStatus,
+    cleanupPreAutoProfileBackup: cleanupPreAutoProfileBackup
 };
+

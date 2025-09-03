@@ -531,7 +531,176 @@ function applyManualProfileChange(profileName, res, next) {
     next();
 }
 
-// And update the module.exports section to:
+// Get backup restore status
+var get_backup_restore_status = function (req, res, next) {
+    var configWatcher = require("../config_watcher");
+    
+    try {
+        if (configWatcher.hasPreAutoProfileBackup()) {
+            configWatcher.getPreAutoProfileBackupInfo(function(err, info) {
+                if (err) {
+                    res.json({
+                        status: "error", 
+                        message: err.message
+                    });
+                    return next();
+                }
+                
+                // Only prompt if this backup is from a recent auto-profile process
+                var shouldPrompt = false;
+                
+                // Check if auto-profile was recently applied
+                try {
+                    if (fs.existsSync("/opt/fabmo/config/.auto_profile_applied")) {
+                        var marker = JSON.parse(fs.readFileSync("/opt/fabmo/config/.auto_profile_applied", "utf8"));
+                        var backupTime = new Date(info.created_at).getTime();
+                        var applyTime = new Date(marker.applied_at).getTime();
+                        
+                        // Only show modal if backup was created BEFORE the auto-profile was applied
+                        // and both happened recently (within last 24 hours)
+                        var now = Date.now();
+                        var twentyFourHours = 24 * 60 * 60 * 1000;
+                        
+                        if (backupTime < applyTime && 
+                            (now - applyTime) < twentyFourHours && 
+                            (now - backupTime) < twentyFourHours) {
+                            shouldPrompt = true;
+                            log.info("Auto-profile backup restore available - showing modal");
+                        } else {
+                            log.debug("Backup exists but not from recent auto-profile process");
+                        }
+                    }
+                } catch (markerErr) {
+                    log.debug("Could not read auto-profile marker: " + markerErr.message);
+                }
+                
+                res.json({
+                    status: "success",
+                    data: {
+                        backup_available: true,
+                        backup_info: info,
+                        should_prompt: shouldPrompt  // ← key flag
+                    }
+                });
+                next();
+            });
+        } else {
+            res.json({
+                status: "success",
+                data: {
+                    backup_available: false,
+                    should_prompt: false
+                }
+            });
+            next();
+        }
+    } catch(err) {
+        res.json({
+            status: "error",
+            message: "Error checking backup: " + err.message
+        });
+        next();
+    }
+};
+
+// Restore from pre-auto-profile backup
+var post_restore_backup = function (req, res, next) {
+    var configWatcher = require("../config_watcher");
+    
+    log.info("User requested restore from pre-auto-profile backup");
+    
+    try {
+        configWatcher.restoreFromPreAutoProfileBackup(function(err) {
+            if (err) {
+                log.error("Failed to restore from backup: " + err.message);
+                res.json({
+                    status: "error",
+                    message: "Failed to restore backup: " + err.message
+                });
+                return next(); 
+            }
+            
+            log.info("Pre-auto-profile backup restored successfully");
+            res.json({
+                status: "success",
+                message: "Backup restored successfully - engine will restart"
+            });
+            
+            next();
+            
+            // Restart after a short delay
+            setTimeout(function() {
+                log.info("Restarting engine after backup restore...");
+                process.exit(0);
+            }, 1000);
+        });
+    } catch(err) {
+        res.json({
+            status: "error",
+            message: "Error during restore: " + err.message
+        });
+        next();
+    }
+    
+};
+
+var get_backup_status = function (req, res, next) {
+    var configWatcher = require("../config_watcher");
+    
+    try {
+        var status = configWatcher.getBackupStatus();
+        res.json({
+            status: "success",
+            data: status
+        });
+    } catch (err) {
+        log.error("Error getting backup status: " + err.message);
+        res.json({
+            status: "error",
+            message: "Failed to get backup status: " + err.message
+        });
+    }
+    next();
+};
+
+var dismiss_backup_restore = function (req, res, next) {
+    log.info("User dismissed backup restore modal - cleaning up markers");
+    
+    try {
+        // Remove the auto-profile marker file
+        const markerPath = "/opt/fabmo/config/.auto_profile_applied";
+        if (fs.existsSync(markerPath)) {
+            fs.unlinkSync(markerPath);
+            log.info("Removed auto-profile marker file");
+        }
+        
+        // Optionally remove the pre-auto-profile backup to fully clean up
+        // (or just mark it as "dismissed" somehow)
+        const configWatcher = require("../config_watcher");
+        configWatcher.cleanupPreAutoProfileBackup(function(cleanupErr) {
+            if (cleanupErr) {
+                log.warn("Could not clean up pre-auto-profile backup: " + cleanupErr.message);
+            } else {
+                log.info("Cleaned up pre-auto-profile backup");
+            }
+            
+            res.json({
+                status: "success",
+                message: "Backup restore dismissed and markers cleaned up"
+            });
+            next();
+        });
+        
+    } catch (err) {
+        log.error("Error dismissing backup restore: " + err.message);
+        res.json({
+            status: "error",
+            message: "Error dismissing backup restore: " + err.message
+        });
+        next();
+    }
+};
+
 module.exports = function (server) {
     server.post("/macros/restore", handleMacrosRestore);
     server.get("/macros/backup", backup_macros);
@@ -544,4 +713,10 @@ module.exports = function (server) {
     server.get("/config/auto-profile-status", get_auto_profile_status);
 
     server.post("/profile/manual-change", post_manual_profile_change);
+
+    server.get("/config/backup-status", get_backup_status);
+
+    server.post('/config/dismiss-backup-restore', dismiss_backup_restore);
+    server.get("/config/backup-restore-status", get_backup_restore_status);
+    server.post("/config/restore-backup", post_restore_backup);
 };

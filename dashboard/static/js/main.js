@@ -168,6 +168,232 @@ function setVideoStyle() {
     }
 }
 
+// Check if we're expecting a restart and handle authentication accordingly
+$(document).ready(function() {
+    const expectingRestart = sessionStorage.getItem('fabmo_expect_restart');
+    
+    if (expectingRestart) {
+        console.log("DEBUG: Detected expected restart: " + expectingRestart);
+        sessionStorage.removeItem('fabmo_expect_restart');
+        sessionStorage.removeItem('fabmo_authenticated');
+        
+        // Force auth check after short delay
+        setTimeout(function() {
+            checkAuthenticationStatus(true);
+        }, 1500);
+    }
+});
+
+function checkForGlobalBackupRestore() {
+    console.log("DEBUG: Global dashboard backup restore check");
+
+    setTimeout(function() {
+        console.log("DEBUG: Making global API call to check backup status");
+        
+        $.ajax({
+            url: '/config/backup-restore-status',
+            method: 'GET',
+            success: function(response) {
+                console.log("DEBUG: Global backup status response:", response);
+                
+                // Check both backup_available AND should_prompt
+                if (response.status === 'success' && 
+                    response.data.backup_available && 
+                    response.data.should_prompt) {
+                    console.log("DEBUG: Global backup available and should prompt, showing modal");
+                    showGlobalBackupRestoreModal(response.data.backup_info);
+                } else {
+                    console.log("DEBUG: No global backup available or should not prompt");
+                    if (response.data.backup_available && !response.data.should_prompt) {
+                        console.log("DEBUG: Backup exists but not showing modal (not from recent auto-profile)");
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log("DEBUG: Error in global backup status check:", error);
+            }
+        });
+    }, 3000); 
+}
+
+function showGlobalBackupRestoreModal(backupInfo) {
+    console.log("DEBUG: Showing global backup restore modal");
+    
+    var backupDate = new Date(backupInfo.created_at).toLocaleString();
+    var message = 
+        'FabMo has found a configuration backup made before this update.<br>' +
+        'Backup created: ' + backupDate + '<br>' +
+        'Would you like to restore your previous configuration?';
+
+    dashboard.showModal({
+        title: 'Configuration Backup Available',
+        message: message,
+        okText: 'Use My Config',
+        cancelText: 'Keep the New Config',
+        ok: function() {
+            console.log("DEBUG: User chose to restore global backup");
+            
+            // Show progress message
+            dashboard.notification('info', 'Restoring backup... System will restart shortly.');
+            
+            // Use direct API call
+            $.ajax({
+                url: '/config/restore-backup',
+                method: 'POST',
+                success: function(response) {
+                    console.log("DEBUG: Restore backup response:", response);
+                    if (response.status === 'success') {
+                        dashboard.notification('success', 'Backup restored - restarting...');
+                        
+                        // Set up authentication check for after restart
+                        sessionStorage.setItem('fabmo_expect_restart', 'backup_restore');
+                        sessionStorage.removeItem('fabmo_authenticated');
+                        
+                        // Monitor for restart completion
+                        monitorRestartAndAuth();
+                        
+                    } else {
+                        dashboard.notification('error', 'Failed to restore backup: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("DEBUG: Error restoring backup:", error);
+                    dashboard.notification('error', 'Failed to restore backup: ' + error);
+                }
+            });
+        },
+        cancel: function() {
+            console.log("DEBUG: User chose to keep current config - cleaning up markers");
+            
+            // Clean up the marker files so modal doesn't appear again
+            $.ajax({
+                url: '/config/dismiss-backup-restore',
+                method: 'POST',
+                success: function(response) {
+                    console.log("DEBUG: Cleanup response:", response);
+                    dashboard.notification('info', 'Keeping current configuration');
+                },
+                error: function(xhr, status, error) {
+                    console.log("DEBUG: Error during cleanup:", error);
+                    dashboard.notification('info', 'Keeping current configuration');
+                }
+            });
+        }
+    });
+}
+
+// Enhanced authentication checker
+function checkAuthenticationStatus(forceCheck = false) {
+    console.log("DEBUG: Checking authentication status (force=" + forceCheck + ")");
+    
+    // Check current user status
+    engine.getCurrentUser(function (err, user) {
+        console.log("DEBUG: Authentication check result - err:", err, "user:", user);
+        
+        if (err || user === undefined || user === null) {
+            console.log("DEBUG: User not authenticated, showing login");
+            
+            // Clear any cached authentication state
+            sessionStorage.removeItem('fabmo_authenticated');
+            localStorage.removeItem('fabmo_authenticated');
+            
+            // Force redirect to authentication
+            setTimeout(function() {
+                if (window.location.hash !== "#/authentication") {
+                    console.log("DEBUG: Redirecting to authentication");
+                    window.location.href = "#/authentication";
+                }
+            }, 100);
+        } else {
+            console.log("DEBUG: User authenticated:", user.username);
+            sessionStorage.setItem('fabmo_authenticated', 'true');
+        }
+    });
+}
+
+// Enhanced startup authentication check
+function performStartupAuthCheck() {
+    console.log("DEBUG: Performing startup authentication check");
+    
+    // Initial check
+    checkAuthenticationStatus(true);
+    
+    // Also check after a short delay in case there are timing issues
+    setTimeout(function() {
+        checkAuthenticationStatus(true);
+    }, 2000);
+    
+    // Set up periodic checks for the first 30 seconds after startup
+    let checkCount = 0;
+    const maxChecks = 6; // 6 checks over 30 seconds
+    
+    const periodicCheck = setInterval(function() {
+        checkCount++;
+        
+        if (sessionStorage.getItem('fabmo_authenticated') === 'true') {
+            console.log("DEBUG: Authentication confirmed, stopping periodic checks");
+            clearInterval(periodicCheck);
+            return;
+        }
+        
+        console.log("DEBUG: Periodic auth check #" + checkCount);
+        checkAuthenticationStatus(false);
+        
+        if (checkCount >= maxChecks) {
+            clearInterval(periodicCheck);
+        }
+    }, 5000);
+}
+
+// Monitor for restart completion and handle authentication
+function monitorRestartAndAuth() {
+    console.log("DEBUG: Starting restart monitoring");
+    
+    let attempts = 0;
+    const maxAttempts = 30; // Monitor for up to 3 minutes
+    const recheckInterval = 6000; // Check every 6 seconds
+    
+    const restartMonitor = setInterval(function() {
+        attempts++;
+        
+        console.log("DEBUG: Restart monitor attempt #" + attempts);
+        
+        // Try to ping the server
+        $.ajax({
+            url: '/status',
+            method: 'GET',
+            timeout: 3000,
+            success: function(response) {
+                console.log("DEBUG: Server responded after restart");
+                clearInterval(restartMonitor);
+                
+                // Clear restart expectation
+                sessionStorage.removeItem('fabmo_expect_restart');
+                
+                // Force authentication check after restart
+                setTimeout(function() {
+                    console.log("DEBUG: Forcing auth check after restart");
+                    checkAuthenticationStatus(true);
+                }, 1000);
+            },
+            error: function() {
+                if (attempts >= maxAttempts) {
+                    console.log("DEBUG: Restart monitor timeout - stopping");
+                    clearInterval(restartMonitor);
+                    sessionStorage.removeItem('fabmo_expect_restart');
+                    
+                    // Force a page reload as fallback
+                    setTimeout(function() {
+                        console.log("DEBUG: Forcing page reload due to restart timeout");
+                        window.location.reload();
+                    }, 2000);
+                }
+                // Otherwise keep checking
+            }
+        });
+    }, recheckInterval);
+}
+
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
 
@@ -178,17 +404,21 @@ engine.getVersion(function (err, version) {
             // Create a FabMo object for the dashboard
             dashboard.setEngine(engine);
             console.log("Configuring this FabMo ...");
-            ////##            setUpManual(); // Configures all axis displays
             dashboard.ui = new FabMoUI(dashboard.engine);
             dashboard.getNetworkIdentity();
 
             keyboard = setupKeyboard();
             keypad = setupKeypad();
 
+            // Check authentication status early
+            performStartupAuthCheck();
+
+            // BACKUP RESTORE CHECK HERE - BEFORE APP ROUTING STARTS
+            checkForGlobalBackupRestore();
+
             // Start the application
             router = new context.Router();
             router.setContext(context);
-
             dashboard.setRouter(router);
 
             // Sort of a hack, but works OK.
