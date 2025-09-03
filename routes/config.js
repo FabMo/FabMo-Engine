@@ -663,6 +663,44 @@ var get_backup_status = function (req, res, next) {
     next();
 };
 
+var dismiss_backup_restore = function (req, res, next) {
+    log.info("User dismissed backup restore modal - cleaning up markers");
+    
+    try {
+        // Remove the auto-profile marker file
+        const markerPath = "/opt/fabmo/config/.auto_profile_applied";
+        if (fs.existsSync(markerPath)) {
+            fs.unlinkSync(markerPath);
+            log.info("Removed auto-profile marker file");
+        }
+        
+        // Optionally remove the pre-auto-profile backup to fully clean up
+        // (or just mark it as "dismissed" somehow)
+        const configWatcher = require("../config_watcher");
+        configWatcher.cleanupPreAutoProfileBackup(function(cleanupErr) {
+            if (cleanupErr) {
+                log.warn("Could not clean up pre-auto-profile backup: " + cleanupErr.message);
+            } else {
+                log.info("Cleaned up pre-auto-profile backup");
+            }
+            
+            res.json({
+                status: "success",
+                message: "Backup restore dismissed and markers cleaned up"
+            });
+            next();
+        });
+        
+    } catch (err) {
+        log.error("Error dismissing backup restore: " + err.message);
+        res.json({
+            status: "error",
+            message: "Error dismissing backup restore: " + err.message
+        });
+        next();
+    }
+};
+
 module.exports = function (server) {
     server.post("/macros/restore", handleMacrosRestore);
     server.get("/macros/backup", backup_macros);
@@ -678,6 +716,7 @@ module.exports = function (server) {
 
     server.get("/config/backup-status", get_backup_status);
 
+    server.post('/config/dismiss-backup-restore', dismiss_backup_restore);
     server.get("/config/backup-restore-status", get_backup_restore_status);
     server.post("/config/restore-backup", post_restore_backup);
 };

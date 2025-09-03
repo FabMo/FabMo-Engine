@@ -432,6 +432,26 @@ function getBackupStatus() {
     };
 }
 
+// Clean up pre-auto-profile backup (when user dismisses restore)
+function cleanupPreAutoProfileBackup(callback) {
+    const backupDir = '/opt/fabmo_backup/pre_auto_profile';
+    
+    if (!fs.existsSync(backupDir)) {
+        return callback(null);
+    }
+    
+    try {
+        // Remove the entire directory
+        fs.rmSync(backupDir, { recursive: true, force: true });
+        log.info("Pre-auto-profile backup directory removed");
+        callback(null);
+    } catch (err) {
+        log.error("Error removing pre-auto-profile backup: " + err.message);
+        callback(err);
+    }
+}
+
+
 // Export the status function for debugging
 module.exports = {
     startWatcher,
@@ -440,6 +460,7 @@ module.exports = {
     restoreFromPreAutoProfileBackup,
     hasPreAutoProfileBackup,
     getPreAutoProfileBackupInfo,
-    getBackupStatus: getBackupStatus
+    getBackupStatus: getBackupStatus,
+    cleanupPreAutoProfileBackup: cleanupPreAutoProfileBackup
 };
 

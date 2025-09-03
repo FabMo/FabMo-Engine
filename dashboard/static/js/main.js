@@ -223,14 +223,13 @@ function showGlobalBackupRestoreModal(backupInfo) {
     var message = 
         'FabMo has found a configuration backup made before this update.<br>' +
         'Backup created: ' + backupDate + '<br>' +
-        // 'Backup type: ' + backupInfo.backup_type + '<br>' + // Uncomment if needed
         'Would you like to restore your previous configuration?';
 
     dashboard.showModal({
         title: 'Configuration Backup Available',
         message: message,
-        okText: 'Restore Backup',
-        cancelText: 'Keep Current Config',
+        okText: 'Use My Config',
+        cancelText: 'Keep the New Config',
         ok: function() {
             console.log("DEBUG: User chose to restore global backup");
             
@@ -264,8 +263,21 @@ function showGlobalBackupRestoreModal(backupInfo) {
             });
         },
         cancel: function() {
-            console.log("DEBUG: User chose to keep current config");
-            dashboard.notification('info', 'Keeping current configuration');
+            console.log("DEBUG: User chose to keep current config - cleaning up markers");
+            
+            // Clean up the marker files so modal doesn't appear again
+            $.ajax({
+                url: '/config/dismiss-backup-restore',
+                method: 'POST',
+                success: function(response) {
+                    console.log("DEBUG: Cleanup response:", response);
+                    dashboard.notification('info', 'Keeping current configuration');
+                },
+                error: function(xhr, status, error) {
+                    console.log("DEBUG: Error during cleanup:", error);
+                    dashboard.notification('info', 'Keeping current configuration');
+                }
+            });
         }
     });
 }
