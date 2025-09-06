@@ -194,9 +194,11 @@ function copyExistingFiles() {
     });
 }
 
-// Function to copy backup at the start of the session
-function copyBackupAtStart(callback) {
-    const atStartDir = "/opt/fabmo_backup_atStart/";
+// Function to copy backup at the start of the session with rotation
+function copyBackupAtStart(callback, engineVersion) { // ← Add engineVersion parameter
+    const atStartBaseDir = "/opt/fabmo_backup_atStart/";
+    const maxBackups = 5;
+    
     fs.pathExists(backupBaseDir, (err, exists) => {
         if (err) {
             log.error(`Error checking existence of ${backupBaseDir}:`, err);
@@ -208,16 +210,121 @@ function copyBackupAtStart(callback) {
             callback();
             return;
         }
-        log.info(`Ensuring directory exists: ${atStartDir}`);
-        fs.ensureDirSync(atStartDir);
-        log.info(`Copying backup from ${backupBaseDir} to ${atStartDir}`);
-        fs.copy(backupBaseDir, atStartDir, (err) => {
-            if (err) {
-                log.error(`Error copying backup to ${atStartDir}:`, err);
-                callback(err);
-            } else {
-                log.info(`Backup copied to ${atStartDir}`);
-                callback();
+        
+        log.info(`Ensuring directory exists: ${atStartBaseDir}`);
+        fs.ensureDirSync(atStartBaseDir);
+        
+        // Create timestamped subdirectory name
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = String(now.getHours()).padStart(2, '0');
+        const minute = String(now.getMinutes()).padStart(2, '0');
+        const second = String(now.getSeconds()).padStart(2, '0');
+        
+        const timestampedDirName = `atStart_${year}_${month}_${day}_${hour}${minute}${second}`;
+        const newBackupDir = path.join(atStartBaseDir, timestampedDirName);
+        
+        // Get existing backup directories and sort by creation time (oldest first)
+        fs.readdir(atStartBaseDir, (readErr, files) => {
+            if (readErr) {
+                log.warn(`Could not read existing backups directory: ${readErr.message}`);
+                files = []; // Continue with empty list
+            }
+            
+            // Filter for directories that match our naming pattern and get their stats
+            const existingBackups = [];
+            let pendingStats = 0;
+            
+            const processBackups = () => {
+                // Sort by creation time (oldest first)
+                existingBackups.sort((a, b) => a.mtime - b.mtime);
+                
+                // Remove oldest backups if we have >= maxBackups
+                if (existingBackups.length >= maxBackups) {
+                    const backupsToRemove = existingBackups.slice(0, existingBackups.length - maxBackups + 1);
+                    
+                    log.info(`Found ${existingBackups.length} existing backups, removing ${backupsToRemove.length} oldest`);
+                    
+                    // Remove old backups
+                    backupsToRemove.forEach(backup => {
+                        try {
+                            fs.rmSync(backup.fullPath, { recursive: true, force: true });
+                            log.info(`Removed old backup: ${backup.name}`);
+                        } catch (rmErr) {
+                            log.warn(`Could not remove old backup ${backup.name}: ${rmErr.message}`);
+                        }
+                    });
+                }
+                
+                // Now create the new backup
+                log.info(`Creating new timestamped backup: ${timestampedDirName}`);
+                log.info(`Copying backup from ${backupBaseDir} to ${newBackupDir}`);
+                
+                fs.copy(backupBaseDir, newBackupDir, (copyErr) => {
+                    if (copyErr) {
+                        log.error(`Error copying backup to ${newBackupDir}:`, copyErr);
+                        callback(copyErr);
+                    } else {
+                        log.info(`Timestamped backup created successfully at ${newBackupDir}`);
+                        
+                        // Create a marker file with metadata
+                        const markerInfo = {
+                            created_at: now.toISOString(),
+                            backup_type: "atStart_rotated",
+                            source_dir: backupBaseDir,
+                            fabmo_version: engineVersion || "unknown" // ← Now engineVersion is in scope
+                        };
+                        
+                        try {
+                            fs.writeFileSync(path.join(newBackupDir, "backup_info.json"), JSON.stringify(markerInfo, null, 2));
+                            log.debug("Created backup metadata file");
+                        } catch (metaErr) {
+                            log.warn("Could not create backup metadata: " + metaErr.message);
+                        }
+                        
+                        callback();
+                    }
+                });
+            };
+            
+            if (files.length === 0) {
+                processBackups();
+                return;
+            }
+            
+            // Check each file to see if it's a backup directory
+            files.forEach(file => {
+                if (file.startsWith('atStart_') && file.match(/atStart_\d{4}_\d{2}_\d{2}_\d{6}/)) {
+                    const fullPath = path.join(atStartBaseDir, file);
+                    pendingStats++;
+                    
+                    fs.stat(fullPath, (statErr, stats) => {
+                        pendingStats--;
+                        
+                        if (!statErr && stats.isDirectory()) {
+                            existingBackups.push({
+                                name: file,
+                                fullPath: fullPath,
+                                mtime: stats.mtime.getTime()
+                            });
+                        } else if (statErr) {
+                            log.warn(`Could not stat backup directory ${fullPath}: ${statErr.message}`);
+                        }
+                        
+                        if (pendingStats === 0) {
+                            processBackups();
+                        }
+                    });
+                } else {
+                    log.debug(`Skipping non-backup file/directory: ${file}`);
+                }
+            });
+            
+            // Handle case where no valid backup directories were found
+            if (pendingStats === 0) {
+                processBackups();
             }
         });
     });

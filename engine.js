@@ -314,6 +314,7 @@ Engine.prototype.start = function (callback) {
                 
                 // FIRST: Always ensure user backup exists
                 configWatcher.copyBackupAtStart(function(backupErr) {
+
                     if (backupErr) {
                         log.warn("Failed to create user backup: " + backupErr.message);
                     } else {
@@ -954,16 +955,19 @@ Engine.prototype.start = function (callback) {
 
             // Copy backup at the start of the session and then start the watcher
             function copy_backup_and_start_watcher(callback) {
-                log.debug("Copying backup and starting watcher...");
-                // Copy backup at the start of the session
-                configWatcher.copyBackupAtStart((err) => {
+                var configWatcher = require("./config_watcher");
+                
+                log.info("Copying backup and starting watcher...");
+                const engineVersion = this.version ? this.version.number : "unknown";
+                
+                configWatcher.copyBackupAtStart(function (err) {
                     if (err) {
-                        return callback(err);
+                        log.error("Error copying backup at start: " + err.message);
                     }
                     configWatcher.startWatcher();
                     callback();
-                });
-            },
+                }, engineVersion); // Pass the version here
+            }.bind(this),
 
             /**
              * Apply auto-profile if one is pending from the check_auto_profile step.
