@@ -145,52 +145,103 @@ function performBackup(filePath, currentTime) {
 
 // Function to copy existing files to the backup directory if they do not already exist
 function copyExistingFiles() {
-    watchDirs.forEach((watchDir) => {
-        const backupDir = path.join(backupBaseDir, path.basename(watchDir));
-        fs.ensureDirSync(backupDir); // Ensure backup directory exists
+    return new Promise((resolve) => {
+        let pendingOps = 0;
+        let completedOps = 0;
+        const results = [];
         
-        // Check if source directory exists before trying to read it
-        if (!fs.existsSync(watchDir)) {
-            log.debug(`Source directory ${watchDir} does not exist, skipping copy.`);
-            return;
-        }
-        
-        fs.readdir(watchDir, (err, files) => {
-            if (err) {
-                log.error(`Error reading directory ${watchDir}:`, err);
+        watchDirs.forEach((watchDir) => {
+            const backupDir = path.join(backupBaseDir, path.basename(watchDir));
+            
+            log.info(`Processing watch directory: ${watchDir}`);
+            fs.ensureDirSync(backupDir);
+            
+            if (!fs.existsSync(watchDir)) {
+                log.warn(`Source directory ${watchDir} does not exist, skipping copy.`);
                 return;
             }
+            
+            const files = fs.readdirSync(watchDir); // Make this synchronous
+            log.info(`Found ${files.length} files in ${watchDir}: ${files.join(', ')}`);
+            
+            if (files.length === 0) {
+                return;
+            }
+            
             files.forEach((file) => {
                 const srcPath = path.join(watchDir, file);
                 const destPath = path.join(backupDir, file);
                 
-                // Ensure destination directory exists for nested files
-                fs.ensureDirSync(path.dirname(destPath));
-                
-                fs.pathExists(destPath, (exists) => {
-                    if (exists) {
-                        log.debug(`File already exists at ${destPath}, skipping copy.`);
-                    } else {
-                        // Check if source file still exists before copying
-                        fs.pathExists(srcPath, (srcExists) => {
-                            if (!srcExists) {
-                                log.debug(`Source file ${srcPath} no longer exists, skipping copy.`);
-                                return;
-                            }
-                            
+                try {
+                    const srcStats = fs.statSync(srcPath);
+                    if (!srcStats.isFile()) {
+                        return;
+                    }
+                    
+                    pendingOps++;
+                    
+                    // Check if backup exists
+                    fs.stat(destPath, (backupErr, backupStats) => {
+                        if (backupErr) {
+                            // No backup exists - create initial backup
+                            log.info(`Creating initial backup for new file: ${file}`);
                             fs.copy(srcPath, destPath, (copyErr) => {
+                                completedOps++;
                                 if (copyErr) {
-                                    // More descriptive error logging
-                                    log.error(`Error copying file from ${srcPath} to ${destPath}: ${copyErr.code} - ${copyErr.message}`);
+                                    log.error(`Error creating initial backup for ${srcPath}: ${copyErr.message}`);
+                                    results.push({ file, status: 'error', error: copyErr.message });
                                 } else {
-                                    log.debug(`Copied file from ${srcPath} to ${destPath}`);
+                                    log.info(`Created initial backup for ${srcPath}`);
+                                    results.push({ file, status: 'created' });
+                                }
+                                
+                                if (completedOps >= pendingOps) {
+                                    log.info(`Initial backup completed: ${results.length} files processed`);
+                                    resolve(results);
                                 }
                             });
-                        });
-                    }
-                });
+                        } else {
+                            // Backup exists - check if source is newer
+                            if (srcStats.mtime > backupStats.mtime) {
+                                log.info(`Updating backup for modified file: ${file}`);
+                                fs.copy(srcPath, destPath, (copyErr) => {
+                                    completedOps++;
+                                    if (copyErr) {
+                                        log.error(`Error updating backup for ${srcPath}: ${copyErr.message}`);
+                                        results.push({ file, status: 'error', error: copyErr.message });
+                                    } else {
+                                        log.info(`Updated backup for ${srcPath}`);
+                                        results.push({ file, status: 'updated' });
+                                    }
+                                    
+                                    if (completedOps >= pendingOps) {
+                                        log.info(`Initial backup completed: ${results.length} files processed`);
+                                        resolve(results);
+                                    }
+                                });
+                            } else {
+                                completedOps++;
+                                log.debug(`Backup up-to-date for: ${file} (preserving previous version)`);
+                                results.push({ file, status: 'up-to-date' });
+                                
+                                if (completedOps >= pendingOps) {
+                                    log.info(`Initial backup completed: ${results.length} files processed`);
+                                    resolve(results);
+                                }
+                            }
+                        }
+                    });
+                } catch (statErr) {
+                    log.debug(`Cannot read source file ${srcPath}: ${statErr.message}`);
+                }
             });
         });
+        
+        // Handle case where no operations were started
+        if (pendingOps === 0) {
+            log.info("No files to backup - completing immediately");
+            resolve([]);
+        }
     });
 }
 
@@ -457,9 +508,16 @@ function getPreAutoProfileBackupInfo(callback) {
 }
 
 // Function to start the watcher
-function startWatcher() {
-    // Copy existing files to the backup directory at the start
-    copyExistingFiles();
+async function startWatcher() {
+    // Wait for initial file copying to complete
+    log.info("Starting initial backup of existing files...");
+    try {
+        const results = await copyExistingFiles();
+        log.info(`Initial backup completed: ${results.length} operations`);
+    } catch (err) {
+        log.error("Error during initial backup:", err);
+    }
+
 
     // Initialize watcher with awaitWriteFinish
     const watcher = chokidar.watch(watchDirs, {
