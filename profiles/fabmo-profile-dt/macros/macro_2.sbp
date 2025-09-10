@@ -56,14 +56,14 @@ find_z_zero_plate:                                              ' Now Offset to 
     IF %(3) == &target_ck THEN GOTO fail_missed_target
     &target_ck = %(3)                                           ' Should now be accurate distance from Z zero 
     &target_ck = &target_ck * -1
-    $sb_current_cutter_Zoffset = &target_ck + &zPlateThick		' RECORD: offset of this cutter
+    $sb_current_cutter_Zoffset = &target_ck - &zPlateThick		' RECORD: offset of this cutter
     IF %(25) == 1 THEN GOTO continue_as_mm
 		$sb_current_cutter_Zoffset_Units = "IN"                 ' RECORD: units for offset of this cutter
         GOTO set_z
 	continue_as_mm:
 		$sb_current_cutter_Zoffset_Units = "MM"                 ' RECORD: units for offset of this cutter
     set_z:    
-        JZ, ((-1 * $sb_current_cutter_Zoffset) + &safeZ_pullup + &zPlateThick) 
+        JZ, ((-1 * $sb_current_cutter_Zoffset) + &safeZ_pullup - &zPlateThick) 
         VA,,, (&safeZ_pullup + &zPlateThick)                    				' Only setting local Z, not TBC-Z (g55z)
     RETURN
 
