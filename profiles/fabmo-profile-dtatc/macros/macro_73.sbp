@@ -8,6 +8,7 @@ SK																		' >> Keypad open
 C2																		' >> Zero Z Axis to Z Zero Plate
 PAUSE "Offset is " + %(9)												' >> Display offset for user's reference
 $ATC.PlateOffset = %(9) - $tools[$ATC.ToolIn].H							' >> Record Offset in config
+END
 
 ' Subroutines ==========================================================
 HOME_Z:

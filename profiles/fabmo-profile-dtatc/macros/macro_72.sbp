@@ -9,6 +9,7 @@ START:
 	&ALL_TOOLS = 0																				' >> This variable will be set to "1" if the user elects to measure all tools in the toolbar
 	&MANUAL_MEASUREMENT = 0																		' >> This variable will be set to "1" if the user selects a tool that is not on the toolbar (or the toolbar is unplugged)
 	&VALID_TOOL = 0																				' >> This variable will be set to "1" if the user selects a valid tool number
+    GOSUB initialize_variables
 	GOSUB CHOOSE_TOOL																			' >> Send to subroutine to prompt for tool selection
 	IF &VALID_TOOL = 0 THEN PAUSE "Tool selection invalid. Please choose a valid tool number"	' >> If selection is invalid, warn user...
 	IF &VALID_TOOL = 0 THEN GOSUB CHOOSE_TOOL													' >> ...and let them try again
@@ -25,7 +26,7 @@ PREPARE_FOR_MEASUREMENT:
 	&check = %(106) + %(3)																		' >> Determine maximum range of Z motion to set target for probe
 	PZ, &check, $zFast, $Z_Prox																	' >> Probe Z limit
 	IF %(3) >= &check THEN GOSUB Z_PROX_FAILURE													' >> If we got to our check value without triggering limit, then we've failed -- exit with error.
-	VA,,,0 + $smallBackOff																						' >> After successful probe, reset z values
+	VA,,,0 + &homeOff_Z																						' >> After successful probe, reset z values
    	JZ, 0																		' >> Back off limit switch
 	IF $ATC.ToolIn > $ATC.NumClips THEN GOSUB MANUAL_POSITION									' >> If we're measuring an "off toolbar" tool, go to the manual measurement subroutine
 	IF $ATC.ToolIn <= $ATC.NumClips THEN GOSUB AUTO_POSITION									' >> If we're measuring an "on toolbar" tool, go to the normal auto measurement subroutine
@@ -47,7 +48,7 @@ PREPARE_FOR_MEASUREMENT:
 	IF &AGAIN = "Y" THEN GOTO START																' >> If user replied "Y" then go again
 	
 FINISHED:
-	JZ, -1 * %(9) - $smallBackOff																' >> We're done, lift to maximum safe height
+	JZ, -1 * %(9) - &homeOff_Z																	' >> We're done, lift to maximum safe height
 	J2, %(1) - 5 * $unitMultiplier																' >> Move forward to clear rear limit switch
   	VN,0																						' >> Turn limits back on
 	END				
@@ -75,7 +76,55 @@ CHOOSE_TOOL:
 MANUAL_BACKOFF:
 	JZ,%(3) - $ATC.PlateOffset - $sb_zPlateThick
     RETURN
+    
+initialize_variables:
+    &proxNum_Z = $sb_proxNum_Z
+    &check_prox_Z = $sb_proxCk_Z							  
+    &proxNum_X = $sb_proxNum_X
+    &check_prox_X = $sb_proxCk_X							  
+    &proxNum_Y = $sb_proxNum_Y
+    &check_prox_Y = $sb_proxCk_Y							  
 
+  'Adjust to current UNITS of tool (handles whether tool Macro Variables are for INCHES or MM)
+	&dist_mult = 1.0
+	&Zoff_mult = 1.0
+	IF %(25) == 1 THEN GOTO tool_MM							  ' Read UNIT of Tool; System Variable #25
+	  tool_IN:
+	    $sb_current_cutter_Zoffset := .25                     ' Initialize variable in IN for case tool cutter not zeroed
+		$sb_current_cutter_Zoffset_Units := 0
+		IF $sb_current_cutter_Zoffset_Units == "IN" THEN GOTO ok_IN
+		  &Zoff_mult = 0.0393701
+		ok_IN:
+	    IF $sb_varTableUNITS == "IN" THEN GOTO continue_with_variables
+		&dist_mult = 0.0393701                                ' Defined in MM: Multiplier to redefine distances from mm to inches 
+	    GOTO continue_with_variables
+	  tool_MM:
+	    $sb_current_cutter_Zoffset := 6.35                    ' Initialize variable in MM for case tool cutter not zeroed
+		$sb_current_cutter_Zoffset_Units := 1
+		IF $sb_current_cutter_Zoffset_Units == "MM" THEN GOTO ok_MM
+		  &Zoff_mult = 25.4
+		ok_MM:
+	    IF $sb_varTableUNITS == "MM" THEN GOTO continue_with_variables
+		&dist_mult = 25.4                                     ' Defined in IN: Multiplier to redefine distances from inches to mm 
+	    GOTO continue_with_variables
+  'continue adjusting units for current working variables ...
+	continue_with_variables:
+		&target_ck = 0
+		&ooch = $sb_ooch * &dist_mult
+		&backOff_dist = &ooch * 5
+ 		&searchDist_Z = $sb_searchDist_Z * &dist_mult
+		&searchSpeed_Z = $sb_searchSpeed_Z * &dist_mult
+		&slowSearchSpeed_Z = $sb_slowSearchSpeed_Z * &dist_mult
+		&searchDist_X = $sb_searchDist_X * &dist_mult
+		&searchDist_Y = $sb_searchDist_Y * &dist_mult
+		&searchSpeed_XY = $sb_searchSpeed_XY * &dist_mult
+		&slowSearchSpeed_XY = $sb_slowSearchSpeed_XY * &dist_mult
+		&homePullBack = $sb_homePullBack * &dist_mult
+		&homeOff_Z = $sb_homeOff_Z * &dist_mult
+		&homeOff_X = $sb_homeOff_X * &dist_mult
+		&homeOff_Y = $sb_homeOff_Y * &dist_mult
+	RETURN
+    
 'Error Handlers ================================================================================
 CONTACT_ERROR:
 	MZ,%(3) + $smallBackOff																	
