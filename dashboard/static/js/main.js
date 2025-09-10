@@ -228,7 +228,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
     dashboard.showModal({
         title: 'Configuration Backup Available',
         message: message,
-        okText: 'Use My Config',
+        okText: 'Use My Previous Config',
         cancelText: 'Keep the New Config',
         ok: function() {
             console.log("DEBUG: User chose to restore global backup");
