@@ -22,6 +22,7 @@ var MachineConfig = require("./machine_config").MachineConfig;
 var DashboardConfig = require("./dashboard_config").DashboardConfig;
 var InstanceConfig = require("./instance_config").InstanceConfig;
 var ProfileConfig = require("./profile_config").ProfileConfig;
+var ProfileDefinition = require("./profile_definition"); 
 
 var log = require("../log").logger("config");
 
@@ -57,7 +58,6 @@ function configureInstance(driver, callback) {
 }
 
 // The machine configuration was instantiated when this module was initialized
-// TODO why is that the case for config.machine but not the others (config.opensbp, etc.)
 function configureMachine(machine, callback) {
     exports.machine.init(machine, callback);
 }
@@ -172,6 +172,7 @@ function clearAppRoot(callback) {
 exports.machine = new MachineConfig();
 exports.driver = new G2Config();
 exports.profiles = new ProfileConfig();
+exports.profileDefinition = ProfileDefinition;
 
 // Individual startup configuration commands
 exports.configureEngine = configureEngine;

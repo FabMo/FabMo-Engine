@@ -30,7 +30,7 @@ function isToolBusy(callback) {
     callback(isBusy);
 }
 
-// Enhanced backup creation with deferred update handling
+// Setup deferred update handling
 const createBackup = debounce((filePath) => {
     const currentTime = Date.now();
     
@@ -246,7 +246,7 @@ function copyExistingFiles() {
 }
 
 // Function to copy backup at the start of the session with rotation
-function copyBackupAtStart(callback, engineVersion) { // ← Add engineVersion parameter
+function copyBackupAtStart(callback, engineVersion) {
     const atStartBaseDir = "/opt/fabmo_backup_atStart/";
     const maxBackups = 5;
     
@@ -309,33 +309,92 @@ function copyBackupAtStart(callback, engineVersion) { // ← Add engineVersion p
                     });
                 }
                 
-                // Now create the new backup
+                // Copy only config and macros directories
                 log.info(`Creating new timestamped backup: ${timestampedDirName}`);
-                log.info(`Copying backup from ${backupBaseDir} to ${newBackupDir}`);
                 
-                fs.copy(backupBaseDir, newBackupDir, (copyErr) => {
-                    if (copyErr) {
-                        log.error(`Error copying backup to ${newBackupDir}:`, copyErr);
-                        callback(copyErr);
+                // Ensure the target directory exists
+                fs.ensureDirSync(newBackupDir);
+                
+                // Copy only the essential directories
+                const essentialDirs = ['config', 'macros'];
+                let pendingCopies = essentialDirs.length;
+                let copyErrors = [];
+                
+                essentialDirs.forEach(dirName => {
+                    const sourceDir = path.join(backupBaseDir, dirName);
+                    const targetDir = path.join(newBackupDir, dirName);
+                    
+                    // Check if source directory exists before copying
+                    if (fs.existsSync(sourceDir)) {
+                        log.info(`Copying ${dirName} from ${sourceDir} to ${targetDir}`);
+                        fs.copy(sourceDir, targetDir, (copyErr) => {
+                            pendingCopies--;
+                            
+                            if (copyErr) {
+                                log.error(`Error copying ${dirName} directory:`, copyErr);
+                                copyErrors.push(copyErr);
+                            } else {
+                                log.info(`Successfully copied ${dirName} directory`);
+                            }
+                            
+                            // Check if all copies are complete
+                            if (pendingCopies === 0) {
+                                if (copyErrors.length > 0) {
+                                    log.error(`Errors occurred during backup creation: ${copyErrors.length} errors`);
+                                    callback(copyErrors[0]); // Return first error
+                                } else {
+                                    log.info(`Timestamped backup created successfully at ${newBackupDir}`);
+                                    
+                                    // Create a marker file with metadata
+                                    const markerInfo = {
+                                        created_at: now.toISOString(),
+                                        backup_type: "atStart_rotated",
+                                        source_dir: backupBaseDir,
+                                        fabmo_version: engineVersion || "unknown",
+                                        directories_included: essentialDirs
+                                    };
+                                    
+                                    try {
+                                        fs.writeFileSync(path.join(newBackupDir, "backup_info.json"), JSON.stringify(markerInfo, null, 2));
+                                        log.debug("Created backup metadata file");
+                                    } catch (metaErr) {
+                                        log.warn("Could not create backup metadata: " + metaErr.message);
+                                    }
+                                    
+                                    callback();
+                                }
+                            }
+                        });
                     } else {
-                        log.info(`Timestamped backup created successfully at ${newBackupDir}`);
+                        pendingCopies--;
+                        log.warn(`Source directory ${sourceDir} does not exist, skipping`);
                         
-                        // Create a marker file with metadata
-                        const markerInfo = {
-                            created_at: now.toISOString(),
-                            backup_type: "atStart_rotated",
-                            source_dir: backupBaseDir,
-                            fabmo_version: engineVersion || "unknown" // ← Now engineVersion is in scope
-                        };
-                        
-                        try {
-                            fs.writeFileSync(path.join(newBackupDir, "backup_info.json"), JSON.stringify(markerInfo, null, 2));
-                            log.debug("Created backup metadata file");
-                        } catch (metaErr) {
-                            log.warn("Could not create backup metadata: " + metaErr.message);
+                        // Check if all copies are complete
+                        if (pendingCopies === 0) {
+                            if (copyErrors.length > 0) {
+                                callback(copyErrors[0]);
+                            } else {
+                                log.info(`Timestamped backup created successfully at ${newBackupDir}`);
+                                
+                                // Create a marker file with metadata
+                                const markerInfo = {
+                                    created_at: now.toISOString(),
+                                    backup_type: "atStart_rotated",
+                                    source_dir: backupBaseDir,
+                                    fabmo_version: engineVersion || "unknown",
+                                    directories_included: essentialDirs.filter(dir => fs.existsSync(path.join(backupBaseDir, dir)))
+                                };
+                                
+                                try {
+                                    fs.writeFileSync(path.join(newBackupDir, "backup_info.json"), JSON.stringify(markerInfo, null, 2));
+                                    log.debug("Created backup metadata file");
+                                } catch (metaErr) {
+                                    log.warn("Could not create backup metadata: " + metaErr.message);
+                                }
+                                
+                                callback();
+                            }
                         }
-                        
-                        callback();
                     }
                 });
             };
