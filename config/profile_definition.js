@@ -5,6 +5,9 @@ var log = require("../log").logger("profile_def");
 var ProfileDefinition = function () {
     this.definition_file = "/fabmo-def/fabmo-def.json";
     this.applied_marker = "/opt/fabmo/config/.auto_profile_applied";
+    this._cache = null; 
+    this._cacheTime = 0; // Cache timestamp
+    this._cacheTTL = 5000; // 5 seconds cache TTL
 };
 
 ProfileDefinition.prototype.exists = function () {
@@ -19,10 +22,19 @@ ProfileDefinition.prototype.isAlreadyApplied = function () {
     return fs.existsSync(this.applied_marker);
 };
 
-ProfileDefinition.prototype.read = function () {
+ProfileDefinition.prototype.read = function (force) {
+    const now = Date.now();
+    
+    // Return cached result if still valid (unless forced)
+    if (!force && this._cache !== null && (now - this._cacheTime) < this._cacheTTL) {
+        return this._cache;
+    }
+    
     try {
         if (!this.exists()) {
             log.debug("No profile definition file found at: " + this.definition_file);
+            this._cache = null;
+            this._cacheTime = now;
             return null;
         }
 
@@ -32,18 +44,30 @@ ProfileDefinition.prototype.read = function () {
         // Validate structure
         if (!definition.auto_profile || !definition.auto_profile.profile_name) {
             log.warn("Invalid profile definition structure");
+            this._cache = null;
+            this._cacheTime = now;
             return null;
         }
 
         if (!definition.auto_profile.enabled) {
             log.info("Auto-profile is disabled in definition file");
+            this._cache = null;
+            this._cacheTime = now;
             return null;
         }
 
-        log.info("Found profile definition: " + definition.auto_profile.profile_name);
+        // Only log on first read or cache miss
+        if (this._cache === null) {
+            log.info("Found profile definition: " + definition.auto_profile.profile_name);
+        }
+        
+        this._cache = definition;
+        this._cacheTime = now;
         return definition;
     } catch (err) {
         log.error("Error reading profile definition: " + err.message);
+        this._cache = null;
+        this._cacheTime = now;
         return null;
     }
 };
@@ -71,7 +95,7 @@ ProfileDefinition.prototype.markAsApplied = function (profileName, callback) {
     });
 };
 
-// New method to mark profile change in progress
+// Mark profile change in progress
 ProfileDefinition.prototype.markAsInProgress = function (profileName, callback) {
     var self = this;
 
@@ -95,7 +119,7 @@ ProfileDefinition.prototype.markAsInProgress = function (profileName, callback) 
     });
 };
 
-// Add method to get the actual engine version
+// Get the actual engine version
 ProfileDefinition.prototype.getEngineVersion = function (callback) {
     try {
         // Try to get version from the running engine

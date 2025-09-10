@@ -1420,7 +1420,7 @@
         toaster.style.visibility = "visible";
         setTimeout(function () {
             document.body.removeChild(toaster);
-        }, 1000);
+        }, 1500);
     };
 
     console.log(
