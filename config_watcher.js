@@ -86,14 +86,14 @@ function processDeferredBackups() {
     deferredTimer = null;
 }
 
-// Extracted backup processing logic
+// Backup processing logic
 function processBackup(filePath, currentTime) {
     isToolBusy((busy) => {
         if (busy) {
             log.debug("Tool is busy. Delaying backup request for " + filePath);
             setTimeout(() => processBackup(filePath, currentTime), 10000);
         } else {
-            // NEW: Validate JSON before backing up
+            // Validate JSON before backing up
             if (path.extname(filePath) === '.json') {
                 fs.readFile(filePath, 'utf8', (readErr, data) => {
                     if (readErr) {
@@ -117,7 +117,7 @@ function processBackup(filePath, currentTime) {
     });
 }
 
-// Enhanced helper function to perform the actual backup
+// Helper function to perform the actual backup
 function performBackup(filePath, currentTime) {
     const watchDir = watchDirs.find((dir) => filePath.startsWith(dir));
     const relativePath = path.relative(watchDir, filePath);
@@ -536,14 +536,14 @@ function restoreFromPreAutoProfileBackup(callback) {
     }
 }
 
-// NEW: Function to check if pre-auto-profile backup exists
+// Function to check if pre-auto-profile backup exists
 function hasPreAutoProfileBackup() {
     const preAutoProfileBackupDir = "/opt/fabmo_backup/pre_auto_profile/";
     const backupInfoFile = preAutoProfileBackupDir + "backup_info.json";
     return fs.existsSync(preAutoProfileBackupDir) && fs.existsSync(backupInfoFile);
 }
 
-// NEW: Function to get pre-auto-profile backup info
+// Function to get pre-auto-profile backup info
 function getPreAutoProfileBackupInfo(callback) {
     const preAutoProfileBackupDir = "/opt/fabmo_backup/pre_auto_profile/";
     const backupInfoFile = preAutoProfileBackupDir + "backup_info.json";

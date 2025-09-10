@@ -5,7 +5,7 @@ var log = require("../log").logger("profile_def");
 var ProfileDefinition = function () {
     this.definition_file = "/fabmo-def/fabmo-def.json";
     this.applied_marker = "/opt/fabmo/config/.auto_profile_applied";
-    this._cache = null; // Add cache
+    this._cache = null; 
     this._cacheTime = 0; // Cache timestamp
     this._cacheTTL = 5000; // 5 seconds cache TTL
 };
@@ -95,7 +95,7 @@ ProfileDefinition.prototype.markAsApplied = function (profileName, callback) {
     });
 };
 
-// New method to mark profile change in progress
+// Mark profile change in progress
 ProfileDefinition.prototype.markAsInProgress = function (profileName, callback) {
     var self = this;
 
@@ -119,7 +119,7 @@ ProfileDefinition.prototype.markAsInProgress = function (profileName, callback) 
     });
 };
 
-// Add method to get the actual engine version
+// Get the actual engine version
 ProfileDefinition.prototype.getEngineVersion = function (callback) {
     try {
         // Try to get version from the running engine

@@ -690,7 +690,7 @@ var post_restore_backup = function (req, res, next) {
                 return next(); 
             }
             
-            // CRITICAL FIX: Recreate/update the marker to indicate backup was restored
+            // Recreate/update the marker to indicate backup was restored
             try {
                 // Create marker indicating backup was restored
                 const restoredMarker = existingMarker || {
