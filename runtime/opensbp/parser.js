@@ -88,10 +88,46 @@ function parseLine(line) {
     if (line.includes("!FABMO!")) {
         return { type: "metadata" };
     }
-    // Extract end-of-line comments
-    var parts = line.split("'");
-    var statement = parts[0];
-    var comment = parts.slice(1, parts.length);
+    
+    // FIXED: Extract end-of-line comments more intelligently
+    // Don't split on apostrophes that are inside quoted strings
+    var statement = line;
+    var comment = [];
+    
+    // Simple state machine to track if we're inside quotes
+    var inQuotes = false;
+    var quoteChar = null;
+    var commentStart = -1;
+    
+    for (var i = 0; i < line.length; i++) {
+        var char = line[i];
+        
+        if (!inQuotes) {
+            // Not inside quotes - look for quote start or comment start
+            if (char === '"' || char === "'") {
+                if (char === "'" && commentStart === -1) {
+                    // This is a comment - everything after this apostrophe is comment
+                    commentStart = i;
+                    break;
+                }                
+                if (char === '"') {
+                    inQuotes = true;
+                    quoteChar = char;
+                }
+            }
+        } else {
+            // Inside quotes - look for matching quote end
+            if (char === quoteChar) {
+                inQuotes = false;
+                quoteChar = null;
+            }
+        }
+    }
+    
+    if (commentStart !== -1) {
+        statement = line.substring(0, commentStart);
+        comment = [line.substring(commentStart + 1)]; // Remove the apostrophe itself
+    }
 
     try {
         // Use parse optimization
@@ -114,12 +150,6 @@ function parseLine(line) {
             } else {
                 throw e; // Re-throw other exceptions
             }
-            // Now you can use normalizedError.offset, normalizedError.line, etc.
-            //throw e; // Or if not, throw the exception like we should do anyway
-            //const normalizedError = normalizePeggyError(e);
-            ////throw new Error(normalizedError);
-            //throw normalizedError;
-            //////* handleError(normalizedError);
         }
     }
 
@@ -139,7 +169,7 @@ function parseLine(line) {
     if (Array.isArray(obj) || obj === null) {
         obj = { type: "comment", comment: comment };
     } else {
-        if (comment != "") {
+        if (comment.length > 0 && comment[0] !== "") {
             obj.comment = comment;
         }
     }
@@ -189,35 +219,6 @@ function parse(data) {
     }
     return output;
 }
-// function parse(data) {
-//     var output = [];
-//     // Parse from a string or an array of strings
-//     if (Array.isArray(data)) {
-//         var lines = data;
-//     } else {
-//         lines = data.split("\n");
-//     }
-
-//     // Iterate over lines and parse one by one.  Throw an error if any don't parse.
-//     for (var i = 0; i < lines.length; i++) {
-//         try {
-//             output.push(parseLine(lines[i]));
-//         } catch (err) {
-//             if (err.name == "SyntaxError") {
-//                 log.error("Syntax Error on line " + (i + 1));
-//                 err.line = i + 1;
-//                 log.error(
-//                     "(LINE-" + err.line + ") Expected " + JSON.stringify(err.expected) + " but found " + err.found
-//                 );
-//                 log.error(err.line);
-//             } else {
-//                 log.error(err);
-//             }
-//             throw err;
-//         }
-//     }
-//     return output;
-// }
 
 // Constructor for Parser object
 // Parser is a transform stream that accepts string input and streams out parsed statement objects

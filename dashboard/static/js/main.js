@@ -185,39 +185,39 @@ $(document).ready(function() {
 });
 
 function checkForGlobalBackupRestore() {
-    console.log("DEBUG: Global dashboard backup restore check");
+    // console.log("DEBUG: Global dashboard backup restore check");
 
     setTimeout(function() {
-        console.log("DEBUG: Making global API call to check backup status");
+        // console.log("DEBUG: Making global API call to check backup status");
         
         $.ajax({
             url: '/config/backup-restore-status',
             method: 'GET',
             success: function(response) {
-                console.log("DEBUG: Global backup status response:", response);
+                // console.log("DEBUG: Global backup status response:", response);
                 
                 // Check both backup_available AND should_prompt
                 if (response.status === 'success' && 
                     response.data.backup_available && 
                     response.data.should_prompt) {
-                    console.log("DEBUG: Global backup available and should prompt, showing modal");
+                    // console.log("DEBUG: Global backup available and should prompt, showing modal");
                     showGlobalBackupRestoreModal(response.data.backup_info);
                 } else {
-                    console.log("DEBUG: No global backup available or should not prompt");
+                    // console.log("DEBUG: No global backup available or should not prompt");
                     if (response.data.backup_available && !response.data.should_prompt) {
-                        console.log("DEBUG: Backup exists but not showing modal (not from recent auto-profile)");
+                    // console.log("DEBUG: Backup exists but not showing modal (not from recent auto-profile)");
                     }
                 }
             },
             error: function(xhr, status, error) {
-                console.log("DEBUG: Error in global backup status check:", error);
+                // console.log("DEBUG: Error in global backup status check:", error);
             }
         });
     }, 3000); 
 }
 
 function showGlobalBackupRestoreModal(backupInfo) {
-    console.log("DEBUG: Showing global backup restore modal");
+    // console.log("DEBUG: Showing global backup restore modal");
     
     var backupDate = new Date(backupInfo.created_at).toLocaleString();
     var message = 
@@ -231,7 +231,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
         okText: 'Use My Previous Config',
         cancelText: 'Keep the New Config',
         ok: function() {
-            console.log("DEBUG: User chose to restore global backup");
+            // console.log("DEBUG: User chose to restore global backup");
             
             // Show progress message
             dashboard.notification('info', 'Restoring backup... System will restart shortly.');
@@ -241,7 +241,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
                 url: '/config/restore-backup',
                 method: 'POST',
                 success: function(response) {
-                    console.log("DEBUG: Restore backup response:", response);
+                    // console.log("DEBUG: Restore backup response:", response);
                     if (response.status === 'success') {
                         dashboard.notification('success', 'Backup restored - restarting...');
                         
@@ -257,24 +257,24 @@ function showGlobalBackupRestoreModal(backupInfo) {
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.log("DEBUG: Error restoring backup:", error);
+                    // console.log("DEBUG: Error restoring backup:", error);
                     dashboard.notification('error', 'Failed to restore backup: ' + error);
                 }
             });
         },
         cancel: function() {
-            console.log("DEBUG: User chose to keep current config - cleaning up markers");
+            // console.log("DEBUG: User chose to keep current config - cleaning up markers");
             
             // Clean up the marker files so modal doesn't appear again
             $.ajax({
                 url: '/config/dismiss-backup-restore',
                 method: 'POST',
                 success: function(response) {
-                    console.log("DEBUG: Cleanup response:", response);
+                    // console.log("DEBUG: Cleanup response:", response);
                     dashboard.notification('info', 'Keeping current configuration');
                 },
                 error: function(xhr, status, error) {
-                    console.log("DEBUG: Error during cleanup:", error);
+                    // console.log("DEBUG: Error during cleanup:", error);
                     dashboard.notification('info', 'Keeping current configuration');
                 }
             });
@@ -284,14 +284,14 @@ function showGlobalBackupRestoreModal(backupInfo) {
 
 // Enhanced authentication checker
 function checkAuthenticationStatus(forceCheck = false) {
-    console.log("DEBUG: Checking authentication status (force=" + forceCheck + ")");
+    // console.log("DEBUG: Checking authentication status (force=" + forceCheck + ")");
     
     // Check current user status
     engine.getCurrentUser(function (err, user) {
-        console.log("DEBUG: Authentication check result - err:", err, "user:", user);
+        // console.log("DEBUG: Authentication check result - err:", err, "user:", user);
         
         if (err || user === undefined || user === null) {
-            console.log("DEBUG: User not authenticated, showing login");
+            // console.log("DEBUG: User not authenticated, showing login");
             
             // Clear any cached authentication state
             sessionStorage.removeItem('fabmo_authenticated');
@@ -300,12 +300,12 @@ function checkAuthenticationStatus(forceCheck = false) {
             // Force redirect to authentication
             setTimeout(function() {
                 if (window.location.hash !== "#/authentication") {
-                    console.log("DEBUG: Redirecting to authentication");
+                    // console.log("DEBUG: Redirecting to authentication");
                     window.location.href = "#/authentication";
                 }
             }, 100);
         } else {
-            console.log("DEBUG: User authenticated:", user.username);
+            // console.log("DEBUG: User authenticated:", user.username);
             sessionStorage.setItem('fabmo_authenticated', 'true');
         }
     });
@@ -313,7 +313,7 @@ function checkAuthenticationStatus(forceCheck = false) {
 
 // Enhanced startup authentication check
 function performStartupAuthCheck() {
-    console.log("DEBUG: Performing startup authentication check");
+    // console.log("DEBUG: Performing startup authentication check");
     
     // Initial check
     checkAuthenticationStatus(true);
@@ -331,12 +331,12 @@ function performStartupAuthCheck() {
         checkCount++;
         
         if (sessionStorage.getItem('fabmo_authenticated') === 'true') {
-            console.log("DEBUG: Authentication confirmed, stopping periodic checks");
+            // console.log("DEBUG: Authentication confirmed, stopping periodic checks");
             clearInterval(periodicCheck);
             return;
         }
-        
-        console.log("DEBUG: Periodic auth check #" + checkCount);
+
+        // console.log("DEBUG: Periodic auth check #" + checkCount);
         checkAuthenticationStatus(false);
         
         if (checkCount >= maxChecks) {
@@ -347,7 +347,7 @@ function performStartupAuthCheck() {
 
 // Monitor for restart completion and handle authentication
 function monitorRestartAndAuth() {
-    console.log("DEBUG: Starting restart monitoring");
+    // console.log("DEBUG: Starting restart monitoring");
     
     let attempts = 0;
     const maxAttempts = 30; // Monitor for up to 3 minutes
@@ -355,16 +355,16 @@ function monitorRestartAndAuth() {
     
     const restartMonitor = setInterval(function() {
         attempts++;
-        
-        console.log("DEBUG: Restart monitor attempt #" + attempts);
-        
+
+        // console.log("DEBUG: Restart monitor attempt #" + attempts);
+
         // Try to ping the server
         $.ajax({
             url: '/status',
             method: 'GET',
             timeout: 3000,
             success: function(response) {
-                console.log("DEBUG: Server responded after restart");
+                // console.log("DEBUG: Server responded after restart");
                 clearInterval(restartMonitor);
                 
                 // Clear restart expectation
@@ -372,19 +372,19 @@ function monitorRestartAndAuth() {
                 
                 // Force authentication check after restart
                 setTimeout(function() {
-                    console.log("DEBUG: Forcing auth check after restart");
+                    // console.log("DEBUG: Forcing auth check after restart");
                     checkAuthenticationStatus(true);
                 }, 1000);
             },
             error: function() {
                 if (attempts >= maxAttempts) {
-                    console.log("DEBUG: Restart monitor timeout - stopping");
+                    // console.log("DEBUG: Restart monitor timeout - stopping");
                     clearInterval(restartMonitor);
                     sessionStorage.removeItem('fabmo_expect_restart');
                     
                     // Force a page reload as fallback
                     setTimeout(function() {
-                        console.log("DEBUG: Forcing page reload due to restart timeout");
+                        // console.log("DEBUG: Forcing page reload due to restart timeout");
                         window.location.reload();
                     }, 2000);
                 }

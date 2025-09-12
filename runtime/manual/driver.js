@@ -9,7 +9,10 @@
  * OVER TIME, Manual has gotten a little crazy because it serves many purposes:
  *  - the Normal Keypad (which is in incremental mode and has relied at different times on
  *      different types of pumping; many acc commands to support keypad extras)
- *  - truly manual uses for sending individual commands for other purposes, as well as providing
+ *      = in the Keypad, the spindle is controlled simply as output 1 (not spph) to avoid interraction with "feedhold"
+ *        behaviors; but we still have to turn spph off to prevent feedhold from turnig off the spindle;
+ *           this is bad and erratic behavior by g2; a kludge for now
+ *  - truly Manual uses for sending individual commands for other purposes, as well as providing
  *      the direct calls for developing other manual motion handlers beyond the normal keypad
  */
 var log = require("../../log").logger("manual");
@@ -82,24 +85,19 @@ ManualDriver.prototype.enter = function () {
     this.driver.manual_hold = true;
     switch (this.mode) {
         case "normal":
-            // Disable the spindle off during feedhold in manual mode
-            this.stream.write("M100 ({spph:false})\n");
             // Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
             var jerkXY = config.machine._cache.manual.xy_jerk || 100;
             var jerkZ = config.machine._cache.manual.z_jerk || 100;
-            this.stream.write("M100 ({xjm:" + jerkXY + "})\n");
-            this.stream.write("M100 ({yjm:" + jerkXY + "})\n");
-            this.stream.write("M100 ({zjm:" + jerkZ + "})\n");
-            this.stream.write("M100 ({spde:0})\n"); // need to turn of spindle dwell to be able to toggle quickly
-            // Turn off z-lift, set incremental mode, and send a
-            // "dummy" move to prod the machine into issuing a status report
+            this.stream.write("{xjm:" + jerkXY + "}\n");
+            this.stream.write("{yjm:" + jerkXY + "}\n");
+            this.stream.write("{zjm:" + jerkZ + "}\n");
+            this.stream.write("{spph:false}\n"); // turn off spph so G2 feedhold doesn't turn off spindle
+            // Send "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
-            //			this.stream.write('M100 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n'); ////## no longer need to turn off z-lift?
             this.driver.prime();
             break;
         case "raw":
             this.stream.write("M0\n");
-            //			this.stream.write('M100 ({zl:0})\nM0\n');                    ////## no longer need to turn off z-lift?
             this.driver.prime();
             break;
         default:
@@ -123,20 +121,25 @@ ManualDriver.prototype.exit = function () {
     } else {
         log.debug("Executing immediate exit");
         this.driver.manual_hold = false; // PROBLEM area for exiting SK when used in file
+
+        // Check if stream exists before trying to write to it
+        if (!this.stream) {
+            log.warn("Stream already closed during manual exit - skipping stream writes");
+            this._done();
+            return;
+        }
+
         switch (this.mode) {
             case "normal":
                 // Restore the sbp_runtime config settings for jerk
                 var jerkXY = config.opensbp._cache.xy_maxjerk || 75;
                 var jerkZ = config.opensbp._cache.z_maxjerk || 75;
-                var spindleDwell = config.driver._cache.spde || 0;
-                this.stream.write("M100 ({xjm:" + jerkXY + "})\n");
-                this.stream.write("M100 ({yjm:" + jerkXY + "})\n");
-                this.stream.write("M100 ({zjm:" + jerkZ + "})\n");
-                this.stream.write("M100 ({spde:" + spindleDwell + "})\n"); // restore spindle dwell
+                this.stream.write("{xjm:" + jerkXY + "}\n");
+                this.stream.write("{yjm:" + jerkXY + "}\n");
+                this.stream.write("{zjm:" + jerkZ + "}\n");
+                this.stream.write("{spph:true}\n"); // restore spph behavior
                 // Restore generic feedrate (this is mostly for appearance of first move if a rapid)
                 var feedXY = config.opensbp._cache.movexy_speed || 3;
-                // Restore spindle on during feedhold
-                this.stream.write("M100 ({spph:true})\n");
                 var uMult = 1;
                 if (config.machine._cache.units === "in") {
                     uMult = 25.4;
@@ -335,20 +338,18 @@ ManualDriver.prototype.goto = function (pos) {
 };
 
 // This function was created to turn outputs on and off from inside the manual runtime
-// ... however, output 1 is a special case for the spindle and it is the only one we are currently handling
-// ... for a spindle we need M3 so that we get both spc and out1 set
-// Toggle an output in manual [currenting only doing output1 for spindle]
+// ... however, output 1 in the Keypad is the only one we are currently handling
+// ... for a spindle. We do not use M3 and spc because we don't want the spph spindle handling
+// ... because feedholds are used to manage the key action in the Keypad. So we just toggle output 1.
+// [NOTE: That in anycase, spph: false may not be working correctly in G2 at this time.]
+// Toggle an output in manual [currenting only doing output1 for spindle]so
 //   out - Output as a state, eg: {"1":1} or {"1":0} (i.e. using g-code json format)
 //   ... such that the short hand version looks like {out1:1}
 ManualDriver.prototype.output = function (out, val) {
     var newOut = "";
-    if (out === 1 && val === 1) {
-        newOut = "m3\n";
-    } else if (out === 1 && val === 0) {
-        newOut = "m5\n";
-    } else {
-        newOut = "{out" + out + ":" + val + "}\n";
-    }
+
+    newOut = "{out" + out + ":" + val + "}\n";
+
     log.info("ManualDriver.output called with: " + newOut);
     this.mode = "raw"; // or this.driver.mode = "raw"
     this.stream.write(newOut);

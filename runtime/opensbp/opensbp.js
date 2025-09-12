@@ -1169,19 +1169,29 @@ SBPRuntime.prototype._end = async function (error) {
                 this.machine.status.job = null;
             }
 
-            // Set the machine state
-            if (error_msg) {
-                this.machine.setState(this, "idle", { error: error_msg });
+            // Add null check before calling setState
+            if (this.machine && typeof this.machine.setState === 'function') {
+                // Set the machine state
+                if (error_msg) {
+                    this.machine.setState(this, "idle", { error: error_msg });
+                } else {
+                    this.machine.setState(this, "idle");
+                }
             } else {
-                this.machine.setState(this, "idle");
+                log.warn("Machine or setState method not available during _end cleanup");
             }
         } catch (err) {
             log.error("Error during machine state restoration:", err);
-            // Even if there's an error during restoration, ensure the machine state is set
-            this.machine.setState(this, "stopped", { error: error_msg || err.message });
+            // Add null check here too
+            if (this.machine && typeof this.machine.setState === 'function') {
+                this.machine.setState(this, "stopped", { error: error_msg || err.message });
+            } else {
+                log.warn("Machine not available for error state setting");
+            }
         }
     } else {
         // If there's no machine, close the stream if necessary
+        log.warn("No machine available during SBPRuntime._end - likely due to disconnection");
         if (this.stream) {
             this.stream.end();
         }
