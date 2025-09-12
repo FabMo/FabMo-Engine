@@ -10,8 +10,9 @@
  *  - the Normal Keypad (which is in incremental mode and has relied at different times on
  *      different types of pumping; many acc commands to support keypad extras)
  *      = in the Keypad, the spindle is controlled simply as output 1 (not spph) to avoid interraction with "feedhold"
- *        behaviors
- *  - truly manual uses for sending individual commands for other purposes, as well as providing
+ *        behaviors; but we still have to turn spph off to prevent feedhold from turnig off the spindle;
+ *           this is bad and erratic behavior by g2; a kludge for now
+ *  - truly Manual uses for sending individual commands for other purposes, as well as providing
  *      the direct calls for developing other manual motion handlers beyond the normal keypad
  */
 var log = require("../../log").logger("manual");
@@ -90,6 +91,7 @@ ManualDriver.prototype.enter = function () {
             this.stream.write("{xjm:" + jerkXY + "}\n");
             this.stream.write("{yjm:" + jerkXY + "}\n");
             this.stream.write("{zjm:" + jerkZ + "}\n");
+            this.stream.write("{spph:false}\n"); // turn off spph so G2 feedhold doesn't turn off spindle
             // Send "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
             this.driver.prime();
@@ -119,6 +121,14 @@ ManualDriver.prototype.exit = function () {
     } else {
         log.debug("Executing immediate exit");
         this.driver.manual_hold = false; // PROBLEM area for exiting SK when used in file
+
+        // Check if stream exists before trying to write to it
+        if (!this.stream) {
+            log.warn("Stream already closed during manual exit - skipping stream writes");
+            this._done();
+            return;
+        }
+
         switch (this.mode) {
             case "normal":
                 // Restore the sbp_runtime config settings for jerk
@@ -127,6 +137,7 @@ ManualDriver.prototype.exit = function () {
                 this.stream.write("{xjm:" + jerkXY + "}\n");
                 this.stream.write("{yjm:" + jerkXY + "}\n");
                 this.stream.write("{zjm:" + jerkZ + "}\n");
+                this.stream.write("{spph:true}\n"); // restore spph behavior
                 // Restore generic feedrate (this is mostly for appearance of first move if a rapid)
                 var feedXY = config.opensbp._cache.movexy_speed || 3;
                 var uMult = 1;
