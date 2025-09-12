@@ -249,25 +249,26 @@ G2.prototype._createCycleContext = function () {
     // Set absolute, spindle speed default, units, and turn on output 4 & ...
     // M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4 (needs to be in first 4 commands or vulnerable)
     // ... these conditions are exited when in machine as it goes back to idle
-    ////## {spph:true} makes sure that spindle shutoff and pull up is enabled for feedholds; potentially turned off in manual
+    ////## {spph:true} makes sure that spindle shutoff and pull up is enabled for feedholds; no longer turned off in manual, needed?
     ////## S1000 is default for spindle speed so that m3 (and SO,1,1) will work correctly w/delay w/o speed
     ////## TODO: create default variable for S-value for VFD spindle control, just a dummy here now
     ////## TODO: fix this kludge to get the current_runtime !
 
     if (global.CUR_RUNTIME != "[IdleRuntime]") {
         var prependString =
-            "N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "N4 M100 ({out4:1})\n" + "N5 M100 ({spph:true})\n" + "N6 S1000\n";
+          //####  "N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "N4 M100 ({out4:1})\n" + "N5 M100 ({spph:true})\n" + "N6 S1000\n";
+          "N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "{out4:1}\n" + "{spph:true}\n" + "N6 S1000\n";
 
-        console.log("=== PREPEND DEBUG ===");
-        console.log("Prepend string:", JSON.stringify(prependString));
-        console.log("Lines to send before:", this.lines_to_send);
+        log.debug("=== PREPEND DEBUG ===");
+        log.debug("Prepend string:", JSON.stringify(prependString));
+        log.debug("Lines to send before:", this.lines_to_send);
 
         log.debug("PREPEND to cycle - " + global.CUR_RUNTIME);
         st.write(prependString);
 
         // FORCE enough lines_to_send to handle all prepend lines //** IMPORTANT */
         this.lines_to_send = Math.max(this.lines_to_send, 6);
-        console.log("Lines to send after adjustment:", this.lines_to_send);
+        log.debug("Lines to send after adjustment:", this.lines_to_send);
     }
 
     // Handle a stream finishing or disconnecting.
