@@ -312,6 +312,7 @@ ManualDriver.prototype.runGCode = function (code) {
 ManualDriver.prototype.goto = function (pos) {
     // We may want to consider whether GOTOs are moves or jogs; for now, they're moves w/speed set by slider (safer)
     var hasZABC = false;
+    var of_ZABC = "";
     var move = "G90\nG1 ";
     for (var key in pos) {
         if (Object.prototype.hasOwnProperty.call(pos, key)) {
@@ -322,12 +323,26 @@ ManualDriver.prototype.goto = function (pos) {
                 var testb = pos[key];
                 if (Math.abs(testa - testb) > 0.001) {
                     hasZABC = true;
+                    of_ZABC = key;
                 }
             }
         }
     }
-    if (hasZABC) {
-        move += "F" + 60 * config.machine._cache.manual.z_fast_speed;
+    if (hasZABC) {  // If we have a special axis move use appropriate speed (not controlled by slider, user sets manually in configs)
+        switch (of_ZABC) {
+            case "Z":
+                move += "F" + 60 * config.machine._cache.manual.z_fast_speed;
+                break;
+            case "A":
+                move += "F" + 60 * config.opensbp._cache.movea_speed;
+                break;
+            case "B":
+                move += "F" + 60 * config.opensbp._cache.moveb_speed;
+                break;
+            case "C":
+                move += "F" + 60 * config.opensbp._cache.movec_speed;
+                break;
+        }
     } else {
         move += "F" + 60 * config.machine._cache.manual.xy_speed;
     }

@@ -139,8 +139,14 @@
         second_direction
     ) {
         if (this.going) {
+            console.warn("Keypad: Already in motion, ignoring start command");
             return;
         }
+        if (!this.enabled) {
+            console.warn("Keypad: Not enabled, ignoring start command");
+            return;
+        }
+        
         if (second_axis) {
             this.move = {
                 axis: axis,
@@ -152,7 +158,6 @@
             this.move = { axis: axis, dir: direction };
         }
         this.going = true;
-        // this.refresh(); ////## previous method for maintianig motion
         this.emit("go", this.move);
     };
 
@@ -163,8 +168,14 @@
         second_direction
     ) {
         if (this.going) {
+            console.warn("Keypad: Already in motion, ignoring nudge command");
             return;
         }
+        if (!this.enabled) {
+            console.warn("Keypad: Not enabled, ignoring nudge command");
+            return;
+        }
+
         if (second_axis) {
             var nudge = {
                 axis: axis,
@@ -180,6 +191,7 @@
     };
 
     Keypad.prototype.stop = function () {
+        console.log("Keypad: Stop called");
         this.going = false;
         if (this.interval) {
             clearTimeout(this.interval);
@@ -243,6 +255,10 @@
                     this.start("b", 1);
                 } else if (e.hasClass("b_neg")) {
                     this.start("b", -1);
+                } else if (e.hasClass("c_pos")) {
+                    this.start("c", 1);
+                } else if (e.hasClass("c_neg")) {
+                    this.start("c", -1);
                 } else {
                     return;
                 }
@@ -291,6 +307,10 @@
                 this.nudge("b", 1);
             } else if (e.hasClass("b_neg")) {
                 this.nudge("b", -1);
+            } else if (e.hasClass("c_pos")) {
+                this.nudge("c", 1);
+            } else if (e.hasClass("c_neg")) {
+                this.nudge("c", -1);
             } else {
                 return;
             }

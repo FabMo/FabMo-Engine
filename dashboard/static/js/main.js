@@ -80,6 +80,7 @@ var setUpManual = function () {
         // Function to set location displays and then set video style
         function setLocationAndVideoStyle() {
             setLocationDisplays();
+            adjustModalHeight();
             setVideoStyle();
             resolve(); // Resolve the promise after setting location displays and video style
         }
@@ -148,6 +149,7 @@ function setLocationDisplays() {
                 enabledAxes[axi] = config.driver[axi];
             });
             engine.setConfig({ driver: enabledAxes }, function (err, data) {});
+            setTimeout(adjustModalHeight, 100); // Small delay to ensure DOM updates
         }
     });
 }
@@ -394,6 +396,34 @@ function monitorRestartAndAuth() {
     }, recheckInterval);
 }
 
+function adjustModalHeight() {
+    const modal = document.getElementById("keypad-modal");
+    if (!modal) return;
+    const visibleAxes = document.querySelectorAll('.axis:not([style*="display: none"])').length;
+    
+    let heightPercentage;
+    if (visibleAxes <= 4) {
+        heightPercentage = '50%';
+        marginTop = '0%';
+        speedTop = '40%'; 
+    } else if (visibleAxes === 5) {
+        heightPercentage = '60%';
+        marginTop = '4%';
+        speedTop = '60%'; 
+    } else { // 6 or more axes
+        heightPercentage = '80%';
+        marginTop = '8%';
+        speedTop = '80%';
+    }
+    $(".manual-drive-modal").css("height", heightPercentage);
+    $(".manual-drive-container").css("margin-top", marginTop);
+    $(".speed_read_out").css("top", speedTop);
+        // console.log(`Adjusted modal height to ${heightPercentage} for ${visibleAxes} axes`);
+
+    // // Set data attribute for CSS to use
+    // modal.setAttribute('data-axis-count', visibleAxes);        
+}
+
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
 
@@ -458,6 +488,7 @@ engine.getVersion(function (err, version) {
                     if (!status["hideKeypad"]) {
                         $(".modalDim").show();
                         $(".manual-drive-modal").show();
+                        adjustModalHeight();
                         console.log("Status: " + status.state + "  Cmd: " + status.currentCmd);
                         if (status.stat === 5 && (status.currentCmd === "goto" || status.currentCmd === "resume")) {
                             $(".manual-stop").show();
@@ -843,10 +874,48 @@ engine.getVersion(function (err, version) {
 
 function getManualMoveSpeed(move) {
     var speed_ips = null;
-    if ($("#manual-move-speed").val()) {
-        speed_ips = $("#manual-move-speed").val();
+    try {
+        switch (move.axis) {
+            case "x":
+            case "y":
+                // Use the slider value for XY axes
+                if ($("#manual-move-speed").val()) {
+                    speed_ips = $("#manual-move-speed").val();
+                }
+                break;
+            case "z":
+                // Z speed is handled separately in the keypad setup
+                if ($("#manual-move-speed").val()) {
+                    speed_ips = $("#manual-move-speed").val();
+                }
+                break;
+            case "a":
+                // Use OpenSBP config for A axis
+                speed_ips = engine.config.opensbp.movea_speed;
+                break;
+            case "b":
+                // Use OpenSBP config for B axis
+                speed_ips = engine.config.opensbp.moveb_speed;
+                break;
+            case "c":
+                // Use OpenSBP config for C axis
+                speed_ips = engine.config.opensbp.movec_speed;
+                break;
+            default:
+                // Fallback to slider value
+                if ($("#manual-move-speed").val()) {
+                    speed_ips = $("#manual-move-speed").val();
+                }
+                break;
+        }
+    } catch (e) {
+        console.error("Error getting manual move speed:", e);
+        // Fallback to slider value
+        if ($("#manual-move-speed").val()) {
+            speed_ips = $("#manual-move-speed").val();
+        }
     }
-    return speed_ips;
+    return speed_ips || 1.0; // Default fallback
 }
 
 function getManualMoveJerk(move) {

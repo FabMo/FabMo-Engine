@@ -2255,7 +2255,7 @@ input[type='range']:focus {
     width: 50%;
 	height: 50%;
 	min-height: 400px;
-	max-height: 500px;
+	max-height: 530px;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -2751,7 +2751,7 @@ filter: blur(2px);
     position: absolute;
     top: 30px;
     right: 8px;
-    font-size: 11px;
+    font-size: 14px;
     font-weight: bold;
     color: #555;
     background: rgba(255,255,255,0);
