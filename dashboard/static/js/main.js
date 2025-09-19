@@ -399,30 +399,59 @@ function monitorRestartAndAuth() {
 function adjustModalHeight() {
     const modal = document.getElementById("keypad-modal");
     if (!modal) return;
+    
+    // Check if we're on mobile first
+    const isMobile = window.innerWidth <= 650; // Your mobile breakpoint
+    const isVeryShortScreen = window.innerHeight <= 500;
+    
+    if (isVeryShortScreen) {
+        // Let CSS handle very short screens - don't override
+        modal.style.height = '';
+        modal.style.width = '';
+        $(".manual-drive-container").css("margin-top", '');
+        return;
+    }
+    
+    if (isMobile) {
+        // Let CSS handle mobile - don't override mobile styles
+        modal.style.height = '';
+        $(".manual-drive-container").css("margin-top", '');
+        return;
+    }
+    
+    // For Keypad apply dynamic sizing 
     const visibleAxes = document.querySelectorAll('.axis:not([style*="display: none"])').length;
     
-    let heightPercentage;
+    let marginTop, keypadHeight;
     if (visibleAxes <= 4) {
-        heightPercentage = '50%';
+        keypadHeight = 450;
         marginTop = '0%';
-        speedTop = '40%'; 
     } else if (visibleAxes === 5) {
-        heightPercentage = '60%';
-        marginTop = '4%';
-        speedTop = '60%'; 
+        keypadHeight = 450;
+        marginTop = '3%';
     } else { // 6 or more axes
-        heightPercentage = '80%';
-        marginTop = '8%';
-        speedTop = '80%';
+        keypadHeight = 450;
+        marginTop = '3%';
     }
-    $(".manual-drive-modal").css("height", heightPercentage);
-    $(".manual-drive-container").css("margin-top", marginTop);
-    $(".speed_read_out").css("top", speedTop);
-        // console.log(`Adjusted modal height to ${heightPercentage} for ${visibleAxes} axes`);
 
-    // // Set data attribute for CSS to use
-    // modal.setAttribute('data-axis-count', visibleAxes);        
+    $(".manual-drive-modal").css("height", keypadHeight);
+    $(".manual-drive-container").css("margin-top", marginTop);
+
+    console.log(`Adjusted modal height to ${marginTop} for ${visibleAxes} axes`);
 }
+
+function handleResponsiveKeypad() {
+    // Debounce the resize handler
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            adjustModalHeight();
+        }, 250);
+    });
+}
+
+handleResponsiveKeypad();
 
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
@@ -597,6 +626,9 @@ engine.getVersion(function (err, version) {
                             $("#action-2").css("visibility", "hidden");
                             $("#action-3").css("visibility", "hidden");
                             $("#action-4").css("visibility", "hidden");
+                            $("#action-5").css("visibility", "hidden");
+                            // Use "display: none" to hide and remove space
+                            $(".title-container").css("display", "none");
                         } else if (status.info["timer"] && status.info["timer"] <= TIMER_DISPLAY_CUTOFF) {
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
@@ -1093,6 +1125,8 @@ $(".manual-drive-exit").on("click", function () {
     $("#action-2").css("visibility", "visible");
     $("#action-3").css("visibility", "visible");
     $("#action-4").css("visibility", "visible");
+    $("#action-5").css("visibility", "visible");
+    $(".title-container").css("display", "block");
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
     $(".manual-drive-message").removeClass("blinking-text");

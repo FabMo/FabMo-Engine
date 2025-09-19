@@ -1457,16 +1457,16 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .manual-drive-message {
-	font-size: 1.2rem;
+	font-size: 1.5rem;
 	font-weight: bold;
 	display: none;
-	color: #0f6ccb;
-	width: 100%;
+	color: #d00;
 	height: auto;
 	text-align: center;
-	margin-top: -8px;
-	margin-bottom: 10px;
+	margin-top: -2px;
+	margin-bottom: 6px;
 }
+
 .keypad-button {
 	border : 2px solid #201f2b;
 	border-radius: 10px;
@@ -1638,8 +1638,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .slidecontainer {
-    margin-top: -0.8rem;
-	margin-bottom: 20px;
+	margin-bottom: 10px;
 }
 
 .slidecontainer label {
@@ -1658,15 +1657,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     bottom: -10px;
     right: 25px;
 } */
-
-.speed_read_out {
-	position: relative;
-	top: 10%;
-	left: 73%;
-	color: #422001;
-	display: none;
-	z-index: 10000;
-}
 
 
 /* range input  */
@@ -1840,7 +1830,7 @@ input[type='range']:focus {
 	justify-content: space-evenly;
 	display: none;
 	margin-bottom: 9px;
-	text-align: left;
+	text-align: center;
 	min-height: 60px;
 }
 
@@ -1884,7 +1874,7 @@ input[type='range']:focus {
 
 /* The switch - the box around the slider */
 .switch-container {
-	text-align: left;
+	text-align: center;
 }
 
 .fixed-label{
@@ -2173,7 +2163,7 @@ input[type='range']:focus {
 	margin-bottom: 1.5rem;
     margin-left: 0.3rem;
 	margin-right: 0.3rem;
-	width: 50px;
+	width: 14%;
     background-color: #035b1c;
     border-radius: 10px 10px 10px 10px;
     box-shadow: 0px 2px 0px #84743d, 0px 2px 4px rgba(0,0,0,.2);
@@ -2183,14 +2173,14 @@ input[type='range']:focus {
 }
 
 .action-button:active {
-	margin-top: 1px;
+	/*margin-top: 1px;*/
 	box-shadow: 0px 1px 0px #ce6402, 0px 1px 1px rgba(0,0,0,.9);
 	color: #eee;
 }
 
 #action-5.action-button{
 	max-width: 70%;
-	margin-top: -1.5%;
+	margin-left: 0.5rem;
 	background-color: #ce6402;
 	color:#035b1c;
 }
@@ -2248,14 +2238,13 @@ input[type='range']:focus {
     }
 }
 
-
 .manual-drive-modal {
 	user-select: none;
 	display: none;
     width: 50%;
-	height: 50%;
+	height: 600px;
 	min-height: 400px;
-	max-height: 530px;
+	min-width: 370px;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -2274,6 +2263,19 @@ input[type='range']:focus {
 	height: 300px;
 }
 
+/* Speed readout positioning above slider */
+.speed_read_out {
+    position: absolute;
+    top: -25px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #555;
+    background: rgba(255,255,255,0);
+    border-radius: 2px;
+	left: 47%;
+	z-index: 10000;
+}
+
 .read-out-wrapper {
 	position: absolute;
 	top: 50%;
@@ -2287,6 +2289,8 @@ input[type='range']:focus {
 	}
 }
 
+
+
 @media (max-width: 750px  ) and (min-height: 500px)  {
 	.manual-drive-modal {
 		width: 90%; 
@@ -2296,20 +2300,37 @@ input[type='range']:focus {
 	}
 
 	.manual-drive-container {
-		top: 10%;
+		top: 8%;
 		transform: translate(-5%, 0%);
 	}
 
-	.read-out-container, .manual-right-side-container{
+	.read-out-container{
 		width: 100%;
 		height: 100%;
-        scale: 85%
+		margin-top: 10%;
+        scale: 90%
+	}
+
+	.manual-right-side-container{
+		width: 100%;
+		height: 100%;
+		margin-top: 15%;
+        scale: 90%
+	}
+
+
+	.speed_read_out {
+		top: -95px;
 	}
 
 	.read-out-wrapper{
 		left: 50%;
 		transform: translate(-50%, -50%);
 		width: 80%;
+	}
+
+	#keypad {
+		scale: 125%;
 	}
 
     #title_goto {
@@ -2329,6 +2350,7 @@ input[type='range']:focus {
 	.go-to {
 		height:20%;
 		width: 70%;
+		top: -2.5rem;
 		display: inline-block;
 	}
 
@@ -2336,29 +2358,23 @@ input[type='range']:focus {
 		margin-top:0;
 		height:20%;
 		width:25%;
+		top: -2.5rem;
 		display: inline-block;
 	}
 
 	.manual-drive-message {
-		font-size: 15px;
 		font-weight: bold;
-		line-height: 16px;
+		line-height: 20px;
 		padding: 0.5em;
 	}
 
     .slidecontainer {
         margin-top: -2rem;
     }
-
-	.speed_read_out {
-		top: 55%;
-		left: 20%;
-		padding-top: 35px;
-		padding-left: 35px;
-	}
-
 }
-@media (max-width: 650px) {
+
+
+@media (max-width: 650px) and (min-width: 285px) and (min-height: 500px) {
     #icon_keypad {
         cursor: pointer;
         right: 50%;
@@ -2367,6 +2383,12 @@ input[type='range']:focus {
         position: absolute;
         opacity: 90%;
     }
+	.action-button{
+		width: 15%;
+	}
+	.axis {
+		width: 75%;
+	}
 }
 
 @media (max-height: 500px) {
@@ -2385,9 +2407,6 @@ input[type='range']:focus {
 		min-height: 0;
 	}
 }
-
-
-
 
 
 .newModal{
@@ -2716,7 +2735,7 @@ filter: blur(2px);
 .manual-drive-exit {
     position: absolute;
     right: -20px;
-    top: 50%;
+    top: 60%;
     transform: translateY(-50%);
     cursor: pointer;
     padding: 2px 4px;
@@ -2744,30 +2763,6 @@ filter: blur(2px);
     position: relative;
     min-height: 0; /* Will expand as needed */
     padding: 4px 8px;
-}
-
-/* Speed readout positioning */
-.speed_read_out {
-    position: absolute;
-    top: 30px;
-    right: 8px;
-    font-size: 14px;
-    font-weight: bold;
-    color: #555;
-    background: rgba(255,255,255,0);
-    padding: 1px 4px;
-    border-radius: 2px;
-   /* border: 1px solid #ddd; */
-}
-
-/* Message styling */
-.manual-drive-message {
-    text-align: center;
-    font-size: 12px;
-    font-weight: bold;
-    color: #d00;
-    margin-bottom: 4px;
-    padding: 2px;
 }
 
 /* Title container */

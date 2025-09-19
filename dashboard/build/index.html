@@ -301,25 +301,7 @@
     </div>
     </div>
 
-    <!-- The Dialog -->
-
-<!--
-    <div class="modalDim"></div>
-
-    <div class="manual-drive-modal" id="keypad-modal" tabindex="0" oncontextmenu="return false;">
-
-      <div class="modal-drag-header">
-          <div class="drag-handle" title="Drag to move keypad">
-              <span class="drag-dots">⋮⋮⋮</span>
-              <span class="modal-title">Motion Keypad</span>
-          </div>
-          <div class="manual-drive-exit"><i class="fa fa-times"></i></div>
-      </div>
-      <div class="speed_read_out">
-        100
-      </div>
-      <div class="manual-drive-message">This is where a message will go</div>
--->
+    <!-- The KEYPAD -->
 
     <div class="manual-drive-modal" id="keypad-modal" tabindex="0" oncontextmenu="return false;">
 
@@ -333,9 +315,6 @@
 
         <!-- Content area with the previously hidden elements -->
         <div class="modal-content-header">
-            <div class="speed_read_out" style="display: none;">
-                100
-            </div>
             <div class="manual-drive-message" style="display: none;">
                 This is where a message will go
             </div>
@@ -406,14 +385,16 @@
               <div class="action-button" id="action-1" title="Do Z-Zero (Macro C2)">C2</div>
               <div class="action-button" id="action-2" title="Do XYZ-Homing (Macro C3)">C3</div>
               <div class="action-button" id="action-3" title="JH (Jog Home in XY)">JH</div>
-              <div class="action-button" id="action-4" title="Goto Park Location (Macro C#79; Settings in C#210)">P</div>
-              <div>....</div>
+              <div class="action-button" id="action-4" title="Goto Park Location (Macro C#79; Settings in C#210)">JP</div>
+              <!--<div>....</div>-->
               <div class="action-button" id="action-5" title="Toggle Spindle ON/OFF"><img src="../img/icon_spindle_off.png" style="max-width:70%;"></img></div>
             </div>
 
           </div>
         </div>
+
         <div class="manual-right-side-container">
+          <div class="speed_read_out" style="display: inline;"></div>
           <div id="keypad" tabindex="0" class="fabmo-manual-control keypad " style="text-align: center;">
             <div class="slidecontainer">
               <input type="range"  step="0.1" class="slider" id="manual-move-speed">
