@@ -367,6 +367,7 @@ p.at-foot {
 
 #sbp-container {
     height: 200px;
+    min-height: 10px;
     resize: vertical;
     overflow: hidden;
     width: 95%;

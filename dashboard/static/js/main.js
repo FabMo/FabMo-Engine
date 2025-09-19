@@ -80,6 +80,7 @@ var setUpManual = function () {
         // Function to set location displays and then set video style
         function setLocationAndVideoStyle() {
             setLocationDisplays();
+            adjustModalHeight();
             setVideoStyle();
             resolve(); // Resolve the promise after setting location displays and video style
         }
@@ -148,6 +149,7 @@ function setLocationDisplays() {
                 enabledAxes[axi] = config.driver[axi];
             });
             engine.setConfig({ driver: enabledAxes }, function (err, data) {});
+            setTimeout(adjustModalHeight, 100); // Small delay to ensure DOM updates
         }
     });
 }
@@ -394,6 +396,63 @@ function monitorRestartAndAuth() {
     }, recheckInterval);
 }
 
+function adjustModalHeight() {
+    const modal = document.getElementById("keypad-modal");
+    if (!modal) return;
+    
+    // Check if we're on mobile first
+    const isMobile = window.innerWidth <= 650; // Your mobile breakpoint
+    const isVeryShortScreen = window.innerHeight <= 500;
+    
+    if (isVeryShortScreen) {
+        // Let CSS handle very short screens - don't override
+        modal.style.height = '';
+        modal.style.width = '';
+        $(".manual-drive-container").css("margin-top", '');
+        return;
+    }
+    
+    if (isMobile) {
+        // Let CSS handle mobile - don't override mobile styles
+        modal.style.height = '';
+        $(".manual-drive-container").css("margin-top", '');
+        return;
+    }
+    
+    // For Keypad apply dynamic sizing 
+    const visibleAxes = document.querySelectorAll('.axis:not([style*="display: none"])').length;
+    
+    let marginTop, keypadHeight;
+    if (visibleAxes <= 4) {
+        keypadHeight = 450;
+        marginTop = '0%';
+    } else if (visibleAxes === 5) {
+        keypadHeight = 450;
+        marginTop = '3%';
+    } else { // 6 or more axes
+        keypadHeight = 450;
+        marginTop = '3%';
+    }
+
+    $(".manual-drive-modal").css("height", keypadHeight);
+    $(".manual-drive-container").css("margin-top", marginTop);
+
+    console.log(`Adjusted modal height to ${marginTop} for ${visibleAxes} axes`);
+}
+
+function handleResponsiveKeypad() {
+    // Debounce the resize handler
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            adjustModalHeight();
+        }, 250);
+    });
+}
+
+handleResponsiveKeypad();
+
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
 
@@ -458,6 +517,7 @@ engine.getVersion(function (err, version) {
                     if (!status["hideKeypad"]) {
                         $(".modalDim").show();
                         $(".manual-drive-modal").show();
+                        adjustModalHeight();
                         console.log("Status: " + status.state + "  Cmd: " + status.currentCmd);
                         if (status.stat === 5 && (status.currentCmd === "goto" || status.currentCmd === "resume")) {
                             $(".manual-stop").show();
@@ -566,6 +626,9 @@ engine.getVersion(function (err, version) {
                             $("#action-2").css("visibility", "hidden");
                             $("#action-3").css("visibility", "hidden");
                             $("#action-4").css("visibility", "hidden");
+                            $("#action-5").css("visibility", "hidden");
+                            // Use "display: none" to hide and remove space
+                            $(".title-container").css("display", "none");
                         } else if (status.info["timer"] && status.info["timer"] <= TIMER_DISPLAY_CUTOFF) {
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
@@ -843,10 +906,48 @@ engine.getVersion(function (err, version) {
 
 function getManualMoveSpeed(move) {
     var speed_ips = null;
-    if ($("#manual-move-speed").val()) {
-        speed_ips = $("#manual-move-speed").val();
+    try {
+        switch (move.axis) {
+            case "x":
+            case "y":
+                // Use the slider value for XY axes
+                if ($("#manual-move-speed").val()) {
+                    speed_ips = $("#manual-move-speed").val();
+                }
+                break;
+            case "z":
+                // Z speed is handled separately in the keypad setup
+                if ($("#manual-move-speed").val()) {
+                    speed_ips = $("#manual-move-speed").val();
+                }
+                break;
+            case "a":
+                // Use OpenSBP config for A axis
+                speed_ips = engine.config.opensbp.movea_speed;
+                break;
+            case "b":
+                // Use OpenSBP config for B axis
+                speed_ips = engine.config.opensbp.moveb_speed;
+                break;
+            case "c":
+                // Use OpenSBP config for C axis
+                speed_ips = engine.config.opensbp.movec_speed;
+                break;
+            default:
+                // Fallback to slider value
+                if ($("#manual-move-speed").val()) {
+                    speed_ips = $("#manual-move-speed").val();
+                }
+                break;
+        }
+    } catch (e) {
+        console.error("Error getting manual move speed:", e);
+        // Fallback to slider value
+        if ($("#manual-move-speed").val()) {
+            speed_ips = $("#manual-move-speed").val();
+        }
     }
-    return speed_ips;
+    return speed_ips || 1.0; // Default fallback
 }
 
 function getManualMoveJerk(move) {
@@ -1024,6 +1125,8 @@ $(".manual-drive-exit").on("click", function () {
     $("#action-2").css("visibility", "visible");
     $("#action-3").css("visibility", "visible");
     $("#action-4").css("visibility", "visible");
+    $("#action-5").css("visibility", "visible");
+    $(".title-container").css("display", "block");
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
     $(".manual-drive-message").removeClass("blinking-text");

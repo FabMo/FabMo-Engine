@@ -210,7 +210,7 @@
                 <span class="tooltiptext">
                 This page contains default/current settings for Axis characteristics: <br><br>
                 <strong>Feedrate Maximum:</strong> The maximum allowable feedrate for this machine in a move <br>
-                &nbsp;&nbsp;&nbsp; speed command ([M] commands in OpenSBP; G1 commands in g-code).<br>
+                &nbsp;&nbsp;&nbsp; speed command ([M] commands in OpenSBP or G1 commands in g-code).<br>
                 <strong>Jog Velocity:</strong> The speed of Jog or rapid-traverse comands ([J]og commands <br>
                 &nbsp;&nbsp;&nbsp;in OpenSBP; G0 command in g-code). May be greater than Feedrate Maximum.<br>
                 <strong>Maximum Jerk:</strong> "Jerk" is technically the 3rd derivative of position -- it is the <br>
@@ -222,7 +222,8 @@
                 &nbsp;&nbsp;&nbsp;situations such as homing and unprogrammed STOPS. If this value is too <br>
                 &nbsp;&nbsp;&nbsp;high or loads heavy, position accuracy may be lost. <br>
                 <strong>Axis Mode:</strong> The movement mode for this axis. Linear axes are controlled in the <br>
-                &nbsp;&nbsp;&nbsp;default linear unit system. Rotary axes are controlled in degrees rotation. <br>
+                &nbsp;&nbsp;&nbsp;default linear unit system. Rotary axes are controlled in degrees of rotation. <br>
+                &nbsp;&nbsp;&nbsp;Note that changing the Axis Mode will reset the default parameters for the axis. <br>
                 <br>
               </span>
             </span>
@@ -445,14 +446,27 @@
                   </div>
                 </div>
               </div>
-            <div class="large-4 columns">
+            <div class="large-4 columns"> 
               <div class="row collapse">
-                <label>Axis Mode</label>
+
+                <label>Axis Mode <span class="tooltip tooltip-left">i
+                  <span class="tooltiptext">
+                    Axis Mode for this axis:
+                    &nbsp;&nbsp;&nbsp;<strong>Resetting mode resets Axis defaults.</strong> <br>
+                    &nbsp;&nbsp;&nbsp;Default Linear values are estimated from the Z axis. <br>
+                    &nbsp;&nbsp;&nbsp;Default Rotary values are based on DT-Indexer. <br>
+                    &nbsp;&nbsp;&nbsp;Move speeds are set to 1/2 of the Feedrate Maximum. <br>
+                    &nbsp;&nbsp;&nbsp;Please also check the Unit Value for Channel in Drivers. <br>
+                    &nbsp;&nbsp;&nbsp;Changes made to values will persist unless mode reset. <br>
+                    <br>
+                  </span>
+
+                </label>
                 <select id="driver-aam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
                   <option value="2">Linear</option>
-                  <option value="3">Speed/Radius</option>
+                  <!--<option value="3">Speed/Radius</option>-->
                 </select>
               </div>
             </div>
@@ -506,12 +520,23 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode</label>
+                <label>Axis Mode <span class="tooltip tooltip-left">i
+                  <span class="tooltiptext">
+                    Axis Mode for this axis:
+                    &nbsp;&nbsp;&nbsp;<strong>Resetting mode resets Axis defaults.</strong> <br>
+                    &nbsp;&nbsp;&nbsp;Default Linear values are estimated from the Z axis. <br>
+                    &nbsp;&nbsp;&nbsp;Default Rotary values are based on DT-Indexer. <br>
+                    &nbsp;&nbsp;&nbsp;Move speeds are set to 1/2 of the Feedrate Maximum. <br>
+                    &nbsp;&nbsp;&nbsp;Please also check the Unit Value for Channel in Drivers. <br>
+                    &nbsp;&nbsp;&nbsp;Changes made to values will persist unless mode reset. <br>
+                    <br>
+                  </span>
+                </label>
                 <select id="driver-bam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
                   <option value="2">Linear</option>
-                  <option value="3">Speed/Radius</option>
+                  <!--<option value="3">Speed/Radius</option>-->
                 </select>
               </div>
             </div>
@@ -565,12 +590,23 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode</label>
+                <label>Axis Mode <span class="tooltip tooltip-left">i
+                  <span class="tooltiptext">
+                    Axis Mode for this axis:
+                    &nbsp;&nbsp;&nbsp;<strong>Resetting mode resets Axis defaults.</strong> <br>
+                    &nbsp;&nbsp;&nbsp;Default Linear values are estimated from the Z axis. <br>
+                    &nbsp;&nbsp;&nbsp;Default Rotary values are based on DT-Indexer. <br>
+                    &nbsp;&nbsp;&nbsp;Move speeds are set to 1/2 of the Feedrate Maximum. <br>
+                    &nbsp;&nbsp;&nbsp;Please also check the Unit Value for Channel in Drivers. <br>
+                    &nbsp;&nbsp;&nbsp;Changes made to values will persist unless mode reset. <br>
+                    <br>
+                  </span>
+                </label>
                 <select id="driver-cam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
                   <option value="2">Linear</option>
-                  <option value="3">Speed/Radius</option>
+                  <!--<option value="3">Speed/Radius</option>-->
                 </select>
               </div>
             </div>

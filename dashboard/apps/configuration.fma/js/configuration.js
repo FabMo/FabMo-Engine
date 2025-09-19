@@ -18,7 +18,7 @@ $('body').bind('focusin focus', function(e){
 })
 
 var axis_modes = {
-  a_mode: 0, // For ABC axis mode:   0=disable; 1=degrees; 2=linear; 3=speed/radius(not implemented)
+  a_mode: 0, // For ABC axis mode:   0=disable; 1=degrees; 2=linear; 3=speed/radius(not implemented yet)
   b_mode: 0,
   c_mode: 0,
 };
@@ -439,11 +439,51 @@ $(document).ready(function() {
             new_config.driver[v] = this.value * 60;
             setConfig(this.id,  new_config.driver[v]);
         
-        // Fix up the symbol and label for ABC axis mode
+        // Fix up the symbol and label for ABC axis mode and deal with default selection
         } else if (v === "aam" || v === "bam" || v === "cam") {
             console.log ("Got a new Axis Mode - " + (v) + " - " + this.value); 
             setConfig(this.id, this.value);
-            update();
+            // get current unit_value for the 3rd channel "3su"; this Z value is used to estimate a linear A,B, or C
+            var chan = 4; // default to A axis
+            if (v === "bam") { chan = 5; }
+            if (v === "cam") { chan = 6; }
+            var est_linear = 100; // default to 100 if we can't get a better value
+            var chan3_units = configData.driver["3su"];
+            if (chan3_units >= 5 && chan3_units <= 5000) {est_linear = chan3_units};
+            // get current units
+            var unit_multipler = 1;
+            var current_units = configData.machine.units;
+            if (current_units == "mm") { unit_multipler = 25.4; }
+            // With a change in mode, we need to reset some other parameters to defaults
+            // for linear-2 set: FeedrateMaximum=4, JogVelocity=6, MaxJerk=50
+            // for rotary-1 set: FeedrateMaximum=100, JogVelocity=150, MaxJerk=1000
+            // for disable-0 set: FeedrateMaximum=100, JogVelocity=150, MaxJerk=1000
+            // Speed/Radius-3 not implemented; but should be available in G2 for future
+            var axis = v.substring(0,1);
+            var new_params = {};
+            new_params.driver = {};
+            new_params.opensbp = {};
+           // Handle getting reasonable defaults for linear vs rotary (and handle units for linear too)
+           // ... these are based on typical values for XYZ axis, but reduced a bit for ABC
+           // ... these are just starting points; user can modify as needed
+           // ... user can override these values after changing mode and they will persist
+            if (this.value == 2) { // linear
+                new_params.driver[axis + 'fr'] = 4 * 60 * unit_multipler;
+                new_params.opensbp['move' + axis + '_speed'] = (4 * unit_multipler)/2; // default move speed to 1/2 feedrate max
+                new_params.opensbp['jog' + axis + '_speed'] = 6 * unit_multipler;
+                new_params.opensbp[axis + '_maxjerk'] = 50 * unit_multipler;
+                new_params.driver[chan + 'su'] = est_linear; // set a reasonable default linear value
+            } else {              // rotary or disable
+                new_params.driver[axis + 'fr'] = 100 * 60;
+                new_params.opensbp['move' + axis + '_speed'] = 50/2; // default move speed to 1/2 feedrate max
+                new_params.opensbp['jog' + axis + '_speed'] = 150;
+                new_params.opensbp[axis + '_maxjerk'] = 1000;
+                new_params.driver[chan + 'su'] = 33.33333; // set a reasonable default rotary value
+            }
+            fabmo.setConfig(new_params, function(err, data) {
+                notifyChange(err, v);
+                setTimeout(update, 500);
+            });
 
          // General "driver-input" updates  
          } else {

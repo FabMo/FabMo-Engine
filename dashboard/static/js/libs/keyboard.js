@@ -29,6 +29,7 @@
         }
         this.moves = 0;
         this.init();
+        this.enabled = false;
         this.move = null;
         this.going = false;
         this.interval = null;
@@ -110,33 +111,51 @@
         }
     };
 
+    // Keep pumping
     Keyboard.prototype.refresh = function () {
-        // Keep pumping moves unless we should STOP
-        if (!this.enabled || !this.going) {
+        // Defensive state checks
+        if (this.enabled !== true || this.going !== true) {
+            console.log("Keyboard: Stopping due to state check", {enabled: this.enabled, going: this.going});
             this.emit("stop", null);
-        } else if ($(".fixed-switch input").is(":checked")) {
+            this.going = false;  // Ensure clean state
+            return;
+        }
+        
+        if ($(".fixed-switch input").is(":checked")) {
             this.nudgeTimer = 1;
             this.going = true;
-            if (this.enabled) {
+            if (this.enabled === true) {
                 $(".drive-button").removeClass("drive-button-active");
                 this.emit("nudge", this.move);
             }
         } else {
-            if (this.enabled) {
+            if (this.enabled === true) {
                 this.emit("go", this.move);
             }
-            this.interval = setTimeout(
-                this.refresh.bind(this),
-                this.refreshInterval
-            );
+            // Safety timeout limit
+            if (this.going === true && this.enabled === true) {
+                this.interval = setTimeout(this.refresh.bind(this), this.refreshInterval);
+            } else {
+                console.warn("Keyboard: Motion terminated due to state change");
+                this.emit("stop", null);
+            }
         }
-    };
+    }
 
     // Get keypad icons to light when keyboard arrow keys are used; see note above
     Keyboard.prototype.start = function (axis, direction) {
-        if (this.going) {
+        // Defensive checks
+        if (this.going === true) {
+            console.warn("Keyboard: Already in motion, ignoring start command");
             return;
         }
+        if (this.enabled !== true) {
+            console.warn("Keyboard: Not enabled, ignoring start command");
+            return;
+        }
+    
+        console.log("Keyboard: Starting motion", axis, direction); 
+    
         this.move = { axis: axis, dir: direction };
         let activeArrowStr =
             "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
@@ -150,14 +169,23 @@
     };
 
     Keyboard.prototype.stop = function () {
+        console.log("Keyboard: Stop called"); 
+        
         this.going = false;
+        
         if (this.interval) {
             clearTimeout(this.interval);
             this.interval = null;
         }
+        
+        if (this.nudgeTimer && this.nudgeTimer !== 1) {
+            clearTimeout(this.nudgeTimer);
+            this.nudgeTimer = null;
+        }
+        
         this.emit("stop", null);
         $(".drive-button").removeClass("drive-button-active");
-        $(".drive-button").removeClass("drive-button-active-transient"); // this does not quite parallel keypad action
+        $(".drive-button").removeClass("drive-button-active-transient");
     };
 
     Keyboard.prototype.onClick = function (evt) {
