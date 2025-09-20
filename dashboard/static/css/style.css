@@ -1503,11 +1503,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .drive-button.bar {
 	text-align: center;
-	padding: 4px;
 	color: white;
 	font-weight: bolder;
 	width  : 100%;
-    height: 100%;
+    height: 95%;
     position: relative;
 
 }
@@ -1520,10 +1519,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	transform: translate(-50%, -47%);
 	pointer-events: none;
 }
-
-
-
-
 
 
 .enter-button {
@@ -1582,18 +1577,18 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .z-pad {
 	width: 55px;
     height: 180px;
+	padding: 2px;
     float: right;
 }
 
 
 .keypad-cell {
 	margin: 0;
-    padding: 0;
+    padding: 1px;
     height: 33%;
     width: 33%;
     display: inline-block;
     box-sizing: border-box;
-
 }
 
 

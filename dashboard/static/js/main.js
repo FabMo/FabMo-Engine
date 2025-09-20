@@ -437,7 +437,7 @@ function adjustModalHeight() {
     $(".manual-drive-modal").css("height", keypadHeight);
     $(".manual-drive-container").css("margin-top", marginTop);
 
-    console.log(`Adjusted modal height to ${marginTop} for ${visibleAxes} axes`);
+    // console.log(`Adjusted modal height to ${marginTop} for ${visibleAxes} axes`);
 }
 
 function handleResponsiveKeypad() {

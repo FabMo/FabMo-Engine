@@ -53,6 +53,15 @@
                 hammer.on("tap", this.onDriveTap.bind(this));
                 hammer.on("panend", this.end.bind(this));
                 hammer.on("pancancel", this.end.bind(this));
+                
+                // Mobile touch handling
+                hammer.on("panstart", this.end.bind(this));
+                hammer.on("panmove", function(evt) {
+                    // If we pan more than a small threshold, end the motion
+                    if (evt.distance > 15) {
+                        this.end();
+                    }
+                }.bind(this));
 
                 window.addEventListener(
                     "orientationchange",
@@ -62,6 +71,26 @@
                 $(element).on("blur", this.end.bind(this));
                 $(element).on("mouseleave", this.onDriveMouseleave.bind(this));
                 $(element).on("touchend", this.end.bind(this));
+                $(element).on("touchcancel", this.end.bind(this));
+                
+                // Touchleave equivalent and touch handling
+                $(element).on("touchmove", function(evt) {
+                    var touch = evt.originalEvent.touches[0];
+                    if (touch) {
+                        var elementRect = element.getBoundingClientRect();
+                        var isInside = (
+                            touch.clientX >= elementRect.left &&
+                            touch.clientX <= elementRect.right &&
+                            touch.clientY >= elementRect.top &&
+                            touch.clientY <= elementRect.bottom
+                        );
+                        
+                        if (!isInside) {
+                            this.end();
+                        }
+                    }
+                }.bind(this));
+                
                 $(document).on("scroll", this.end.bind(this));
                 element.addEventListener("contextmenu", function (evt) {
                     evt.preventDefault();
@@ -171,10 +200,6 @@
             console.warn("Keypad: Already in motion, ignoring nudge command");
             return;
         }
-        if (!this.enabled) {
-            console.warn("Keypad: Not enabled, ignoring nudge command");
-            return;
-        }
 
         if (second_axis) {
             var nudge = {
@@ -201,12 +226,24 @@
     };
 
     Keypad.prototype.end = function () {
+        console.log("Keypad: End called");
+        
+        // Clean up visual state immediately
+        this.elem
+            .find(".drive-button")
+            .removeClass("drive-button-active")
+            .removeClass("drive-button-active-transient")
+            .addClass("drive-button-inactive");
+        
         if (this.enabled) {
             this.setEnabled(false);
         }
         if (this.going) {
             this.stop();
         }
+        
+        // Clear target reference
+        this.target = null;
     };
 
     Keypad.prototype.exit = function () {
@@ -339,9 +376,10 @@
     };
 
     Keypad.prototype.onDriveMouseleave = function (evt) {
-        if (evt.target == this.target) {
-            this.end();
-        }
+        // Always end on mouse leave, regardless of target matching
+        // Safer for mobile touch scenarios
+        console.log("Keypad: Mouse/touch leave detected");
+        this.end();
     };
 
     return Keypad;
