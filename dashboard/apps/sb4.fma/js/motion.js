@@ -19,7 +19,7 @@ function doMotion (x, y, z, speed) {
     //code.push('F60');
     fabmo.manualRunGCode(code.join(''))
     //PAnEvent = false;
-    beep(20, 1800, 1);
+    //beep(20, 1800, 1);
 }
 
 // TODO: Implement jerk change from slow abrupt to smoother ... ramp up with manual speed feed ... not changing jerk before stop

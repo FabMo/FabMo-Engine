@@ -11,6 +11,28 @@ require("../css/style.css");
 require("../css/toastr.min.css");
 require("../css/tips.css");
 
+// Add this right after the existing requires at the top
+function bustModuleCache() {
+    const timestamp = Date.now();
+    
+    // Force reload of keypad and keyboard modules
+    if (typeof require !== 'undefined' && require.cache) {
+        // Clear module cache for our libs
+        const modulesToClear = [
+            './libs/keyboard.js',
+            './libs/keypad.js'
+        ];
+        
+        modulesToClear.forEach(modulePath => {
+            const resolvedPath = require.resolve(modulePath);
+            if (require.cache[resolvedPath]) {
+                delete require.cache[resolvedPath];
+                console.log(`Cache cleared for: ${modulePath}`);
+            }
+        });
+    }
+}
+
 // context is the application context
 // dashboard is the bridge between the application context and the apps
 var context = require("./context.js");
@@ -184,6 +206,15 @@ $(document).ready(function() {
             checkAuthenticationStatus(true);
         }, 1500);
     }
+
+    // for Keypad debugging
+    const isTouchDevice = 'ontouchstart' in window;
+    const isRealMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    console.log("Touch device:", isTouchDevice);
+    console.log("Real mobile:", isRealMobile);
+    console.log("User agent:", navigator.userAgent);
+
 });
 
 function checkForGlobalBackupRestore() {
@@ -453,6 +484,38 @@ function handleResponsiveKeypad() {
 
 handleResponsiveKeypad();
 
+// Add mobile cache busting before engine.getVersion call
+function handleMobileCaching() {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const touchDevice = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+    
+    if (isMobile || touchDevice) {
+        console.log("MOBILE CACHE BUST: Detected mobile device - version " + Date.now());
+        
+        // Clear any cached module references
+        if (window.Keyboard) {
+            console.log("MOBILE CACHE BUST: Clearing Keyboard cache");
+            delete window.Keyboard;
+        }
+        if (window.Keypad) {
+            console.log("MOBILE CACHE BUST: Clearing Keypad cache");
+            delete window.Keypad;
+        }
+        
+        // Add timestamp to prevent aggressive mobile caching
+        window._fabmo_mobile_cache_bust = Date.now();
+        
+        // Force a small delay before initializing
+        setTimeout(() => {
+            console.log("MOBILE CACHE BUST: Ready for fresh initialization");
+        }, 100);
+    }
+}
+
+// Call the mobile cache handler
+handleMobileCaching();
+
+// Then your existing engine.getVersion call continues...
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
 
@@ -1174,7 +1237,7 @@ function hideDaisy(callback) {
     dashboard.hideModal();
 }
 
-// Click outside the modal keypad to close it  //th: don't know if I like this now that it is done?
+// Click outside the modal keypad to close it  //th: don't know if i like this now that it is done?
 const modalKeyPad = document.getElementById("keypad-modal");
 
 function setupSimpleClickOutside() {
@@ -1477,40 +1540,6 @@ $(".toggle-out").on("click", function (evt) {
     }
 });
 
-// UI for SPEED AND OVERRIDE (%) -------------------------------------------------
-var changeFeedRate = function (new_feedrate) {
-    if (new_feedrate > 0 && new_feedrate < 1000) {
-        dashboard.handlers.runSBP("MS, " + new_feedrate, function (err, result) {
-            if (err) {
-                console.error("An error occurred:", err);
-            } else {
-                console.log("The result is:", result);
-            }
-        });
-    }
-};
-$("#feed-rate").on("change", function (evt) {
-    var new_feedrate = parseFloat($("#feed-rate").val());
-    changeFeedRate(new_feedrate);
-});
-// Requested OVERRIDE Feed Rate via setUix process (see uix.js)
-var overrideFeedRate = function (new_override) {
-    try {
-        console.log("----> fr Override Request: " + new_override);
-        engine.setUix("fr_override", new_override);
-    } catch (error) {
-        console.log("Failed to pass new Override: " + error);
-    }
-};
-$("#override").on("change", function (evt) {
-    if (engine.status.state != "idle") {
-        var new_override = parseFloat($("#override").val());
-        // Check against: feedrate override range
-        if (new_override > 4 && new_override < 301) {
-            overrideFeedRate(new_override);
-        }
-    }
-});
 // ... get FOCUS out of OVERRIDE BOX if done
 var ovBlurTimer;
 function startOvBlurTimer() {

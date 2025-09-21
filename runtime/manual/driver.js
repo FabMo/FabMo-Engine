@@ -180,25 +180,58 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     var second_dir = second_speed < 0 ? -1.0 : 1.0;
     speed = Math.abs(speed);
     this.gotoModeHold = false;
+    
     // Raw mode doesn't accept start motion command
     if (this.mode != "normal") {
         throw new Error("Cannot start movement in " + this.mode + " mode.");
     }
+    
     // Don't start motion if we're in the middle of stopping (can do it from stopped, though)
     if (this.stop_pending) {
         return;
     }
 
-    // If we're moving already, maintain motion
+    // Handle axis changes
     if (this.moving) {
         if (axis === this.currentAxis && speed === this.currentSpeed) {
             this.maintainMotion();
+            return;
         } else {
-            this.stopMotion();
-            // TODO Deal with direction changes here
+            // Don't use stopMotion() for axis changes
+            // Just update the parameters and let _renewMoves handle the transition
+            log.debug("Switching from " + this.currentAxis + " to " + axis);
+            
+            // Clear the renewal timer to force immediate parameter update
+            if (this.renew_timer) {
+                clearTimeout(this.renew_timer);
+                this.renew_timer = null;
+            }
+            
+            // Update motion parameters immediately
+            this.currentAxis = axis;
+            this.currentSpeed = speed;
+            this.currentDirection = dir;
+            
+            if (second_axis) {
+                this.second_axis = second_axis;
+                this.second_currentDirection = second_dir;
+            } else {
+                this.second_axis = null;
+                this.second_currentDirection = null;
+            }
+            
+            // Update the renewal distance for new speed
+            this.renewDistance = speed * (T_RENEW / 60000) * SAFETY_FACTOR;
+            
+            // Send new speed and start pumping with new parameters
+            this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n");
+            
+            // Force immediate renewal with new parameters
+            this._renewMoves("axis_change");
+            return;
         }
     } else {
-        // Deal with one axis vs 2 (See TODO above)
+        // Starting fresh motion (unchanged)
         if (second_axis) {
             this.second_axis = second_axis;
             this.second_currentDirection = second_dir;
@@ -206,20 +239,14 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
             this.second_axis = null;
             this.second_currentDirection = null;
         }
-        // Set Heading
+        
         this.currentAxis = axis;
         this.currentSpeed = speed;
         this.currentDirection = dir;
-
-        // Flag that we're kicking off a move
         this.moving = this.keep_moving = true;
-
-        // Length of the moves we pump the queue with, based on speed vector
         this.renewDistance = speed * (T_RENEW / 60000) * SAFETY_FACTOR;
-        // Make sure we're in relative moves and the speed is set
+        
         this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n" + "G61" + "\n");
-
-        // Start pumping moves
         this._renewMoves("start");
     }
 };
@@ -564,15 +591,23 @@ ManualDriver.prototype.isMoving = function () {
 // eslint-disable-next-line no-unused-vars
 ManualDriver.prototype._renewMoves = function (reason) {
     if (this.mode === "normal") {
-        if (this.moving && this.keep_moving) {
-            this.keep_moving = true;
+        // FIXED: Check keep_moving first - it's set immediately by startMotion()
+        // Don't rely solely on this.moving which depends on G2 status updates
+        if (this.keep_moving && (this.moving || reason === "start")) {
             if (global.CLIENT_DISCONNECTED) {
-                ////## added to prevent runaway; TODO: sovled this without global!
                 this.keep_moving = false;
+                return;
             }
+            
+            // Force moving to true if we're starting (before G2 status confirms it)
+            if (reason === "start") {
+                this.moving = true;
+            }
+            
             var segment = this.currentDirection * (this.renewDistance / RENEW_SEGMENTS);
             var second_segment = this.second_currentDirection * (this.renewDistance / RENEW_SEGMENTS);
             var moves = [];
+            
             if (this.second_axis) {
                 for (var i = 0; i < RENEW_SEGMENTS; i++) {
                     var move =
@@ -585,13 +620,12 @@ ManualDriver.prototype._renewMoves = function (reason) {
                     moves.push(move);
                 }
             } else {
-                // eslint-disable-next-line no-redeclare
                 for (var i = 0; i < RENEW_SEGMENTS; i++) {
-                    // eslint-disable-next-line no-redeclare
                     var move = "G1" + this.currentAxis + segment.toFixed(4) + "\n";
                     moves.push(move);
                 }
             }
+            
             this.stream.write(moves.join(""));
             this.driver.prime();
             this.renew_timer = setTimeout(
@@ -601,9 +635,19 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 T_RENEW
             );
         } else {
-            this.stopMotion();
+            // FIXED: Only call stopMotion if we're actually moving
+            // Don't call it on startup when moving might still be false
+            if (this.moving && !this.keep_moving) {
+                this.stopMotion();
+            }
+            // Clear timer if we're not going to continue
+            if (this.renew_timer) {
+                clearTimeout(this.renew_timer);
+                this.renew_timer = null;
+            }
         }
     } else {
+        // Raw mode logic unchanged
         if (!(this.moving && this.keep_moving)) {
             // TODO:  Why is this disabled?
             //this.stopMotion();
