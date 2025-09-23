@@ -11,35 +11,12 @@ require("../css/style.css");
 require("../css/toastr.min.css");
 require("../css/tips.css");
 
-// Add this right after the existing requires at the top
-function bustModuleCache() {
-    const timestamp = Date.now();
-    
-    // Force reload of keypad and keyboard modules
-    if (typeof require !== 'undefined' && require.cache) {
-        // Clear module cache for our libs
-        const modulesToClear = [
-            './libs/keyboard.js',
-            './libs/keypad.js'
-        ];
-        
-        modulesToClear.forEach(modulePath => {
-            const resolvedPath = require.resolve(modulePath);
-            if (require.cache[resolvedPath]) {
-                delete require.cache[resolvedPath];
-                console.log(`Cache cleared for: ${modulePath}`);
-            }
-        });
-    }
-}
-
 // context is the application context
 // dashboard is the bridge between the application context and the apps
 var context = require("./context.js");
 var dashboard = require("./dashboard.js");
 
 // Vendor libraries
-
 var $ = require("jquery");
 var Backbone = require("backbone");
 var underscore = require("underscore");
@@ -87,6 +64,17 @@ engine.getCurrentUser(function (err, user) {
         window.location.href = "#/authentication";
     }
 });
+
+// Mobile cache detection 
+function handleMobileCaching() {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const touchDevice = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+    
+    if (isMobile || touchDevice) {
+        console.log("Mobile device detected");
+        window._fabmo_mobile_device = true;
+    }
+}
 
 var setUpManual = function () {
     return new Promise((resolve, reject) => {
@@ -210,10 +198,8 @@ $(document).ready(function() {
     // for Keypad debugging
     const isTouchDevice = 'ontouchstart' in window;
     const isRealMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    console.log("Touch device:", isTouchDevice);
-    console.log("Real mobile:", isRealMobile);
-    console.log("User agent:", navigator.userAgent);
+
+    console.log("Touch device:", isTouchDevice, "Mobile:", isRealMobile);
 
 });
 
@@ -511,9 +497,6 @@ function handleMobileCaching() {
         }, 100);
     }
 }
-
-// Call the mobile cache handler
-handleMobileCaching();
 
 // Then your existing engine.getVersion call continues...
 engine.getVersion(function (err, version) {
@@ -832,14 +815,6 @@ engine.getVersion(function (err, version) {
                                     modalOptions.cancelText = "Quit";
                                     modalOptions.cancel = cancelFunction;
                                 }
-                                // if (modalOptions.ok === null) {
-                                //     modalOptions.okText = "Resume";
-                                //     modalOptions.ok = resumeFunction;
-                                // }
-                                // if (modalOptions.cancel === null) {
-                                //     modalOptions.cancelText = "Quit";
-                                //     modalOptions.cancel = cancelFunction;
-                                // }
                             } else {
                                 // No custom parameters; use default buttons
                                 modalOptions.okText = "Resume";
@@ -1131,7 +1106,29 @@ function setupKeypad() {
     return keypad;
 }
 
-$(".action-button").on("click", function () {
+$(".action-button").on("click", function (evt) {
+    // Stop all event propagation immediately
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Action button clicked - preventing other handlers");
+    
+    // Stop any ongoing motion before action
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    // Clear any touch state
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+        keypad.enabled = false; // Disable keypad immediately
+    }
+    
+    // Add a flag to prevent any delayed events
+    window._actionButtonClicked = Date.now();
+    
     // Get the action from the generic button
     var exitKeypad = true;
     var action = $(this).attr("id");
@@ -1181,7 +1178,29 @@ $(".action-button").on("click", function () {
     }
 });
 
-$(".manual-drive-exit").on("click", function () {
+$(".manual-drive-exit").on("click", function (evt) {
+    // FIXED: Stop all event propagation immediately
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Exit button clicked - preventing other handlers");
+    
+    // Stop any ongoing motion before exiting
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    // Clear any touch state
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+        keypad.enabled = false; // Disable keypad immediately
+    }
+    
+    // Add a flag to prevent any delayed events
+    window._exitButtonClicked = Date.now();
+    
     // Remove changes for running manual from within a file
     $("#title_goto").css("visibility", "visible");
     $("#action-1").css("visibility", "visible");
@@ -1356,7 +1375,28 @@ var getAxis = function () {
     });
 };
 
-$(".go-to").on("mousedown", function () {
+$(".go-to").on("mousedown", function (evt) {
+    // FIXED: Stop all event propagation and keypad events
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Go To button clicked - preventing other handlers");
+    
+    // Stop any ongoing motion and disable keypad
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+        keypad.enabled = false;
+    }
+    
+    // Add protection flag
+    window._gotoButtonClicked = Date.now();
+    
     var move = {};
     $(".modal-axi:visible").each(function () {
         move[$(this).attr("id")] = parseFloat($(this).val());
@@ -1368,7 +1408,26 @@ $(".manual-stop").on("mousedown", function () {
     dashboard.engine.manualStop();
 });
 
-$(".set-coordinates").on("mousedown", function () {
+$(".set-coordinates").on("mousedown", function (evt) {
+    // FIXED: Same protection as goto
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Set Coordinates button clicked - preventing other handlers");
+    
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+        keypad.enabled = false;
+    }
+    
+    window._setButtonClicked = Date.now();
+    
     var move = {};
     $(".modal-axi:visible").each(function () {
         move[$(this).attr("id")] = parseFloat($(this).val());
@@ -1485,7 +1544,25 @@ $(".axi").keyup(function (e) {
     }
 });
 
-$(".zero-button").on("click", function () {
+$(".zero-button").on("click", function (evt) {
+    // FIXED: Add protection for zero buttons
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Zero button clicked - preventing other handlers");
+    
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+    }
+    
+    window._zeroButtonClicked = Date.now();
+    
     var axi = $(this).parent("div").find("input").attr("id");
     var obj = {};
     obj[axi] = 0;
