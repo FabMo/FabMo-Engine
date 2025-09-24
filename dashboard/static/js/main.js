@@ -195,6 +195,15 @@ $(document).ready(function() {
         }, 1500);
     }
 
+    // Fix for mobile viewport height issues - only run on very small screens
+    function setVHProperty() {
+        // Only apply viewport height fix on screens that need it
+        if (window.innerHeight <= 500 || window.innerWidth <= 400) {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+    }
+
     // for Keypad debugging
     const isTouchDevice = 'ontouchstart' in window;
     const isRealMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -441,17 +450,17 @@ function adjustModalHeight() {
     
     let marginTop, keypadHeight;
     if (visibleAxes <= 4) {
-        keypadHeight = 450;
+//        keypadHeight = 450;
         marginTop = '0%';
     } else if (visibleAxes === 5) {
-        keypadHeight = 450;
+//        keypadHeight = 450;
         marginTop = '3%';
     } else { // 6 or more axes
-        keypadHeight = 450;
+//        keypadHeight = 450;
         marginTop = '3%';
     }
 
-    $(".manual-drive-modal").css("height", keypadHeight);
+//    $(".manual-drive-modal").css("height", keypadHeight);
     $(".manual-drive-container").css("margin-top", marginTop);
 
     // console.log(`Adjusted modal height to ${marginTop} for ${visibleAxes} axes`);
