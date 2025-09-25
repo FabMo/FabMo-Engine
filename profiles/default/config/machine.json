@@ -5,7 +5,7 @@
 	"quit_input": 0,
 	"auth_timeout" : 30,
 	"auth_required": false,
-	"auth_input" : 0,
+	"auth_input" : 5,
 	"ap_input" : 0,
 	"ap_time" : 8,
     "di1ac": "none",
@@ -38,7 +38,7 @@
 		"xy_increment" : 0.05,
 		"z_increment" : 0.005,
 		"abc_increment" : 1,
-		"xy_jerk" : 50,
+		"xy_jerk" : 75,
 		"z_jerk" : 50
 	}
 }

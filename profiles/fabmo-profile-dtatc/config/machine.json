@@ -12,7 +12,6 @@
 		"zmax" : 6
 	},
 	"manual" : {
-        "xy_speed": 3,
-        "xy_max": 6
+        "xy_speed": 3
 	}
 }
