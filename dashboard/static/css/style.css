@@ -835,7 +835,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	display: block;
     text-align: center;
     padding-bottom: 20px;
-	padding-top: 10px;
+	/*padding-top: 10px;*/
 	padding-left: 10px;
 	padding-right: 10px;
     text-decoration: none;
@@ -1503,11 +1503,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .drive-button.bar {
 	text-align: center;
-	padding: 4px;
 	color: white;
 	font-weight: bolder;
 	width  : 100%;
-    height: 100%;
+    height: 95%;
     position: relative;
 
 }
@@ -1520,10 +1519,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	transform: translate(-50%, -47%);
 	pointer-events: none;
 }
-
-
-
-
 
 
 .enter-button {
@@ -1582,18 +1577,18 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .z-pad {
 	width: 55px;
     height: 180px;
+	padding: 2px;
     float: right;
 }
 
 
 .keypad-cell {
 	margin: 0;
-    padding: 0;
+    padding: 1px;
     height: 33%;
     width: 33%;
     display: inline-block;
     box-sizing: border-box;
-
 }
 
 
@@ -2241,8 +2236,8 @@ input[type='range']:focus {
 .manual-drive-modal {
 	user-select: none;
 	display: none;
-    width: 50%;
-	height: 600px;
+    width: 55%;
+	height: 60%;
 	min-height: 400px;
 	min-width: 370px;
     position: fixed;
@@ -2283,40 +2278,42 @@ input[type='range']:focus {
 }
 
 
-@media (max-width: 1175px) and (min-height: 500px)   {
+@media (max-width: 1120px) and (min-height: 450px)   {
 	.manual-drive-modal {
-		width: 80%; 
+		width: 80%;
+		height: 60%;
 	}
 }
 
 
-
-@media (max-width: 750px  ) and (min-height: 500px)  {
+@media (max-width: 750px) and (orientation: portrait) and (min-height: 500px) {
+/*@media (max-width: 750px  ) and (min-height: 500px)  {*/
 	.manual-drive-modal {
 		width: 90%; 
-		height: 100%;
+		height: 95%;
 		max-height: none;
 		padding-top: 0;
 	}
 
-	.manual-drive-container {
-		top: 8%;
-		transform: translate(-5%, 0%);
-	}
+    .manual-drive-container {
+        top: 5%; /* Reduced from 8% */
+        transform: translate(-3%, 0%);
+		scale: 80%
+    }
 
-	.read-out-container{
-		width: 100%;
-		height: 100%;
-		margin-top: 10%;
+    .read-out-container {
+        width: 100%;
+        height: 100%;
+        margin-top: 10%;
         scale: 90%
-	}
+    }
 
-	.manual-right-side-container{
-		width: 100%;
-		height: 100%;
-		margin-top: 15%;
+    .manual-right-side-container {
+        width: 100%;
+        height: 100%;
+        margin-top: 10%; /* Reduced */
         scale: 90%
-	}
+    }
 
 
 	.speed_read_out {
@@ -2330,7 +2327,8 @@ input[type='range']:focus {
 	}
 
 	#keypad {
-		scale: 125%;
+		scale: 135%;
+		margin-top: 3cap;
 	}
 
     #title_goto {
@@ -2373,8 +2371,8 @@ input[type='range']:focus {
     }
 }
 
-
-@media (max-width: 650px) and (min-width: 285px) and (min-height: 500px) {
+@media (max-width: 650px) {
+/*@media (max-width: 650px) and (min-width: 285px) and (min-height: 500px) {*/
     #icon_keypad {
         cursor: pointer;
         right: 50%;
@@ -2398,15 +2396,16 @@ input[type='range']:focus {
 	.left-slide-menu{
 		display:block;
 	}
-
+/*
 	.manual-drive-modal {
 		width: 100%; 
 		height: 100%;
 		max-height: none;
 		padding-top: 0;
 		min-height: 0;
-	}
+	}*/
 }
+
 
 
 .newModal{

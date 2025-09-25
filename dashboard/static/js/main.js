@@ -17,7 +17,6 @@ var context = require("./context.js");
 var dashboard = require("./dashboard.js");
 
 // Vendor libraries
-
 var $ = require("jquery");
 var Backbone = require("backbone");
 var underscore = require("underscore");
@@ -65,6 +64,17 @@ engine.getCurrentUser(function (err, user) {
         window.location.href = "#/authentication";
     }
 });
+
+// Mobile cache detection 
+function handleMobileCaching() {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const touchDevice = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+    
+    if (isMobile || touchDevice) {
+        console.log("Mobile device detected");
+        window._fabmo_mobile_device = true;
+    }
+}
 
 var setUpManual = function () {
     return new Promise((resolve, reject) => {
@@ -184,6 +194,22 @@ $(document).ready(function() {
             checkAuthenticationStatus(true);
         }, 1500);
     }
+
+    // // Fix for mobile viewport height issues - only run on very small screens
+    // function setVHProperty() {
+    //     // Only apply viewport height fix on screens that need it
+    //     if (window.innerHeight <= 500 || window.innerWidth <= 400) {
+    //         const vh = window.innerHeight * 0.01;
+    //         document.documentElement.style.setProperty('--vh', `${vh}px`);
+    //     }
+    // }
+
+    // for Keypad debugging
+    const isTouchDevice = 'ontouchstart' in window;
+    const isRealMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    console.log("Touch device:", isTouchDevice, "Mobile:", isRealMobile);
+
 });
 
 function checkForGlobalBackupRestore() {
@@ -424,20 +450,20 @@ function adjustModalHeight() {
     
     let marginTop, keypadHeight;
     if (visibleAxes <= 4) {
-        keypadHeight = 450;
+//        keypadHeight = 450;
         marginTop = '0%';
     } else if (visibleAxes === 5) {
-        keypadHeight = 450;
+//        keypadHeight = 450;
         marginTop = '3%';
     } else { // 6 or more axes
-        keypadHeight = 450;
+//        keypadHeight = 450;
         marginTop = '3%';
     }
 
-    $(".manual-drive-modal").css("height", keypadHeight);
+//    $(".manual-drive-modal").css("height", keypadHeight);
     $(".manual-drive-container").css("margin-top", marginTop);
 
-    console.log(`Adjusted modal height to ${marginTop} for ${visibleAxes} axes`);
+    // console.log(`Adjusted modal height to ${marginTop} for ${visibleAxes} axes`);
 }
 
 function handleResponsiveKeypad() {
@@ -453,6 +479,35 @@ function handleResponsiveKeypad() {
 
 handleResponsiveKeypad();
 
+// Add mobile cache busting before engine.getVersion call
+function handleMobileCaching() {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const touchDevice = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+    
+    if (isMobile || touchDevice) {
+        console.log("MOBILE CACHE BUST: Detected mobile device - version " + Date.now());
+        
+        // Clear any cached module references
+        if (window.Keyboard) {
+            console.log("MOBILE CACHE BUST: Clearing Keyboard cache");
+            delete window.Keyboard;
+        }
+        if (window.Keypad) {
+            console.log("MOBILE CACHE BUST: Clearing Keypad cache");
+            delete window.Keypad;
+        }
+        
+        // Add timestamp to prevent aggressive mobile caching
+        window._fabmo_mobile_cache_bust = Date.now();
+        
+        // Force a small delay before initializing
+        setTimeout(() => {
+            console.log("MOBILE CACHE BUST: Ready for fresh initialization");
+        }, 100);
+    }
+}
+
+// Then your existing engine.getVersion call continues...
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
 
@@ -769,14 +824,6 @@ engine.getVersion(function (err, version) {
                                     modalOptions.cancelText = "Quit";
                                     modalOptions.cancel = cancelFunction;
                                 }
-                                // if (modalOptions.ok === null) {
-                                //     modalOptions.okText = "Resume";
-                                //     modalOptions.ok = resumeFunction;
-                                // }
-                                // if (modalOptions.cancel === null) {
-                                //     modalOptions.cancelText = "Quit";
-                                //     modalOptions.cancel = cancelFunction;
-                                // }
                             } else {
                                 // No custom parameters; use default buttons
                                 modalOptions.okText = "Resume";
@@ -1068,7 +1115,29 @@ function setupKeypad() {
     return keypad;
 }
 
-$(".action-button").on("click", function () {
+$(".action-button").on("click", function (evt) {
+    // Stop all event propagation immediately
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Action button clicked - preventing other handlers");
+    
+    // Stop any ongoing motion before action
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    // Clear any touch state
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+        keypad.enabled = false; // Disable keypad immediately
+    }
+    
+    // Add a flag to prevent any delayed events
+    window._actionButtonClicked = Date.now();
+    
     // Get the action from the generic button
     var exitKeypad = true;
     var action = $(this).attr("id");
@@ -1118,7 +1187,29 @@ $(".action-button").on("click", function () {
     }
 });
 
-$(".manual-drive-exit").on("click", function () {
+$(".manual-drive-exit").on("click", function (evt) {
+    // FIXED: Stop all event propagation immediately
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Exit button clicked - preventing other handlers");
+    
+    // Stop any ongoing motion before exiting
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    // Clear any touch state
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+        keypad.enabled = false; // Disable keypad immediately
+    }
+    
+    // Add a flag to prevent any delayed events
+    window._exitButtonClicked = Date.now();
+    
     // Remove changes for running manual from within a file
     $("#title_goto").css("visibility", "visible");
     $("#action-1").css("visibility", "visible");
@@ -1174,7 +1265,7 @@ function hideDaisy(callback) {
     dashboard.hideModal();
 }
 
-// Click outside the modal keypad to close it  //th: don't know if I like this now that it is done?
+// Click outside the modal keypad to close it  //th: don't know if i like this now that it is done?
 const modalKeyPad = document.getElementById("keypad-modal");
 
 function setupSimpleClickOutside() {
@@ -1293,7 +1384,28 @@ var getAxis = function () {
     });
 };
 
-$(".go-to").on("mousedown", function () {
+$(".go-to").on("mousedown", function (evt) {
+    // FIXED: Stop all event propagation and keypad events
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Go To button clicked - preventing other handlers");
+    
+    // Stop any ongoing motion and disable keypad
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+        keypad.enabled = false;
+    }
+    
+    // Add protection flag
+    window._gotoButtonClicked = Date.now();
+    
     var move = {};
     $(".modal-axi:visible").each(function () {
         move[$(this).attr("id")] = parseFloat($(this).val());
@@ -1305,7 +1417,26 @@ $(".manual-stop").on("mousedown", function () {
     dashboard.engine.manualStop();
 });
 
-$(".set-coordinates").on("mousedown", function () {
+$(".set-coordinates").on("mousedown", function (evt) {
+    // FIXED: Same protection as goto
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Set Coordinates button clicked - preventing other handlers");
+    
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+        keypad.enabled = false;
+    }
+    
+    window._setButtonClicked = Date.now();
+    
     var move = {};
     $(".modal-axi:visible").each(function () {
         move[$(this).attr("id")] = parseFloat($(this).val());
@@ -1422,7 +1553,25 @@ $(".axi").keyup(function (e) {
     }
 });
 
-$(".zero-button").on("click", function () {
+$(".zero-button").on("click", function (evt) {
+    // FIXED: Add protection for zero buttons
+    evt.preventDefault();
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+    
+    console.log("Zero button clicked - preventing other handlers");
+    
+    if (keypad && keypad.going) {
+        keypad.stop();
+    }
+    
+    if (keypad) {
+        keypad.touchStartTime = null;
+        keypad.currentTouchElement = null;
+    }
+    
+    window._zeroButtonClicked = Date.now();
+    
     var axi = $(this).parent("div").find("input").attr("id");
     var obj = {};
     obj[axi] = 0;
@@ -1477,40 +1626,6 @@ $(".toggle-out").on("click", function (evt) {
     }
 });
 
-// UI for SPEED AND OVERRIDE (%) -------------------------------------------------
-var changeFeedRate = function (new_feedrate) {
-    if (new_feedrate > 0 && new_feedrate < 1000) {
-        dashboard.handlers.runSBP("MS, " + new_feedrate, function (err, result) {
-            if (err) {
-                console.error("An error occurred:", err);
-            } else {
-                console.log("The result is:", result);
-            }
-        });
-    }
-};
-$("#feed-rate").on("change", function (evt) {
-    var new_feedrate = parseFloat($("#feed-rate").val());
-    changeFeedRate(new_feedrate);
-});
-// Requested OVERRIDE Feed Rate via setUix process (see uix.js)
-var overrideFeedRate = function (new_override) {
-    try {
-        console.log("----> fr Override Request: " + new_override);
-        engine.setUix("fr_override", new_override);
-    } catch (error) {
-        console.log("Failed to pass new Override: " + error);
-    }
-};
-$("#override").on("change", function (evt) {
-    if (engine.status.state != "idle") {
-        var new_override = parseFloat($("#override").val());
-        // Check against: feedrate override range
-        if (new_override > 4 && new_override < 301) {
-            overrideFeedRate(new_override);
-        }
-    }
-});
 // ... get FOCUS out of OVERRIDE BOX if done
 var ovBlurTimer;
 function startOvBlurTimer() {
