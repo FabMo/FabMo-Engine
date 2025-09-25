@@ -232,7 +232,6 @@ define(function(require) {
 
 //----------------------------------- These two routines are enough to communicate events from dash during running
 // Function to handle key events
-////## need to debounce these to give a little runway for spinning
 function handleKeyEvent(key) {
     switch (key) {
         case "+":
@@ -306,7 +305,7 @@ window.addEventListener('message', function(event) {
                 $('.left-slide-menu').css('width', "46px");
             } else {
                 $('#left-slide-button').addClass('open');
-                $('.left-slide-menu').css('width', "400px");
+                $('.left-slide-menu').css('width', "500px");
             }
         });
 

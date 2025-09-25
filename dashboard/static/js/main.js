@@ -195,14 +195,14 @@ $(document).ready(function() {
         }, 1500);
     }
 
-    // Fix for mobile viewport height issues - only run on very small screens
-    function setVHProperty() {
-        // Only apply viewport height fix on screens that need it
-        if (window.innerHeight <= 500 || window.innerWidth <= 400) {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        }
-    }
+    // // Fix for mobile viewport height issues - only run on very small screens
+    // function setVHProperty() {
+    //     // Only apply viewport height fix on screens that need it
+    //     if (window.innerHeight <= 500 || window.innerWidth <= 400) {
+    //         const vh = window.innerHeight * 0.01;
+    //         document.documentElement.style.setProperty('--vh', `${vh}px`);
+    //     }
+    // }
 
     // for Keypad debugging
     const isTouchDevice = 'ontouchstart' in window;
