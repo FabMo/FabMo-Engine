@@ -825,6 +825,25 @@ SBPRuntime.prototype._run = function () {
     this.probingInitialized = false;
     this.probingPending = false;
     this.probePin = null;
+
+    // Reset spindle authorization at program start
+    try {
+        config.opensbp.setVariable(
+            { name: "SPINDLEAUTHORIZED", type: "persistent_variable", access: [] }, 
+            false,
+            function(err) {
+                if (err) {
+                    log.error("Failed to set $spindleAuthorized: " + err);
+                } else {
+                    log.debug("Reset $spindleAuthorized to false for new program");
+                }
+            }
+        );
+    } catch (err) {
+        log.error("Error setting spindle authorization variable: " + err);
+    }
+
+
     log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
     if (this.machine) {
         this.machine.setState(this, "running");
