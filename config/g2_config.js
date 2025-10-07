@@ -34,15 +34,15 @@ G2Config.prototype.init = function (driver, callback) {
     var definition = profileDef.read();
     var skipRecovery = profileDef.isChangeInProgress() || profileDef.hasAutoProfileDefinition();
     
-    log.info("=== G2 CONFIG INIT DEBUG ===");
-    log.info("Skip recovery (auto-profile active): " + skipRecovery);
-    if (definition && definition.auto_profile) {
-        log.info("Target profile from definition: " + definition.auto_profile.profile_name);
-    }
+    // log.info("=== G2 CONFIG INIT DEBUG ===");
+    //log.info("Skip recovery (auto-profile active): " + skipRecovery);
+    //if (definition && definition.auto_profile) {
+    //    log.info("Target profile from definition: " + definition.auto_profile.profile_name);
+    //}
     
     var Config = require("./config").Config;
-    log.info("Current profile from Config.getCurrentProfile(): " + Config.getCurrentProfile());
-    log.info("G2 config file path: " + this.getConfigFile());
+    //log.info("Current profile from Config.getCurrentProfile(): " + Config.getCurrentProfile());
+    //log.info("G2 config file path: " + this.getConfigFile());
 
     // Call parent init which should use our enhanced load method
     Config.prototype.init.call(this, function(initErr) {

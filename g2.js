@@ -256,7 +256,6 @@ G2.prototype._createCycleContext = function () {
 
     if (global.CUR_RUNTIME != "[IdleRuntime]") {
         var prependString =
-          //####  "N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "N4 M100 ({out4:1})\n" + "N5 M100 ({spph:true})\n" + "N6 S1000\n";
           "N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "{out4:1}\n" + "{spph:true}\n" + "N6 S1000\n";
 
         log.debug("=== PREPEND DEBUG ===");
