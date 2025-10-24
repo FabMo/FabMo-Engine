@@ -79,25 +79,18 @@ function handleMobileCaching() {
 var setUpManual = function () {
     return new Promise((resolve, reject) => {
         calledFromModal = "";
-        // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
+        
+        // Turn off fixed-distance
         $(".drive-button").removeClass("drive-button-fixed");
         $(".slidecontainer").show();
         $(".fixed-input-container").hide();
         $(".fixed-switch input").prop("checked", false);
-        //        $("#action-5 img").attr("src", "../img/icon_spindle_off.png"); // probably not useful
         $("#action-5").css("background-color", "#ce6402");
-
-        // Function to set location displays and then set video style
-        function setLocationAndVideoStyle() {
-            setLocationDisplays();
-            adjustModalHeight();
-            setVideoStyle();
-            resolve(); // Resolve the promise after setting location displays and video style
-        }
 
         engine.getConfig(function (err, config) {
             if (err) {
                 console.log(err);
+                reject(err);
             } else {
                 var manual_config = config.machine.manual;
                 if (manual_config.xy_increment) {
@@ -111,38 +104,69 @@ var setUpManual = function () {
                 $("#manual-move-speed").attr("min", manual_config.xy_min);
                 $("#manual-move-speed").attr("max", manual_config.xy_max);
                 $("#manual-move-speed").val(manual_config.xy_speed);
+                
+                // FIXED: Don't call setLocationDisplays here either
+                // The status handler will update axis visibility
+                // Just update what we need for the modal
+                adjustModalHeight();
+                setVideoStyle();
+                
+                // Initialize drag functionality
+                setTimeout(() => {
+                    initializeKeypadModal();
+                }, 100);
+                
+                resolve();
             }
-            // Call the function to set location displays and video style
-            setLocationAndVideoStyle();
         });
-
-        // Initialize drag functionality
-        setTimeout(() => {
-            initializeKeypadModal();
-        }, 100); // Small delay to ensure modal is rendered
-
-        resolve();
     });
 };
 
 var startManualExit = function () {
     return new Promise((resolve, reject) => {
-        // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
+        // // Turn off fixed-distance if it is on (someone may want remembering to be an option?)
+        // $(".drive-button").removeClass("drive-button-fixed");
+        // $(".slidecontainer").show();
+        // $(".fixed-input-container").hide();
+        // $(".fixed-switch input").prop("checked", false);
+        // // Clean up spindle which will automatically turn off
+        // $("#action-5 img").attr("src", "../img/icon_spindle_off.png");
+        // $("#action-5").css("background-color", "#ce6402");
+
+        // // Function to set location displays and then set video style
+        // function setLocationAndVideoStyle() {
+        //     setLocationDisplays();
+        //     setVideoStyle();
+        //     resolve(); // Resolve the promise after setting location displays and video style
+        // }
+        // setLocationAndVideoStyle();
+
+
+        // FIXED: Prevent config updates during exit
+        window._manualExitInProgress = true;
+        
+        // Turn off fixed-distance if it is on
         $(".drive-button").removeClass("drive-button-fixed");
         $(".slidecontainer").show();
         $(".fixed-input-container").hide();
         $(".fixed-switch input").prop("checked", false);
-        // Clean up spindle which will automatically turn off
+        
+        // Clean up spindle icon
         $("#action-5 img").attr("src", "../img/icon_spindle_off.png");
         $("#action-5").css("background-color", "#ce6402");
 
-        // Function to set location displays and then set video style
-        function setLocationAndVideoStyle() {
-            setLocationDisplays();
-            setVideoStyle();
-            resolve(); // Resolve the promise after setting location displays and video style
-        }
-        setLocationAndVideoStyle();
+        // FIXED: Don't call setLocationDisplays during exit
+        // Just update video style and resolve
+        setVideoStyle();
+        
+        // Clear exit flag after a delay
+        setTimeout(() => {
+            window._manualExitInProgress = false;
+        }, 1000);
+        
+        resolve();
+
+        
     });
 };
 

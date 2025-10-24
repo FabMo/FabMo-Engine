@@ -19,6 +19,60 @@ function debounce(func, wait) {
     };
 }
 
+// Track retries for backup attempts
+let backupRetries = new Map(); // filepath -> retry count
+const MAX_BACKUP_RETRIES = 5;
+
+function processBackup(filePath, currentTime) {
+    // Initialize retry count if not present
+    if (!backupRetries.has(filePath)) {
+        backupRetries.set(filePath, 0);
+    }
+    
+    isToolBusy((busy) => {
+        if (busy) {
+            const retryCount = backupRetries.get(filePath);
+            
+            // Check if we've exceeded max retries
+            if (retryCount >= MAX_BACKUP_RETRIES) {
+                log.warn(`Backup abandoned for ${filePath} after ${MAX_BACKUP_RETRIES} retries - tool remains busy`);
+                backupRetries.delete(filePath);
+                pendingUpdates.delete(filePath);
+                return;
+            }
+            
+            log.debug(`Tool is busy. Delaying backup request for ${filePath} (attempt ${retryCount + 1}/${MAX_BACKUP_RETRIES})`);
+            backupRetries.set(filePath, retryCount + 1);
+            
+            setTimeout(() => processBackup(filePath, currentTime), 10000);
+        } else {
+            // Clear retry count on success
+            backupRetries.delete(filePath);
+            
+            // Validate JSON before backing up
+            if (path.extname(filePath) === '.json') {
+                fs.readFile(filePath, 'utf8', (readErr, data) => {
+                    if (readErr) {
+                        log.warn(`Cannot read file for backup validation: ${filePath} - ${readErr.message}`);
+                        return;
+                    }
+                    
+                    try {
+                        JSON.parse(data); // Validate JSON
+                        performBackup(filePath, currentTime);
+                    } catch (parseErr) {
+                        log.warn(`Skipping backup of invalid JSON file: ${filePath} - ${parseErr.message}`);
+                        return;
+                    }
+                });
+            } else {
+                // Non-JSON files, backup normally
+                performBackup(filePath, currentTime);
+            }
+        }
+    });
+}
+
 // Track the last backup time and pending updates
 let lastBackupTime = 0;
 let pendingUpdates = new Map(); // filepath -> { flagged: true, lastAttempt: timestamp }
@@ -26,7 +80,16 @@ let deferredTimer = null;
 
 // Function to check tool state
 function isToolBusy(callback) {
-    const isBusy = machine.machine.status.state === "running" || machine.machine.status.state === "manual";
+    const state = machine.machine.status.state;
+    const stat = machine.machine.status.stat; // G2 motion status
+    
+    // Consider busy if:
+    // 1. Actually running a file
+    // 2. In manual mode AND actually moving (stat === 5)
+    const isBusy = state === "running" || 
+                   (state === "manual" && stat === 5);
+    
+    log.debug(`Tool state check: state=${state}, stat=${stat}, busy=${isBusy}`);
     callback(isBusy);
 }
 

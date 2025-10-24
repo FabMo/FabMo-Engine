@@ -957,16 +957,16 @@ Engine.prototype.start = function (callback) {
             function copy_backup_and_start_watcher(callback) {
                 var configWatcher = require("./config_watcher");
                 
-                log.info("Copying backup and starting watcher...");
-                const engineVersion = this.version ? this.version.number : "unknown";
+                log.info("NOT! Copying backup and starting watcher...");
+                // const engineVersion = this.version ? this.version.number : "unknown";
                 
-                configWatcher.copyBackupAtStart(function (err) {
-                    if (err) {
-                        log.error("Error copying backup at start: " + err.message);
-                    }
-                    configWatcher.startWatcher();
-                    callback();
-                }, engineVersion); // Pass the version here
+                // configWatcher.copyBackupAtStart(function (err) {
+                //     if (err) {
+                //         log.error("Error copying backup at start: " + err.message);
+                //     }
+                //     configWatcher.startWatcher();
+                //     callback();
+                // }, engineVersion); // Pass the version here
             }.bind(this),
 
             /**

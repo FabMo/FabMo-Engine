@@ -43,6 +43,7 @@ function ManualDriver(drv, st, mode) {
     this.fixedQueue = [];
     this.entered = false;
     this.exited = false;
+    this.exiting = false; // Add flag to prevent re-entry
     this.fromFile = false;
     this.gotoModeHold = false;
 
@@ -113,6 +114,12 @@ ManualDriver.prototype.enter = function () {
 // Exit the machining cycle
 // This stops motion if it is in progress, and restores the settings changed in enter()
 ManualDriver.prototype.exit = function () {
+    // Prevent multiple simultaneous exits
+    if (this.exiting) {
+        log.debug("Exit already in progress - ignoring duplicate exit command");
+        return;
+    }
+    
     if (this.isMoving()) {
         // Don't exit yet - just pend.
         log.debug("Pending the exit");
@@ -120,7 +127,11 @@ ManualDriver.prototype.exit = function () {
         this.stopMotion();
     } else {
         log.debug("Executing immediate exit");
-        this.driver.manual_hold = false; // PROBLEM area for exiting SK when used in file
+        
+        // Set flag immediately to prevent re-entry
+        this.exiting = true;
+        
+        this.driver.manual_hold = false;
 
         // Check if stream exists before trying to write to it
         if (!this.stream) {
@@ -137,35 +148,39 @@ ManualDriver.prototype.exit = function () {
                 this.stream.write("{xjm:" + jerkXY + "}\n");
                 this.stream.write("{yjm:" + jerkXY + "}\n");
                 this.stream.write("{zjm:" + jerkZ + "}\n");
-                this.stream.write("{spph:true}\n"); // restore spph behavior
-                // Restore generic feedrate (this is mostly for appearance of first move if a rapid)
+                this.stream.write("{spph:true}\n");
+                
                 var feedXY = config.opensbp._cache.movexy_speed || 3;
                 var uMult = 1;
                 if (config.machine._cache.units === "in") {
                     uMult = 25.4;
                 }
-                feedXY = feedXY * uMult * 60; // convert to mm/min
+                feedXY = feedXY * uMult * 60;
                 this.stream.write("M100 ({feed:" + feedXY + "})\n");
-                // Other potential additional Manual Keypad post-pend commands
                 break;
             case "raw":
-                // Potential additional Manual 'raw' post-pend commands
                 break;
             default:
                 log.warn("Unknown manual drive mode on exit: " + this.mode);
                 break;
         }
-        this.stream.write("G61\n"); // don't leave in exact stop mode from nudge
+        
+        this.stream.write("G61\n");
         if (this.fromFile) {
-            this.stream.write("M0\n"); // avoid triggering stat:4 when in file
+            this.stream.write("M0\n");
         } else {
             this.stream.write("M30\n");
             this.stream.write("{out4:0}\n");
-            this.stream.write("{out1:0}\n"); // just in case, turn off spindle
+            this.stream.write("{out1:0}\n");
         }
+        
         this.driver.removeListener("status", this.status_handler);
         this.exited = true;
-        this._done();
+
+        // Give a brief moment for commands to flush
+        setTimeout(() => {
+            this._done();
+        }, 100);
     }
 };
 
@@ -258,7 +273,7 @@ ManualDriver.prototype.stopMotion = function () {
     if (!this.gotoModeHold) {
         this.driver.queueFlush(
             function () {
-                this.driver._write("%\n"); // Will send flush as callback
+            //    this.driver._write("%\n"); // Will send flush as callback
             }.bind(this)
         );
     }
@@ -677,9 +692,9 @@ ManualDriver.prototype._onG2Status = function (status) {
             } else {
                 // extra flushes may be coming from here
                 this.stop_pending = false;
-                if (!this.driver.pause_hold && this.driver.status.hold === 0) {
-                    this.driver._write("%\n"); // flush feed-hold and get stat
-                }
+                // if (!this.driver.pause_hold && this.driver.status.hold === 0) {
+                //     this.driver._write("%\n"); // flush feed-hold and get stat
+                // }
                 if (this.exit_pending) {
                     this.exit();
                 }
@@ -695,6 +710,7 @@ ManualDriver.prototype._done = function () {
     this.keep_moving = false;
     this.stream = null;
     this.entered = false;
+    this.exiting = false; // Reset the flag
     this.deferred.resolve();
 };
 

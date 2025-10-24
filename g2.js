@@ -468,8 +468,18 @@ G2.prototype.onData = function (data) {
                 // log.debug(JSON.stringify(obj, null, 4));
                 this.onMessage(obj);
             } catch (e) {
+                // allow higher-level handling/logging
                 this.handleExceptionReport(e);
-                throw e;
+
+                // When suppressed, just log and continue instead of throwing exception
+                // Use to allow g2 streaming of additonal debug info even if json not json-parsable
+                this._suppressJsonErrors = false;  // i.e. set true for debugging g2 firmware w/debug comments
+                if (this._suppressJsonErrors) {
+                    log.warn("Ignored JSON parse error:", e && e.message);
+                } else {
+                    throw e;
+                }
+
             } finally {
                 // if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
                 // and if we fail to parse, we still clear the line and start anew.
@@ -770,45 +780,41 @@ G2.prototype.queueFlush = function (callback) {
 // Like the quit() function below, to issue another resume while the first one is pending can
 // make the system crashy - so we're careful not to do that.
 // This function returns a promise that resolves when the machining cycle has resumed.
-G2.prototype.resume = function () {
-    this.status.resumeFlag = true;
-    var thisPromise = _promiseCounter;
-    if (this.resumePending) {
-        return;
-    }
-    log.info("Creating promise from resume " + thisPromise);
-    _promiseCounter += 1;
-    this.resumePending = true;
-    var deferred = Q.defer();
-    var that = this;
-    var onStat = function (stat) {
-        if (stat !== STAT_RUNNING) {
-            if (this.quit_pending && stat === STAT_HOLDING) {
-                return;
-            }
-            that.removeListener("stat", onStat);
-            //            log.info("Resolving promise (resume): " + thisPromise);
-            this.resumePending = false;
-            deferred.resolve(stat);
+G2.prototype.resume = function () { 
+//    if (this.status.hold === 10) { // don't handle resume request until stopped in hold
+        this.status.resumeFlag = true;
+        var thisPromise = _promiseCounter;
+        if (this.resumePending) { // don't double-resume
+            return;
         }
-    };
+        log.info("Creating promise from resume " + thisPromise);
+        _promiseCounter += 1;
+        this.resumePending = true;
+        var deferred = Q.defer();
+        var that = this;
+        var onStat = function (stat) {
+            if (stat !== STAT_RUNNING) {
+                if (this.quit_pending && stat === STAT_HOLDING) {
+                    return;
+                }
+                that.removeListener("stat", onStat);
+                //            log.info("Resolving promise (resume): " + thisPromise);
+                this.resumePending = false;
+                deferred.resolve(stat);
+            }
+        };
 
-    this.on("stat", onStat);
-    this._write("~"); //cycle start command character
+        this.on("stat", onStat);
+        this._write("~"); //cycle start command character
 
-    if (this.context) {
-        this.context.resume();
-    }
+        if (this.context) {
+            this.context.resume();
+        }
 
-    this.pause_flag = false;
-    // Was getting too many SR's competing with stack-breaking, so ...
-    // this.requestStatusReport(
-    //     function () {
-    //         this.pause_flag = false;
-    //     }.bind(this)
-    // );
+        this.pause_flag = false;
 
-    return deferred.promise;
+        return deferred.promise;
+//    };  
 };
 
 // Quit means to stop the tool and abandon the machining cycle.
