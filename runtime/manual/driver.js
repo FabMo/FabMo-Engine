@@ -273,7 +273,7 @@ ManualDriver.prototype.stopMotion = function () {
     if (!this.gotoModeHold) {
         this.driver.queueFlush(
             function () {
-            //    this.driver._write("%\n"); // Will send flush as callback
+                this.driver._write("%\n"); // Will send flush as callback
             }.bind(this)
         );
     }
@@ -692,9 +692,9 @@ ManualDriver.prototype._onG2Status = function (status) {
             } else {
                 // extra flushes may be coming from here
                 this.stop_pending = false;
-                // if (!this.driver.pause_hold && this.driver.status.hold === 0) {
-                //     this.driver._write("%\n"); // flush feed-hold and get stat
-                // }
+                if (!this.driver.pause_hold && this.driver.status.hold === 0) {
+                    this.driver._write("%\n"); // flush feed-hold and get stat
+                }
                 if (this.exit_pending) {
                     this.exit();
                 }

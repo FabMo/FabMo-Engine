@@ -473,9 +473,9 @@ G2.prototype.onData = function (data) {
 
                 // When suppressed, just log and continue instead of throwing exception
                 // Use to allow g2 streaming of additonal debug info even if json not json-parsable
-                this._suppressJsonErrors = false;  // i.e. set true for debugging g2 firmware w/debug comments
+                this._suppressJsonErrors = true;  // i.e. set true for debugging g2 firmware w/debug comments
                 if (this._suppressJsonErrors) {
-                    log.warn("Ignored JSON parse error:", e && e.message);
+                    // log.warn("alt Parse:", e && e.message);
                 } else {
                     throw e;
                 }
