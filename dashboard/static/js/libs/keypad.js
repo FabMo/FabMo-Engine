@@ -23,6 +23,7 @@
         this.pressTime = 150;
         this.tapInterval = 150;
         this.target = null;
+        this.slideOffDetected = false; // Track slide-off state
     };
 
 
@@ -250,28 +251,16 @@
                     this.end();
                 }.bind(this));
                 
-                hammer.on("panend", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    this.end();
-                }.bind(this));
-                
-                hammer.on("pancancel", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    this.end();
-                }.bind(this));
-                
+                // FIXED: Only end once when pan starts, don't trigger repeatedly
                 hammer.on("panstart", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
-                    this.end();
-                }.bind(this));
-                
-                hammer.on("panmove", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    if (evt.distance > 15) {
-                        this.end();
+                    if (this.going) {
+                        this.cleanStop();
                     }
                 }.bind(this));
-
+                
+                // FIXED: Remove panend, pancancel, panmove handlers that cause repeated stops
+                
                 $(element).on("touchstart", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
                     
@@ -301,20 +290,28 @@
                 
                 $(element).on("touchend", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
-                    
-                    setTimeout(() => {
-                        this.touchStartTime = null;
-                        this.currentTouchElement = null;
-                    }, 50);
-                    
+               
+                    // Only call end if we haven't already handled slide-off
+                    if (this.going && !this.slideOffDetected) {
+                        this.end();
+                    }
+
+                setTimeout(() => {
+                    this.touchStartTime = null;
                     this.currentTouchElement = null;
+                    this.slideOffDetected = false;
+                }, 50);
+                    
                 }.bind(this));
 
                 $(element).on("blur", this.end.bind(this));
                 $(element).on("mouseleave", this.onDriveMouseleave.bind(this));
                 $(element).on("touchcancel", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
-                    this.end();
+                    if (this.going && !this.slideOffDetected) {
+                        this.cleanStop();
+                    }
+                    this.slideOffDetected = false;
                 }.bind(this));
                 
                 $(document).on("scroll", this.end.bind(this));
@@ -587,6 +584,34 @@
         this.emit("stop", null);
     };
 
+    Keypad.prototype.cleanStop = function () {
+        console.log("Keypad: Clean stop called (slide-off detected)");
+        
+        // Immediately set flags to prevent re-entry
+        if (!this.going) {
+            return; // Already stopped
+        }
+        
+        this.going = false;
+        this.enabled = false;
+        
+        // Clear the refresh timer
+        if (this.interval) {
+            clearTimeout(this.interval);
+            this.interval = null;
+        }
+        
+        // Update UI
+        this.elem
+            .find(".drive-button")
+            .removeClass("drive-button-active")
+            .removeClass("drive-button-active-transient")
+            .addClass("drive-button-inactive");
+        
+        // Emit stop ONCE
+        this.emit("stop", null);
+    };    
+
     Keypad.prototype.onDrivePress = function (evt) {
         if (this.guardAgainstExitButton()) return;
         if (this.going) {
@@ -729,26 +754,14 @@
         
         // FIXED: Don't process mouseleave if we're not actually in motion
         if (!this.going) {
-            console.log("Keypad: Ignoring mouseleave - not in motion");
             return;
         }
         
-        // FIXED: Don't process mouseleave if keypad is disabled
-        if (!this.enabled) {
-            console.log("Keypad: Ignoring mouseleave - keypad disabled");
-            return;
+        // FIXED: Only process once - use cleanStop instead of end
+        if (this.going) {
+            console.log("Keypad: Mouse left button - clean stopping");
+            this.cleanStop();
         }
-        
-        // Small delay to avoid race conditions with touch events
-        setTimeout(() => {
-            // Double-check conditions after delay
-            if (!this.touchStartTime && !this.currentTouchElement && this.going && this.enabled) {
-                console.log("Keypad: Processing mouseleave after delay");
-                this.end();
-            } else {
-                console.log("Keypad: Mouseleave cancelled after delay - conditions changed");
-            }
-        }, 10);
     };
 
     return Keypad;

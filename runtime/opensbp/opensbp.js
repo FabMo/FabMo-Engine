@@ -1912,7 +1912,7 @@ SBPRuntime.prototype._setUnits = function (units) {
         return;
     }
 
-    // Handle the update to new units and their display; using OpenSBP runtime for convenience, even it user may not use OpenSBP
+    // Handle the update to new units and their display; using OpenSBP runtime for convenience, even if user may not use OpenSBP
     var convert = units === "in" ? u.mm2in : u.in2mm;
     var convertR = units === "in" ? u.mm2inR : u.in2mmR; // Round to keep display of speeds clean
     this.movespeed_xy = convertR(this.movespeed_xy);

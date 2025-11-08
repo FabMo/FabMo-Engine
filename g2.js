@@ -460,22 +460,22 @@ G2.prototype.onData = function (data) {
             // eslint flags t as unused, used for logging
             // eslint-disable-next-line no-unused-vars
             t = new Date().getTime();
-            log.g2("S", "in", json_string);
             try {
                 // Responses from G2 are in JSON format (always) so we parse them out, and handle the messages
                 var obj = JSON.parse(json_string);
-                //log.debug("<<<Parsing G2 return:");
-                // log.debug(JSON.stringify(obj, null, 4));
+                log.g2("S", "in", json_string);
                 this.onMessage(obj);
             } catch (e) {
-                // allow higher-level handling/logging
                 this.handleExceptionReport(e);
-
-                // When suppressed, just log and continue instead of throwing exception
-                // Use to allow g2 streaming of additonal debug info even if json not json-parsable
-                this._suppressJsonErrors = true;  // i.e. set true for debugging g2 firmware w/debug comments
+                // When suppressed = true
+                // Use to allow g2 streaming of additonal debug info even if not json-parsable
+                this._suppressJsonErrors = false;  // i.e. set true for debugging g2 firmware w/debug comments
                 if (this._suppressJsonErrors) {
-                    // log.warn("alt Parse:", e && e.message);
+                    // Optionally log non-JSON debug lines
+                    // Comment/Uncomment log line to manage G2 debug visibility
+                    if (json_string && json_string.trim().length > 0) {
+                        log.g2("S", "in", json_string);  // Use "db" token for debug lines
+                    }
                 } else {
                     throw e;
                 }
