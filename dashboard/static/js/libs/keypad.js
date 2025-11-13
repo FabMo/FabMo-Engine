@@ -259,8 +259,6 @@
                     }
                 }.bind(this));
                 
-                // FIXED: Remove panend, pancancel, panmove handlers that cause repeated stops
-                
                 $(element).on("touchstart", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
                     
@@ -344,7 +342,7 @@
             target.id === 'action-4' ||
             target.id === 'action-5' ||
             
-            // FIXED: Go To, Set Coordinates, Manual Stop buttons
+            // Go To, Set Coordinates, Manual Stop buttons
             $target.hasClass('go-to') ||
             $target.closest('.go-to').length > 0 ||
             $target.hasClass('set-coordinates') ||
@@ -352,12 +350,12 @@
             $target.hasClass('manual-stop') ||
             $target.closest('.manual-stop').length > 0 ||
             
-            // FIXED: Zero buttons
+            // Zero buttons
             $target.hasClass('zero-button') ||
             $target.closest('.zero-button').length > 0 ||
             target.className && target.className.includes('zero-') ||
             
-            // FIXED: Speed slider and fixed distance controls
+            // Speed slider and fixed distance controls
             target.id === 'manual-move-speed' ||
             $target.hasClass('slider') ||
             $target.closest('.slidecontainer').length > 0 ||
@@ -366,13 +364,13 @@
             $target.hasClass('fixed-step-value') ||
             $target.closest('.fixed-input-container').length > 0 ||
             
-            // FIXED: Axis input boxes that trigger goto
+            // Axis input boxes that trigger goto
             $target.hasClass('axi') ||
             $target.hasClass('modal-axi') ||
             target.id === 'X' || target.id === 'Y' || target.id === 'Z' ||
             target.id === 'A' || target.id === 'B' || target.id === 'C' ||
             
-            // FIXED: Any button or input in the go-to container
+            // Any button or input in the go-to container
             $target.closest('.go-to-container').length > 0 ||
             $target.closest('.read-out-container').length > 0 ||
             
@@ -752,12 +750,12 @@
             return;
         }
         
-        // FIXED: Don't process mouseleave if we're not actually in motion
+        // Don't process mouseleave if we're not actually in motion
         if (!this.going) {
             return;
         }
         
-        // FIXED: Only process once - use cleanStop instead of end
+        // Only process once - use cleanStop instead of end
         if (this.going) {
             console.log("Keypad: Mouse left button - clean stopping");
             this.cleanStop();
