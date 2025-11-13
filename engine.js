@@ -662,6 +662,20 @@ Engine.prototype.start = function (callback) {
                 config.configureOpenSBP(callback);
             }.bind(this),
 
+            // Do Update to get opensbp elements to G2 at startup; could be more efficient
+            function save_opensbp_update(callback) {
+                log.info("Updating/Synchronizing Elements of OpenSBP configuration...");
+                config.opensbp.update({}, function (err) {
+                    if (err) {
+                        log.error("Failed to save opensbp.json: " + (err && err.message ? err.message : err));
+                    } else {
+                        log.info("opensbp.json saved successfully");
+                    }
+                    // Continue startup regardless of save result
+                    callback(null);
+                });
+            }.bind(this),
+
             // Apply the machine config.  See config/machine_config.js for what this entails
             function apply_machine_config(callback) {
                 log.info("Applying machine configuration...");

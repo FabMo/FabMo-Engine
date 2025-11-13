@@ -120,7 +120,7 @@ function offsets(args, callback) {
 async function machineLoc(args) {
     log.debug("STARTING machineLoc change - UPPER Register > " + args);
     // Process Upper Register for Setting Machine Location (needs to be done before offsets if there are any)
-    const subArgs = args.slice(6, 11); // Check to see if there are any values in top of array
+    const subArgs = args.slice(6, 12); // Check to see if there are any values in top of array
     if (subArgs.some((val) => val !== undefined)) {
         log.debug("Found Machine Base Changes now being Processed First!");
         let updtMachineLoc = "";
@@ -137,6 +137,8 @@ async function machineLoc(args) {
             // set Z Machine Base Coordinate
             updtMachineLoc += "Z" + args[8];
         }
+        
+        // ABC must be managed as G2 converts ABC assuming rotary based on units
         if (args[9] !== undefined) {
             // set A Machine Base Coordinate
             updtMachineLoc += "A" + args[9];
