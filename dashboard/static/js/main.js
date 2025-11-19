@@ -531,7 +531,7 @@ function handleMobileCaching() {
     }
 }
 
-// Then your existing engine.getVersion call continues...
+// Then existing engine.getVersion call continues...
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
 

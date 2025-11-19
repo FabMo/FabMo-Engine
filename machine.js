@@ -132,6 +132,7 @@ function Machine(control_path, callback) {
         nb_lines: null,
         auth: false,
         hideKeypad: false,
+        hold: 0,
         inFeedHold: false,
         resumeFlag: false,
         quitFlag: false,
@@ -1299,7 +1300,7 @@ Machine.prototype.quit = function (callback) {
     }
 };
 
-// Resume from the paused state.
+// Resume from the paused state (during the resume process, a nested feedhold may occur)
 Machine.prototype.resume = function (callback, input = false) {
     if (this.driver.pause_hold) {
         //Release driver pause hold
@@ -1322,6 +1323,8 @@ Machine.prototype.resume = function (callback, input = false) {
         callback(null, "resumed");
     } else {
         this.driver.resumePending = false; // * important to clear for multiple stackbreaks
+        this.status.hold = 0  // maybe redundant with g2core?
+        this.emit("status", this.status);
         log.debug("Undefined callback passed to resume; cleared .resumePending");
     }
 };

@@ -606,21 +606,6 @@ const { last } = require("underscore");
                 $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
                 $(that.stop_button_selector + " div:first-child").removeClass("spinner red");
             }
-            // } else if (status.state === "manual") {
-            //     that.allowKeypad();
-            //     $(".tab-bar").addClass("manual");
-            //     $(that.status_div_selector).removeClass(
-            //         "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"
-            //     );
-            //     $(that.status_div_selector).removeClass("fabmo-status-running");
-            //     $(".tools-current > li a").removeClass("disc err").addClass("paus");
-            //     $(that.state_selector).html(statename);
-
-            //     if (that.file_control) {
-            //         $(that.stop_button_selector).hide();
-            //         $(that.resume_button_selector).hide();
-            //         $(that.pause_button_selector).hide();
-            //     }
         } else if (status.state === "paused") {
             $(that.status_div_selector).removeClass(
                 "fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough"
@@ -630,19 +615,30 @@ const { last } = require("underscore");
             $(that.state_selector).html(statename);
             $(".exit-button").hide();
             if (that.file_control) {
-                if (status.inFeedHold) {
+                // When FabMo is in feedhold, display resume button IF fully stopped
+                if (status.inFeedHold && (status.hold === 10)) {  // only when fully stopped
                     $(that.stop_button_selector).show();
                     $(that.pause_button_selector).hide();
                     $(that.resume_button_selector).show();
+                    // Clear spinners only when fully stopped and ready for Resume/Quit
+                    $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
+                    $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
                 }
-                //While FabMo is resuming from feedhold, display stop button
-                if (status.resumeFlag) {
+                // While FabMo is resuming from feedhold, display pause button (acts as stop)
+                else if (status.resumeFlag) {
                     $(that.stop_button_selector).hide();
                     $(that.pause_button_selector).show();
                     $(that.resume_button_selector).hide();
+                    // Don't clear pause button spinner - it may have been clicked during resume
                 }
-                $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
-                $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
+                // If stopping in progress (hold > 0 but < 10), show pause button with spinner
+                else if (status.inFeedHold && status.hold > 0 && status.hold < 10) {
+                    $(that.stop_button_selector).hide();
+                    $(that.pause_button_selector).show();
+                    $(that.resume_button_selector).hide();
+                    // Keep the spinner visible during the stopping process
+                    // Don't clear it here - let it persist from the click handler
+                }
             }
         } else if (status.state === "passthrough") {
             that.forbidKeypad();
@@ -666,7 +662,7 @@ const { last } = require("underscore");
             $(that.state_selector).html(status.state);
             $(".exit-button").hide();
 
-            if (that.file_control) {
+            if (that.file_control  && (status.hold === 10)) { // only when fully stopped
                 $(that.pause_button_selector).hide();
                 $(that.resume_button_selector).show();
                 $(that.stop_button_selector).hide();

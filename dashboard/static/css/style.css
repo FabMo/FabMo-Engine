@@ -1109,44 +1109,43 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .pauseJob div {
 	color: #ffffff;
-	font-size: 35px;
+	font-size: 50px;
 	font-family: Arial;
 	z-index: 10;
 
 }
 
 .pauseJob-wrapper {
-	display: block;
-	align-items: center;
-	justify-content: center;
+    display: block;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-	position: relative;
-	margin-left: auto;
-	margin-right: auto;
-	width: 36%;
-	height: 150px;
-	margin-top: 12px;
-	background: #ff0000;
-	border: solid 5px #A60000;
-	border-radius: 5px;
-	text-decoration: none;
-	transition: border background-color 2s linear;
-	-webkit-user-select: none;  /* Chrome all / Safari all */
-      -moz-user-select: none;     /* Firefox all */
-        -ms-user-select: none;      /* IE 10+ */
-          user-select: none;
+    position: relative;
+    margin-left: auto;
+    margin-right: 30rem; /* Shift to the right by adding right margin */
+    width: 200px; /* Make width equal to height for perfect circle */
+    height: 200px;
+    margin-top: -12px;
+    background: #ff0000;
+    border: solid 5px #A60000;
+    border-radius: 50%; /* Change from 25% to 50% for perfect circle */
+    text-decoration: none;
+    transition: border background-color 2s linear;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .pauseJob {
     display: flex;
     cursor: pointer;
-	align-items: center;
-	justify-content: center;
-	transition: all 1s;
-	width: 100%;
-   	height: 100%;
+    align-items: center;
+    justify-content: center;
+    transition: all 1s;
+    width: 100%; /* Changed from 30% to 100% to fill the circular container */
+    height: 100%; /* Changed from 120% to 100% */
 }
-
 
 .fabmo-resume-stop {
     margin-top: 12px;
@@ -1185,8 +1184,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	line-height: 3.3em;
 	text-decoration: none;
 	transition: all 1s;
-	width: 100%;
+	width: 80%;
    	height: 50%;
+	margin-left:-25%
 }
 
 
