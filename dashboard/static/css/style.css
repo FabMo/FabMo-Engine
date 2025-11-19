@@ -1109,7 +1109,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .pauseJob div {
 	color: #ffffff;
-	font-size: 50px;
+	font-weight: bolder;
+	font-size: 80px;
 	font-family: Arial;
 	z-index: 10;
 
@@ -1123,12 +1124,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     position: relative;
     margin-left: auto;
     margin-right: 30rem; /* Shift to the right by adding right margin */
-    width: 200px; /* Make width equal to height for perfect circle */
-    height: 200px;
+    width: 240px; /* Make width equal to height for perfect circle */
+    height: 180px;
     margin-top: -12px;
-    background: #ff0000;
-    border: solid 5px #A60000;
-    border-radius: 50%; /* Change from 25% to 50% for perfect circle */
+    background: #ffda29;
+    border: solid 15px #a66600;
+    border-radius: 30%; /* Change from 25% to 50% for perfect circle */
     text-decoration: none;
     transition: border background-color 2s linear;
     -webkit-user-select: none;
@@ -1168,8 +1169,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 
 .pauseJob.blink{
-	border: 5px solid #ff0000;
-	background-color: #A60000;
+	border: 5px solid #ffda29;
+	background-color: #a66600;
 	transition: border background-color 2s linear;
 }
 
@@ -2606,9 +2607,9 @@ input[type='range']:focus {
 	content: '';
   }
   .spinner.red:after {
-	background: #ff0000;
-	width: 75%;
-	height: 75%;
+	background: #ffda29;
+	width: 50%;
+	height: 50%;
 	border-radius: 50%;
 	content: '';
 	margin: auto;
