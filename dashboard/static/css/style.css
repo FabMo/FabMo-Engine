@@ -1108,7 +1108,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .pauseJob div {
-	color: #ffffff;
+	color: #233564;
 	font-weight: bolder;
 	font-size: 80px;
 	font-family: Arial;
@@ -1123,15 +1123,17 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     cursor: pointer;
     position: relative;
     margin-left: auto;
-    margin-right: 30rem; /* Shift to the right by adding right margin */
-    width: 240px; /* Make width equal to height for perfect circle */
-    height: 180px;
-    margin-top: -12px;
+    margin-right: 25rem;
+    width: 240px;
+    height: 160px;
+    margin-top: 7px;
     background: #ffda29;
-    border: solid 15px #a66600;
-    border-radius: 30%; /* Change from 25% to 50% for perfect circle */
+    border: solid 5px #ffc045;
+    border-radius: 40px;
     text-decoration: none;
-    transition: border background-color 2s linear;
+	/* Option 1: Add box-shadow blur */
+	box-shadow: 4px 4px 4px 4px rgb(0, 0, 0);
+	transition: border background-color box-shadow 2s linear;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -1149,10 +1151,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .fabmo-resume-stop {
-    margin-top: 12px;
+    margin-top: 20px;
 	position: relative;
-    width: 36%;
-	height: 150px;
+    width: 30%;
+	height: 120px;
     display: block;
     text-align: center;
     margin-right: auto;
@@ -1194,12 +1196,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .stopJob {
    background: #ff0000;
    border: solid #ff0000 1px;
-   border-radius: 0 0 5px 5px;
+   border-radius: 0 0 10px 10px;
 }
 .resumeJob {
     background: #32B433;
 	border: solid #00A600 1px;
-    border-radius: 5px 5px 0 0;
+    border-radius: 10px 10px 0 0;
 }
 
 .currentContainer {
@@ -2597,10 +2599,10 @@ input[type='range']:focus {
 
   }
   .spinner:before {
-	width: 50%;
-	height: 50%;
+	width: 20%;
+	height: 20%;
 	background: #fff;
-	border-radius: 100% 0 0 0;
+	border-radius: 40% 0 0 0;
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -2608,9 +2610,10 @@ input[type='range']:focus {
   }
   .spinner.red:after {
 	background: #ffda29;
-	width: 50%;
-	height: 50%;
-	border-radius: 50%;
+	width: 20%;
+	height: 20%;
+	border-width: 10px;
+	border-radius: 30%;
 	content: '';
 	margin: auto;
 	position: absolute;

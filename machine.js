@@ -1213,6 +1213,47 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
     }
 };
 
+
+// // Pause the machine
+// Machine.prototype.pause = function (callback) {
+//     log.debug("====> Machine.pause() called, current state: " + this.status.state);
+//     log.debug("====> pauseTimer exists: " + !!this.pauseTimer);
+//     log.debug("====> current_runtime: " + (this.current_runtime ? this.current_runtime.toString() : "none"));
+    
+//     if (this.status.state === "running" || this.status.state === "probing") {
+//         if (this.current_runtime) {
+//             log.debug("====> Handling .pause in Machine, to cur_runtime.pause()");
+            
+//             // Clear pauseTimer if it exists (handles early Stop during file start)
+//             if (this.pauseTimer) {
+//                 log.debug("====> Clearing pauseTimer during running->pause transition");
+//                 clearTimeout(this.pauseTimer);
+//                 this.pauseTimer = false;
+//             }
+            
+//             this.current_runtime.pause();
+//             callback(null, "paused");
+//         } else {
+//             callback("Not pausing because no runtime provided");
+//         }
+//     } else if (this.status.state === "paused") {
+//         // Already paused - just clear the timer if present
+//         // DO NOT call setState() as that creates the center modal
+//         if (this.pauseTimer) {
+//             log.debug("====> User Stop during timed pause - clearing timer only");
+//             clearTimeout(this.pauseTimer);
+//             this.pauseTimer = false;
+//             // Just emit status without changing state
+//             // This allows the dashboard to show the footer modal
+//             this.emit("status", this.status);
+//         }
+//         callback(null, "paused");
+//     } else {
+//         log.debug("====> Not pausing, state is: " + this.status.state);
+//         callback("Not pausing because machine is not running");
+//     }
+// };
+
 // Pause the machine
 Machine.prototype.pause = function (callback) {
     if (this.status.state === "running" || this.status.state === "probing") {
@@ -1228,7 +1269,7 @@ Machine.prototype.pause = function (callback) {
         if (this.pauseTimer) {
             clearTimeout(this.pauseTimer);
             this.pauseTimer = false;
-            this.setState(this, "paused", { message: "Paused by user" });
+            this.setState(this, "paused", { message: "Paused in a 'Pause' programmed in your file" });
         } else {
             this.current_runtime.pause();
         }

@@ -760,6 +760,10 @@ const { last } = require("underscore");
         var that = this;
         //    console.log("ADD red spinner pause_button");
         $(that.pause_button_selector).click(function (e) {
+            // debug: log selector counts to confirm we are targeting the right element
+            try {
+                console.debug("Pause click selectors:", that.pause_button_selector, $(that.pause_button_selector).length, $(that.pause_button_selector + " div div:first-child").length);
+            } catch (err) {}
             $(that.pause_button_selector + " div div:first-child").addClass("spinner red");
             that.pause();
         });
@@ -781,6 +785,19 @@ const { last } = require("underscore");
                 }
             });
         });
+    };
+
+    // Add centralized spinner clear method
+    FabMoUI.prototype.clearSpinners = function () {
+        try {
+            $(this.resume_button_selector + " div:first-child").removeClass("spinner green");
+            $(this.stop_button_selector + " div:first-child").removeClass("spinner red");
+            $(this.pause_button_selector + " div div:first-child").removeClass("spinner red");
+            // also attempt a more generic cleanup in case DOM structure differs
+            $(this.file_control_selector).find(".spinner").removeClass("spinner green red");
+        } catch (e) {
+            console.debug("clearSpinners error", e);
+        }
     };
 
     return FabMoUI;
