@@ -1107,15 +1107,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	box-shadow: 0px -2px 15px -6px rgba(0,0,0,0.75);
 }
 
-.pauseJob div {
-	color: #233564;
-	font-weight: bolder;
-	font-size: 80px;
-	font-family: Arial;
-	z-index: 10;
-
-}
-
 .pauseJob-wrapper {
     display: block;
     align-items: center;
@@ -1131,9 +1122,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     border: solid 5px #ffc045;
     border-radius: 40px;
     text-decoration: none;
-	/* Option 1: Add box-shadow blur */
-	box-shadow: 4px 4px 4px 4px rgb(0, 0, 0);
-	transition: border background-color box-shadow 2s linear;
+    box-shadow: 4px 4px 4px 4px rgb(0, 0, 0);
+    transition: border background-color box-shadow 2s linear;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -1146,8 +1136,17 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     align-items: center;
     justify-content: center;
     transition: all 1s;
-    width: 100%; /* Changed from 30% to 100% to fill the circular container */
-    height: 100%; /* Changed from 120% to 100% */
+    width: 100%;
+    height: 100%;
+    position: relative; /* Needed for spinner positioning */
+}
+
+.pauseJob div {
+    color: #233564;
+    font-weight: bolder;
+    font-size: 80px;
+    font-family: Arial;
+    z-index: 10;
 }
 
 .fabmo-resume-stop {
@@ -1165,10 +1164,17 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
           user-select: none;
 }
 
-
-
-
-
+.halting-label {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: #233564;
+    font-weight: normal;
+    opacity: 0.8;
+    z-index: 11;
+}
 
 .pauseJob.blink{
 	border: 5px solid #ffda29;
@@ -2583,89 +2589,93 @@ input[type='range']:focus {
 /* Special Custom Style : rotations et animations */
 
 .spinner {
-	text-indent: -9999em;
-	width: 2.5em;
-	height: 2.5em;
-	border-radius: 50%;
-	background: #fff;
-	background: -moz-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	background: -webkit-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	background: -o-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	background: -ms-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	background: linear-gradient(to right, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	position: relative;
-	-webkit-animation: load3 1.4s infinite linear;
-	animation: load3 1.4s infinite linear;
+    text-indent: -9999em;
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+    background: #fff;
+    background: -moz-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -webkit-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -o-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -ms-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    background: linear-gradient(to right, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    -webkit-animation: load3 1.4s infinite linear;
+    animation: load3 1.4s infinite linear;
+}
 
-  }
-  .spinner:before {
-	width: 20%;
-	height: 20%;
-	background: #fff;
-	border-radius: 40% 0 0 0;
-	position: absolute;
-	top: 0;
-	left: 0;
-	content: '';
-  }
-  .spinner.red:after {
-	background: #ffda29;
-	width: 20%;
-	height: 20%;
-	border-width: 10px;
-	border-radius: 30%;
-	content: '';
-	margin: auto;
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-  }
+.spinner:before {
+    width: 50%;
+    height: 50%;
+    background: #fff;
+    border-radius: 100% 0 0 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: '';
+}
 
-  .spinner.green:after {
-	background: #32B433;
-	width: 75%;
-	height: 75%;
-	border-radius: 50%;
-	content: '';
-	margin: auto;
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-  }
+.spinner.red:after {
+    background: #ffda29;
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    content: '';
+    margin: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
 
-  @-webkit-keyframes load3 {
-	0% {
-	  -webkit-transform: rotate(0deg);
-	  transform: rotate(0deg);
-	}
-	100% {
-	  -webkit-transform: rotate(360deg);
-	  transform: rotate(360deg);
-	}
-  }
-  @keyframes load3 {
-	0% {
-	  -webkit-transform: rotate(0deg);
-	  transform: rotate(0deg);
-	}
-	100% {
-	  -webkit-transform: rotate(360deg);
-	  transform: rotate(360deg);
-	}
-  }
+.spinner.green:after {
+    background: #32B433;
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    content: '';
+    margin: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+@-webkit-keyframes load3 {
+    0% {
+        -webkit-transform: translate(-50%, -50%) rotate(0deg);
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        -webkit-transform: translate(-50%, -50%) rotate(360deg);
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes load3 {
+    0% {
+        -webkit-transform: translate(-50%, -50%) rotate(0deg);
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        -webkit-transform: translate(-50%, -50%) rotate(360deg);
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
 
 /* for feed rate override and keypad message */  
 @keyframes blink {
-	0% {opacity: 1;}
-	50% {opacity: 0;}
-	100% {opacity: 1;}
+    0% {opacity: 1;}
+    50% {opacity: 0;}
+    100% {opacity: 1;}
 }
 .blinking-text {
-	animation: blink 2.0s linear infinite;
+    animation: blink 2.0s linear infinite;
 }
 
 .logout_link_container{

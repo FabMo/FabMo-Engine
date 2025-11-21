@@ -813,7 +813,52 @@ table {
 }
 
 
+/* Play/Pause Button Base Styles */
+.play {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -40px 0 0 -40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
 
+.play i {
+  font-size: 32px;
+  color: #32B433;
+  transition: all 0.3s;
+}
+
+/* Loading State - Spinner */
+.play.loading i::before {
+  content: '\f110'; /* fa-spinner */
+  animation: spin 1.5s linear infinite;
+  color: #E3B505;
+}
+
+/* Active State (Running) - Show Pause Icon */
+.play.active i::before {
+  content: '\f04c'; /* fa-pause */
+  color: #9C210C;
+}
+
+/* Hover Effects */
+.play:hover i {
+  transform: scale(1.1);
+}
+
+/* Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+/*
 .play span {
   height: 80px;
   width: 80px;
@@ -938,6 +983,8 @@ table {
   -o-transform: rotate(90deg);
   transform: rotate(90deg);
 }
+*/
+
 
 /* Manage Transform section */
 .scale-row {
