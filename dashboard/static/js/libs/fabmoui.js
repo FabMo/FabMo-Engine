@@ -603,16 +603,15 @@ const { last } = require("underscore");
             $(that.state_selector).html(statename);
             
             if (that.file_control) {
+                console.log("Transitioning to running state - clearing spinners"); // Debug
+                
                 // Running: Pause is active, Resume/Quit inactive
                 $(that.stop_button_selector).show().addClass("inactive").removeClass("active");
                 $(that.pause_button_selector).show().addClass("active").removeClass("inactive");
                 $(that.resume_button_selector).show().addClass("inactive").removeClass("active");
-                $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
-                $(that.stop_button_selector + " div:first-child").removeClass("spinner red");
                 
-                // CRITICAL: Clear spinner and pausing label when transitioning to running
-                $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
-                $(that.pause_button_selector).find('.halting-label').remove();
+                // Call clearSpinners to clean up everything
+                that.clearSpinners();
             }
         } else if (status.state === "paused") {
             $(that.status_div_selector).removeClass(
@@ -626,12 +625,14 @@ const { last } = require("underscore");
             if (that.file_control) {
                 // Paused: Resume/Quit active, Pause inactive
                 if (status.inFeedHold && (status.hold === 10)) {
+                    console.log("Fully stopped - clearing spinners"); // Debug
+                    
                     $(that.stop_button_selector).show().addClass("active").removeClass("inactive");
                     $(that.pause_button_selector).show().addClass("inactive").removeClass("active");
                     $(that.resume_button_selector).show().addClass("active").removeClass("inactive");
+                    
                     // Clear spinners when fully stopped
-                    $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
-                    $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
+                    that.clearSpinners();
                 }
                 else if (status.resumeFlag) {
                     // Resuming: Pause active (acts as stop), Resume/Quit inactive
@@ -646,8 +647,6 @@ const { last } = require("underscore");
                     $(that.resume_button_selector).show().addClass("inactive").removeClass("active");
                 }
             }
-        
-
 
         } else if (status.state === "passthrough") {
             that.forbidKeypad();
@@ -769,12 +768,18 @@ const { last } = require("underscore");
         var that = this;
         
         $(that.pause_button_selector).click(function (e) {
-            // Add spinner
-            $(that.pause_button_selector + " div div:first-child").addClass("spinner red");
+            console.log("Pause button clicked"); // Debug
+            
+            // Add spinner to the icon
+            $(that.pause_button_selector).find("i").addClass("spinner red");
+            
+            // Hide the subtext and add pausing label
+            $(that.pause_button_selector).find('.pause-subtext').hide();
             
             // Add pausing label if it doesn't exist
-            if (!$(that.pause_button_selector).find('.halting-label').length) {
-                $(that.pause_button_selector).append('<div class="halting-label">... pausing</div>');
+            if (!$(that.pause_button_selector).find('.pausing-label').length) {
+                $(that.pause_button_selector).append('<div class="pausing-label">...pausing</div>');
+                console.log("Added pausing label"); // Debug
             }
             
             that.pause();
@@ -801,18 +806,27 @@ const { last } = require("underscore");
 
     // Add centralized spinner clear method
     FabMoUI.prototype.clearSpinners = function () {
+        console.log("clearSpinners called"); // Debug
+        
         try {
+            // Clear resume/quit spinners
             $(this.resume_button_selector + " div:first-child").removeClass("spinner green");
             $(this.stop_button_selector + " div:first-child").removeClass("spinner red");
-            $(this.pause_button_selector + " div div:first-child").removeClass("spinner red");
             
-            // Remove pausing label when clearing spinners
-            $(this.pause_button_selector).find('.halting-label').remove();
+            // Clear pause button spinner from icon
+            $(this.pause_button_selector).find("i").removeClass("spinner red");
+            
+            // Remove pausing label and restore subtext
+            $(this.pause_button_selector).find('.pausing-label').remove();
+            $(this.pause_button_selector).find('.pause-subtext').show();
+            
+            console.log("Spinners cleared"); // Debug
             
             // Generic cleanup
             $(this.file_control_selector).find(".spinner").removeClass("spinner green red");
         } catch (e) {
-            console.debug("clearSpinners error", e);
+            console.error("clearSpinners error", e);
         }
-    };    return FabMoUI;
+    };
+    return FabMoUI;
 });

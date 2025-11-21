@@ -1189,6 +1189,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     transform: translateX(-50%);
     opacity: 0.7;
     white-space: nowrap;
+    transition: opacity 0.3s;
 }
 
 /* Hide subtext when button is inactive */
@@ -1196,10 +1197,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     display: none;
 }
 
-/* Halting label - positioned at bottom of wrapper */
-.pauseJob-wrapper .halting-label {
+/* Pausing label - same position as subtext */
+.pauseJob-wrapper .pausing-label {
     position: absolute;
-    bottom: 20px;
+    bottom: 45%;
     left: 50%;
     transform: translateX(-50%);
     font-size: 18px;
@@ -1224,7 +1225,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .resumeJob.active div {
     color: #ffffff;
 }
-
 
 
 .fabmo-resume-stop {
@@ -1298,7 +1298,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 
-
 /* Quit button */
 .stopJob {
     border-radius: 0 0 0 10px;
@@ -1332,7 +1331,13 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     color: #ffffff;
 }
 
-
+/* Spinner positioning adjustments for Resume/Quit buttons */
+.resumeJob .spinner,
+.stopJob .spinner {
+    /* Override the default centering to move left and up slightly */
+    left: 35%;  /* Move 20% left from center (50% - 20% = 30%) */
+    top: 25%;   /* Move up slightly from center */
+}
 
 
 .currentContainer {
@@ -1365,12 +1370,13 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 	.fabmo-resume-stop div {
         font-size: 14px;
-
     }
-    .fabmo-resume-stop {
+
+	.fabmo-resume-stop {
         margin-top: 40px;
 		height: 100px;
     }
+
 	.currentContainer {
 		max-width: 28%;
 		margin-left: 1em;

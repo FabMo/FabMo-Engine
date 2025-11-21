@@ -817,7 +817,7 @@ table {
 
 /* FontAwesome icons - DEFAULT state (play) */
 .inset .play i {
-  font-size: 32px;
+  font-size: 40px;
   color: #32B433;
   transition: all 0.3s;
   position: static;
@@ -832,7 +832,7 @@ table {
 
 /* LOADING state - spinner */
 .inset .play.loading i {
-  color: #E3B505;
+  color: #d0d0d0;
   animation: spin-icon 1.5s linear infinite;
 }
 
@@ -842,7 +842,7 @@ table {
 
 /* ACTIVE state - pause icon */
 .inset .play.active i {
-  color: #9C210C;
+  color:  #323564;;
   margin-left: 0;
 }
 
