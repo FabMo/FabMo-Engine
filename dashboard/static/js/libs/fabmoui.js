@@ -609,6 +609,10 @@ const { last } = require("underscore");
                 $(that.resume_button_selector).show().addClass("inactive").removeClass("active");
                 $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
                 $(that.stop_button_selector + " div:first-child").removeClass("spinner red");
+                
+                // CRITICAL: Clear spinner and pausing label when transitioning to running
+                $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
+                $(that.pause_button_selector).find('.halting-label').remove();
             }
         } else if (status.state === "paused") {
             $(that.status_div_selector).removeClass(
@@ -763,14 +767,14 @@ const { last } = require("underscore");
 
     FabMoUI.prototype.FileControl = function () {
         var that = this;
-        //    console.log("ADD red spinner pause_button");
+        
         $(that.pause_button_selector).click(function (e) {
             // Add spinner
             $(that.pause_button_selector + " div div:first-child").addClass("spinner red");
             
-            // Add halting label if it doesn't exist
+            // Add pausing label if it doesn't exist
             if (!$(that.pause_button_selector).find('.halting-label').length) {
-                $(that.pause_button_selector).append('<div class="halting-label">...halting</div>');
+                $(that.pause_button_selector).append('<div class="halting-label">... pausing</div>');
             }
             
             that.pause();
@@ -802,7 +806,7 @@ const { last } = require("underscore");
             $(this.stop_button_selector + " div:first-child").removeClass("spinner red");
             $(this.pause_button_selector + " div div:first-child").removeClass("spinner red");
             
-            // Remove halting label when clearing spinners
+            // Remove pausing label when clearing spinners
             $(this.pause_button_selector).find('.halting-label').remove();
             
             // Generic cleanup
@@ -810,6 +814,5 @@ const { last } = require("underscore");
         } catch (e) {
             console.debug("clearSpinners error", e);
         }
-    };
-    return FabMoUI;
+    };    return FabMoUI;
 });

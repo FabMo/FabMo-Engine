@@ -500,17 +500,20 @@ var setProgress = function(status) {
  */
 
 function handleStatusReport(status) {
-  // Either we're running a job currently or null
   try {
     var jobId = status.job._id || null;
     var jobState = status.state;
-
   } catch (e) {
-    var jobid = null;
+    var jobId = null;
   }
 
-  if (jobId && jobState === "running") { // Job is currently running
+  if (jobId && jobState === "running") {
     setProgress(status);
+    updatePlayButton(status);  // Add this line
+  } else if (jobState === "paused") {
+    updatePlayButton(status);  // Add this line
+  } else {
+    updatePlayButton(status);  // Add this line
   }
 }
 
@@ -620,7 +623,7 @@ var current_job_id = 0;
 function runNext() {
   $('#queue_table').on('click touchstart', '.play', function(e) {
     if ($('.play').hasClass('active')) {
-      // Currently running/paused - trigger pause/feedhold
+      // Currently running - trigger pause
       fabmo.pause(function(err, data) {});
     } else {
       // Not running - start the job
@@ -629,11 +632,27 @@ function runNext() {
       fabmo.runNext(function(err, data) {
         if (err) {
           fabmo.notify(err);
-        } else {
         }
       });
     }
   });
+}
+
+// Update the play button state based on status
+function updatePlayButton(status) {
+  if (status.state === 'running') {
+    // Job running - show pause icon
+    $('.play').addClass('active').removeClass('loading');
+    $('.play i').removeClass('fa-play fa-spinner').addClass('fa-pause');
+  } else if (status.state === 'paused') {
+    // Job paused - show play icon
+    $('.play').removeClass('active loading');
+    $('.play i').removeClass('fa-pause fa-spinner').addClass('fa-play');
+  } else {
+    // Idle - show play icon
+    $('.play').removeClass('active loading');
+    $('.play i').removeClass('fa-pause fa-spinner').addClass('fa-play');
+  }
 }
 
 function findUpTag(el, id) {

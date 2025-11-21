@@ -1178,6 +1178,39 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     transition: color 0.3s ease;
 }
 
+/* Subtext styling for "Pause / Feedhold" */
+.pauseJob .pause-subtext {
+    font-size: 14px;
+    font-weight: normal;
+    font-style: normal;
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+/* Hide subtext when button is inactive */
+.pauseJob-wrapper.inactive .pause-subtext {
+    display: none;
+}
+
+/* Halting label - positioned at bottom of wrapper */
+.pauseJob-wrapper .halting-label {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 18px;
+    color: #233564;
+    font-weight: normal;
+    font-style: italic;
+    opacity: 0.75;
+    z-index: 11;
+    white-space: nowrap;
+    pointer-events: none;
+}
 
 /* Resume - ACTIVE state */
 .resumeJob.active {
@@ -1228,24 +1261,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	transition: all 1s;
 	width: 75%;
    	height: 50%;
-}
-
-
-
-/* Halting label - positioned at bottom of wrapper */
-.pauseJob-wrapper .halting-label {
-    position: absolute;
-    bottom: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-    color: #233564;
-    font-weight: normal;
-    font-style: italic;
-    opacity: 0.75;
-    z-index: 11;
-    white-space: nowrap;
-    pointer-events: none; /* Don't interfere with button clicks */
 }
 
 

@@ -874,11 +874,6 @@ engine.getVersion(function (err, version) {
                             dashboard.showModal(modalOptions);
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
-
-                            // Show the modal
-                            dashboard.showModal(modalOptions);
-                            modalIsShown = true;
-                            dashboard.handlers.hideFooter();
                         }
 
                         $("#keypad-modal").focus();
