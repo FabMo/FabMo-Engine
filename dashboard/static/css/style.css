@@ -1107,53 +1107,98 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	box-shadow: 0px -2px 15px -6px rgba(0,0,0,0.75);
 }
 
-.pauseJob-wrapper {
+
+/* ========== FOOTER BUTTON STYLES ========== */
+
+/* Base styles - always visible */
+.pauseJob-wrapper,
+.fabmo-resume-stop {
     display: block;
-    align-items: center;
-    justify-content: center;
     cursor: pointer;
     position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Right side: Pause button */
+.pauseJob-wrapper {
     margin-left: auto;
     margin-right: 25rem;
     width: 240px;
     height: 160px;
-    margin-top: 7px;
-    background: #ffda29;
-    border: solid 5px #ffc045;
-    border-radius: 40px;
-    text-decoration: none;
-    box-shadow: 4px 4px 4px 4px rgb(0, 0, 0);
-    transition: border background-color box-shadow 2s linear;
+    margin-top: -135px;
+    border-radius: 25px;
+    box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.3);
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
 
+/* Pause button - INACTIVE state (default) */
+.pauseJob-wrapper.inactive {
+    background: #666;
+    border: solid 3px #555;
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pauseJob-wrapper.inactive .pauseJob div {
+    color: #999;
+}
+
+/* Pause button - ACTIVE state */
+.pauseJob-wrapper.active {
+    background: #ffda29;
+    border: solid 3px #ff7745;
+    opacity: 1.0;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+.pauseJob-wrapper.active .pauseJob div {
+    color: #233564;
+}
+
 .pauseJob {
     display: flex;
-    cursor: pointer;
+    cursor: inherit;
     align-items: center;
     justify-content: center;
-    transition: all 1s;
     width: 100%;
     height: 100%;
-    position: relative; /* Needed for spinner positioning */
+    position: relative;
 }
 
 .pauseJob div {
-    color: #233564;
     font-weight: bolder;
     font-size: 80px;
     font-family: Arial;
     z-index: 10;
+    transition: color 0.3s ease;
 }
 
+
+/* Resume - ACTIVE state */
+.resumeJob.active {
+    background: #32B433;
+    border: solid #00A600 1px;
+    opacity: 1.0;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+.resumeJob.active div {
+    color: #ffffff;
+}
+
+
+
 .fabmo-resume-stop {
-    margin-top: 20px;
+    margin-top: 30px;
 	position: relative;
     width: 30%;
-	height: 120px;
+	height: 110px;
     display: block;
     text-align: center;
     margin-right: auto;
@@ -1162,18 +1207,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
           user-select: none;
-}
-
-.halting-label {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 14px;
-    color: #233564;
-    font-weight: normal;
-    opacity: 0.8;
-    z-index: 11;
 }
 
 .pauseJob.blink{
@@ -1193,22 +1226,99 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	line-height: 3.3em;
 	text-decoration: none;
 	transition: all 1s;
-	width: 80%;
+	width: 75%;
    	height: 50%;
-	margin-left:-25%
 }
 
 
-.stopJob {
-   background: #ff0000;
-   border: solid #ff0000 1px;
-   border-radius: 0 0 10px 10px;
+
+/* Halting label - positioned at bottom of wrapper */
+.pauseJob-wrapper .halting-label {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #233564;
+    font-weight: normal;
+    font-style: italic;
+    opacity: 0.75;
+    z-index: 11;
+    white-space: nowrap;
+    pointer-events: none; /* Don't interfere with button clicks */
 }
+
+
+/* Resume button */
 .resumeJob {
-    background: #32B433;
-	border: solid #00A600 1px;
-    border-radius: 10px 10px 0 0;
+    border-radius: 10px 0 0 0;
+    cursor: pointer;
+	margin-left: -75px;
 }
+
+/* Resume - INACTIVE state */
+.resumeJob.inactive {
+    background: #2d6b28;
+    border: solid #1f4a1d 1px;
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.resumeJob.inactive div {
+    color: #5a8a56;
+}
+
+/* Resume - ACTIVE state */
+.resumeJob.active {
+    background: #32B433;
+    border: solid #00A600 1px;
+    opacity: 1.0;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+.resumeJob.active div {
+    color: #ffffff;
+}
+
+
+
+/* Quit button */
+.stopJob {
+    border-radius: 0 0 0 10px;
+    cursor: pointer;
+	margin-left: -75px;
+}
+
+/* Quit - INACTIVE state */
+.stopJob.inactive {
+    background: #7a0000;
+    border: solid #660000 1px;
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.stopJob.inactive div {
+    color: #a63939;
+}
+
+/* Quit - ACTIVE state */
+.stopJob.active {
+    background: #ff0000;
+    border: solid #cc0000 1px;
+    opacity: 1.0;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+.stopJob.active div {
+    color: #ffffff;
+}
+
+
+
 
 .currentContainer {
 	margin-top: 65px;
@@ -1256,7 +1366,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	}
 }
 
-@media only screen and (max-width: 450px){
+@media only screen and (max-width: 700px){
 	.pauseJob div {
 		font-size: 2em;
 	}

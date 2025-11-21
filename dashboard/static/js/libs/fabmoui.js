@@ -570,6 +570,7 @@ const { last } = require("underscore");
         if (status.state != "manual") {
             $(".tab-bar").removeClass("manual");
         }
+
         if (status.state === "idle") {
             that.allowKeypad();
             $(that.status_div_selector).removeClass(
@@ -582,14 +583,15 @@ const { last } = require("underscore");
             $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
 
             if (that.file_control) {
-                $(that.stop_button_selector).hide();
-                $(that.resume_button_selector).hide();
-                $(that.pause_button_selector).hide();
+                // Show all buttons, but mark as inactive
+                $(that.stop_button_selector).show().addClass("inactive").removeClass("active");
+                $(that.resume_button_selector).show().addClass("inactive").removeClass("active");
+                $(that.pause_button_selector).show().addClass("inactive").removeClass("active");
             }
         } else if (
             status.state === "running" ||
             status.state === "homing" ||
-            status.state === "probing" || // probing and manual are here to provide the same graphics as regular moves
+            status.state === "probing" ||
             status.state === "manual"
         ) {
             that.forbidKeypad();
@@ -599,10 +601,12 @@ const { last } = require("underscore");
             $(that.status_div_selector).removeClass("fabmo-status-running");
             $(".tools-current > li a").removeClass("paus disc").addClass("err");
             $(that.state_selector).html(statename);
+            
             if (that.file_control) {
-                $(that.stop_button_selector).hide();
-                $(that.pause_button_selector).show();
-                $(that.resume_button_selector).hide();
+                // Running: Pause is active, Resume/Quit inactive
+                $(that.stop_button_selector).show().addClass("inactive").removeClass("active");
+                $(that.pause_button_selector).show().addClass("active").removeClass("inactive");
+                $(that.resume_button_selector).show().addClass("inactive").removeClass("active");
                 $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
                 $(that.stop_button_selector + " div:first-child").removeClass("spinner red");
             }
@@ -614,32 +618,33 @@ const { last } = require("underscore");
             $(".tools-current > li a").removeClass("paus disc err").addClass("paus");
             $(that.state_selector).html(statename);
             $(".exit-button").hide();
+            
             if (that.file_control) {
-                // When FabMo is in feedhold, display resume button IF fully stopped
-                if (status.inFeedHold && (status.hold === 10)) {  // only when fully stopped
-                    $(that.stop_button_selector).show();
-                    $(that.pause_button_selector).hide();
-                    $(that.resume_button_selector).show();
-                    // Clear spinners only when fully stopped and ready for Resume/Quit
+                // Paused: Resume/Quit active, Pause inactive
+                if (status.inFeedHold && (status.hold === 10)) {
+                    $(that.stop_button_selector).show().addClass("active").removeClass("inactive");
+                    $(that.pause_button_selector).show().addClass("inactive").removeClass("active");
+                    $(that.resume_button_selector).show().addClass("active").removeClass("inactive");
+                    // Clear spinners when fully stopped
                     $(that.resume_button_selector + " div:first-child").removeClass("spinner green");
                     $(that.pause_button_selector + " div div:first-child").removeClass("spinner red");
                 }
-                // While FabMo is resuming from feedhold, display pause button (acts as stop)
                 else if (status.resumeFlag) {
-                    $(that.stop_button_selector).hide();
-                    $(that.pause_button_selector).show();
-                    $(that.resume_button_selector).hide();
-                    // Don't clear pause button spinner - it may have been clicked during resume
+                    // Resuming: Pause active (acts as stop), Resume/Quit inactive
+                    $(that.stop_button_selector).show().addClass("inactive").removeClass("active");
+                    $(that.pause_button_selector).show().addClass("active").removeClass("inactive");
+                    $(that.resume_button_selector).show().addClass("inactive").removeClass("active");
                 }
-                // If stopping in progress (hold > 0 but < 10), show pause button with spinner
                 else if (status.inFeedHold && status.hold > 0 && status.hold < 10) {
-                    $(that.stop_button_selector).hide();
-                    $(that.pause_button_selector).show();
-                    $(that.resume_button_selector).hide();
-                    // Keep the spinner visible during the stopping process
-                    // Don't clear it here - let it persist from the click handler
+                    // Stopping in progress: Pause active with spinner, Resume/Quit inactive
+                    $(that.stop_button_selector).show().addClass("inactive").removeClass("active");
+                    $(that.pause_button_selector).show().addClass("active").removeClass("inactive");
+                    $(that.resume_button_selector).show().addClass("inactive").removeClass("active");
                 }
             }
+        
+
+
         } else if (status.state === "passthrough") {
             that.forbidKeypad();
             $(".tools-current > li a").removeClass("paus disc err").addClass("paus");
@@ -760,11 +765,14 @@ const { last } = require("underscore");
         var that = this;
         //    console.log("ADD red spinner pause_button");
         $(that.pause_button_selector).click(function (e) {
-            // debug: log selector counts to confirm we are targeting the right element
-            try {
-                console.debug("Pause click selectors:", that.pause_button_selector, $(that.pause_button_selector).length, $(that.pause_button_selector + " div div:first-child").length);
-            } catch (err) {}
+            // Add spinner
             $(that.pause_button_selector + " div div:first-child").addClass("spinner red");
+            
+            // Add halting label if it doesn't exist
+            if (!$(that.pause_button_selector).find('.halting-label').length) {
+                $(that.pause_button_selector).append('<div class="halting-label">...halting</div>');
+            }
+            
             that.pause();
         });
 
@@ -793,12 +801,15 @@ const { last } = require("underscore");
             $(this.resume_button_selector + " div:first-child").removeClass("spinner green");
             $(this.stop_button_selector + " div:first-child").removeClass("spinner red");
             $(this.pause_button_selector + " div div:first-child").removeClass("spinner red");
-            // also attempt a more generic cleanup in case DOM structure differs
+            
+            // Remove halting label when clearing spinners
+            $(this.pause_button_selector).find('.halting-label').remove();
+            
+            // Generic cleanup
             $(this.file_control_selector).find(".spinner").removeClass("spinner green red");
         } catch (e) {
             console.debug("clearSpinners error", e);
         }
     };
-
     return FabMoUI;
 });

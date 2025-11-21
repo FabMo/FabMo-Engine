@@ -828,22 +828,27 @@ table {
 }
 
 .play i {
-  font-size: 32px;
+  font-size: 55px;
+  padding-left: 12px;
   color: #32B433;
   transition: all 0.3s;
 }
 
 /* Loading State - Spinner */
 .play.loading i::before {
+  padding-right: 10px;
   content: '\f110'; /* fa-spinner */
   animation: spin 1.5s linear infinite;
-  color: #E3B505;
+  color: #e3e2e1;
 }
 
 /* Active State (Running) - Show Pause Icon */
 .play.active i::before {
+  font-size: 36px;
+  padding-right: 16px;
+  padding-bottom: 30px;
   content: '\f04c'; /* fa-pause */
-  color: #9C210C;
+  color: #323564;
 }
 
 /* Hover Effects */

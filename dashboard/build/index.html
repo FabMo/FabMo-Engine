@@ -536,30 +536,24 @@
 
     <div class="footBar fabmo-file-control">
       <div class="currentContainer">
-        <p class="currentJobTitle" ></p>
+        <p class="currentJobTitle"></p>
       </div>
       <div class="load_container">
         <div class="loading_bar">
-          <div class="horizontal_fill">
-          </div>
+          <div class="horizontal_fill"></div>
         </div>
         <div class="elapsed_time">
-          <p class="elapsed_time_label"><i class="fa fa-clock-o" aria-hidden="true"></i> :  
-          <p>
+          <p class="elapsed_time_label"><i class="fa fa-clock-o" aria-hidden="true"></i> :  </p>
           <p class="elapsed_time_text">0s</p>
         </div>
         <div class="percent_comp">10%</div>
         <div class="line_number">
-          <p class="line_number_label">line:
-          <p>
+          <p class="line_number_label">line:</p>
           <p class="line_number_text">0</p>
         </div>
       </div>
-      <div class='pauseJob-wrapper'>
-        <div class='pauseJob fabmo-pause-button '>
-          <div ><i class="fa fa-pause"></i></div>
-        </div>
-      </div>
+      
+      <!-- Left side: Resume/Quit (always visible) -->
       <span class='fabmo-resume-stop'>
         <div class='but resumeJob'>
           <div>RESUME <i class="fa fa-play"></i></div>
@@ -568,6 +562,13 @@
           <div>QUIT <i class="fa fa-stop"></i></div>
         </div>
       </span>
+      
+      <!-- Right side: Pause button (always visible) -->
+      <div class='pauseJob-wrapper'>
+        <div class='pauseJob fabmo-pause-button'>
+          <div><i class="fa fa-pause"></i></div>
+        </div>
+      </div>
     </div>
 
     <script src="/js/libs/socket.io.js"></script>
