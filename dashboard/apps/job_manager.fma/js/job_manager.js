@@ -17,8 +17,7 @@ var blinkTimer = null;
 
 // The currently running Job ID
 var currentJobId = -1;
-var currentStatus = {};  // there is a funny conflict with window.status so we use currentStatus 
-                         // ... this is messy, inconsistent, and may be an issue elsewhere
+var currentStatus = {};  // there is a funny conflict with window.status so we use currentStatus ("status" is then ok as parameter)
 
 $('body').bind('focusin focus', function(e){
     e.preventDefault();
@@ -868,11 +867,6 @@ $(document).ready(function() {
         }
     };
 
-    // set focus at the end of 'ready'.
-
-
-
-
     $('#history_page_next').click(function(evt) {
         evt.preventDefault();
         historyNextPage();
@@ -1047,9 +1041,7 @@ $(document).ready(function() {
     fabmo.on('status', function(newStatus) {
         currentStatus = newStatus; // Use currentStatus instead of status to avoid window.status conflict
         updateLabels(currentStatus.unit); // Update labels for transforms
-        handleStatusReport(currentStatus); // Handle the status report
-        
-        // Update the play button icon based on state
+        handleStatusReport(currentStatus);
         updatePlayButton(currentStatus);
 
         // Update UI elements based on the status
