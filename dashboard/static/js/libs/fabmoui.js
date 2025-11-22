@@ -768,18 +768,27 @@ const { last } = require("underscore");
         var that = this;
         
         $(that.pause_button_selector).click(function (e) {
-            console.log("Pause button clicked"); // Debug
+            //console.log("Pause button clicked at", Date.now());
+            
+            var $pauseBtn = $(that.pause_button_selector);
+            
+            // Mark when spinner was added
+            that._spinnerAddedTime = Date.now();
+            
+            // Force reflow
+            $pauseBtn[0].offsetHeight;
             
             // Add spinner to the icon
-            $(that.pause_button_selector).find("i").addClass("spinner red");
+            $pauseBtn.find("i").addClass("spinner red");
             
-            // Hide the subtext and add pausing label
-            $(that.pause_button_selector).find('.pause-subtext').hide();
+            // Hide the subtext
+            $pauseBtn.find('.pause-subtext').hide();
             
-            // Add pausing label if it doesn't exist
-            if (!$(that.pause_button_selector).find('.pausing-label').length) {
-                $(that.pause_button_selector).append('<div class="pausing-label">... pausing</div>');
-                console.log("Added pausing label"); // Debug
+            // Add pausing label
+            if (!$pauseBtn.find('.pausing-label').length) {
+                $pauseBtn.append('<div class="pausing-label">...pausing</div>');
+                // Force reflow for label
+                $pauseBtn[0].offsetHeight;
             }
             
             that.pause();
@@ -806,27 +815,25 @@ const { last } = require("underscore");
 
     // Add centralized spinner clear method
     FabMoUI.prototype.clearSpinners = function () {
-        console.log("clearSpinners called"); // Debug
+        // Debounce - don't clear within 500ms of adding
+        if (this._spinnerAddedTime && (Date.now() - this._spinnerAddedTime < 500)) {
+            //console.log("Debounced clearSpinners at", Date.now());
+            return;
+        }
+        
+        //console.log("clearSpinners executing at", Date.now());
         
         try {
-            // Clear resume/quit spinners
             $(this.resume_button_selector + " div:first-child").removeClass("spinner green");
             $(this.stop_button_selector + " div:first-child").removeClass("spinner red");
-            
-            // Clear pause button spinner from icon
             $(this.pause_button_selector).find("i").removeClass("spinner red");
-            
-            // Remove pausing label and restore subtext
             $(this.pause_button_selector).find('.pausing-label').remove();
             $(this.pause_button_selector).find('.pause-subtext').show();
-            
-            console.log("Spinners cleared"); // Debug
-            
-            // Generic cleanup
             $(this.file_control_selector).find(".spinner").removeClass("spinner green red");
         } catch (e) {
             console.error("clearSpinners error", e);
         }
     };
+
     return FabMoUI;
 });
