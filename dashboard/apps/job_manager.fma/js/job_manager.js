@@ -17,8 +17,8 @@ var blinkTimer = null;
 
 // The currently running Job ID
 var currentJobId = -1;
-var currentStatus = {};
-
+var currentStatus = {};  // there is a funny conflict with window.status so we use currentStatus 
+                         // ... this is messy, inconsistent, and may be an issue elsewhere
 
 $('body').bind('focusin focus', function(e){
     e.preventDefault();
@@ -624,16 +624,33 @@ function runNext() {
   $('#queue_table').on('click touchstart', '.play', function(e) {
     if ($('.play').hasClass('active')) {
       // Currently running - trigger pause
-      fabmo.pause(function(err, data) {});
-    } else {
-      // Not running - start the job
-      jobLoading = true; 
-      $('.play').addClass('loading');
-      fabmo.runNext(function(err, data) {
+      fabmo.pause(function(err, data) {
         if (err) {
-          fabmo.notify(err);
+          fabmo.notify('error', err);
         }
       });
+    } else {
+      // Check if we're paused and should resume instead of starting new job
+      // Use the currentStatus variable that's maintained by the status handler
+      if (currentStatus && currentStatus.state === 'paused') {
+        // Resume the paused job
+        fabmo.resume(function(err, data) {
+          if (err) {
+            fabmo.notify('error', err);
+          }
+        });
+      } else {
+        // Not running or paused - start the next job
+        jobLoading = true; 
+        $('.play').addClass('loading');
+        fabmo.runNext(function(err, data) {
+          if (err) {
+            fabmo.notify('error', err);
+            $('.play').removeClass('loading');
+            jobLoading = false;
+          }
+        });
+      }
     }
   });
 }
@@ -645,11 +662,11 @@ function updatePlayButton(status) {
     $('.play').addClass('active').removeClass('loading');
     $('.play i').removeClass('fa-play fa-spinner').addClass('fa-pause');
   } else if (status.state === 'paused') {
-    // Job paused - show play icon
+    // Job paused - show play icon (ready to resume)
     $('.play').removeClass('active loading');
     $('.play i').removeClass('fa-pause fa-spinner').addClass('fa-play');
   } else {
-    // Idle - show play icon
+    // Idle - show play icon (ready to start new job)
     $('.play').removeClass('active loading');
     $('.play i').removeClass('fa-pause fa-spinner').addClass('fa-play');
   }
@@ -883,9 +900,9 @@ $(document).ready(function() {
  * -----------
  */
 
-    $('.submit-button').click(function(evt) {       // TRIGGER POINT FOR FILE SELECTION PROCESS:  USE USB BROWSER OR STD INPUT:FILE system
-        // Start file submit sequence by checking for presence of USB-drive; present on status.usbDrive
-        if (status && status.usbDrive) {
+    $('.submit-button').click(function(evt) {
+        // Use currentStatus instead of status
+        if (currentStatus && currentStatus.usbDrive) {
           fabmo.showUSBFileBrowser();
         } else {
           jQuery('#file').trigger('click');
@@ -980,11 +997,11 @@ $(document).ready(function() {
           setConfig(this.id, this.value);
       }
       // How to send G90 or G91 from here?
-  });
+    });
 
-  $('.opensbp-input').change( function() {
-    setConfig(this.id, this.value);
-  });
+    $('.opensbp-input').change( function() {
+      setConfig(this.id, this.value);
+    });
 
     $('.opensbp-values').change( function() {
        var parts = this.id.split("-");
@@ -1026,20 +1043,20 @@ $(document).ready(function() {
         updateHistory();
     });
 
-    // Define a global variable to store status to improve accessibility
-    let status = null;
-
-    // Update the status variable whenever a status report is received
+    // Update the currentStatus variable whenever a status report is received
     fabmo.on('status', function(newStatus) {
-        status = newStatus; // Persist the status globally
-        updateLabels(status.unit); // Update labels for transforms
-        handleStatusReport(status); // Handle the status report
+        currentStatus = newStatus; // Use currentStatus instead of status to avoid window.status conflict
+        updateLabels(currentStatus.unit); // Update labels for transforms
+        handleStatusReport(currentStatus); // Handle the status report
+        
+        // Update the play button icon based on state
+        updatePlayButton(currentStatus);
 
         // Update UI elements based on the status
-        if (status.job == null && status.state != 'idle') {
+        if (currentStatus.job == null && currentStatus.state != 'idle') {
             $('.play-button').hide();
             $('.play').removeClass('loading');
-        } else if (status.state == 'idle' && el.firstChild) {
+        } else if (currentStatus.state == 'idle' && el.firstChild) {
             $('.play-button').show();
         }
     });

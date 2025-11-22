@@ -778,7 +778,7 @@ const { last } = require("underscore");
             
             // Add pausing label if it doesn't exist
             if (!$(that.pause_button_selector).find('.pausing-label').length) {
-                $(that.pause_button_selector).append('<div class="pausing-label">...pausing</div>');
+                $(that.pause_button_selector).append('<div class="pausing-label">... pausing</div>');
                 console.log("Added pausing label"); // Debug
             }
             

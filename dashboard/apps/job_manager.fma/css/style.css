@@ -817,7 +817,7 @@ table {
 
 /* FontAwesome icons - DEFAULT state (play) */
 .inset .play i {
-  font-size: 40px;
+  font-size: 50px;
   color: #32B433;
   transition: all 0.3s;
   position: static;
