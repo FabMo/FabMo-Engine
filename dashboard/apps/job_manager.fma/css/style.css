@@ -821,8 +821,8 @@ table {
   color: #32B433;
   transition: all 0.3s;
   position: static;
+  padding-left: 5px;
   margin: 0;
-  padding: 0;
 }
 
 /* Play icon needs slight offset for visual centering */

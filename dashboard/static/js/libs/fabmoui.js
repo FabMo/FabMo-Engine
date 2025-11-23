@@ -603,7 +603,7 @@ const { last } = require("underscore");
             $(that.state_selector).html(statename);
             
             if (that.file_control) {
-                console.log("Transitioning to running state - clearing spinners"); // Debug
+                //console.log("Transitioning to running state - clearing spinners"); // Debug
                 
                 // Running: Pause is active, Resume/Quit inactive
                 $(that.stop_button_selector).show().addClass("inactive").removeClass("active");
@@ -635,10 +635,14 @@ const { last } = require("underscore");
                     that.clearSpinners();
                 }
                 else if (status.resumeFlag) {
-                    // Resuming: Pause active (acts as stop), Resume/Quit inactive
+                    // Resuming: Show spinner on Resume (inactive), Pause active
+                    //console.log("Resume in progress - adding spinner to inactive Resume button"); // Debug
                     $(that.stop_button_selector).show().addClass("inactive").removeClass("active");
                     $(that.pause_button_selector).show().addClass("active").removeClass("inactive");
                     $(that.resume_button_selector).show().addClass("inactive").removeClass("active");
+                    
+                    // ADD spinner to the INACTIVE Resume button during resume process
+                    $(that.resume_button_selector + " div:first-child").addClass("spinner green");
                 }
                 else if (status.inFeedHold && status.hold > 0 && status.hold < 10) {
                     // Stopping in progress: Pause active with spinner, Resume/Quit inactive

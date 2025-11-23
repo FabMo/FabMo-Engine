@@ -1120,6 +1120,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     justify-content: center;
     gap: 4px;
     height: 100%;
+    padding-bottom: 4px;
 }
 
 /* ========== FOOTER BUTTON STYLES ========== */
@@ -1225,7 +1226,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 /* Override for Resume button - move to right side and lower */
 .resumeJob .spinner {
     left: 45%;  /* Move to right side */
-    top: 33%;   /* Move down */
+    top: 31%;   /* Move down */
 }
 
 /* Keep Quit button spinner on left side */
@@ -1261,22 +1262,40 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 /* Pause button - ACTIVE state */
 .pauseJob-wrapper.active {
-    background: #ffe56b;
+    background: #ffda29;
     border: solid 3px #ff7745;
     opacity: 1.0;
     cursor: pointer;
     pointer-events: all;
+    /* Add pulsing glow animation - no size change */
+    animation: pause-glow-pulse .7s ease-in-out infinite;
 }
 
+/* Pulsing glow animation - only affects the shadow, not the size */
+@keyframes pause-glow-pulse {
+    0% {
+        box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 4px 4px 12px 6px rgba(255, 119, 69, 0.6);
+    }
+    100% {
+        box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* Enhanced hover effect - stops animation on hover */
 .pauseJob-wrapper.active:hover {
     background: #ffed70;
     border-color: #ff9966;
-    box-shadow: 4px 4px 8px 4px rgba(0, 0, 0, 0.4);
+    box-shadow: 4px 4px 12px 8px rgba(255, 119, 69, 0.6);
     transition: all 0.3s ease;
+    animation: none; /* Stop pulsing when hovering */
 }
 
 .pauseJob-wrapper.active .pauseJob div {
     color: #233564;
+    padding-bottom: 10px;
 }
 
 .pauseJob {
@@ -1311,29 +1330,24 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     transition: opacity 0.3s;
 }
 
-/* Pulse animation for active pause button to draw attention */
+/* Subtext styling for "Pause / Feedhold" */
+.pauseJob .pause-subtext {
+    font-size: 14px;
+    font-weight: normal;
+    font-style: normal;
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.7;
+    white-space: nowrap;
+    transition: opacity 0.3s;
+}
+
+/* Remove pulse animation - just static enhanced lighting for active state */
 .pauseJob-wrapper.active {
-    animation: pause-pulse 2s ease-in-out infinite;
-}
-
-@keyframes pause-pulse {
-    0% {
-        box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.3);
-        transform: scale(1);
-    }
-    50% {
-        box-shadow: 4px 4px 12px 6px rgba(255, 119, 69, 0.6);
-        transform: scale(1.02);
-    }
-    100% {
-        box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.3);
-        transform: scale(1);
-    }
-}
-
-/* Stop pulsing on hover - user is already focused on it */
-.pauseJob-wrapper.active:hover {
-    animation: none;
+    /* Static enhanced glow - no animation */
+    box-shadow: 4px 4px 12px 6px rgba(255, 119, 69, 0.5);
 }
 
 /* Hide subtext when button is inactive */
@@ -1355,12 +1369,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     z-index: 11;
     white-space: nowrap;
     pointer-events: none;
-}
-
-.pauseJob.blink{
-    border: 5px solid #ffef6b;
-    background-color: #a66600;
-    transition: border background-color 2s linear;
 }
 
 /* Current job info containers */
@@ -2814,7 +2822,7 @@ input[type='range']:focus {
 }
 
 .spinner.red:after {
-    background: #ffe56b;
+    background: #ffda29;
     width: 75%;
     height: 75%;
     border-radius: 50%;
@@ -2825,6 +2833,11 @@ input[type='range']:focus {
     left: 0;
     bottom: 0;
     right: 0;
+}
+
+/* Hover state for pause button spinner - match the button background */
+.pauseJob-wrapper.active:hover .spinner.red:after {
+    background: #ffed70; /* Matches the hover background color */
 }
 
 .spinner.green:after {
