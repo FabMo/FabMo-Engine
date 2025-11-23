@@ -1094,186 +1094,398 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	/* auto margins center the apps, but make them jump when the DRO is displayed (ick) */
 }
 
-/* ********** footer stuff********** */
+
+/* ...existing code... */
+
+/* ========== FOOTER STYLES ========== */
 .footBar {
-	position: fixed;
-	bottom: 0;
-	width: 100%;
-	height: 0px;
-	background-color: #333333;
-	z-index: 1006;
-	display: block;
-	transition: all 0.3s;
-	box-shadow: 0px -2px 15px -6px rgba(0,0,0,0.75);
-}
-
-.pauseJob div {
-	color: #ffffff;
-	font-size: 35px;
-	font-family: Arial;
-	z-index: 10;
-
-}
-
-.pauseJob-wrapper {
-	display: block;
-	align-items: center;
-	justify-content: center;
-    cursor: pointer;
-	position: relative;
-	margin-left: auto;
-	margin-right: auto;
-	width: 36%;
-	height: 150px;
-	margin-top: 12px;
-	background: #ff0000;
-	border: solid 5px #A60000;
-	border-radius: 5px;
-	text-decoration: none;
-	transition: border background-color 2s linear;
-	-webkit-user-select: none;  /* Chrome all / Safari all */
-      -moz-user-select: none;     /* Firefox all */
-        -ms-user-select: none;      /* IE 10+ */
-          user-select: none;
-}
-
-.pauseJob {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 0px;
+    background-color: #333333;
+    z-index: 1006;
     display: flex;
-    cursor: pointer;
-	align-items: center;
-	justify-content: center;
-	transition: all 1s;
-	width: 100%;
-   	height: 100%;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    box-shadow: 0px -2px 15px -6px rgba(0,0,0,0.75);
+    overflow: hidden; /* Hide buttons when footer is closed */
 }
 
+/* Container for both button groups - centers them with gap */
+.footer-buttons-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 100%;
+    padding-bottom: 4px;
+}
 
+/* ========== FOOTER BUTTON STYLES ========== */
+
+/* Left side: Resume/Quit button group */
 .fabmo-resume-stop {
-    margin-top: 12px;
-	position: relative;
-    width: 36%;
-	height: 150px;
-    display: block;
+    width: 240px;
+    height: 110px;
+    display: flex;
+    flex-direction: column;
     text-align: center;
-    margin-right: auto;
-    margin-left: auto;
-	-webkit-user-select: none;  /* Chrome all / Safari all */
-      -moz-user-select: none;     /* Firefox all */
-        -ms-user-select: none;      /* IE 10+ */
-          user-select: none;
-}
-
-
-
-
-
-
-.pauseJob.blink{
-	border: 5px solid #ff0000;
-	background-color: #A60000;
-	transition: border background-color 2s linear;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .fabmo-resume-stop .but {
     display: flex;
     cursor: pointer;
-	align-items: center;
-	justify-content: center;
-	font-family: Arial;
-	color: #ffffff;
-	font-size: 25px;
-	line-height: 3.3em;
-	text-decoration: none;
-	transition: all 1s;
-	width: 100%;
-   	height: 50%;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial;
+    color: #ffffff;
+    font-size: 25px;
+    text-decoration: none;
+    transition: all 1s;
+    width: 100%;
+    height: 45%;
 }
 
-
-.stopJob {
-   background: #ff0000;
-   border: solid #ff0000 1px;
-   border-radius: 0 0 5px 5px;
-}
+/* Resume button */
 .resumeJob {
-    background: #32B433;
-	border: solid #00A600 1px;
-    border-radius: 5px 5px 0 0;
+    border-radius: 10px 0 0 0;
+    cursor: pointer;
+	margin-bottom: 2px;
 }
 
+/* Resume - INACTIVE state */
+.resumeJob.inactive {
+    background: #2d6b28;
+    border: solid #1f4a1d 1px;
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.resumeJob.inactive div {
+    color: #5a8a56;
+}
+
+/* Resume - ACTIVE state */
+.resumeJob.active {
+    background: #32B433;
+    border: solid #00A600 1px;
+    opacity: 1.0;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+.resumeJob.active div {
+    color: #ffffff;
+}
+
+/* Quit button */.stopJob {
+    border-radius: 0 0 0 10px;
+    cursor: pointer;
+}
+
+/* Quit - INACTIVE state */
+.stopJob.inactive {
+    background: #7a0000;
+    border: solid #660000 1px;
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.stopJob.inactive div {
+    color: #a63939;
+}
+
+/* Quit - ACTIVE state */
+.stopJob.active {
+    background: #ff0000;
+    border: solid #cc0000 1px;
+    opacity: 1.0;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+.stopJob.active div {
+    color: #ffffff;
+}
+
+/* Spinner positioning adjustments for Resume/Quit buttons */
+.resumeJob .spinner,
+.stopJob .spinner {
+    left: 35%;
+    top: 25%;
+}
+
+/* Override for Resume button - move to right side and lower */
+.resumeJob .spinner {
+    left: 45%;  /* Move to right side */
+    top: 31%;   /* Move down */
+}
+
+/* Keep Quit button spinner on left side */
+.stopJob .spinner {
+    left: 35%;
+    top: 25%;
+}
+
+/* Right side: Pause button */
+.pauseJob-wrapper {
+    width: 240px;
+    height: 160px;
+    border-radius: 25px;
+    box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.3);
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Pause button - INACTIVE state (default) */
+.pauseJob-wrapper.inactive {
+    background: #666;
+    border: solid 3px #555;
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pauseJob-wrapper.inactive .pauseJob div {
+    color: #999;
+}
+
+/* Pause button - ACTIVE state */
+.pauseJob-wrapper.active {
+    background: #ffda29;
+    border: solid 3px #ff7745;
+    opacity: 1.0;
+    cursor: pointer;
+    pointer-events: all;
+    /* Add pulsing glow animation - no size change */
+    animation: pause-glow-pulse .7s ease-in-out infinite;
+}
+
+/* Pulsing glow animation - only affects the shadow, not the size */
+@keyframes pause-glow-pulse {
+    0% {
+        box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 4px 4px 12px 6px rgba(255, 119, 69, 0.6);
+    }
+    100% {
+        box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* Enhanced hover effect - stops animation on hover */
+.pauseJob-wrapper.active:hover {
+    background: #ffed70;
+    border-color: #ff9966;
+    box-shadow: 4px 4px 12px 8px rgba(255, 119, 69, 0.6);
+    transition: all 0.3s ease;
+    animation: none; /* Stop pulsing when hovering */
+}
+
+.pauseJob-wrapper.active .pauseJob div {
+    color: #233564;
+    padding-bottom: 10px;
+}
+
+.pauseJob {
+    display: flex;
+    cursor: inherit;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.pauseJob div {
+    font-weight: bolder;
+    font-size: 80px;
+    font-family: Arial;
+    z-index: 10;
+    transition: color 0.3s ease;
+}
+
+/* Subtext styling for "Pause / Feedhold" */
+.pauseJob .pause-subtext {
+    font-size: 14px;
+    font-weight: normal;
+    font-style: normal;
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.7;
+    white-space: nowrap;
+    transition: opacity 0.3s;
+}
+
+/* Subtext styling for "Pause / Feedhold" */
+.pauseJob .pause-subtext {
+    font-size: 14px;
+    font-weight: normal;
+    font-style: normal;
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.7;
+    white-space: nowrap;
+    transition: opacity 0.3s;
+}
+
+/* Remove pulse animation - just static enhanced lighting for active state */
+.pauseJob-wrapper.active {
+    /* Static enhanced glow - no animation */
+    box-shadow: 4px 4px 12px 6px rgba(255, 119, 69, 0.5);
+}
+
+/* Hide subtext when button is inactive */
+.pauseJob-wrapper.inactive .pause-subtext {
+    display: none;
+}
+
+/* Pausing label - same position as subtext */
+.pauseJob-wrapper .pausing-label {
+    position: absolute;
+    bottom: 45%;
+    left: 59.5%;
+    transform: translateX(-50%);
+    font-size: 18px;
+    color: #233564;
+    font-weight: normal;
+    font-style: italic;
+    opacity: 0.75;
+    z-index: 11;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* Current job info containers */
 .currentContainer {
-	margin-top: 65px;
-	margin-left: 2em;
-	float: left;
-	overflow: hidden;
+    position: absolute;
+    left: 2em;
+    top: 50%;
+    transform: translateY(-50%);
+    overflow: hidden;
     max-width: 28%;
-	max-height: 100px;
+    max-height: 100px;
 }
 
 .currentJobTitle {
-	color: #F0F0F0;
-	font-size: 20px;
-	font-family: 'source_sans_proextralight';
-    /*white-space: nowrap;*/
-	text-align: left;
+    color: #F0F0F0;
+    font-size: 20px;
+    font-family: 'source_sans_proextralight';
+    text-align: left;
+}
 
+.load_container {
+    position: absolute;
+    right: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 25%;
+}
+
+.load_container .loading_bar {
+    background-color: #444444;
+    height: 30px;
+    border-radius: 5px;
+}
+
+.loading_bar .horizontal_fill {
+    background-color: #5DA423;
+    position: relative;
+    height: 28.5px;
+    width: 100%;
+    top: 1px;
+    left: 1px;
+    border-radius: 5px;
+    transition: all 1s;
+}
+
+.percent_comp {
+    float: right;
+    margin-right: 5px;
+    color: #F0F0F0;
+    font-family: 'source_sans_proextralight';
+    display: inline-flex;
+}
+
+.elapsed_time{
+    font-family: 'source_sans_proextralight';
+    display: inline-flex;
+    margin-right: 50px;
+    margin-left: auto;
+    text-align: center;
+    color:#F0F0F0;
+}
+
+.elapsed_time_label{
+    margin-right: 5px;
+}
+
+.line_number{
+    font-family: 'source_sans_proextralight';
+    display: inline-flex;
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+    color:#F0F0F0
+}
+
+/* Responsive adjustments */
+@media only screen and (max-width: 1024px){
+    .currentContainer {
+        max-width: 20%;
+    }
+    
+    .load_container {
+        width: 20%;
+    }
 }
 
 @media only screen and (max-width: 700px){
-	.pauseJob div {
-		font-size: 2em;
-	}
-
-	.pauseJob-wrapper{
-		margin-top: 40px;
-		height: 100px;
-	}
-
-	.fabmo-resume-stop div {
-        font-size: 14px;
-
+    .pauseJob div {
+        font-size: 2em;
     }
+
+    .pauseJob-wrapper{
+        height: 100px;
+        width: 180px;
+    }
+
     .fabmo-resume-stop {
-        margin-top: 40px;
-		height: 100px;
+        width: 180px;
+        height: 100px;
     }
-	.currentContainer {
-		max-width: 28%;
-		margin-left: 1em;
-	}
-
-	.currentJobTitle {
-		 font-size: 15px;
-	}
-}
-
-@media only screen and (max-width: 450px){
-	.pauseJob div {
-		font-size: 2em;
-	}
-
-	.pauseJob-wrapper{
-		margin-top: 40px;
-		height: 100px;
-	}
-
-	.fabmo-resume-stop div {
+    
+    .fabmo-resume-stop div {
         font-size: 14px;
-
     }
-    .fabmo-resume-stop {
-        margin-top: 40px;
-		height: 100px;
+    
+    .currentContainer {
+        display: none;
     }
-	.currentContainer {
-		display: none;
-	}
 
-	.currentJobTitle {
-		 font-size: 15px;
-	}
+    .currentJobTitle {
+        font-size: 15px;
+    }
+    
+    .load_container {
+        width: 30%;
+    }
 }
-
 
 
 .radial_progress {
@@ -2580,88 +2792,98 @@ input[type='range']:focus {
 /* Special Custom Style : rotations et animations */
 
 .spinner {
-	text-indent: -9999em;
-	width: 2.5em;
-	height: 2.5em;
-	border-radius: 50%;
-	background: #fff;
-	background: -moz-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	background: -webkit-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	background: -o-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	background: -ms-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	background: linear-gradient(to right, #fff 10%, rgba(255, 255, 255, 0) 42%);
-	position: relative;
-	-webkit-animation: load3 1.4s infinite linear;
-	animation: load3 1.4s infinite linear;
+    text-indent: -9999em;
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+    background: #fff;
+    background: -moz-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -webkit-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -o-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -ms-linear-gradient(left, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    background: linear-gradient(to right, #fff 10%, rgba(255, 255, 255, 0) 42%);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    -webkit-animation: load3 1.4s infinite linear;
+    animation: load3 1.4s infinite linear;
+}
 
-  }
-  .spinner:before {
-	width: 50%;
-	height: 50%;
-	background: #fff;
-	border-radius: 100% 0 0 0;
-	position: absolute;
-	top: 0;
-	left: 0;
-	content: '';
-  }
-  .spinner.red:after {
-	background: #ff0000;
-	width: 75%;
-	height: 75%;
-	border-radius: 50%;
-	content: '';
-	margin: auto;
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-  }
+.spinner:before {
+    width: 50%;
+    height: 50%;
+    background: #fff;
+    border-radius: 100% 0 0 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: '';
+}
 
-  .spinner.green:after {
-	background: #32B433;
-	width: 75%;
-	height: 75%;
-	border-radius: 50%;
-	content: '';
-	margin: auto;
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-  }
+.spinner.red:after {
+    background: #ffda29;
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    content: '';
+    margin: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
 
-  @-webkit-keyframes load3 {
-	0% {
-	  -webkit-transform: rotate(0deg);
-	  transform: rotate(0deg);
-	}
-	100% {
-	  -webkit-transform: rotate(360deg);
-	  transform: rotate(360deg);
-	}
-  }
-  @keyframes load3 {
-	0% {
-	  -webkit-transform: rotate(0deg);
-	  transform: rotate(0deg);
-	}
-	100% {
-	  -webkit-transform: rotate(360deg);
-	  transform: rotate(360deg);
-	}
-  }
+/* Hover state for pause button spinner - match the button background */
+.pauseJob-wrapper.active:hover .spinner.red:after {
+    background: #ffed70; /* Matches the hover background color */
+}
+
+.spinner.green:after {
+    background: #32B433;
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    content: '';
+    margin: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+@-webkit-keyframes load3 {
+    0% {
+        -webkit-transform: translate(-50%, -50%) rotate(0deg);
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        -webkit-transform: translate(-50%, -50%) rotate(360deg);
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes load3 {
+    0% {
+        -webkit-transform: translate(-50%, -50%) rotate(0deg);
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        -webkit-transform: translate(-50%, -50%) rotate(360deg);
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
 
 /* for feed rate override and keypad message */  
 @keyframes blink {
-	0% {opacity: 1;}
-	50% {opacity: 0;}
-	100% {opacity: 1;}
+    0% {opacity: 1;}
+    50% {opacity: 0;}
+    100% {opacity: 1;}
 }
 .blinking-text {
-	animation: blink 2.0s linear infinite;
+    animation: blink 2.0s linear infinite;
 }
 
 .logout_link_container{

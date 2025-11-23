@@ -531,7 +531,7 @@ function handleMobileCaching() {
     }
 }
 
-// Then your existing engine.getVersion call continues...
+// Then existing engine.getVersion call continues...
 engine.getVersion(function (err, version) {
     context.setEngineVersion(version);
 
@@ -854,6 +854,20 @@ engine.getVersion(function (err, version) {
                                 modalOptions.cancelText = "Quit";
                                 modalOptions.ok = resumeFunction;
                                 modalOptions.cancel = cancelFunction;
+                            }
+
+                            // Clear spinners before showing the modal (handles programmed PAUSE case)
+                            try {
+                                if (dashboard && dashboard.ui && typeof dashboard.ui.clearSpinners === "function") {
+                                    dashboard.ui.clearSpinners();
+                                } else {
+                                    // fallback: best-effort jQuery cleanup if UI object not ready
+                                    $(".pauseJob-wrapper .pauseJob div div:first-child").removeClass("spinner red");
+                                    $(".resumeJob div:first-child").removeClass("spinner green");
+                                    $(".stopJob div:first-child").removeClass("spinner red");
+                                }
+                            } catch (e) {
+                                console.debug("Spinner clear before modal failed", e);
                             }
 
                             // Show the modal

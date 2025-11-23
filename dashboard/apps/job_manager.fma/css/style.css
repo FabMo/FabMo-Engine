@@ -694,6 +694,7 @@ table {
   }
 }
 
+
 @keyframes rotator {
   0% {
     -webkit-transform: rotate(0deg);
@@ -704,6 +705,7 @@ table {
     transform: rotate(270deg);
   }
 }
+
 .path {
   stroke-dasharray: 187;
   stroke-dashoffset: 0;
@@ -713,7 +715,6 @@ table {
   -webkit-animation: dash 1.4s ease-in-out infinite, colors 5.6s ease-in-out infinite;
   animation: dash 1.4s ease-in-out infinite, colors 5.6s ease-in-out infinite;
 }
-
 
 #tabpending{
   position: relative;
@@ -725,24 +726,23 @@ table {
   width: 5%;
   top: 50%;
   transform: translateY(-50%);
-
   z-index: 50;
 }
 
+/* Radial progress container */
 .radial_progress {
-	margin-top: 5px;
-    background-color: #eee;
-    height: 100px;
-    width: 100px;
-    border-radius: 50%;
-	float: right;
-	margin-right: 50px;
+  margin-top: 5px;
+  background-color: #eee;
+  height: 100px;
+  width: 100px;
+  border-radius: 50%;
+  float: right;
+  margin-right: 50px;
+  position: relative;
 }
 
-
 @media screen and (max-width: 630px){
-
-    .radial_progress{
+  .radial_progress{
     position: relative;
     margin-right: 20px;
   }
@@ -754,205 +754,125 @@ table {
   }
 }
 
+/* Progress fill background */
 .fill {
-    background-color: #91331E;
-    height: 100px;
-    width: 100px;
-    transition: -webkit-transform 1s;
-    transition: -ms-transform 1s;
-    transition: transform 1s;
-    position: absolute;
-    /* rect(<top>, <right>, <bottom>, <left>) */
-    clip: rect(0px, 50px, 1000px, 0px);
-    -webkit-backface-visibility: hidden;
-    border-radius: 50%;
-}
-
-.percent_circle .mask {
-    /* rect(<top>, <right>, <bottom>, <left>) */
-      clip: rect(0px,100px,100px,50px);
-      height: 100px;
-      width: 100px;
-      position: absolute;
-      transition: -webkit-transform 1s;
-        transition: -ms-transform 1s;
-            transition: transform 1s;
-}
-.mask .fill {
-    clip: rect(0px, 50px, 100px, 0px);
-}
-.inset {
-    background-color: white;
-    width: 90px;
-    height: 90px;
-    position: absolute;
-    margin-left: 5px;
-    margin-top: 5px;
-    border-radius: 50%;
-    box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
-}
-
-.shadow {
-      width: 100px;
-      height: 100px;
-      position: absolute;
-      border-radius: 50%;
-      box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2);
-}
-
-.inset .percentage {
-     color: #32B433;
-     font-size: 11px;
-     width: 28px;
-     position: absolute;
-     line-height: 1;
-     text-align: center;
-     top: 10.5px;
-     left: 2px;
-	 font-family: 'source_sans_proextralight';
-}
-
-
-
-.play span {
-  height: 80px;
-  width: 80px;
-  display: block;
-  position: relative;
-  top: 0;
-  left: 0;
-  text-indent: -9999px;
-}
-
-.play span:before,
-.play span:after {
-  -webkit-transition: all 0.5s;
-  -moz-transition: all 0.5s;
-  -o-transition: all 0.5s;
-  transition: all 0.5s;
-}
-.play {
-  width: 80px;
-  height: 80px;
+  background-color: #91331E;
+  height: 100px;
+  width: 100px;
+  transition: -webkit-transform 1s;
+  transition: -ms-transform 1s;
+  transition: transform 1s;
   position: absolute;
-  left: 50%;
-  top: 50%;
-  margin:-40px 0 0 -40px;
-  display: Block;
-  cursor: pointer;
+  clip: rect(0px, 50px, 100px, 0px);
+  -webkit-backface-visibility: hidden;
+  border-radius: 50%;
 }
-.play span {
+
+/* Progress circle mask */
+.percent_circle .mask {
+  clip: rect(0px, 100px, 100px, 50px);
+  height: 100px;
+  width: 100px;
+  position: absolute;
+  transition: -webkit-transform 1s;
+  transition: -ms-transform 1s;
+  transition: transform 1s;
+}
+
+.mask .fill {
+  clip: rect(0px, 50px, 100px, 0px);
+}
+
+/* Shadow effect */
+.shadow {
+  width: 100px;
+  height: 100px;
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2);
+}
+
+/* Center button inset - FIXED SIZE */
+.inset {
+  background-color: white;
+  width: 90px;
+  height: 90px;
+  position: absolute;
+  margin-left: 5px;
+  margin-top: 5px;
+  border-radius: 50%;
+  box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
+}
+
+/* Play button container inside inset */
+.inset .play {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+/* FontAwesome icons - DEFAULT state (play) */
+.inset .play i {
+  font-size: 50px;
+  color: #32B433;
+  transition: all 0.3s;
+  position: static;
+  padding-left: 5px;
   margin: 0;
 }
-.play span:before {
-  content: '';
-  height: 0px;
-  width: 0px;
-  display: block;
-  background: transparent;
-  border: 25px transparent solid;
-  border-right-width: 0;
-  border-left-color: #32B433;
-  position: absolute;
-  top: 45%;
-  left: 60%;
-  margin: -20px 0 0 -15px;
-}
-.play span:after {
-  content: '';
-  height: 0px;
-  width: 0px;
-  display: block;
-  background: transparent;
-  border: 25px transparent solid;
-  border-right-width: 0;
-  border-left-color: #32B433;
-  position: absolute;
-  top: 45%;
-  left: 60%;
-  margin: -20px 0 0 -15px;
+
+/* Play icon needs slight offset for visual centering */
+.inset .play i.fa-play {
+  margin-left: 3px;
 }
 
-.play.loading span:before {
-  content: '';
-  height: 40px;
-  width: 40px;
-  border: 5px transparent solid;
-  border-top: 5px #E3B505 solid;
-  border-radius: 50%;
-  top: 50%;
-  left: 45%;
-  -webkit-animation:spin 1.5s linear infinite;
-  -moz-animation:spin 1.5s linear infinite;
-  animation:spin 1.5s linear infinite;
+/* LOADING state - spinner */
+.inset .play.loading i {
+  color: #d0d0d0;
+  animation: spin-icon 1.5s linear infinite;
 }
 
-.play.loading span:after {
-  content: '';
-  height: 40px;
-  width: 40px;
-  border: 5px transparent solid;
-  border-bottom: 5px #E3B505 solid;
-  border-radius: 50%;
-  top: 50%;
-  left: 45%;
-  -webkit-animation:spin 1.5s linear infinite;
-  -moz-animation:spin 1.5s linear infinite;
-  animation:spin 1.5s linear infinite;
+.inset .play.loading i::before {
+  content: '\f110'; /* fa-spinner */
 }
 
-.play.active {
-  position: absolute;
-  width: 80px;
-  height: 80px;
-  left: 50%;
-  top: 50%;
-  z-index: 0;
+/* ACTIVE state - pause icon */
+.inset .play.active i {
+  color:  #323564;;
+  margin-left: 0;
 }
-.play.active span:before {
-  content: '';
-  border: 20px #9C210C solid;
-  border-top-width: 40px;
-  border-bottom-width: 0px;
-  border-left-color: transparent;
-  top: 50%;
-  left: 45%;
-  -webkit-transform: rotate(-90deg);
-  -moz-transform: rotate(-90deg);
-  -ms-transform: rotate(-90deg);
-  -o-transform: rotate(-90deg);
-  transform: rotate(-90deg);
+
+.inset .play.active i::before {
+  content: '\f04c'; /* fa-pause */
 }
-.play.active span:after {
-  content: '';
-  border: 20px #9C210C solid;
-  border-bottom-width: 0;
-  border-left-color: transparent;
-  border-top-width: 40px;
-  border-radius: 0%;
-  top: 50%;
-  left: 45%;
-  -webkit-transform: rotate(90deg);
-  -moz-transform: rotate(90deg);
-  -ms-transform: rotate(90deg);
-  -o-transform: rotate(90deg);
-  transform: rotate(90deg);
+
+/* Hover effects */
+.inset .play:hover i {
+  transform: scale(1.15);
+}
+
+/* Spinner animation for FontAwesome icon */
+@keyframes spin-icon {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Manage Transform section */
 .scale-row {
   display: flex;
   justify-content: flex-start;
-  gap: 20px; /* Add spacing between columns */
-  margin-bottom: 20px; /* Add spacing between rows */
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-/* Ensure columns take up equal space */
 .scale-row .columns {
   flex: 1;
 }
 
-/* Enable/Disable box size */
 .apply {
   width: 150px;
 }
@@ -963,39 +883,55 @@ table {
   color: #696767;
 }
 
+/* Keep generic spin animations for other uses */
+@-moz-keyframes spin { 
+  100% { -moz-transform: rotate(360deg); } 
+}
+@-webkit-keyframes spin { 
+  100% { -webkit-transform: rotate(360deg); } 
+}
+@keyframes spin { 
+  100% { 
+    -webkit-transform: rotate(360deg); 
+    transform: rotate(360deg); 
+  } 
+}
 
+@-moz-keyframes spinCounter { 
+  100% { -moz-transform: rotate(-360deg); } 
+}
+@-webkit-keyframes spinCounter { 
+  100% { -webkit-transform: rotate(-360deg); } 
+}
+@keyframes spinCounter { 
+  100% { 
+    -webkit-transform: rotate(-360deg); 
+    transform: rotate(-360deg); 
+  } 
+}
 
-
-@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
-@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
-@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
-
-@-moz-keyframes spinCounter { 100% { -moz-transform: rotate(-360deg); } }
-@-webkit-keyframes spinCounter { 100% { -webkit-transform: rotate(-360deg); } }
-@keyframes spinCounter { 100% { -webkit-transform: rotate(-360deg); transform:rotate(-360deg); } }
-
+/* History navigation */
 #history_page_prev, #history_page_next{
-    background-color: #666;
-    width: 100px;
-    text-align: center;
-    margin: 1em;
-    padding-top: .1em;
-    height: 30px;
-    border-radius: 5px;
-    color: #f2f2f2;
-    cursor: pointer;
-    text-transform: normal;
-    -o-text-overflow: clip;
-    text-overflow: clip;
-    white-space: pre;
-    text-shadow: #fff 1px 1px 0;
-    text-shadow: -.3px -.3px .3px rgba(0,0,0,0.67);
-    box-shadow: 0 1px 0 rgba(0,0,0,.15);
-    transition: all .3s;
+  background-color: #666;
+  width: 100px;
+  text-align: center;
+  margin: 1em;
+  padding-top: .1em;
+  height: 30px;
+  border-radius: 5px;
+  color: #f2f2f2;
+  cursor: pointer;
+  text-transform: normal;
+  -o-text-overflow: clip;
+  text-overflow: clip;
+  white-space: pre;
+  text-shadow: -.3px -.3px .3px rgba(0,0,0,0.67);
+  box-shadow: 0 1px 0 rgba(0,0,0,.15);
+  transition: all .3s;
 }
 
 #tabpanel8 {
-    background-color: transparent;
+  background-color: transparent;
 }
 
 #history_page_prev:hover, #history_page_next:hover{
@@ -1003,13 +939,12 @@ table {
 }
 
 #history_page_prev{
-     float: left;
+  float: left;
 }
 
 #history_page_next{
-    float: right;
+  float: right;
 }
-
 
 .hidden, .hide { display:none; }
 

@@ -628,6 +628,7 @@ G2.prototype.handleStatusReport = function (response) {
                 switch (response.sr.stat) {
                     case STAT_HOLDING:
                         this.pause_flag = true;
+                        this.status.resumeFlag = false; // clear for next resume display
                         this.status.inFeedHold = true; // for sensing input-generated-hold
                         if (this.context) {
                             this.context.pause();
@@ -781,8 +782,10 @@ G2.prototype.queueFlush = function (callback) {
 // make the system crashy - so we're careful not to do that.
 // This function returns a promise that resolves when the machining cycle has resumed.
 G2.prototype.resume = function () { 
-//    if (this.status.hold === 10) { // don't handle resume request until stopped in hold
+
+    if (this.status.hold === 10) { // don't handle resume request until stopped in hold
         this.status.resumeFlag = true;
+        this.status.hold = 0; // reset hold for next resume display, to be applied by g2core
         var thisPromise = _promiseCounter;
         if (this.resumePending) { // don't double-resume
             return;
@@ -814,7 +817,8 @@ G2.prototype.resume = function () {
         this.pause_flag = false;
 
         return deferred.promise;
-//    };  
+    };  
+
 };
 
 // Quit means to stop the tool and abandon the machining cycle.

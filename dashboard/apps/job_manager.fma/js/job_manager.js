@@ -17,8 +17,7 @@ var blinkTimer = null;
 
 // The currently running Job ID
 var currentJobId = -1;
-var currentStatus = {};
-
+var currentStatus = {};  // there is a funny conflict with window.status so we use currentStatus ("status" is then ok as parameter)
 
 $('body').bind('focusin focus', function(e){
     e.preventDefault();
@@ -146,7 +145,7 @@ function createRecentMenu(id) {
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -429,18 +428,17 @@ function nextJob(job) {
 function runningJob(job) {
   if (!job) {
     setProgress(status);
-    $('.play').removeClass('active')
+    $('.play').removeClass('active');
+    $('.play').show(); // Show the icon when idle
     $('body').css('background-color', '#EEEEEE');
-    $('.play-button').show();
     sortable.options.disabled = false;
-    return
+    return;
   }
 
   $('.cancel').slideUp(100);
   $('.download').slideUp(100);
   $('.edit').slideUp(100);
 
-  // $('.preview').slideUp(100); // Here if the live viewer button moves
   $('.preview').off('click');
   $('.preview').click(function(e) {
     e.preventDefault();
@@ -456,12 +454,14 @@ function runningJob(job) {
   $('.up-next').css('left', '-2000px');
   $('.no-jobs').css('left', '-2000px');
   $('.now-running').css('left', '0px');
-  $('.play-button').show();
-  if (!$('.play').hasClass('active')){
-    $('.play').addClass('active');
-  }
+  
+  // Keep the progress circle visible but hide the icon during running
+  $('.play-button').show(); // Keep container visible
+  $('.play').hide(); // Hide the icon
+  $('.play').removeClass('active');
+  
   sortable.options.disabled = true;
-};
+}
 
 var setProgress = function(status) {
   var prog = ((status.line / status.nb_lines) * 100).toFixed(2);
@@ -500,19 +500,21 @@ var setProgress = function(status) {
  */
 
 function handleStatusReport(status) {
-  // Either we're running a job currently or null
   try {
     var jobId = status.job._id || null;
     var jobState = status.state;
-
   } catch (e) {
-    var jobid = null;
+    var jobId = null;
   }
 
-  if (jobId && jobState === "running") { // Job is currently running
+  // Always update the play button based on current status
+  updatePlayButton(status);
+
+  if (jobId && jobState === "running") {
     setProgress(status);
   }
 }
+
 
 function updateOrder(){
   var newOrder = sortable.toArray();
@@ -620,19 +622,77 @@ var current_job_id = 0;
 function runNext() {
   $('#queue_table').on('click touchstart', '.play', function(e) {
     if ($('.play').hasClass('active')) {
-      fabmo.pause(function(err, data) {});
-    } else {
-      jobLoading = true; 
-      $('.play').addClass('loading');
-      fabmo.runNext(function(err, data) {
+      // Currently running - trigger pause (footer handles this)
+      fabmo.pause(function(err, data) {
         if (err) {
-          fabmo.notify(err);
-        } else {
+          fabmo.notify('error', err);
         }
       });
+    } else {
+      // Check if we're paused and should resume instead of starting new job
+      if (currentStatus && currentStatus.state === 'paused') {
+        // Resume the paused job
+        //console.log('JobManager: Resuming paused job');
+        // Add spinner to footer Resume button
+        $('.fabmo-resume-stop .resumeJob div:first-child').addClass('spinner green');
+        
+        fabmo.resume(function(err, data) {
+          if (err) {
+            fabmo.notify('error', err);
+            // Clear spinner on error
+            $('.fabmo-resume-stop .resumeJob div:first-child').removeClass('spinner green');
+          }
+          // Spinner will be cleared by status update when job resumes
+        });
+      } else {
+        // Not running or paused - start the next job
+        //console.log('JobManager: Starting next job');
+        jobLoading = true; 
+//        $('.play').addClass('loading');
+        fabmo.runNext(function(err, data) {
+          if (err) {
+            fabmo.notify('error', err);
+//            $('.play').removeClass('loading');
+            jobLoading = false;
+          }
+        });
+      }
     }
   });
 }
+
+// Update the play button state based on status
+function updatePlayButton(status) {
+  if (status.state === 'running' || status.state === 'probing' || status.state === 'homing') {
+    // Job running - HIDE the icon but keep the progress circle visible
+    $('.play-button').show(); // Keep the container visible
+    $('.play').hide(); // Hide the icon inside
+    $('.play').removeClass('active loading');
+  } else if (status.state === 'paused' && status.inFeedHold && status.hold === 10) {
+    // Fully stopped in feedhold - show play icon (ready to resume or start)
+    $('.play-button').show();
+    $('.play').show(); // Show the icon
+    $('.play').removeClass('active loading');
+    $('.play i').removeClass('fa-pause fa-spinner').addClass('fa-play');
+  } else if (status.state === 'idle') {
+    // Idle with jobs in queue - show play icon (ready to start)
+    $('.play').removeClass('active loading');
+    $('.play i').removeClass('fa-pause fa-spinner').addClass('fa-play');
+    // Only show if there are jobs in the queue
+    if ($('#queue_table').children().length > 0) {
+      $('.play-button').show();
+      $('.play').show();
+    } else {
+      $('.play-button').hide();
+      $('.play').hide();
+    }
+  } else {
+    // Any other state (pausing, stopping, etc.) - hide just the icon
+    $('.play-button').show(); // Keep progress circle
+    $('.play').hide(); // Hide the icon
+  }
+}
+
 
 function findUpTag(el, id) {
   while (el.parentNode) {
@@ -830,11 +890,6 @@ $(document).ready(function() {
         }
     };
 
-    // set focus at the end of 'ready'.
-
-
-
-
     $('#history_page_next').click(function(evt) {
         evt.preventDefault();
         historyNextPage();
@@ -862,9 +917,9 @@ $(document).ready(function() {
  * -----------
  */
 
-    $('.submit-button').click(function(evt) {       // TRIGGER POINT FOR FILE SELECTION PROCESS:  USE USB BROWSER OR STD INPUT:FILE system
-        // Start file submit sequence by checking for presence of USB-drive; present on status.usbDrive
-        if (status && status.usbDrive) {
+    $('.submit-button').click(function(evt) {
+        // Use currentStatus instead of status
+        if (currentStatus && currentStatus.usbDrive) {
           fabmo.showUSBFileBrowser();
         } else {
           jQuery('#file').trigger('click');
@@ -959,11 +1014,11 @@ $(document).ready(function() {
           setConfig(this.id, this.value);
       }
       // How to send G90 or G91 from here?
-  });
+    });
 
-  $('.opensbp-input').change( function() {
-    setConfig(this.id, this.value);
-  });
+    $('.opensbp-input').change( function() {
+      setConfig(this.id, this.value);
+    });
 
     $('.opensbp-values').change( function() {
        var parts = this.id.split("-");
@@ -1005,21 +1060,20 @@ $(document).ready(function() {
         updateHistory();
     });
 
-    // Define a global variable to store status to improve accessibility
-    let status = null;
-
-    // Update the status variable whenever a status report is received
+    // Update the currentStatus variable whenever a status report is received
     fabmo.on('status', function(newStatus) {
-        status = newStatus; // Persist the status globally
-        updateLabels(status.unit); // Update labels for transforms
-        handleStatusReport(status); // Handle the status report
+        currentStatus = newStatus;
+        updateLabels(currentStatus.unit);
+        handleStatusReport(currentStatus);
+        updatePlayButton(currentStatus); // This will handle icon visibility
 
         // Update UI elements based on the status
-        if (status.job == null && status.state != 'idle') {
-            $('.play-button').hide();
-            $('.play').removeClass('loading');
-        } else if (status.state == 'idle' && el.firstChild) {
+        if (currentStatus.job == null && currentStatus.state != 'idle') {
+            $('.play-button').show(); // Keep container
+            $('.play').hide(); // Hide icon
+        } else if (currentStatus.state == 'idle' && el.firstChild) {
             $('.play-button').show();
+            $('.play').show(); // Show icon when idle
         }
     });
 

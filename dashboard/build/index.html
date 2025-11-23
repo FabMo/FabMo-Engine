@@ -536,38 +536,52 @@
 
     <div class="footBar fabmo-file-control">
       <div class="currentContainer">
-        <p class="currentJobTitle" ></p>
+        <p class="currentJobTitle"></p>
       </div>
       <div class="load_container">
         <div class="loading_bar">
-          <div class="horizontal_fill">
-          </div>
+          <div class="horizontal_fill"></div>
         </div>
         <div class="elapsed_time">
-          <p class="elapsed_time_label"><i class="fa fa-clock-o" aria-hidden="true"></i> :  
-          <p>
+          <p class="elapsed_time_label"><i class="fa fa-clock-o" aria-hidden="true"></i> :  </p>
           <p class="elapsed_time_text">0s</p>
         </div>
         <div class="percent_comp">10%</div>
         <div class="line_number">
-          <p class="line_number_label">line:
-          <p>
+          <p class="line_number_label">line:</p>
           <p class="line_number_text">0</p>
         </div>
       </div>
-      <div class='pauseJob-wrapper'>
-        <div class='pauseJob fabmo-pause-button '>
-          <div >STOP</div>
+      
+      <div class="footer-buttons-container">
+        <!-- Left side: Resume/Quit -->
+        <span class='fabmo-resume-stop'>
+          <div class='but resumeJob'>
+            <div>RESUME &nbsp;&nbsp;<i class="fa fa-play" style="color: rgb(190, 204, 194);"></i></div>
+          </div>
+          <div class='but stopJob'>
+            <div>QUIT &nbsp;&nbsp;<i class="fa fa-stop" style="color: rgb(205, 189, 189);"></i></div>
+          </div>
+        </span>
+        
+        <!-- Right side: Pause button (always visible) -->
+        <div class='pauseJob-wrapper'>
+          <div class='pauseJob fabmo-pause-button'>
+            <div><i class="fa fa-pause"></i></div>
+            <div class="pause-subtext">Pause / Feedhold</div>
+          </div>
+          <!-- Tooltip info for Pause/Feedhold ## NOT POSITIONED CORRECTLY-->
+          <div class="footer-tips"><span class="tooltip tooltip-below tooltiptext::after" style="justify-content: right; left: 250px; top:-160px">i<span class="tooltiptext">
+            When a file is running, Pause/Feedhold will execute a controlled stop <br>
+            allowing the file to be subsequently Resumed or Fully Quit.<br><br>
+            If an immediate Emergency Stop (E-Stop) is needed, use the physical <br>
+            RED Button/Lever to brake and shutdown the equipment.  The tool's <br>
+            position will be lost and your file will need to be restarted. <br>
+            On some tools, the E-Stop may also be the main power switch.<br>
+            </span></span>
+          </div>
         </div>
       </div>
-      <span class='fabmo-resume-stop'>
-        <div class='but resumeJob'>
-          <div>RESUME</div>
-        </div>
-        <div class='but stopJob'>
-          <div>QUIT</div>
-        </div>
-      </span>
     </div>
 
     <script src="/js/libs/socket.io.js"></script>
