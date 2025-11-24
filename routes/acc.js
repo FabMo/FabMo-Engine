@@ -31,4 +31,11 @@ var spindle_speed = function (req, res, next) {
 
 module.exports = function (server) {
     server.post("/acc/spindle_speed", spindle_speed);
+    
+    server.get('/backup/status', function(req, res, next) {
+    const watcher = require('../config_watcher');
+    res.send(watcher.getBackupStatus());
+    next();
+});
+
 };
