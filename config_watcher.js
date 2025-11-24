@@ -10,6 +10,12 @@ const watchDirs = ["/opt/fabmo/config/", "/opt/fabmo/macros/"];
 // Directory to store backups
 const backupBaseDir = "/opt/fabmo_backup/";
 
+// Backup timing constraints (relaxed for production efficiency)
+const MIN_BACKUP_SPACING_MS = 30000;      // 30 seconds between backups (was 10s)
+const DEFERRED_BATCH_WINDOW_MS = 60000;   // 60 seconds to batch changes (was 12s)
+const BACKUP_RETRY_DELAY_MS = 30000;      // 30 seconds between retry attempts (was 10s)
+const MAX_BACKUP_RETRIES = 10;            // 10 attempts = ~5 minutes tolerance (was 5)
+
 // Debounce function
 function debounce(func, wait) {
     let timeout;
@@ -21,7 +27,6 @@ function debounce(func, wait) {
 
 // Track retries for backup attempts
 let backupRetries = new Map(); // filepath -> retry count
-const MAX_BACKUP_RETRIES = 5;
 
 function processBackup(filePath, currentTime) {
     // Initialize retry count if not present
@@ -29,22 +34,22 @@ function processBackup(filePath, currentTime) {
         backupRetries.set(filePath, 0);
     }
     
-    isToolBusy((busy) => {
-        if (busy) {
+    isToolIdle((idle) => {
+        if (!idle) {
             const retryCount = backupRetries.get(filePath);
             
             // Check if we've exceeded max retries
             if (retryCount >= MAX_BACKUP_RETRIES) {
-                log.warn(`Backup abandoned for ${filePath} after ${MAX_BACKUP_RETRIES} retries - tool remains busy`);
+                log.warn(`Backup abandoned for ${filePath} after ${MAX_BACKUP_RETRIES} retries (${Math.round(MAX_BACKUP_RETRIES * BACKUP_RETRY_DELAY_MS / 60000)} minutes) - tool not idle`);
                 backupRetries.delete(filePath);
                 pendingUpdates.delete(filePath);
                 return;
             }
             
-            log.debug(`Tool is busy. Delaying backup request for ${filePath} (attempt ${retryCount + 1}/${MAX_BACKUP_RETRIES})`);
+            log.debug(`Tool not idle (state=${machine.machine.status.state}). Delaying backup for ${filePath} (attempt ${retryCount + 1}/${MAX_BACKUP_RETRIES})`);
             backupRetries.set(filePath, retryCount + 1);
             
-            setTimeout(() => processBackup(filePath, currentTime), 10000);
+            setTimeout(() => processBackup(filePath, currentTime), BACKUP_RETRY_DELAY_MS);
         } else {
             // Clear retry count on success
             backupRetries.delete(filePath);
@@ -78,28 +83,36 @@ let lastBackupTime = 0;
 let pendingUpdates = new Map(); // filepath -> { flagged: true, lastAttempt: timestamp }
 let deferredTimer = null;
 
-// Function to check tool state
-function isToolBusy(callback) {
+// Function to check if tool is idle (stricter than "busy" check)
+// Only backup when machine is truly idle - not running, manual, pausing, stopping, etc.
+function isToolIdle(callback) {
     const state = machine.machine.status.state;
-    const stat = machine.machine.status.stat; // G2 motion status
     
-    // Consider busy if:
-    // 1. Actually running a file
-    // 2. In manual mode AND actually moving (stat === 5)
-    const isBusy = state === "running" || 
-                   (state === "manual" && stat === 5);
+    // Only consider idle if machine state is explicitly "idle"
+    // This prevents backups during:
+    // - running: Active job execution
+    // - manual: Manual control (keyboard/pendant)
+    // - paused: Job paused (may resume soon)
+    // - stopped: Job stopped (transitioning)
+    // - probing: Probing operation
+    // - homing: Homing operation
+    const isIdle = state === "idle";
     
-    log.debug(`Tool state check: state=${state}, stat=${stat}, busy=${isBusy}`);
-    callback(isBusy);
+    if (!isIdle) {
+        log.debug(`Tool not idle - state=${state}, deferring backup`);
+    }
+    
+    callback(isIdle);
 }
 
-// Setup deferred update handling
+// Setup deferred update handling with relaxed timing
 const createBackup = debounce((filePath) => {
     const currentTime = Date.now();
     
-    // Check if we're within the 10-second window
-    if (currentTime - lastBackupTime < 10000) {
-        log.debug(`Backup request for ${filePath} deferred due to 10-second constraint`);
+    // Check if we're within the minimum spacing window
+    if (currentTime - lastBackupTime < MIN_BACKUP_SPACING_MS) {
+        const waitTime = Math.round((MIN_BACKUP_SPACING_MS - (currentTime - lastBackupTime)) / 1000);
+        log.debug(`Backup request for ${filePath} deferred due to ${MIN_BACKUP_SPACING_MS/1000}s spacing constraint (${waitTime}s remaining)`);
         
         // Flag this file for deferred backup
         pendingUpdates.set(filePath, {
@@ -120,26 +133,48 @@ const createBackup = debounce((filePath) => {
     processBackup(filePath, currentTime);
 }, 10);
 
-// Set up timer to handle deferred backups
+// Set up timer to handle deferred backups (batches multi-file changes)
 function setupDeferredBackupTimer() {
     if (deferredTimer) {
         clearTimeout(deferredTimer);
     }
     
-    // Wait 12 seconds (10 + 2 buffer) then process all flagged updates
+    // Wait for batch window to accumulate changes, then process all flagged updates
     deferredTimer = setTimeout(() => {
         processDeferredBackups();
-    }, 12000);
+    }, DEFERRED_BATCH_WINDOW_MS);
 }
 
 // Process all flagged deferred backups
 function processDeferredBackups() {
     const currentTime = Date.now();
-    log.info(`Processing ${pendingUpdates.size} deferred backup(s)`);
+    const pendingCount = pendingUpdates.size;
+    
+    if (pendingCount === 0) {
+        deferredTimer = null;
+        return;
+    }
+    
+    log.info(`Processing ${pendingCount} deferred backup(s) after ${DEFERRED_BATCH_WINDOW_MS/1000}s batch window`);
+    
+    // Calculate total wait time for first deferred update
+    let maxWaitTime = 0;
+    for (const [filePath, updateInfo] of pendingUpdates.entries()) {
+        if (updateInfo.flagged && updateInfo.originalTime) {
+            const waitTime = currentTime - updateInfo.originalTime;
+            if (waitTime > maxWaitTime) {
+                maxWaitTime = waitTime;
+            }
+        }
+    }
+    
+    if (maxWaitTime > 0) {
+        log.info(`Longest deferred backup waited ${Math.round(maxWaitTime/1000)}s`);
+    }
     
     for (const [filePath, updateInfo] of pendingUpdates.entries()) {
         if (updateInfo.flagged) {
-            log.info(`Executing deferred backup for: ${filePath}`);
+            log.debug(`Executing deferred backup for: ${filePath}`);
             processBackup(filePath, currentTime);
         }
     }
@@ -147,37 +182,6 @@ function processDeferredBackups() {
     // Clear all pending updates
     pendingUpdates.clear();
     deferredTimer = null;
-}
-
-// Backup processing logic
-function processBackup(filePath, currentTime) {
-    isToolBusy((busy) => {
-        if (busy) {
-            log.debug("Tool is busy. Delaying backup request for " + filePath);
-            setTimeout(() => processBackup(filePath, currentTime), 10000);
-        } else {
-            // Validate JSON before backing up
-            if (path.extname(filePath) === '.json') {
-                fs.readFile(filePath, 'utf8', (readErr, data) => {
-                    if (readErr) {
-                        log.warn(`Cannot read file for backup validation: ${filePath} - ${readErr.message}`);
-                        return;
-                    }
-                    
-                    try {
-                        JSON.parse(data); // Validate JSON
-                        performBackup(filePath, currentTime);
-                    } catch (parseErr) {
-                        log.warn(`Skipping backup of invalid JSON file: ${filePath} - ${parseErr.message}`);
-                        return;
-                    }
-                });
-            } else {
-                // Non-JSON files, backup normally
-                performBackup(filePath, currentTime);
-            }
-        }
-    });
 }
 
 // Helper function to perform the actual backup
@@ -205,6 +209,7 @@ function performBackup(filePath, currentTime) {
         }
     });
 }
+
 
 // Function to copy existing files to the backup directory if they do not already exist
 function copyExistingFiles() {
