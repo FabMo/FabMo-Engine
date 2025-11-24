@@ -367,7 +367,6 @@ p.at-foot {
 
 #sbp-container {
     height: 200px;
-    min-height: 10px;
     resize: vertical;
     overflow: hidden;
     width: 95%;
@@ -564,7 +563,7 @@ p.at-foot {
     background: #156ed350;
     border-style: solid;
     border-color: #7ab6fc;
-    border-radius: 5%;
+    border-radius: 15px;
 }
 
 #padCloseX {

@@ -178,18 +178,18 @@
                     This panel accesses the steps for starting-up your tool and Cutting or Managing your Part Files.<br><br>
                     Click to download a detailed workflow <span class = "tooltiplink" id="ck-list">Checklist</span></span></span>
                 </h9>
-                    <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button">
-                        1 - Home X & Y [C3] 
+                    <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button" title="Home the X and Y Axes; C3 or Macro">
+                        1 - Home X & Y 
                         <span class="tog-homed" id="tog-xy-homed" style="color: grey;">&#10680;</span>
                     </button>
-                    <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button">
-                        2 - Set Z Zero [C2] 
+                    <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button" title="Set Z Zero; C2 or Macro2">
+                        2 - Set Z Zero 
                         <span class="tog-homed" id="tog-z-homed" style="color: grey;">&#10680;</span>
                     </button>
-                    <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" title="Pick a Single Part to Cut">
-                        <strong>3 - CUT PART [FP]</strong>
+                    <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" title="Pick a Single Part File to Cut; FP">
+                        <strong>3 - CUT PART</strong>
                     </button>
-                    <button type="button" class="macro-button success button small medium-expanded" id="to_job_manager" title="Select and Order Parts in Job Manager">
+                    <button type="button" class="macro-button success button small medium-expanded" id="to_job_manager" title="Advanced: Select and Order Parts in Job Manager">
                         <span class="icon"></span>
                         <strong>(3) MANAGE PARTS</strong>
                     </button>
@@ -198,12 +198,13 @@
               <div class="other-macros">
               <!-- <label class="panel-label show-for-medium-up" title="Access other helpful macros and quick command calls; User configurable in ..."><strong>Other Helpful Macros</strong></label> -->
               <label class="panel-label show-for-medium-up"><strong>Other Helpful Macros</strong></label>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button1" title="Jog Home (X and Y; Z Safe Height)">JH</button>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button2" title="zero Z axis">ZZ</button>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button3" title="Move to Park location">Park (C79)</button>
-              <button type="button" class="macro-button secondary button small medium-expanded" id="third_macro_button">Square Gantry (C10)</button>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button1" title="Jog Home X & Y; Z to Safe Height (MH moves home at feed rate)">JH</button>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button2" title="Zero Z axis; ZZ (ZT to fully zero all axes and offsets)">ZZ</button>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button3" title="Move to Park location; C79 or Macro79">Park</button>
+              <button type="button" class="macro-button secondary button small medium-expanded" id="third_macro_button" title="Runs Spindle warm-up cycle; C5 or Macro5">Spindle Warm Up</button>
+              <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button"title="Square Gantry against the end stops; C10 or Macro10">Square Gantry</button>
               <!-- <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button">Test Cut (C210)</button> -->
-              <button type="button" class="macro-button secondary button small medium-expanded" id="fifth_macro_button">First Project - Bit Holder (C211)</button>
+              <!--<button type="button" class="macro-button secondary button small medium-expanded" id="fifth_macro_button">First Project - Bit Holder (C211)</button> -->
               </div>
             </div>
         </div>  
