@@ -134,6 +134,9 @@ $sb_home_Y               = 0         '- (m3) this would be a special offset from
 
 $sb_safe_Z               = %(28)     'Temporary retreival from system vars ... see note below
 
+$ToolIn := 0                         'Initial default for std macro
+$ATC.Type := 0                       'Initial default for std macro
+
 $sb_standard_variables_PRESENT = 1   'CONFIRM ALL READ.
 
 

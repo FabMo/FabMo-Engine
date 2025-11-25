@@ -355,27 +355,6 @@ $(document).ready(function () {
                 if (err) {
                     fabmo.notify('error', err);
                 } else {
-                    // Helper to fetch last job's file and run it
-                    function fetchAndRun() {
-                        fabmo.getJobHistory({ start: 0, count: 1 }, function(err, jobs) {
-                            if (err || !jobs.data.length) {
-                                fabmo.notify('error', 'Could not get job history');
-                                return;
-                            }
-                            var lastJob = jobs.data[0];
-                            var url = '/job/' + lastJob._id + '/file';
-                            $.get(url, function(data, status) {
-                                lines = data.split('\n');
-                                // Now lines[] is ready for display as job runs
-                                fabmo.runNext(function(runErr) {
-                                    if(runErr) {
-                                        fabmo.notify('error', runErr);
-                                    }
-                                });
-                            });
-                        });
-                    }
-
                     if(window.curFilePath) { // USB file
                         fabmo.submitUSBFile(window.curFilePath, {
                             name: window.curFilename,
@@ -396,8 +375,14 @@ $(document).ready(function () {
                             file: curFile,
                             name: curFilename,
                             description: '... called from Sb4'
-                        }, { stayHere: true }, function () {
-                            fetchAndRun();
+                        }, { stayHere: true }, function (err, result) {
+                            if(err) {
+                                fabmo.notify('error', err);
+                            } else {
+                                fetchPendingAndRun(function(runErr) {
+                                    // done
+                                });
+                            }
                         });
                     }
                 }
@@ -726,12 +711,12 @@ $(document).ready(function () {
 
     $("#third_macro_button").click(function () {
         console.log('got thirdMacro');
-        sendCmd("C10");
+        sendCmd("C5");
     });
 
     $("#fourth_macro_button").click(function () {
         console.log('got fourthMacro');
-        sendCmd("C210");
+        sendCmd("C10");
     });
 
     $("#fifth_macro_button").click(function () {
