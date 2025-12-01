@@ -1475,11 +1475,30 @@ define(function (require) {
             $(".modalDialogue").hide();
         }
 
+        // Format the numbers before display here or at the time of assignment?
         if (options["message"]) {
             $(".modalDialogue").html(options.message).show();
         } else {
             $(".modalDialogue").hide();
         }
+
+        // if (options["message"]) {
+        //     // Format any numbers in the message before display
+        //     let formattedMessage = options.message;
+            
+        //     // Match numbers with many decimal places: 123.456789
+        //     formattedMessage = formattedMessage.replace(/\b(\d+\.\d{4,})\b/g, function(match, num) {
+        //     const parsed = parseFloat(num);
+        //     if (Number.isInteger(parsed)) {
+        //         return String(parsed);
+        //     }
+        //     return String(parseFloat(parsed.toFixed(4)));
+        //     });
+            
+        //     $(".modalDialogue").html(formattedMessage).show();
+        // } else {
+        //     $(".modalDialogue").hide();
+        // }
 
         if (options["detail"]) {
             $(".modalDetail").html(options.detail).show();

@@ -1692,10 +1692,59 @@ SBPRuntime.prototype._varExists = function (identifier) {
     return false;
 };
 
+// Helper function to round numeric values to specified decimal places based on configuration
+//SBPRuntime.prototype._roundNumeric = function(value, decimals = 4) {
+SBPRuntime.prototype._roundNumeric = function(value) {
+    const decimals = config.opensbp.get('variable_precision') || 4;
+    // Handle null/undefined
+    if (value === null || value === undefined) {
+        return value;
+    }
+    
+    // If it's a string, return as-is
+    if (typeof value === 'string') {
+        return value;
+    }
+    
+    // If it's an object or array, recursively round nested values
+    if (typeof value === 'object') {
+        if (Array.isArray(value)) {
+            return value.map(item => this._roundNumeric(item, decimals));
+        } else {
+            const rounded = {};
+            for (const key in value) {
+                if (Object.prototype.hasOwnProperty.call(value, key)) {
+                    rounded[key] = this._roundNumeric(value[key], decimals);
+                }
+            }
+            return rounded;
+        }
+    }
+    
+    // Try to convert to number
+    const num = Number(value);
+    
+    // If not a valid number, return original
+    if (isNaN(num)) {
+        return value;
+    }
+    
+    // If it's an integer (no decimal part), return as-is
+    if (Number.isInteger(num)) {
+        return num;
+    }
+    
+    // Round to specified decimal places
+    const multiplier = Math.pow(10, decimals);
+    return Math.round(num * multiplier) / multiplier;
+};
+
 // Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
 SBPRuntime.prototype._assign = async function (identifier, value) {
+    value = this._roundNumeric(value); // Round numeric values based on configuration
+    
     // Determine the variable name
     let variableName;
     if (identifier.name) {
