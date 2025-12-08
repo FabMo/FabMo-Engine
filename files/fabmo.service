@@ -1,11 +1,14 @@
 [Unit]
 Description=FabMo Engine
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-ExecStart=/usr/bin/node /fabmo/server.js &
+ExecStart=/usr/bin/node /fabmo/server.js
 Type=simple
 User=root
-Restart=always
+Restart=on-failure
+RestartSec=3
 SyslogIdentifier=FBMO
 WorkingDirectory = /fabmo/
 

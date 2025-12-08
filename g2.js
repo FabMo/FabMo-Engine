@@ -546,14 +546,18 @@ G2.prototype.clearLastException = function () {
  */
 G2.prototype.handleStatusReport = function (response) {
     if (response.prb) {
-        log.debug("GOT PROBE FINISH REPORT! Target at:  " + response.prb.z);
+        log.debug("GOT PROBE FINISH REPORT! Target at: " + response.prb.z);
         if (response.prb.e === 1) {
-            // Special Case: When a probe move starts very close to the target,
-            // ... a STAT_PROBE may not have been issued before it is hit. So we add this flag, which is usually redundant.
             this.status.targetHit = true;
+            this.probeCompleting = true; // Block feedholds during completion
             log.debug("HIT TARGET!");
+
+            // Clear the flag after probe completion window
+            setTimeout(() => {
+                this.probeCompleting = false;
+                log.debug("Probe completion window closed");
+            }, 500); // 500ms window
         }
-        // Don't clear probePending until next stat:3; managed in "opensbp"
     }
     if (response.sr) {
         // Update our copy of the system status
@@ -757,6 +761,13 @@ G2.prototype.manualResume = function () {
 // "pause" the current machining cycle by issuing a feedhold
 // callback is called when the next state change takes place
 G2.prototype.feedHold = function (callback) {
+    // Block feedholds during probe completion
+    if (this.probeCompleting) {
+        log.warn("Feedhold blocked - probe completing");
+        if (callback) callback(new Error("Feedhold blocked during probe completion"));
+        return;
+    }
+    
     this.pause_flag = true;
     this.flooded = false;
     typeof callback === "function" && this.once("state", callback);
@@ -764,7 +775,7 @@ G2.prototype.feedHold = function (callback) {
     if (this.context) {
         this.context.pause();
     }
-    this._write("!\n"); // ESSENTIAL to terminations in keypad
+    this._write("!\n");
 };
 
 // Clears the queue, this means both the queue of g-codes in the engine to send,

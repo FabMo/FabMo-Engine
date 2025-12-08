@@ -864,8 +864,6 @@ SBPRuntime.prototype._run = function () {
         }
         switch (stat) {
             case this.driver.STAT_STOP:
-                // Only update and call execute next if we're waiting on pending gcodes or probing
-                // ... and expecting this stat:3
                 // For probing we do not turn off the pending if we have not passed the Initialization phase
                 if (this.driver.resumePending) {
                     log.debug("Awaiting RESUME PENDING ...");
@@ -888,8 +886,39 @@ SBPRuntime.prototype._run = function () {
                     break;
                 }
                 break;
+
             case this.driver.STAT_HOLDING:
                 this.feedhold = true;
+
+                // Handle feedhold during probing; Should probably be fixed in G2, but for now we do it here!
+                if (this.probingPending && this.probingInitialized) {
+                    log.info("Feedhold occurred during active probe - probe aborted");
+                    // Clean up probe state
+                    this.probingPending = false;
+                    this.probingInitialized = false;
+                    this.driver.status.targetHit = false;
+                    // Turn off probe input
+                    this.emit_gcode('M100.1("{prbin:0}")');
+                    this.prime();
+                    log.info("PROBE INTERRUPTED BY FEEDHOLD - cleaned up ============####");
+                }
+                // Check if probe was interrupted AFTER it completed but before cleanup
+                if (this.probingPending && !this.probingInitialized) {
+                    log.warn("Probe completion interrupted by feedhold - cleaning up probe state");
+                    this.probingPending = false;
+                    this.emit_gcode('M100.1("{prbin:0}")');
+                    this.prime();
+                    log.info("PROBE POST-COMPLETION INTERRUPTED - cleaned up, hold: " + this.driver.status.hold + " ============####");
+                    // CRITICAL: Emit hold:10 for client-side to recognize proper pause state
+                    // G2 sends hold:10 before stat:6,hold:0 in probe moves, but client needs to see it AFTER stat:6
+                    if (this.driver.status.hold === 0) {
+                        log.info("Emitting synthetic hold:10 for client-side pause recognition");
+                        this.driver.status.hold = 10;
+                        this.machine.emit('status', this.machine.status);
+                    }
+                }
+
+                // Now handle the normal paused state
                 if (this.machine.pauseTimer) {
                     clearTimeout(this.machine.pauseTimer);
                     this.machine.pauseTimer = false;
@@ -2513,8 +2542,19 @@ SBPRuntime.prototype.transformation = function (TranPt) {
 
 // Pause the currently running program
 SBPRuntime.prototype.pause = function () {
-    // TODO: Pending feedholds appear to be broken and may no longer be desired functionality.
-    // TODO: Should this be handled by g2.js behavior?
+
+    // Don't block feedhold during active probing - only during completion (See above re G2 probing fix eventually)
+    // Check if we're in the brief probe completion window (after hit/finish, before cleanup)
+    if (this.probingPending && !this.probingInitialized && this.driver.status.stat === this.driver.STAT_STOP) {
+        log.warn("Ignoring feedhold request - probe move completing (in STAT_STOP)");
+        return;
+    }
+    // Allow feedhold during active probe motion (stat 7) - G2 will handle it gracefully
+    if (this.probingPending && this.probingInitialized && this.driver.status.stat === this.driver.STAT_PROBE) {
+        log.info("Feedhold during active probe - G2 will stop probe motion");
+        // Continue with normal feedhold processing below
+    }
+
     if (
         this.machine.driver.status.stat == this.machine.driver.STAT_END ||
         this.machine.driver.status.stat == this.machine.driver.STAT_STOP
