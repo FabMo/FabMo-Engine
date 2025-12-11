@@ -1682,6 +1682,37 @@ $("#override").on("input keypress mousemove", function (evt) {
 });
 // -------------------------------------------------------------------------------
 
+// UI for FEEDRATE OVERRIDE (%) -------------------------------------------------
+// Requested OVERRIDE Feed Rate via setUix process (see uix.js)
+var overrideFeedRate = function (new_override) {
+    try {
+        console.log("----> fr Override Request: " + new_override);
+        engine.setUix("fr_override", new_override);
+    } catch (error) {
+        console.log("Failed to pass new Override: " + error);
+    }
+};
+
+$("#override").on("change", function (evt) {
+    if (engine.status.state != "idle") {
+        var new_override = parseFloat($("#override").val());
+        // Check against: feedrate override range
+        if (new_override > 4 && new_override < 301) {
+            overrideFeedRate(new_override);
+        }
+    }
+});
+
+// Listener for focus on the override input box
+$("#override").on("focus", function (evt) {
+    startOvBlurTimer();
+});
+// Listeners for activity in the override input box to restart the timer
+$("#override").on("input keypress mousemove", function (evt) {
+    startOvBlurTimer();
+});
+// -------------------------------------------------------------------------------
+
 // UI for Spindle Speed (RPM & AMP) -----------------------------------------------
 const debouncedChangeSpindleSpeed = debounce(function (new_RPM) {
     changeSpindleSpeed(new_RPM);

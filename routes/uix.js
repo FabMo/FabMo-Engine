@@ -12,6 +12,7 @@ var machine = require("../machine").machine;
 
 // eslint-disable-next-line no-unused-vars
 var fr_override = function (req, res, next) {
+    //log.debug("====> fr_override route hit, body: " + JSON.stringify(req.body));
     var answer = {
         status: "success",
         data: null,
@@ -19,12 +20,14 @@ var fr_override = function (req, res, next) {
     // Adjust parameter names to match the client's payload
     if (req.body.ovr !== undefined) {
         var OVR = req.body.ovr;
+        //log.debug("====> Calling machine.frOverride(" + OVR + ")");
         machine.frOverride(OVR);
     } else {
         answer = {
             status: "error",
             message: "No OVR specified in request.",
         };
+        //log.error("====> No OVR in request body");
     }
     res.json(answer);
 };

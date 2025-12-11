@@ -197,7 +197,8 @@ function addQueueEntries(jobs) {
         listItem.setAttribute("data-id", jobs[i]._id);
         table.appendChild(listItem);
         var id = document.getElementById(jobs[i]._id);
-        id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div><div class="created-date">'+ moment(jobs[i].created_at).fromNow(); +'</div>';
+        // id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div><div class="created-date">'+ moment(jobs[i].created_at).fromNow(); +'</div>';
+        id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div>';
         var menu = id.firstChild;
         menu.innerHTML = createQueueMenu(jobs[i]._id);
       // }
