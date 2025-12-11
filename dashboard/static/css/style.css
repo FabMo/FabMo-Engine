@@ -1453,6 +1453,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     .load_container {
         width: 20%;
     }
+
+    .load_container .loading_bar {
+        margin-top: -120px;
+        height: 10px;
+    }
 }
 
 @media only screen and (max-width: 700px){
