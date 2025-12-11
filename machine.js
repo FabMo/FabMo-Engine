@@ -1609,20 +1609,29 @@ Machine.prototype.spindleSpeed = function (new_RPM) {
     }
 };
 
+
 // Set a Feed Rate Override Request for injection into G2 "driver"
 // ... handle this with a debounce type procedure so that the driver is not overwhelmed with commands and G2 has time to update
 Machine.prototype.frOverride = function (new_override) {
-    // Second check against: Override range
+    //log.info("====> frOverride called with: " + new_override);
+    //log.info("====> Value check: " + (new_override >= 5 && new_override <= 300));
+    //log.info("====> Driver state: pause_flag=" + this.driver.pause_flag + ", stat=" + this.driver.status.stat);
+    
     if (new_override >= 5 && new_override <= 300) {
         try {
             log.info("----> new override CMD sent: " + new_override);
             // Set the new override value and format for the driver
             // ... I have tested several methods of this injection (including M101); this seems the most robust
             var cmd_to_G2 = "{fro:" + (new_override / 100).toFixed(2) + "}";
-            this.driver.command(cmd_to_G2); // <<==== injected here, but may be several commands away form execution
+            //log.info("----> Formatted command: " + cmd_to_G2);
+            //log.info("----> Command queue length before: " + this.driver.command_queue.getLength());
+            this.driver.command(cmd_to_G2);
+            //log.info("----> Command queue length after: " + this.driver.command_queue.getLength());
         } catch (error) {
             log.error("Failed to pass new Override: " + error);
         }
+    } else {
+        log.warn("====> Override value out of range: " + new_override);
     }
 };
 

@@ -1120,6 +1120,7 @@ G2.prototype.prime = function () {
 G2.prototype.sendMore = function () {
     // Don't ever send anything if we're paused
     if (this.pause_flag) {
+        //log.debug("====> sendMore() blocked by pause_flag, command_queue length: " + this.command_queue.getLength());
         return;
     }
 
@@ -1127,6 +1128,7 @@ G2.prototype.sendMore = function () {
     // ... Feedrate overrides come in here, and are sent as commands.
     var count = this.command_queue.getLength();
     if (count) {
+        //log.debug("====> sendMore() sending " + count + " commands");
         var to_send = count;
         var codes = this.command_queue.multiDequeue(count);
         codes.push("");
