@@ -16,6 +16,7 @@ var Grid          = require('./grid');
 var Table         = require('./table');
 var Tool          = require('./tool');
 var Gui           = require('./gui');
+var PointCloud    = require('./pointcloud');
 
 
 module.exports = function(container) {
@@ -251,6 +252,7 @@ module.exports = function(container) {
   self.table = new Table(self.scene, self.refresh);
   self.axes = new Axes(self.scene, self.refresh);
   self.tool = new Tool(self.scene, self.refresh);
+  self.pointcloud = new PointCloud(self.scene, self.refresh);
 
   // Path
   self.path = new Path(self.scene, {
@@ -267,13 +269,27 @@ module.exports = function(container) {
     showX: self.showX,
     showY: self.showY,
     showZ: self.showZ,
-    play:  function () {self.path.play()},
-    pause: function () {self.path.pause()},
-    reset: function () {self.path.reset()}
-  }
+    showISO: self.showISO,
+    play: self.path.play,
+    pause: self.path.pause,
+    stop: self.path.stop,
+    reset: self.path.reset,
+    showPointCloud: self.pointcloud.setShow,
+    showPointCloudWireframe: self.pointcloud.setShowWireframe,
+    setPointCloudOpacity: self.pointcloud.setOpacity
+  };
 
   self.gui = new Gui(callbacks);
 
   // Units
   util.connectSetting('units', self.units, self.setUnits);
+
+  // Add method to load point cloud from config
+  self.loadPointCloud = function(config) {
+    if (config && config.opensbp && config.opensbp.transforms &&
+        config.opensbp.transforms.level && config.opensbp.transforms.level.apply) {
+      var filePath = config.opensbp.transforms.level.ptDataFile;
+      self.pointcloud.loadFromFile(filePath);
+    }
+  };
 }

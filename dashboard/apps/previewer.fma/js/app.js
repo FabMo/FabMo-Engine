@@ -40,7 +40,7 @@ function resize() {
 
 function getMachineData(err, callback) {
     fabmo.getConfig(function (err, config) {
-        cached_Config = config;             // Make machineData available to this app (units, dim, and offsets needed)
+        cached_Config = config;
         if (!err) {
           callback();
         } else {
@@ -104,6 +104,15 @@ function nowPreviewJob() {
 
     // Setup grid and table
     viewer.setTable(cached_Config.machine.envelope, cached_Config.driver.g55x, cached_Config.driver.g55y, -1);
+
+    // Load point cloud if leveling is enabled
+    if (cached_Config.opensbp.transforms.level.apply === true || 
+        cached_Config.opensbp.transforms.level.apply === 'true') {
+      console.log('Loading point cloud from:', cached_Config.opensbp.transforms.level.ptDataFile);
+      viewer.loadPointCloud(cached_Config);
+    } else {
+      console.log('Point cloud leveling not enabled');
+    }
 
     // Resize
     resize();
