@@ -1231,8 +1231,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 /* Keep Quit button spinner on left side */
 .stopJob .spinner {
-    left: 35%;
-    top: 25%;
+    left: 46%;
+    top: 60%;
 }
 
 /* Right side: Pause button */
