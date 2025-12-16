@@ -136,6 +136,27 @@
 
           <label>Point Cloud Opacity</label>
           <input name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>
+
+          <label>
+            <input type="checkbox" name="show-material"/>
+            Show Material Simulation
+          </label>
+
+          <label>Material Opacity</label>
+          <div class="range-container">
+            <input name="material-opacity" type="range" min="0" max="1" step="0.1" value="0.5"/>
+          </div>
+
+          <label>Simulation Resolution (grid points)</label>
+          <select name="material-resolution">
+            <option value="50">Low (50x50 - Fast)</option>
+            <option value="100">Medium (100x100)</option>
+            <option value="200" selected>High (200x200)</option>
+            <option value="300">Very High (300x300)</option>
+            <option value="500">Ultra (500x500)</option>
+          </select>
+
+          <button class="reset-material">Reset Material</button>
         </div>
         <div class="footer"><button class="close">Ok</button></div>
       </div>

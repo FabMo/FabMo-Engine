@@ -10,6 +10,7 @@
 
 
 var util = require('./util');
+var cookie = require('./cookie');  // ADD THIS LINE - cookie module was missing!
 
 
 module.exports = function(callbacks) {
@@ -129,4 +130,14 @@ module.exports = function(callbacks) {
   self.help      = $('#preview .help')[0];
   self.settings  = $('#preview .settings')[0];
   $('#preview .dialog .close').click(onClose);
+
+  $('.reset-material').click(function() {
+    if (callbacks.resetMaterial) callbacks.resetMaterial();
+  });
+  
+  // ENSURE resolution dropdown shows current value on open
+  $('#preview .settings [name="material-resolution"]').on('focus', function() {
+    var currentRes = cookie.get('material-resolution', 200);
+    $(this).val(currentRes);
+  });
 }

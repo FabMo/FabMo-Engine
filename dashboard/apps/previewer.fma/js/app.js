@@ -158,6 +158,10 @@ function nowPreviewJob() {
         },
 
         success: function (gcode) {
+          console.log('=== RAW GCODE FROM SERVER (first 2000 chars) ===');
+          console.log(gcode.substring(0, 2000));
+          console.log('=== GCODE LINES COUNT:', gcode.split('\n').length);
+          
           viewer.gui.showLoadingSize(gcode.length);
           viewer.setGCode(gcode)
         },

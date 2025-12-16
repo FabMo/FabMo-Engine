@@ -156,8 +156,19 @@ module.exports = function(scene, callbacks) {
     var feed = rapid ? rapid_feed : self.feed;
     var move = new Move(self.buffers[self.buffers.length - 1], self.fill * 6,
                         self.lines + 1, rapid, feed, self.duration);
+    
+    // ADD: Store move metadata for material simulation
+    move.start = start;
+    move.end = end;
+    move.type = 'line';
+    move.startTime = self.duration;
+    
     self.distance += move.getLength();
     self.duration += move.getDuration();
+    
+    // ADD: Store end time
+    move.endTime = self.duration;
+    
     self.moves.push(move);
 
     if (++self.fill == buffer_size) self.flushBuffer();
@@ -307,11 +318,27 @@ module.exports = function(scene, callbacks) {
       next[planeAxis[2]] = zStart + deltaZ * a / angle;
 
       self.addLine(self.position, next, false);
+      
+      // ADD: Mark this segment as part of an arc for material simulation
+      var lastMove = self.moves[self.moves.length - 1];
+      lastMove.type = 'arc';
+      lastMove.arcCenter = center2D;
+      lastMove.arcRadius = radius;
+      lastMove.arcPlane = plane;
+      
       self.position = next;
     }
 
     // Final move to exact end
     self.addLine(self.position, end, false);
+    
+    // ADD: Mark final segment as arc
+    var lastMove = self.moves[self.moves.length - 1];
+    lastMove.type = 'arc';
+    lastMove.arcCenter = center2D;
+    lastMove.arcRadius = radius;
+    lastMove.arcPlane = plane;
+    
     self.position = next;
   }
 
@@ -526,6 +553,38 @@ module.exports = function(scene, callbacks) {
     var start    = move.start;
     var p        = move.getPositionAt(time);
 
+    // Material simulation during playback
+    if (callbacks.materialUpdate && nextMove > self.lastMove) {
+      for (var i = self.lastMove; i < nextMove; i++) {
+        var currentMove = self.moves[i];
+        
+        // Only simulate cutting moves (not rapids)
+        if (!currentMove.rapid) {
+          // For arc moves, sample at fine intervals for smooth material removal
+          if (currentMove.type === 'arc') {
+            // Calculate arc segment count based on arc length and desired resolution
+            var arcLength = currentMove.getLength();
+            var samplesPerInch = 20; // REDUCED from 50 for better performance
+            var numSegments = Math.max(10, Math.ceil(arcLength * samplesPerInch));
+            
+            var prevPos = currentMove.start;
+            
+            for (var seg = 1; seg <= numSegments; seg++) {
+              var t = seg / numSegments;
+              var segTime = currentMove.startTime + t * currentMove.getDuration();
+              var currentPos = currentMove.getPositionAt(segTime);
+              
+              callbacks.materialUpdate(prevPos, currentPos, true);
+              prevPos = currentPos;
+            }
+          } else {
+            // Linear moves: just start to end (already smooth)
+            callbacks.materialUpdate(currentMove.start, currentMove.end, true);
+          }
+        }
+      }
+    }
+
     // Mark lines done
     for (var i = self.lastMove; i < nextMove; i++)
       self.moves[i].setDone(true);
@@ -546,6 +605,14 @@ module.exports = function(scene, callbacks) {
     callbacks.position(p);
 
     setCurrentLine(move.getLine());
+    
+    // Force final material update when simulation completes
+    // REMOVE the auto-reset - let user inspect the result
+    if (time >= self.duration && callbacks.materialForceUpdate) {
+      callbacks.materialForceUpdate();
+      console.log('Material simulation complete - final update rendered');
+    }
+    
     self.lastMove = nextMove;
     self.moveTime = time;
   }

@@ -17,7 +17,7 @@ var Table         = require('./table');
 var Tool          = require('./tool');
 var Gui           = require('./gui');
 var PointCloud    = require('./pointcloud');
-
+var Material      = require('./material');  // ADD THIS
 
 module.exports = function(container) {
   var self = this;
@@ -198,6 +198,38 @@ module.exports = function(container) {
     self.axes.update(size);
     self.tool.update(size, self.path.position);
     
+    // Initialize material simulation
+    // Stock top should be at Z=0 (or slightly above if needed)
+    var stockThickness = 0.75; // Default stock thickness
+    var materialTop = 0; // Top surface at Z=zero plane
+    
+    // Expand bounds to include material block
+    var materialBounds = {
+      min: {
+        x: bounds.min.x - 0.5,  // Add margin
+        y: bounds.min.y - 0.5,
+        z: materialTop - stockThickness  // Bottom of stock
+      },
+      max: {
+        x: bounds.max.x + 0.5,
+        y: bounds.max.y + 0.5,
+        z: materialTop  // Top at Z=0
+      }
+    };
+    
+    // Tool diameter - could be from config or settings (default 0.25")
+    var toolDia = 0.25; // TODO: Get from machine config
+    
+    console.log('Initializing material:');
+    console.log('  Top Z:', materialTop);
+    console.log('  Bottom Z:', materialTop - stockThickness);
+    console.log('  Thickness:', stockThickness);
+    console.log('  Tool diameter:', toolDia);
+    console.log('Path bounds Z: min=', bounds.min.z, 'max=', bounds.max.z);
+    
+    // Initialize material with proper positioning
+    self.material.initialize(materialBounds, stockThickness, toolDia, materialTop);
+    
     // Try to restore saved view state first
     var restored = self.restoreViewState();
     
@@ -346,7 +378,7 @@ module.exports = function(container) {
   self.orthographicCamera.position.set(100, 100, 100);
   
   // Initialize view mode from saved preference (default to perspective)
-  var savedView = cookie.get('fabmo-previewer-view', 'perspective');
+  var savedView = cookie.get('view', 'perspective');  // Was 'fabmo-previewer-view'
   self.isOrtho = (savedView === 'ortho');
   
   // Set initial camera based on saved preference
@@ -391,14 +423,14 @@ module.exports = function(container) {
       },
       zoom: self.camera.zoom
     };
-    cookie.set('fabmo-previewer-view-state', JSON.stringify(viewState));
-    cookie.set('fabmo-previewer-view', viewState.mode);
+    cookie.set('view-state', JSON.stringify(viewState));  // Was 'fabmo-previewer-view-state'
+    cookie.set('view', viewState.mode);  // Was 'fabmo-previewer-view'
   };
 
   // Method to restore saved view state
   self.restoreViewState = function() {
     try {
-      var viewStateStr = cookie.get('fabmo-previewer-view-state');
+      var viewStateStr = cookie.get('view-state');  // Was 'fabmo-previewer-view-state'
       if (!viewStateStr) return false;
       
       var viewState = JSON.parse(viewStateStr);
@@ -459,17 +491,30 @@ module.exports = function(container) {
   self.axes = new Axes(self.scene, self.refresh);
   self.tool = new Tool(self.scene, self.refresh);
   self.pointcloud = new PointCloud(self.scene, self.refresh);
+  self.material = new Material(self.scene, self.refresh);
 
-  // Path
+  // Path - Create WITH material callbacks
   self.path = new Path(self.scene, {
     metric: self.setPathMetric,
     progress: pathProgress,
-    position: updatePosition
+    position: updatePosition,
+    materialUpdate: function(start, end, isCut) {
+      // Remove console.log - it's working!
+      if (isCut && self.material) {
+        self.material.removeMaterial(start, end, 'flat');
+      }
+    },
+    materialForceUpdate: function() {
+      // Remove console.log
+      if (self.material) {
+        self.material.forceUpdate();
+      }
+    }
   });
 
   // Initialize camera position BEFORE path loads
   // This prevents the "jump" effect
-  var initialViewState = cookie.get('fabmo-previewer-view-state');
+  var initialViewState = cookie.get('view-state');  // Was 'fabmo-previewer-view-state'
   if (initialViewState) {
     try {
       var parsed = JSON.parse(initialViewState);
@@ -503,7 +548,11 @@ module.exports = function(container) {
     reset: self.path.reset,
     showPointCloud: self.pointcloud.setShow,
     showPointCloudWireframe: self.pointcloud.setShowWireframe,
-    setPointCloudOpacity: self.pointcloud.setOpacity
+    setPointCloudOpacity: self.pointcloud.setOpacity,
+    showMaterial: self.material.setShow,
+    setMaterialOpacity: self.material.setOpacity,
+    setMaterialResolution: self.material.setResolution,
+    resetMaterial: self.material.reset
   };
 
   self.gui = new Gui(callbacks);
