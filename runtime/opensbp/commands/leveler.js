@@ -180,17 +180,26 @@ var Leveler = function (file, callback) {
             points = [];
 
         for (i = 0; i < arr.length; i++) {
-            point = arr[i].split(" ");
+            // Split on any whitespace (spaces or tabs), filter out empty strings
+            point = arr[i].trim().split(/\s+/).filter(function(s) { return s !== ''; });
 
             if (point.length === 3) {
-                points.push([
-                    parseFloat(point[0], 10),
-                    parseFloat(point[1], 10),
-                    parseFloat(point[2], 10),
-                ]);
+                var x = parseFloat(point[0]);
+                var y = parseFloat(point[1]);
+                var z = parseFloat(point[2]);
+                
+                // Validate that all coordinates are valid numbers
+                if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
+                    points.push([x, y, z]);
+                } else {
+                    log.warn("Skipping invalid point on line " + (i + 1) + ": " + arr[i]);
+                }
+            } else if (arr[i].trim() !== '') {
+                log.warn("Skipping malformed line " + (i + 1) + ": " + arr[i]);
             }
         }
 
+        log.info("Parsed " + points.length + " valid points from point cloud file");
         return points;
     }
 
@@ -214,6 +223,17 @@ var Leveler = function (file, callback) {
         var points2D = [];
 
         that.points = parseData(data);
+
+            // Validate we have enough points
+        if (that.points.length < 3) {
+            log.error("Point cloud must contain at least 3 points. Found: " + that.points.length);
+            that.triangles = [];
+            if (callback !== undefined) {
+                callback(new Error("Insufficient points for triangulation"));
+            }
+            return;
+        }
+ 
         that.points.sort(comparePosition);
 
         //Remove the points in the same place
@@ -233,13 +253,27 @@ var Leveler = function (file, callback) {
             }
         }
 
+        // Check again after removing duplicates
+        if (that.points.length < 3) {
+            log.error("After removing duplicates, not enough unique points remain: " + that.points.length);
+            that.triangles = [];
+            if (callback !== undefined) {
+                callback(new Error("Insufficient unique points for triangulation"));
+            }
+            return;
+        }
+
+        log.info("Point cloud contains " + that.points.length + " unique points");
+    
         points2D = convertPointsForTriangulation(that.points);
 
         that.triangles = triangulate(points2D);
 
         if (that.triangulationFailed() === true) {
             //Should stop the job
-            log.error(new Error("Impossible to triangulate the point cloud."));
+            log.error(new Error("Impossible to triangulate the point cloud. Points may be collinear."));
+        } else {
+            log.info("Successfully created " + that.triangles.length + " triangles from point cloud");
         }
 
         if (callback !== undefined) {

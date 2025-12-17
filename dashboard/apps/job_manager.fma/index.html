@@ -381,6 +381,40 @@
         	</fieldset>
         </div>
 
+
+          <fieldset>
+        		<h4>Leveler (Z Height Mapping) <span class="tooltip tooltip-below">i
+              <span class="tooltiptext">
+                The Leveler, using a Z-height point cloud map, adjusts the Z height across the Job to compensate for uneven surfaces. <br>
+              </span>
+            </span></h4>
+            <div class="row scale-row">
+          		<div class="large-3 columns">
+          			<div class="row collapse">
+         					<select id="opensbp-transforms-level-apply" class="opensbp-input apply">
+         						<option value="false">Disabled</option>
+       	  					<option value="true">Enabled</option>
+       		  			</select>
+                </div>
+          		</div>
+          	</div>
+        		
+            <div class="row scale-row">
+              <div class="large-3 columns">
+          			<div class="row collapse">
+          				<label>Point Cloud Map (full path)</label>
+          				<div class="small-9 columns">
+          					<input type="text" id="opensbp-transforms-level-ptDataFile" class="opensbp-input"/>
+        	  			</div>
+        		    </div>
+        		  </div>
+            </div>
+
+        	</fieldset>
+        </div>
+
+
+
       <!-- </section> -->
     </div>
   <div class="dropDownWrapper"></div>

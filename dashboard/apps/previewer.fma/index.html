@@ -38,11 +38,15 @@
         <img id="button-play"   src="images/play.png"
              title="Start or continue path simulation."/>
         <img id="button-x"      src="images/x.png"
-             title="Snap to view down the X axis."/>
+             title="Change orientation to view down the X axis."/>
         <img id="button-y"      src="images/y.png"
-             title="Snap to view down the Y axis."/>
+             title="Change orientation to view down the Y axis."/>
         <img id="button-z"      src="images/z.png"
-             title="Snap to view down the Z axis."/>
+             title="Change orientation to view down the Z axis."/>
+        <img id="button-ortho"    src="images/ortho.png"
+             title="Toggle to Ortho (non-perspective) view."/>
+        <img id="button-perspective"    src="images/perspective.png"
+             title="Toggle to Perspective view."/>
         <img id="button-settings" src="images/settings.png"
              title="Open previewer settings."/>
       </div>
@@ -67,7 +71,7 @@
       </div>
 
       <div class="settings dialog">
-        <div class="header">Preview Settings</div>
+        <div class="header">Settings</div>
         <div class="content">
           <label>Simulation Speed</label>
           <select name="speed">
@@ -121,6 +125,19 @@
             <input name="show-tool" type="checkbox" checked="true"/>
             Show Tool (Yellow Cone)
           </label>
+
+          <label>
+            <input name="show-pointcloud" type="checkbox"/>
+            Show Point Cloud (Leveler)
+          </label>
+
+          <label>
+            <input name="show-pointcloud-wireframe" type="checkbox" checked="true"/>
+            Show Point Cloud Wireframe
+          </label>
+
+          <label>Point Cloud Opacity</label>
+          <input name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>
         </div>
         <div class="footer"><button class="close">Ok</button></div>
       </div>
@@ -160,6 +177,10 @@
             <tr>
               <th><img src="images/z.png"/></th>
               <td>Snap to view down the Z axis.</td>
+            </tr>
+            <tr>
+              <th><img src="images/iso.png"/></th>
+              <td>Snap to isometric view.</td>
             </tr>
             <tr>
               <th><img src="images/settings.png"/></th>

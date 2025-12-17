@@ -30,7 +30,9 @@ module.exports = function(callbacks) {
 
   function get(name, callback) {
     var e = $('#preview #button-' + name)[0];
-    e.onclick = callback;
+    if (e && callback) {
+      e.onclick = callback;
+    }
     return e;
   }
 
@@ -40,19 +42,24 @@ module.exports = function(callbacks) {
     var margin = 5;
 
     var x = margin, y = margin;
-    place(self.buttons.showX, x, y);
-    place(self.buttons.showY, x, y + size + margin);
-    place(self.buttons.showZ, x, y + (size + margin) * 2);
-    place(self.buttons.help, x + 25, y + (size + margin) * 3.2);
+    if (self.buttons.showX) place(self.buttons.showX, x, y);
+    if (self.buttons.showY) place(self.buttons.showY, x, y + size + margin);
+    if (self.buttons.showZ) place(self.buttons.showZ, x, y + (size + margin) * 2);
+    if (self.buttons.showOrtho) place(self.buttons.showOrtho, x, y + (size + margin) * 3);
+    if (self.buttons.showPerspective) place(self.buttons.showPerspective, x, y + (size + margin) * 3);
+    if (self.buttons.help) place(self.buttons.help, x + 25, y + (size + margin) * 4.2);
 
-    place(self.buttons.settings, margin, self.height - margin - size);
+    if (self.buttons.settings) place(self.buttons.settings, margin, self.height - margin - size);
 
+    // Bottom center: play/pause on left, reset on right
     x = (self.width / 2) - size - margin / 2;
     y = self.height - margin - size;
-    place(self.buttons.play, x, y);
-    place(self.buttons.pause, x, y);
-    place(self.buttons.reset, (self.width / 2) + margin / 2, y);
-    $('#preview #button-help').show();
+    if (self.buttons.play) place(self.buttons.play, x, y);
+    if (self.buttons.pause) place(self.buttons.pause, x, y);  // Same position as play (mutually exclusive)
+    if (self.buttons.reset) place(self.buttons.reset, self.width / 2 + margin / 2, y);
+    
+    var helpBtn = $('#preview #button-help');
+    if (helpBtn.length) helpBtn.show();
   }
 
 
@@ -106,14 +113,22 @@ module.exports = function(callbacks) {
 
   // Buttons
   self.buttons = {};
-  self.buttons.showX    = get('x',        callbacks.showX);
-  self.buttons.showY    = get('y',        callbacks.showY);
-  self.buttons.showZ    = get('z',        callbacks.showZ);
-  self.buttons.help     = get('help',     onHelp);
+  self.buttons.showX    = get('x', callbacks.showX);
+  self.buttons.showY    = get('y', callbacks.showY);
+  self.buttons.showZ    = get('z', callbacks.showZ);
+  self.buttons.showOrtho  = get('ortho', callbacks.toggleView);
+  self.buttons.showPerspective  = get('perspective', callbacks.toggleView);
+  
+  // Debug: Log button elements
+  console.log('Ortho button:', self.buttons.showOrtho);
+  console.log('Perspective button:', self.buttons.showPerspective);
+  
+  self.buttons.play     = get('play', callbacks.play);
+  self.buttons.pause    = get('pause', callbacks.pause);
+  self.buttons.stop     = get('stop', callbacks.stop);
+  self.buttons.reset    = get('reset', callbacks.reset);
   self.buttons.settings = get('settings', onSettings);
-  self.buttons.play     = get('play',     callbacks.play);
-  self.buttons.pause    = get('pause',    callbacks.pause)
-  self.buttons.reset    = get('reset',    callbacks.reset);
+  self.buttons.help     = get('help', onHelp);
 
   // Dialogs
   self.loading   = $('#preview .loading')[0];
