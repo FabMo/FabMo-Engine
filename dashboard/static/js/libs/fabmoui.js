@@ -719,6 +719,13 @@ const { last } = require("underscore");
             $(that.manual_controls_selector).addClass("hide");
         }
 
+        // Update transform warning indicator
+        if (status.transformsEnabled) {
+            $('#transform_warning').show();
+        } else {
+            $('#transform_warning').hide();
+        }
+        
         this.emit("status", status);
     };
 

@@ -251,6 +251,9 @@ function Machine(control_path, callback) {
     this.driver.on(
         "status",
         function (stat) {
+            // First, update machine status from driver status (including transform check)
+            this._updateStatusFromDriver(stat);
+            
             var auth_input = "in" + config.machine.get("auth_input");
             var quit_input = "in" + config.machine.get("quit_input");
             var ap_input = "in" + config.machine.get("ap_input");
@@ -282,6 +285,9 @@ function Machine(control_path, callback) {
             this.handleFireButton(stat, auth_input);
             this.handleAPCollapseButton(stat, ap_input);
             this.status.clientDisconnected = global.CLIENT_DISCONNECTED;
+            
+            // Note: _updateStatusFromDriver already emitted the status, 
+            // so we don't need to emit it again here
         }.bind(this)
     );
 }
@@ -1718,6 +1724,41 @@ Machine.prototype._runNextJob = function (force, callback) {
     } else {
         callback(new Error("Cannot run next job: Driver is disconnected."));
     }
+};
+
+// Add transform warning to status
+Machine.prototype._updateStatusFromDriver = function (status) {
+    // Update the base status fields
+    for (var key in status) {
+        if (key in this.status) {
+            this.status[key] = status[key];
+        }
+    }
+
+    // Add transform warning to status
+    // Check if any transforms are enabled
+    try {
+        var transforms = config.opensbp.get('transforms');
+        if (transforms) {
+            this.status.transformsEnabled = 
+                transforms.rotate.apply ||
+                transforms.scale.apply ||
+                transforms.move.apply ||
+                transforms.shearx.apply ||
+                transforms.sheary.apply ||
+                transforms.interpolate.apply ||
+                transforms.level.apply ||
+                false;
+        } else {
+            this.status.transformsEnabled = false;
+        }
+    } catch (e) {
+        log.warn('Could not read transform state: ' + e);
+        this.status.transformsEnabled = false;
+    }
+    
+    // Emit the status with the new transform state
+    this.emit("status", this.status);
 };
 
 exports.connect = connect;
