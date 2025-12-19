@@ -591,11 +591,17 @@ $(document).ready(function() {
                         fabmo.notify('info', 'Profile change initiated...');
                     },
                     error: function(xhr, status, error) {
-                        fabmo.notify('error', 'Profile change failed: ' + error);
-                        // Reset the dropdown to current profile if failed
-                        update();
+                        // Server restart causes connection error - this is expected
+                        if (status === 'error' && (xhr.status === 0 || xhr.status >= 500)) {
+                            fabmo.notify('info', 'Profile change initiated - engine restarting...');
+                        } else {
+                            fabmo.notify('error', 'Profile change failed: ' + error);
+                            // Reset the dropdown to current profile if failed
+                            update();
+                        }
                     }
                 });
+
             },
             cancel : function() {
                 // Reset dropdown to current value if user cancels
