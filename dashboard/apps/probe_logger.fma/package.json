@@ -1,0 +1,10 @@
+{
+  "name": "Probe-Logger",
+  "version": "1.0.0",
+  "id": "probe-log",
+  "description": "Reference app for logging probe data from OpenSBP DATA_SEND commands",
+  "main": "./index.html",
+  "icon": "icon_plus_cross.png",
+  "menu_icon": "icon_menu.png",
+  "author": "FabMo"
+}

@@ -1,0 +1,53 @@
+'==============================================================================
+' PROBE DIGITIZING EXAMPLE
+' Demonstrates DATA_SEND for point cloud data acquisition
+'==============================================================================
+
+' Initialize probe grid parameters
+&grid_x_start = 0
+&grid_y_start = 0
+&grid_x_end = 3
+&grid_y_end = 3
+&grid_step = 1.0
+&probe_speed = 1.0
+&probe_input = 1
+&safe_z = 1.0
+
+' Move to safe starting position
+MZ,&safe_z
+PAUSE 10 'to provide time to start logger
+
+' Send initialization message to app
+DATA_SEND,"probe_start",&grid_x_end,&grid_y_end,&grid_step
+
+' Nested loop for grid probing
+&x = &grid_x_start
+x_loop:
+    &y = &grid_y_start
+    y_loop:
+        
+        ' Move to XY position
+        M2,&x,&y
+        
+        ' Probe down
+        PZ,-0.5,&probe_speed,&probe_input
+        
+        ' Send probe point data
+        ' DATA_SEND channel, X pos, Y pos, Z pos, input state
+        DATA_SEND,"probe_point",%(1),%(2),%(3),%(51)
+        
+        ' Return to safe Z
+        MZ,&safe_z
+        
+        ' Increment Y
+        &y = &y + &grid_step
+    IF &y <= &grid_y_end THEN GOTO y_loop
+    ' Increment X
+    &x = &x + &grid_step
+IF &x <= &grid_x_end THEN GOTO x_loop
+
+' Send completion message
+DATA_SEND,"probe_complete",&x,&y
+
+' Return home
+MH

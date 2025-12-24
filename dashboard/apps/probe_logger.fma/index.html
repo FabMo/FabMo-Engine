@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Probe Data Logger</title>
+    <link rel="stylesheet" href="../../css/dashboard.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Probe Data Logger</h1>
+            <div id="status" class="status-message">Waiting for data...</div>
+            <div id="point-count" class="point-count">0 points</div>
+        </div>
+
+        <div class="controls">
+            <label for="channel-select">Filter by channel:</label>
+            <select id="channel-select">
+                <option value="">All Channels</option>
+            </select>
+            
+            <button id="clear-btn" class="btn btn-warning">Clear Data</button>
+            <button id="export-csv-btn" class="btn btn-primary">Export CSV</button>
+            <button id="export-json-btn" class="btn btn-primary">Export JSON</button>
+        </div>
+
+        <div class="table-container">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>Channel</th>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>Z</th>
+                        <th>Data</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="data-body">
+                    <!-- Data rows will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Load jQuery from correct path -->
+    <script src="../../js/libs/jquery.min.js"></script>
+    
+    <!-- Load Foundation from correct path -->
+    <script src="../../js/libs/foundation.min.js"></script>
+    
+    <!-- Load FabMo library from correct path -->
+    <script src="../../js/libs/fabmo.js"></script>
+    
+    <!-- Load app JavaScript -->
+    <script src="index.js"></script>
+</body>
+</html>
