@@ -33,7 +33,7 @@ x_loop:
         PZ,-0.5,&probe_speed,&probe_input
         
         ' Send probe point data
-        ' DATA_SEND channel, X pos, Y pos, Z pos, input state
+        ' DATA_SEND channel, X pos, Y pos, Z pos, input1
         DATA_SEND,"probe_point",%(1),%(2),%(3),%(51)
         
         ' Return to safe Z

@@ -232,6 +232,8 @@
     FabMoAPI.prototype.on = function (message, func) {
         if (message in this.events) {
             this.events[message].push(func);
+        } else {
+            console.warn('FabMoAPI.on() called for unregistered event:', message);
         }
     };
 

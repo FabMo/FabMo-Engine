@@ -20,7 +20,7 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / fail / jump / pause / dialog / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / command / __)
+   = (label / single / fail / jump / pause / dialog / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / data_send / data_request / command / __)
 
 custom_cut
    = [Cc] index:integer __ ","?
@@ -269,6 +269,23 @@ cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "=" / "<>"
 
 whitespace
    = [ \t]
+
+data_send
+   = "DATA_SEND"i __ "," __ channel:argument args:("," __ arg:argument __ { return arg; })* {
+      return {
+         type: 'data_send',
+         channel: channel,
+         args: args
+      };
+   }
+
+data_request
+   = "DATA_REQUEST"i __ "," __ channel:argument {
+      return {
+         type: 'data_request',
+         channel: channel
+      };
+   }   
 
 __ = whitespace*
 ___ = whitespace+

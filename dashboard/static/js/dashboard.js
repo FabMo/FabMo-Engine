@@ -86,7 +86,6 @@ define(function (require) {
             }.bind(this)
         );
         
-        // NEW: Listen for data_send events from the engine (FabMoAPI)
         this.engine.on(
             "data_send",
             function (message) {
@@ -96,7 +95,6 @@ define(function (require) {
             }.bind(this)
         );
         
-        // NEW: Listen for data_request events from the engine (FabMoAPI)
         this.engine.on(
             "data_request",
             function (message) {
@@ -186,7 +184,7 @@ define(function (require) {
                 try {
                     if (source) {
                         //console.log('Posting', name, 'event to app iframe', i);
-                        //source.postMessage(msg, "*");
+                        source.postMessage(msg, "*");
                     }
                 } catch (e) {
                     //console.error('Error posting event to app:', e);

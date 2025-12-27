@@ -87,6 +87,20 @@ function setupStatusBroadcasts(server) {
         server.io.of("/private").emit("change", topic);
         server.io.of("/").emit("change", topic);
     });
+
+    // Data Bridge: Broadcast DATA_SEND events from OpenSBP to dashboard apps
+    machine.on('data_send', function(message) {
+        server.io.of('/private').emit('data_send', message);
+        server.io.of('/').emit('data_send', message);
+        log.debug('Broadcasting data_send: ' + message.channel);
+    });
+
+    // Data Bridge: Broadcast DATA_REQUEST events from OpenSBP to dashboard apps
+    machine.on('data_request', function(message) {
+        server.io.of('/private').emit('data_request', message);
+        server.io.of('/').emit('data_request', message);
+        log.debug('Broadcasting data_request: ' + message.channel);
+    });
 }
 
 var onPublicConnect = function (socket) {
@@ -205,6 +219,16 @@ var onPrivateConnect = function (socket) {
 
     socket.on("user_kickout", function (data) {
         console.error(data);
+    });
+
+    // Data Bridge: Handle responses from dashboard apps to DATA_REQUEST
+    socket.on('data_response', function(response) {
+        if (!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId) {
+            log.error('Unauthenticated data_response attempt from ' + userId);
+            return;
+        }
+        log.debug('Received data_response: ' + JSON.stringify(response));
+        machine.emit('data_response', response);
     });
 
     onPublicConnect(socket); // inherit routes from the public function
