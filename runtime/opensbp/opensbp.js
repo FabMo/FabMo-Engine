@@ -1388,26 +1388,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
             // DATA_SEND does NOT break the stack - evaluation happens inline
             return false;
 
-        case "data_request":
-            // Similar handling for DATA_REQUEST
-            var requestChannel = this._eval(command.channel);
-            
-            if (this.machine) {
-                var requestMessage = {
-                    channel: requestChannel,
-                    timestamp: Date.now()
-                };
-                
-                this.machine.emit('data_request', requestMessage);
-                log.debug('Emitted DATA_REQUEST: channel=' + requestChannel);
-            }
-            
-            this.pc += 1;
-            if (callback) {
-                setImmediate(callback);
-            }
-            return false;
-
         case "event":
             // Throw a useful exception for the no-longer-supported ON INPUT command
             this.pc += 1;

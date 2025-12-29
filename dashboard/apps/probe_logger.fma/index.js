@@ -157,6 +157,42 @@ function updatePointCount() {
     pointCountEl.textContent = count + ' points';
 }
 
+function exportJSON() {
+    if (dataPoints.length === 0) {
+        fabmo.notify('info', 'No data to export');
+        return;
+    }
+    
+    // Create metadata
+    var metadata = {
+        exportDate: new Date().toISOString(),
+        pointCount: dataPoints.length,
+        channels: Array.from(channels)
+    };
+    
+    // Create export object
+    var exportData = {
+        metadata: metadata,
+        points: dataPoints
+    };
+    
+    // Convert to JSON string with pretty formatting
+    var json = JSON.stringify(exportData, null, 2);
+    
+    // Create and download file
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'probe_data_' + Date.now() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    fabmo.notify('info', 'Exported ' + dataPoints.length + ' points to JSON');
+}
+
 function clearData() {
     dataPoints = [];
     channels.clear();
@@ -171,69 +207,6 @@ function clearData() {
     console.log('Data cleared');
 }
 
-function exportCSV() {
-    if (dataPoints.length === 0) {
-        console.log('No data to export');
-        fabmo.notify('info', 'No data to export');
-        return;
-    }
-    
-    var csv = 'Index,Channel,X,Y,Z,Data,Timestamp\n';
-    
-    dataPoints.forEach(function(point, index) {
-        var x = point.position ? point.position.x : '';
-        var y = point.position ? point.position.y : '';
-        var z = point.position ? point.position.z : '';
-        var data = point.data ? JSON.stringify(point.data).replace(/"/g, '""') : '';
-        var timestamp = new Date(point.timestamp).toISOString();
-        
-        csv += (index + 1) + ',' + point.channel + ',' + x + ',' + y + ',' + z + ',"' + data + '",' + timestamp + '\n';
-    });
-    
-    var blob = new Blob([csv], { type: 'text/csv' });
-    var url = window.URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'probe_data_' + Date.now() + '.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    fabmo.notify('info', 'Exported ' + dataPoints.length + ' points to CSV');
-    console.log('CSV exported:', dataPoints.length, 'points');
-}
-
-function exportJSON() {
-    if (dataPoints.length === 0) {
-        console.log('No data to export');
-        fabmo.notify('info', 'No data to export');
-        return;
-    }
-    
-    var exportData = {
-        metadata: {
-            exportDate: new Date().toISOString(),
-            pointCount: dataPoints.length,
-            channels: Array.from(channels)
-        },
-        points: dataPoints
-    };
-    
-    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    var url = window.URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'probe_data_' + Date.now() + '.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    fabmo.notify('info', 'Exported ' + dataPoints.length + ' points to JSON');
-    console.log('JSON exported:', dataPoints.length, 'points');
-}
-
 // DOM ready - set up UI event listeners
 $(document).ready(function() {
     console.log('Probe Logger DOM ready');
@@ -245,13 +218,37 @@ $(document).ready(function() {
     var exportCsvBtn = document.getElementById('export-csv-btn');
     var exportJsonBtn = document.getElementById('export-json-btn');
     var channelSelect = document.getElementById('channel-select');
+    var showGeneratorBtn = document.getElementById('show-generator-btn');
+    var generatorForm = document.getElementById('generator-form');
+    var generateBtn = document.getElementById('generate-btn');
+    var exportStlBtn = document.getElementById('export-stl-btn');
+    var exportXyzBtn = document.getElementById('export-xyz-btn');
+    var exportSbpBtn = document.getElementById('export-sbp-btn');
     
     if (clearBtn) {
         clearBtn.addEventListener('click', clearData);
     }
     
     if (exportCsvBtn) {
-        exportCsvBtn.addEventListener('click', exportCSV);
+        exportCsvBtn.addEventListener('click', function() {
+            if (dataPoints.length === 0) {
+                fabmo.notify('info', 'No data to export');
+                return;
+            }
+            
+            var csv = window.ProbeFileGenerator.exportCSV(dataPoints);
+            var blob = new Blob([csv], { type: 'text/csv' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'probe_data_' + Date.now() + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            fabmo.notify('info', 'Exported ' + dataPoints.length + ' points to CSV');
+        });
     }
     
     if (exportJsonBtn) {
@@ -275,6 +272,143 @@ $(document).ready(function() {
             });
             
             updatePointCount();
+        });
+    }
+    
+    if (showGeneratorBtn && generatorForm) {
+        showGeneratorBtn.addEventListener('click', function() {
+            if (generatorForm.style.display === 'none') {
+                generatorForm.style.display = 'block';
+                showGeneratorBtn.textContent = 'Hide Generator';
+            } else {
+                generatorForm.style.display = 'none';
+                showGeneratorBtn.textContent = 'Show Generator';
+            }
+        });
+    }
+    
+    if (generateBtn) {
+        generateBtn.addEventListener('click', function() {
+            var params = {
+                xStart: parseFloat($('#x-start').val()),
+                xEnd: parseFloat($('#x-end').val()),
+                yStart: parseFloat($('#y-start').val()),
+                yEnd: parseFloat($('#y-end').val()),
+                step: parseFloat($('#step').val()),
+                speed: parseFloat($('#speed').val()),
+                probeDepth: parseFloat($('#depth').val()),
+                safeZ: parseFloat($('#safe-z').val()),
+                input: parseInt($('#input').val()),
+                startDelay: 10
+            };
+            
+            var sbpCode = window.ProbeFileGenerator.generate(params);
+            
+            // NEED TO SET UP TO RUN after clearing QUEUE
+            // Create file and submit as job
+            var blob = new Blob([sbpCode], { type: 'text/plain' });
+            fabmo.submitJob({
+                file: blob,
+                filename: 'probe_grid_' + Date.now() + '.sbp',
+                name: 'Auto Probe Grid',
+                description: 'Generated probe grid file'
+            }, function(err, result) {
+                if (err) {
+                    fabmo.notify('error', 'Failed to submit job: ' + err);
+                } else {
+                    fabmo.notify('success', 'Probe file generated and submitted!');
+                    generatorForm.style.display = 'none';
+                    showGeneratorBtn.textContent = 'Show Generator';
+                }
+            });
+        });
+    }
+    
+    if (exportStlBtn) {
+        exportStlBtn.addEventListener('click', function() {
+            if (dataPoints.length === 0) {
+                fabmo.notify('info', 'No data to export');
+                return;
+            }
+            
+            var stl = window.ProbeFileGenerator.exportSTL(dataPoints);
+            var blob = new Blob([stl], { type: 'application/sla' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'probe_data_' + Date.now() + '.stl';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            fabmo.notify('info', 'Exported ' + dataPoints.length + ' points to STL');
+        });
+    }
+    
+    if (exportXyzBtn) {
+        exportXyzBtn.addEventListener('click', function() {
+            if (dataPoints.length === 0) {
+                fabmo.notify('info', 'No data to export');
+                return;
+            }
+            
+            var xyz = window.ProbeFileGenerator.exportPointCloud(dataPoints);
+            var blob = new Blob([xyz], { type: 'text/plain' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'probe_pointcloud_' + Date.now() + '.xyz';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            fabmo.notify('info', 'Exported ' + dataPoints.length + ' points as XYZ point cloud');
+        });
+    }
+    
+    if (exportSbpBtn) {
+        exportSbpBtn.addEventListener('click', function() {
+            if (dataPoints.length === 0) {
+                fabmo.notify('info', 'No data to export');
+                return;
+            }
+            
+            // Show options dialog
+            var rasterDir = confirm('Raster along X axis?\n\nOK = Raster along X (rows in Y direction)\nCancel = Raster along Y (columns in X direction)');
+            
+            var feedrate = prompt('Enter feedrate (units/sec):', '3.0');
+            if (!feedrate) return;
+            feedrate = parseFloat(feedrate);
+            
+            var safeZ = prompt('Enter safe Z height:', '1.0');
+            if (!safeZ) return;
+            safeZ = parseFloat(safeZ);
+            
+            var plungeSpeed = prompt('Enter plunge speed (units/sec):', '1.0');
+            if (!plungeSpeed) return;
+            plungeSpeed = parseFloat(plungeSpeed);
+            
+            var options = {
+                rasterDirection: rasterDir ? 'x' : 'y',
+                feedrate: feedrate,
+                safeZ: safeZ,
+                plungeSpeed: plungeSpeed
+            };
+            
+            var sbp = window.ProbeFileGenerator.exportSBP(dataPoints, options);
+            var blob = new Blob([sbp], { type: 'text/plain' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'surface_map_' + Date.now() + '.sbp';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            fabmo.notify('success', 'Exported surface mapping SBP file');
         });
     }
     

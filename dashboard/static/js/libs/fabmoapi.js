@@ -98,21 +98,11 @@
                 }.bind(this)
             );
 
-            // Add data_send listener
             this.socket.on(
                 "data_send",
                 function (message) {
                     //console.log('FabMoAPI received data_send:', message);
                     this.emit("data_send", message);
-                }.bind(this)
-            );
-
-            // Add data_request listener
-            this.socket.on(
-                "data_request",
-                function (message) {
-                    //console.log('FabMoAPI received data_request:', message);
-                    this.emit("data_request", message);
                 }.bind(this)
             );
 

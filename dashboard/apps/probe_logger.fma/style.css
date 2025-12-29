@@ -32,10 +32,20 @@ body {
 }
 
 .controls {
-    margin-bottom: 15px;
+    margin: 20px 0;
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     align-items: center;
+}
+
+.controls label {
+    margin-right: 10px;
+}
+
+.controls select {
+    margin-right: 20px;
+    padding: 5px;
 }
 
 .point-count {
@@ -92,24 +102,38 @@ body {
     background-color: #fafafa;
 }
 
-button {
+.btn {
     padding: 8px 16px;
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    transition: background-color 0.2s;
 }
 
-button.secondary {
-    background-color: #6c757d;
+.btn-primary {
+    background-color: #007bff;
     color: white;
 }
 
-button.success {
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-success {
     background-color: #28a745;
     color: white;
 }
 
-button:hover {
-    opacity: 0.9;
+.btn-success:hover {
+    background-color: #1e7e34;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
 }
