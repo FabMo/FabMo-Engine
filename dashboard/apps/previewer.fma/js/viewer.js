@@ -506,9 +506,40 @@ module.exports = function(container) {
     metric: self.setPathMetric,
     progress: pathProgress,
     position: updatePosition,
-    materialUpdate: function(start, end, isCut) {
-      if (self.material && isCut) {
-        self.material.removeMaterial(start, end);
+    materialUpdate: function(move) {
+      // CHANGED: Receive entire move object instead of just positions
+      if (!self.material) return;
+      
+      // Check if this is an arc move
+      if (move.type === 'arc' && move.arcCenter && move.arcRadius) {
+        console.log('Processing arc move - radius:', move.arcRadius, 'center:', move.arcCenter);
+        
+        // Sample the arc at fine intervals
+        var arcLength = move.getLength();
+        var samplesPerInch = 30; // Increased for small arcs
+        var numSamples = Math.max(20, Math.ceil(arcLength * samplesPerInch)); // Minimum 20 samples
+        
+        console.log('Arc length:', arcLength, 'samples:', numSamples);
+        
+        var prevPos = move.start;
+        
+        for (var i = 1; i <= numSamples; i++) {
+          var t = i / numSamples;
+          var segTime = move.startTime + t * move.getDuration();
+          var currentPos = move.getPositionAt(segTime);
+          
+          if (!currentPos) {
+            console.error('getPositionAt returned undefined at t=', t);
+            continue;
+          }
+          
+          self.material.removeMaterial(prevPos, currentPos, 'flat');
+          prevPos = currentPos;
+        }
+      } else {
+        // Linear move: process normally
+        console.log('Processing linear move from', move.start, 'to', move.end);
+        self.material.removeMaterial(move.start, move.end, 'flat');
       }
     },
     materialForceUpdate: function() {
@@ -516,7 +547,6 @@ module.exports = function(container) {
         self.material.forceUpdate();
       }
     }
-    // REMOVED materialAutoCleanup - not needed anymore
   });
 
   // Initialize camera position BEFORE path loads
@@ -589,7 +619,7 @@ module.exports = function(container) {
     
     // 2. Cleanup path (most complex - has many geometries)
     if (self.path && self.path.obj) {
-      scene.remove(self.path.obj);
+      self.scene.remove(self.path.obj); // FIXED: was 'scene', now 'self.scene'
       
       // Dispose all path geometries and materials
       self.path.obj.traverse(function(child) {
@@ -632,7 +662,7 @@ module.exports = function(container) {
     
     objectsToRemove.forEach(function(obj) {
       if (obj) {
-        scene.remove(obj);
+        self.scene.remove(obj); // FIXED: was 'scene'
         if (obj.geometry) obj.geometry.dispose();
         if (obj.material) {
           if (Array.isArray(obj.material)) {
@@ -645,9 +675,9 @@ module.exports = function(container) {
     });
     
     // 4. Clear the entire scene recursively
-    while(scene.children.length > 0) { 
-      var obj = scene.children[0];
-      scene.remove(obj);
+    while(self.scene.children.length > 0) { // FIXED: was 'scene'
+      var obj = self.scene.children[0]; // FIXED: was 'scene'
+      self.scene.remove(obj); // FIXED: was 'scene'
       
       if (obj.geometry) obj.geometry.dispose();
       if (obj.material) {
@@ -737,5 +767,49 @@ module.exports = function(container) {
       window.gc();
     }
   };
+
+  // Material update callback - processes path moves and updates material
+  function materialUpdate(start, end, isArc) {
+    if (!self.material) return;
+    
+    // CHANGED: Handle arcs differently from lines
+    if (isArc) {
+      var currentMove = self.path.moves[self.path.lastMove];
+      
+      console.log('Arc detected! Move type:', currentMove ? currentMove.type : 'undefined');
+      console.log('Arc center:', currentMove ? currentMove.arcCenter : 'undefined');
+      console.log('Arc radius:', currentMove ? currentMove.arcRadius : 'undefined');
+      
+      if (currentMove && currentMove.type === 'arc') {
+        var arcLength = currentMove.getLength();
+        var samplesPerInch = 20;
+        var numSamples = Math.max(10, Math.ceil(arcLength * samplesPerInch));
+        
+        console.log('Sampling arc with', numSamples, 'samples');
+        
+        var prevPos = start;
+        
+        for (var i = 1; i <= numSamples; i++) {
+          var t = i / numSamples;
+          var segTime = currentMove.startTime + t * currentMove.getDuration();
+          var currentPos = currentMove.getPositionAt(segTime);
+          
+          if (!currentPos) {
+            console.error('getPositionAt returned undefined at t=', t);
+            continue;
+          }
+          
+          self.material.removeMaterial(prevPos, currentPos, 'flat');
+          prevPos = currentPos;
+        }
+      } else {
+        console.warn('Arc flagged but no arc metadata found, using fallback');
+        self.material.removeMaterial(start, end, 'flat');
+      }
+    } else {
+      // Linear move: process normally
+      self.material.removeMaterial(start, end, 'flat');
+    }
+  }
 
 };

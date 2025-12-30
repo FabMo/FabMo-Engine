@@ -213,7 +213,7 @@ module.exports = function(scene, update) {
   }
 
   /**
-   * Remove material at a single tool position (MODIFIED)
+   * Remove material at a single tool position (IMPROVED with adaptive sampling)
    */
   function updateGridUnderTool(toolX, toolY, toolZ, toolType) {
     if (!heightMap) return;
@@ -223,12 +223,12 @@ module.exports = function(scene, update) {
       var dx = toolX - lastToolPos.x;
       var dy = toolY - lastToolPos.y;
       var moveDist = Math.sqrt(dx*dx + dy*dy);
-      if (moveDist < heightMap.xStep * 0.5) return;
+      if (moveDist < heightMap.xStep * 0.25) return; // CHANGED: More frequent updates
     }
     lastToolPos = {x: toolX, y: toolY};
     
     var toolRadius = toolDia / 2;
-    var cellRadius = Math.ceil(toolRadius / Math.min(heightMap.xStep, heightMap.yStep));
+    var cellRadius = Math.ceil(toolRadius / Math.min(heightMap.xStep, heightMap.yStep)) + 1; // ADDED: +1 for safety margin
     var indices = getGridIndices(toolX, toolY);
     if (!indices) return;
     
@@ -239,24 +239,58 @@ module.exports = function(scene, update) {
     
     var changed = false;
     
-    // Update each grid cell under tool
+    // ADAPTIVE: Use more sub-samples for shallow cuts
+    var cutDepth = Math.abs(toolZ - materialTop);
+    var subSamples = (cutDepth < toolDia) ? 5 : 3; // 5x5 for shallow cuts, 3x3 for deep
+    
     for (var xi = xiMin; xi <= xiMax; xi++) {
       for (var yi = yiMin; yi <= yiMax; yi++) {
         var cellX = bounds.min.x + xi * heightMap.xStep;
         var cellY = bounds.min.y + yi * heightMap.yStep;
         
-        var dx = cellX - toolX;
-        var dy = cellY - toolY;
-        var radialDist = Math.sqrt(dx*dx + dy*dy);
+        var minToolZ = Infinity;
+        var maxToolZ = -Infinity; // NEW: Track deepest and shallowest tool contact
         
-        if (radialDist <= toolRadius) {
-          var toolBottomZ = getToolBottomZ(toolZ, radialDist, toolType);
-          var currentZ = getHeight(xi, yi);
+        // IMPROVED: Sub-sample BEYOND grid cell boundaries for better coverage
+        var sampleRange = 0.6; // Sample 60% beyond cell center in each direction
+        
+        for (var sx = 0; sx < subSamples; sx++) {
+          for (var sy = 0; sy < subSamples; sy++) {
+            // Map to -sampleRange to +sampleRange instead of -0.5 to +0.5
+            var offsetX = (sx / (subSamples - 1) - 0.5) * (2 * sampleRange);
+            var offsetY = (sy / (subSamples - 1) - 0.5) * (2 * sampleRange);
+            
+            var sampleX = cellX + offsetX * heightMap.xStep;
+            var sampleY = cellY + offsetY * heightMap.yStep;
+            
+            var dx = sampleX - toolX;
+            var dy = sampleY - toolY;
+            var radialDist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (radialDist <= toolRadius) {
+              var toolBottomZ = getToolBottomZ(toolZ, radialDist, toolType);
+              minToolZ = Math.min(minToolZ, toolBottomZ);
+              maxToolZ = Math.max(maxToolZ, toolBottomZ);
+            }
+          }
+        }
+        
+        // IMPROVED: Use average of min/max for better edge representation
+        var currentZ = getHeight(xi, yi);
+        
+        if (minToolZ < Infinity) {
+          // For shallow cuts, use minimum to ensure material is removed
+          // For deep cuts, average min/max for smoother edges
+          var targetZ;
+          if (cutDepth < toolDia * 0.5) {
+            targetZ = minToolZ; // Shallow: aggressive removal
+          } else {
+            targetZ = (minToolZ + maxToolZ) / 2; // Deep: smooth average
+          }
           
-          // Material removal: take minimum (lower) Z value
-          if (toolBottomZ < currentZ) {
-            setHeight(xi, yi, toolBottomZ);
-            markDirtyRegion(xi, yi); // NEW: Track dirty region
+          if (targetZ < currentZ) {
+            setHeight(xi, yi, targetZ);
+            markDirtyRegion(xi, yi);
             changed = true;
           }
         }
@@ -270,7 +304,7 @@ module.exports = function(scene, update) {
   }
 
   /**
-   * Remove material along a path
+   * Remove material along a path (IMPROVED with axis-aligned detection)
    */
   self.removeMaterial = function(start, end, toolType) {
     if (!heightMap) {
@@ -280,28 +314,61 @@ module.exports = function(scene, update) {
     
     toolType = toolType || 'flat';
     
-    // Calculate move distance and interpolate
+    // Calculate move distance
     var dx = end[0] - start[0];
     var dy = end[1] - start[1];
     var dz = end[2] - start[2];
-    var dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    var xyDist = Math.sqrt(dx*dx + dy*dy);
+    var totalDist = Math.sqrt(dx*dx + dy*dy + dz*dz);
     
-    if (dist < 0.001) return; // Too small to matter
+    if (totalDist < 0.001) return;
     
-    // Number of steps - ADAPTIVE based on resolution
-    var steps = Math.max(2, Math.ceil(dist / (toolDia * 0.5)));
+    // DETECT PLUNGE: mostly vertical movement
+    var isPlunge = (xyDist < toolDia * 0.1) && (Math.abs(dz) > toolDia * 0.5);
     
-    // Interpolate along path and remove material
-    for (var step = 0; step <= steps; step++) {
-      var t = step / steps;
-      var toolX = start[0] + dx * t;
-      var toolY = start[1] + dy * t;
-      var toolZ = start[2] + dz * t;
-      
-      updateGridUnderTool(toolX, toolY, toolZ, toolType);
+    // NEW: DETECT AXIS-ALIGNED MOVES (vertical or horizontal lines)
+    var isAxisAligned = false;
+    var axisAlignedTolerance = 0.001; // 1 thousandth tolerance
+    
+    if (Math.abs(dx) < axisAlignedTolerance && Math.abs(dy) > axisAlignedTolerance) {
+      isAxisAligned = 'vertical'; // Pure Y-axis move
+    } else if (Math.abs(dy) < axisAlignedTolerance && Math.abs(dx) > axisAlignedTolerance) {
+      isAxisAligned = 'horizontal'; // Pure X-axis move
     }
     
-    // TIME-BASED mesh updates for consistent visual progress
+    if (isPlunge) {
+      // For plunges, single point update
+      var toolX = start[0];
+      var toolY = start[1];
+      var toolZ = Math.min(start[2], end[2]);
+      
+      updateGridUnderTool(toolX, toolY, toolZ, toolType);
+    } else if (isAxisAligned) {
+      // NEW: For axis-aligned moves, use FINER interpolation
+      var steps = Math.max(5, Math.ceil(totalDist / (heightMap.xStep * 0.3))); // 30% of grid spacing
+      
+      for (var step = 0; step <= steps; step++) {
+        var t = step / steps;
+        var toolX = start[0] + dx * t;
+        var toolY = start[1] + dy * t;
+        var toolZ = start[2] + dz * t;
+        
+        updateGridUnderTool(toolX, toolY, toolZ, toolType);
+      }
+    } else {
+      // For angled moves, normal interpolation
+      var steps = Math.max(2, Math.ceil(totalDist / (toolDia * 0.5)));
+      
+      for (var step = 0; step <= steps; step++) {
+        var t = step / steps;
+        var toolX = start[0] + dx * t;
+        var toolY = start[1] + dy * t;
+        var toolZ = start[2] + dz * t;
+        
+        updateGridUnderTool(toolX, toolY, toolZ, toolType);
+      }
+    }
+    
     var now = Date.now();
     if (isDirty && (now - lastUpdateTime) >= UPDATE_INTERVAL_MS) {
       console.log('Material update: ' + pendingUpdates + ' changes since last render');

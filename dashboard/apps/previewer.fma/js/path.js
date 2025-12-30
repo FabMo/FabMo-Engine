@@ -325,19 +325,21 @@ module.exports = function(scene, callbacks) {
       lastMove.arcCenter = center2D;
       lastMove.arcRadius = radius;
       lastMove.arcPlane = plane;
-      
+      lastMove.arcClockwise = clockwise; // ADDED: Store direction
+
       self.position = next;
     }
 
     // Final move to exact end
     self.addLine(self.position, end, false);
     
-    // ADD: Mark final segment as arc
+    // ADD: Mark final segment as arc and store direction
     var lastMove = self.moves[self.moves.length - 1];
     lastMove.type = 'arc';
     lastMove.arcCenter = center2D;
     lastMove.arcRadius = radius;
     lastMove.arcPlane = plane;
+    lastMove.arcClockwise = clockwise; // ADDED: Store direction
     
     self.position = next;
   }
@@ -560,27 +562,8 @@ module.exports = function(scene, callbacks) {
         
         // Only simulate cutting moves (not rapids)
         if (!currentMove.rapid) {
-          // For arc moves, sample at fine intervals for smooth material removal
-          if (currentMove.type === 'arc') {
-            // Calculate arc segment count based on arc length and desired resolution
-            var arcLength = currentMove.getLength();
-            var samplesPerInch = 20;
-            var numSegments = Math.max(10, Math.ceil(arcLength * samplesPerInch));
-            
-            var prevPos = currentMove.start;
-            
-            for (var seg = 1; seg <= numSegments; seg++) {
-              var t = seg / numSegments;
-              var segTime = currentMove.startTime + t * currentMove.getDuration();
-              var currentPos = currentMove.getPositionAt(segTime);
-              
-              callbacks.materialUpdate(prevPos, currentPos, true);
-              prevPos = currentPos;
-            }
-          } else {
-            // Linear moves: just start to end (already smooth)
-            callbacks.materialUpdate(currentMove.start, currentMove.end, true);
-          }
+          // CHANGED: Pass the move object itself, not just positions
+          callbacks.materialUpdate(currentMove);
         }
       }
     }
