@@ -218,7 +218,7 @@ module.exports = function(container) {
     };
     
     // Tool diameter - could be from config or settings (default 0.25")
-    var toolDia = 0.25; // TODO: Get from machine config
+    var toolDia = 0.125; // TODO: Get from machine config
     
     console.log('Initializing material:');
     console.log('  Top Z:', materialTop);
@@ -269,7 +269,15 @@ module.exports = function(container) {
 
 
   // Get the file path that will be displayed; "bounds" comes from this work
-  self.setGCode = function (gcode) {self.path.load(gcode, pathLoaded)}
+  self.setGCode = function(gcode) {
+    // Clean up existing material before loading new path
+    if (self.material && self.material.reset) {
+      console.log('Cleaning up previous material before new load');
+      self.material.reset();
+    }
+    
+    self.path.load(gcode, pathLoaded);
+  }
 
 
   self.isMetric = function () {
@@ -499,17 +507,16 @@ module.exports = function(container) {
     progress: pathProgress,
     position: updatePosition,
     materialUpdate: function(start, end, isCut) {
-      // Remove console.log - it's working!
-      if (isCut && self.material) {
-        self.material.removeMaterial(start, end, 'flat');
+      if (self.material && isCut) {
+        self.material.removeMaterial(start, end);
       }
     },
     materialForceUpdate: function() {
-      // Remove console.log
       if (self.material) {
         self.material.forceUpdate();
       }
     }
+    // REMOVED materialAutoCleanup - not needed anymore
   });
 
   // Initialize camera position BEFORE path loads
@@ -568,4 +575,167 @@ module.exports = function(container) {
       self.pointcloud.loadFromFile(filePath);
     }
   };
-}
+  
+  /**
+   * Cleanup entire viewer when app exits
+   */
+  self.cleanup = function() {
+    console.log('=== VIEWER CLEANUP STARTED ===');
+    
+    // 1. Cleanup material first
+    if (self.material && self.material.destroy) {
+      self.material.destroy();
+    }
+    
+    // 2. Cleanup path (most complex - has many geometries)
+    if (self.path && self.path.obj) {
+      scene.remove(self.path.obj);
+      
+      // Dispose all path geometries and materials
+      self.path.obj.traverse(function(child) {
+        if (child.geometry) {
+          child.geometry.dispose();
+        }
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => {
+              if (mat.map) mat.map.dispose();
+              mat.dispose();
+            });
+          } else {
+            if (child.material.map) child.material.map.dispose();
+            child.material.dispose();
+          }
+        }
+      });
+      
+      // Clear path buffers
+      if (self.path.buffers) {
+        self.path.buffers.forEach(function(buffer) {
+          if (buffer[0] && buffer[0].dispose) buffer[0].dispose();
+          if (buffer[1] && buffer[1].dispose) buffer[1].dispose();
+        });
+        self.path.buffers = [];
+      }
+    }
+    
+    // 3. Cleanup other scene objects
+    var objectsToRemove = [
+      self.dims && self.dims.group,
+      self.grid && self.grid.grid,
+      self.table && self.table.table,
+      self.axes && self.axes.mesh,
+      self.tool && self.tool.mesh,
+      self.pointcloud && self.pointcloud.mesh,
+      self.path && self.path.currentLine
+    ];
+    
+    objectsToRemove.forEach(function(obj) {
+      if (obj) {
+        scene.remove(obj);
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(mat => mat.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      }
+    });
+    
+    // 4. Clear the entire scene recursively
+    while(scene.children.length > 0) { 
+      var obj = scene.children[0];
+      scene.remove(obj);
+      
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) {
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach(mat => {
+            if (mat.map) mat.map.dispose();
+            mat.dispose();
+          });
+        } else {
+          if (obj.material.map) obj.material.map.dispose();
+          obj.material.dispose();
+        }
+      }
+      
+      // Recursively dispose children
+      if (obj.children) {
+        obj.traverse(function(child) {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(mat => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+      }
+    }
+    
+    // 5. CRITICAL: Force WebGL context loss and dispose renderer
+    if (self.renderer) {
+      // Get the WebGL context
+      var gl = self.renderer.getContext();
+      
+      // Dispose all render targets
+      self.renderer.renderLists.dispose();
+      
+      // Clear any cached programs
+      if (self.renderer.info && self.renderer.info.programs) {
+        self.renderer.info.programs.length = 0;
+      }
+      
+      // Dispose renderer
+      self.renderer.dispose();
+      
+      // FORCE context loss (critical for memory release)
+      if (gl) {
+        var loseContext = gl.getExtension('WEBGL_lose_context');
+        if (loseContext) {
+          loseContext.loseContext();
+          console.log('WebGL context forcibly lost');
+        }
+      }
+      
+      // Remove canvas from DOM
+      if (self.renderer.domElement && self.renderer.domElement.parentNode) {
+        self.renderer.domElement.parentNode.removeChild(self.renderer.domElement);
+      }
+      
+      self.renderer = null;
+    }
+    
+    // 6. Cleanup controls
+    if (self.controls) {
+      self.controls.dispose();
+      self.controls = null;
+    }
+    
+    // 7. Null out all references
+    self.camera = null;
+    self.scene = null;
+    self.path = null;
+    self.material = null;
+    self.dims = null;
+    self.grid = null;
+    self.table = null;
+    self.axes = null;
+    self.tool = null;
+    self.pointcloud = null;
+    self.gui = null;
+    
+    console.log('=== VIEWER CLEANUP COMPLETE ===');
+    
+    // 8. FORCE garbage collection hint (non-standard but helps in some browsers)
+    if (window.gc) {
+      console.log('Suggesting garbage collection...');
+      window.gc();
+    }
+  };
+
+};

@@ -564,7 +564,7 @@ module.exports = function(scene, callbacks) {
           if (currentMove.type === 'arc') {
             // Calculate arc segment count based on arc length and desired resolution
             var arcLength = currentMove.getLength();
-            var samplesPerInch = 20; // REDUCED from 50 for better performance
+            var samplesPerInch = 20;
             var numSegments = Math.max(10, Math.ceil(arcLength * samplesPerInch));
             
             var prevPos = currentMove.start;
@@ -607,10 +607,10 @@ module.exports = function(scene, callbacks) {
     setCurrentLine(move.getLine());
     
     // Force final material update when simulation completes
-    // REMOVE the auto-reset - let user inspect the result
+    // DO NOT AUTO-RESET - User wants to explore the result!
     if (time >= self.duration && callbacks.materialForceUpdate) {
       callbacks.materialForceUpdate();
-      console.log('Material simulation complete - final update rendered');
+      console.log('Material simulation complete - ready for user inspection');
     }
     
     self.lastMove = nextMove;
