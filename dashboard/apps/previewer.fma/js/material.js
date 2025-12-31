@@ -304,9 +304,9 @@ module.exports = function(scene, update) {
   }
 
   /**
-   * Remove material along a path (IMPROVED with axis-aligned detection)
+   * Remove material along a path (with arc segment detection)
    */
-  self.removeMaterial = function(start, end, toolType) {
+  self.removeMaterial = function(start, end, toolType, isArcSegment) {
     if (!heightMap) {
       console.warn('Height map not initialized');
       return;
@@ -326,26 +326,19 @@ module.exports = function(scene, update) {
     // DETECT PLUNGE: mostly vertical movement
     var isPlunge = (xyDist < toolDia * 0.1) && (Math.abs(dz) > toolDia * 0.5);
     
-    // NEW: DETECT AXIS-ALIGNED MOVES (vertical or horizontal lines)
-    var isAxisAligned = false;
-    var axisAlignedTolerance = 0.001; // 1 thousandth tolerance
-    
-    if (Math.abs(dx) < axisAlignedTolerance && Math.abs(dy) > axisAlignedTolerance) {
-      isAxisAligned = 'vertical'; // Pure Y-axis move
-    } else if (Math.abs(dy) < axisAlignedTolerance && Math.abs(dx) > axisAlignedTolerance) {
-      isAxisAligned = 'horizontal'; // Pure X-axis move
-    }
-    
     if (isPlunge) {
-      // For plunges, single point update
+      // For plunges, single point update at deepest Z
       var toolX = start[0];
       var toolY = start[1];
       var toolZ = Math.min(start[2], end[2]);
       
       updateGridUnderTool(toolX, toolY, toolZ, toolType);
-    } else if (isAxisAligned) {
-      // NEW: For axis-aligned moves, use FINER interpolation
-      var steps = Math.max(5, Math.ceil(totalDist / (heightMap.xStep * 0.3))); // 30% of grid spacing
+      
+    } else if (isArcSegment) {
+      // ARC SEGMENTS: Already finely sampled by path.js (1500 samples/inch)
+      // Just do simple interpolation to ensure grid coverage
+      var gridSpacing = Math.min(heightMap.xStep, heightMap.yStep);
+      var steps = Math.max(2, Math.ceil(totalDist / (gridSpacing * 0.5))); // 2 samples per grid cell
       
       for (var step = 0; step <= steps; step++) {
         var t = step / steps;
@@ -355,17 +348,42 @@ module.exports = function(scene, update) {
         
         updateGridUnderTool(toolX, toolY, toolZ, toolType);
       }
-    } else {
-      // For angled moves, normal interpolation
-      var steps = Math.max(2, Math.ceil(totalDist / (toolDia * 0.5)));
       
-      for (var step = 0; step <= steps; step++) {
-        var t = step / steps;
-        var toolX = start[0] + dx * t;
-        var toolY = start[1] + dy * t;
-        var toolZ = start[2] + dz * t;
+    } else {
+      // DETECT AXIS-ALIGNED MOVES for straight lines (not arcs)
+      var axisAlignedTolerance = 0.001;
+      var isAxisAligned = false;
+      
+      if (Math.abs(dx) < axisAlignedTolerance && Math.abs(dy) > axisAlignedTolerance) {
+        isAxisAligned = 'vertical';
+      } else if (Math.abs(dy) < axisAlignedTolerance && Math.abs(dx) > axisAlignedTolerance) {
+        isAxisAligned = 'horizontal';
+      }
+      
+      if (isAxisAligned) {
+        // Axis-aligned straight lines: fine interpolation
+        var steps = Math.max(5, Math.ceil(totalDist / (heightMap.xStep * 0.3)));
         
-        updateGridUnderTool(toolX, toolY, toolZ, toolType);
+        for (var step = 0; step <= steps; step++) {
+          var t = step / steps;
+          var toolX = start[0] + dx * t;
+          var toolY = start[1] + dy * t;
+          var toolZ = start[2] + dz * t;
+          
+          updateGridUnderTool(toolX, toolY, toolZ, toolType);
+        }
+      } else {
+        // Normal angled straight lines: standard interpolation
+        var steps = Math.max(2, Math.ceil(totalDist / (toolDia * 0.5)));
+        
+        for (var step = 0; step <= steps; step++) {
+          var t = step / steps;
+          var toolX = start[0] + dx * t;
+          var toolY = start[1] + dy * t;
+          var toolZ = start[2] + dz * t;
+          
+          updateGridUnderTool(toolX, toolY, toolZ, toolType);
+        }
       }
     }
     

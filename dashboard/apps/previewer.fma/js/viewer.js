@@ -506,41 +506,11 @@ module.exports = function(container) {
     metric: self.setPathMetric,
     progress: pathProgress,
     position: updatePosition,
-    materialUpdate: function(move) {
-      // CHANGED: Receive entire move object instead of just positions
+    materialUpdate: function(start, end, isArcSegment) {
       if (!self.material) return;
       
-      // Check if this is an arc move
-      if (move.type === 'arc' && move.arcCenter && move.arcRadius) {
-        console.log('Processing arc move - radius:', move.arcRadius, 'center:', move.arcCenter);
-        
-        // Sample the arc at fine intervals
-        var arcLength = move.getLength();
-        var samplesPerInch = 30; // Increased for small arcs
-        var numSamples = Math.max(20, Math.ceil(arcLength * samplesPerInch)); // Minimum 20 samples
-        
-        console.log('Arc length:', arcLength, 'samples:', numSamples);
-        
-        var prevPos = move.start;
-        
-        for (var i = 1; i <= numSamples; i++) {
-          var t = i / numSamples;
-          var segTime = move.startTime + t * move.getDuration();
-          var currentPos = move.getPositionAt(segTime);
-          
-          if (!currentPos) {
-            console.error('getPositionAt returned undefined at t=', t);
-            continue;
-          }
-          
-          self.material.removeMaterial(prevPos, currentPos, 'flat');
-          prevPos = currentPos;
-        }
-      } else {
-        // Linear move: process normally
-        console.log('Processing linear move from', move.start, 'to', move.end);
-        self.material.removeMaterial(move.start, move.end, 'flat');
-      }
+      // Pass the arc flag to material removal
+      self.material.removeMaterial(start, end, 'flat', isArcSegment);
     },
     materialForceUpdate: function() {
       if (self.material) {

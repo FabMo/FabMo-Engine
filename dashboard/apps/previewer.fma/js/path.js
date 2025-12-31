@@ -260,7 +260,6 @@ module.exports = function(scene, callbacks) {
 
       // Handle possible small negative caused by rounding errors
       l = l < 0 ? 0 : Math.sqrt(l);
-
       if (!clockwise) l = -l;
       if (0 < radius) l = -l;
 
@@ -308,6 +307,15 @@ module.exports = function(scene, callbacks) {
 
     var segments = Math.ceil(Math.abs(angle) / segAngle);
 
+    // ADDED: Debug first segment (only once)
+    if (segments > 1) {
+      console.log('ARC PARSED: First segment of', segments, 'total');
+      console.log('  Radius:', radius.toFixed(4));
+      console.log('  Center:', center2D);
+      console.log('  Start angle:', (startAngle * 180 / Math.PI).toFixed(2), 'deg');
+      console.log('  Total angle:', (angle * 180 / Math.PI).toFixed(2), 'deg');
+    }
+
     // Render arc
     for (var i = 1; i < segments - 1; i++) {
       var a = i * angle / segments;
@@ -319,29 +327,16 @@ module.exports = function(scene, callbacks) {
 
       self.addLine(self.position, next, false);
       
-      // ADD: Mark this segment as part of an arc for material simulation
-      var lastMove = self.moves[self.moves.length - 1];
-      lastMove.type = 'arc';
-      lastMove.arcCenter = center2D;
-      lastMove.arcRadius = radius;
-      lastMove.arcPlane = plane;
-      lastMove.arcClockwise = clockwise; // ADDED: Store direction
-
+      // REMOVED: Don't mark individual segments as arcs!
+      // The arc has already been linearized - these are just short line segments
+      
       self.position = next;
     }
 
     // Final move to exact end
     self.addLine(self.position, end, false);
     
-    // ADD: Mark final segment as arc and store direction
-    var lastMove = self.moves[self.moves.length - 1];
-    lastMove.type = 'arc';
-    lastMove.arcCenter = center2D;
-    lastMove.arcRadius = radius;
-    lastMove.arcPlane = plane;
-    lastMove.arcClockwise = clockwise; // ADDED: Store direction
-    
-    self.position = next;
+    // REMOVED: Don't mark final segment either
   }
 
 
@@ -562,8 +557,48 @@ module.exports = function(scene, callbacks) {
         
         // Only simulate cutting moves (not rapids)
         if (!currentMove.rapid) {
-          // CHANGED: Pass the move object itself, not just positions
-          callbacks.materialUpdate(currentMove);
+          // ADDED: Debug logging for move detection
+          console.log('=== MOVE', i, '===');
+          console.log('  Type:', currentMove.type || 'undefined');
+          console.log('  Start:', currentMove.start);
+          console.log('  End:', currentMove.end);
+          
+          // Check if this is an arc move
+          if (currentMove.type === 'arc') {
+            console.log('  ARC DETECTED!');
+            console.log('    Center:', currentMove.arcCenter);
+            console.log('    Radius:', currentMove.arcRadius);
+            console.log('    Plane:', currentMove.arcPlane);
+            console.log('    Clockwise:', currentMove.arcClockwise);
+            
+            // CHANGED: Dynamic sampling based on arc length
+            var arcLength = currentMove.getLength();
+            var samplesPerInch = 1500; // INCREASED from 30 to ensure fine coverage
+            var numSegments = Math.max(15, Math.ceil(arcLength * samplesPerInch));
+            
+            console.log('    Arc length:', arcLength);
+            console.log('    Segments:', numSegments);
+            
+            var prevPos = currentMove.start;
+            
+            for (var seg = 1; seg <= numSegments; seg++) {
+              var t = seg / numSegments;
+              var segTime = currentMove.startTime + t * currentMove.getDuration();
+              var currentPos = currentMove.getPositionAt(segTime);
+              
+              if (seg === 1 || seg === numSegments) {
+                console.log('    Segment', seg, ':', prevPos, '->', currentPos);
+              }
+              
+              // Pass small segments with isArcSegment flag
+              callbacks.materialUpdate(prevPos, currentPos, true);
+              prevPos = currentPos;
+            }
+          } else {
+            console.log('  LINEAR MOVE');
+            // Linear moves: just start to end
+            callbacks.materialUpdate(currentMove.start, currentMove.end, false);
+          }
         }
       }
     }
@@ -737,4 +772,97 @@ module.exports = function(scene, callbacks) {
   geometry.vertices.push(new THREE.Vector3(0, 0, 0));
   self.currentLine = new THREE.Line(geometry, material);
   scene.add(self.currentLine);
+  
+  /**
+   * Remove material along a path (IMPROVED for small arc handling)
+   */
+  self.removeMaterial = function(start, end, toolType) {
+    if (!heightMap) {
+      console.warn('Height map not initialized');
+      return;
+    }
+    
+    toolType = toolType || 'flat';
+    
+    // Calculate move distance
+    var dx = end[0] - start[0];
+    var dy = end[1] - start[1];
+    var dz = end[2] - start[2];
+    var xyDist = Math.sqrt(dx*dx + dy*dy);
+    var totalDist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    
+    if (totalDist < 0.001) return;
+    
+    // DETECT PLUNGE: mostly vertical movement
+    var isPlunge = (xyDist < toolDia * 0.1) && (Math.abs(dz) > toolDia * 0.5);
+    
+    // DETECT AXIS-ALIGNED MOVES (vertical or horizontal lines)
+    var isAxisAligned = false;
+    var axisAlignedTolerance = 0.001;
+    
+    if (Math.abs(dx) < axisAlignedTolerance && Math.abs(dy) > axisAlignedTolerance) {
+      isAxisAligned = 'vertical';
+    } else if (Math.abs(dy) < axisAlignedTolerance && Math.abs(dx) > axisAlignedTolerance) {
+      isAxisAligned = 'horizontal';
+    }
+    
+    // DETECT SMALL SEGMENTS that might be part of small arcs
+    // If segment is short but not axis-aligned, it's probably part of a curve
+    var isSmallArcSegment = (xyDist < toolDia * 2) && !isAxisAligned && !isPlunge;
+    
+    if (isPlunge) {
+      // For plunges, single point update
+      var toolX = start[0];
+      var toolY = start[1];
+      var toolZ = Math.min(start[2], end[2]);
+      
+      updateGridUnderTool(toolX, toolY, toolZ, toolType);
+    } else if (isSmallArcSegment) {
+      // NEW: For small arc segments, use VERY fine interpolation
+      // This catches small arcs that are broken into few segments
+      var steps = Math.max(8, Math.ceil(totalDist / (heightMap.xStep * 0.15))); // 15% of grid spacing
+      
+      for (var step = 0; step <= steps; step++) {
+        var t = step / steps;
+        var toolX = start[0] + dx * t;
+        var toolY = start[1] + dy * t;
+        var toolZ = start[2] + dz * t;
+        
+        updateGridUnderTool(toolX, toolY, toolZ, toolType);
+      }
+    } else if (isAxisAligned) {
+      // For axis-aligned moves, use finer interpolation
+      var steps = Math.max(5, Math.ceil(totalDist / (heightMap.xStep * 0.3)));
+      
+      for (var step = 0; step <= steps; step++) {
+        var t = step / steps;
+        var toolX = start[0] + dx * t;
+        var toolY = start[1] + dy * t;
+        var toolZ = start[2] + dz * t;
+        
+        updateGridUnderTool(toolX, toolY, toolZ, toolType);
+      }
+    } else {
+      // For normal moves, standard interpolation
+      var steps = Math.max(2, Math.ceil(totalDist / (toolDia * 0.5)));
+      
+      for (var step = 0; step <= steps; step++) {
+        var t = step / steps;
+        var toolX = start[0] + dx * t;
+        var toolY = start[1] + dy * t;
+        var toolZ = start[2] + dz * t;
+        
+        updateGridUnderTool(toolX, toolY, toolZ, toolType);
+      }
+    }
+    
+    var now = Date.now();
+    if (isDirty && (now - lastUpdateTime) >= UPDATE_INTERVAL_MS) {
+      console.log('Material update: ' + pendingUpdates + ' changes since last render');
+      self.updateMesh();
+      lastUpdateTime = now;
+      isDirty = false;
+      pendingUpdates = 0;
+    }
+  };
 }
