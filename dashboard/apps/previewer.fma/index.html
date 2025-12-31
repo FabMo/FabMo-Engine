@@ -99,8 +99,10 @@
           <input name="table-zzoff" type="number" min="-100" max="100"
                  step=".1" value="-1"/>
                  
+          <h5>Display Options</h5>
+
           <label>
-            <input name="show-grid" type="checkbox" checked="true"/>
+            <input type="checkbox" name="show-grid"/>
             Show Grid
           </label>
 
@@ -110,39 +112,50 @@
           </label>
 
           <label>
-            <input name="show-dims" type="checkbox" checked="true"/>
+            <input type="checkbox" name="show-dims"/>
             Show Dimensions
           </label>
 
           <label>
-            <input name="show-axes" type="checkbox" checked="true"/>
+            <input type="checkbox" name="show-axes"/>
             Show Axes
           </label>
 
           <label>
-            <input name="show-tool" type="checkbox" checked="true"/>
+            <input type="checkbox" name="show-tool"/>
             Show Tool (Yellow Cone)
           </label>
 
           <label>
+            <input type="checkbox" name="show-toolpath"/>
+            Show Toolpath
+          </label>
+
+          <label>
             <input name="show-pointcloud" type="checkbox"/>
-            Show Point Cloud (Leveler)
+            BETA Show Point Cloud Shape for Leveler
           </label>
 
           <label>
             <input name="show-pointcloud-wireframe" type="checkbox" checked="true"/>
-            Show Point Cloud Wireframe
+            BETA Show Point Cloud Wireframe
           </label>
-
-          <label>Point Cloud Opacity</label>
-          <input name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>
 
           <label>
             <input type="checkbox" name="show-material"/>
-            Show Material Simulation
+            BETA Show Material for Subtractive Simulation
           </label>
 
-          <label>Material Opacity</label>
+          <button class="reset-material">Reset Material (BETA)</button>
+
+          <hr/>
+
+          <h5>BETA Options</h5>
+
+          <label>Set Point Cloud Opacity</label>
+          <input class="opacity-slider" id=#op-slider name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>
+
+          <label>Set Material Opacity</label>
           <div class="range-container">
             <input name="material-opacity" type="range" min="0" max="1" step="0.1" value="0.5"/>
           </div>
@@ -151,16 +164,10 @@
           <select name="material-resolution">
             <option value="50">Low (50x50 - Fast)</option>
             <option value="100">Medium (100x100)</option>
-            <option value="200" selected>High (200x200)</option>
-            <option value="300">Very High (300x300)</option>
+            <option value="200">High (200x200)</option>
+            <option value="300" selected>Very High (300x300)</option>
             <option value="500">Ultra (500x500)</option>
           </select>
-
-          <button class="reset-material">Reset Material</button>
-
-          <hr/>
-
-          <h3>Tool Settings</h3>
 
           <label>Tool Type</label>
           <select name="tool-type">
@@ -183,43 +190,6 @@
           </select>
 
           <hr/>
-
-          <h3>Display Options</h3>
-
-          <label>
-            <input type="checkbox" name="show-grid"/>
-            Show Grid
-          </label>
-
-          <label>
-            <input type="checkbox" name="show-dims"/>
-            Show Dimensions
-          </label>
-
-          <label>
-            <input type="checkbox" name="show-axes"/>
-            Show Axes
-          </label>
-
-          <label>
-            <input type="checkbox" name="show-tool"/>
-            Show Tool
-          </label>
-
-          <label>
-            <input type="checkbox" name="show-pointcloud"/>
-            Show Point Cloud
-          </label>
-
-          <label>
-            <input type="checkbox" name="show-material"/>
-            Show Material Simulation
-          </label>
-
-          <label>
-            <input type="checkbox" name="show-toolpath"/>
-            Show Toolpath
-          </label>
 
         </div>
         <div class="footer"><button class="close">Ok</button></div>

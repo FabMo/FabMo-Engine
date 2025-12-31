@@ -188,50 +188,11 @@ module.exports = function(scene, update) {
     
     switch(toolType) {
       case 'ball':
-        // Ball nose: Hemispherical CUTTING surface
-        // The tool TIP (deepest point) is at toolZ
-        // At the CENTER (radialDist = 0): surface is at toolZ (deepest)
-        // At the EDGE (radialDist = toolRadius): surface rises to toolZ + toolRadius
         // Formula: depth below tip = toolRadius - sqrt(r² - d²)
         var depthBelowTip = toolRadius - Math.sqrt(toolRadius * toolRadius - radialDist * radialDist);
-        
-        // But we want the MATERIAL surface, which is BELOW the tool tip
-        // The cut surface is toolZ - depthBelowTip
-        // NO WAIT - toolZ is where the TIP is, material gets cut BELOW that
-        // At center: cut depth is MAXIMUM (toolZ - toolRadius for deepest penetration)
-        // At edge: cut depth is MINIMUM (toolZ for shallowest)
-        
-        // Actually, rethinking: toolZ is the Z position of the tool TIP (center bottom of ball)
-        // The ball extends UPWARD from there
-        // Material at radialDist gets cut to the height where the ball surface touches it
-        
-        // At center (radialDist=0): Ball surface is at toolZ (the tip)
-        // At edge (radialDist=r): Ball surface is at toolZ + r (top of hemisphere touches)
-        
         // Height of ball surface above the tip at distance d:
         var heightAboveTip = toolRadius - Math.sqrt(toolRadius * toolRadius - radialDist * radialDist);
-        
-        // Material surface = tip position + height above tip
-        // NO - this is still wrong!
-        
-        // Let me restart with correct geometry:
-        // Tool moves to Z position 'toolZ' (this is the Z of the tool CENTER or TIP?)
-        // For ball nose, typically toolZ is the BOTTOM of the ball (the tip)
-        // The ball extends UP from toolZ
-        // At radialDist=0: ball surface is at toolZ (tip touches)
-        // At radialDist=r: ball surface is at toolZ + r (top of hemisphere touches)
-        
-        // Material gets cut WHERE THE BALL TOUCHES IT
-        // That's the BOTTOM envelope of the ball's spherical surface
-        
-        // The sphere equation: (x-cx)² + (y-cy)² + (z-cz)² = r²
-        // Center of ball at (toolX, toolY, toolZ + toolRadius)
-        // At horizontal distance 'radialDist' from center:
-        // radialDist² + (z - (toolZ + toolRadius))² = toolRadius²
-        // (z - (toolZ + toolRadius))² = toolRadius² - radialDist²
-        // z - (toolZ + toolRadius) = -sqrt(toolRadius² - radialDist²)  [negative because we want BOTTOM of sphere]
-        // z = toolZ + toolRadius - sqrt(toolRadius² - radialDist²)
-        
+
         return toolZ + toolRadius - Math.sqrt(toolRadius * toolRadius - radialDist * radialDist);
       
       case 'vbit':
