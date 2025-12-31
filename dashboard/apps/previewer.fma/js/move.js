@@ -94,15 +94,64 @@ Move.prototype.getUnitVector = function () {
   }
 
 
-Move.prototype.getPositionAt = function (time) {
-  var dist  = (time - this.startTime) / 60 * this.feed;
-  var unit  = this.getUnitVector();
-  var p     = [];
-
-  for (var i = 0; i < 3; i++)
-    p.push(this.start[i] + unit[i] * dist);
-
-  return p;
+Move.prototype.getPositionAt = function(time) {
+  // Handle arcs specially
+  if (this.type === 'arc' && this.arcCenter && this.arcRadius) {
+    // Calculate position along arc
+    var t = (time - this.startTime) / this.getDuration();
+    t = Math.max(0, Math.min(1, t)); // Clamp to [0, 1]
+    
+    var plane = this.arcPlane || 'xy';
+    var planeAxes = plane === 'xy' ? [0, 1, 2] : 
+                    plane === 'xz' ? [0, 2, 1] : 
+                    [1, 2, 0]; // yz
+    
+    var start2D = [this.start[planeAxes[0]], this.start[planeAxes[1]]];
+    var end2D = [this.end[planeAxes[0]], this.end[planeAxes[1]]];
+    var center2D = this.arcCenter;
+    
+    // Calculate start and end angles
+    var startAngle = Math.atan2(
+      start2D[1] - center2D[1], 
+      start2D[0] - center2D[0]
+    );
+    var endAngle = Math.atan2(
+      end2D[1] - center2D[1], 
+      end2D[0] - center2D[0]
+    );
+    
+    // Determine arc direction
+    var angle = endAngle - startAngle;
+    if (this.arcClockwise) {
+      if (angle > 0) angle -= 2 * Math.PI;
+    } else {
+      if (angle < 0) angle += 2 * Math.PI;
+    }
+    
+    // Interpolate angle
+    var currentAngle = startAngle + angle * t;
+    
+    // Calculate position on arc
+    var pos = [0, 0, 0];
+    pos[planeAxes[0]] = center2D[0] + this.arcRadius * Math.cos(currentAngle);
+    pos[planeAxes[1]] = center2D[1] + this.arcRadius * Math.sin(currentAngle);
+    
+    // Interpolate Z (or other axis) linearly
+    pos[planeAxes[2]] = this.start[planeAxes[2]] + 
+      (this.end[planeAxes[2]] - this.start[planeAxes[2]]) * t;
+    
+    return pos;
+  }
+  
+  // Linear move: simple interpolation
+  var t = (time - this.startTime) / this.getDuration();
+  t = Math.max(0, Math.min(1, t)); // Clamp to [0, 1]
+  
+  var pos = [];
+  for (var i = 0; i < 3; i++) {
+    pos[i] = this.start[i] + (this.end[i] - this.start[i]) * t;
+  }
+  return pos;
 }
 
 

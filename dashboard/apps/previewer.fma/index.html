@@ -101,8 +101,10 @@
           <input name="table-zzoff" type="number" min="-100" max="100"
                  step=".1" value="-1"/>
                  
+          <h5>Display Options</h5>
+
           <label>
-            <input name="show-grid" type="checkbox" checked="true"/>
+            <input type="checkbox" name="show-grid"/>
             Show Grid
           </label>
 
@@ -112,32 +114,85 @@
           </label>
 
           <label>
-            <input name="show-dims" type="checkbox" checked="true"/>
+            <input type="checkbox" name="show-dims"/>
             Show Dimensions
           </label>
 
           <label>
-            <input name="show-axes" type="checkbox" checked="true"/>
+            <input type="checkbox" name="show-axes"/>
             Show Axes
           </label>
 
           <label>
-            <input name="show-tool" type="checkbox" checked="true"/>
+            <input type="checkbox" name="show-tool"/>
             Show Tool (Yellow Cone)
           </label>
 
           <label>
+            <input type="checkbox" name="show-toolpath"/>
+            Show Toolpath
+          </label>
+
+          <label>
             <input name="show-pointcloud" type="checkbox"/>
-            Show Point Cloud (Leveler)
+            BETA Show Point Cloud Shape for Leveler
           </label>
 
           <label>
             <input name="show-pointcloud-wireframe" type="checkbox" checked="true"/>
-            Show Point Cloud Wireframe
+            BETA Show Point Cloud Wireframe
           </label>
 
-          <label>Point Cloud Opacity</label>
-          <input name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>
+          <label>
+            <input type="checkbox" name="show-material"/>
+            BETA Show Material for Subtractive Simulation
+          </label>
+
+          <button class="reset-material">Reset Material (BETA)</button>
+
+          <hr/>
+
+          <h5>BETA Options</h5>
+
+          <label>Set Point Cloud Opacity</label>
+          <input class="opacity-slider" id=#op-slider name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>
+
+          <label>Set Material Opacity</label>
+          <div class="range-container">
+            <input name="material-opacity" type="range" min="0" max="1" step="0.1" value="0.5"/>
+          </div>
+
+          <label>Simulation Resolution (grid points)</label>
+          <select name="material-resolution">
+            <option value="50">Low (50x50 - Fast)</option>
+            <option value="100">Medium (100x100)</option>
+            <option value="200">High (200x200)</option>
+            <option value="300" selected>Very High (300x300)</option>
+            <option value="500">Ultra (500x500)</option>
+          </select>
+
+          <label>Tool Type</label>
+          <select name="tool-type">
+            <option value="flat" selected>Flat End Mill</option>
+            <option value="ball">Ball Nose</option>
+            <option value="vbit">V-Bit</option>
+          </select>
+
+          <label>Tool Diameter</label>
+          <select name="tool-diameter">
+            <option value="0.125">1/8 inch</option>
+            <option value="0.25" selected>1/4 inch</option>
+            <option value="0.5">1/2 inch</option>
+          </select>
+
+          <label class="vbit-angle-setting" style="display: none;">V-Bit Angle</label>
+          <select name="vbit-angle" class="vbit-angle-setting" style="display: none;">
+            <option value="60">60 degrees</option>
+            <option value="90" selected>90 degrees</option>
+          </select>
+
+          <hr/>
+
         </div>
         <div class="footer"><button class="close">Ok</button></div>
       </div>

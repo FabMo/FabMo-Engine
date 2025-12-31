@@ -10,6 +10,7 @@
 
 
 var util = require('./util');
+var cookie = require('./cookie');  // ADD THIS LINE - cookie module was missing!
 
 
 module.exports = function(callbacks) {
@@ -106,10 +107,23 @@ module.exports = function(callbacks) {
   }
 
 
-  function onHelp()     {toggle(self.help)}
-  function onClose(e)   {show($(e.target).closest('.dialog')[0], false)}
-  function onSettings() {toggle(self.settings)}
+  function onHelp()     {show(self.help, true)}
+  function onClose(e)   {show($(e.target).parents('.dialog')[0], false)}
+  function onSettings() {
+    show(self.settings, true);
+    
+    // Show/hide V-bit angle based on tool type selection
+    var toolType = $('[name="tool-type"]').val();
+    updateVbitAngleVisibility(toolType);
+  }
 
+  function updateVbitAngleVisibility(toolType) {
+    if (toolType === 'vbit') {
+      $('.vbit-angle-setting').show();
+    } else {
+      $('.vbit-angle-setting').hide();
+    }
+  }
 
   // Buttons
   self.buttons = {};
@@ -136,4 +150,14 @@ module.exports = function(callbacks) {
   self.help      = $('#preview .help')[0];
   self.settings  = $('#preview .settings')[0];
   $('#preview .dialog .close').click(onClose);
+
+  $('.reset-material').click(function() {
+    if (callbacks.resetMaterial) callbacks.resetMaterial();
+  });
+  
+  // ENSURE resolution dropdown shows current value on open
+  $('#preview .settings [name="material-resolution"]').on('focus', function() {
+    var currentRes = cookie.get('material-resolution', 200);
+    $(this).val(currentRes);
+  });
 }
