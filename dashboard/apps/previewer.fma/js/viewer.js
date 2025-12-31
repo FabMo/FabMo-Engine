@@ -544,6 +544,7 @@ module.exports = function(container) {
     showY: function() {snapPlane('xz')},
     showZ: function() {snapPlane('xy')},
     showISO: function() {snapPlane()},
+    toggleView: self.toggleView,  // ADD THIS LINE
     play: function() {self.path.play()},
     pause: function() {self.path.pause()},
     reset: function() {self.path.reset()},
@@ -553,7 +554,7 @@ module.exports = function(container) {
     showTool: self.tool.setShow,
     showPointCloud: self.pointcloud.setShow,
     showMaterial: self.material.setShow,
-    showToolpath: self.path.setShow,  // NEW: Add toolpath visibility toggle
+    showToolpath: self.path.setShow,
     setMaterialOpacity: self.material.setOpacity,
     setMaterialResolution: self.material.setResolution,
     resetMaterial: self.material.reset
