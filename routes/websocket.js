@@ -69,16 +69,6 @@ function setupStatusBroadcasts(server) {
     machine.on("status", function (status) {
         //Add Server Timestamp to status updates
         status.server_ts = Date.now();
-        /*
-		  decoding the "emit" statements below due how many layers there are:
-			e.g.: server.io.of('/private').emit('status', status);
-			* "server" is a websocket object that has been passed in
-			* "io" is the socket.io data member of server
-			* "server.io.of('/someString')" is a function on socket.io that returns
-				a server.io NameSpace object associated with "/someString"
-					where the string: '/' is the default namespace.
-			NameSpace objects use "emit" to send to all the sockets that are in their space
-		*/
         server.io.of("/private").emit("status", status);
         server.io.of("/").emit("status", status);
     });
@@ -87,6 +77,15 @@ function setupStatusBroadcasts(server) {
         server.io.of("/private").emit("change", topic);
         server.io.of("/").emit("change", topic);
     });
+
+    // Data Bridge: Broadcast DATA_SEND events from OpenSBP to dashboard apps
+    machine.on('data_send', function(message) {
+        server.io.of('/private').emit('data_send', message);
+        server.io.of('/').emit('data_send', message);
+        log.debug('Broadcasting data_send: ' + message.channel);
+    });
+
+    // REMOVE the data_request broadcast here
 }
 
 var onPublicConnect = function (socket) {

@@ -31,6 +31,8 @@ define(function (require) {
             reconnect: [],
             video_frame: [],
             upload_progress: [],
+            data_send: [],
+            data_request: []
         };
         this._registerHandlers();
         this._setupMessageListener();
@@ -67,42 +69,69 @@ define(function (require) {
 
     Dashboard.prototype.setEngine = function (engine) {
         this.engine = engine;
+        
+        //console.log('Dashboard.setEngine called, setting up event forwarding');
+        
         this.engine.on(
             "status",
             function (data) {
                 this.updateStatus(data);
             }.bind(this)
         );
+        
         this.engine.on(
             "change",
             function (topic) {
                 this._fireEvent("change", topic);
             }.bind(this)
         );
+        
+        this.engine.on(
+            "data_send",
+            function (message) {
+                //console.log('Dashboard received data_send from engine, forwarding to apps:', message);
+                //console.log('Registered data_send listeners:', this.events.data_send ? this.events.data_send.length : 0);
+                this._fireEvent("data_send", message);
+            }.bind(this)
+        );
+        
+        this.engine.on(
+            "data_request",
+            function (message) {
+                //console.log('Dashboard received data_request from engine, forwarding to apps:', message);
+                this._fireEvent("data_request", message);
+            }.bind(this)
+        );
+        
         this.engine.on(
             "video_frame",
             function (frame) {
                 this._fireEvent("video_frame", frame);
             }.bind(this)
         );
+        
         this.engine.on(
             "upload_progress",
             function (frame) {
                 this._fireEvent("upload_progress", frame);
             }.bind(this)
         );
+        
         this.engine.on(
             "connect",
             function () {
                 this._fireEvent("reconnect", null);
             }.bind(this)
         );
+        
         this.engine.on(
             "disconnect",
             function () {
                 this._fireEvent("disconnect", null);
             }.bind(this)
         );
+        
+        //console.log('Dashboard event forwarding setup complete');
     };
 
     Dashboard.prototype.setRouter = function (router) {
@@ -139,6 +168,8 @@ define(function (require) {
     };
 
     Dashboard.prototype._fireEvent = function (name, data) {
+        //console.log('Dashboard._fireEvent called for:', name, 'with', this.events[name]?.length || 0, 'listeners');
+        
         if (name in this.events) {
             listeners = this.events[name];
             for (var i in listeners) {
@@ -147,14 +178,20 @@ define(function (require) {
                     status: "success",
                     type: "evt",
                     id: name,
+                    evt: name,
                     data: data,
                 };
                 try {
-                    if (source) source.postMessage(msg, "*");
+                    if (source) {
+                        //console.log('Posting', name, 'event to app iframe', i);
+                        source.postMessage(msg, "*");
+                    }
                 } catch (e) {
-                    //Fix this
+                    //console.error('Error posting event to app:', e);
                 }
             }
+        } else {
+            //console.warn('No event listeners registered for:', name);
         }
     };
 
