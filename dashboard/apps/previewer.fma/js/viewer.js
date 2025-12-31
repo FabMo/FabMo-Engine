@@ -123,18 +123,26 @@ module.exports = function(container) {
   self.showY   = function () {snapPlane('xz')}
   self.showZ   = function () {snapPlane('xy')}
   
-  self.showISO = function () {
-    // Toggle between ortho and perspective
+  self.toggleView = function () {
     self.toggleOrtho();
-    
-    // Only snap to ISO view if we're now in ortho mode
-    if (self.isOrtho) {
-      snapPlane('iso');
-    }
   }
 
   self.toggleOrtho = function() {
     self.isOrtho = !self.isOrtho;
+    
+    console.log('Toggling ortho mode to:', self.isOrtho); // Debug log
+    
+    // Update CSS class on preview container - using jQuery for reliability
+    if (self.isOrtho) {
+      container.addClass('ortho-mode');
+      //console.log('Added ortho-mode class'); // Debug log
+    } else {
+      container.removeClass('ortho-mode');
+      //console.log('Removed ortho-mode class'); // Debug log
+    }
+    
+    // Log to verify class was applied
+    //console.log('Container has ortho-mode class:', container.hasClass('ortho-mode'));
     
     if (self.isOrtho) {
       // Switch to orthographic
@@ -144,12 +152,8 @@ module.exports = function(container) {
       self.orthographicCamera.position.copy(currentPos);
       self.orthographicCamera.lookAt(currentTarget);
       self.orthographicCamera.zoom = 2.0;
-      self.orthographicCamera.near = orthoNearClip;
+      self.orthographicCamera.near = self.orthoNearClip;
       self.orthographicCamera.updateProjectionMatrix();
-      
-      // Debug: Log the near plane distance
-      //console.log('Ortho near clipping plane:', orthoNearClip);
-      //console.log('Camera distance from target:', currentPos.distanceTo(currentTarget));
       
       self.camera = self.orthographicCamera;
     } else {
@@ -250,7 +254,7 @@ module.exports = function(container) {
       // Apply zoom and near plane if in ortho mode
       if (self.isOrtho) {
         self.orthographicCamera.zoom = 2.0;
-        self.orthographicCamera.near = orthoNearClip;
+        self.orthographicCamera.near = self.orthoNearClip;
         self.orthographicCamera.updateProjectionMatrix();
       }
       
@@ -373,30 +377,32 @@ module.exports = function(container) {
 
   // Create orthographic camera
   var frustumSize = 100;
-  var orthoNearClip = -100;  // Try a NEGATIVE value to include objects behind camera
+  self.orthoNearClip = -100;  // Make it a property of self so it's accessible everywhere
   self.orthographicCamera = new THREE.OrthographicCamera(
     -frustumSize / 2,
     frustumSize / 2,
     frustumSize / 2,
     -frustumSize / 2,
-    orthoNearClip,    // Near plane (can be negative)
+    self.orthoNearClip,    // Near plane (can be negative)
     10000             // Far plane
   );
   self.orthographicCamera.up.set(0, 0, 1);
   self.orthographicCamera.position.set(100, 100, 100);
   
   // Initialize view mode from saved preference (default to perspective)
-  var savedView = cookie.get('view', 'perspective');  // Was 'fabmo-previewer-view'
+  var savedView = cookie.get('view-mode', 'perspective');  // Changed from 'fabmo-previewer-view'
   self.isOrtho = (savedView === 'ortho');
   
   // Set initial camera based on saved preference
   if (self.isOrtho) {
     self.camera = self.orthographicCamera;
     self.orthographicCamera.zoom = 2.0;
-    self.orthographicCamera.near = orthoNearClip;  // Ensure near plane is set
-    self.orthographicCamera.updateProjectionMatrix();  // IMPORTANT: Update the matrix
+    self.orthographicCamera.near = self.orthoNearClip;
+    self.orthographicCamera.updateProjectionMatrix();
+    container.addClass('ortho-mode');
   } else {
     self.camera = self.perspectiveCamera;
+    container.removeClass('ortho-mode');
   }
 
   // Controls
@@ -431,55 +437,45 @@ module.exports = function(container) {
       },
       zoom: self.camera.zoom
     };
-    cookie.set('view-state', JSON.stringify(viewState));  // Was 'fabmo-previewer-view-state'
-    cookie.set('view', viewState.mode);  // Was 'fabmo-previewer-view'
+    cookie.set('view-state', JSON.stringify(viewState));  // Changed from 'fabmo-previewer-view-state'
+    cookie.set('view-mode', viewState.mode);              // Changed from 'fabmo-previewer-view'
   };
 
   // Method to restore saved view state
   self.restoreViewState = function() {
     try {
-      var viewStateStr = cookie.get('view-state');  // Was 'fabmo-previewer-view-state'
+      var viewStateStr = cookie.get('view-state');  // Changed from 'fabmo-previewer-view-state'
       if (!viewStateStr) return false;
       
       var viewState = JSON.parse(viewStateStr);
       
       // Make sure we're using the right camera before restoring
       if (viewState.mode !== (self.isOrtho ? 'ortho' : 'perspective')) {
-        console.warn('View state camera mode mismatch - skipping restore');
         return false;
       }
       
-      // Restore camera position and target
-      self.camera.position.set(
-        viewState.position.x,
-        viewState.position.y,
-        viewState.position.z
-      );
-      self.controls.target.set(
-        viewState.target.x,
-        viewState.target.y,
-        viewState.target.z
-      );
+      if (viewState.position) {
+        self.camera.position.set(
+          viewState.position.x,
+          viewState.position.y,
+          viewState.position.z
+        );
+      }
       
-      // Restore zoom - CRITICAL for orthographic
+      if (viewState.target) {
+        self.controls.target.set(
+          viewState.target.x,
+          viewState.target.y,
+          viewState.target.z
+        );
+      }
+      
       if (viewState.zoom && self.isOrtho) {
         self.orthographicCamera.zoom = viewState.zoom;
+        self.orthographicCamera.updateProjectionMatrix();
       }
       
-      // Ensure near plane is set if in ortho mode
-      if (self.isOrtho) {
-        self.orthographicCamera.near = orthoNearClip;
-      }
-      
-      // Update projection matrix BEFORE updating controls
-      self.camera.updateProjectionMatrix();
-      
-      // Force controls to use the restored state
       self.controls.update();
-      
-      // Force a render to show the correct view immediately
-      self.refresh();
-      
       return true;
     } catch (e) {
       console.warn('Could not restore view state:', e);
@@ -520,7 +516,7 @@ module.exports = function(container) {
 
   // Initialize camera position BEFORE path loads
   // This prevents the "jump" effect
-  var initialViewState = cookie.get('view-state');  // Was 'fabmo-previewer-view-state'
+  var initialViewState = cookie.get('view-state');  // Changed from 'fabmo-previewer-view-state'
   if (initialViewState) {
     try {
       var parsed = JSON.parse(initialViewState);

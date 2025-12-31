@@ -112,6 +112,23 @@ body {
   display: block;
 }
 
+/* Show ortho button in perspective mode, perspective button in ortho mode */
+#preview.ortho-mode #button-ortho {
+  display: none;
+}
+
+#preview.ortho-mode #button-perspective {
+  display: block;
+}
+
+#preview:not(.ortho-mode) #button-ortho {
+  display: block;
+}
+
+#preview:not(.ortho-mode) #button-perspective {
+  display: none;
+}
+
 #preview .dialog {
   display: none;
   position: absolute;
@@ -203,4 +220,37 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 .opacity-slider::-webkit-slider-runnable-track {
   background-color: #2563eb !important;
+}
+/* Override the dashboard's orange slider styling for previewer settings */
+#preview .settings input[type='range']::-webkit-slider-runnable-track {
+  box-shadow: none;
+  background: #ffffff !important;
+  border: 1px solid #cccccc;
+}
+
+#preview .settings input[type='range']::-moz-range-track {
+  box-shadow: none;
+  background: #ffffff !important;
+  border: 1px solid #cccccc;
+}
+
+#preview .settings input[type='range']::-ms-track {
+  box-shadow: none;
+  background: #ffffff !important;
+  border: 1px solid #cccccc;
+}
+
+#preview .settings input[type='range']::-webkit-slider-thumb {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  background: #888888;
+}
+
+#preview .settings input[type='range']::-moz-range-thumb {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  background: #888888;
+}
+
+#preview .settings input[type='range']::-ms-thumb {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  background: #888888;
 }
