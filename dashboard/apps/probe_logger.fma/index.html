@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Probe Data Logger</title>
+    <link rel="stylesheet" href="../../css/dashboard.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Probe Data Logger</h1>
+            <div id="status" class="status-message">Waiting for data...</div>
+            <div id="point-count" class="point-count">0 points</div>
+        </div>
+
+        <!-- Add Generator Section -->
+        <div class="generator-section">
+            <h3>Generate Probe File</h3>
+            <button id="show-generator-btn" class="btn btn-info">Show Generator</button>
+            
+            <div id="generator-form" style="display:none;">
+                <label>X Start: <input type="number" id="x-start" value="0" step="0.1"></label>
+                <label>X End: <input type="number" id="x-end" value="3" step="0.1"></label>
+                <label>Y Start: <input type="number" id="y-start" value="0" step="0.1"></label>
+                <label>Y End: <input type="number" id="y-end" value="3" step="0.1"></label>
+                <label>Step Size: <input type="number" id="step" value="1.0" step="0.1"></label>
+                <label>Probe Speed: <input type="number" id="speed" value="1.0" step="0.1"></label>
+                <label>Probe Depth: <input type="number" id="depth" value="-0.5" step="0.1"></label>
+                <label>Safe Z: <input type="number" id="safe-z" value="1.0" step="0.1"></label>
+                <label>Input #: <input type="number" id="input" value="1" min="1" max="12"></label>
+                <button id="generate-btn" class="btn btn-success">Generate & Run File</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <label for="channel-select">Filter by channel:</label>
+            <select id="channel-select">
+                <option value="">All Channels</option>
+            </select>
+            
+            <button id="clear-btn" class="btn btn-warning">Clear Data</button>
+            <button id="export-csv-btn" class="btn btn-primary">Export CSV</button>
+            <button id="export-json-btn" class="btn btn-primary">Export JSON</button>
+            <button id="export-stl-btn" class="btn btn-primary">Export STL</button>
+            <button id="export-xyz-btn" class="btn btn-primary">Export Point Cloud</button>
+            <button id="export-sbp-btn" class="btn btn-success">Export SBP File</button>
+        </div>
+
+        <div class="table-container">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>Channel</th>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>Z</th>
+                        <th>Data</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="data-body">
+                    <!-- Data rows will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="../../js/libs/jquery.min.js"></script>
+    <script src="../../js/libs/foundation.min.js"></script>
+    <script src="../../js/libs/fabmo.js"></script>
+    <script src="generate.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>

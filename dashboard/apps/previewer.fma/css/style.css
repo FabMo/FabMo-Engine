@@ -112,6 +112,23 @@ body {
   display: block;
 }
 
+/* Show ortho button in perspective mode, perspective button in ortho mode */
+#preview.ortho-mode #button-ortho {
+  display: none;
+}
+
+#preview.ortho-mode #button-perspective {
+  display: block;
+}
+
+#preview:not(.ortho-mode) #button-ortho {
+  display: block;
+}
+
+#preview:not(.ortho-mode) #button-perspective {
+  display: none;
+}
+
 #preview .dialog {
   display: none;
   position: absolute;
@@ -141,7 +158,7 @@ body {
   height: 368px;
   }
 
-#preview .dialog h2, #preview .dialog h3 {
+#preview .dialog h2, #preview .dialog h5 {
   color: #444;
 }
 
@@ -171,4 +188,69 @@ body {
 #preview .loading progress {
   display: block;
   width: 100%;
+}
+
+
+/* Working on getting control of sliders here; main overriding now ... */
+/* Sliders */
+#op-slider {
+  width: 200px;
+  height: 120px;
+  background: steelblue;
+  margin-top: 1rem;
+  opacity: 1;
+}
+
+/* Base range reset (optional) */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 200px;
+  height: 6px;          /* fallback height */
+  background: transparent;
+  outline: none;
+}
+
+/* WebKit: Chrome, Edge, Safari */
+input[type="range"]::-webkit-slider-runnable-track {
+  background-color: #2563eb;  /* solid bar color */
+  height: 6px;
+  border-radius: 3px;
+}
+
+.opacity-slider::-webkit-slider-runnable-track {
+  background-color: #2563eb !important;
+}
+/* Override the dashboard's orange slider styling for previewer settings */
+#preview .settings input[type='range']::-webkit-slider-runnable-track {
+  box-shadow: none;
+  background: #ffffff !important;
+  border: 1px solid #cccccc;
+}
+
+#preview .settings input[type='range']::-moz-range-track {
+  box-shadow: none;
+  background: #ffffff !important;
+  border: 1px solid #cccccc;
+}
+
+#preview .settings input[type='range']::-ms-track {
+  box-shadow: none;
+  background: #ffffff !important;
+  border: 1px solid #cccccc;
+}
+
+#preview .settings input[type='range']::-webkit-slider-thumb {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  background: #888888;
+}
+
+#preview .settings input[type='range']::-moz-range-thumb {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  background: #888888;
+}
+
+#preview .settings input[type='range']::-ms-thumb {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  background: #888888;
 }

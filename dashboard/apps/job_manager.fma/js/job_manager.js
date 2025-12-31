@@ -806,22 +806,26 @@ function update() {
 }
 
 function setConfig(id, value) {
-	var parts = id.split("-");
-	var o = {};
-	var co = o;
-	var i=0;
+    var parts = id.split("-");
+    var o = {};
+    var co = o;
+    var i=0;
 
-	do {
-	  co[parts[i]] = {};
-	  if(i < parts.length-1) {
-	    co = co[parts[i]];
-	  }
-	} while(i++ < parts.length-1 );
-	co[parts[parts.length-1]] = value;
-	fabmo.setConfig(o, function(err, data) {
-    notifyChange(err,id);
-    update();
-	});
+    do {
+      co[parts[i]] = {};
+      if(i < parts.length-1) {
+        co = co[parts[i]];
+      }
+    } while(i++ < parts.length-1 );
+    co[parts[parts.length-1]] = value;
+    fabmo.setConfig(o, function(err, data) {
+        notifyChange(err,id);
+        update();
+        
+        // Request a status update after config change to propagate transform state
+        // This ensures the dashboard transform warning gets updated
+        fabmo.requestStatus();
+    });
 }
 
 var notifyChange = function(err,id){

@@ -26,7 +26,7 @@ var Fabmo  = require('../../../static/js/libs/fabmo.js');
 
 var preview = $('#preview');
 var fabmo = new Fabmo();
-var viewer;
+var viewer = null;  // Module-level viewer reference
 
 var cached_Config = null;
 var cached_Status = null;
@@ -35,12 +35,14 @@ function resize() {
   var width = window.innerWidth - 4;
   var height = window.innerHeight - $('#topbar').height() - 3;
   preview.size(width, height);
-  viewer.resize(width, height);
+  if (viewer) {
+    viewer.resize(width, height);
+  }
 }
 
 function getMachineData(err, callback) {
     fabmo.getConfig(function (err, config) {
-        cached_Config = config;             // Make machineData available to this app (units, dim, and offsets needed)
+        cached_Config = config;
         if (!err) {
           callback();
         } else {
@@ -52,7 +54,7 @@ function getMachineData(err, callback) {
 function getStartStatus(err, callback) {
     fabmo.requestStatus(function (err, status) {
         var startPosx = status.posx;
-        cached_Status = status;             // Make initial status available to this app (location needed)
+        cached_Status = status;             
         if (!err) {
           callback();
         } else {
@@ -61,17 +63,35 @@ function getStartStatus(err, callback) {
     });
 }
 
+// CLEANUP FUNCTION - Now cleans up entire viewer
+function cleanupBeforeExit() {
+    
+    if (viewer && typeof viewer.cleanup === 'function') {
+        try {
+            viewer.cleanup();
+            
+            // Clear the preview container
+            preview.empty();
+            
+        } catch (err) {
+            console.error('Error during viewer cleanup:', err);
+        }
+    }
+    
+    // Null out the viewer reference
+    viewer = null;
+}
 
-$(function () {                             // Preview App ENTRY POINT  <<================
+$(function () {                             
   if (!util.webGLEnabled()) {
     fabmo.notify('error', 'WebGL is not enabled. Impossible to preview.');
     return;
   }
   let err = null;
-  getMachineData(err, nowGetStatus);       // Need to get tool's units and dimensions before we start
+  getMachineData(err, nowGetStatus);       
 })
 
-function nowGetStatus() {                  // Need to make sure we have current status data for location
+function nowGetStatus() {                  
     let err = null;
     getStartStatus(err, nowPreviewJob);  
 }
@@ -93,37 +113,44 @@ function nowPreviewJob() {
     });
 
     $('.run-now').click(function() {
+      // CLEANUP BEFORE switching apps
+      cleanupBeforeExit();
+      
       fabmo.runNext(function(err, data) {
         if (err) fabmo.notify(err);
         else fabmo.launchApp('job-manager');
       });
     });
 
-    // Viewer
+    // CRITICAL: Assign to module-level viewer variable
     viewer = new Viewer(preview);
+    
+    // IMPORTANT: Add unload handler AFTER viewer is created
+    window.addEventListener('unload', function() {
+        console.log('Window unloading - cleaning up viewer');
+        cleanupBeforeExit();
+    });
 
     // Setup grid and table
     viewer.setTable(cached_Config.machine.envelope, cached_Config.driver.g55x, cached_Config.driver.g55y, -1);
 
+    // Load point cloud if leveling is enabled
+    viewer.loadPointCloud(cached_Config);
+
     // Resize
-    resize();
-    $(window).resize(resize);
-
-    // Units (pass units and initial status)
-    viewer.setUnits(cached_Config.machine.units, cached_Status);
-
-    // Fabmo callbacks
     var job_started = false;
+
+    $(window).resize(resize);
+    resize();
+
     fabmo.on('status', function(status) {
-      if (status.state == 'running' && status.job && status.job._id == jobID &&
-          status.line !== null) {
-            var p = [status.posx, status.posy, status.posz];
-            viewer.updateStatus(status.line, p);
-        if (!job_started) {
-          job_started = true;
-          viewer.jobStarted();
-        }
-      }
+      if (job_started)
+        viewer.updateStatus(status.line, [status.posx, status.posy, status.posz]);
+    });
+
+    fabmo.on('job_start', function() {
+      job_started = true;
+      viewer.jobStarted();
     });
 
     fabmo.on('job_end', function() {
@@ -155,10 +182,16 @@ function nowPreviewJob() {
 
         error: function(data) {
           if (data && data.responseJSON)
-            fabmo.notify('error', data.responseJSON);
+            fabmo.notify(data.responseJSON.message || data.statusText);
+
+          else fabmo.notify(data.statusText);
+
+          viewer.gui.hideLoading();
         }
       });
     }
+
+    viewer.setUnits(cached_Config.machine.units, cached_Status);   
   });
 }
 
@@ -180,16 +213,26 @@ $(document).ready(function() {
         localStorage.setItem("backapp", back_App);
     } 
 
+    // CLEANUP HANDLERS - ONLY on explicit user actions (not beforeunload)
     $(".exit-button").on("click", function(){
+        console.log('Exit button clicked - cleaning up before exit');
+        cleanupBeforeExit();
+        // REMOVED setTimeout - cleanup is synchronous, no delay needed
         fabmo.launchApp(back_App);
     });
 
     document.onkeyup = function (evt) {
         if (evt.key === "Escape") {
+            console.log('Escape key pressed - cleaning up before exit');
             evt.preventDefault();
+            cleanupBeforeExit();
+            // REMOVED setTimeout - cleanup is synchronous, no delay needed
             fabmo.launchApp(back_App);
         }
     };
+
+    // REMOVED beforeunload handler - it fires too early in single-page apps
+    // The explicit exit/ESC handlers above are sufficient
 
     // set focus at the end of 'ready.
     $(window).trigger("focus");

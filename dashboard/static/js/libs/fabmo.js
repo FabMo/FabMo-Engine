@@ -27,21 +27,11 @@
         this.target = window.parent;
         this.window = window;
         this._setOptions(options);
-        this._id = 0;
-        this._handlers = {};
+        this._init();
+        this._setupMessageListener();
         this.status = {};
         this.isReady = false;
-        this._event_listeners = {
-            status: [],
-            job_start: [],
-            job_end: [],
-            change: [],
-            disconnect: [],
-            reconnect: [],
-            video_frame: [],
-            upload_progress: [],
-        };
-        this._setupMessageListener();
+
         // listen for escape key press to quit the engine
         document.onkeydown = function (e) {
             // if (e.keyCode === 27) {  ////## removing allows for ESC to be used in manual mode
@@ -139,6 +129,25 @@
         this.options = {};
         this.options.defer = options.defer || false;
     };
+
+
+    FabMoDashboard.prototype._init = function () {
+        this._handlers = {};
+        this._id = 0;
+        this._event_listeners = {
+            status: [],
+            change: [],
+            job_start: [],
+            job_end: [],
+            disconnect: [],
+            reconnect: [],
+            video_frame: [],
+            upload_progress: [],
+            data_send: [],
+            data_request: [],
+        };
+    };
+
 
     /**
      * @method isPresent
@@ -381,15 +390,20 @@
                         break;
 
                     case "evt":
-                        if ("id" in message) {
-                            if (message.id in this._event_listeners) {
-                                listeners = this._event_listeners[message.id];
-                                for (i in listeners) {
-                                    listeners[i](message.data);
-                                }
+                        // Handle both new pattern (message.evt) and old pattern (message.id)
+                        var name = message.evt || message.id;  // Try new pattern first, fall back to old
+                        var data = message.data;
+                        
+                        if (name && name in this._event_listeners) {
+                            var listeners = this._event_listeners[name] || [];
+                            for (var i = 0; i < listeners.length; i++) {
+                                listeners[i](data);
                             }
+                        } else if (name) {
+                            // Event name not in listeners - this is okay for some events
+                            // Just silently ignore (don't warn, as this is normal)
                         }
-                        break;
+                        break;                        
                 }
             }.bind(this)
         );

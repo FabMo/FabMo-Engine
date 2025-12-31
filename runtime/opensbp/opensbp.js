@@ -953,7 +953,7 @@ SBPRuntime.prototype._run = function () {
                 }
                 break;
             // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
-            //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
+            //      Enabiling this appears to lead to extra and pre-mature attempts to activate _end().
             // case this.driver.STAT_END:
             //     this._end();
             //     break;
@@ -1354,18 +1354,48 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
 //   command - A single parsed line of OpenSBP code
 
 SBPRuntime.prototype._execute = function (command, callback) {
-    // Just skip over blank lines, undefined, etc.
-    //log.info("####=._execute");
-    //log.info("    line: #" + this.pc);
-    //log.info("    " + command.type + " " + JSON.stringify(command));
-    if (!command) {
-        this.pc += 1;
-        return;
-    }
-
-    // All correctly parsed commands have a type
     switch (command.type) {
-        // A ShopBot Comand (M2, ZZ, etc...)
+        case "data_send":
+            // Evaluate the channel
+            var channel = this._eval(command.channel);
+            
+            // Evaluate all arguments (this will get current system variable values)
+            var evaluatedArgs = [];
+            if (command.args) {
+                evaluatedArgs = command.args.map(function(arg) {
+                    return this._eval(arg);
+                }.bind(this));
+            }
+            
+            // Emit the data_send event to the machine
+            if (this.machine) {
+                var message = {
+                    channel: channel,
+                    data: evaluatedArgs,
+                    timestamp: Date.now()
+                };
+                
+                this.machine.emit('data_send', message);
+                log.debug('Emitted DATA_SEND: channel=' + channel + ', args=' + JSON.stringify(evaluatedArgs));
+            }
+            
+            // Always increment PC and continue immediately
+            // System variables have already been evaluated above
+            this.pc += 1;
+            if (callback) {
+                setImmediate(callback);
+            }
+            // DATA_SEND does NOT break the stack - evaluation happens inline
+            return false;
+
+        case "event":
+            // Throw a useful exception for the no-longer-supported ON INPUT command
+            this.pc += 1;
+            throw new Error(
+                "ON INPUT is no longer a supported command.  Make sure the program you are using is up to date.  Line: " +
+                    (this.pc + 1)
+            );
+
         case "cmd":
             var broke = this._executeCommand(command, callback);
             if (!broke) {
@@ -1670,15 +1700,8 @@ SBPRuntime.prototype._execute = function (command, callback) {
             );
 
         default:
-            // Just skip over commands we don't recognize
-            // TODO - Maybe this isn't the best behavior?
-            try {
-                log.error("Unknown command: " + JSON.stringify(command));
-            } catch (e) {
-                log.error("Unknown command: " + command);
-            }
             this.pc += 1;
-            return false;
+            throw new Error("Unknown command: " + JSON.stringify(command));
     }
 };
 
@@ -1955,7 +1978,7 @@ SBPRuntime.prototype.init = function () {
     this.started = false;
     this.sysvar_evaluated = false;
     this.output = []; // Used in simulation mode only ??meaning??
-    this.quit_pending = false; // this is runtime specific, not the global G2 driver "quit_pending"
+    this.quit_pending = false; // this seems important for clean exit after quits
     this.end_message = null;
     this.paused = false;
     this.feedhold = false;
@@ -2514,7 +2537,7 @@ SBPRuntime.prototype._setupTransforms = function () {
 
 // Transform the specified points within a motion command for a line or arc
 // - by type of transform
-// - to the tform function we are passing the to-be-transformed object and other parameters needed for calc
+// - to the tform function we are passing the to-be-transformed object and other parameters for calc
 // - the possible presence of gcode arcs (with relative values and absent start point) makes this messy
 
 let prevPt = {

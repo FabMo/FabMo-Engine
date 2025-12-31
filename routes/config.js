@@ -520,12 +520,16 @@ function applyManualProfileChange(profileName, res, next) {
             status: "success",
             message: "Profile change initiated",
         });
+        
+        log.info("Response sent, waiting before restart...");
+        res.end();
+        next();
 
         // Restart after a short delay
         setTimeout(function () {
             log.info("Restarting for manual profile change...");
             process.exit(0);
-        }, 1000);
+        }, 2000);
     });
 
     next();
