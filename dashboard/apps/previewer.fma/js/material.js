@@ -7,7 +7,6 @@
 
 var util = require('./util');
 var cookie = require('./cookie');
-// Note: THREE is available globally via window.THREE from app.js
 
 module.exports = function(scene, update) {
   var self = this;
@@ -18,10 +17,14 @@ module.exports = function(scene, update) {
   self.opacity = parseFloat(cookie.get('material-opacity', 0.5));
   self.resolution = Math.min(parseInt(cookie.get('material-resolution', 200)), 500);
   
-  // DECLARE ALL MODULE-LEVEL VARIABLES HERE
+  // NEW: Tool settings with defaults
+  self.toolType = cookie.get('tool-type', 'flat');
+  self.toolDiameter = parseFloat(cookie.get('tool-diameter', 0.25));
+  self.vbitAngle = parseFloat(cookie.get('vbit-angle', 90));
+  
   var bounds = null;
   var stockHeight = 0;
-  var toolDia = 0.05;
+  var toolDia = 0.25; // Will be updated from self.toolDiameter
   var materialTop = 0;
   var heightMap = null;
   var lastUpdateTime = 0;
@@ -29,10 +32,10 @@ module.exports = function(scene, update) {
   var lastToolPos = null;
   var isDirty = false;
   var pendingUpdates = 0;
-
-  // CRITICAL: Track geometry/material references for proper cleanup
   var activeGeometries = [];
   var activeMaterials = [];
+  var dirtyRegions = [];
+  var geometryCreated = false;
 
   /**
    * Helper to properly dispose a mesh and track its resources
@@ -97,7 +100,7 @@ module.exports = function(scene, update) {
     // NOW set new bounds and parameters
     bounds = pathBounds;
     stockHeight = height || 1;
-    toolDia = diameter || 0.25;
+    toolDia = self.toolDiameter; // Use setting instead of parameter
     materialTop = topZ !== undefined ? topZ : 0;
     
     var width = bounds.max.x - bounds.min.x;
@@ -168,26 +171,80 @@ module.exports = function(scene, update) {
   function getToolBottomZ(toolZ, radialDist, toolType) {
     var toolRadius = toolDia / 2;
     
-    if (radialDist > toolRadius) return Infinity; // Outside tool
+    if (radialDist > toolRadius) {
+      // For V-bit, check if within max cutting width
+      if (toolType === 'vbit') {
+        var maxWidth = 1.0; // 1 inch max width
+        var angleRad = (self.vbitAngle / 2) * (Math.PI / 180);
+        var depth = Math.abs(toolZ - materialTop);
+        var widthAtDepth = 2 * depth * Math.tan(angleRad);
+        
+        if (radialDist <= widthAtDepth / 2 && widthAtDepth <= maxWidth) {
+          return toolZ + radialDist / Math.tan(angleRad);
+        }
+      }
+      return Infinity; // Outside tool
+    }
     
     switch(toolType) {
       case 'ball':
-        // Ball nose: hemisphere bottom
-        return toolZ + Math.sqrt(toolRadius * toolRadius - radialDist * radialDist);
+        // Ball nose: Hemispherical CUTTING surface
+        // The tool TIP (deepest point) is at toolZ
+        // At the CENTER (radialDist = 0): surface is at toolZ (deepest)
+        // At the EDGE (radialDist = toolRadius): surface rises to toolZ + toolRadius
+        // Formula: depth below tip = toolRadius - sqrt(r² - d²)
+        var depthBelowTip = toolRadius - Math.sqrt(toolRadius * toolRadius - radialDist * radialDist);
+        
+        // But we want the MATERIAL surface, which is BELOW the tool tip
+        // The cut surface is toolZ - depthBelowTip
+        // NO WAIT - toolZ is where the TIP is, material gets cut BELOW that
+        // At center: cut depth is MAXIMUM (toolZ - toolRadius for deepest penetration)
+        // At edge: cut depth is MINIMUM (toolZ for shallowest)
+        
+        // Actually, rethinking: toolZ is the Z position of the tool TIP (center bottom of ball)
+        // The ball extends UPWARD from there
+        // Material at radialDist gets cut to the height where the ball surface touches it
+        
+        // At center (radialDist=0): Ball surface is at toolZ (the tip)
+        // At edge (radialDist=r): Ball surface is at toolZ + r (top of hemisphere touches)
+        
+        // Height of ball surface above the tip at distance d:
+        var heightAboveTip = toolRadius - Math.sqrt(toolRadius * toolRadius - radialDist * radialDist);
+        
+        // Material surface = tip position + height above tip
+        // NO - this is still wrong!
+        
+        // Let me restart with correct geometry:
+        // Tool moves to Z position 'toolZ' (this is the Z of the tool CENTER or TIP?)
+        // For ball nose, typically toolZ is the BOTTOM of the ball (the tip)
+        // The ball extends UP from toolZ
+        // At radialDist=0: ball surface is at toolZ (tip touches)
+        // At radialDist=r: ball surface is at toolZ + r (top of hemisphere touches)
+        
+        // Material gets cut WHERE THE BALL TOUCHES IT
+        // That's the BOTTOM envelope of the ball's spherical surface
+        
+        // The sphere equation: (x-cx)² + (y-cy)² + (z-cz)² = r²
+        // Center of ball at (toolX, toolY, toolZ + toolRadius)
+        // At horizontal distance 'radialDist' from center:
+        // radialDist² + (z - (toolZ + toolRadius))² = toolRadius²
+        // (z - (toolZ + toolRadius))² = toolRadius² - radialDist²
+        // z - (toolZ + toolRadius) = -sqrt(toolRadius² - radialDist²)  [negative because we want BOTTOM of sphere]
+        // z = toolZ + toolRadius - sqrt(toolRadius² - radialDist²)
+        
+        return toolZ + toolRadius - Math.sqrt(toolRadius * toolRadius - radialDist * radialDist);
       
       case 'vbit':
-        // V-bit: conical bottom (assume 90 degrees for now)
-        return toolZ + radialDist;
+        // V-bit: cone formula
+        var angleRad = (self.vbitAngle / 2) * (Math.PI / 180);
+        return toolZ + radialDist / Math.tan(angleRad);
       
       case 'flat':
       default:
-        // Flat endmill: flat bottom
+        // Flat endmill: constant bottom
         return toolZ;
     }
   }
-
-  var dirtyRegions = []; // Track which regions changed
-  var geometryCreated = false; // Track if we've created initial geometry
 
   /**
    * Mark a region as needing update
@@ -307,14 +364,10 @@ module.exports = function(scene, update) {
    * Remove material along a path (with arc segment detection)
    */
   self.removeMaterial = function(start, end, toolType, isArcSegment) {
-    if (!heightMap) {
-      console.warn('Height map not initialized');
-      return;
-    }
+    if (!heightMap) return;
     
-    toolType = toolType || 'flat';
+    toolType = self.toolType; // Use setting instead of parameter
     
-    // Calculate move distance
     var dx = end[0] - start[0];
     var dy = end[1] - start[1];
     var dz = end[2] - start[2];
@@ -323,11 +376,9 @@ module.exports = function(scene, update) {
     
     if (totalDist < 0.001) return;
     
-    // DETECT PLUNGE: mostly vertical movement
     var isPlunge = (xyDist < toolDia * 0.1) && (Math.abs(dz) > toolDia * 0.5);
     
     if (isPlunge) {
-      // For plunges, single point update at deepest Z
       var toolX = start[0];
       var toolY = start[1];
       var toolZ = Math.min(start[2], end[2]);
@@ -335,10 +386,8 @@ module.exports = function(scene, update) {
       updateGridUnderTool(toolX, toolY, toolZ, toolType);
       
     } else if (isArcSegment) {
-      // ARC SEGMENTS: Already finely sampled by path.js (1500 samples/inch)
-      // Just do simple interpolation to ensure grid coverage
       var gridSpacing = Math.min(heightMap.xStep, heightMap.yStep);
-      var steps = Math.max(2, Math.ceil(totalDist / (gridSpacing * 0.5))); // 2 samples per grid cell
+      var steps = Math.max(2, Math.ceil(totalDist / (gridSpacing * 0.5)));
       
       for (var step = 0; step <= steps; step++) {
         var t = step / steps;
@@ -350,7 +399,6 @@ module.exports = function(scene, update) {
       }
       
     } else {
-      // DETECT AXIS-ALIGNED MOVES for straight lines (not arcs)
       var axisAlignedTolerance = 0.001;
       var isAxisAligned = false;
       
@@ -361,7 +409,6 @@ module.exports = function(scene, update) {
       }
       
       if (isAxisAligned) {
-        // Axis-aligned straight lines: fine interpolation
         var steps = Math.max(5, Math.ceil(totalDist / (heightMap.xStep * 0.3)));
         
         for (var step = 0; step <= steps; step++) {
@@ -373,7 +420,6 @@ module.exports = function(scene, update) {
           updateGridUnderTool(toolX, toolY, toolZ, toolType);
         }
       } else {
-        // Normal angled straight lines: standard interpolation
         var steps = Math.max(2, Math.ceil(totalDist / (toolDia * 0.5)));
         
         for (var step = 0; step <= steps; step++) {
@@ -389,7 +435,6 @@ module.exports = function(scene, update) {
     
     var now = Date.now();
     if (isDirty && (now - lastUpdateTime) >= UPDATE_INTERVAL_MS) {
-      console.log('Material update: ' + pendingUpdates + ' changes since last render');
       self.updateMesh();
       lastUpdateTime = now;
       isDirty = false;
@@ -778,8 +823,39 @@ module.exports = function(scene, update) {
     }
   };
 
+  self.setToolType = function(type) {
+    self.toolType = type;
+    cookie.set('tool-type', type);
+    
+    if (bounds) {
+      self.reset();
+    }
+  };
+
+  self.setToolDiameter = function(diameter) {
+    self.toolDiameter = parseFloat(diameter);
+    cookie.set('tool-diameter', diameter);
+    
+    if (bounds) {
+      toolDia = self.toolDiameter;
+      self.reset();
+    }
+  };
+
+  self.setVbitAngle = function(angle) {
+    self.vbitAngle = parseFloat(angle);
+    cookie.set('vbit-angle', angle);
+    
+    if (bounds && self.toolType === 'vbit') {
+      self.reset();
+    }
+  };
+
   // Initialize settings connections
   util.connectSetting('show-material', self.show, self.setShow);
   util.connectSetting('material-opacity', self.opacity, self.setOpacity);
   util.connectSetting('material-resolution', self.resolution, self.setResolution);
+  util.connectSetting('tool-type', self.toolType, self.setToolType);
+  util.connectSetting('tool-diameter', self.toolDiameter, self.setToolDiameter);
+  util.connectSetting('vbit-angle', self.vbitAngle, self.setVbitAngle);
 };

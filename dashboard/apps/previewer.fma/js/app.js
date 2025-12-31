@@ -65,23 +65,20 @@ function getStartStatus(err, callback) {
 
 // CLEANUP FUNCTION - Now cleans up entire viewer
 function cleanupBeforeExit() {
-    console.log('=== CLEANUP BEFORE EXIT CALLED ===');
     
     if (viewer && typeof viewer.cleanup === 'function') {
-        console.log('Executing viewer.cleanup()...');
         try {
             viewer.cleanup();
             
-            // ADDED: Clear the preview container
+            // Clear the preview container
             preview.empty();
             
-            console.log('Viewer cleanup completed successfully');
         } catch (err) {
             console.error('Error during viewer cleanup:', err);
         }
     }
     
-    // ADDED: Null out the viewer reference
+    // Null out the viewer reference
     viewer = null;
 }
 
@@ -134,9 +131,6 @@ function nowPreviewJob() {
         cleanupBeforeExit();
     });
 
-    console.log('Viewer initialized:', !!viewer);
-    console.log('Viewer.material initialized:', !!(viewer && viewer.material));
-
     // Setup grid and table
     viewer.setTable(cached_Config.machine.envelope, cached_Config.driver.g55x, cached_Config.driver.g55y, -1);
 
@@ -182,10 +176,6 @@ function nowPreviewJob() {
         },
 
         success: function (gcode) {
-          console.log('=== RAW GCODE FROM SERVER (first 2000 chars) ===');
-          console.log(gcode.substring(0, 2000));
-          console.log('=== GCODE LINES COUNT:', gcode.split('\n').length);
-          
           viewer.gui.showLoadingSize(gcode.length);
           viewer.setGCode(gcode)
         },

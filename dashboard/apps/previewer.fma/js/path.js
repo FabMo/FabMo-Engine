@@ -557,28 +557,14 @@ module.exports = function(scene, callbacks) {
         
         // Only simulate cutting moves (not rapids)
         if (!currentMove.rapid) {
-          // ADDED: Debug logging for move detection
-          console.log('=== MOVE', i, '===');
-          console.log('  Type:', currentMove.type || 'undefined');
-          console.log('  Start:', currentMove.start);
-          console.log('  End:', currentMove.end);
           
           // Check if this is an arc move
           if (currentMove.type === 'arc') {
-            console.log('  ARC DETECTED!');
-            console.log('    Center:', currentMove.arcCenter);
-            console.log('    Radius:', currentMove.arcRadius);
-            console.log('    Plane:', currentMove.arcPlane);
-            console.log('    Clockwise:', currentMove.arcClockwise);
             
             // CHANGED: Dynamic sampling based on arc length
             var arcLength = currentMove.getLength();
             var samplesPerInch = 1500; // INCREASED from 30 to ensure fine coverage
             var numSegments = Math.max(15, Math.ceil(arcLength * samplesPerInch));
-            
-            console.log('    Arc length:', arcLength);
-            console.log('    Segments:', numSegments);
-            
             var prevPos = currentMove.start;
             
             for (var seg = 1; seg <= numSegments; seg++) {
@@ -586,16 +572,11 @@ module.exports = function(scene, callbacks) {
               var segTime = currentMove.startTime + t * currentMove.getDuration();
               var currentPos = currentMove.getPositionAt(segTime);
               
-              if (seg === 1 || seg === numSegments) {
-                console.log('    Segment', seg, ':', prevPos, '->', currentPos);
-              }
-              
               // Pass small segments with isArcSegment flag
               callbacks.materialUpdate(prevPos, currentPos, true);
               prevPos = currentPos;
             }
           } else {
-            console.log('  LINEAR MOVE');
             // Linear moves: just start to end
             callbacks.materialUpdate(currentMove.start, currentMove.end, false);
           }
@@ -628,7 +609,6 @@ module.exports = function(scene, callbacks) {
     // DO NOT AUTO-RESET - User wants to explore the result!
     if (time >= self.duration && callbacks.materialForceUpdate) {
       callbacks.materialForceUpdate();
-      console.log('Material simulation complete - ready for user inspection');
     }
     
     self.lastMove = nextMove;
@@ -757,6 +737,7 @@ module.exports = function(scene, callbacks) {
   self.commands    = 0;
   self.codeLine    = $('#preview .code-line');
   self.preview     = $('#preview');
+  self.show        = parseInt(cookie.get('show-toolpath', 1)); // Default to visible
 
   // Playback speed
   self.speed = parseFloat(cookie.get('speed', 1));
@@ -764,6 +745,7 @@ module.exports = function(scene, callbacks) {
 
   // THREE.js
   self.obj = new THREE.Object3D();
+  self.obj.visible = !!self.show;  // Respect initial setting
   scene.add(self.obj);
 
   var material = new THREE.LineBasicMaterial({color: 0xff00ff});
@@ -771,8 +753,20 @@ module.exports = function(scene, callbacks) {
   geometry.vertices.push(new THREE.Vector3(0, 0, 0));
   geometry.vertices.push(new THREE.Vector3(0, 0, 0));
   self.currentLine = new THREE.Line(geometry, material);
+  self.currentLine.visible = !!self.show;
   scene.add(self.currentLine);
-  
+
+  // NEW: Add setShow method
+  self.setShow = function(show) {
+    self.show = show;
+    if (self.obj) self.obj.visible = !!show;
+    if (self.currentLine) self.currentLine.visible = !!show;
+    cookie.set('show-toolpath', show ? 1 : 0);
+    if (callbacks.update) callbacks.update();
+  };
+
+  util.connectSetting('show-toolpath', self.show, self.setShow);
+
   /**
    * Remove material along a path (IMPROVED for small arc handling)
    */

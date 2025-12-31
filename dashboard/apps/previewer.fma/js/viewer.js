@@ -509,7 +509,6 @@ module.exports = function(container) {
     materialUpdate: function(start, end, isArcSegment) {
       if (!self.material) return;
       
-      // Pass the arc flag to material removal
       self.material.removeMaterial(start, end, 'flat', isArcSegment);
     },
     materialForceUpdate: function() {
@@ -545,18 +544,20 @@ module.exports = function(container) {
 
   // Add the GUI
   var callbacks = {
-    showX: self.showX,
-    showY: self.showY,
-    showZ: self.showZ,
-    showISO: self.showISO,
-    play: self.path.play,
-    pause: self.path.pause,
-    stop: self.path.stop,
-    reset: self.path.reset,
+    showX: function() {snapPlane('yz')},
+    showY: function() {snapPlane('xz')},
+    showZ: function() {snapPlane('xy')},
+    showISO: function() {snapPlane()},
+    play: function() {self.path.play()},
+    pause: function() {self.path.pause()},
+    reset: function() {self.path.reset()},
+    showGrid: self.grid.setShow,
+    showDims: self.dims.setShow,
+    showAxes: self.axes.setShow,
+    showTool: self.tool.setShow,
     showPointCloud: self.pointcloud.setShow,
-    showPointCloudWireframe: self.pointcloud.setShowWireframe,
-    setPointCloudOpacity: self.pointcloud.setOpacity,
     showMaterial: self.material.setShow,
+    showToolpath: self.path.setShow,  // NEW: Add toolpath visibility toggle
     setMaterialOpacity: self.material.setOpacity,
     setMaterialResolution: self.material.setResolution,
     resetMaterial: self.material.reset
@@ -580,7 +581,6 @@ module.exports = function(container) {
    * Cleanup entire viewer when app exits
    */
   self.cleanup = function() {
-    console.log('=== VIEWER CLEANUP STARTED ===');
     
     // 1. Cleanup material first
     if (self.material && self.material.destroy) {
@@ -698,7 +698,6 @@ module.exports = function(container) {
         var loseContext = gl.getExtension('WEBGL_lose_context');
         if (loseContext) {
           loseContext.loseContext();
-          console.log('WebGL context forcibly lost');
         }
       }
       

@@ -157,6 +157,70 @@
           </select>
 
           <button class="reset-material">Reset Material</button>
+
+          <hr/>
+
+          <h3>Tool Settings</h3>
+
+          <label>Tool Type</label>
+          <select name="tool-type">
+            <option value="flat" selected>Flat End Mill</option>
+            <option value="ball">Ball Nose</option>
+            <option value="vbit">V-Bit</option>
+          </select>
+
+          <label>Tool Diameter</label>
+          <select name="tool-diameter">
+            <option value="0.125">1/8 inch</option>
+            <option value="0.25" selected>1/4 inch</option>
+            <option value="0.5">1/2 inch</option>
+          </select>
+
+          <label class="vbit-angle-setting" style="display: none;">V-Bit Angle</label>
+          <select name="vbit-angle" class="vbit-angle-setting" style="display: none;">
+            <option value="60">60 degrees</option>
+            <option value="90" selected>90 degrees</option>
+          </select>
+
+          <hr/>
+
+          <h3>Display Options</h3>
+
+          <label>
+            <input type="checkbox" name="show-grid"/>
+            Show Grid
+          </label>
+
+          <label>
+            <input type="checkbox" name="show-dims"/>
+            Show Dimensions
+          </label>
+
+          <label>
+            <input type="checkbox" name="show-axes"/>
+            Show Axes
+          </label>
+
+          <label>
+            <input type="checkbox" name="show-tool"/>
+            Show Tool
+          </label>
+
+          <label>
+            <input type="checkbox" name="show-pointcloud"/>
+            Show Point Cloud
+          </label>
+
+          <label>
+            <input type="checkbox" name="show-material"/>
+            Show Material Simulation
+          </label>
+
+          <label>
+            <input type="checkbox" name="show-toolpath"/>
+            Show Toolpath
+          </label>
+
         </div>
         <div class="footer"><button class="close">Ok</button></div>
       </div>
