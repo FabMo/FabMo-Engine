@@ -2095,6 +2095,48 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
     if (v.type != "system_variable") {
         return;
     }
+
+    // Handle new dot notation config path format (e.g., %machine.envelope.xmax)
+    if (v.configPath) {
+        var configName = v.configPath[0].toLowerCase();
+        var configObj = null;
+
+        // Map config names to config objects
+        switch (configName) {
+            case 'machine':
+                configObj = config.machine;
+                break;
+            case 'driver':
+            case 'g2':
+                configObj = config.driver;
+                break;
+            case 'opensbp':
+                configObj = config.opensbp;
+                break;
+            case 'engine':
+                configObj = config.engine;
+                break;
+            case 'instance':
+                configObj = config.instance;
+                break;
+            default:
+                throw new Error(`Unknown config object: ${configName}`);
+        }
+
+        // Navigate the property path
+        var value = configObj._cache; // Start with the full cache
+        for (var i = 1; i < v.configPath.length; i++) {
+            var prop = v.configPath[i].toLowerCase();
+            if (value && typeof value === 'object' && prop in value) {
+                value = value[prop];
+            } else {
+                throw new Error(`Property ${v.configPath.slice(0, i + 1).join('.')} not found in config`);
+            }
+        }
+        return value;
+    }
+
+    // Handle traditional numeric system variables (e.g., %(71))
     var n = this._eval(v.expr);
     switch (n) {
         case 1: // X Location

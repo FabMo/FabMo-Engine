@@ -198,6 +198,13 @@ persistent_variable
 
 system_variable
   = "%" "(" __ e:expression __ ")" { return { "type": "system_variable", "expr": e } }
+  / "%" config:identifier path:("." identifier)+ {
+      var propertyPath = [config.toUpperCase()];
+      path.forEach(function(p) {
+        propertyPath.push(p[1].toUpperCase());
+      });
+      return { "type": "system_variable", "configPath": propertyPath };
+    }
 
 property_access
   = "[" __ e:expression __ "]" {

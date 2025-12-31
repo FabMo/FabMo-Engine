@@ -19,6 +19,7 @@ var WORD_REGEX = /[A-Z_][A-Z0-9_]*/i;
 var STRING_REGEX = /^"(?:[^\\"]|\\.)*"/;
 var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i;
 var SYS_VAR_REGEX = /^\%\(([ \t]*((\$|&)[A-Z_][A-Z0-9_]*|[0-9]+)([ \t]*)\))[ \t]*/i;
+var CONFIG_VAR_REGEX = /^%[A-Z_][A-Z0-9_]*(?:\.[A-Z_][A-Z0-9_]*)+/i;
 var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i');
 var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i');
 var BARE_REGEX = /^[IOT]/i;
@@ -179,7 +180,9 @@ function tokenObjectLiteral(stream, state) {
 }
 
 function matchExpression(stream, state) {
-  if (stream.match(SYS_VAR_REGEX)) {
+  if (stream.match(CONFIG_VAR_REGEX)) {
+    return "variable-4"; // Highlight config variables (e.g., %opensbp.units)
+  } else if (stream.match(SYS_VAR_REGEX)) {
     state.tokenize = tokenVariableAccess("variable");
     return state.tokenize(stream, state);
   } else if (stream.match(USR_VAR_REGEX)) {
@@ -272,6 +275,9 @@ function tokenPauseDialogOptions(stream, state) {
   }
 
   // Match variables in concatenation
+  if (stream.match(CONFIG_VAR_REGEX)) {
+    return "variable-4"; // Highlight config variables
+  }
   if (stream.match(USR_VAR_REGEX)) {
     state.tokenize = tokenVariableAccess("variable-2");
     return "variable-2";
@@ -378,6 +384,12 @@ CodeMirror.defineMode("opensbp", function() {
           if (stream.match(/^DIALOG\b/i)) {
             state.name = "dialog";
             return "keyword";
+          }
+
+          // Match DATA_SEND statements
+          if (stream.match(/^DATA_SEND\b/i)) {
+            state.name = "data_send";
+            return "cmd";
           }
 
           // Match FAIL statements
@@ -553,7 +565,8 @@ CodeMirror.defineMode("opensbp", function() {
 
         case "pause":
         case "dialog":
-          // Handle PAUSE and DIALOG statements with options
+        case "data_send":
+          // Handle PAUSE, DIALOG, and DATA_SEND statements with options
           return tokenPauseDialogOptions(stream, state);
 
         case "fail":
