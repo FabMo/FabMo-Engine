@@ -664,6 +664,10 @@ Engine.prototype.start = function (callback) {
 
             // Do Update to get opensbp elements to G2 at startup; could be more efficient
             function save_opensbp_update(callback) {
+                if (!config.opensbp) {
+                    log.warn("Skipping OpenSBP configuration update due to no connection to motion system.");
+                    return callback(null);
+                }
                 log.info("Updating/Synchronizing Elements of OpenSBP configuration...");
                 config.opensbp.update({}, function (err) {
                     if (err) {

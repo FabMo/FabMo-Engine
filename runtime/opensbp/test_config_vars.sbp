@@ -1,0 +1,12 @@
+' Test file for config variable access
+' This should evaluate to 36 (the xmax from machine.json)
+$test_xmax = %machine.envelope.xmax
+
+' This should work too
+$test_units = %machine.units
+
+' Test nested access
+$test_movexy = %opensbp.movexy_speed
+
+' Traditional system variables should still work
+$test_traditional = %(71)
