@@ -219,6 +219,7 @@ $(document).ready(function() {
     var exportJsonBtn = document.getElementById('export-json-btn');
     var channelSelect = document.getElementById('channel-select');
     var showGeneratorBtn = document.getElementById('show-generator-btn');
+    var probingGenTitle = document.getElementById('probing-gen-title');
     var generatorForm = document.getElementById('generator-form');
     var generateBtn = document.getElementById('generate-btn');
     var exportStlBtn = document.getElementById('export-stl-btn');
@@ -255,79 +256,16 @@ $(document).ready(function() {
         exportJsonBtn.addEventListener('click', exportJSON);
     }
     
-    if (channelSelect) {
-        channelSelect.addEventListener('change', function() {
-            currentFilter = this.value;
-            var tbody = document.getElementById('data-body');
-            if (tbody) {
-                tbody.innerHTML = '';
-            }
-            
-            var filteredPoints = currentFilter ? 
-                dataPoints.filter(function(p) { return p.channel === currentFilter; }) : 
-                dataPoints;
-            
-            filteredPoints.forEach(function(point, index) {
-                addDataRow(point, index + 1);
-            });
-            
-            updatePointCount();
-        });
-    }
-    
-    if (showGeneratorBtn && generatorForm) {
-        showGeneratorBtn.addEventListener('click', function() {
-            if (generatorForm.style.display === 'none') {
-                generatorForm.style.display = 'block';
-                showGeneratorBtn.textContent = 'Hide Generator';
-            } else {
-                generatorForm.style.display = 'none';
-                showGeneratorBtn.textContent = 'Show Generator';
-            }
-        });
-    }
-    
-    if (generateBtn) {
-        generateBtn.addEventListener('click', function() {
-            var params = {
-                xStart: parseFloat($('#x-start').val()),
-                xEnd: parseFloat($('#x-end').val()),
-                yStart: parseFloat($('#y-start').val()),
-                yEnd: parseFloat($('#y-end').val()),
-                step: parseFloat($('#step').val()),
-                speed: parseFloat($('#speed').val()),
-                probeDepth: parseFloat($('#depth').val()),
-                safeZ: parseFloat($('#safe-z').val()),
-                input: parseInt($('#input').val()),
-                startDelay: 10
-            };
-            
-            var sbpCode = window.ProbeFileGenerator.generate(params);
-            
-            // NEED TO SET UP TO RUN after clearing QUEUE
-            // Create file and submit as job
-            var blob = new Blob([sbpCode], { type: 'text/plain' });
-            fabmo.submitJob({
-                file: blob,
-                filename: 'probe_grid_' + Date.now() + '.sbp',
-                name: 'Auto Probe Grid',
-                description: 'Generated probe grid file'
-            }, function(err, result) {
-                if (err) {
-                    fabmo.notify('error', 'Failed to submit job: ' + err);
-                } else {
-                    fabmo.notify('success', 'Probe file generated and submitted!');
-                    generatorForm.style.display = 'none';
-                    showGeneratorBtn.textContent = 'Show Generator';
-                }
-            });
-        });
-    }
-    
     if (exportStlBtn) {
         exportStlBtn.addEventListener('click', function() {
             if (dataPoints.length === 0) {
                 fabmo.notify('info', 'No data to export');
+                return;
+            }
+            
+            if (!window.ProbeFileGenerator || !window.ProbeFileGenerator.exportSTL) {
+                fabmo.notify('error', 'Export function not available. Please refresh the page.');
+                console.error('ProbeFileGenerator.exportSTL not found');
                 return;
             }
             
@@ -353,6 +291,12 @@ $(document).ready(function() {
                 return;
             }
             
+            if (!window.ProbeFileGenerator || !window.ProbeFileGenerator.exportPointCloud) {
+                fabmo.notify('error', 'Export function not available. Please refresh the page.');
+                console.error('ProbeFileGenerator.exportPointCloud not found');
+                return;
+            }
+            
             var xyz = window.ProbeFileGenerator.exportPointCloud(dataPoints);
             var blob = new Blob([xyz], { type: 'text/plain' });
             var url = window.URL.createObjectURL(blob);
@@ -375,45 +319,170 @@ $(document).ready(function() {
                 return;
             }
             
-            // Show options dialog
-            var rasterDir = confirm('Raster along X axis?\n\nOK = Raster along X (rows in Y direction)\nCancel = Raster along Y (columns in X direction)');
+            if (!window.ProbeFileGenerator || !window.ProbeFileGenerator.exportSBP) {
+                fabmo.notify('error', 'Export function not available. Please refresh the page.');
+                console.error('ProbeFileGenerator.exportSBP not found');
+                return;
+            }
             
-            var feedrate = prompt('Enter feedrate (units/sec):', '3.0');
-            if (!feedrate) return;
-            feedrate = parseFloat(feedrate);
+            // Ask for raster direction only, use defaults for rest
+            fabmo.showModal({
+                title: 'Export Surface Mapping File',
+                message: 'Raster along X axis (rows in Y direction)?<br><br>' +
+                        'Default settings:<br>' +
+                        '• Feedrate: 3.0 units/sec<br>' +
+                        '• Safe Z: 1.0<br>' +
+                        '• Plunge Speed: 1.0 units/sec',
+                okText: 'Yes (X Raster)',
+                cancelText: 'No (Y Raster)',
+                ok: function() {
+                    exportWithOptions('x');
+                },
+                cancel: function() {
+                    exportWithOptions('y');
+                }
+            });
             
-            var safeZ = prompt('Enter safe Z height:', '1.0');
-            if (!safeZ) return;
-            safeZ = parseFloat(safeZ);
-            
-            var plungeSpeed = prompt('Enter plunge speed (units/sec):', '1.0');
-            if (!plungeSpeed) return;
-            plungeSpeed = parseFloat(plungeSpeed);
-            
-            var options = {
-                rasterDirection: rasterDir ? 'x' : 'y',
-                feedrate: feedrate,
-                safeZ: safeZ,
-                plungeSpeed: plungeSpeed
-            };
-            
-            var sbp = window.ProbeFileGenerator.exportSBP(dataPoints, options);
-            var blob = new Blob([sbp], { type: 'text/plain' });
-            var url = window.URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'surface_map_' + Date.now() + '.sbp';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            fabmo.notify('success', 'Exported surface mapping SBP file');
+            function exportWithOptions(rasterDirection) {
+                var options = {
+                    rasterDirection: rasterDirection,
+                    feedrate: 3.0,
+                    safeZ: 1.0,
+                    plungeSpeed: 1.0
+                };
+                
+                var sbp = window.ProbeFileGenerator.exportSBP(dataPoints, options);
+                var blob = new Blob([sbp], { type: 'text/plain' });
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'surface_map_' + Date.now() + '.sbp';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                fabmo.notify('success', 'Exported ' + rasterDirection.toUpperCase() + 
+                            ' raster surface mapping file');
+            }
         });
     }
     
-    $('#status').text('Ready. Waiting for probe data...');
-    console.log('Probe Logger ready');
+    if (channelSelect) {
+        channelSelect.addEventListener('change', function() {
+            currentFilter = this.value;
+            var tbody = document.getElementById('data-body');
+            if (tbody) {
+                tbody.innerHTML = '';
+            }
+            
+            var filteredPoints = currentFilter ? 
+                dataPoints.filter(function(p) { return p.channel === currentFilter; }) : 
+                dataPoints;
+            
+            filteredPoints.forEach(function(point, index) {
+                addDataRow(point, index + 1);
+            });
+            
+            updatePointCount();
+        });
+    }
+    
+    if (showGeneratorBtn && generatorForm) {
+        showGeneratorBtn.addEventListener('click', function() {
+            if (generatorForm.style.display === 'none') {
+                generatorForm.style.display = 'block';
+                probingGenTitle.style.color = '#0078d7';
+                showGeneratorBtn.textContent = 'Hide Generator';
+            } else {
+                generatorForm.style.display = 'none';
+                probingGenTitle.style.color = '#b6b6b9ff';
+                showGeneratorBtn.textContent = 'Show Generator';
+            }
+        });
+    }
+    
+    if (generateBtn) {
+        generateBtn.addEventListener('click', function() {
+            var params = {
+                xStart: parseFloat($('#x-start').val()),
+                xEnd: parseFloat($('#x-end').val()),
+                yStart: parseFloat($('#y-start').val()),
+                yEnd: parseFloat($('#y-end').val()),
+                step: parseFloat($('#step').val()),
+                speed: parseFloat($('#speed').val()),
+                probeDepth: parseFloat($('#depth').val()),
+                safeZ: parseFloat($('#safe-z').val()),
+                input: parseInt($('#input').val()),
+                startDelay: 10
+            };
+            
+            var sbpCode = window.ProbeFileGenerator.generate(params);
+            
+            // Clear the queue, submit the job, then run it - all while staying in the logger
+            fabmo.notify('info', 'Preparing probe file...');
+            
+            fabmo.clearJobQueue(function(err, data) {
+                if (err) {
+                    fabmo.notify('error', 'Failed to clear job queue: ' + err);
+                    return;
+                }
+                
+                // Submit the generated probe file with proper format
+                var filename = 'probe_grid_' + Date.now() + '.sbp';
+                
+                fabmo.submitJob({
+                    file: sbpCode,           // Just the string content
+                    filename: filename,
+                    name: 'Auto Probe Grid',
+                    description: 'Generated probe grid file'
+                }, { stayHere: true }, function(err, result) {
+                    if (err) {
+                        fabmo.notify('error', 'Failed to submit job: ' + err);
+                        return;
+                    }
+                    
+                    fabmo.notify('info', 'Probe file submitted. Starting in 2 seconds...');
+                    
+                    // Wait a moment for the job to be fully queued, then fetch and run
+                    setTimeout(function() {
+                        fetchPendingAndRun(function(runErr) {
+                            if (runErr) {
+                                fabmo.notify('error', 'Failed to start job: ' + runErr);
+                            } else {
+                                fabmo.notify('success', 'Probe file running!');
+                                generatorForm.style.display = 'none';
+                                probingGenTitle.style.color = '#b6b6b9ff';
+                                showGeneratorBtn.textContent = 'Show Generator';
+                            }
+                        });
+                    }, 2000);
+                });
+            });
+        });
+    }
 });
 
-console.log('Probe Logger script loaded');
+function fetchPendingAndRun(callback) {
+    fabmo.getJobsInQueue(function(err, jobs) {
+        if (err || !jobs.pending || jobs.pending.length === 0) {
+            fabmo.notify('error', 'No pending jobs found');
+            if (callback) callback(err || new Error('No pending jobs'));
+            return;
+        }
+        
+        var pendingJob = jobs.pending[0];
+        fabmo.notify('info', 'Starting: ' + (pendingJob.name || pendingJob.file.filename || 'probe job'));
+        
+        // Start the job
+        fabmo.runNext(function(runErr) {
+            if (runErr) {
+                fabmo.notify('error', 'Failed to run job: ' + runErr);
+                if (callback) callback(runErr);
+            } else {
+                fabmo.notify('success', 'Probe job started!');
+                if (callback) callback(null);
+            }
+        });
+    });
+}
