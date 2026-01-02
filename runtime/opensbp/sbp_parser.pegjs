@@ -165,6 +165,10 @@ mnemonic = code: ([_A-Za-z][_A-Za-z0-9\#]) {return code.join('').replace('#','_P
 identifier
   = first:[a-zA-Z_]+ rest:[A-Za-z0-9_]* { return first.join('') + rest.join(''); }
 
+// Config path identifier allows names that start with digits (e.g., %driver.1su)
+config_path_identifier
+  = chars:[A-Za-z0-9_]+ { return chars.join(''); }
+
 label
    = id:identifier ":" {return {type:"label", value:id.toUpperCase()};}
 
@@ -198,7 +202,7 @@ persistent_variable
 
 system_variable
   = "%" "(" __ e:expression __ ")" { return { "type": "system_variable", "expr": e } }
-  / "%" config:identifier path:("." identifier)+ {
+  / "%" config:identifier path:("." config_path_identifier)+ {
       var propertyPath = [config.toUpperCase()];
       path.forEach(function(p) {
         propertyPath.push(p[1].toUpperCase());
