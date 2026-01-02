@@ -6,11 +6,13 @@ var fs = require('fs');
 
 // Test cases
 var testCases = [
-    '%machine.envelope.xmax',
-    '%machine.units',
-    '%opensbp.movexy_speed',
-    '%driver.g55x',
-    '%(71)',  // Traditional format should still work
+    '$test = %machine.envelope.xmax',
+    '$test = %machine.units',
+    '$test = %opensbp.movexy_speed',
+    '$test = %driver.g55x',
+    '$test = %driver.1su',           // Path components starting with digits
+    '$test = %driver.1am',
+    '$test = %(71)',  // Traditional format should still work
 ];
 
 console.log('Testing OpenSBP parser with config variables:\n');
