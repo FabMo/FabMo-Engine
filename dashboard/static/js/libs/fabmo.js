@@ -1269,7 +1269,7 @@
             }
 
             // Debug override: Force offline mode for testing
-            const debugForceOffline = true; // Set to true to test offline behavior
+            const debugForceOffline = false; // Set to true to test offline behavior
             const effectiveOnline = debugForceOffline ? false : online;
             
             // Determine which URL to navigate to
