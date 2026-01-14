@@ -63,9 +63,9 @@ class NetworkConfigApp:
         mode_label2 = tk.Label(frame, text="- When switching wired connections wait 10 sec\n after disengaging before connecting new cable.", font=("Arial", 12))
         mode_label2.pack(pady=5)
 
-        mode_label3 = tk.Label(frame, text="(Accessing tool from the small screen is easiest using a mouse.)", font=("Arial", 12))
-        mode_label3.pack(pady=5)
-
+        # mode_label3 = tk.Label(frame, text="(Accessing tool from the small screen is easiest using a mouse.)", font=("Arial", 12))
+        # mode_label3.pack(pady=5)
+ 
     def check_dhcp_server(self, interface):
         try:
             result = subprocess.run(['sudo', 'dhclient', '-v', interface], check=True, text=True, capture_output=True)
