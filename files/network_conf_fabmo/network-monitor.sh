@@ -51,18 +51,48 @@ restart_dnsmasq_if_needed() {
     if [ "$CURRENT_PROFILE" != "$LAST_PROFILE" ]; then
         log "Profile changed to $CURRENT_PROFILE, reconfiguring dnsmasq"
         
-        # Switch dnsmasq configuration based on profile
-        # This prevents DHCP from being served on eth0 when connected to LAN
         if [ "$CURRENT_PROFILE" = "direct" ]; then
             log "Activating direct-mode dnsmasq config (DHCP on eth0 + wlan0_ap)"
             sudo ln -sf /etc/dnsmasq.d/direct-mode.conf /etc/dnsmasq.d/active-mode.conf
+            
+            # CRITICAL: Wait for eth0 to have IP 192.168.44.1
+            log "Waiting for eth0 to have IP 192.168.44.1..."
+            MAX_WAIT=20
+            for i in $(seq 1 $MAX_WAIT); do
+                # Check if eth0 has the direct IP
+                ETH0_IP=$(/usr/sbin/ip addr show eth0 2>/dev/null | /bin/grep "inet " | /usr/bin/awk '{print $2}' | /usr/bin/cut -d/ -f1)
+                if [ "$ETH0_IP" = "$DIRECT_IP" ]; then
+                    log "SUCCESS: eth0 has IP $DIRECT_IP (attempt $i/$MAX_WAIT)"
+                    break
+                fi
+                log "Attempt $i/$MAX_WAIT: eth0 IP is '$ETH0_IP', waiting for $DIRECT_IP..."
+                sleep 1
+            done
+            
+            # Final check
+            ETH0_IP=$(/usr/sbin/ip addr show eth0 2>/dev/null | /bin/grep "inet " | /usr/bin/awk '{print $2}' | /usr/bin/cut -d/ -f1)
+            if [ "$ETH0_IP" != "$DIRECT_IP" ]; then
+                log "ERROR: eth0 still doesn't have $DIRECT_IP after ${MAX_WAIT}s wait. Current IP: $ETH0_IP"
+            fi
         else
             log "Activating ap-only dnsmasq config (DHCP only on wlan0_ap)"
             sudo ln -sf /etc/dnsmasq.d/ap-only.conf /etc/dnsmasq.d/active-mode.conf
         fi
         
-        # Restart dnsmasq to apply new configuration
+        log "Restarting dnsmasq..."
         sudo systemctl restart dnsmasq
+        sleep 2
+        
+        # Verify dnsmasq bound correctly
+        if [ "$CURRENT_PROFILE" = "direct" ]; then
+            if sudo /usr/bin/netstat -tulnp 2>/dev/null | /bin/grep dnsmasq | /bin/grep -q "192.168.44.1:53"; then
+                log "SUCCESS: dnsmasq is listening on 192.168.44.1:53"
+            else
+                log "ERROR: dnsmasq is NOT listening on 192.168.44.1:53"
+                sudo /usr/bin/netstat -tulnp 2>/dev/null | /bin/grep dnsmasq >> $LOGFILE
+            fi
+        fi
+        
         LAST_PROFILE=$CURRENT_PROFILE
     fi
 }
