@@ -1794,26 +1794,22 @@ SBPRuntime.prototype._roundNumeric = function(value) {
 // Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
+// Supports Universal Unit variables (ending with 'UU')
 SBPRuntime.prototype._assign = async function (identifier, value) {
-    value = this._roundNumeric(value); // Round numeric values based on configuration
+    value = this._roundNumeric(value);
     
-    // Determine the variable name
     let variableName;
     if (identifier.name) {
         variableName = identifier.name.toUpperCase();
     } else if (identifier.expr) {
-        // Evaluate the expression to get the variable name
         variableName = this._eval(identifier.expr).toUpperCase();
     } else {
         throw new Error("Invalid identifier: missing 'name' and 'expr'");
     }
 
     let accessPath = identifier.access || [];
-
-    // Evaluate accessPath
     accessPath = this._evaluateAccessPath(accessPath);
 
-    // Update the variable in the config
     let variables;
     if (identifier.type === "user_variable") {
         variables = config.opensbp._cache["tempVariables"];
@@ -1821,17 +1817,51 @@ SBPRuntime.prototype._assign = async function (identifier, value) {
         variables = config.opensbp._cache["variables"];
     }
 
-    if (!(variableName in variables)) {
-        // Initialize the variable if it doesn't exist
-        variables[variableName] = {};
-    }
-
-    if (accessPath.length === 0) {
-        // Direct assignment
-        variables[variableName] = value;
+    // Check if this is a Universal Unit variable (ends with UU)
+    const isUniversalUnit = variableName.endsWith('UU');
+    
+    if (isUniversalUnit) {
+        // Handle Universal Unit variable assignment
+        if (accessPath.length > 0) {
+            // User is explicitly accessing array index (e.g., &distanceUU(0) = 5.5)
+            // Do normal assignment to allow manual override of specific unit values
+            if (!(variableName in variables)) {
+                variables[variableName] = {};
+            }
+            this._setNestedValue(variables[variableName], accessPath, value);
+        } else {
+            // Direct assignment to UU variable - create both unit versions
+            // e.g., &distanceUU = 1.5
+            // Get current system units to know how to interpret the input value
+            const currentUnits = this.evaluateSystemVariable({type: "system_variable", expr: 25});
+            
+            let inchValue, mmValue;
+            if (currentUnits === 0) {
+                // Current units are inches
+                inchValue = value;
+                mmValue = value * 25.4;
+            } else {
+                // Current units are mm
+                mmValue = value;
+                inchValue = value / 25.4;
+            }
+            
+            // Create/update the array with both values
+            variables[variableName] = {
+                0: inchValue,
+                1: mmValue
+            };
+        }
     } else {
-        // Nested assignment
-        this._setNestedValue(variables[variableName], accessPath, value);
+        // Normal variable assignment (existing code)
+        if (!(variableName in variables)) {
+            variables[variableName] = {};
+        }
+        if (accessPath.length === 0) {
+            variables[variableName] = value;
+        } else {
+            this._setNestedValue(variables[variableName], accessPath, value);
+        }
     }
 };
 
