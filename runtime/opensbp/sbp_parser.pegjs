@@ -211,13 +211,16 @@ system_variable
     }
 
 property_access
-  = "[" __ e:expression __ "]" {
+  = "[" __ "]" {
+      return { "type": "unit_placeholder" };
+    }
+  / "[" __ e:expression __ "]" {
       return { "type": "index", "value": e };
     }
   / "." propName:identifier {
       return { "type": "property", "name": propName.toUpperCase() };
     }
-
+    
 object_literal
   = "{" __ properties:property_list __ "}" { return properties; }
 

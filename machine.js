@@ -1603,9 +1603,11 @@ Machine.prototype.checkUSBDrive = function (callback) {
     });
 };
 
-// Directly set the spindle speed as an accessory ignoring runtimes
+// Directly set the spindle speed as an accessory (for use with any runtime)
+// spindle speed / spindle RPM are currently limited HERE for command sent from DRO
+//  and in tools.js for OpenSBP; typically the VFD itself will have its own smaller spread
 Machine.prototype.spindleSpeed = function (new_RPM) {
-    if (new_RPM >= 5000 && new_RPM <= 30000) {
+    if (new_RPM >= 100 && new_RPM <= 30000) {
         try {
             log.info("----> new speed: " + new_RPM);
             spindle.setSpindleVFDFreq(new_RPM);

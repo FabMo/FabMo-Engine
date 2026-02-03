@@ -1,109 +1,135 @@
-## Universal Unit Variables (UU Variables)
+# Universal Unit Variables (UU Variables)
 
-Variables ending with "UU" automatically store values in both inch and millimeter units. When you assign to a UU variable, the value is interpreted according to current system units and both conversions are stored.
+Variables ending with "UU" automatically store values in both inch and millimeter units using an explicit placeholder syntax. When you assign to a UU variable with `[]`, the value is interpreted according to current system units and both conversions are stored.
 
-### Syntax
+## Syntax
+
 ```opensbp
-' Direct assignment - interprets value based on current units
-&variableUU = value
-$variableUU = value
+' Universal Unit assignment - requires [] placeholder and UU suffix
+$variableUU[].property = value
+$variableUU[index][].property = value
 
-' Access specific unit value
-&variableUU[0]  ' Inch value
-&variableUU[1]  ' Millimeter value
-
-' Access using current unit index
-&variableUU[%(25)]  ' Current units (0=in, 1=mm)
+' Access using current units
+value = $variable[index][%(25)].property  ' %(25) = current unit (0=in, 1=mm)
 ```
 
-### Examples
+## Rules
 
-#### Basic Usage
+1. **Variable names MUST end with "UU"** (case insensitive)
+2. **Assignments MUST use `[]` placeholder** for the unit index position
+3. **Access requires explicit index** (typically `%(25)` for current units, or `0`/`1` for specific units)
+4. **Only one `[]` placeholder** allowed per assignment
+5. The `[]` creates indices `[0]` for inches and `[1]` for mm
+
+## Examples
+
+### Tool Table with Universal Units
+
 ```opensbp
 ' Set units to inches
-VD,0
+VD, 0
 
-' Assign a distance (interpreted as inches)
-&lengthUU = 10.5
-' Now &lengthUU[0] = 10.5 inches
-'     &lengthUU[1] = 266.7 mm
+' Define tool 3 positions - UU suffix + [] placeholder required
+$toolUU[3][].x = 5.5      ' Creates [3][0].x = 5.5 in, [3][1].x = 139.7 mm
+$toolUU[3][].y = 2.0      ' Creates [3][0].y = 2.0 in, [3][1].y = 50.8 mm  
+$toolUU[3][].z = -0.5     ' Creates [3][0].z = -0.5 in, [3][1].z = -12.7 mm
 
-' Switch to millimeters
-VD,1
+' Access in current units
+MX, $toolUU[3][%(25)].x
+MY, $toolUU[3][%(25)].y
+MZ, $toolUU[3][%(25)].z
 
-' Assign another distance (interpreted as mm)
-&widthUU = 250
-' Now &widthUU[0] = 9.8425 inches
-'     &widthUU[1] = 250 mm
+' Switch to mm - same access works
+VD, 1
+MX, $toolUU[3][%(25)].x   ' Now uses mm values automatically
 ```
 
-#### Using in Motion Commands
+### Simple Configuration
+
 ```opensbp
-' Define cutting dimensions in current units
-&cut_depthUU = 0.5
-&cut_lengthUU = 12.0
+' Single-level array with properties
+$configUU[].safe_height = 1.0     ' [0].safe_height = 1.0 in, [1].safe_height = 25.4 mm
+$configUU[].plunge_depth = 0.25   ' [0].plunge_depth = 0.25 in, [1].plunge_depth = 6.35 mm
 
-' Move using appropriate units automatically
-MZ, &cut_depthUU[%(25)]
-MX, &cut_lengthUU[%(25)]
-
-' Works across unit changes
-VD,1  ' Switch to mm
-' Same variables now return mm values when accessed with %(25)
-MZ, &cut_depthUU[%(25)]  ' Uses mm value automatically
+' Use in moves
+MZ, $configUU[%(25)].safe_height
 ```
 
-#### Manual Override
+### Material Library
+
 ```opensbp
-' You can still set specific unit values manually
-&heightUU[0] = 2.5     ' Set inch value directly
-&heightUU[1] = 63.5    ' Set mm value directly (not auto-converted)
+' Define materials with thickness in current units
+VD, 0  ' Inches
+
+$materialUU[1][].thickness = 0.75    ' 3/4" plywood
+$materialUU[1][].name = "Plywood 3/4"
+
+$materialUU[2][].thickness = 0.5     ' 1/2" MDF
+$materialUU[2][].name = "MDF 1/2"
+
+' Later, select material and cut
+&current_material = 2
+MZ, $materialUU[&current_material][%(25)].thickness
 ```
 
-#### Persistent Universal Units
+## Error Checking
+
+The system validates your syntax and provides helpful error messages:
+
+### Missing Placeholder Error
+
 ```opensbp
-' Works with permanent variables too
-$table_lengthUU = 48  ' 48 inches (if in inch mode)
-' $table_lengthUU[0] = 48
-' $table_lengthUU[1] = 1219.2
-
-' Value persists across files
-' Access in any subsequent file with appropriate units
-MX, $table_lengthUU[%(25)]
+' ❌ ERROR: Missing [] placeholder
+$toolUU[3][0].x = 5.5
+' Error: Universal Unit variable $TOOLUU requires empty bracket [] 
+'        placeholder for unit index.
+'        Example: $TOOLUU[].property = value
 ```
 
-### Use Cases
+### Wrong Suffix Error
 
-**Multi-Unit Workflows**
 ```opensbp
-' Designer provides dimensions in mm
-VD,1
-&design_widthUU = 250
-&design_heightUU = 180
-
-' Machine operator prefers inches
-VD,0
-' Can still see/use values
-' &design_widthUU[%(25)] now returns 9.8425 inches
+' ❌ ERROR: [] used without UU suffix
+$tool[3][].x = 5.5
+' Error: Empty bracket [] placeholder can only be used with 
+'        Universal Unit variables (ending in "UU").
 ```
 
-**Configuration Files**
+### Correct Usage
+
 ```opensbp
-' Setup file that works regardless of user's preferred units
-$material_thicknessUU = 0.75  ' Set while in inches
-$spoilboard_heightUU = 1.0
-
-' Later in cutting file (user may have switched units)
-MZ, $spoilboard_heightUU[%(25)] + $material_thicknessUU[%(25)]
+' ✅ CORRECT: UU suffix + [] placeholder
+$toolUU[3][].x = 5.5
 ```
 
-### Naming Convention
-- Variable names **must** end with "UU" (case insensitive)
+## How It Works
+
+1. **Assignment**: When you write `$toolUU[3][].x = 5.5`, the system:
+   - Checks that variable ends with "UU" ✓
+   - Checks that `[]` placeholder is present ✓
+   - Reads current units with `%(25)` (0 = inches, 1 = mm)
+   - If in inches: stores 5.5 at `[3][0].x` and 139.7 at `[3][1].x`
+   - If in mm: stores 2.165 at `[3][0].x` and 5.5 at `[3][1].x`
+
+2. **Access**: When you read `$toolUU[3][%(25)].x`:
+   - `%(25)` evaluates to current unit (0 or 1)
+   - Returns the appropriate value automatically
+
+3. **Unit Changes**: Values remain correct when switching units with `VD` command
+
+## Benefits
+
+- **Explicit syntax**: The `[]` makes it visually clear where unit conversion happens
+- **Error prevention**: Catches mistakes like `$toolUU[3][0].x` at runtime
+- **Intent validation**: "UU" suffix signals this variable needs dual units
+- **Single-line assignments**: No helper functions or GOSUBs needed
+- **Works with any nesting**: `$varUU[a][b][].prop` is valid
+- **Safe by default**: Can't accidentally create single-unit UU variables
+
+## Notes
+
 - Works with both `&` (temporary) and `$` (permanent) variables
-- Examples: `&distUU`, `&PART_LENGTHUU`, `$offsetUU`
-
-### Notes
-- Assignment **without** array index interprets value based on current system units [%(25)]
-- Assignment **with** array index (0 or 1) sets that specific value without conversion
-- Reading always uses array access: `[0]` for inches, `[1]` for mm
-- Use `%(25)` to automatically select current units: `&varUU[%(25)]`
+- The "UU" suffix is **required** and case-insensitive (`tooluu`, `ToolUU`, `TOOLUU` all work)
+- You cannot assign directly to `[0]` or `[1]` in a UU variable; use regular variables if needed
+- Works with expressions: `$toolUU[&num][].x = %(1) + 2.5` evaluates before conversion
+- The `[]` placeholder can appear anywhere in the chain, not just at the end

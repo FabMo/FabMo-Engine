@@ -1721,6 +1721,10 @@ var changeSpindleSpeed = function (new_RPM) {
     try {
         console.log("----> new speed: " + new_RPM);
         engine.setAcc("spindle_speed", new_RPM);
+        
+        // Round to nearest 25 and update display
+        const rounded = Math.round(new_RPM / 25) * 25;
+        $("#sp-speed").val(rounded);
     } catch (error) {
         console.log("Failed to pass new RPM: " + error);
     }
@@ -1732,7 +1736,7 @@ function debounce(func, delay) {
         timer = setTimeout(() => func.apply(this, args), delay);
     };
 }
-$(".spindle-speed input").on("input", function (evt) {
+$(".spindle-speed input").on("input", function () {
     const latestValue = $(this).val();
     $(".spindle-speed input").css("color", "black");
     debouncedChangeSpindleSpeed(latestValue);
@@ -1746,7 +1750,7 @@ function startBlurTimer() {
     }, 3000);
 }
 // By listening for update in the spindle input box to clear focus
-$("#sp-speed").on("input", function (evt) {
+$("#sp-speed").on("input", function () {
     startBlurTimer();
 });
 // -------------------------------------------------------------------------

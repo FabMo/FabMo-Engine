@@ -1353,7 +1353,7 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
 // Returns false if execution does not break the stack (and callback is never called)
 //   command - A single parsed line of OpenSBP code
 
-SBPRuntime.prototype._execute = function (command, callback) {
+SBPRuntime.prototype._execute = async function (command, callback) {
     switch (command.type) {
         case "data_send":
             // Evaluate the channel
@@ -1498,23 +1498,42 @@ SBPRuntime.prototype._execute = function (command, callback) {
 
         case "assign":
             this.pc += 1;
-            var value = this._eval(command.expr);
-            this._assign(command.var, value);
-            if (callback) {
-                //log.info("calling callback");
-                callback();
+            try {
+                var value = this._eval(command.expr);
+                await this._assign(command.var, value);
+                if (callback) {
+                    callback();
+                }
+            } catch (assignError) {
+                log.error("Assignment error: " + assignError.message);
+                
+                if (!this.pending_error && this.started) {
+                    this._abort(assignError);
+                } else {
+                    log.debug("Ignoring assignment error during cleanup: " + assignError.message);
+                }
+                return true;
             }
             return true;
 
         case "weak_assign":
             this.pc += 1;
             if (!this._varExists(command.var)) {
-                // eslint-disable-next-line no-redeclare
-                var value = this._eval(command.expr);
-                this._assign(command.var, value);
-                if (callback) {
-                    //log.info("calling callback");
-                    callback();
+                try {
+                    var value = this._eval(command.expr);
+                    await this._assign(command.var, value);
+                    if (callback) {
+                        callback();
+                    }
+                } catch (assignError) {
+                    log.error("Weak assignment error: " + assignError.message);
+                    
+                    if (!this.pending_error && this.started) {
+                        this._abort(assignError);
+                    } else {
+                        log.debug("Ignoring assignment error during cleanup: " + assignError.message);
+                    }
+                    return true;
                 }
             } else {
                 setImmediate(callback);
@@ -1796,6 +1815,12 @@ SBPRuntime.prototype._roundNumeric = function(value) {
 //        value - The new value
 // Supports Universal Unit variables (ending with 'UU')
 SBPRuntime.prototype._assign = async function (identifier, value) {
+    // Don't process assignments if we're already in an error state OR ending
+    if (this.pending_error || !this.started) {
+        log.debug("Skipping assignment - runtime in error state or not started");
+        return;
+    }
+    
     value = this._roundNumeric(value);
     
     let variableName;
@@ -1808,55 +1833,87 @@ SBPRuntime.prototype._assign = async function (identifier, value) {
     }
 
     let accessPath = identifier.access || [];
-    accessPath = this._evaluateAccessPath(accessPath);
-
-    let variables;
-    if (identifier.type === "user_variable") {
-        variables = config.opensbp._cache["tempVariables"];
-    } else {
-        variables = config.opensbp._cache["variables"];
-    }
-
-    // Check if this is a Universal Unit variable (ends with UU)
+    
+    // Check if this is a Universal Unit variable (ends with "UU")
     const isUniversalUnit = variableName.endsWith('UU');
     
-    if (isUniversalUnit) {
-        // Handle Universal Unit variable assignment
-        if (accessPath.length > 0) {
-            // User is explicitly accessing array index (e.g., &distanceUU(0) = 5.5)
-            // Do normal assignment to allow manual override of specific unit values
-            if (!(variableName in variables)) {
-                variables[variableName] = {};
-            }
-            this._setNestedValue(variables[variableName], accessPath, value);
+    // Check for unit placeholder in access path
+    const hasUnitPlaceholder = accessPath.some(part => part.type === "unit_placeholder");
+    
+    // Validation: UU variables MUST use placeholder, non-UU variables MUST NOT
+    if (isUniversalUnit && !hasUnitPlaceholder) {
+        const errorMsg = `UU variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} requires [] placeholder.`;
+        log.error(errorMsg);
+        throw new Error(errorMsg);
+    }
+
+    if (!isUniversalUnit && hasUnitPlaceholder) {
+        const errorMsg = `[] placeholder requires UU suffix. Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} must end with "UU"`;
+        log.error(errorMsg);
+        throw new Error(errorMsg);
+    }    
+
+    if (hasUnitPlaceholder) {
+        // Handle Universal Unit assignment with explicit placeholder
+        // Get current system units (0 = inches, 1 = mm)
+        const currentUnits = this.evaluateSystemVariable({type: "system_variable", expr: 25});
+        
+        // Calculate both unit values
+        let inchValue, mmValue;
+        if (currentUnits === 0) {
+            // Value provided is in inches
+            inchValue = value;
+            mmValue = value * 25.4;
         } else {
-            // Direct assignment to UU variable - create both unit versions
-            // e.g., &distanceUU = 1.5
-            // Get current system units to know how to interpret the input value
-            const currentUnits = this.evaluateSystemVariable({type: "system_variable", expr: 25});
-            
-            let inchValue, mmValue;
-            if (currentUnits === 0) {
-                // Current units are inches
-                inchValue = value;
-                mmValue = value * 25.4;
-            } else {
-                // Current units are mm
-                mmValue = value;
-                inchValue = value / 25.4;
-            }
-            
-            // Create/update the array with both values
-            variables[variableName] = {
-                0: inchValue,
-                1: mmValue
-            };
+            // Value provided is in mm
+            mmValue = value;
+            inchValue = value / 25.4;
         }
-    } else {
-        // Normal variable assignment (existing code)
+        
+        // Determine which variable collection to use
+        let variables;
+        if (identifier.type === "user_variable") {
+            variables = config.opensbp._cache["tempVariables"];
+        } else {
+            variables = config.opensbp._cache["variables"];
+        }
+        
+        // Ensure base variable exists
         if (!(variableName in variables)) {
             variables[variableName] = {};
         }
+        
+        // Create paths for both units by replacing placeholder with actual indices
+        const inchPath = accessPath.map(part => 
+            part.type === "unit_placeholder" ? { type: "index", value: 0 } : part
+        );
+        const mmPath = accessPath.map(part => 
+            part.type === "unit_placeholder" ? { type: "index", value: 1 } : part
+        );
+        
+        // Evaluate any expressions in the access paths
+        const evalInchPath = this._evaluateAccessPath(inchPath);
+        const evalMmPath = this._evaluateAccessPath(mmPath);
+        
+        // Set both unit values using the existing nested value setter
+        this._setNestedValue(variables[variableName], evalInchPath, inchValue);
+        this._setNestedValue(variables[variableName], evalMmPath, mmValue);
+        
+    } else {
+        // Normal variable assignment (existing code)
+        accessPath = this._evaluateAccessPath(accessPath);
+        
+        let variables;
+        if (identifier.type === "user_variable") {
+            variables = config.opensbp._cache["tempVariables"];
+        } else {
+            variables = config.opensbp._cache["variables"];
+        }
+        
+        if (!(variableName in variables)) {
+            variables[variableName] = {};
+        }
+        
         if (accessPath.length === 0) {
             variables[variableName] = value;
         } else {
