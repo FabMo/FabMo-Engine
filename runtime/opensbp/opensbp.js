@@ -93,6 +93,7 @@ function SBPRuntime() {
 
     this.inManualMode = false;
 }
+
 util.inherits(SBPRuntime, events.EventEmitter);
 
 SBPRuntime.prototype.toString = function () {
@@ -289,6 +290,7 @@ SBPRuntime.prototype.needsAuth = function (s) {
 //          s - The string to run
 //   callback - Called when the program has ended
 SBPRuntime.prototype.runString = function (s) {
+    this.currentFilename = "direct input";
     //log.info("####=.runString");
     try {
         // Initialize the program
@@ -313,10 +315,9 @@ SBPRuntime.prototype.runString = function (s) {
             this.program = parser.parse(s);
         } catch (e) {
             log.error(e);
-            e.message = `Error@line- ${e.line}(${e.location.start.column}): ${e.message}`;
+            const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+            e.message = `${filePrefix}Error@line-${e.line}(${e.location.start.column}): ${e.message}`;
             this._end(e.message);
-        } finally {
-            log.tock("Parse file");
         }
 
         // Configure affine transformations on the file
@@ -549,6 +550,14 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 SBPRuntime.prototype.runFile = function (filename) {
     //log.info("####=.runFile");
     this.lastFilename = filename;
+    
+    // Only set currentFilename if not already set (by machine._runFile)
+    if (!this.currentFilename) {
+        this.currentFilename = require('path').basename(filename);
+    }
+    
+    log.debug(`[Filename Tracking] runFile currentFilename: ${this.currentFilename}`);
+    
     var st = fs.createReadStream(filename);
     this.runStream(st);
 };
@@ -1169,12 +1178,20 @@ SBPRuntime.prototype._end = async function (error) {
     this.pending_error = error;
     let error_msg = null;
     if (error) {
-        if (Object.prototype.hasOwnProperty.call(error, "offset")) {
-            error_msg = `@line-${error.offset}(${error.column}):  ${error.message}`;
-        } else if (Object.prototype.hasOwnProperty.call(error, "message")) {
-            error_msg = `@line-${this.pc + 1}:  ${error.message}`;
+        if (error instanceof Error) {
+            // Include filename in error message
+            const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+            
+            if (Object.prototype.hasOwnProperty.call(error, "offset")) {
+                error_msg = `${filePrefix}@line-${error.offset}(${error.column}):  ${error.message}`;
+            } else if (Object.prototype.hasOwnProperty.call(error, "message")) {
+                error_msg = `${filePrefix}@line-${this.pc + 1}:  ${error.message}`;
+            } else {
+                error_msg = filePrefix + error;
+            }
         } else {
-            error_msg = error;
+            const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+            error_msg = filePrefix + error;
         }
     }
 
@@ -1194,6 +1211,7 @@ SBPRuntime.prototype._end = async function (error) {
 
     // Clear the internal state of the runtime
     this.init();
+    this.currentFilename = null;
 
     // Handle machine state restoration
     if (this.machine) {
@@ -1337,6 +1355,8 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
             // TODO: Should this just display the macro identifier or name?
             // log.debug("Running macro: " + JSON.stringify(macro));
             this._pushFileStack();
+            // Set the current filename to the macro name for better error messages
+            this.currentFilename = `C${number} (${macro.name})`;
             this.runFile(macro.filename);
         } else {
             throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found at " + (this.pc + 1));
@@ -1478,7 +1498,11 @@ SBPRuntime.prototype._execute = async function (command, callback) {
                 }
                 return true;
             } else {
-                throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
+                const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+                throw new Error(
+                    `${filePrefix}@line-${this.pc + 1}: ` +
+                    `Can't GOTO ${command.label}: Label does not exist in this program.`
+                );
             }
 
         case "gosub":
@@ -1505,7 +1529,8 @@ SBPRuntime.prototype._execute = async function (command, callback) {
                     callback();
                 }
             } catch (assignError) {
-                log.error("Assignment error: " + assignError.message);
+                const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+                log.error(`${filePrefix}Assignment error: ${assignError.message}`);
                 
                 if (!this.pending_error && this.started) {
                     this._abort(assignError);
@@ -2180,12 +2205,14 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
                     if (line.label in this.label_index) {
                         // pass
                     } else {
-                        // Add one to the line number so they start at 1
-                        throw new Error(`@line-${i + 1}: Undefined label ` + line.label);
+                        const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+                        throw new Error(
+                            `${filePrefix}@line-${i + 1}: Undefined label ${line.label}`
+                        );
                     }
                     break;
                 default:
-                    // pass
+                    //pass
                     break;
             }
         }
@@ -2494,6 +2521,7 @@ SBPRuntime.prototype._pushFileStack = function () {
     frame.stack = this.stack;
     frame.end_message = this.end_message;
     frame.label_index = this.label_index;
+    frame.filename = this.currentFilename;  // filename tracking for reporting
     this.file_stack.push(frame);
 };
 
@@ -2510,7 +2538,8 @@ SBPRuntime.prototype._popFileStack = function () {
     this.stack = frame.stack;
     this.label_index = frame.label_index;
     this.end_message = frame.end_message;
-};
+    this.currentFilename = frame.filename;
+};    
 
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word

@@ -1002,6 +1002,19 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
 
+    // Set the user-friendly filename from the job object, if available
+    if (this.status.job && this.status.job.name) {
+        // Job name is the user-friendly name (e.g., "test36.sbp")
+        // Don't overwrite if runtime has already set it
+        if (!this.sbp_runtime.currentFilename && !this.gcode_runtime.currentFilename) {
+            if (ext === ".sbp") {
+                this.sbp_runtime.currentFilename = this.status.job.name;
+            } else {
+                this.gcode_runtime.currentFilename = this.status.job.name;
+            }
+        }
+    }
+
     // Choose the appropriate runtime based on the file extension
     var runtime = this.gcode_runtime;
     if (ext === ".sbp") {

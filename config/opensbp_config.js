@@ -31,6 +31,8 @@ util.inherits(OpenSBPConfig, Config);
 
 // Overide of Config.prototype.load is removing tempVariables on load.  See config.js
 //   *This is duplicated code from config.js as a work around for the cache not being accesible in callbacks.
+// Around line 28-210
+
 OpenSBPConfig.prototype.load = function (filename, callback) {
     this._filename = filename;
 
@@ -59,7 +61,7 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
     const originalDefaultProfileFile = path.join(originalProfileDir, "default/config/", path.basename(filename));
 
     // Get the actual target profile from auto-profile definition if it exists
-    let actualTargetProfile = currentProfile; // default fallback
+    let actualTargetProfile = currentProfile;
     if (skipRecovery && definition && definition.auto_profile && definition.auto_profile.profile_name) {
         actualTargetProfile = definition.auto_profile.profile_name;
     }
@@ -70,127 +72,152 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
         path.basename(filename)
     );
 
+    // Helper function to load a single file
     const tryLoadFile = (filePath, next) => {
+        log.debug(`Attempting to load: ${filePath}`);
+        
         fs.readFile(filePath, "utf8", (err, data) => {
             if (err) {
+                log.debug(`Failed to load ${filePath}: ${err.message}`);
                 return next(err);
             }
+            
+            // Validate data before parsing
+            if (!data || typeof data !== 'string') {
+                const error = new Error(`Invalid data read from ${filePath}`);
+                log.debug(error.message);
+                return next(error);
+            }
+            
             try {
-                data = JSON.parse(data);
-                if (Object.prototype.hasOwnProperty.call(data, "tempVariables")) {
-                    data["tempVariables"] = {};
+                // Parse the JSON
+                const parsedData = JSON.parse(data);
+                
+                // Validate it's an object
+                if (typeof parsedData !== 'object' || parsedData === null) {
+                    const error = new Error(`Invalid JSON structure in ${filePath}`);
+                    log.debug(error.message);
+                    return next(error);
+                }
+                
+                // Clear tempVariables on load (they're session-specific, not persistent)
+                if (Object.prototype.hasOwnProperty.call(parsedData, "tempVariables")) {
+                    parsedData["tempVariables"] = {};
                 }
 
-                // REMOVED: Profile blocking logic
-                // Let normal config merge happen - auto-profile system handles the rest
-
+                // Update the cache
                 this.update(
-                    data,
+                    parsedData,
                     (err, d) => {
                         if (err) {
+                            log.error(`Failed to update cache from ${filePath}: ${err.message}`);
                             return next(err);
                         }
-                        next(); // Continue the chain
+                        log.info(`Successfully loaded configuration from ${filePath}`);
+                        next(); // Success!
                     },
-                    true
+                    true // force update
                 );
-            } catch (e) {
-                log.error(e);
-                next(e);
+            } catch (parseError) {
+                log.error(`JSON parse error in ${filePath}: ${parseError.message}`);
+                return next(parseError);
             }
         });
     };
 
-    const loadFromBackup = (next) => {
-        if (skipRecovery) {
-            log.info("Skipping backup recovery due to auto-profile in progress");
-            return next(); // Return success, not error
-        }
-
-        fs.access(backupDir, fs.constants.F_OK, (err) => {
-            if (err) {
-                log.warn(`Backup directory does not exist: ${backupDir}`);
-                return next();
-            }
-            log.info(`Attempting to load from backup: ${backupFile}`);
-            tryLoadFile(backupFile, next);
-        });
-    };
-
-    const loadFromWorkingProfile = (next) => {
-        if (skipRecovery) {
-            log.info("Skipping working profile recovery due to auto-profile system");
-            return next(); // Return success, not error
-        }
-
-        fs.access(workingProfileDir, fs.constants.F_OK, (err) => {
-            if (err) {
-                log.warn(`Working profile directory does not exist: ${workingProfileDir}`);
-                return next();
-            }
-            log.info(`Attempting to rebuild from working profile: ${defaultProfileFile} and ${userProfileFile}`);
-            async.series([(cb) => tryLoadFile(defaultProfileFile, cb), (cb) => tryLoadFile(userProfileFile, cb)], next);
-        });
-    };
-
-    const loadFromOriginalProfile = (next) => {
-        // ALWAYS try to load from original profiles - this provides baseline defaults
-        // Do NOT check skipRecovery here - we need these defaults even during auto-profile
-        log.info(
-            `Attempting to rebuild from original profile: ${originalDefaultProfileFile} and ${originalUserProfileFile}`
-        );
-
-        // Debug: Check if files exist
-        log.debug(
-            `Checking original default profile: ${originalDefaultProfileFile} - exists: ${fs.existsSync(
-                originalDefaultProfileFile
-            )}`
-        );
-        log.debug(
-            `Checking original user profile: ${originalUserProfileFile} - exists: ${fs.existsSync(
-                originalUserProfileFile
-            )}`
-        );
-
+    // Helper function to load a pair of profile files (default + user)
+    const tryLoadProfile = (defaultFile, userFile, next) => {
+        log.debug(`Attempting to load profile: default=${defaultFile}, user=${userFile}`);
+        
         async.series(
             [
-                (cb) => {
-                    log.debug(`Trying to load original default profile: ${originalDefaultProfileFile}`);
-                    tryLoadFile(originalDefaultProfileFile, cb);
-                },
-                (cb) => {
-                    log.debug(`Trying to load original user profile: ${originalUserProfileFile}`);
-                    tryLoadFile(originalUserProfileFile, cb);
-                },
+                (cb) => tryLoadFile(defaultFile, cb),
+                (cb) => tryLoadFile(userFile, cb)
             ],
             (err) => {
                 if (err) {
-                    log.error(`Original profile loading failed: ${err.message}`);
+                    log.debug(`Profile load failed: ${err.message}`);
                 } else {
-                    log.info(`Original profile loading succeeded`);
+                    log.info("Profile load succeeded");
                 }
                 next(err);
             }
         );
     };
 
-    // Try direct load first, then fallback
-    tryLoadFile(filename, (err) => {
-        if (err) {
-            log.warn(`Failed to load config file: ${filename}, trying backup.`);
-
-            async.series([loadFromBackup, loadFromWorkingProfile, loadFromOriginalProfile], (err) => {
-                if (err) {
-                    log.warn(`Failed to load configuration from all sources: ${err.message}`);
-                    callback(err);
-                } else {
-                    callback(null, this._cache); // ✅ Return the cache data
+    // Define the fallback chain
+    // Each step only runs if the previous step failed
+    const loadStrategies = [
+        // Strategy 1: Load from primary config file
+        {
+            name: "primary config",
+            execute: (cb) => tryLoadFile(filename, cb)
+        },
+        
+        // Strategy 2: Load from backup (skip if auto-profile active)
+        {
+            name: "backup",
+            execute: (cb) => {
+                if (skipRecovery) {
+                    log.debug("Skipping backup (auto-profile active)");
+                    return cb(new Error("Skipping backup during auto-profile"));
                 }
-            });
-        } else {
-            callback(null, this._cache); // ✅ Return the cache data
+                tryLoadFile(backupFile, cb);
+            }
+        },
+        
+        // Strategy 3: Load from working profile (skip if auto-profile active)
+        {
+            name: "working profile",
+            execute: (cb) => {
+                if (skipRecovery) {
+                    log.debug("Skipping working profile (auto-profile active)");
+                    return cb(new Error("Skipping working profile during auto-profile"));
+                }
+                tryLoadProfile(defaultProfileFile, userProfileFile, cb);
+            }
+        },
+        
+        // Strategy 4: Load from original installation profile (final fallback)
+        {
+            name: "original profile",
+            execute: (cb) => {
+                tryLoadProfile(originalDefaultProfileFile, originalUserProfileFile, cb);
+            }
         }
-    });
+    ];
+
+    // Execute the fallback chain
+    // Try each strategy in order, stop on first success
+    let strategyIndex = 0;
+    
+    const tryNextStrategy = () => {
+        if (strategyIndex >= loadStrategies.length) {
+            // All strategies failed
+            const error = new Error("Failed to load configuration from all sources");
+            log.error(error.message);
+            return callback(error);
+        }
+        
+        const strategy = loadStrategies[strategyIndex];
+        log.debug(`Trying load strategy ${strategyIndex + 1}/${loadStrategies.length}: ${strategy.name}`);
+        
+        strategy.execute((err) => {
+            if (!err) {
+                // Success! We're done
+                log.info(`Configuration loaded successfully via ${strategy.name}`);
+                return callback(null, this._cache);
+            }
+            
+            // This strategy failed, try the next one
+            log.debug(`Strategy '${strategy.name}' failed: ${err.message}`);
+            strategyIndex++;
+            tryNextStrategy();
+        });
+    };
+    
+    // Start the chain
+    tryNextStrategy();
 };
 
 // Update the tree with the provided data. Deal with values shared by runtime with G2
