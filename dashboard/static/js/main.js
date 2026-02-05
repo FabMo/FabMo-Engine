@@ -40,6 +40,7 @@ var isRunning = false;
 var keyPressed = false;
 var isAuth = false;
 var lastInfoSeen = null;
+var lastErrorSeen = null;
 var consent = "";
 var disconnected = false;
 var calledFromModal = ""; // variable for passing action from Keypad modal to engine
@@ -64,17 +65,6 @@ engine.getCurrentUser(function (err, user) {
         window.location.href = "#/authentication";
     }
 });
-
-// Mobile cache detection 
-function handleMobileCaching() {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const touchDevice = 'ontouchstart' in window || navigator.msMaxTouchPoints;
-    
-    if (isMobile || touchDevice) {
-        console.log("Mobile device detected");
-        window._fabmo_mobile_device = true;
-    }
-}
 
 var setUpManual = function () {
     return new Promise((resolve, reject) => {
@@ -878,7 +868,36 @@ engine.getVersion(function (err, version) {
 
                         $("#keypad-modal").focus();
                     } else if (status.info["error"]) {
-                        if (dashboard.engine.status.job) {
+                        // Check if this is a new error (not already shown)
+                        // Use status.info.id if available, otherwise create unique identifier from error message
+                        var errorId = status.info.id || JSON.stringify(status.info.error);
+                        
+                        if (errorId !== lastErrorSeen) {
+                            lastErrorSeen = errorId; // Mark this error as shown
+                            
+                            // SAVE LOG ON ERROR
+                            console.log('ERROR MODAL - saving log');
+                            fetch('/log/save', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                            .then(function(response) {
+                                return response.json();
+                            })
+                            .then(function(result) {
+                                if (result.status === 'success') {
+                                    console.log('Log auto-saved due to error modal:', result.data.filename);
+                                }
+                            })
+                            .catch(function(err) {
+                                console.error('Failed to auto-save log on error modal:', err);
+                            });
+
+                        }
+
+                            if (dashboard.engine.status.job) {
                             var detailHTML =
                                 "<p>" +
                                 "<b>Job Name:  </b>" +

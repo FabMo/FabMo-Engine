@@ -389,6 +389,13 @@ G2.prototype.disconnect = function (reason, callback) {
 G2.prototype.onSerialError = function (data) {
     log.error(new Error("There was a serial error"));
     log.error(data);
+    
+    // Save log immediately on serial errors
+    require('./log').saveCurrentLog('g2-serial-error', function(err) {
+        if (err) {
+            log.error("Failed to save log on serial error: " + err);
+        }
+    });
 };
 
 // When the serial link to G2 is closed, exit the engine with an error
@@ -397,9 +404,13 @@ G2.prototype.onSerialError = function (data) {
 G2.prototype.onSerialClose = function () {
     this.connected = false;
     log.error("G2 Core serial link was lost.");
-    if (!intendedClose) {
-        process.exit(14);
-    }
+    
+    // Save log before exiting
+    require('./log').saveCurrentLog('g2-disconnect', function(err) {
+        if (!intendedClose) {
+            process.exit(14);
+        }
+    });
 };
 
 // Write to the serial port (and log it)

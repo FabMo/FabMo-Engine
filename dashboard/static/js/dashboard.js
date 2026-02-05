@@ -1750,6 +1750,36 @@ define(function (require) {
     };
 
     Dashboard.prototype.notification = function (type, message) {
+        console.log('=== NOTIFICATION CALLED ===', type, message); // Debug output
+
+    // Auto-save log on error notifications
+        if (type === 'error') {
+        console.log('ERROR notification - attempting to save log'); // Debug output
+            
+            // Use fetch API to trigger log save
+            fetch('/log/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function(response) {
+                console.log('Fetch response status:', response.status); // Debug output
+                return response.json();
+            })
+            .then(function(result) {
+                if (result.status === 'success') {
+                    console.log('Log auto-saved due to error:', result.data.filename);
+                } else {
+                    console.error('Failed to auto-save log on error:', result.message);
+                }
+            })
+            .catch(function(err) {
+                console.error('Failed to auto-save log on error:', err);
+            });
+        }
+        
+        // Display the notification
         switch (type) {
             case "info":
                 toastr.info(message);

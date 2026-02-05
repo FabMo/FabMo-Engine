@@ -446,10 +446,21 @@ Machine.prototype.handleCancelButton = function (stat, quit_input) {
 /*
  * State Functions
  */
-Machine.prototype.die = function (err_msg) {
-    this.setState(this, "dead", {
-        error: err_msg || "A G2 exception has occurred. You must reboot your tool.",
+Machine.prototype.die = function (err, cause) {
+    // Save log before dying
+    var logModule = require('./log');
+    logModule.saveCurrentLog('machine-die', function(saveErr) {
+        if (saveErr) {
+            log.error("Failed to save log on machine die: " + saveErr);
+        }
     });
+    
+    cause = cause || "unknown";
+
+    this.setState(this, "dead", {
+        error: err || "A G2 exception has occurred. You must reboot your tool.",
+    });
+    
     this.emit("status", this.status);
 };
 
@@ -1741,7 +1752,7 @@ Machine.prototype._runNextJob = function (force, callback) {
     }
 };
 
-// Add transform warning to status
+// Setup a transform-on warning that is available in status
 Machine.prototype._updateStatusFromDriver = function (status) {
     // Update the base status fields
     for (var key in status) {
@@ -1753,18 +1764,24 @@ Machine.prototype._updateStatusFromDriver = function (status) {
     // Add transform warning to status
     // Check if any transforms are enabled
     try {
-        var transforms = config.opensbp.get('transforms');
-        if (transforms) {
-            this.status.transformsEnabled = 
-                transforms.rotate.apply ||
-                transforms.scale.apply ||
-                transforms.move.apply ||
-                transforms.shearx.apply ||
-                transforms.sheary.apply ||
-                transforms.interpolate.apply ||
-                transforms.level.apply ||
-                false;
+        // Check if config.opensbp is initialized before accessing it
+        if (config.opensbp && config.opensbp.get) {
+            var transforms = config.opensbp.get('transforms');
+            if (transforms) {
+                this.status.transformsEnabled = 
+                    transforms.rotate.apply ||
+                    transforms.scale.apply ||
+                    transforms.move.apply ||
+                    transforms.shearx.apply ||
+                    transforms.sheary.apply ||
+                    transforms.interpolate.apply ||
+                    transforms.level.apply ||
+                    false;
+            } else {
+                this.status.transformsEnabled = false;
+            }
         } else {
+            // Config not yet initialized, default to false
             this.status.transformsEnabled = false;
         }
     } catch (e) {
