@@ -59,6 +59,12 @@ Spin.prototype.connectVFD = function() {
         const settings = this.settings.VFD_Settings;
         this.vfdSettings = settings;
 
+        // Use a timeout for initial connection
+        const connectionTimeout = setTimeout(() => {
+            this.disableSpindle('Connection timeout - no VFD detected', true);
+            reject(new Error('Connection timeout'));
+        }, 3000); // 3 second timeout for initial connection
+
         client.connectRTUBuffered(settings.COM_PORT, {
             baudRate: settings.BAUDRATE,
             parity: settings.PARITY,
@@ -66,6 +72,7 @@ Spin.prototype.connectVFD = function() {
             stopBits: settings.STOPBITS
         })
         .then(() => {
+            clearTimeout(connectionTimeout);
             client.setID(settings.MB_ADDRESS);
             log.info("Connected to VFD via MODBUS");
             if (settings.Registers.UNLOCK_PARAMETERS !== null) {
@@ -76,6 +83,7 @@ Spin.prototype.connectVFD = function() {
             resolve();
         })
         .catch((error) => {
+            clearTimeout(connectionTimeout);
             this.disableSpindle(`Connection failed: ${error.message}`, true);
             reject(error);
         });
@@ -83,10 +91,15 @@ Spin.prototype.connectVFD = function() {
 };
 
 let vfdFailures = 0;
+let vfdDisabled = false;
 // Set up 1-second UPDATES to spindleVFD status 
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
     const MAX_VFD_FAILS = 3;
+    
+    // Reset the disabled flag when starting
+    vfdDisabled = false;
+    vfdFailures = 0;
     
     // Store intervalId as instance property so it can be cleared properly
     if (this.vfdInterval) {
@@ -95,16 +108,16 @@ Spin.prototype.startSpindleVFD = function() {
     
     if (this.status.vfdEnabled) {
         this.vfdInterval = setInterval(() => {
-            if (this.vfdBusy) {
-                log.error("VFD is busy; skipping update");
-                this.vfdBusy = false;
+            // Check if already disabled - stop immediately
+            if (vfdDisabled || !this.status.vfdEnabled || this.status.vfdDesgFreq === -1) {
+                clearInterval(this.vfdInterval);
+                this.vfdInterval = null;
                 return;
             }
             
-            // Check if we've been disabled - stop the interval
-            if (!this.status.vfdEnabled || this.status.vfdDesgFreq === -1) {
-                clearInterval(this.vfdInterval);
-                this.vfdInterval = null;
+            if (this.vfdBusy) {
+                log.error("VFD is busy; skipping update");
+                this.vfdBusy = false;
                 return;
             }
             
@@ -129,11 +142,17 @@ Spin.prototype.startSpindleVFD = function() {
                 vfdFailures = 0; // Reset failure count on success
             })
             .catch((error) => {
+                // Ignore errors if we've already disabled
+                if (vfdDisabled) {
+                    return;
+                }
+                
                 // Handle errors here where 'error' is actually defined
                 vfdFailures++;
                 log.error(`***Error reading VFD: ${error.message}`);
                 
                 if (vfdFailures >= MAX_VFD_FAILS) {
+                    vfdDisabled = true; // Set flag immediately
                     log.error(`Last Error (of ${MAX_VFD_FAILS}): ${error.message}`);
                     
                     // Handle specific error types

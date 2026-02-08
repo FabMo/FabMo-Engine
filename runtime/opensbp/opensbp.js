@@ -93,6 +93,7 @@ function SBPRuntime() {
 
     this.inManualMode = false;
 }
+
 util.inherits(SBPRuntime, events.EventEmitter);
 
 SBPRuntime.prototype.toString = function () {
@@ -289,6 +290,7 @@ SBPRuntime.prototype.needsAuth = function (s) {
 //          s - The string to run
 //   callback - Called when the program has ended
 SBPRuntime.prototype.runString = function (s) {
+    this.currentFilename = "direct input";
     //log.info("####=.runString");
     try {
         // Initialize the program
@@ -313,10 +315,9 @@ SBPRuntime.prototype.runString = function (s) {
             this.program = parser.parse(s);
         } catch (e) {
             log.error(e);
-            e.message = `Error@line- ${e.line}(${e.location.start.column}): ${e.message}`;
+            const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+            e.message = `${filePrefix}Error@line-${e.line}(${e.location.start.column}): ${e.message}`;
             this._end(e.message);
-        } finally {
-            log.tock("Parse file");
         }
 
         // Configure affine transformations on the file
@@ -549,6 +550,14 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 SBPRuntime.prototype.runFile = function (filename) {
     //log.info("####=.runFile");
     this.lastFilename = filename;
+    
+    // Only set currentFilename if not already set (by machine._runFile)
+    if (!this.currentFilename) {
+        this.currentFilename = require('path').basename(filename);
+    }
+    
+    log.debug(`[Filename Tracking] runFile currentFilename: ${this.currentFilename}`);
+    
     var st = fs.createReadStream(filename);
     this.runStream(st);
 };
@@ -1169,12 +1178,20 @@ SBPRuntime.prototype._end = async function (error) {
     this.pending_error = error;
     let error_msg = null;
     if (error) {
-        if (Object.prototype.hasOwnProperty.call(error, "offset")) {
-            error_msg = `@line-${error.offset}(${error.column}):  ${error.message}`;
-        } else if (Object.prototype.hasOwnProperty.call(error, "message")) {
-            error_msg = `@line-${this.pc + 1}:  ${error.message}`;
+        if (error instanceof Error) {
+            // Include filename in error message
+            const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+            
+            if (Object.prototype.hasOwnProperty.call(error, "offset")) {
+                error_msg = `${filePrefix}@line-${error.offset}(${error.column}):  ${error.message}`;
+            } else if (Object.prototype.hasOwnProperty.call(error, "message")) {
+                error_msg = `${filePrefix}@line-${this.pc + 1}:  ${error.message}`;
+            } else {
+                error_msg = filePrefix + error;
+            }
         } else {
-            error_msg = error;
+            const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+            error_msg = filePrefix + error;
         }
     }
 
@@ -1194,6 +1211,7 @@ SBPRuntime.prototype._end = async function (error) {
 
     // Clear the internal state of the runtime
     this.init();
+    this.currentFilename = null;
 
     // Handle machine state restoration
     if (this.machine) {
@@ -1337,6 +1355,8 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
             // TODO: Should this just display the macro identifier or name?
             // log.debug("Running macro: " + JSON.stringify(macro));
             this._pushFileStack();
+            // Set the current filename to the macro name for better error messages
+            this.currentFilename = `C${number} (${macro.name})`;
             this.runFile(macro.filename);
         } else {
             throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found at " + (this.pc + 1));
@@ -1353,7 +1373,7 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
 // Returns false if execution does not break the stack (and callback is never called)
 //   command - A single parsed line of OpenSBP code
 
-SBPRuntime.prototype._execute = function (command, callback) {
+SBPRuntime.prototype._execute = async function (command, callback) {
     switch (command.type) {
         case "data_send":
             // Evaluate the channel
@@ -1478,7 +1498,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 }
                 return true;
             } else {
-                throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc + 1));
+                const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+                throw new Error(
+                    `${filePrefix}@line-${this.pc + 1}: ` +
+                    `Can't GOTO ${command.label}: Label does not exist in this program.`
+                );
             }
 
         case "gosub":
@@ -1498,23 +1522,43 @@ SBPRuntime.prototype._execute = function (command, callback) {
 
         case "assign":
             this.pc += 1;
-            var value = this._eval(command.expr);
-            this._assign(command.var, value);
-            if (callback) {
-                //log.info("calling callback");
-                callback();
+            try {
+                var value = this._eval(command.expr);
+                await this._assign(command.var, value);
+                if (callback) {
+                    callback();
+                }
+            } catch (assignError) {
+                const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+                log.error(`${filePrefix}Assignment error: ${assignError.message}`);
+                
+                if (!this.pending_error && this.started) {
+                    this._abort(assignError);
+                } else {
+                    log.debug("Ignoring assignment error during cleanup: " + assignError.message);
+                }
+                return true;
             }
             return true;
 
         case "weak_assign":
             this.pc += 1;
             if (!this._varExists(command.var)) {
-                // eslint-disable-next-line no-redeclare
-                var value = this._eval(command.expr);
-                this._assign(command.var, value);
-                if (callback) {
-                    //log.info("calling callback");
-                    callback();
+                try {
+                    var value = this._eval(command.expr);
+                    await this._assign(command.var, value);
+                    if (callback) {
+                        callback();
+                    }
+                } catch (assignError) {
+                    log.error("Weak assignment error: " + assignError.message);
+                    
+                    if (!this.pending_error && this.started) {
+                        this._abort(assignError);
+                    } else {
+                        log.debug("Ignoring assignment error during cleanup: " + assignError.message);
+                    }
+                    return true;
                 }
             } else {
                 setImmediate(callback);
@@ -1794,44 +1838,112 @@ SBPRuntime.prototype._roundNumeric = function(value) {
 // Assign a variable to a value
 //   identifier - The variable to assign
 //        value - The new value
+// Supports Universal Unit variables (ending with 'UU')
 SBPRuntime.prototype._assign = async function (identifier, value) {
-    value = this._roundNumeric(value); // Round numeric values based on configuration
+    // Don't process assignments if we're already in an error state OR ending
+    if (this.pending_error || !this.started) {
+        log.debug("Skipping assignment - runtime in error state or not started");
+        return;
+    }
     
-    // Determine the variable name
+    value = this._roundNumeric(value);
+    
     let variableName;
     if (identifier.name) {
         variableName = identifier.name.toUpperCase();
     } else if (identifier.expr) {
-        // Evaluate the expression to get the variable name
         variableName = this._eval(identifier.expr).toUpperCase();
     } else {
         throw new Error("Invalid identifier: missing 'name' and 'expr'");
     }
 
     let accessPath = identifier.access || [];
-
-    // Evaluate accessPath
-    accessPath = this._evaluateAccessPath(accessPath);
-
-    // Update the variable in the config
-    let variables;
-    if (identifier.type === "user_variable") {
-        variables = config.opensbp._cache["tempVariables"];
-    } else {
-        variables = config.opensbp._cache["variables"];
+    
+    // Check if this is a Universal Unit variable (ends with "UU")
+    const isUniversalUnit = variableName.endsWith('UU');
+    
+    // Check for unit placeholder in access path
+    const hasUnitPlaceholder = accessPath.some(part => part.type === "unit_placeholder");
+    
+    // Validation: UU variables MUST use placeholder, non-UU variables MUST NOT
+    if (isUniversalUnit && !hasUnitPlaceholder) {
+        const errorMsg = `UU variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} requires [] placeholder.`;
+        log.error(errorMsg);
+        throw new Error(errorMsg);
     }
 
-    if (!(variableName in variables)) {
-        // Initialize the variable if it doesn't exist
-        variables[variableName] = {};
-    }
+    if (!isUniversalUnit && hasUnitPlaceholder) {
+        const errorMsg = `[] placeholder requires UU suffix. Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} must end with "UU"`;
+        log.error(errorMsg);
+        throw new Error(errorMsg);
+    }    
 
-    if (accessPath.length === 0) {
-        // Direct assignment
-        variables[variableName] = value;
+    if (hasUnitPlaceholder) {
+        // Handle Universal Unit assignment with explicit placeholder
+        // Get current system units (0 = inches, 1 = mm)
+        const currentUnits = this.evaluateSystemVariable({type: "system_variable", expr: 25});
+        
+        // Calculate both unit values
+        let inchValue, mmValue;
+        if (currentUnits === 0) {
+            // Value provided is in inches
+            inchValue = value;
+            mmValue = value * 25.4;
+        } else {
+            // Value provided is in mm
+            mmValue = value;
+            inchValue = value / 25.4;
+        }
+        
+        // Determine which variable collection to use
+        let variables;
+        if (identifier.type === "user_variable") {
+            variables = config.opensbp._cache["tempVariables"];
+        } else {
+            variables = config.opensbp._cache["variables"];
+        }
+        
+        // Ensure base variable exists
+        if (!(variableName in variables)) {
+            variables[variableName] = {};
+        }
+        
+        // Create paths for both units by replacing placeholder with actual indices
+        const inchPath = accessPath.map(part => 
+            part.type === "unit_placeholder" ? { type: "index", value: 0 } : part
+        );
+        const mmPath = accessPath.map(part => 
+            part.type === "unit_placeholder" ? { type: "index", value: 1 } : part
+        );
+        
+        // Evaluate any expressions in the access paths
+        const evalInchPath = this._evaluateAccessPath(inchPath);
+        const evalMmPath = this._evaluateAccessPath(mmPath);
+        
+        // Set both unit values using the existing nested value setter
+        this._setNestedValue(variables[variableName], evalInchPath, inchValue);
+        this._setNestedValue(variables[variableName], evalMmPath, mmValue);
+        
     } else {
-        // Nested assignment
-        this._setNestedValue(variables[variableName], accessPath, value);
+        // Normal variable assignment (existing code)
+        accessPath = this._evaluateAccessPath(accessPath);
+        
+        let variables;
+        if (identifier.type === "user_variable") {
+            variables = config.opensbp._cache["tempVariables"];
+        } else {
+            variables = config.opensbp._cache["variables"];
+        }
+        
+        if (!(variableName in variables)) {
+            variables[variableName] = {};
+        }
+        
+        if (accessPath.length === 0) {
+            variables[variableName] = value;
+        } else {
+            this._setNestedValue(variables[variableName], accessPath, value);
+        }
     }
 };
 
@@ -2093,12 +2205,14 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
                     if (line.label in this.label_index) {
                         // pass
                     } else {
-                        // Add one to the line number so they start at 1
-                        throw new Error(`@line-${i + 1}: Undefined label ` + line.label);
+                        const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
+                        throw new Error(
+                            `${filePrefix}@line-${i + 1}: Undefined label ${line.label}`
+                        );
                     }
                     break;
                 default:
-                    // pass
+                    //pass
                     break;
             }
         }
@@ -2407,6 +2521,7 @@ SBPRuntime.prototype._pushFileStack = function () {
     frame.stack = this.stack;
     frame.end_message = this.end_message;
     frame.label_index = this.label_index;
+    frame.filename = this.currentFilename;  // filename tracking for reporting
     this.file_stack.push(frame);
 };
 
@@ -2423,7 +2538,8 @@ SBPRuntime.prototype._popFileStack = function () {
     this.stack = frame.stack;
     this.label_index = frame.label_index;
     this.end_message = frame.end_message;
-};
+    this.currentFilename = frame.filename;
+};    
 
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word

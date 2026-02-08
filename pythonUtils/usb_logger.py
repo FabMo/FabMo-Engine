@@ -6,6 +6,7 @@ import logging
 import time # For sequencing updates
 import shutil  # For file operations
 import urllib.parse  # For unescaping paths
+import glob
 
 # Configure logging
 logging.basicConfig(
@@ -103,6 +104,53 @@ def decode_path(path):
             i += 1
     return result
 
+def get_recent_fabmo_logs():
+    """Get the most recent FabMo log files."""
+    try:
+        log_dir = "/opt/fabmo/log"
+        if not os.path.exists(log_dir):
+            return "No log directory found at /opt/fabmo/log"
+        
+        # Get all log files
+        log_files = []
+        for pattern in ['fabmo-*.txt', 'g2-flight-log*.json']:
+            log_files.extend(glob.glob(os.path.join(log_dir, pattern)))
+        
+        if not log_files:
+            return "No log files found in /opt/fabmo/log"
+        
+        # Sort by modification time, most recent first
+        log_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        
+        # Get the 3 most recent log files
+        recent_logs = []
+        for log_file in log_files[:3]:
+            file_name = os.path.basename(log_file)
+            file_time = time.strftime('%Y-%m-%d %H:%M:%S', 
+                                     time.localtime(os.path.getmtime(log_file)))
+            
+            recent_logs.append(f"\n{'='*60}\n")
+            recent_logs.append(f"File: {file_name}\n")
+            recent_logs.append(f"Modified: {file_time}\n")
+            recent_logs.append(f"{'='*60}\n\n")
+            
+            try:
+                with open(log_file, 'r') as f:
+                    content = f.read()
+                    # Limit to last 500 lines to avoid huge files
+                    lines = content.split('\n')
+                    if len(lines) > 500:
+                        recent_logs.append(f"[Showing last 500 of {len(lines)} lines]\n\n")
+                        content = '\n'.join(lines[-500:])
+                    recent_logs.append(content)
+                    recent_logs.append('\n\n')
+            except Exception as e:
+                recent_logs.append(f"Error reading {file_name}: {e}\n\n")
+        
+        return ''.join(recent_logs)
+    except Exception as e:
+        return f"Error getting logs: {e}"
+
 def write_to_usb(mount_point, ip_address, fabmo_status, fabmo_updater_status, heat_volts_status, json_content, html_written_drives):
     """Write the status log file and HTML access file to the USB drive."""
     try:
@@ -126,6 +174,9 @@ def write_to_usb(mount_point, ip_address, fabmo_status, fabmo_updater_status, he
         else:
             support_contact_info = "Support contact information file not found."
         
+        # Get recent FabMo logs
+        fabmo_logs = get_recent_fabmo_logs()
+        
         # Ensure the mount point exists
         if not os.path.exists(real_mount_point):
             logging.error(f"Mount point does not exist: {real_mount_point} (from {mount_point})")
@@ -148,9 +199,11 @@ def write_to_usb(mount_point, ip_address, fabmo_status, fabmo_updater_status, he
             log.write("=== heat_volts Status ===\n")
             log.write(f"{heat_volts_status}\n\n")
             log.write("=== JSON File Contents ===\n")
-            log.write(f"{json_content}\n")
-            log.flush()  # Flush buffer
-            os.fsync(log.fileno())  # Force write to disk
+            log.write(f"{json_content}\n\n")
+            log.write("=== Recent FabMo Engine Logs ===\n")
+            log.write(f"{fabmo_logs}\n")
+            log.flush()
+            os.fsync(log.fileno())
         
         logging.info(f"Log file '{log_file}' updated successfully.")
         print(f"Log file '{log_file}' updated successfully.")

@@ -446,10 +446,21 @@ Machine.prototype.handleCancelButton = function (stat, quit_input) {
 /*
  * State Functions
  */
-Machine.prototype.die = function (err_msg) {
-    this.setState(this, "dead", {
-        error: err_msg || "A G2 exception has occurred. You must reboot your tool.",
+Machine.prototype.die = function (err, cause) {
+    // Save log before dying
+    var logModule = require('./log');
+    logModule.saveCurrentLog('machine-die', function(saveErr) {
+        if (saveErr) {
+            log.error("Failed to save log on machine die: " + saveErr);
+        }
     });
+    
+    cause = cause || "unknown";
+
+    this.setState(this, "dead", {
+        error: err || "A G2 exception has occurred. You must reboot your tool.",
+    });
+    
     this.emit("status", this.status);
 };
 
@@ -1001,6 +1012,19 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 // Run a file given a filename on disk.  Choose the runtime that is appropriate for that file.
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
+
+    // Set the user-friendly filename from the job object, if available
+    if (this.status.job && this.status.job.name) {
+        // Job name is the user-friendly name (e.g., "test36.sbp")
+        // Don't overwrite if runtime has already set it
+        if (!this.sbp_runtime.currentFilename && !this.gcode_runtime.currentFilename) {
+            if (ext === ".sbp") {
+                this.sbp_runtime.currentFilename = this.status.job.name;
+            } else {
+                this.gcode_runtime.currentFilename = this.status.job.name;
+            }
+        }
+    }
 
     // Choose the appropriate runtime based on the file extension
     var runtime = this.gcode_runtime;
@@ -1603,9 +1627,11 @@ Machine.prototype.checkUSBDrive = function (callback) {
     });
 };
 
-// Directly set the spindle speed as an accessory ignoring runtimes
+// Directly set the spindle speed as an accessory (for use with any runtime)
+// spindle speed / spindle RPM are currently limited HERE for command sent from DRO
+//  and in tools.js for OpenSBP; typically the VFD itself will have its own smaller spread
 Machine.prototype.spindleSpeed = function (new_RPM) {
-    if (new_RPM >= 5000 && new_RPM <= 30000) {
+    if (new_RPM >= 100 && new_RPM <= 30000) {
         try {
             log.info("----> new speed: " + new_RPM);
             spindle.setSpindleVFDFreq(new_RPM);
@@ -1726,7 +1752,7 @@ Machine.prototype._runNextJob = function (force, callback) {
     }
 };
 
-// Add transform warning to status
+// Setup a transform-on warning that is available in status
 Machine.prototype._updateStatusFromDriver = function (status) {
     // Update the base status fields
     for (var key in status) {
@@ -1738,18 +1764,24 @@ Machine.prototype._updateStatusFromDriver = function (status) {
     // Add transform warning to status
     // Check if any transforms are enabled
     try {
-        var transforms = config.opensbp.get('transforms');
-        if (transforms) {
-            this.status.transformsEnabled = 
-                transforms.rotate.apply ||
-                transforms.scale.apply ||
-                transforms.move.apply ||
-                transforms.shearx.apply ||
-                transforms.sheary.apply ||
-                transforms.interpolate.apply ||
-                transforms.level.apply ||
-                false;
+        // Check if config.opensbp is initialized before accessing it
+        if (config.opensbp && config.opensbp.get) {
+            var transforms = config.opensbp.get('transforms');
+            if (transforms) {
+                this.status.transformsEnabled = 
+                    transforms.rotate.apply ||
+                    transforms.scale.apply ||
+                    transforms.move.apply ||
+                    transforms.shearx.apply ||
+                    transforms.sheary.apply ||
+                    transforms.interpolate.apply ||
+                    transforms.level.apply ||
+                    false;
+            } else {
+                this.status.transformsEnabled = false;
+            }
         } else {
+            // Config not yet initialized, default to false
             this.status.transformsEnabled = false;
         }
     } catch (e) {

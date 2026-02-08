@@ -170,3 +170,7 @@ See API docs: http://fabmo.github.io/FabMo-Engine/api
 - **Config additions**: Update appropriate config class in `/config`, add defaults
 - **Runtime modifications**: Implement `connect()`, `disconnect()`, `toString()` methods
 - **Database changes**: Update schema in `db.js`, handle migration for existing data
+
+## Notes to AI
+
+- When working in dev mode here is vscode, our script always runs `npm run webpack` to rebuild the dashboard.

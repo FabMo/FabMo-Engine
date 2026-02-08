@@ -27,8 +27,10 @@ exports.TR = function (args, callback) {
         opts2 = "";
     }
 
-    // Set RPM; todo: check for change only (or deeper than here); update range
-    if (new_RPM > 5000 && new_RPM < 30000) {
+    // Set RPM RANGE
+    // spindle speed / spindle RPM are currently limited HERE for command sent from OpenSBP
+    //    and in machine.js from DRO; typically the VFD itself will have its own smaller spread
+    if (new_RPM > 100 && new_RPM < 30000) {
         try {
             log.info("----> new speed: " + new_RPM);
             spindle.setSpindleVFDFreq(new_RPM);

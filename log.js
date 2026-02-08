@@ -13,7 +13,7 @@ var jsesc = require('jsesc');
 var _suppress = false;
 var log_buffer = [];
 var LOG_BUFFER_SIZE = 5000;
-var PERSISTENT_LOG_COUNT = 20;
+var PERSISTENT_LOG_COUNT = 10;
 var flightRecorder = null;
 var tickTime = null;
 
@@ -299,8 +299,8 @@ var logger = function(name) {
 // .... log log logger log.
 var _log = logger('log');
 
-// Cleanup operations that happen on program exit.
-// TODO are we really ever getting a program exit with typical power off of RPi's? Mabye do cleanup on starts?
+// Cleanup operation now called from startup.
+// TODO are we really ever getting a program exit with typical power off of RPi's? 
 // Mainly:
 //  - Write to the current log file so we don't miss anything if the engine crashed
 //  - Write out the contents of the current flight recording
@@ -388,40 +388,82 @@ var getFlightLog = function() {
 // count - The number of log files to keep.  If there are 10 logfiles in the log directory, and 
 //         this function is called with count=5, the 5 oldest ones are deleted.
 // 
-var rotateLogs = function(count,callback) {
-	var logdir = require('./config').getDataDir('log');
-	callback = callback || function() {};
-	try {
-		fs.readdir(logdir, function(err, files) {
-			files.sort();
-			if(files.length <= count) {
-				return callback();
-			}
-			var filesToDelete = files.slice(0, files.length-count);
-			async.each(
-				filesToDelete,
-				function(file, callback) {
-					fs.unlink(path.join(logdir, file), callback)
-				},
-				function(err) {
-					if(err) {
-						_log.error(err);
-					} else {
-			    		_log.info(filesToDelete.length + " old logfile removed.");
-					}
-					callback(null)
-				});
-			});
-	} catch(e) {
-		_log.error(e);
-		callback(e);
-	}
+var rotateLogs = function(count,callback) {  // passed in at startup from engine.js now; currently 10
+    var logdir = require('./config').getDataDir('log');
+    callback = callback || function() {};
+    try {
+        fs.readdir(logdir, function(err, files) {
+            if (err) {
+                return callback(err);
+            }
+            
+            // Filter to only log files (fabmo-*.txt and g2-flight-log*.json)
+            files = files.filter(function(file) {
+                return file.startsWith('fabmo-') || file.startsWith('g2-flight-log');
+            });
+            
+            // Sort by filename (which includes timestamp, so newest = highest)
+            files.sort();
+            
+            if(files.length <= count) {
+                return callback();
+            }
+            
+            // Keep the NEWEST files (end of array), delete the OLDEST (start of array)
+            var filesToDelete = files.slice(0, files.length-count);
+            
+            async.each(
+                filesToDelete,
+                function(file, callback) {
+                    fs.unlink(path.join(logdir, file), callback)
+                },
+                function(err) {
+                    if(err) {
+                        _log.error(err);
+                    } else {
+                		_log.info(filesToDelete.length + " old logfile(s) removed.");
+                    }
+                    callback(null)
+                });
+        });
+    } catch(e) {
+        _log.error(e);
+        callback(e);
+    }
 }
+
+// Save current log on demand (async version for use in error handlers)
+var saveCurrentLog = function(source, callback) {
+    callback = callback || function() {};
+    source = source || 'emergency';
+    
+    try {
+        var dir = require('./config').getDataDir('log');
+        var fn = 'fabmo-' + source + '-' + Date.now() + '-log.txt';
+        var filename = path.join(dir, fn);
+        
+        fs.writeFile(filename, getLogBuffer(), function(err) {
+            if (err) {
+                _log.error("Failed to save " + source + " log: " + err);
+                callback(err);
+            } else {
+                _log.info(source + " log saved to " + filename);
+                // Don't rotate on emergency saves to avoid blocking
+                callback(null, filename);
+            }
+        });
+    } catch(e) {
+        _log.error("Error saving " + source + " log: " + e);
+        callback(e);
+    }
+};
+
 
 exports.getFlightLog = getFlightLog;
 exports.FlightRecorder = FlightRecorder;
 exports.suppress = suppress;
 exports.logger = logger;
+exports.saveCurrentLog = saveCurrentLog;
 exports.setGlobalLevel = setGlobalLevel;
 exports.getLogBuffer = getLogBuffer;
 exports.clearLogBuffer = clearLogBuffer;

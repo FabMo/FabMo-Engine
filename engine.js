@@ -15,10 +15,21 @@ var machine = require("./machine");
 var config = require("./config");
 var OS = process.platform;
 var PLATFORM = process.env.PLATFORM;
-var log = require("./log").logger("engine");
+var logModule = require("./log");
+var log = logModule.logger("engine");
 //developer adjust next:, comment, un-comment as needed to track startup at deepest level
 // ... also see enginge_config.js, last section, for another set point that can create a log level at start
 //require("./log").setGlobalLevel("g2");
+
+// Rotate logs on startup to prevent accumulation (note there is also a limit in the log module; not coordinated)
+logModule.rotateLogs(10, function(err) {
+    if (err) {
+        log.error("Failed to rotate logs on startup: " + err);
+    } else {
+        log.info("Startup log rotation completed");
+    }
+});
+
 var db = require("./db");
 var macros = require("./macros");
 var dashboard = require("./dashboard");
