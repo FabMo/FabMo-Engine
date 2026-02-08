@@ -1769,6 +1769,36 @@ SBPRuntime.prototype._varExists = function (identifier) {
             return false;
         }
 
+        // Check if this is a UU variable with unit placeholder
+        const hasUnitPlaceholder = accessPath.some(part => part.type === "unit_placeholder");
+        
+        if (hasUnitPlaceholder) {
+            // For UU variables, check if the base variable exists and has the dual-unit structure
+            let value = variables[variableName];
+            
+            // Navigate to the level just before the unit placeholder
+            for (let part of accessPath) {
+                if (part.type === "unit_placeholder") {
+                    // Check if both [0] and [1] exist at this level (indicating a UU variable was created)
+                    return value && (0 in value) && (1 in value);
+                }
+                
+                let key;
+                if (part.type === "index") {
+                    key = this._eval(part.value);
+                } else if (part.type === "property") {
+                    key = part.name;
+                }
+                
+                if (value && key in value) {
+                    value = value[key];
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        // Normal variable existence check (non-UU or no placeholder)
         let value = variables[variableName];
         for (let part of accessPath) {
             let key;
@@ -1783,7 +1813,7 @@ SBPRuntime.prototype._varExists = function (identifier) {
                 return false;
             }
         }
-        return true;
+        return value !== undefined;
     }
     return false;
 };
