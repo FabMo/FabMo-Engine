@@ -387,50 +387,92 @@ var getFlightLog = function() {
 // Rotate the log files
 // count - The number of log files to keep.  If there are 10 logfiles in the log directory, and 
 //         this function is called with count=5, the 5 oldest ones are deleted.
-// 
-var rotateLogs = function(count,callback) {  // passed in at startup from engine.js now; currently 10
+// ALL log types are rotated together based on modification time (oldest deleted first).
+var rotateLogs = function(count, callback) {
     var logdir = require('./config').getDataDir('log');
     callback = callback || function() {};
+    
     try {
         fs.readdir(logdir, function(err, files) {
             if (err) {
                 return callback(err);
             }
             
-            // Filter to only log files (fabmo-*.txt and g2-flight-log*.json)
+            // Filter to include ALL FabMo log types and flight recorder logs
             files = files.filter(function(file) {
-                return file.startsWith('fabmo-') || file.startsWith('g2-flight-log');
+                return (
+                    file.startsWith('fabmo-') &&           // All fabmo logs (any source/type)
+                    (file.endsWith('.txt') || file.endsWith('.log'))
+                ) || file.startsWith('g2-flight-log');     // Flight recorder logs
             });
             
-            // Sort by filename (which includes timestamp, so newest = highest)
-            files.sort();
-            
-            if(files.length <= count) {
+            if (files.length <= count) {
+                _log.debug('Log rotation: ' + files.length + ' files found, keeping all (limit: ' + count + ')');
                 return callback();
             }
             
-            // Keep the NEWEST files (end of array), delete the OLDEST (start of array)
-            var filesToDelete = files.slice(0, files.length-count);
+            // Get file stats to sort by modification time (oldest first)
+            var fileStats = [];
+            var pending = files.length;
             
-            async.each(
-                filesToDelete,
-                function(file, callback) {
-                    fs.unlink(path.join(logdir, file), callback)
-                },
-                function(err) {
-                    if(err) {
-                        _log.error(err);
-                    } else {
-                		_log.info(filesToDelete.length + " old logfile(s) removed.");
+            files.forEach(function(file) {
+                var filePath = path.join(logdir, file);
+                fs.stat(filePath, function(err, stats) {
+                    if (!err) {
+                        fileStats.push({
+                            name: file,
+                            path: filePath,
+                            mtime: stats.mtime.getTime()
+                        });
                     }
-                    callback(null)
+                    
+                    pending--;
+                    if (pending === 0) {
+                        // Sort by modification time (oldest first)
+                        fileStats.sort(function(a, b) {
+                            return a.mtime - b.mtime;
+                        });
+                        
+                        // Keep the NEWEST files, delete the OLDEST
+                        var filesToDelete = fileStats.slice(0, fileStats.length - count);
+                        
+                        if (filesToDelete.length === 0) {
+                            _log.debug('Log rotation: no files to delete (' + fileStats.length + ' total)');
+                            return callback();
+                        }
+                        
+                        _log.info('Log rotation: deleting ' + filesToDelete.length + ' oldest log(s), keeping ' + count + ' newest');
+                        
+                        async.each(
+                            filesToDelete,
+                            function(fileInfo, cb) {
+                                fs.unlink(fileInfo.path, function(err) {
+                                    if (err) {
+                                        _log.warn('Failed to delete ' + fileInfo.name + ': ' + err.message);
+                                    } else {
+                                        _log.debug('Deleted old log: ' + fileInfo.name);
+                                    }
+                                    cb(); // Continue even if delete fails
+                                });
+                            },
+                            function(err) {
+                                if (err) {
+                                    _log.error('Error during log rotation: ' + err);
+                                } else {
+                                    _log.info('Log rotation complete: ' + filesToDelete.length + ' file(s) removed');
+                                }
+                                callback(null);
+                            }
+                        );
+                    }
                 });
+            });
         });
     } catch(e) {
-        _log.error(e);
+        _log.error('Exception during log rotation: ' + e);
         callback(e);
     }
-}
+};
 
 // Save current log on demand (async version for use in error handlers)
 var saveCurrentLog = function(source, callback) {
