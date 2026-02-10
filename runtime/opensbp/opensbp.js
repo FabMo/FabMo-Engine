@@ -1819,9 +1819,8 @@ SBPRuntime.prototype._varExists = function (identifier) {
 };
 
 // Helper function to round numeric values to specified decimal places based on configuration
-//SBPRuntime.prototype._roundNumeric = function(value, decimals = 4) {
 SBPRuntime.prototype._roundNumeric = function(value) {
-    const decimals = config.opensbp.get('variable_precision') || 4;
+    const decimals = config.opensbp.get('variable_precision') || 5;
     // Handle null/undefined
     if (value === null || value === undefined) {
         return value;

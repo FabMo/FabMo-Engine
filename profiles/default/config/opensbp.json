@@ -20,6 +20,7 @@
   "pocketOverlap": 50,
   "safeZpullUp": 0.25,
   "safeApullUp": 0.25,
+  "variable_precision": 5,
   "variables": {},
   "transforms": {
     "rotate": {
