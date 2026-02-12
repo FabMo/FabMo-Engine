@@ -93,7 +93,8 @@ initialize_variables:
 	    GOTO continue_with_variables
   'continue adjusting units for current working variables ...
 	continue_with_variables:
-		&target_ck = 0
+		&u = %(25)
+    &target_ck = 0
 		&ooch = $sb_ooch * &dist_mult
 		&backOff_dist = &ooch * 5
 		&squaringMove = $sb_squaringMove * &dist_mult  
@@ -104,7 +105,7 @@ initialize_variables:
 		&searchDist_Y = $sb_searchDist_Y * &dist_mult
 		&searchSpeed_XY = $sb_searchSpeed_XY * &dist_mult
 		&slowSearchSpeed_XY = $sb_slowSearchSpeed_XY * &dist_mult
-		&homeOff_Z = $sb_homeOff_Z * &dist_mult
-		&homeOff_X = $sb_homeOff_X * &dist_mult
-		&homeOff_Y = $sb_homeOff_Y * &dist_mult
+		&homeOff_Z = $sb_homeOffUU[&u].z
+		&homeOff_X = $sb_homeOffUU[&u].x
+		&homeOff_Y = $sb_homeOffUU[&u].y
 	RETURN

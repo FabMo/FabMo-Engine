@@ -1,19 +1,129 @@
 '!FABMO!name: STANDARD FABMO MACRO VARIABLES
 '!FABMO!description: Set Values for Standard Variables used in many Macros
 '!FABMO!enabled:true
-'   2025/11/25 - Refactored (th)
-'   Standard Macro Variables are defined and read from Macro #201 (variables are stored as persistent)
+'   2026/2/5 - Refactored (th)
+
+' STANDARD MACRO VARIABLES =========================================================================================================
+' Standard Macro Variables are defined and read from Macro #201 (variables are stored as persistent; $)
 '
-'Standard variables for ShopBot-FabMo "Macros" are a defined subset of "persistant" variables available within FabMo.
-'- They are tool-specific and are included in the tool default profile.
-'- All Macros are written in OpenSBP so all variables are SBP "variant" type (numbers and strings).
-'- The idea here is to keep the Macros and variable names the same for all tools, only adjusting the values for tool type.
+$sb_standard_variables_PRESENT = 0  '- flags that this variables table has been read when it is set to 1 at end
+$sb_varTableUNITS        = "IN"     '- We make it clear here what units the UU table below will be populated in; INCH or MM (APPLIES TO ATC TOO!)
+$sb_hasBeenZeroed        = 0        '- Flag for whether we have been zeroed since starting or faulting; NEEDS TO BE ENABLED RYAN
+$sb_dtType               = 3        ' 2=DTmax; 3=DT3
+
+$sb_proxNum.x            = 3        '- (m3,?)  ... usually input 2 or 3; if using as system var; number = Input# + 50 
+$sb_proxNum.y            = 3        '- (m3,?)  ... usually input 2 or 3
+$sb_proxNum.z            = 3        '- (m2,m3,?) ... usually input 2 or 5
+$sb_zZeroNum             = 1        '- (m2,?) ... usually 1; if using as system var; number = Input# + 50
+$sb_proxType             = 0        '- 0=normally-open; 1=normally-closed (tools consistently use one or the other)
+
+'Derived Switch Values:				'- for convenience, pre-compute switch "system numbers" needed for switch reads (equals # + 50)
+$sb_proxCk.x = $sb_proxNum.x + 50
+$sb_proxCk.y = $sb_proxNum.y + 50
+$sb_proxCk.z = $sb_proxNum.z + 50
+$sb_zZeroCk = $sb_zZeroNum + 50
+
+$sb_zPlateType           = "STD"    '- PRESS; 3D; STD ... use this eventually to select type
+
+'Tool Change Variables
+$ATC.type               := 0        '- REQUIRED: Set to 0 for standard MTC tools
+$ToolIn                 := 0        '- used now?
+$sb_TOOLcurrent         := 0        '- used now? (m9) for manual and ATC changes
+$sb_MTCmode              = "QUIT"   '- (m9) IGNORE; QUIT; MTC ... defaulting to IGNORE for moment
+$sb_MTC_XY_mode          = "FIXED"  '- (m9) FIXED; STAY where to do tool change
+$sb_MTC_Z_mode           = "FIXED"  '- (m9) MAX; FIXED method pull-up
+$sb_MTC_Zero_mode        = "MACRO"  '- (m9) MACRO; or, DRO keypad manual method to zero Z
+$sb_MTC_skip_first       = "NO"     '- (m9) NO; YES ... add to DT Util? do we really want this?
+
+' UNIVERSAL UNIT VARIABLES =========================================================================================================
+' Universal Unit (UU) variables are dual variables that hold inch and metric equivalent values for macros.
+' UU variables simplify unit type in macros and allow the measurement unit to be largely ignored when used.
+' UU variables are set in the current units, so insure units are what you intend.
+
+IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC
+    SetINCH:
+        VD,,, 0                          ' FORCE CURRENT UNIT to INCHE for this MACRO
+        GOTO SetUniversalUnits
+    SetMETRIC:
+        VD,,, 1                          ' FORCE CURRENT UNIT to MM for this MACRO
+        GOTO SetUniversalUnits
+
+SetUniversalUnits:
+    $sb_homePullBackUU[]         = 0.5      '- for C3 short pullback after hitting prox (for case of longer offsets)
+    $sb_homeOffUU[].x            = 0.5      '- back off a prox to set Home location (m2,m3) back off a prox to Home location 
+    $sb_homeOffUU[].y            = 0.5  
+    $sb_homeOffUU[].z            = 0.15
+   '$sb_homeOffUU[].a
+   '$sb_homeOffUU[].b
+   '$sb_homeOffUU[].c
+
+    $sb_searchSpeedUU[].xy       = 3.5      '- search speeds for moving to proximity switches (m2,m3,etc)
+    $sb_searchSpeedUU[].z        = 1.5 
+    $sb_searchSpeedUU[].zzero    = 0.5      '- SLOOOoow because we don't want any extra steps into plate(m2) 
+   '$sb_searchSpeedUU[].a
+   '$sb_searchSpeedUU[].b
+   '$sb_searchSpeedUU[].c
+    $sb_slowSearchSpeedUU[].xy   = 0.5      '- (m2,m3,etc)
+    $sb_slowSearchSpeedUU[].z    = 0.25     '- (m2,m3,etc)
+   '$sb_slowSearchSpeedUU.a
+   '$sb_slowSearchSpeedUU.b
+   '$sb_slowSearchSpeedUU.c
+    $sb_searchDistUU[].x         = 36       '- (m2,m3,etc)
+    $sb_searchDistUU[].y         = 26       '- (m2,m3,etc)
+    $sb_searchDistUU[].z         = 6        '- (m2,m3,etc)
+   '$sb_searchDistUU[].a
+   '$sb_searchDistUU[].b
+   '$sb_searchDistUU[].c
+
+    $sb_oochUU[]                 = .05      '- distance used for pull backs and target adjustments, scaled to tool type
+
+    $sb_zPlateThickUU[]          = 0.118    '- (m2,?)
+    '  - 0.118" for std plate, your plate may be slightly different
+    '  - To instead use ShopBot/Handibot pressure plate, change $sb_ZZeroNum to 5, and
+    '    ... adjust plate thickness to 0.57, and
+    $sb_zPlateOffUU[]            = 0.5      '- (m2) offset for move from plate distinguishing pull back from Zprox and ZeroPlate
+
+    $sb_parkUU[].x               = 12
+    $sb_parkUU[].y               = 8
+    $sb_parkUU[].z               = 1.0
+   '$sb_parkUU[].a
+   '$sb_parkUU[].b
+   '$sb_parkUU[].c
+   
+    $sb_changePosUU[].x          = 4        '- (m9) for fixed location of a change
+    $sb_changePosUU[].y          = 4        '- (m9) for fixed location of a change
+    $sb_changePosUU[].z          = 1        '- (m9) for fixed location of a change; going to need to do a height check to prevent crashes here
+
+    $sb_squaringMoveUU[]         = .75      '- (m10) for Desktops  
+    $sb_squaringJerkUU[]         = 1000     '- (m10) for Desktops
+
+    $sb_current_cutter_ZoffsetUU[] = 0      '- (m2,m3,m9,m78) ... some set-ups may not use these two, but variables should exist
+
+' Close With ===================================================================================================================
+    $sb_safe_Z               = %(28)     'Temporary retreival from system vars ... see note below
+    $sb_standard_variables_PRESENT = 1   'CONFIRM ALL READ.
+
+
+END
+
+'-------------------------------------------------------------------------------------------------------------------------------
+'**NOTE:   " := " Is an OpenSBP function ("weak assign") to set a variable BUT only if not previously defined 
+'**NOTE Developers: This Macros are not yet handling proxType.
+
+'Standard Variables for ShopBot-FabMo "Macros" are a defined subset of "persistant" ($) variables available within FabMo.
+'- They may be tool-specific and so are included in the tool "profile".
+'- All Macros are written in OpenSBP so all variables are SBP "variant" type (works as number and string).
+'- The idea here is to keep the Macros and standard variable names the same for all tools, only adjusting the values for tool type.
 '
-'Naming System is: "$sb_" as identifier and camelCase with _X(axis letters) for axis specific items. 
-'- UNDERSCORES need to be used as spacers as hyphen's don't currently work in SBP files.
+'The naming system for Standard variable is: "$sb_" as identifier with camelCase name. Axes are specified with an ".axis" property (e.g. ".y")
+'    at the end of the variables.
+'Standard Variable make use of the FabMo Universal Unit system (identified by a UU at the end of the proper variable name). The last index []
+'    is defines the INCH [0] or MM [1] version of the variable. During assignment that index is left blank to trigger an updating of both versions.
+'    For example: "$sb_myTool[1][].y = 3" would cause $sb_myTool[1][0].y to be assigned 3 (the inch version of the variable) and $sb_myTool[1][1] 
+'    would be assigned 76.2 (the MM version of the variable). When the variable is subsequently used with the unit type referenced, e.g.
+'    $sb_myTool[1][%(25)], the appropriate version will be used ... here the current system unit type.
+'- UNDERSCORES need to be used as spacers in variable names as hyphen's don't currently work in FabMo files.
 '- FOR MOST MACROS these standard variable are read and converted to a local variable for use in Macro
-'- THE UNIT SYSTEM allows using either INCH values or MM values and these are handled in Macros no matter
-'    the current UNIT TYPE of the tool.
 '
 'Standard Macro File Format:  (for all relatively complex macros, to give a similar flow)
 '        - Main Program Sequence :: calling program function subroutine with GOSUBs
@@ -23,117 +133,3 @@
 '              = initialize_variables:
 '                     * makes a local version of the standard variable to prevent corruption
 '                     * handles conversion to tool measurment mode based on unit of variable 
-'
-'Further Note! These variables can be used and modified in any OpenSBP format part file or Macro
-'-   They are only immutable in the sense that they are initially defined when the profile is installed and persist from session to session.
-'-   If in doubt, RE-RUN MACRO#201 !
-'
-' ----------------------------------------------------------------
-$sb_standard_variables_PRESENT = 0  '- flags that this variables table has been read when it is set to 1 at end
-$sb_varTableUNITS        = "IN"     '- (everywhere) IN;MM Table can be in INCHEs or MMs
-                                    '-  but distance and speed values must be a consistent UNIT !!!
-$sb_hasBeenZeroed        = 0        '-  flag for whether we have been zeroed since starting or faulting; NEEDS TO BE ENABLED RYAN
-
-$sb_proxNum_X            = 3        '- (m3,?)  ... usually input 2 or 3; if using as system var; number = Input# + 50 
-$sb_proxNum_Y            = 3        '- (m3,?)  ... usually input 2 or 3
-$sb_proxNum_Z            = 3        '- (m2,m3,?) ... usually input 2 or 5
-'$sb_proxNum_A
-'$sb_proxNum_B
-'$sb_proxNum_C
-'$sb_laserOnNum
-'$sb_laserPWMnum
-$sb_proxType             = 0        '- 0=normally-open; 1=normally-closed (tools consistently use one or the other)
-'Derived Switch Values:				'- for convenience, pre-compute switch "system numbers" needed for switch reads (equals # + 50)
-$sb_proxCk_X = $sb_proxNum_X + 50
-$sb_proxCk_Y = $sb_proxNum_Y + 50
-$sb_proxCk_Z = $sb_proxNum_Z + 50
-
-$sb_homePullBack         = 0.5      '- for C3 short pullback after hitting prox (for case of longer offsets)
-$sb_homeOff_X            = 0.5      '- (m2,m3) back off a prox to Home location 
-$sb_homeOff_Y            = 0.5      '- (m2,m3) back off a prox to Home location
-$sb_homeOff_Z            = 0.15     '- (m2,m3) back off a prox to Home location
-'$sb_homeOff_A
-'$sb_homeOff_B
-'$sb_homeOff_C
-
-$sb_searchSpeed_XY       = 3.5      '- (m2,m3,?)
-$sb_searchSpeed_Z        = 1.5      '- (m2,m3,?)
-$sb_searchSpeed_Zzero    = 0.5      '- (m2) don't want any extra steps into plate
-'$sb_searchSpeed_A
-'$sb_searchSpeed_B
-'$sb_searchSpeed_C
-$sb_slowSearchSpeed_XY   = 0.5      '- (m2,m3,?)
-$sb_slowSearchSpeed_Z    = 0.25     '- (m2,m3,?)
-'$sb_slowSearchSpeed_A
-'$sb_slowSearchSpeed_B
-'$sb_slowSearchSpeed_C
-$sb_searchDist_X         = 36       '- (m2,m3,?)
-$sb_searchDist_Y         = 26       '- (m2,m3,?)
-$sb_searchDist_Z         = 6        '- (m2,m3,?)
-'$sb_searchDist_A
-'$sb_searchDist_B
-'$sb_searchDist_C
-$sb_ooch                 = .05      '- distance used for pull backs and target adjustments, scaled to tool type
-
-$sb_zZeroNum             = 1        '- (m2,?) ... usually 1; if using as system var; number = Input# + 50
-$sb_zPlateOff            = 0.5      '- (m2) offset for move from plate distinguishing pull back from Zprox and ZeroPlate
-$sb_zPlateThick          = 0.118    '- (m2,?)
-$sb_zPlateType           = "STD"    '- PRESS; 3D; STD ... use this eventually to select type
-'  - 0.118" for std plate, your plate may be slightly different
-'  - To instead use ShopBot/Handibot pressure plate, change $sb_ZZeroNum to 5, and
-'    ... adjust plate thickness to 0.57, and
-'Derived Plate Value:				'- for convenience, pre-compute switch "system" number needed for input read (equals # + 50)
-$sb_zZeroCk = $sb_zZeroNum + 50
-$sb_current_cutter_Zoffset = 0      '- (m2,m3,m9,m78) ... some set-ups may not use these two, but variables should exist
-$sb_current_cutter_Zoffset_Units = "IN" '- (m2,m3,m9,m78) ... IN or MM; can be set in different places so we need to track units
-
-
-' MTC (Manual Tool Change) Behaviors
-$ATC.type               := 0        '- set to 0 for standard MTC tools
-$ToolIn                 := 0        '- used now?
-$sb_MTCmode              = "QUIT"   '- (m9) IGNORE; QUIT; MTC ... defaulting to IGNORE for moment
-$sb_MTC_XY_mode          = "FIXED"  '- (m9) FIXED; STAY where to do tool change
-$sb_MTC_Z_mode           = "FIXED"  '- (m9) MAX; FIXED method pull-up
-$sb_MTC_Zero_mode        = "MACRO"  '- (m9) MACRO; or, DRO keypad manual method to zero Z
-$sb_MTC_skip_first       = "NO"     '- (m9) NO; YES ... add to DT Util? do we really want this?
-$sb_changePos_X          = 4        '- (m9) for fixed location of a change
-$sb_changePos_Y          = 4        '- (m9) for fixed location of a change
-$sb_changePos_Z          = 1        '- (m9) for fixed location of a change; going to need to do a height check to prevent crashes here
-$sb_TOOLcurrent          = 0        '- (m9) for manual and ATC changes
-
-$sb_dtType               = 3        ' 2=DTmax; 3=DT3
-$sb_squaringMove         = .75      '- (m10) for Desktops  
-$sb_squaringJerk         = 1000     '- (m10) for Desktops
-
-'$sb_ATCtype       - our macros have been using ...?
-'$sb_TOOLtype      - DT types were 2=DTMAX 3=DT3 need todefine others
-'... other ATC needed variables, like: ?
-'$sb_tool_change_x
-'$sb_tool_change_y
-'$sb_tool_change_safe_z
-'$sb_tool_change_z
-
-$sb_X_park               = 12
-$sb_Y_park               = 8
-$sb_Z_park               = 1.0
-'$sb_A_park
-'$sb_B_park
-'$sb_C_park
-
-'DO we need a separate special home?
-$sb_home_X               = 0         '- (m3) this would be a special offset from 0,0; only a value if using it
-$sb_home_Y               = 0         '- (m3) this would be a special offset from 0,0; only a value if using it
-
-$sb_safe_Z               = %(28)     'Temporary retreival from system vars ... see note below
-
-$ToolIn := 0                         'Initial default for std macro
-$ATC.Type := 0                       'Initial default for std macro
-
-$sb_standard_variables_PRESENT = 1   'CONFIRM ALL READ.
-
-
-'* - FUTURE: ShopBot V-Carve posts currently write an IF statement at the top of file that tests whether file measurement UNITS match current measurement UNITS of tool>
-'        ... If not, it sends control to Macro#91 for user Notification, and ends file.
-'        ... We may want to consider changing this because FabMo can handle disparate units if units are defined at start with OpenSBP or g-code.
-'* - FUTURE: We should have a sb_safe_Z variable that is consistent with VC and with g2! Just read it here and make redundant?
-'* - FUTURE: Allow hyphens in sbp var names

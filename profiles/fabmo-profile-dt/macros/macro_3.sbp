@@ -1,40 +1,31 @@
 '!FABMO!name: Home Tool
 '!FABMO!description: Automatically Set Axis Zero for XYZ and position tool
 '!FABMO!enabled:true
-'   Standard Macro Variables are read from Macro #201, only needs to happen once 
-'   2021/09/25 - Refactored (th)
-'   Note that tracking of current_cutter_Zoffset allows automatic zeroing all three axis including Z, even if re-powered
-'   ... as long as cutter is not changed (or, if zeroed at material, material and cutter have not changed)
-'   Existing Move and Jog speeds are used for a few ancillary moves
-'**NOTE:   " := " Is an OpenSBP function to set variable but only if not previously defined 
-'**NOTE Developers: FabMo SBP currently not processing variable on right side of IF ... THEN; nor, variable in system var as  %(&var) 
-'**NOTE Developers: This Macro not yet handling proxType.
+'   2026/2/8 - Refactored (th)
 
-'--- Adjust Standard Macro Variables to Current Tool Units if Needed ---
-'    ... also deal with cutter measurement setting if made in different units
-
-'--- Check to make sure Standard Macro Variables have been read
+'--- Check to make sure Standard Macro Variables have been read (these are stored in Macro#201 along with general Macro Instructions)
+&debug = 0                                                        ' Set to 1 to debug on simulator; defined in 70 as well
 $sb_standard_variables_PRESENT := 0								  ' Define presence-test variable if it does not exist
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+$ATC.type := 0                                                    ' Set ATC.type designation if it does not exist
+$sb_current_cutter_ZoffsetUU[] := .25                             ' Initialize this variable in IN for case tool cutter not yet zeroed
 
-
-' === ATC Status Checks ===
+'--- Preliminary ATC Status Checks (for optional ATC)
 IF $ATC.Type == 0 THEN GOTO OK
-C75
+CN,75                                                             ' ATC status check and load CN,70                                                             ' Load ATC Varibles (and local variables from #201)
 OK:
 
-' === Main Program ===
+' === Main Program =============
 &xyHOMED = false
-GOSUB initialize_variables
-' --- Main Program Sequence ---
-Z3    ' zeoring all axes at their current location (sets worst case homing distances)l  ##TABLE BASE?
+GOSUB initialize_local_variables                                  ' Local variables used to prevent corruption of saved values
+Z3                                                                ' Zeoring all axes at their current location (sets worst case homing distances)
 GOSUB backOffProx_if_needed
 GOSUB home_z
 GOSUB home_x
 GOSUB home_y
 &xyHOMED = true
 END
-'==============================
+'===============================
 
 ' --- Primary Subroutines ---                                      
 home_z:
@@ -46,14 +37,13 @@ home_z:
     IF %(3)== &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
     ZZ
     JZ, (-1 * &homeOff_Z)
-    IF $ATC.Type > 0 THEN GOTO Z_OFFSET
-
-    VA,,,($sb_current_cutter_Zoffset * &Zoff_mult),,,,,,0,,     ' Set 0 based on previous cutter ZZero
-    RETURN
-
-    Z_OFFSET:
-    VA,,,-1*($tools[$ATC.ToolIn].H + $ATC.PlateOffset),,,,,,0
-	RETURN
+    IF $ATC.Type > 0 THEN GOTO Z_OFFSET_ATC
+   Z_OFFSET: 
+      VA,,,(-1 * $sb_current_cutter_ZoffsetUU[&u]),,,,,,0        ' Set 0 and maintain cutter offset
+      RETURN
+   Z_OFFSET_ATC:                                                 ' Handle cutter offset for ATC
+      VA,,,-1*($toolsUU[$ATC.ToolIn][&u].H + $atcUU[&u].PlateOffset),,,,,,0
+	  RETURN
 
 home_x:
     PX, (-1 * &searchDist_X), &searchSpeed_XY, &proxNum_X       ' PX "probes" for a switch or contact in the X axis 
@@ -74,21 +64,17 @@ home_y:
     JY, &homePullBack
     &target_ck = (-1 * (&homeOff_Y + &ooch))               
     PY, &target_ck, &slowSearchSpeed_XY, &proxNum_Y 
-    IF %(2)== &target_ck THEN GOTO fail_missed_target
+    IF %(2)== &target_ck THEN GOSUB fail_missed_target
     ZY
     &change_Offset_Y = %(8)+ &homeOff_Y
     JY, &homeOff_Y
-	VA,,0,,,,,,0,,,,                                     
-	RETURN
+	VA,,0,,,,,,0,,,,
 
-offset_z_cutter:
-    PAUSE "XY Homing Complete.", OKTEXT="Continue ..."
-    VA,,,($sb_current_cutter_Zoffset * &Zoff_mult),,,,,,0,,     ' Set 0 based on previous cutter ZZero
+    DIALOG "XY Homing Complete <br> (... will continue in 5 sec)", TIMER=6, NOBUTTON=true
     RETURN
-
+END
 
 ' --- Checks and Failures ---
-
   backOffProx_if_needed:                                        ' Managing prox switches is complicated by multiple arrangements
       &proxTriggered = 0
       GOSUB checkProxs
@@ -117,58 +103,44 @@ offset_z_cutter:
       RETURN
 
   fail_missed_target:
-      PAUSE "Target Not Triggered! Center and Try C3 again."      ' Did not hit target.
+      IF &debug = 1 THEN GOTO JustReport
+      DIALOG "Target Not Triggered! (Started beyond prox switch?) Center and Try C3 again.", CANCELTEXT="Exit"
       END
+    JustReport:
+      DIALOG "DEBUG MODE: At a missed target; will continue to debug!"
+      RETURN
 
   no_variables:
-        CN,201
-        RETURN
+      CN,201
+      RETURN
+END      
 
-'--- Initialize Variables and Adjust Standard Macro Variables for Current Tool and Conditions as Needed
-initialize_variables:
-    &proxNum_Z = $sb_proxNum_Z
-    &check_prox_Z = $sb_proxCk_Z							  
-    &proxNum_X = $sb_proxNum_X
-    &check_prox_X = $sb_proxCk_X							  
-    &proxNum_Y = $sb_proxNum_Y
-    &check_prox_Y = $sb_proxCk_Y							  
+initialize_local_variables:
+    &u = %(25)                                                     ' Set current UNIT index
 
-  'Adjust to current UNITS of tool (handles whether tool Macro Variables are for INCHES or MM)
-	&dist_mult = 1.0
-	&Zoff_mult = 1.0
-	IF %(25) == 1 THEN GOTO tool_MM							  ' Read UNIT of Tool; System Variable #25
-	  tool_IN:
-	    $sb_current_cutter_Zoffset := .25                     ' Initialize variable in IN for case tool cutter not zeroed
-		$sb_current_cutter_Zoffset_Units := 0
-		IF $sb_current_cutter_Zoffset_Units == "IN" THEN GOTO ok_IN
-		  &Zoff_mult = 0.0393701
-		ok_IN:
-	    IF $sb_varTableUNITS == "IN" THEN GOTO continue_with_variables
-		&dist_mult = 0.0393701                                ' Defined in MM: Multiplier to redefine distances from mm to inches 
-	    GOTO continue_with_variables
-	  tool_MM:
-	    $sb_current_cutter_Zoffset := 6.35                    ' Initialize variable in MM for case tool cutter not zeroed
-		$sb_current_cutter_Zoffset_Units := 1
-		IF $sb_current_cutter_Zoffset_Units == "MM" THEN GOTO ok_MM
-		  &Zoff_mult = 25.4
-		ok_MM:
-	    IF $sb_varTableUNITS == "MM" THEN GOTO continue_with_variables
-		&dist_mult = 25.4                                     ' Defined in IN: Multiplier to redefine distances from inches to mm 
-	    GOTO continue_with_variables
-  'continue adjusting units for current working variables ...
-	continue_with_variables:
-		&target_ck = 0
-		&ooch = $sb_ooch * &dist_mult
-		&backOff_dist = &ooch * 5
- 		&searchDist_Z = $sb_searchDist_Z * &dist_mult
-		&searchSpeed_Z = $sb_searchSpeed_Z * &dist_mult
-		&slowSearchSpeed_Z = $sb_slowSearchSpeed_Z * &dist_mult
-		&searchDist_X = $sb_searchDist_X * &dist_mult
-		&searchDist_Y = $sb_searchDist_Y * &dist_mult
-		&searchSpeed_XY = $sb_searchSpeed_XY * &dist_mult
-		&slowSearchSpeed_XY = $sb_slowSearchSpeed_XY * &dist_mult
-		&homePullBack = $sb_homePullBack * &dist_mult
-		&homeOff_Z = $sb_homeOff_Z * &dist_mult
-		&homeOff_X = $sb_homeOff_X * &dist_mult
-		&homeOff_Y = $sb_homeOff_Y * &dist_mult
-	RETURN
+    &proxNum_Z = $sb_proxNum.z
+    &check_prox_Z = $sb_proxCk.z							  
+    &proxNum_X = $sb_proxNum.x
+    &check_prox_X = $sb_proxCk.x							  
+    &proxNum_Y = $sb_proxNum.y
+    &check_prox_Y = $sb_proxCk.y
+    &zZeroNum = $sb_zZeroNum
+    &zZeroCk = $sb_zZeroCk
+							  
+	&target_ck = 0
+	&ooch = $sb_oochUU[&u]
+	&backOff_dist = &ooch * 5
+	&searchDist_Z = $sb_searchDistUU[&u].z
+	&searchSpeed_Z = $sb_searchSpeedUU[&u].z
+	&slowSearchSpeed_Z = $sb_slowSearchSpeedUU[&u].z
+	&searchDist_X = $sb_searchDistUU[&u].x
+	&searchDist_Y = $sb_searchDistUU[&u].y
+	&searchSpeed_XY = $sb_searchSpeedUU[&u].xy
+	&slowSearchSpeed_XY = $sb_slowSearchSpeedUU[&u].xy
+	&homePullBack = $sb_homePullBackUU[&u]
+	&homeOff_Z = $sb_homeOffUU[&u].z
+	&homeOff_X = $sb_homeOffUU[&u].x
+	&homeOff_Y = $sb_homeOffUU[&u].y
+
+    RETURN
+END
