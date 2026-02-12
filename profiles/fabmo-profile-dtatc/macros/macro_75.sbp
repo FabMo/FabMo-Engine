@@ -1,62 +1,66 @@
 '!FABMO!name:ATC Status Check
 '!FABMO!description:Check ATC Status in a file
 '!FABMO!enabled:true
+'   2026/2/05 - Refactored (th)
+
 ' ATC STATUS CHECK FOR NORMAL ATC FUNCTIONS
+&debug = 0
 ' Main =================================================================
-C70																		' >> Load ATC Varibles
-IF $ATC.ToolIn > 0 THEN GOSUB CHECK_TOOL_IN								' >> If we think we have a tool inserted, check to make sure
-IF $ATC.ToolIn == 0 THEN GOSUB CHECK_TOOL_OUT							' >> If we think we hace no tool inserted, check to make sure
+CN,70                                                                           ' Load ATC Varibles (and local variables from #201)
+&u = %(25)
+IF $ATC.ToolIn > 0 THEN GOSUB CHECK_TOOL_IN                                     ' If we think we have a tool inserted, check to make sure
+IF $ATC.ToolIn == 0 THEN GOSUB CHECK_TOOL_OUT                                   ' If we think we hace no tool inserted, check to make sure
 END
 
 ' Subroutines ==========================================================
 CHECK_TOOL_IN:
-	IF %($Tool_Sensor_Status) == 0 THEN $ATC.ToolIn = 0					' >> Check tool present sensor to confirm tool present; if no tool then set ToolIn = 0
-	RETURN
+    IF %($Tool_Sensor_Status) == 0 THEN $ATC.ToolIn = 0                         ' Check tool present sensor to confirm tool present; if no tool then set ToolIn = 0
+    RETURN
 
 CHECK_TOOL_OUT:
-	IF %($Tool_Sensor_Status) == 1 THEN GOSUB REMOVE_TOOL				' >> If there's a tool in the spindle, we don't know what it is, tell user to remove it
-    $ATC.ToolIn = 0														' >> Set ToolIn to 0
-    IF &ERROR = 1 THEN GOSUB HOME_Z										' >> We have no idea about z offset so re-home Z
-	RETURN
+    IF %($Tool_Sensor_Status) == 1 THEN GOSUB REMOVE_TOOL                       ' If there's a tool in the spindle, we don't know what it is, tell user to remove it
+    $ATC.ToolIn = 0                                                             ' Set ToolIn to 0
+    IF &ERROR = 1 THEN GOSUB HOME_Z                                             ' We have no idea about z offset so re-home Z
+    RETURN
 
 REMOVE_TOOL:
-	&ERROR = 1															' >> Flag the fact we've had an error so we can know to rehome Z afterwards
-	&TRY = 0															' >> Reset our "try" counter for user removal
-  	GOSUB ASK_REMOVE                 		                   			' >> Check to see if they've removed the tool.
-  	IF &TRY = 1 THEN GOSUB ASK_REMOVE         	        				' >> Give them one more chance if they didn't remove the tool.
-  	IF &TRY = 2 THEN GOSUB TOOL_NOT_REMOVED				  				' >> Too many attempts ... exit file.
-  	&TRY = 0															' >> Reset try counter for cleanliness.
-	RETURN
+    &ERROR = 1                                                                  ' Flag the fact we've had an error so we can know to rehome Z afterwards
+    &TRY = 0                                                                    ' Reset our "try" counter for user removal
+      GOSUB ASK_REMOVE                                                          ' Check to see if they've removed the tool.
+      IF &TRY = 1 THEN GOSUB ASK_REMOVE                                         ' Give them one more chance if they didn't remove the tool.
+      IF &TRY = 2 THEN GOSUB TOOL_NOT_REMOVED                                   ' Too many attempts ... exit file.
+      &TRY = 0                                                                  ' Reset try counter for cleanliness.
+    RETURN    
 
 ASK_REMOVE:
-  	PAUSE "Unknown tool in spindle. Press green button on gantry to remove tool."	' >> Prompt user to remove current tool
-  	IF %($Tool_Sensor_Status) = 0 THEN RETURN							' >> If sensor shows that tool is removed -- return to main routine
-  	&TRY = &TRY + 1														' >> If sensor shows that tool is still present, increment try counter.	
-  	PAUSE "Tool removal failed; try again."								' >> Show error message before returning to main and prompting user to try again
-  	RETURN
+      PAUSE "Unknown tool in spindle. Press green button on gantry to remove tool."     ' Prompt user to remove current tool
+      IF %($Tool_Sensor_Status) = 0 THEN RETURN                                 ' If sensor shows that tool is removed -- return to main routine
+      &TRY = &TRY + 1                                                           ' If sensor shows that tool is still present, increment try counter.     
+      PAUSE "Tool removal failed; try again."                                   ' Show error message before returning to main and prompting user to try again
+      RETURN
 
 HOME_Z:
-	PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z						' >> PZ "probes" for a switch or contact in the Z axis
-    ZZ																	' >> Reset working zero
-    JZ, (-1 * &homeOff_Z)												' >> Pull back from prox
-    &target_ck = &homeOff_Z + &ooch										' >> New target for detecting error just past prox
-    PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z						' >> Slowly probe for prox in final accurate check
-    IF %(3)== &target_ck THEN GOSUB fail_missed_target					' >> Look at current Z location to see if we went past the target
+    PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z                              ' PZ "probes" for a switch or contact in the Z axis
+    ZZ                                                                         ' Reset working zero
+    JZ, (-1 * &homeOff_Z)                                                      ' Pull back from prox
+    &target_ck = &homeOff_Z + &ooch                                            ' New target for detecting error just past prox
+    PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z                             ' Slowly probe for prox in final accurate check
+    IF %(3)== &target_ck THEN GOSUB fail_missed_target                         ' Look at current Z location to see if we went past the target
     ZZ
     JZ, (-1 * &homeOff_Z)
-    VA,,,0,,,,,,0,,,                                            		' >> Set 0 location and Table Base Zero
-    VA,,,-1*($tools[$ATC.ToolIn].H + $ATC.PlateOffset)					' >> Apply Offset for no tool
-    PAUSE "Z Home location has been recovered using Z Limit switch"		' >> Let user know that we've reset their Z home due to a problem. 
-	RETURN
+    VA,,,0,,,,,,0,,,                                                           ' Set 0 location and Table Base Zero
+    VA,,,-1*($toolsUU[$ATC.ToolIn][&u].h + $atcUU[&u].PlateOffset)             ' Apply Offset for no tool
+    PAUSE "Z Home location has been recovered using Z Limit switch"            ' Let user know that we've reset their Z home due to a problem. 
+    RETURN
 
 ' Error Messages =======================================================
 TOOL_NOT_REMOVED:
-  	DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit" ' >> Didn't remove tool
-  	END
-  	RETURN
+      DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit"   ' Did not remove tool
+      END
+      RETURN
     
 fail_missed_target:
-    PAUSE "Target Not Triggered! Lower Z Axis and run C3 (XYZ Homing)." ' >> Did not hit target.
+    PAUSE "Target Not Triggered! Lower Z Axis and run C3 (XYZ Homing)."        ' Did not hit target.
     END
     
 ' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -1,7 +1,7 @@
 '!FABMO!name:ATC Toolchange -- User Initiated
 '!FABMO!description:Swaps  tools using Automatic Tool Changer - ATC
 '!FABMO!enabled:true
-C70
+CN,70
 &type = $ATC.type
 If &type = 7 Then GoTo IsDTATC
 If &type = 6 Then GoTo IsATC
@@ -11,27 +11,30 @@ If &type = 3 Then GoTo IsATC
 If &type = 2 Then GoTo IsATC
 If &type = 1 Then GoTo IsATC
 If &type = 0 Then GoTo IsMTC
-
 GOTO Tool_Type_Error
+END
+
 
 IsMTC:
-	C9
-	GoTo IsDone
+    CN,9
+    GoTo IsDone
 
 IsATC:
-	PAUSE "<p>Request Tool # to Load <br> (or: 0 = Return Current Tool; -1 = Manual Change)</p>", &tool
-	C71
-	GoTo IsDone
+    PAUSE "<p>Request Tool # to Load <br> (or: 0 = Return Current Tool; -1 = Manual Change)</p>", &tool
+    CN,71
+    GoTo IsDone
 
 IsDTATC:
-	PAUSE "<p>Request Tool # to Load <br> (or: 0 = Return Current Tool; -1 = Manual Change)</p>", &tool
-	C71
-	GoTo IsDone
+    PAUSE "<p>Request Tool # to Load <br> (or: 0 = Return Current Tool; -1 = Manual Change)</p>", &tool
+    CN,71
+    GoTo IsDone
 
 IsDone:
-END
+    END
 
 Tool_Type_Error:
 'Tool type not set, please check your ShopBot setup to make sure you have selected a tool type. 
 PAUSE
 GOTO IsDone
+END
+
