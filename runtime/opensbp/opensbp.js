@@ -1777,16 +1777,30 @@ SBPRuntime.prototype._varExists = function (identifier) {
         const hasUnitPlaceholder = accessPath.some(part => part.type === "unit_placeholder");
         
         if (hasUnitPlaceholder) {
-            // For UU variables, check if the base variable exists and has the dual-unit structure
+            // For UU variables with placeholder, we need to check the FULL path
+            // by checking both [0] and [1] versions of the path
             let value = variables[variableName];
             
-            // Navigate to the level just before the unit placeholder
+            // Build the paths for both units
+            const pathBefore = [];
+            const pathAfter = [];
+            let foundPlaceholder = false;
+            
             for (let part of accessPath) {
                 if (part.type === "unit_placeholder") {
-                    // Check if both [0] and [1] exist at this level (indicating a UU variable was created)
-                    return value && (0 in value) && (1 in value);
+                    foundPlaceholder = true;
+                    continue;
                 }
                 
+                if (foundPlaceholder) {
+                    pathAfter.push(part);
+                } else {
+                    pathBefore.push(part);
+                }
+            }
+            
+            // Navigate to the point before the placeholder
+            for (let part of pathBefore) {
                 let key;
                 if (part.type === "index") {
                     key = this._eval(part.value);
@@ -1800,6 +1814,45 @@ SBPRuntime.prototype._varExists = function (identifier) {
                     return false;
                 }
             }
+            
+            // Check if both [0] and [1] exist at the placeholder level
+            if (!(value && (0 in value) && (1 in value))) {
+                return false;
+            }
+            
+            // If there are properties after the placeholder, check both unit versions
+            if (pathAfter.length > 0) {
+                let value0 = value[0];
+                let value1 = value[1];
+                
+                for (let part of pathAfter) {
+                    let key;
+                    if (part.type === "index") {
+                        key = this._eval(part.value);
+                    } else if (part.type === "property") {
+                        key = part.name;
+                    }
+                    
+                    // Both unit versions must have the full path
+                    if (value0 && key in value0) {
+                        value0 = value0[key];
+                    } else {
+                        return false;
+                    }
+                    
+                    if (value1 && key in value1) {
+                        value1 = value1[key];
+                    } else {
+                        return false;
+                    }
+                }
+                
+                // Both final values must be defined
+                return value0 !== undefined && value1 !== undefined;
+            }
+            
+            // No properties after placeholder - just check dual structure exists
+            return true;
         }
 
         // Normal variable existence check (non-UU or no placeholder)
