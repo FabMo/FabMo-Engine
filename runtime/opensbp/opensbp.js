@@ -1147,9 +1147,6 @@ SBPRuntime.prototype.prime = function () {
 // The pending error is picked up by _executeNext and the program is ended as a result.
 //   error - The error message
 SBPRuntime.prototype._abort = function (error) {
-    // this.pending_error = error;
-    //log.info("####=._abort");
-    this.driver.quit();
     this._end(error);
 };
 
@@ -1157,33 +1154,38 @@ SBPRuntime.prototype._abort = function (error) {
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = async function (error) {
-    // No Error populate with any pending error
-    //log.info("####=._end");
+    var error_msg;
     if (!error && this.pending_error) {
         error = this.pending_error;
     }
 
-    if (this.pending_error) {
-        log.error("Pending error: " + this.pending_error);
-        //cleanup("early abort");
+    // CRITICAL: Only exit early if we're being called recursively AND there's already an error
+    // Check if this is a recursive call by seeing if we're already cleaning up
+    if (this.pending_error && error && this.pending_error !== error) {
+        log.error("Recursive call to _end() detected - already processing: " + this.pending_error);
         log.debug("Exiting _end method on ABORT");
         return;
     }
+    
+    // Set pending_error NOW (after recursive check)
+    if (error && !this.pending_error) {
+        this.pending_error = error;
+    }
 
-    // Normalize the error ending state; pass as much information as possible to report
-    // Standardizing reporting format to:
-    //                    An Error Occurred!
-    //         @line-<line number>:  <error message>
-    // ... with some variations
-    this.pending_error = error;
-    let error_msg = null;
+    // Normalize the error message
     if (error) {
         if (error instanceof Error) {
-            // Include filename in error message
             const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
             
-            if (Object.prototype.hasOwnProperty.call(error, "offset")) {
-                error_msg = `${filePrefix}@line-${error.offset}(${error.column}):  ${error.message}`;
+            // Check if error message already starts with @line-
+            if (error.message && error.message.startsWith('@line-')) {
+                error_msg = `${filePrefix}${error.message}`;
+            } else if (Object.prototype.hasOwnProperty.call(error, "offset")) {
+                if (error.column !== undefined) {
+                    error_msg = `${filePrefix}@line-${error.offset}(${error.column}): ${error.message}`;
+                } else {
+                    error_msg = `${filePrefix}@line-${error.offset}: ${error.message}`;
+                }
             } else if (Object.prototype.hasOwnProperty.call(error, "message")) {
                 error_msg = `${filePrefix}@line-${this.pc + 1}:  ${error.message}`;
             } else {
@@ -1199,14 +1201,15 @@ SBPRuntime.prototype._end = async function (error) {
     if (!error_msg && this.end_message) {
         error_msg = this.end_message;
     }
-
+    
     log.debug("Calling the non-nested (toplevel) end");
+    
     // Log the error for posterity
     if (error) {
         log.error(error);
     }
 
-    //// Clear runtime state
+    // Clear runtime state
     this.resetRuntimeState();
 
     // Clear the internal state of the runtime
@@ -1219,7 +1222,7 @@ SBPRuntime.prototype._end = async function (error) {
         try {
             await this.machine.restoreDriverState();
 
-            // Trigger the save process without making any specific updates
+            // Trigger the save process
             config.opensbp.update({}, (err) => {
                 if (err) {
                     log.error("Failed to save opensbp.json:", err);
@@ -1235,9 +1238,8 @@ SBPRuntime.prototype._end = async function (error) {
                 this.machine.status.job = null;
             }
 
-            // Add null check before calling setState
+            // Set the machine state with error message
             if (this.machine && typeof this.machine.setState === 'function') {
-                // Set the machine state
                 if (error_msg) {
                     this.machine.setState(this, "idle", { error: error_msg });
                 } else {
@@ -1248,7 +1250,6 @@ SBPRuntime.prototype._end = async function (error) {
             }
         } catch (err) {
             log.error("Error during machine state restoration:", err);
-            // Add null check here too
             if (this.machine && typeof this.machine.setState === 'function') {
                 this.machine.setState(this, "stopped", { error: error_msg || err.message });
             } else {
@@ -1256,14 +1257,13 @@ SBPRuntime.prototype._end = async function (error) {
             }
         }
     } else {
-        // If there's no machine, close the stream if necessary
         log.warn("No machine available during SBPRuntime._end - likely due to disconnection");
         if (this.stream) {
             this.stream.end();
         }
     }
 
-    // Emit an 'end'; a sort of general purpose callback
+    // Emit an 'end' event
     this.emit("end", this);
 };
 
@@ -1292,10 +1292,21 @@ SBPRuntime.prototype.resetRuntimeState = function () {
 SBPRuntime.prototype._executeCommand = function (command, callback) {
     if (command.cmd in this && typeof this[command.cmd] == "function") {
         // Command is valid and has a registered handler
-        //log.info("####=._executeCommand");
-
+        
         // Evaluate the command arguments and extract the handler
-        var args = this._evaluateArguments(command.cmd, command.args);
+        let args;
+        try {
+            args = this._evaluateArguments(command.cmd, command.args);
+        } catch (evalError) {
+            // Error evaluating arguments (likely undefined variable)
+            const errorMsg = `@line-${this.pc + 1}: ${evalError.message}`;
+            log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
+            
+            this.pc += 1;
+            this._abort(new Error(errorMsg));
+            return true;
+        }
+        
         var f = this[command.cmd].bind(this);
 
         if (f.length > 1) {
@@ -1304,17 +1315,11 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
                 f(
                     args,
                     function commandComplete() {
-                        // advance the pc and do the callback to move on to next instruction
-                        // TODO - We should allow commands to use an errback?  This would allow
-                        //        for asynchronous errors in addition to the throw
                         this.pc += 1;
                         callback();
                     }.bind(this)
                 );
             } catch (e) {
-                // TODO - Should we throw the error here?!  This feels like an issue. (Sturmer, 5 years ago)
-                // Update(th-6/15/23): Yes, we should throw the error here.  Otherwise, the error is
-                //         swallowed and the program continues to run. Done.
                 log.error("Error in a stack-breaking command");
                 var e_more = e + " (in [" + command.cmd + "] Line-" + this.pc + ").";
                 log.error(e_more);
@@ -1331,14 +1336,12 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
                 throw e;
             }
             this.pc += 1;
-            // We use the callback, stack breaker or not
             if (callback != undefined) {
                 setImmediate(callback);
             }
             return false;
         }
     } else {
-        // We don't know what this is.  Whatever it is, it doesn't break the stack.
         this._unhandledCommand(command);
         this.pc += 1;
         return false;
@@ -1521,19 +1524,25 @@ SBPRuntime.prototype._execute = async function (command, callback) {
             }
 
         case "assign":
-            this.pc += 1;
             try {
                 var value = this._eval(command.expr);
                 await this._assign(command.var, value);
+                
+                // Only increment after success
+                this.pc += 1;
+                
                 if (callback) {
                     callback();
                 }
             } catch (assignError) {
-                const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
-                log.error(`${filePrefix}Assignment error: ${assignError.message}`);
+                const errorMsg = `@line-${this.pc + 1}: ${assignError.message}`;
+                log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
+                
+                // Increment before aborting
+                this.pc += 1;
                 
                 if (!this.pending_error && this.started) {
-                    this._abort(assignError);
+                    this._abort(new Error(errorMsg));
                 } else {
                     log.debug("Ignoring assignment error during cleanup: " + assignError.message);
                 }
@@ -1542,47 +1551,65 @@ SBPRuntime.prototype._execute = async function (command, callback) {
             return true;
 
         case "weak_assign":
-            this.pc += 1;
             if (!this._varExists(command.var)) {
                 try {
                     var value = this._eval(command.expr);
                     await this._assign(command.var, value);
+                    
+                    // Only increment after success
+                    this.pc += 1;
+                    
                     if (callback) {
                         callback();
                     }
                 } catch (assignError) {
-                    log.error("Weak assignment error: " + assignError.message);
+                    const errorMsg = `@line-${this.pc + 1}: ${assignError.message}`;
+                    log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
+                    
+                    // Increment before aborting
+                    this.pc += 1;
                     
                     if (!this.pending_error && this.started) {
-                        this._abort(assignError);
+                        this._abort(new Error(errorMsg));
                     } else {
-                        log.debug("Ignoring assignment error during cleanup: " + assignError.message);
+                        log.debug("Ignoring weak assignment error during cleanup: " + assignError.message);
                     }
                     return true;
                 }
             } else {
+                this.pc += 1;
                 setImmediate(callback);
             }
             return true;
-
+            
         case "cond":
-            if (this._eval(command.cmp)) {
-                // This command action is for THEN RETURN, handled as highly special case; should make more consistent with GOTO and GOSUB
-                if (command.stmt && command.stmt.type === "return") {
-                    var result = this._execute(command.stmt, callback);
-                    if (result === true) {
-                        setImmediate(callback);
-                        return result;
+            try {
+                if (this._eval(command.cmp)) {
+                    // Conditional is true - execute the statement
+                    if (command.stmt && command.stmt.type === "return") {
+                        var result = this._execute(command.stmt, callback);
+                        if (result === true) {
+                            setImmediate(callback);
+                            return result;
+                        }
+                    } else {
+                        return this._execute(command.stmt, callback);
                     }
                 } else {
-                    return this._execute(command.stmt, callback); // Warning RECURSION!
+                    this.pc += 1;
+                    setImmediate(callback);
+                    return true;
                 }
-            } else {
+            } catch (evalError) {
+                // Error evaluating the condition (likely undefined variable)
+                const errorMsg = `@line-${this.pc + 1}: ${evalError.message}`;
+                log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
+                
                 this.pc += 1;
-                setImmediate(callback);
+                this._abort(new Error(errorMsg));
                 return true;
             }
-            break; // to keep eslint happy
+            break;
 
         case "comment":
             var comment = command.comment.join("").trim();
@@ -1599,74 +1626,67 @@ SBPRuntime.prototype._execute = async function (command, callback) {
 
         case "dialog":
         case "pause":
-            // PAUSE as a word is overloaded.  In a perfect world there would be distinct states
-            // ... for pause and feedhold, but here describes both the file-initiated and the user-initiated stop.
-
+            try {
+                var arg = command.expr ? this._eval(command.expr) : null;
+            } catch (evalError) {
+                const errorMsg = `@line-${this.pc + 1}: ${evalError.message}`;
+                log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
+                
+                this.pc += 1;
+                this._abort(new Error(errorMsg));
+                return true;
+            }
+            
             this.pc += 1;
-            var arg = command.expr ? this._eval(command.expr) : null; // collect for handing TIMER in old style
-            var input_var = command.var; // collect for handling INPUT in old style
+            
+            var input_var = command.var;
             var params = command.params || {};
-            //log.debug("####1PAUSE command parameters: " + JSON.stringify(params));
-            //log.debug("PAUSE command arg: " + JSON.stringify(arg));
-            //log.debug("PAUSE command: " + JSON.stringify(command));
 
-            // In simulation/PREVIEW, just don't do anything
             if (!this.machine) {
                 setImmediate(callback);
                 return true;
             }
 
-            // Handle an old style TIMER message
             var message = arg;
             if (u.isANumber(arg)) {
                 message = "Paused for " + arg + " seconds.";
             }
-            // Try to construct the new form of modal display object with current options
 
-            // Deal with the old stye previous comment line if it exists and we have no other data
-            //            if (!message && !normalizedParams && !normalizedParams.timer) {
-            if (!message && !normalizedParams) {
-                // If a message is not provided and this is not a timer, use the comment from the previous line.
-                var last_command = this.program[this.pc - 2];
-                if (last_command && last_command.type === "comment") {
-                    var commandTextArray = last_command["comment"];
-                    var commandText = commandTextArray.join("");
-                    if (commandText && commandText.length > 0) {
-                        message = commandText.trim();
-                    } else {
-                        message = "Paused ...";
+            // Normalize the parameter structure
+            let normalizedParams = {};
+            if (params) {
+                Object.keys(params).forEach((key) => {
+                    try {
+                        const paramValue = params[key];
+                        if (typeof paramValue === 'object' && (paramValue.type === 'user_variable' || 
+                            paramValue.type === 'persistent_variable' || paramValue.type === 'system_variable')) {
+                            normalizedParams[key.toLowerCase()] = this._eval(paramValue);
+                        } else {
+                            normalizedParams[key.toLowerCase()] = paramValue;
+                        }
+                    } catch (evalError) {
+                        log.debug(`[PAUSE/DIALOG PARAM DEBUG] Error in param ${key}: ${evalError.message}`);
+                        
+                        const errorMsg = `@line-${this.pc}: Error evaluating ${key} parameter: ${evalError.message}`;
+                        log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
+                        
+                        const error = new Error(errorMsg);
+                        log.debug(`[PAUSE/DIALOG PARAM DEBUG] Created param error: ${error.message}`);
+                        
+                        this._abort(error);
+                        return true;
                     }
-                } else {
-                    message = "Paused ...";
-                }
+                });
             }
-
-            // Normalize params keys to lowercase
-            var normalizedParams = {};
-            for (var key in params) {
-                if (Object.prototype.hasOwnProperty.call(params, key)) {
-                    normalizedParams[key.toLowerCase()] = params[key];
-                }
-            }
-
-            //log.debug("####1.5PAUSE command parameters: " + JSON.stringify(normalizedParams));
-
-            // Make Our list for modal display and start by bringing in old TIMER and MESSAGE format
-            // var modalParams = {};
-            // modalParams.input = null; // Initialize input variable
-            // modalParams.input.name = null;
-            // modalParams.input.type = null;
-            // modalParams.input.access = [];
 
             var modalParams = {
-                message: null, // Default value for message
+                message: null,
                 input: {
-                    name: null, // Nested property for input name
-                    type: null, // Nested property for input type
+                    name: null,
+                    type: null,
                 },
-                okText: null, // Default value for okText
-                cancelText: null, // Default value for cancelText
-                // other properties?
+                okText: null,
+                cancelText: null,
             };
 
             if (u.isANumber(arg)) {
@@ -1677,60 +1697,44 @@ SBPRuntime.prototype._execute = async function (command, callback) {
             }
             modalParams.message = message;
 
-            //log.debug("####2PAUSE modalParams: " + JSON.stringify(modalParams));
-
-            // Handle the user-inputting of a variable; two methods, two types
             if (input_var) {
-                // old style input variable request
                 modalParams.input.name = input_var;
             } else if (normalizedParams.input) {
-                // New input request options (Y/N) are constructed here rather than in parser
                 if (normalizedParams.input[0] == "&") {
                     normalizedParams.type = "user_variable";
-                    // Strip the leading '&' from the variable name
                     normalizedParams.input = normalizedParams.input.substring(1);
                 } else if (normalizedParams.input[0] == "$") {
                     normalizedParams.type = "persistent_variable";
-                    // Strip the leading '$' from the variable name
                     normalizedParams.input = normalizedParams.input.substring(1);
                 } else {
-                    throw new Error("Invalid variable name: " + normalizedParams.input);
+                    const errorMsg = `@line-${this.pc}: Invalid variable name: ${normalizedParams.input}`;
+                    log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
+                    
+                    const error = new Error(errorMsg);
+                    error.offset = this.pc;
+                    
+                    this._abort(error);
+                    return true;
                 }
                 modalParams.input.type = normalizedParams.type;
-                modalParams.input.name = normalizedParams.input; //"&last_YN"
-                log.debug(modalParams.input.name);
+                modalParams.input.name = normalizedParams.input;
             }
 
-            // Handle the other optional parameters
-            if (normalizedParams.title) {
-                modalParams.title = normalizedParams.title;
-            }
-            if (Object.prototype.hasOwnProperty.call(normalizedParams, "oktext")) {
-                modalParams.okText = normalizedParams.oktext; // Assign the value even if it's false
-                modalParams.okFunc = normalizedParams.okfunc || "resume";
-            }
-            if (Object.prototype.hasOwnProperty.call(normalizedParams, "canceltext")) {
-                modalParams.cancelText = normalizedParams.canceltext; // Assign the value even if it's false
-                modalParams.cancelFunc = normalizedParams.cancelfunc || "quit";
-            }
-            if (normalizedParams.detail) {
-                modalParams.detail = normalizedParams.detail;
-            }
-            if (normalizedParams.nobutton !== undefined) {
-                modalParams.noButton = normalizedParams.nobutton;
-            }
-            if (normalizedParams.timer !== undefined) {
+            modalParams.title = normalizedParams.title || null;
+            modalParams.detail = normalizedParams.detail || null;
+            modalParams.okText = normalizedParams.oktext || null;
+            modalParams.okFunc = normalizedParams.okfunc || null;
+            modalParams.cancelText = normalizedParams.canceltext || null;
+            modalParams.cancelFunc = normalizedParams.cancelfunc || null;
+            modalParams.noButton = normalizedParams.nobutton || false;
+
+            if (normalizedParams.timer) {
                 modalParams.timer = normalizedParams.timer;
             }
 
-            //log.debug("####4PAUSE modalParams before packaging: " + JSON.stringify(modalParams));
-
-            // Use utility function to package modal parameters
             modalParams = u.packageModalParams(modalParams);
-            //log.debug("####5PAUSE modalParams after packaging: " + JSON.stringify(modalParams));
             this.paused = true;
 
-            //Set driver in paused state with modalParams data
             this.machine.driver.pause_hold = true;
             this.machine.setState(this, "paused", modalParams);
             return true;
@@ -2206,7 +2210,10 @@ SBPRuntime.prototype._analyzeLabels = function () {
             switch (line.type) {
                 case "label":
                     if (line.value in this.label_index) {
-                        throw new Error(`@line-${this.label_index[line.value]} and @line-${i + 1}: Duplicate labels `);
+                        // Report ACTUAL line numbers (not +1)
+                        const firstLine = this.label_index[line.value] + 1;
+                        const duplicateLine = i + 1;
+                        throw new Error(`@line-${firstLine} and @line-${duplicateLine}: Duplicate labels "${line.value}"`);
                     }
                     this.label_index[line.value] = i;
                     break;
