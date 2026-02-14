@@ -60,86 +60,168 @@ function probe(runtime, opts) {
 
 exports.PX = function (args, callback) {
     this.cmd_posx = undefined;
-    probe(this, {
-        inp: args[2],
-        feed: args[1],
-        dist: {
-            X: args[0],
-        },
-    });
-    callback();
+    try {
+        probe(this, {
+            inp: args[2],
+            feed: args[1],
+            dist: {
+                X: args[0],
+            },
+        });
+        callback();
+    } catch (error) {
+        // Log the error but call callback with no args to maintain
+        // compatible callback signature with other stack-breaking commands
+        const errorMsg = error.message || error;
+        const log = require('../../log').logger('sbp');
+        log.error(`Probe error: ${errorMsg}`);
+        
+        // Abort execution with the error
+        setImmediate(() => {
+            // Use the runtime's _abort mechanism directly instead of passing through callback
+            this._abort(new Error(errorMsg));
+            // Still call callback to avoid hanging
+            callback();
+        });
+    }
 };
 
 exports.PY = function (args, callback) {
     this.cmd_posy = undefined;
-    probe(this, {
-        inp: args[2],
-        feed: args[1],
-        dist: {
-            Y: args[0],
-        },
-    });
-    callback();
+    try {
+        probe(this, {
+            inp: args[2],
+            feed: args[1],
+            dist: {
+                Y: args[0],
+            },
+        });
+        callback();
+    } catch (error) {
+        const errorMsg = error.message || error;
+        const log = require('../../log').logger('sbp');
+        log.error(`Probe error: ${errorMsg}`);
+        
+        setImmediate(() => {
+            this._abort(new Error(errorMsg));
+            callback();
+        });
+    }
 };
 
 exports.PZ = function (args, callback) {
     this.cmd_posz = undefined;
-    probe(this, {
-        inp: args[2],
-        feed: args[1],
-        dist: {
-            Z: args[0],
-        },
-    });
-    callback();
+    try {
+        probe(this, {
+            inp: args[2],
+            feed: args[1],
+            dist: {
+                Z: args[0],
+            },
+        });
+        callback();
+    } catch (error) {
+        const errorMsg = error.message || error;
+        const log = require('../../log').logger('sbp');
+        log.error(`Probe error: ${errorMsg}`);
+        
+        setImmediate(() => {
+            this._abort(new Error(errorMsg));
+            callback();
+        });
+    }
 };
 
 exports.PA = function (args, callback) {
     this.cmd_posa = undefined;
-    probe(this, {
-        inp: args[2],
-        feed: args[1],
-        dist: {
-            A: args[0],
-        },
-    });
-    callback();
+    try {
+        probe(this, {
+            inp: args[2],
+            feed: args[1],
+            dist: {
+                A: args[0],
+            },
+        });
+        callback();
+    } catch (error) {
+        const errorMsg = error.message || error;
+        const log = require('../../log').logger('sbp');
+        log.error(`Probe error: ${errorMsg}`);
+        
+        setImmediate(() => {
+            this._abort(new Error(errorMsg));
+            callback();
+        });
+    }
 };
 
 exports.PB = function (args, callback) {
     this.cmd_posb = undefined;
-    probe(this, {
-        inp: args[2],
-        feed: args[1],
-        dist: {
-            B: args[0],
-        },
-    });
-    callback();
+    try {
+        probe(this, {
+            inp: args[2],
+            feed: args[1],
+            dist: {
+                B: args[0],
+            },
+        });
+        callback();
+    } catch (error) {
+        const errorMsg = error.message || error;
+        const log = require('../../log').logger('sbp');
+        log.error(`Probe error: ${errorMsg}`);
+        
+        setImmediate(() => {
+            this._abort(new Error(errorMsg));
+            callback();
+        });
+    }
 };
 
 exports.PC = function (args, callback) {
     this.cmd_posc = undefined;
-    probe(this, {
-        inp: args[2],
-        feed: args[1],
+    try {
+        probe(this, {
+            inp: args[2],
+            feed: args[1],
         dist: {
             C: args[0],
         },
     });
     callback();
+    } catch (error) {
+        const errorMsg = error.message || error;
+        const log = require('../../log').logger('sbp');
+        log.error(`Probe error: ${errorMsg}`);
+        
+        setImmediate(() => {
+            this._abort(new Error(errorMsg));
+            callback();
+        });
+    }
 };
 
 exports.P2 = function (args, callback) {
     this.cmd_posx = undefined;
     this.cmd_posy = undefined;
-    probe(this, {
-        inp: args[3],
-        feed: args[2],
-        dist: {
-            X: args[0],
-            Y: args[1],
+    try {
+        probe(this, {
+            inp: args[3],
+            feed: args[2],
+            dist: {
+                X: args[0],
+                Y: args[1],
         },
     });
     callback();
+    } catch (error) {
+        const errorMsg = error.message || error;
+        const log = require('../../log').logger('sbp');
+        log.error(`Probe error: ${errorMsg}`);
+        
+        setImmediate(() => {
+            this._abort(new Error(errorMsg));
+            callback();
+        });
+    }
 };
