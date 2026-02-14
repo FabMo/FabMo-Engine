@@ -19,7 +19,7 @@
     GOSUB GET_TOOL_DATA                                               ' ... by reading table
     &Z_OFFSET = %(9) - (&th +  $atcUU[&u].PlateOffset)                ' Record current Z Offset if any
     JZ, -1 * %(9) - $smallBackOffUU[&u]                               ' Pull up as initial move indicating
-    
+
 ' MAIN ==================================================================================================
     &AtNow = "Toolchange Start"
     IF &tool == $ATC.ToolIn THEN GOSUB Same_Tool                      ' No toolchange needed, exit ASAP
@@ -45,13 +45,13 @@ StashTool: '  PUT A TOOL BACK INTO ITS CLIP
         J2, &tx + $atcUU[&u].clipSafe, &ty                          ' Move to safe spot in front of intended clip
         JZ, &tz                                                     ' Jog to Z height for intended clip 
         JX, &tx + $atcUU[&u].clipSafe / 4                           ' Move partway in ...
-        SO, $DrawBar, 1                                             ' Open toolholder chuck
+        SO, $DrawBar_Out, 1                                         ' Open toolholder chuck
         MX, &tx                                                     ' Final Move into clip
         JZ, &tz + $thClearanceUU[&u]                                ' Pull up to twice the clearance height for toolholder
-        SO, $DrawBar, 0                                             ' And Close the toolholder chuck
+        SO, $DrawBar_Out, 0                                         ' And Close the toolholder chuck
         PAUSE 0.25
-        &State = 1                                                  ' Set proper tool sensor state for check_tool subroutine
-        IF &Debug == 0 THEN GOSUB AUTO_CHECK_TOOL                   ' Check if tool is still in spindle!
+          '&State = 1                                                  ' Set proper tool sensor state for check_tool subroutine
+          'IF &Debug == 0 THEN GOSUB AUTO_CHECK_TOOL                   ' Check if tool is still in spindle!
         IF %($Drawbar_Sensor_Status) = 1 THEN GOSUB BAR_NOT_CLOSE   ' Drawbar is still open
         JZ, -1 * %(9) + $Transit_HeightUU[&u]                       ' Jog to safe transit height
         $ATC.ToolIN = 0                                             ' Now there is No Tool!
@@ -68,12 +68,12 @@ GrabTool: '  REMOVE A TOOL FROM ITS CLIP
     ' BEGIN Physical Grab
         J2, &tx, &ty                                                ' ... move to the clip location 
         JZ, &tz + $thClearanceUU[&u]                                ' Get clear in Z then 
-        SO, $DrawBar, 1                                             ' Open toolholder chuck
-        IF &Debug == 0 THEN GOSUB AUTO_CHECK_BAR_OPEN               ' Give 3 tries to check if drawbar opened properly
+        SO, $DrawBar_Out, 1                                             ' Open toolholder chuck
+          'IF &Debug == 0 THEN GOSUB AUTO_CHECK_BAR_OPEN               ' Give 3 tries to check if drawbar opened properly
         MZ, &tz                                                     ' ## Move Onto Toolholder ##
-        SO, $DrawBar, 0                                             ' Close toolholder chuck
-        &State = 1                                                  ' Set proper tool sensor state for check_tool subroutine
-        IF &Debug == 0 THEN GOSUB AUTO_CHECK_TOOL                   ' Give 3 tries to check if tool clamped properly
+        SO, $DrawBar_Out, 0                                             ' Close toolholder chuck
+          '&State = 1                                                  ' Set proper tool sensor state for check_tool subroutine
+          'IF &Debug == 0 THEN GOSUB AUTO_CHECK_TOOL                   ' Give 3 tries to check if tool clamped properly
         $ATC.ToolIN = &tool                                         ' Update value of ToolIn
         VA,,,&tz - ((&th + $atcUU[&u].PlateOffset) + &Z_OFFSET) + %(9)    ' ... set it with local value VA
         JX, &tx + $atcUU[&u].clipSafe
@@ -119,7 +119,7 @@ ManualGrab_Tool:
 FinishToolChange:
     &AtNow = "Wrapping Up"
     &TL = &th + $atcUU[&u].PlateOffset + $atcUU[&u].MaxDepth         ' Figure out Z limit to prevent cutting into table
-    VL,,,,,&TL                                                       ' Update Z limits.
+    VL,,,,,&TL                                                       ' Update Z limits
     &AtNow = "Finished"
     IF $ATC.ToolIN == 0 THEN GOSUB JOG_HOME
     END
@@ -167,9 +167,9 @@ MAN_CHECK_TOOL_OUT:
 AUTO_CHECK_TOOL:
   &TRY = 0                                                               ' Initialize try counter
   GOSUB CHECK_TOOL                                                       ' Check if tool is in
-  IF &TRY == 1 THEN SO,$Drawbar,1                                        ' If tool is not in, reopen drawbar...
+  IF &TRY == 1 THEN SO,$DrawBar_Out,1                                        ' If tool is not in, reopen drawbar...
   IF &TRY == 1 THEN GOSUB CHECK_TOOL                                     ' ...and check again
-  IF &TRY == 2 THEN SO,$Drawbar,1                                        ' If tool is still not in, reopent drawbar one more time...
+  IF &TRY == 2 THEN SO,$DrawBar_Out,1                                        ' If tool is still not in, reopent drawbar one more time...
   IF &TRY == 2 THEN GOSUB CHECK_TOOL                                     ' ...and check again
   IF &TRY == 3 THEN GOSUB TOOL_ERROR                                     ' If tool is still not in, then we have a problem, send to error message and end
   &TRY = 0                                                               ' Reset try counter for cleanliness
@@ -177,7 +177,7 @@ AUTO_CHECK_TOOL:
   
 CHECK_TOOL:
   PAUSE 1 '$DrawbarDelay                                                 ' Wait for some time to allow drawbar to fully open (maybe only if drawbar has been opened...?)
-  SO,$Drawbar,0                                                          ' Close drawbar if open
+  SO,$DrawBar_Out,0                                                          ' Close drawbar if open
   PAUSE 1 '$DrawbarDelay                                                 ' Wait for some time to allow drawbar to fully close.
   IF %($Tool_Sensor_Status) == &State THEN RETURN                        ' Check if tool is clamped, if so return
   &TRY = &TRY + 1                                                        ' If not, increment try counter and return
@@ -186,9 +186,9 @@ CHECK_TOOL:
 AUTO_CHECK_BAR_OPEN:												
   &TRY = 0                                                               ' Initialize try counter
   GOSUB CHECK_BAR_OPEN                                                   ' Check if the drawbar is open
-  IF &TRY = 1 THEN SO,$Drawbar,0                                         ' If drawbar is open, open it again (before trying to close it again) ...
+  IF &TRY = 1 THEN SO,$DrawBar_Out,0                                         ' If drawbar is open, open it again (before trying to close it again) ...
   IF &TRY = 1 THEN GOSUB CHECK_BAR_OPEN                                  ' Check if it worked
-  IF &TRY = 2 THEN SO,$Drawbar,0                                         ' If drawbar still is stuck open, open again and check again...
+  IF &TRY = 2 THEN SO,$DrawBar_Out,0                                         ' If drawbar still is stuck open, open again and check again...
   IF &TRY = 2 THEN GOSUB CHECK_BAR_OPEN                                  ' Check if it worked
   IF &TRY = 3 THEN GOSUB TOOL_NOT_REMOVED                                ' We can't get drawbar closed, display error and end
   &TRY = 0                                                               ' Reset try counter for cleanliness
@@ -196,7 +196,7 @@ AUTO_CHECK_BAR_OPEN:
 
 CHECK_BAR_OPEN:
   PAUSE 1 '$DrawbarDelay                                                 ' Give time for drawbar to open
-  SO,$Drawbar,1                                                          ' Close drawbar
+  SO,$DrawBar_Out,1                                                          ' Close drawbar
   PAUSE 1 '$DrawbarDelay                                                 ' Give time for drawbar to close
   IF %($Drawbar_Sensor_Status) == 1 THEN RETURN                          ' Read drawbar sensor, if closed then return!
   &TRY = &TRY + 1                                                        ' If still open then increment try counter and return

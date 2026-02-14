@@ -28,8 +28,8 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     IF %($sb_zZeroCk) == 1 THEN GOSUB CONTACT_TRIGGERED_ERROR                    ' We're about to lower the empty tool holder to touch the inverted tool holder in the clip. If input 1 is already triggered then we have a problem
     &check = %(3) - %(106)                                                       ' Calculate max Z travel for probe move
     PZ, &check,  $xySlowUU[&u], $sb_zZeroNum                                     ' Try to touch tool holders together
-    IF &Debug = 1 THEN PAUSE "Press OK"
-    'IF %(3) <= &check THEN MZ,%(3) + $smallBackOffUU[&u]                        ' If we didn't make contact -- let's back off just in case the problem was a lack of electical continuity and we've crashed
+      'IF &Debug = 1 THEN PAUSE "Press OK"
+      'IF %(3) <= &check THEN MZ,%(3) + $smallBackOffUU[&u]                        ' If we didn't make contact -- let's back off just in case the problem was a lack of electical continuity and we've crashed
     IF %(3) <= &check THEN GOSUB CONTACT_ERROR
 
 'Set Clip Height
@@ -43,8 +43,8 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     JZ,&alignment_height                                                         ' Move down to prepare for Y probe
     &check = $firstClipUU[&u].y - %(8)                                           ' Calculate max distance for Y probe
     PY, $firstClipUU[&u].y - %(8), $xySlowUU[&u], $sb_zZeroNum                   ' Probe in Y to find inverted tool holder
-    IF &Debug = 1 THEN PAUSE "Press OK"
-    'IF %(2) >= &check THEN MY,%(2) - $smallBackOffUU[&u]                        ' If we went too far without contact -- first back off in case we crashed
+      'IF &Debug = 1 THEN PAUSE "Press OK"
+      'IF %(2) >= &check THEN MY,%(2) - $smallBackOffUU[&u]                        ' If we went too far without contact -- first back off in case we crashed
     IF %(2) >= &check THEN GOSUB CONTACT_ERROR
 
 'Found Left Edge
@@ -55,8 +55,8 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     JY, &LEFTSTART + $TOOL_OFFSETUU[&u]                                          ' Move to other side of tool holder
     JZ,&alignment_height                                                         ' Drop down to prepare for probe
     PY, &LEFTSTART, $xySlowUU[&u], $sb_zZeroNum                                  ' Probe in Y to find inverted tool holder
-    IF &Debug = 1 THEN PAUSE "Press OK"
-    'IF %(2) <= &LEFTSTART THEN MY,%(2) + $smallBackOffUU[&u]                    ' If we went too far without contact -- first back off in case we crashed
+      'IF &Debug = 1 THEN PAUSE "Press OK"
+      'IF %(2) <= &LEFTSTART THEN MY,%(2) + $smallBackOffUU[&u]                    ' If we went too far without contact -- first back off in case we crashed
     IF %(2) <= &LEFTSTART THEN GOSUB CONTACT_ERROR
     
 'Found Right Edge
@@ -69,8 +69,8 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     JZ,&alignment_height                                                         ' Drop down to prepare for probe
     &check = $firstClipUU[&u].x - %(7)                                           ' Calculate max distance for X probe
     PX,$firstClipUU[&u].x - %(7), $xySlowUU[&u], $sb_zZeroNum                    ' Probe in X to find inverted tool holder
-    IF &Debug = 1 THEN PAUSE "Press OK"
-    'IF %(1) >= &check THEN MX,%(1) - $smallBackOffUU[&u]                        ' If we went too far without contact -- first back off in case we crashed
+      'IF &Debug = 1 THEN PAUSE "Press OK"
+      'IF %(1) >= &check THEN MX,%(1) - $smallBackOffUU[&u]                        ' If we went too far without contact -- first back off in case we crashed
     IF %(1) >= &check THEN GOSUB CONTACT_ERROR
 
 'Found Front Edge
@@ -91,7 +91,7 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
           $toolsUU[&toolIdx][].y = &center_Y + $TOOL_OFFSETUU[&u] * (&toolIdx - 1)    ' (Y location of clip increments based on tool clip offset variable)
           $toolsUU[&toolIdx][].z = &thisZ
           $toolsUU[&toolIdx][].h = -5                                          ' stub in a bit length
-        IF &toolIdx = $ATC.numClips THEN GOTO FINISHED                           ' If we've done all the clips we planned to do -- head for the exit
+      IF &toolIdx = $ATC.numClips THEN GOTO FINISHED                           ' If we've done all the clips we planned to do -- head for the exit
         &toolIdx = &toolIdx + 1
         GOTO TOOL_POS_LOOP                                                       ' Go through loop for next tool
 

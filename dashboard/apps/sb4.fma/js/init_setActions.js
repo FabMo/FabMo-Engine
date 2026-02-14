@@ -257,12 +257,30 @@ $(document).ready(function () {
             case 'formatted_movez_speed':
                 var thisSpeedCmd = 'VS,,' + this.value;
                 break;
+            case 'formatted_movea_speed':
+                var thisSpeedCmd = 'VS,,,,' + this.value;
+                break;
+            case 'formatted_moveb_speed':
+                var thisSpeedCmd = 'VS,,,,,,' + this.value;
+                break;
+            case 'formatted_movec_speed':
+                var thisSpeedCmd = 'VS,,,,,,,,' + this.value;
+                break;
             case 'formatted_jogxy_speed':
                 var thisSpeedCmd = 'VS,,,,,,' + this.value;
                 break;    
             case 'formatted_jogz_speed':
                 var thisSpeedCmd = 'VS,,,,,,,' + this.value;
                 break;    
+            case 'formatted_joga_speed':
+                var thisSpeedCmd = 'VS,,,,' + this.value;
+                break;
+            case 'formatted_jogb_speed':
+                var thisSpeedCmd = 'VS,,,,,,' + this.value;
+                break;
+            case 'formatted_jogc_speed':
+                var thisSpeedCmd = 'VS,,,,,,,,' + this.value;
+                break;
         }
         var mult_cmds = [thisSpeedCmd, 'SV'].join("\n");
         fabmo.runSBP(mult_cmds);

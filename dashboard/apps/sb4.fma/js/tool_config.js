@@ -43,10 +43,55 @@ function updateSpeedsFromEngineConfig() {  // ALSO update HOMING status at the s
         }
         $('#formatted_movexy_speed').val(data.opensbp.movexy_speed.toFixed(2));
         $('#formatted_movez_speed').val(data.opensbp.movez_speed.toFixed(2));
+        
+        // Show/hide and populate A, B, C axis move speeds if configured
+        if (data.driver && data.driver.aam !== 0 && data.opensbp.movea_speed !== undefined) {
+            $('#movea-container').show();
+            $('#formatted_movea_speed').val(data.opensbp.movea_speed.toFixed(2));
+        } else {
+            $('#movea-container').hide();
+        }
+        
+        if (data.driver && data.driver.bam !== 0 && data.opensbp.moveb_speed !== undefined) {
+            $('#moveb-container').show();
+            $('#formatted_moveb_speed').val(data.opensbp.moveb_speed.toFixed(2));
+        } else {
+            $('#moveb-container').hide();
+        }
+        
+        if (data.driver && data.driver.cam !== 0 && data.opensbp.movec_speed !== undefined) {
+            $('#movec-container').show();
+            $('#formatted_movec_speed').val(data.opensbp.movec_speed.toFixed(2));
+        } else {
+            $('#movec-container').hide();
+        }
+        
         // Note that for g2, jog speeds are handled differently than move speeds (they are drived from G2 velocity max)
         $('#formatted_jogxy_speed').val(data.opensbp.jogxy_speed.toFixed(2));
         $('#formatted_jogz_speed').val(data.opensbp.jogz_speed.toFixed(2));
-        $('#formatted_joga_speed').val(data.opensbp.joga_speed.toFixed(2));
+
+        // Show/hide and populate A, B, C axis move speeds if configured
+        if (data.driver && data.driver.aam !== 0 && data.opensbp.joga_speed !== undefined) {
+            $('#joga-container').show();
+            $('#formatted_joga_speed').val(data.opensbp.joga_speed.toFixed(2));
+        } else {
+            $('#joga-container').hide();
+        }
+        
+        if (data.driver && data.driver.bam !== 0 && data.opensbp.jogb_speed !== undefined) {
+            $('#jogb-container').show();
+            $('#formatted_jogb_speed').val(data.opensbp.jogb_speed.toFixed(2));
+        } else {
+            $('#jogb-container').hide();
+        }
+        
+        if (data.driver && data.driver.cam !== 0 && data.opensbp.jogc_speed !== undefined) {
+            $('#jogc-container').show();
+            $('#formatted_jogc_speed').val(data.opensbp.jogc_speed.toFixed(2));
+        } else {
+            $('#jogc-container').hide();
+        }
+
 
         var xyHomedStatus = data?.opensbp?.tempVariables?.XYHOMED || null;
         if (!xyHomedStatus || xyHomedStatus == "false") {
