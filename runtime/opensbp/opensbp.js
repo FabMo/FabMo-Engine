@@ -1484,9 +1484,12 @@ SBPRuntime.prototype._execute = async function (command, callback) {
             this.pc = this.program.length;
             if (command.message) {
                 this.end_message = command.message;
-                throw new Error(command.message);
+                const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : "";
+                const errorMsg = `${filePrefix}@line-${this.pc + 1}: ${this.end_message}`;
+                this._abort(new Error(errorMsg));
+            } else {
+                this._end();
             }
-            setImmediate(callback);
             return true;
 
         case "goto":
@@ -1723,9 +1726,13 @@ SBPRuntime.prototype._execute = async function (command, callback) {
             modalParams.title = normalizedParams.title || null;
             modalParams.detail = normalizedParams.detail || null;
             modalParams.okText = normalizedParams.oktext || null;
-            modalParams.okFunc = normalizedParams.okfunc || null;
+            if (normalizedParams.okfunc != null) {
+                modalParams.okFunc = normalizedParams.okfunc;
+            }
             modalParams.cancelText = normalizedParams.canceltext || null;
-            modalParams.cancelFunc = normalizedParams.cancelfunc || null;
+            if (normalizedParams.cancelfunc != null) {
+                modalParams.cancelFunc = normalizedParams.cancelfunc;
+            }
             modalParams.noButton = normalizedParams.nobutton || false;
 
             if (normalizedParams.timer) {
@@ -1926,110 +1933,115 @@ SBPRuntime.prototype._roundNumeric = function(value) {
 //        value - The new value
 // Supports Universal Unit variables (ending with 'UU')
 SBPRuntime.prototype._assign = async function (identifier, value) {
-    // Don't process assignments if we're already in an error state OR ending
-    if (this.pending_error || !this.started) {
-        log.debug("Skipping assignment - runtime in error state or not started");
-        return;
-    }
-    
-    value = this._roundNumeric(value);
-    
-    let variableName;
-    if (identifier.name) {
-        variableName = identifier.name.toUpperCase();
-    } else if (identifier.expr) {
-        variableName = this._eval(identifier.expr).toUpperCase();
-    } else {
-        throw new Error("Invalid identifier: missing 'name' and 'expr'");
-    }
+    try{
+        // Don't process assignments if we're already in an error state OR ending
+        if (this.pending_error || !this.started) {
+            log.debug("Skipping assignment - runtime in error state or not started");
+            return;
+        }
+        
+        value = this._roundNumeric(value);
+        
+        let variableName;
+        if (identifier.name) {
+            variableName = identifier.name.toUpperCase();
+        } else if (identifier.expr) {
+            variableName = this._eval(identifier.expr).toUpperCase();
+        } else {
+            throw new Error("Invalid identifier: missing 'name' and 'expr'");
+        }
 
-    let accessPath = identifier.access || [];
-    
-    // Check if this is a Universal Unit variable (ends with "UU")
-    const isUniversalUnit = variableName.endsWith('UU');
-    
-    // Check for unit placeholder in access path
-    const hasUnitPlaceholder = accessPath.some(part => part.type === "unit_placeholder");
-    
-    // Validation: UU variables MUST use placeholder, non-UU variables MUST NOT
-    if (isUniversalUnit && !hasUnitPlaceholder) {
-        const errorMsg = `UU variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} requires [] placeholder.`;
-        log.error(errorMsg);
-        throw new Error(errorMsg);
-    }
+        let accessPath = identifier.access || [];
+        
+        // Check if this is a Universal Unit variable (ends with "UU")
+        const isUniversalUnit = variableName.endsWith('UU');
+        
+        // Check for unit placeholder in access path
+        const hasUnitPlaceholder = accessPath.some(part => part.type === "unit_placeholder");
+        
+        // Validation: UU variables MUST use placeholder, non-UU variables MUST NOT
+        if (isUniversalUnit && !hasUnitPlaceholder) {
+            const errorMsg = `UU variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} requires [] placeholder.`;
+            log.error(errorMsg);
+            throw new Error(errorMsg);
+        }
 
-    if (!isUniversalUnit && hasUnitPlaceholder) {
-        const errorMsg = `[] placeholder requires UU suffix. Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} must end with "UU"`;
-        log.error(errorMsg);
-        throw new Error(errorMsg);
-    }    
+        if (!isUniversalUnit && hasUnitPlaceholder) {
+            const errorMsg = `[] placeholder requires UU suffix. Variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} must end with "UU"`;
+            log.error(errorMsg);
+            throw new Error(errorMsg);
+        }    
 
-    if (hasUnitPlaceholder) {
-        // Handle Universal Unit assignment with explicit placeholder
-        // Get current system units (0 = inches, 1 = mm)
-        const currentUnits = this.evaluateSystemVariable({type: "system_variable", expr: 25});
-        
-        // Calculate both unit values
-        let inchValue, mmValue;
-        if (currentUnits === 0) {
-            // Value provided is in inches
-            inchValue = value;
-            mmValue = value * 25.4;
+        if (hasUnitPlaceholder) {
+            // Handle Universal Unit assignment with explicit placeholder
+            // Get current system units (0 = inches, 1 = mm)
+            const currentUnits = this.evaluateSystemVariable({type: "system_variable", expr: 25});
+            
+            // Calculate both unit values
+            let inchValue, mmValue;
+            if (currentUnits === 0) {
+                // Value provided is in inches
+                inchValue = value;
+                mmValue = value * 25.4;
+            } else {
+                // Value provided is in mm
+                mmValue = value;
+                inchValue = value / 25.4;
+            }
+            
+            // Determine which variable collection to use
+            let variables;
+            if (identifier.type === "user_variable") {
+                variables = config.opensbp._cache["tempVariables"];
+            } else {
+                variables = config.opensbp._cache["variables"];
+            }
+            
+            // Ensure base variable exists
+            if (!(variableName in variables)) {
+                variables[variableName] = {};
+            }
+            
+            // Create paths for both units by replacing placeholder with actual indices
+            const inchPath = accessPath.map(part => 
+                part.type === "unit_placeholder" ? { type: "index", value: 0 } : part
+            );
+            const mmPath = accessPath.map(part => 
+                part.type === "unit_placeholder" ? { type: "index", value: 1 } : part
+            );
+            
+            // Evaluate any expressions in the access paths
+            const evalInchPath = this._evaluateAccessPath(inchPath);
+            const evalMmPath = this._evaluateAccessPath(mmPath);
+            
+            // Set both unit values using the existing nested value setter
+            this._setNestedValue(variables[variableName], evalInchPath, inchValue);
+            this._setNestedValue(variables[variableName], evalMmPath, mmValue);
+            
         } else {
-            // Value provided is in mm
-            mmValue = value;
-            inchValue = value / 25.4;
+            // Normal variable assignment (existing code)
+            accessPath = this._evaluateAccessPath(accessPath);
+            
+            let variables;
+            if (identifier.type === "user_variable") {
+                variables = config.opensbp._cache["tempVariables"];
+            } else {
+                variables = config.opensbp._cache["variables"];
+            }
+            
+            if (!(variableName in variables)) {
+                variables[variableName] = {};
+            }
+            
+            if (accessPath.length === 0) {
+                variables[variableName] = value;
+            } else {
+                this._setNestedValue(variables[variableName], accessPath, value);
+            }
         }
-        
-        // Determine which variable collection to use
-        let variables;
-        if (identifier.type === "user_variable") {
-            variables = config.opensbp._cache["tempVariables"];
-        } else {
-            variables = config.opensbp._cache["variables"];
-        }
-        
-        // Ensure base variable exists
-        if (!(variableName in variables)) {
-            variables[variableName] = {};
-        }
-        
-        // Create paths for both units by replacing placeholder with actual indices
-        const inchPath = accessPath.map(part => 
-            part.type === "unit_placeholder" ? { type: "index", value: 0 } : part
-        );
-        const mmPath = accessPath.map(part => 
-            part.type === "unit_placeholder" ? { type: "index", value: 1 } : part
-        );
-        
-        // Evaluate any expressions in the access paths
-        const evalInchPath = this._evaluateAccessPath(inchPath);
-        const evalMmPath = this._evaluateAccessPath(mmPath);
-        
-        // Set both unit values using the existing nested value setter
-        this._setNestedValue(variables[variableName], evalInchPath, inchValue);
-        this._setNestedValue(variables[variableName], evalMmPath, mmValue);
-        
-    } else {
-        // Normal variable assignment (existing code)
-        accessPath = this._evaluateAccessPath(accessPath);
-        
-        let variables;
-        if (identifier.type === "user_variable") {
-            variables = config.opensbp._cache["tempVariables"];
-        } else {
-            variables = config.opensbp._cache["variables"];
-        }
-        
-        if (!(variableName in variables)) {
-            variables[variableName] = {};
-        }
-        
-        if (accessPath.length === 0) {
-            variables[variableName] = value;
-        } else {
-            this._setNestedValue(variables[variableName], accessPath, value);
-        }
+    } catch (err) {
+        log.error(`Error in _assign: ${ err.message}`);
+        throw err; // Re-throw to be caught by caller
     }
 };
 

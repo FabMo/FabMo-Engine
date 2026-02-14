@@ -245,17 +245,28 @@ Parser.prototype._transform = function (chunk, enc, cb) {
         for (var i = 0; i < str.length; i++) {
             if (str[i] === "\n") {
                 var substr = str.substring(start, i);
-                let parsedline = parseLine(substr);
-                // Skip entries that are metadata
-                if (parsedline.type != "metadata") {
-                    this.push(parsedline);
+                try {
+                    let parsedline = parseLine(substr);
+                    if (parsedline.type != "metadata") {
+                        this.push(parsedline);
+                    }
+                } catch (e) {
+                    if (e && e.name === "SyntaxError") {
+                        // Track actual file line number
+                        this.line = (this.line || 0) + 1;
+                        e.line = this.line -3; // Adjust line number to account for 3 lines of metadata at the start of the file
+                        e.offset = e.line;
+                    }
+                    this.emit("error", e);
+                    return;
                 }
+                this.line = (this.line || 0) + 1;
                 start = i + 1;
             }
         }
         this.scrap = str.substring(start);
     } catch (e) {
-        this.emit("error", e); // Emit the error to be handled by the consumer of the stream
+        this.emit("error", e);
     }
     this.resume();
     cb();
