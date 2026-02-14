@@ -49,6 +49,7 @@ div {
 }
 
 /* Get spacing between left and right panels */
+/*
 @media only screen and (min-width: 64.0625em) {
 .row.large-uncollapse>.column, .row.large-uncollapse>.columns {
     padding-left: 0.4rem;
@@ -57,6 +58,7 @@ div {
     float: left;
     }
 }
+*/
 
 /*
 row.large-uncollapse>.columns {
@@ -66,6 +68,7 @@ row.large-uncollapse>.columns {
 
 .panel-label {
     margin-top: .4rem;
+    color: #4D4D4Dc2;
     background-color: rgb(206, 207, 209);
     border-radius: 10px;
     border-color: rgb(136, 171, 190);
@@ -73,7 +76,7 @@ row.large-uncollapse>.columns {
 }
 
 #macro-panel-label {
-    color: #4D4D4D;
+    color: #4D4D4Dc2;
     font-size: 0.875rem;
     font-weight: normal;
     line-height: 1.5;
@@ -166,9 +169,36 @@ input.cmds {
 }
 
 .move-speed-box {
-    margin-top: -5px;
+    margin-right: -15px;
     padding-top: .25rem;
     padding-bottom: .35rem;
+}
+
+/* Center speed box and reduce label size on small screens */
+@media only screen and (max-width: 690px) {
+    .move-speed-box {
+        margin-left: auto;
+        margin-right: 1.75rem;
+        margin-top: .75rem;
+        padding-top: 1rem;
+    }
+    
+    .speed-axis-label {
+        font-size: 0.65rem;
+    }
+    
+    label.speed-labels {
+        font-size: 0.65rem;
+    }
+    #speed-panel {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+        margin-bottom: 10px;
+    }
+    #vid-button {
+        visibility: hidden; 
+    }
+     
 }
 
 #cmd-input::placeholder {
@@ -281,13 +311,47 @@ table tr:nth-of-type(even) {
 
 /* ============================================== SPEED DISPLAYS */
 
+.speed-inputs-container {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    align-items: flex-end;
+    width: 100%;
+}
+
+.speed-input-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-width: 50px;
+}
+
+.speed-axis-label {
+    color: #4D4D4Dc2;
+    /*font-size: 0.7rem;*/
+    font-weight: normal;
+    text-align: right;
+    margin-bottom: 0.1rem;
+    white-space: nowrap;
+    cursor: default;
+    padding-right: 0.5rem;
+}
+
+.speed-input-group input.opensbp_input_formattedspeeds {
+    width: 100%;
+}
+
 input.opensbp_input_formattedspeeds {
   color: rgb(113, 233, 241);
   background-color: rgb(143, 148, 150);
   border-color: rgb(136, 171, 190);
   border-radius: 5px;
   margin-bottom: .25rem;
+  padding: 0.2rem;
+  /*font-size: 0.75rem;*/
+  text-align: right;
 }
+
 
 #insert-input {
   color: rgb(113, 233, 241);
@@ -317,7 +381,8 @@ input[type="text"]:focus {
 
 label.speed-labels,
 .cmds {
-  color: #4D4D4D;
+  color: #4D4D4Dc2;
+  font-weight: bold;
   cursor: default;
 }
 
@@ -327,13 +392,13 @@ label.speed-labels,
 p.at-foot {
   position: relative;
   top: 35px;
-  color: #4D4D4D;
+  color: #4D4D4Dc2;
   font-size: .75rem;
   margin-bottom: 0rem;
 }
 #copyright {
     position: relative;
-    left: -250px;
+    left: -61%;
     top: 0px;
 }
 
@@ -367,6 +432,7 @@ p.at-foot {
 
 #sbp-container {
     height: 200px;
+    min-height: 100px;
     resize: vertical;
     overflow: hidden;
     width: 95%;
@@ -377,6 +443,7 @@ p.at-foot {
     position: relative;
 /*    width: 100%;
     height: 100%; */
+    min-height: 100px;
     width: 95%;
     resize: vertical;
     overflow: hidden;

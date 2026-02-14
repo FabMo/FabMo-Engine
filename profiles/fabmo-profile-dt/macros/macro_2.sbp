@@ -53,17 +53,16 @@ find_z_zero_plate:                                                   ' Now probe
     PZ, &target_ck, &slowSearchSpeed_Z, &zZeroNum                    ' Probe again, more carefully
     IF %(3) == &target_ck THEN GOSUB fail_missed_target
     &target_ck = %(3)                                                ' Get the accurate distance to Z zero plate 
-    &target_ck = &target_ck
     $sb_current_cutter_ZoffsetUU[] = &target_ck - &zPlateThick	     ' RECORD as persistent variable: offset of this cutter to the material
 
     SET_Z:    
         JZ, ($sb_current_cutter_ZoffsetUU[&u] + &zPlateOff)          ' Pull up by offset
-        VA,,,(&zPlateOff)                                            ' Correct local Z
+        VA,,,(&zPlateOff)                                            ' Correct local Z to the offset
         RETURN
 
 finish:
-	DIALOG "Remember to Remove Clip! The following value will be used for Cutter Offset in Homing:  " + $sb_current_cutter_ZoffsetUU[%(25)] + " (vs " + &last_cutter_offset + " last)", OKTEXT="Continue ..."
-        RETURN 
+	DIALOG "Remember to Remove Clip! The following value will be used for Cutter Offset in Homing:  " + $sb_current_cutter_ZoffsetUU[%(25)] + " (vs " + &last_cutter_offset + " last)"
+    RETURN 
 END
 
 

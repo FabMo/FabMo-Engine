@@ -33,10 +33,10 @@ $DrawbarDelay = 0.75
 ' UNIVERSAL UNIT VARIABLES =========================================================================================================
 IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC  ' We need to define the UNIT type that this table is provided in
     SetINCH:
-        VD,,, 0                          ' FORCE CURRENT UNIT to INCHE for this MACRO
+        VD,,, 0                                   ' FORCE CURRENT UNIT to INCH for this MACRO
         GOTO SetUniversalUnits
     SetMETRIC:
-        VD,,, 1                          ' FORCE CURRENT UNIT to MM for this MACRO
+        VD,,, 1                                   ' FORCE CURRENT UNIT to MM for this MACRO
         GOTO SetUniversalUnits
 
 SetUniversalUnits:
@@ -45,45 +45,45 @@ SetUniversalUnits:
     $atcUU[].zZero_X := 1
     $atcUU[].zZero_Y := 1
     $atcUU[].zZero_YCorrection := -4.125
+    $atcUU[].clipSafe := -1.75
 
-    $ATC_X_Prox_ClearUU[] = -2.0 
-    $ATC_clipSafeUU[] = -1.75
-    $ATC_holderHeightUU[] = 1.575
-    $ATC_holderAlignmentHeightUU[] = 0.69
-    $holder_radiusUU[] = 0.56
-    $stylus_diaUU[] = .25
-    $toolsUU[0][].x = 0
-    $toolsUU[0][].y = 0
-    $toolsUU[0][].z = 0
-    $toolsUU[0][].h = 0
-    $toolsUU[1][].x = 0
-    $toolsUU[1][].y = 0
-    $toolsUU[1][].z = 0
-    $toolsUU[1][].h = 0
+    $ATC_X_Prox_ClearUU[] := -2.0 
+    $ATC_holderHeightUU[] := 1.575
+    $ATC_holderAlignmentHeightUU[] := 0.69
+    $holder_radiusUU[] := 0.56
+    $stylus_diaUU[] := .25
+    $toolsUU[0][].x := 0
+    $toolsUU[0][].y := 0
+    $toolsUU[0][].z := 0
+    $toolsUU[0][].h := 0
+    $toolsUU[1][].x := 0
+    $toolsUU[1][].y := 0
+    $toolsUU[1][].z := 0
+    $toolsUU[1][].h := 0
   'Positions
-    $manual_changeUU[].x = 15            ' Location for manual tool change
-    $manual_changeUU[].y = 0
+    $manual_changeUU[].x := 15            ' Location for manual tool change
+    $manual_changeUU[].y := 0
   'Motion values
-    $zSlowUU[] = 0.4
-    $zFastUU[] = 0.75
-    $zJogUU[] = 2.0
-    $xySlowUU[] = 0.4
-    $xyFastUU[] = 2.0
-    $xyJogUU[] = 4.0
-    $smallBackOffUU[] = 0.5
+    $zSlowUU[] := 0.4
+    $zFastUU[] := 0.75
+    $zJogUU[] := 2.0
+    $xySlowUU[] := 0.4
+    $xyFastUU[] := 2.0
+    $xyJogUU[] := 4.0
+    $smallBackOffUU[] := 0.5
     $bigBackOffUU[] = 2.0
   'Toolbar parameters
-    $ToolBar_Probe_OffsetUU[] = 1.5
-    $TOOLBAR_LENGTHUU[] = 15
-    $TOOL_OFFSETUU[] = 3
-    $Transit_HeightUU[] = -1
+    $ToolBar_Probe_OffsetUU[] := 1.5
+    $TOOLBAR_LENGTHUU[] := 15
+    $TOOL_OFFSETUU[] := 3
+    $Transit_HeightUU[] := -1
   'Calibration parameters
-    $firstClipUU[].x = 39.25             'Location of first clip for calibration
-    $firstClipUU[].y = 4.875
-    $firstClipUU[].z = 3
-    $safe_liftUU[] = 1
-    $clipPulloutUU[] = 0.75
-    $thClearanceUU[] = 0.375
+    $firstClipUU[].x := 39.25             'Location of first clip for calibration
+    $firstClipUU[].y := 4.875
+    $firstClipUU[].z := 3
+    $safe_liftUU[] := 1
+    $clipPulloutUU[] := 0.75
+    $thClearanceUU[] := 0.375
 
 END
 
