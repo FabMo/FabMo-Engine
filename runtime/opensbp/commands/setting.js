@@ -123,7 +123,7 @@ exports.SP = function (args) {
 };
 
 // Set Units
-exports.SU = function (args) {
+exports.SU = function (args, callback) {
     var units = ((args[0] || "in") + "").toLowerCase();
 
     switch (units) {
@@ -133,16 +133,31 @@ exports.SU = function (args) {
         case "0":
             this.emit_gcode("G20");
             this.emit_gcode("G4 P0.001");
+            this._setUnits("in");
+            this.machine.setPreferredUnits("in", this.units, function (err) {
+                if (err) {
+                    log.error("Error setting preferred units to in: " + err);
+                }
+                callback(err);
+            });
             break;
         case "mm":
         case "millimeter":
-        case "millimeters:":
+        case "millimeters":
         case "1":
             this.emit_gcode("G21");
             this.emit_gcode("G4 P0.001");
+            this._setUnits("mm");
+            this.machine.setPreferredUnits("mm", this.units, function (err) {
+                if (err) {
+                    log.error("Error setting preferred units to mm: " + err);
+                }
+                callback(err);
+            });
             break;
         default:
             log.warn("Unknown unit specified: " + units);
+            callback();
             break;
     }
 };
