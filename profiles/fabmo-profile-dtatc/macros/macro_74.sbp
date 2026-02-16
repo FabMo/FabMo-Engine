@@ -1,25 +1,29 @@
-'!FABMO!name:ATC Calibrate
+'!FABMO!name:*ATC* CALIBRATE
 '!FABMO!description:Initial calibration of Tool-Clip location for ATC
 '!FABMO!enabled:true
-' ATC Calibration; records location of all the tool clips.
-' Brian Owen
-' Refactored 2/09/2026 (th)
-' ## Note this Macro still uses a combination of local and persistent variables; we should clean this up at some point but it is functional for now.
+' Name: *ATC* CALIBRATE
+' Description: Initial calibration of Tool-Clip location for ATC
+' Author: Brian Owen
+' - Determines the locations of all the tool clips, based on knowledge of the location of the first clip and the dimensions of the clip.
+' - Also determines the location of the fixed Z zero plate for use in future tool measurements.
+' 2026/2/09 - Refactored (th)
+ 
 
-' Main =========================================================================
+' --- Initialize ------------------------------------------------------------------
 $ATC.type = 7                                                                   ' Set to ATC
-
+CN,75                                                                           ' ATC status check and load CN,70                                                             ' Load ATC Varibles (and local variables from #201)
 CN,3                                                                            ' Home machine in XYZ first. 
 VN,0                                                                            ' ## functional??? Turn off limit switches
 SF,0                                                                            ' ## functional??? Turn off table limits
-
 &u = %(25)
 &debug = 0 
-JS,$xyJogUU[&u],$zJogUU[&u]                                                     ' Set Jog speeds
+JS, $xyJogUU[&u], $zJogUU[&u]                                                   ' Set Jog speeds
 
+
+' === Main =========================================================================
 PAUSE "How many positions exist on your toolbar" &count                         ' Maybe user does not want to use all 7 positions...so give them a choice
 $ATC.numClips = &count                                                          ' Update ATC settings based on user selection
-J2,$firstClipUU[&u].x - %(7),$firstClipUU[&u].y - %(8)                          ' Jog to known first clip location. Offset by table base coordinates
+J2, $firstClipUU[&u].x - %(7), $firstClipUU[&u].y - %(8)                        ' Jog to known first clip location. Offset by table base coordinates
 PAUSE "Insert an empty tool holder in the spindle (no collet or nut)... (M-0051)"
 PAUSE "...Insert an empty tool holder upside down in the #1 clip (no collet or nut)... (M-0052)"
 PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 and the other end on the fixed z zero plate. Click OK when ready to proceed! (M-0055)"
@@ -35,12 +39,12 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
 'Set Clip Height
     &Z_clipbase = %(3) - $ATC_holderHeightUU[&u]                                 ' If we succeeded in making contact, we record the current position for use later
     JZ, %(3) + $smallBackOffUU[&u]                                               ' Back off to break contact
-    JY,%(2) - $ToolBar_Probe_OffsetUU[&u]                                        ' Shift over in the Y to prepare for first Y probe of calibration tool holder
+    JY, %(2) - $ToolBar_Probe_OffsetUU[&u]                                       ' Shift over in the Y to prepare for first Y probe of calibration tool holder
     &start_X = %(1)                                                              ' Record X start position
     &start_Y = %(2)                                                              ' Record Y start position
     &start_Z = %(3)                                                              ' Record Z start position
     &alignment_height = %(3) - $ATC_holderAlignmentHeightUU[&u] - $smallBackOffUU[&u]    ' Calculate correct z position for plunge
-    JZ,&alignment_height                                                         ' Move down to prepare for Y probe
+    JZ, &alignment_height                                                        ' Move down to prepare for Y probe
     &check = $firstClipUU[&u].y - %(8)                                           ' Calculate max distance for Y probe
     PY, $firstClipUU[&u].y - %(8), $xySlowUU[&u], $sb_zZeroNum                   ' Probe in Y to find inverted tool holder
       'IF &Debug = 1 THEN PAUSE "Press OK"
@@ -53,7 +57,7 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     JY, &LEFTSTART - $smallBackOffUU[&u]                                         ' Break contact between tool holders
     JZ, %(3) + $safe_liftUU[&u]                                                  ' Lift up clear of the tool holder
     JY, &LEFTSTART + $TOOL_OFFSETUU[&u]                                          ' Move to other side of tool holder
-    JZ,&alignment_height                                                         ' Drop down to prepare for probe
+    JZ, &alignment_height                                                         ' Drop down to prepare for probe
     PY, &LEFTSTART, $xySlowUU[&u], $sb_zZeroNum                                  ' Probe in Y to find inverted tool holder
       'IF &Debug = 1 THEN PAUSE "Press OK"
       'IF %(2) <= &LEFTSTART THEN MY,%(2) + $smallBackOffUU[&u]                    ' If we went too far without contact -- first back off in case we crashed
@@ -62,15 +66,15 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
 'Found Right Edge
     PAUSE 0.1                                                                    ' Take a break
     &RIGHTSTART = %(2)                                                           ' Record Y position for use in calculating center location of tool holder
-    JY,&RIGHTSTART + $smallBackOffUU[&u]                                         ' Break contact between tool holders
+    JY, &RIGHTSTART + $smallBackOffUU[&u]                                        ' Break contact between tool holders
     JZ, %(3) + $safe_liftUU[&u]                                                  ' Lift up clear of the tool holder
     &CENTER_Y = &LEFTSTART + ((&RIGHTSTART - &LEFTSTART) / 2)                    ' Calculate center position in Y axis
-    J2,$firstClipUU[&u].x - $TOOL_OFFSETUU[&u] - %(7), &CENTER_Y                 ' Jog in front of tool holder
-    JZ,&alignment_height                                                         ' Drop down to prepare for probe
+    J2, $firstClipUU[&u].x - $TOOL_OFFSETUU[&u] - %(7), &CENTER_Y                ' Jog in front of tool holder
+    JZ, &alignment_height                                                        ' Drop down to prepare for probe
     &check = $firstClipUU[&u].x - %(7)                                           ' Calculate max distance for X probe
-    PX,$firstClipUU[&u].x - %(7), $xySlowUU[&u], $sb_zZeroNum                    ' Probe in X to find inverted tool holder
+    PX, $firstClipUU[&u].x - %(7), $xySlowUU[&u], $sb_zZeroNum                   ' Probe in X to find inverted tool holder
       'IF &Debug = 1 THEN PAUSE "Press OK"
-      'IF %(1) >= &check THEN MX,%(1) - $smallBackOffUU[&u]                        ' If we went too far without contact -- first back off in case we crashed
+      'IF %(1) >= &check THEN MX,%(1) - $smallBackOffUU[&u]                       ' If we went too far without contact -- first back off in case we crashed
     IF %(1) >= &check THEN GOSUB CONTACT_ERROR
 
 'Found Front Edge
@@ -78,27 +82,29 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     &X_EDGE = %(1)                                                               ' Record X location of tool holder
     JX,&X_EDGE - $smallBackOffUU[&u]                                             ' Break contact with tool holder
     &CENTER_X = &X_EDGE + $holder_radiusUU[&u] * 2                               ' Calculate X location of tool holder center
-    JZ,%(3) + $safe_liftUU[&u]                                                   ' Lift up clear of tool holder
-    JX,&CENTER_X                                                                 ' Move to center of tool holder to demonstrate that we've calculated the correct position
+    JZ, %(3) + $safe_liftUU[&u]                                                  ' Lift up clear of tool holder
+    JX, &CENTER_X                                                                ' Move to center of tool holder to demonstrate that we've calculated the correct position
 
     &center_X = &center_X - $sb_homeOffUU[&u].x                                  ' Clean offsets for storage
     &center_Y = &center_Y - $sb_homeOffUU[&u].y
     &thisZ = &Z_clipbase + %(9)
 
+    '--------------------------------------------
     &toolIdx = 1                                                                 ' Set up index that will be incremented while recording values for each tool
     TOOL_POS_LOOP:
-          $toolsUU[&toolIdx][].x = &center_X                                   ' Record locations of clips (permanent)
+          $toolsUU[&toolIdx][].x = &center_X                                     ' Record locations of clips (permanent)
           $toolsUU[&toolIdx][].y = &center_Y + $TOOL_OFFSETUU[&u] * (&toolIdx - 1)    ' (Y location of clip increments based on tool clip offset variable)
           $toolsUU[&toolIdx][].z = &thisZ
-          $toolsUU[&toolIdx][].h = -5                                          ' stub in a bit length
-      IF &toolIdx = $ATC.numClips THEN GOTO FINISHED                           ' If we've done all the clips we planned to do -- head for the exit
+          $toolsUU[&toolIdx][].h = -5                                            ' stub in a bit length
+      IF &toolIdx = $ATC.numClips THEN GOTO FINISHED                             ' If we've done all the clips we planned to do -- head for the exit
         &toolIdx = &toolIdx + 1
         GOTO TOOL_POS_LOOP                                                       ' Go through loop for next tool
+    '--------------------------------------------
 
 FINISHED:
     $atcUU[].zZero_X = %(1)                                                      ' Store locations of fixed Z Zero plate (always the same)
     $atcUU[].zZero_Y = %(2) + $atcUU[&u].zZero_YCorrection                       ' with OFFSET CORRECTION (typ. -4.125in)
-    J2,0,0
+    J2, 0, 0
     DIALOG "Calibration complete (M-0151)" OKTEXT="Continue ..."
 END
 

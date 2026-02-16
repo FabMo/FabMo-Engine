@@ -1,16 +1,20 @@
-'!FABMO!name:ATC Status Check
+'!FABMO!name:*ATC* STATUS CHECK
 '!FABMO!description:Check ATC Status in a file
 '!FABMO!enabled:true
-'   2026/2/05 - Refactored (th)
+' Name: *ATC* STATUS CHECK
+' Description: Check ATC Status in a file
+' Author: Brian Owen
+' 2026/2/12 - Refactored (th)
+
 
 ' ATC STATUS CHECK FOR NORMAL ATC FUNCTIONS
-&debug = 0
 ' Main =================================================================
-CN,70                                                                           ' Load ATC Varibles (and local variables from #201)
+CN,70                                                                           ' Load ATC Varibles (and local variables from Macro 201)
 &u = %(25)
 IF $ATC.ToolIn > 0 THEN GOSUB CHECK_TOOL_IN                                     ' If we think we have a tool inserted, check to make sure
 IF $ATC.ToolIn == 0 THEN GOSUB CHECK_TOOL_OUT                                   ' If we think we hace no tool inserted, check to make sure
 END
+
 
 ' Subroutines ==========================================================
 CHECK_TOOL_IN:
@@ -53,6 +57,7 @@ HOME_Z:
     PAUSE "Z Home location has been recovered using Z Limit switch"            ' Let user know that we've reset their Z home due to a problem. 
     RETURN
 
+
 ' Error Messages =======================================================
 TOOL_NOT_REMOVED:
       DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit"   ' Did not remove tool
@@ -62,6 +67,7 @@ TOOL_NOT_REMOVED:
 fail_missed_target:
     PAUSE "Target Not Triggered! Lower Z Axis and run C3 (XYZ Homing)."        ' Did not hit target.
     END
+
     
 ' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 STATE: ' Report State at points in ATC Sequence

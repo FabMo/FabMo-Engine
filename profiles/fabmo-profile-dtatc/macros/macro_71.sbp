@@ -1,11 +1,13 @@
-'!FABMO!name:ATC Toolchange - internal
+'!FABMO!name:*ATC* TOOLCHANGE - INTERNAL
 '!FABMO!description:- internal -
 '!FABMO!enabled:true
-' ATC Toolchange; Core routine for swapping out tools
-' ... this called by C1(user) and other ATC Macros 
-' FabMo Version from 12/15/24
-' Brian Owen, Josh Ayers
-' Refactored 2026/2/09 (th)
+' Name: *ATC* TOOLCHANGE - INTERNAL
+' Description: - internal -
+' Author: Brian Owen, Josh Ayers
+' 2026/2/09 - Refactored (th)
+
+'   - Core routine for swapping out tools
+'   - Called by C1(user) and other ATC Macros 
 
 ' Initialize ------------------------------------------------------------------------------------------
     &debug = 0    

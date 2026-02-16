@@ -1,12 +1,14 @@
-'!FABMO!name:ATC Settings
+'!FABMO!name:*ATC* SETTINGS
 '!FABMO!description:Macro Description
 '!FABMO!enabled:true
-'   2026/2/05 - Refactored (th)
+' Name: *ATC* SETTINGS
+' Description: Macro Description
+' Author: Brian Owen
+' 2026/2/12 - Refactored (th)
 
 ' ATC VARIABLES =========================================================================================================
-' Standard ATC Macro Variables read along with Macro #201 (variables are stored as persistent; $)
+' Standard ATC Macro Variables read along with Macro 201 (variables are stored as persistent; $)
 '
-&debug = 0
 &error = 0
 
 $sb_standard_variables_PRESENT := 0								  ' Define presence-test variable if it does not exist
@@ -92,7 +94,7 @@ no_variables:
     RETURN
 END
 
-
+'*in progress ...
 ' DICTIONARY ===========================================================
 '   h,H                         ( H = general reference to the measured length of a tool )
 

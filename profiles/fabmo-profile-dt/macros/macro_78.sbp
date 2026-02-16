@@ -1,13 +1,11 @@
 '!FABMO!name: Set Z-Zero to Current Offset
-'!FABMO!description: Use after manually zeroing to record offset
+'!FABMO!description: Use after manually zeroing to record your offset (works after running Macro #3 at least once)
 '!FABMO!enabled:true
-'   2026/2/8 Refactored (th)
-
 ' Name: Set Z-Zero to Current Offset
 ' Description: 
 '   Installs Current Value of Z offset to the permanent offset variable ($sb_current_cutter_ZoffsetUU[]) for future Zeroing. 
-'   Works even if manually zeroed assuming Macro#3 has been run once. 
-
+'   Works even if manually zeroed assuming Macro#3 has been run once (works even if you are no longer at the zero position). 
+'   2026/2/8 Refactored (th)
 
 
 $sb_current_cutter_ZoffsetUU[] = %(9)                         ' Write the current offset to the cutter offset variable (uses UU system)

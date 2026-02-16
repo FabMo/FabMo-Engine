@@ -1,7 +1,7 @@
-'!FABMO!name: Unit error
+'!FABMO!name: Units error
 '!FABMO!description: Notification that file Units do not match machine
-' Name: Change Unit error
-' Description: Notify of inconsistent Units
+' Name: Units error
+' Description: Notification of inconsistent Units
 
 ' This Macro is called by Vectric posts in the process of checking Units
 ' FabMo will handle a file even if its Units are mismatched to the current tool setting.

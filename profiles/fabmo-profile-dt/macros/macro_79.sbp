@@ -1,14 +1,13 @@
 '!FABMO!name: Park
 '!FABMO!description: Move Tool to a Parking Location 
 '!FABMO!enabled:true
-
 ' Name: Park
 ' Description: Move Tool to a Parking Location (typically to back)
-' Platform: Desktop
+' 2026/2/12 - Refactored (th)
 
-
-$sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
+$sb_standard_variables_PRESENT := 0                                        ' Define test variable if it does not exist
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+&u = %(25)
 
 ' === Main Program ===
   GOSUB initialize_variables
@@ -19,20 +18,12 @@ IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 '--- 'Subroutines ---
 Move_to_Position:
   IF &Z_park < %(3) THEN GOTO Skip_Lift
-      JZ, &Z_park
+      JZ, $sb_parkUU[&u].z
   Skip_Lift:
-    J2, &X_park, &Y_park
+      J2, $sb_parkUU[&u].x, $sb_parkUU[&u].y
   END
 
 no_variables:
     CN,201
-    RETURN
-
-'--- Initialize Variables and Adjust Standard Macro Variables for Current Tool and Conditions as Needed
-initialize_variables:
-    &u = %(25)
-    &X_park = $sb_parkUU[&u].x
-    &Y_park = $sb_parkUU[&u].y
-    &Z_park = $sb_parkUU[&u].z
     RETURN
 

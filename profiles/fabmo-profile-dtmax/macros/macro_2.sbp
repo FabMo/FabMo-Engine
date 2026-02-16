@@ -1,41 +1,43 @@
-'!FABMO!name: Z-Zero
+'!FABMO!name: Z-ZERO
 '!FABMO!description: Set Z-Zero with Zeroing Plate; after changing cutter
 '!FABMO!enabled:true
-'   2026/2/07 - Refactored (th)
+' Name: Z-ZERO
+' Description: Set Z-Zero with Zeroing Plate; after changing cutter
+' 2026/2/12 - Refactored (th)
 
-'--- Check to make sure Standard Macro Variables have been read (these are stored in Macro#201 along with general Macro Instructions)
-&debug = 0                                                            ' Set to 1 to debug on simulator but defined elsewhere as well
+' === Initialize ===
+' make sure Standard Macro Variables have been read from Macro 201 
 $sb_standard_variables_PRESENT := 0	                                  ' Define presence-test variable if it does not exist
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 $ATC.type := 0                                                        ' Set ATC.type designation if it does not exist  
-$sb_current_cutter_ZoffsetUU[] := .25                                 ' Initialize this variable for case tool cutter not yet zeroed
-
+&u = %(25)                                                            ' Set &u var as current units (clearer?)
+&last_cutter_offset = $sb_current_cutter_ZoffsetUU[&u]
+&backOff_dist = $sb_oochUU[&u] * 5
+&debug = 0                                                            ' Set to 1 to debug on simulator but defined elsewhere as well
 
 ' === Main Program =============
-&zHOMED = false
-GOSUB initialize_local_variables                                      ' Local variables used to prevent corruption of saved values
-&last_cutter_offset = $sb_current_cutter_ZoffsetUU[%(25)]
-
-ZZ    ' Set current Z location to 0.00 as a working starting point
-GOSUB backOffProx_if_needed
-GOSUB check_plate_clearance
-GOSUB first_home_z_toProx
-GOSUB find_z_zero_plate
-GOSUB finish
-&zHOMED = true
+    &zHOMED = false
+    ZZ    ' Set current Z location to 0.00 as a known starting point
+    GOSUB backOffProx_if_needed
+    GOSUB check_plate_clearance
+    GOSUB first_home_z_toProx
+    GOSUB find_z_zero_plate
+    GOSUB finish
+    &zHOMED = true
 END
-'===============================
+' ==============================
+
 
 ' --- Primary Subroutines ---
-first_home_z_toProx:                                                 ' Table Base Z-zero is at the top; we're confirming it here 
-	PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z                    ' PZ "probes" for a switch or contact in the Z axis
+first_home_z_toProx:                                                 ' Table Base Z-zero is at the top; we're confirming its location here 
+	PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z    ' PZ "probes" for a switch or contact in the Z axis
     ZZ                                                               ' Reset working zero to support next move
-    JZ, (-1 * &homeOff_Z)                                            ' Pull back from prox to location that will be true zero
-    &target_ck = &homeOff_Z + &ooch	                                 ' New target for detecting error; just past prox
-    PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z                   ' Slowly probe for prox in final accurate check
+    JZ, (-1 * $sb_homeOffUU[&u].z)                                   ' Pull back from prox to location that will be true zero
+    &target_ck = $sb_homeOffUU[&u].z + $sb_oochUU[&u]	             ' New target for detecting error; just past prox
+    PZ, &target_ck, $sb_slowSearchSpeedUU[&u].z, $sb_proxNum.z       ' Slowly probe for prox in final accurate check
     IF %(3) == &target_ck THEN GOSUB fail_missed_target	             ' Look at current Z location to see if we went past the target
     ZZ                                                               ' If OK, reset working zero again to do the pullback
-    JZ, (-1 * &homeOff_Z)
+    JZ, (-1 * $sb_homeOffUU[&u].z)
     ZZ                                                               ' And SET LOCAL ZERO
     IF $ATC.Type = 0 THEN GOTO SET_TABLE_BASE                        ' If not an ATC then also Set Table Base Zero
       GOTO NO_RESET
@@ -45,39 +47,39 @@ first_home_z_toProx:                                                 ' Table Bas
     NO_RESET:
       RETURN                                                         ' (for ATC we leave here with offset to a local Z of 0)
 
-find_z_zero_plate:                                                   ' Now probe to MEASURE OFFSET FOR THIS CUTTER 
-	PZ, (-1 * &searchDist_Z), &searchSpeed_Zzero, &zZeroNum          ' (THUS, set the Z=0; at surface of table or material, per position of plate)
+find_z_zero_plate:                                                   ' Now probe to MEASURE OFFSET FOR THIS CUTTER to surface of table or material
+	PZ, (-1 * $sb_searchDistUU[&u].z), $sb_searchSpeedUU[&u].zzero, $sb_zZeroNum    ' (THUS, probe to Z=0[+ plate thickness]; per position of plate)
     &target_ck = %(3)                                                ' Get position after probe
-    JZ, (&target_ck + &zPlateOff)                                    ' Back off after first contact with the Z zero plate
-    &target_ck = &target_ck - &ooch 
-    PZ, &target_ck, &slowSearchSpeed_Z, &zZeroNum                    ' Probe again, more carefully
+    JZ, (&target_ck + $sb_zPlateOffUU[&u])                           ' Back off after first contact with the Z zero plate
+    &target_ck = &target_ck - $sb_oochUU[&u] 
+    PZ, &target_ck, $sb_slowSearchSpeedUU[&u].z, $sb_zZeroNum        ' Probe again, more carefully
     IF %(3) == &target_ck THEN GOSUB fail_missed_target
     &target_ck = %(3)                                                ' Get the accurate distance to Z zero plate 
-    $sb_current_cutter_ZoffsetUU[] = &target_ck - &zPlateThick	     ' RECORD as persistent variable: offset of this cutter to the material
+    $sb_current_cutter_ZoffsetUU[] = &target_ck - $sb_zPlateThickUU[&u]    ' RECORD as persistent variable: offset of this cutter to the material
 
     SET_Z:    
-        JZ, ($sb_current_cutter_ZoffsetUU[&u] + &zPlateOff)          ' Pull up by offset
-        VA,,,(&zPlateOff)                                            ' Correct local Z to the offset
+        JZ, ($sb_current_cutter_ZoffsetUU[&u] + $sb_zPlateOffUU[&u]) ' Pull up by offset
+        VA,,,($sb_zPlateOffUU[&u])                                   ' Correct the local Z to the offset
         RETURN
 
 finish:
-	DIALOG "Remember to Remove Clip! The following value will be used for Cutter Offset in Homing:  " + $sb_current_cutter_ZoffsetUU[%(25)] + " (vs " + &last_cutter_offset + " last)"
+	DIALOG "Remember to Remove Clip! The following value will be used for Cutter Offset in Homing:  " + $sb_current_cutter_ZoffsetUU[&u] + " (vs " + &last_cutter_offset + " last)"
     RETURN 
 END
 
 
-' --- Checks and Failures ---
+' --- Checks and Errors ---
 	backOffProx_if_needed:
-	    IF %(&check_prox_Z) == 1 THEN GOSUB try_backOffProx_z
+	    IF %($sb_proxCk.z) == 1 THEN GOSUB try_backOffProx_z
 	    RETURN
 	
 	try_backOffProx_z:
 		MZ, -1 * &backOff_Dist
-	    IF %(&check_prox_Z) == 1 THEN GOTO fail_on_prox
+	    IF %($sb_proxCk.z) == 1 THEN GOTO fail_on_prox
 	    RETURN    
 	
 	check_plate_clearance:
-	    IF %(&zZeroCk) == 1 THEN GOTO fail_on_plate
+	    IF %($sb_zZeroCk) == 1 THEN GOTO fail_on_plate
 		RETURN
 	
 	fail_on_prox:
@@ -99,27 +101,4 @@ END
 	no_variables:
         CN,201
         RETURN
-END
-
-initialize_local_variables:
-    &u = %(25)                                                ' Local UNIT index
-
-    &safeZ_pullup = %(28)									  ' Read safeZ-pullup from system variables
-    &proxNum_Z = $sb_proxNum.z
-    &check_prox_Z = $sb_proxCk.z							  
-    &zZeroNum = $sb_zZeroNum
-    &zZeroCk = $sb_zZeroCk
-
-    &target_ck = 0
-	&ooch = $sb_oochUU[&u]
-	&backOff_dist = &ooch * 5
- 	&searchDist_Z = $sb_searchDistUU[&u].z
-	&searchSpeed_Z = $sb_searchSpeedUU[&u].z
-    &searchSpeed_Zzero = $sb_searchSpeedUU[&u].zzero
-	&slowSearchSpeed_Z = $sb_slowSearchSpeedUU[&u].z
-	&homeOff_Z = $sb_homeOffUU[&u].z
-    &zPlateOff = $sb_zPlateOffUU[&u]
-    &zPlateThick = $sb_zPlateThickUU[&u]
-
-	RETURN
 END

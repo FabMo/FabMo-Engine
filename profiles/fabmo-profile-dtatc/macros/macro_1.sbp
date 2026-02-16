@@ -1,7 +1,14 @@
-'!FABMO!name:ATC Toolchange -- User Initiated
-'!FABMO!description:Swaps  tools using Automatic Tool Changer - ATC
+'!FABMO!name:*ATC* TOOLCHANGE -- User Initiated
+'!FABMO!description:Swaps tools using Automatic Tool Changer - ATC
 '!FABMO!enabled:true
-CN,70
+' Name: *ATC* TOOLCHANGE -- User Initiated
+' Description: Swaps tools using Automatic Tool Changer - ATC
+' Author: Ryan Sturmer, Brendan Collins, Brian Owen, Ryan Patterson
+' 2026/2/12 - Refactored (th)
+
+
+' === Main ====================
+CN,75                                                             ' Load primary ATC variables and ck status (calls CN 70)
 &type = $ATC.type
 If &type = 7 Then GoTo IsDTATC
 If &type = 6 Then GoTo IsATC
@@ -13,6 +20,7 @@ If &type = 1 Then GoTo IsATC
 If &type = 0 Then GoTo IsMTC
 GOTO Tool_Type_Error
 END
+' ============================== 
 
 
 IsMTC:
