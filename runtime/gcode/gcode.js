@@ -224,6 +224,10 @@ GCodeRuntime.prototype.runStream = function (st) {
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function (filename) {
     this._file_or_stream_in_progress = true;
+    if (this.machine) {
+        this.machine._preRunUnits = config.machine.get("units");
+    }
+    
     if (this.machine.status.state === "idle" || this.machine.status.state === "armed") {
         //  TODO:  Can we count line numbers before streaming without reading the file twice?
         countLineNumbers(

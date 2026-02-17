@@ -827,6 +827,15 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
 SBPRuntime.prototype._run = function () {
     // Set state variables to kick things off
     //log.info("####=._run");
+    this._endCalled = false;
+
+    // Save the unit system at the start of the run so we can restore it later
+    this._preRunUnits = config.machine.get("units");
+    if (this.machine) {
+        this.machine._preRunUnits = this._preRunUnits;
+    }
+    log.debug("_run: captured _preRunUnits=" + this._preRunUnits);
+    log.debug("_run: config.machine.get('units')=" + config.machine.get("units"));
 
     this.started = true;
     this.waitingForStackBreak = false;
@@ -1154,6 +1163,12 @@ SBPRuntime.prototype._abort = function (error) {
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = async function (error) {
+    // Prevent double-end from overwriting restored state
+    if (this._endCalled) {
+        log.debug("_end already called, skipping duplicate");
+        return;
+    }
+    this._endCalled = true;
     var error_msg;
     if (!error && this.pending_error) {
         error = this.pending_error;
@@ -1220,16 +1235,19 @@ SBPRuntime.prototype._end = async function (error) {
     if (this.machine) {
         this.resumeAllowed = false;
         try {
-            await this.machine.restoreDriverState();
+            // restoreDriverState is callback-based, wrap in Promise for proper await
+            await new Promise(function (resolve, reject) {
+                this.machine.restoreDriverState(function (err) {
+                    if (err) {
+                        log.error("Error in restoreDriverState: " + err);
+                    }
+                    resolve();
+                });
+            }.bind(this));
 
-            // Trigger the save process
-            config.opensbp.update({}, (err) => {
-                if (err) {
-                    log.error("Failed to save opensbp.json:", err);
-                } else {
-                    log.info("opensbp.json saved successfully");
-                }
-            });
+            // restoreDriverState already saves opensbp.json and sends values to G2,
+            // so we do NOT call config.opensbp.update({}) here — doing so would
+            // re-send potentially stale values and overwrite the restored config.
 
             this.resumeAllowed = true;
 
@@ -2215,6 +2233,13 @@ SBPRuntime.prototype.setPreferredUnits = function (units, callback) {
 // Convert, Update, and Set parameters to the new current units
 // (Converts internal state to the specified unit system; which is saved to disc)
 SBPRuntime.prototype._setUnits = function (units) {
+    log.debug("_setUnits called: units=" + units + " this.units=" + this.units);
+    if (units === this.units) {
+        log.debug("_setUnits: EARLY RETURN - units match, no conversion");
+        return;
+    }
+    log.debug("_setUnits: proceeding with conversion from " + this.units + " to " + units);
+
     // UNIT Primary Value is machine.units (e.g. config.machine.get("units")); though internal state is represented in multiple objects for convenience
     this.units = config.machine.get("last_units"); // current preferred units from last update
     units = u.unitType(units); // new version of unitType
