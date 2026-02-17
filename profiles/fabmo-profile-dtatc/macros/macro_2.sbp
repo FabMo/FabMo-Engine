@@ -63,7 +63,7 @@ find_z_zero_plate:                                                   ' Now probe
         RETURN
 
 finish:
-	DIALOG "Remember to Remove Clip! The following value will be used for Cutter Offset in Homing:  " + $sb_current_cutter_ZoffsetUU[&u] + " (vs " + &last_cutter_offset + " last)"
+	DIALOG "Remember to Remove Clip! The following value will be used for Cutter Offset in Homing:  " + $sb_current_cutter_ZoffsetUU[&u] + " (vs " + &last_cutter_offset + " last)", OKTEXT="Continue ..."
     RETURN 
 END
 
