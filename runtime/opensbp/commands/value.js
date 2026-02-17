@@ -54,7 +54,7 @@ exports.VC = function (args, callback) {
     });
 };
 
-exports.VD = function (args) {
+exports.VD = function (args, callback) {
     // For all axes - the values are:
     //    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
     // XYZ Unit type
@@ -62,24 +62,21 @@ exports.VD = function (args) {
         log.debug("VD:Current X = " + this.cmd_posx);
         log.debug("VD:Current Y = " + this.cmd_posy);
         log.debug("VD:Current Z = " + this.cmd_posz);
-        switch (args[2]) {
-            case 0:
-                this.emit_gcode("G20"); // inches
-                this._setUnits("in");
-                log.debug("VD: returned from setting units to in");
-                break;
 
-            case 1:
-                this.emit_gcode("G21");
-                this._setUnits("mm");
-                log.debug("VD: returned from setting units to mm");
-                break;
-            default:
-                throw new Error("Invalid unit setting: " + args[2]);
-        }
-        log.debug("VD:Converted X = " + this.cmd_posx);
-        log.debug("VD:Converted Y = " + this.cmd_posy);
-        log.debug("VD:Converted Z = " + this.cmd_posz);
+        var setting = require("./setting");
+        // VD uses 0=inches, 1=mm — SU accepts "0" and "1" for the same mapping
+        setting.SU.call(this, [String(args[2])], function (err) {
+            if (err) {
+                log.error("VD: Error changing units: " + err);
+                return callback(err);
+            }
+            log.debug("VD:Converted X = " + this.cmd_posx);
+            log.debug("VD:Converted Y = " + this.cmd_posy);
+            log.debug("VD:Converted Z = " + this.cmd_posz);
+            callback();
+        }.bind(this));
+    } else {
+        callback();
     }
 };
 

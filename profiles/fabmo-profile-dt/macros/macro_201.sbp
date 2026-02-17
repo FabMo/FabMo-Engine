@@ -53,11 +53,12 @@ $sb_varTableUNITS        = "IN"     '- HOWEVER, the values provided in the table
 
 IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC
     SetINCH:
-        VD,,, 0                          ' FORCE CURRENT UNIT to INCH for inputting INCH DATA in this table!
+        SU, "in"                          ' FORCE CURRENT UNIT to INCH for inputting INCH DATA from this table!
         GOTO SetUniversalUnits
     SetMETRIC:
-        VD,,, 1                          ' FORCE CURRENT UNIT to MM for inputting MM DATA in this table!
+        SU, "mm"                          ' FORCE CURRENT UNIT to MM for inputting MM DATA from this table!
         GOTO SetUniversalUnits
+  ' Note that original unit type is restored at end of this file.
 
 SetUniversalUnits:
                                 ' these are INCH values that will be used for UU's

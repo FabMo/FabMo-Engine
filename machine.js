@@ -467,10 +467,18 @@ Machine.prototype.die = function (err, cause) {
 // This function restores the driver configuration to what is stored in the g2 configuration on disk
 // It is typically used after, for instance, a running file has altered the configuration in memory.
 // This is used to ensure that when the machine returns to idle the driver is in a "known" configuration
-//Machine.prototype.restoreDriverState =  async function (callback) {
 Machine.prototype.restoreDriverState = function (callback) {
+    var savedUnits = this._preRunUnits || config.machine.get("units");
+    var currentUnits = config.machine.get("units");
+    var preRunMachineConfig = this._preRunMachineConfig || null;
+
+    // Clear the pre-run state now that we've captured it
+    this._preRunUnits = null;
+    this._preRunMachineConfig = null;
+
+    // First, restore the G2 driver config from disk
     this.driver.setUnits(
-        config.machine.get("units"),
+        savedUnits,
         function () {
             this.driver.requestStatusReport(
                 function (status) {
@@ -479,12 +487,150 @@ Machine.prototype.restoreDriverState = function (callback) {
                             this.status[key] = status[key];
                         }
                     }
-                    log.debug("Restoring G2 from disk cache after run ...");
-                    config.driver.restore(function () {
-                        if (callback) {
-                            callback();
-                        }
-                    });
+                    config.driver.restore(
+                        function () {
+                            if (currentUnits !== savedUnits) {
+                                log.info(
+                                    "Units changed during run (" +
+                                        currentUnits +
+                                        " -> " +
+                                        savedUnits +
+                                        "), performing full unit restore"
+                                );
+
+                                // Step 1: Reload opensbp config from disk
+                                var opensbpPath = config.opensbp._filename;
+                                try {
+                                    var diskData = JSON.parse(require("fs").readFileSync(opensbpPath, "utf8"));
+                                } catch (e) {
+                                    log.warn("Could not reload opensbp config from disk: " + e);
+                                    diskData = null;
+                                }
+
+                                // Step 2: Reset machine config units to pre-run values
+                                config.machine._cache.units = savedUnits;
+                                config.machine._cache.last_units = savedUnits;
+
+                                // Step 3: Restore opensbp cache from disk data
+                                if (diskData) {
+                                    var sbpKeys = [
+                                        "movexy_speed", "movez_speed", "movea_speed", "moveb_speed", "movec_speed",
+                                        "jogxy_speed", "jogy_speed", "jogz_speed", "joga_speed", "jogb_speed", "jogc_speed",
+                                        "xy_maxjerk", "y_maxjerk", "z_maxjerk", "a_maxjerk", "b_maxjerk", "c_maxjerk",
+                                        "safeZpullUp"
+                                    ];
+                                    sbpKeys.forEach(function (key) {
+                                        if (key in diskData) {
+                                            config.opensbp._cache[key] = diskData[key];
+                                        }
+                                    });
+                                }
+
+                                // Step 4: Restore machine.json envelope and manual from pre-run snapshot
+                                // (disk file was overwritten with converted values during the SU command)
+                                if (preRunMachineConfig) {
+                                    if (preRunMachineConfig.envelope) {
+                                        config.machine._cache.envelope = preRunMachineConfig.envelope;
+                                    }
+                                    if (preRunMachineConfig.manual) {
+                                        config.machine._cache.manual = preRunMachineConfig.manual;
+                                    }
+                                } else {
+                                    log.warn("restoreDriverState: no preRunMachineConfig available, machine envelope may be incorrect");
+                                }
+
+                                // Step 5: Reload runtime from the now-correct cache
+                                for (var rkey in this.runtimes) {
+                                    var rt = this.runtimes[rkey];
+                                    if (rt && rt._loadConfig) {
+                                        rt._loadConfig();
+                                    }
+                                    if (rt && rt.units !== undefined) {
+                                        rt.units = savedUnits;
+                                    }
+                                }
+
+                                // Step 6: Send correct values to G2 and apply machine config
+                                config.opensbp.update({}, function (err) {
+                                    if (err) {
+                                        log.error("Error updating opensbp after restore: " + err);
+                                    }
+
+                                    // Step 7: Apply machine config to send envelope/input values to G2
+                                    // Use setMany to properly send values without triggering unit conversion
+                                    config.machine.save(function () {
+                                        // Send the envelope values to the driver directly
+                                        // (machine config apply would trigger unit conversion again, so we do it manually)
+                                        var envelope = config.machine._cache.envelope;
+                                        if (envelope) {
+                                            var envCmds = {};
+                                            if ("xmin" in envelope) envCmds.xtn = envelope.xmin;
+                                            if ("xmax" in envelope) envCmds.xtm = envelope.xmax;
+                                            if ("ymin" in envelope) envCmds.ytn = envelope.ymin;
+                                            if ("ymax" in envelope) envCmds.ytm = envelope.ymax;
+                                            if ("zmin" in envelope) envCmds.ztn = envelope.zmin;
+                                            if ("zmax" in envelope) envCmds.ztm = envelope.zmax;
+                                            for (var ek in envCmds) {
+                                                var cmd = {};
+                                                cmd[ek] = envCmds[ek];
+                                                this.driver.command(cmd);
+                                            }
+                                        }
+
+                                        config.opensbp.save(function () {
+                                            // Step 8: Trigger G2 position recalculation via the Z-jog hack
+                                            // G2 firmware has a bug where it doesn't recalculate displayed
+                                            // positions after a unit change. The updateMachinePosition hack
+                                            // does a tiny Z jog to force it.
+                                            this.driver.updateMachinePosition();
+
+                                            // Step 9: Get fresh positions AFTER the Z-jog completes
+                                            // The Z-jog generates async status reports, so we need to wait
+                                            // for it to finish before requesting our final status.
+                                            setTimeout(function () {
+                                                this.driver.requestStatusReport(
+                                                    function (freshStatus) {
+                                                        for (var key in this.status) {
+                                                            if (key in freshStatus) {
+                                                                this.status[key] = freshStatus[key];
+                                                            }
+                                                        }
+                                                        // Step 10: Save positions to instance
+                                                        this.driver.get("mpo", function (mpoErr, mpo) {
+                                                            if (!mpoErr && mpo && config.instance) {
+                                                                config.instance.update(
+                                                                    { position: mpo },
+                                                                    function () {
+                                                                        // Final status emit with correct position
+                                                                        this.emit("status", this.status);
+                                                                        if (callback) { callback(); }
+                                                                    }.bind(this)
+                                                                );
+                                                            } else {
+                                                                this.emit("status", this.status);
+                                                                if (callback) { callback(); }
+                                                            }
+                                                        }.bind(this));
+                                                    }.bind(this)
+                                                );
+                                            }.bind(this), 500); // Wait for Z-jog to complete
+                                        }.bind(this));
+                                    }.bind(this));
+                                }.bind(this));
+                            } else {
+                                // No unit change, but still need to restore opensbp values to G2
+                                // in case the file modified speeds/jerks
+                                config.opensbp.update({}, function (err) {
+                                    if (err) {
+                                        log.error("Error updating opensbp after restore (no unit change): " + err);
+                                    }
+                                    if (callback) {
+                                        callback();
+                                    }
+                                });
+                            }
+                        }.bind(this)
+                    );
                 }.bind(this)
             );
         }.bind(this)
@@ -934,7 +1080,7 @@ Machine.prototype.setPreferredUnits = async function (units, lastunits, callback
                                 function runtime_set_units(item, callback) {
                                     log.info("Setting preferred units for " + item);
                                     if (item.setPreferredUnits) {
-                                        return item.setPreferredUnits(uv, callback);
+                                        return item.setPreferredUnits(units, callback);
                                     }
                                     callback();
                                 }.bind(this),
@@ -1012,6 +1158,23 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 // Run a file given a filename on disk.  Choose the runtime that is appropriate for that file.
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
+
+    // Save pre-run state for restoration after the run
+    this._preRunUnits = config.machine.get("units");
+    
+    // Deep-copy the machine config values that get modified by unit changes
+    // so we can restore them after the run completes
+    try {
+        this._preRunMachineConfig = {
+            envelope: JSON.parse(JSON.stringify(config.machine.get("envelope") || {})),
+            manual: JSON.parse(JSON.stringify(config.machine.get("manual") || {})),
+            units: config.machine.get("units"),
+            last_units: config.machine.get("last_units")
+        };
+    } catch (e) {
+        log.warn("_runFile: failed to save preRunMachineConfig: " + e);
+        this._preRunMachineConfig = null;
+    }
 
     // Set the user-friendly filename from the job object, if available
     if (this.status.job && this.status.job.name) {
@@ -1244,46 +1407,6 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 };
 
 
-// // Pause the machine
-// Machine.prototype.pause = function (callback) {
-//     log.debug("====> Machine.pause() called, current state: " + this.status.state);
-//     log.debug("====> pauseTimer exists: " + !!this.pauseTimer);
-//     log.debug("====> current_runtime: " + (this.current_runtime ? this.current_runtime.toString() : "none"));
-    
-//     if (this.status.state === "running" || this.status.state === "probing") {
-//         if (this.current_runtime) {
-//             log.debug("====> Handling .pause in Machine, to cur_runtime.pause()");
-            
-//             // Clear pauseTimer if it exists (handles early Stop during file start)
-//             if (this.pauseTimer) {
-//                 log.debug("====> Clearing pauseTimer during running->pause transition");
-//                 clearTimeout(this.pauseTimer);
-//                 this.pauseTimer = false;
-//             }
-            
-//             this.current_runtime.pause();
-//             callback(null, "paused");
-//         } else {
-//             callback("Not pausing because no runtime provided");
-//         }
-//     } else if (this.status.state === "paused") {
-//         // Already paused - just clear the timer if present
-//         // DO NOT call setState() as that creates the center modal
-//         if (this.pauseTimer) {
-//             log.debug("====> User Stop during timed pause - clearing timer only");
-//             clearTimeout(this.pauseTimer);
-//             this.pauseTimer = false;
-//             // Just emit status without changing state
-//             // This allows the dashboard to show the footer modal
-//             this.emit("status", this.status);
-//         }
-//         callback(null, "paused");
-//     } else {
-//         log.debug("====> Not pausing, state is: " + this.status.state);
-//         callback("Not pausing because machine is not running");
-//     }
-// };
-
 // Pause the machine
 Machine.prototype.pause = function (callback) {
     if (this.status.state === "running" || this.status.state === "probing") {
@@ -1396,7 +1519,7 @@ Machine.prototype.resume = function (callback, input = false) {
         this.driver.resumePending = false; // * important to clear for multiple stackbreaks
         this.status.hold = 0  // maybe redundant with g2core?
         this.emit("status", this.status);
-        log.debug("Undefined callback passed to resume; cleared .resumePending");
+        log.debug("Undefined callback passed to resume; cleared resumePending");
     }
 };
 
@@ -1513,25 +1636,6 @@ Machine.prototype.startAccessories = async function () {
         log.debug("Continuing without spindle functionality");
     }
 };
-
-// Machine.prototype.startAccessories = async function () {
-//     try {
-//         //const spindle = new Spin();
-//         log.info("Spindle instance created:" + JSON.stringify(spindle));
-//         // load VFD settings with wait and complete connection before listening for changes
-//         await spindle.loadVFDSettings();
-//         await spindle.connectVFD();
-//         spindle.on("statusChanged", (spindlestatus) => {
-//             log.info("EMIT New GLOBAL Spindle status : " + JSON.stringify(spindlestatus));
-//             // add spindle status to global status object
-//             this.status.spindle = spindlestatus;
-//             this.emit("status", this.status);
-//         });
-//     } catch (error) {
-//         //log.error("Failed to create a spindle connection:" + error);
-//         log.error("Spindle RPM Failed as accessory.");
-//     }
-// };
 
 // Set up the USB-drive checker
 Machine.prototype.startUSBDriveManager = function () {

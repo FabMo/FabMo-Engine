@@ -224,6 +224,22 @@ GCodeRuntime.prototype.runStream = function (st) {
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function (filename) {
     this._file_or_stream_in_progress = true;
+    if (this.machine) {
+        this.machine._preRunUnits = config.machine.get("units");
+        // Save machine config snapshot for consistency with SBP runtime
+        try {
+            this.machine._preRunMachineConfig = {
+                envelope: JSON.parse(JSON.stringify(config.machine.get("envelope") || {})),
+                manual: JSON.parse(JSON.stringify(config.machine.get("manual") || {})),
+                units: config.machine.get("units"),
+                last_units: config.machine.get("last_units")
+            };
+        } catch (e) {
+            // Non-critical, just log
+            log.warn("Failed to save preRunMachineConfig in GCode runtime: " + e);
+        }
+    }
+    
     if (this.machine.status.state === "idle" || this.machine.status.state === "armed") {
         //  TODO:  Can we count line numbers before streaming without reading the file twice?
         countLineNumbers(
