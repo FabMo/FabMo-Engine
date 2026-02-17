@@ -469,12 +469,8 @@ Machine.prototype.die = function (err, cause) {
 // This is used to ensure that when the machine returns to idle the driver is in a "known" configuration
 Machine.prototype.restoreDriverState = function (callback) {
     var savedUnits = this._preRunUnits || config.machine.get("units");
-    var currentUnits = this.status.unit === "mm" ? "mm" : "in";
+    var currentUnits = config.machine.get("units");
     var preRunMachineConfig = this._preRunMachineConfig || null;
-
-    log.debug("restoreDriverState: savedUnits=" + savedUnits + " currentUnits=" + currentUnits);
-    log.debug("restoreDriverState: _preRunUnits=" + this._preRunUnits);
-    log.debug("restoreDriverState: has preRunMachineConfig=" + !!preRunMachineConfig);
 
     // Clear the pre-run state now that we've captured it
     this._preRunUnits = null;
@@ -491,8 +487,6 @@ Machine.prototype.restoreDriverState = function (callback) {
                             this.status[key] = status[key];
                         }
                     }
-                    log.debug("restoreDriverState: after setUnits+statusReport, status.unit=" + status.unit);
-                    log.debug("Restoring G2 from disk cache after run ...");
                     config.driver.restore(
                         function () {
                             if (currentUnits !== savedUnits) {
@@ -508,7 +502,6 @@ Machine.prototype.restoreDriverState = function (callback) {
                                 var opensbpPath = config.opensbp._filename;
                                 try {
                                     var diskData = JSON.parse(require("fs").readFileSync(opensbpPath, "utf8"));
-                                    log.debug("restoreDriverState: reloaded opensbp from disk, movexy_speed=" + diskData.movexy_speed);
                                 } catch (e) {
                                     log.warn("Could not reload opensbp config from disk: " + e);
                                     diskData = null;
@@ -538,11 +531,9 @@ Machine.prototype.restoreDriverState = function (callback) {
                                 if (preRunMachineConfig) {
                                     if (preRunMachineConfig.envelope) {
                                         config.machine._cache.envelope = preRunMachineConfig.envelope;
-                                        log.debug("restoreDriverState: restored machine envelope from pre-run snapshot, xmax=" + preRunMachineConfig.envelope.xmax);
                                     }
                                     if (preRunMachineConfig.manual) {
                                         config.machine._cache.manual = preRunMachineConfig.manual;
-                                        log.debug("restoreDriverState: restored machine manual from pre-run snapshot");
                                     }
                                 } else {
                                     log.warn("restoreDriverState: no preRunMachineConfig available, machine envelope may be incorrect");
@@ -580,9 +571,10 @@ Machine.prototype.restoreDriverState = function (callback) {
                                             if ("zmin" in envelope) envCmds.ztn = envelope.zmin;
                                             if ("zmax" in envelope) envCmds.ztm = envelope.zmax;
                                             for (var ek in envCmds) {
-                                                this.driver.command(JSON.parse('{"' + ek + '":' + envCmds[ek] + '}'));
+                                                var cmd = {};
+                                                cmd[ek] = envCmds[ek];
+                                                this.driver.command(cmd);
                                             }
-                                            log.debug("restoreDriverState: sent envelope to G2: xmax=" + envelope.xmax + " ymax=" + envelope.ymax);
                                         }
 
                                         config.opensbp.save(function () {
@@ -598,8 +590,6 @@ Machine.prototype.restoreDriverState = function (callback) {
                                             setTimeout(function () {
                                                 this.driver.requestStatusReport(
                                                     function (freshStatus) {
-                                                        log.debug("restoreDriverState: fresh status.unit=" + freshStatus.unit);
-                                                        log.debug("restoreDriverState: fresh status.posx=" + freshStatus.posx);
                                                         for (var key in this.status) {
                                                             if (key in freshStatus) {
                                                                 this.status[key] = freshStatus[key];
@@ -607,20 +597,17 @@ Machine.prototype.restoreDriverState = function (callback) {
                                                         }
                                                         // Step 10: Save positions to instance
                                                         this.driver.get("mpo", function (mpoErr, mpo) {
-                                                            log.debug("restoreDriverState: mpo=" + JSON.stringify(mpo));
                                                             if (!mpoErr && mpo && config.instance) {
                                                                 config.instance.update(
                                                                     { position: mpo },
                                                                     function () {
                                                                         // Final status emit with correct position
                                                                         this.emit("status", this.status);
-                                                                        log.debug("restoreDriverState: COMPLETE");
                                                                         if (callback) { callback(); }
                                                                     }.bind(this)
                                                                 );
                                                             } else {
                                                                 this.emit("status", this.status);
-                                                                log.debug("restoreDriverState: COMPLETE (no mpo)");
                                                                 if (callback) { callback(); }
                                                             }
                                                         }.bind(this));
@@ -631,10 +618,16 @@ Machine.prototype.restoreDriverState = function (callback) {
                                     }.bind(this));
                                 }.bind(this));
                             } else {
-                                log.debug("restoreDriverState: no unit change, COMPLETE");
-                                if (callback) {
-                                    callback();
-                                }
+                                // No unit change, but still need to restore opensbp values to G2
+                                // in case the file modified speeds/jerks
+                                config.opensbp.update({}, function (err) {
+                                    if (err) {
+                                        log.error("Error updating opensbp after restore (no unit change): " + err);
+                                    }
+                                    if (callback) {
+                                        callback();
+                                    }
+                                });
                             }
                         }.bind(this)
                     );
@@ -1178,7 +1171,6 @@ Machine.prototype._runFile = function (filename) {
             units: config.machine.get("units"),
             last_units: config.machine.get("last_units")
         };
-        log.debug("_runFile: saved preRunMachineConfig snapshot, envelope.xmax=" + this._preRunMachineConfig.envelope.xmax);
     } catch (e) {
         log.warn("_runFile: failed to save preRunMachineConfig: " + e);
         this._preRunMachineConfig = null;
@@ -1415,46 +1407,6 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 };
 
 
-// // Pause the machine
-// Machine.prototype.pause = function (callback) {
-//     log.debug("====> Machine.pause() called, current state: " + this.status.state);
-//     log.debug("====> pauseTimer exists: " + !!this.pauseTimer);
-//     log.debug("====> current_runtime: " + (this.current_runtime ? this.current_runtime.toString() : "none"));
-    
-//     if (this.status.state === "running" || this.status.state === "probing") {
-//         if (this.current_runtime) {
-//             log.debug("====> Handling .pause in Machine, to cur_runtime.pause()");
-            
-//             // Clear pauseTimer if it exists (handles early Stop during file start)
-//             if (this.pauseTimer) {
-//                 log.debug("====> Clearing pauseTimer during running->pause transition");
-//                 clearTimeout(this.pauseTimer);
-//                 this.pauseTimer = false;
-//             }
-            
-//             this.current_runtime.pause();
-//             callback(null, "paused");
-//         } else {
-//             callback("Not pausing because no runtime provided");
-//         }
-//     } else if (this.status.state === "paused") {
-//         // Already paused - just clear the timer if present
-//         // DO NOT call setState() as that creates the center modal
-//         if (this.pauseTimer) {
-//             log.debug("====> User Stop during timed pause - clearing timer only");
-//             clearTimeout(this.pauseTimer);
-//             this.pauseTimer = false;
-//             // Just emit status without changing state
-//             // This allows the dashboard to show the footer modal
-//             this.emit("status", this.status);
-//         }
-//         callback(null, "paused");
-//     } else {
-//         log.debug("====> Not pausing, state is: " + this.status.state);
-//         callback("Not pausing because machine is not running");
-//     }
-// };
-
 // Pause the machine
 Machine.prototype.pause = function (callback) {
     if (this.status.state === "running" || this.status.state === "probing") {
@@ -1567,7 +1519,7 @@ Machine.prototype.resume = function (callback, input = false) {
         this.driver.resumePending = false; // * important to clear for multiple stackbreaks
         this.status.hold = 0  // maybe redundant with g2core?
         this.emit("status", this.status);
-        log.debug("Undefined callback passed to resume; cleared .resumePending");
+        log.debug("Undefined callback passed to resume; cleared resumePending");
     }
 };
 
@@ -1684,25 +1636,6 @@ Machine.prototype.startAccessories = async function () {
         log.debug("Continuing without spindle functionality");
     }
 };
-
-// Machine.prototype.startAccessories = async function () {
-//     try {
-//         //const spindle = new Spin();
-//         log.info("Spindle instance created:" + JSON.stringify(spindle));
-//         // load VFD settings with wait and complete connection before listening for changes
-//         await spindle.loadVFDSettings();
-//         await spindle.connectVFD();
-//         spindle.on("statusChanged", (spindlestatus) => {
-//             log.info("EMIT New GLOBAL Spindle status : " + JSON.stringify(spindlestatus));
-//             // add spindle status to global status object
-//             this.status.spindle = spindlestatus;
-//             this.emit("status", this.status);
-//         });
-//     } catch (error) {
-//         //log.error("Failed to create a spindle connection:" + error);
-//         log.error("Spindle RPM Failed as accessory.");
-//     }
-// };
 
 // Set up the USB-drive checker
 Machine.prototype.startUSBDriveManager = function () {

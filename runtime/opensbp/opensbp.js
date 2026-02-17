@@ -833,6 +833,20 @@ SBPRuntime.prototype._run = function () {
     this._preRunUnits = config.machine.get("units");
     if (this.machine) {
         this.machine._preRunUnits = this._preRunUnits;
+        // Also save machine config snapshot if not already saved by _runFile
+        if (!this.machine._preRunMachineConfig) {
+            try {
+                this.machine._preRunMachineConfig = {
+                    envelope: JSON.parse(JSON.stringify(config.machine.get("envelope") || {})),
+                    manual: JSON.parse(JSON.stringify(config.machine.get("manual") || {})),
+                    units: config.machine.get("units"),
+                    last_units: config.machine.get("last_units")
+                };
+                log.debug("_run: saved preRunMachineConfig snapshot (not set by _runFile)");
+            } catch (e) {
+                log.warn("_run: failed to save preRunMachineConfig: " + e);
+            }
+        }
     }
     log.debug("_run: captured _preRunUnits=" + this._preRunUnits);
     log.debug("_run: config.machine.get('units')=" + config.machine.get("units"));
@@ -1237,11 +1251,24 @@ SBPRuntime.prototype._end = async function (error) {
         try {
             // restoreDriverState is callback-based, wrap in Promise for proper await
             await new Promise(function (resolve, reject) {
-                this.machine.restoreDriverState(function (err) {
-                    if (err) {
-                        log.error("Error in restoreDriverState: " + err);
+                var resolved = false;
+                var timeout = setTimeout(function () {
+                    if (!resolved) {
+                        resolved = true;
+                        log.warn("restoreDriverState timed out after 10s");
+                        resolve();
                     }
-                    resolve();
+                }, 10000);
+                
+                this.machine.restoreDriverState(function (err) {
+                    if (!resolved) {
+                        resolved = true;
+                        clearTimeout(timeout);
+                        if (err) {
+                            log.error("Error in restoreDriverState: " + err);
+                        }
+                        resolve();
+                    }
                 });
             }.bind(this));
 
