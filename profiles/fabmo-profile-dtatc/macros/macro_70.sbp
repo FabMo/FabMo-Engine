@@ -33,12 +33,13 @@ $DrawbarDelay = 0.75
 
 
 ' UNIVERSAL UNIT VARIABLES =========================================================================================================
+&PRESENT_UNITS = %(25)                  ' Save the original unit type that this macro was called in
 IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC  ' We need to define the UNIT type that this table is provided in
     SetINCH:
-        VD,,, 0                                   ' FORCE CURRENT UNIT to INCH for this MACRO
+        SU, "in"                        ' FORCE CURRENT UNIT to INCH for this MACRO
         GOTO SetUniversalUnits
     SetMETRIC:
-        VD,,, 1                                   ' FORCE CURRENT UNIT to MM for this MACRO
+        SU, "mm"                        ' FORCE CURRENT UNIT to MM for this MACRO
         GOTO SetUniversalUnits
 
 SetUniversalUnits:
@@ -63,7 +64,7 @@ SetUniversalUnits:
     $toolsUU[1][].z := 0
     $toolsUU[1][].h := 0
   'Positions
-    $manual_changeUU[].x := 15            ' Location for manual tool change
+    $manual_changeUU[].x := 15          ' Location for manual tool change
     $manual_changeUU[].y := 0
   'Motion values
     $zSlowUU[] := 0.4
@@ -80,12 +81,14 @@ SetUniversalUnits:
     $TOOL_OFFSETUU[] := 3
     $Transit_HeightUU[] := -1
   'Calibration parameters
-    $firstClipUU[].x := 39.25             'Location of first clip for calibration
+    $firstClipUU[].x := 39.25           ' Location of first clip for calibration
     $firstClipUU[].y := 4.875
     $firstClipUU[].z := 3
     $safe_liftUU[] := 1
     $clipPulloutUU[] := 0.75
     $thClearanceUU[] := 0.375
+
+SU, &PRESENT_UNITS                      ' Restore original unit type after defining Universal Units    
 
 END
 

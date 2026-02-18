@@ -15,7 +15,6 @@ GOSUB HOME_Z                                                         ' First Hom
 PAUSE "The keypad will now open. Move your spindle to the location where you want to Zero the Z axis." 
 SK                                                                   ' Keypad open
 CN,2                                                                 ' Zero Z Axis to Z Zero Plate
-PAUSE "Offset 9 is " + %(9)                                          ' Display offset for user's reference
 $atcUU[].PlateOffset = %(9) - $toolsUU[$ATC.ToolIn][&u].h            ' Record Offset in config
 PAUSE "tool.h- " + $toolsUU[$ATC.ToolIn][&u].h + " ATCPlateOffset- " + $atcUU[&u].PlateOffset
 END

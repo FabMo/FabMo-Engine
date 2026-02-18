@@ -1,0 +1,141 @@
+'!FABMO!name: Manual Tool Change - MTC
+'!FABMO!description: -for files- Calls Manual Tool Changes
+'!FABMO!enabled:true
+' Name: Manual Tool Change - MTC
+' Description: -for files- Calls Manual Tool Changes
+' Author: Ted Hall, Ryan Sturmer
+' 2026/2/12 - Refactored (th)
+
+' Typically called from file with C9 (e.g. produced by Vectric Post-processor); uses &tool variable to specify tool number and $sb_MTCmode to specify method (e.g., IGNORE, MTC, QUIT).
+' See Macro 201 for setting standard variables that are read here, including $sb_MTCmode and $sb_MTC_Z_mode, which are used to specify the method for tool changing and Z pull-up method, respectively.
+' Some of these variables are adjusted in the FabMo "Cutting Settings" app
+
+' === Initialize ===
+' make sure Standard Macro Variables have been read from Macro 201 
+$sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
+IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+&last_YN = "NO"
+&Tool := -1                                                       ' Only overwrites if we did not get tool number from file
+&current_tool := 0                                                ' Only overwrites if there is not a know tool in spindle 
+
+IF $ATC.Type = 0 THEN GOTO select_manual_change
+CN, 71                                                             ' Switch to ATC Tool Change Subroutine if ATC
+GOTO end_change                                                    ' and exit ...
+
+' === Main Program ===
+select_manual_change:
+    IF $sb_MTCmode == "IGNORE" THEN GOSUB MTC_ignore
+    IF &Tool == -1 THEN GOTO no_tool_error                        ' If no specific &Tool was specified, that's an error
+    IF &current_tool >= 1 THEN GOTO std_change                    ' At start of file &current_tool set to 0 unless $sb_MTC_skip_first set in C201
+        DIALOG "Is Tool #" + &Tool + " currently inserted in the spindle?", OKTEXT="Continue ...", INPUT="&last_YN"
+        IF &last_YN = "YES" THEN GOTO tool_in_OK
+            GOSUB MTC_run
+            GOTO end_change
+            END
+
+    std_change:
+    IF &Tool == &current_tool THEN GOTO end_change                    ' Skips if same tool after initial check
+        DIALOG "Ready for change to Tool #" + &Tool + " ?", OKTEXT="OK, Continue ..."
+            &zHOMED = false
+            GOSUB MTC_run
+            GOTO end_change
+            
+    start_change:
+        ' C9 is a gatekeeper for spindle (may need to set spindle authorized here)
+        DIALOG "Clear to Start Spindle ? (Key switch On?)", OKTEXT="Yes, continue ...", CANCELTEXT="Quit"
+        GOTO end_change
+ 
+    tool_in_OK: 'options for z_zero on first tool, even if correct
+        DIALOG "Have you zeroed the Z axis for this bit?", OKTEXT="Continue ...", INPUT="&last_YN"
+        IF &last_YN = "YES" THEN GOTO end_change
+        IF $sb_MTC_Zero_mode == "MACRO" THEN GOSUB z_zero_with_macro
+        IF $sb_MTC_Zero_mode == "DRO" THEN GOSUB z_zero_with_manual
+
+    end_change:
+        ' Set the current tool to the tool requested (assume if we got this far that the tool change was made successfully)
+        &current_tool = &Tool               'update local #
+        $sb_TOOLcurrent = &current_tool     'update system #       
+END
+'====================
+
+
+'--- Primary Subroutines ---
+MTC_ignore:
+    ' This option is dedicated to Bill Young - Just pretend like we didn't even see this tool change function.
+    RETURN
+ 
+MTC_run:
+    ' Save the current XY position
+    Pause .5
+    &xpos = %(1)
+    &ypos = %(2)
+    
+    ' Turn the spindle off
+    CN,7
+    
+    ' Pull up to top prox or a defined spot
+    IF $sb_MTC_Z_mode == "MAX" THEN GOSUB goto_max_z
+    IF $sb_MTC_Z_mode == "FIXED" THEN GOSUB goto_fixed_z
+
+    'Change tools using the specified method
+    IF $sb_MTC_Zero_mode == "MACRO" THEN GOSUB z_zero_with_macro
+    IF $sb_MTC_Zero_mode == "DRO" THEN GOSUB z_zero_with_manual
+
+    ' Pull up to Safe Z Height
+    JZ, $sb_safe_Z
+
+    ' Return to the XY position we started from
+    J2, &xpos, &ypos
+    
+    ' Spindle back on
+    CN,6
+    
+    done_MTC_run:
+    RETURN
+
+
+' --- Checks & Errors ---
+goto_max_z: ' check to make sure not a bad offset
+    IF $sb_current_cutter_ZoffsetUU[%(25)] > $sb_safe_Z THEN GOTO pullup_to_offset
+    JZ, $sb_safe_Z
+    RETURN
+    pullup_to_offset:
+    JZ, $sb_current_cutter_ZoffsetUU[%(25)]
+    RETURN
+    
+goto_fixed_z:
+    JZ, $sb_changePosUU[%(25)].z
+    RETURN
+    
+goto_fixed_xy:
+    J2, $sb_changePosUU[%(25)].x, $sb_changePosUU[%(25)].y
+    RETURN
+    
+z_zero_with_macro:
+    DIALOG "Turn OFF Spindle Power (with Key)!", OKTEXT="Spindle Off ...", DETAIL="After confirming, you can use the Keypad to facilitate the tool change. When complete, close the Keypad to initiate Z-Zeroing."
+    SK, "Change to Tool #" + &Tool + " and position it above the Z-Zero plate for Zeroing. Close to start Z-Zeroing."
+    CN,2
+    DIALOG "Turn Spindle Power back ON ... <br> Then press Resume to continue with this tool."
+    DIALOG "Clear to Start Spindle ?", OKTEXT="Yes, continue ...", CANCELTEXT="Quit"
+    RETURN
+
+z_zero_with_manual:
+    ' Setting Z manually with Keypad and Z readout; assumes that no change has been made to base offsets since last C2
+    DIALOG "Shut OFF Spindle Power (with Key)!", OKTEXT="Done ...", DETAIL="After confirming, you can use the Keypad to facilitate the tool change. Set Z-Zero and pull up. When done, close the Keypad to continue file."
+    SK, "Change to Tool #" + &Tool + " and set the the zero position of the new Tool Manually with Keypad. Close to continue file."
+    CN,78  ' Set Current Z offset (this will not change current location but will set his offset to zero)
+    DIALOG "Turn Spindle Power back ON ... <br> Then press Resume to continue with this tool."
+    DIALOG "Clear to Start Spindle ?", OKTEXT="Yes, continue ...", CANCELTEXT="Quit"
+    RETURN
+
+no_tool_error:
+    PAUSE "A tool change was requested, but no Tool Number (&Tool) was specified in part file.", CANCELTEXT="Quit"
+    END
+    
+no_change:
+    END
+
+no_variables:
+    'Run the standard variable initialization macro to set up the standard macro variables
+    CN,201
+    RETURN

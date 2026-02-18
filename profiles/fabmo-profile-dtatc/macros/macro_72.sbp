@@ -35,7 +35,7 @@ START:
     &check = %(106) + %(3)                                            ' Determine maximum range of Z motion from system variable to set target distancefor probe
     
   'PROBE Z TOP LIMIT
-    PZ, &check, $zFastUU[&u], $Z_Prox
+    PZ, &check, $zFastUU[&u], $sb_proxNum.z
     IF %(3) >= &check THEN GOSUB Z_PROX_FAILURE                       ' If we got to our check value without triggering limit, then we've failed -- exit with error.
     VA,,,0 + $sb_homeOffUU[&u].z                                      ' After successful probe, reset z values
     JZ, 0                                                             ' Back off limit switch
@@ -45,7 +45,7 @@ START:
 
   'MEASURE_BIT
     &check = %(3) - %(106)                                            ' Determine maxium range of Z motion for probe of z zero plate
-    PZ, &check, $zSlowUU[&u], $ZZero_Sensor                                 ' Probe Z Zero plate
+    PZ, &check, $zSlowUU[&u], $sb_zZeroNum                            ' Probe Z Zero plate
     IF %(3) <= &check THEN GOTO CONTACT_ERROR                         ' If we reached target value then we've failed. Exit with error.
 
   'RECORD_LENGTH
