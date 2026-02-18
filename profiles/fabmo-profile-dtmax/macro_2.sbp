@@ -1,0 +1,104 @@
+'!FABMO!name: Z-ZERO
+'!FABMO!description: Set Z-Zero with Zeroing Plate; after changing cutter
+'!FABMO!enabled:true
+' Name: Z-ZERO
+' Description: Set Z-Zero with Zeroing Plate; after changing cutter
+' 2026/2/12 - Refactored (th)
+
+' === Initialize ===
+' make sure Standard Macro Variables have been read from Macro 201 
+$sb_standard_variables_PRESENT := 0	                                  ' Define presence-test variable if it does not exist
+IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+$ATC.type := 0                                                        ' Set ATC.type designation if it does not exist  
+&u = %(25)                                                            ' Set &u var as current units (clearer?)
+&last_cutter_offset = $sb_current_cutter_ZoffsetUU[&u]
+&backOff_dist = $sb_oochUU[&u] * 5
+&debug = 0                                                            ' Set to 1 to debug on simulator but defined elsewhere as well
+
+' === Main Program =============
+    &zHOMED = false
+    ZZ    ' Set current Z location to 0.00 as a known starting point
+    GOSUB backOffProx_if_needed
+    GOSUB check_plate_clearance
+    GOSUB first_home_z_toProx
+    GOSUB find_z_zero_plate
+    GOSUB finish
+    &zHOMED = true
+END
+' ==============================
+
+
+' --- Primary Subroutines ---
+first_home_z_toProx:                                                 ' Table Base Z-zero is at the top; we're confirming its location here 
+	PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z    ' PZ "probes" for a switch or contact in the Z axis
+    ZZ                                                               ' Reset working zero to support next move
+    JZ, (-1 * $sb_homeOffUU[&u].z)                                   ' Pull back from prox to location that will be true zero
+    &target_ck = $sb_homeOffUU[&u].z + $sb_oochUU[&u]	             ' New target for detecting error; just past prox
+    PZ, &target_ck, $sb_slowSearchSpeedUU[&u].z, $sb_proxNum.z       ' Slowly probe for prox in final accurate check
+    IF %(3) == &target_ck THEN GOSUB fail_missed_target	             ' Look at current Z location to see if we went past the target
+    ZZ                                                               ' If OK, reset working zero again to do the pullback
+    JZ, (-1 * $sb_homeOffUU[&u].z)
+    ZZ                                                               ' And SET LOCAL ZERO
+    IF $ATC.Type = 0 THEN GOTO SET_TABLE_BASE                        ' If not an ATC then also Set Table Base Zero
+      GOTO NO_RESET
+
+    SET_TABLE_BASE:  
+      VA,,,,,,,,,0,,,                                                ' SET TABLE BASE ZERO for Z Axis (if not ATC)
+    NO_RESET:
+      RETURN                                                         ' (for ATC we leave here with offset to a local Z of 0)
+
+find_z_zero_plate:                                                   ' Now probe to MEASURE OFFSET FOR THIS CUTTER to surface of table or material
+	PZ, (-1 * $sb_searchDistUU[&u].z), $sb_searchSpeedUU[&u].zzero, $sb_zZeroNum    ' (THUS, probe to Z=0[+ plate thickness]; per position of plate)
+    &target_ck = %(3)                                                ' Get position after probe
+    JZ, (&target_ck + $sb_zPlateOffUU[&u])                           ' Back off after first contact with the Z zero plate
+    &target_ck = &target_ck - $sb_oochUU[&u] 
+    PZ, &target_ck, $sb_slowSearchSpeedUU[&u].z, $sb_zZeroNum        ' Probe again, more carefully
+    IF %(3) == &target_ck THEN GOSUB fail_missed_target
+    &target_ck = %(3)                                                ' Get the accurate distance to Z zero plate 
+    $sb_current_cutter_ZoffsetUU[] = &target_ck - $sb_zPlateThickUU[&u]    ' RECORD as persistent variable: offset of this cutter to the material
+
+    SET_Z:    
+        JZ, ($sb_current_cutter_ZoffsetUU[&u] + $sb_zPlateOffUU[&u]) ' Pull up by offset
+        VA,,,($sb_zPlateOffUU[&u])                                   ' Correct the local Z to the offset
+        RETURN
+
+finish:
+	DIALOG "Remember to Remove Clip! The following value will be used for Cutter Offset in Homing:  " + $sb_current_cutter_ZoffsetUU[&u] + " (vs " + &last_cutter_offset + " last)", OKTEXT="Continue ..."
+    RETURN 
+END
+
+
+' --- Checks and Errors ---
+	backOffProx_if_needed:
+	    IF %($sb_proxCk.z) == 1 THEN GOSUB try_backOffProx_z
+	    RETURN
+	
+	try_backOffProx_z:
+		MZ, -1 * &backOff_Dist
+	    IF %($sb_proxCk.z) == 1 THEN GOTO fail_on_prox
+	    RETURN    
+	
+	check_plate_clearance:
+	    IF %($sb_zZeroCk) == 1 THEN GOTO fail_on_plate
+		RETURN
+	
+	fail_on_prox:
+		PAUSE "Z prox switch is already triggered. Cannot clear the tool. Move Off and Retry."
+		END
+	
+	fail_on_plate:
+	    PAUSE "Z-zero is already triggered. Cannot zero the tool. Move Off or Clear, and Retry."
+		END
+	
+	fail_missed_target:
+        IF &debug = 1 THEN GOTO JustReport
+	    DIALOG "Target Not Triggered! (Started beyond prox switch?)", CANCELTEXT="Exit"
+        END
+      JustReport:
+        DIALOG "DEBUG MODE: At a missed target; will continue to debug!"
+        RETURN
+
+	no_variables:
+        CN,201
+        RETURN
+END

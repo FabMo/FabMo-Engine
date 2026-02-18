@@ -1,0 +1,127 @@
+'!FABMO!name: HOME TOOL
+'!FABMO!description: Automatically Set Axis Zero for XYZ and position tool
+'!FABMO!enabled:true
+' Name: HOME TOOL
+' Description: Automatically Set Axis Zero for XYZ and position tool
+' 2026/12/5 - Refactored (th)
+
+' === Initialize ===
+' make sure Standard Macro Variables have been read from Macro 201 
+$sb_standard_variables_PRESENT := 0                                   ' Define presence-test variable if it does not exist
+IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+$ATC.type := 0                                                        ' Set ATC.type designation if it does not exist  
+&u = %(25)                                                            ' Set &u var as current units (clearer?)
+&last_cutter_offset = $sb_current_cutter_ZoffsetUU[&u]
+&backOff_dist = $sb_oochUU[&u] * 5
+&target_ck = 0
+&debug = 0                                                            ' Set to 1 to debug on simulator
+
+'--- Preliminary ATC Status Checks (for optional ATC)
+IF $ATC.Type == 0 THEN GOTO OK
+CN,75                                                                 ' ATC status check and load CN,70                                                             ' Load ATC Varibles (and local variables from #201)
+' ... then continue
+OK:
+
+
+' === Main Program =============
+    &xyHOMED = false
+    Z3    ' Zeoring all axes at their current location (sets worst case homing distances)
+    GOSUB backOffProx_if_needed
+    GOSUB home_z
+    GOSUB home_x
+    GOSUB home_y
+    &xyHOMED = true
+END
+'===============================
+
+
+' --- Primary Subroutines ---                                      
+home_z:
+    PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z    ' PZ "probes" for a switch or contact in the Z axis
+    ZZ                                                               ' Reset working zero to support next move
+    JZ, (-1 * $sb_homeOffUU[&u].z)                                   ' Pull back from prox to location that will be true zero
+    &target_ck = $sb_homeOffUU[&u].z + $sb_oochUU[&u]                ' New target for detecting error; just past prox
+    PZ, &target_ck, $sb_slowSearchSpeedUU[&u].z, $sb_proxNum.z       ' Slowly probe for prox in final accurate check
+    IF %(3) == &target_ck THEN GOSUB fail_missed_target              ' Look at current Z location to see if we went past the target
+    ZZ                                                               ' If OK, reset working zero again to do the pullback
+    JZ, (-1 * $sb_homeOffUU[&u].z)
+
+    IF $ATC.Type = 0 THEN GOTO SET_TABLE_BASE                        ' If not an ATC then also Set Table Base Zero
+      GOTO SET_TABLE_BASE_FOR_ATC
+
+    SET_TABLE_BASE:  
+        VA,,,(-1 * $sb_current_cutter_ZoffsetUU[&u]),,,,,,0          ' Set 0 and maintain full current-cutter-offset
+        RETURN
+    SET_TABLE_BASE_FOR_ATC:                                          ' Handle cutter offset for ATC
+        VA,,,-1*($toolsUU[$ATC.ToolIn][&u].H + $atcUU[&u].PlateOffset),,,,,,0    ' i.e. cutter-to-plate-offset + plate-to-table-offset
+        RETURN
+
+home_x:
+    PX, (-1 * $sb_searchDistUU[&u].x), $sb_searchSpeedUU[&u].xy, $sb_proxNum.x   ' PX "probes" for a switch or contact in the X axis 
+    ZX                                                               ' Reset working zero
+    JX, $sb_homePullBackUU[&u]                                       ' Pull back from prox
+    &target_ck = (-1 * ($sb_homeOffUU[&u].x + $sb_oochUU[&u]))       ' New target for detecting error just past prox
+    PX, &target_ck, $sb_slowSearchSpeedUU[&u].xy, $sb_proxNum.x      ' Slowly probe for prox in final accurate check
+    IF %(1)== &target_ck THEN GOSUB fail_missed_target               ' Look at current X location to see if we went past the target
+    ZX
+    JX, $sb_homeOffUU[&u].x
+    VA,0,,,,,,0,,,,,                                                 ' Set 0 location and Table Base Zero                                   
+    RETURN
+
+home_y:
+    PY, (-1 * $sb_searchDistUU[&u].y), $sb_searchSpeedUU[&u].xy, $sb_proxNum.y        
+    ZY
+    JY, $sb_homePullBackUU[&u]
+    &target_ck = (-1 * ($sb_homeOffUU[&u].y + $sb_oochUU[&u]))               
+    PY, &target_ck, $sb_slowSearchSpeedUU[&u].xy, $sb_proxNum.y 
+    IF %(2)== &target_ck THEN GOSUB fail_missed_target
+    ZY
+    JY, $sb_homeOffUU[&u].y
+    VA,,0,,,,,,0,,,,
+
+    DIALOG "XY Homing Complete <br> (continuing in 8 sec ...)", TIMER=8, OKTEXT="Continue, now ..."
+    RETURN
+END
+
+
+' --- Checks and Failures ---
+  backOffProx_if_needed:                                             ' Managing prox switches is complicated by multiple arrangements
+      &proxTriggered = 0
+      GOSUB checkProxs
+      IF &proxTriggered == 1 THEN GOSUB handleBackOff
+      &proxTriggered = 0
+      GOSUB checkProxs
+      IF &proxTriggered == 1 THEN GOSUB fail_no_clear
+      RETURN
+
+  checkProxs:
+      IF %$sb_proxCk.z)== 1 THEN GOSUB onProx
+      IF %$sb_proxCk.x)== 1 THEN GOSUB onProx
+      IF %$sb_proxCk.y)== 1 THEN GOSUB onProx
+      RETURN
+  onProx:
+      &proxTriggered = 1
+      RETURN
+
+  handleBackOff:
+      M3, &backOff_Dist, &backOff_Dist, -1 * &backOff_Dist
+      RETURN    
+
+  fail_no_clear:
+      PAUSE "Proximity Switch Not Clear! (A switch is stuck on.)" ' Could not clear.
+      END
+      RETURN
+
+  fail_missed_target:
+      IF &debug = 1 THEN GOTO JustReport
+      DIALOG "Target Not Triggered! (Started beyond prox switch?) Center and Try C3 again.", CANCELTEXT="Exit"
+      END
+    JustReport:
+      DIALOG "DEBUG MODE: At a missed target; will continue to debug!"
+      RETURN
+
+  no_variables:
+      CN,201
+      RETURN
+END      
+

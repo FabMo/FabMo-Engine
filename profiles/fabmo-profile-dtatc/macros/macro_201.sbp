@@ -49,14 +49,16 @@ $sb_MTC_skip_first       = "NO"     '- NO; YES ... add to DT Util? do we really 
 ' UU variables simplify unit type in macros and allow the measurement unit to be largely ignored when used.
 
 ' This input table is defined per the following assignment. It can be defined in MM or IN and Universal Units will be produced.
-$sb_varTableUNITS        = "IN"     '- HOWEVER, the values provided in the table must be consistent with this definition.
+$sb_varTableUNITS        = "IN"         '- HOWEVER, the values provided in the table must be consistent with this definition.
 
+
+&PRESENT_UNITS = %(25)                  ' Save the original unit type that this macro was called in
 IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC
     SetINCH:
-        SU, "in"                          ' FORCE CURRENT UNIT to INCH for inputting INCH DATA from this table!
+        SU, "in"                        ' FORCE CURRENT UNIT to INCH for inputting INCH DATA from this table!
         GOTO SetUniversalUnits
     SetMETRIC:
-        SU, "mm"                          ' FORCE CURRENT UNIT to MM for inputting MM DATA from this table!
+        SU, "mm"                        ' FORCE CURRENT UNIT to MM for inputting MM DATA from this table!
         GOTO SetUniversalUnits
   ' Note that original unit type is restored at end of this file.
 
@@ -114,6 +116,7 @@ SetUniversalUnits:
 ' Close With ==============================================================================================================
     $sb_standard_variables_PRESENT = 1      ' CONFIRM ALL VARIABLES READ !
 
+SU, &PRESENT_UNITS                          ' Restore original unit type after defining Universal Units    
 
 END
 
