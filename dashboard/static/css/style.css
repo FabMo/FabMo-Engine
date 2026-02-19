@@ -2746,18 +2746,24 @@ input[type='range']:focus {
 }
 
 .modalOkay{
-	color: #fff;
+    color: #fff;
     padding-top: .3em;
     cursor: pointer;
     display: inline-block;
     height: 50px;
     min-width: 30%;
-	padding-left: 2em;
-	padding-right: 2em;
-	text-align: center;
+    padding-left: 2em;
+    padding-right: 2em;
+    text-align: center;
     background-color: #5DAA35;
     border-radius: 5px;
     margin-bottom: 1em;
+}
+
+.modalOkay:focus {
+    outline: 2px solid #fff;
+    outline-offset: -3px;
+    box-shadow: 0 0 8px rgba(93, 170, 53, 0.6);
 }
 
 .modalCancel{
