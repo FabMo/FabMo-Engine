@@ -1745,6 +1745,13 @@ SBPRuntime.prototype._execute = async function (command, callback) {
             }
             modalParams.message = message;
 
+            modalParams.message = message;
+            
+            // Ensure a bare PAUSE always has a message so the client displays the modal
+            if (!modalParams.message && modalParams.message !== 0) {
+                modalParams.message = "Paused";
+            }            
+
             if (input_var) {
                 modalParams.input.name = input_var;
             } else if (normalizedParams.input) {
@@ -2921,8 +2928,12 @@ SBPRuntime.prototype.resume = function (input = false) {
                     this._assign(input.var, input.val);
                 }
                 this.paused = false;
-                this._executeNext();
+                // Resume the driver BEFORE calling _executeNext.
+                // _executeNext may immediately hit another PAUSE which sets this.paused=true again.
+                // If we call driver.resume() AFTER that, the resumePending flag will incorrectly
+                // consume the next STAT_STOP, preventing _executeNext from ever being called again.
                 this.driver.resume();
+                this._executeNext();
             } catch (err) {
                 log.error("Error during resume assignment: " + err);
                 return this._abort(err);

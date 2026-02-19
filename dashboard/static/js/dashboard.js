@@ -1608,6 +1608,8 @@ define(function (require) {
                     $(".modalNo").css("background-color", "transparent");
                     $(".modalOkay").css("pointer-events", "all");
                     $(".modalOkay").css("opacity", "1.0");
+                    // Focus OK button so Enter triggers it
+                    $(".modalOkay").focus();
                 });
 
             $(".modalNo")
@@ -1626,6 +1628,8 @@ define(function (require) {
                     $(".modalYes").css("color", "black");
                     $(".modalOkay").css("pointer-events", "all");
                     $(".modalOkay").css("opacity", "1.0");
+                    // Focus OK button so Enter triggers it
+                    $(".modalOkay").focus();
                 });
 
             // Normal input case
