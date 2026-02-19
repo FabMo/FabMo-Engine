@@ -1608,6 +1608,8 @@ define(function (require) {
                     $(".modalNo").css("background-color", "transparent");
                     $(".modalOkay").css("pointer-events", "all");
                     $(".modalOkay").css("opacity", "1.0");
+                    // Focus OK button so Enter triggers it
+                    $(".modalOkay").focus();
                 });
 
             $(".modalNo")
@@ -1626,6 +1628,8 @@ define(function (require) {
                     $(".modalYes").css("color", "black");
                     $(".modalOkay").css("pointer-events", "all");
                     $(".modalOkay").css("opacity", "1.0");
+                    // Focus OK button so Enter triggers it
+                    $(".modalOkay").focus();
                 });
 
             // Normal input case
@@ -1656,6 +1660,18 @@ define(function (require) {
                 $(".modalOkay").css("pointer-events", "all");
                 $(".modalOkay").css("opacity", "1.0");
             });
+
+            // Allow Enter key from the input box to trigger the OK button
+            $("#inputVal").off("keydown.modalEnter").on("keydown.modalEnter", function (e) {
+                if (e.keyCode === 13 || e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if ($(".modalOkay").css("pointer-events") !== "none") {
+                        $(".modalOkay").click();
+                    }
+                }
+            });
+
             $(".modalOkay")
                 .off("click")
                 .on("click", function () {
@@ -1714,13 +1730,32 @@ define(function (require) {
             });
         }
 
-        if (options["noButton"] === true) {
-            $(".modalCancel").hide();
-            $(".modalOkay").hide();
-        }
-
         if (options["noLogo"] === true) {
             $(".modalLogo").hide();
+        }
+
+        // Focus management for OK button: allow Enter key to trigger it
+        if (options.ok && options.okText) {
+            $(".modalOkay").attr("tabindex", "0");
+
+            // Add Enter key handler on the OK button itself
+            $(".modalOkay").off("keydown.modalEnter").on("keydown.modalEnter", function (e) {
+                if (e.keyCode === 13 || e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if ($(".modalOkay").css("pointer-events") !== "none") {
+                        $(this).click();
+                    }
+                }
+            });
+
+            // If there is no input field, focus the OK button directly so Enter works immediately
+            if (!options.input) {
+                // Small delay to ensure modal is fully rendered
+                setTimeout(function () {
+                    $(".modalOkay").focus();
+                }, 100);
+            }
         }
     };
 
@@ -1728,6 +1763,8 @@ define(function (require) {
     Dashboard.prototype.hideModal = function () {
         $(".modalDim").hide();
         $(".newModal").hide();
+        $(".modalOkay").off("keydown.modalEnter");
+        $("#inputVal").off("keydown.modalEnter");
         $(".modalOkay").off();
         $(".modalCancel").off();
     };
