@@ -1716,7 +1716,7 @@ define(function (require) {
         }
 
         // In the case of both buttons missing, provide a quit to prevent a jam
-        if (!options["okText"] && !options["cancelText"]) {
+        if (!options["okText"] && !options["cancelText"] && !options["noButton"]) {
             $(".modalOkay").off();
             $(".modalOkay").show();
             $(".modalOkay").text("Quit");

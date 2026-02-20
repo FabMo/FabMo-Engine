@@ -832,7 +832,7 @@ engine.getVersion(function (err, version) {
                                 }
 
                                 //Set defaults if both buttons are still null
-                                if (modalOptions.ok === null && modalOptions.cancel === null) {
+                                if (modalOptions.ok === null && modalOptions.cancel === null && !modalOptions.noButton) {
                                     modalOptions.okText = "Resume";
                                     modalOptions.ok = resumeFunction;
                                     modalOptions.cancelText = "Quit";
