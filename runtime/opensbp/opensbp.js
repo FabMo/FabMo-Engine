@@ -1176,7 +1176,7 @@ SBPRuntime.prototype._abort = function (error) {
 // End the program
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
-SBPRuntime.prototype._end = async function (error) {
+SBPRuntime.prototype._end = function (error) {
     // Prevent double-end from overwriting restored state
     if (this._endCalled) {
         log.debug("_end already called, skipping duplicate");
@@ -1189,7 +1189,6 @@ SBPRuntime.prototype._end = async function (error) {
     }
 
     // CRITICAL: Only exit early if we're being called recursively AND there's already an error
-    // Check if this is a recursive call by seeing if we're already cleaning up
     if (this.pending_error && error && this.pending_error !== error) {
         log.error("Recursive call to _end() detected - already processing: " + this.pending_error);
         log.debug("Exiting _end method on ABORT");
@@ -1205,8 +1204,6 @@ SBPRuntime.prototype._end = async function (error) {
     if (error) {
         if (error instanceof Error) {
             const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
-            
-            // Check if error message already starts with @line-
             if (error.message && error.message.startsWith('@line-')) {
                 error_msg = `${filePrefix}${error.message}`;
             } else if (Object.prototype.hasOwnProperty.call(error, "offset")) {
@@ -1233,83 +1230,80 @@ SBPRuntime.prototype._end = async function (error) {
     
     log.debug("Calling the non-nested (toplevel) end");
     
-    // Log the error for posterity
     if (error) {
         log.error(error);
     }
 
     // Clear runtime state
     this.resetRuntimeState();
-
-    // Clear the internal state of the runtime
     this.init();
     this.currentFilename = null;
 
     // Handle machine state restoration
     if (this.machine) {
         this.resumeAllowed = false;
-        try {
-            // restoreDriverState is callback-based, wrap in Promise for proper await
-            await new Promise(function (resolve, reject) {
-                var resolved = false;
-                var timeout = setTimeout(function () {
-                    if (!resolved) {
-                        resolved = true;
-                        log.warn("restoreDriverState timed out after 10s");
-                        resolve();
-                    }
-                }, 10000);
-                
-                this.machine.restoreDriverState(function (err) {
-                    if (!resolved) {
-                        resolved = true;
-                        clearTimeout(timeout);
-                        if (err) {
-                            log.error("Error in restoreDriverState: " + err);
-                        }
-                        resolve();
-                    }
-                });
-            }.bind(this));
-
-            // restoreDriverState already saves opensbp.json and sends values to G2,
-            // so we do NOT call config.opensbp.update({}) here — doing so would
-            // re-send potentially stale values and overwrite the restored config.
-
-            this.resumeAllowed = true;
-
-            if (this.machine.status.job) {
-                await this.machine.status.job.finish();
-                this.machine.status.job = null;
+        var self = this;
+        
+        // restoreDriverState is callback-based — use it directly, no Promise needed
+        var timeout = setTimeout(function () {
+            log.warn("restoreDriverState timed out after 10s");
+            self._finishEnd(error_msg);
+        }, 10000);
+        
+        this.machine.restoreDriverState(function (err) {
+            clearTimeout(timeout);
+            if (err) {
+                log.error("Error in restoreDriverState: " + err);
             }
-
-            // Set the machine state with error message
-            if (this.machine && typeof this.machine.setState === 'function') {
-                if (error_msg) {
-                    this.machine.setState(this, "idle", { error: error_msg });
-                } else {
-                    this.machine.setState(this, "idle");
-                }
-            } else {
-                log.warn("Machine or setState method not available during _end cleanup");
-            }
-        } catch (err) {
-            log.error("Error during machine state restoration:", err);
-            if (this.machine && typeof this.machine.setState === 'function') {
-                this.machine.setState(this, "stopped", { error: error_msg || err.message });
-            } else {
-                log.warn("Machine not available for error state setting");
-            }
-        }
+            self._finishEnd(error_msg);
+        });
     } else {
         log.warn("No machine available during SBPRuntime._end - likely due to disconnection");
         if (this.stream) {
             this.stream.end();
         }
+        this.emit("end", this);
     }
+};
 
-    // Emit an 'end' event
-    this.emit("end", this);
+// Second half of _end, called after restoreDriverState completes
+SBPRuntime.prototype._finishEnd = function (error_msg) {
+    this.resumeAllowed = true;
+
+    var self = this;
+    
+    var doSetState = function () {
+        if (self.machine && typeof self.machine.setState === 'function') {
+            if (error_msg) {
+                self.machine.setState(self, "idle", { error: error_msg });
+            } else {
+                self.machine.setState(self, "idle");
+            }
+        } else {
+            log.warn("Machine or setState method not available during _end cleanup");
+        }
+        self.emit("end", self);
+    };
+
+    if (this.machine && this.machine.status.job) {
+        var job = this.machine.status.job;
+        this.machine.status.job = null;
+        // job.finish() returns a Promise — chain it without async
+        var finishResult = job.finish();
+        if (finishResult && typeof finishResult.then === 'function') {
+            finishResult.then(
+                function () { doSetState(); },
+                function (err) {
+                    log.error("Error finishing job: " + err);
+                    doSetState();
+                }
+            );
+        } else {
+            doSetState();
+        }
+    } else {
+        doSetState();
+    }
 };
 
 SBPRuntime.prototype.resetRuntimeState = function () {
@@ -1421,7 +1415,7 @@ SBPRuntime.prototype.runCustomCut = function (number, callback) {
 // Returns false if execution does not break the stack (and callback is never called)
 //   command - A single parsed line of OpenSBP code
 
-SBPRuntime.prototype._execute = async function (command, callback) {
+SBPRuntime.prototype._execute = function (command, callback) {
     switch (command.type) {
         case "data_send":
             // Evaluate the channel
@@ -1574,25 +1568,41 @@ SBPRuntime.prototype._execute = async function (command, callback) {
         case "assign":
             try {
                 var value = this._eval(command.expr);
-                await this._assign(command.var, value);
+                // _assign may return a Promise (for system variables that need config updates)
+                // Handle it without making _execute async
+                var assignResult = this._assign(command.var, value);
                 
-                // Only increment after success
-                this.pc += 1;
-                
-                if (callback) {
-                    callback();
+                if (assignResult && typeof assignResult.then === 'function') {
+                    // It's a Promise — handle asynchronously
+                    assignResult.then(
+                        function () {
+                            this.pc += 1;
+                            if (callback) {
+                                callback();
+                            }
+                        }.bind(this),
+                        function (assignError) {
+                            var errorMsg = '@line-' + (this.pc + 1) + ': ' + assignError.message;
+                            log.error('[' + (this.currentFilename || 'unknown') + '] ' + errorMsg);
+                            this.pc += 1;
+                            if (!this.pending_error && this.started) {
+                                this._abort(new Error(errorMsg));
+                            }
+                        }.bind(this)
+                    );
+                } else {
+                    // Synchronous assignment (user variables, etc.)
+                    this.pc += 1;
+                    if (callback) {
+                        callback();
+                    }
                 }
             } catch (assignError) {
-                const errorMsg = `@line-${this.pc + 1}: ${assignError.message}`;
-                log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
-                
-                // Increment before aborting
+                var errorMsg = '@line-' + (this.pc + 1) + ': ' + assignError.message;
+                log.error('[' + (this.currentFilename || 'unknown') + '] ' + errorMsg);
                 this.pc += 1;
-                
                 if (!this.pending_error && this.started) {
                     this._abort(new Error(errorMsg));
-                } else {
-                    log.debug("Ignoring assignment error during cleanup: " + assignError.message);
                 }
                 return true;
             }
@@ -1602,25 +1612,37 @@ SBPRuntime.prototype._execute = async function (command, callback) {
             if (!this._varExists(command.var)) {
                 try {
                     var value = this._eval(command.expr);
-                    await this._assign(command.var, value);
+                    var weakAssignResult = this._assign(command.var, value);
                     
-                    // Only increment after success
-                    this.pc += 1;
-                    
-                    if (callback) {
-                        callback();
+                    if (weakAssignResult && typeof weakAssignResult.then === 'function') {
+                        weakAssignResult.then(
+                            function () {
+                                this.pc += 1;
+                                if (callback) {
+                                    callback();
+                                }
+                            }.bind(this),
+                            function (assignError) {
+                                var errorMsg = '@line-' + (this.pc + 1) + ': ' + assignError.message;
+                                log.error('[' + (this.currentFilename || 'unknown') + '] ' + errorMsg);
+                                this.pc += 1;
+                                if (!this.pending_error && this.started) {
+                                    this._abort(new Error(errorMsg));
+                                }
+                            }.bind(this)
+                        );
+                    } else {
+                        this.pc += 1;
+                        if (callback) {
+                            callback();
+                        }
                     }
                 } catch (assignError) {
-                    const errorMsg = `@line-${this.pc + 1}: ${assignError.message}`;
-                    log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
-                    
-                    // Increment before aborting
+                    var errorMsg = '@line-' + (this.pc + 1) + ': ' + assignError.message;
+                    log.error('[' + (this.currentFilename || 'unknown') + '] ' + errorMsg);
                     this.pc += 1;
-                    
                     if (!this.pending_error && this.started) {
                         this._abort(new Error(errorMsg));
-                    } else {
-                        log.debug("Ignoring weak assignment error during cleanup: " + assignError.message);
                     }
                     return true;
                 }
@@ -1629,7 +1651,7 @@ SBPRuntime.prototype._execute = async function (command, callback) {
                 setImmediate(callback);
             }
             return true;
-            
+
         case "cond":
             try {
                 if (this._eval(command.cmp)) {
@@ -1649,10 +1671,8 @@ SBPRuntime.prototype._execute = async function (command, callback) {
                     return true;
                 }
             } catch (evalError) {
-                // Error evaluating the condition (likely undefined variable)
-                const errorMsg = `@line-${this.pc + 1}: ${evalError.message}`;
-                log.error(`[${this.currentFilename || 'unknown'}] ${errorMsg}`);
-                
+                var errorMsg = '@line-' + (this.pc + 1) + ': ' + evalError.message;
+                log.error('[' + (this.currentFilename || 'unknown') + '] ' + errorMsg);
                 this.pc += 1;
                 this._abort(new Error(errorMsg));
                 return true;
@@ -1984,7 +2004,7 @@ SBPRuntime.prototype._roundNumeric = function(value) {
 //   identifier - The variable to assign
 //        value - The new value
 // Supports Universal Unit variables (ending with 'UU')
-SBPRuntime.prototype._assign = async function (identifier, value) {
+SBPRuntime.prototype._assign = function (identifier, value) {
     try{
         // Don't process assignments if we're already in an error state OR ending
         if (this.pending_error || !this.started) {
@@ -2928,11 +2948,17 @@ SBPRuntime.prototype.resume = function (input = false) {
                     this._assign(input.var, input.val);
                 }
                 this.paused = false;
-                // Resume the driver BEFORE calling _executeNext.
-                // _executeNext may immediately hit another PAUSE which sets this.paused=true again.
-                // If we call driver.resume() AFTER that, the resumePending flag will incorrectly
-                // consume the next STAT_STOP, preventing _executeNext from ever being called again.
+                // Resume the G2 driver first to clear the hold state.
                 this.driver.resume();
+                // CRITICAL: Clear resumePending BEFORE calling _executeNext.
+                // driver.resume() sets resumePending=true to prevent the next STAT_STOP
+                // from triggering _executeNext prematurely. But WE are about to call
+                // _executeNext ourselves. If the next command breaks the stack (e.g., an
+                // IF/cond that evaluates a system variable), _executeNext will defer
+                // execution until STAT_STOP arrives. If resumePending is still true,
+                // the onStat handler will consume that STAT_STOP instead of letting
+                // _executeNext process it — causing a deadlock.
+                this.driver.resumePending = false;
                 this._executeNext();
             } catch (err) {
                 log.error("Error during resume assignment: " + err);
