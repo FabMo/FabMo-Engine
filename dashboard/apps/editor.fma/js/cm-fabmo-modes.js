@@ -18,10 +18,13 @@ var IDENTIFIER_REGEX = /[A-Z_][A-Z0-9_]*(\[[^\]]*\]|(\.[A-Z_][A-Z0-9_]*)*)*/i;
 var WORD_REGEX = /[A-Z_][A-Z0-9_]*/i;
 var STRING_REGEX = /^"(?:[^\\"]|\\.)*"/;
 var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i;
+
+var SYS_VAR_OPEN_REGEX = /^\%\(/;
 var SYS_VAR_REGEX = /^\%\(([ \t]*((\$|&)[A-Z_][A-Z0-9_]*|[0-9]+)([ \t]*)\))[ \t]*/i;
+
 var CONFIG_VAR_REGEX = /^%[A-Z_][A-Z0-9_]*(?:\.[A-Z0-9_]+)+/i;
-var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i');
-var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\b\\s*', 'i');
+var USR_VAR_REGEX = new RegExp('^&' + IDENTIFIER_REGEX.source + '\\s*', 'i');
+var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\s*', 'i');
 var BARE_REGEX = /^[IOT]/i;
 var COMMENT_REGEX = /^'.*/i;
 
@@ -143,6 +146,90 @@ function tokenVariableAccess(variableType) {
   };
 }
 
+// Tokenizer for system variable internals
+function tokenSystemVariable(stream, state) {
+    if (stream.eatSpace()) {
+        return null;
+    }
+    
+    if (stream.match(/^\)/)) {
+        // Closing paren - exit system variable context
+        state.tokenize = state._savedTokenize || null;
+        state._savedTokenize = null;
+        return "variable"; // Color ')' as system variable
+    }
+    
+    // Try to match internal variables with their own coloring
+    if (stream.match(USR_VAR_REGEX)) {
+        // Save current tokenize and set up variable access for the user var
+        state._savedTokenize = state._savedTokenize; // preserve outer context
+        state.tokenize = function(stream, state) {
+            // After variable access completes, return to system variable tokenizer
+            if (stream.eatSpace()) return null;
+            
+            if (stream.match(/^\./)) return "operator";
+            if (stream.match(IDENTIFIER_REGEX)) return "property";
+            
+            if (stream.match(/^\[/)) {
+                state.bracketNesting = (state.bracketNesting || 0) + 1;
+                return "bracket";
+            }
+            if (stream.match(/^\]/)) {
+                state.bracketNesting = Math.max(0, (state.bracketNesting || 0) - 1);
+                return "bracket";
+            }
+            if (state.bracketNesting > 0) {
+                var match = matchExpression(stream, state);
+                if (match) return match;
+            }
+            
+            // No more access path - return to system variable tokenizer
+            state.tokenize = tokenSystemVariable;
+            return state.tokenize(stream, state);
+        };
+        return "variable-2"; // Color &var as user variable
+    }
+    
+    if (stream.match(PERSIST_VAR_REGEX)) {
+        state.tokenize = function(stream, state) {
+            if (stream.eatSpace()) return null;
+            
+            if (stream.match(/^\./)) return "operator";
+            if (stream.match(IDENTIFIER_REGEX)) return "property";
+            
+            if (stream.match(/^\[/)) {
+                state.bracketNesting = (state.bracketNesting || 0) + 1;
+                return "bracket";
+            }
+            if (stream.match(/^\]/)) {
+                state.bracketNesting = Math.max(0, (state.bracketNesting || 0) - 1);
+                return "bracket";
+            }
+            if (state.bracketNesting > 0) {
+                var match = matchExpression(stream, state);
+                if (match) return match;
+            }
+            
+            state.tokenize = tokenSystemVariable;
+            return state.tokenize(stream, state);
+        };
+        return "variable-3"; // Color $var as persistent variable
+    }
+    
+    // Match numbers (e.g., %(25))
+    if (stream.match(NUMBER_REGEX)) {
+        return "number";
+    }
+    
+    // Match operators for expressions inside %()
+    if (stream.match(OPERATOR_REGEX)) {
+        return "operator";
+    }
+    
+    stream.next();
+    return "variable"; // Default to system variable color for unknown content
+}
+
 // Tokenizer for object literals (e.g., {x: 1, y:2})
 function tokenObjectLiteral(stream, state) {
   if (stream.eatSpace()) {
@@ -182,9 +269,11 @@ function tokenObjectLiteral(stream, state) {
 function matchExpression(stream, state) {
   if (stream.match(CONFIG_VAR_REGEX)) {
     return "variable-4"; // Highlight config variables (e.g., %opensbp.units)
-  } else if (stream.match(SYS_VAR_REGEX)) {
-    state.tokenize = tokenVariableAccess("variable");
-    return state.tokenize(stream, state);
+  } else if (stream.match(SYS_VAR_OPEN_REGEX)) {
+    // Enter system variable tokenizer for multi-token coloring
+    state._savedTokenize = state.tokenize;
+    state.tokenize = tokenSystemVariable;
+    return "variable"; // Color '%(' as system variable
   } else if (stream.match(USR_VAR_REGEX)) {
       state.tokenize = tokenVariableAccess("variable-2");
       return state.tokenize(stream, state);
@@ -192,7 +281,7 @@ function matchExpression(stream, state) {
       state.tokenize = tokenVariableAccess("variable-3");
       return state.tokenize(stream, state);
   } else if (stream.match(NUMBER_REGEX)) {
-      return "number"; // Highlight numbers
+    return "number"; // Highlight numbers
   } else if (stream.match(STRING_REGEX)) {
       return "string"; // Highlight strings
   } else if (stream.match(OPERATOR_REGEX)) {

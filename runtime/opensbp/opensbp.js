@@ -2033,7 +2033,7 @@ SBPRuntime.prototype._assign = function (identifier, value) {
         
         // Validation: UU variables MUST use placeholder, non-UU variables MUST NOT
         if (isUniversalUnit && !hasUnitPlaceholder) {
-            const errorMsg = `UU variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} requires [] placeholder.`;
+            const errorMsg = `UU variable ${identifier.type === "user_variable" ? "&" : "$"}${variableName} requires [] placeholder (or [in]/[mm] for explicit units).`;
             log.error(errorMsg);
             throw new Error(errorMsg);
         }
@@ -2046,12 +2046,22 @@ SBPRuntime.prototype._assign = function (identifier, value) {
 
         if (hasUnitPlaceholder) {
             // Handle Universal Unit assignment with explicit placeholder
-            // Get current system units (0 = inches, 1 = mm)
-            const currentUnits = this.evaluateSystemVariable({type: "system_variable", expr: 25});
+            // Check if any placeholder has an explicit unit override
+            const placeholderPart = accessPath.find(part => part.type === "unit_placeholder");
+            
+            let assignmentUnit;
+            if (placeholderPart && placeholderPart.explicit_unit) {
+                // Explicit unit specified: [in] or [mm]
+                var explicitUnit = u.unitType(placeholderPart.explicit_unit); // normalizes to "in" or "mm"
+                assignmentUnit = (explicitUnit === "in") ? 0 : 1;
+            } else {
+                // No explicit unit — use current system units (0 = inches, 1 = mm)
+                assignmentUnit = this.evaluateSystemVariable({type: "system_variable", expr: 25});
+            }
             
             // Calculate both unit values
             let inchValue, mmValue;
-            if (currentUnits === 0) {
+            if (assignmentUnit === 0) {
                 // Value provided is in inches
                 inchValue = value;
                 mmValue = value * 25.4;
@@ -2060,7 +2070,7 @@ SBPRuntime.prototype._assign = function (identifier, value) {
                 mmValue = value;
                 inchValue = value / 25.4;
             }
-            
+
             // Determine which variable collection to use
             let variables;
             if (identifier.type === "user_variable") {

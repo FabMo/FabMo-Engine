@@ -9,6 +9,12 @@ Variables ending with "UU" automatically store values in both inch and millimete
 $variableUU[].property = value
 $variableUU[index][].property = value
 
+' Explicit unit assignment - value interpreted as the specified unit
+$variableUU[in].property = value    ' Value is in inches, regardless of system units
+$variableUU[mm].property = value    ' Value is in mm, regardless of system units
+$variableUU[index][in].property = value
+$variableUU[index][mm].property = value
+
 ' Access using current units
 value = $variable[index][%(25)].property  ' %(25) = current unit (0=in, 1=mm)
 ```
@@ -16,10 +22,11 @@ value = $variable[index][%(25)].property  ' %(25) = current unit (0=in, 1=mm)
 ## Rules
 
 1. **Variable names MUST end with "UU"** (case insensitive)
-2. **Assignments MUST use `[]` placeholder** for the unit index position
+2. **Assignments MUST use `[]` placeholder** (or `[in]`/`[mm]` for explicit units) for the unit index position
 3. **Access requires explicit index** (typically `%(25)` for current units, or `0`/`1` for specific units)
-4. **Only one `[]` placeholder** allowed per assignment
-5. The `[]` creates indices `[0]` for inches and `[1]` for mm
+4. **Only one `[]`/`[in]`/`[mm]` placeholder** allowed per assignment
+5. The placeholder creates indices `[0]` for inches and `[1]` for mm
+6. **`[in]` and `[mm]` are case-insensitive** (`[IN]`, `[In]`, `[MM]`, `[Mm]` all work)
 
 ## Examples
 

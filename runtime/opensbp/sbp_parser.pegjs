@@ -211,10 +211,9 @@ system_variable
     }
 
 property_access
-  = "[" __ "]" {
-      return { "type": "unit_placeholder" };
-    }
-  / "[" __ e:expression __ "]" {
+  = "[" __ "in"i __ "]" { return { type: "unit_placeholder", explicit_unit: "in" }; }
+  / "[" __ "mm"i __ "]" { return { type: "unit_placeholder", explicit_unit: "mm" }; }
+  / "[" __ "]" { return { type: "unit_placeholder" }; }  / "[" __ e:expression __ "]" {
       return { "type": "index", "value": e };
     }
   / "." propName:identifier {
