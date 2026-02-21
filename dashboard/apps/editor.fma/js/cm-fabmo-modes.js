@@ -28,79 +28,6 @@ var PERSIST_VAR_REGEX = new RegExp('^\\$' + IDENTIFIER_REGEX.source + '\\s*', 'i
 var BARE_REGEX = /^[IOT]/i;
 var COMMENT_REGEX = /^'.*/i;
 
-// Tokenizer for variable access paths (e.g., &var3[1].z)
-
-// function tokenVariableAccess(variableType) {
-//   return function(stream, state) {
-//       if (stream.eatSpace()) {
-//           return null; // Always allow and ignore spaces
-//       }
-
-//       // Match array indices and properties with dot notation
-//       if (stream.match(/^\[/)) {
-//           state.subState = 'array';
-//           return "bracket";
-//       } else if (stream.match(/^\./)) {
-//           state.subState = 'property';
-//           return "operator";
-//       } else if (state.subState === 'array' && stream.match(/^\d+/)) {
-//           if (stream.peek() === ']') {
-//               stream.next(); // Consume the closing bracket
-//               state.subState = ''; // Reset subState
-//               return "number"; // Highlight the index number
-//           }
-//       } else if (state.subState === 'property' && stream.match(/^[A-Z_][A-Z0-9_]*/i)) {
-//           state.subState = ''; // Reset subState
-//           return "property"; // Highlight the property name
-//       }
-
-//       // Match variable names initially
-//       if (stream.match(variableType === 'variable-2' ? USR_VAR_REGEX : PERSIST_VAR_REGEX)) {
-//           return variableType; // Highlight the variable
-//       }
-
-//       // If no valid continuation, clear the tokenizer and allow default handling
-//       state.tokenize = null;
-//       stream.next(); // Move the stream forward to avoid getting stuck
-//       return "error"; // Highlight unexpected characters as errors
-//   };
-// }
-
-// function tokenVariableAccess(variableType) {
-//   return function(stream, state) {
-//       if (stream.eatSpace()) {
-//           return null;
-//       }
-
-//       if (stream.match(/^\[/)) {
-//           return "bracket"; // Highlight array opening bracket
-//       }
-
-//       if (stream.match(/^\]/)) {
-//           return "bracket"; // Highlight array closing bracket
-//       }
-
-//       if (stream.match(/^\./)) {
-//           return "operator"; // Highlight dot for property access
-//       }
-
-//       if (stream.match(/[A-Z_][A-Z0-9_]*/i)) {
-//           return "property"; // Highlight property name
-//       }
-
-//       // After processing a property or bracket, check if there are more properties or array indexes
-//       if (variableType === "variable-2" && stream.match(USR_VAR_REGEX)) {
-//           return "variable-2";  // User variable
-//       } else if (variableType === "variable-3" && stream.match(PERSIST_VAR_REGEX)) {
-//           return "variable-3";  // Persistent variable
-//       }
-
-//       // Return the type of variable (user or persistent)
-//       state.tokenize = null;
-//       return variableType;
-//   };
-// }
-
 function tokenVariableAccess(variableType) {
   return function(stream, state) {
       if (stream.eatSpace()) {
@@ -123,8 +50,9 @@ function tokenVariableAccess(variableType) {
       if (stream.match(/^\]/)) {
           state.bracketNesting--;
           if (state.bracketNesting < 0) {
+              state.bracketNesting = 0;
               state.tokenize = null; // Exit variable access
-              return "error";
+              return "bracket";
           }
           return "bracket"; // Highlight ']'
       }
@@ -135,14 +63,15 @@ function tokenVariableAccess(variableType) {
           if (match) {
               return match;
           }
-      } else {
-          // No more access path
-          state.tokenize = null;
-          return variableType;
+          stream.next();
+          return "error";
       }
 
-      stream.next();
-      return "error";
+      // Not inside brackets and next char is not '.' or '[' 
+      // Variable access is complete — exit tokenizer WITHOUT consuming
+      state.tokenize = null;
+      state.bracketNesting = 0;
+      return null; // Return null to re-enter the main token function for this position
   };
 }
 
@@ -275,16 +204,22 @@ function matchExpression(stream, state) {
     state.tokenize = tokenSystemVariable;
     return "variable"; // Color '%(' as system variable
   } else if (stream.match(USR_VAR_REGEX)) {
-      state.tokenize = tokenVariableAccess("variable-2");
-      return state.tokenize(stream, state);
+      // Only enter tokenVariableAccess if there's more access path to consume
+      if (!stream.eol() && (stream.peek() === '.' || stream.peek() === '[')) {
+          state.tokenize = tokenVariableAccess("variable-2");
+      }
+      return "variable-2";
   } else if (stream.match(PERSIST_VAR_REGEX)) {
-      state.tokenize = tokenVariableAccess("variable-3");
-      return state.tokenize(stream, state);
+      // Only enter tokenVariableAccess if there's more access path to consume
+      if (!stream.eol() && (stream.peek() === '.' || stream.peek() === '[')) {
+          state.tokenize = tokenVariableAccess("variable-3");
+      }
+      return "variable-3";
   } else if (stream.match(NUMBER_REGEX)) {
     return "number"; // Highlight numbers
   } else if (stream.match(STRING_REGEX)) {
       return "string"; // Highlight strings
-  } else if (stream.match(OPERATOR_REGEX)) {
+  } else if (stream.match(OPERATOR_REGEX)) {    
       return "operator"; // Highlight operators
   } else if (stream.match(/^\{/)) {
       state.tokenize = tokenObjectLiteral;
