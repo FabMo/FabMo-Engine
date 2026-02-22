@@ -1687,7 +1687,7 @@ define(function (require) {
             $(".modalOkay")
                 .off("click")
                 .on("click", function () {
-                    if (options.input?.name && options.input.type && selectedValue) {
+                    if (options.input?.name && options.input.type && selectedValue !== null && selectedValue !== undefined) {
                         options.ok(selectedValue); // Pass the selected YES_NO value OR variable value to the OK callback
                     } else {
                         // option needs to pick up the value of the input box
