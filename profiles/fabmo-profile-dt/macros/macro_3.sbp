@@ -95,9 +95,9 @@ END
       RETURN
 
   checkProxs:
-      IF %$sb_proxCk.z)== 1 THEN GOSUB onProx
-      IF %$sb_proxCk.x)== 1 THEN GOSUB onProx
-      IF %$sb_proxCk.y)== 1 THEN GOSUB onProx
+      IF %($sb_proxCk.z)== 1 THEN GOSUB onProx
+      IF %($sb_proxCk.x)== 1 THEN GOSUB onProx
+      IF %($sb_proxCk.y)== 1 THEN GOSUB onProx
       RETURN
   onProx:
       &proxTriggered = 1

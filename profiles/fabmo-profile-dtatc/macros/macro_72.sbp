@@ -35,6 +35,7 @@ START:
     &check = %(106) + %(3)                                            ' Determine maximum range of Z motion from system variable to set target distancefor probe
     
   'PROBE Z TOP LIMIT
+    GOSOB Check_Z_Prox
     PZ, &check, $zFastUU[&u], $sb_proxNum.z
     IF %(3) >= &check THEN GOSUB Z_PROX_FAILURE                       ' If we got to our check value without triggering limit, then we've failed -- exit with error.
     VA,,,0 + $sb_homeOffUU[&u].z                                      ' After successful probe, reset z values
@@ -55,9 +56,8 @@ START:
     JZ,$smallBackOffUU[&u] - $atcUU[&u].PlateOffset                   ' Lift up off of plate
 
     IF &ALL_TOOLS > 0 THEN GOTO PREPARE_FOR_MEASUREMENT               ' If we're measuring all the bits, go back to the start of measurement and run again
-    PAUSE "Do you wish to zero another cutter <Y or N>: " &AGAIN      ' If we're measuring one at a time, ask user if they want to measure another
-    IF &AGAIN = "Y" THEN GOTO START                                   ' If user replied "Y" then go again
-    IF &AGAIN = "y" THEN GOTO START
+    DIALOG "Do you wish to zero another cutter <Y or N>: ", INPUT="&last_YN", OKTEXT="OK"    ' If we're measuring one at a time, ask user if they want to measure another
+    IF &last_YN == "YES" THEN GOTO START                                        ' If user replied "Y" then go again
     
 FINISHED:
     JZ, -1 * %(9) - $sb_homeOffUU[&u].z                               ' We're done, lift to maximum safe height
@@ -90,6 +90,12 @@ MANUAL_BACKOFF:
     JZ,%(3) - $atcUU[&u].PlateOffset - $sb_zPlateThickUU[&u]
     RETURN
     
+Check_Z_Prox:
+    IF %($sb_proxCk.z) == 0 THEN RETURN
+    PAUSE "A Proximity Sensor is Unexpectedly Triggered! Please clear switches and try macro again.", OKTEXT="OK"
+    END
+    RETURN      
+
 
 'Error Handlers ================================================================================
 CONTACT_ERROR:

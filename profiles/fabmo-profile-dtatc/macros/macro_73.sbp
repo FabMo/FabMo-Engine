@@ -13,14 +13,16 @@ CN,75                                                                ' Load prim
 '=== Main ==============================================================
 GOSUB HOME_Z                                                         ' First Home the Z Axis
 PAUSE "The keypad will now open. Move your spindle to the location where you want to Zero the Z axis." 
-SK                                                                   ' Keypad open
+SK "Move your spindle to the location for Zeroing the Z axis, Close Keypad to continue."                                                                ' Keypad open
 CN,2                                                                 ' Zero Z Axis to Z Zero Plate
 $atcUU[].PlateOffset = %(9) - $toolsUU[$ATC.ToolIn][&u].h            ' Record Offset in config
-PAUSE "tool.h- " + $toolsUU[$ATC.ToolIn][&u].h + " ATCPlateOffset- " + $atcUU[&u].PlateOffset
+'PAUSE "tool.h- " + $toolsUU[$ATC.ToolIn][&u].h + " ATCPlateOffset- " + $atcUU[&u].PlateOffset
+PAUSE "Zeroing to bed surface (or material) now complete.", OKTEXT="Continue ..."
 END
 
 ' Subroutines ==========================================================
 HOME_Z:
+    GOSUB Check_Z_Prox
     PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z    ' PZ "probes" for a switch or contact in the Z axis
     ZZ                                                               ' Reset working zero to support next move
     JZ, (-1 * $sb_homeOffUU[&u].z)                                   ' Pull back from prox to location that will be true zero
@@ -39,3 +41,9 @@ HOME_Z:
 fail_missed_target:
     PAUSE "Target Not Triggered! Lower Z Axis and run C3 (XYZ Homing)."  ' Did not hit target.
     END
+
+Check_Z_Prox:
+    IF %($sb_proxCk.z) == 0 THEN RETURN
+    PAUSE "A Proximity Sensor is Unexpectedly Triggered! Please clear switches and try macro again.", OKTEXT="OK"
+    END
+    RETURN      
