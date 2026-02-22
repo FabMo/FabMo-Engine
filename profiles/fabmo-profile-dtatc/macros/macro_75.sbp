@@ -11,6 +11,7 @@
 ' Main =================================================================
 CN,70                                                                           ' Load ATC Varibles (and local variables from Macro 201)
 &u = %(25)
+
 IF $ATC.ToolIn > 0 THEN GOSUB CHECK_TOOL_IN                                     ' If we think we have a tool inserted, check to make sure
 IF $ATC.ToolIn == 0 THEN GOSUB CHECK_TOOL_OUT                                   ' If we think we hace no tool inserted, check to make sure
 END
@@ -38,13 +39,14 @@ REMOVE_TOOL:
 
 ASK_REMOVE:
       PAUSE "Unknown tool in spindle. Press green button on gantry to remove tool."     ' Prompt user to remove current tool
-      IF %($Tool_Sensor_Status) = 0 THEN RETURN                                 ' If sensor shows that tool is removed -- return to main routine
+      IF %($Tool_Sensor_Status) == 0 THEN RETURN                                ' If sensor shows that tool is removed -- return to main routine
       &TRY = &TRY + 1                                                           ' If sensor shows that tool is still present, increment try counter.     
       PAUSE "Tool removal failed; try again."                                   ' Show error message before returning to main and prompting user to try again
       RETURN
 
 HOME_Z:
-    PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z             ' PZ "probes" for a switch or contact in the Z axis
+    GOSUB Check_Z_Prox
+    PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z         ' PZ "probes" for a switch or contact in the Z axis
     ZZ                                                                         ' Reset working zero
     JZ, (-1 * $sb_homeOffUU[&u].z)                                                      ' Pull back from prox
     &target_ck = $sb_homeOffUU[&u].z + $sb_oochUU[&u]                                            ' New target for detecting error just past prox
@@ -63,6 +65,12 @@ TOOL_NOT_REMOVED:
       DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit"   ' Did not remove tool
       END
       RETURN
+
+Check_Z_Prox:
+    IF %($sb_proxCk.z) == 0 THEN RETURN
+    PAUSE "A Proximity Sensor is Unexpectedly Triggered! Please clear switches and try macro again.", OKTEXT="OK"
+    END
+    RETURN      
     
 fail_missed_target:
     PAUSE "Target Not Triggered! Lower Z Axis and run C3 (XYZ Homing)."        ' Did not hit target.

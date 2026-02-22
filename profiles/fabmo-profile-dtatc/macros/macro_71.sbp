@@ -70,12 +70,12 @@ GrabTool: '  REMOVE A TOOL FROM ITS CLIP
     ' BEGIN Physical Grab
         J2, &tx, &ty                                                ' ... move to the clip location 
         JZ, &tz + $thClearanceUU[&u]                                ' Get clear in Z then 
-        SO, $DrawBar_Out, 1                                             ' Open toolholder chuck
-          'IF &Debug == 0 THEN GOSUB AUTO_CHECK_BAR_OPEN               ' Give 3 tries to check if drawbar opened properly
+        SO, $DrawBar_Out, 1                                         ' Open toolholder chuck
+          'IF &Debug == 0 THEN GOSUB AUTO_CHECK_BAR_OPEN                ' Give 3 tries to check if drawbar opened properly
         MZ, &tz                                                     ' ## Move Onto Toolholder ##
         SO, $DrawBar_Out, 0                                             ' Close toolholder chuck
-          '&State = 1                                                  ' Set proper tool sensor state for check_tool subroutine
-          'IF &Debug == 0 THEN GOSUB AUTO_CHECK_TOOL                   ' Give 3 tries to check if tool clamped properly
+          '&State = 1                                                   ' Set proper tool sensor state for check_tool subroutine
+          'IF &Debug == 0 THEN GOSUB AUTO_CHECK_TOOL                ' Give 3 tries to check if tool clamped properly
         $ATC.ToolIN = &tool                                         ' Update value of ToolIn
         VA,,,&tz - ((&th + $atcUU[&u].PlateOffset) + &Z_OFFSET) + %(9)    ' ... set it with local value VA
         JX, &tx + $atcUU[&u].clipSafe
@@ -145,7 +145,8 @@ GET_TOOL_DATA:
 
 ' Special Cases -----------------------------------------------------------------------------------------
 Same_Tool:
-    'PAUSE "Requested Tool seems to already be in Spindle! (ToolIn:" + $ATC.ToolIN + ")", OKTEXT="Continue for suggestions ...", CANCELTEXT="Quit"
+    PAUSE "Requested Tool seems to already be in Spindle! (ToolIn:" + $ATC.ToolIN + ")", OKTEXT="Done"
+    'Maybe come up with some more options 
     'PAUSE "Maybe try requesting a different tool or resetting the current ATC.ToolIN ..."
     'END
     GOSUB FinishToolChange
@@ -155,7 +156,7 @@ Same_Tool:
 MAN_CHECK_TOOL_IN:
   PAUSE "Press green button on gantry and insert tool " + &tool          ' Prompt user to insert the desired tool
   IF %($Tool_Sensor_Status) = 1 THEN RETURN                              ' If sensor shows that tool is in -- return to main routine
-  &TRY = &TRY + 1	                                                     ' If sensor does not show that tool is in, increment try counter.
+  &TRY = &TRY + 1	                                                       ' If sensor does not show that tool is in, increment try counter.
   PAUSE "Tool insertion failed; try again."                              ' Show error message before returning to main and prompting user to try again
   RETURN
 
@@ -169,9 +170,9 @@ MAN_CHECK_TOOL_OUT:
 AUTO_CHECK_TOOL:
   &TRY = 0                                                               ' Initialize try counter
   GOSUB CHECK_TOOL                                                       ' Check if tool is in
-  IF &TRY == 1 THEN SO,$DrawBar_Out,1                                        ' If tool is not in, reopen drawbar...
+  IF &TRY == 1 THEN SO,$DrawBar_Out,1                                    ' If tool is not in, reopen drawbar...
   IF &TRY == 1 THEN GOSUB CHECK_TOOL                                     ' ...and check again
-  IF &TRY == 2 THEN SO,$DrawBar_Out,1                                        ' If tool is still not in, reopent drawbar one more time...
+  IF &TRY == 2 THEN SO,$DrawBar_Out,1                                    ' If tool is still not in, reopent drawbar one more time...
   IF &TRY == 2 THEN GOSUB CHECK_TOOL                                     ' ...and check again
   IF &TRY == 3 THEN GOSUB TOOL_ERROR                                     ' If tool is still not in, then we have a problem, send to error message and end
   &TRY = 0                                                               ' Reset try counter for cleanliness
@@ -179,7 +180,7 @@ AUTO_CHECK_TOOL:
   
 CHECK_TOOL:
   PAUSE 1 '$DrawbarDelay                                                 ' Wait for some time to allow drawbar to fully open (maybe only if drawbar has been opened...?)
-  SO,$DrawBar_Out,0                                                          ' Close drawbar if open
+  SO,$DrawBar_Out,0                                                      ' Close drawbar if open
   PAUSE 1 '$DrawbarDelay                                                 ' Wait for some time to allow drawbar to fully close.
   IF %($Tool_Sensor_Status) == &State THEN RETURN                        ' Check if tool is clamped, if so return
   &TRY = &TRY + 1                                                        ' If not, increment try counter and return
@@ -188,9 +189,9 @@ CHECK_TOOL:
 AUTO_CHECK_BAR_OPEN:												
   &TRY = 0                                                               ' Initialize try counter
   GOSUB CHECK_BAR_OPEN                                                   ' Check if the drawbar is open
-  IF &TRY = 1 THEN SO,$DrawBar_Out,0                                         ' If drawbar is open, open it again (before trying to close it again) ...
+  IF &TRY = 1 THEN SO,$DrawBar_Out,0                                     ' If drawbar is open, open it again (before trying to close it again) ...
   IF &TRY = 1 THEN GOSUB CHECK_BAR_OPEN                                  ' Check if it worked
-  IF &TRY = 2 THEN SO,$DrawBar_Out,0                                         ' If drawbar still is stuck open, open again and check again...
+  IF &TRY = 2 THEN SO,$DrawBar_Out,0                                     ' If drawbar still is stuck open, open again and check again...
   IF &TRY = 2 THEN GOSUB CHECK_BAR_OPEN                                  ' Check if it worked
   IF &TRY = 3 THEN GOSUB TOOL_NOT_REMOVED                                ' We can't get drawbar closed, display error and end
   &TRY = 0                                                               ' Reset try counter for cleanliness
@@ -198,7 +199,7 @@ AUTO_CHECK_BAR_OPEN:
 
 CHECK_BAR_OPEN:
   PAUSE 1 '$DrawbarDelay                                                 ' Give time for drawbar to open
-  SO,$DrawBar_Out,1                                                          ' Close drawbar
+  SO,$DrawBar_Out,1                                                      ' Close drawbar
   PAUSE 1 '$DrawbarDelay                                                 ' Give time for drawbar to close
   IF %($Drawbar_Sensor_Status) == 1 THEN RETURN                          ' Read drawbar sensor, if closed then return!
   &TRY = &TRY + 1                                                        ' If still open then increment try counter and return
@@ -217,7 +218,7 @@ TOOL_NOT_INSERTED:
   RETURN
 
 TOOL_ERROR:
-  IF &State == 0 THEN DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit"	' If we were trying to remove a tool then display this message
+  IF &State == 0 THEN DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit"  	' If we were trying to remove a tool then display this message
   IF &State == 1 THEN DIALOG "Tool insertion failed again. Exiting file.", CANCELTEXT = "Quit"	' If we were trying to insert a tool then display this message
   END
   RETURN

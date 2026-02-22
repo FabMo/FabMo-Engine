@@ -10,36 +10,37 @@
 ' Standard ATC Macro Variables read along with Macro 201 (variables are stored as persistent; $)
 '
 &error = 0
+&tool := 0                                          ' current local tool number request/in; typically read from file
 
 $sb_standard_variables_PRESENT := 0								  ' Define presence-test variable if it does not exist
-IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
+IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables    ' Every macros should check
 
-$ATC.ToolIn := 0
+$ATC.ToolIn := 0                                    ' ATC system persistent tool loaded
 $ATC.numClips := 7
 $ATC.Status := 0
 $ATC.Dropped := 0
 $ATC.Type = 7
 
 'Inputs
-$ToolBar_Sensor = 6
-$Tool_Sensor = 7
-$DrawBar_Sensor = 8
-$ToolBar_Status = $ToolBar_Sensor + 50
-$Tool_Sensor_Status = $Tool_Sensor + 50
-$Drawbar_Sensor_Status = $DrawBar_Sensor + 50
+$ToolBar_Sensor = 6                                 ' Input number of ToolBar Sensor (e.g. #6 on DT-MAX)
+$Tool_Sensor = 7                                    ' Input number of Tool Presence Sensor (e.g. #7 on DT-MAX)
+$DrawBar_Sensor = 8                                 ' Input number of Drawbar Sensor (e.g. #8 on DT-MAX)
+$ToolBar_Status = $ToolBar_Sensor + 50              ' SysVar# to read ToolBar Sensor Status (r.g. 50 + #6 on DT-MAX)
+$Tool_Sensor_Status = $Tool_Sensor + 50             ' SysVar# to read Tool Presence Sensor Status (e.g. 50 + #7 on DT-MAX)
+$Drawbar_Sensor_Status = $DrawBar_Sensor + 50       ' SysVar# to read Drawbar Sensor Status (e.g. 50 + #8 on DT-MAX)
 'Outputs
-$DrawBar_OUT = 8
+$DrawBar_OUT = 8                                    ' Output number to control Drawbar (e.g. #8 on DT-MAX)
 $DrawbarDelay = 0.75
 
 
 ' UNIVERSAL UNIT VARIABLES =========================================================================================================
-&PRESENT_UNITS = %(25)                  ' Save the original unit type that this macro was called in
-IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC  ' We need to define the UNIT type that this table is provided in
+&PRESENT_UNITS = %(25)                  ' Save the UNIT TYPE that this macro is DEFINED IN
+IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC  ' We need to define the UNIT type that this table data is provided in
     SetINCH:
-        SU, "in"                        ' FORCE CURRENT UNIT to INCH for this MACRO
+        SU, "in"                        ' FORCE CURRENT UNIT to INCH to read values below
         GOTO SetUniversalUnits
     SetMETRIC:
-        SU, "mm"                        ' FORCE CURRENT UNIT to MM for this MACRO
+        SU, "mm"                        ' FORCE CURRENT UNIT to MM to read values below
         GOTO SetUniversalUnits
 
 SetUniversalUnits:
@@ -48,17 +49,17 @@ SetUniversalUnits:
     $atcUU[].zZero_X := 1
     $atcUU[].zZero_Y := 1
     $atcUU[].zZero_YCorrection := -4.125
-    $atcUU[].clipSafe := -1.75
+    $atcUU[].clipSafe := -1.75          ' Spot in front of toolbar for pre ATC activity
 
     $ATC_X_Prox_ClearUU[] := -2.0 
     $ATC_holderHeightUU[] := 1.575
     $ATC_holderAlignmentHeightUU[] := 0.69
     $holder_radiusUU[] := 0.56
     $stylus_diaUU[] := .25
-    $toolsUU[0][].x := 0
+    $toolsUU[0][].x := 0                ' Clip locations for tools;  0 (no tool) -- not really used but good to have defined
     $toolsUU[0][].y := 0
     $toolsUU[0][].z := 0
-    $toolsUU[0][].h := 0
+    $toolsUU[0][].h := 0                ' We use h(H) for the measured length of the tool (offset distance to measurement plate); 
     $toolsUU[1][].x := 0
     $toolsUU[1][].y := 0
     $toolsUU[1][].z := 0
@@ -67,7 +68,7 @@ SetUniversalUnits:
     $manual_changeUU[].x := 15          ' Location for manual tool change
     $manual_changeUU[].y := 0
   'Motion values
-    $zSlowUU[] := 0.4
+    $zSlowUU[] := 0.4                   ' Speeds for approaching targets
     $zFastUU[] := 0.75
     $zJogUU[] := 2.0
     $xySlowUU[] := 0.4
@@ -85,7 +86,7 @@ SetUniversalUnits:
     $firstClipUU[].y := 4.875
     $firstClipUU[].z := 3
     $safe_liftUU[] := 1
-    $clipPulloutUU[] := 0.75
+    $clipPulloutUU[] := 0.75            ' (Used?)
     $thClearanceUU[] := 0.375
 
 SU, &PRESENT_UNITS                      ' Restore original unit type after defining Universal Units    
@@ -97,49 +98,3 @@ no_variables:
     RETURN
 END
 
-'*in progress ...
-' DICTIONARY ===========================================================
-'   h,H                         ( H = general reference to the measured length of a tool )
-
-' -temporary variables--------------------------------------------------
-'   &tool                     - this is the current tool number with the value brought in from Macro1, 72,74,??
-'   $sb_homeOff_X,Y,Z         - offsets from prox switch to table base 0, why here???
-'   &tx,y,z                   - clip locations of current tool, exactly from prox)
-'   &th                       - measured lenth of current tool
-'   &sx                       - safe X location in front of clip for current tool
-' 
-'   $manual_changeUU[].x,y            - A MANUAL_CHANGE (=1) can be requrested for this location
-'   &Z_OFFSET                 - (?)
-'   &ATC_safeclear            - (?)  
-'   &Status =                 - NOT USED anymore ??? same as %($Drawbar_Sensor_Status)
-'   &new_curZ                 - (?)
-'   &COUNT                    - (?) used for counting errors to 3
-'   &BIGCOUNT                   (?)  ""  to 3 x 3
-
-' -permanent variables---------------------------------------------------
-'   $Drawbar_Sensor_Status    - SysVar# for Drawbar_Sensor (50 + #8 on DT-MAX)
-'   $Tool_Sensor_Status       - SysVar# for Tool Presence Sensor (50 + #7 on DT-MAX)
-'   $ToolBar_Status           - SysVar# for Presence of ATC Bar and Clips (50 + #6 on DT-MAX)
-'
-'   $thClearanceUU[]              - (?)
-'   $smallBackOffUU[]             - (?)
-'   $Transit_HeightUU[]           - (?)
-'   $XYJOG, $ZJOG             - (?) Jog Speeds for ATC Approach ??should these be ATC variables??
-
-' -atc-specific variables------------------------------------------------
-'   $atcUU[].clipSafe       - (?) 
-'	$ATC.ToolIN                 - Current tool in the spindle; 0=no-tool, <0=set-manual, >toolNumber=set, >1000 special case? 
-'   $ATC.Stautus              - (?) (possible values and significance "EMPTY" "OK" 
-'   $atcUU[].PlateOffset
-'   $ATC.Dropped              - ATC.Dropped =1; means spindle should be empty and %($Tool_Sensor_Status)=0
-'                             - ATC.Dropped =0; means spindle should be loaded with something %($Tool_Sensor_Status)=1 and ATC.ToolIn >0 and =< numberOfTools
-
-'   $tools[&tool].X   (the clip location of a tool)
-'   $tools[&tool].Y
-'   $tools[&tool].Z
-'   $tools[&tool].H  (the measured cutter length of a tool)
-
-' -system variables-(used for atc)----------------------------------------
-'   %(7,8,9)                  - Current offsets from 0 for X,Y and Z axis (same as g55x,y,z)
-'   %($Drawbar_Sensor_Status) - Drawbar OPEN=1 (active); Drawbar CLOSED=1 (normal mechanical state)
-'   %($Tool_Sensor_Status)    - 1=tool-present; 0=no-tool-present 

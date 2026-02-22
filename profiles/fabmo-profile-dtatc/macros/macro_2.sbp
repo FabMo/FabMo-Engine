@@ -83,7 +83,7 @@ END
 		RETURN
 	
 	fail_on_prox:
-		PAUSE "Z prox switch is already triggered. Cannot clear the tool. Move Off and Retry."
+		PAUSE "Z prox switch is already triggered. Cannot clear the tool. Possibly on other axis prox switch?Move Off and Retry."
 		END
 	
 	fail_on_plate:
@@ -94,7 +94,7 @@ END
         IF &debug = 1 THEN GOTO JustReport
 	    DIALOG "Target Not Triggered! (Started beyond prox switch?)", CANCELTEXT="Exit"
         END
-      JustReport:
+    JustReport:
         DIALOG "DEBUG MODE: At a missed target; will continue to debug!"
         RETURN
 
