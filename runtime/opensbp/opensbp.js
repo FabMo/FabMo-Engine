@@ -1768,9 +1768,22 @@ SBPRuntime.prototype._execute = function (command, callback) {
             modalParams.message = message;
             
             // Ensure a bare PAUSE always has a message so the client displays the modal
+            // If there's a preceding comment, use it as the message
             if (!modalParams.message && modalParams.message !== 0) {
-                modalParams.message = "Paused";
-            }            
+                if (command.comment && command.comment.length > 0) {
+                    // Use the preceding comment as the pause message
+                    // Strip leading comment markers like "'" or ">"
+                    var commentText = command.comment.join(" ").trim();
+                    commentText = commentText.replace(/^['>]\s*/, "");
+                    if (commentText) {
+                        modalParams.message = commentText;
+                    } else {
+                        modalParams.message = "Paused";
+                    }
+                } else {
+                    modalParams.message = "Paused";
+                }
+            }
 
             if (input_var) {
                 modalParams.input.name = input_var;

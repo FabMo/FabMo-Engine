@@ -1632,6 +1632,18 @@ define(function (require) {
                     $(".modalOkay").focus();
                 });
 
+            // Keyboard shortcuts: Y/y triggers Yes, N/n triggers No
+            $(document).off("keydown.yesno").on("keydown.yesno", function (e) {
+                var key = e.key;
+                if (key === "Y" || key === "y") {
+                    e.preventDefault();
+                    $(".modalYes").click();
+                } else if (key === "N" || key === "n") {
+                    e.preventDefault();
+                    $(".modalNo").click();
+                }
+            });
+
             // Normal input case
         } else if (options["input"]) {
             console.log("Detected normal input:", options.input); // Log detection of normal input
@@ -1761,12 +1773,17 @@ define(function (require) {
 
     //Hide Modal
     Dashboard.prototype.hideModal = function () {
+        modalIsShown = false;
         $(".modalDim").hide();
         $(".newModal").hide();
         $(".modalOkay").off("keydown.modalEnter");
         $("#inputVal").off("keydown.modalEnter");
+        $(document).off("keydown.yesno");
         $(".modalOkay").off();
         $(".modalCancel").off();
+        $(".yes-no-buttons").remove();
+        $(".modalYes").remove();
+        $(".modalNo").remove();
     };
 
     // Open and close the right menu

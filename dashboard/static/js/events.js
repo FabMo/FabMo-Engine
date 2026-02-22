@@ -246,17 +246,20 @@ function handleKeyEvent(key) {
             break
         case ">":
             var $frOverride = $('#override');
-            $frOverride.val(parseInt($frOverride.val(), 10) + 5);
+            var newVal = Math.min(parseInt($frOverride.val(), 10) + 5, 200);
+            $frOverride.val(newVal);
             $frOverride.trigger('change');
             break;
         case "<":
             var $frOverride = $('#override');
-            $frOverride.val(parseInt($frOverride.val(), 10) - 5);
+            var newVal = Math.max(parseInt($frOverride.val(), 10) - 5, 5);
+            $frOverride.val(newVal);
             $frOverride.trigger('change');
             break;
-    }
     //console.log('Second Received key: ' + key);
+    }
 }
+
 // In the main window
 window.addEventListener('keyup', function (event) {
     // Handle the keystroke

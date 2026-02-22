@@ -1753,21 +1753,17 @@ Machine.prototype.frOverride = function (new_override) {
     //log.info("====> Value check: " + (new_override >= 5 && new_override <= 300));
     //log.info("====> Driver state: pause_flag=" + this.driver.pause_flag + ", stat=" + this.driver.status.stat);
     
-    if (new_override >= 5 && new_override <= 300) {
+    // G2 firmware caps feed rate override at 2.00 (200%)
+    if (new_override >= 5 && new_override <= 200) {
         try {
             log.info("----> new override CMD sent: " + new_override);
-            // Set the new override value and format for the driver
-            // ... I have tested several methods of this injection (including M101); this seems the most robust
             var cmd_to_G2 = "{fro:" + (new_override / 100).toFixed(2) + "}";
-            //log.info("----> Formatted command: " + cmd_to_G2);
-            //log.info("----> Command queue length before: " + this.driver.command_queue.getLength());
             this.driver.command(cmd_to_G2);
-            //log.info("----> Command queue length after: " + this.driver.command_queue.getLength());
         } catch (error) {
             log.error("Failed to pass new Override: " + error);
         }
     } else {
-        log.warn("====> Override value out of range: " + new_override);
+        log.warn("====> Override value out of range (5-200): " + new_override);
     }
 };
 
