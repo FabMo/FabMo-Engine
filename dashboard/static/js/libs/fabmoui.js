@@ -302,10 +302,12 @@ const { last } = require("underscore");
             $("#fr-inp").css("color", "#42e6f5");
             if (status.unit === "mm") {
                 $(".feedrate-unit").text("mm/sec");
+                // status.feed from G2 is in mm/min — divide by 60 for mm/sec
                 const displayValue = (feedrate / 60).toFixed(2);
                 $("#fr-inp").val(displayValue);
             } else {
                 $(".feedrate-unit").text("in/sec");
+                // status.feed from G2 is in mm/min — divide by 25.4 for in/min, then by 60 for in/sec
                 const displayValue = (feedrate / 1524).toFixed(2);
                 $("#fr-inp").val(displayValue);
             }

@@ -1715,8 +1715,8 @@ var overrideFeedRate = function (new_override) {
 $("#override").on("change", function (evt) {
     if (engine.status.state != "idle") {
         var new_override = parseFloat($("#override").val());
-        // Check against: feedrate override range
-        if (new_override > 4 && new_override < 301) {
+        // Check against: feedrate override range (G2 firmware caps at 200%)
+        if (new_override > 4 && new_override <= 200) {
             overrideFeedRate(new_override);
         }
     }
