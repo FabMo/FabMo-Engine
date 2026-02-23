@@ -103,7 +103,7 @@ ManualGrab_Tool:
   IF $ATC.ToolIN > 0 THEN RETURN                                     ' Skip this if there is already a tool in the spindle
   &AtNow = "Before Manual Pickup"
   J2,$manual_changeUU[&u].x - %(7),$manual_changeUU[&u].y - %(8)     ' Jog to the user's desired locaiton for manual toolchanges
-  &TRY = 0															 ' Reset our "try" counter for user insertion
+  &TRY = 0															                             ' Reset our "try" counter for user insertion
   GOSUB MAN_CHECK_TOOL_IN                                            ' Check to see if they've inserted the tool.
   IF &TRY = 1 THEN GOSUB MAN_CHECK_TOOL_IN                           ' Give them one more chance if they didn't insert the tool.
   IF &TRY = 2 THEN GOSUB TOOL_NOT_INSERTED                           ' Too many attempts ... exit file.

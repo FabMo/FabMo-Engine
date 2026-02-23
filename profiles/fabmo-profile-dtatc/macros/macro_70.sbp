@@ -49,7 +49,7 @@ SetUniversalUnits:
     $atcUU[].zZero_X := 1
     $atcUU[].zZero_Y := 1
     $atcUU[].zZero_YCorrection := -4.125
-    $atcUU[].clipSafe := -1.75          ' Spot in front of toolbar for pre ATC activity
+    $atcUU[].clipSafe := -2.25          ' Spot in front of toolbar for pre ATC activity; moved from -1.75 to avoid prox
 
     $ATC_X_Prox_ClearUU[] := -2.0 
     $ATC_holderHeightUU[] := 1.575
