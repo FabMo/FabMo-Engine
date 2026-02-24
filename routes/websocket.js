@@ -119,8 +119,12 @@ var onPrivateConnect = function (socket) {
 
     var userId = socket.request.sessionID.content.passport.user;
 
-    authentication.eventEmitter.on("user_change", function (data) {
+    var user_change_listener = function (data) {
         socket.emit("user_change", data);
+    };
+    authentication.eventEmitter.on("user_change", user_change_listener);
+    socket.on("disconnect", function () {
+        authentication.eventEmitter.removeListener("user_change", user_change_listener);
     });
 
     authentication.eventEmitter.on("user_kickout", function user_kickout_listener(user) {

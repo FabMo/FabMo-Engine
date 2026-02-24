@@ -393,16 +393,16 @@ Engine.prototype.start = function (callback) {
                         }
 
                         if (isCurrentProfileMatchingTarget) {
-                            log.info("Profile already matches target - scheduling auto-profile application for macros/apps");
+                            log.info("Profile already matches target - scheduling auto-profile application for macros/apps [engine]");
                             this.pending_profile_change = {
                                 target: targetProfile,
                                 definition: definition,
+                                isProfileMatch: true,
+                                skipRestart: true,   // <-- profile match: config already loaded, no restart needed
                             };
-
-                            // Set backup restore flag for this scenario too
+                            
                             this.backup_restore_pending = true;
                             log.info("Auto-profile scheduled (profile match) - backup restore will be offered on dashboard load");
-
                             return callback();
                         }
 
@@ -419,6 +419,7 @@ Engine.prototype.start = function (callback) {
                             this.pending_profile_change = {
                                 target: targetProfile,
                                 definition: definition,
+                                skipRestart: true,   // <-- first run: also no restart, engine will start clean next time
                             };
                             
                             // Set flag that backup restore should be offered after auto-profile completion
@@ -834,6 +835,113 @@ Engine.prototype.start = function (callback) {
                 }
             }.bind(this),
 
+            /**
+             * Apply auto-profile if one is pending from the check_auto_profile step.
+             * This runs after the engine has completed baseline startup to ensure
+             * a stable system before profile changes are applied.
+             * @param {Function} callback - Called when complete or on error
+             */
+            function apply_auto_profile_if_needed(callback) {
+                if (!this.pending_profile_change) {
+                    return callback();
+                }
+
+                var targetProfile = this.pending_profile_change.target;
+                var profileDef = require("./config/profile_definition");
+                var profiles = require("./profiles");
+
+                log.info("Applying auto-profile: " + targetProfile);
+
+                var currentProfileDir = config.engine.get("profile") || "default";
+                log.info("Current profile directory: " + currentProfileDir + ", Target: " + targetProfile);
+
+                profileDef.markAsInProgress(targetProfile, function (err) {
+                    if (err) {
+                        log.error("Failed to mark profile change in progress: " + err.message);
+                        return callback(err);
+                    }
+
+                    // Find target display name
+                    var allProfiles = profiles.getProfiles();
+                    var targetDisplayName = null;
+                    for (var name in allProfiles) {
+                        var dirName = require("path").basename(allProfiles[name].dir);
+                        if (dirName === targetProfile) {
+                            targetDisplayName = name;
+                            break;
+                        }
+                    }
+
+                    if (!targetDisplayName) {
+                        log.error("Could not find display name for profile: " + targetProfile);
+                        return callback(new Error("Profile not found: " + targetProfile));
+                    }
+
+                    log.info("Found target profile: " + targetDisplayName);
+                    log.info("Applying profile: " + targetDisplayName);
+
+                    profiles.apply(targetDisplayName, function (err) {
+                        if (err) {
+                            log.error("Failed to apply profile: " + err);
+                            return callback(err);
+                        }
+
+                        config.engine.set("profile", targetDisplayName, function (err) {
+                            if (err) {
+                                log.warn("Failed to update engine config: " + err.message);
+                            }
+
+                            profileDef.markAsApplied(targetProfile, function (markErr) {
+                                if (markErr) {
+                                    log.warn("Could not mark profile as applied: " + markErr.message);
+                                }
+
+                                // Skip restart if flagged - config was already loaded correctly
+                                // OR this is a first run where next startup will load profile fresh
+                                var skipRestart = this.pending_profile_change && 
+                                                  this.pending_profile_change.skipRestart;
+
+                                if (skipRestart) {
+                                    log.info("Auto-profile applied - recreating dirs and reloading apps/macros in-process.");
+                                    // profiles.apply() calls clearAppRoot() which deletes /opt/fabmo/approot entirely.
+                                    // Recreate the directory structure before copying apps back in.
+                                    config.createDataDirectories(function (dirErr) {
+                                        if (dirErr) {
+                                            log.warn("Failed to recreate data dirs after auto-profile: " + dirErr);
+                                        } else {
+                                            log.info("Data directories recreated after auto-profile apply.");
+                                        }
+                                        // Now copy system apps into the freshly recreated approot
+                                        dashboard.loadApps(function (loadErr) {
+                                            if (loadErr) {
+                                                log.warn("App reload after auto-profile failed: " + loadErr);
+                                            } else {
+                                                log.info("Apps reloaded after auto-profile apply.");
+                                            }
+                                            macros.load(function (macroErr) {
+                                                if (macroErr) {
+                                                    log.warn("Macro reload after auto-profile failed: " + macroErr);
+                                                } else {
+                                                    log.info("Macros reloaded after auto-profile apply.");
+                                                }
+                                                log.info("Auto-profile in-process reload complete - continuing startup.");
+                                                return callback(null);
+                                            });
+                                        });
+                                    });
+                                    return;
+                                }
+
+                                log.info("Profile application completed - restarting...");
+                                setTimeout(function () {
+                                    process.exit(0);
+                                }, 2000);
+                            }.bind(this));
+                        }.bind(this));
+                    }.bind(this));
+                }.bind(this));
+            }.bind(this),
+
             // Kick off the server if all of the above went OK.
             function start_server(callback) {
                 log.info("Setting up the webserver...");
@@ -996,89 +1104,6 @@ Engine.prototype.start = function (callback) {
                     configWatcher.startWatcher();
                     callback();
                 }, engineVersion); // Pass the version here
-            }.bind(this),
-
-            /**
-             * Apply auto-profile if one is pending from the check_auto_profile step.
-             * This runs after the engine has completed baseline startup to ensure
-             * a stable system before profile changes are applied.
-             * @param {Function} callback - Called when complete or on error
-             */
-            function apply_auto_profile_if_needed(callback) {
-                if (!this.pending_profile_change) {
-                    return callback();
-                }
-
-                var targetProfile = this.pending_profile_change.target;
-                var profileDef = require("./config/profile_definition");
-                var profiles = require("./profiles");
-
-                log.info("Applying auto-profile: " + targetProfile);
-
-                var currentProfileDir = config.engine.get("profile") || "default";
-                log.info("Current profile directory: " + currentProfileDir + ", Target: " + targetProfile);
-
-                // Mark as in progress
-                profileDef.markAsInProgress(targetProfile, function (err) {
-                    if (err) {
-                        log.error("Failed to mark profile change in progress: " + err.message);
-                        return callback(err); // Pass error up instead of continuing
-                    }
-
-                    // Find target display name
-                    var allProfiles = profiles.getProfiles();
-                    var targetDisplayName = null;
-
-                    Object.keys(allProfiles).forEach(function (displayName) {
-                        if (allProfiles[displayName].dir.endsWith("/" + targetProfile)) {
-                            targetDisplayName = displayName;
-                            log.info("Found target profile: " + displayName);
-                        }
-                    });
-
-                    if (!targetDisplayName) {
-                        log.error("Profile not found: " + targetProfile);
-                        log.error("Available profiles: " + Object.keys(allProfiles).join(", "));
-
-                        // Mark as failed and continue startup instead of hanging
-                        profileDef.markAsApplied(targetProfile, function () {
-                            callback(null); // Continue startup despite profile failure
-                        });
-                        return;
-                    }
-
-                    log.info("Applying profile: " + targetDisplayName);
-
-                    profiles.apply(targetDisplayName, function (err) {
-                        if (err) {
-                            log.error("Profile application failed: " + err.message);
-                            // Mark as failed and continue
-                            profileDef.markAsApplied(targetProfile, function () {
-                                callback(null);
-                            });
-                            return;
-                        }
-
-                        // Set display name in engine config
-                        config.engine.set("profile", targetDisplayName, function (err) {
-                            if (err) {
-                                log.warn("Failed to update engine config: " + err.message);
-                            }
-
-                            // Mark as successfully applied
-                            profileDef.markAsApplied(targetProfile, function (markErr) {
-                                if (markErr) {
-                                    log.warn("Could not mark profile as applied: " + markErr.message);
-                                }
-
-                                log.info("Profile application completed - restarting...");
-                                setTimeout(function () {
-                                    process.exit(0);
-                                }, 2000);
-                            });
-                        });
-                    });
-                });
             }.bind(this),
         ],
 

@@ -233,11 +233,13 @@ AppManager.prototype.rebuildAppList = function () {
 AppManager.prototype._addApp = function (app) {
     if (app.info.id in this.apps_index) {
         var old_app = this.apps_index[app.info.id];
-        fs.unlink(old_app.app_archive_path, function (err) {
-            if (err) {
-                log.warn("failed to remove an old app archive: " + err);
-            }
-        }); // unlink
+        if (old_app.app_archive_path !== app.info.app_archive_path) {
+            fs.remove(old_app.app_archive_path, function (err) {
+                if (err) {
+                    log.warn("failed to remove an old app archive: " + err);
+                }
+            }); // remove old archive only when replaced by a different one
+        }
     }
     this.apps_index[app.info.id] = app.info;
     this.app_configs[app.info.id] = app.config;
