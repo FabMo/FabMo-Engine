@@ -569,7 +569,6 @@ Engine.prototype.start = function (callback) {
                     config.configureDriver(null, function (err, data) {
                         callback(null);
                     });
-                    callback(null);
                 }
             }.bind(this),
 
@@ -815,8 +814,16 @@ Engine.prototype.start = function (callback) {
 
             // Start the accessories (spindle speed controller, etc.)
             function add_accessories(callback) {
-                this.machine.startAccessories(callback);
-                callback();
+                Promise.resolve(this.machine.startAccessories())
+                    .then(function () {
+                        callback(null);
+                    })
+                    .catch(function (err) {
+                        if (err) {
+                            log.warn("Accessory startup issue: " + (err.message || err));
+                        }
+                        callback(null);
+                    });
             }.bind(this),
 
             // Start the USB-drive manager to track whether there is a USB drive inserted;
@@ -1071,10 +1078,48 @@ Engine.prototype.start = function (callback) {
                                     log.warn("Could not mark profile as applied: " + markErr.message);
                                 }
 
-                                log.info("Profile application completed - restarting...");
-                                setTimeout(function () {
-                                    process.exit(0);
-                                }, 2000);
+                                log.info(
+                                    "Auto-profile marked applied; reloading apps/macros in-process (no restart)."
+                                );
+                                async.series(
+                                    [
+                                        function (next) {
+                                            dashboard.loadApps(function (loadErr) {
+                                                if (loadErr) {
+                                                    log.warn(
+                                                        "Auto-profile app reload failed: " +
+                                                            (loadErr.message || loadErr)
+                                                    );
+                                                } else {
+                                                    log.info("Auto-profile app reload completed.");
+                                                }
+                                                next(null);
+                                            });
+                                        },
+                                        function (next) {
+                                            macros.load(function (macroErr) {
+                                                if (macroErr) {
+                                                    log.warn(
+                                                        "Auto-profile macro reload failed: " +
+                                                            (macroErr.message || macroErr)
+                                                    );
+                                                } else {
+                                                    log.info("Auto-profile macro reload completed.");
+                                                }
+                                                next(null);
+                                            });
+                                        },
+                                    ],
+                                    function () {
+                                        log.info(
+                                            "Auto-profile in-process reload summary: profile='" +
+                                                targetDisplayName +
+                                                "', restart_required=false."
+                                        );
+                                        log.info("Profile application completed - continuing without restart.");
+                                        callback(null);
+                                    }
+                                );
                             });
                         });
                     });
