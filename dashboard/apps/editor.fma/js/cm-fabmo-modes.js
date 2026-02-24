@@ -455,19 +455,6 @@ CodeMirror.defineMode("opensbp", function() {
           stream.next();
           return "error";
 
-        // case "assign":
-        //   // Handle assignment operator '='
-        //   if (stream.eatSpace()) {
-        //     return null;
-        //   }
-        //   if (stream.match('=')) {
-        //     state.name = "expression";
-        //     return "operator";
-        //   }
-        //   // If '=' not found, highlight as error
-        //   stream.next();
-        //   return "error";
-
         case "expression":
           // Handle expressions after assignment
           if (stream.eatSpace()) {

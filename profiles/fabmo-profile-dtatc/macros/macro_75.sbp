@@ -48,9 +48,9 @@ HOME_Z:
     GOSUB Check_Z_Prox
     PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z         ' PZ "probes" for a switch or contact in the Z axis
     ZZ                                                                         ' Reset working zero
-    JZ, (-1 * $sb_homeOffUU[&u].z)                                                      ' Pull back from prox
-    &target_ck = $sb_homeOffUU[&u].z + $sb_oochUU[&u]                                            ' New target for detecting error just past prox
-    PZ, &target_ck, $sb_slowSearchSpeedUU[&u].z, $sb_proxNum.z                             ' Slowly probe for prox in final accurate check
+    JZ, (-1 * $sb_homeOffUU[&u].z)                                             ' Pull back from prox
+    &target_ck = $sb_homeOffUU[&u].z + $sb_oochUU[&u]                          ' New target for detecting error just past prox
+    PZ, &target_ck, $sb_slowSearchSpeedUU[&u].z, $sb_proxNum.z                 ' Slowly probe for prox in final accurate check
     IF %(3)== &target_ck THEN GOSUB fail_missed_target                         ' Look at current Z location to see if we went past the target
     ZZ
     JZ, (-1 * $sb_homeOffUU[&u].z)
