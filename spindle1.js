@@ -95,7 +95,7 @@ let vfdDisabled = false;
 // Set up 1-second UPDATES to spindleVFD status 
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
-    const MAX_VFD_FAILS = 3;
+    const MAX_VFD_FAILS = 300;  // Should be 3; set high for debugging
     
     // Reset the disabled flag when starting
     vfdDisabled = false;
@@ -105,7 +105,23 @@ Spin.prototype.startSpindleVFD = function() {
     if (this.vfdInterval) {
         clearInterval(this.vfdInterval);
     }
+
+        // *** Run a one-time diagnostic scan on startup ***
+    log.info("DEBUG: Starting VFD register scan on connect...");
+    // Scan a broad range to find active registers
+    const scanRanges = [
+        { start: 0, len: 10 },    // Common control/status block
+        { start: 36, len: 6 },    // Your current read range
+        { start: 100, len: 6 },   // Check o2-xx parameter area (Yaskawa)
+    ];
     
+    var scanPromise = Promise.resolve();
+    scanRanges.forEach(range => {
+        scanPromise = scanPromise
+            .then(() => this.debugReadRegisters(range.start, range.len))
+            .catch(() => {}); // continue on error
+    });
+
     if (this.status.vfdEnabled) {
         this.vfdInterval = setInterval(() => {
             // Check if already disabled - stop immediately
@@ -254,6 +270,23 @@ Spin.prototype.setFrequency = function(data) {
             return data;  // return data to resolve
         });
 };
+
+// Add this debug method to Spin prototype
+Spin.prototype.debugReadRegisters = function(startReg, length) {
+    log.info(`DEBUG: Reading ${length} registers starting at ${startReg} (hex: 0x${startReg.toString(16)})`);
+    return readVFD(startReg, length)
+        .then((data) => {
+            log.info(`DEBUG RAW DATA from reg ${startReg} (len ${length}):`);
+            data.forEach((val, idx) => {
+                log.info(`  reg[${startReg + idx}] = ${val} (hex: 0x${val.toString(16).padStart(4,'0')})`);
+            });
+            return data;
+        })
+        .catch((err) => {
+            log.error(`DEBUG read failed at reg ${startReg}: ${err.message}`);
+        });
+};
+
 
 
 // ------------------- Calls to ModbusRTU ------------------
