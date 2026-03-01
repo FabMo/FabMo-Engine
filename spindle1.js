@@ -111,7 +111,7 @@ Spin.prototype.startSpindleVFD = function() {
     // Scan a broad range to find active registers
     const scanRanges = [
         { start: 0, len: 10 },    // Common control/status block
-        { start: 36, len: 6 },    // Your current read range
+        { start: 35, len: 10 },    // Your current read range; changed to 35 and 10 for broader scan
         { start: 100, len: 6 },   // Check o2-xx parameter area (Yaskawa)
     ];
     
@@ -262,16 +262,34 @@ Spin.prototype.setSpindleVFDFreq = function(data) {
     });
 };
 
+// Spin.prototype.setFrequency = function(data) {
+//     var vfd_req = Math.round(data / this.vfdSettings.Registers.RPM_MULT);
+//     var useMultiple = (this.vfdSettings.Modbus_Function_Codes.WRITE_SINGLE_REGISTER === 16 || 
+//                        this.vfdSettings.Modbus_Function_Codes.WRITE_SINGLE_REGISTER === 0x10);
+//     log.info(`VFD write: reg=${this.vfdSettings.Registers.SET_FREQUENCY}, value=${vfd_req}, FC16=${useMultiple}`);
+//     return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple)
+//         .then(data => {
+//             log.info("VFD Data after setting:" + JSON.stringify(data));
+//             return data;
+//         });
+// };
+
+
+// with debugs
 Spin.prototype.setFrequency = function(data) {
-    var vfd_req = Math.round(data / this.vfdSettings.Registers.RPM_MULT);    
-    return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req)
+    var vfd_req = Math.round(data / this.vfdSettings.Registers.RPM_MULT);
+    var useMultiple = (this.vfdSettings.Modbus_Function_Codes.WRITE_SINGLE_REGISTER === 16 || 
+                       this.vfdSettings.Modbus_Function_Codes.WRITE_SINGLE_REGISTER === 0x10);
+    log.info(`VFD write: reg=${this.vfdSettings.Registers.SET_FREQUENCY}, value=${vfd_req}, FC16=${useMultiple}`);
+    return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple)
         .then(data => {
             log.info("VFD Data after setting:" + JSON.stringify(data));
-            return data;  // return data to resolve
+            return data;
         });
 };
 
-// Add this debug method to Spin prototype
+
+
 Spin.prototype.debugReadRegisters = function(startReg, length) {
     log.info(`DEBUG: Reading ${length} registers starting at ${startReg} (hex: 0x${startReg.toString(16)})`);
     return readVFD(startReg, length)
@@ -308,15 +326,22 @@ function readVFD(data, length) {
     });
 }
 
-function writeVFD(reg, data) {
+// this funciton should now handle both single and multiple register writes (for V1000) based on the useMultiple flag
+function writeVFD(reg, data, useMultiple) {
     return new Promise((resolve, reject) => {
-        client.writeRegister(reg, data)
+        var writePromise;
+        if (useMultiple) {
+            // FC16 - Write Multiple Registers (required by Yaskawa V1000)
+            writePromise = client.writeRegisters(reg, [data]);
+        } else {
+            // FC06 - Write Single Register (Delta, Lenze)
+            writePromise = client.writeRegister(reg, data);
+        }
+        writePromise
             .then(() => resolve(data))
             .catch(error => {
                 log.error("***Error writing VFD:", error);
-                // Lets just log and continue for the moment
-                resolve (null);
-                //reject(error);
+                resolve(null);
             });
     });
 }
