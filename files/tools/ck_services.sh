@@ -16,7 +16,6 @@ echo " "
 echo "------------------------------------------------------------"
 echo "----User Networking-----------------------------------------"
 systemctl --no-pager status network-monitor.service
-systemctl --no-pager status setup-wlan0_ap.service
 echo " "
 echo "------------------------------------------------------------"
 echo "----System Networking---------------------------------------"
