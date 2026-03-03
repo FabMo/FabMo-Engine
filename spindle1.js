@@ -280,14 +280,36 @@ Spin.prototype.setFrequency = function(data) {
     var vfd_req = Math.round(data / this.vfdSettings.Registers.RPM_MULT);
     var useMultiple = (this.vfdSettings.Modbus_Function_Codes.WRITE_SINGLE_REGISTER === 16 || 
                        this.vfdSettings.Modbus_Function_Codes.WRITE_SINGLE_REGISTER === 0x10);
-    log.info(`VFD write: reg=${this.vfdSettings.Registers.SET_FREQUENCY}, value=${vfd_req}, FC16=${useMultiple}`);
-    return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple)
-        .then(data => {
-            log.info("VFD Data after setting:" + JSON.stringify(data));
-            return data;
-        });
-};
+    
+    log.info(`VFD setFrequency called: input=${data} RPM, RPM_MULT=${this.vfdSettings.Registers.RPM_MULT}, calculated_reg_value=${vfd_req}, FC16=${useMultiple}`);
+    log.info(`VFD write target: reg=${this.vfdSettings.Registers.SET_FREQUENCY} (hex: 0x${this.vfdSettings.Registers.SET_FREQUENCY.toString(16)})`);
 
+    // *** DEBUG: Scan key registers BEFORE write so we can see state change ***
+    const postWriteScanRanges = [
+        { start: 0, len: 6 },    // Control/command block reg 0-5 (includes cmd reg 0x0001 and freq ref 0x0002)
+        { start: 35, len: 10 },  // Monitor registers (freq, current, status)
+    ];
+
+    const doScan = (label) => {
+        log.info(`--- VFD Register Scan: ${label} ---`);
+        var scanPromise = Promise.resolve();
+        postWriteScanRanges.forEach(range => {
+            scanPromise = scanPromise
+                .then(() => this.debugReadRegisters(range.start, range.len))
+                .catch((err) => { log.error(`Scan failed at ${range.start}: ${err.message}`); });
+        });
+        return scanPromise;
+    };
+
+    return doScan('BEFORE write')
+        .then(() => writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple))
+        .then(result => {
+            log.info(`VFD write completed, result=${JSON.stringify(result)}`);
+            // Small delay to let VFD process the write before reading back
+            return new Promise(resolve => setTimeout(() => resolve(result), 200));
+        })
+        .then(result => doScan('AFTER write').then(() => result));
+};
 
 
 Spin.prototype.debugReadRegisters = function(startReg, length) {
