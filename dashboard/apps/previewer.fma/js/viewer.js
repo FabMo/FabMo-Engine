@@ -323,7 +323,17 @@ module.exports = function(container) {
     // ... which does not include a number of sbp type lines
     // SO ... as a very crude first approximation, we just look for the gcode start and go from there
     // DO THAT BY Extracting the line number from the first element of the gcode array
+    // GUARD: Don't attempt update if path is not yet loaded
+    if (!self.path || !self.path.loaded || !self.path.gcode || !self.path.gcode.length) {
+      return;
+    }
     const gcodeLine = self.path.gcode[0];
+    // GUARD: Handle case where first line has no N number
+    if (!gcodeLine) {
+      self.path.setMoveLinePosition(line, position);
+      return;
+    }
+
     const match = gcodeLine.match(/^N(\d+)/);
     let baseLineNumber = match ? parseInt(match[1], 10) : 0;
 

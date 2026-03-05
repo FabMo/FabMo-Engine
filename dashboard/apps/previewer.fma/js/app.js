@@ -143,10 +143,21 @@ function nowPreviewJob() {
     $(window).resize(resize);
     resize();
 
+    // fabmo.on('status', function(status) {
+    //   if (job_started)
+    //     viewer.updateStatus(status.line, [status.posx, status.posy, status.posz]);
+    // });
+
+
     fabmo.on('status', function(status) {
-      if (job_started)
+      // Also update if a job is currently running, even if we missed job_start
+      // This handles the case where the user opens the previewer while a job is already running
+      var isLive = job_started || status.state === 'running';
+      if (isLive)
         viewer.updateStatus(status.line, [status.posx, status.posy, status.posz]);
     });
+
+
 
     fabmo.on('job_start', function() {
       job_started = true;
