@@ -112,15 +112,26 @@ function nowPreviewJob() {
         $('.run-now').show();
     });
 
-    $('.run-now').click(function() {
-      // CLEANUP BEFORE switching apps
-      cleanupBeforeExit();
+    // $('.run-now').click(function() {
+    //   // CLEANUP BEFORE switching apps
+    //   cleanupBeforeExit();
       
-      fabmo.runNext(function(err, data) {
-        if (err) fabmo.notify(err);
-        else fabmo.launchApp('job-manager');
-      });
+    //   fabmo.runNext(function(err, data) {
+    //     if (err) fabmo.notify(err);
+    //     else fabmo.launchApp('job-manager');
+    //   });
+    // });
+
+
+  $('.run-now').click(function() {
+    $('.run-now').hide();
+    fabmo.runNext(function(err, data) {
+      if (err) {
+        fabmo.notify(err, 'error');
+        $('.run-now').show(); // re-show if the run failed
+      }
     });
+  });
 
     // CRITICAL: Assign to module-level viewer variable
     viewer = new Viewer(preview);
