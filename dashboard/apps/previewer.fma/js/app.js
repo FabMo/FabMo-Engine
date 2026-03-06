@@ -139,6 +139,7 @@ function nowPreviewJob() {
 
     // Resize
     var job_started = false;
+    var prev_state = null;
 
     $(window).resize(resize);
     resize();
@@ -155,12 +156,22 @@ function nowPreviewJob() {
       var isLive = job_started || status.state === 'running';
       if (isLive)
         viewer.updateStatus(status.line, [status.posx, status.posy, status.posz]);
+      
+      // When state leaves 'running' while the job still exists (e.g. end-of-file PAUSE),
+      // immediately start animating the remaining buffered moves.
+      // This fires BEFORE any modal dialog appears, so the preview stays in sync.
+      if (prev_state === 'running' && status.state !== 'running' && !!status.job) {
+        viewer.finishLive();
+      }
+
+      prev_state = status.state;
     });
 
 
 
     fabmo.on('job_start', function() {
       job_started = true;
+      prev_state = null;
       viewer.jobStarted();
     });
 
