@@ -106,14 +106,14 @@ Spin.prototype.startSpindleVFD = function() {
         clearInterval(this.vfdInterval);
     }
 
-        // *** Run a one-time diagnostic scan on startup ***
-    log.info("DEBUG: Starting VFD register scan on connect...");
-    // Scan a broad range to find active registers
-    const scanRanges = [
-        { start: 0, len: 10 },    // Common control/status block
-        { start: 35, len: 10 },    // Your current read range; changed to 35 and 10 for broader scan
-        { start: 100, len: 6 },   // Check o2-xx parameter area (Yaskawa)
-    ];
+    //     // *** Run a one-time diagnostic scan on startup ***
+    // log.info("DEBUG: Starting VFD register scan on connect...");
+    // // Scan a broad range to find active registers
+    // const scanRanges = [
+    //     { start: 0, len: 10 },    // Common control/status block
+    //     { start: 35, len: 10 },    // Your current read range; changed to 35 and 10 for broader scan
+    //     { start: 100, len: 6 },   // Check o2-xx parameter area (Yaskawa)
+    // ];
     
     // var scanPromise = Promise.resolve();
     // scanRanges.forEach(range => {
@@ -229,46 +229,54 @@ Spin.prototype.disableSpindle = function(reason, isInitialFailure = false) {
     this.updateStatus(this.status);
 };
 
+// Yaskawa V1000 registers ...
+const VFD_SURVEY_REGS = [
+    { reg: 2,  label: "Frequency Reference (written value)" },
+    //{ reg: 3,  label: "Min Frequency Clamp" },
+    //{ reg: 16, label: "U1-01 mirror / internal ref?" },
+    //{ reg: 17, label: "internal ref B?" },
+    { reg: 32, label: "Status A" },
+    { reg: 35, label: "Freq Ref echo" },
+    { reg: 36, label: "Output Frequency (attained)" },
+    { reg: 37, label: "Output Voltage" },
+    { reg: 38, label: "Output Current" },
+    //{ reg: 43, label: "Input Status" },
+    { reg: 44, label: "Status B" },
+    //{ reg: 45, label: "Output Status" },
+    //{ reg: 49, label: "DC Bus Voltage" },
+];
 
-// Add a flag to track if a survey scan is already pending
 let surveyScanPending = false;
 
-// Full register survey - reads registers one at a time to match actual call pattern
-Spin.prototype.surveyRegisters = function(startReg, endReg) {
-    log.info(`=== VFD SURVEY SCAN: registers ${startReg} to ${endReg} (one at a time) ===`);
+// Targeted register survey - reads only the registers listed in VFD_SURVEY_REGS
+Spin.prototype.surveyRegisters = function() {
+    log.info(`=== VFD SURVEY SCAN (${VFD_SURVEY_REGS.length} registers) ===`);
     
     var results = [];
-    
-    // Build sequential chain of single-register reads
     var chain = Promise.resolve();
-    for (var r = startReg; r <= endReg; r++) {
-        (function(reg) {   // IIFE to capture reg value in closure
-            chain = chain.then(() => {
-                return readVFD(reg, 1)
-                    .then((data) => {
-                        var val = data[0];
-                        if (val !== 0) {   // Only log non-zero to keep output manageable
-                            log.info(`  survey reg[${reg}] (0x${reg.toString(16).padStart(4,'0')}) = ${val} (0x${val.toString(16).padStart(4,'0')})`);
-                        }
-                        results.push({ reg: reg, val: val });
-                    })
-                    .catch((err) => {
-                        log.info(`  survey reg[${reg}] = READ ERROR: ${err.message}`);
-                        results.push({ reg: reg, val: null, err: err.message });
-                    });
-            });
-        })(r);
-    }
+    
+    VFD_SURVEY_REGS.forEach(function(entry) {
+        chain = chain.then(() => {
+            return readVFD(entry.reg, 1)
+                .then((data) => {
+                    var val = data[0];
+                    log.info(`  reg[${entry.reg}] (0x${entry.reg.toString(16).padStart(4,'0')}) = ${val} (0x${val.toString(16).padStart(4,'0')})  -- ${entry.label}`);
+                    results.push({ reg: entry.reg, val: val, label: entry.label });
+                })
+                .catch((err) => {
+                    log.info(`  reg[${entry.reg}] = READ ERROR: ${err.message}  -- ${entry.label}`);
+                    results.push({ reg: entry.reg, val: null, label: entry.label, err: err.message });
+                });
+        });
+    });
     
     return chain.then(() => {
-        log.info(`=== VFD SURVEY SCAN COMPLETE ===`);
-        // Also log a compact summary of all non-zero registers
+        log.info(`=== VFD SURVEY COMPLETE ===`);
         var nonZero = results.filter(r => r.val !== null && r.val !== 0);
-        log.info(`  Non-zero registers: ${nonZero.map(r => `[${r.reg}]=${r.val}`).join(', ')}`);
+        log.info(`  Non-zero: ${nonZero.map(r => `[${r.reg}]=${r.val}`).join(', ')}`);
         return results;
     });
 };
-
 
 
 
@@ -329,7 +337,7 @@ Spin.prototype.setFrequency = function(data) {
                         log.info('=== VFD SURVEY: timed out waiting for idle, running anyway ===');
                     }
                     this.vfdBusy = true;
-                    this.surveyRegisters(0, 50)
+                    this.surveyRegisters()
                         .then(() => {
                             this.vfdBusy = false;
                             surveyScanPending = false;
