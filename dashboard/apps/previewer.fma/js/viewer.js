@@ -260,7 +260,8 @@ module.exports = function(container) {
       
       self.controls.update();
     }
-    
+
+    buildNLineMap();
     self.gui.hideLoading();
     self.refresh();
   }
@@ -270,6 +271,58 @@ module.exports = function(container) {
     self.gui.showLoadingProgress(progress);
     self.refresh();
   }
+
+
+  // Build N-number → first move index lookup table after gcode is loaded.
+  //
+  // Two different N-numbering schemes in use depending on file type:
+  //   SBP files:   emit_gcode() embeds N = (SBP_pc + 20), so loaded gcode has
+  //                N-numbers that map to SBP source commands (N20=cmd0, N21=cmd1 ...)
+  //   GCode files: loaded gcode has NO N-numbers; LineNumberer adds N21 for file
+  //                line 0, N22 for line 1, etc. during actual execution
+  //
+  // In both cases status.line = last N-number accepted by G2 planner, so a
+  // single backward search through this table works for both file types.
+  function buildNLineMap() {
+    self.nLineMap = {};
+    var gcode = self.path.gcode;
+    var moves = self.path.moves;
+    var hasNNumbers = false;
+
+    // Map each 1-based gcode array index to the first move index from that line
+    var lineToMoveIdx = {};
+    for (var m = 0; m < moves.length; m++) {
+      var gl = moves[m].getLine(); // move.getLine() == gcode_array_index + 1
+      if (!(gl in lineToMoveIdx)) lineToMoveIdx[gl] = m;
+    }
+
+    // SBP files: N-numbers already present in loaded gcode (N = SBP pc + 20)
+    for (var k = 0; k < gcode.length; k++) {
+      var match = gcode[k].match(/^N(\d+)/);
+      if (match) {
+        hasNNumbers = true;
+        var n = parseInt(match[1]);
+        var gcLine = k + 1;
+        if (!(n in self.nLineMap) && (gcLine in lineToMoveIdx)) {
+          self.nLineMap[n] = lineToMoveIdx[gcLine];
+        }
+      }
+    }
+
+    // GCode files: no N-numbers in loaded gcode; LineNumberer will assign
+    // N21 to gcode[0], N22 to gcode[1], etc. during actual streaming to G2
+    if (!hasNNumbers) {
+      for (var k = 0; k < gcode.length; k++) {
+        var n = k + 21;
+        var gcLine = k + 1;
+        if (gcLine in lineToMoveIdx) {
+          self.nLineMap[n] = lineToMoveIdx[gcLine];
+        }
+      }
+    }
+    self.isSBP = hasNNumbers;  
+  }
+
 
 
   // Get the file path that will be displayed; "bounds" comes from this work
@@ -323,40 +376,67 @@ module.exports = function(container) {
     // ... which does not include a number of sbp type lines
     // SO ... as a very crude first approximation, we just look for the gcode start and go from there
     // DO THAT BY Extracting the line number from the first element of the gcode array
-    const gcodeLine = self.path.gcode[0];
-    const match = gcodeLine.match(/^N(\d+)/);
-    let baseLineNumber = match ? parseInt(match[1], 10) : 0;
+  
+  
+    if (!self.path || !self.path.loaded || !self.path.gcode || !self.path.gcode.length) return;
+    if (!self.nLineMap || !line) return;
 
-    //console.log('line: ', line);
-    //console.log('gcodeLine: ', gcodeLine);
-    //console.log('baseLineNumber: ', baseLineNumber);
+    // Subtract the planner buffer compensation (in N-numbers).
+    // For GCode files: 1 N-number = 1 gcode line, so comp=20 means "show 20 lines behind planner"
+    // For SBP files:   1 N-number = 1 SBP command, so comp=5 means "5 commands behind planner"
+    var comp = parseInt(cookie.get('planner-lookahead', 5));
+    var targetN = line - comp;
 
-    // Subtract the extracted line number from the input line number
-    line = line - baseLineNumber;
+    // Backward search: find the largest N <= targetN that has a mapped move.
+    // Handles gaps from preamble lines (no motion), non-motion commands, etc.
+    var moveIdx;
+    var limit = 200;
+    for (var n = targetN; n >= 0 && limit-- > 0; n--) {
+      if (n in self.nLineMap) {
+        moveIdx = self.nLineMap[n];
+        break;
+      }
+    }
 
-    // Update the move line position
-    self.path.setMoveLinePosition(line, position);
+    if (moveIdx === undefined) moveIdx = 0;
+    if (moveIdx >= self.path.moves.length) moveIdx = self.path.moves.length - 1;
+
+    // setMoveLinePosition handles the fine positioning within the move using
+    // the reported hardware coordinates — pins the preview icon to actual position
+    var moveLine = self.path.moves[moveIdx].getLine();
+    self.path.setMoveLinePosition(moveLine, position);
+
+    // Update the Line: display with the original file line number.
+    // SBP:   N = SBP_pc + 20, so 1-based source line = targetN - 19
+    // GCode: N21 = line 1,    so 1-based source line = targetN - 20
+    if (self.path.setCurrentLine && targetN > 0) {
+      var displayLine = self.isSBP ? (targetN - 19) : (targetN - 20);
+      if (displayLine < 1) displayLine = 1;
+      self.path.setCurrentLine(displayLine);
+    }
   }
-  // self.updateStatus = function(line, position) {
-  //   line = line - 20; // Subtract the minimum line number for gcode starting point
-  //   self.path.setMoveLinePosition(line, position);
-  // }
-
+  
+  // Called when G2 finishes streaming (state leaves 'running' while job exists).
+  // Animates the remaining moves in the planner buffer before any modal appears.
+  self.finishLive = function() {
+    self.path.play();
+  }
 
   self.jobStarted = function () {container.addClass('live')}
 
-
   self.jobEnded = function () {
-    self.path.setMoveToEnd();
-    container.removeClass('live')
+    // If finishLive() animation is still running, let it finish naturally.
+    // If not (e.g. direct-to-idle with no pause), jump to end instantly.
+    if (typeof self.path.animationFrame === 'undefined') {
+      self.path.setMoveToEnd();
+    }
+    container.removeClass('live');
   }
-
 
   function updatePosition (position) {
     self.tool.setPosition(position);
     self.refresh();
   }
-
 
   // Renderer
   self.renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
@@ -564,6 +644,11 @@ module.exports = function(container) {
 
   // Units
   util.connectSetting('units', self.units, self.setUnits);
+
+  // Planner lookahead compensation
+  util.connectSetting('planner-lookahead', parseInt(cookie.get('planner-lookahead', 5)), function(v) {
+      cookie.set('planner-lookahead', v);
+  });
 
   // Add method to load point cloud from config
   self.loadPointCloud = function(config) {

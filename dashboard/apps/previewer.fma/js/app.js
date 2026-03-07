@@ -112,15 +112,26 @@ function nowPreviewJob() {
         $('.run-now').show();
     });
 
-    $('.run-now').click(function() {
-      // CLEANUP BEFORE switching apps
-      cleanupBeforeExit();
+    // $('.run-now').click(function() {
+    //   // CLEANUP BEFORE switching apps
+    //   cleanupBeforeExit();
       
-      fabmo.runNext(function(err, data) {
-        if (err) fabmo.notify(err);
-        else fabmo.launchApp('job-manager');
-      });
+    //   fabmo.runNext(function(err, data) {
+    //     if (err) fabmo.notify(err);
+    //     else fabmo.launchApp('job-manager');
+    //   });
+    // });
+
+
+  $('.run-now').click(function() {
+    $('.run-now').hide();
+    fabmo.runNext(function(err, data) {
+      if (err) {
+        fabmo.notify(err, 'error');
+        $('.run-now').show(); // re-show if the run failed
+      }
     });
+  });
 
     // CRITICAL: Assign to module-level viewer variable
     viewer = new Viewer(preview);
@@ -139,17 +150,39 @@ function nowPreviewJob() {
 
     // Resize
     var job_started = false;
+    var prev_state = null;
 
     $(window).resize(resize);
     resize();
 
+    // fabmo.on('status', function(status) {
+    //   if (job_started)
+    //     viewer.updateStatus(status.line, [status.posx, status.posy, status.posz]);
+    // });
+
+
     fabmo.on('status', function(status) {
-      if (job_started)
+      // Also update if a job is currently running, even if we missed job_start
+      // This handles the case where the user opens the previewer while a job is already running
+      var isLive = job_started || status.state === 'running';
+      if (isLive)
         viewer.updateStatus(status.line, [status.posx, status.posy, status.posz]);
+      
+      // When state leaves 'running' while the job still exists (e.g. end-of-file PAUSE),
+      // immediately start animating the remaining buffered moves.
+      // This fires BEFORE any modal dialog appears, so the preview stays in sync.
+      if (prev_state === 'running' && status.state !== 'running' && !!status.job) {
+        viewer.finishLive();
+      }
+
+      prev_state = status.state;
     });
+
+
 
     fabmo.on('job_start', function() {
       job_started = true;
+      prev_state = null;
       viewer.jobStarted();
     });
 

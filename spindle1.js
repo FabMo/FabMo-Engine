@@ -115,12 +115,12 @@ Spin.prototype.startSpindleVFD = function() {
         { start: 100, len: 6 },   // Check o2-xx parameter area (Yaskawa)
     ];
     
-    var scanPromise = Promise.resolve();
-    scanRanges.forEach(range => {
-        scanPromise = scanPromise
-            .then(() => this.debugReadRegisters(range.start, range.len))
-            .catch(() => {}); // continue on error
-    });
+    // var scanPromise = Promise.resolve();
+    // scanRanges.forEach(range => {
+    //     scanPromise = scanPromise
+    //         .then(() => this.debugReadRegisters(range.start, range.len))
+    //         .catch(() => {}); // continue on error
+    // });
 
     if (this.status.vfdEnabled) {
         this.vfdInterval = setInterval(() => {
@@ -133,7 +133,7 @@ Spin.prototype.startSpindleVFD = function() {
             
             if (this.vfdBusy) {
                 log.error("VFD is busy; skipping update");
-                this.vfdBusy = false;
+                // this.vfdBusy = false // removed for Yaskawa workflow
                 return;
             }
             
@@ -229,6 +229,50 @@ Spin.prototype.disableSpindle = function(reason, isInitialFailure = false) {
     this.updateStatus(this.status);
 };
 
+
+// Add a flag to track if a survey scan is already pending
+let surveyScanPending = false;
+
+// Full register survey - reads registers one at a time to match actual call pattern
+Spin.prototype.surveyRegisters = function(startReg, endReg) {
+    log.info(`=== VFD SURVEY SCAN: registers ${startReg} to ${endReg} (one at a time) ===`);
+    
+    var results = [];
+    
+    // Build sequential chain of single-register reads
+    var chain = Promise.resolve();
+    for (var r = startReg; r <= endReg; r++) {
+        (function(reg) {   // IIFE to capture reg value in closure
+            chain = chain.then(() => {
+                return readVFD(reg, 1)
+                    .then((data) => {
+                        var val = data[0];
+                        if (val !== 0) {   // Only log non-zero to keep output manageable
+                            log.info(`  survey reg[${reg}] (0x${reg.toString(16).padStart(4,'0')}) = ${val} (0x${val.toString(16).padStart(4,'0')})`);
+                        }
+                        results.push({ reg: reg, val: val });
+                    })
+                    .catch((err) => {
+                        log.info(`  survey reg[${reg}] = READ ERROR: ${err.message}`);
+                        results.push({ reg: reg, val: null, err: err.message });
+                    });
+            });
+        })(r);
+    }
+    
+    return chain.then(() => {
+        log.info(`=== VFD SURVEY SCAN COMPLETE ===`);
+        // Also log a compact summary of all non-zero registers
+        var nonZero = results.filter(r => r.val !== null && r.val !== 0);
+        log.info(`  Non-zero registers: ${nonZero.map(r => `[${r.reg}]=${r.val}`).join(', ')}`);
+        return results;
+    });
+};
+
+
+
+
+
 Spin.prototype.setSpindleVFDFreq = function(data) {
     this.vfdBusy = true;
     return new Promise((resolve, reject) => {
@@ -262,18 +306,6 @@ Spin.prototype.setSpindleVFDFreq = function(data) {
     });
 };
 
-// Spin.prototype.setFrequency = function(data) {
-//     var vfd_req = Math.round(data / this.vfdSettings.Registers.RPM_MULT);
-//     var useMultiple = (this.vfdSettings.Modbus_Function_Codes.WRITE_SINGLE_REGISTER === 16 || 
-//                        this.vfdSettings.Modbus_Function_Codes.WRITE_SINGLE_REGISTER === 0x10);
-//     log.info(`VFD write: reg=${this.vfdSettings.Registers.SET_FREQUENCY}, value=${vfd_req}, FC16=${useMultiple}`);
-//     return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple)
-//         .then(data => {
-//             log.info("VFD Data after setting:" + JSON.stringify(data));
-//             return data;
-//         });
-// };
-
 
 // with debugs
 Spin.prototype.setFrequency = function(data) {
@@ -284,32 +316,42 @@ Spin.prototype.setFrequency = function(data) {
     log.info(`VFD setFrequency called: input=${data} RPM, RPM_MULT=${this.vfdSettings.Registers.RPM_MULT}, calculated_reg_value=${vfd_req}, FC16=${useMultiple}`);
     log.info(`VFD write target: reg=${this.vfdSettings.Registers.SET_FREQUENCY} (hex: 0x${this.vfdSettings.Registers.SET_FREQUENCY.toString(16)})`);
 
-    // *** DEBUG: Scan key registers BEFORE write so we can see state change ***
-    const postWriteScanRanges = [
-        { start: 0, len: 6 },    // Control/command block reg 0-5 (includes cmd reg 0x0001 and freq ref 0x0002)
-        { start: 35, len: 10 },  // Monitor registers (freq, current, status)
-    ];
+    // *** Schedule the full survey scan 1 second after this write ***
+    if (!surveyScanPending) {
+        surveyScanPending = true;
+        setTimeout(() => {
+            var waitCount = 0;
+            var waitForIdle = setInterval(() => {
+                waitCount++;
+                if (!this.vfdBusy || waitCount >= 10) {
+                    clearInterval(waitForIdle);
+                    if (this.vfdBusy) {
+                        log.info('=== VFD SURVEY: timed out waiting for idle, running anyway ===');
+                    }
+                    this.vfdBusy = true;
+                    this.surveyRegisters(0, 50)
+                        .then(() => {
+                            this.vfdBusy = false;
+                            surveyScanPending = false;
+                        })
+                        .catch((err) => {
+                            log.error(`Survey scan failed: ${err.message}`);
+                            this.vfdBusy = false;
+                            surveyScanPending = false;
+                        });
+                }
+            }, 100);
+        }, 1000);
+    }
 
-    const doScan = (label) => {
-        log.info(`--- VFD Register Scan: ${label} ---`);
-        var scanPromise = Promise.resolve();
-        postWriteScanRanges.forEach(range => {
-            scanPromise = scanPromise
-                .then(() => this.debugReadRegisters(range.start, range.len))
-                .catch((err) => { log.error(`Scan failed at ${range.start}: ${err.message}`); });
-        });
-        return scanPromise;
-    };
-
-    return doScan('BEFORE write')
-        .then(() => writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple))
+    // *** This return is critical - setSpindleVFDFreq calls .then() on this result ***
+    return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple)
         .then(result => {
             log.info(`VFD write completed, result=${JSON.stringify(result)}`);
-            // Small delay to let VFD process the write before reading back
-            return new Promise(resolve => setTimeout(() => resolve(result), 200));
-        })
-        .then(result => doScan('AFTER write').then(() => result));
+            return result;
+        });
 };
+
 
 
 Spin.prototype.debugReadRegisters = function(startReg, length) {

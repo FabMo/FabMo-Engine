@@ -100,7 +100,11 @@
           <label>Table Offset from Z-Zero (in current machine display units)</label>
           <input name="table-zzoff" type="number" min="-100" max="100"
                  step=".1" value="-1"/>
-                 
+
+          <label>Live Sync Buffer Compensation (SBP: SBP commands; GCode: gcode lines)</label>
+          <input name="planner-lookahead" type="number" min="0" max="40"
+                step="1" value="5"/>
+
           <h5>Display Options</h5>
 
           <label>

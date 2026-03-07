@@ -540,7 +540,7 @@ module.exports = function(scene, callbacks) {
   function setCurrentLine(line) {
     self.codeLine.text(infoLine + line.toLocaleString());
   }
-
+  self.setCurrentLine = setCurrentLine;
 
   self.setMoveTime = function(time) {
     if (!self.loaded || !self.moves.length) return;
