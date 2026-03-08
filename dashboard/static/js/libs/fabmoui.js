@@ -462,6 +462,7 @@ const { last } = require("underscore");
         let stopIsOn = false; // ... at least one is already on
         let intIsOn = false;
         let limitIsOn = false;
+        var limitsEnabled = status.limitsEnabled !== undefined ? status.limitsEnabled : true; // default true if not yet in status
         for (var i = 1; i < MAX_INPUTS + 1; i++) {
             let iname = "in" + i;
             if (iname in status) {
@@ -479,6 +480,17 @@ const { last } = require("underscore");
                 ) {
                     assignedAction = that.tool.config.machine["di" + i + "ac"];
                 }
+
+                // If this is a limit input and limits are disabled, show as muted regardless of input state
+                if (assignedAction === "limit" && !limitsEnabled) {
+                    $(selector).removeClass("on off stopOn interlockOn limitOn").addClass("limitDisabled");
+                    // keep #inp-limit hidden — a disabled limit indicator should not show
+                    if (!limitIsOn) {
+                        $("#inp-limit").css("visibility", "hidden");
+                    }
+                    continue;
+                }
+
                 if (ival) {
                     // input is ON
                     idisp = "on";
@@ -503,7 +515,7 @@ const { last } = require("underscore");
                             $("#inp-limit").css("visibility", "visible");
                         }
                     }
-                    $(selector).removeClass("off").addClass(idisp);
+                    $(selector).removeClass("off limitDisabled").addClass(idisp);
                 } else if (ival === 0) {
                     // input is OFF ... cleanup
                     if (assignedAction === "stop" || assignedAction === "faststop") {
@@ -522,33 +534,16 @@ const { last } = require("underscore");
                             inProbeOn = false;
                         }
                     }
-                    $(selector).removeClass("on stopOn interlockOn limitOn").addClass("off");
+                    $(selector).removeClass("on stopOn interlockOn limitOn limitDisabled").addClass("off");
                 } else {
                     // input is disabled  ... not picking up at moment because all reported
-                    $(selector).removeClass("on off stopOn interlockOn").addClass("disabled");
+                    $(selector).removeClass("on off stopOn interlockOn limitDisabled").addClass("disabled");
                 }
             } else {
                 break;
             }
         }
-
-        ///update outputs
-        for (var i = 1; i < MAX_OUTPUTS + 1; i++) {
-            var outname = "out" + i;
-            if (outname in status) {
-                var selector = that.status_div_selector + " .out" + i;
-                if (status[outname] == 1) {
-                    $(selector).removeClass("off").addClass("on");
-                } else if (status[outname] == 0) {
-                    $(selector).removeClass("on").addClass("off");
-                } else {
-                    $(selector).removeClass("on off").addClass("disabled");
-                }
-            } else {
-                break;
-            }
-        }
-
+        
         //// TODO: How to Handle 2 Spindles via g2
         //// TODO: Consider whether to modify g2 to report spc status during feedhold
         ////## -- Currently removing check for spc to just use out1 status for spindle notification

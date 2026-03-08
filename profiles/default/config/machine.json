@@ -8,6 +8,7 @@
 	"auth_input" : 5,
 	"ap_input" : 0,
 	"ap_time" : 8,
+    "limits_on" : true,
     "di1ac": "none",
     "di2ac": "none",
     "di3ac": "none",

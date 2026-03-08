@@ -131,6 +131,10 @@ MachineConfig.prototype.update = function (data, callback, force) {
     if ("zmax" in this._cache.envelope) {
         this.machine.driver.command({ ztm: this._cache.envelope["zmax"] });
     }
+    // Sync limits_on → g2 "lim" parameter
+    if ("limits_on" in this._cache) {
+        this.machine.driver.command({ lim: this._cache.limits_on ? 1 : 0 });
+    }
 
     this.save(function (err, result) {
         if (err) {

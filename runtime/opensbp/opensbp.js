@@ -494,6 +494,7 @@ SBPRuntime.prototype._loadConfig = function () {
     this.maxjerk_b = settings.b_maxjerk;
     this.maxjerk_c = settings.c_maxjerk;
     this.safeZpullUp = settings.safeZpullUp;
+    this.limits_on = config.machine.get("limits_on");  // ← add this line
 
     // need these to control conversion or not of ABC axis for case of rotary mode
     var axis_types = config.driver.getMany(["aam", "bam", "cam"]);
@@ -536,11 +537,28 @@ SBPRuntime.prototype._saveConfig = async function (callback) {
 //   callback - Called when config has been written
 SBPRuntime.prototype._saveDriverSettings = async function (callback) {
     var g2_values = {};
+
+    // Save lim to g2 driver config (g2.json) so restoreDriverState respects it after file end
+    if (this.limits_on !== undefined) {
+        g2_values.lim = this.limits_on ? 1 : 0;
+    }
+
     try {
         await config.driver.setManyWrapper(g2_values);
+
+        // Also persist limits_on to machine config (machine.json) — the machine-level owner
+        if (this.limits_on !== undefined) {
+            await new Promise(function (resolve, reject) {
+                config.machine.update({ limits_on: this.limits_on }, function (err) {
+                    if (err) { reject(err); } else { resolve(); }
+                });
+            }.bind(this));
+        }
+
         callback();
     } catch (error) {
         log.error(error);
+        callback(error);
     }
 };
 

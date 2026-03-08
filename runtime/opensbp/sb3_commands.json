@@ -3781,7 +3781,7 @@
             "typeext": 0,
             "disptype": "1",
             "default": "-.5",
-            "sysvar": 11,
+            "sysvar": 101,
             "range": [
                null,
                null
@@ -3795,7 +3795,7 @@
             "typeext": 0,
             "disptype": "1",
             "default": "96.5",
-            "sysvar": 12,
+            "sysvar": 102,
             "range": [
                null,
                null
@@ -3809,7 +3809,7 @@
             "typeext": 0,
             "disptype": "1",
             "default": "-.5",
-            "sysvar": 13,
+            "sysvar": 103,
             "range": [
                null,
                null
@@ -3823,7 +3823,7 @@
             "typeext": 0,
             "disptype": "1",
             "default": "48.5",
-            "sysvar": 14,
+            "sysvar": 104,
             "range": [
                null,
                null
@@ -3837,7 +3837,7 @@
             "typeext": 0,
             "disptype": "1",
             "default": "-3.0",
-            "sysvar": 15,
+            "sysvar": 105,
             "range": [
                null,
                null
@@ -3851,7 +3851,7 @@
             "typeext": 0,
             "disptype": "1",
             "default": "8.0",
-            "sysvar": 16,
+            "sysvar": 106,
             "range": [
                null,
                null
@@ -3865,7 +3865,7 @@
             "typeext": 0,
             "disptype": "1",
             "default": "-3.0",
-            "sysvar": 17,
+            "sysvar": 107,
             "range": [
                null,
                null
@@ -3879,12 +3879,98 @@
             "typeext": 0,
             "disptype": "1",
             "default": "8.0",
-            "sysvar": 18,
+            "sysvar": 108,
             "range": [
                null,
                null
             ],
             "type": "opt"
+         },
+         {
+            "name": "Low B Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "loB",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "-500",
+            "sysvar": 109,
+            "range": [
+               null,
+               null
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "High B Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "hiB",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "500",
+            "sysvar": 110,
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Low C Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "loC",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "-500",
+            "sysvar": 111,
+            "range": [
+               null,
+               null
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "High C Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "hiC",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "500",
+            "sysvar": 112,
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Number of Axes to Check",
+            "desc": "Define how many axes to check",
+            "abrev": "lmNm",
+            "typeext": 0,
+            "default": "5",
+            "sysvar": 113,
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Limit Switches ON/OFF",
+            "desc": "Turn ON or OFF limit switches",
+            "abrev": "ON",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "1",
+            "default_desc": "ON",
+            "opts": [
+               {
+                  "value": "0",
+                  "desc": "0ff"
+               }
+            ],
+            "sysvar": "46",
+            "type": "distmb"
          },
          {
             "name": "File Limit Checking",
@@ -3900,49 +3986,8 @@
                   "desc": "0ff"
                }
             ],
-            "sysvar": "0",
+            "sysvar": "114",
             "type": "distmb"
-         },
-         {
-            "name": "Low B Limit",
-            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
-            "abrev": "loB",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "-500",
-            "sysvar": 19,
-            "range": [
-               null,
-               null
-            ],
-            "type": "distmb"
-         },
-         {
-            "name": "High B Limit",
-            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
-            "abrev": "hiB",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "500",
-            "sysvar": 20,
-            "range": [
-               null,
-               null
-            ],
-            "type": "int"
-         },
-         {
-            "name": "Number of Axes to Check",
-            "desc": "Define how many axes to check",
-            "abrev": "lmNm",
-            "typeext": 0,
-            "default": "5",
-            "sysvar": 30,
-            "range": [
-               null,
-               null
-            ],
-            "type": "int"
          }
       ]
    },
@@ -4125,8 +4170,8 @@
       "name": "iNput/output switch modes",
       "params": [
          {
-            "name": "Limits ON or OFF",
-            "desc": "Turn LIMIT Switches (all those designated) ON or OFF",
+            "name": "Limit Switches ON or OFF",
+            "desc": "Turn LIMIT Switches (all those designated in number to check) ON or OFF",
             "abrev": "limON",
             "typeext": 0,
             "disptype": "1",
@@ -4159,7 +4204,7 @@
                   "desc": "not used"
                }
             ],
-            "sysvar": "94",
+            "sysvar": "48",
             "type": "opt"
          },
          {
@@ -4192,7 +4237,7 @@
                   "desc": "An1 & An2 Cont"
                }
             ],
-            "sysvar": "47",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4221,7 +4266,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "91",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4250,7 +4295,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "92",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4279,7 +4324,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "93",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4308,7 +4353,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "95",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4337,7 +4382,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "96",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4366,7 +4411,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "97",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4395,7 +4440,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "98",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4424,7 +4469,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "131",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4453,7 +4498,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "132",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4482,7 +4527,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "133",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4511,7 +4556,7 @@
                   "desc": "Nrm Closed Stop"
                }
             ],
-            "sysvar": "134",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4544,7 +4589,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "111",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4577,7 +4622,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "112",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4610,7 +4655,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "113",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4643,7 +4688,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "115",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4676,7 +4721,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "116",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4709,7 +4754,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "117",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4742,7 +4787,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "118",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4775,7 +4820,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "119",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4808,7 +4853,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "120",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4841,7 +4886,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "121",
+            "sysvar": "0",
             "type": "opt"
          },
          {
@@ -4874,7 +4919,7 @@
                   "desc": "AutoON/FlStpOFF"
                }
             ],
-            "sysvar": "122",
+            "sysvar": "0",
             "type": "opt"
          }
       ]

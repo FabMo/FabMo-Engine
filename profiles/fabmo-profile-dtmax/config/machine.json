@@ -1,5 +1,4 @@
 {
-    "limits_on" : false,
     "softlimits_on" : false,
 	"default_app" : "fabmo-sb4",
 	"envelope" : {
