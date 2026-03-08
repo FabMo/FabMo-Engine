@@ -487,6 +487,11 @@ input#override {
 	font-weight: 900;
 }
 
+.input.limitDisabled {
+	opacity: 0.35;
+    filter: grayscale(80%);
+}
+
 .inp-alert {
     display: inline;
     visibility: hidden;

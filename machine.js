@@ -785,6 +785,8 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 // We check for interlock state before any action that ARMS tool for action and with any general change in state
 function checkForInterlocks(thisMachine, action) {
     let getInterlockState = "";
+    var limitsEnabled = config.machine.get("limits_on");  // read once
+
     for (let pin = 1; pin < 13; pin++) {
         let checkAssignedInput = config.machine.get("di" + pin + "ac");
         // Check assignedInput for "none" in letters of any case; then set value to ""
@@ -802,6 +804,10 @@ function checkForInterlocks(thisMachine, action) {
         //         ... in the Dashboard, for this case the Limit messages will not be displayed (managed in fabmoui.js)
         //      - for the case of Stop, Faststop or Interlock, the opensbp runtime should generate an error with explanation
         if (checkAssignedInput) {
+            // If this input is a limit switch and limits are disabled, skip it entirely
+            if (checkAssignedInput === "limit" && !limitsEnabled) {
+                continue;
+            }
             if (thisMachine.driver.status["in" + pin]) {
                 getInterlockState = checkAssignedInput;
             }
@@ -1860,6 +1866,9 @@ Machine.prototype._updateStatusFromDriver = function (status) {
             this.status[key] = status[key];
         }
     }
+
+    // Propagate limitsEnabled to status so dashboard can style limit inputs correctly
+    this.status.limitsEnabled = config.machine.get("limits_on") ? true : false;
 
     // Add transform warning to status
     // Check if any transforms are enabled

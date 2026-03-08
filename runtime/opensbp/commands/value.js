@@ -157,17 +157,6 @@ exports.VI = async function (args, callback) {
     }
 };
 
-exports.VU = async function (args, callback) {
-    var g2_VU = {};
-    g2_VU[args[0]] = args[1];
-    try {
-        await config.driver.setManyWrapper(g2_VU);
-        callback();
-    } catch (error) {
-        callback(error);
-    }
-};
-
 exports.VL = async function (args, callback) {
     var g2_VL = {};
 
@@ -203,8 +192,6 @@ exports.VL = async function (args, callback) {
     if (args[7] !== undefined) {
         g2_VL.atm = args[7];
     }
-    // Soft limit checking ON-OFF
-
     // B - Low Limit
     if (args[9] !== undefined) {
         g2_VL.btn = args[9];
@@ -213,8 +200,6 @@ exports.VL = async function (args, callback) {
     if (args[10] !== undefined) {
         g2_VL.btm = args[10];
     }
-    // Number of axes limits to check
-
     // C - Low Limit
     if (args[12] !== undefined) {
         g2_VL.ctn = args[12];
@@ -230,6 +215,18 @@ exports.VL = async function (args, callback) {
     } catch (error) {
         callback(error);
     }
+};
+exports.VN = function (args, callback) {
+    // args[0]: Limits on/off — 1=on, 0=off
+    // Transient change: stored on runtime for SV to persist later (like movespeed_xy/VS)
+    if (args[0] !== undefined) {
+        var limits_on = parseFloat(args[0]) !== 0;
+        this.limits_on = limits_on;
+        // Send live to G2 (transient — restoreDriverState will reset unless SV is called)
+        this.machine.driver.command({ lim: limits_on ? 1 : 0 });
+    }
+    // REST OF INPUT DEFINITION for OpenSBP
+    callback();
 };
 
 exports.VR = function (args, callback) {
@@ -310,9 +307,21 @@ exports.VS = function (args) {
         this.jogspeed_b = args[8];
     }
     //Set C jog speed
-    if (args[9] !== undefined) {
+    if (args[9] !== undefined) {k
         this.jogspeed_c = args[9];
     }
 
     this.vs_change = 1;
 };
+
+exports.VU = async function (args, callback) {
+    var g2_VU = {};
+    g2_VU[args[0]] = args[1];
+    try {
+        await config.driver.setManyWrapper(g2_VU);
+        callback();
+    } catch (error) {
+        callback(error);
+    }
+};
+
