@@ -101,12 +101,18 @@ MachineConfig.prototype.update = function (data, callback, force) {
             switch (this._cache[diDef]) {
                 case "stop":
                 case "interlock":
-                case "limit":
                     g2inpAction = 1; // G2 regular stop action
                     break;
+                case "limit":
                 case "faststop":
                     g2inpAction = 2; // G2 fast-stop action
                     break;
+                case "halt":
+                    g2inpAction = 3; // G2 immediate stop action (feedhold instant)
+                    break;
+                case "none":
+                default:
+                    g2inpAction = 0; // G2 none action    
             }
             this.machine.driver.command({ ["di" + i + "ac"]: g2inpAction });
         }
