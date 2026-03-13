@@ -95,8 +95,7 @@ let vfdDisabled = false;
 // Set up 1-second UPDATES to spindleVFD status 
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
-    const MAX_VFD_FAILS = 300;  // Should be 3; set high for debugging
-    
+    const MAX_VFD_FAILS = 5;  
     // Reset the disabled flag when starting
     vfdDisabled = false;
     vfdFailures = 0;
@@ -105,22 +104,6 @@ Spin.prototype.startSpindleVFD = function() {
     if (this.vfdInterval) {
         clearInterval(this.vfdInterval);
     }
-
-    //     // *** Run a one-time diagnostic scan on startup ***
-    // log.info("DEBUG: Starting VFD register scan on connect...");
-    // // Scan a broad range to find active registers
-    // const scanRanges = [
-    //     { start: 0, len: 10 },    // Common control/status block
-    //     { start: 35, len: 10 },    // Your current read range; changed to 35 and 10 for broader scan
-    //     { start: 100, len: 6 },   // Check o2-xx parameter area (Yaskawa)
-    // ];
-    
-    // var scanPromise = Promise.resolve();
-    // scanRanges.forEach(range => {
-    //     scanPromise = scanPromise
-    //         .then(() => this.debugReadRegisters(range.start, range.len))
-    //         .catch(() => {}); // continue on error
-    // });
 
     if (this.status.vfdEnabled) {
         this.vfdInterval = setInterval(() => {
@@ -143,14 +126,15 @@ Spin.prototype.startSpindleVFD = function() {
             ])
             .then((data) => {
                 // Success - process data
+                // Offsets are computed from config addresses so the register layout is config-driven
+                // data[0] is always TRIG_READ_FREQ (commanded/designated frequency)
+                var achvOffset = settings.Registers.READ_ATTAINED_FREQUENCY - settings.Registers.TRIG_READ_FREQ;
+                var ampsOffset = settings.Registers.READ_OUTPUT_CURRENT - settings.Registers.TRIG_READ_FREQ;
+
                 this.status.vfdDesgFreq = data[0] * settings.Registers.RPM_MULT;
-                this.status.vfdAchvFreq = data[1] * settings.Registers.RPM_MULT;
-                
-                if (settings.Registers.READ_AMPS_HI === true) {
-                    var vCur = ((data[2] >> 8) & 0xFF);
-                } else {
-                    var vCur = data[2];
-                }
+                this.status.vfdAchvFreq = data[achvOffset] * settings.Registers.RPM_MULT;
+
+                var vCur = settings.Registers.READ_AMPS_HI === true ? ((data[ampsOffset] >> 8) & 0xFF) : data[ampsOffset];
                 vCur = vCur * settings.Registers.AMP_MULT;
                 this.status.vfdAmps = vCur;
                 
@@ -229,7 +213,10 @@ Spin.prototype.disableSpindle = function(reason, isInitialFailure = false) {
     this.updateStatus(this.status);
 };
 
-// Yaskawa V1000 registers ...
+// Set to true to enable post-write register survey (for debugging only; disable for production)
+const VFD_SURVEY_ENABLED = false;
+
+// Registers to survey -- edit this list to add/remove registers of interest
 const VFD_SURVEY_REGS = [
     { reg: 2,  label: "Frequency Reference (written value)" },
     //{ reg: 3,  label: "Min Frequency Clamp" },
@@ -325,7 +312,7 @@ Spin.prototype.setFrequency = function(data) {
     log.info(`VFD write target: reg=${this.vfdSettings.Registers.SET_FREQUENCY} (hex: 0x${this.vfdSettings.Registers.SET_FREQUENCY.toString(16)})`);
 
     // *** Schedule the full survey scan 1 second after this write ***
-    if (!surveyScanPending) {
+    if (VFD_SURVEY_ENABLED && !surveyScanPending) {
         surveyScanPending = true;
         setTimeout(() => {
             var waitCount = 0;
