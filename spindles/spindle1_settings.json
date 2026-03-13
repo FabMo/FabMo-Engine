@@ -10,15 +10,15 @@
     "MAX_RPM": 24000,
     "MIN_RPM": 1000,
     "Registers": {
-      "READ_FREQUENCY": 36,
+      "READ_FREQUENCY": 35,
       "READ_ATTAINED_FREQUENCY": 36,
       "READ_OUTPUT_CURRENT": 38,
       "READ_STATUS": 43,
-      "TRIG_READ_FREQ": 36,
+      "TRIG_READ_FREQ": 35,
       "SET_FREQUENCY": 2,
       "RPM_MULT": 1,
       "READ_AMPS_HI": false,
-      "AMP_MULT": 0.1,
+      "AMP_MULT": 10,
       "UNLOCK_PARAMETERS": null,
       "PASSWORD": 0
     },
@@ -26,6 +26,6 @@
       "READ_REGISTER": 3,
       "WRITE_SINGLE_REGISTER": 16
     },
-    "READ_LENGTH": 3
+    "READ_LENGTH": 4
   }
 }
