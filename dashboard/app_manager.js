@@ -234,11 +234,15 @@ AppManager.prototype._addApp = function (app) {
     if (app.info.id in this.apps_index) {
         var old_app = this.apps_index[app.info.id];
         if (old_app.app_archive_path !== app.info.app_archive_path) {
-            fs.remove(old_app.app_archive_path, function (err) {
-                if (err) {
-                    log.warn("failed to remove an old app archive: " + err);
-                }
-            }); // remove old archive only when replaced by a different one
+            // Never delete system app source directories - only clean up user app archives in the data directory
+            var isSystemApp = old_app.app_archive_path.startsWith(this.system_app_directory);
+            if (!isSystemApp) {
+                fs.remove(old_app.app_archive_path, function (err) {
+                    if (err) {
+                        log.warn("failed to remove an old app archive: " + err);
+                    }
+                }); // remove old archive only when replaced by a different one
+            }
         }
     }
     this.apps_index[app.info.id] = app.info;

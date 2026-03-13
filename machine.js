@@ -774,13 +774,13 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 // ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold (and variations)
 // TABLE:
 // interlock
-// --state--  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions)
-//           -  (none)          -             -               0
-//    stop   -  Stop           YES          Stop ON           1   [feedhold]
-// faststop  -  FastStop       YES          Stop ON           2   [feedhold w/HiJerk] *not implemented in G2 yet ???
-// interlock -  Interlock      YES        Interlock ON        1   [feedhold]
-//    limit  -  Limit          YES         Limit Hit          1   [feedhold]
-//  hardstop -  ImmediateStop   NO             -              3   [feedhold instant] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
+// --state--       --action--  --locking?--     --message   --G2 di#ac settings (digital input actions)
+//                -  (none)          -             -               0
+//    stop        -  Stop           YES          Stop ON           1   [feedhold]
+// faststop       -  FastStop       YES          Stop ON           2   [feedhold w/HiJerk] *not implemented in G2 yet ???
+// interlock      -  Interlock      YES        Interlock ON        1   [feedhold]
+//   limit        -  Limit          YES         Limit Hit          1   [feedhold]
+//halt(hard stop) - ImmediateStop   NO              -              3   [feedhold instant] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
 
 // We check for interlock state before any action that ARMS tool for action and with any general change in state
 function checkForInterlocks(thisMachine, action) {
