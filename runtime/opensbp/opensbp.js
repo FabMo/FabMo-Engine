@@ -170,7 +170,7 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
     //this.init();
 
     log.info("MANUAL CODE - from in FILE!!");
-    log.debug(JSON.stringify(s));
+    // log.debug(JSON.stringify(s)); // logs file
 
     if (typeof s === "string" || s instanceof String) {
         // Plain old string interprets as OpenSBP code segment

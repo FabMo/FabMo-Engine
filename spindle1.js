@@ -95,7 +95,7 @@ let vfdDisabled = false;
 // Set up 1-second UPDATES to spindleVFD status 
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
-    const MAX_VFD_FAILS = 5;  
+    const MAX_VFD_FAILS = 10;  
     // Reset the disabled flag when starting
     vfdDisabled = false;
     vfdFailures = 0;
