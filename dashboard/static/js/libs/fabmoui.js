@@ -561,10 +561,12 @@ const { last } = require("underscore");
             let oname = "out" + o;
             if (oname in status) {
                 let selector = that.status_div_selector + " .out" + o;
-                if (status[oname]) {
+                if (status[oname] == 1) {
                     $(selector).removeClass("off").addClass("on");
-                } else {
+                } else if (status[oname] == 0) {
                     $(selector).removeClass("on").addClass("off");
+                } else {
+                    $(selector).removeClass("on off").addClass("disabled");
                 }
             }
         }
