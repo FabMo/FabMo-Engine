@@ -304,12 +304,12 @@ const { last } = require("underscore");
                 $(".feedrate-unit").text("mm/sec");
                 // status.feed from G2 is in mm/min — divide by 60 for mm/sec
                 const displayValue = (feedrate / 60).toFixed(2);
-                $("#fr-inp").val(displayValue);
+                $("#fr-inp").text(displayValue);
             } else {
                 $(".feedrate-unit").text("in/sec");
                 // status.feed from G2 is in mm/min — divide by 25.4 for in/min, then by 60 for in/sec
                 const displayValue = (feedrate / 1524).toFixed(2);
-                $("#fr-inp").val(displayValue);
+                $("#fr-inp").text(displayValue);
             }
         } else {
             var speed = 0;
@@ -317,10 +317,10 @@ const { last } = require("underscore");
             speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
             if (status.unit === "mm") {
                 $(".feedrate-unit").text("mm/sec");
-                $("#fr-inp").val(speed);
+                $("#fr-inp").text(speed);
             } else {
                 $(".feedrate-unit").text("in/sec");
-                $("#fr-inp").val(speed);
+                $("#fr-inp").text(speed);
             }
         }
 
@@ -369,11 +369,11 @@ const { last } = require("underscore");
             if (!spindleSpeedInput.is(":focus")) {
                 if (status.spindle.vfdAchvFreq !== 0) {
                     $(".spindle-speed input").css("color", "#42e6f5");
-                    $(".spindle-power input").css("color", "black");
+                    $(".spindle-power .sp-power").css("color", "black");
                     updateSpindleSpeed(status.spindle.vfdAchvFreq);
                 } else {
                     $(".spindle-speed input").css("color", "gray");
-                    $(".spindle-power input").css("color", "gray");
+                    $(".spindle-power .sp-power").css("color", "gray");
                     if (status.spindle.vfdDesgFreq < 0) {
                         updateSpindleSpeed("- disabled -  ");
                     } else {
@@ -383,15 +383,15 @@ const { last } = require("underscore");
                 var pwrDraw = status.spindle.vfdAmps;
                 var formattedDraw = (pwrDraw * 0.01).toFixed(2);
                 if (status.spindle.vfdAmps !== 0) {
-                    $(".spindle-power input").css("color", "black");
+                    $(".spindle-power .sp-power").css("color", "black");
                 }
-                $(".spindle-power input").val(formattedDraw);
+                $(".spindle-power .sp-power").text(formattedDraw);
                 $("#dro-addon-3").css("visibility", "visible");
             }
         } else {
             updateSpindleSpeed("- No VFD/USB -  ");
             $(".spindle-speed input").css("color", "gray");
-            $(".spindle-power input").css("color", "gray");
+            $(".spindle-power .sp-power").css("color", "gray");
             // hide display when no VFD
             $("#dro-addon-3").css("visibility", "hidden");
         }

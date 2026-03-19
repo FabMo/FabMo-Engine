@@ -372,6 +372,14 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 }
 
 /** Large DRO add-ons or TOOLS **/
+
+/* Display-only text spans for feedrate and spindle-power */
+.no-select-input {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
 .dro-addon-spacer-row {
     height: 1px;
 }
@@ -407,8 +415,8 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-size: large;
 	cursor: default;
 }
-/* kludge to get feed-rate input box in right place */
-input#fr-inp {
+/* feedrate display span */
+#fr-inp {
 	margin-left: 10px;
 	margin-right: 5px;
 }
@@ -432,9 +440,28 @@ input#override {
 	background-color: #931B14 !important;
 	display: flex;
 }
-/* Make spindle power input align like other number inputs */
-.dro-addon-value.spindle-power input {
-    text-align: right !important;
+/* Display-only spans styled to match input appearance */
+#fr-inp,
+.dro-addon-value .sp-power {
+	width: 50%;
+	height: 1.5rem;
+	text-align: right;
+	padding: 0px;
+	margin-bottom: 5px;
+	margin-left: 20px;
+	margin-right: 5px;
+	margin-top: 3px;
+	font-size: large;
+	font-weight: bold;
+	border: 1px solid gray;
+	background-color: #931B14;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+}
+/* spindle power display span */
+.dro-addon-value.spindle-power .sp-power {
+    text-align: right;
     padding-right: 18px;
 }
 
