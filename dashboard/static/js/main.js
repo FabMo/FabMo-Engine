@@ -625,6 +625,7 @@ engine.getVersion(function (err, version) {
                     (status.state != "armed" && last_state_seen === "armed") ||
                     (status.state != "paused" && last_state_seen === "paused") ||
                     (status.state != "interlock" && last_state_seen === "interlock") ||
+                    (status.state != "driverFault" && last_state_seen === "driverFault") ||
                     (status.state != "lock" && last_state_seen === "lock")
                 ) {
                     dashboard.hideModal();
@@ -967,6 +968,28 @@ engine.getVersion(function (err, version) {
                         title: "Safety Interlock Activated!",
                         message:
                             "You cannot perform the specified action with the safety interlock open.  Please close the safety interlock before Resuming.",
+                        cancelText: "Quit",
+                        cancel: function () {
+                            interlockDialog = false;
+                            dashboard.engine.quit(function (err, result) {
+                                if (err) {
+                                    console.log("ERRROR: " + err);
+                                }
+                            });
+                        },
+                        okText: "Resume",
+                        ok: function () {
+                            dashboard.engine.resume();
+                        },
+                    });
+                } else if (status.state === "driverFault" && status.resumeFlag === false) {
+                    interlockDialog = true;
+                    keypad.setEnabled(false);
+                    keyboard.setEnabled(false);
+                    dashboard.showModal({
+                        title: "DRIVE FAULT!",
+                        message:
+                            "A stepper motor driver fault has been detected. The system must be reset before continuing. Check for mechanical issues and then Quit to return to Idle.",
                         cancelText: "Quit",
                         cancel: function () {
                             interlockDialog = false;

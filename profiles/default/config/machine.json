@@ -21,6 +21,7 @@
     "di10ac": "none",
     "di11ac": "none",
     "di12ac": "none",
+    "di15ac": "driverFault",
 	"default_app" : "apps",
 	"envelope" : {
 		"xmin" : 0,

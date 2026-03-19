@@ -12,7 +12,7 @@ const { last } = require("underscore");
 })(this, function () {
     "use strict";
 
-    var MAX_INPUTS = 12;
+    var MAX_INPUTS = 15;
     var MAX_OUTPUTS = 12;
     var currentUnits = null;
     var inProbeOn = false;
@@ -462,6 +462,7 @@ const { last } = require("underscore");
         let stopIsOn = false; // ... at least one is already on
         let intIsOn = false;
         let limitIsOn = false;
+        let drvFaultIsOn = false;
         var limitsEnabled = status.limitsEnabled !== undefined ? status.limitsEnabled : true; // default true if not yet in status
         for (var i = 1; i < MAX_INPUTS + 1; i++) {
             let iname = "in" + i;
@@ -483,7 +484,7 @@ const { last } = require("underscore");
 
                 // If this is a limit input and limits are disabled, show as muted regardless of input state
                 if (assignedAction === "limit" && !limitsEnabled) {
-                    $(selector).removeClass("on off stopOn interlockOn limitOn").addClass("limitDisabled");
+                    $(selector).removeClass("on off stopOn interlockOn limitOn driverFaultOn").addClass("limitDisabled");
                     // keep #inp-limit hidden — a disabled limit indicator should not show
                     if (!limitIsOn) {
                         $("#inp-limit").css("visibility", "hidden");
@@ -503,6 +504,11 @@ const { last } = require("underscore");
                         idisp = "interlockOn";
                         intIsOn = true;
                         $("#inp-interlock").css("visibility", "visible");
+                    }
+                    if (assignedAction === "driverFault") {
+                        idisp = "driverFaultOn";
+                        drvFaultIsOn = true;
+                        $("#inp-driverFault").css("visibility", "visible");
                     }
                     if (assignedAction === "limit") {
                         if (status.state === "probing") {
@@ -528,22 +534,41 @@ const { last } = require("underscore");
                             $("#inp-interlock").css("visibility", "hidden");
                         }
                     }
+                    if (assignedAction === "driverFault") {
+                        if (!drvFaultIsOn) {
+                            $("#inp-driverFault").css("visibility", "hidden");
+                        }
+                    }
                     if (assignedAction === "limit") {
                         if (!limitIsOn) {
                             $("#inp-limit").css("visibility", "hidden");
                             inProbeOn = false;
                         }
                     }
-                    $(selector).removeClass("on stopOn interlockOn limitOn limitDisabled").addClass("off");
+                    $(selector).removeClass("on stopOn interlockOn limitOn driverFaultOn limitDisabled").addClass("off");
                 } else {
                     // input is disabled  ... not picking up at moment because all reported
-                    $(selector).removeClass("on off stopOn interlockOn limitDisabled").addClass("disabled");
+                    $(selector).removeClass("on off stopOn interlockOn limitOn driverFaultOn limitDisabled").addClass("disabled");
                 }
             } else {
-                break;
+                // skip missing inputs (in13, in14 don't exist) but keep looping to reach in15
+                continue;
             }
         }
-        
+
+        // Update outputs display
+        for (var o = 1; o < MAX_OUTPUTS + 1; o++) {
+            let oname = "out" + o;
+            if (oname in status) {
+                let selector = that.status_div_selector + " .out" + o;
+                if (status[oname]) {
+                    $(selector).removeClass("off").addClass("on");
+                } else {
+                    $(selector).removeClass("on").addClass("off");
+                }
+            }
+        }
+
         //// TODO: How to Handle 2 Spindles via g2
         //// TODO: Consider whether to modify g2 to report spc status during feedhold
         ////## -- Currently removing check for spc to just use out1 status for spindle notification

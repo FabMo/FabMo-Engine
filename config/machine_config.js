@@ -14,7 +14,7 @@
  *  [Also note that some values that are used in the manual runtime are managed here even though not really conceptually consistent.]
  */
 
-let MAX_INPUTS = 12;
+let MAX_INPUTS = 15;
 
 var config = require("../config");
 var Config = require("./config").Config;
@@ -102,6 +102,9 @@ MachineConfig.prototype.update = function (data, callback, force) {
                 case "stop":
                 case "interlock":
                     g2inpAction = 1; // G2 regular stop action
+                    break;
+                case "driverFault":
+                    g2inpAction = 1; // G2 feedhold action (same as interlock)
                     break;
                 case "limit":
                 case "faststop":
