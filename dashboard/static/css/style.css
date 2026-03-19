@@ -507,6 +507,11 @@ input#override {
 	font-weight: bold;
 }
 
+.input.driverFaultOn {
+	color: #ff3333;
+	font-weight: 900;
+}
+
 .input.limitOn {
 	/* border: 0.5px solid #32B433; */
 	/* background-color: #eee; */
@@ -527,6 +532,11 @@ input#override {
 #inp-interlock {
 	color: #ffe217;
     font-weight: bold;
+}
+
+#inp-driverFault {
+	color: #ff3333;
+    font-weight: 900;
 }
 
 #inp-stop {

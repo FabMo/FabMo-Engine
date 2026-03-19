@@ -110,6 +110,7 @@ function Machine(control_path, callback) {
         in10: 1,
         in11: 1,
         in12: 1,
+        in15: 1,
         spc: 0,
         out1: 0,
         out2: 0,
@@ -350,6 +351,15 @@ Machine.prototype.handleOkayCancelDual = function (stat, quit_input) {
                 log.info(msg);
             }
         });
+    } else if (this.status.state === "driverFault" && this.quit_pressed) {
+        log.info("Okay hit, resuming from driverFault");
+        this.resume(function (err, msg) {
+            if (err) {
+                log.error(err);
+            } else {
+                log.info(msg);
+            }
+        });
     } else if (this.status.state === "lock" && this.quit_pressed) {
         log.info("Okay hit, resuming from lock");
         this.resume(function (err, msg) {
@@ -410,6 +420,15 @@ Machine.prototype.handleOkayButton = function (stat, auth_input) {
             }, 2000);
         } else if (this.status.state === "interlock") {
             log.info("Okay hit, resuming from interlock");
+            this.resume(function (err, msg) {
+                if (err) {
+                    log.error(err);
+                } else {
+                    log.info(msg);
+                }
+            });
+        } else if (this.status.state === "driverFault") {
+            log.info("Okay hit, resuming from driverFault");
             this.resume(function (err, msg) {
                 if (err) {
                     log.error(err);
@@ -674,6 +693,7 @@ function decideNextAction(
             break;
         case "lock":
         case "interlock":
+        case "driverFault":
             if (driver_status_inFeedHold === true) {
                 // handle lock/interlock after software pause; in FeedHold
                 result_arm_obj["interlock_action"] = current_action_io;
@@ -767,7 +787,7 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 }
 
 // Before beginning or resuming any runtime action also check for "locking/interlocking" inputs that may be ACTIVE
-// Locking/Interlocking Inputs are inputs defined as Stop(stop), FastStop(faststop), Interlock(interlock), or Limit(limit)
+// Locking/Interlocking Inputs are inputs defined as Stop(stop), Stop-Fast(faststop), Stop-Immediate(halt), Interlock(interlock), or Limit(limit)
 // These inputs are fucntionally similar as they produce a feedhold in G2 when effected, BUT they have different user displays and for LIMIT
 // a different follow-on action -- so they are distinct for FabMo vs G2 (G2 has some similar functions we do not use because of conflicts)
 // Input definitions are stored in machine.json and = "machine: di#ac" in the configuration tree
@@ -777,17 +797,18 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 // --state--       --action--  --locking?--     --message   --G2 di#ac settings (digital input actions)
 //                -  (none)          -             -               0
 //    stop        -  Stop           YES          Stop ON           1   [feedhold]
-// faststop       -  FastStop       YES          Stop ON           2   [feedhold w/HiJerk] *not implemented in G2 yet ???
+// faststop       -  Stop-Fast      YES          Stop ON           2   [feedhold w/HiJerk]; for use in ON INP ?
 // interlock      -  Interlock      YES        Interlock ON        1   [feedhold]
 //   limit        -  Limit          YES         Limit Hit          1   [feedhold]
-//halt(hard stop) - ImmediateStop   NO              -              3   [feedhold instant] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
+//halt(hard stop) - Stop-Immediate  YES          Stop ON           3   [feedhold instant]; for use in ON INP ?
+// driverFault    -  DriverFault    YES       Drive Fault ON       1   [feedhold]; works like interlock but triggered by stepper driver fault on input 15
 
 // We check for interlock state before any action that ARMS tool for action and with any general change in state
 function checkForInterlocks(thisMachine, action) {
     let getInterlockState = "";
     var limitsEnabled = config.machine.get("limits_on");  // read once
 
-    for (let pin = 1; pin < 13; pin++) {
+    for (let pin = 1; pin < 16; pin++) {
         let checkAssignedInput = config.machine.get("di" + pin + "ac");
         // Check assignedInput for "none" in letters of any case; then set value to ""
         if (checkAssignedInput) {
@@ -811,6 +832,10 @@ function checkForInterlocks(thisMachine, action) {
             if (thisMachine.driver.status["in" + pin]) {
                 getInterlockState = checkAssignedInput;
             }
+        }
+        // Also check for driverFault on in15 even if no config entry exists for it yet
+        if (pin === 15 && !checkAssignedInput && thisMachine.driver.status["in15"]) {
+            getInterlockState = "driverFault";
         }
     }
     // When overrideLimit true and starting in manual, clear interlock state to produce override; one time only
@@ -878,6 +903,8 @@ Machine.prototype.arm = function (action, timeout) {
                 this.setState(this, "limit");
             } else if (isInterlocked === "interlock") {
                 this.setState(this, "interlock");
+            } else if (isInterlocked === "driverFault") {
+                this.setState(this, "driverFault");
             } else if (isInterlocked === "stop") {
                 this.setState(this, "lock");
             }
@@ -1288,6 +1315,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                     switch (this.status.state) {
                         case "limit":
                         case "interlock":
+                        case "driverFault":
                         case "lock":
                             log.debug("Initially skip cases of input-hit processing");
                             break;
@@ -1365,6 +1393,9 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                             case "interlock":
                                 details_newstate = "interlock";
                                 break;
+                            case "driverFault":
+                                details_newstate = "driverFault";
+                                break;
                             case "stop":
                                 details_newstate = "lock";
                                 break;
@@ -1376,6 +1407,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
             case "limit":
             case "lock":
             case "interlock":
+            case "driverFault":
                 this.status.resumeFlag = false;
                 break;
             case "dead":
@@ -1460,6 +1492,11 @@ Machine.prototype.quit = function (callback) {
             break;
 
         case "interlock":
+            this.action = null;
+            this.setState(this, "idle");
+            break;
+
+        case "driverFault":
             this.action = null;
             this.setState(this, "idle");
             break;
