@@ -738,6 +738,10 @@
         this._call("submitFirmwareUpdate", file, callback);
     };
 
+    FabMoDashboard.prototype.reloadFirmware = function (options, callback) {
+        this._call("reloadFirmware", options, callback);
+    };
+
     FabMoDashboard.prototype.submitUpdate = function (file, options, callback, progress) {
         this._call("submitUpdate", file, callback);
     };

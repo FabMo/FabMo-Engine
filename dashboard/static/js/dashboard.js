@@ -360,6 +360,14 @@ define(function (require) {
             }.bind(this)
         );
 
+        //Reload firmware from /fabmo/firmware/
+        this._registerHandler(
+            "reloadFirmware",
+            function (options, callback) {
+                this.engine.reloadFirmware(options, callback);
+            }.bind(this)
+        );
+
         //Submit update
 
         this._registerHandler(
