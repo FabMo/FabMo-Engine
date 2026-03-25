@@ -330,6 +330,26 @@ $('#btn-flash-firm').click(function() {
     $('#firmware-input').trigger('click');
   });
 
+$('#btn-reload-firm').click(function() {
+    fabmo.showModal({
+      title: 'Reload G2 Firmware?',
+      message: 'This will reload the G2 firmware from the current FabMo version. The tool will restart.',
+      okText: 'Reload',
+      cancelText: 'Cancel',
+      ok: function() {
+        fabmo.notify('info', 'Reloading G2 firmware ...');
+        fabmo.reloadFirmware({}, function(err, data) {
+          if (err) {
+            fabmo.notify('error', 'Firmware reload failed: ' + (err.message || err));
+          } else {
+            fabmo.notify('info', 'Firmware reload started — tool will restart.');
+          }
+        });
+      },
+      cancel: function() {}
+    });
+  });
+
 $('#btn-update').click(function(){
   fabmo.navigate('/updater');  // for the moment, let's just go to updater to check for updates
   //  $('#update-input').trigger('click');

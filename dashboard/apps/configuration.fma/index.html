@@ -179,23 +179,38 @@
                 <div class="columns">
                     <span class="engine-version"></span>
                 </div>
+                <div>
+                    <div class="row collapse">
+                      <a id="btn-update"  class="button radius small">Check for FabMo Software Updates</a>
+                    </div>
+                </div>
+              </div>  
+              <div class="row collapse">
                 <label>G2 Firmware Version (realtime motion module)</label>
                 <div class="columns">
                     <span class="firmware-version"></span>
                 </div>
               </div>
             </div>
-            <div class="large-4 columns">
+
+            <div class="large-12 columns">
+              <label>Special Case - Firmware loading <span class="tooltip">i
+                <span class="tooltiptext">
+                  These are firmware load functions for special use cases:<br>
+                      &nbsp;&nbsp;Either to upload a firmware file you have been provided by tech support, <br>
+                      &nbsp;&nbsp;or to reload the current firmare in cases where there is a mismatch <br>
+                      &nbsp;&nbsp;between the SD card and the Control card (e.g. SD card replacement).<br>
+                  </span>
+                </span>
+              </label>
+              <div class="large-4 columns">
                 <div class="row collapse">
-                  <a id="btn-update"  class="button radius small">Check for FabMo Software Updates</a>
+                  <a id="btn-flash-firm"  class="button info radius tiny">SPECIAL |  Update G2 Firmware with a file provided by tech support</a>
+                  <a id="btn-reload-firm" class="button info radius tiny">SPECIAL |  Reload G2 Firmware from current FabMo</a>
                 </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <a id="btn-flash-firm"  class="button info radius tiny">SPECIAL |  Update G2 Firmware with a file provided by tech support</a>
-                <input style="display:none" type="file" id="firmware-input">
               </div>
             </div>
+
           </fieldset>
         </div>
 

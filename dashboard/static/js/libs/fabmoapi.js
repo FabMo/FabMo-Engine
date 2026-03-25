@@ -610,6 +610,10 @@
         this._postUpload("/firmware/update", file, {}, callback, callback, null, progress);
     };
 
+    FabMoAPI.prototype.reloadFirmware = function (options, callback) {
+        this._post("/firmware/reload", options || {}, callback, callback);
+    };
+
     FabMoAPI.prototype.submitUpdate = function (file, options, callback, progress) {
         this._postUpload("/update/fabmo", file, {}, callback, callback, null, progress);
     };

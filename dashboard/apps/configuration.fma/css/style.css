@@ -414,6 +414,10 @@ table {
   color: white;
 }
 
+#btn-reload-firm {
+  background-color: lightgray;
+  color: white;
+}
 
 #modal-title {
   font-weight: 700;

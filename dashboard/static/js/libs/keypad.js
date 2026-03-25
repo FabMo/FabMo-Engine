@@ -312,12 +312,14 @@
                     this.slideOffDetected = false;
                 }.bind(this));
                 
-                $(document).on("scroll", this.end.bind(this));
                 element.addEventListener("contextmenu", function (evt) {
                     evt.preventDefault();
                 });
             }.bind(this)
         );
+
+        // Bind scroll handler once (outside the .each loop) to avoid duplicate stop commands
+        $(document).on("scroll", this.end.bind(this));
     };
 
     Keypad.prototype.isExitButtonEvent = function(evt) {
@@ -564,6 +566,9 @@
     // Simplified end function
     Keypad.prototype.end = function () {
         if (this.guardAgainstExitButton()) return;
+
+        // Don't emit stop if keypad is already idle
+        var wasActive = this.going || this.enabled;
         this.going = false;
         this.enabled = false;
         this.target = null;
@@ -579,7 +584,9 @@
             .removeClass("drive-button-active-transient")
             .addClass("drive-button-inactive");
         
-        this.emit("stop", null);
+        if (wasActive) {
+            this.emit("stop", null);
+        }
     };
 
     Keypad.prototype.cleanStop = function () {
