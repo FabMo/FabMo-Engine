@@ -165,6 +165,7 @@ function G2() {
     this.manual_hold = false;
 
     this.resumePending = false;
+    this.holdComplete = false; // Latches true when hold:10 is seen; cleared on resume send
 
     // Readers and callbacks
     this.expectations = [];
@@ -680,6 +681,13 @@ G2.prototype.handleStatusReport = function (response) {
         this.stat = this.status.stat !== undefined ? this.status.stat : this.stat;
         this.hold = this.status.hold !== undefined ? this.status.hold : this.hold;
 
+        // Latch holdComplete when hold reaches 10 (feedhold fully stopped).
+        // A subsequent hold:0 from G2 (seen with small arc segments) must not
+        // prevent resume from working.
+        if (this.status.hold === 10) {
+            this.holdComplete = true;
+        }
+
         if (this.context) {
             this.context.emit("status", this.status);
         }
@@ -781,6 +789,7 @@ G2.prototype.feedHold = function (callback) {
     
     this.pause_flag = true;
     this.flooded = false;
+    this.holdComplete = false; // clear latch at start of new feedhold
     typeof callback === "function" && this.once("state", callback);
     log.debug("Sending a feedhold");
     if (this.context) {
@@ -805,7 +814,8 @@ G2.prototype.queueFlush = function (callback) {
 // This function returns a promise that resolves when the machining cycle has resumed.
 G2.prototype.resume = function () { 
 
-    if (this.status.hold === 10) { // don't handle resume request until stopped in hold
+    if (this.holdComplete || this.status.hold === 10) { // don't handle resume request until stopped in hold
+        this.holdComplete = false; // clear the latch now that we are processing resume
         this.status.resumeFlag = true;
         this.status.hold = 0; // reset hold for next resume display, to be applied by g2core
         var thisPromise = _promiseCounter;
