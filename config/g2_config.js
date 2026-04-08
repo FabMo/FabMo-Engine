@@ -280,3 +280,16 @@ G2Config.prototype.configureStatusReports = function (callback) {
     }
 };
 exports.G2Config = G2Config;
+
+// DIAGNOSTIC TESTING :: DEBUGGING ONLY
+// Temporarily replace the last 9 for step counting (Matt version; see G2) --------------------------
+// ... or just read with JSON; To clear all registers use {clc:0}
+                // "1scn": true,
+                // "1scu": true,
+                // "1scd": true,
+                // "2scn": true,
+                // "2scu": true,
+                // "2scd": true,
+                // "3scn": true,
+                // "3scu": true,
+                // "3scd": true,
