@@ -11,7 +11,7 @@
 
 ' --- Initialize ------------------------------------------------------------------
 $ATC.type = 7                                                                   ' Set to ATC
-CN,75                                                                           ' ATC status check and load CN,70                                                             ' Load ATC Varibles (and local variables from #201)
+CN,75                                                                           ' ATC status check and load CN,70
 CN,3                                                                            ' Home machine in XYZ first. 
 VN,0                                                                            ' ## functional??? Turn off limit switches
 SF,0                                                                            ' ## functional??? Turn off table limits

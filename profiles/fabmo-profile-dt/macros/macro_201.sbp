@@ -4,11 +4,11 @@
 ' Name:  STANDARD FABMO MACRO VARIABLES
 ' Description:  Set Values for Standard Variables used in Macros
 ' Author: Ryan Sturmer, Brendan Collins
-' 2026/2/12 - Refactored (th)
+' 2026/2/27 - Made search distances longer (bo)
 
 '   **NOTE:   " := "  Is an OpenSBP function ("weak assign") to set a variable; BUT only if not previously defined! 
 
-' STANDARD MACRO VARIABLES =========(stored as persistent variables with "$sb" prefix; e.g., $sb_varName)====================================================================
+' STANDARD MACRO VARIABLES =========(stored as persistent variables with "$sb" prefix; e.g., $sb_varName)=========================
                                     ' Standard Macro Variables are defined and read from this Macro 201 (CN,201)
                                     ' Because these variables are regularly read with homing and tool change macros,
                                     ' then they will be regularly reset to values here, if they have NOT been weak assigned with ":=".
@@ -36,13 +36,13 @@ $sb_safe_Z               = %(28)    '- Retreived from system variables
 
 'Tool Change Variables
 $ATC.type               := 0        '- REQUIRED: Set to 0 for standard MTC tools
-$ToolIn                 := 0
+'$ToolIn                 := 0    'Don't think this var exists; REMOVE
 $sb_TOOLcurrent         := 0
-$sb_MTCmode              = "QUIT"   '- IGNORE; QUIT; MTC ... defaulting to IGNORE for moment
-$sb_MTC_XY_mode          = "FIXED"  '- FIXED; STAY where to do tool change
-$sb_MTC_Z_mode           = "FIXED"  '- MAX; FIXED method pull-up
-$sb_MTC_Zero_mode        = "MACRO"  '- MACRO; or, DRO keypad manual method to zero Z
-$sb_MTC_skip_first       = "NO"     '- NO; YES ... add to DT Util? do we really want this?
+$sb_MTCmode             := "QUIT"   '- IGNORE; QUIT; MTC ... defaulting to IGNORE for moment
+$sb_MTC_XY_mode         := "FIXED"  '- FIXED; STAY where to do tool change
+$sb_MTC_Z_mode          := "FIXED"  '- MAX; FIXED method pull-up
+$sb_MTC_Zero_mode       := "MACRO"  '- MACRO; or, DRO keypad manual method to zero Z
+$sb_MTC_skip_first      := "NO"     '- NO; YES ... add to DT Util? do we really want this?
 
 ' UNIVERSAL UNIT VARIABLES ====================================================================================================
 ' Universal Unit (UU) variables are dual variables that hold inch and metric equivalent values for macros.
@@ -62,20 +62,20 @@ IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC
         GOTO SetUniversalUnits
   ' Note that original unit type is restored at end of this file.
 
-SetUniversalUnits:
-                                ' these are INCH values that will be used for UU's
+SetUniversalUnits:              ' *** these are INCH values that will be used for UU's ***
+                                ' Many or the weak assigns (:=) below are done so as to not overwite values defined in the "Cutting Settings" app
     $sb_homePullBackUU[]        = 0.5     '- short pullback after hitting prox
-    $sb_homeOffUU[].x           = 0.5     '- back off a prox to set Home location 
-    $sb_homeOffUU[].y           = 0.5  
+    $sb_homeOffUU[].x           := 0.5    '- back off a prox to set Home location 
+    $sb_homeOffUU[].y           := 0.5  
     $sb_homeOffUU[].z           = 0.15
     $sb_zPlateOffUU[]           = 0.5     '- offset for move from plate; distinguishing pull back from Zprox and ZeroPlate
    '$sb_homeOffUU[].a
    '$sb_homeOffUU[].b
    '$sb_homeOffUU[].c
 
-    $sb_searchSpeedUU[].xy      = 3.5     '- search speeds for moving to proximity switches
+    $sb_searchSpeedUU[].xy      := 3.5     '- search speeds for moving to proximity switches
     $sb_searchSpeedUU[].z       = 1.5 
-    $sb_searchSpeedUU[].zzero   = 0.5     '- SLOWER because we don't want any extra steps into plate 
+    $sb_searchSpeedUU[].zzero   := 0.5     '- SLOWER because we don't want any extra steps into plate 
    '$sb_searchSpeedUU[].a
    '$sb_searchSpeedUU[].b
    '$sb_searchSpeedUU[].c
@@ -84,8 +84,8 @@ SetUniversalUnits:
    '$sb_slowSearchSpeedUU[].a
    '$sb_slowSearchSpeedUU[].b
    '$sb_slowSearchSpeedUU[].c
-    $sb_searchDistUU[].x        = 36
-    $sb_searchDistUU[].y        = 26
+    $sb_searchDistUU[].x        = 40 'Longer than X cutting area to be sure we hit limit!
+    $sb_searchDistUU[].y        = 30 'Longer than Y cutting area to be sure we hit limit!
     $sb_searchDistUU[].z        = 6
    '$sb_searchDistUU[].a
    '$sb_searchDistUU[].b
@@ -93,7 +93,7 @@ SetUniversalUnits:
 
     $sb_oochUU[]                = .05      '- generic short distance used for pull backs and target adjustments
 
-    $sb_zPlateThickUU[]         = 0.118
+    $sb_zPlateThickUU[]         := 0.118
     '  - 0.118" for std plate, your plate may be slightly different
     '  - To instead use ShopBot pressure plate, change $sb_ZZeroNum to 5, and adjust plate thickness to 0.57
 
@@ -104,9 +104,9 @@ SetUniversalUnits:
    '$sb_parkUU[].b
    '$sb_parkUU[].c
    
-    $sb_changePosUU[].x         = 4        '- for fixed location of an MTC tool change (in Macro 9)
-    $sb_changePosUU[].y         = 4
-    $sb_changePosUU[].z         = 1
+    $sb_changePosUU[].x         := 4        '- for fixed location of an MTC tool change (in Macro 9)
+    $sb_changePosUU[].y         := 4
+    $sb_changePosUU[].z         : 1
 
     $sb_squaringMoveUU[]        = .75      '- for Desktops (in Macro 10)
     $sb_squaringJerkUU[]        = 1000

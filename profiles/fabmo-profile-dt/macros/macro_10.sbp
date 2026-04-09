@@ -19,7 +19,7 @@ IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
   PAUSE "This routine will Square Gantry by pushing it into End Stops (loudly). Resume to Continue."
   Z3
   GOSUB clear_z
-  IF &dtType = 3 then GOTO dt3
+  IF $sb_dtType = 3 then GOTO dt3
       GOSUB square_x_gantry
       GOSUB run_C3
   END
@@ -37,7 +37,7 @@ clear_z:
     RETURN
 
 square_y_gantry:
-    PY, $sb_searchDistUU[&u].y, $sb_searchSpeedUU[&u].y, $sb_proxNum.y           ' Search for prox switch
+    PY, $sb_searchDistUU[&u].y, $sb_searchSpeedUU[&u].xy, $sb_proxNum.y           ' Search for prox switch
     VA,,0,,,,,,0,,,,                                                             ' Set 0 location
     VR, $sb_squaringJerkUU[&u]
     MY, $sb_squaringMoveUU[&u]                                                   ' Move Y axis .75 inches past prox switch, which will force it into end stop  
@@ -48,7 +48,7 @@ square_y_gantry:
     RETURN
 
 square_x_gantry:
-    PX, $sb_searchDistUU[&u].x, $sb_searchSpeedUU[&u].x, $sb_proxNum.x           ' Search for prox switch
+    PX, $sb_searchDistUU[&u].x, $sb_searchSpeedUU[&u].xy, $sb_proxNum.x           ' Search for prox switch
     VA,0,,,,,,0,,,,,                                                             ' Set 0 location
     VR, $sb_squaringJerkUU[&u]
     MX, $sb_squaringMoveUU[&u]                                                   ' Move Y axis .75 inches past prox switch, which will force it into end stop  
