@@ -15,7 +15,7 @@
                                     ' Change value here to permanently change for all macros that read these variables. 
                                     
 $sb_standard_variables_PRESENT = 0  '- flags that this variables table has been read when it is set to 1 at end
-$sb_dtType               = 3        '- 2=DTmax; 3=DT3
+$sb_dtType               := 3        '- 2=DTmax; 3=DT3
 
 'Switch numbers (esp. used for target parameter in Probing [P_] actions)
 $sb_proxNum.x            = 3 
@@ -106,9 +106,9 @@ SetUniversalUnits:              ' *** these are INCH values that will be used fo
    
     $sb_changePosUU[].x         := 4        '- for fixed location of an MTC tool change (in Macro 9)
     $sb_changePosUU[].y         := 4
-    $sb_changePosUU[].z         : 1
+    $sb_changePosUU[].z         := 1
 
-    $sb_squaringMoveUU[]        = .75      '- for Desktops (in Macro 10)
+    $sb_squaringMoveUU[]        = 4.0       '- for Desktops (in Macro 10)
     $sb_squaringJerkUU[]        = 1000
 
     $sb_current_cutter_ZoffsetUU[] = -.25  '- used in multiple macros for non-ATC tools
