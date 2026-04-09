@@ -4,7 +4,7 @@
 ' Name: *ATC* TOOLCHANGE - INTERNAL
 ' Description: - internal -
 ' Author: Brian Owen, Josh Ayers
-' 2026/2/09 - Refactored (th)
+' 2026/2/27 - Added handling for changing to bit 0 (bo)
 
 '   - Core routine for swapping out tools
 '   - Called by C1(user) and other ATC Macros 
@@ -66,7 +66,7 @@ GrabTool: '  REMOVE A TOOL FROM ITS CLIP
     &INDEX = &tool                                                  ' Parameter for GET_TOOL_DATA
     GOSUB GET_TOOL_DATA                                             ' Get the tool length for new tool and other data ...
     
-    IF &tool == 0 THEN GOSUB FinishToolChange                       ' No pickup required, leave with spindle empty
+    IF &tool == 0 THEN GOSUB FinishToolChangeWithNoTool                       ' No pickup required, leave with spindle empty
     ' BEGIN Physical Grab
         J2, &tx, &ty                                                ' ... move to the clip location 
         JZ, &tz + $thClearanceUU[&u]                                ' Get clear in Z then 
@@ -123,6 +123,15 @@ FinishToolChange:
     &TL = &th + $atcUU[&u].PlateOffset + $atcUU[&u].MaxDepth         ' Figure out Z limit to prevent cutting into table
     VL,,,,,&TL                                                       ' Update Z limits
     &AtNow = "Finished"
+    END
+    RETURN
+    
+FinishToolChangeWithNoTool:
+	VA,,,&tz - ((&th + $atcUU[&u].PlateOffset) + &Z_OFFSET) + %(9)
+    &AtNow = "Wrapping Up with no Tool"
+    &TL = &th + $atcUU[&u].PlateOffset + $atcUU[&u].MaxDepth         ' Figure out Z limit to prevent cutting into table
+    VL,,,,,&TL                                                       ' Update Z limits
+    &AtNow = "Finished with no Tool"
     IF $ATC.ToolIN == 0 THEN GOSUB JOG_HOME
     END
     RETURN
@@ -232,4 +241,3 @@ BAR_NOT_CLOSE:
   DIALOG "Drawbar did not close!", CANCELTEXT = "Quit"
   END 
   RETURN
-

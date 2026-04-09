@@ -3,7 +3,7 @@
     "movez_speed": 1,
     "movea_speed": 1,
     "variables" : {
-        "example_variable": 999
+        "EXAMPLE_VARIABLE": 999
     },
     "cRes": 0.01,
     "GblPropX": 1,

@@ -57,7 +57,7 @@ START:
 
     IF &ALL_TOOLS > 0 THEN GOTO PREPARE_FOR_MEASUREMENT               ' If we're measuring all the bits, go back to the start of measurement and run again
     DIALOG "Do you wish to zero another cutter <Y or N>: ", INPUT="&last_YN", OKTEXT="OK"    ' If we're measuring one at a time, ask user if they want to measure another
-    IF &last_YN == "YES" THEN GOTO START                                        ' If user replied "Y" then go again
+    IF &last_YN == "YES" THEN GOTO START                              ' If user replied "Y" then go again
     
 FINISHED:
     JZ, -1 * %(9) - $sb_homeOffUU[&u].z                               ' We're done, lift to maximum safe height
@@ -81,7 +81,7 @@ AUTO_POSITION:
     RETURN
 
 CHOOSE_TOOL:
-    PAUSE "Bit number to Zero:  (0 for all)" &tool                    ' Prompt user for desired tool
+    PAUSE "Bit number to Measure:  (0 for all)" &tool                 ' Prompt user for desired tool
     IF &tool >= 0 THEN &VALID_TOOL = 1                                ' If the tool is greater than or equal to 0 then it is valid
     IF &tool == 0 THEN &ALL_TOOLS = 1                                 ' If the tool is 0 then we're measuring all tools
     RETURN

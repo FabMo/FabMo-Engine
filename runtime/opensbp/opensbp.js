@@ -291,6 +291,7 @@ SBPRuntime.prototype.needsAuth = function (s) {
 //   callback - Called when the program has ended
 SBPRuntime.prototype.runString = function (s) {
     this.currentFilename = "direct input";
+    this._endCalled = false; // Reset for new run so errors before _run() aren't suppressed
     //log.info("####=.runString");
     try {
         // Initialize the program
@@ -318,6 +319,7 @@ SBPRuntime.prototype.runString = function (s) {
             const filePrefix = this.currentFilename ? `[${this.currentFilename}] ` : '';
             e.message = `${filePrefix}Error@line-${e.line}(${e.location.start.column}): ${e.message}`;
             this._end(e.message);
+            return;
         }
 
         // Configure affine transformations on the file
@@ -356,6 +358,7 @@ SBPRuntime.prototype.runString = function (s) {
 // See documentation above for runString - this works the same way.
 //   callback - Called when run is complete or with error if there was an error.
 SBPRuntime.prototype.runStream = function (text_stream) {
+    this._endCalled = false; // Reset for new run so errors before _run() aren't suppressed
     //log.info("####=.runStream");
     try {
         // Initialize the program

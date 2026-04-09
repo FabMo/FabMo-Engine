@@ -18,7 +18,7 @@ $ATC.type := 0                                                        ' Set ATC.
 
 '--- Preliminary ATC Status Checks (for optional ATC)
 IF $ATC.Type == 0 THEN GOTO OK
-CN,75                                                                 ' ATC status check and load CN,70                                                             ' Load ATC Varibles (and local variables from #201)
+CN,75                                                                 ' ATC status check and load CN,70
 ' ... then continue
 OK:
 
