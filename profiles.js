@@ -153,7 +153,8 @@ var apply = function (profileName, callback) {
         }
 
         // For every directory affected by profiles...
-        async.each(
+        // Use eachSeries to copy directories sequentially (avoids I/O race conditions)
+        async.eachSeries(
             dirsToProcess, // ← Use filtered list instead of PROFILE_DIRS
             function (dir, callback) {
                 var configDir = config.getDataDir(dir);
@@ -183,32 +184,38 @@ var apply = function (profileName, callback) {
 
                     // ...and replace it with the configuration provided by the profile
                     log.debug("Copying profile configuration directory " + profileConfigDir);
-                    ncp(profileConfigDir, config.getDataDir(dir), function (err) {
+                    // Use fs.copy (fs-extra) instead of ncp for more reliable recursive copy
+                    fs.copy(profileConfigDir, config.getDataDir(dir), function (err) {
                         if (err) {
+                            log.error("Failed to copy profile directory " + profileConfigDir + ": " + err.message);
                             return callback(err);
-                        } else {
-                            log.debug("...done copying.");
-                            // Copy auth secret back if we moved it.
-                            if (authSecretExists) {
-                                fs.copySync("/opt/fabmo/tmp/auth_secret", authPath);
-                                fs.remove("/opt/fabmo/tmp", function (err) {
-                                    if (err) {
-                                        log.error(err);
-                                    } else {
-                                        log.debug("copied auth_secret and removed tmp dir");
-                                    }
-                                });
-                            }
-                            callback();
                         }
+                        log.debug("...done copying " + dir + ".");
+                        // Copy auth secret back if we moved it.
+                        if (authSecretExists) {
+                            fs.copySync("/opt/fabmo/tmp/auth_secret", authPath);
+                            fs.remove("/opt/fabmo/tmp", function (err) {
+                                if (err) {
+                                    log.error(err);
+                                } else {
+                                    log.debug("copied auth_secret and removed tmp dir");
+                                }
+                            });
+                        }
+                        callback();
                     });
                 });
             },
 
-            // eslint-disable-next-line no-unused-vars
             function allDone(err) {
-                // eslint-disable-next-line no-unused-vars
-                config.clearAppRoot(function (err) {
+                if (err) {
+                    log.error("Error during profile directory copy: " + err.message);
+                    return callback(err);
+                }
+                config.clearAppRoot(function (clearErr) {
+                    if (clearErr) {
+                        log.warn("Failed to clear approot: " + clearErr);
+                    }
                     var appsDir = config.getDataDir("apps");
                     fs.readdir(appsDir, function (err, files) {
                         if (files) {
