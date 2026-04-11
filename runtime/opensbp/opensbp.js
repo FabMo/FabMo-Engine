@@ -2990,7 +2990,16 @@ SBPRuntime.prototype.resume = function (input = false) {
         if (this.paused) {
             try {
                 if (input) {
-                    this._assign(input.var, input.val);
+                    // Dialog input arrives as a string from the HTML input field.
+                    // Convert to number when possible to preserve arithmetic behavior.
+                    var val = input.val;
+                    if (typeof val === "string" && val.trim() !== "") {
+                        var num = Number(val);
+                        if (!isNaN(num)) {
+                            val = num;
+                        }
+                    }
+                    this._assign(input.var, val);
                 }
                 this.paused = false;
                 // Resume the G2 driver first to clear the hold state.
