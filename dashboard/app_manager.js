@@ -543,7 +543,7 @@ AppManager.prototype.loadApps = function (callback) {
                         {},
                         function (err, result) {
                             if (err) {
-                                // Swallow errors and insert null in the output array
+                                log.warn("Failed to load app: " + file + " - " + err.message);
                                 return callback(null, null);
                             } else {
                                 return callback(null, result);

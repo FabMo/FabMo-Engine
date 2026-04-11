@@ -676,32 +676,47 @@ Config.createDataDirectories = function (callback) {
                 fs.mkdir(dir, function (err) {
                     if (!err) {
                         log.info('Successfully created directory "' + dir + '"');
+                        var copyTasks = [];
                         if (dir.includes("/opt/fabmo/apps")) {
                             this.newAppsNeeded = true;
                             if (fs.existsSync("/opt/fabmo_backup/apps")) {
-                                fs.copy("/opt/fabmo_backup/apps", "/opt/fabmo/apps", function (err) {
-                                    if (err) {
-                                        log.error(err);
-                                    } else {
-                                        log.debug("Successfully copied apps from backup to /opt/fabmo/apps");
-                                    }
+                                copyTasks.push(function (cb) {
+                                    fs.copy("/opt/fabmo_backup/apps", "/opt/fabmo/apps", function (copyErr) {
+                                        if (copyErr) {
+                                            log.error("Failed to copy apps from backup: " + copyErr);
+                                        } else {
+                                            log.debug("Successfully copied apps from backup to /opt/fabmo/apps");
+                                        }
+                                        cb(); // continue even on copy error
+                                    });
                                 });
                             }
                         }
                         if (dir.includes("/opt/fabmo/macros")) {
                             this.newMacrosNeeded = true;
                             if (fs.existsSync("/opt/fabmo_backup/macros")) {
-                                fs.copy("/opt/fabmo_backup/macros", "/opt/fabmo/macros", function (err) {
-                                    if (err) {
-                                        log.error(err);
-                                    } else {
-                                        log.debug("Successfully copied macros from backup to /opt/fabmo/macros");
-                                    }
+                                copyTasks.push(function (cb) {
+                                    fs.copy("/opt/fabmo_backup/macros", "/opt/fabmo/macros", function (copyErr) {
+                                        if (copyErr) {
+                                            log.error("Failed to copy macros from backup: " + copyErr);
+                                        } else {
+                                            log.debug("Successfully copied macros from backup to /opt/fabmo/macros");
+                                        }
+                                        cb(); // continue even on copy error
+                                    });
                                 });
                             }
                         }
+                        if (copyTasks.length > 0) {
+                            async.series(copyTasks, function () {
+                                callback(null);
+                            });
+                        } else {
+                            callback(null);
+                        }
+                    } else {
+                        callback(err);
                     }
-                    callback(err);
                 });
             } else {
                 callback(null);
