@@ -88,6 +88,31 @@ function setupDropTarget() {
  * -----------
  */
 
+function initialLoad() {
+  fabmo.getQueueAndHistory({start: historyStart, count: historyCount}, function(err, data) {
+    if (err) { return; }
+    // Update queue display from combined result
+    var jobs = { pending: data.pending, running: data.running };
+    numberJobs = jobs.pending.length;
+    jobs.pending.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+    if (jobs.running.length) {
+      var current = jobs.running[0];
+      jobs.pending.unshift(current);
+      addQueueEntries(jobs.pending);
+      runningJob(current);
+    } else {
+      runningJob(null);
+      addQueueEntries(jobs.pending);
+    }
+    // Update history display from combined result
+    historyTotal = data.history.total_count;
+    $('#history_page_next').toggle(historyTotal > (historyStart + historyCount));
+    $('#history_page_prev').toggle(historyStart > 0);
+    clearHistory();
+    addHistoryEntries(data.history.data);
+  });
+}
+
 function updateQueue(callback) {
   callback = callback || function() {};
   // Update the queue display.
@@ -211,7 +236,7 @@ function addQueueEntries(jobs) {
     $('.no-jobs').css('left', '0px');
     fabmo.getJobHistory({
       start: 0,
-      count: 0
+      count: 20
     }, function(err, jobs) {
       var arr = jobs.data;
       var i = 0;
@@ -854,8 +879,7 @@ $(document).ready(function() {
     // The queue will update when the status report comes in
     // But the history needs to be updated manually
     fabmo.requestStatus();
-    updateQueue();
-    updateHistory();
+    initialLoad();
 
     setupDropTarget();
     runNext();

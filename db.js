@@ -194,32 +194,89 @@ Job.getRunning = function (callback) {
  *    starting with the tenth one.
  */
 Job.getHistory = function (options, callback) {
-    // eslint-disable-next-line no-unused-vars
-    var total = jobs.count(
-        {
-            state: { $in: ["finished", "cancelled", "failed"] },
-        },
-        function (err, total) {
+    var query = { state: { $in: ["finished", "cancelled", "failed"] } };
+    var start = parseInt(options.start) || 0;
+    var count = parseInt(options.count) || 100;
+
+    var doFind = function (total) {
+        jobs.find(query)
+            .skip(start)
+            .limit(count)
+            .sort({ created_at: -1 })
+            .toArray(function (err, data) {
+                if (err) {
+                    return callback(err);
+                }
+                callback(null, {
+                    total_count: total,
+                    data: data,
+                });
+            });
+    };
+
+    if (options.countTotal === false) {
+        doFind(null);
+    } else {
+        jobs.count(query, function (err, total) {
             if (err) {
                 return callback(err);
             }
-            jobs.find({
-                state: { $in: ["finished", "cancelled", "failed"] },
-            })
-                .skip(parseInt(options.start) || 0)
-                .limit(parseInt(options.count) || 0)
-                .sort({ created_at: -1 })
-                .toArray(function (err, data) {
-                    if (err) {
-                        callback(err);
-                    }
-                    callback(null, {
-                        total_count: total,
-                        data: data,
-                    });
-                });
+            doFind(total);
+        });
+    }
+};
+
+
+/*
+ * Get the queue (pending + running) and a page of history in a single scan.
+ * This avoids multiple full-collection scans on page load.
+ * options:
+ *   - start : Starting index for history pagination
+ *   - count : Number of history entries per page (default 10)
+ */
+Job.getQueueAndHistory = function (options, callback) {
+    var historyStart = parseInt(options.start) || 0;
+    var historyCount = parseInt(options.count) || 10;
+
+    jobs.find({}).sort({ created_at: -1 }).toArray(function (err, allJobs) {
+        if (err) {
+            return callback(err);
         }
-    );
+
+        var pending = [];
+        var running = [];
+        var history = [];
+
+        for (var i = 0; i < allJobs.length; i++) {
+            var job = allJobs[i];
+            switch (job.state) {
+                case "pending":
+                    pending.push(job);
+                    break;
+                case "running":
+                    running.push(job);
+                    break;
+                case "finished":
+                case "cancelled":
+                case "failed":
+                    history.push(job);
+                    break;
+            }
+        }
+
+        pending.sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+
+        var historyPage = history.slice(historyStart, historyStart + historyCount);
+
+        callback(null, {
+            pending: pending,
+            running: running,
+            history: {
+                total_count: history.length,
+                data: historyPage,
+            },
+        });
+    });
 };
 
 /*
@@ -945,6 +1002,13 @@ exports.configureDB = function (callback) {
                 });
             } else {
                 log.info("Databases are clean.");
+                jobs.ensureIndex({ state: 1, created_at: -1 }, function (err) {
+                    if (err) {
+                        log.warn("Could not create index on jobs collection: " + err);
+                    } else {
+                        log.info("Jobs collection index ensured.");
+                    }
+                });
                 callback(null);
                 backupDB(callback);
             }
@@ -952,6 +1016,8 @@ exports.configureDB = function (callback) {
     );
     File.getTotalFileSize();
 };
+
+var MAX_HISTORY_LENGTH = 500;
 
 exports.cleanup = function (callback) {
     jobs.update(
@@ -972,7 +1038,49 @@ exports.cleanup = function (callback) {
             }
         }
     );
-    setImmediate(callback, null);
+    // Prune old history entries to keep the database performant
+    Job.pruneHistory(function (err) {
+        if (err) {
+            log.warn("Error pruning job history: " + err);
+        }
+        setImmediate(callback, null);
+    });
+};
+
+/*
+ * Remove the oldest history entries if the total exceeds MAX_HISTORY_LENGTH.
+ * This keeps the TingoDB jobs file small enough for fast queries.
+ */
+Job.pruneHistory = function (callback) {
+    var historyStates = ["finished", "cancelled", "failed"];
+    jobs.find({ state: { $in: historyStates } })
+        .sort({ created_at: -1 })
+        .toArray(function (err, history) {
+            if (err) {
+                return callback(err);
+            }
+            if (history.length <= MAX_HISTORY_LENGTH) {
+                log.info("Job history has " + history.length + " entries, no pruning needed.");
+                return callback(null);
+            }
+            var toRemove = history.slice(MAX_HISTORY_LENGTH);
+            var removeIds = toRemove.map(function (j) { return j._id; });
+            log.info(
+                "Pruning job history: removing " + removeIds.length +
+                " old entries (keeping " + MAX_HISTORY_LENGTH + " most recent)"
+            );
+            jobs.remove(
+                { _id: { $in: removeIds } },
+                { multi: true },
+                function (err) {
+                    if (err) {
+                        return callback(err);
+                    }
+                    log.info("Job history pruned successfully.");
+                    callback(null);
+                }
+            );
+        });
 };
 
 exports.File = File;

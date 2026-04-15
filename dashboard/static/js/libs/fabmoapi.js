@@ -412,6 +412,12 @@
         this._get("/jobs/queue", callback, callback, "jobs");
     };
 
+    FabMoAPI.prototype.getQueueAndHistory = function (options, callback) {
+        var start = options.start || 0;
+        var count = options.count || 10;
+        this._get("/jobs/queue-and-history?start=" + start + "&count=" + count, callback, callback);
+    };
+
     // Apps
     FabMoAPI.prototype.getApps = function (callback) {
         this._get("/apps", callback, callback, "apps");
