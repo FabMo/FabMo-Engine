@@ -2516,6 +2516,294 @@
          }
       ]
    },
+   "P2": {
+      "cmd": "P2",
+      "name": "Probe XY",
+      "params": [
+         {
+            "name": "X Search Distance",
+            "desc": "X target position for probe search",
+            "abrev": "p2XDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Y Search Distance",
+            "desc": "Y target position for probe search",
+            "abrev": "p2YDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search",
+            "abrev": "p2Spd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "p2I",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+   "P3": {
+      "cmd": "P3",
+      "name": "Probe XYZ",
+      "params": [
+         {
+            "name": "X Search Distance",
+            "desc": "X target position for probe search",
+            "abrev": "p3XDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Y Search Distance",
+            "desc": "Y target position for probe search",
+            "abrev": "p3YDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Search Distance",
+            "desc": "Z target position for probe search",
+            "abrev": "p3ZDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search",
+            "abrev": "p3Spd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "p3I",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+   "P4": {
+      "cmd": "P4",
+      "name": "Probe XYZA",
+      "params": [
+         {
+            "name": "X Search Distance",
+            "desc": "X target position for probe search",
+            "abrev": "p4XDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Y Search Distance",
+            "desc": "Y target position for probe search",
+            "abrev": "p4YDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Search Distance",
+            "desc": "Z target position for probe search",
+            "abrev": "p4ZDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "A Search Distance",
+            "desc": "A target position for probe search",
+            "abrev": "p4ADist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search",
+            "abrev": "p4Spd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "p4I",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+   "P5": {
+      "cmd": "P5",
+      "name": "Probe XYZAB",
+      "params": [
+         {
+            "name": "X Search Distance",
+            "desc": "X target position for probe search",
+            "abrev": "p5XDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Y Search Distance",
+            "desc": "Y target position for probe search",
+            "abrev": "p5YDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Search Distance",
+            "desc": "Z target position for probe search",
+            "abrev": "p5ZDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "A Search Distance",
+            "desc": "A target position for probe search",
+            "abrev": "p5ADist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "B Search Distance",
+            "desc": "B target position for probe search",
+            "abrev": "p5BDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search",
+            "abrev": "p5Spd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "p5I",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
    "VC": {
       "cmd": "VC",
       "name": "Cutter values",
