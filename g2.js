@@ -773,6 +773,7 @@ G2.prototype.manualFeedHold = function (callback) {
 
 G2.prototype.manualResume = function () {
     this.status.resumeFlag = true;
+    this.status.inFeedHold = false; // Clear stale feedhold flag to prevent re-pause before stat update arrives
     this.resumePending = true;
     log.debug("Processing manualResume");
 };

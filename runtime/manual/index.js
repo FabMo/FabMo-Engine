@@ -141,7 +141,7 @@ ManualRuntime.prototype.executeCode = function (code) {
 
                 case "resume":
                     this.helper.resumeMove();
-                    this.machine.status.state = "manual";
+                    this.machine.setState(this, "manual");
                     break;
 
                 case "maint":
@@ -203,22 +203,19 @@ ManualRuntime.prototype._onG2Status = function (status) {
     for (var key in this.machine.status) {
         if (key in status) {
             this.machine.status[key] = status[key];
-            // Special case handler for stop, interlock, or limit in a manual mode 'GOTO'
-            if (key === "inFeedHold" && status[key] === true) {
-                if (this.machine.status["currentCmd"] === "goto") {
-                    log.debug("got currentCmd");
-                    this.machine.setState(this, "paused");
-                }
-            }
         }
     }
-    if (this.machine.status.inFeedHold) {
-        var manualCmd = this.machine.status.currentCmd;
-        if (manualCmd === "goto" || manualCmd === "resume") {
-            this.machine.setState(this, "paused"); // setting state triggers standard feedHold behavior
+    // Detect feedhold during goto moves (including after resume within a goto).
+    // Use gotoModeHold flag to reliably identify goto context rather than currentCmd,
+    // which gets overwritten by stop/resume commands during feedhold/resume cycles.
+    // Guard against re-entering paused state from stale inFeedHold during resume transition.
+    if (status.inFeedHold === true && this.helper && this.helper.gotoModeHold) {
+        if (this.machine.status.state !== "paused") {
+            log.debug("Feedhold detected in goto mode");
+            this.machine.setState(this, "paused");
         }
     }
-    // Update machine status further becasue of inconsistent list match
+    // Update machine status further because of inconsistent list match
     this.machine.status.currentCmd = currentCmd;
     this.machine.status.stat = status.stat;
     this.machine.emit("status", this.machine.status);
