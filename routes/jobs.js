@@ -265,6 +265,27 @@ var getAllJobs = function (req, res, next) {
  * @apiError {Object} message Error message
  */
 // eslint-disable-next-line no-unused-vars
+var getQueueAndHistory = function (req, res, next) {
+    var options = {
+        start: req.params.start || 0,
+        count: req.params.count || 10,
+    };
+
+    db.Job.getQueueAndHistory(options, function (err, result) {
+        if (err) {
+            log.error(err);
+            return res.json({
+                status: "error",
+                message: "failed to get jobs from DB",
+            });
+        }
+        return res.json({
+            status: "success",
+            data: result,
+        });
+    });
+};
+
 var getJobHistory = function (req, res, next) {
     var answer;
     var options = {
@@ -469,4 +490,5 @@ module.exports = function (server) {
     server.del("/jobs/queue", clearQueue);
     server.post("/jobs/queue/run", runNextJob);
     server.get("/jobs/history", getJobHistory);
+    server.get("/jobs/queue-and-history", getQueueAndHistory);
 };
