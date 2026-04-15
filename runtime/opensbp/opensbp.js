@@ -877,6 +877,8 @@ SBPRuntime.prototype._run = function () {
     this.gcodesPending = false;
     this.probingInitialized = false;
     this.probingPending = false;
+    this.probingActive = false;
+    this.probingHeld = false;
     this.probePin = null;
 
     // Reset spindle authorization at program start
@@ -926,6 +928,8 @@ SBPRuntime.prototype._run = function () {
                 if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
                     this.driver.status.targetHit = false;
                     this.probingPending = false;
+                    this.probingActive = false;
+                    this.probingHeld = false;
                     this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
                     this.prime();
                     log.info("COMPLETED PENDING PROBING =(cleared)============####");
@@ -943,32 +947,24 @@ SBPRuntime.prototype._run = function () {
             case this.driver.STAT_HOLDING:
                 this.feedhold = true;
 
-                // Handle feedhold during probing; Should probably be fixed in G2, but for now we do it here!
+                // Handle feedhold during probing - distinguish between active probe and post-completion
                 if (this.probingPending && this.probingInitialized) {
-                    log.info("Feedhold occurred during active probe - probe aborted");
-                    // Clean up probe state
-                    this.probingPending = false;
-                    this.probingInitialized = false;
-                    this.driver.status.targetHit = false;
-                    // Turn off probe input
-                    this.emit_gcode('M100.1("{prbin:0}")');
-                    this.prime();
-                    log.info("PROBE INTERRUPTED BY FEEDHOLD - cleaned up ============####");
-                }
-                // Check if probe was interrupted AFTER it completed but before cleanup
-                if (this.probingPending && !this.probingInitialized) {
+                    // Feedhold arrived before G2 even entered probe mode (between cmd send and STAT_PROBE)
+                    log.info("Feedhold during probe initialization - preserving probe state for resume");
+                    this.probingHeld = true;
+                } else if (this.probingPending && this.probingActive) {
+                    // Feedhold during active probe motion (G2 was in STAT_PROBE)
+                    // Do NOT clean up probe state - probe input must remain active for resume
+                    log.info("Feedhold during active probe motion - probe state preserved for resume");
+                    this.probingHeld = true;
+                } else if (this.probingPending && !this.probingInitialized && !this.probingActive) {
+                    // Probe completed (STAT_PROBE cleared probingActive via STAT_STOP path) but
+                    // feedhold arrived before cleanup finished
                     log.warn("Probe completion interrupted by feedhold - cleaning up probe state");
                     this.probingPending = false;
                     this.emit_gcode('M100.1("{prbin:0}")');
                     this.prime();
                     log.info("PROBE POST-COMPLETION INTERRUPTED - cleaned up, hold: " + this.driver.status.hold + " ============####");
-                    // CRITICAL: Emit hold:10 for client-side to recognize proper pause state
-                    // G2 sends hold:10 before stat:6,hold:0 in probe moves, but client needs to see it AFTER stat:6
-                    if (this.driver.status.hold === 0) {
-                        log.info("Emitting synthetic hold:10 for client-side pause recognition");
-                        this.driver.status.hold = 10;
-                        this.machine.emit('status', this.machine.status);
-                    }
                 }
 
                 // Now handle the normal paused state
@@ -986,6 +982,7 @@ SBPRuntime.prototype._run = function () {
             case this.driver.STAT_PROBE:
                 //log.debug("PROBING INITIALIZATION COMPLETED; BUT still PENDING =====####");
                 this.probingInitialized = false;
+                this.probingActive = true;
                 this.machine.setState(this, "probing");
                 break;
 
@@ -2949,16 +2946,17 @@ SBPRuntime.prototype.transformation = function (TranPt) {
 // Pause the currently running program
 SBPRuntime.prototype.pause = function () {
 
-    // Don't block feedhold during active probing - only during completion (See above re G2 probing fix eventually)
-    // Check if we're in the brief probe completion window (after hit/finish, before cleanup)
-    if (this.probingPending && !this.probingInitialized && this.driver.status.stat === this.driver.STAT_STOP) {
+    // Block feedhold during probe completion window (after hit/finish, before cleanup)
+    if (this.probingPending && !this.probingInitialized && !this.probingActive &&
+        this.driver.status.stat === this.driver.STAT_STOP) {
         log.warn("Ignoring feedhold request - probe move completing (in STAT_STOP)");
         return;
     }
-    // Allow feedhold during active probe motion (stat 7) - G2 will handle it gracefully
-    if (this.probingPending && this.probingInitialized && this.driver.status.stat === this.driver.STAT_PROBE) {
-        log.info("Feedhold during active probe - G2 will stop probe motion");
-        // Continue with normal feedhold processing below
+
+    // During active probing, only send one feedhold (avoid multiple rapid ! commands)
+    if (this.probingActive && this.feedhold) {
+        log.debug("Ignoring duplicate feedhold during probe - already held");
+        return;
     }
 
     if (
@@ -3019,6 +3017,11 @@ SBPRuntime.prototype.resume = function (input = false) {
                 return this._abort(err);
             }
         } else {
+            // If we were held during an active probe, restore probing state for dashboard
+            if (this.probingHeld && this.probingPending) {
+                log.info("Resuming from probe feedhold - probe input still active");
+                this.probingHeld = false;
+            }
             this.driver.resume();
             this.machine.status.inFeedHold = false;
             this.feedhold = false;
