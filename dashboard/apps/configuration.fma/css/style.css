@@ -518,3 +518,35 @@ input[type=number] {
 select {
     -moz-appearance: none;
 }
+
+/* Profile Creator */
+.profile-collapse-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+.profile-collapse-toggle::before {
+    content: "\25BC ";
+    font-size: 0.7em;
+}
+.profile-collapse-toggle.collapsed::before {
+    content: "\25B6 ";
+}
+.profile-fieldset-content {
+    overflow: hidden;
+}
+.profile-group {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px 4px;
+    margin: 10px 0;
+    background: #fafafa;
+    overflow: hidden;
+}
+.profile-group-heading {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #555;
+    margin: 0 0 6px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e0e0e0;
+}

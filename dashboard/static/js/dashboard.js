@@ -600,6 +600,45 @@ define(function (require) {
         );
 
         this._registerHandler(
+            "getQueueAndHistory",
+            function (options, callback) {
+                this.engine.getQueueAndHistory(options || {}, function (err, data) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        callback(null, data);
+                    }
+                });
+            }.bind(this)
+        );
+
+        this._registerHandler(
+            "getDefaultProfile",
+            function (data, callback) {
+                this.engine.getDefaultProfile(function (err, result) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        callback(null, result);
+                    }
+                });
+            }.bind(this)
+        );
+
+        this._registerHandler(
+            "createProfile",
+            function (data, callback) {
+                this.engine.createProfile(data, function (err, result) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        callback(null, result);
+                    }
+                });
+            }.bind(this)
+        );
+
+        this._registerHandler(
             "updateOrder",
             function (data, callback) {
                 this.engine.updateOrder(data, function (err, result) {

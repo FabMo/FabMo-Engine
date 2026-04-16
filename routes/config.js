@@ -247,6 +247,27 @@ var getProfiles = function (req, res, next) {
     });
 };
 
+var get_default_profile = function (req, res, next) {
+    profiles.getDefaultConfig(function (err, data) {
+        if (err) {
+            res.json({ status: "error", message: String(err) });
+        } else {
+            res.json({ status: "success", data: data });
+        }
+    });
+};
+
+var post_create_profile = function (req, res, next) {
+    var body = req.body || req.params;
+    profiles.createProfile(body, function (err, info) {
+        if (err) {
+            res.json({ status: "error", message: String(err) });
+        } else {
+            res.json({ status: "success", data: info });
+        }
+    });
+};
+
 // Backup Macros
 const backup_macros = function (req, res, next) {
     const output = fs.createWriteStream(backupFile);
@@ -746,6 +767,8 @@ module.exports = function (server) {
     server.get("/version", get_version);
     server.get("/info", get_info);
     server.get("/profiles", getProfiles);
+    server.get("/profiles/default", get_default_profile);
+    server.post("/profiles/create", post_create_profile);
     server.get("/config/auto-profile-status", get_auto_profile_status);
 
     server.post("/profile/manual-change", post_manual_profile_change);

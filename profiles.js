@@ -243,8 +243,163 @@ var apply = function (profileName, callback) {
     }
 };
 
+// Read the default profile's config files and return them as an object
+var getDefaultConfig = function (callback) {
+    var defaultDir = path.join(__dirname, "profiles", "default", "config");
+    var configFiles = ["engine.json", "machine.json", "g2.json", "opensbp.json"];
+    var result = {};
+
+    async.each(
+        configFiles,
+        function (file, cb) {
+            var section = file.replace(".json", "");
+            fs.readFile(path.join(defaultDir, file), "utf8", function (err, data) {
+                if (err) {
+                    log.warn("Could not read default " + file + ": " + err);
+                    result[section] = {};
+                } else {
+                    try {
+                        result[section] = JSON.parse(data);
+                    } catch (e) {
+                        log.warn("Could not parse default " + file + ": " + e);
+                        result[section] = {};
+                    }
+                }
+                cb(null);
+            });
+        },
+        function (err) {
+            callback(err, result);
+        }
+    );
+};
+
+// Write a profile to a single directory (helper for createProfile)
+function writeProfileToDir(profileDir, name, description, configData, callback) {
+    var configDir = path.join(profileDir, "config");
+    fs.mkdirp(configDir, function (err) {
+        if (err) {
+            return callback(new Error("Failed to create profile directory: " + err));
+        }
+
+        // Write package.json
+        var pkg = { name: name };
+        if (description) {
+            pkg.description = description;
+        }
+        pkg.version = "v1.0.0";
+
+        fs.writeFile(
+            path.join(profileDir, "package.json"),
+            JSON.stringify(pkg, null, 2),
+            function (err) {
+                if (err) {
+                    return callback(new Error("Failed to write package.json: " + err));
+                }
+
+                var sections = ["engine", "machine", "g2", "opensbp"];
+                async.each(
+                    sections,
+                    function (section, cb) {
+                        var data = configData[section];
+                        if (data && Object.keys(data).length > 0) {
+                            fs.writeFile(
+                                path.join(configDir, section + ".json"),
+                                JSON.stringify(data, null, 4),
+                                cb
+                            );
+                        } else {
+                            cb(null);
+                        }
+                    },
+                    function (err) {
+                        if (err) {
+                            return callback(err);
+                        }
+                        // Create empty macros and apps directories
+                        async.each(
+                            ["macros", "apps"],
+                            function (dir, cb) {
+                                fs.mkdirp(path.join(profileDir, dir), cb);
+                            },
+                            function () {
+                                callback(null);
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    });
+}
+
+// Create a new profile on disk in both source (/fabmo/profiles) and
+// runtime (/opt/fabmo/profiles) directories so it survives engine updates.
+//   profileData - { name, description, config: { engine, machine, g2, opensbp } }
+//   callback - called with (err, profileInfo) on completion
+var createProfile = function (profileData, callback) {
+    var name = profileData.name;
+    if (!name) {
+        return callback(new Error("Profile name is required"));
+    }
+
+    // Generate a directory name from the profile name
+    var dirName = "fabmo-profile-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
+    var runtimeDir = path.join(config.getDataDir("profiles"), dirName);
+    var sourceDir = path.join(__dirname, "profiles", dirName);
+
+    // Check if profile already exists in either location
+    fs.access(runtimeDir, function (runtimeErr) {
+        fs.access(sourceDir, function (sourceErr) {
+            if (!runtimeErr || !sourceErr) {
+                return callback(new Error("A profile with this name already exists"));
+            }
+
+            // Prepare config data
+            var configData = profileData.config || {};
+            if (!configData.engine) {
+                configData.engine = {};
+            }
+            configData.engine.profile = name;
+
+            // Write to both locations
+            async.parallel(
+                [
+                    function (cb) {
+                        log.info("Writing profile to source: " + sourceDir);
+                        writeProfileToDir(sourceDir, name, profileData.description, configData, cb);
+                    },
+                    function (cb) {
+                        log.info("Writing profile to runtime: " + runtimeDir);
+                        writeProfileToDir(runtimeDir, name, profileData.description, configData, cb);
+                    },
+                ],
+                function (err) {
+                    if (err) {
+                        return callback(new Error("Failed to write profile: " + err));
+                    }
+
+                    // Reload profiles list
+                    load(function (loadErr) {
+                        if (loadErr) {
+                            log.warn("Error reloading profiles: " + loadErr);
+                        }
+                        callback(null, {
+                            name: name,
+                            dir: dirName,
+                            description: profileData.description || "",
+                        });
+                    });
+                }
+            );
+        });
+    });
+};
+
 module.exports.load = load;
 module.exports.apply = apply;
+module.exports.createProfile = createProfile;
+module.exports.getDefaultConfig = getDefaultConfig;
 module.exports.getProfiles = function () {
     return profiles;
 };

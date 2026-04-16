@@ -418,6 +418,15 @@
         this._get("/jobs/queue-and-history?start=" + start + "&count=" + count, callback, callback);
     };
 
+    // Profiles
+    FabMoAPI.prototype.getDefaultProfile = function (callback) {
+        this._get("/profiles/default", callback, callback);
+    };
+
+    FabMoAPI.prototype.createProfile = function (data, callback) {
+        this._post("/profiles/create", data, callback, callback);
+    };
+
     // Apps
     FabMoAPI.prototype.getApps = function (callback) {
         this._get("/apps", callback, callback, "apps");

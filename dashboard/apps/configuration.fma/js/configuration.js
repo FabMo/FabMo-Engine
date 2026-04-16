@@ -660,3 +660,249 @@ function ensureProfileDisplayCorrect() {
         }
     });
 }
+
+// ============================================================================
+// PROFILE CREATOR
+// ============================================================================
+
+var profileDefaults = null; // Stores the default profile config values
+
+// Load default profile values into the Profiles tab form
+function loadProfileDefaults() {
+    fabmo.getDefaultProfile(function (err, data) {
+        if (err) {
+            console.error("Failed to load default profile:", err);
+            return;
+        }
+        profileDefaults = data;
+
+        // Populate all profile form fields from defaults
+        var sections = ["machine", "g2", "opensbp"];
+        sections.forEach(function (section) {
+            if (!data[section]) return;
+            var flat = flattenObject(data[section]);
+            for (var key in flat) {
+                // Skip the variables object — handled separately
+                if (key.indexOf("variables-") === 0) continue;
+                var input = $("#profile-" + section + "-" + key);
+                if (input.length) {
+                    if (input.is(":checkbox")) {
+                        input.prop("checked", flat[key] ? true : false);
+                    } else {
+                        input.val(String(flat[key]));
+                    }
+                }
+            }
+        });
+
+        // Populate default variables
+        if (data.opensbp && data.opensbp.variables) {
+            var vars = data.opensbp.variables;
+            for (var name in vars) {
+                if (vars.hasOwnProperty(name)) {
+                    addProfileVariableRow(name, vars[name], true);
+                }
+            }
+        }
+    });
+}
+
+// Add a variable row to the variables list
+function addProfileVariableRow(name, value, isDefault) {
+    var row = $('<div class="profile-var-row" style="margin-bottom: 4px; overflow: hidden;"></div>');
+    row.append('<div class="large-4 columns"><input type="text" class="profile-var-name" value="' + (name || '') + '"' + (isDefault ? ' data-default="true"' : '') + '/></div>');
+    row.append('<div class="large-4 columns"><input type="text" class="profile-var-value" value="' + (value !== undefined ? value : '') + '"' + (isDefault ? ' data-default-value="' + value + '"' : '') + '/></div>');
+    row.append('<div class="large-4 columns"><a class="button radius small btn-remove-profile-var" style="background-color:#c0392b; margin:0; padding: 6px 12px;">Remove</a></div>');
+    $("#profile-variables-list").append(row);
+}
+
+// Add variable button handler
+$(document).on("click", "#btn-add-profile-var", function () {
+    var name = $("#profile-var-new-name").val().trim();
+    var value = $("#profile-var-new-value").val().trim();
+    if (!name) return;
+    if (/\s/.test(name)) {
+        fabmo.notify("error", "Variable names cannot contain spaces");
+        return;
+    }
+    addProfileVariableRow(name, value, false);
+    $("#profile-var-new-name").val("");
+    $("#profile-var-new-value").val("");
+});
+
+// Remove variable button handler
+$(document).on("click", ".btn-remove-profile-var", function () {
+    $(this).closest(".profile-var-row").remove();
+});
+
+// Collect current variables from the UI — returns null if validation fails
+function getProfileVariables() {
+    var vars = {};
+    var valid = true;
+    $(".profile-var-row").each(function () {
+        var name = $(this).find(".profile-var-name").val().trim();
+        var value = $(this).find(".profile-var-value").val().trim();
+        if (name) {
+            if (/\s/.test(name)) {
+                fabmo.notify("error", 'Variable name "' + name + '" cannot contain spaces');
+                $(this).find(".profile-var-name").addClass("flash-red");
+                setTimeout(function () { $(".flash-red").removeClass("flash-red"); }, 500);
+                valid = false;
+                return;
+            }
+            // Try to parse as number
+            var numVal = parseFloat(value);
+            vars[name] = !isNaN(numVal) && String(numVal) === value ? numVal : value;
+        }
+    });
+    return valid ? vars : null;
+}
+
+// Compute the diff between current form values and defaults
+function computeProfileDiff() {
+    if (!profileDefaults) return {};
+    var config = {};
+    var validationFailed = false;
+    var sections = ["machine", "g2", "opensbp"];
+
+    sections.forEach(function (section) {
+        if (!profileDefaults[section]) return;
+        var flat = flattenObject(profileDefaults[section]);
+        var sectionChanges = {};
+
+        for (var key in flat) {
+            // Skip variables — handled separately for opensbp
+            if (key.indexOf("variables-") === 0) continue;
+
+            var input = $("#profile-" + section + "-" + key);
+            if (!input.length) continue;
+
+            var defaultVal = flat[key];
+            var currentVal;
+
+            if (input.is(":checkbox")) {
+                currentVal = input.is(":checked");
+                if (currentVal !== (defaultVal ? true : false)) {
+                    setNestedValue(sectionChanges, key, currentVal);
+                }
+            } else {
+                currentVal = input.val();
+                // Compare as numbers if the default is a number
+                if (typeof defaultVal === "number") {
+                    var numVal = parseFloat(currentVal);
+                    if (!isNaN(numVal) && numVal !== defaultVal) {
+                        setNestedValue(sectionChanges, key, numVal);
+                    }
+                } else {
+                    if (currentVal !== String(defaultVal)) {
+                        setNestedValue(sectionChanges, key, currentVal);
+                    }
+                }
+            }
+        }
+
+        // For opensbp, include variables if any differ from defaults
+        if (section === "opensbp") {
+            var currentVars = getProfileVariables();
+            if (currentVars === null) {
+                validationFailed = true;
+                return;
+            }
+            var defaultVars = (profileDefaults.opensbp && profileDefaults.opensbp.variables) || {};
+            var varsChanged = false;
+
+            // Check for new or changed variables
+            for (var vname in currentVars) {
+                if (!(vname in defaultVars) || currentVars[vname] !== defaultVars[vname]) {
+                    varsChanged = true;
+                    break;
+                }
+            }
+            // Check for removed variables
+            if (!varsChanged) {
+                for (var dname in defaultVars) {
+                    if (!(dname in currentVars)) {
+                        varsChanged = true;
+                        break;
+                    }
+                }
+            }
+            if (varsChanged) {
+                sectionChanges.variables = currentVars;
+            }
+        }
+
+        if (Object.keys(sectionChanges).length > 0) {
+            config[section] = sectionChanges;
+        }
+    });
+
+    if (validationFailed) return null;
+    return config;
+}
+
+// Convert a flat key like "envelope-xmin" into a nested object path
+function setNestedValue(obj, flatKey, value) {
+    var parts = flatKey.split("-");
+    var current = obj;
+    for (var i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) {
+            current[parts[i]] = {};
+        }
+        current = current[parts[i]];
+    }
+    current[parts[parts.length - 1]] = value;
+}
+
+// Hide Backup & Restore section when Profiles tab is active
+$(document).on("click", "[data-tab] a[role='tab']", function () {
+    var target = $(this).attr("href");
+    if (target === "#tabpanel8") {
+        $("#backup-restore-section").hide();
+    } else {
+        $("#backup-restore-section").show();
+    }
+});
+
+// Collapsible fieldsets
+$(document).on("click", ".profile-collapse-toggle", function () {
+    $(this).next(".profile-fieldset-content").slideToggle(200);
+    $(this).toggleClass("collapsed");
+});
+
+// Save profile button handler
+$(document).on("click", "#btn-save-profile", function () {
+    var name = $("#profile-name").val().trim();
+    if (!name) {
+        $("#profile-save-status").text("Profile name is required").css("color", "red");
+        return;
+    }
+
+    var description = $("#profile-description").val().trim();
+    var config = computeProfileDiff();
+
+    if (config === null) {
+        $("#profile-save-status").text("Fix validation errors above").css("color", "red");
+        return;
+    }
+
+    $("#profile-save-status").text("Saving...").css("color", "#333");
+
+    fabmo.createProfile(
+        { name: name, description: description, config: config },
+        function (err, result) {
+            if (err) {
+                $("#profile-save-status").text("Error: " + err).css("color", "red");
+            } else {
+                $("#profile-save-status").text("Profile saved!").css("color", "green");
+                // Refresh the profile dropdown in the General tab
+                update();
+            }
+        }
+    );
+});
+
+// Load defaults when the page loads
+$(document).ready(function () {
+    loadProfileDefaults();
+});

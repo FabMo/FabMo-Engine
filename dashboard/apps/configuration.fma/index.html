@@ -39,6 +39,8 @@
           </li>
           <li class="tab-title" role="presentational"><a href="#tabpanel7" role="tab" tabindex="0" aria-selected="false" controls="tabpanel7">Users</a>
           </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel8" role="tab" tabindex="0" aria-selected="false" controls="tabpanel8">Profiles</a>
+          </li>
         </ul>
         <ul class="right">
           <li>
@@ -1990,7 +1992,7 @@
 
 
 <!-- TEST BACKUP & RESTORE SECTION  (Applied to All) -->
-      <section>
+      <section id="backup-restore-section">
 
         <div class="row">
           <fieldset>
@@ -2025,6 +2027,255 @@
           </fieldset>
         </div>
             
+      </section>
+
+      <!-- PROFILES ----------------------------------------------------------------------------------------------- -->
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8">
+        <div class="row">
+
+          <!-- Profile Name & Description -->
+          <fieldset>
+            <legend>New Profile</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Profile Name</label>
+                <div class="small-12 columns">
+                  <input type="text" id="profile-name" placeholder="My Custom Profile"/>
+                </div>
+              </div>
+            </div>
+            <div class="large-8 columns">
+              <div class="row collapse">
+                <label>Description</label>
+                <div class="small-12 columns">
+                  <input type="text" id="profile-description" placeholder="Description of this profile"/>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Machine Settings -->
+          <fieldset class="profile-fieldset">
+            <legend class="profile-collapse-toggle">Machine Settings</legend>
+            <div class="profile-fieldset-content">
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label>Units</label>
+                  <select id="profile-machine-units" class="profile-input">
+                    <option value="in">in</option>
+                    <option value="mm">mm</option>
+                  </select>
+                </div>
+              </div>
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label>Default App</label>
+                  <input type="text" id="profile-machine-default_app" class="profile-input"/>
+                </div>
+              </div>
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label>Limits Enabled</label>
+                  <input type="checkbox" id="profile-machine-limits_on" class="profile-input"/>
+                </div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Envelope</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>X Min</label><input type="number" id="profile-machine-envelope-xmin" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>X Max</label><input type="number" id="profile-machine-envelope-xmax" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Y Min</label><input type="number" id="profile-machine-envelope-ymin" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Y Max</label><input type="number" id="profile-machine-envelope-ymax" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Min</label><input type="number" id="profile-machine-envelope-zmin" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Max</label><input type="number" id="profile-machine-envelope-zmax" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Manual Control</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>XY Speed</label><input type="number" id="profile-machine-manual-xy_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>XY Min Speed</label><input type="number" id="profile-machine-manual-xy_min" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>XY Max Speed</label><input type="number" id="profile-machine-manual-xy_max" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Fast Speed</label><input type="number" id="profile-machine-manual-z_fast_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Slow Speed</label><input type="number" id="profile-machine-manual-z_slow_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>XY Increment</label><input type="number" id="profile-machine-manual-xy_increment" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Increment</label><input type="number" id="profile-machine-manual-z_increment" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>ABC Increment</label><input type="number" id="profile-machine-manual-abc_increment" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>XY Jerk</label><input type="number" id="profile-machine-manual-xy_jerk" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Jerk</label><input type="number" id="profile-machine-manual-z_jerk" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Authorization</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Auth Timeout (sec)</label><input type="number" id="profile-machine-auth_timeout" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Auth Required</label><input type="checkbox" id="profile-machine-auth_required" class="profile-input"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Auth Input</label><input type="number" id="profile-machine-auth_input" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Quit Input</label><input type="number" id="profile-machine-quit_input" class="profile-input" step="1"/></div></div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Input Actions -->
+          <fieldset class="profile-fieldset">
+            <legend class="profile-collapse-toggle">Input Actions</legend>
+            <div class="profile-fieldset-content">
+              <div class="large-4 columns"><div class="row collapse"><label>Input 1</label><select id="profile-machine-di1ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 2</label><select id="profile-machine-di2ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 3</label><select id="profile-machine-di3ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 4</label><select id="profile-machine-di4ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 5</label><select id="profile-machine-di5ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 6</label><select id="profile-machine-di6ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 7</label><select id="profile-machine-di7ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 8</label><select id="profile-machine-di8ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 9</label><select id="profile-machine-di9ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 10</label><select id="profile-machine-di10ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 11</label><select id="profile-machine-di11ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 12</label><select id="profile-machine-di12ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+              <div class="large-4 columns"><div class="row collapse"><label>Input 15</label><select id="profile-machine-di15ac" class="profile-input"><option value="none">none</option><option value="stop">stop</option><option value="interlock">interlock</option><option value="limit">limit</option><option value="faststop">faststop</option><option value="halt">halt</option><option value="driverFault">driverFault</option></select></div></div>
+            </div>
+          </fieldset>
+
+          <!-- G2 Driver Settings -->
+          <fieldset class="profile-fieldset">
+            <legend class="profile-collapse-toggle">G2 Driver Settings</legend>
+            <div class="profile-fieldset-content">
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Global</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Units Mode (gun)</label><input type="number" id="profile-g2-gun" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Chordal Tolerance (ct)</label><input type="number" id="profile-g2-ct" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Junction Integration (jt)</label><input type="number" id="profile-g2-jt" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Axis Modes</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>X Axis Mode (xam)</label><input type="number" id="profile-g2-xam" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Y Axis Mode (yam)</label><input type="number" id="profile-g2-yam" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Axis Mode (zam)</label><input type="number" id="profile-g2-zam" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>A Axis Mode (aam)</label><input type="number" id="profile-g2-aam" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>B Axis Mode (bam)</label><input type="number" id="profile-g2-bam" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>C Axis Mode (cam)</label><input type="number" id="profile-g2-cam" class="profile-input" step="1"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Motor Mapping</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 1 Axis (1ma)</label><input type="number" id="profile-g2-1ma" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 2 Axis (2ma)</label><input type="number" id="profile-g2-2ma" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 3 Axis (3ma)</label><input type="number" id="profile-g2-3ma" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 4 Axis (4ma)</label><input type="number" id="profile-g2-4ma" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 5 Axis (5ma)</label><input type="number" id="profile-g2-5ma" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 6 Axis (6ma)</label><input type="number" id="profile-g2-6ma" class="profile-input" step="1"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Motor Polarity</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 1 Polarity (1po)</label><input type="number" id="profile-g2-1po" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 2 Polarity (2po)</label><input type="number" id="profile-g2-2po" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 3 Polarity (3po)</label><input type="number" id="profile-g2-3po" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 4 Polarity (4po)</label><input type="number" id="profile-g2-4po" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 5 Polarity (5po)</label><input type="number" id="profile-g2-5po" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 6 Polarity (6po)</label><input type="number" id="profile-g2-6po" class="profile-input" step="1"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Step Units</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 1 Steps/Unit (1su)</label><input type="number" id="profile-g2-1su" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 2 Steps/Unit (2su)</label><input type="number" id="profile-g2-2su" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 3 Steps/Unit (3su)</label><input type="number" id="profile-g2-3su" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 4 Steps/Unit (4su)</label><input type="number" id="profile-g2-4su" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 5 Steps/Unit (5su)</label><input type="number" id="profile-g2-5su" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Motor 6 Steps/Unit (6su)</label><input type="number" id="profile-g2-6su" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Feedrates</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>X Feedrate (xfr)</label><input type="number" id="profile-g2-xfr" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Y Feedrate (yfr)</label><input type="number" id="profile-g2-yfr" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Feedrate (zfr)</label><input type="number" id="profile-g2-zfr" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>A Feedrate (afr)</label><input type="number" id="profile-g2-afr" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>B Feedrate (bfr)</label><input type="number" id="profile-g2-bfr" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>C Feedrate (cfr)</label><input type="number" id="profile-g2-cfr" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Homing Jerk</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>X Homing Jerk (xjh)</label><input type="number" id="profile-g2-xjh" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Y Homing Jerk (yjh)</label><input type="number" id="profile-g2-yjh" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Homing Jerk (zjh)</label><input type="number" id="profile-g2-zjh" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Spindle</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Spindle Enable (spde)</label><input type="number" id="profile-g2-spde" class="profile-input" step="1"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Probe Input (plmo)</label><input type="number" id="profile-g2-plmo" class="profile-input" step="1"/></div></div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- OpenSBP Settings -->
+          <fieldset class="profile-fieldset">
+            <legend class="profile-collapse-toggle">OpenSBP Settings</legend>
+            <div class="profile-fieldset-content">
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Move Speeds</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Move XY Speed</label><input type="number" id="profile-opensbp-movexy_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Move Z Speed</label><input type="number" id="profile-opensbp-movez_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Move A Speed</label><input type="number" id="profile-opensbp-movea_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Move B Speed</label><input type="number" id="profile-opensbp-moveb_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Move C Speed</label><input type="number" id="profile-opensbp-movec_speed" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Jog Speeds</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Jog XY Speed</label><input type="number" id="profile-opensbp-jogxy_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Jog Y Speed</label><input type="number" id="profile-opensbp-jogy_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Jog Z Speed</label><input type="number" id="profile-opensbp-jogz_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Jog A Speed</label><input type="number" id="profile-opensbp-joga_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Jog B Speed</label><input type="number" id="profile-opensbp-jogb_speed" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Jog C Speed</label><input type="number" id="profile-opensbp-jogc_speed" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Max Jerk</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>XY Max Jerk</label><input type="number" id="profile-opensbp-xy_maxjerk" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Y Max Jerk</label><input type="number" id="profile-opensbp-y_maxjerk" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Z Max Jerk</label><input type="number" id="profile-opensbp-z_maxjerk" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>A Max Jerk</label><input type="number" id="profile-opensbp-a_maxjerk" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>B Max Jerk</label><input type="number" id="profile-opensbp-b_maxjerk" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>C Max Jerk</label><input type="number" id="profile-opensbp-c_maxjerk" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Tool Settings</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Cutter Diameter</label><input type="number" id="profile-opensbp-cutterDia" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Pocket Overlap (%)</label><input type="number" id="profile-opensbp-pocketOverlap" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Safe Z Pull Up</label><input type="number" id="profile-opensbp-safeZpullUp" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Safe A Pull Up</label><input type="number" id="profile-opensbp-safeApullUp" class="profile-input" step="any"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Resolution</h5>
+                <div class="large-4 columns"><div class="row collapse"><label>Coord Resolution (cRes)</label><input type="number" id="profile-opensbp-cRes" class="profile-input" step="any"/></div></div>
+                <div class="large-4 columns"><div class="row collapse"><label>Variable Precision</label><input type="number" id="profile-opensbp-variable_precision" class="profile-input" step="1"/></div></div>
+              </div>
+
+              <div class="profile-group">
+                <h5 class="profile-group-heading">Variables</h5>
+                <div id="profile-variables-list"></div>
+                <div style="margin-top: 8px;">
+                  <div class="large-4 columns"><div class="row collapse"><label>Name</label><input type="text" id="profile-var-new-name" placeholder="VARIABLE_NAME"/></div></div>
+                  <div class="large-4 columns"><div class="row collapse"><label>Value</label><input type="text" id="profile-var-new-value" placeholder="value"/></div></div>
+                  <div class="large-4 columns"><div class="row collapse"><label>&nbsp;</label><a id="btn-add-profile-var" class="button radius small" style="background-color:#5385e0; margin:0; padding: 6px 12px;">Add Variable</a></div></div>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Save Button -->
+          <div class="large-12 columns" style="margin-top: 20px; margin-bottom: 20px;">
+            <a id="btn-save-profile" class="button radius small" style="background-color:rgb(83, 133, 224)">Save Profile</a>
+            <span id="profile-save-status" style="margin-left: 10px;"></span>
+          </div>
+
+        </div>
       </section>
 
     </div>

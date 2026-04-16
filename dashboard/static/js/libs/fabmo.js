@@ -844,6 +844,49 @@
     };
 
     /**
+     * Get the job queue and history in a single call.
+     *
+     * @method getQueueAndHistory
+     * @param {Object} options
+     * @param {Number} options.start The location in the history results to start
+     * @param {Number} options.count The number of history jobs to return
+     * @param {function} callback
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object} callback.data Object with queue and history arrays
+     */
+    FabMoDashboard.prototype.getQueueAndHistory = function (options, callback) {
+        this._call("getQueueAndHistory", options, callback);
+    };
+
+    /**
+     * Get the default profile configuration values.
+     *
+     * @method getDefaultProfile
+     * @param {function} callback
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object} callback.data Default config for engine, machine, g2, opensbp
+     */
+    FabMoDashboard.prototype.getDefaultProfile = function (callback) {
+        this._call("getDefaultProfile", null, callback);
+    };
+
+    /**
+     * Create a new profile.
+     *
+     * @method createProfile
+     * @param {Object} data Profile data
+     * @param {String} data.name Profile name (required)
+     * @param {String} data.description Profile description
+     * @param {Object} data.config Config overrides (only values that differ from default)
+     * @param {function} callback
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object} callback.info Created profile info
+     */
+    FabMoDashboard.prototype.createProfile = function (data, callback) {
+        this._call("createProfile", data, callback);
+    };
+
+    /**
      * Run the next job in the job queue.
      *
      * @method runNext
