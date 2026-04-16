@@ -844,6 +844,21 @@
     };
 
     /**
+     * Get the job queue and history in a single call.
+     *
+     * @method getQueueAndHistory
+     * @param {Object} options
+     * @param {Number} options.start The location in the history results to start
+     * @param {Number} options.count The number of history jobs to return
+     * @param {function} callback
+     * @param {Error} callback.err Error object if there was an error.
+     * @param {Object} callback.data Object with queue and history arrays
+     */
+    FabMoDashboard.prototype.getQueueAndHistory = function (options, callback) {
+        this._call("getQueueAndHistory", options, callback);
+    };
+
+    /**
      * Run the next job in the job queue.
      *
      * @method runNext

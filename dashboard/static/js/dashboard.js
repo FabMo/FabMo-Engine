@@ -600,6 +600,19 @@ define(function (require) {
         );
 
         this._registerHandler(
+            "getQueueAndHistory",
+            function (options, callback) {
+                this.engine.getQueueAndHistory(options || {}, function (err, data) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        callback(null, data);
+                    }
+                });
+            }.bind(this)
+        );
+
+        this._registerHandler(
             "updateOrder",
             function (data, callback) {
                 this.engine.updateOrder(data, function (err, result) {
