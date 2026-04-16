@@ -158,37 +158,49 @@ function Machine(control_path, callback) {
         log.error(err);
     });
 
+    // Create runtimes up front so they exist even before G2 connects.
+    // This allows the engine startup sequence to proceed (web server, etc.)
+    // even while waiting for G2 to become available.
+    this.gcode_runtime = new GCodeRuntime();
+    this.sbp_runtime = new SBPRuntime();
+    this.manual_runtime = new ManualRuntime();
+    this.passthrough_runtime = new PassthroughRuntime();
+    this.idle_runtime = new IdleRuntime();
+
+    this.runtimes = [
+        this.gcode_runtime,
+        this.sbp_runtime,
+        this.manual_runtime,
+        this.passthrough_runtime,
+        this.idle_runtime,
+    ];
+
+    this._control_path = control_path;
+
     this.driver.connect(
         control_path,
         function (err) {
             // Most of the setup of the machine happens here, AFTER we've successfully connected to G2
             if (err) {
                 log.error(JSON.stringify(err));
-                log.warn("Setting the disconnected state");
-                this.die("An internal error has occurred. You must reboot your tool.");
+                log.warn("Initial G2 connection failed — will keep retrying via reconnect");
+                this.status.state = "not_ready";
+                this.status.info = {
+                    message: "Waiting for motion controller connection...",
+                };
+                this.emit("status", this.status);
+                // Store the serial path and trigger the reconnect loop
+                this.driver._serialPath = control_path;
+                this.driver.reconnect();
+                // Let the engine startup continue — the "reconnected" handler
+                // will finish machine initialization when G2 comes online
                 if (typeof callback === "function") {
-                    return callback(new Error("No connection to G2"));
-                } else {
-                    return;
+                    return callback(null);
                 }
+                return;
             } else {
                 this.status.state = "idle";
             }
-
-            // Create runtimes for different functions/command languages
-            this.gcode_runtime = new GCodeRuntime();
-            this.sbp_runtime = new SBPRuntime();
-            this.manual_runtime = new ManualRuntime();
-            this.passthrough_runtime = new PassthroughRuntime();
-            this.idle_runtime = new IdleRuntime();
-
-            this.runtimes = [
-                this.gcode_runtime,
-                this.sbp_runtime,
-                this.manual_runtime,
-                this.passthrough_runtime,
-                this.idle_runtime,
-            ];
 
             // The machine only has one "active" runtime at a time.  When it's not doing anything else
             // the active runtime is the IdleRuntime (setRuntime(null) sets the IdleRuntime)
@@ -287,8 +299,35 @@ function Machine(control_path, callback) {
             this.handleAPCollapseButton(stat, ap_input);
             this.status.clientDisconnected = global.CLIENT_DISCONNECTED;
             
-            // Note: _updateStatusFromDriver already emitted the status, 
+            // Note: _updateStatusFromDriver already emitted the status,
             // so we don't need to emit it again here
+        }.bind(this)
+    );
+
+    // Handle G2 serial disconnection — set machine to not_ready and wait for reconnection
+    this.driver.on(
+        "disconnect",
+        function () {
+            log.warn("G2 driver reported disconnect — machine entering not_ready state");
+            this.status.state = "not_ready";
+            this.status.info = {
+                message: "Reconnecting to motion controller...",
+            };
+            this.emit("status", this.status);
+        }.bind(this)
+    );
+
+    // Handle G2 serial reconnection — restore configuration and return to idle
+    this.driver.on(
+        "reconnected",
+        function () {
+            log.info("G2 driver reconnected — restoring configuration");
+            this._restoreAfterReconnect(function (err) {
+                if (err) {
+                    log.error("Failed to restore after reconnect: " + err);
+                    this.die("Failed to restore G2 configuration after reconnect.");
+                }
+            }.bind(this));
         }.bind(this)
     );
 }
@@ -653,6 +692,74 @@ Machine.prototype.restoreDriverState = function (callback) {
                 }.bind(this)
             );
         }.bind(this)
+    );
+};
+
+// Restore G2 configuration after a serial reconnection.
+// Re-pushes all cached config to G2 (which may have lost its state),
+// checks the G2 status, and transitions the machine back to idle.
+Machine.prototype._restoreAfterReconnect = function (callback) {
+    var self = this;
+    async.series(
+        [
+            // Step 1: (Re-)initialize driver config and configure status reports.
+            // This handles both the case where config.driver was a dummy (initial
+            // connect failed) and where it was previously initialized (mid-session
+            // reconnect). configureDriver() calls init(driver) + configureStatusReports().
+            function (cb) {
+                log.info("Reconnect: configuring G2 driver...");
+                config.configureDriver(self.driver, function (err) {
+                    if (err) {
+                        log.error("Reconnect: error configuring driver: " + err);
+                    }
+                    cb(null);
+                });
+            },
+            // Step 3: Restore unit system
+            function (cb) {
+                log.info("Reconnect: restoring units...");
+                self.driver.setUnits(config.machine.get("units"), cb);
+            },
+            // Step 4: Re-push machine config (inputs, envelope, limits) to G2
+            function (cb) {
+                log.info("Reconnect: reapplying machine configuration...");
+                config.machine.update({}, cb);
+            },
+        ],
+        function (err) {
+            if (err) {
+                log.error("Reconnect: error during config restore: " + err);
+                return callback(err);
+            }
+
+            // Check G2 status after config restore
+            self.driver.requestStatusReport(function (status) {
+                if (status && status.stat !== undefined) {
+                    switch (status.stat) {
+                        case g2.STAT_INTERLOCK:
+                        case g2.STAT_SHUTDOWN:
+                        case g2.STAT_PANIC:
+                            log.error("Reconnect: G2 in fatal state (stat=" + status.stat + ") after reconnect");
+                            self.die("G2 is in an error state after reconnection. You must reboot your tool.");
+                            return callback(new Error("G2 in fatal state after reconnect"));
+                        case g2.STAT_ALARM:
+                            log.warn("Reconnect: G2 in alarm state — clearing");
+                            self.driver.clearAlarm();
+                            break;
+                    }
+                }
+
+                // Transition to idle
+                log.info("Reconnect: transitioning machine to idle");
+                self.status.state = "idle";
+                delete self.status.info;
+                self.setRuntime(null, function () {
+                    self.emit("status", self.status);
+                    log.info("Machine restored to idle after reconnection");
+                    callback(null);
+                });
+            });
+        }
     );
 };
 

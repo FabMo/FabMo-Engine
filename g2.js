@@ -36,6 +36,16 @@ var STAT_PANIC = 13;
 var CMD_TIMEOUT = 100000;
 var EXPECT_TIMEOUT = 300000;
 
+// Reconnection constants
+var RECONNECT_BASE_DELAY = 1000; // 1s initial retry delay
+var RECONNECT_MAX_DELAY = 30000; // 30s max retry delay
+var MAX_RECONNECT_TIME = 300000; // 5 minutes total before giving up
+var RECONNECT_READY_TIMEOUT = 5000; // 5s to wait for SYSTEM READY on each attempt
+
+// Heartbeat constants
+var HEARTBEAT_INTERVAL = 5000; // 5s between heartbeat checks
+var HEARTBEAT_TIMEOUT = 3000; // 3s to wait for heartbeat response
+
 var _promiseCounter = 1;
 var intendedClose = false;
 var THRESH = 1;
@@ -189,9 +199,57 @@ function G2() {
     this._streamDone = false;
 
     this.lineBuffer = [];
+
+    // Reconnection state
+    this._reconnecting = false;
+    this._reconnectTimer = null;
+
+    // Heartbeat state
+    this._lastDataReceived = 0;
+    this._heartbeatTimer = null;
+    this._heartbeatTimeout = null;
+    this._heartbeatPending = false;
 }
 
 util.inherits(G2, events.EventEmitter);
+
+// Reset all internal state that becomes stale after a serial disconnect.
+// This prepares the G2 object for a fresh reconnection without creating a new instance.
+G2.prototype._resetInternalState = function () {
+    // Buffers
+    this._currentData = [];
+    this.lineBuffer = [];
+
+    // Queues (Queue has no clear method, so reinitialize)
+    this.gcode_queue = new Queue();
+    this.command_queue = new Queue();
+
+    // Pending callbacks — these will never resolve, let them expire naturally
+    this.expectations = [];
+    this.readers = {};
+
+    // Streaming state
+    this.lines_to_send = 4;
+    this._ignored_responses = 0;
+    this._primed = false;
+    this._streamDone = false;
+    this.context = null;
+    this.flooded = false;
+    this.qtotal = 0;
+    this.lines_sent = 0;
+
+    // Flags
+    this.pause_flag = false;
+    this.quit_pending = false;
+    this.resumePending = false;
+    this.holdComplete = false;
+    this.manual_hold = false;
+    this.pause_hold = false;
+
+    // Connection state — allow "SYSTEM READY" detection again
+    this.connected = false;
+    this._seen_ready = false;
+};
 
 // Creates a cycle context, which has a pass-through stream into which data can be piped
 G2.prototype._createCycleContext = function () {
@@ -346,6 +404,7 @@ G2.prototype.connect = function (path, callback) {
                 function () {
                     this.requestStatusReport(
                         function () {
+                            this.startHeartbeat();
                             callback(null, this);
                         }.bind(this)
                     );
@@ -383,6 +442,7 @@ G2.prototype.disconnect = function (reason, callback) {
     if (reason === "firmware") {
         intendedClose = true;
     }
+    this.stopHeartbeat();
     this._serialPort.close(callback);
 };
 
@@ -399,23 +459,261 @@ G2.prototype.onSerialError = function (data) {
     });
 };
 
-// When the serial link to G2 is closed, exit the engine with an error
-// In a production environment, the system service manager (usually systemd)
-// will simply restart the process and attempt to reconnect
+// When the serial link to G2 is closed, attempt in-process reconnection
+// instead of exiting the process. Falls back to process.exit(14) after
+// MAX_RECONNECT_TIME if reconnection fails.
 G2.prototype.onSerialClose = function () {
     this.connected = false;
     log.error("G2 Core serial link was lost.");
-    
-    // Save log before exiting
-    require('./log').saveCurrentLog('g2-disconnect', function(err) {
-        if (!intendedClose) {
-            process.exit(14);
+
+    // Save log for diagnostics
+    require('./log').saveCurrentLog('g2-disconnect', function (err) {
+        if (err) {
+            log.error("Failed to save log on disconnect: " + err);
         }
     });
+
+    // Intentional close (firmware update) — do nothing
+    if (intendedClose) {
+        return;
+    }
+
+    // Already in a reconnection cycle — let the retry loop handle it
+    if (this._reconnecting) {
+        return;
+    }
+
+    // Start reconnection
+    this.reconnect();
+};
+
+// Attempt to reconnect to G2 with exponential backoff.
+// Reuses the existing G2 object in-place so all external references
+// (machine.driver, runtimes, config) remain valid.
+G2.prototype.reconnect = function () {
+    var that = this;
+    this._reconnecting = true;
+    this.stopHeartbeat();
+
+    // Notify listeners (machine.js) that the connection was lost
+    this.emit("disconnect");
+
+    // Clean up old serial port listeners to avoid ghost events
+    if (this._serialPort) {
+        this._serialPort.removeAllListeners();
+    }
+
+    // Reset all internal state (queues, buffers, callbacks, flags)
+    this._resetInternalState();
+
+    var startTime = Date.now();
+    var delay = RECONNECT_BASE_DELAY;
+
+    function attemptReconnect() {
+        var elapsed = Date.now() - startTime;
+        if (elapsed >= MAX_RECONNECT_TIME) {
+            log.error(
+                "G2 reconnection failed after " +
+                    Math.round(elapsed / 1000) +
+                    "s — falling back to process exit."
+            );
+            require('./log').saveCurrentLog('g2-reconnect-failed', function () {
+                process.exit(14);
+            });
+            return;
+        }
+
+        log.info(
+            "G2 reconnection attempt (elapsed: " +
+                Math.round(elapsed / 1000) +
+                "s, next delay: " +
+                Math.round(delay / 1000) +
+                "s)"
+        );
+
+        // Check if the serial device exists before trying to open it
+        fs.access(that._serialPath, fs.constants.R_OK | fs.constants.W_OK, function (err) {
+            if (err) {
+                log.warn("Serial device " + that._serialPath + " not available yet: " + err.code);
+                scheduleNextRetry();
+                return;
+            }
+
+            // Create a new serial port object on the same path
+            var newPort = new SerialPort(that._serialPath, {
+                flowcontrol: ["RTSCTS"],
+                autoOpen: false,
+            });
+
+            var readyFired = false;
+            var readyTimeout = null;
+
+            // Handler for when G2 sends "SYSTEM READY"
+            function onReady() {
+                readyFired = true;
+                if (readyTimeout) {
+                    clearTimeout(readyTimeout);
+                    readyTimeout = null;
+                }
+
+                that.connected = true;
+                that._reconnecting = false;
+                that._seen_ready = true;
+
+                // Send kill commands to clear any stale G2 state, then notify success
+                that._write("\x04\n", function () {});
+                that._write("\x04\n", function () {
+                    that.requestStatusReport(function () {
+                        log.info("G2 reconnection successful.");
+                        that.startHeartbeat();
+                        that.emit("reconnected");
+                    });
+                });
+            }
+
+            // Listen for the "ready" event (emitted when onMessage sees "SYSTEM READY")
+            that.once("ready", onReady);
+
+            // Wire up event handlers on the new port
+            newPort.on("error", function (err) {
+                log.error("Serial error during reconnect attempt: " + err);
+            });
+            newPort.on("close", function () {
+                // Port closed during reconnection attempt — handled by retry loop
+                if (that._reconnecting && !readyFired) {
+                    log.warn("Serial port closed during reconnect attempt");
+                }
+            });
+            newPort.on("data", that.onData.bind(that));
+
+            // Replace the internal serial port reference
+            that._serialPort = newPort;
+            that._serialToken = "S";
+
+            // Attempt to open
+            newPort.open(function (openErr) {
+                if (openErr) {
+                    log.warn("Failed to open serial port: " + openErr);
+                    that.removeListener("ready", onReady);
+                    scheduleNextRetry();
+                    return;
+                }
+
+                log.info("G2 port opened during reconnect — waiting for SYSTEM READY...");
+
+                // Give G2 time to send "SYSTEM READY"
+                readyTimeout = setTimeout(function () {
+                    if (!readyFired) {
+                        log.warn("No SYSTEM READY received within " + (RECONNECT_READY_TIMEOUT / 1000) + "s");
+                        that.removeListener("ready", onReady);
+                        // Close this port attempt and retry
+                        try {
+                            newPort.close(function () {
+                                scheduleNextRetry();
+                            });
+                        } catch (e) {
+                            scheduleNextRetry();
+                        }
+                    }
+                }, RECONNECT_READY_TIMEOUT);
+            });
+        });
+    }
+
+    function scheduleNextRetry() {
+        that._reconnectTimer = setTimeout(function () {
+            that._reconnectTimer = null;
+            attemptReconnect();
+        }, delay);
+        // Exponential backoff with cap
+        delay = Math.min(delay * 2, RECONNECT_MAX_DELAY);
+    }
+
+    // Start the first attempt after a short delay
+    that._reconnectTimer = setTimeout(function () {
+        that._reconnectTimer = null;
+        attemptReconnect();
+    }, RECONNECT_BASE_DELAY);
+};
+
+// Start periodic heartbeat to detect silent G2 failures.
+// Sends a status report request if no data has been received recently.
+G2.prototype.startHeartbeat = function () {
+    this.stopHeartbeat();
+    this._heartbeatTimer = setInterval(
+        function () {
+            if (!this.connected || this._reconnecting) {
+                return;
+            }
+            // Skip if we received data recently — G2 is alive
+            if (Date.now() - this._lastDataReceived < HEARTBEAT_INTERVAL) {
+                return;
+            }
+            // Send a status report request as a heartbeat probe
+            log.debug("Sending heartbeat status request");
+            this._heartbeatPending = true;
+            this.command({ sr: null });
+
+            // Set timeout for response
+            this._heartbeatTimeout = setTimeout(
+                function () {
+                    if (this._heartbeatPending) {
+                        this._onHeartbeatTimeout();
+                    }
+                }.bind(this),
+                HEARTBEAT_TIMEOUT
+            );
+        }.bind(this),
+        HEARTBEAT_INTERVAL
+    );
+};
+
+// Stop the heartbeat timer and any pending response timeout
+G2.prototype.stopHeartbeat = function () {
+    if (this._heartbeatTimer) {
+        clearInterval(this._heartbeatTimer);
+        this._heartbeatTimer = null;
+    }
+    if (this._heartbeatTimeout) {
+        clearTimeout(this._heartbeatTimeout);
+        this._heartbeatTimeout = null;
+    }
+    this._heartbeatPending = false;
+};
+
+// Called when G2 fails to respond to a heartbeat within HEARTBEAT_TIMEOUT.
+// Triggers reconnection by closing the serial port (which fires onSerialClose).
+G2.prototype._onHeartbeatTimeout = function () {
+    log.error("G2 heartbeat timeout — no response received. Triggering reconnection.");
+    this.stopHeartbeat();
+    // Try to close the port gracefully, which triggers onSerialClose -> reconnect
+    try {
+        this._serialPort.close(function (err) {
+            if (err) {
+                log.warn("Error closing port after heartbeat timeout: " + err);
+                // Port may already be in a bad state — trigger reconnect directly
+                if (!this._reconnecting) {
+                    this.reconnect();
+                }
+            }
+        }.bind(this));
+    } catch (e) {
+        log.warn("Exception closing port after heartbeat timeout: " + e);
+        if (!this._reconnecting) {
+            this.reconnect();
+        }
+    }
 };
 
 // Write to the serial port (and log it)
 G2.prototype._write = function (s, callback) {
+    if (!this.connected || !this._serialPort || !this._serialPort.isOpen) {
+        log.warn("Attempted write while disconnected: " + String(s).substring(0, 50));
+        if (callback) {
+            setImmediate(callback);
+        }
+        return;
+    }
     log.g2(this._serialToken, "out", s);
     this._serialPort.write(
         s,
@@ -456,6 +754,10 @@ G2.prototype.requestStatusReport = function (callback) {
 
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function (data) {
+    // Track data reception for heartbeat
+    this._lastDataReceived = Date.now();
+    this._heartbeatPending = false;
+
     var t = new Date().getTime(); // Get current time for logging
     // raw_data event for listeners that want to snoop on all data.
     // Not usually used except for debugging
@@ -1140,6 +1442,10 @@ G2.prototype.prime = function () {
 // This implements the so-called "linemode" protocol (see G2 source documentation for more info)
 // https://github.com/synthetos/g2/wiki/g2core-Communications
 G2.prototype.sendMore = function () {
+    // Don't send anything if we're disconnected
+    if (!this.connected) {
+        return;
+    }
     // Don't ever send anything if we're paused
     if (this.pause_flag) {
         //log.debug("====> sendMore() blocked by pause_flag, command_queue length: " + this.command_queue.getLength());
