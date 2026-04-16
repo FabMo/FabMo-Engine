@@ -422,9 +422,7 @@ AppManager.prototype.decompressApp = function (src, dest, options, callback) {
                         return callback(err);
                     } else {
                         this._addApp(app_metadata);
-                        util.diskSync(function () {
-                            callback(null, app_metadata);
-                        });
+                        callback(null, app_metadata);
                     }
                 }.bind(this)
             );
@@ -447,7 +445,9 @@ AppManager.prototype.decompressApp = function (src, dest, options, callback) {
                     return callback(err);
                 }
                 this._addApp(app_metadata);
-                callback(null, app_metadata);
+                util.diskSync(function () {
+                    callback(null, app_metadata);
+                });
             }.bind(this)
         );
     } catch (e) {
