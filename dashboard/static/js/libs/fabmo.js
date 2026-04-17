@@ -32,16 +32,8 @@
         this.status = {};
         this.isReady = false;
 
-        // listen for escape key press to quit the engine
-        document.onkeydown = function (e) {
-            // if (e.keyCode === 27) {  ////## removing allows for ESC to be used in manual mode
-            //     console.warn("ESC key pressed - quitting engine.");
-            //     this.stop();
-            if (e.keyCode === 75 && e.ctrlKey) {
-                // } else if (e.keyCode === 75 && e.ctrlKey) {
-                this.manualEnter();
-            }
-        }.bind(this);
+        // Global keyboard shortcuts (like "k" for keypad) are handled by the
+        // parent dashboard via events.js, which listens on the iframe's contentWindow.
 
         function detectswipe(func) {
             swipe_det = new Object();
