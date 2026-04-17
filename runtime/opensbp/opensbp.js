@@ -594,7 +594,17 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
     this.cmd_StartZ = z;
     if (this.ok_to_disconnect) {
         this.disconnect();
-        var st = this.runString(s);
+        var st;
+        try {
+            st = this.runString(s);
+        } catch (err) {
+            log.error("simulateString: runString threw: " + err.message);
+            return callback(err);
+        }
+        if (!st) {
+            log.error("simulateString: runString returned undefined");
+            return callback(new Error("Failed to start simulation: runString returned no stream."));
+        }
         var chunks = [];
         st.on("data", function (chunk) {
             chunks.push(chunk);
@@ -2870,7 +2880,12 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
 // Load transform settings from the OpenSBP configuration
 SBPRuntime.prototype._setupTransforms = function () {
     log.debug("_setupTransforms");
-    this.transforms = JSON.parse(JSON.stringify(config.opensbp.get("transforms")));
+    if (config.opensbp) {
+        this.transforms = JSON.parse(JSON.stringify(config.opensbp.get("transforms")));
+    } else {
+        log.warn("_setupTransforms: config.opensbp not available, using empty transforms");
+        this.transforms = {};
+    }
 };
 
 // Transform the specified points within a motion command for a line or arc
