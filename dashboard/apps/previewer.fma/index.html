@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="../../css/dashboard.css">
-    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/style.css?v=2">
   </head>
 
   <body>
@@ -31,12 +31,6 @@
       <div class="actions">
         <div class="run-now">Run This Job</div>
 
-        <img id="button-pause"  src="images/pause.png"
-             title="Pause path simulation."/>
-        <img id="button-reset"  src="images/reset.png"
-             title="Restart path simulation."/>
-        <img id="button-play"   src="images/play.png"
-             title="Start or continue path simulation."/>
         <img id="button-x"      src="images/x.png"
              title="Change orientation to view down the X axis."/>
         <img id="button-y"      src="images/y.png"
@@ -47,8 +41,18 @@
              title="Toggle to Ortho (non-perspective) view."/>
         <img id="button-perspective"    src="images/perspective.png"
              title="Toggle to Perspective view."/>
+      </div>
+
+      <div class="bottom-bar">
         <img id="button-settings" src="images/settings.png"
              title="Open previewer settings."/>
+        <img id="button-play"   src="images/play.png"
+             title="Start or continue path simulation."/>
+        <img id="button-pause"  src="images/pause.png"
+             title="Pause path simulation."/>
+        <img id="button-reset"  src="images/reset.png"
+             title="Restart path simulation."/>
+        <input type="range" id="timeline" min="0" max="1000" value="0" step="1"/>
       </div>
       <a id="button-help" title="Show Help" hidden> i </a>
 

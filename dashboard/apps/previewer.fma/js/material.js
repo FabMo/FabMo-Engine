@@ -256,56 +256,22 @@ module.exports = function(scene, update) {
     var yiMax = Math.min(heightMap.yPoints - 1, indices.yi + cellRadius);
     
     var changed = false;
-    
-    // ADAPTIVE: Use more sub-samples for shallow cuts
-    var cutDepth = Math.abs(toolZ - materialTop);
-    var subSamples = (cutDepth < toolDia) ? 5 : 3; // 5x5 for shallow cuts, 3x3 for deep
-    
+
     for (var xi = xiMin; xi <= xiMax; xi++) {
       for (var yi = yiMin; yi <= yiMax; yi++) {
         var cellX = bounds.min.x + xi * heightMap.xStep;
         var cellY = bounds.min.y + yi * heightMap.yStep;
-        
-        var minToolZ = Infinity;
-        var maxToolZ = -Infinity; // NEW: Track deepest and shallowest tool contact
-        
-        // IMPROVED: Sub-sample BEYOND grid cell boundaries for better coverage
-        var sampleRange = 0.6; // Sample 60% beyond cell center in each direction
-        
-        for (var sx = 0; sx < subSamples; sx++) {
-          for (var sy = 0; sy < subSamples; sy++) {
-            // Map to -sampleRange to +sampleRange instead of -0.5 to +0.5
-            var offsetX = (sx / (subSamples - 1) - 0.5) * (2 * sampleRange);
-            var offsetY = (sy / (subSamples - 1) - 0.5) * (2 * sampleRange);
-            
-            var sampleX = cellX + offsetX * heightMap.xStep;
-            var sampleY = cellY + offsetY * heightMap.yStep;
-            
-            var dx = sampleX - toolX;
-            var dy = sampleY - toolY;
-            var radialDist = Math.sqrt(dx*dx + dy*dy);
-            
-            if (radialDist <= toolRadius) {
-              var toolBottomZ = getToolBottomZ(toolZ, radialDist, toolType);
-              minToolZ = Math.min(minToolZ, toolBottomZ);
-              maxToolZ = Math.max(maxToolZ, toolBottomZ);
-            }
-          }
-        }
-        
-        // IMPROVED: Use average of min/max for better edge representation
-        var currentZ = getHeight(xi, yi);
-        
-        if (minToolZ < Infinity) {
-          // For shallow cuts, use minimum to ensure material is removed
-          // For deep cuts, average min/max for smoother edges
-          var targetZ;
-          if (cutDepth < toolDia * 0.5) {
-            targetZ = minToolZ; // Shallow: aggressive removal
-          } else {
-            targetZ = (minToolZ + maxToolZ) / 2; // Deep: smooth average
-          }
-          
+
+        // Distance from cell center to tool center
+        var cdx = cellX - toolX;
+        var cdy = cellY - toolY;
+        var centerDist = Math.sqrt(cdx*cdx + cdy*cdy);
+
+        // Get the tool bottom Z at this cell's radial distance
+        var targetZ = getToolBottomZ(toolZ, centerDist, toolType);
+
+        if (targetZ < Infinity) {
+          var currentZ = getHeight(xi, yi);
           if (targetZ < currentZ) {
             setHeight(xi, yi, targetZ);
             markDirtyRegion(xi, yi);

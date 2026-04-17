@@ -42,6 +42,7 @@ module.exports = function(callbacks) {
     var size = 32;
     var margin = 5;
 
+    // Left-side view buttons (absolutely positioned)
     var x = margin, y = margin;
     if (self.buttons.showX) place(self.buttons.showX, x, y);
     if (self.buttons.showY) place(self.buttons.showY, x, y + size + margin);
@@ -50,15 +51,8 @@ module.exports = function(callbacks) {
     if (self.buttons.showPerspective) place(self.buttons.showPerspective, x, y + (size + margin) * 3);
     if (self.buttons.help) place(self.buttons.help, x + 25, y + (size + margin) * 4.2);
 
-    if (self.buttons.settings) place(self.buttons.settings, margin, self.height - margin - size);
+    // Bottom bar buttons are positioned by flexbox — no place() needed
 
-    // Bottom center: play/pause on left, reset on right
-    x = (self.width / 2) - size - margin / 2;
-    y = self.height - margin - size;
-    if (self.buttons.play) place(self.buttons.play, x, y);
-    if (self.buttons.pause) place(self.buttons.pause, x, y);  // Same position as play (mutually exclusive)
-    if (self.buttons.reset) place(self.buttons.reset, self.width / 2 + margin / 2, y);
-    
     var helpBtn = $('#preview #button-help');
     if (helpBtn.length) helpBtn.show();
   }
@@ -154,6 +148,67 @@ module.exports = function(callbacks) {
   $('.reset-material').click(function() {
     if (callbacks.resetMaterial) callbacks.resetMaterial();
   });
+
+  // Style the bottom bar via JS to avoid CSS caching issues
+  var bottomBar = $('#preview .bottom-bar');
+  if (bottomBar.length) {
+    bottomBar.css({
+      position: 'absolute',
+      bottom: '0',
+      left: '0',
+      right: '0',
+      height: '42px',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 8px',
+      zIndex: 2,
+      background: 'rgba(235, 235, 235, 0.85)',
+      borderTop: '1px solid #ccc'
+    });
+    bottomBar.find('img').css({
+      width: '32px',
+      height: '32px',
+      cursor: 'pointer',
+      marginRight: '5px',
+      flexShrink: 0
+    });
+    bottomBar.find('#timeline').css({
+      flex: '1',
+      minWidth: '0',
+      margin: '0 8px',
+      height: '8px',
+      cursor: 'pointer'
+    });
+  }
+
+  // Timeline scrubber
+  self.timeline = $('#preview #timeline')[0];
+  self.timelineDuration = 0;
+
+  self.setTimelineDuration = function(duration) {
+    self.timelineDuration = duration;
+    if (self.timeline) {
+      self.timeline.max = 1000;
+      self.timeline.value = 0;
+    }
+  };
+
+  self.updateTimeline = function(time) {
+    if (self.timeline && self.timelineDuration > 0 && !self.timelineScrubbing) {
+      self.timeline.value = (time / self.timelineDuration) * 1000;
+    }
+  };
+
+  if (self.timeline) {
+    self.timeline.addEventListener('input', function() {
+      self.timelineScrubbing = true;
+      var time = (parseFloat(self.timeline.value) / 1000) * self.timelineDuration;
+      if (callbacks.scrub) callbacks.scrub(time);
+    });
+    self.timeline.addEventListener('change', function() {
+      self.timelineScrubbing = false;
+    });
+  }
   
   // ENSURE resolution dropdown shows current value on open
   $('#preview .settings [name="material-resolution"]').on('focus', function() {

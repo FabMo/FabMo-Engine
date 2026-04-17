@@ -203,9 +203,19 @@ module.exports = function(container) {
     self.tool.update(size, self.path.position);
     
     // Initialize material simulation
-    // Stock top should be at Z=0 (or slightly above if needed)
     var stockThickness = 0.75; // Default stock thickness
-    var materialTop = 0; // Top surface at Z=zero plane
+    var materialTop = 0; // Default: material surface origin (Z=0 is top)
+
+    // Use VCarve/ShopBot file metadata if available
+    if (self.fileMetadata) {
+      if (self.fileMetadata.materialThickness) {
+        stockThickness = self.fileMetadata.materialThickness;
+      }
+      if (self.fileMetadata.zOrigin && self.fileMetadata.zOrigin.indexOf('table') !== -1) {
+        // Table Surface origin: Z=0 is at the table, material top at Z=stockThickness
+        materialTop = stockThickness;
+      }
+    }
     
     // Expand bounds to include material block
     var materialBounds = {
@@ -221,6 +231,10 @@ module.exports = function(container) {
       }
     };
     
+    // Align table surface with the bottom of the material
+    var materialBottom = materialTop - stockThickness;
+    self.table.setZZoff(materialBottom);
+
     // Tool diameter - could be from config or settings (default 0.25")
     var toolDia = 0.125; // TODO: Get from machine config
     
@@ -263,6 +277,7 @@ module.exports = function(container) {
 
     buildNLineMap();
     self.gui.hideLoading();
+    self.gui.setTimelineDuration(self.path.duration);
     self.refresh();
   }
 
@@ -324,6 +339,14 @@ module.exports = function(container) {
   }
 
 
+
+  // VCarve/ShopBot file metadata (Z origin mode, material thickness)
+  self.fileMetadata = null;
+
+  self.setFileMetadata = function(metadata) {
+    self.fileMetadata = metadata;
+    console.log('File metadata set:', JSON.stringify(metadata));
+  };
 
   // Get the file path that will be displayed; "bounds" comes from this work
   self.setGCode = function(gcode) {
@@ -435,6 +458,7 @@ module.exports = function(container) {
 
   function updatePosition (position) {
     self.tool.setPosition(position);
+    if (self.gui) self.gui.updateTimeline(self.path.moveTime);
     self.refresh();
   }
 
@@ -628,6 +652,10 @@ module.exports = function(container) {
     play: function() {self.path.play()},
     pause: function() {self.path.pause()},
     reset: function() {self.path.reset()},
+    scrub: function(time) {
+      self.path.pause();
+      self.path.setMoveTime(time);
+    },
     showGrid: self.grid.setShow,
     showDims: self.dims.setShow,
     showAxes: self.axes.setShow,

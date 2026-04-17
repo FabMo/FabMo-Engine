@@ -98,18 +98,59 @@ body {
   opacity: 0.7;
 }
 
-#preview .run-now,
+#preview .run-now {
+  display: none;
+}
+
 #preview #button-pause,
 #preview #button-play,
 #preview #button-reset {
   display: none;
 }
 
-#preview.live .actions .run-now,
-#preview.running .actions #button-pause,
-#preview:not(.live):not(.running) .actions #button-play,
-#preview:not(.live) .actions #button-reset {
+#preview.live .actions .run-now {
   display: block;
+}
+
+#preview.running .bottom-bar #button-pause,
+#preview:not(.live):not(.running) .bottom-bar #button-play,
+#preview:not(.live) .bottom-bar #button-reset {
+  display: block;
+}
+
+/* Bottom toolbar */
+#preview .bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  z-index: 2;
+  background: rgba(235, 235, 235, 0.85);
+  border-top: 1px solid #ccc;
+}
+
+#preview .bottom-bar img {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+#preview .bottom-bar img:hover {
+  opacity: 0.7;
+}
+
+#preview .bottom-bar #timeline {
+  flex: 1;
+  min-width: 0;
+  margin: 0 8px;
+  height: 8px;
+  cursor: pointer;
 }
 
 /* Show ortho button in perspective mode, perspective button in ortho mode */

@@ -96,6 +96,52 @@ function nowGetStatus() {
     getStartStatus(err, nowPreviewJob);  
 }
 
+/**
+ * Parse VCarve/ShopBot metadata from original file header.
+ * Looks for Z origin mode and material thickness in both SBP and GCode formats.
+ */
+function parseFileMetadata(content) {
+  if (typeof content !== 'string') return null;
+
+  var metadata = {};
+  var lines = content.split('\n');
+  var limit = Math.min(lines.length, 50); // Only scan header
+
+  for (var i = 0; i < limit; i++) {
+    var line = lines[i].trim();
+
+    // SBP: &PWZorigin = Material Surface (or Table Surface)
+    var zOriginMatch = line.match(/&PWZorigin\s*=\s*(.*)/i);
+    if (zOriginMatch) {
+      metadata.zOrigin = zOriginMatch[1].trim().toLowerCase();
+    }
+
+    // SBP: &PWMaterial = 0.500
+    var materialMatch = line.match(/&PWMaterial\s*=\s*([\d.]+)/i);
+    if (materialMatch) {
+      metadata.materialThickness = parseFloat(materialMatch[1]);
+    }
+
+    // SBP comment: 'Depth of material in Z = 0.500
+    var depthMatch = line.match(/Depth of material in Z\s*=\s*([\d.]+)/i);
+    if (depthMatch && !metadata.materialThickness) {
+      metadata.materialThickness = parseFloat(depthMatch[1]);
+    }
+
+    // GCode comment: (Z Origin = Material Surface)
+    var gcodeOriginMatch = line.match(/\(\s*Z\s*Origin\s*=\s*(.*?)\s*\)/i);
+    if (gcodeOriginMatch) {
+      metadata.zOrigin = gcodeOriginMatch[1].trim().toLowerCase();
+    }
+  }
+
+  if (metadata.zOrigin || metadata.materialThickness) {
+    console.log('Parsed file metadata:', JSON.stringify(metadata));
+    return metadata;
+  }
+  return null;
+}
+
 function nowPreviewJob() {
   fabmo.getAppArgs(function(err, args) {
     if (err) console.log(err);
@@ -195,31 +241,47 @@ function nowPreviewJob() {
     if (jobID != -1) {
       viewer.gui.showLoading();
 
+      // Fetch original file first to extract VCarve/ShopBot metadata
+      // (Z origin mode and material thickness), then load gcode.
+      // Using 'complete' ensures gcode loads even if file fetch fails.
       $.ajax({
         type: 'GET',
-        url: '/job/' + jobID + '/gcode',
-
-        xhr: function () {
-          var xhr = $.ajaxSettings.xhr();
-          xhr.onprogress = function (e) {
-            viewer.gui.showLoadingSize(e.loaded);
+        url: '/job/' + jobID + '/file',
+        success: function(content) {
+          var metadata = parseFileMetadata(content);
+          if (metadata) {
+            viewer.setFileMetadata(metadata);
           }
-
-          return xhr;
         },
+        complete: function() {
+          // Load gcode after metadata is set
+          $.ajax({
+            type: 'GET',
+            url: '/job/' + jobID + '/gcode',
 
-        success: function (gcode) {
-          viewer.gui.showLoadingSize(gcode.length);
-          viewer.setGCode(gcode)
-        },
+            xhr: function () {
+              var xhr = $.ajaxSettings.xhr();
+              xhr.onprogress = function (e) {
+                viewer.gui.showLoadingSize(e.loaded);
+              }
 
-        error: function(data) {
-          if (data && data.responseJSON)
-            fabmo.notify(data.responseJSON.message || data.statusText);
+              return xhr;
+            },
 
-          else fabmo.notify(data.statusText);
+            success: function (gcode) {
+              viewer.gui.showLoadingSize(gcode.length);
+              viewer.setGCode(gcode)
+            },
 
-          viewer.gui.hideLoading();
+            error: function(data) {
+              if (data && data.responseJSON)
+                fabmo.notify(data.responseJSON.message || data.statusText);
+
+              else fabmo.notify(data.statusText);
+
+              viewer.gui.hideLoading();
+            }
+          });
         }
       });
     }
