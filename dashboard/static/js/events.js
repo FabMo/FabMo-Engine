@@ -256,16 +256,28 @@ function handleKeyEvent(key) {
             $frOverride.val(newVal);
             $frOverride.trigger('change');
             break;
+        case "Escape":
+            if ($(".manual-drive-modal").is(":visible")) {
+                $(".manual-drive-exit").trigger("click");
+            }
+            break;
+        case "x":
+        case "y":
+        case "z":
+        case "a":
+        case "b":
+            if ($(".manual-drive-modal").is(":visible")) {
+                $("#" + key.toUpperCase()).focus().select();
+            }
+            break;
         case "k":
-            // Debounce to prevent double-firing from multiple event sources
+            // Only open the keypad — use Escape to close
             var now = Date.now();
             if (window._lastKeypadToggle && (now - window._lastKeypadToggle) < 500) {
                 break;
             }
-            window._lastKeypadToggle = now;
-            if ($(".manual-drive-modal").is(":visible")) {
-                $(".manual-drive-exit").trigger("click");
-            } else {
+            if (!$(".manual-drive-modal").is(":visible")) {
+                window._lastKeypadToggle = now;
                 $(".manual-drive-enter").trigger("click");
                 // Pull focus out of app iframe so arrow keys work on the keypad
                 window.focus();
