@@ -256,7 +256,22 @@ function handleKeyEvent(key) {
             $frOverride.val(newVal);
             $frOverride.trigger('change');
             break;
-    //console.log('Second Received key: ' + key);
+        case "k":
+            // Debounce to prevent double-firing from multiple event sources
+            var now = Date.now();
+            if (window._lastKeypadToggle && (now - window._lastKeypadToggle) < 500) {
+                break;
+            }
+            window._lastKeypadToggle = now;
+            if ($(".manual-drive-modal").is(":visible")) {
+                $(".manual-drive-exit").trigger("click");
+            } else {
+                $(".manual-drive-enter").trigger("click");
+                // Pull focus out of app iframe so arrow keys work on the keypad
+                window.focus();
+                setTimeout(function () { $("#keypad-modal").focus(); }, 300);
+            }
+            break;
     }
 }
 
@@ -276,10 +291,39 @@ window.addEventListener('message', function(event) {
     handleKeyEvent(event.data.key);
     if (event.data === "refresh-iframes") {
         location.reload();
-    }   
+    }
     //console.log('origin >> ' + event.origin);
 
 });
+
+// Listen for keyup inside the app iframe so global shortcuts work from any app
+function attachIframeKeyListener(iframe) {
+    try {
+        iframe.contentWindow.document.addEventListener('keyup', function (e) {
+            var tag = e.target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) {
+                return;
+            }
+            handleKeyEvent(e.key);
+        });
+    } catch (err) {
+        // cross-origin or not yet loaded
+    }
+}
+
+// Watch for the app iframe to appear/change and attach listener on each load
+var _lastIframe = null;
+var observer = new MutationObserver(function () {
+    var iframe = document.getElementById('app-iframe');
+    if (iframe && iframe !== _lastIframe) {
+        _lastIframe = iframe;
+        iframe.addEventListener('load', function () {
+            attachIframeKeyListener(iframe);
+        });
+        attachIframeKeyListener(iframe);
+    }
+});
+observer.observe(document.body, { childList: true, subtree: true });
 
     /********** Document Ready Init **********/
     function docReady () {
