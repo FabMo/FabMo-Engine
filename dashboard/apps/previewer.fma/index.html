@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="../../css/dashboard.css">
-    <link rel="stylesheet" href="./css/style.css?v=2">
+    <link rel="stylesheet" href="./css/style.css?v=19">
   </head>
 
   <body>
@@ -30,6 +30,7 @@
 
       <div class="actions">
         <div class="run-now">Run This Job</div>
+        <div class="submit-trimmed">Submit Trimmed Job</div>
 
         <img id="button-x"      src="images/x.png"
              title="Change orientation to view down the X axis."/>
@@ -46,13 +47,40 @@
       <div class="bottom-bar">
         <img id="button-settings" src="images/settings.png"
              title="Open previewer settings."/>
+        <select name="speed" class="quick-setting" title="Simulation Speed">
+          <option value="0.0625">1/16x</option>
+          <option value="0.125">1/8x</option>
+          <option value="0.25">1/4x</option>
+          <option value="0.5">1/2x</option>
+          <option value="1">1x</option>
+          <option value="2">2x</option>
+          <option value="4">4x</option>
+          <option value="8">8x</option>
+          <option value="16">16x</option>
+        </select>
+        <label class="quick-toggle" title="Show Toolpath">
+          <input type="checkbox" name="show-toolpath"/> Path
+        </label>
+        <label class="quick-toggle" title="Show Material Simulation">
+          <input type="checkbox" name="show-material"/> Material
+        </label>
         <img id="button-play"   src="images/play.png"
              title="Start or continue path simulation."/>
         <img id="button-pause"  src="images/pause.png"
              title="Pause path simulation."/>
         <img id="button-reset"  src="images/reset.png"
              title="Restart path simulation."/>
+        <span id="button-skip-back" class="nav-btn" title="Skip to previous plunge (Shift+Left)">|&lsaquo;&lsaquo;</span>
+        <span id="button-step-back" class="nav-btn" title="Step back one line (Left arrow)">&lsaquo;</span>
         <input type="range" id="timeline" min="0" max="1000" value="0" step="1"/>
+        <span id="button-step-fwd" class="nav-btn" title="Step forward one line (Right arrow)">&rsaquo;</span>
+        <span id="button-skip-fwd" class="nav-btn" title="Skip to next retract (Shift+Right)">&rsaquo;&rsaquo;|</span>
+        <div class="timeline-range" id="timeline-range"></div>
+        <div class="timeline-stripes" id="timeline-stripes"></div>
+        <span id="button-in" class="inout-btn" title="Set Cut Start at current position (I)">Set Cut Start</span>
+        <span id="button-out" class="inout-btn" title="Set Cut Stop at current position (O)">Set Cut Stop</span>
+        <span id="button-clear-inout" class="inout-btn clear-btn" title="Clear In/Out points">&times;</span>
+        <span id="inout-info" class="inout-info"></span>
       </div>
       <a id="button-help" title="Show Help" hidden> i </a>
 
@@ -77,19 +105,6 @@
       <div class="settings dialog">
         <div class="header">Settings</div>
         <div class="content">
-          <label>Simulation Speed</label>
-          <select name="speed">
-            <option value="0.0625">1/16x</option>
-            <option value="0.125">1/8x</option>
-            <option value="0.25">1/4x</option>
-            <option value="0.5">1/2x</option>
-            <option value="1">1x</option>
-            <option value="2">2x</option>
-            <option value="4">4x</option>
-            <option value="8">8x</option>
-            <option value="16">16x</option>
-          </select>
-
           <label>Temporarily Change File-Boundary Indicator Units </label>
           <select name="units">
             <!-- <option value="auto">auto</option> -->
@@ -137,30 +152,20 @@
           </label>
 
           <label>
-            <input type="checkbox" name="show-toolpath"/>
-            Show Toolpath
-          </label>
-
-          <label>
             <input name="show-pointcloud" type="checkbox"/>
-            BETA Show Point Cloud Shape for Leveler
+            Show Point Cloud Shape for Leveler
           </label>
 
           <label>
             <input name="show-pointcloud-wireframe" type="checkbox" checked="true"/>
-            BETA Show Point Cloud Wireframe
+            Show Point Cloud Wireframe
           </label>
 
-          <label>
-            <input type="checkbox" name="show-material"/>
-            BETA Show Material for Subtractive Simulation
-          </label>
-
-          <button class="reset-material">Reset Material (BETA)</button>
+          <button class="reset-material">Reset Material</button>
 
           <hr/>
 
-          <h5>BETA Options</h5>
+          <h5>Simulation Options</h5>
 
           <label>Set Point Cloud Opacity</label>
           <input class="opacity-slider" id=#op-slider name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>

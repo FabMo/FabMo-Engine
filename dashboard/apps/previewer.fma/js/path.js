@@ -156,12 +156,16 @@ module.exports = function(scene, callbacks) {
     var feed = rapid ? rapid_feed : self.feed;
     var move = new Move(self.buffers[self.buffers.length - 1], self.fill * 6,
                         self.lines + 1, rapid, feed, self.duration);
-    
-    // ADD: Store move metadata for material simulation
+
+    // Store move metadata for material simulation
     move.start = start;
     move.end = end;
     move.type = 'line';
     move.startTime = self.duration;
+
+    // Store source line (SBP line from N-word, or GCode line as fallback)
+    move.sourceLine = self.hasSourceLines ? self.currentSourceLine : (self.lines + 1);
+    move.gcLine = self.lines + 1;
     
     self.distance += move.getLength();
     self.duration += move.getDuration();
@@ -385,6 +389,9 @@ module.exports = function(scene, callbacks) {
     var result = {cmds: [], words: {}}
     var hasAxis = false;
 
+    // Preserve N-word (SBP source line number, offset by +20)
+    if (typeof o.N === 'number') result.N = o.N;
+
     for (var i = 0; i < o.words.length; i++) {
       var letter = o.words[i][0];
       var number = o.words[i][1];
@@ -408,6 +415,12 @@ module.exports = function(scene, callbacks) {
     } catch (e) {
       self.addError('error', e);
       return;
+    }
+
+    // Track source line from N-word (SBP line = N - 20)
+    if (typeof line.N === 'number') {
+      self.currentSourceLine = line.N - 20;
+      self.hasSourceLines = true;
     }
 
     if (typeof line.words.f != 'undefined')
@@ -542,6 +555,32 @@ module.exports = function(scene, callbacks) {
   }
   self.setCurrentLine = setCurrentLine;
 
+  // Helper: apply material removal for a range of moves
+  function applyMaterialForMoves(fromMove, toMove) {
+    if (!callbacks.materialUpdate) return;
+    for (var i = fromMove; i < toMove; i++) {
+      var currentMove = self.moves[i];
+      if (currentMove.rapid) continue;
+
+      if (currentMove.type === 'arc') {
+        var arcLength = currentMove.getLength();
+        var samplesPerInch = 1500;
+        var numSegments = Math.max(15, Math.ceil(arcLength * samplesPerInch));
+        var prevPos = currentMove.start;
+
+        for (var seg = 1; seg <= numSegments; seg++) {
+          var t = seg / numSegments;
+          var segTime = currentMove.startTime + t * currentMove.getDuration();
+          var currentPos = currentMove.getPositionAt(segTime);
+          callbacks.materialUpdate(prevPos, currentPos, true);
+          prevPos = currentPos;
+        }
+      } else {
+        callbacks.materialUpdate(currentMove.start, currentMove.end, false);
+      }
+    }
+  }
+
   self.setMoveTime = function(time) {
     if (!self.loaded || !self.moves.length) return;
 
@@ -550,43 +589,32 @@ module.exports = function(scene, callbacks) {
     var start    = move.start;
     var p        = move.getPositionAt(time);
 
-    // Material simulation during playback
-    if (callbacks.materialUpdate && nextMove > self.lastMove) {
-      for (var i = self.lastMove; i < nextMove; i++) {
-        var currentMove = self.moves[i];
-        
-        // Only simulate cutting moves (not rapids)
-        if (!currentMove.rapid) {
-          
-          // Check if this is an arc move
-          if (currentMove.type === 'arc') {
-            
-            // CHANGED: Dynamic sampling based on arc length
-            var arcLength = currentMove.getLength();
-            var samplesPerInch = 1500; // INCREASED from 30 to ensure fine coverage
-            var numSegments = Math.max(15, Math.ceil(arcLength * samplesPerInch));
-            var prevPos = currentMove.start;
-            
-            for (var seg = 1; seg <= numSegments; seg++) {
-              var t = seg / numSegments;
-              var segTime = currentMove.startTime + t * currentMove.getDuration();
-              var currentPos = currentMove.getPositionAt(segTime);
-              
-              // Pass small segments with isArcSegment flag
-              callbacks.materialUpdate(prevPos, currentPos, true);
-              prevPos = currentPos;
-            }
-          } else {
-            // Linear moves: just start to end
-            callbacks.materialUpdate(currentMove.start, currentMove.end, false);
-          }
-        }
-      }
-    }
+    if (nextMove < self.lastMove) {
+      // --- REWIND: scrubbing backward ---
+      // Un-highlight moves that are now in the future
+      for (var i = nextMove; i <= self.lastMove && i < self.moves.length; i++)
+        self.moves[i].setDone(false);
 
-    // Mark lines done
-    for (var i = self.lastMove; i < nextMove; i++)
-      self.moves[i].setDone(true);
+      // Reset material heights and replay from beginning
+      if (callbacks.materialResetHeights) {
+        callbacks.materialResetHeights();
+        applyMaterialForMoves(0, nextMove);
+        if (callbacks.materialForceUpdate) callbacks.materialForceUpdate();
+      }
+
+      // Re-mark moves 0..nextMove-1 as done (they stay highlighted)
+      // (they were already done before, but setDone(false) above may have hit some)
+      for (var i = 0; i < nextMove; i++)
+        self.moves[i].setDone(true);
+
+    } else if (nextMove > self.lastMove) {
+      // --- FORWARD: normal playback or scrubbing forward ---
+      applyMaterialForMoves(self.lastMove, nextMove);
+
+      // Mark lines done
+      for (var i = self.lastMove; i < nextMove; i++)
+        self.moves[i].setDone(true);
+    }
 
     // Current line
     var verts = self.currentLine.geometry.vertices;
@@ -735,6 +763,8 @@ module.exports = function(scene, callbacks) {
   self.arcRelative = true;
   self.errors      = [];
   self.commands    = 0;
+  self.currentSourceLine = 0;
+  self.hasSourceLines = false;
   self.codeLine    = $('#preview .code-line');
   self.preview     = $('#preview');
   self.show        = parseInt(cookie.get('show-toolpath', 1)); // Default to visible
@@ -766,6 +796,19 @@ module.exports = function(scene, callbacks) {
   };
 
   util.connectSetting('show-toolpath', self.show, self.setShow);
+
+  /**
+   * Map a raycaster intersection on a LineSegments child back to a Move.
+   * Returns the Move object, or null if not found.
+   */
+  self.getMoveAtIntersection = function(lineSegmentsObj, vertexIndex) {
+    var bufferIndex = self.obj.children.indexOf(lineSegmentsObj);
+    if (bufferIndex < 0) return null;
+    var segmentIndex = Math.floor(vertexIndex / 2);
+    var moveIndex = bufferIndex * buffer_size + segmentIndex;
+    if (moveIndex < 0 || moveIndex >= self.moves.length) return null;
+    return self.moves[moveIndex];
+  };
 
   /**
    * Remove material along a path (IMPROVED for small arc handling)

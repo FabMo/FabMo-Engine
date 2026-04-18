@@ -133,7 +133,7 @@ var util = {
 
 
   connectSetting: function (name, value, cb) {
-    $('#preview .settings [name="' + name + '"]').each(function () {
+    $('#preview [name="' + name + '"]').each(function () {
       var e = $(this);
       var checkbox = e.attr('type') == 'checkbox';
 

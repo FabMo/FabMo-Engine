@@ -37,6 +37,15 @@ module.exports = function(scene, update) {
   var dirtyRegions = [];
   var geometryCreated = false;
 
+  // Stepped column mesh buffers (pre-allocated for performance)
+  var posArr = null;       // Float32Array of vertex positions
+  var idxArr = null;       // Uint32Array of face indices
+  var posAttr = null;      // THREE.BufferAttribute for positions
+  var idxAttr = null;      // THREE.BufferAttribute for indices
+  var topVertCount = 0;    // Number of top surface vertices (4 per column)
+  var botVertOffset = 0;   // Index offset to bottom vertices in posArr
+  var meshMaterial = null;  // Reusable THREE.MeshPhongMaterial
+
   /**
    * Helper to properly dispose a mesh and track its resources
    */
@@ -130,10 +139,39 @@ module.exports = function(scene, update) {
     isDirty = false;
     pendingUpdates = 0;
     lastUpdateTime = 0;
-    
-    console.log('Material initialized:', xPoints, 'x', yPoints, 'grid',
-                'Stock height:', stockHeight, 'Top Z:', materialTop, 'Tool dia:', toolDia);
-    
+
+    // Pre-allocate stepped column mesh buffers
+    topVertCount = xPoints * yPoints * 4;  // 4 top vertices per column
+    botVertOffset = topVertCount;
+    var botVertCount = (xPoints + 1) * (yPoints + 1);  // shared bottom grid
+    var totalVerts = topVertCount + botVertCount;
+
+    var maxFaces = xPoints * yPoints * 2                              // top faces
+                 + xPoints * yPoints * 2                              // bottom faces
+                 + (xPoints > 1 ? (xPoints - 1) * yPoints * 2 : 0)   // x-direction walls
+                 + (yPoints > 1 ? xPoints * (yPoints - 1) * 2 : 0)   // y-direction walls
+                 + 2 * (xPoints + yPoints) * 2;                       // outer walls
+
+    posArr = new Float32Array(totalVerts * 3);
+    idxArr = new Uint32Array(maxFaces * 3);
+
+    // Fill bottom vertices (static — never change)
+    var bottomZ = materialTop - stockHeight;
+    var xS = heightMap.xStep;
+    var yS = heightMap.yStep;
+    for (var byi = 0; byi <= yPoints; byi++) {
+      for (var bxi = 0; bxi <= xPoints; bxi++) {
+        var bIdx = (topVertCount + byi * (xPoints + 1) + bxi) * 3;
+        posArr[bIdx]     = bounds.min.x + (bxi - 0.5) * xS;
+        posArr[bIdx + 1] = bounds.min.y + (byi - 0.5) * yS;
+        posArr[bIdx + 2] = bottomZ;
+      }
+    }
+
+    console.log('Material initialized:', xPoints, 'x', yPoints, 'stepped column grid',
+                'Stock:', stockHeight, 'TopZ:', materialTop, 'Tool:', toolDia,
+                'Verts:', totalVerts, 'MaxFaces:', maxFaces);
+
     // Create initial mesh
     self.createFullMesh();
   };
@@ -385,212 +423,208 @@ module.exports = function(scene, update) {
   };
 
   /**
-   * OPTIMIZED: Update only changed vertices instead of full rebuild
+   * Fill top vertex positions in posArr from heightMap data.
+   * Each column (grid point) gets 4 vertices forming a flat-topped rectangle.
+   */
+  function fillAllTopVertices() {
+    var xP = heightMap.xPoints;
+    var yP = heightMap.yPoints;
+    var xS = heightMap.xStep;
+    var yS = heightMap.yStep;
+    var hw = xS / 2;
+    var hh = yS / 2;
+
+    for (var yi = 0; yi < yP; yi++) {
+      for (var xi = 0; xi < xP; xi++) {
+        var base = (yi * xP + xi) * 4 * 3;
+        var cx = bounds.min.x + xi * xS;
+        var cy = bounds.min.y + yi * yS;
+        var h = getHeight(xi, yi);
+
+        // vertex 0: near-left
+        posArr[base]     = cx - hw; posArr[base + 1]  = cy - hh; posArr[base + 2]  = h;
+        // vertex 1: near-right
+        posArr[base + 3] = cx + hw; posArr[base + 4]  = cy - hh; posArr[base + 5]  = h;
+        // vertex 2: far-left
+        posArr[base + 6] = cx - hw; posArr[base + 7]  = cy + hh; posArr[base + 8]  = h;
+        // vertex 3: far-right
+        posArr[base + 9] = cx + hw; posArr[base + 10] = cy + hh; posArr[base + 11] = h;
+      }
+    }
+  }
+
+  /**
+   * Build the index buffer for the stepped column mesh.
+   * Top/bottom faces always exist; internal wall faces only where adjacent heights differ.
+   * Returns the number of index values written.
+   */
+  function buildIndices() {
+    var xP = heightMap.xPoints;
+    var yP = heightMap.yPoints;
+    var bOff = botVertOffset;
+    var fi = 0;
+    var idx = idxArr;
+
+    // Top vertex index: column (xi,yi), corner c (0=near-left,1=near-right,2=far-left,3=far-right)
+    function tv(xi, yi, c) { return (yi * xP + xi) * 4 + c; }
+    // Bottom vertex index: corner (xi,yi) in the (xP+1)×(yP+1) grid
+    function bv(xi, yi) { return bOff + yi * (xP + 1) + xi; }
+
+    // --- TOP FACES (flat quad per column) ---
+    for (var yi = 0; yi < yP; yi++) {
+      for (var xi = 0; xi < xP; xi++) {
+        idx[fi++] = tv(xi, yi, 0); idx[fi++] = tv(xi, yi, 1); idx[fi++] = tv(xi, yi, 2);
+        idx[fi++] = tv(xi, yi, 1); idx[fi++] = tv(xi, yi, 3); idx[fi++] = tv(xi, yi, 2);
+      }
+    }
+
+    // --- BOTTOM FACES ---
+    for (var yi = 0; yi < yP; yi++) {
+      for (var xi = 0; xi < xP; xi++) {
+        idx[fi++] = bv(xi, yi); idx[fi++] = bv(xi, yi + 1); idx[fi++] = bv(xi + 1, yi);
+        idx[fi++] = bv(xi + 1, yi); idx[fi++] = bv(xi, yi + 1); idx[fi++] = bv(xi + 1, yi + 1);
+      }
+    }
+
+    // --- INTERNAL X-DIRECTION WALLS (between column (xi,yi) and (xi+1,yi)) ---
+    for (var yi = 0; yi < yP; yi++) {
+      for (var xi = 0; xi < xP - 1; xi++) {
+        if (getHeight(xi, yi) !== getHeight(xi + 1, yi)) {
+          // Wall quad using A's right edge and B's left edge
+          idx[fi++] = tv(xi, yi, 1); idx[fi++] = tv(xi + 1, yi, 0); idx[fi++] = tv(xi, yi, 3);
+          idx[fi++] = tv(xi + 1, yi, 0); idx[fi++] = tv(xi + 1, yi, 2); idx[fi++] = tv(xi, yi, 3);
+        }
+      }
+    }
+
+    // --- INTERNAL Y-DIRECTION WALLS (between column (xi,yi) and (xi,yi+1)) ---
+    for (var yi = 0; yi < yP - 1; yi++) {
+      for (var xi = 0; xi < xP; xi++) {
+        if (getHeight(xi, yi) !== getHeight(xi, yi + 1)) {
+          // Wall quad using A's far edge and B's near edge
+          idx[fi++] = tv(xi, yi, 2); idx[fi++] = tv(xi, yi, 3); idx[fi++] = tv(xi, yi + 1, 0);
+          idx[fi++] = tv(xi, yi, 3); idx[fi++] = tv(xi, yi + 1, 1); idx[fi++] = tv(xi, yi + 1, 0);
+        }
+      }
+    }
+
+    // --- OUTER WALLS (column top edges down to material bottom) ---
+    // Front edge (yi = 0)
+    for (var xi = 0; xi < xP; xi++) {
+      idx[fi++] = bv(xi, 0); idx[fi++] = tv(xi, 0, 0); idx[fi++] = bv(xi + 1, 0);
+      idx[fi++] = tv(xi, 0, 0); idx[fi++] = tv(xi, 0, 1); idx[fi++] = bv(xi + 1, 0);
+    }
+    // Back edge (yi = yP-1)
+    for (var xi = 0; xi < xP; xi++) {
+      idx[fi++] = tv(xi, yP - 1, 2); idx[fi++] = bv(xi, yP); idx[fi++] = tv(xi, yP - 1, 3);
+      idx[fi++] = tv(xi, yP - 1, 3); idx[fi++] = bv(xi, yP); idx[fi++] = bv(xi + 1, yP);
+    }
+    // Left edge (xi = 0)
+    for (var yi = 0; yi < yP; yi++) {
+      idx[fi++] = tv(0, yi, 0); idx[fi++] = bv(0, yi); idx[fi++] = tv(0, yi, 2);
+      idx[fi++] = tv(0, yi, 2); idx[fi++] = bv(0, yi); idx[fi++] = bv(0, yi + 1);
+    }
+    // Right edge (xi = xP-1)
+    for (var yi = 0; yi < yP; yi++) {
+      idx[fi++] = bv(xP, yi); idx[fi++] = tv(xP - 1, yi, 1); idx[fi++] = bv(xP, yi + 1);
+      idx[fi++] = tv(xP - 1, yi, 1); idx[fi++] = tv(xP - 1, yi, 3); idx[fi++] = bv(xP, yi + 1);
+    }
+
+    return fi;
+  }
+
+  /**
+   * Update mesh incrementally: update dirty vertex positions, rebuild indices.
    */
   self.updateMesh = function() {
-    if (!heightMap) return;
-    
-    // FIRST TIME ONLY: Create full geometry
+    if (!heightMap || !posArr) return;
+
     if (!geometryCreated) {
       self.createFullMesh();
-      // geometryCreated is now set inside createFullMesh()
       dirtyRegions = [];
       return;
     }
-    
-    // INCREMENTAL UPDATE: Only modify changed vertices
-    if (dirtyRegions.length === 0) {
-      return;
-    }
-    
-    console.log('Updating ' + dirtyRegions.length + ' dirty regions incrementally');
-    
-    var geometry = self.mesh.geometry;
-    
-    // SAFETY CHECK: If geometry doesn't exist, recreate
-    if (!geometry) {
-      console.warn('Geometry missing - recreating full mesh');
-      self.createFullMesh();
-      dirtyRegions = [];
-      return;
-    }
-    
-    var vertices = geometry.vertices;
-    
-    // Update only vertices in dirty regions
+
+    if (dirtyRegions.length === 0) return;
+
+    var xP = heightMap.xPoints;
+
+    // Update only dirty column top vertices (4 vertices per column, only Z changes)
     dirtyRegions.forEach(function(region) {
       for (var yi = region.yMin; yi <= region.yMax; yi++) {
         for (var xi = region.xMin; xi <= region.xMax; xi++) {
-          // Update TOP surface vertex Z coordinate
-          var vertexIndex = yi * heightMap.xPoints + xi;
-          if (vertexIndex < vertices.length) {
-            vertices[vertexIndex].z = getHeight(xi, yi);
-          }
+          var base = (yi * xP + xi) * 4 * 3;
+          var h = getHeight(xi, yi);
+          posArr[base + 2]  = h;  // vertex 0 Z
+          posArr[base + 5]  = h;  // vertex 1 Z
+          posArr[base + 8]  = h;  // vertex 2 Z
+          posArr[base + 11] = h;  // vertex 3 Z
         }
       }
     });
-    
-    // Mark geometry for update
-    geometry.verticesNeedUpdate = true;
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
-    geometry.normalsNeedUpdate = true;
-    
-    // Clear dirty regions
+
+    // Rebuild index buffer (wall topology may have changed)
+    var indexCount = buildIndices();
+
+    // Update GPU buffers
+    posAttr.needsUpdate = true;
+    idxAttr.needsUpdate = true;
+    self.mesh.geometry.setDrawRange(0, indexCount);
+    self.mesh.geometry.computeVertexNormals();
+
     dirtyRegions = [];
-    
     update();
   };
 
   /**
-   * NEW: Create full mesh geometry (called only once or after reset)
+   * Create the stepped column mesh (BufferGeometry with pre-allocated buffers).
+   * Each grid point becomes a flat-topped column; vertical wall faces appear
+   * only where adjacent column heights differ.
    */
   self.createFullMesh = function() {
-    console.log('Creating full material mesh...');
-    
+    console.log('Creating stepped column material mesh...');
+
     // Dispose old meshes
     self.mesh = disposeMesh(self.mesh);
     self.wireMesh = disposeMesh(self.wireMesh);
-    
-    var geometry = new THREE.Geometry();
-    activeGeometries.push(geometry);
-    
-    // Create vertices for TOP surface from height map
-    for (var yi = 0; yi < heightMap.yPoints; yi++) {
-      for (var xi = 0; xi < heightMap.xPoints; xi++) {
-        var x = bounds.min.x + xi * heightMap.xStep;
-        var y = bounds.min.y + yi * heightMap.yStep;
-        var z = getHeight(xi, yi);
-        
-        geometry.vertices.push(new THREE.Vector3(x, y, z));
-      }
-    }
-    
-    // Add BOTTOM surface vertices
-    var bottomVertexOffset = heightMap.xPoints * heightMap.yPoints;
-    var bottomZ = materialTop - stockHeight;
-    
-    for (var yi = 0; yi < heightMap.yPoints; yi++) {
-      for (var xi = 0; xi < heightMap.xPoints; xi++) {
-        var x = bounds.min.x + xi * heightMap.xStep;
-        var y = bounds.min.y + yi * heightMap.yStep;
-        
-        geometry.vertices.push(new THREE.Vector3(x, y, bottomZ));
-      }
-    }
-    
-    // Create TOP surface faces
-    for (var yi = 0; yi < heightMap.yPoints - 1; yi++) {
-      for (var xi = 0; xi < heightMap.xPoints - 1; xi++) {
-        var i0 = yi * heightMap.xPoints + xi;
-        var i1 = i0 + 1;
-        var i2 = i0 + heightMap.xPoints;
-        var i3 = i2 + 1;
-        
-        geometry.faces.push(new THREE.Face3(i0, i1, i2));
-        geometry.faces.push(new THREE.Face3(i1, i3, i2));
-      }
-    }
-    
-    // Create BOTTOM surface faces
-    for (var yi = 0; yi < heightMap.yPoints - 1; yi++) {
-      for (var xi = 0; xi < heightMap.xPoints - 1; xi++) {
-        var i0 = bottomVertexOffset + yi * heightMap.xPoints + xi;
-        var i1 = i0 + 1;
-        var i2 = i0 + heightMap.xPoints;
-        var i3 = i2 + 1;
-        
-        geometry.faces.push(new THREE.Face3(i0, i2, i1));
-        geometry.faces.push(new THREE.Face3(i1, i2, i3));
-      }
-    }
-    
-    // Create SIDE faces (front, back, left, right)
-    // Front edge (yi = 0)
-    for (var xi = 0; xi < heightMap.xPoints - 1; xi++) {
-      var topLeft = xi;
-      var topRight = xi + 1;
-      var bottomLeft = bottomVertexOffset + xi;
-      var bottomRight = bottomVertexOffset + xi + 1;
-      
-      geometry.faces.push(new THREE.Face3(bottomLeft, topLeft, bottomRight));
-      geometry.faces.push(new THREE.Face3(topLeft, topRight, bottomRight));
-    }
-    
-    // Back edge
-    var backOffset = (heightMap.yPoints - 1) * heightMap.xPoints;
-    for (var xi = 0; xi < heightMap.xPoints - 1; xi++) {
-      var topLeft = backOffset + xi;
-      var topRight = backOffset + xi + 1;
-      var bottomLeft = bottomVertexOffset + backOffset + xi;
-      var bottomRight = bottomVertexOffset + backOffset + xi + 1;
-      
-      geometry.faces.push(new THREE.Face3(bottomLeft, bottomRight, topLeft));
-      geometry.faces.push(new THREE.Face3(topLeft, bottomRight, topRight));
-    }
-    
-    // Left edge
-    for (var yi = 0; yi < heightMap.yPoints - 1; yi++) {
-      var topFront = yi * heightMap.xPoints;
-      var topBack = (yi + 1) * heightMap.xPoints;
-      var bottomFront = bottomVertexOffset + yi * heightMap.xPoints;
-      var bottomBack = bottomVertexOffset + (yi + 1) * heightMap.xPoints;
-      
-      geometry.faces.push(new THREE.Face3(bottomFront, topFront, bottomBack));
-      geometry.faces.push(new THREE.Face3(topFront, topBack, bottomBack));
-    }
-    
-    // Right edge
-    var rightOffset = heightMap.xPoints - 1;
-    for (var yi = 0; yi < heightMap.yPoints - 1; yi++) {
-      var topFront = yi * heightMap.xPoints + rightOffset;
-      var topBack = (yi + 1) * heightMap.xPoints + rightOffset;
-      var bottomFront = bottomVertexOffset + yi * heightMap.xPoints + rightOffset;
-      var bottomBack = bottomVertexOffset + (yi + 1) * heightMap.xPoints + rightOffset;
-      
-      geometry.faces.push(new THREE.Face3(bottomFront, bottomBack, topFront));
-      geometry.faces.push(new THREE.Face3(topFront, bottomBack, topBack));
-    }
-    
-    geometry.computeFaceNormals();
+
+    if (!heightMap || !posArr) return;
+
+    // Fill all top vertex positions from current heightMap
+    fillAllTopVertices();
+
+    // Build index buffer
+    var indexCount = buildIndices();
+
+    // Create BufferGeometry with pre-allocated typed arrays
+    var geometry = new THREE.BufferGeometry();
+    posAttr = new THREE.BufferAttribute(posArr, 3);
+    idxAttr = new THREE.BufferAttribute(idxArr, 1);
+    geometry.setAttribute('position', posAttr);
+    geometry.setIndex(idxAttr);
+    geometry.setDrawRange(0, indexCount);
     geometry.computeVertexNormals();
-    
-    // Create material
-    var material = new THREE.MeshPhongMaterial({
-      color: 0xD2B48C,
-      specular: 0x222222,
-      shininess: 20,
-      transparent: true,
-      opacity: self.opacity,
-      side: THREE.DoubleSide,
-      flatShading: false
-    });
-    activeMaterials.push(material);
-    
-    self.mesh = new THREE.Mesh(geometry, material);
+    activeGeometries.push(geometry);
+
+    // Create material (flat shading for clean stepped look)
+    if (!meshMaterial) {
+      meshMaterial = new THREE.MeshPhongMaterial({
+        color: 0xD2B48C,
+        specular: 0x222222,
+        shininess: 20,
+        transparent: true,
+        opacity: self.opacity,
+        side: THREE.DoubleSide,
+        flatShading: true
+      });
+      activeMaterials.push(meshMaterial);
+    }
+
+    self.mesh = new THREE.Mesh(geometry, meshMaterial);
     self.mesh.visible = !!self.show;
     scene.add(self.mesh);
-    
-    // Optional wireframe
-    if (self.resolution <= 100) {
-      var wireGeo = new THREE.WireframeGeometry(geometry);
-      activeGeometries.push(wireGeo);
-      
-      var wireMat = new THREE.LineBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        opacity: 0.03
-      });
-      activeMaterials.push(wireMat);
-      
-      self.wireMesh = new THREE.LineSegments(wireGeo, wireMat);
-      self.wireMesh.visible = !!self.show;
-      scene.add(self.wireMesh);
-    }
-    
-    // CRITICAL: Set flag here so subsequent updates use incremental path
+
     geometryCreated = true;
-    
     update();
   };
 
@@ -606,61 +640,38 @@ module.exports = function(scene, update) {
     var savedStockHeight = stockHeight;
     var savedToolDia = toolDia;
     var savedMaterialTop = materialTop;
-    
+
     // Dispose meshes
     self.mesh = disposeMesh(self.mesh);
     self.wireMesh = disposeMesh(self.wireMesh);
-    
-    // Clear transient state (but keep bounds)
+
+    // Clear transient state
     if (heightMap && heightMap.heights) {
       heightMap.heights = null;
     }
     heightMap = null;
+    posArr = null;
+    idxArr = null;
+    posAttr = null;
+    idxAttr = null;
     lastToolPos = null;
     isDirty = false;
     pendingUpdates = 0;
     lastUpdateTime = 0;
     dirtyRegions = [];
     geometryCreated = false;
-    
-    console.log('Material disposed - memory should be released');
-    
+
     // RESTORE visibility preference
     self.show = wasVisible;
-    
-    // RE-INITIALIZE with saved parameters if we had bounds
+
+    // RE-INITIALIZE with saved parameters (allocates new buffers)
     if (savedBounds) {
-      console.log('Re-initializing material with fresh stock...');
-      bounds = savedBounds;
-      stockHeight = savedStockHeight;
-      toolDia = savedToolDia;
-      materialTop = savedMaterialTop;
-      
-      var width = bounds.max.x - bounds.min.x;
-      var depth = bounds.max.y - bounds.min.y;
-      
-      var xPoints = self.resolution;
-      var yPoints = Math.round(self.resolution * (depth / width));
-      
-      heightMap = {
-        xPoints: xPoints,
-        yPoints: yPoints,
-        xStep: width / (xPoints - 1),
-        yStep: depth / (yPoints - 1),
-        heights: new Float32Array(xPoints * yPoints)
-      };
-      
-      for (var i = 0; i < heightMap.heights.length; i++) {
-        heightMap.heights[i] = materialTop;
-      }
-      
-      self.createFullMesh();
-      
+      self.initialize(savedBounds, savedStockHeight, savedToolDia, savedMaterialTop);
       console.log('Material re-initialized: fresh stock ready');
     } else {
       bounds = null;
     }
-    
+
     update();
   };
 
@@ -687,13 +698,18 @@ module.exports = function(scene, update) {
     activeMaterials.length = 0;
     dirtyRegions = [];
     geometryCreated = false;
-    
-    // Null out heightmap
+
+    // Null out heightmap and buffers
     if (heightMap && heightMap.heights) {
       heightMap.heights = null;
     }
     heightMap = null;
-    
+    posArr = null;
+    idxArr = null;
+    posAttr = null;
+    idxAttr = null;
+    meshMaterial = null;
+
     // Clear ALL state (including bounds this time)
     bounds = null;
     stockHeight = 0;
@@ -706,6 +722,22 @@ module.exports = function(scene, update) {
     
     console.log('Material destroyed - all resources freed');
     update();
+  };
+
+  /**
+   * Reset height map to fresh stock without disposing geometry.
+   * Used for timeline rewind — much lighter than full reset().
+   */
+  self.resetHeights = function() {
+    if (!heightMap) return;
+    for (var i = 0; i < heightMap.heights.length; i++) {
+      heightMap.heights[i] = materialTop;
+    }
+    fillAllTopVertices();
+    lastToolPos = null;
+    isDirty = false;
+    pendingUpdates = 0;
+    dirtyRegions = [];
   };
 
   /**
@@ -724,7 +756,7 @@ module.exports = function(scene, update) {
    */
   self.setOpacity = function(opacity) {
     self.opacity = opacity;
-    if (self.mesh) self.mesh.material.opacity = opacity;
+    if (meshMaterial) meshMaterial.opacity = opacity;
     cookie.set('material-opacity', opacity);
     update();
   };

@@ -606,6 +606,7 @@ module.exports = function(container) {
     metric: self.setPathMetric,
     progress: pathProgress,
     position: updatePosition,
+    update: self.refresh,
     materialUpdate: function(start, end, isArcSegment) {
       if (!self.material) return;
       
@@ -614,6 +615,11 @@ module.exports = function(container) {
     materialForceUpdate: function() {
       if (self.material) {
         self.material.forceUpdate();
+      }
+    },
+    materialResetHeights: function() {
+      if (self.material) {
+        self.material.resetHeights();
       }
     }
   });
@@ -656,6 +662,30 @@ module.exports = function(container) {
       self.path.pause();
       self.path.setMoveTime(time);
     },
+    getZoomRange: function() {
+      if (!self.path || !self.path.moves.length) return null;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      if (idx < 0 || idx >= moves.length) return null;
+      var currentLine = moves[idx].sourceLine;
+      var lineRange = 100;
+      var minLine = currentLine - lineRange;
+      var maxLine = currentLine + lineRange;
+
+      var startTime = null;
+      var endTime = null;
+      for (var i = 0; i < moves.length; i++) {
+        var line = moves[i].sourceLine;
+        if (line >= minLine && line <= maxLine) {
+          var t0 = moves[i].getStartTime();
+          var t1 = moves[i].getEndTime();
+          if (startTime === null || t0 < startTime) startTime = t0;
+          if (endTime === null || t1 > endTime) endTime = t1;
+        }
+      }
+      if (startTime === null) return null;
+      return { startTime: startTime, endTime: endTime };
+    },
     showGrid: self.grid.setShow,
     showDims: self.dims.setShow,
     showAxes: self.axes.setShow,
@@ -665,10 +695,218 @@ module.exports = function(container) {
     showToolpath: self.path.setShow,
     setMaterialOpacity: self.material.setOpacity,
     setMaterialResolution: self.material.setResolution,
-    resetMaterial: self.material.reset
+    resetMaterial: self.material.reset,
+    setInPoint: function() {
+      if (!self.path || !self.path.loaded) return;
+      var time = self.path.moveTime;
+      var moveIdx = self.path.lastMove;
+      var move = self.path.moves[moveIdx];
+      if (!move) return;
+      var srcLine = self.path.hasSourceLines ? move.sourceLine : move.getLine();
+      self.gui.setInPoint(time, srcLine, moveIdx);
+    },
+    setOutPoint: function() {
+      if (!self.path || !self.path.loaded) return;
+      var time = self.path.moveTime;
+      var moveIdx = self.path.lastMove;
+      var move = self.path.moves[moveIdx];
+      if (!move) return;
+      var srcLine = self.path.hasSourceLines ? move.sourceLine : move.getLine();
+      self.gui.setOutPoint(time, srcLine, moveIdx);
+    },
+    stepForward: function() {
+      if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      var currentLine = moves[idx].sourceLine;
+
+      // Find next move with a different sourceLine
+      for (var i = idx + 1; i < moves.length; i++) {
+        if (moves[i].sourceLine !== currentLine) {
+          self.path.pause();
+          self.path.setMoveTime(moves[i].startTime);
+          if (self.gui) self.gui.updateTimeline(moves[i].startTime);
+          self.refresh();
+          return;
+        }
+      }
+    },
+
+    stepBackward: function() {
+      if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      var currentLine = moves[idx].sourceLine;
+
+      // Skip back to start of current line group
+      var i = idx;
+      while (i > 0 && moves[i - 1].sourceLine === currentLine) i--;
+
+      // Now go to the previous line group
+      if (i > 0) {
+        var prevLine = moves[i - 1].sourceLine;
+        // Find start of that previous line group
+        while (i > 1 && moves[i - 2].sourceLine === prevLine) i--;
+        i--;
+        self.path.pause();
+        self.path.setMoveTime(moves[i].startTime);
+        if (self.gui) self.gui.updateTimeline(moves[i].startTime);
+        self.refresh();
+      }
+    },
+
+    skipToCutStart: function() {
+      if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      var Z_THRESHOLD = 0.01;
+
+      // Search backward for a plunge move (Z decreasing significantly, into material)
+      for (var i = idx - 1; i >= 0; i--) {
+        var zDelta = moves[i].end[2] - moves[i].start[2];
+        if (zDelta < -Z_THRESHOLD) {
+          self.path.pause();
+          self.path.setMoveTime(moves[i].startTime);
+          if (self.gui) self.gui.updateTimeline(moves[i].startTime);
+          self.refresh();
+          return;
+        }
+      }
+    },
+
+    skipToCutEnd: function() {
+      if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      var Z_THRESHOLD = 0.01;
+
+      // Search forward for a retract move (Z increasing significantly, out of material)
+      for (var i = idx + 1; i < moves.length; i++) {
+        var zDelta = moves[i].end[2] - moves[i].start[2];
+        if (zDelta > Z_THRESHOLD) {
+          self.path.pause();
+          self.path.setMoveTime(moves[i].startTime);
+          if (self.gui) self.gui.updateTimeline(moves[i].startTime);
+          self.refresh();
+          return;
+        }
+      }
+    },
+
+    inOutChanged: function(inPt, outPt) {
+      // Toggle submit-trimmed button visibility
+      if (inPt || outPt) {
+        container.addClass('has-selection');
+      } else {
+        container.removeClass('has-selection');
+      }
+      // Dim toolpath segments outside the in/out range
+      if (!self.path || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      for (var i = 0; i < moves.length; i++) {
+        var inside = true;
+        if (inPt && i < inPt.moveIndex) inside = false;
+        if (outPt && i > outPt.moveIndex) inside = false;
+        if (inPt || outPt) {
+          // Dim outside segments, normal inside
+          var m = moves[i];
+          if (!inside) {
+            m.setColor([0.3, 0.3, 0.3]);  // dim gray
+          } else {
+            // Restore original color based on done/rapid state
+            m.setDone(false);  // reset to default color
+          }
+        } else {
+          // No in/out set — restore all
+          moves[i].setDone(false);
+        }
+      }
+      self.refresh();
+    }
   };
 
   self.gui = new Gui(callbacks);
+
+  // Public accessor for in/out points (used by app.js for job submission)
+  self.getInOutPoints = function() {
+    return self.gui.getInOut();
+  };
+
+  // --- Toolpath hover/click interaction ---
+  var raycaster = new THREE.Raycaster();
+  raycaster.params.Line.threshold = 0.1;  // world-space pick tolerance
+  var mouse = new THREE.Vector2();
+  var hoveredMove = null;
+  var hoverThrottle = null;
+  var mouseDownPos = null;
+  var canvas = self.renderer.domElement;
+
+  function getMouseNDC(event) {
+    var rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  }
+
+  function findMoveUnderMouse(event) {
+    if (!self.path || !self.path.obj || !self.path.obj.visible) return null;
+    if (!self.path.loaded) return null;
+    getMouseNDC(event);
+    raycaster.setFromCamera(mouse, self.camera);
+    var intersects = raycaster.intersectObject(self.path.obj, true);
+    if (intersects.length === 0) return null;
+    return self.path.getMoveAtIntersection(intersects[0].object, intersects[0].index);
+  }
+
+  canvas.addEventListener('mousemove', function(event) {
+    // Don't show hover during playback (it flickers with the playback line display)
+    if (container.hasClass('running')) return;
+
+    // Throttle to ~15fps to avoid bogging down the Pi
+    if (hoverThrottle) return;
+    hoverThrottle = setTimeout(function() { hoverThrottle = null; }, 66);
+
+    var move = findMoveUnderMouse(event);
+    if (move) {
+      if (hoveredMove !== move) {
+        hoveredMove = move;
+        var label = self.path.hasSourceLines
+          ? 'SBP Line ' + move.sourceLine.toLocaleString()
+          : 'Line ' + move.getLine().toLocaleString();
+        self.path.codeLine.text(label);
+        canvas.style.cursor = 'pointer';
+      }
+    } else if (hoveredMove) {
+      hoveredMove = null;
+      self.path.codeLine.text('');
+      canvas.style.cursor = '';
+    }
+  });
+
+  // Track mousedown to distinguish clicks from drags
+  canvas.addEventListener('mousedown', function(event) {
+    mouseDownPos = { x: event.clientX, y: event.clientY };
+  });
+
+  canvas.addEventListener('click', function(event) {
+    // Ignore if user dragged (was rotating/panning, not clicking)
+    if (mouseDownPos) {
+      var dx = event.clientX - mouseDownPos.x;
+      var dy = event.clientY - mouseDownPos.y;
+      if (dx * dx + dy * dy > 25) return;  // 5px threshold
+    }
+
+    var move = findMoveUnderMouse(event);
+    if (!move) return;
+
+    // Jump timeline to this move's start time
+    var time = move.getStartTime();
+    self.path.pause();
+    self.path.setMoveTime(time);
+    if (self.gui) {
+      self.gui.updateTimeline(time);
+    }
+    self.refresh();
+  });
 
   // Units
   util.connectSetting('units', self.units, self.setUnits);

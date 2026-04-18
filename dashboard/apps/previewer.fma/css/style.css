@@ -66,26 +66,49 @@ body {
     text-align: center;
     font-size: 1rem;
     font-family: serif;
-    -webkit-box-shadow: 1px 1px 1px 0px #aaaaaa;
-    -moz-box-shadow:    1px 1px 1px 0px #aaaaaa;
-    box-shadow:         1px 1px 1px 0px #aaaaaa;
+    border: 2px solid #201f2b;
+    box-shadow: none;
 }
 
 #preview .code-line {
   position: absolute;
+  top: 5px;
   left: 15%;
   width: 600px;
   margin-left: -75px;
   font-size: 150%;
+  z-index: 3;
+  pointer-events: none;
 }
 
 #preview .actions .run-now {
   right: 0;
   margin: 5px;
-  padding: 0.7rem;
+  padding: 0.7rem 1.2rem;
   border-radius: 10px;
   color: #eee;
-  background-color: #32B433;
+  background-color: #035b1c;
+  border: 2px solid #024a16;
+  font-weight: bold;
+  box-shadow: none;
+}
+
+#preview .actions .submit-trimmed {
+  right: 0;
+  top: 50px;
+  margin: 5px;
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  color: #eee;
+  background-color: #313366;
+  border: 2px solid #201f2b;
+  font-weight: bold;
+  box-shadow: none;
+  font-size: 0.85rem;
+}
+
+#preview .actions .submit-trimmed:hover {
+  background-color: #3d3f7a;
 }
 
 #preview .actions > * {
@@ -100,6 +123,14 @@ body {
 
 #preview .run-now {
   display: none;
+}
+
+#preview .submit-trimmed {
+  display: none;
+}
+
+#preview.has-selection .submit-trimmed {
+  display: block;
 }
 
 #preview #button-pause,
@@ -124,21 +155,25 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 42px;
+  height: 50px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 6px 6px 6px;
   z-index: 2;
-  background: rgba(235, 235, 235, 0.85);
-  border-top: 1px solid #ccc;
+  background: #ffda29;
+  border-top: 1px solid #d0c265;
 }
 
 #preview .bottom-bar img {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   cursor: pointer;
-  margin-right: 5px;
+  margin-right: 4px;
   flex-shrink: 0;
+  border-radius: 6px;
+  padding: 3px;
+  background: transparent;
+  border: none;
 }
 
 #preview .bottom-bar img:hover {
@@ -149,8 +184,262 @@ body {
   flex: 1;
   min-width: 0;
   margin: 0 8px;
-  height: 8px;
   cursor: pointer;
+  position: relative;
+  z-index: 1;
+  -webkit-appearance: none;
+  /* Thumb must paint above stripes overlay */
+  appearance: none;
+  height: 2em;
+  border-radius: 0.25em;
+  border: solid 1em transparent;
+  background: transparent;
+  color: #262626;
+}
+
+#preview .bottom-bar #timeline::-webkit-slider-runnable-track {
+  height: 2em;
+  border-radius: 1.25em;
+  padding: 0.75em;
+  box-shadow:
+    inset 0 1px 0.125em #d0c265,
+    inset 0 -1px 0.125em #969161,
+    inset 0 0 0 0.75em #ffda29;
+  background-color: #897827;
+  background-image: linear-gradient(90deg, transparent 60%, rgba(40,30,0,0.3) 60%);
+  background-size: 8px 100%;
+  background-repeat: repeat-x;
+  transition: background-size 0.5s ease-out;
+}
+
+#preview .bottom-bar #timeline.zoomed::-webkit-slider-runnable-track {
+  background-image: linear-gradient(90deg, transparent 45%, rgba(40,30,0,0.5) 45%);
+  background-size: 28px 100%;
+}
+
+#preview .bottom-bar #timeline::-moz-range-track {
+  height: 2em;
+  border-radius: 1.25em;
+  padding: 0.75em;
+  background-color: #897827;
+  background-image: linear-gradient(90deg, transparent 60%, rgba(40,30,0,0.3) 60%);
+  background-size: 8px 100%;
+  background-repeat: repeat-x;
+  transition: background-size 0.5s ease-out;
+  box-shadow:
+    inset 0 1px 0.125em #272727,
+    inset 0 -1px 0.125em #272727,
+    inset 0 0 0 0.75em #ffda29;
+}
+
+#preview .bottom-bar #timeline.zoomed::-moz-range-track {
+  background-image: linear-gradient(90deg, transparent 45%, rgba(40,30,0,0.5) 45%);
+  background-size: 28px 100%;
+}
+
+#preview .bottom-bar #timeline::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 2em;
+  height: 2em;
+  border-radius: 50%;
+  padding: 0.75em;
+  margin-top: -0.75em;
+  box-shadow: 0 1px 0.125em #111, inset 0 1px 1px #4a4a7a;
+  background:
+    radial-gradient(#3d3f7a 35%, #313366 71%) content-box,
+    linear-gradient(#444, #333) border-box;
+  cursor: pointer;
+}
+
+#preview .bottom-bar #timeline::-moz-range-thumb {
+  width: 2em;
+  height: 2em;
+  border-radius: 50%;
+  border: none;
+  padding: 0.75em;
+  box-shadow: 0 1px 0.125em #111, inset 0 1px 1px #4a4a7a;
+  background:
+    radial-gradient(#3d3f7a 35%, #313366 71%) content-box,
+    linear-gradient(#444, #333) border-box;
+  cursor: pointer;
+}
+
+/* In/Out range overlay on the timeline */
+#preview .bottom-bar .timeline-range {
+  display: none;
+  position: absolute;
+  height: 6px;
+  background: rgba(93, 170, 53, 0.4);
+  border-left: 2px solid #5DAA35;
+  border-right: 2px solid #5DAA35;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Zoom stripes overlay — must sit ABOVE the slider track */
+#preview .bottom-bar .timeline-stripes {
+  display: none;
+  position: absolute;
+  pointer-events: none;
+  border-radius: 1em;
+  z-index: 2;
+  background-image: linear-gradient(
+    90deg,
+    transparent 60%,
+    rgba(60, 40, 0, 0.25) 60%
+  );
+  background-size: 8px 100%;
+  background-repeat: repeat-x;
+  transition: background-size 0.5s ease-out;
+}
+
+#preview .bottom-bar .timeline-stripes.zoomed {
+  background-size: 28px 100%;
+  background-image: linear-gradient(
+    90deg,
+    transparent 50%,
+    rgba(60, 40, 0, 0.45) 50%
+  );
+}
+
+/* In/Out buttons — match keypad style */
+#preview .bottom-bar .inout-btn {
+  display: inline-block !important;
+  visibility: visible !important;
+  flex-shrink: 0;
+  padding: 4px 10px !important;
+  margin: 0 0 0 4px !important;
+  border: 2px solid #201f2b !important;
+  border-radius: 10px !important;
+  background: #313366 !important;
+  cursor: pointer;
+  font-size: 12px !important;
+  font-weight: bold;
+  line-height: 1.3 !important;
+  color: #eee !important;
+  height: auto !important;
+  width: auto !important;
+  min-width: 0;
+  box-shadow: none !important;
+  user-select: none;
+}
+
+#preview .bottom-bar .inout-btn:hover {
+  background: #3d3f7a !important;
+}
+
+#preview .bottom-bar .inout-btn.active {
+  background: #035b1c !important;
+  border-color: #024a16 !important;
+}
+
+#preview .bottom-bar .clear-btn {
+  padding: 4px 7px !important;
+  font-size: 13px !important;
+  background: #444 !important;
+  border-color: #555 !important;
+  color: #aaa !important;
+  font-weight: normal;
+}
+
+#preview .bottom-bar .clear-btn:hover {
+  background: #633 !important;
+  border-color: #944 !important;
+  color: #faa !important;
+}
+
+/* Quick settings in bottom bar */
+#preview .bottom-bar .quick-setting {
+  flex-shrink: 0;
+  flex-grow: 0 !important;
+  width: auto !important;
+  max-width: 60px !important;
+  height: 28px !important;
+  padding: 2px 4px !important;
+  margin: 0 2px !important;
+  border: 2px solid #201f2b !important;
+  border-radius: 8px !important;
+  background: #313366 !important;
+  color: #eee !important;
+  font-size: 11px !important;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none !important;
+}
+
+#preview .bottom-bar .quick-toggle {
+  flex-shrink: 0;
+  display: inline-flex !important;
+  align-items: center;
+  padding: 4px 8px;
+  margin: 0 2px;
+  border: 2px solid #201f2b;
+  border-radius: 10px;
+  background: #444;
+  color: #aaa;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+#preview .bottom-bar .quick-toggle input[type="checkbox"] {
+  display: none;
+}
+
+#preview .bottom-bar .quick-toggle.active {
+  background: #313366;
+  color: #eee;
+  border-color: #201f2b;
+}
+
+#preview .bottom-bar .quick-toggle:hover {
+  background: #3d3f7a;
+  color: #eee;
+}
+
+/* Step/Skip navigation buttons */
+#preview .bottom-bar .nav-btn {
+  display: inline-block !important;
+  visibility: visible !important;
+  flex-shrink: 0;
+  padding: 4px 8px !important;
+  margin: 0 1px !important;
+  border: 2px solid #201f2b !important;
+  border-radius: 10px !important;
+  background: #313366 !important;
+  cursor: pointer;
+  font-size: 13px !important;
+  font-weight: bold;
+  line-height: 1.3 !important;
+  color: #eee !important;
+  height: auto !important;
+  width: auto !important;
+  min-width: 0;
+  box-shadow: none !important;
+  user-select: none;
+  font-family: monospace;
+}
+
+#preview .bottom-bar .nav-btn:hover {
+  background: #3d3f7a !important;
+}
+
+#preview .bottom-bar .nav-btn:active {
+  background: #262850 !important;
+}
+
+#preview .bottom-bar .inout-info {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #333;
+  margin-left: 6px;
+  white-space: nowrap;
+  font-weight: bold;
 }
 
 /* Show ortho button in perspective mode, perspective button in ortho mode */
@@ -214,8 +503,36 @@ body {
   border-top: 1px solid #ddd;
 }
 
-#preview .dialog button:hover {
-  opacity: 0.9;
+/* Dialog buttons — match keypad style */
+#preview .dialog button,
+#preview .dialog .button {
+  background: #313366 !important;
+  color: #eee !important;
+  border: 2px solid #201f2b !important;
+  border-radius: 10px !important;
+  padding: 8px 24px !important;
+  font-size: 14px !important;
+  font-weight: bold;
+  box-shadow: none !important;
+  cursor: pointer;
+  margin: 0 4px !important;
+}
+
+#preview .dialog button:hover,
+#preview .dialog .button:hover {
+  background: #3d3f7a !important;
+}
+
+/* Reset Material button in settings */
+#preview .dialog .reset-material {
+  background: #444 !important;
+  border-color: #555 !important;
+  font-size: 12px !important;
+  padding: 6px 14px !important;
+}
+
+#preview .dialog .reset-material:hover {
+  background: #555 !important;
 }
 
 #preview .loading {
@@ -252,15 +569,15 @@ input[type="range"] {
   outline: none;
 }
 
-/* WebKit: Chrome, Edge, Safari */
+/* Timeline track — dark theme */
 input[type="range"]::-webkit-slider-runnable-track {
-  background-color: #2563eb;  /* solid bar color */
+  background-color: #555;
   height: 6px;
   border-radius: 3px;
 }
 
 .opacity-slider::-webkit-slider-runnable-track {
-  background-color: #2563eb !important;
+  background-color: #555 !important;
 }
 /* Override the dashboard's orange slider styling for previewer settings */
 #preview .settings input[type='range']::-webkit-slider-runnable-track {
