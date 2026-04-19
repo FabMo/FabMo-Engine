@@ -195,75 +195,169 @@ module.exports = function(container) {
       self.gui.showErrors(self.path.errors);
 
     var bounds = self.path.bounds;
-    var size = util.maxDim(bounds);
 
-    updateLights(bounds);
-    self.dims.update(bounds, self.isMetric());
+    // On first load, save the full-file bounds so operation filtering
+    // doesn't shrink the material/camera to a subset's extents.
+    var isFirstLoad = !self.originalBounds;
+    if (isFirstLoad) {
+      self.originalBounds = {
+        min: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
+        max: { x: bounds.max.x, y: bounds.max.y, z: bounds.max.z }
+      };
+    }
+
+    // Always use original bounds for material, camera, and scene setup
+    var sceneBounds = self.originalBounds;
+    var size = util.maxDim(sceneBounds);
+
+    updateLights(sceneBounds);
+    self.dims.update(sceneBounds, self.isMetric());
     self.axes.update(size);
     self.tool.update(size, self.path.position);
-    
+
     // Initialize material simulation
-    // Stock top should be at Z=0 (or slightly above if needed)
     var stockThickness = 0.75; // Default stock thickness
-    var materialTop = 0; // Top surface at Z=zero plane
-    
+    var materialTop = 0; // Default: material surface origin (Z=0 is top)
+
+    // Use VCarve/ShopBot file metadata if available
+    if (self.fileMetadata) {
+      if (self.fileMetadata.materialThickness) {
+        stockThickness = self.fileMetadata.materialThickness;
+      }
+      if (self.fileMetadata.zOrigin && self.fileMetadata.zOrigin.indexOf('table') !== -1) {
+        // Table Surface origin: Z=0 is at the table, material top at Z=stockThickness
+        materialTop = stockThickness;
+      }
+    }
+
     // Expand bounds to include material block
     var materialBounds = {
       min: {
-        x: bounds.min.x - 0.5,  // Add margin
-        y: bounds.min.y - 0.5,
+        x: sceneBounds.min.x - 0.5,  // Add margin
+        y: sceneBounds.min.y - 0.5,
         z: materialTop - stockThickness  // Bottom of stock
       },
       max: {
-        x: bounds.max.x + 0.5,
-        y: bounds.max.y + 0.5,
+        x: sceneBounds.max.x + 0.5,
+        y: sceneBounds.max.y + 0.5,
         z: materialTop  // Top at Z=0
       }
     };
-    
-    // Tool diameter - could be from config or settings (default 0.25")
-    var toolDia = 0.125; // TODO: Get from machine config
-    
+
+    // Align table surface with the bottom of the material
+    var materialBottom = materialTop - stockThickness;
+    self.table.setZZoff(materialBottom);
+
+    // Tool info is now per-operation; initial material diameter uses first operation or default
+    var toolDia = 0.25;
+    if (self.operations && self.operations.length > 0 && self.operations[0].toolInfo) {
+      toolDia = self.operations[0].toolInfo.toolDiameter || toolDia;
+    }
+
     console.log('Initializing material:');
     console.log('  Top Z:', materialTop);
     console.log('  Bottom Z:', materialTop - stockThickness);
     console.log('  Thickness:', stockThickness);
     console.log('  Tool diameter:', toolDia);
     console.log('Path bounds Z: min=', bounds.min.z, 'max=', bounds.max.z);
-    
-    // Initialize material with proper positioning
-    self.material.initialize(materialBounds, stockThickness, toolDia, materialTop);
-    
-    // Try to restore saved view state first
-    var restored = self.restoreViewState();
-    
-    // If no saved state, position camera in ISO orientation
-    if (!restored) {
-      var center = util.getCenter(bounds);
-      var dims = util.getDims(bounds);
-      var zoom = 0.75 * util.maxDim(bounds) / Math.tan(Math.PI / 8);
-      
-      var camera = [center[0], center[1], center[2]];
-      camera[1] -= (zoom + dims[1] / 2) / 1.4;
-      camera[2] += (zoom + dims[2] / 2) / 1.4;
-      
-      self.controls.reset();
-      self.camera.position.set(camera[0], camera[1], camera[2]);
-      self.controls.target.set(center[0], center[1], center[2]);
-      
-      // Apply zoom and near plane if in ortho mode
-      if (self.isOrtho) {
-        self.orthographicCamera.zoom = 2.0;
-        self.orthographicCamera.near = self.orthoNearClip;
-        self.orthographicCamera.updateProjectionMatrix();
+
+    // Material initialization is handled by computeMaterialProgressive() below
+
+    // Only set up camera on first load
+    if (isFirstLoad) {
+      // Try to restore saved view state first
+      var restored = self.restoreViewState();
+
+      // If no saved state, position camera in ISO orientation
+      if (!restored) {
+        var center = util.getCenter(sceneBounds);
+        var dims = util.getDims(sceneBounds);
+        var zoom = 0.75 * size / Math.tan(Math.PI / 8);
+
+        var camera = [center[0], center[1], center[2]];
+        camera[1] -= (zoom + dims[1] / 2) / 1.4;
+        camera[2] += (zoom + dims[2] / 2) / 1.4;
+
+        self.controls.reset();
+        self.camera.position.set(camera[0], camera[1], camera[2]);
+        self.controls.target.set(center[0], center[1], center[2]);
+
+        // Apply zoom and near plane if in ortho mode
+        if (self.isOrtho) {
+          self.orthographicCamera.zoom = 2.0;
+          self.orthographicCamera.near = self.orthoNearClip;
+          self.orthographicCamera.updateProjectionMatrix();
+        }
+
+        self.controls.update();
       }
-      
-      self.controls.update();
     }
 
-    buildNLineMap();
-    self.gui.hideLoading();
-    self.refresh();
+    // Tag each move with its operation's tool info so the material
+    // simulation can switch bit size/type per operation.
+    if (self.operations && self.path.moves.length) {
+      tagMovesWithToolInfo();
+    }
+
+    // Save material params for progressive re-rendering
+    self._materialParams = {
+      bounds: materialBounds,
+      thickness: stockThickness,
+      toolDia: toolDia,
+      materialTop: materialTop
+    };
+
+    // Compute material with progress bar
+    computeMaterial(function() {
+      buildNLineMap();
+      self.gui.hideLoading();
+      self.gui.setTimelineDuration(self.path.duration);
+      self.refresh();
+    });
+  }
+
+  function computeMaterial(onDone) {
+    if (!self.material || !self.path || !self._materialParams) {
+      if (onDone) onDone();
+      return;
+    }
+    var p = self._materialParams;
+    self.material.initialize(p.bounds, p.thickness, p.toolDia, p.materialTop);
+    self.gui.showLoading('Computing material\u2026');
+    self.path.applyAllMaterial(
+      function(progress) {
+        var pct = Math.round(progress * 100);
+        self.gui.showLoading('Computing material\u2026 <progress max="100" value="' + pct + '"></progress>');
+      },
+      function() {
+        if (onDone) onDone();
+      }
+    );
+  }
+
+  // Assign toolInfo from operations to each move based on sourceLine ranges
+  function tagMovesWithToolInfo() {
+    if (!self.operations || !self.path.hasSourceLines) return;
+    var ops = self.operations;
+    var moves = self.path.moves;
+    // Build sorted list of operation ranges (0-based source lines)
+    var ranges = [];
+    for (var i = 0; i < ops.length; i++) {
+      ranges.push({
+        start: ops[i].startLine - 1,
+        end: ops[i].endLine - 1,
+        toolInfo: ops[i].toolInfo
+      });
+    }
+    for (var i = 0; i < moves.length; i++) {
+      var sl = moves[i].sourceLine;
+      for (var r = 0; r < ranges.length; r++) {
+        if (sl >= ranges[r].start && sl <= ranges[r].end) {
+          moves[i].toolInfo = ranges[r].toolInfo;
+          break;
+        }
+      }
+    }
   }
 
 
@@ -325,16 +419,226 @@ module.exports = function(container) {
 
 
 
+  // VCarve/ShopBot file metadata (Z origin mode, material thickness)
+  self.fileMetadata = null;
+
+  self.setFileMetadata = function(metadata) {
+    self.fileMetadata = metadata;
+    console.log('File metadata set:', JSON.stringify(metadata));
+  };
+
+  // Operations list parsed from 'New Path blocks
+  self.operations = null;
+
+  self.setOperations = function(ops) {
+    self.operations = ops;
+    if (!ops || ops.length === 0) {
+      $('#operations-panel').hide();
+      return;
+    }
+
+    var list = $('#ops-list');
+    list.empty();
+
+    // Helper: rebuild move tags and reload material after a tool override
+    function onToolOverride() {
+      if (self.path && self.path.moves.length) {
+        tagMovesWithToolInfo();
+        computeMaterial(function() {
+          self.gui.hideLoading();
+          self.refresh();
+        });
+      }
+    }
+
+    for (var i = 0; i < ops.length; i++) {
+      (function(idx) {
+        var op = ops[idx];
+        var ti = op.toolInfo || {};
+        var entry = $('<div class="op-entry">');
+        var topRow = $('<div class="op-top-row">');
+        var checkbox = $('<input type="checkbox" checked>').attr('data-op-index', idx);
+        var nameSpan = $('<span class="op-name">').text(op.name || ('Operation ' + (idx + 1)));
+        topRow.append(checkbox).append(nameSpan);
+        entry.append(topRow);
+
+        // Per-operation tool controls
+        var toolRow = $('<div class="op-tool-row">');
+
+        var typeSelect = $('<select class="op-tool-type">')
+          .append('<option value="flat">Flat</option>')
+          .append('<option value="ball">Ball</option>')
+          .append('<option value="vbit">V-Bit</option>')
+          .val(ti.toolType || 'flat');
+
+        var diaInput = $('<input class="op-tool-dia" type="number" min="0.01" max="3" step="any">')
+          .val(ti.toolDiameter || 0.25);
+
+        var diaLabel = $('<span class="op-tool-dia-label">').text('"');
+
+        var angleInput = $('<input class="op-tool-angle" type="number" min="10" max="180" step="1">')
+          .val(ti.vbitAngle || 90);
+        var angleLabel = $('<span class="op-tool-angle-label">').text('°');
+        var angleWrap = $('<span class="op-angle-wrap">').append(angleInput).append(angleLabel);
+        if ((ti.toolType || 'flat') !== 'vbit') angleWrap.hide();
+
+        typeSelect.on('change', function() {
+          var type = $(this).val();
+          if (!op.toolInfo) op.toolInfo = {};
+          op.toolInfo.toolType = type;
+          angleWrap.toggle(type === 'vbit');
+          onToolOverride();
+        });
+
+        diaInput.on('change', function() {
+          var dia = parseFloat($(this).val());
+          if (dia > 0) {
+            if (!op.toolInfo) op.toolInfo = {};
+            op.toolInfo.toolDiameter = dia;
+            onToolOverride();
+          }
+        });
+
+        angleInput.on('change', function() {
+          var angle = parseFloat($(this).val());
+          if (angle > 0) {
+            if (!op.toolInfo) op.toolInfo = {};
+            op.toolInfo.vbitAngle = angle;
+            onToolOverride();
+          }
+        });
+
+        toolRow.append(typeSelect).append(diaInput).append(diaLabel).append(angleWrap);
+        entry.append(toolRow);
+
+        // Click on name to highlight this operation green, grey out the rest.
+        // Click again to clear highlighting.
+        nameSpan.on('click', function(e) {
+          e.preventDefault();
+          var wasActive = entry.hasClass('active');
+          list.find('.op-entry').removeClass('active');
+
+          if (wasActive) {
+            if (self.path && self.path.highlightSourceLineRange) {
+              self.path.highlightSourceLineRange(null, null);
+            }
+          } else {
+            entry.addClass('active');
+            if (self.path && self.path.highlightSourceLineRange) {
+              self.path.highlightSourceLineRange(op.startLine - 1, op.endLine - 1);
+              if (self.path.moveTime !== undefined) {
+                self.gui.updateTimeline(self.path.moveTime);
+              }
+            }
+          }
+        });
+
+        // Toggle toolpath visibility — reload path with only selected operations' GCode
+        checkbox.on('change', function() {
+          self.reloadForSelectedOperations(self.getSelectedOperationIndices());
+        });
+
+        list.append(entry);
+      })(i);
+    }
+
+    // Toggle all / none
+    $('.ops-toggle-all').off('click').on('click', function() {
+      var checkboxes = list.find('input[type="checkbox"]');
+      var allChecked = checkboxes.length === checkboxes.filter(':checked').length;
+      checkboxes.prop('checked', !allChecked);
+      // Single reload instead of triggering each checkbox individually
+      self.reloadForSelectedOperations(self.getSelectedOperationIndices());
+    });
+
+    $('#operations-panel').show();
+    console.log('Operations panel: ' + ops.length + ' operations');
+  };
+
+  self.getSelectedOperationIndices = function() {
+    var indices = [];
+    $('#ops-list input[type="checkbox"]:checked').each(function() {
+      indices.push(parseInt($(this).attr('data-op-index')));
+    });
+    return indices.sort(function(a, b) { return a - b; });
+  };
+
   // Get the file path that will be displayed; "bounds" comes from this work
   self.setGCode = function(gcode) {
+    self.originalGCode = gcode;  // Store for operation filtering
+    self.reloadGCode(gcode);
+  }
+
+  // Reload the path from GCode text (used for initial load and operation filtering)
+  self.reloadGCode = function(gcode) {
     // Clean up existing material before loading new path
     if (self.material && self.material.reset) {
       console.log('Cleaning up previous material before new load');
       self.material.reset();
     }
-    
+    // Clear existing path geometry
+    if (self.path.clearPath) {
+      self.path.clearPath();
+    }
+
     self.path.load(gcode, pathLoaded);
   }
+
+  // Filter GCode to only lines whose N-word source line falls within
+  // the selected operation ranges, then reload the path.
+  // Ranges are 0-based source lines (matching move.sourceLine = pc).
+  self.reloadForSelectedOperations = function(selectedOps) {
+    if (!self.originalGCode || !self.operations) return;
+
+    // If all operations selected, just reload the original
+    if (!selectedOps || selectedOps.length === self.operations.length) {
+      self.reloadGCode(self.originalGCode);
+      return;
+    }
+
+    if (selectedOps.length === 0) {
+      // Nothing selected — clear the path
+      if (self.path.clearPath) self.path.clearPath();
+      return;
+    }
+
+    // Build list of 0-based source line ranges for selected operations
+    var ranges = [];
+    for (var i = 0; i < selectedOps.length; i++) {
+      var op = self.operations[selectedOps[i]];
+      ranges.push({ start: op.startLine - 1, end: op.endLine - 1 });
+    }
+
+    // Filter GCode lines: keep lines with no N-word (setup/units) or
+    // with N-word mapping to a selected operation's source line range
+    var gcodeLines = self.originalGCode.split('\n');
+    var filtered = [];
+    for (var i = 0; i < gcodeLines.length; i++) {
+      var line = gcodeLines[i];
+      // Extract N-word value
+      var nMatch = line.match(/^N(\d+)\s/);
+      if (!nMatch) {
+        // Lines without N-word (shouldn't happen in SBP-compiled GCode, but keep them)
+        filtered.push(line);
+        continue;
+      }
+      var sourceLine = parseInt(nMatch[1]) - 20;  // N = pc + 20
+      // Check if this source line is in any selected operation range
+      var inRange = false;
+      for (var r = 0; r < ranges.length; r++) {
+        if (sourceLine >= ranges[r].start && sourceLine <= ranges[r].end) {
+          inRange = true;
+          break;
+        }
+      }
+      if (inRange) {
+        filtered.push(line);
+      }
+    }
+
+    console.log('Filtered GCode: ' + filtered.length + ' of ' + gcodeLines.length + ' lines for ' + selectedOps.length + ' operations');
+    self.reloadGCode(filtered.join('\n'));
+  };
 
 
   self.isMetric = function () {
@@ -435,6 +739,7 @@ module.exports = function(container) {
 
   function updatePosition (position) {
     self.tool.setPosition(position);
+    if (self.gui) self.gui.updateTimeline(self.path.moveTime);
     self.refresh();
   }
 
@@ -582,14 +887,35 @@ module.exports = function(container) {
     metric: self.setPathMetric,
     progress: pathProgress,
     position: updatePosition,
+    update: self.refresh,
     materialUpdate: function(start, end, isArcSegment) {
       if (!self.material) return;
-      
+
       self.material.removeMaterial(start, end, 'flat', isArcSegment);
     },
-    materialForceUpdate: function() {
+    materialToolChange: function(toolInfo) {
+      if (!self.material || !toolInfo) return;
+      if (toolInfo.toolDiameter) self.material.setSimToolDiameter(toolInfo.toolDiameter);
+      if (toolInfo.toolType) self.material.setSimToolType(toolInfo.toolType);
+      if (toolInfo.vbitAngle) self.material.setSimVbitAngle(toolInfo.vbitAngle);
+    },
+    materialComputeFromSegments: function(segments, onProgress, onDone) {
       if (self.material) {
-        self.material.forceUpdate();
+        if (onProgress || onDone) {
+          self.material.computeFromSegmentsAsync(segments, onProgress, onDone);
+        } else {
+          self.material.computeFromSegments(segments);
+        }
+      }
+    },
+    materialForceUpdate: function(useSparse) {
+      if (self.material) {
+        self.material.forceUpdate(useSparse);
+      }
+    },
+    materialResetHeights: function() {
+      if (self.material) {
+        self.material.resetHeights();
       }
     }
   });
@@ -628,6 +954,34 @@ module.exports = function(container) {
     play: function() {self.path.play()},
     pause: function() {self.path.pause()},
     reset: function() {self.path.reset()},
+    scrub: function(time) {
+      self.path.pause();
+      self.path.setMoveTime(time);
+    },
+    getZoomRange: function() {
+      if (!self.path || !self.path.moves.length) return null;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      if (idx < 0 || idx >= moves.length) return null;
+      var currentLine = moves[idx].sourceLine;
+      var lineRange = 100;
+      var minLine = currentLine - lineRange;
+      var maxLine = currentLine + lineRange;
+
+      var startTime = null;
+      var endTime = null;
+      for (var i = 0; i < moves.length; i++) {
+        var line = moves[i].sourceLine;
+        if (line >= minLine && line <= maxLine) {
+          var t0 = moves[i].getStartTime();
+          var t1 = moves[i].getEndTime();
+          if (startTime === null || t0 < startTime) startTime = t0;
+          if (endTime === null || t1 > endTime) endTime = t1;
+        }
+      }
+      if (startTime === null) return null;
+      return { startTime: startTime, endTime: endTime };
+    },
     showGrid: self.grid.setShow,
     showDims: self.dims.setShow,
     showAxes: self.axes.setShow,
@@ -637,10 +991,218 @@ module.exports = function(container) {
     showToolpath: self.path.setShow,
     setMaterialOpacity: self.material.setOpacity,
     setMaterialResolution: self.material.setResolution,
-    resetMaterial: self.material.reset
+    resetMaterial: self.material.reset,
+    setInPoint: function() {
+      if (!self.path || !self.path.loaded) return;
+      var time = self.path.moveTime;
+      var moveIdx = self.path.lastMove;
+      var move = self.path.moves[moveIdx];
+      if (!move) return;
+      var srcLine = self.path.hasSourceLines ? move.sourceLine : move.getLine();
+      self.gui.setInPoint(time, srcLine, moveIdx);
+    },
+    setOutPoint: function() {
+      if (!self.path || !self.path.loaded) return;
+      var time = self.path.moveTime;
+      var moveIdx = self.path.lastMove;
+      var move = self.path.moves[moveIdx];
+      if (!move) return;
+      var srcLine = self.path.hasSourceLines ? move.sourceLine : move.getLine();
+      self.gui.setOutPoint(time, srcLine, moveIdx);
+    },
+    stepForward: function() {
+      if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      var currentLine = moves[idx].sourceLine;
+
+      // Find next move with a different sourceLine
+      for (var i = idx + 1; i < moves.length; i++) {
+        if (moves[i].sourceLine !== currentLine) {
+          self.path.pause();
+          self.path.setMoveTime(moves[i].startTime);
+          if (self.gui) self.gui.updateTimeline(moves[i].startTime);
+          self.refresh();
+          return;
+        }
+      }
+    },
+
+    stepBackward: function() {
+      if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      var currentLine = moves[idx].sourceLine;
+
+      // Skip back to start of current line group
+      var i = idx;
+      while (i > 0 && moves[i - 1].sourceLine === currentLine) i--;
+
+      // Now go to the previous line group
+      if (i > 0) {
+        var prevLine = moves[i - 1].sourceLine;
+        // Find start of that previous line group
+        while (i > 1 && moves[i - 2].sourceLine === prevLine) i--;
+        i--;
+        self.path.pause();
+        self.path.setMoveTime(moves[i].startTime);
+        if (self.gui) self.gui.updateTimeline(moves[i].startTime);
+        self.refresh();
+      }
+    },
+
+    skipToCutStart: function() {
+      if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      var Z_THRESHOLD = 0.01;
+
+      // Search backward for a plunge move (Z decreasing significantly, into material)
+      for (var i = idx - 1; i >= 0; i--) {
+        var zDelta = moves[i].end[2] - moves[i].start[2];
+        if (zDelta < -Z_THRESHOLD) {
+          self.path.pause();
+          self.path.setMoveTime(moves[i].startTime);
+          if (self.gui) self.gui.updateTimeline(moves[i].startTime);
+          self.refresh();
+          return;
+        }
+      }
+    },
+
+    skipToCutEnd: function() {
+      if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      var idx = self.path.lastMove;
+      var Z_THRESHOLD = 0.01;
+
+      // Search forward for a retract move (Z increasing significantly, out of material)
+      for (var i = idx + 1; i < moves.length; i++) {
+        var zDelta = moves[i].end[2] - moves[i].start[2];
+        if (zDelta > Z_THRESHOLD) {
+          self.path.pause();
+          self.path.setMoveTime(moves[i].startTime);
+          if (self.gui) self.gui.updateTimeline(moves[i].startTime);
+          self.refresh();
+          return;
+        }
+      }
+    },
+
+    inOutChanged: function(inPt, outPt) {
+      // Toggle submit-trimmed button visibility
+      if (inPt || outPt) {
+        container.addClass('has-selection');
+      } else {
+        container.removeClass('has-selection');
+      }
+      // Dim toolpath segments outside the in/out range
+      if (!self.path || !self.path.moves.length) return;
+      var moves = self.path.moves;
+      for (var i = 0; i < moves.length; i++) {
+        var inside = true;
+        if (inPt && i < inPt.moveIndex) inside = false;
+        if (outPt && i > outPt.moveIndex) inside = false;
+        if (inPt || outPt) {
+          // Dim outside segments, normal inside
+          var m = moves[i];
+          if (!inside) {
+            m.setColor([0.3, 0.3, 0.3]);  // dim gray
+          } else {
+            // Restore original color based on done/rapid state
+            m.setDone(false);  // reset to default color
+          }
+        } else {
+          // No in/out set — restore all
+          moves[i].setDone(false);
+        }
+      }
+      self.refresh();
+    }
   };
 
   self.gui = new Gui(callbacks);
+
+  // Public accessor for in/out points (used by app.js for job submission)
+  self.getInOutPoints = function() {
+    return self.gui.getInOut();
+  };
+
+  // --- Toolpath hover/click interaction ---
+  var raycaster = new THREE.Raycaster();
+  raycaster.params.Line.threshold = 0.1;  // world-space pick tolerance
+  var mouse = new THREE.Vector2();
+  var hoveredMove = null;
+  var hoverThrottle = null;
+  var mouseDownPos = null;
+  var canvas = self.renderer.domElement;
+
+  function getMouseNDC(event) {
+    var rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  }
+
+  function findMoveUnderMouse(event) {
+    if (!self.path || !self.path.obj || !self.path.obj.visible) return null;
+    if (!self.path.loaded) return null;
+    getMouseNDC(event);
+    raycaster.setFromCamera(mouse, self.camera);
+    var intersects = raycaster.intersectObject(self.path.obj, true);
+    if (intersects.length === 0) return null;
+    return self.path.getMoveAtIntersection(intersects[0].object, intersects[0].index);
+  }
+
+  canvas.addEventListener('mousemove', function(event) {
+    // Don't show hover during playback (it flickers with the playback line display)
+    if (container.hasClass('running')) return;
+
+    // Throttle to ~15fps to avoid bogging down the Pi
+    if (hoverThrottle) return;
+    hoverThrottle = setTimeout(function() { hoverThrottle = null; }, 66);
+
+    var move = findMoveUnderMouse(event);
+    if (move) {
+      if (hoveredMove !== move) {
+        hoveredMove = move;
+        var label = self.path.hasSourceLines
+          ? 'SBP Line ' + move.sourceLine.toLocaleString()
+          : 'Line ' + move.getLine().toLocaleString();
+        self.path.codeLine.text(label);
+        canvas.style.cursor = 'pointer';
+      }
+    } else if (hoveredMove) {
+      hoveredMove = null;
+      self.path.codeLine.text('');
+      canvas.style.cursor = '';
+    }
+  });
+
+  // Track mousedown to distinguish clicks from drags
+  canvas.addEventListener('mousedown', function(event) {
+    mouseDownPos = { x: event.clientX, y: event.clientY };
+  });
+
+  canvas.addEventListener('click', function(event) {
+    // Ignore if user dragged (was rotating/panning, not clicking)
+    if (mouseDownPos) {
+      var dx = event.clientX - mouseDownPos.x;
+      var dy = event.clientY - mouseDownPos.y;
+      if (dx * dx + dy * dy > 25) return;  // 5px threshold
+    }
+
+    var move = findMoveUnderMouse(event);
+    if (!move) return;
+
+    // Jump timeline to this move's start time
+    var time = move.getStartTime();
+    self.path.pause();
+    self.path.setMoveTime(time);
+    if (self.gui) {
+      self.gui.updateTimeline(time);
+    }
+    self.refresh();
+  });
 
   // Units
   util.connectSetting('units', self.units, self.setUnits);

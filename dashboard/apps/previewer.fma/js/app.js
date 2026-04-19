@@ -27,6 +27,7 @@ var Fabmo  = require('../../../static/js/libs/fabmo.js');
 var preview = $('#preview');
 var fabmo = new Fabmo();
 var viewer = null;  // Module-level viewer reference
+var originalFileContent = null;  // Raw SBP file content for in/out extraction
 
 var cached_Config = null;
 var cached_Status = null;
@@ -96,6 +97,417 @@ function nowGetStatus() {
     getStartStatus(err, nowPreviewJob);  
 }
 
+/**
+ * Parse tool info from a VCarve/ShopBot &ToolName variable value.
+ * Extracts tool type, diameter, and V-bit angle from descriptive names like:
+ *   "End Mill (1/4")"        -> flat, 0.25"
+ *   "Ball Nose (0.125 inch)" -> ball, 0.125"
+ *   "V Bit (90 deg)"         -> vbit, angle 90
+ *   "End Mill (6mm)"         -> flat, ~0.2362"
+ */
+function parseToolName(toolName) {
+  if (typeof toolName !== 'string') return null;
+
+  var result = {};
+  var name = toolName.trim();
+  // Strip surrounding quotes from variable-style values like &ToolName = "..."
+  // but preserve " as inch mark in unquoted comment-style values like End Mill (3/8")
+  if (name.charAt(0) === '"') {
+    name = name.substring(1).replace(/"$/, '');
+  }
+
+  // Tool type keywords
+  if (/v[\s\-]?bit|vee[\s\-]?bit/i.test(name)) {
+    result.toolType = 'vbit';
+  } else if (/ball[\s\-]?(nose|end)/i.test(name)) {
+    result.toolType = 'ball';
+  } else if (/end[\s\-]?mill|flat|straight|router/i.test(name)) {
+    result.toolType = 'flat';
+  }
+
+  // V-bit angle: "90 deg", "60 degrees", "90°"
+  var angleMatch = name.match(/(\d+(?:\.\d+)?)\s*(?:deg(?:rees?)?|°)/i);
+  if (angleMatch) {
+    result.vbitAngle = parseFloat(angleMatch[1]);
+  }
+
+  // Diameter — try patterns in order of specificity
+
+  // Fraction + inch unit: 1/4", 1/8 in, 3/8 inch
+  var fracInch = name.match(/(\d+)\s*\/\s*(\d+)\s*(?:"|(?:inch(?:es)?|in)\b)/i);
+  if (fracInch) {
+    result.toolDiameter = parseInt(fracInch[1]) / parseInt(fracInch[2]);
+  }
+
+  // Decimal + inch unit: 0.25", 0.250 in, 0.5 inch
+  if (!result.toolDiameter) {
+    var decInch = name.match(/(\d+\.?\d*)\s*(?:"|(?:inch(?:es)?|in)\b)/i);
+    if (decInch) {
+      var val = parseFloat(decInch[1]);
+      if (val > 0 && val < 10) {
+        result.toolDiameter = val;
+      }
+    }
+  }
+
+  // Metric: 6mm, 3.175 mm
+  if (!result.toolDiameter) {
+    var mmMatch = name.match(/(\d+\.?\d*)\s*mm\b/i);
+    if (mmMatch) {
+      result.toolDiameter = Math.round(parseFloat(mmMatch[1]) / 25.4 * 10000) / 10000;
+    }
+  }
+
+  // Bare fraction in parentheses: (1/4), (3/8) — assume inches
+  if (!result.toolDiameter) {
+    var bareFrac = name.match(/\(\s*(\d+)\s*\/\s*(\d+)\s*\)/);
+    if (bareFrac) {
+      result.toolDiameter = parseInt(bareFrac[1]) / parseInt(bareFrac[2]);
+    }
+  }
+
+  // Bare decimal in parentheses: (0.250) — assume inches
+  if (!result.toolDiameter) {
+    var bareDec = name.match(/\(\s*(\d+\.\d+)\s*\)/);
+    if (bareDec) {
+      var val = parseFloat(bareDec[1]);
+      if (val > 0 && val < 10) {
+        result.toolDiameter = val;
+      }
+    }
+  }
+
+  if (result.toolType || result.toolDiameter || result.vbitAngle) {
+    console.log('Parsed tool name "' + name + '":', JSON.stringify(result));
+    return result;
+  }
+  return null;
+}
+
+/**
+ * Parse VCarve/ShopBot metadata from original file header.
+ * Looks for Z origin mode, material thickness, and tool info in both SBP and GCode formats.
+ * Scans up to 200 lines to find the first toolpath comment block.
+ */
+function parseFileMetadata(content) {
+  if (typeof content !== 'string') return null;
+
+  var metadata = {};
+  var lines = content.split('\n');
+  var limit = Math.min(lines.length, 200);
+  var toolInfoFromComment = false;
+
+  for (var i = 0; i < limit; i++) {
+    var line = lines[i].trim();
+
+    // SBP: &PWZorigin = Material Surface (or Table Surface)
+    var zOriginMatch = line.match(/&PWZorigin\s*=\s*(.*)/i);
+    if (zOriginMatch) {
+      metadata.zOrigin = zOriginMatch[1].trim().toLowerCase();
+    }
+
+    // SBP: &PWMaterial = 0.500
+    var materialMatch = line.match(/&PWMaterial\s*=\s*([\d.]+)/i);
+    if (materialMatch) {
+      metadata.materialThickness = parseFloat(materialMatch[1]);
+    }
+
+    // SBP comment: 'Depth of material in Z = 0.500
+    var depthMatch = line.match(/Depth of material in Z\s*=\s*([\d.]+)/i);
+    if (depthMatch && !metadata.materialThickness) {
+      metadata.materialThickness = parseFloat(depthMatch[1]);
+    }
+
+    // GCode comment: (Z Origin = Material Surface)
+    var gcodeOriginMatch = line.match(/\(\s*Z\s*Origin\s*=\s*(.*?)\s*\)/i);
+    if (gcodeOriginMatch) {
+      metadata.zOrigin = gcodeOriginMatch[1].trim().toLowerCase();
+    }
+
+    // SBP comment: 'Toolpath Name = Profile 3
+    var pathNameMatch = line.match(/^'\s*Toolpath\s*Name\s*=\s*(.*)/i);
+    if (pathNameMatch && !metadata.toolpathName) {
+      metadata.toolpathName = pathNameMatch[1].trim();
+    }
+
+    // SBP comment: 'Tool Name   = End Mill (3/8")
+    // This per-path format overrides the &ToolName variable
+    var toolCommentMatch = line.match(/^'\s*Tool\s*Name\s*=\s*(.*)/i);
+    if (toolCommentMatch && !toolInfoFromComment) {
+      var toolInfo = parseToolName(toolCommentMatch[1]);
+      if (toolInfo) {
+        metadata.toolInfo = toolInfo;
+        toolInfoFromComment = true;
+      }
+    }
+
+    // SBP variable: &ToolName = "End Mill (1/4")" (fallback if no comment-style)
+    if (!toolInfoFromComment) {
+      var toolNameMatch = line.match(/&ToolName\s*=\s*(.*)/i);
+      if (toolNameMatch && !metadata.toolInfo) {
+        var toolInfo = parseToolName(toolNameMatch[1]);
+        if (toolInfo) {
+          metadata.toolInfo = toolInfo;
+        }
+      }
+    }
+  }
+
+  if (metadata.zOrigin || metadata.materialThickness || metadata.toolInfo || metadata.toolpathName) {
+    console.log('Parsed file metadata:', JSON.stringify(metadata));
+    return metadata;
+  }
+  return null;
+}
+
+/**
+ * Parse all toolpath operation blocks from an SBP file.
+ * Each block starts with a 'New Path comment and includes the toolpath name and tool info.
+ * Returns an array of operation objects with line ranges for extraction.
+ */
+function parseOperations(content) {
+  if (typeof content !== 'string') return [];
+
+  var lines = content.split('\n');
+  var operations = [];
+  var current = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    var lineNum = i + 1; // 1-based
+
+    if (/^'\s*New\s*Path/i.test(line)) {
+      if (current) {
+        current.endLine = lineNum - 1;
+        operations.push(current);
+      }
+      current = {
+        name: null,
+        toolName: null,
+        toolInfo: null,
+        startLine: lineNum,
+        endLine: null
+      };
+      continue;
+    }
+
+    if (current) {
+      var pathMatch = line.match(/^'\s*Toolpath\s*Name\s*=\s*(.*)/i);
+      if (pathMatch && !current.name) {
+        current.name = pathMatch[1].trim();
+      }
+
+      var toolMatch = line.match(/^'\s*Tool\s*Name\s*=\s*(.*)/i);
+      if (toolMatch && !current.toolName) {
+        current.toolName = toolMatch[1].trim();
+        current.toolInfo = parseToolName(current.toolName);
+      }
+    }
+  }
+
+  // Close last operation
+  if (current) {
+    current.endLine = lines.length;
+    operations.push(current);
+  }
+
+  // Merge consecutive duplicates: VCarve prints path info once before the
+  // toolchange and again after it. Keep the first's startLine (includes tool
+  // setup / C9 / C6 / MS) and the second's endLine (includes cutting moves).
+  var merged = [];
+  for (var i = 0; i < operations.length; i++) {
+    var next = operations[i + 1];
+    if (next && operations[i].name && operations[i].name === next.name) {
+      next.startLine = operations[i].startLine;
+      // skip the first occurrence — the merged next will be pushed on its turn
+    } else {
+      merged.push(operations[i]);
+    }
+  }
+  operations = merged;
+
+  if (operations.length) {
+    console.log('Parsed ' + operations.length + ' operations:',
+      operations.map(function(op) { return op.name || '(unnamed)'; }).join(', '));
+  }
+  return operations;
+}
+
+/**
+ * Build a combined SBP file from selected operation blocks.
+ * Includes the file header (everything before the first 'New Path) plus
+ * the selected operation blocks in order, with safe Z between them.
+ */
+function extractSelectedOperations(fileContent, operations, selectedIndices, safeZ) {
+  if (!fileContent || !operations.length || !selectedIndices.length) return null;
+  if (typeof safeZ === 'undefined' || safeZ === null) safeZ = 0;
+
+  var allLines = fileContent.split('\n');
+  var output = [];
+
+  // Header: everything before first 'New Path
+  var firstOpStart = operations[0].startLine;
+  for (var i = 0; i < firstOpStart - 1; i++) {
+    output.push(allLines[i]);
+  }
+
+  output.push("' --- Selected operations (" + selectedIndices.length + " of " + operations.length + ") ---");
+
+  for (var s = 0; s < selectedIndices.length; s++) {
+    var op = operations[selectedIndices[s]];
+    if (s > 0) {
+      output.push("JZ," + safeZ);
+    }
+    for (var i = op.startLine - 1; i < op.endLine && i < allLines.length; i++) {
+      output.push(allLines[i]);
+    }
+  }
+
+  output.push("' --- End of selection ---");
+  output.push("JZ," + safeZ);
+  output.push("C7");
+
+  return output.join('\n');
+}
+
+/**
+ * Extract a runnable SBP selection from the original file using in/out points.
+ * Scans backward from the in-point to find the most recent tool setup commands:
+ *   &tool = N   (tool number variable)
+ *   C9           (toolchange)
+ *   C6           (spindle start)
+ *   MS,xy,z      (move speed)
+ * Builds: preamble header lines + tool setup + selected cutting lines.
+ */
+function extractSBPSelection(fileContent, inLine, outLine, safeZ) {
+  if (!fileContent || !inLine) return null;
+  if (typeof safeZ === 'undefined' || safeZ === null) safeZ = 0;
+
+  var allLines = fileContent.split('\n');
+  if (!outLine) outLine = allLines.length;
+
+  // Clamp to valid range (1-based line numbers)
+  inLine = Math.max(1, Math.min(inLine, allLines.length));
+  outLine = Math.max(inLine, Math.min(outLine, allLines.length));
+
+  // Collect header/variable lines from the top of the file (before first motion)
+  // These include comments, variable assignments (&var=), unit settings, etc.
+  var headerLines = [];
+  var headerEnd = 0;
+  for (var i = 0; i < allLines.length && i < inLine - 1; i++) {
+    var line = allLines[i].trim();
+    var upper = line.toUpperCase();
+    // Header lines: comments, blank lines, variable assignments, SA/IF/etc
+    if (line === '' || line.charAt(0) === "'" ||
+        line.match(/^&\w+\s*=/) || line.match(/^'/)) {
+      headerLines.push(allLines[i]);
+      headerEnd = i + 1;
+    } else {
+      // Stop collecting header at first non-header line
+      break;
+    }
+  }
+
+  // Scan backward from in-point to find tool setup commands
+  var toolSetup = {
+    toolVar: null,   // &tool = N
+    toolChange: null, // C9
+    spindleStart: null, // C6
+    moveSpeed: null  // MS,xy,z
+  };
+
+  for (var i = inLine - 2; i >= 0; i--) {  // -2 because 1-based, and we want lines before in-point
+    var line = allLines[i].trim();
+    var upper = line.toUpperCase();
+
+    // &tool = N (tool number assignment)
+    if (!toolSetup.toolVar && line.match(/^&tool\s*=/i)) {
+      toolSetup.toolVar = allLines[i];
+    }
+
+    // C9 (toolchange command)
+    if (!toolSetup.toolChange && upper.match(/^C9\b/)) {
+      toolSetup.toolChange = allLines[i];
+    }
+
+    // C6 (spindle start)
+    if (!toolSetup.spindleStart && upper.match(/^C6\b/)) {
+      toolSetup.spindleStart = allLines[i];
+    }
+
+    // MS,xy,z (move speed)
+    if (!toolSetup.moveSpeed && upper.match(/^MS\s*,/)) {
+      toolSetup.moveSpeed = allLines[i];
+    }
+
+    // Stop scanning once we have all commands
+    if (toolSetup.toolVar && toolSetup.toolChange &&
+        toolSetup.spindleStart && toolSetup.moveSpeed) {
+      break;
+    }
+  }
+
+  // Scan selected lines for the first XY position (for rapid jog to start)
+  var startX = null, startY = null;
+  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
+    var scanLine = allLines[i].trim().toUpperCase();
+
+    // M2,x,y  M3,x,y,z  J2,x,y  J3,x,y,z
+    var moveMatch = scanLine.match(/^[MJ][23]\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
+    if (moveMatch) {
+      startX = moveMatch[1]; startY = moveMatch[2];
+      break;
+    }
+    // CG,dir,endX,endY,...
+    var arcMatch = scanLine.match(/^CG\s*,[^,]*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
+    if (arcMatch) {
+      startX = arcMatch[1]; startY = arcMatch[2];
+      break;
+    }
+  }
+
+  // Build the output file
+  var output = [];
+
+  // 1. Header lines (comments, variables from file top)
+  output = output.concat(headerLines);
+  output.push("' --- Previewer: In/Out selection ---");
+  output.push("' In: line " + inLine + "  Out: line " + outLine);
+
+  // 2. Tool setup preamble (in correct order)
+  if (toolSetup.toolVar) output.push(toolSetup.toolVar);
+  if (toolSetup.moveSpeed) output.push(toolSetup.moveSpeed);
+  if (toolSetup.toolChange) output.push(toolSetup.toolChange);
+  if (toolSetup.spindleStart) output.push(toolSetup.spindleStart);
+
+  // 3. Jog to safe Z, then rapid to starting XY
+  output.push("JZ," + safeZ);
+  if (startX !== null && startY !== null) {
+    output.push("J2," + startX + "," + startY);
+  }
+
+  output.push("' --- Begin selected cutting ---");
+
+  // 4. Selected lines (in-point to out-point, 1-based)
+  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
+    output.push(allLines[i]);
+  }
+
+  // 5. End: safe Z then spindle off
+  output.push("' --- End of selection ---");
+  output.push("JZ," + safeZ);
+  output.push("C7");
+
+  console.log('SBP selection: lines ' + inLine + '-' + outLine +
+              ', preamble: tool=' + !!toolSetup.toolVar +
+              ' C9=' + !!toolSetup.toolChange +
+              ' C6=' + !!toolSetup.spindleStart +
+              ' MS=' + !!toolSetup.moveSpeed +
+              ', startXY=' + startX + ',' + startY);
+
+  return output.join('\n');
+}
+
 function nowPreviewJob() {
   fabmo.getAppArgs(function(err, args) {
     if (err) console.log(err);
@@ -124,12 +536,150 @@ function nowPreviewJob() {
 
 
   $('.run-now').click(function() {
-    $('.run-now').hide();
-    fabmo.runNext(function(err, data) {
-      if (err) {
-        fabmo.notify(err, 'error');
-        $('.run-now').show(); // re-show if the run failed
+    // Check for in/out selection
+    var inOut = viewer ? viewer.getInOutPoints() : null;
+    var hasSelection = inOut && (inOut.inPoint || inOut.outPoint);
+
+    if (hasSelection && originalFileContent) {
+      // Run only the selected portion with tool setup preamble
+      var inLine = inOut.inPoint ? inOut.inPoint.sourceLine : 1;
+      var outLine = inOut.outPoint ? inOut.outPoint.sourceLine : null;
+      var safeZ = (cached_Config && cached_Config.opensbp) ? cached_Config.opensbp.safeZpullUp : 0;
+      var sbpCode = extractSBPSelection(originalFileContent, inLine, outLine, safeZ);
+
+      if (sbpCode) {
+        $('.run-now').hide();
+        fabmo.runSBP(sbpCode, function(err, data) {
+          if (err) {
+            fabmo.notify(err, 'error');
+            $('.run-now').show();
+          }
+        });
+      } else {
+        fabmo.notify('Could not extract selection from file', 'error');
       }
+    } else {
+      // No selection — run the full job as before
+      $('.run-now').hide();
+      fabmo.runNext(function(err, data) {
+        if (err) {
+          fabmo.notify(err, 'error');
+          $('.run-now').show();
+        }
+      });
+    }
+  });
+
+  // Submit Trimmed Job: delete current job, submit extracted SBP as new job
+  $('.submit-trimmed').click(function() {
+    var inOut = viewer ? viewer.getInOutPoints() : null;
+    if (!inOut || (!inOut.inPoint && !inOut.outPoint) || !originalFileContent) {
+      fabmo.notify('Set In and Out points first', 'error');
+      return;
+    }
+
+    var inLine = inOut.inPoint ? inOut.inPoint.sourceLine : 1;
+    var outLine = inOut.outPoint ? inOut.outPoint.sourceLine : null;
+    var sbpCode = extractSBPSelection(originalFileContent, inLine, outLine);
+    if (!sbpCode) {
+      fabmo.notify('Could not extract selection from file', 'error');
+      return;
+    }
+
+    var currentJobID = cookie.get('job-id');
+    if (!currentJobID || currentJobID == -1) {
+      fabmo.notify('No current job to replace', 'error');
+      return;
+    }
+
+    $('.submit-trimmed').css('opacity', '0.5').css('pointer-events', 'none');
+
+    // Create a File object with .sbp extension so the job system recognizes it
+    var fileName = 'trimmed_L' + inLine + '-L' + (outLine || 'end') + '.sbp';
+    var file = new File([sbpCode], fileName, { type: 'text/plain' });
+
+    // Delete the current job, then submit the trimmed one
+    fabmo.deleteJob(currentJobID, function(err) {
+      if (err) {
+        console.warn('Could not delete original job:', err);
+        // Continue anyway — still submit the trimmed job
+      }
+
+      fabmo.submitJob(file, {}, function(err, data) {
+        $('.submit-trimmed').css('opacity', '').css('pointer-events', '');
+        if (err) {
+          fabmo.notify('Failed to submit trimmed job: ' + err, 'error');
+        } else {
+          cleanupBeforeExit();
+          fabmo.launchApp('job-manager');
+        }
+      });
+    });
+  });
+
+  // Run Selected Operations
+  $('.run-selected-ops').click(function() {
+    if (!viewer || !viewer.operations || !originalFileContent) return;
+
+    var selected = viewer.getSelectedOperationIndices();
+    if (selected.length === 0) {
+      fabmo.notify('No operations selected', 'error');
+      return;
+    }
+
+    var safeZ = (cached_Config && cached_Config.opensbp) ? cached_Config.opensbp.safeZpullUp : 0;
+    var sbpCode = extractSelectedOperations(originalFileContent, viewer.operations, selected, safeZ);
+
+    if (sbpCode) {
+      fabmo.runSBP(sbpCode, function(err) {
+        if (err) fabmo.notify(err, 'error');
+      });
+    } else {
+      fabmo.notify('Could not build selected operations', 'error');
+    }
+  });
+
+  // Submit Selected Operations as new job
+  $('.submit-selected-ops').click(function() {
+    if (!viewer || !viewer.operations || !originalFileContent) return;
+
+    var selected = viewer.getSelectedOperationIndices();
+    if (selected.length === 0) {
+      fabmo.notify('No operations selected', 'error');
+      return;
+    }
+
+    var safeZ = (cached_Config && cached_Config.opensbp) ? cached_Config.opensbp.safeZpullUp : 0;
+    var sbpCode = extractSelectedOperations(originalFileContent, viewer.operations, selected, safeZ);
+    if (!sbpCode) {
+      fabmo.notify('Could not build selected operations', 'error');
+      return;
+    }
+
+    var currentJobID = cookie.get('job-id');
+    if (!currentJobID || currentJobID == -1) {
+      fabmo.notify('No current job to replace', 'error');
+      return;
+    }
+
+    $('.submit-selected-ops').css('opacity', '0.5').css('pointer-events', 'none');
+
+    var opNames = selected.map(function(i) { return viewer.operations[i].name || ('op' + (i+1)); });
+    var fileName = 'selected_' + opNames.join('_').replace(/\s+/g, '-').substring(0, 40) + '.sbp';
+    var file = new File([sbpCode], fileName, { type: 'text/plain' });
+
+    fabmo.deleteJob(currentJobID, function(err) {
+      if (err) console.warn('Could not delete original job:', err);
+
+      fabmo.submitJob(file, {}, function(err, data) {
+        $('.submit-selected-ops').css('opacity', '').css('pointer-events', '');
+        if (err) {
+          fabmo.notify('Failed to submit selected operations: ' + err, 'error');
+        } else {
+          cleanupBeforeExit();
+          fabmo.launchApp('job-manager');
+        }
+      });
     });
   });
 
@@ -195,31 +745,52 @@ function nowPreviewJob() {
     if (jobID != -1) {
       viewer.gui.showLoading();
 
+      // Fetch original file first to extract VCarve/ShopBot metadata
+      // (Z origin mode and material thickness), then load gcode.
+      // Using 'complete' ensures gcode loads even if file fetch fails.
       $.ajax({
         type: 'GET',
-        url: '/job/' + jobID + '/gcode',
-
-        xhr: function () {
-          var xhr = $.ajaxSettings.xhr();
-          xhr.onprogress = function (e) {
-            viewer.gui.showLoadingSize(e.loaded);
+        url: '/job/' + jobID + '/file',
+        success: function(content) {
+          originalFileContent = content;
+          var metadata = parseFileMetadata(content);
+          if (metadata) {
+            viewer.setFileMetadata(metadata);
           }
-
-          return xhr;
+          var operations = parseOperations(content);
+          if (operations.length > 0) {
+            viewer.setOperations(operations);
+          }
         },
+        complete: function() {
+          // Load gcode after metadata is set
+          $.ajax({
+            type: 'GET',
+            url: '/job/' + jobID + '/gcode',
 
-        success: function (gcode) {
-          viewer.gui.showLoadingSize(gcode.length);
-          viewer.setGCode(gcode)
-        },
+            xhr: function () {
+              var xhr = $.ajaxSettings.xhr();
+              xhr.onprogress = function (e) {
+                viewer.gui.showLoadingSize(e.loaded);
+              }
 
-        error: function(data) {
-          if (data && data.responseJSON)
-            fabmo.notify(data.responseJSON.message || data.statusText);
+              return xhr;
+            },
 
-          else fabmo.notify(data.statusText);
+            success: function (gcode) {
+              viewer.gui.showLoadingSize(gcode.length);
+              viewer.setGCode(gcode)
+            },
 
-          viewer.gui.hideLoading();
+            error: function(data) {
+              if (data && data.responseJSON)
+                fabmo.notify(data.responseJSON.message || data.statusText);
+
+              else fabmo.notify(data.statusText);
+
+              viewer.gui.hideLoading();
+            }
+          });
         }
       });
     }

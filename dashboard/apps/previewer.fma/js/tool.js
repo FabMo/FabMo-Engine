@@ -21,6 +21,13 @@ module.exports = function(scene, update) {
 
 
   self.update = function (size, position) {
+    // Remove previous mesh before creating a new one
+    if (self.mesh) {
+      scene.remove(self.mesh);
+      if (self.mesh.geometry) self.mesh.geometry.dispose();
+      if (self.mesh.material) self.mesh.material.dispose();
+    }
+
     var material = new THREE.MeshPhongMaterial({
       shininess: 30,
       specular: 0x888888,

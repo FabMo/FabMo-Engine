@@ -156,12 +156,16 @@ module.exports = function(scene, callbacks) {
     var feed = rapid ? rapid_feed : self.feed;
     var move = new Move(self.buffers[self.buffers.length - 1], self.fill * 6,
                         self.lines + 1, rapid, feed, self.duration);
-    
-    // ADD: Store move metadata for material simulation
+
+    // Store move metadata for material simulation
     move.start = start;
     move.end = end;
     move.type = 'line';
     move.startTime = self.duration;
+
+    // Store source line (SBP line from N-word, or GCode line as fallback)
+    move.sourceLine = self.hasSourceLines ? self.currentSourceLine : (self.lines + 1);
+    move.gcLine = self.lines + 1;
     
     self.distance += move.getLength();
     self.duration += move.getDuration();
@@ -385,6 +389,11 @@ module.exports = function(scene, callbacks) {
     var result = {cmds: [], words: {}}
     var hasAxis = false;
 
+    // Preserve N-word (SBP source line number, offset by +20)
+    // PEG parser returns N as ["N", integer] array, not a plain number
+    var nVal = Array.isArray(o.N) ? o.N[1] : o.N;
+    if (typeof nVal === 'number') result.N = nVal;
+
     for (var i = 0; i < o.words.length; i++) {
       var letter = o.words[i][0];
       var number = o.words[i][1];
@@ -408,6 +417,12 @@ module.exports = function(scene, callbacks) {
     } catch (e) {
       self.addError('error', e);
       return;
+    }
+
+    // Track source line from N-word (SBP line = N - 20)
+    if (typeof line.N === 'number') {
+      self.currentSourceLine = line.N - 20;
+      self.hasSourceLines = true;
     }
 
     if (typeof line.words.f != 'undefined')
@@ -542,6 +557,108 @@ module.exports = function(scene, callbacks) {
   }
   self.setCurrentLine = setCurrentLine;
 
+  // Helper: apply material removal for a range of moves
+  function applyMaterialForMoves(fromMove, toMove) {
+    if (!callbacks.materialUpdate) return;
+    for (var i = fromMove; i < toMove; i++) {
+      var currentMove = self.moves[i];
+      if (currentMove.rapid) continue;
+
+      // Notify of per-move tool info if it changed
+      if (currentMove.toolInfo && callbacks.materialToolChange) {
+        callbacks.materialToolChange(currentMove.toolInfo);
+      }
+
+      if (currentMove.type === 'arc') {
+        var arcLength = currentMove.getLength();
+        var samplesPerInch = 1500;
+        var numSegments = Math.max(15, Math.ceil(arcLength * samplesPerInch));
+        var prevPos = currentMove.start;
+
+        for (var seg = 1; seg <= numSegments; seg++) {
+          var t = seg / numSegments;
+          var segTime = currentMove.startTime + t * currentMove.getDuration();
+          var currentPos = currentMove.getPositionAt(segTime);
+          callbacks.materialUpdate(prevPos, currentPos, true);
+          prevPos = currentPos;
+        }
+      } else {
+        callbacks.materialUpdate(currentMove.start, currentMove.end, false);
+      }
+    }
+  }
+
+  // Apply all material removal at once (called after path loads).
+  // Material shows the final cut result immediately; animation only moves the tool.
+  // Collect move segments for the segment-indexed material computation
+  function collectSegments() {
+    var segments = [];
+    var currentDia = 0.25;
+    var currentType = 'flat';
+    var currentAngle = 90;
+
+    for (var i = 0; i < self.moves.length; i++) {
+      var m = self.moves[i];
+      if (m.rapid) continue;
+      if (m.toolInfo) {
+        if (m.toolInfo.toolDiameter) currentDia = m.toolInfo.toolDiameter;
+        if (m.toolInfo.toolType) currentType = m.toolInfo.toolType;
+        if (m.toolInfo.vbitAngle) currentAngle = m.toolInfo.vbitAngle;
+      }
+      segments.push({
+        start: m.start, end: m.end,
+        toolType: currentType, toolDia: currentDia, vbitAngle: currentAngle
+      });
+    }
+    return segments;
+  }
+
+  // Apply all material: async with progress callback
+  self.applyAllMaterial = function(onProgress, onDone) {
+    if (!self.loaded || !self.moves.length) { if (onDone) onDone(); return; }
+
+    var segments = collectSegments();
+
+    if (callbacks.materialComputeFromSegments) {
+      callbacks.materialComputeFromSegments(segments,
+        onProgress || null,
+        function() {
+          if (callbacks.materialForceUpdate) callbacks.materialForceUpdate();
+          if (onDone) onDone();
+        }
+      );
+    } else {
+      applyMaterialForMoves(0, self.moves.length);
+      if (callbacks.materialForceUpdate) callbacks.materialForceUpdate();
+      if (onDone) onDone();
+    }
+  };
+
+  // Apply material in chunks so the UI stays responsive.
+  // Calls onDone() when complete; updates the mesh periodically.
+  self.applyAllMaterialChunked = function(chunkSize, onDone) {
+    if (!self.loaded || !self.moves.length) { if (onDone) onDone(); return; }
+    var total = self.moves.length;
+    var pos = 0;
+    var chunkCount = 0;
+    chunkSize = chunkSize || 500;
+
+    function processChunk() {
+      var end = Math.min(pos + chunkSize, total);
+      applyMaterialForMoves(pos, end);
+      pos = end;
+      chunkCount++;
+      if (pos < total) {
+        setTimeout(processChunk, 0);
+      } else {
+        // Build sparse mesh only once at the end
+        if (callbacks.materialForceUpdate) callbacks.materialForceUpdate(true);
+        if (onDone) onDone();
+      }
+    }
+    processChunk();
+  };
+
   self.setMoveTime = function(time) {
     if (!self.loaded || !self.moves.length) return;
 
@@ -550,43 +667,19 @@ module.exports = function(scene, callbacks) {
     var start    = move.start;
     var p        = move.getPositionAt(time);
 
-    // Material simulation during playback
-    if (callbacks.materialUpdate && nextMove > self.lastMove) {
-      for (var i = self.lastMove; i < nextMove; i++) {
-        var currentMove = self.moves[i];
-        
-        // Only simulate cutting moves (not rapids)
-        if (!currentMove.rapid) {
-          
-          // Check if this is an arc move
-          if (currentMove.type === 'arc') {
-            
-            // CHANGED: Dynamic sampling based on arc length
-            var arcLength = currentMove.getLength();
-            var samplesPerInch = 1500; // INCREASED from 30 to ensure fine coverage
-            var numSegments = Math.max(15, Math.ceil(arcLength * samplesPerInch));
-            var prevPos = currentMove.start;
-            
-            for (var seg = 1; seg <= numSegments; seg++) {
-              var t = seg / numSegments;
-              var segTime = currentMove.startTime + t * currentMove.getDuration();
-              var currentPos = currentMove.getPositionAt(segTime);
-              
-              // Pass small segments with isArcSegment flag
-              callbacks.materialUpdate(prevPos, currentPos, true);
-              prevPos = currentPos;
-            }
-          } else {
-            // Linear moves: just start to end
-            callbacks.materialUpdate(currentMove.start, currentMove.end, false);
-          }
-        }
-      }
-    }
+    if (nextMove < self.lastMove) {
+      // --- REWIND: scrubbing backward ---
+      for (var i = nextMove; i <= self.lastMove && i < self.moves.length; i++)
+        self.moves[i].setDone(false);
 
-    // Mark lines done
-    for (var i = self.lastMove; i < nextMove; i++)
-      self.moves[i].setDone(true);
+      for (var i = 0; i < nextMove; i++)
+        self.moves[i].setDone(true);
+
+    } else if (nextMove > self.lastMove) {
+      // --- FORWARD ---
+      for (var i = self.lastMove; i < nextMove; i++)
+        self.moves[i].setDone(true);
+    }
 
     // Current line
     var verts = self.currentLine.geometry.vertices;
@@ -648,6 +741,47 @@ module.exports = function(scene, callbacks) {
     setCurrentLine(line);
   }
 
+
+  var grey = [0.35, 0.35, 0.35];
+  var highlight = [0, 1, 0]; // green
+
+  // Highlight an operation's moves in green and grey out everything else.
+  // srcStart/srcEnd are 0-based source line numbers.
+  // Pass null to clear highlighting and restore normal colors.
+  self.highlightSourceLineRange = function(srcStart, srcEnd) {
+    if (!self.loaded) return;
+    self.pause();
+    for (var i = 0; i < self.moves.length; i++) {
+      var m = self.moves[i];
+      if (m.hidden) continue;
+      if (srcStart !== null && m.sourceLine >= srcStart && m.sourceLine <= srcEnd) {
+        m.setColor(highlight);
+      } else if (srcStart !== null) {
+        m.setColor(grey);
+      } else {
+        // Restore normal colors
+        m.setColor(m.rapid ? red : green);
+      }
+    }
+    // Position tool at start of highlighted range
+    if (srcStart !== null) {
+      for (var i = 0; i < self.moves.length; i++) {
+        if (self.moves[i].sourceLine >= srcStart) {
+          self.lastMove = i;
+          self.moveTime = self.moves[i].getStartTime();
+          var move = self.moves[i];
+          var verts = self.currentLine.geometry.vertices;
+          verts[0].fromArray(move.start);
+          verts[1].fromArray(move.start);
+          self.currentLine.geometry.verticesNeedUpdate = true;
+          self.currentLine.visible = true;
+          callbacks.position(move.start);
+          break;
+        }
+      }
+    }
+    if (callbacks.update) callbacks.update();
+  };
 
   self.setMoveToEnd = function () {
     if (!self.loaded) return;
@@ -735,6 +869,8 @@ module.exports = function(scene, callbacks) {
   self.arcRelative = true;
   self.errors      = [];
   self.commands    = 0;
+  self.currentSourceLine = 0;
+  self.hasSourceLines = false;
   self.codeLine    = $('#preview .code-line');
   self.preview     = $('#preview');
   self.show        = parseInt(cookie.get('show-toolpath', 1)); // Default to visible
@@ -766,6 +902,65 @@ module.exports = function(scene, callbacks) {
   };
 
   util.connectSetting('show-toolpath', self.show, self.setShow);
+
+  // Hide or show all moves whose sourceLine falls within a range
+  self.setMovesVisibleBySourceLine = function(startLine, endLine, visible) {
+    for (var i = 0; i < self.moves.length; i++) {
+      var sl = self.moves[i].sourceLine;
+      if (sl >= startLine && sl <= endLine) {
+        self.moves[i].setHidden(!visible);
+      }
+    }
+    if (callbacks.update) callbacks.update();
+  };
+
+  // Clear existing path data and THREE.js objects so we can reload
+  self.clearPath = function() {
+    self.pause();
+    // Remove LineSegments meshes from the group (but keep self.obj in scene)
+    while (self.obj.children.length > 0) {
+      var child = self.obj.children[0];
+      self.obj.remove(child);
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) child.material.dispose();
+    }
+    self.moves       = [];
+    self.buffers     = [];
+    self.lines       = 0;
+    self.distance    = 0;
+    self.duration    = 0;
+    self.bounds      = {min: {}, max: {}};
+    self.position    = [0, 0, 0];
+    self.plane       = 'xy';
+    self.done        = false;
+    self.relative    = false;
+    self.arcRelative = true;
+    self.errors      = [];
+    self.commands     = 0;
+    self.currentSourceLine = 0;
+    self.hasSourceLines = false;
+    self.loaded      = false;
+    self.lastMove    = 0;
+    self.moveTime    = 0;
+    self.offsetTime  = 0;
+    self.fill        = 0;
+    self.positions   = undefined;
+    self.colors      = undefined;
+    self.currentLine.visible = false;
+  };
+
+  /**
+   * Map a raycaster intersection on a LineSegments child back to a Move.
+   * Returns the Move object, or null if not found.
+   */
+  self.getMoveAtIntersection = function(lineSegmentsObj, vertexIndex) {
+    var bufferIndex = self.obj.children.indexOf(lineSegmentsObj);
+    if (bufferIndex < 0) return null;
+    var segmentIndex = Math.floor(vertexIndex / 2);
+    var moveIndex = bufferIndex * buffer_size + segmentIndex;
+    if (moveIndex < 0 || moveIndex >= self.moves.length) return null;
+    return self.moves[moveIndex];
+  };
 
   /**
    * Remove material along a path (IMPROVED for small arc handling)

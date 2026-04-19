@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="../../css/dashboard.css">
-    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/style.css?v=22">
   </head>
 
   <body>
@@ -28,15 +28,20 @@
     <div id="preview" style="display: inline-block;">
       <div class="code-line" title="Current File Line"></div>
 
-      <div class="actions">
-        <div class="run-now">Run This Job</div>
+      <div class="operations-panel" id="operations-panel" style="display: none;">
+        <div class="ops-header">
+          <span>Operations</span>
+          <span class="ops-toggle-all" title="Select All / None">All</span>
+        </div>
+        <div class="ops-list" id="ops-list"></div>
+        <div class="ops-actions">
+          <div class="run-now">Run Full Job</div>
+          <button class="run-selected-ops" title="Run only the checked operations">Run Selected</button>
+          <button class="submit-selected-ops" title="Submit checked operations as a new job">Submit Selected</button>
+        </div>
+      </div>
 
-        <img id="button-pause"  src="images/pause.png"
-             title="Pause path simulation."/>
-        <img id="button-reset"  src="images/reset.png"
-             title="Restart path simulation."/>
-        <img id="button-play"   src="images/play.png"
-             title="Start or continue path simulation."/>
+      <div class="actions">
         <img id="button-x"      src="images/x.png"
              title="Change orientation to view down the X axis."/>
         <img id="button-y"      src="images/y.png"
@@ -47,8 +52,45 @@
              title="Toggle to Ortho (non-perspective) view."/>
         <img id="button-perspective"    src="images/perspective.png"
              title="Toggle to Perspective view."/>
+      </div>
+
+      <div class="bottom-bar">
         <img id="button-settings" src="images/settings.png"
              title="Open previewer settings."/>
+        <select name="speed" class="quick-setting" title="Simulation Speed">
+          <option value="0.0625">1/16x</option>
+          <option value="0.125">1/8x</option>
+          <option value="0.25">1/4x</option>
+          <option value="0.5">1/2x</option>
+          <option value="1">1x</option>
+          <option value="2">2x</option>
+          <option value="4">4x</option>
+          <option value="8">8x</option>
+          <option value="16">16x</option>
+        </select>
+        <label class="quick-toggle" title="Show Toolpath">
+          <input type="checkbox" name="show-toolpath"/> Path
+        </label>
+        <label class="quick-toggle" title="Show Material Simulation">
+          <input type="checkbox" name="show-material"/> Material
+        </label>
+        <img id="button-play"   src="images/play.png"
+             title="Start or continue path simulation."/>
+        <img id="button-pause"  src="images/pause.png"
+             title="Pause path simulation."/>
+        <img id="button-reset"  src="images/reset.png"
+             title="Restart path simulation."/>
+        <span id="button-skip-back" class="nav-btn" title="Skip to previous plunge (Shift+Left)">|&lsaquo;&lsaquo;</span>
+        <span id="button-step-back" class="nav-btn" title="Step back one line (Left arrow)">&lsaquo;</span>
+        <input type="range" id="timeline" min="0" max="1000" value="0" step="1"/>
+        <span id="button-step-fwd" class="nav-btn" title="Step forward one line (Right arrow)">&rsaquo;</span>
+        <span id="button-skip-fwd" class="nav-btn" title="Skip to next retract (Shift+Right)">&rsaquo;&rsaquo;|</span>
+        <div class="timeline-range" id="timeline-range"></div>
+        <div class="timeline-stripes" id="timeline-stripes"></div>
+        <span id="button-in" class="inout-btn" title="Set Cut Start at current position (I)">Set Cut Start</span>
+        <span id="button-out" class="inout-btn" title="Set Cut Stop at current position (O)">Set Cut Stop</span>
+        <span id="button-clear-inout" class="inout-btn clear-btn" title="Clear In/Out points">&times;</span>
+        <span id="inout-info" class="inout-info"></span>
       </div>
       <a id="button-help" title="Show Help" hidden> i </a>
 
@@ -73,19 +115,6 @@
       <div class="settings dialog">
         <div class="header">Settings</div>
         <div class="content">
-          <label>Simulation Speed</label>
-          <select name="speed">
-            <option value="0.0625">1/16x</option>
-            <option value="0.125">1/8x</option>
-            <option value="0.25">1/4x</option>
-            <option value="0.5">1/2x</option>
-            <option value="1">1x</option>
-            <option value="2">2x</option>
-            <option value="4">4x</option>
-            <option value="8">8x</option>
-            <option value="16">16x</option>
-          </select>
-
           <label>Temporarily Change File-Boundary Indicator Units </label>
           <select name="units">
             <!-- <option value="auto">auto</option> -->
@@ -133,30 +162,20 @@
           </label>
 
           <label>
-            <input type="checkbox" name="show-toolpath"/>
-            Show Toolpath
-          </label>
-
-          <label>
             <input name="show-pointcloud" type="checkbox"/>
-            BETA Show Point Cloud Shape for Leveler
+            Show Point Cloud Shape for Leveler
           </label>
 
           <label>
             <input name="show-pointcloud-wireframe" type="checkbox" checked="true"/>
-            BETA Show Point Cloud Wireframe
+            Show Point Cloud Wireframe
           </label>
 
-          <label>
-            <input type="checkbox" name="show-material"/>
-            BETA Show Material for Subtractive Simulation
-          </label>
-
-          <button class="reset-material">Reset Material (BETA)</button>
+          <button class="reset-material">Reset Material</button>
 
           <hr/>
 
-          <h5>BETA Options</h5>
+          <h5>Simulation Options</h5>
 
           <label>Set Point Cloud Opacity</label>
           <input class="opacity-slider" id=#op-slider name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>
@@ -168,31 +187,12 @@
 
           <label>Simulation Resolution (grid points)</label>
           <select name="material-resolution">
-            <option value="50">Low (50x50 - Fast)</option>
-            <option value="100">Medium (100x100)</option>
-            <option value="200">High (200x200)</option>
-            <option value="300" selected>Very High (300x300)</option>
-            <option value="500">Ultra (500x500)</option>
-          </select>
-
-          <label>Tool Type</label>
-          <select name="tool-type">
-            <option value="flat" selected>Flat End Mill</option>
-            <option value="ball">Ball Nose</option>
-            <option value="vbit">V-Bit</option>
-          </select>
-
-          <label>Tool Diameter</label>
-          <select name="tool-diameter">
-            <option value="0.125">1/8 inch</option>
-            <option value="0.25" selected>1/4 inch</option>
-            <option value="0.5">1/2 inch</option>
-          </select>
-
-          <label class="vbit-angle-setting" style="display: none;">V-Bit Angle</label>
-          <select name="vbit-angle" class="vbit-angle-setting" style="display: none;">
-            <option value="60">60 degrees</option>
-            <option value="90" selected>90 degrees</option>
+            <option value="100">Low (100 - Fast)</option>
+            <option value="200">Medium (200)</option>
+            <option value="400">High (400)</option>
+            <option value="600">Very High (600)</option>
+            <option value="1000" selected>Ultra (1000)</option>
+            <option value="2000">Extreme (2000)</option>
           </select>
 
           <hr/>
