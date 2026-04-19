@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="../../css/dashboard.css">
-    <link rel="stylesheet" href="./css/style.css?v=19">
+    <link rel="stylesheet" href="./css/style.css?v=21">
   </head>
 
   <body>
@@ -28,10 +28,20 @@
     <div id="preview" style="display: inline-block;">
       <div class="code-line" title="Current File Line"></div>
 
-      <div class="actions">
-        <div class="run-now">Run This Job</div>
-        <div class="submit-trimmed">Submit Trimmed Job</div>
+      <div class="operations-panel" id="operations-panel" style="display: none;">
+        <div class="ops-header">
+          <span>Operations</span>
+          <span class="ops-toggle-all" title="Select All / None">All</span>
+        </div>
+        <div class="ops-list" id="ops-list"></div>
+        <div class="ops-actions">
+          <div class="run-now">Run Full Job</div>
+          <button class="run-selected-ops" title="Run only the checked operations">Run Selected</button>
+          <button class="submit-selected-ops" title="Submit checked operations as a new job">Submit Selected</button>
+        </div>
+      </div>
 
+      <div class="actions">
         <img id="button-x"      src="images/x.png"
              title="Change orientation to view down the X axis."/>
         <img id="button-y"      src="images/y.png"
@@ -191,18 +201,11 @@
             <option value="vbit">V-Bit</option>
           </select>
 
-          <label>Tool Diameter</label>
-          <select name="tool-diameter">
-            <option value="0.125">1/8 inch</option>
-            <option value="0.25" selected>1/4 inch</option>
-            <option value="0.5">1/2 inch</option>
-          </select>
+          <label>Tool Diameter (inches)</label>
+          <input name="tool-diameter" type="number" min="0.01" max="3" step="any" value="0.25"/>
 
-          <label class="vbit-angle-setting" style="display: none;">V-Bit Angle</label>
-          <select name="vbit-angle" class="vbit-angle-setting" style="display: none;">
-            <option value="60">60 degrees</option>
-            <option value="90" selected>90 degrees</option>
-          </select>
+          <label class="vbit-angle-setting" style="display: none;">V-Bit Angle (degrees)</label>
+          <input name="vbit-angle" class="vbit-angle-setting" type="number" min="10" max="180" step="1" value="90" style="display: none;"/>
 
           <hr/>
 

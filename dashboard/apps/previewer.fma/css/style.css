@@ -81,35 +81,19 @@ body {
   pointer-events: none;
 }
 
-#preview .actions .run-now {
-  right: 0;
-  margin: 5px;
-  padding: 0.7rem 1.2rem;
-  border-radius: 10px;
+#preview .run-now {
+  padding: 6px 8px;
+  border-radius: 8px;
   color: #eee;
   background-color: #035b1c;
   border: 2px solid #024a16;
   font-weight: bold;
+  font-size: 11px;
   box-shadow: none;
+  cursor: pointer;
+  text-align: center;
 }
 
-#preview .actions .submit-trimmed {
-  right: 0;
-  top: 50px;
-  margin: 5px;
-  padding: 0.7rem 1.2rem;
-  border-radius: 10px;
-  color: #eee;
-  background-color: #313366;
-  border: 2px solid #201f2b;
-  font-weight: bold;
-  box-shadow: none;
-  font-size: 0.85rem;
-}
-
-#preview .actions .submit-trimmed:hover {
-  background-color: #3d3f7a;
-}
 
 #preview .actions > * {
   cursor: pointer;
@@ -125,12 +109,8 @@ body {
   display: none;
 }
 
-#preview .submit-trimmed {
-  display: none;
-}
-
-#preview.has-selection .submit-trimmed {
-  display: block;
+#preview .run-now:hover {
+  background-color: #047a25;
 }
 
 #preview #button-pause,
@@ -139,7 +119,7 @@ body {
   display: none;
 }
 
-#preview.live .actions .run-now {
+#preview.live .run-now {
   display: block;
 }
 
@@ -611,4 +591,131 @@ input[type="range"]::-webkit-slider-runnable-track {
 #preview .settings input[type='range']::-ms-thumb {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   background: #888888;
+}
+
+/* Operations panel — top right */
+#preview .operations-panel {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(30, 30, 50, 0.92);
+  border: 2px solid #201f2b;
+  border-radius: 10px;
+  max-height: 60vh;
+  min-width: 200px;
+  max-width: 300px;
+  z-index: 5;
+  font-size: 12px;
+  color: #eee;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#preview .operations-panel .ops-header {
+  padding: 8px 10px;
+  font-weight: bold;
+  font-size: 13px;
+  border-bottom: 1px solid #444;
+  background: rgba(49, 51, 102, 0.8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+#preview .operations-panel .ops-toggle-all {
+  font-size: 11px;
+  color: #aac;
+  cursor: pointer;
+  padding: 2px 6px;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+#preview .operations-panel .ops-toggle-all:hover {
+  background: rgba(100, 100, 150, 0.4);
+  color: #eee;
+}
+
+#preview .operations-panel .ops-list {
+  overflow-y: auto;
+  max-height: 45vh;
+}
+
+#preview .operations-panel .ops-list label {
+  display: flex;
+  align-items: flex-start;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  line-height: 1.4;
+  gap: 6px;
+}
+
+#preview .operations-panel .ops-list label:hover {
+  background: rgba(100, 100, 150, 0.25);
+}
+
+#preview .operations-panel .ops-list label.active {
+  background: rgba(93, 170, 53, 0.15);
+}
+
+#preview .operations-panel .ops-list input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+#preview .operations-panel .ops-list .op-text {
+  flex: 1;
+  min-width: 0;
+}
+
+#preview .operations-panel .ops-list .op-name {
+  font-weight: bold;
+  display: block;
+}
+
+#preview .operations-panel .ops-list .op-tool {
+  font-size: 11px;
+  color: #aaa;
+  display: block;
+}
+
+#preview .operations-panel .ops-actions {
+  padding: 6px 10px;
+  border-top: 1px solid #444;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+#preview .operations-panel .ops-actions .run-now {
+  flex-basis: 100%;
+}
+
+#preview .operations-panel .ops-actions button {
+  flex: 1;
+  padding: 6px 8px;
+  border: 2px solid #024a16;
+  border-radius: 8px;
+  background: #035b1c;
+  color: #eee;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+#preview .operations-panel .ops-actions button:hover {
+  background: #047a25;
+}
+
+#preview .operations-panel .ops-actions .submit-selected-ops {
+  background: #313366;
+  border-color: #201f2b;
+}
+
+#preview .operations-panel .ops-actions .submit-selected-ops:hover {
+  background: #3d3f7a;
 }

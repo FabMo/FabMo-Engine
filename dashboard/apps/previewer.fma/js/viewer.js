@@ -195,13 +195,26 @@ module.exports = function(container) {
       self.gui.showErrors(self.path.errors);
 
     var bounds = self.path.bounds;
-    var size = util.maxDim(bounds);
 
-    updateLights(bounds);
-    self.dims.update(bounds, self.isMetric());
+    // On first load, save the full-file bounds so operation filtering
+    // doesn't shrink the material/camera to a subset's extents.
+    var isFirstLoad = !self.originalBounds;
+    if (isFirstLoad) {
+      self.originalBounds = {
+        min: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
+        max: { x: bounds.max.x, y: bounds.max.y, z: bounds.max.z }
+      };
+    }
+
+    // Always use original bounds for material, camera, and scene setup
+    var sceneBounds = self.originalBounds;
+    var size = util.maxDim(sceneBounds);
+
+    updateLights(sceneBounds);
+    self.dims.update(sceneBounds, self.isMetric());
     self.axes.update(size);
     self.tool.update(size, self.path.position);
-    
+
     // Initialize material simulation
     var stockThickness = 0.75; // Default stock thickness
     var materialTop = 0; // Default: material surface origin (Z=0 is top)
@@ -216,63 +229,83 @@ module.exports = function(container) {
         materialTop = stockThickness;
       }
     }
-    
+
     // Expand bounds to include material block
     var materialBounds = {
       min: {
-        x: bounds.min.x - 0.5,  // Add margin
-        y: bounds.min.y - 0.5,
+        x: sceneBounds.min.x - 0.5,  // Add margin
+        y: sceneBounds.min.y - 0.5,
         z: materialTop - stockThickness  // Bottom of stock
       },
       max: {
-        x: bounds.max.x + 0.5,
-        y: bounds.max.y + 0.5,
+        x: sceneBounds.max.x + 0.5,
+        y: sceneBounds.max.y + 0.5,
         z: materialTop  // Top at Z=0
       }
     };
-    
+
     // Align table surface with the bottom of the material
     var materialBottom = materialTop - stockThickness;
     self.table.setZZoff(materialBottom);
 
-    // Tool diameter - could be from config or settings (default 0.25")
-    var toolDia = 0.125; // TODO: Get from machine config
-    
+    // Apply tool info parsed from file metadata (e.g. &ToolName variable)
+    if (self.fileMetadata && self.fileMetadata.toolInfo) {
+      var ti = self.fileMetadata.toolInfo;
+      if (ti.toolType) {
+        self.material.setToolType(ti.toolType);
+        $('[name="tool-type"]').val(ti.toolType);
+      }
+      if (ti.toolDiameter) {
+        self.material.setToolDiameter(ti.toolDiameter);
+        $('[name="tool-diameter"]').val(ti.toolDiameter);
+      }
+      if (ti.vbitAngle) {
+        self.material.setVbitAngle(ti.vbitAngle);
+        $('[name="vbit-angle"]').val(ti.vbitAngle);
+      }
+    }
+
+    // Use material's current tool diameter (from file metadata, cookie, or default)
+    var toolDia = self.material.toolDiameter;
+
     console.log('Initializing material:');
     console.log('  Top Z:', materialTop);
     console.log('  Bottom Z:', materialTop - stockThickness);
     console.log('  Thickness:', stockThickness);
     console.log('  Tool diameter:', toolDia);
     console.log('Path bounds Z: min=', bounds.min.z, 'max=', bounds.max.z);
-    
+
     // Initialize material with proper positioning
     self.material.initialize(materialBounds, stockThickness, toolDia, materialTop);
-    
-    // Try to restore saved view state first
-    var restored = self.restoreViewState();
-    
-    // If no saved state, position camera in ISO orientation
-    if (!restored) {
-      var center = util.getCenter(bounds);
-      var dims = util.getDims(bounds);
-      var zoom = 0.75 * util.maxDim(bounds) / Math.tan(Math.PI / 8);
-      
-      var camera = [center[0], center[1], center[2]];
-      camera[1] -= (zoom + dims[1] / 2) / 1.4;
-      camera[2] += (zoom + dims[2] / 2) / 1.4;
-      
-      self.controls.reset();
-      self.camera.position.set(camera[0], camera[1], camera[2]);
-      self.controls.target.set(center[0], center[1], center[2]);
-      
-      // Apply zoom and near plane if in ortho mode
-      if (self.isOrtho) {
-        self.orthographicCamera.zoom = 2.0;
-        self.orthographicCamera.near = self.orthoNearClip;
-        self.orthographicCamera.updateProjectionMatrix();
+
+    // Only set up camera on first load
+    if (isFirstLoad) {
+      // Try to restore saved view state first
+      var restored = self.restoreViewState();
+
+      // If no saved state, position camera in ISO orientation
+      if (!restored) {
+        var center = util.getCenter(sceneBounds);
+        var dims = util.getDims(sceneBounds);
+        var zoom = 0.75 * size / Math.tan(Math.PI / 8);
+
+        var camera = [center[0], center[1], center[2]];
+        camera[1] -= (zoom + dims[1] / 2) / 1.4;
+        camera[2] += (zoom + dims[2] / 2) / 1.4;
+
+        self.controls.reset();
+        self.camera.position.set(camera[0], camera[1], camera[2]);
+        self.controls.target.set(center[0], center[1], center[2]);
+
+        // Apply zoom and near plane if in ortho mode
+        if (self.isOrtho) {
+          self.orthographicCamera.zoom = 2.0;
+          self.orthographicCamera.near = self.orthoNearClip;
+          self.orthographicCamera.updateProjectionMatrix();
+        }
+
+        self.controls.update();
       }
-      
-      self.controls.update();
     }
 
     buildNLineMap();
@@ -348,16 +381,152 @@ module.exports = function(container) {
     console.log('File metadata set:', JSON.stringify(metadata));
   };
 
+  // Operations list parsed from 'New Path blocks
+  self.operations = null;
+
+  self.setOperations = function(ops) {
+    self.operations = ops;
+    if (!ops || ops.length === 0) {
+      $('#operations-panel').hide();
+      return;
+    }
+
+    var list = $('#ops-list');
+    list.empty();
+
+    for (var i = 0; i < ops.length; i++) {
+      (function(idx) {
+        var op = ops[idx];
+        var label = $('<label>');
+        var checkbox = $('<input type="checkbox" checked>').attr('data-op-index', idx);
+        var textWrap = $('<span class="op-text">');
+        var nameSpan = $('<span class="op-name">').text(op.name || ('Operation ' + (idx + 1)));
+        var toolSpan = $('<span class="op-tool">').text(op.toolName || '');
+
+        textWrap.append(nameSpan);
+        if (op.toolName) textWrap.append(toolSpan);
+        label.append(checkbox).append(textWrap);
+
+        // Click on text to seek timeline to this operation's start
+        // op.startLine is 1-based; move.sourceLine is 0-based (SBP pc)
+        textWrap.on('click', function(e) {
+          e.preventDefault();
+          if (self.path && self.path.seekToSourceLine) {
+            self.path.seekToSourceLine(op.startLine - 1);
+            if (self.path.moveTime !== undefined) {
+              self.gui.updateTimeline(self.path.moveTime);
+            }
+          }
+          list.find('label').removeClass('active');
+          label.addClass('active');
+        });
+
+        // Toggle toolpath visibility — reload path with only selected operations' GCode
+        checkbox.on('change', function() {
+          self.reloadForSelectedOperations(self.getSelectedOperationIndices());
+        });
+
+        list.append(label);
+      })(i);
+    }
+
+    // Toggle all / none
+    $('.ops-toggle-all').off('click').on('click', function() {
+      var checkboxes = list.find('input[type="checkbox"]');
+      var allChecked = checkboxes.length === checkboxes.filter(':checked').length;
+      checkboxes.prop('checked', !allChecked);
+      // Single reload instead of triggering each checkbox individually
+      self.reloadForSelectedOperations(self.getSelectedOperationIndices());
+    });
+
+    $('#operations-panel').show();
+    console.log('Operations panel: ' + ops.length + ' operations');
+  };
+
+  self.getSelectedOperationIndices = function() {
+    var indices = [];
+    $('#ops-list input[type="checkbox"]:checked').each(function() {
+      indices.push(parseInt($(this).attr('data-op-index')));
+    });
+    return indices.sort(function(a, b) { return a - b; });
+  };
+
   // Get the file path that will be displayed; "bounds" comes from this work
   self.setGCode = function(gcode) {
+    self.originalGCode = gcode;  // Store for operation filtering
+    self.reloadGCode(gcode);
+  }
+
+  // Reload the path from GCode text (used for initial load and operation filtering)
+  self.reloadGCode = function(gcode) {
     // Clean up existing material before loading new path
     if (self.material && self.material.reset) {
       console.log('Cleaning up previous material before new load');
       self.material.reset();
     }
-    
+    // Clear existing path geometry
+    if (self.path.clearPath) {
+      self.path.clearPath();
+    }
+
     self.path.load(gcode, pathLoaded);
   }
+
+  // Filter GCode to only lines whose N-word source line falls within
+  // the selected operation ranges, then reload the path.
+  // Ranges are 0-based source lines (matching move.sourceLine = pc).
+  self.reloadForSelectedOperations = function(selectedOps) {
+    if (!self.originalGCode || !self.operations) return;
+
+    // If all operations selected, just reload the original
+    if (!selectedOps || selectedOps.length === self.operations.length) {
+      self.reloadGCode(self.originalGCode);
+      return;
+    }
+
+    if (selectedOps.length === 0) {
+      // Nothing selected — clear the path
+      if (self.path.clearPath) self.path.clearPath();
+      return;
+    }
+
+    // Build list of 0-based source line ranges for selected operations
+    var ranges = [];
+    for (var i = 0; i < selectedOps.length; i++) {
+      var op = self.operations[selectedOps[i]];
+      ranges.push({ start: op.startLine - 1, end: op.endLine - 1 });
+    }
+
+    // Filter GCode lines: keep lines with no N-word (setup/units) or
+    // with N-word mapping to a selected operation's source line range
+    var gcodeLines = self.originalGCode.split('\n');
+    var filtered = [];
+    for (var i = 0; i < gcodeLines.length; i++) {
+      var line = gcodeLines[i];
+      // Extract N-word value
+      var nMatch = line.match(/^N(\d+)\s/);
+      if (!nMatch) {
+        // Lines without N-word (shouldn't happen in SBP-compiled GCode, but keep them)
+        filtered.push(line);
+        continue;
+      }
+      var sourceLine = parseInt(nMatch[1]) - 20;  // N = pc + 20
+      // Check if this source line is in any selected operation range
+      var inRange = false;
+      for (var r = 0; r < ranges.length; r++) {
+        if (sourceLine >= ranges[r].start && sourceLine <= ranges[r].end) {
+          inRange = true;
+          break;
+        }
+      }
+      if (inRange) {
+        filtered.push(line);
+      }
+    }
+
+    console.log('Filtered GCode: ' + filtered.length + ' of ' + gcodeLines.length + ' lines for ' + selectedOps.length + ' operations');
+    self.reloadGCode(filtered.join('\n'));
+  };
 
 
   self.isMetric = function () {

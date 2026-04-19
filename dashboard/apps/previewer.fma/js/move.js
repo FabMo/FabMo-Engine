@@ -77,7 +77,17 @@ Move.prototype.setColor = function (color) {
 
 
 Move.prototype.setDone = function (done) {
+  if (this.hidden) return; // Stay invisible while operation is hidden
   this.setColor(done ? magenta : (this.rapid ? red : green));
+}
+
+Move.prototype.setHidden = function (hidden) {
+  this.hidden = hidden;
+  if (hidden) {
+    this.setColor([0, 0, 0]);
+  } else {
+    this.setColor(this.rapid ? red : green);
+  }
 }
 
 

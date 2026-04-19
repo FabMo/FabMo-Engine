@@ -98,15 +98,104 @@ function nowGetStatus() {
 }
 
 /**
+ * Parse tool info from a VCarve/ShopBot &ToolName variable value.
+ * Extracts tool type, diameter, and V-bit angle from descriptive names like:
+ *   "End Mill (1/4")"        -> flat, 0.25"
+ *   "Ball Nose (0.125 inch)" -> ball, 0.125"
+ *   "V Bit (90 deg)"         -> vbit, angle 90
+ *   "End Mill (6mm)"         -> flat, ~0.2362"
+ */
+function parseToolName(toolName) {
+  if (typeof toolName !== 'string') return null;
+
+  var result = {};
+  var name = toolName.trim();
+  // Strip surrounding quotes from variable-style values like &ToolName = "..."
+  // but preserve " as inch mark in unquoted comment-style values like End Mill (3/8")
+  if (name.charAt(0) === '"') {
+    name = name.substring(1).replace(/"$/, '');
+  }
+
+  // Tool type keywords
+  if (/v[\s\-]?bit|vee[\s\-]?bit/i.test(name)) {
+    result.toolType = 'vbit';
+  } else if (/ball[\s\-]?(nose|end)/i.test(name)) {
+    result.toolType = 'ball';
+  } else if (/end[\s\-]?mill|flat|straight|router/i.test(name)) {
+    result.toolType = 'flat';
+  }
+
+  // V-bit angle: "90 deg", "60 degrees", "90°"
+  var angleMatch = name.match(/(\d+(?:\.\d+)?)\s*(?:deg(?:rees?)?|°)/i);
+  if (angleMatch) {
+    result.vbitAngle = parseFloat(angleMatch[1]);
+  }
+
+  // Diameter — try patterns in order of specificity
+
+  // Fraction + inch unit: 1/4", 1/8 in, 3/8 inch
+  var fracInch = name.match(/(\d+)\s*\/\s*(\d+)\s*(?:"|(?:inch(?:es)?|in)\b)/i);
+  if (fracInch) {
+    result.toolDiameter = parseInt(fracInch[1]) / parseInt(fracInch[2]);
+  }
+
+  // Decimal + inch unit: 0.25", 0.250 in, 0.5 inch
+  if (!result.toolDiameter) {
+    var decInch = name.match(/(\d+\.?\d*)\s*(?:"|(?:inch(?:es)?|in)\b)/i);
+    if (decInch) {
+      var val = parseFloat(decInch[1]);
+      if (val > 0 && val < 10) {
+        result.toolDiameter = val;
+      }
+    }
+  }
+
+  // Metric: 6mm, 3.175 mm
+  if (!result.toolDiameter) {
+    var mmMatch = name.match(/(\d+\.?\d*)\s*mm\b/i);
+    if (mmMatch) {
+      result.toolDiameter = Math.round(parseFloat(mmMatch[1]) / 25.4 * 10000) / 10000;
+    }
+  }
+
+  // Bare fraction in parentheses: (1/4), (3/8) — assume inches
+  if (!result.toolDiameter) {
+    var bareFrac = name.match(/\(\s*(\d+)\s*\/\s*(\d+)\s*\)/);
+    if (bareFrac) {
+      result.toolDiameter = parseInt(bareFrac[1]) / parseInt(bareFrac[2]);
+    }
+  }
+
+  // Bare decimal in parentheses: (0.250) — assume inches
+  if (!result.toolDiameter) {
+    var bareDec = name.match(/\(\s*(\d+\.\d+)\s*\)/);
+    if (bareDec) {
+      var val = parseFloat(bareDec[1]);
+      if (val > 0 && val < 10) {
+        result.toolDiameter = val;
+      }
+    }
+  }
+
+  if (result.toolType || result.toolDiameter || result.vbitAngle) {
+    console.log('Parsed tool name "' + name + '":', JSON.stringify(result));
+    return result;
+  }
+  return null;
+}
+
+/**
  * Parse VCarve/ShopBot metadata from original file header.
- * Looks for Z origin mode and material thickness in both SBP and GCode formats.
+ * Looks for Z origin mode, material thickness, and tool info in both SBP and GCode formats.
+ * Scans up to 200 lines to find the first toolpath comment block.
  */
 function parseFileMetadata(content) {
   if (typeof content !== 'string') return null;
 
   var metadata = {};
   var lines = content.split('\n');
-  var limit = Math.min(lines.length, 50); // Only scan header
+  var limit = Math.min(lines.length, 200);
+  var toolInfoFromComment = false;
 
   for (var i = 0; i < limit; i++) {
     var line = lines[i].trim();
@@ -134,13 +223,151 @@ function parseFileMetadata(content) {
     if (gcodeOriginMatch) {
       metadata.zOrigin = gcodeOriginMatch[1].trim().toLowerCase();
     }
+
+    // SBP comment: 'Toolpath Name = Profile 3
+    var pathNameMatch = line.match(/^'\s*Toolpath\s*Name\s*=\s*(.*)/i);
+    if (pathNameMatch && !metadata.toolpathName) {
+      metadata.toolpathName = pathNameMatch[1].trim();
+    }
+
+    // SBP comment: 'Tool Name   = End Mill (3/8")
+    // This per-path format overrides the &ToolName variable
+    var toolCommentMatch = line.match(/^'\s*Tool\s*Name\s*=\s*(.*)/i);
+    if (toolCommentMatch && !toolInfoFromComment) {
+      var toolInfo = parseToolName(toolCommentMatch[1]);
+      if (toolInfo) {
+        metadata.toolInfo = toolInfo;
+        toolInfoFromComment = true;
+      }
+    }
+
+    // SBP variable: &ToolName = "End Mill (1/4")" (fallback if no comment-style)
+    if (!toolInfoFromComment) {
+      var toolNameMatch = line.match(/&ToolName\s*=\s*(.*)/i);
+      if (toolNameMatch && !metadata.toolInfo) {
+        var toolInfo = parseToolName(toolNameMatch[1]);
+        if (toolInfo) {
+          metadata.toolInfo = toolInfo;
+        }
+      }
+    }
   }
 
-  if (metadata.zOrigin || metadata.materialThickness) {
+  if (metadata.zOrigin || metadata.materialThickness || metadata.toolInfo || metadata.toolpathName) {
     console.log('Parsed file metadata:', JSON.stringify(metadata));
     return metadata;
   }
   return null;
+}
+
+/**
+ * Parse all toolpath operation blocks from an SBP file.
+ * Each block starts with a 'New Path comment and includes the toolpath name and tool info.
+ * Returns an array of operation objects with line ranges for extraction.
+ */
+function parseOperations(content) {
+  if (typeof content !== 'string') return [];
+
+  var lines = content.split('\n');
+  var operations = [];
+  var current = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    var lineNum = i + 1; // 1-based
+
+    if (/^'\s*New\s*Path/i.test(line)) {
+      if (current) {
+        current.endLine = lineNum - 1;
+        operations.push(current);
+      }
+      current = {
+        name: null,
+        toolName: null,
+        toolInfo: null,
+        startLine: lineNum,
+        endLine: null
+      };
+      continue;
+    }
+
+    if (current) {
+      var pathMatch = line.match(/^'\s*Toolpath\s*Name\s*=\s*(.*)/i);
+      if (pathMatch && !current.name) {
+        current.name = pathMatch[1].trim();
+      }
+
+      var toolMatch = line.match(/^'\s*Tool\s*Name\s*=\s*(.*)/i);
+      if (toolMatch && !current.toolName) {
+        current.toolName = toolMatch[1].trim();
+        current.toolInfo = parseToolName(current.toolName);
+      }
+    }
+  }
+
+  // Close last operation
+  if (current) {
+    current.endLine = lines.length;
+    operations.push(current);
+  }
+
+  // Merge consecutive duplicates: VCarve prints path info once before the
+  // toolchange and again after it. Keep the first's startLine (includes tool
+  // setup / C9 / C6 / MS) and the second's endLine (includes cutting moves).
+  var merged = [];
+  for (var i = 0; i < operations.length; i++) {
+    var next = operations[i + 1];
+    if (next && operations[i].name && operations[i].name === next.name) {
+      next.startLine = operations[i].startLine;
+      // skip the first occurrence — the merged next will be pushed on its turn
+    } else {
+      merged.push(operations[i]);
+    }
+  }
+  operations = merged;
+
+  if (operations.length) {
+    console.log('Parsed ' + operations.length + ' operations:',
+      operations.map(function(op) { return op.name || '(unnamed)'; }).join(', '));
+  }
+  return operations;
+}
+
+/**
+ * Build a combined SBP file from selected operation blocks.
+ * Includes the file header (everything before the first 'New Path) plus
+ * the selected operation blocks in order, with safe Z between them.
+ */
+function extractSelectedOperations(fileContent, operations, selectedIndices, safeZ) {
+  if (!fileContent || !operations.length || !selectedIndices.length) return null;
+  if (typeof safeZ === 'undefined' || safeZ === null) safeZ = 0;
+
+  var allLines = fileContent.split('\n');
+  var output = [];
+
+  // Header: everything before first 'New Path
+  var firstOpStart = operations[0].startLine;
+  for (var i = 0; i < firstOpStart - 1; i++) {
+    output.push(allLines[i]);
+  }
+
+  output.push("' --- Selected operations (" + selectedIndices.length + " of " + operations.length + ") ---");
+
+  for (var s = 0; s < selectedIndices.length; s++) {
+    var op = operations[selectedIndices[s]];
+    if (s > 0) {
+      output.push("JZ," + safeZ);
+    }
+    for (var i = op.startLine - 1; i < op.endLine && i < allLines.length; i++) {
+      output.push(allLines[i]);
+    }
+  }
+
+  output.push("' --- End of selection ---");
+  output.push("JZ," + safeZ);
+  output.push("C7");
+
+  return output.join('\n');
 }
 
 /**
@@ -390,6 +617,72 @@ function nowPreviewJob() {
     });
   });
 
+  // Run Selected Operations
+  $('.run-selected-ops').click(function() {
+    if (!viewer || !viewer.operations || !originalFileContent) return;
+
+    var selected = viewer.getSelectedOperationIndices();
+    if (selected.length === 0) {
+      fabmo.notify('No operations selected', 'error');
+      return;
+    }
+
+    var safeZ = (cached_Config && cached_Config.opensbp) ? cached_Config.opensbp.safeZpullUp : 0;
+    var sbpCode = extractSelectedOperations(originalFileContent, viewer.operations, selected, safeZ);
+
+    if (sbpCode) {
+      fabmo.runSBP(sbpCode, function(err) {
+        if (err) fabmo.notify(err, 'error');
+      });
+    } else {
+      fabmo.notify('Could not build selected operations', 'error');
+    }
+  });
+
+  // Submit Selected Operations as new job
+  $('.submit-selected-ops').click(function() {
+    if (!viewer || !viewer.operations || !originalFileContent) return;
+
+    var selected = viewer.getSelectedOperationIndices();
+    if (selected.length === 0) {
+      fabmo.notify('No operations selected', 'error');
+      return;
+    }
+
+    var safeZ = (cached_Config && cached_Config.opensbp) ? cached_Config.opensbp.safeZpullUp : 0;
+    var sbpCode = extractSelectedOperations(originalFileContent, viewer.operations, selected, safeZ);
+    if (!sbpCode) {
+      fabmo.notify('Could not build selected operations', 'error');
+      return;
+    }
+
+    var currentJobID = cookie.get('job-id');
+    if (!currentJobID || currentJobID == -1) {
+      fabmo.notify('No current job to replace', 'error');
+      return;
+    }
+
+    $('.submit-selected-ops').css('opacity', '0.5').css('pointer-events', 'none');
+
+    var opNames = selected.map(function(i) { return viewer.operations[i].name || ('op' + (i+1)); });
+    var fileName = 'selected_' + opNames.join('_').replace(/\s+/g, '-').substring(0, 40) + '.sbp';
+    var file = new File([sbpCode], fileName, { type: 'text/plain' });
+
+    fabmo.deleteJob(currentJobID, function(err) {
+      if (err) console.warn('Could not delete original job:', err);
+
+      fabmo.submitJob(file, {}, function(err, data) {
+        $('.submit-selected-ops').css('opacity', '').css('pointer-events', '');
+        if (err) {
+          fabmo.notify('Failed to submit selected operations: ' + err, 'error');
+        } else {
+          cleanupBeforeExit();
+          fabmo.launchApp('job-manager');
+        }
+      });
+    });
+  });
+
     // CRITICAL: Assign to module-level viewer variable
     viewer = new Viewer(preview);
     
@@ -463,6 +756,10 @@ function nowPreviewJob() {
           var metadata = parseFileMetadata(content);
           if (metadata) {
             viewer.setFileMetadata(metadata);
+          }
+          var operations = parseOperations(content);
+          if (operations.length > 0) {
+            viewer.setOperations(operations);
           }
         },
         complete: function() {

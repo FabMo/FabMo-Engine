@@ -390,7 +390,9 @@ module.exports = function(scene, callbacks) {
     var hasAxis = false;
 
     // Preserve N-word (SBP source line number, offset by +20)
-    if (typeof o.N === 'number') result.N = o.N;
+    // PEG parser returns N as ["N", integer] array, not a plain number
+    var nVal = Array.isArray(o.N) ? o.N[1] : o.N;
+    if (typeof nVal === 'number') result.N = nVal;
 
     for (var i = 0; i < o.words.length; i++) {
       var letter = o.words[i][0];
@@ -677,6 +679,18 @@ module.exports = function(scene, callbacks) {
   }
 
 
+  // Seek to the first move whose sourceLine >= the given SBP source line (0-based)
+  self.seekToSourceLine = function(srcLine) {
+    if (!self.loaded) return;
+    self.pause();
+    for (var i = 0; i < self.moves.length; i++) {
+      if (self.moves[i].sourceLine >= srcLine) {
+        self.setMoveTime(self.moves[i].getStartTime());
+        return;
+      }
+    }
+  };
+
   self.setMoveToEnd = function () {
     if (!self.loaded) return;
     self.pause();
@@ -796,6 +810,52 @@ module.exports = function(scene, callbacks) {
   };
 
   util.connectSetting('show-toolpath', self.show, self.setShow);
+
+  // Hide or show all moves whose sourceLine falls within a range
+  self.setMovesVisibleBySourceLine = function(startLine, endLine, visible) {
+    for (var i = 0; i < self.moves.length; i++) {
+      var sl = self.moves[i].sourceLine;
+      if (sl >= startLine && sl <= endLine) {
+        self.moves[i].setHidden(!visible);
+      }
+    }
+    if (callbacks.update) callbacks.update();
+  };
+
+  // Clear existing path data and THREE.js objects so we can reload
+  self.clearPath = function() {
+    self.pause();
+    // Remove LineSegments meshes from the group (but keep self.obj in scene)
+    while (self.obj.children.length > 0) {
+      var child = self.obj.children[0];
+      self.obj.remove(child);
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) child.material.dispose();
+    }
+    self.moves       = [];
+    self.buffers     = [];
+    self.lines       = 0;
+    self.distance    = 0;
+    self.duration    = 0;
+    self.bounds      = {min: {}, max: {}};
+    self.position    = [0, 0, 0];
+    self.plane       = 'xy';
+    self.done        = false;
+    self.relative    = false;
+    self.arcRelative = true;
+    self.errors      = [];
+    self.commands     = 0;
+    self.currentSourceLine = 0;
+    self.hasSourceLines = false;
+    self.loaded      = false;
+    self.lastMove    = 0;
+    self.moveTime    = 0;
+    self.offsetTime  = 0;
+    self.fill        = 0;
+    self.positions   = undefined;
+    self.colors      = undefined;
+    self.currentLine.visible = false;
+  };
 
   /**
    * Map a raycaster intersection on a LineSegments child back to a Move.
