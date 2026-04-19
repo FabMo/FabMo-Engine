@@ -564,6 +564,11 @@ module.exports = function(scene, callbacks) {
       var currentMove = self.moves[i];
       if (currentMove.rapid) continue;
 
+      // Notify of per-move tool info if it changed
+      if (currentMove.toolInfo && callbacks.materialToolChange) {
+        callbacks.materialToolChange(currentMove.toolInfo);
+      }
+
       if (currentMove.type === 'arc') {
         var arcLength = currentMove.getLength();
         var samplesPerInch = 1500;
@@ -583,6 +588,77 @@ module.exports = function(scene, callbacks) {
     }
   }
 
+  // Apply all material removal at once (called after path loads).
+  // Material shows the final cut result immediately; animation only moves the tool.
+  // Collect move segments for the segment-indexed material computation
+  function collectSegments() {
+    var segments = [];
+    var currentDia = 0.25;
+    var currentType = 'flat';
+    var currentAngle = 90;
+
+    for (var i = 0; i < self.moves.length; i++) {
+      var m = self.moves[i];
+      if (m.rapid) continue;
+      if (m.toolInfo) {
+        if (m.toolInfo.toolDiameter) currentDia = m.toolInfo.toolDiameter;
+        if (m.toolInfo.toolType) currentType = m.toolInfo.toolType;
+        if (m.toolInfo.vbitAngle) currentAngle = m.toolInfo.vbitAngle;
+      }
+      segments.push({
+        start: m.start, end: m.end,
+        toolType: currentType, toolDia: currentDia, vbitAngle: currentAngle
+      });
+    }
+    return segments;
+  }
+
+  // Apply all material: async with progress callback
+  self.applyAllMaterial = function(onProgress, onDone) {
+    if (!self.loaded || !self.moves.length) { if (onDone) onDone(); return; }
+
+    var segments = collectSegments();
+
+    if (callbacks.materialComputeFromSegments) {
+      callbacks.materialComputeFromSegments(segments,
+        onProgress || null,
+        function() {
+          if (callbacks.materialForceUpdate) callbacks.materialForceUpdate();
+          if (onDone) onDone();
+        }
+      );
+    } else {
+      applyMaterialForMoves(0, self.moves.length);
+      if (callbacks.materialForceUpdate) callbacks.materialForceUpdate();
+      if (onDone) onDone();
+    }
+  };
+
+  // Apply material in chunks so the UI stays responsive.
+  // Calls onDone() when complete; updates the mesh periodically.
+  self.applyAllMaterialChunked = function(chunkSize, onDone) {
+    if (!self.loaded || !self.moves.length) { if (onDone) onDone(); return; }
+    var total = self.moves.length;
+    var pos = 0;
+    var chunkCount = 0;
+    chunkSize = chunkSize || 500;
+
+    function processChunk() {
+      var end = Math.min(pos + chunkSize, total);
+      applyMaterialForMoves(pos, end);
+      pos = end;
+      chunkCount++;
+      if (pos < total) {
+        setTimeout(processChunk, 0);
+      } else {
+        // Build sparse mesh only once at the end
+        if (callbacks.materialForceUpdate) callbacks.materialForceUpdate(true);
+        if (onDone) onDone();
+      }
+    }
+    processChunk();
+  };
+
   self.setMoveTime = function(time) {
     if (!self.loaded || !self.moves.length) return;
 
@@ -593,27 +669,14 @@ module.exports = function(scene, callbacks) {
 
     if (nextMove < self.lastMove) {
       // --- REWIND: scrubbing backward ---
-      // Un-highlight moves that are now in the future
       for (var i = nextMove; i <= self.lastMove && i < self.moves.length; i++)
         self.moves[i].setDone(false);
 
-      // Reset material heights and replay from beginning
-      if (callbacks.materialResetHeights) {
-        callbacks.materialResetHeights();
-        applyMaterialForMoves(0, nextMove);
-        if (callbacks.materialForceUpdate) callbacks.materialForceUpdate();
-      }
-
-      // Re-mark moves 0..nextMove-1 as done (they stay highlighted)
-      // (they were already done before, but setDone(false) above may have hit some)
       for (var i = 0; i < nextMove; i++)
         self.moves[i].setDone(true);
 
     } else if (nextMove > self.lastMove) {
-      // --- FORWARD: normal playback or scrubbing forward ---
-      applyMaterialForMoves(self.lastMove, nextMove);
-
-      // Mark lines done
+      // --- FORWARD ---
       for (var i = self.lastMove; i < nextMove; i++)
         self.moves[i].setDone(true);
     }
@@ -679,16 +742,45 @@ module.exports = function(scene, callbacks) {
   }
 
 
-  // Seek to the first move whose sourceLine >= the given SBP source line (0-based)
-  self.seekToSourceLine = function(srcLine) {
+  var grey = [0.35, 0.35, 0.35];
+  var highlight = [0, 1, 0]; // green
+
+  // Highlight an operation's moves in green and grey out everything else.
+  // srcStart/srcEnd are 0-based source line numbers.
+  // Pass null to clear highlighting and restore normal colors.
+  self.highlightSourceLineRange = function(srcStart, srcEnd) {
     if (!self.loaded) return;
     self.pause();
     for (var i = 0; i < self.moves.length; i++) {
-      if (self.moves[i].sourceLine >= srcLine) {
-        self.setMoveTime(self.moves[i].getStartTime());
-        return;
+      var m = self.moves[i];
+      if (m.hidden) continue;
+      if (srcStart !== null && m.sourceLine >= srcStart && m.sourceLine <= srcEnd) {
+        m.setColor(highlight);
+      } else if (srcStart !== null) {
+        m.setColor(grey);
+      } else {
+        // Restore normal colors
+        m.setColor(m.rapid ? red : green);
       }
     }
+    // Position tool at start of highlighted range
+    if (srcStart !== null) {
+      for (var i = 0; i < self.moves.length; i++) {
+        if (self.moves[i].sourceLine >= srcStart) {
+          self.lastMove = i;
+          self.moveTime = self.moves[i].getStartTime();
+          var move = self.moves[i];
+          var verts = self.currentLine.geometry.vertices;
+          verts[0].fromArray(move.start);
+          verts[1].fromArray(move.start);
+          self.currentLine.geometry.verticesNeedUpdate = true;
+          self.currentLine.visible = true;
+          callbacks.position(move.start);
+          break;
+        }
+      }
+    }
+    if (callbacks.update) callbacks.update();
   };
 
   self.setMoveToEnd = function () {

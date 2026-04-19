@@ -248,25 +248,11 @@ module.exports = function(container) {
     var materialBottom = materialTop - stockThickness;
     self.table.setZZoff(materialBottom);
 
-    // Apply tool info parsed from file metadata (e.g. &ToolName variable)
-    if (self.fileMetadata && self.fileMetadata.toolInfo) {
-      var ti = self.fileMetadata.toolInfo;
-      if (ti.toolType) {
-        self.material.setToolType(ti.toolType);
-        $('[name="tool-type"]').val(ti.toolType);
-      }
-      if (ti.toolDiameter) {
-        self.material.setToolDiameter(ti.toolDiameter);
-        $('[name="tool-diameter"]').val(ti.toolDiameter);
-      }
-      if (ti.vbitAngle) {
-        self.material.setVbitAngle(ti.vbitAngle);
-        $('[name="vbit-angle"]').val(ti.vbitAngle);
-      }
+    // Tool info is now per-operation; initial material diameter uses first operation or default
+    var toolDia = 0.25;
+    if (self.operations && self.operations.length > 0 && self.operations[0].toolInfo) {
+      toolDia = self.operations[0].toolInfo.toolDiameter || toolDia;
     }
-
-    // Use material's current tool diameter (from file metadata, cookie, or default)
-    var toolDia = self.material.toolDiameter;
 
     console.log('Initializing material:');
     console.log('  Top Z:', materialTop);
@@ -275,8 +261,7 @@ module.exports = function(container) {
     console.log('  Tool diameter:', toolDia);
     console.log('Path bounds Z: min=', bounds.min.z, 'max=', bounds.max.z);
 
-    // Initialize material with proper positioning
-    self.material.initialize(materialBounds, stockThickness, toolDia, materialTop);
+    // Material initialization is handled by computeMaterialProgressive() below
 
     // Only set up camera on first load
     if (isFirstLoad) {
@@ -308,10 +293,71 @@ module.exports = function(container) {
       }
     }
 
-    buildNLineMap();
-    self.gui.hideLoading();
-    self.gui.setTimelineDuration(self.path.duration);
-    self.refresh();
+    // Tag each move with its operation's tool info so the material
+    // simulation can switch bit size/type per operation.
+    if (self.operations && self.path.moves.length) {
+      tagMovesWithToolInfo();
+    }
+
+    // Save material params for progressive re-rendering
+    self._materialParams = {
+      bounds: materialBounds,
+      thickness: stockThickness,
+      toolDia: toolDia,
+      materialTop: materialTop
+    };
+
+    // Compute material with progress bar
+    computeMaterial(function() {
+      buildNLineMap();
+      self.gui.hideLoading();
+      self.gui.setTimelineDuration(self.path.duration);
+      self.refresh();
+    });
+  }
+
+  function computeMaterial(onDone) {
+    if (!self.material || !self.path || !self._materialParams) {
+      if (onDone) onDone();
+      return;
+    }
+    var p = self._materialParams;
+    self.material.initialize(p.bounds, p.thickness, p.toolDia, p.materialTop);
+    self.gui.showLoading('Computing material\u2026');
+    self.path.applyAllMaterial(
+      function(progress) {
+        var pct = Math.round(progress * 100);
+        self.gui.showLoading('Computing material\u2026 <progress max="100" value="' + pct + '"></progress>');
+      },
+      function() {
+        if (onDone) onDone();
+      }
+    );
+  }
+
+  // Assign toolInfo from operations to each move based on sourceLine ranges
+  function tagMovesWithToolInfo() {
+    if (!self.operations || !self.path.hasSourceLines) return;
+    var ops = self.operations;
+    var moves = self.path.moves;
+    // Build sorted list of operation ranges (0-based source lines)
+    var ranges = [];
+    for (var i = 0; i < ops.length; i++) {
+      ranges.push({
+        start: ops[i].startLine - 1,
+        end: ops[i].endLine - 1,
+        toolInfo: ops[i].toolInfo
+      });
+    }
+    for (var i = 0; i < moves.length; i++) {
+      var sl = moves[i].sourceLine;
+      for (var r = 0; r < ranges.length; r++) {
+        if (sl >= ranges[r].start && sl <= ranges[r].end) {
+          moves[i].toolInfo = ranges[r].toolInfo;
+          break;
+        }
+      }
+    }
   }
 
 
@@ -394,31 +440,97 @@ module.exports = function(container) {
     var list = $('#ops-list');
     list.empty();
 
+    // Helper: rebuild move tags and reload material after a tool override
+    function onToolOverride() {
+      if (self.path && self.path.moves.length) {
+        tagMovesWithToolInfo();
+        computeMaterial(function() {
+          self.gui.hideLoading();
+          self.refresh();
+        });
+      }
+    }
+
     for (var i = 0; i < ops.length; i++) {
       (function(idx) {
         var op = ops[idx];
-        var label = $('<label>');
+        var ti = op.toolInfo || {};
+        var entry = $('<div class="op-entry">');
+        var topRow = $('<div class="op-top-row">');
         var checkbox = $('<input type="checkbox" checked>').attr('data-op-index', idx);
-        var textWrap = $('<span class="op-text">');
         var nameSpan = $('<span class="op-name">').text(op.name || ('Operation ' + (idx + 1)));
-        var toolSpan = $('<span class="op-tool">').text(op.toolName || '');
+        topRow.append(checkbox).append(nameSpan);
+        entry.append(topRow);
 
-        textWrap.append(nameSpan);
-        if (op.toolName) textWrap.append(toolSpan);
-        label.append(checkbox).append(textWrap);
+        // Per-operation tool controls
+        var toolRow = $('<div class="op-tool-row">');
 
-        // Click on text to seek timeline to this operation's start
-        // op.startLine is 1-based; move.sourceLine is 0-based (SBP pc)
-        textWrap.on('click', function(e) {
+        var typeSelect = $('<select class="op-tool-type">')
+          .append('<option value="flat">Flat</option>')
+          .append('<option value="ball">Ball</option>')
+          .append('<option value="vbit">V-Bit</option>')
+          .val(ti.toolType || 'flat');
+
+        var diaInput = $('<input class="op-tool-dia" type="number" min="0.01" max="3" step="any">')
+          .val(ti.toolDiameter || 0.25);
+
+        var diaLabel = $('<span class="op-tool-dia-label">').text('"');
+
+        var angleInput = $('<input class="op-tool-angle" type="number" min="10" max="180" step="1">')
+          .val(ti.vbitAngle || 90);
+        var angleLabel = $('<span class="op-tool-angle-label">').text('°');
+        var angleWrap = $('<span class="op-angle-wrap">').append(angleInput).append(angleLabel);
+        if ((ti.toolType || 'flat') !== 'vbit') angleWrap.hide();
+
+        typeSelect.on('change', function() {
+          var type = $(this).val();
+          if (!op.toolInfo) op.toolInfo = {};
+          op.toolInfo.toolType = type;
+          angleWrap.toggle(type === 'vbit');
+          onToolOverride();
+        });
+
+        diaInput.on('change', function() {
+          var dia = parseFloat($(this).val());
+          if (dia > 0) {
+            if (!op.toolInfo) op.toolInfo = {};
+            op.toolInfo.toolDiameter = dia;
+            onToolOverride();
+          }
+        });
+
+        angleInput.on('change', function() {
+          var angle = parseFloat($(this).val());
+          if (angle > 0) {
+            if (!op.toolInfo) op.toolInfo = {};
+            op.toolInfo.vbitAngle = angle;
+            onToolOverride();
+          }
+        });
+
+        toolRow.append(typeSelect).append(diaInput).append(diaLabel).append(angleWrap);
+        entry.append(toolRow);
+
+        // Click on name to highlight this operation green, grey out the rest.
+        // Click again to clear highlighting.
+        nameSpan.on('click', function(e) {
           e.preventDefault();
-          if (self.path && self.path.seekToSourceLine) {
-            self.path.seekToSourceLine(op.startLine - 1);
-            if (self.path.moveTime !== undefined) {
-              self.gui.updateTimeline(self.path.moveTime);
+          var wasActive = entry.hasClass('active');
+          list.find('.op-entry').removeClass('active');
+
+          if (wasActive) {
+            if (self.path && self.path.highlightSourceLineRange) {
+              self.path.highlightSourceLineRange(null, null);
+            }
+          } else {
+            entry.addClass('active');
+            if (self.path && self.path.highlightSourceLineRange) {
+              self.path.highlightSourceLineRange(op.startLine - 1, op.endLine - 1);
+              if (self.path.moveTime !== undefined) {
+                self.gui.updateTimeline(self.path.moveTime);
+              }
             }
           }
-          list.find('label').removeClass('active');
-          label.addClass('active');
         });
 
         // Toggle toolpath visibility — reload path with only selected operations' GCode
@@ -426,7 +538,7 @@ module.exports = function(container) {
           self.reloadForSelectedOperations(self.getSelectedOperationIndices());
         });
 
-        list.append(label);
+        list.append(entry);
       })(i);
     }
 
@@ -778,12 +890,27 @@ module.exports = function(container) {
     update: self.refresh,
     materialUpdate: function(start, end, isArcSegment) {
       if (!self.material) return;
-      
+
       self.material.removeMaterial(start, end, 'flat', isArcSegment);
     },
-    materialForceUpdate: function() {
+    materialToolChange: function(toolInfo) {
+      if (!self.material || !toolInfo) return;
+      if (toolInfo.toolDiameter) self.material.setSimToolDiameter(toolInfo.toolDiameter);
+      if (toolInfo.toolType) self.material.setSimToolType(toolInfo.toolType);
+      if (toolInfo.vbitAngle) self.material.setSimVbitAngle(toolInfo.vbitAngle);
+    },
+    materialComputeFromSegments: function(segments, onProgress, onDone) {
       if (self.material) {
-        self.material.forceUpdate();
+        if (onProgress || onDone) {
+          self.material.computeFromSegmentsAsync(segments, onProgress, onDone);
+        } else {
+          self.material.computeFromSegments(segments);
+        }
+      }
+    },
+    materialForceUpdate: function(useSparse) {
+      if (self.material) {
+        self.material.forceUpdate(useSparse);
       }
     },
     materialResetHeights: function() {

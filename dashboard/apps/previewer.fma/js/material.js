@@ -15,7 +15,7 @@ module.exports = function(scene, update) {
   self.wireMesh = null;
   self.show = parseInt(cookie.get('show-material', 0));
   self.opacity = parseFloat(cookie.get('material-opacity', 0.5));
-  self.resolution = Math.min(parseInt(cookie.get('material-resolution', 200)), 500);
+  self.resolution = Math.min(parseInt(cookie.get('material-resolution', 1000)), 3000);
   
   // NEW: Tool settings with defaults
   self.toolType = cookie.get('tool-type', 'flat');
@@ -97,6 +97,7 @@ module.exports = function(scene, update) {
    * Initialize material block with height map
    */
   self.initialize = function(pathBounds, height, diameter, topZ) {
+    var t0 = performance.now();
     // CHANGED: Just dispose old meshes, don't destroy everything
     self.mesh = disposeMesh(self.mesh);
     self.wireMesh = disposeMesh(self.wireMesh);
@@ -168,7 +169,8 @@ module.exports = function(scene, update) {
       }
     }
 
-    console.log('Material initialized:', xPoints, 'x', yPoints, 'stepped column grid',
+    var tInit = performance.now() - t0;
+    console.log('Material initialized:', xPoints, 'x', yPoints, 'in', tInit.toFixed(0) + 'ms',
                 'Stock:', stockHeight, 'TopZ:', materialTop, 'Tool:', toolDia,
                 'Verts:', totalVerts, 'MaxFaces:', maxFaces);
 
@@ -326,6 +328,300 @@ module.exports = function(scene, update) {
   }
 
   /**
+   * Compute the entire heightmap from an array of move segments at once.
+   * Uses spatial indexing: index all segments, then for each grid point
+   * find nearby segments and compute min Z analytically from distance.
+   * Much faster for V-bits since the bevel is a simple distance calculation.
+   *
+   * segments: array of {start:[x,y,z], end:[x,y,z], toolType, toolDia, vbitAngle}
+   */
+  self.computeFromSegments = function(segments) {
+    if (!heightMap || !segments.length) return;
+    var t0 = performance.now();
+
+    var xP = heightMap.xPoints;
+    var yP = heightMap.yPoints;
+    var xS = heightMap.xStep;
+    var yS = heightMap.yStep;
+    var minX = bounds.min.x;
+    var minY = bounds.min.y;
+
+    // 1. Build spatial grid index of segments
+    // Cell size based on max tool influence radius
+    var maxInfluence = 0;
+    for (var i = 0; i < segments.length; i++) {
+      var seg = segments[i];
+      var r = seg.toolDia / 2;
+      if (seg.toolType === 'vbit') {
+        // V-bit influence extends based on depth
+        var maxDepth = Math.max(
+          Math.abs(seg.start[2] - materialTop),
+          Math.abs(seg.end[2] - materialTop)
+        );
+        var angleRad = (seg.vbitAngle / 2) * Math.PI / 180;
+        r = Math.max(r, maxDepth * Math.tan(angleRad));
+      }
+      if (r > maxInfluence) maxInfluence = r;
+    }
+    // Add margin for grid cell half-width
+    maxInfluence += Math.max(xS, yS);
+
+    var cellSize = Math.max(maxInfluence * 2, Math.max(xS, yS) * 4);
+    var gridW = Math.ceil((bounds.max.x - minX) / cellSize) + 1;
+    var gridH = Math.ceil((bounds.max.y - minY) / cellSize) + 1;
+
+    // Hash grid: array of arrays
+    var grid = new Array(gridW * gridH);
+    for (var i = 0; i < grid.length; i++) grid[i] = null;
+
+    function gridKey(gx, gy) { return gy * gridW + gx; }
+
+    // Insert each segment into all grid cells it touches
+    for (var i = 0; i < segments.length; i++) {
+      var seg = segments[i];
+      var sx = seg.start, ex = seg.end;
+      var x0 = Math.min(sx[0], ex[0]) - maxInfluence;
+      var x1 = Math.max(sx[0], ex[0]) + maxInfluence;
+      var y0 = Math.min(sx[1], ex[1]) - maxInfluence;
+      var y1 = Math.max(sx[1], ex[1]) + maxInfluence;
+
+      var gx0 = Math.max(0, Math.floor((x0 - minX) / cellSize));
+      var gx1 = Math.min(gridW - 1, Math.floor((x1 - minX) / cellSize));
+      var gy0 = Math.max(0, Math.floor((y0 - minY) / cellSize));
+      var gy1 = Math.min(gridH - 1, Math.floor((y1 - minY) / cellSize));
+
+      for (var gy = gy0; gy <= gy1; gy++) {
+        for (var gx = gx0; gx <= gx1; gx++) {
+          var k = gridKey(gx, gy);
+          if (!grid[k]) grid[k] = [];
+          grid[k].push(i);
+        }
+      }
+    }
+
+    var t1 = performance.now();
+
+    // 2. For each heightmap grid point, find nearby segments and compute min Z
+    var heights = heightMap.heights;
+    var cutCount = 0;
+
+    for (var yi = 0; yi < yP; yi++) {
+      var py = minY + yi * yS;
+      var gy = Math.floor((py - minY) / cellSize);
+      if (gy < 0 || gy >= gridH) continue;
+
+      for (var xi = 0; xi < xP; xi++) {
+        var px = minX + xi * xS;
+        var gx = Math.floor((px - minX) / cellSize);
+        if (gx < 0 || gx >= gridW) continue;
+
+        var cell = grid[gridKey(gx, gy)];
+        if (!cell) continue;
+
+        var minZ = materialTop;
+
+        for (var s = 0; s < cell.length; s++) {
+          var seg = segments[cell[s]];
+          var sx = seg.start, ex = seg.end;
+
+          // Perpendicular distance from point to segment
+          var dx = ex[0] - sx[0];
+          var dy = ex[1] - sx[1];
+          var lenSq = dx * dx + dy * dy;
+          var t;
+          if (lenSq < 0.000001) {
+            t = 0;
+          } else {
+            t = ((px - sx[0]) * dx + (py - sx[1]) * dy) / lenSq;
+            if (t < 0) t = 0;
+            else if (t > 1) t = 1;
+          }
+
+          // Closest point on segment and interpolated Z
+          var cx = sx[0] + t * dx;
+          var cy = sx[1] + t * dy;
+          var cz = sx[2] + t * (ex[2] - sx[2]);
+
+          var dist = Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+
+          // Compute tool bottom Z at this distance
+          var segDia = seg.toolDia;
+          var segRadius = segDia / 2;
+          var z;
+
+          if (seg.toolType === 'vbit') {
+            var angleRad = (seg.vbitAngle / 2) * Math.PI / 180;
+            var tanHalf = Math.tan(angleRad);
+            // V-bit: depth at center = cz, shallower as distance increases
+            z = cz + dist / tanHalf;
+            // Clamp to material surface
+            if (z >= materialTop) continue;
+          } else if (seg.toolType === 'ball') {
+            if (dist > segRadius) continue;
+            z = cz + segRadius - Math.sqrt(segRadius * segRadius - dist * dist);
+          } else {
+            // Flat end mill
+            if (dist > segRadius) continue;
+            z = cz;
+          }
+
+          if (z < minZ) minZ = z;
+        }
+
+        if (minZ < materialTop) {
+          heights[yi * xP + xi] = minZ;
+          cutCount++;
+        }
+      }
+    }
+
+    isDirty = cutCount > 0;
+    pendingUpdates = cutCount;
+
+    var t2 = performance.now();
+    console.log('computeFromSegments: ' + segments.length + ' segments, ' +
+                cutCount + ' cells cut, index=' + (t1 - t0).toFixed(0) +
+                'ms, compute=' + (t2 - t1).toFixed(0) + 'ms, total=' + (t2 - t0).toFixed(0) + 'ms');
+  };
+
+  /**
+   * Async version of computeFromSegments that yields between row batches
+   * so the browser can paint progress updates.
+   *   onProgress(fraction) — called with 0..1
+   *   onDone() — called when complete
+   */
+  self.computeFromSegmentsAsync = function(segments, onProgress, onDone) {
+    if (!heightMap || !segments.length) { if (onDone) onDone(); return; }
+    var t0 = performance.now();
+
+    var xP = heightMap.xPoints;
+    var yP = heightMap.yPoints;
+    var xS = heightMap.xStep;
+    var yS = heightMap.yStep;
+    var minX = bounds.min.x;
+    var minY = bounds.min.y;
+    var heights = heightMap.heights;
+
+    // Build spatial grid (same as sync version)
+    var maxInfluence = 0;
+    for (var i = 0; i < segments.length; i++) {
+      var seg = segments[i];
+      var r = seg.toolDia / 2;
+      if (seg.toolType === 'vbit') {
+        var maxDepth = Math.max(
+          Math.abs(seg.start[2] - materialTop),
+          Math.abs(seg.end[2] - materialTop)
+        );
+        var angleRad = (seg.vbitAngle / 2) * Math.PI / 180;
+        r = Math.max(r, maxDepth * Math.tan(angleRad));
+      }
+      if (r > maxInfluence) maxInfluence = r;
+    }
+    maxInfluence += Math.max(xS, yS);
+    var cellSize = Math.max(maxInfluence * 2, Math.max(xS, yS) * 4);
+    var gridW = Math.ceil((bounds.max.x - minX) / cellSize) + 1;
+    var gridH = Math.ceil((bounds.max.y - minY) / cellSize) + 1;
+    var grid = new Array(gridW * gridH);
+    for (var i = 0; i < grid.length; i++) grid[i] = null;
+    function gridKey(gx, gy) { return gy * gridW + gx; }
+
+    for (var i = 0; i < segments.length; i++) {
+      var seg = segments[i];
+      var sx = seg.start, ex = seg.end;
+      var x0 = Math.min(sx[0], ex[0]) - maxInfluence;
+      var x1 = Math.max(sx[0], ex[0]) + maxInfluence;
+      var y0 = Math.min(sx[1], ex[1]) - maxInfluence;
+      var y1 = Math.max(sx[1], ex[1]) + maxInfluence;
+      var gx0 = Math.max(0, Math.floor((x0 - minX) / cellSize));
+      var gx1 = Math.min(gridW - 1, Math.floor((x1 - minX) / cellSize));
+      var gy0 = Math.max(0, Math.floor((y0 - minY) / cellSize));
+      var gy1 = Math.min(gridH - 1, Math.floor((y1 - minY) / cellSize));
+      for (var gy = gy0; gy <= gy1; gy++) {
+        for (var gx = gx0; gx <= gx1; gx++) {
+          var k = gridKey(gx, gy);
+          if (!grid[k]) grid[k] = [];
+          grid[k].push(i);
+        }
+      }
+    }
+
+    // Process rows in batches
+    var rowPos = 0;
+    var rowsPerBatch = Math.max(1, Math.floor(yP / 20)); // ~20 progress steps
+    var cutCount = 0;
+
+    function processBatch() {
+      var rowEnd = Math.min(rowPos + rowsPerBatch, yP);
+      for (var yi = rowPos; yi < rowEnd; yi++) {
+        var py = minY + yi * yS;
+        var gyy = Math.floor((py - minY) / cellSize);
+        if (gyy < 0 || gyy >= gridH) continue;
+
+        for (var xi = 0; xi < xP; xi++) {
+          var px = minX + xi * xS;
+          var gx = Math.floor((px - minX) / cellSize);
+          if (gx < 0 || gx >= gridW) continue;
+          var cell = grid[gridKey(gx, gyy)];
+          if (!cell) continue;
+
+          var minZ = materialTop;
+          for (var s = 0; s < cell.length; s++) {
+            var seg = segments[cell[s]];
+            var ssx = seg.start, eex = seg.end;
+            var dx = eex[0] - ssx[0];
+            var dy = eex[1] - ssx[1];
+            var lenSq = dx * dx + dy * dy;
+            var t;
+            if (lenSq < 0.000001) { t = 0; }
+            else {
+              t = ((px - ssx[0]) * dx + (py - ssx[1]) * dy) / lenSq;
+              if (t < 0) t = 0; else if (t > 1) t = 1;
+            }
+            var cx = ssx[0] + t * dx;
+            var cy = ssx[1] + t * dy;
+            var cz = ssx[2] + t * (eex[2] - ssx[2]);
+            var dist = Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+            var segRadius = seg.toolDia / 2;
+            var z;
+            if (seg.toolType === 'vbit') {
+              var tanHalf = Math.tan((seg.vbitAngle / 2) * Math.PI / 180);
+              z = cz + dist / tanHalf;
+              if (z >= materialTop) continue;
+            } else if (seg.toolType === 'ball') {
+              if (dist > segRadius) continue;
+              z = cz + segRadius - Math.sqrt(segRadius * segRadius - dist * dist);
+            } else {
+              if (dist > segRadius) continue;
+              z = cz;
+            }
+            if (z < minZ) minZ = z;
+          }
+          if (minZ < materialTop) {
+            heights[yi * xP + xi] = minZ;
+            cutCount++;
+          }
+        }
+      }
+
+      rowPos = rowEnd;
+      if (onProgress) onProgress(rowPos / yP);
+
+      if (rowPos < yP) {
+        setTimeout(processBatch, 0);
+      } else {
+        isDirty = cutCount > 0;
+        pendingUpdates = cutCount;
+        var t2 = performance.now();
+        console.log('computeFromSegmentsAsync: ' + segments.length + ' segments, ' +
+                    cutCount + ' cells cut, total=' + (t2 - t0).toFixed(0) + 'ms');
+        if (onDone) onDone();
+      }
+    }
+
+    processBatch();
+  };
+
+  /**
    * Remove material along a path (with arc segment detection)
    */
   self.removeMaterial = function(start, end, toolType, isArcSegment) {
@@ -385,14 +681,15 @@ module.exports = function(scene, update) {
           updateGridUnderTool(toolX, toolY, toolZ, toolType);
         }
       } else {
-        var steps = Math.max(2, Math.ceil(totalDist / (toolDia * 0.5)));
-        
+        var gridSpacing = Math.min(heightMap.xStep, heightMap.yStep);
+        var steps = Math.max(2, Math.ceil(totalDist / (gridSpacing * 0.5)));
+
         for (var step = 0; step <= steps; step++) {
           var t = step / steps;
           var toolX = start[0] + dx * t;
           var toolY = start[1] + dy * t;
           var toolZ = start[2] + dz * t;
-          
+
           updateGridUnderTool(toolX, toolY, toolZ, toolType);
         }
       }
@@ -410,10 +707,10 @@ module.exports = function(scene, update) {
   /**
    * Force immediate mesh update
    */
-  self.forceUpdate = function() {
+  self.forceUpdate = function(useSparse) {
     if (isDirty) {
       console.log('Forcing final material update: ' + pendingUpdates + ' pending changes');
-      self.updateMesh();
+      self.createFullMesh();
       lastUpdateTime = Date.now();
       isDirty = false;
       pendingUpdates = 0;
@@ -570,7 +867,6 @@ module.exports = function(scene, update) {
     posAttr.needsUpdate = true;
     idxAttr.needsUpdate = true;
     self.mesh.geometry.setDrawRange(0, indexCount);
-    self.mesh.geometry.computeVertexNormals();
 
     dirtyRegions = [];
     update();
@@ -582,7 +878,7 @@ module.exports = function(scene, update) {
    * only where adjacent column heights differ.
    */
   self.createFullMesh = function() {
-    console.log('Creating stepped column material mesh...');
+    var t0 = performance.now();
 
     // Dispose old meshes
     self.mesh = disposeMesh(self.mesh);
@@ -592,9 +888,11 @@ module.exports = function(scene, update) {
 
     // Fill all top vertex positions from current heightMap
     fillAllTopVertices();
+    var t1 = performance.now();
 
     // Build index buffer
     var indexCount = buildIndices();
+    var t2 = performance.now();
 
     // Create BufferGeometry with pre-allocated typed arrays
     var geometry = new THREE.BufferGeometry();
@@ -603,17 +901,16 @@ module.exports = function(scene, update) {
     geometry.setAttribute('position', posAttr);
     geometry.setIndex(idxAttr);
     geometry.setDrawRange(0, indexCount);
-    geometry.computeVertexNormals();
+    // Skip computeVertexNormals — flatShading computes face normals in the shader
+    geometry.computeBoundingSphere();
     activeGeometries.push(geometry);
 
-    // Create material (flat shading for clean stepped look)
+    // Create material (opaque solid stock with flat shading)
     if (!meshMaterial) {
       meshMaterial = new THREE.MeshPhongMaterial({
         color: 0xD2B48C,
         specular: 0x222222,
         shininess: 20,
-        transparent: true,
-        opacity: self.opacity,
         side: THREE.DoubleSide,
         flatShading: true
       });
@@ -625,6 +922,197 @@ module.exports = function(scene, update) {
     scene.add(self.mesh);
 
     geometryCreated = true;
+    var t3 = performance.now();
+    console.log('createFullMesh: fillVerts=' + (t1-t0).toFixed(0) + 'ms, buildIndices=' + (t2-t1).toFixed(0) + 'ms, geometry+normals=' + (t3-t2).toFixed(0) + 'ms, total=' + (t3-t0).toFixed(0) + 'ms');
+    update();
+  };
+
+  /**
+   * Create a sparse mesh: only build geometry for cells that were actually cut,
+   * plus a single flat quad as the uncut surface. Dramatically fewer vertices
+   * when cuts cover a small fraction of the workpiece.
+   */
+  self.createSparseMesh = function() {
+    var t0 = performance.now();
+
+    self.mesh = disposeMesh(self.mesh);
+    self.wireMesh = disposeMesh(self.wireMesh);
+    if (!heightMap) return;
+
+    var xP = heightMap.xPoints;
+    var yP = heightMap.yPoints;
+    var xS = heightMap.xStep;
+    var yS = heightMap.yStep;
+
+    // 1. Find active cells (cut or within margin of cut)
+    var active = new Uint8Array(xP * yP); // 0=inactive, 1=active
+    var activeCells = [];
+    var margin = 3; // cells of uncut surface to show around each cut
+    for (var yi = 0; yi < yP; yi++) {
+      for (var xi = 0; xi < xP; xi++) {
+        if (getHeight(xi, yi) < materialTop) {
+          for (var dy = -margin; dy <= margin; dy++) {
+            for (var dx = -margin; dx <= margin; dx++) {
+              var nx = xi + dx, ny = yi + dy;
+              if (nx >= 0 && nx < xP && ny >= 0 && ny < yP) {
+                active[ny * xP + nx] = 1;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Collect active cell list
+    for (var i = 0; i < active.length; i++) {
+      if (active[i]) activeCells.push(i);
+    }
+
+    var t1 = performance.now();
+    var nActive = activeCells.length;
+
+    // 2. Build compact vertex + index arrays for active cells only
+    // Each active cell gets 4 top vertices + 4 bottom vertices.
+    var vertsPerCell = 8;
+    var totalVerts = nActive * vertsPerCell;
+    var sparsePos = new Float32Array(totalVerts * 3);
+    // Max faces: 2 top + 2 bottom + 4 walls per cell
+    var maxIdx = nActive * 10 * 3;
+    var sparseIdx = new Uint32Array(maxIdx);
+
+    // Map from grid index to vertex base
+    var cellVertBase = new Int32Array(xP * yP);
+    cellVertBase.fill(-1);
+
+    var hw = xS / 2, hh = yS / 2;
+    var bottomZ = materialTop - stockHeight;
+    var vi = 0; // vertex write position (in floats / 3)
+
+    for (var c = 0; c < nActive; c++) {
+      var gi = activeCells[c];
+      var xi = gi % xP, yi = (gi - xi) / xP;
+      cellVertBase[gi] = c * vertsPerCell;
+
+      var cx = bounds.min.x + xi * xS;
+      var cy = bounds.min.y + yi * yS;
+      var h = getHeight(xi, yi);
+      var b = (c * vertsPerCell) * 3;
+
+      // Top 4 vertices (0-3): NL, NR, FL, FR
+      sparsePos[b]    = cx-hw; sparsePos[b+1]  = cy-hh; sparsePos[b+2]  = h;
+      sparsePos[b+3]  = cx+hw; sparsePos[b+4]  = cy-hh; sparsePos[b+5]  = h;
+      sparsePos[b+6]  = cx-hw; sparsePos[b+7]  = cy+hh; sparsePos[b+8]  = h;
+      sparsePos[b+9]  = cx+hw; sparsePos[b+10] = cy+hh; sparsePos[b+11] = h;
+      // Bottom 4 vertices (4-7): NL, NR, FL, FR
+      sparsePos[b+12] = cx-hw; sparsePos[b+13] = cy-hh; sparsePos[b+14] = bottomZ;
+      sparsePos[b+15] = cx+hw; sparsePos[b+16] = cy-hh; sparsePos[b+17] = bottomZ;
+      sparsePos[b+18] = cx-hw; sparsePos[b+19] = cy+hh; sparsePos[b+20] = bottomZ;
+      sparsePos[b+21] = cx+hw; sparsePos[b+22] = cy+hh; sparsePos[b+23] = bottomZ;
+    }
+
+    var t2 = performance.now();
+
+    // 3. Build indices
+    var fi = 0;
+    var idx = sparseIdx;
+
+    for (var c = 0; c < nActive; c++) {
+      var gi = activeCells[c];
+      var xi = gi % xP, yi = (gi - xi) / xP;
+      var v = c * vertsPerCell;
+      var h = getHeight(xi, yi);
+
+      // Top face
+      idx[fi++] = v; idx[fi++] = v+1; idx[fi++] = v+2;
+      idx[fi++] = v+1; idx[fi++] = v+3; idx[fi++] = v+2;
+
+      // Bottom face
+      idx[fi++] = v+4; idx[fi++] = v+6; idx[fi++] = v+5;
+      idx[fi++] = v+5; idx[fi++] = v+6; idx[fi++] = v+7;
+
+      // Walls — only where neighbor is inactive or has different height
+      // Front wall (yi-1 direction)
+      var nIdx = yi > 0 ? (yi-1)*xP+xi : -1;
+      if (nIdx < 0 || !active[nIdx] || getHeight(xi, yi-1) !== h) {
+        idx[fi++] = v+4; idx[fi++] = v+5; idx[fi++] = v;
+        idx[fi++] = v+5; idx[fi++] = v+1; idx[fi++] = v;
+      }
+      // Back wall (yi+1 direction)
+      nIdx = yi < yP-1 ? (yi+1)*xP+xi : -1;
+      if (nIdx < 0 || !active[nIdx] || getHeight(xi, yi+1) !== h) {
+        idx[fi++] = v+2; idx[fi++] = v+3; idx[fi++] = v+6;
+        idx[fi++] = v+3; idx[fi++] = v+7; idx[fi++] = v+6;
+      }
+      // Left wall (xi-1 direction)
+      nIdx = xi > 0 ? yi*xP+(xi-1) : -1;
+      if (nIdx < 0 || !active[nIdx] || getHeight(xi-1, yi) !== h) {
+        idx[fi++] = v+4; idx[fi++] = v; idx[fi++] = v+6;
+        idx[fi++] = v; idx[fi++] = v+2; idx[fi++] = v+6;
+      }
+      // Right wall (xi+1 direction)
+      nIdx = xi < xP-1 ? yi*xP+(xi+1) : -1;
+      if (nIdx < 0 || !active[nIdx] || getHeight(xi+1, yi) !== h) {
+        idx[fi++] = v+1; idx[fi++] = v+5; idx[fi++] = v+3;
+        idx[fi++] = v+5; idx[fi++] = v+7; idx[fi++] = v+3;
+      }
+    }
+
+    var t3 = performance.now();
+
+    // 4. Create THREE.js geometry
+    var geometry = new THREE.BufferGeometry();
+    var pa = new THREE.BufferAttribute(sparsePos, 3);
+    var ia = new THREE.BufferAttribute(sparseIdx, 1);
+    geometry.setAttribute('position', pa);
+    geometry.setIndex(ia);
+    geometry.setDrawRange(0, fi);
+    geometry.computeBoundingSphere();
+    activeGeometries.push(geometry);
+
+    var sparseMat = new THREE.MeshPhongMaterial({
+      color: 0xD2B48C,
+      specular: 0x222222,
+      shininess: 20,
+      side: THREE.DoubleSide,
+      flatShading: true
+    });
+    activeMaterials.push(sparseMat);
+
+    self.mesh = new THREE.Mesh(geometry, sparseMat);
+    self.mesh.visible = !!self.show;
+    scene.add(self.mesh);
+
+    // Translucent stock block showing the full workpiece volume
+    self.wireMesh = disposeMesh(self.wireMesh);
+    var stockW = bounds.max.x - bounds.min.x;
+    var stockD = bounds.max.y - bounds.min.y;
+    var stockGeo = new THREE.BoxBufferGeometry(stockW, stockD, stockHeight);
+    var stockMat = new THREE.MeshPhongMaterial({
+      color: 0xD2B48C,
+      specular: 0x111111,
+      shininess: 10,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide
+    });
+    activeMaterials.push(stockMat);
+    activeGeometries.push(stockGeo);
+    self.wireMesh = new THREE.Mesh(stockGeo, stockMat);
+    self.wireMesh.position.set(
+      (bounds.min.x + bounds.max.x) / 2,
+      (bounds.min.y + bounds.max.y) / 2,
+      materialTop - stockHeight / 2
+    );
+    self.wireMesh.visible = !!self.show;
+    scene.add(self.wireMesh);
+
+    geometryCreated = true;
+
+    var t4 = performance.now();
+    console.log('createSparseMesh: ' + nActive + ' of ' + (xP*yP) + ' cells active (' +
+                (100*nActive/(xP*yP)).toFixed(1) + '%), scan=' + (t1-t0).toFixed(0) +
+                'ms, verts=' + (t2-t1).toFixed(0) + 'ms, indices=' + (t3-t2).toFixed(0) +
+                'ms, geometry=' + (t4-t3).toFixed(0) + 'ms, total=' + (t4-t0).toFixed(0) + 'ms');
     update();
   };
 
@@ -766,7 +1254,7 @@ module.exports = function(scene, update) {
    */
   self.setResolution = function(resolution) {
     console.log('Setting resolution to:', resolution);
-    self.resolution = Math.min(parseInt(resolution), 500);
+    self.resolution = Math.min(parseInt(resolution), 3000);
     cookie.set('material-resolution', self.resolution);
     
     // Reinitialize will call reset() internally
@@ -810,11 +1298,22 @@ module.exports = function(scene, update) {
     }
   };
 
+  // Lightweight tool updates for per-operation changes during simulation.
+  // These update internal state without triggering a full material reset.
+  self.setSimToolDiameter = function(diameter) {
+    toolDia = parseFloat(diameter);
+  };
+  self.setSimToolType = function(type) {
+    self.toolType = type;
+  };
+  self.setSimVbitAngle = function(angle) {
+    self.vbitAngle = parseFloat(angle);
+  };
+
   // Initialize settings connections
   util.connectSetting('show-material', self.show, self.setShow);
   util.connectSetting('material-opacity', self.opacity, self.setOpacity);
   util.connectSetting('material-resolution', self.resolution, self.setResolution);
-  util.connectSetting('tool-type', self.toolType, self.setToolType);
-  util.connectSetting('tool-diameter', self.toolDiameter, self.setToolDiameter);
-  util.connectSetting('vbit-angle', self.vbitAngle, self.setVbitAngle);
+  // Tool settings are now per-operation in the operations panel;
+  // setSimToolDiameter/setSimToolType/setSimVbitAngle handle live updates.
 };

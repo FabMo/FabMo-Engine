@@ -643,43 +643,78 @@ input[type="range"]::-webkit-slider-runnable-track {
   max-height: 45vh;
 }
 
-#preview .operations-panel .ops-list label {
-  display: flex;
-  align-items: flex-start;
+#preview .operations-panel .ops-list .op-entry {
   padding: 6px 10px;
-  cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   line-height: 1.4;
-  gap: 6px;
 }
 
-#preview .operations-panel .ops-list label:hover {
+#preview .operations-panel .ops-list .op-entry:hover {
   background: rgba(100, 100, 150, 0.25);
 }
 
-#preview .operations-panel .ops-list label.active {
+#preview .operations-panel .ops-list .op-entry.active {
   background: rgba(93, 170, 53, 0.15);
 }
 
-#preview .operations-panel .ops-list input[type="checkbox"] {
-  margin-top: 2px;
-  flex-shrink: 0;
+#preview .operations-panel .ops-list .op-top-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-#preview .operations-panel .ops-list .op-text {
-  flex: 1;
-  min-width: 0;
+#preview .operations-panel .ops-list input[type="checkbox"] {
+  flex-shrink: 0;
 }
 
 #preview .operations-panel .ops-list .op-name {
   font-weight: bold;
-  display: block;
+  color: #fff;
+  cursor: pointer;
+  flex: 1;
 }
 
-#preview .operations-panel .ops-list .op-tool {
+#preview .operations-panel .ops-list .op-tool-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding-left: 20px;
   font-size: 11px;
-  color: #aaa;
-  display: block;
+}
+
+#preview .operations-panel .ops-list .op-tool-type {
+  background: rgba(50, 50, 70, 0.9);
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 1px 2px;
+  font-size: 11px;
+  width: 52px;
+}
+
+#preview .operations-panel .ops-list .op-tool-dia,
+#preview .operations-panel .ops-list .op-tool-angle {
+  background: rgba(50, 50, 70, 0.9);
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 1px 3px;
+  font-size: 11px;
+  width: 50px;
+}
+
+#preview .operations-panel .ops-list .op-tool-dia-label,
+#preview .operations-panel .ops-list .op-tool-angle-label {
+  color: #888;
+  font-size: 11px;
+}
+
+#preview .operations-panel .ops-list .op-angle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
 }
 
 #preview .operations-panel .ops-actions {

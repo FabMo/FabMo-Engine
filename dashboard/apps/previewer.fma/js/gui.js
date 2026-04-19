@@ -435,7 +435,7 @@ module.exports = function(callbacks) {
 
   // ENSURE resolution dropdown shows current value on open
   $('#preview .settings [name="material-resolution"]').on('focus', function() {
-    var currentRes = cookie.get('material-resolution', 200);
+    var currentRes = cookie.get('material-resolution', 1000);
     $(this).val(currentRes);
   });
 }
