@@ -100,6 +100,10 @@ GCodeRuntime.prototype._onErrorStatus = function (error) {
 
 GCodeRuntime.prototype._die = function () {
     this.machine.status.current_file = null;
+    if (this.machine.status.job) {
+        this.machine.status.job.final_line = this.machine.status.line ? this.machine.status.line - 20 : null;
+        this.machine.status.job.nb_lines = this.machine.status.nb_lines;
+    }
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
     try {
@@ -116,6 +120,10 @@ GCodeRuntime.prototype._die = function () {
 
 GCodeRuntime.prototype._fail = function (message) {
     this.machine.status.current_file = null;
+    if (this.machine.status.job) {
+        this.machine.status.job.final_line = this.machine.status.line ? this.machine.status.line - 20 : null;
+        this.machine.status.job.nb_lines = this.machine.status.nb_lines;
+    }
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
     try {
@@ -130,6 +138,10 @@ GCodeRuntime.prototype._fail = function (message) {
 
 GCodeRuntime.prototype._idle = function () {
     this.machine.status.current_file = null;
+    if (this.machine.status.job) {
+        this.machine.status.job.final_line = this.machine.status.line ? this.machine.status.line - 20 : null;
+        this.machine.status.job.nb_lines = this.machine.status.nb_lines;
+    }
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
     var job = this.machine.status.job;

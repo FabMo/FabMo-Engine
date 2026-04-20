@@ -61,6 +61,8 @@ var Job = function (options) {
     this.created_at = Date.now();
     this.started_at = null;
     this.finished_at = null;
+    this.final_line = null;
+    this.nb_lines = null;
     this.state = "pending";
     this.order = options.order || null;
 };

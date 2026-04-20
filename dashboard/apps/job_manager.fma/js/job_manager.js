@@ -342,8 +342,187 @@ function clearHistory() {
   }
 }
 
+/**
+ * Extract a runnable SBP selection from the original file starting at inLine.
+ * Scans backward from the in-point to find the most recent tool setup commands:
+ *   &tool = N, C9 (toolchange), C6 (spindle start), MS,xy,z (move speed)
+ * Builds: preamble header lines + tool setup + safe Z + XY jog + selected lines.
+ * Adapted from previewer extractSBPSelection().
+ */
+function extractSBPSelection(fileContent, inLine, outLine, safeZ) {
+  if (!fileContent || !inLine) return null;
+  if (typeof safeZ === 'undefined' || safeZ === null) safeZ = 0;
+
+  var allLines = fileContent.split('\n');
+  if (!outLine) outLine = allLines.length;
+
+  inLine = Math.max(1, Math.min(inLine, allLines.length));
+  outLine = Math.max(inLine, Math.min(outLine, allLines.length));
+
+  // Collect header/variable lines from the top of the file (before first motion)
+  var headerLines = [];
+  for (var i = 0; i < allLines.length && i < inLine - 1; i++) {
+    var line = allLines[i].trim();
+    if (line === '' || line.charAt(0) === "'" || line.match(/^&\w+\s*=/)) {
+      headerLines.push(allLines[i]);
+    } else {
+      break;
+    }
+  }
+
+  // Scan backward from in-point to find tool setup commands
+  var toolSetup = { toolVar: null, toolChange: null, spindleStart: null, moveSpeed: null };
+  for (var i = inLine - 2; i >= 0; i--) {
+    var line = allLines[i].trim();
+    var upper = line.toUpperCase();
+    if (!toolSetup.toolVar && line.match(/^&tool\s*=/i)) toolSetup.toolVar = allLines[i];
+    if (!toolSetup.toolChange && upper.match(/^C9\b/)) toolSetup.toolChange = allLines[i];
+    if (!toolSetup.spindleStart && upper.match(/^C6\b/)) toolSetup.spindleStart = allLines[i];
+    if (!toolSetup.moveSpeed && upper.match(/^MS\s*,/)) toolSetup.moveSpeed = allLines[i];
+    if (toolSetup.toolVar && toolSetup.toolChange && toolSetup.spindleStart && toolSetup.moveSpeed) break;
+  }
+
+  // Scan selected lines for the first XY position
+  var startX = null, startY = null;
+  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
+    var scanLine = allLines[i].trim().toUpperCase();
+    var moveMatch = scanLine.match(/^[MJ][23]\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
+    if (moveMatch) { startX = moveMatch[1]; startY = moveMatch[2]; break; }
+    var arcMatch = scanLine.match(/^CG\s*,[^,]*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
+    if (arcMatch) { startX = arcMatch[1]; startY = arcMatch[2]; break; }
+  }
+
+  // Build the output file
+  var output = [];
+  output = output.concat(headerLines);
+  output.push("' --- Restart from line " + inLine + " ---");
+
+  if (toolSetup.toolVar) output.push(toolSetup.toolVar);
+  if (toolSetup.moveSpeed) output.push(toolSetup.moveSpeed);
+  if (toolSetup.toolChange) output.push(toolSetup.toolChange);
+  if (toolSetup.spindleStart) output.push(toolSetup.spindleStart);
+
+  output.push("JZ," + safeZ);
+  if (startX !== null && startY !== null) {
+    output.push("J2," + startX + "," + startY);
+  }
+
+  output.push("' --- Begin cutting ---");
+  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
+    output.push(allLines[i]);
+  }
+
+  output.push("' --- End ---");
+  output.push("JZ," + safeZ);
+  output.push("C7");
+
+  return output.join('\n');
+}
+
+/**
+ * Extract a runnable GCode selection from the original file starting at inLine.
+ * Scans backward from the in-point for modal state: units, coord mode, tool, spindle, feed.
+ * Builds: preamble + safe Z + XY jog + selected lines + retract + spindle off.
+ */
+function extractGCodeSelection(fileContent, inLine, outLine, safeZ) {
+  if (!fileContent || !inLine) return null;
+  if (typeof safeZ === 'undefined' || safeZ === null) safeZ = 0;
+
+  var allLines = fileContent.split('\n');
+  if (!outLine) outLine = allLines.length;
+
+  inLine = Math.max(1, Math.min(inLine, allLines.length));
+  outLine = Math.max(inLine, Math.min(outLine, allLines.length));
+
+  // Collect header comments from file top
+  var headerLines = [];
+  for (var i = 0; i < allLines.length && i < inLine - 1; i++) {
+    var line = allLines[i].trim();
+    if (line === '' || line.charAt(0) === '(' || line.charAt(0) === ';' || line.charAt(0) === '%') {
+      headerLines.push(allLines[i]);
+    } else {
+      break;
+    }
+  }
+
+  // Scan backward from in-point for modal state
+  var setup = { units: null, coordMode: null, toolChange: null, spindleOn: null, feedRate: null };
+  for (var i = inLine - 2; i >= 0; i--) {
+    var line = allLines[i].trim().toUpperCase();
+    if (!setup.units && line.match(/G2[01]\b/)) setup.units = line.match(/G2[01]\b/)[0];
+    if (!setup.coordMode && line.match(/G9[01]\b/)) setup.coordMode = line.match(/G9[01]\b/)[0];
+    if (!setup.toolChange) {
+      var toolMatch = line.match(/T(\d+)/);
+      if (toolMatch) setup.toolChange = 'T' + toolMatch[1] + ' M6';
+    }
+    if (!setup.spindleOn) {
+      var spindleMatch = line.match(/(M[34])\b/);
+      var speedMatch = line.match(/S([\d.]+)/);
+      if (spindleMatch) {
+        setup.spindleOn = spindleMatch[1];
+        if (speedMatch) setup.spindleOn = 'S' + speedMatch[1] + ' ' + setup.spindleOn;
+      } else if (speedMatch && !setup.spindleOn) {
+        // S value without M3/M4 on same line — keep scanning for M3/M4
+      }
+    }
+    if (!setup.feedRate) {
+      var feedMatch = line.match(/F([\d.]+)/);
+      if (feedMatch) setup.feedRate = 'F' + feedMatch[1];
+    }
+    if (setup.units && setup.coordMode && setup.toolChange && setup.spindleOn && setup.feedRate) break;
+  }
+
+  // If we found S but not M3/M4 on same line, scan separately for spindle direction
+  if (!setup.spindleOn) {
+    var sValue = null, mDir = null;
+    for (var i = inLine - 2; i >= 0; i--) {
+      var line = allLines[i].trim().toUpperCase();
+      if (!sValue) { var sm = line.match(/S([\d.]+)/); if (sm) sValue = sm[1]; }
+      if (!mDir) { var mm = line.match(/(M[34])\b/); if (mm) mDir = mm[1]; }
+      if (sValue && mDir) { setup.spindleOn = 'S' + sValue + ' ' + mDir; break; }
+    }
+  }
+
+  // Scan forward from in-point for first XY position
+  var startX = null, startY = null;
+  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
+    var scanLine = allLines[i].trim().toUpperCase();
+    var xMatch = scanLine.match(/X([\d.\-]+)/);
+    var yMatch = scanLine.match(/Y([\d.\-]+)/);
+    if (xMatch && yMatch) { startX = xMatch[1]; startY = yMatch[1]; break; }
+  }
+
+  // Build the output
+  var output = [];
+  output = output.concat(headerLines);
+  output.push('(--- Restart from line ' + inLine + ' ---)');
+
+  if (setup.units) output.push(setup.units);
+  if (setup.coordMode) output.push(setup.coordMode);
+  if (setup.toolChange) output.push(setup.toolChange);
+  if (setup.spindleOn) output.push(setup.spindleOn);
+
+  output.push('G0 Z' + safeZ);
+  if (startX !== null && startY !== null) {
+    output.push('G0 X' + startX + ' Y' + startY);
+  }
+  if (setup.feedRate) output.push(setup.feedRate);
+
+  output.push('(--- Begin cutting ---)');
+  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
+    output.push(allLines[i]);
+  }
+
+  output.push('(--- End ---)');
+  output.push('G0 Z' + safeZ);
+  output.push('M5');
+  output.push('M30');
+
+  return output.join('\n');
+}
+
 function createHistoryMenu(id) {
-  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
+  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='restartFromLine' data-jobid='JOBID'>Restart from Last Line</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
   return menu.replace(/JOBID/g, id)
 }
 
@@ -358,11 +537,17 @@ function addHistoryEntries(jobs) {
     var name = row.insertCell(2);
     var done = row.insertCell(3);
     var time = row.insertCell(4);
+    var progress = row.insertCell(5);
 
     menu.innerHTML = createHistoryMenu(job._id);
     name.innerHTML = '<div class="job-' + job.state + '">' + job.name + '</div>';
     done.innerHTML = moment(job.finished_at).fromNow();
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
+    if (job.final_line != null && job.nb_lines != null) {
+      progress.innerHTML = job.final_line + ' / ' + job.nb_lines;
+    } else {
+      progress.innerHTML = '—';
+    }
   });
   bindMenuEvents();
 }
@@ -387,6 +572,76 @@ function bindMenuEvents() {
       });
     });
     hideDropDown();
+  });
+
+  $('.restartFromLine').off('click');
+  $('.restartFromLine').click(function(e) {
+    e.preventDefault();
+    var jobid = this.dataset.jobid;
+    hideDropDown();
+
+    fabmo.getJobInfo(jobid, function(err, job) {
+      if (err || !job) {
+        fabmo.notify('Could not load job info', 'error');
+        return;
+      }
+      if (job.final_line == null) {
+        fabmo.notify('No line data available for this job', 'error');
+        return;
+      }
+
+      // Fetch the original file content
+      $.ajax({
+        type: 'GET',
+        url: '/job/' + jobid + '/file',
+        dataType: 'text',
+        success: function(fileContent) {
+          // Get safeZ from config
+          fabmo.getConfig(function(err, config) {
+            var safeZ = (config && config.opensbp) ? config.opensbp.safeZpullUp : 0;
+            var inLine = job.final_line;
+            var jobName = job.name || '';
+            var isSBP = /\.(sbp|sbc)$/i.test(jobName);
+            var code, fileName, ext;
+
+            if (isSBP) {
+              code = extractSBPSelection(fileContent, inLine, null, safeZ);
+              ext = '.sbp';
+            } else {
+              code = extractGCodeSelection(fileContent, inLine, null, safeZ);
+              ext = '.nc';
+            }
+
+            if (!code) {
+              fabmo.notify('Could not generate restart file', 'error');
+              return;
+            }
+
+            // Strip extension from job name for the new filename
+            var baseName = jobName.replace(/\.[^.]+$/, '');
+            fileName = baseName + '_restart_L' + inLine + ext;
+            var file = new File([code], fileName, { type: 'text/plain' });
+
+            fabmo.submitJob(file, {}, function(err, data) {
+              if (err) {
+                fabmo.notify('Failed to submit restart job: ' + err, 'error');
+              } else {
+                fabmo.notify('Restart job added to queue');
+                updateOrder();
+                fabmo.getJobsInQueue(function(err, data) {
+                  $('.toggle-topbar').click();
+                  $('#nav-pending').click();
+                  updateQueue(false);
+                });
+              }
+            });
+          });
+        },
+        error: function() {
+          fabmo.notify('Could not fetch job file', 'error');
+        }
+      });
+    });
   });
 
   $('.previewJob').off('click');
@@ -572,7 +827,7 @@ var sortable = Sortable.create(el, {
   clickDelay: 0,
   touchDelay: 100,
   animation: 150,
-  filter: ".cancel, .preview, .edit, .download, .play, .previewJob, .editJob, .downloadJob, .deleteJob, .ellipses",
+  filter: ".cancel, .preview, .edit, .download, .play, .previewJob, .editJob, .downloadJob, .deleteJob, .restartFromLine, .ellipses",
   onStart: function(evt) {
     var remove = document.getElementById('actions');
     remove.parentNode.removeChild(remove);
