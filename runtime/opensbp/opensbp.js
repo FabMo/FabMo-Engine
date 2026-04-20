@@ -1218,6 +1218,12 @@ SBPRuntime.prototype._end = function (error) {
         this.pending_error = error;
     }
 
+    // Capture final line info on the job before cleanup clears it
+    if (this.machine && this.machine.status.job) {
+        this.machine.status.job.final_line = this.pc + 1;
+        this.machine.status.job.nb_lines = this.machine.status.nb_lines;
+    }
+
     // Normalize the error message
     if (error) {
         if (error instanceof Error) {
