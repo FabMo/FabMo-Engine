@@ -45,6 +45,7 @@ var RECONNECT_READY_TIMEOUT = 5000; // 5s to wait for SYSTEM READY on each attem
 // Heartbeat constants
 var HEARTBEAT_INTERVAL = 5000; // 5s between heartbeat checks
 var HEARTBEAT_TIMEOUT = 3000; // 3s to wait for heartbeat response
+var HEARTBEAT_FEEDHOLD_TIMEOUT = 15000; // 15s timeout during feedhold — more tolerant
 
 var _promiseCounter = 1;
 var intendedClose = false;
@@ -645,6 +646,9 @@ G2.prototype.startHeartbeat = function () {
             if (!this.connected || this._reconnecting) {
                 return;
             }
+            // Use longer timeout during feedhold — G2 is alive but paused
+            var inHold = this.pause_flag || this.status.inFeedHold;
+            var timeout = inHold ? HEARTBEAT_FEEDHOLD_TIMEOUT : HEARTBEAT_TIMEOUT;
             // Skip if we received data recently — G2 is alive
             if (Date.now() - this._lastDataReceived < HEARTBEAT_INTERVAL) {
                 return;
@@ -661,7 +665,7 @@ G2.prototype.startHeartbeat = function () {
                         this._onHeartbeatTimeout();
                     }
                 }.bind(this),
-                HEARTBEAT_TIMEOUT
+                timeout
             );
         }.bind(this),
         HEARTBEAT_INTERVAL
@@ -708,7 +712,12 @@ G2.prototype._onHeartbeatTimeout = function () {
 // Write to the serial port (and log it)
 G2.prototype._write = function (s, callback) {
     if (!this.connected || !this._serialPort || !this._serialPort.isOpen) {
-        log.warn("Attempted write while disconnected: " + String(s).substring(0, 50));
+        log.error("Attempted write while disconnected: " + String(s).substring(0, 50));
+        // Trigger reconnection if not already in progress
+        if (!this._reconnecting) {
+            log.error("Write to disconnected port — initiating reconnection.");
+            this.reconnect();
+        }
         if (callback) {
             setImmediate(callback);
         }

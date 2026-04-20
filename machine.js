@@ -310,8 +310,10 @@ function Machine(control_path, callback) {
         function () {
             log.warn("G2 driver reported disconnect — machine entering not_ready state");
             this.status.state = "not_ready";
+            this.info_id += 1;
             this.status.info = {
-                message: "Reconnecting to motion controller...",
+                id: this.info_id,
+                message: "Motion controller disconnected — attempting to reconnect...",
             };
             this.emit("status", this.status);
         }.bind(this)
@@ -725,6 +727,20 @@ Machine.prototype._restoreAfterReconnect = function (callback) {
                 log.info("Reconnect: reapplying machine configuration...");
                 config.machine.update({}, cb);
             },
+            // Step 5: Restore last known position from instance.json
+            function (cb) {
+                log.info("Reconnect: restoring last known position...");
+                if (config.instance) {
+                    config.instance.apply(function (err) {
+                        if (err) {
+                            log.warn("Reconnect: could not restore position: " + err);
+                        }
+                        cb(null);
+                    });
+                } else {
+                    cb(null);
+                }
+            },
         ],
         function (err) {
             if (err) {
@@ -749,10 +765,14 @@ Machine.prototype._restoreAfterReconnect = function (callback) {
                     }
                 }
 
-                // Transition to idle
+                // Transition to idle with reconnection warning
                 log.info("Reconnect: transitioning machine to idle");
                 self.status.state = "idle";
-                delete self.status.info;
+                self.info_id += 1;
+                self.status.info = {
+                    id: self.info_id,
+                    message: "Reconnected to motion controller after brief interruption. Last known position has been restored, but may not be accurate — please rehome your machine before continuing.",
+                };
                 self.setRuntime(null, function () {
                     self.emit("status", self.status);
                     log.info("Machine restored to idle after reconnection");
