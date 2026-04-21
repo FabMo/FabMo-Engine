@@ -595,9 +595,8 @@ engine.getVersion(function (err, version) {
                             $("#keypad").hide();
                             $(".go-to-container").show();
                         } else {
-                            // if an axis is selected in go-to or set, then flag is true
+                            // if an axis input has focus for go-to or set, keep showing the controls
                             if (in_goto_flag) {
-                                in_goto_flag = false;
                                 $(".manual-stop").hide();
                                 $(".go-to, .set-coordinates").show();
                                 keyboard.setEnabled(false);
@@ -1448,6 +1447,22 @@ $(document).on("keydown", function (e) {
         setTimeout(function () {
             $(".speed_read_out").hide();
         }, 1500);
+    // X, Y, Z, A, B, C keys — focus the axis input to enter goto/set mode
+    } else if (last_state_seen === "manual" && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        var axisKey = e.key.toUpperCase();
+        if ("XYZABC".indexOf(axisKey) >= 0) {
+            var activeTag = document.activeElement ? document.activeElement.tagName : "";
+            // Only intercept if not already typing in an input
+            if (activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
+                e.preventDefault();
+                var axisInput = $("#" + axisKey);
+                if (axisInput.length && axisInput.is(":visible")) {
+                    axisInput.focus(); // triggers .axi focus handler → sets in_goto_flag
+                    $("#keypad").hide();
+                    $(".go-to-container").show();
+                }
+            }
+        }
     }
 });
 
@@ -1621,6 +1636,32 @@ $(".manual-drive-modal")
             keyboard.setEnabled(true);
         }
     });
+
+$(".axi").on("keydown", function (e) {
+    // Allow: backspace, delete, tab, escape, enter, decimal point, minus, arrows
+    if ([8, 9, 13, 27, 46, 110, 190].indexOf(e.keyCode) >= 0 ||
+        e.keyCode === 189 || e.keyCode === 109 || // minus key
+        (e.keyCode >= 35 && e.keyCode <= 40) ||    // home, end, arrows
+        (e.ctrlKey && (e.key === "a" || e.key === "c" || e.key === "v" || e.key === "x"))) {
+        return;
+    }
+    // Allow: digits (top row and numpad)
+    if ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105)) {
+        return;
+    }
+    // Axis letter keys — switch to that axis input instead of typing the letter
+    var axisKey = e.key.toUpperCase();
+    if ("XYZABC".indexOf(axisKey) >= 0) {
+        e.preventDefault();
+        var axisInput = $("#" + axisKey);
+        if (axisInput.length && axisInput.is(":visible")) {
+            axisInput.focus();
+        }
+        return;
+    }
+    // Block all other keys
+    e.preventDefault();
+});
 
 $(".axi").keyup(function (e) {
     keyboard.setEnabled(false);
