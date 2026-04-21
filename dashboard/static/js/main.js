@@ -1606,9 +1606,25 @@ $(".axi").on("click", function (e) {
 $(".axi").on("focus", function (e) {
     in_goto_flag = true;
     e.stopPropagation();
-    $(this).val(parseFloat($(this).val().toString()));
+    var num = parseFloat($(this).val());
+    if (!isNaN(num)) {
+        $(this).val(num);
+    }
     $(this).select();
     keyboard.setEnabled(false);
+});
+
+// Restore position from status if field is empty or invalid on blur
+$(".axi").on("blur", function () {
+    var val = $(this).val();
+    if (val === "" || val === "-" || isNaN(parseFloat(val))) {
+        var axis = this.id.toLowerCase(); // "X" → "x"
+        var pos = dashboard.engine.status["pos" + axis];
+        if (pos !== undefined && !isNaN(pos)) {
+            var digits = dashboard.engine.status.unit === "mm" ? 2 : 3;
+            $(this).val(pos.toFixed(digits));
+        }
+    }
 });
 
 $(".fixed-step-value").on("focus", function (e) {
@@ -1621,12 +1637,18 @@ $(".fixed-step-value").on("focus", function (e) {
 $(".manual-drive-modal")
     .not(".fixed-step-value")
     .on("click", function (e) {
-        $(".posx").val($(".posx").val());
-        $(".posy").val($(".posy").val());
-        $(".posz").val($(".posz").val());
-        $(".posa").val($(".posa").val());
-        $(".posb").val($(".posb").val());
-        $(".posc").val($(".posc").val());
+        // Restore position values — use status if field is empty/invalid
+        var digits = dashboard.engine.status.unit === "mm" ? 2 : 3;
+        ["x", "y", "z", "a", "b", "c"].forEach(function (axis) {
+            var $input = $("input.pos" + axis);
+            var val = parseFloat($input.val());
+            if (isNaN(val)) {
+                var pos = dashboard.engine.status["pos" + axis];
+                if (pos !== undefined && !isNaN(pos)) {
+                    $input.val(pos.toFixed(digits));
+                }
+            }
+        });
         in_goto_flag = false;
         $("#keypad").show();
         $(".go-to-container").hide();
