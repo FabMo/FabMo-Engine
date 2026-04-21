@@ -24,7 +24,11 @@ ManualRuntime.prototype.toString = function () {
 
 // pass through function for compatibility with opensbp runtime
 // eslint-disable-next-line no-unused-vars
-ManualRuntime.prototype.needsAuth = function (s) {
+ManualRuntime.prototype.needsAuth = function (code) {
+    // Stop and exit should never be gated by auth
+    if (code && (code.cmd === "stop" || code.cmd === "exit" || code.cmd === "quit")) {
+        return false;
+    }
     return true;
 };
 
@@ -109,8 +113,8 @@ ManualRuntime.prototype.executeCode = function (code) {
         case "stopped":
             return;
     }
-    log.info("MANUAL CODE!!");
-    log.info(JSON.stringify(code));
+    log.debug("Manual command: " + code.cmd);
+    log.debug(JSON.stringify(code));
     switch (code.cmd) {
         case "enter":
             this.enter(code.mode, code.hideKeypad || false);

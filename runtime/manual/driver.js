@@ -24,7 +24,7 @@ var Q = require("q");
 // Parameters related to filling the queue, motion, etc.
 // These are fussy.
 var T_RENEW = 300;
-var SAFETY_FACTOR = 4.0;
+var SAFETY_FACTOR = 1.5;
 // TODO should be in the ManualDriver instance?!
 var count = 0;
 var RENEW_SEGMENTS = 10;
@@ -204,6 +204,17 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         return;
     }
 
+    // Reject starts within 500ms of a stop — prevents in-flight messages from causing runaway
+    if (this._awaitingStop) {
+        log.warn("startMotion rejected — awaiting stop confirmation");
+        return;
+    }
+
+    // Reject motion on a different axis while currently moving or stopping
+    if (this.moving && axis !== this.currentAxis) {
+        return;
+    }
+
     // Improved axis switching without debug logging
     if (this.moving) {
         if (axis === this.currentAxis && speed === this.currentSpeed) {
@@ -264,6 +275,7 @@ ManualDriver.prototype.maintainMotion = function () {
 
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
+    this._awaitingStop = true;
     this.stop_pending = true;
     this.keep_moving = false;
     if (this.renew_timer) {
@@ -563,6 +575,11 @@ ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, sec
         log.warn("fixedMove(): Move queue is already full!");
         return;
     }
+    // Reject nudge on a different axis while currently moving
+    if (this.moving && axis.toUpperCase() !== (this.currentAxis || "").toUpperCase()) {
+        log.warn("fixedMove(): Rejected — different axis while in motion.");
+        return;
+    }
     if (second_axis) {
         this.fixedQueue.push({
             axis: axis,
@@ -683,6 +700,7 @@ ManualDriver.prototype._onG2Status = function (status) {
             break;
         case this.driver.STAT_STOP:
             this.stop_pending = false;
+            this._awaitingStop = false;
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
         case this.driver.STAT_HOLDING:
@@ -692,6 +710,7 @@ ManualDriver.prototype._onG2Status = function (status) {
             } else {
                 // extra flushes may be coming from here
                 this.stop_pending = false;
+                this._awaitingStop = false; // Clear cooldown — machine confirmed stopped
                 if (!this.driver.pause_hold && this.driver.status.hold === 0) {
                     this.driver._write("%\n"); // flush feed-hold and get stat
                 }
