@@ -143,17 +143,20 @@
     }
 
     // Get keypad icons to light when keyboard arrow keys are used; see note above
-    Keyboard.prototype.start = function (axis, direction, keyCode) {
+    Keyboard.prototype.start = function (axis, direction) {
         // Defensive checks
         if (this.going === true) {
+            console.warn("Keyboard: Already in motion, ignoring start command");
             return;
         }
         if (this.enabled !== true) {
+            console.warn("Keyboard: Not enabled, ignoring start command");
             return;
         }
-
+    
+        console.log("Keyboard: Starting motion", axis, direction); 
+    
         this.move = { axis: axis, dir: direction };
-        this._activeKey = keyCode; // Track which key started motion
         let activeArrowStr =
             "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
         if ($(".fixed-switch input").is(":checked")) {
@@ -206,27 +209,38 @@
         if (this.going || !this.enabled) {
             return;
         }
-        // Start motion immediately — no delay
-        switch (evt.keyCode) {
-            case KEY_UP:
-                this.start("y", 1, evt.keyCode);
-                break;
-            case KEY_DOWN:
-                this.start("y", -1, evt.keyCode);
-                break;
-            case KEY_LEFT:
-                this.start("x", -1, evt.keyCode);
-                break;
-            case KEY_RIGHT:
-                this.start("x", 1, evt.keyCode);
-                break;
-            case KEY_PGUP:
-                this.start("z", 1, evt.keyCode);
-                break;
-            case KEY_PGDOWN:
-                this.start("z", -1, evt.keyCode);
-                break;
-        }
+        this.nudgeTimer = setTimeout(
+            function () {
+                if (!this.going) {
+                    switch (evt.keyCode) {
+                        case KEY_UP:
+                            this.start("y", 1);
+                            break;
+
+                        case KEY_DOWN:
+                            this.start("y", -1);
+                            break;
+
+                        case KEY_LEFT:
+                            this.start("x", -1);
+                            break;
+
+                        case KEY_RIGHT:
+                            this.start("x", 1);
+                            break;
+
+                        case KEY_PGUP:
+                            this.start("z", 1);
+                            break;
+
+                        case KEY_PGDOWN:
+                            this.start("z", -1);
+                            break;
+                    }
+                }
+            }.bind(this),
+            NUDGE_TIMEOUT
+        );
     };
 
     Keyboard.prototype.onMouseLeave = function (evt) {
@@ -240,10 +254,43 @@
         if (evt.keyCode < 27) {
             return;
         } // prevents un-needed kills to shift and ctl release
-        // Only stop if this is the key that started motion
-        if (this.going && evt.keyCode === this._activeKey) {
-            this._activeKey = null;
-            this.stop();
+        if (this.nudgeTimer) {
+            clearTimeout(this.nudgeTimer);
+            this.nudgeTimer = null;
+            if (!this.enabled) {
+                return;
+            }
+            switch (evt.keyCode) {
+                case KEY_UP:
+                    this.nudge("y", 1);
+                    break;
+
+                case KEY_DOWN:
+                    this.nudge("y", -1);
+                    break;
+
+                case KEY_LEFT:
+                    this.nudge("x", -1);
+                    break;
+
+                case KEY_RIGHT:
+                    this.nudge("x", 1);
+                    break;
+
+                case KEY_PGUP:
+                    this.nudge("z", 1);
+                    break;
+
+                case KEY_PGDOWN:
+                    this.nudge("z", -1);
+                    break;
+                default:
+                    return;
+            }
+        } else {
+            if (this.going || this.enabled) {
+                this.stop();
+            }
         }
     };
 
