@@ -66,13 +66,15 @@ If file uploads fail, check for:
 ## Phase 3: Node.js + SerialPort Migration 🔴 CRITICAL
 
 ### Changes Made
-- ✅ Updated `serialport` from 9.2.8 → 12.0.0
+- ✅ Updated `serialport` from 9.2.8 → 13.0.0
 - ✅ Updated Node.js requirement from 16.14.0 → 18.20.0+
-- ✅ Modified `g2.js` for SerialPort v12 API:
+- ✅ Modified `g2.js` for SerialPort v12+ API:
   - Changed import: `var SerialPort = require("serialport")` → `const { SerialPort } = require("serialport")`
   - Updated constructor to object syntax with `path` property
   - Changed `flowcontrol: ["RTSCTS"]` → `rtscts: true`
   - Added explicit `baudRate: 115200`
+
+**Note:** SerialPort v13 was required to satisfy `modbus-serial` dependency. The API is compatible with v12 changes.
 
 ### Pre-Testing Requirements
 **IMPORTANT: Test on a dedicated Raspberry Pi first, NOT on production hardware!**
@@ -101,7 +103,10 @@ If file uploads fail, check for:
    ```bash
    # SerialPort has native bindings - watch for build errors
    npm list serialport
+   # Should show: serialport@13.0.0 (no "invalid" warnings)
+   
    npm list @serialport/bindings-cpp
+   # Should show: @serialport/bindings-cpp@13.x.x
    ```
 
 ### Critical Testing Checklist - SerialPort
@@ -268,7 +273,7 @@ When releasing update:
 | Package | Old Version | New Version | Risk Level |
 |---------|-------------|-------------|------------|
 | node | 16.14.0 | 18.20.0+ | HIGH ⚠️ |
-| serialport | 9.2.8 | 12.0.0 | HIGH ⚠️ |
+| serialport | 9.2.8 | 13.0.0 | HIGH ⚠️ |
 | multer | 1.4.5-lts.1 | 2.0.0-rc.4 | MEDIUM |
 | glob | 5.0.15 | 10.4.5 | LOW |
 | jquery | 2.2.4 | 3.7.1 | LOW |
@@ -313,10 +318,12 @@ _(Use this section to track issues found during testing)_
 ### Issues Found:
 - **Node 18 compatibility**: Initial package.json had `glob@11.x` and `eslint@9.x` which require Node 20+. Downgraded to `glob@10.4.5` and kept `eslint@8.57.1` for Node 18 compatibility.
 - **webpack.config.js dependency**: The webpack config requires `es6-promise` module - must keep it even though deprecated elsewhere.
+- **modbus-serial conflict**: The `modbus-serial@8.0.25` package requires `serialport@^13.0.0`. Updated from `serialport@12.0.0` to `serialport@13.0.0` to resolve dependency conflict. The v12→v13 API changes are minimal and compatible with our existing code modifications.
 
 ### Workarounds:
 - Using glob@10.x instead of glob@11.x (still fixes security issues, but Node 18 compatible)
 - Staying on ESLint v8 until Node 20 upgrade (ESLint v9 requires Node 20+)
+- Using serialport@13.x instead of @12.x to satisfy modbus-serial dependency requirements
 
 ### Performance Notes:
 - 
