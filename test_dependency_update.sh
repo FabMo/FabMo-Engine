@@ -84,10 +84,10 @@ fi
 
 # Check glob
 GLOB_VERSION=$(npm list glob --depth=0 2>/dev/null | grep " glob@" | cut -d'@' -f2 | cut -d' ' -f1)
-if [[ "$GLOB_VERSION" =~ ^11\. ]]; then
-    print_result 0 "glob version $GLOB_VERSION (v11.x required)"
+if [[ "$GLOB_VERSION" =~ ^9\. ]]; then
+    print_result 0 "glob version $GLOB_VERSION (v9.x required)"
 else
-    print_result 1 "glob version $GLOB_VERSION (expected v11.x)"
+    print_result 1 "glob version $GLOB_VERSION (expected v9.x)"
 fi
 
 echo ""
