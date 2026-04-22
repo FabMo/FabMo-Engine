@@ -6,12 +6,13 @@ This guide tracks the multi-phase dependency update for FabMo-Engine, including 
 ## Phase 1: Low-Risk Cleanup ✅ COMPLETED
 
 ### Changes Made
-- ✅ Updated `glob` from 5.0.15 → 11.0.0 (security fix)
+- ✅ Updated `glob` from 5.0.15 → 10.4.5 (security fix, Node 18 compatible)
 - ✅ Updated `jquery` from 2.2.4 → 3.7.1 (dashboard library)
 - ✅ Updated `async` from 1.4.x → 3.2.6
 - ✅ Removed deprecated `q` library, replaced with native Promises
+- ✅ Kept `es6-promise` (required by webpack.config.js)
 - ✅ Updated various minor dependencies with security patches
-- ✅ Updated ESLint to v9 with new flat config format
+- ✅ Updated ESLint to v8.57.1 (v9 requires Node 20+)
 
 ### Testing Checklist - Phase 1
 - [ ] `npm install` completes without errors
@@ -26,8 +27,7 @@ This guide tracks the multi-phase dependency update for FabMo-Engine, including 
 - `g2.js` - Removed Q library, replaced with native Promises (2 occurrences)
 - `runtime/manual/driver.js` - Removed Q library, replaced with native Promise
 - `util.js` - Removed Q library, replaced with native Promise
-- `eslint.config.js` - NEW FILE for ESLint v9 flat config
-- `.eslintrc.js` - Can be removed after verifying new config works
+- `.eslintrc.js` - Kept existing ESLint v8 config (v9 requires Node 20+)
 
 ---
 
@@ -270,19 +270,19 @@ When releasing update:
 | node | 16.14.0 | 18.20.0+ | HIGH ⚠️ |
 | serialport | 9.2.8 | 12.0.0 | HIGH ⚠️ |
 | multer | 1.4.5-lts.1 | 2.0.0-rc.4 | MEDIUM |
-| glob | 5.0.15 | 11.0.0 | LOW |
+| glob | 5.0.15 | 10.4.5 | LOW |
 | jquery | 2.2.4 | 3.7.1 | LOW |
 | async | 1.4.x | 3.2.6 | LOW |
 | webpack | 5.76.0 | 5.97.1 | LOW |
-| eslint | 8.57.1 | 9.17.0 | LOW |
+| eslint | 8.57.1 | 8.57.1 | LOW |
 | q | 1.5.1 | REMOVED | LOW |
+| es6-promise | 3.2.1 | 4.2.8 | LOW |
 
 ### Code Changes
 - ✅ `g2.js` - SerialPort v12 API + Promise conversion
 - ✅ `runtime/manual/driver.js` - Promise conversion
 - ✅ `util.js` - Promise conversion
-- ✅ `eslint.config.js` - ESLint v9 flat config
-- ✅ `package.json` - All dependency updates
+- ✅ `package.json` - All dependency updates (Node 18 compatible versions)
 
 ---
 
@@ -311,10 +311,12 @@ When releasing update:
 _(Use this section to track issues found during testing)_
 
 ### Issues Found:
-- 
+- **Node 18 compatibility**: Initial package.json had `glob@11.x` and `eslint@9.x` which require Node 20+. Downgraded to `glob@10.4.5` and kept `eslint@8.57.1` for Node 18 compatibility.
+- **webpack.config.js dependency**: The webpack config requires `es6-promise` module - must keep it even though deprecated elsewhere.
 
 ### Workarounds:
-- 
+- Using glob@10.x instead of glob@11.x (still fixes security issues, but Node 18 compatible)
+- Staying on ESLint v8 until Node 20 upgrade (ESLint v9 requires Node 20+)
 
 ### Performance Notes:
 - 
