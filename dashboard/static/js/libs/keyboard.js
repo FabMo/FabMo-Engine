@@ -12,7 +12,7 @@
 })(this, function () {
     "use strict";
 
-    var NUDGE_TIMEOUT = 200;
+    var DEFAULT_NUDGE_TIMEOUT = 200;
     var MOVE_THRESH = 50; //10; // for mouse to disrupt ?
     var KEY_RIGHT = 39;
     var KEY_LEFT = 37;
@@ -69,7 +69,8 @@
         options = options || {};
         this.refreshInterval =
             options.refreshInterval || this.refreshInterval || 50; // from 100 to make more responsive like pad
-        console.log("refreshInterval now=" + this.refreshInterval);
+        this.nudgeTimeout = options.nudgeTimeout != null ? options.nudgeTimeout : DEFAULT_NUDGE_TIMEOUT;
+        console.log("refreshInterval now=" + this.refreshInterval + ", nudgeTimeout=" + this.nudgeTimeout);
     };
 
     Keyboard.prototype.emit = function (evt, data) {
@@ -209,38 +210,43 @@
         if (this.going || !this.enabled) {
             return;
         }
-        this.nudgeTimer = setTimeout(
-            function () {
-                if (!this.going) {
-                    switch (evt.keyCode) {
-                        case KEY_UP:
-                            this.start("y", 1);
-                            break;
+        var startForKey = function () {
+            if (!this.going) {
+                switch (evt.keyCode) {
+                    case KEY_UP:
+                        this.start("y", 1);
+                        break;
 
-                        case KEY_DOWN:
-                            this.start("y", -1);
-                            break;
+                    case KEY_DOWN:
+                        this.start("y", -1);
+                        break;
 
-                        case KEY_LEFT:
-                            this.start("x", -1);
-                            break;
+                    case KEY_LEFT:
+                        this.start("x", -1);
+                        break;
 
-                        case KEY_RIGHT:
-                            this.start("x", 1);
-                            break;
+                    case KEY_RIGHT:
+                        this.start("x", 1);
+                        break;
 
-                        case KEY_PGUP:
-                            this.start("z", 1);
-                            break;
+                    case KEY_PGUP:
+                        this.start("z", 1);
+                        break;
 
-                        case KEY_PGDOWN:
-                            this.start("z", -1);
-                            break;
-                    }
+                    case KEY_PGDOWN:
+                        this.start("z", -1);
+                        break;
                 }
-            }.bind(this),
-            NUDGE_TIMEOUT
-        );
+            }
+        }.bind(this);
+
+        if (this.nudgeTimeout === 0) {
+            // No delay — start continuous motion immediately
+            this.nudgeTimer = null;
+            startForKey();
+        } else {
+            this.nudgeTimer = setTimeout(startForKey, this.nudgeTimeout);
+        }
     };
 
     Keyboard.prototype.onMouseLeave = function (evt) {

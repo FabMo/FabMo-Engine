@@ -12,8 +12,6 @@
         this.id = id;
         this.elem = $(id);
         //this.elem.attr('tabindex', 0) // For keyboard
-        this.setOptions(options);
-        this.init();
         this.move = null;
         this.going = false;
         this.interval = null;
@@ -24,6 +22,8 @@
         this.tapInterval = 150;
         this.target = null;
         this.slideOffDetected = false; // Track slide-off state
+        this.setOptions(options);
+        this.init();
     };
 
 
@@ -228,7 +228,7 @@
                 
                 hammer.add(
                     new Hammer.Press({
-                        time: this.pressTime,
+                        time: Math.max(1, this.pressTime),
                         threshold: this.pressThreshold,
                     })
                 );
@@ -238,7 +238,12 @@
                 hammer.on("tap", function(evt) {
                     // FIXED: More thorough exit button detection
                     if (this.isExitButtonEvent(evt)) return;
-                    this.onDriveTap(evt);
+                    // When press_delay is 0, tap also starts continuous motion
+                    if (this.pressTime === 0) {
+                        this.onDrivePress(evt);
+                    } else {
+                        this.onDriveTap(evt);
+                    }
                 }.bind(this));
                 
                 hammer.on("press", function(evt) {

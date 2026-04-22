@@ -535,8 +535,14 @@ engine.getVersion(function (err, version) {
             dashboard.ui = new FabMoUI(dashboard.engine);
             dashboard.getNetworkIdentity();
 
-            keyboard = setupKeyboard();
-            keypad = setupKeypad();
+            // Load config before setting up keyboard/keypad so manual control settings are available
+            engine.getConfig(function (err, cfg) {
+                if (!err && cfg) {
+                    engine.config = cfg;
+                }
+                keyboard = setupKeyboard();
+                keypad = setupKeypad();
+            });
 
             // Check authentication status early
             performStartupAuthCheck();
@@ -1118,7 +1124,11 @@ function getManualNudgeIncrement(move) {
 }
 
 function setupKeyboard() {
-    var keyboard = new Keyboard();
+    var manual = engine.config.machine ? engine.config.machine.manual : {};
+    var keyboard = new Keyboard(null, {
+        refreshInterval: manual.refresh_interval || 50,
+        nudgeTimeout: manual.press_delay != null ? manual.press_delay : 200
+    });
     keyboard.on("go", function (move) {
         if (move.axis === "z") {
             dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) / 2 || 0.1));
@@ -1144,7 +1154,11 @@ function setupKeyboard() {
 }
 
 function setupKeypad() {
-    var keypad = new Keypad("#keypad");
+    var manual = engine.config.machine ? engine.config.machine.manual : {};
+    var keypad = new Keypad("#keypad", {
+        refreshInterval: manual.refresh_interval || 50,
+        pressTime: manual.press_delay != null ? manual.press_delay : 150
+    });
     // Make sure the spindle icon is off when entering manual mode
     keypad.on("go", function (move) {
         if (move.second_axis) {
