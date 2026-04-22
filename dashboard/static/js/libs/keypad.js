@@ -12,8 +12,6 @@
         this.id = id;
         this.elem = $(id);
         //this.elem.attr('tabindex', 0) // For keyboard
-        this.setOptions(options);
-        this.init();
         this.move = null;
         this.going = false;
         this.interval = null;
@@ -24,6 +22,8 @@
         this.tapInterval = 150;
         this.target = null;
         this.slideOffDetected = false; // Track slide-off state
+        this.setOptions(options);
+        this.init();
     };
 
 
@@ -228,30 +228,34 @@
                 
                 hammer.add(
                     new Hammer.Press({
-                        time: this.pressTime,
+                        time: Math.max(1, this.pressTime),
                         threshold: this.pressThreshold,
                     })
                 );
                 
                 hammer.add(new Hammer.Pan({ threshold: this.pressThreshold }));
 
-                // Hammer tap/press only used for fixed-mode buttons
                 hammer.on("tap", function(evt) {
+                    // FIXED: More thorough exit button detection
                     if (this.isExitButtonEvent(evt)) return;
-                    // Only handle tap if in fixed mode (optimistic start handles normal mode)
-                    if ($(evt.target).hasClass("drive-button-fixed")) {
+                    // When press_delay is 0, tap also starts continuous motion
+                    if (this.pressTime === 0) {
+                        this.onDrivePress(evt);
+                    } else {
                         this.onDriveTap(evt);
                     }
                 }.bind(this));
-
+                
                 hammer.on("press", function(evt) {
-                    // Suppressed — optimistic start handles this via touchstart/mousedown
+                    if (this.isExitButtonEvent(evt)) return;
+                    this.onDrivePress(evt);
                 }.bind(this));
-
+                
                 hammer.on("pressup", function(evt) {
-                    // Suppressed — handled by touchend/mouseup
+                    if (this.isExitButtonEvent(evt)) return;
+                    this.end();
                 }.bind(this));
-
+                
                 // FIXED: Only end once when pan starts, don't trigger repeatedly
                 hammer.on("panstart", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
@@ -259,27 +263,18 @@
                         this.cleanStop();
                     }
                 }.bind(this));
-
-                // OPTIMISTIC START: begin motion immediately on touch/mousedown
-                // Use a per-element data attribute to track press start time
+                
                 $(element).on("touchstart", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
-                    element._pressStart = Date.now();
-                    element._touchHandled = true;
-                    this._optimisticStart(element);
+                    
+                    this.touchStartTime = Date.now();
+                    this.currentTouchElement = element;
                 }.bind(this));
-
-                $(element).on("mousedown", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    if (element._touchHandled) return; // Already handled by touch
-                    element._pressStart = Date.now();
-                    this._optimisticStart(element);
-                }.bind(this));
-
+                
                 $(element).on("touchmove", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
-                    if (!element._pressStart) return;
-
+                    if (!this.touchStartTime) return;
+                    
                     var touch = evt.originalEvent.touches[0];
                     if (touch) {
                         var elementRect = element.getBoundingClientRect();
@@ -289,27 +284,27 @@
                             touch.clientY >= elementRect.top &&
                             touch.clientY <= elementRect.bottom
                         );
-
+                        
                         if (!isInside) {
-                            element._pressStart = null;
                             this.end();
                         }
                     }
                 }.bind(this));
-
-                $(element).on("touchend mouseup", function(evt) {
+                
+                $(element).on("touchend", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
-                    if (!element._pressStart) return;
-                    element._pressStart = null;
-
-                    // Clear touch flag after a tick so mousedown doesn't double-fire
-                    setTimeout(function() { element._touchHandled = false; }, 50);
-
-                    // Only stop if this is the element that started motion
-                    if (this.going && this._activeElement === element && !this.slideOffDetected) {
-                        this._activeElement = null;
+               
+                    // Only call end if we haven't already handled slide-off
+                    if (this.going && !this.slideOffDetected) {
                         this.end();
                     }
+
+                setTimeout(() => {
+                    this.touchStartTime = null;
+                    this.currentTouchElement = null;
+                    this.slideOffDetected = false;
+                }, 50);
+                    
                 }.bind(this));
 
                 $(element).on("blur", this.end.bind(this));
@@ -561,14 +556,15 @@
     };
 
     Keypad.prototype.stop = function () {
+        console.log("Keypad: Stop called");
+        
         // Clear the refresh timer immediately
         if (this.interval) {
             clearTimeout(this.interval);
             this.interval = null;
         }
-
+        
         this.going = false;
-        this._endTime = Date.now();
         this.emit("stop", null);
     };
 
@@ -581,7 +577,6 @@
         this.going = false;
         this.enabled = false;
         this.target = null;
-        this._endTime = Date.now(); // Cooldown for cross-axis starts
         
         if (this.interval) {
             clearTimeout(this.interval);
@@ -600,14 +595,15 @@
     };
 
     Keypad.prototype.cleanStop = function () {
+        console.log("Keypad: Clean stop called (slide-off detected)");
+        
         // Immediately set flags to prevent re-entry
         if (!this.going) {
             return; // Already stopped
         }
-
+        
         this.going = false;
         this.enabled = false;
-        this._endTime = Date.now();
         
         // Clear the refresh timer
         if (this.interval) {
@@ -747,66 +743,6 @@
         }
     };
 
-    // Optimistic start: begin continuous motion immediately on contact
-    Keypad.prototype._optimisticStart = function (element) {
-        if (this.guardAgainstExitButton()) return;
-        var e = $(element);
-
-        // In fixed mode, don't optimistically start — let tap handle it
-        if (e.hasClass("drive-button-fixed")) return;
-
-        // Ignore if already moving on a different button
-        if (this.going && this._activeElement !== element) {
-            return;
-        }
-
-        // If already moving on same button, just maintain
-        if (this.going) {
-            return;
-        }
-
-        // Block cross-axis starts while machine is still decelerating from previous stop
-        if (this._endTime && this._activeElement !== element && (Date.now() - this._endTime) < 500) {
-            return;
-        }
-
-        this._activeElement = element;
-        this.setEnabled(true);
-        var axisInfo = this._getAxisFromElement(element);
-        if (axisInfo) {
-            if (axisInfo.second_axis) {
-                this.start(axisInfo.axis, axisInfo.dir, axisInfo.second_axis, axisInfo.second_dir);
-            } else {
-                this.start(axisInfo.axis, axisInfo.dir);
-            }
-            e.addClass("drive-button-active").removeClass("drive-button-inactive");
-        }
-    };
-
-    // Extract axis and direction from a drive button element
-    Keypad.prototype._getAxisFromElement = function (element) {
-        var e = $(element);
-        if (e.hasClass("x_pos") && e.hasClass("y_pos")) return { axis: "x", dir: 1, second_axis: "y", second_dir: 1 };
-        if (e.hasClass("x_neg") && e.hasClass("y_pos")) return { axis: "x", dir: -1, second_axis: "y", second_dir: 1 };
-        if (e.hasClass("x_neg") && e.hasClass("y_neg")) return { axis: "x", dir: -1, second_axis: "y", second_dir: -1 };
-        if (e.hasClass("x_pos") && e.hasClass("y_neg")) return { axis: "x", dir: 1, second_axis: "y", second_dir: -1 };
-        if (e.hasClass("x_pos")) return { axis: "x", dir: 1 };
-        if (e.hasClass("x_neg")) return { axis: "x", dir: -1 };
-        if (e.hasClass("y_pos")) return { axis: "y", dir: 1 };
-        if (e.hasClass("y_neg")) return { axis: "y", dir: -1 };
-        if (e.hasClass("z_pos_fast")) return { axis: "z_fast", dir: 1 };
-        if (e.hasClass("z_pos_slow")) return { axis: "z_slow", dir: 1 };
-        if (e.hasClass("z_neg_fast")) return { axis: "z_fast", dir: -1 };
-        if (e.hasClass("z_neg_slow")) return { axis: "z_slow", dir: -1 };
-        if (e.hasClass("a_pos")) return { axis: "a", dir: 1 };
-        if (e.hasClass("a_neg")) return { axis: "a", dir: -1 };
-        if (e.hasClass("b_pos")) return { axis: "b", dir: 1 };
-        if (e.hasClass("b_neg")) return { axis: "b", dir: -1 };
-        if (e.hasClass("c_pos")) return { axis: "c", dir: 1 };
-        if (e.hasClass("c_neg")) return { axis: "c", dir: -1 };
-        return null;
-    };
-
     Keypad.prototype.onExitTap = function (evt) {
         this.exit();
     };
@@ -822,7 +758,7 @@
         }
         
         // Don't process mouseleave during active touch interactions
-        if (this.currentTouchElement) {
+        if (this.touchStartTime || this.currentTouchElement) {
             return;
         }
         

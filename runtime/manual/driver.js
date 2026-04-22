@@ -24,11 +24,11 @@ var Q = require("q");
 // Parameters related to filling the queue, motion, etc.
 // These are fussy.
 var T_RENEW = 300;
-var SAFETY_FACTOR = 1.5;
+var DEFAULT_SAFETY_FACTOR = 4.0;
 // TODO should be in the ManualDriver instance?!
 var count = 0;
 var RENEW_SEGMENTS = 10;
-var FIXED_MOVES_QUEUE_SIZE = 3;
+var DEFAULT_MAX_NUDGES = 3;
 
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
@@ -46,6 +46,10 @@ function ManualDriver(drv, st, mode) {
     this.exiting = false; // Add flag to prevent re-entry
     this.fromFile = false;
     this.gotoModeHold = false;
+
+    // Configurable parameters (read from config in enter(), fall back to defaults)
+    this.safetyFactor = DEFAULT_SAFETY_FACTOR;
+    this.maxNudges = DEFAULT_MAX_NUDGES;
 
     // True while the tool is known to be in motion
     this.moving = false;
@@ -89,6 +93,9 @@ ManualDriver.prototype.enter = function () {
             // Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
             var jerkXY = config.machine._cache.manual.xy_jerk || 100;
             var jerkZ = config.machine._cache.manual.z_jerk || 100;
+            // Read configurable manual control parameters
+            this.safetyFactor = config.machine._cache.manual.safety_factor || DEFAULT_SAFETY_FACTOR;
+            this.maxNudges = config.machine._cache.manual.max_nudges || DEFAULT_MAX_NUDGES;
             this.stream.write("{xjm:" + jerkXY + "}\n");
             this.stream.write("{yjm:" + jerkXY + "}\n");
             this.stream.write("{zjm:" + jerkZ + "}\n");
@@ -204,17 +211,6 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         return;
     }
 
-    // Reject starts within 500ms of a stop — prevents in-flight messages from causing runaway
-    if (this._awaitingStop) {
-        log.warn("startMotion rejected — awaiting stop confirmation");
-        return;
-    }
-
-    // Reject motion on a different axis while currently moving or stopping
-    if (this.moving && axis !== this.currentAxis) {
-        return;
-    }
-
     // Improved axis switching without debug logging
     if (this.moving) {
         if (axis === this.currentAxis && speed === this.currentSpeed) {
@@ -239,7 +235,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
                 this.second_currentDirection = null;
             }
             
-            this.renewDistance = speed * (T_RENEW / 60000) * SAFETY_FACTOR;
+            this.renewDistance = speed * (T_RENEW / 60000) * this.safetyFactor;
             this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n");
             this._renewMoves("axis_change");
             return;
@@ -258,7 +254,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         this.currentSpeed = speed;
         this.currentDirection = dir;
         this.moving = this.keep_moving = true;
-        this.renewDistance = speed * (T_RENEW / 60000) * SAFETY_FACTOR;
+        this.renewDistance = speed * (T_RENEW / 60000) * this.safetyFactor;
         
         this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n" + "G61" + "\n");
         this._renewMoves("start");
@@ -275,7 +271,6 @@ ManualDriver.prototype.maintainMotion = function () {
 
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
-    this._awaitingStop = true;
     this.stop_pending = true;
     this.keep_moving = false;
     if (this.renew_timer) {
@@ -562,7 +557,7 @@ ManualDriver.prototype._handleNudges = function () {
 };
 
 // Issue a nudge (small fixed move).
-// Don't queue more than FIXED_MOVES_QUEUE_SIZE, though, to keep the machines behavior from running away.
+// Don't queue more than maxNudges (configurable), to keep the machines behavior from running away.
 // (TODO: Might consider making this a typematic sort of thing where after a time you get a machine gun effect.)
 // ie: You shoudln't be allowed to queue 50 nudges during a long slow move, and see them execute at the end.
 //              axis - The first axis to move (eg "X")
@@ -571,13 +566,8 @@ ManualDriver.prototype._handleNudges = function () {
 //       second_axis - The second axis to move
 //   second_distance - The second axis speed
 ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, second_distance) {
-    if (this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
+    if (this.fixedQueue.length >= this.maxNudges) {
         log.warn("fixedMove(): Move queue is already full!");
-        return;
-    }
-    // Reject nudge on a different axis while currently moving
-    if (this.moving && axis.toUpperCase() !== (this.currentAxis || "").toUpperCase()) {
-        log.warn("fixedMove(): Rejected — different axis while in motion.");
         return;
     }
     if (second_axis) {
@@ -700,7 +690,6 @@ ManualDriver.prototype._onG2Status = function (status) {
             break;
         case this.driver.STAT_STOP:
             this.stop_pending = false;
-            this._awaitingStop = false;
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
         case this.driver.STAT_HOLDING:
@@ -710,7 +699,6 @@ ManualDriver.prototype._onG2Status = function (status) {
             } else {
                 // extra flushes may be coming from here
                 this.stop_pending = false;
-                this._awaitingStop = false; // Clear cooldown — machine confirmed stopped
                 if (!this.driver.pause_hold && this.driver.status.hold === 0) {
                     this.driver._write("%\n"); // flush feed-hold and get stat
                 }

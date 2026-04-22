@@ -41,6 +41,10 @@
 		"z_increment" : 0.005,
 		"abc_increment" : 1,
 		"xy_jerk" : 75,
-		"z_jerk" : 50
+		"z_jerk" : 50,
+		"press_delay" : 150,
+		"safety_factor" : 4.0,
+		"refresh_interval" : 50,
+		"max_nudges" : 3
 	}
 }
