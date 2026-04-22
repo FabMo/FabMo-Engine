@@ -319,11 +319,13 @@ _(Use this section to track issues found during testing)_
 - **Node 18 compatibility**: Initial package.json had `glob@11.x` and `eslint@9.x` which require Node 20+. Downgraded to `glob@10.4.5` and kept `eslint@8.57.1` for Node 18 compatibility.
 - **webpack.config.js dependency**: The webpack config requires `es6-promise` module - must keep it even though deprecated elsewhere.
 - **modbus-serial conflict**: The `modbus-serial@8.0.25` package requires `serialport@^13.0.0`. Updated from `serialport@12.0.0` to `serialport@13.0.0` to resolve dependency conflict. The v12→v13 API changes are minimal and compatible with our existing code modifications.
+- **mime ESM incompatibility**: The `mime@4.x` package is ESM-only and cannot be used with CommonJS `require()`. Downgraded to `mime@3.0.0` which supports CommonJS.
 
 ### Workarounds:
 - Using glob@10.x instead of glob@11.x (still fixes security issues, but Node 18 compatible)
 - Staying on ESLint v8 until Node 20 upgrade (ESLint v9 requires Node 20+)
 - Using serialport@13.x instead of @12.x to satisfy modbus-serial dependency requirements
+- Using mime@3.x instead of @4.x (v4 is ESM-only, incompatible with CommonJS)
 
 ### Performance Notes:
 - 
