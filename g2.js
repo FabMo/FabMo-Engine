@@ -5,7 +5,7 @@
  * between the host and a g2 motion conroller.  Other objects and functions are
  * defined here as well to support this capability.
  */
-var SerialPort = require("serialport");
+const { SerialPort } = require("serialport");
 var fs = require("fs");
 var events = require("events");
 var async = require("async");
@@ -14,7 +14,6 @@ var Queue = require("./util").Queue;
 var log = require("./log").logger("g2");
 var process = require("process");
 var stream = require("stream");
-var Q = require("q");
 //const { last } = require("underscore");
 
 // Values of the **stat** field that is returned from G2 status reports
@@ -373,9 +372,11 @@ G2.prototype.connect = function (path, callback) {
 
     // Open the serial port.  This used to be two ports, but now is only the one.
     log.info("Opening G2 port: " + this._serialPath);
-    this._serialPort = new SerialPort(this._serialPath, {
-        flowcontrol: ["RTSCTS"],
+    this._serialPort = new SerialPort({
+        path: this._serialPath,
+        baudRate: 115200,
         autoOpen: false,
+        rtscts: true,
     });
     this._serialToken = "S";
 
@@ -541,9 +542,11 @@ G2.prototype.reconnect = function () {
             }
 
             // Create a new serial port object on the same path
-            var newPort = new SerialPort(that._serialPath, {
-                flowcontrol: ["RTSCTS"],
+            var newPort = new SerialPort({
+                path: that._serialPath,
+                baudRate: 115200,
                 autoOpen: false,
+                rtscts: true,
             });
 
             var readyFired = false;
@@ -1137,21 +1140,22 @@ G2.prototype.resume = function () {
         log.info("Creating promise from resume " + thisPromise);
         _promiseCounter += 1;
         this.resumePending = true;
-        var deferred = Q.defer();
         var that = this;
-        var onStat = function (stat) {
-            if (stat !== STAT_RUNNING) {
-                if (this.quit_pending && stat === STAT_HOLDING) {
-                    return;
+        var promise = new Promise(function(resolve, reject) {
+            var onStat = function (stat) {
+                if (stat !== STAT_RUNNING) {
+                    if (this.quit_pending && stat === STAT_HOLDING) {
+                        return;
+                    }
+                    that.removeListener("stat", onStat);
+                    //            log.info("Resolving promise (resume): " + thisPromise);
+                    this.resumePending = false;
+                    resolve(stat);
                 }
-                that.removeListener("stat", onStat);
-                //            log.info("Resolving promise (resume): " + thisPromise);
-                this.resumePending = false;
-                deferred.resolve(stat);
-            }
-        };
+            };
 
-        this.on("stat", onStat);
+            that.on("stat", onStat);
+        });
         this._write("~"); //cycle start command character
 
         if (this.context) {
@@ -1160,7 +1164,7 @@ G2.prototype.resume = function () {
 
         this.pause_flag = false;
 
-        return deferred.promise;
+        return promise;
     };  
 
 };
@@ -1380,21 +1384,21 @@ G2.prototype._createStatePromise = function (states) {
     var thisPromise = _promiseCounter;
     log.info("Creating promise from start " + thisPromise);
     _promiseCounter += 1;
-    var deferred = Q.defer();
     var that = this;
-    var onStat = function (stat) {
-        for (var i = 0; i < states.length; i++) {
-            if (stat === states[i] && !this.manual_hold && !this.pause_hold) {
-                that.removeListener("stat", onStat);
-                log.info(
-                    "Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states
-                );
-                deferred.resolve(stat);
+    return new Promise(function(resolve, reject) {
+        var onStat = function (stat) {
+            for (var i = 0; i < states.length; i++) {
+                if (stat === states[i] && !this.manual_hold && !this.pause_hold) {
+                    that.removeListener("stat", onStat);
+                    log.info(
+                        "Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states
+                    );
+                    resolve(stat);
+                }
             }
-        }
-    };
-    this.on("stat", onStat);
-    return deferred.promise;
+        };
+        that.on("stat", onStat);
+    });
 };
 
 // Wait for a state or states (as reported in the status report 'stat' member)
