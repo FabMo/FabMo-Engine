@@ -284,9 +284,10 @@ When releasing update:
 | es6-promise | 3.2.1 | 4.2.8 | LOW |
 
 ### Code Changes
-- ✅ `g2.js` - SerialPort v12 API + Promise conversion
-- ✅ `runtime/manual/driver.js` - Promise conversion
-- ✅ `util.js` - Promise conversion
+- ✅ `g2.js` - SerialPort v13 API + Promise conversion (lines 8, 376-379, 544-547, 1143-1170, 1386-1408)
+- ✅ `runtime/manual/driver.js` - Promise conversion (lines 22, 109-112, 733)
+- ✅ `util.js` - Promise conversion (lines 12, 212-248)
+- ✅ `dashboard/app_manager.js` - glob@9.x Promise API (lines 513-530)
 - ✅ `package.json` - All dependency updates (Node 18 compatible versions)
 
 ---
@@ -318,6 +319,11 @@ _(Use this section to track issues found during testing)_
 ### Issues Found:
 - **Node 18 compatibility**: Initial package.json had `glob@11.x` and `eslint@9.x` which require Node 20+. Downgraded to `glob@9.3.5` (not 10.x or 11.x) and kept `eslint@8.57.1` for Node 18 compatibility.
 - **glob API breaking change**: glob@10.x changed from function export to object export, breaking `glob()` calls in app_manager.js. glob@9.x maintains the old API while still providing security fixes.
+- **webpack.config.js requires es6-promise**: Despite being deprecated, webpack.config.js still requires the `es6-promise` module. Kept in dependencies (v4.2.8) to avoid webpack build failures.
+- **modbus-serial compatibility**: modbus-serial@8.0.19+ requires serialport@^13.0.0 (not v12). Updated serialport to v13.0.0 to resolve peer dependency conflict.
+- **mime@4.x ESM incompatibility**: mime@4.x is ESM-only and breaks CommonJS `require()` calls. Downgraded to mime@3.0.0 (last CommonJS version) to maintain compatibility.
+- **glob@9.x callback API removed**: glob@9.x no longer supports callbacks - returns Promises instead. Updated `dashboard/app_manager.js` to use `Promise.all()` instead of nested callbacks in `getAppPaths()` function.
+- **jQuery 3.x incompatibility with Foundation**: jQuery 3.x removed the `.load(url)` AJAX method that older Foundation framework relies on. Downgraded jQuery to v2.2.4 (last 2.x stable release) to maintain compatibility with existing Foundation-based dashboard UI.
 - **webpack.config.js dependency**: The webpack config requires `es6-promise` module - must keep it even though deprecated elsewhere.
 - **modbus-serial conflict**: The `modbus-serial@8.0.25` package requires `serialport@^13.0.0`. Updated from `serialport@12.0.0` to `serialport@13.0.0` to resolve dependency conflict. The v12→v13 API changes are minimal and compatible with our existing code modifications.
 - **mime ESM incompatibility**: The `mime@4.x` package is ESM-only and cannot be used with CommonJS `require()`. Downgraded to `mime@3.0.0` which supports CommonJS.
