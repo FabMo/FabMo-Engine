@@ -505,22 +505,37 @@ AppManager.prototype.getAppPaths = function (callback) {
     // TODO - this is no longer needed
     var profile_pattern = config.getProfileDir("apps") + "/@(*.zip|*.fma)";
 
-    glob(
-        app_pattern,
-        function (err, user_files) {
-            glob(
-                sys_pattern,
-                function (err, system_files) {
-                    glob(
-                        profile_pattern,
-                        function (err, profile_files) {
-                            callback(null, system_files.concat(user_files).concat(profile_files));
-                        }.bind(this)
-                    );
-                }.bind(this)
-            );
-        }.bind(this)
-    );
+    log.debug("Searching for apps with patterns:");
+    log.debug("  User apps: " + app_pattern);
+    log.debug("  System apps: " + sys_pattern);
+    log.debug("  Profile apps: " + profile_pattern);
+
+    // glob@9.x requires options object with extglob enabled for @(pattern) syntax
+    var globOptions = { 
+        nocase: true,     // Case-insensitive matching
+        extglob: true     // Enable extended glob patterns like @(*.zip|*.fma)
+    };
+
+    // glob@9.x returns promises - use promise-based approach
+    log.debug("Using promise-based glob for glob@9.x");
+    Promise.all([
+        glob(app_pattern, globOptions),
+        glob(sys_pattern, globOptions),
+        glob(profile_pattern, globOptions)
+    ]).then(function(results) {
+        var user_files = results[0];
+        var system_files = results[1];
+        var profile_files = results[2];
+        log.debug("Found " + user_files.length + " user app(s)");
+        log.debug("Found " + system_files.length + " system app(s)");
+        log.debug("Found " + profile_files.length + " profile app(s)");
+        var all_files = system_files.concat(user_files).concat(profile_files);
+        log.debug("Total apps found: " + all_files.length);
+        callback(null, all_files);
+    }).catch(function(err) {
+        log.error("Error globbing apps: " + err);
+        callback(err);
+    });
 };
 
 // Load all of the apps from all of the app archive locations, excluding "selftest.fma"

@@ -9,7 +9,6 @@
 var path = require("path");
 var log = require("./log").logger("util");
 var fs = require("fs");
-var q = require("q");
 var uuid = require("uuid");
 var escapeRE = require("escape-regexp-component");
 var exec = require("child_process").exec;
@@ -209,17 +208,17 @@ function allowedAppFile(filename) {
  * trying to rename files from one device to the other.
  */
 var move = function (src, dest, cb) {
-    var renameDeferred = q.defer();
-
-    fs.rename(src, dest, function (err) {
-        if (err) {
-            renameDeferred.reject(err);
-        } else {
-            renameDeferred.resolve();
-        }
+    var renamePromise = new Promise(function(resolve, reject) {
+        fs.rename(src, dest, function (err) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
     });
 
-    renameDeferred.promise.then(
+    renamePromise.then(
         function () {
             // rename worked
             return cb(null);

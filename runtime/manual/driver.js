@@ -19,7 +19,6 @@ var log = require("../../log").logger("manual");
 var config = require("../../config");
 var util = require("util");
 var events = require("events");
-var Q = require("q");
 
 // Parameters related to filling the queue, motion, etc.
 // These are fussy.
@@ -113,9 +112,11 @@ ManualDriver.prototype.enter = function () {
             break;
     }
     this.entered = true;
-    this.deferred = Q.defer();
-
-    return this.deferred.promise;
+    var that = this;
+    return new Promise(function(resolve, reject) {
+        that._promiseResolve = resolve;
+        that._promiseReject = reject;
+    });
 };
 
 // Exit the machining cycle
@@ -718,7 +719,11 @@ ManualDriver.prototype._done = function () {
     this.stream = null;
     this.entered = false;
     this.exiting = false; // Reset the flag
-    this.deferred.resolve();
+    if (this._promiseResolve) {
+        this._promiseResolve();
+        this._promiseResolve = null;
+        this._promiseReject = null;
+    }
 };
 
 module.exports = ManualDriver;
