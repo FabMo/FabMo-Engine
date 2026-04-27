@@ -1724,14 +1724,39 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .manual-drive-message {
-	font-size: 1.5rem;
+	font-size: 1.1rem;
 	font-weight: bold;
 	display: none;
 	color: #d00;
-	height: auto;
 	text-align: center;
-	margin-top: -2px;
-	margin-bottom: 6px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 10;
+	background: rgba(255, 255, 255, 0.95);
+	padding: 6px 8px;
+	border-bottom: 1px solid #ddd;
+}
+
+/* Soft limit: axis at boundary styling */
+.axis.at-limit input.pos {
+	color: #cc0000 !important;
+}
+.limit-tag {
+	display: none;
+	position: absolute;
+	right: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 14px;
+	font-weight: bold;
+	color: #cc0000;
+	white-space: nowrap;
+	margin-right: 3px;
+}
+.axis.at-limit .limit-tag {
+	display: block;
 }
 
 .keypad-button {
@@ -2206,8 +2231,6 @@ input[type='range']:focus {
 	border-radius: 50%;
   }
 
-
-
 .fa-keypad {
 	line-height: inherit;
 	text-shadow: 1px 1px 4px black;
@@ -2357,6 +2380,7 @@ input[type='range']:focus {
 	color: #313366;
     font-weight: bold;
 	margin-right: 10px;
+	position: relative;
 }
 
 .read-out-container .units, .read-out-container .a-rotunits, .read-out-container .b-rotunits, .read-out-container .c-rotunits {
@@ -3044,8 +3068,9 @@ filter: blur(2px);
 /* Content header area for your existing elements */
 .modal-content-header {
     position: relative;
-    min-height: 0; /* Will expand as needed */
+    min-height: 0;
     padding: 4px 8px;
+    overflow: visible;
 }
 
 /* Title container */

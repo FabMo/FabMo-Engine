@@ -135,12 +135,12 @@ var startManualExit = function () {
         // FIXED: Prevent config updates during exit
         window._manualExitInProgress = true;
         
-        // Turn off fixed-distance if it is on
+        // Turn off fixed-distance if on
         $(".drive-button").removeClass("drive-button-fixed");
         $(".slidecontainer").show();
         $(".fixed-input-container").hide();
         $(".fixed-switch input").prop("checked", false);
-        
+
         // Clean up spindle icon
         $("#action-5 img").attr("src", "../img/icon_spindle_off.png");
         $("#action-5").css("background-color", "#ce6402");
@@ -689,12 +689,24 @@ engine.getVersion(function (err, version) {
                         // authenticate.setIsRunning(false);
                     }
                 }
+                // Sync soft-limit DRO indicator from persistent status.softLimit
+                // (driven by server; survives arm/disarm wiping status.info)
+                if (status.state === "manual" && status.softLimit) {
+                    var limAxis = String(status.softLimit.axis).toUpperCase();
+                    var $limAxis = $("#" + limAxis).closest(".axis");
+                    if (!$limAxis.hasClass("at-limit")) {
+                        $(".axis.at-limit").not($limAxis).removeClass("at-limit");
+                        $limAxis.addClass("at-limit");
+                    }
+                } else if ($(".axis.at-limit").length) {
+                    $(".axis.at-limit").removeClass("at-limit");
+                }
                 if (status["info"] && status["info"]["id"] != lastInfoSeen) {
                     lastInfoSeen = status["info"]["id"];
                     if (status.info["message"]) {
                         if (status.state === "manual") {
-                            $("#title_goto").css("visibility", "hidden");
                             $(".manual-drive-message").show();
+                            $("#title_goto").css("visibility", "hidden");
                             $(".manual-drive-message").html(status.info.message);
                             $(".manual-drive-message").addClass("blinking-text");
                             $("#action-1").css("visibility", "hidden");
@@ -702,7 +714,6 @@ engine.getVersion(function (err, version) {
                             $("#action-3").css("visibility", "hidden");
                             $("#action-4").css("visibility", "hidden");
                             $("#action-5").css("visibility", "hidden");
-                            // Use "display: none" to hide and remove space
                             $(".title-container").css("display", "none");
                         } else if (status.info["timer"] && status.info["timer"] <= TIMER_DISPLAY_CUTOFF) {
                             keypad.setEnabled(false);
@@ -1314,6 +1325,7 @@ $(".manual-drive-exit").on("click", function (evt) {
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
     $(".manual-drive-message").removeClass("blinking-text");
+    $(".axis.at-limit").removeClass("at-limit");
 
     startManualExit()
         .then(() => {

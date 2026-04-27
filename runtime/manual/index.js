@@ -80,6 +80,26 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
 
     // Create a helper that is used to do the pumping of commands.
     this.helper = new ManualDriver(this.driver, this.stream, mode);
+
+    // Soft-limit indicator state (persistent on machine.status, survives arm/disarm)
+    this.helper.on(
+        "softLimit",
+        function (er) {
+            log.info("Soft limit reached: " + er.axis + " " + er.dir);
+            this.machine.status.softLimit = { axis: er.axis, dir: er.dir };
+            this.machine.emit("status", this.machine.status);
+        }.bind(this)
+    );
+
+    this.helper.on(
+        "softLimitClear",
+        function () {
+            log.info("Soft limit cleared");
+            this.machine.status.softLimit = null;
+            this.machine.emit("status", this.machine.status);
+        }.bind(this)
+    );
+
     // TODO: Determine if this is needed it currently does nothing
     this.helper.enter().then(
         function () {
@@ -124,6 +144,7 @@ ManualRuntime.prototype.executeCode = function (code) {
             switch (code.cmd) {
                 case "exit":
                     log.debug("---- MANUAL DRIVE EXIT ----");
+                    this.machine.status.softLimit = null;
                     this.helper.exit();
                     break;
 

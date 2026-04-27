@@ -121,29 +121,32 @@ MachineConfig.prototype.update = function (data, callback, force) {
         }
     }
 
-    //  Define Envelope for G2
+    //  Define Envelope for G2 (G2 stores travel limits in mm internally)
+    var envConv = this._cache.units === "in" ? 25.4 : 1;
     if ("xmin" in this._cache.envelope) {
-        this.machine.driver.command({ xtn: this._cache.envelope["xmin"] });
+        this.machine.driver.command({ xtn: this._cache.envelope["xmin"] * envConv });
     }
     if ("xmax" in this._cache.envelope) {
-        this.machine.driver.command({ xtm: this._cache.envelope["xmax"] });
+        this.machine.driver.command({ xtm: this._cache.envelope["xmax"] * envConv });
     }
     if ("ymin" in this._cache.envelope) {
-        this.machine.driver.command({ ytn: this._cache.envelope["ymin"] });
+        this.machine.driver.command({ ytn: this._cache.envelope["ymin"] * envConv });
     }
     if ("ymax" in this._cache.envelope) {
-        this.machine.driver.command({ ytm: this._cache.envelope["ymax"] });
+        this.machine.driver.command({ ytm: this._cache.envelope["ymax"] * envConv });
     }
     if ("zmin" in this._cache.envelope) {
-        this.machine.driver.command({ ztn: this._cache.envelope["zmin"] });
+        this.machine.driver.command({ ztn: this._cache.envelope["zmin"] * envConv });
     }
     if ("zmax" in this._cache.envelope) {
-        this.machine.driver.command({ ztm: this._cache.envelope["zmax"] });
+        this.machine.driver.command({ ztm: this._cache.envelope["zmax"] * envConv });
     }
-    // Sync limits_on → g2 "lim" parameter
     if ("limits_on" in this._cache) {
         this.machine.driver.command({ lim: this._cache.limits_on ? 1 : 0 });
     }
+    // FabMo handles manual-mode soft limits; ensure G2's are off so they don't
+    // double-fire alarms during jogs.
+    this.machine.driver.command({ sl: 0 });
 
     this.save(function (err, result) {
         if (err) {
