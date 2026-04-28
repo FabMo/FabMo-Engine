@@ -41,6 +41,7 @@ var keyPressed = false;
 var isAuth = false;
 var lastInfoSeen = null;
 var lastErrorSeen = null;
+var lastSoftLimitPromptId = null;
 var consent = "";
 var disconnected = false;
 var calledFromModal = ""; // variable for passing action from Keypad modal to engine
@@ -698,8 +699,19 @@ engine.getVersion(function (err, version) {
                         $(".axis.at-limit").not($limAxis).removeClass("at-limit");
                         $limAxis.addClass("at-limit");
                     }
+                    // Override prompt — third-step escalation. promptId bumps
+                    // each emit so we re-show on a re-prompt but not on every
+                    // status frame after a single emit. Rendered inline inside
+                    // the keypad modal so Allow/Cancel clicks aren't seen as
+                    // click-outside (which would close the keypad).
+                    if (status.softLimit.prompt && status.softLimit.promptId !== lastSoftLimitPromptId) {
+                        lastSoftLimitPromptId = status.softLimit.promptId;
+                        showSoftLimitPrompt(limAxis);
+                    }
                 } else if ($(".axis.at-limit").length) {
                     $(".axis.at-limit").removeClass("at-limit");
+                    lastSoftLimitPromptId = null;
+                    hideSoftLimitPrompt();
                 }
                 if (status["info"] && status["info"]["id"] != lastInfoSeen) {
                     lastInfoSeen = status["info"]["id"];
@@ -1326,6 +1338,8 @@ $(".manual-drive-exit").on("click", function (evt) {
     $(".manual-drive-message").hide();
     $(".manual-drive-message").removeClass("blinking-text");
     $(".axis.at-limit").removeClass("at-limit");
+    $("#soft-limit-prompt").hide();
+    lastSoftLimitPromptId = null;
 
     startManualExit()
         .then(() => {
@@ -2183,6 +2197,32 @@ function hideKeypadMessage() {
     // Show title when hiding message
     document.getElementById("title_goto").style.display = "block";
 }
+
+function showSoftLimitPrompt(axis) {
+    var $prompt = $("#soft-limit-prompt");
+    $prompt.find(".prompt-axis").text(axis);
+    $prompt.data("axis", axis);
+    $prompt.show();
+}
+
+function hideSoftLimitPrompt() {
+    $("#soft-limit-prompt").hide();
+}
+
+// Bind directly on the prompt — the keypad-modal stops click propagation
+// before it reaches `document`, so a delegated handler at the document level
+// never fires.
+$("#soft-limit-prompt").on("click", ".prompt-allow", function (e) {
+    e.stopPropagation();
+    var axis = $("#soft-limit-prompt").data("axis");
+    if (axis) dashboard.engine.manualSoftLimitOverride(axis);
+    hideSoftLimitPrompt();
+});
+
+$("#soft-limit-prompt").on("click", ".prompt-cancel", function (e) {
+    e.stopPropagation();
+    hideSoftLimitPrompt();
+});
 
 function showTitle() {
     document.getElementById("title_goto").style.display = "block";

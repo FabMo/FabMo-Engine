@@ -1739,6 +1739,75 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border-bottom: 1px solid #ddd;
 }
 
+/* Soft-limit override prompt — overlays the readout (DRO) area only, so
+   accidental clicks while it appears can't hit the jog buttons. Lives
+   inside the keypad modal so confirming/dismissing doesn't fire the
+   click-outside-closes handler. */
+.manual-drive-prompt {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	background: rgba(255, 255, 255, 0.97);
+	border: 2px solid #d32f2f;
+	border-radius: 6px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+	padding: 16px 18px;
+	color: #222;
+	text-align: center;
+	box-sizing: border-box;
+}
+.manual-drive-prompt .prompt-message {
+	font-size: 1rem;
+	line-height: 1.4;
+	margin-bottom: 14px;
+}
+.manual-drive-prompt .prompt-axis {
+	font-weight: bold;
+	color: #d32f2f;
+}
+.manual-drive-prompt .prompt-note {
+	display: block;
+	font-size: 0.85rem;
+	color: #666;
+	margin-top: 6px;
+	font-weight: normal;
+}
+.manual-drive-prompt .prompt-actions {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+}
+.manual-drive-prompt button {
+	min-width: 90px;
+	padding: 8px 16px;
+	font-size: 0.95rem;
+	font-weight: bold;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}
+.manual-drive-prompt .prompt-allow {
+	background: #d32f2f;
+	color: #fff;
+}
+.manual-drive-prompt .prompt-allow:hover {
+	background: #b71c1c;
+}
+.manual-drive-prompt .prompt-cancel {
+	background: #e0e0e0;
+	color: #222;
+}
+.manual-drive-prompt .prompt-cancel:hover {
+	background: #c8c8c8;
+}
+
 /* Soft limit: axis at boundary styling */
 .axis.at-limit input.pos {
 	color: #cc0000 !important;

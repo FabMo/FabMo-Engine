@@ -77,6 +77,16 @@ function ManualDriver(drv, st, mode) {
     // Reset on stopMotion so the next press into a known boundary can fire LIM.
     this._limShownThisAttempt = false;
 
+    // Per-axis soft-limit overrides granted via setSoftLimitOverride (bypasses
+    // both the boundary clip and the startMotion short-circuit). Cleared
+    // automatically on keypad exit since the helper is destroyed.
+    this.axisOverrides = {};
+
+    // Per-direction count of consecutive boundary pushes. Drives the LIM →
+    // override-prompt escalation. Reset when the user moves to a different
+    // vector or override is granted.
+    this._limPushCount = {};
+
     // Current trajectory
     this.current_axis = null;
     this.current_speed = null;
@@ -226,15 +236,29 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     // alive flag set and return without writing to G2.
     // Emit LIM only on the first short-circuit since the last stopMotion —
     // i.e. user is deliberately pushing into a known limit, not just arriving.
+    // On the second deliberate push we escalate to an override prompt.
     if (this._atBoundary &&
         axis === this.currentAxis &&
-        dir === this.currentDirection) {
+        dir === this.currentDirection &&
+        !this.axisOverrides[axis.toLowerCase()]) {
         if (!this._limShownThisAttempt) {
             this._limShownThisAttempt = true;
-            this.emit("softLimit", {
-                axis: this.currentAxis.toUpperCase(),
-                dir: this.currentDirection < 0 ? "minimum" : "maximum",
-            });
+            var dirLabel = this.currentDirection < 0 ? "minimum" : "maximum";
+            var key = this.currentAxis.toUpperCase() + (this.currentDirection < 0 ? "-" : "+");
+            this._limPushCount[key] = (this._limPushCount[key] || 0) + 1;
+            if (this._limPushCount[key] === 1) {
+                this.emit("softLimit", {
+                    axis: this.currentAxis.toUpperCase(),
+                    dir: dirLabel,
+                });
+            } else if (this._limPushCount[key] === 2) {
+                // Once per boundary session — count > 2 stays silent so the
+                // user isn't pestered after dismissing the modal.
+                this.emit("softLimitOverridePrompt", {
+                    axis: this.currentAxis.toUpperCase(),
+                    dir: dirLabel,
+                });
+            }
         }
         this.keep_moving = true;
         return;
@@ -250,6 +274,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
             if (this._atBoundary) {
                 this._atBoundary = false;
                 this._limShownThisAttempt = false;
+                this._limPushCount = {};
                 this.emit("softLimitClear");
             }
             this.plannedPos = {};
@@ -280,6 +305,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         // Fresh motion start
         if (this._atBoundary) {
             this._atBoundary = false;
+            this._limPushCount = {};
             this.emit("softLimitClear");
         }
         this.plannedPos = {};
@@ -552,9 +578,52 @@ ManualDriver.prototype._handleNudges = function () {
     if (this.fixedQueue.length > 0) {
         while (this.fixedQueue.length > 0) {
             var move = this.fixedQueue.shift();
+            var axis = move.axis.toUpperCase();
+
+            // Soft-limit gate for nudges. Without this a quick tap could
+            // bypass the boundary check that startMotion/_renewMoves enforce.
+            // Same escalation as continuous jog: silent clip → LIM → prompt.
+            // (Second-axis nudges only check the primary axis, matching
+            // _renewMoves; a mixed-override two-axis nudge is a rare case.)
+            if ("XYZ".indexOf(axis) >= 0
+                && config.machine._cache.envelope
+                && config.machine._cache.softlimits_on
+                && !this.axisOverrides[axis.toLowerCase()]) {
+                var dir = move.distance < 0 ? -1 : 1;
+                var distAbs = Math.abs(move.distance);
+                var margin = this._getMargin(axis, dir);
+                var key = axis + (dir < 0 ? "-" : "+");
+                var dirLabel = dir < 0 ? "minimum" : "maximum";
+
+                if (margin <= 0) {
+                    // Already at boundary — block the nudge and escalate.
+                    this._limPushCount[key] = (this._limPushCount[key] || 0) + 1;
+                    this._atBoundary = true;
+                    this.currentAxis = axis;
+                    this.currentDirection = dir;
+                    if (this._limPushCount[key] === 1) {
+                        this.emit("softLimit", { axis: axis, dir: dirLabel });
+                    } else if (this._limPushCount[key] === 2) {
+                        this.emit("softLimitOverridePrompt", { axis: axis, dir: dirLabel });
+                    }
+                    continue;
+                }
+                if (distAbs > margin) {
+                    // Silent first arrival — clip the nudge to the boundary.
+                    move.distance = dir * margin;
+                    this._atBoundary = true;
+                    this.currentAxis = axis;
+                    this.currentDirection = dir;
+                } else if (this._atBoundary) {
+                    // Nudge fits with headroom — left the boundary.
+                    this._atBoundary = false;
+                    this._limPushCount = {};
+                    this.emit("softLimitClear");
+                }
+            }
+
             this.moving = true;
             this.keep_moving = false;
-            var axis = move.axis.toUpperCase();
 
             if ("XYZABC".indexOf(axis) >= 0) {
                 var moves = ["G91 G61.1"]; // set to exact fixed distance
@@ -636,6 +705,23 @@ ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, sec
     }
 };
 
+// Grant a temporary soft-limit override for the given axis. Bypasses both
+// directions of the axis so the user can also reverse out of any over-travel
+// they create. Cleared on keypad exit (the helper itself goes away).
+//   axis - Axis letter (e.g. "X")
+ManualDriver.prototype.setSoftLimitOverride = function (axis) {
+    if (!axis) return;
+    var axisLower = String(axis).toLowerCase();
+    this.axisOverrides[axisLower] = true;
+    log.info("Soft limit override granted for axis " + axisLower.toUpperCase() +
+             " (clears on keypad exit)");
+    // Drop boundary state so the next press flows through normal motion.
+    this._atBoundary = false;
+    this._limShownThisAttempt = false;
+    this._limPushCount = {};
+    this.emit("softLimitClear");
+};
+
 // Return true if the machine is moving
 ManualDriver.prototype.isMoving = function () {
     return this.moving;
@@ -714,7 +800,11 @@ ManualDriver.prototype._renewMoves = function (reason) {
             }
 
             // Clip batch to work-coordinate bounds using plannedPos.
-            if (config.machine._cache.envelope && config.machine._cache.softlimits_on) {
+            // Skip the whole block if the primary axis has an override granted —
+            // multi-axis jogs with mixed override are rare enough that letting
+            // the secondary axis through unclipped is acceptable.
+            if (config.machine._cache.envelope && config.machine._cache.softlimits_on
+                && !this.axisOverrides[axisLower]) {
                 var batchDistance = Math.abs(segment) * segmentCount;
                 var margin = this._getMargin(this.currentAxis, this.currentDirection, this.plannedPos[axisLower]);
 

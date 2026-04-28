@@ -520,6 +520,10 @@
         this.executeRuntimeCode("manual", { cmd: "exit" });
     };
 
+    FabMoAPI.prototype.manualSoftLimitOverride = function (axis) {
+        this.executeRuntimeCode("manual", { cmd: "softLimitOverride", axis: axis });
+    };
+
     FabMoAPI.prototype.manualMoveFixed = function (axis, speed, distance, second_axis, second_distance) {
         this.executeRuntimeCode("manual", {
             cmd: "fixed",

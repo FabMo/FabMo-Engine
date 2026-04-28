@@ -331,6 +331,21 @@
 
     <div class="manual-drive-container">
         <div class="read-out-container">
+          <!-- Inline prompt for soft-limit override (lives inside the readout
+               container so it covers only the DRO area, not the jog buttons,
+               and is inside the keypad modal so click-to-confirm doesn't trip
+               click-outside dismissal). -->
+          <div class="manual-drive-prompt" id="soft-limit-prompt" style="display: none;">
+              <div class="prompt-message">
+                  Allow temporary soft-limit override on the
+                  <span class="prompt-axis"></span> axis?
+                  <span class="prompt-note">Override clears when you close the keypad.</span>
+              </div>
+              <div class="prompt-actions">
+                  <button type="button" class="prompt-allow">Allow</button>
+                  <button type="button" class="prompt-cancel">Cancel</button>
+              </div>
+          </div>
           <div class="read-out-wrapper">
             <!-- 'step' for XY and Z is controlled by the fixed distance move size and set in main.js -->
             <div class="axis xaxis">
