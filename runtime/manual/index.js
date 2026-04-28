@@ -100,6 +100,23 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
         }.bind(this)
     );
 
+    // Bumping promptId on each emit lets the dashboard distinguish a fresh
+    // prompt request from a sticky status field after dismissal.
+    this.helper.on(
+        "softLimitOverridePrompt",
+        function (er) {
+            log.info("Soft limit override prompt: " + er.axis + " " + er.dir);
+            var prev = this.machine.status.softLimit || {};
+            this.machine.status.softLimit = {
+                axis: er.axis,
+                dir: er.dir,
+                prompt: true,
+                promptId: (prev.promptId || 0) + 1,
+            };
+            this.machine.emit("status", this.machine.status);
+        }.bind(this)
+    );
+
     // TODO: Determine if this is needed it currently does nothing
     this.helper.enter().then(
         function () {
@@ -154,6 +171,10 @@ ManualRuntime.prototype.executeCode = function (code) {
 
                 case "stop":
                     this.helper.stopMotion();
+                    break;
+
+                case "softLimitOverride":
+                    this.helper.setSoftLimitOverride(code.axis);
                     break;
 
                 case "quit":
