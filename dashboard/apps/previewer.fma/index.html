@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="../../css/dashboard.css">
-    <link rel="stylesheet" href="./css/style.css?v=22">
+    <link rel="stylesheet" href="./css/style.css?v=23">
   </head>
 
   <body>
@@ -28,14 +28,55 @@
     <div id="preview" style="display: inline-block;">
       <div class="code-line" title="Current File Line"></div>
 
+      <div class="soft-limit-warning" id="soft-limit-warning" style="display: none;">
+        <div class="soft-limit-warning-title">File exceeds machine soft limits</div>
+        <ul class="soft-limit-warning-list"></ul>
+      </div>
+
       <div class="operations-panel" id="operations-panel" style="display: none;">
+        <div class="ops-setup" id="ops-setup">
+          <div class="ops-setup-header" title="Click to collapse/expand">
+            <span>Setup</span>
+            <span class="ops-setup-toggle">−</span>
+          </div>
+          <div class="ops-setup-body">
+            <div class="ops-setup-row">
+              <label>Material thickness</label>
+              <input type="number" class="setup-material-thickness" min="0" step="any"/>
+            </div>
+            <div class="ops-setup-row">
+              <label>Z origin</label>
+              <select class="setup-z-origin">
+                <option value="material">Material Surface</option>
+                <option value="table">Table Surface</option>
+              </select>
+            </div>
+            <div class="ops-setup-row">
+              <label>Default tool</label>
+              <select class="setup-tool-type">
+                <option value="flat">Flat</option>
+                <option value="ball">Ball</option>
+                <option value="vbit">V-Bit</option>
+              </select>
+              <input type="number" class="setup-tool-dia" min="0.01" step="any"/>
+              <span class="setup-tool-dia-label">"</span>
+              <span class="setup-vbit-wrap">
+                <input type="number" class="setup-tool-angle" min="10" max="180" step="1"/>
+                <span class="setup-tool-angle-label">°</span>
+              </span>
+            </div>
+          </div>
+        </div>
         <div class="ops-header">
-          <span>Operations</span>
+          <span class="ops-header-title">Operations</span>
           <span class="ops-toggle-all" title="Select All / None">All</span>
         </div>
         <div class="ops-list" id="ops-list"></div>
+        <div class="ops-empty" id="ops-empty" style="display: none;">No operations parsed in file. Use Setup to set tool defaults, then run the full job.</div>
         <div class="ops-actions">
           <div class="run-now">Run Full Job</div>
+          <button class="run-trimmed" title="Run only the in/out selection">Run Trimmed</button>
+          <button class="submit-trimmed" title="Submit the in/out selection as a new job">Submit Trimmed</button>
           <button class="run-selected-ops" title="Run only the checked operations">Run Selected</button>
           <button class="submit-selected-ops" title="Submit checked operations as a new job">Submit Selected</button>
         </div>
@@ -183,6 +224,16 @@
           <label>Set Material Opacity</label>
           <div class="range-container">
             <input name="material-opacity" type="range" min="0" max="1" step="0.1" value="0.5"/>
+          </div>
+
+          <label>Light Azimuth (rotation around scene)</label>
+          <div class="range-container">
+            <input name="light-azimuth" type="range" min="0" max="360" step="5" value="135"/>
+          </div>
+
+          <label>Light Elevation (above table)</label>
+          <div class="range-container">
+            <input name="light-elevation" type="range" min="5" max="90" step="5" value="25"/>
           </div>
 
           <label>Simulation Resolution (grid points)</label>

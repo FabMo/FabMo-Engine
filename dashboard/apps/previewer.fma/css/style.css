@@ -439,6 +439,40 @@ body {
   display: none;
 }
 
+#preview .soft-limit-warning {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  background: #fff3cd;
+  color: #5c4400;
+  border: 1px solid #d4a017;
+  border-radius: 4px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: sans-serif;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  max-width: 70%;
+  pointer-events: auto;
+}
+
+#preview .soft-limit-warning-title {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+#preview .soft-limit-warning-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#preview .soft-limit-warning-list li {
+  padding: 1px 0;
+  font-family: monospace;
+}
+
 #preview .dialog {
   display: none;
   position: absolute;
@@ -612,6 +646,93 @@ input[type="range"]::-webkit-slider-runnable-track {
   flex-direction: column;
 }
 
+#preview .operations-panel .ops-setup {
+  border-bottom: 1px solid #444;
+  flex-shrink: 0;
+}
+
+#preview .operations-panel .ops-setup-header {
+  padding: 6px 10px;
+  font-weight: bold;
+  font-size: 12px;
+  background: rgba(49, 51, 102, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+#preview .operations-panel .ops-setup-toggle {
+  font-size: 14px;
+  color: #aac;
+  width: 16px;
+  text-align: center;
+}
+
+#preview .operations-panel .ops-setup-body {
+  padding: 6px 10px 8px;
+}
+
+#preview .operations-panel.setup-collapsed .ops-setup-body {
+  display: none;
+}
+
+#preview .operations-panel .ops-setup-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 3px 0;
+  font-size: 11px;
+}
+
+#preview .operations-panel .ops-setup-row label {
+  color: #aac;
+  flex: 1;
+  margin: 0;
+  font-size: 11px;
+}
+
+#preview .operations-panel .ops-setup-row input[type="number"],
+#preview .operations-panel .ops-setup-row select {
+  background: rgba(50, 50, 70, 0.9);
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 1px 3px;
+  font-size: 11px;
+  width: 60px;
+}
+
+#preview .operations-panel .ops-setup-row .setup-tool-type {
+  width: 52px;
+}
+
+#preview .operations-panel .ops-setup-row .setup-tool-dia,
+#preview .operations-panel .ops-setup-row .setup-tool-angle {
+  width: 50px;
+}
+
+#preview .operations-panel .ops-setup-row .setup-tool-dia-label,
+#preview .operations-panel .ops-setup-row .setup-tool-angle-label {
+  color: #888;
+}
+
+#preview .operations-panel .ops-setup-row .setup-vbit-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+#preview .operations-panel .ops-empty {
+  padding: 8px 10px;
+  color: #aab;
+  font-style: italic;
+  font-size: 11px;
+  border-bottom: 1px solid #444;
+}
+
 #preview .operations-panel .ops-header {
   padding: 8px 10px;
   font-weight: bold;
@@ -746,11 +867,23 @@ input[type="range"]::-webkit-slider-runnable-track {
   background: #047a25;
 }
 
-#preview .operations-panel .ops-actions .submit-selected-ops {
+#preview .operations-panel .ops-actions .submit-selected-ops,
+#preview .operations-panel .ops-actions .submit-trimmed {
   background: #313366;
   border-color: #201f2b;
 }
 
-#preview .operations-panel .ops-actions .submit-selected-ops:hover {
+#preview .operations-panel .ops-actions .submit-selected-ops:hover,
+#preview .operations-panel .ops-actions .submit-trimmed:hover {
   background: #3d3f7a;
+}
+
+/* Trim buttons only matter when an in/out selection is set. */
+#preview .operations-panel .ops-actions .run-trimmed,
+#preview .operations-panel .ops-actions .submit-trimmed {
+  display: none;
+}
+#preview.has-selection .operations-panel .ops-actions .run-trimmed,
+#preview.has-selection .operations-panel .ops-actions .submit-trimmed {
+  display: inline-block;
 }

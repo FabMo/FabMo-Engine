@@ -2,8 +2,46 @@ var db = require("../db");
 var util = require("../util");
 var log = require("../log").logger("routes");
 var machine = require("../machine").machine;
+var config = require("../config");
+var bounds = require("../runtime/bounds");
 var fs = require("fs");
 var upload = require("./util").upload;
+
+// Background-compute bounds + soft-limit violation flag for a freshly
+// submitted job and persist them on the job record. Runs after we've
+// already responded to the client so submit latency is unaffected; the
+// dashboard learns of the result via the `change` event from job.save().
+function analyzeJobBounds(job) {
+    if (!job || !job._id) return;
+    db.Job.getFileForJobId(job._id, function (err, file) {
+        if (err || !file || !file.path) {
+            return log.warn("analyzeJobBounds: file lookup failed: " + (err || "no file"));
+        }
+        bounds.computeFileBounds(file.path, function (err, result) {
+            if (err) {
+                log.warn("analyzeJobBounds: " + err.message);
+                return;
+            }
+            var envelope = config.machine.get("envelope") || {};
+            var g55 = {
+                x: config.driver.get("g55x") || 0,
+                y: config.driver.get("g55y") || 0,
+            };
+            var check = bounds.checkAgainstEnvelope(result.bounds, envelope, g55);
+            db.Job.getById(job._id, function (err, fresh) {
+                if (err || !fresh) return;
+                fresh.bounds = result.bounds;
+                fresh.softLimitCheck = check;
+                fresh.save(function () {});
+                log.info(
+                    "Bounds for job " + job._id + ": exceeds=" + check.exceeds +
+                    " (" + result.durationMs + "ms) bounds=" + JSON.stringify(result.bounds) +
+                    " env=" + JSON.stringify(envelope) + " g55=" + JSON.stringify(g55)
+                );
+            });
+        });
+    });
+}
 
 var submitJob = function (req, res, next) {
     upload(req, res, next, function (err, upload) {
@@ -32,6 +70,7 @@ var submitJob = function (req, res, next) {
                 // Create a job and respond
                 db.createJob(file, item, function (err, job) {
                     callback(err, job);
+                    if (!err && job) analyzeJobBounds(job);
                 });
             }, // create_job
             function on_complete(err, jobs) {

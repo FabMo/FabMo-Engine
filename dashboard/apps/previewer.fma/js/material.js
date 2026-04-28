@@ -39,12 +39,19 @@ module.exports = function(scene, update) {
 
   // Stepped column mesh buffers (pre-allocated for performance)
   var posArr = null;       // Float32Array of vertex positions
+  var colorArr = null;     // Float32Array of per-vertex RGB (depth shade)
   var idxArr = null;       // Uint32Array of face indices
   var posAttr = null;      // THREE.BufferAttribute for positions
+  var colorAttr = null;    // THREE.BufferAttribute for vertex colors
   var idxAttr = null;      // THREE.BufferAttribute for indices
   var topVertCount = 0;    // Number of top surface vertices (4 per column)
   var botVertOffset = 0;   // Index offset to bottom vertices in posArr
   var meshMaterial = null;  // Reusable THREE.MeshPhongMaterial
+
+  // Base color of stock (tan); modulated per vertex by depth shading.
+  var baseColor = { r: 0xD2 / 255, g: 0xB4 / 255, b: 0x8C / 255 };
+  // Shade range: deepest cut renders at depthMin, uncut top at 1.0.
+  var depthMin = 0.15;
 
   /**
    * Helper to properly dispose a mesh and track its resources
@@ -154,6 +161,7 @@ module.exports = function(scene, update) {
                  + 2 * (xPoints + yPoints) * 2;                       // outer walls
 
     posArr = new Float32Array(totalVerts * 3);
+    colorArr = new Float32Array(totalVerts * 3);
     idxArr = new Uint32Array(maxFaces * 3);
 
     // Fill bottom vertices (static — never change)
@@ -863,6 +871,10 @@ module.exports = function(scene, update) {
     // Rebuild index buffer (wall topology may have changed)
     var indexCount = buildIndices();
 
+    // Recompute shading — heightmap changed, so per-vertex shading must too.
+    // Cheap (~few ms for typical grids) and avoids stale shading after cuts.
+    computeShading();
+
     // Update GPU buffers
     posAttr.needsUpdate = true;
     idxAttr.needsUpdate = true;
@@ -870,6 +882,58 @@ module.exports = function(scene, update) {
 
     dirtyRegions = [];
     update();
+  };
+
+  /**
+   * Compute per-vertex shade from height. Top of stock renders at full
+   * brightness; deepest cut at depthMin. Linear ramp in between, so each
+   * cut layer reads as a distinct lightness step from above.
+   */
+  function computeShading() {
+    if (!colorArr || !heightMap || !heightMap.heights) return;
+    var xP = heightMap.xPoints;
+    var yP = heightMap.yPoints;
+    var H = heightMap.heights;
+    var bottomZ = materialTop - stockHeight;
+    var range = stockHeight || 1;
+    var span = 1 - depthMin;
+
+    for (var yi = 0; yi < yP; yi++) {
+      for (var xi = 0; xi < xP; xi++) {
+        var h = H[yi * xP + xi];
+        var t = (h - bottomZ) / range;
+        if (t < 0) t = 0; else if (t > 1) t = 1;
+        var shade = depthMin + span * t;
+        var r = baseColor.r * shade;
+        var g = baseColor.g * shade;
+        var b = baseColor.b * shade;
+        var base = (yi * xP + xi) * 4 * 3;
+        for (var v = 0; v < 4; v++) {
+          colorArr[base + v*3]     = r;
+          colorArr[base + v*3 + 1] = g;
+          colorArr[base + v*3 + 2] = b;
+        }
+      }
+    }
+    // Bottom vertices stay at the darkest shade.
+    for (var i = botVertOffset * 3; i < colorArr.length; i += 3) {
+      colorArr[i]     = baseColor.r * depthMin;
+      colorArr[i + 1] = baseColor.g * depthMin;
+      colorArr[i + 2] = baseColor.b * depthMin;
+    }
+    if (colorAttr) colorAttr.needsUpdate = true;
+  }
+
+  /**
+   * Kept for compatibility with the existing azimuth/elevation sliders —
+   * shading is now depth-based, so light direction has no effect. We just
+   * recompute and refresh.
+   */
+  self.setLightDirection = function(azimDeg, elevDeg) {
+    if (geometryCreated) {
+      computeShading();
+      update();
+    }
   };
 
   /**
@@ -894,25 +958,32 @@ module.exports = function(scene, update) {
     var indexCount = buildIndices();
     var t2 = performance.now();
 
+    // Bake depth shading into vertex colors before creating geometry
+    computeShading();
+
     // Create BufferGeometry with pre-allocated typed arrays
     var geometry = new THREE.BufferGeometry();
     posAttr = new THREE.BufferAttribute(posArr, 3);
+    colorAttr = new THREE.BufferAttribute(colorArr, 3);
     idxAttr = new THREE.BufferAttribute(idxArr, 1);
     geometry.setAttribute('position', posAttr);
+    geometry.setAttribute('color', colorAttr);
     geometry.setIndex(idxAttr);
     geometry.setDrawRange(0, indexCount);
     // Skip computeVertexNormals — flatShading computes face normals in the shader
     geometry.computeBoundingSphere();
     activeGeometries.push(geometry);
 
-    // Create material (opaque solid stock with flat shading)
+    // Lit Phong with flatShading — top faces (normal up) catch the top-down
+    // light, walls (sideways) only get ambient, so vertical faces render
+    // visibly darker than horizontal cut floors. Per-vertex colors layer a
+    // depth ramp on top of that.
     if (!meshMaterial) {
       meshMaterial = new THREE.MeshPhongMaterial({
-        color: 0xD2B48C,
-        specular: 0x222222,
-        shininess: 20,
-        side: THREE.DoubleSide,
-        flatShading: true
+        vertexColors: true,
+        flatShading: true,
+        shininess: 0,
+        side: THREE.DoubleSide
       });
       activeMaterials.push(meshMaterial);
     }
