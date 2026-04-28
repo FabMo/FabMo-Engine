@@ -1,19 +1,15 @@
 #!/bin/bash
 
-# Needed to make sure we are using the wlan0 transmitter with NetworkManager ???
-# Create the AP interface if it doesn't exist
-#### Marked liness removed to allow control of AP mode enable/disable via the FabMo Client 4/20/2025
-####if ! iw dev | grep -q wlan0_ap; then
-####    iw dev wlan0 interface add wlan0_ap type __ap
-####fi
-# Bring up the AP interface
-####ip link set wlan0_ap up
+# Restart the NetworkManager AP connection to apply SSID changes
+# This is called by ip-reporting.py after updating the wlan0_ap SSID
 
-# Wait for the interface to be up and running
-sleep 5
+# Note: We use NetworkManager to manage the AP, not standalone hostapd
+# The wlan0_ap connection is defined in /etc/NetworkManager/system-connections/wlan0_ap.nmconnection
 
-# Ensure the interface is properly configured
-####ifconfig wlan0_ap 192.168.42.1 netmask 255.255.255.0
+# Wait briefly to ensure previous operations complete
+sleep 2
 
-# Restart hostapd to ensure it picks up the interface correctly
-sudo systemctl restart hostapd
+# Restart the NetworkManager AP connection to apply the new SSID
+# This uses NetworkManager's internal hostapd, not the standalone service
+sudo nmcli connection down wlan0_ap 2>/dev/null
+sudo nmcli connection up wlan0_ap
