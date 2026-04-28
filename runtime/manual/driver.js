@@ -60,12 +60,22 @@ function ManualDriver(drv, st, mode) {
     this.exit_pending = false;
     this.stop_pending = false;
 
+    // Planned position: the endpoint of all queued incremental moves.
+    // Used to prevent queuing past the boundary (overshoot prevention).
+    // Resynced from status when status overtakes planned (moves consumed).
+    this.plannedPos = {};
+
     // The default mode is "normal" (feed the queue with constant movement along a vector)
     if (mode === "raw") {
         this.mode = "raw";
     } else {
         this.mode = "normal";
     }
+
+    this._atBoundary = false;
+    // True once LIM has been signaled (or suppressed) for the current press.
+    // Reset on stopMotion so the next press into a known boundary can fire LIM.
+    this._limShownThisAttempt = false;
 
     // Current trajectory
     this.current_axis = null;
@@ -203,12 +213,30 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     var second_dir = second_speed < 0 ? -1.0 : 1.0;
     speed = Math.abs(speed);
     this.gotoModeHold = false;
-    
+
     if (this.mode != "normal") {
         throw new Error("Cannot start movement in " + this.mode + " mode.");
     }
-    
+
     if (this.stop_pending) {
+        return;
+    }
+
+    // If already at boundary in the same direction, short-circuit: keep the
+    // alive flag set and return without writing to G2.
+    // Emit LIM only on the first short-circuit since the last stopMotion —
+    // i.e. user is deliberately pushing into a known limit, not just arriving.
+    if (this._atBoundary &&
+        axis === this.currentAxis &&
+        dir === this.currentDirection) {
+        if (!this._limShownThisAttempt) {
+            this._limShownThisAttempt = true;
+            this.emit("softLimit", {
+                axis: this.currentAxis.toUpperCase(),
+                dir: this.currentDirection < 0 ? "minimum" : "maximum",
+            });
+        }
+        this.keep_moving = true;
         return;
     }
 
@@ -219,11 +247,18 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
             return;
         } else {
             // Smooth axis transitions
+            if (this._atBoundary) {
+                this._atBoundary = false;
+                this._limShownThisAttempt = false;
+                this.emit("softLimitClear");
+            }
+            this.plannedPos = {};
+
             if (this.renew_timer) {
                 clearTimeout(this.renew_timer);
                 this.renew_timer = null;
             }
-            
+
             this.currentAxis = axis;
             this.currentSpeed = speed;
             this.currentDirection = dir;
@@ -243,6 +278,11 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         }
     } else {
         // Fresh motion start
+        if (this._atBoundary) {
+            this._atBoundary = false;
+            this.emit("softLimitClear");
+        }
+        this.plannedPos = {};
         if (second_axis) {
             this.second_axis = second_axis;
             this.second_currentDirection = second_dir;
@@ -250,7 +290,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
             this.second_axis = null;
             this.second_currentDirection = null;
         }
-        
+
         this.currentAxis = axis;
         this.currentSpeed = speed;
         this.currentDirection = dir;
@@ -274,6 +314,13 @@ ManualDriver.prototype.maintainMotion = function () {
 ManualDriver.prototype.stopMotion = function () {
     this.stop_pending = true;
     this.keep_moving = false;
+    this.plannedPos = {};
+    // Don't reset _atBoundary here — releasing the button at a limit doesn't
+    // change the fact that we're at the limit. It's cleared by startMotion
+    // when motion in a different direction begins.
+    // Reset _limShownThisAttempt so the next press into a known boundary
+    // re-fires the LIM indicator.
+    this._limShownThisAttempt = false;
     if (this.renew_timer) {
         clearTimeout(this.renew_timer);
     }
@@ -594,6 +641,34 @@ ManualDriver.prototype.isMoving = function () {
     return this.moving;
 };
 
+// Return the available margin (distance to boundary) for a given axis and direction.
+// Reads envelope (table coords) and G55 offset live so it always reflects the
+// current zero — no stale cached bounds if the user re-zeroes mid-session.
+//   axis - Axis letter (e.g. "x", "X")
+//   direction - Sign of motion: -1 or +1
+//   pos - (optional) work position to check from; defaults to status position
+ManualDriver.prototype._getMargin = function (axis, direction, pos) {
+    var envelope = config.machine._cache.envelope;
+    if (!envelope) return Infinity;
+    var axisLower = axis.toLowerCase();
+    var currentPos = (pos !== undefined) ? pos : this.driver.status["pos" + axisLower];
+    if (currentPos === undefined) return Infinity;
+
+    var offset = config.driver.get("g55" + axisLower) || 0;
+    if (envelope[axisLower + "min"] === undefined || envelope[axisLower + "max"] === undefined) return Infinity;
+    // Envelope is in table (G53) coords; convert to work coords by subtracting g55 offset.
+    var workMin = envelope[axisLower + "min"] - offset;
+    var workMax = envelope[axisLower + "max"] - offset;
+
+    var margin;
+    if (direction < 0) {
+        margin = currentPos - workMin;
+    } else {
+        margin = workMax - currentPos;
+    }
+    return Math.max(margin, 0);
+};
+
 // Internal function called to "pump" moves into the queue
 // This function is called periodically until a == stop is requested ==,
 // or the users intent to continue moving evaporates ////##??.
@@ -607,17 +682,96 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 this.keep_moving = false;
                 return;
             }
-            
+
             if (reason === "start") {
                 this.moving = true;
             }
-            
+
             var segment = this.currentDirection * (this.renewDistance / RENEW_SEGMENTS);
             var second_segment = this.second_currentDirection * (this.renewDistance / RENEW_SEGMENTS);
-            var moves = [];
-            
+            var segmentCount = RENEW_SEGMENTS;
+
+            // --- Planned-position tracking for overshoot prevention ---
+            // plannedPos tracks the endpoint of all queued incremental moves.
+            // We clip against plannedPos (not status) so moves already in the
+            // G2 planner buffer are accounted for.
+            // Initialize once from status, then only accumulate — never resync
+            // from status during motion (G2 can report transient position spikes
+            // during acceleration that would corrupt the margin calculation).
+            // Explicit resets in startMotion/stopMotion handle re-initialization.
+            var axisLower = this.currentAxis.toLowerCase();
+            if (this.plannedPos[axisLower] === undefined) {
+                var statusPos = this.driver.status["pos" + axisLower];
+                this.plannedPos[axisLower] = (statusPos !== undefined && statusPos !== null) ? statusPos : 0;
+            }
+
             if (this.second_axis) {
-                for (var i = 0; i < RENEW_SEGMENTS; i++) {
+                var secondLower = this.second_axis.toLowerCase();
+                if (this.plannedPos[secondLower] === undefined) {
+                    var secondStatus = this.driver.status["pos" + secondLower];
+                    this.plannedPos[secondLower] = (secondStatus !== undefined && secondStatus !== null) ? secondStatus : 0;
+                }
+            }
+
+            // Clip batch to work-coordinate bounds using plannedPos.
+            if (config.machine._cache.envelope && config.machine._cache.softlimits_on) {
+                var batchDistance = Math.abs(segment) * segmentCount;
+                var margin = this._getMargin(this.currentAxis, this.currentDirection, this.plannedPos[axisLower]);
+
+                if (this.second_axis) {
+                    var secondMargin = this._getMargin(this.second_axis, this.second_currentDirection, this.plannedPos[secondLower]);
+                    var secondBatch = Math.abs(second_segment) * segmentCount;
+                    var scale = 1;
+                    if (batchDistance > 0 && margin < batchDistance) {
+                        scale = Math.min(scale, margin / batchDistance);
+                    }
+                    if (secondBatch > 0 && secondMargin < secondBatch) {
+                        scale = Math.min(scale, secondMargin / secondBatch);
+                    }
+                    if (scale <= 0) {
+                        margin = 0;
+                    } else if (scale < 1) {
+                        segment = segment * scale;
+                        second_segment = second_segment * scale;
+                    }
+                } else {
+                    if (batchDistance > 0 && margin < batchDistance && margin > 0) {
+                        segment = this.currentDirection * (margin / segmentCount);
+                    }
+                }
+
+                if (margin <= 0) {
+                    // Planned endpoint has reached the boundary — stop queuing
+                    // new moves, but keep the renew timer alive.
+                    // Only emit the softLimit indicator when the actual machine
+                    // position (status) is within 0.5 units of the boundary,
+                    // not when the queued endpoint reaches it (which can be
+                    // many inches ahead due to planner buffering).
+                    var statusMargin = this._getMargin(this.currentAxis, this.currentDirection);
+                    if (!this._atBoundary && statusMargin <= 0.5) {
+                        // First arrival at the boundary in this press session —
+                        // silent stop. LIM only shows if the user releases and
+                        // pushes again (handled in startMotion's short-circuit).
+                        this._atBoundary = true;
+                        this._limShownThisAttempt = true;
+                        var axisName = this.currentAxis.toUpperCase();
+                        var dir = this.currentDirection < 0 ? "minimum" : "maximum";
+                        log.info("Soft limit reached (silent): axis=" + axisName + " dir=" + dir);
+                    }
+                    this.renew_timer = setTimeout(
+                        function () {
+                            this._renewMoves("timeout");
+                        }.bind(this),
+                        T_RENEW
+                    );
+                    return;
+                }
+            }
+
+            var moves = [];
+
+            if (this.second_axis) {
+                for (var i = 0; i < segmentCount; i++) {
                     var move =
                         "G1" +
                         this.currentAxis +
@@ -628,14 +782,21 @@ ManualDriver.prototype._renewMoves = function (reason) {
                     moves.push(move);
                 }
             } else {
-                for (var i = 0; i < RENEW_SEGMENTS; i++) {
+                for (var i = 0; i < segmentCount; i++) {
                     var move = "G1" + this.currentAxis + segment.toFixed(4) + "\n";
                     moves.push(move);
                 }
             }
-            
+
             this.stream.write(moves.join(""));
             this.driver.prime();
+
+            // Advance planned position by queued batch
+            this.plannedPos[axisLower] += segment * segmentCount;
+            if (this.second_axis) {
+                this.plannedPos[secondLower] += second_segment * segmentCount;
+            }
+
             this.renew_timer = setTimeout(
                 function () {
                     this._renewMoves("timeout");

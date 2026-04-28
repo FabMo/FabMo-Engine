@@ -140,6 +140,7 @@ function Machine(control_path, callback) {
         targetHit: false,
         lastState: null,
         clientDisconnected: false,
+        softLimit: null,
     };
 
     this.fireButtonDebounce = false;
@@ -623,13 +624,15 @@ Machine.prototype.restoreDriverState = function (callback) {
                                         // (machine config apply would trigger unit conversion again, so we do it manually)
                                         var envelope = config.machine._cache.envelope;
                                         if (envelope) {
+                                            // G2 stores travel limits in mm internally
+                                            var eConv = config.machine._cache.units === "in" ? 25.4 : 1;
                                             var envCmds = {};
-                                            if ("xmin" in envelope) envCmds.xtn = envelope.xmin;
-                                            if ("xmax" in envelope) envCmds.xtm = envelope.xmax;
-                                            if ("ymin" in envelope) envCmds.ytn = envelope.ymin;
-                                            if ("ymax" in envelope) envCmds.ytm = envelope.ymax;
-                                            if ("zmin" in envelope) envCmds.ztn = envelope.zmin;
-                                            if ("zmax" in envelope) envCmds.ztm = envelope.zmax;
+                                            if ("xmin" in envelope) envCmds.xtn = envelope.xmin * eConv;
+                                            if ("xmax" in envelope) envCmds.xtm = envelope.xmax * eConv;
+                                            if ("ymin" in envelope) envCmds.ytn = envelope.ymin * eConv;
+                                            if ("ymax" in envelope) envCmds.ytm = envelope.ymax * eConv;
+                                            if ("zmin" in envelope) envCmds.ztn = envelope.zmin * eConv;
+                                            if ("zmax" in envelope) envCmds.ztm = envelope.zmax * eConv;
                                             for (var ek in envCmds) {
                                                 var cmd = {};
                                                 cmd[ek] = envCmds[ek];

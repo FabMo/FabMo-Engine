@@ -537,6 +537,10 @@ $(document).ready(function() {
         }
     });
 
+    $("#machine-softlimits_on").on('change', function() {
+        $(this).attr('value', $(this).is(':checked') ? 'true' : 'false');
+    });
+
     $('.machine-input').change( function() {
             setConfig(this.id, this.value);
     });
