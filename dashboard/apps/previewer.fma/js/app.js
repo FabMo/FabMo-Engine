@@ -508,6 +508,76 @@ function extractSBPSelection(fileContent, inLine, outLine, safeZ) {
   return output.join('\n');
 }
 
+/**
+ * Heuristic SBP-vs-GCode sniff. SBP files have comma-separated commands
+ * (M3,x,y,z / JZ,h / MS,…) and `&var = …` assignments; GCode files use
+ * G/M codes with X/Y/Z words.
+ */
+function looksLikeSBP(content) {
+  if (!content) return false;
+  var sample = content.slice(0, 4096).split('\n');
+  for (var i = 0; i < sample.length; i++) {
+    var line = sample[i].trim();
+    if (!line || line.charAt(0) === "'" || line.charAt(0) === '(') continue;
+    if (/^&\w+\s*=/.test(line)) return true;
+    if (/^[A-Z][A-Z0-9]?\s*,/i.test(line)) return true;   // M3, MS, JZ, CG, …
+    if (/^N?\d*\s*[GM]\d/.test(line)) return false;       // pure GCode line
+  }
+  return false;
+}
+
+/**
+ * Slice a GCode file to a line range and bracket it with safe Z + a rapid
+ * to the first cut start. Used when the loaded job is plain GCode (no SBP
+ * source to expand). Returns the joined string or null if the range is empty.
+ */
+function extractGCodeSelection(fileContent, inLine, outLine, safeZ) {
+  if (!fileContent || !inLine) return null;
+  if (typeof safeZ === 'undefined' || safeZ === null) safeZ = 0;
+
+  var allLines = fileContent.split('\n');
+  if (!outLine) outLine = allLines.length;
+  inLine = Math.max(1, Math.min(inLine, allLines.length));
+  outLine = Math.max(inLine, Math.min(outLine, allLines.length));
+
+  // Carry forward modal context (units, plane, distance mode, coord system,
+  // feed) seen above the selection so the trimmed job behaves the same.
+  var modal = { units: null, distance: null, plane: null, coord: null, feed: null };
+  for (var i = 0; i < inLine - 1 && i < allLines.length; i++) {
+    var u = allLines[i].toUpperCase();
+    var m;
+    if ((m = u.match(/\bG(20|21)\b/)))                modal.units    = 'G' + m[1];
+    if ((m = u.match(/\bG(90|91)(?!\.)\b/)))          modal.distance = 'G' + m[1];
+    if ((m = u.match(/\bG(17|18|19)\b/)))             modal.plane    = 'G' + m[1];
+    if ((m = u.match(/\bG(54|55|56|57|58|59)\b/)))    modal.coord    = 'G' + m[1];
+    if ((m = u.match(/\bF(\d+(?:\.\d+)?)/)))          modal.feed     = 'F' + m[1];
+  }
+
+  // Find first XY in the selection so we can rapid-position before plunging.
+  var startX = null, startY = null;
+  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
+    var u = allLines[i].toUpperCase();
+    var mx = u.match(/\bX(-?\d+(?:\.\d+)?)/);
+    var my = u.match(/\bY(-?\d+(?:\.\d+)?)/);
+    if (mx && my) { startX = mx[1]; startY = my[1]; break; }
+  }
+
+  var output = [];
+  output.push('( --- Previewer: In/Out selection ---)');
+  output.push('( In: line ' + inLine + '  Out: line ' + outLine + ')');
+  if (modal.units)    output.push(modal.units);
+  if (modal.distance) output.push(modal.distance);
+  if (modal.plane)    output.push(modal.plane);
+  if (modal.coord)    output.push(modal.coord);
+  output.push('G0 Z' + safeZ);
+  if (startX !== null && startY !== null) output.push('G0 X' + startX + ' Y' + startY);
+  if (modal.feed) output.push(modal.feed);
+  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) output.push(allLines[i]);
+  output.push('G0 Z' + safeZ);
+  output.push('M30');
+  return output.join('\n');
+}
+
 function nowPreviewJob() {
   fabmo.getAppArgs(function(err, args) {
     if (err) console.log(err);
@@ -536,55 +606,54 @@ function nowPreviewJob() {
 
 
   $('.run-now').click(function() {
-    // Check for in/out selection
-    var inOut = viewer ? viewer.getInOutPoints() : null;
-    var hasSelection = inOut && (inOut.inPoint || inOut.outPoint);
-
-    if (hasSelection && originalFileContent) {
-      // Run only the selected portion with tool setup preamble
-      var inLine = inOut.inPoint ? inOut.inPoint.sourceLine : 1;
-      var outLine = inOut.outPoint ? inOut.outPoint.sourceLine : null;
-      var safeZ = (cached_Config && cached_Config.opensbp) ? cached_Config.opensbp.safeZpullUp : 0;
-      var sbpCode = extractSBPSelection(originalFileContent, inLine, outLine, safeZ);
-
-      if (sbpCode) {
-        $('.run-now').hide();
-        fabmo.runSBP(sbpCode, function(err, data) {
-          if (err) {
-            fabmo.notify(err, 'error');
-            $('.run-now').show();
-          }
-        });
-      } else {
-        fabmo.notify('Could not extract selection from file', 'error');
+    $('.run-now').hide();
+    fabmo.runNext(function(err) {
+      if (err) {
+        fabmo.notify(err, 'error');
+        $('.run-now').show();
       }
-    } else {
-      // No selection — run the full job as before
-      $('.run-now').hide();
-      fabmo.runNext(function(err, data) {
-        if (err) {
-          fabmo.notify(err, 'error');
-          $('.run-now').show();
-        }
-      });
-    }
+    });
   });
 
-  // Submit Trimmed Job: delete current job, submit extracted SBP as new job
-  $('.submit-trimmed').click(function() {
+  // Build a trimmed program from the in/out selection. Returns
+  // { code, isSBP, inLine, outLine } or null on failure.
+  function buildTrimmedSelection() {
     var inOut = viewer ? viewer.getInOutPoints() : null;
     if (!inOut || (!inOut.inPoint && !inOut.outPoint) || !originalFileContent) {
-      fabmo.notify('Set In and Out points first', 'error');
-      return;
+      fabmo.notify('Set In and/or Out points first', 'error');
+      return null;
     }
-
     var inLine = inOut.inPoint ? inOut.inPoint.sourceLine : 1;
     var outLine = inOut.outPoint ? inOut.outPoint.sourceLine : null;
-    var sbpCode = extractSBPSelection(originalFileContent, inLine, outLine);
-    if (!sbpCode) {
+    var safeZ = (cached_Config && cached_Config.opensbp) ? cached_Config.opensbp.safeZpullUp : 0;
+    var isSBP = looksLikeSBP(originalFileContent);
+    var code = isSBP
+      ? extractSBPSelection(originalFileContent, inLine, outLine, safeZ)
+      : extractGCodeSelection(originalFileContent, inLine, outLine, safeZ);
+    if (!code) {
       fabmo.notify('Could not extract selection from file', 'error');
-      return;
+      return null;
     }
+    return { code: code, isSBP: isSBP, inLine: inLine, outLine: outLine };
+  }
+
+  // Run the in/out selection in place (no job submission).
+  $('.run-trimmed').click(function() {
+    var sel = buildTrimmedSelection();
+    if (!sel) return;
+    $('.run-trimmed').prop('disabled', true);
+    var done = function(err) {
+      $('.run-trimmed').prop('disabled', false);
+      if (err) fabmo.notify(err, 'error');
+    };
+    if (sel.isSBP) fabmo.runSBP(sel.code, done);
+    else           fabmo.runGCode(sel.code, done);
+  });
+
+  // Submit the in/out selection as a new job (replaces current job in queue).
+  $('.submit-trimmed').click(function() {
+    var sel = buildTrimmedSelection();
+    if (!sel) return;
 
     var currentJobID = cookie.get('job-id');
     if (!currentJobID || currentJobID == -1) {
@@ -594,18 +663,13 @@ function nowPreviewJob() {
 
     $('.submit-trimmed').css('opacity', '0.5').css('pointer-events', 'none');
 
-    // Create a File object with .sbp extension so the job system recognizes it
-    var fileName = 'trimmed_L' + inLine + '-L' + (outLine || 'end') + '.sbp';
-    var file = new File([sbpCode], fileName, { type: 'text/plain' });
+    var ext = sel.isSBP ? '.sbp' : '.nc';
+    var fileName = 'trimmed_L' + sel.inLine + '-L' + (sel.outLine || 'end') + ext;
+    var file = new File([sel.code], fileName, { type: 'text/plain' });
 
-    // Delete the current job, then submit the trimmed one
     fabmo.deleteJob(currentJobID, function(err) {
-      if (err) {
-        console.warn('Could not delete original job:', err);
-        // Continue anyway — still submit the trimmed job
-      }
-
-      fabmo.submitJob(file, {}, function(err, data) {
+      if (err) console.warn('Could not delete original job:', err);
+      fabmo.submitJob(file, {}, function(err) {
         $('.submit-trimmed').css('opacity', '').css('pointer-events', '');
         if (err) {
           fabmo.notify('Failed to submit trimmed job: ' + err, 'error');
@@ -695,6 +759,15 @@ function nowPreviewJob() {
     // Setup grid and table
     viewer.setTable(cached_Config.machine.envelope, cached_Config.driver.g55x, cached_Config.driver.g55y, -1);
 
+    // Provide envelope + active G55 offsets so the previewer can flag files
+    // whose cutting extents would exceed the machine soft-limit envelope.
+    viewer.setSoftLimits(
+      cached_Config.machine.envelope,
+      cached_Config.driver.g55x,
+      cached_Config.driver.g55y,
+      cached_Config.machine.units
+    );
+
     // Load point cloud if leveling is enabled
     viewer.loadPointCloud(cached_Config);
 
@@ -758,9 +831,13 @@ function nowPreviewJob() {
             viewer.setFileMetadata(metadata);
           }
           var operations = parseOperations(content);
-          if (operations.length > 0) {
-            viewer.setOperations(operations);
-          }
+          // Always show the operations panel — Setup controls are useful
+          // even with no parsed operations (and Run Full Job lives there).
+          viewer.setOperations(operations);
+        },
+        error: function() {
+          // File fetch failed — still surface the panel for Setup + Run Full Job
+          viewer.setOperations([]);
         },
         complete: function() {
           // Load gcode after metadata is set

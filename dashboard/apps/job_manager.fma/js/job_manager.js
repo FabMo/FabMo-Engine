@@ -228,7 +228,7 @@ function addQueueEntries(jobs) {
         menu.innerHTML = createQueueMenu(jobs[i]._id);
       // }
     };
-    setFirstCard(); //Add play button and css style for first card
+    setFirstCard(jobs[0]); //Add play button and css style for first card
     isTestJob = jobs[0];
     bindMenuEvents();
   } else {
@@ -279,11 +279,11 @@ function addQueueEntries(jobs) {
 
 }
 
-function setFirstCard() {
+function setFirstCard(job) {
   var firstId = $('.job_item').first().attr('id');
   var el = document.getElementById(firstId);
   var cardActions = document.createElement("div");
-  hideDropDown();  ////## trying here to prevent clickability issue after choosing from 'recent'; update to #48395 
+  hideDropDown();  ////## trying here to prevent clickability issue after choosing from 'recent'; update to #48395
   cardActions.setAttribute("id", "actions");
   el.appendChild(cardActions);
   var actions = document.getElementById("actions");
@@ -293,6 +293,23 @@ function setFirstCard() {
   $('.download').data('id', firstId);
   $('.edit').data('id', firstId);
 
+  // Pre-flight soft-limit warning. analyzeJobBounds runs server-side after
+  // submit and tags `softLimitCheck.exceeds` on out-of-envelope jobs; the
+  // play button gets a red exclamation badge so the user can see the
+  // problem before opening the previewer.
+  if (job && job.softLimitCheck && job.softLimitCheck.exceeds) {
+    var $play = $('.play-button').first();
+    $play.addClass('exceeds-limits');
+    var msg = (job.softLimitCheck.violations || [])
+      .map(function (v) { return v.axis.toUpperCase() + ' ' + v.direction + ' by ' + v.overage.toFixed(2); })
+      .join(', ');
+    // Real DOM badge (instead of ::after) so it can carry its own tooltip —
+    // the play icon's own `title` would otherwise shadow a title set on the
+    // play button.
+    var $badge = $('<span class="exceeds-limits-badge">!<span class="exceeds-limits-tooltip"></span></span>');
+    $badge.find('.exceeds-limits-tooltip').text('Job exceeds soft limits: ' + msg);
+    $play.append($badge);
+  }
 }
 
 
@@ -1129,6 +1146,13 @@ $(document).ready(function() {
     fabmo.on('job_start',function (cmd, data) {
         updateQueue();
         updateHistory();
+    });
+
+    // Server fires `change`/`jobs` after async work mutates a job record
+    // (e.g. analyzeJobBounds saving softLimitCheck post-submit). Without
+    // this listener the queue card never picks up the soft-limit badge.
+    fabmo.on('change', function (topic) {
+        if (topic === 'jobs') updateQueue();
     });
 
     // The queue will update when the status report comes in

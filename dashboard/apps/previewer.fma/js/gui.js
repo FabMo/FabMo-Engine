@@ -88,6 +88,25 @@ module.exports = function(callbacks) {
   self.hideLoading = function() {show(self.loading, false)}
 
 
+  self.showSoftLimitWarning = function (violations, units) {
+    if (!self.softLimitWarning) return;
+    var $list = $(self.softLimitWarning).find('.soft-limit-warning-list').empty();
+    var u = units || '';
+    for (var i = 0; i < violations.length; i++) {
+      var v = violations[i];
+      var line = v.axis.toUpperCase() + ' exceeds ' + v.direction +
+                 ' by ' + v.overage.toFixed(2) + ' ' + u;
+      $('<li>').text(line).appendTo($list);
+    }
+    show(self.softLimitWarning, true);
+  }
+
+
+  self.hideSoftLimitWarning = function () {
+    if (self.softLimitWarning) show(self.softLimitWarning, false);
+  }
+
+
   self.showErrors = function (errors) {
     var tbody = $('#preview .errors tbody').empty();
 
@@ -143,10 +162,11 @@ module.exports = function(callbacks) {
   self.buttons.help     = get('help', onHelp);
 
   // Dialogs
-  self.loading   = $('#preview .loading')[0];
-  self.errors    = $('#preview .errors')[0];
-  self.help      = $('#preview .help')[0];
-  self.settings  = $('#preview .settings')[0];
+  self.loading           = $('#preview .loading')[0];
+  self.errors            = $('#preview .errors')[0];
+  self.help              = $('#preview .help')[0];
+  self.settings          = $('#preview .settings')[0];
+  self.softLimitWarning  = $('#preview .soft-limit-warning')[0];
   $('#preview .dialog .close').click(onClose);
 
   $('.reset-material').click(function() {

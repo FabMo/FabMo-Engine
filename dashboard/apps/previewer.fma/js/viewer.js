@@ -69,6 +69,53 @@ module.exports = function(container) {
   }
 
 
+  // Soft-limit envelope and active work offsets, supplied by app.js.
+  // Used to flag files whose cutting extents would exceed the machine envelope.
+  var softLimits = null;
+
+  self.setSoftLimits = function (envelope, g55x, g55y, units) {
+      softLimits = {
+          envelope: envelope,
+          g55: { x: g55x || 0, y: g55y || 0 },
+          units: units || ''
+      };
+  }
+
+
+  // bounds are in work coords; envelope is in machine coords.
+  // machineCoord = workCoord + g55Offset
+  function checkSoftLimits(bounds) {
+      if (!self.gui) return;
+      if (!softLimits || !softLimits.envelope || !bounds) {
+          self.gui.hideSoftLimitWarning && self.gui.hideSoftLimitWarning();
+          return;
+      }
+      var env = softLimits.envelope;
+      var g55 = softLimits.g55;
+      var violations = [];
+      ['x', 'y'].forEach(function (a) {
+          var bMin = bounds.min[a];
+          var bMax = bounds.max[a];
+          if (typeof bMin !== 'number' || typeof bMax !== 'number') return;
+          var machineMin = bMin + g55[a];
+          var machineMax = bMax + g55[a];
+          var envMin = env[a + 'min'];
+          var envMax = env[a + 'max'];
+          if (typeof envMax === 'number' && machineMax > envMax) {
+              violations.push({ axis: a, direction: 'max', overage: machineMax - envMax });
+          }
+          if (typeof envMin === 'number' && machineMin < envMin) {
+              violations.push({ axis: a, direction: 'min', overage: envMin - machineMin });
+          }
+      });
+      if (violations.length) {
+          self.gui.showSoftLimitWarning(violations, softLimits.units);
+      } else {
+          self.gui.hideSoftLimitWarning && self.gui.hideSoftLimitWarning();
+      }
+  }
+
+
   // Called when the canvas or container has resized; scaling to available window.
   self.resize = function(width, height) {
     self.renderer.setSize(width, height);
@@ -179,14 +226,33 @@ module.exports = function(container) {
     self.refresh();
   }
 
+  // Lighting direction (degrees). Cookie-persisted; updated from settings dialog.
+  // Default azimuth is upper-left, elevation is low-raking so micro-relief
+  // (toolpath cuts) casts visible shadows when the scene is viewed top-down.
+  self.lightAzimuth = parseFloat(cookie.get('light-azimuth', 135));
+  self.lightElevation = parseFloat(cookie.get('light-elevation', 25));
+
   function updateLights(bounds) {
+    if (!bounds) bounds = self._lastLightBounds;
+    if (!bounds) return;
+    self._lastLightBounds = bounds;
+
+    var center = util.getCenter(bounds);
     var dims = util.getDims(bounds);
+    var distance = Math.max(dims[0], dims[1], dims[2]) + 10;
 
-    var lx = dims[0] / 2;    //2
-    var ly = dims[1] / 2;
-    var lz = dims[2] / 2;
+    var azim = self.lightAzimuth * Math.PI / 180;
+    var elev = self.lightElevation * Math.PI / 180;
+    var cosE = Math.cos(elev);
+    var dx = distance * cosE * Math.cos(azim);
+    var dy = distance * cosE * Math.sin(azim);
+    var dz = distance * Math.sin(elev);
 
-    self.light2.position.set(lx, ly, lz + 10);
+    self.light2.position.set(center[0] + dx, center[1] + dy, center[2] + dz);
+    if (self.light2.target) {
+      self.light2.target.position.set(center[0], center[1], center[2]);
+      self.light2.target.updateMatrixWorld();
+    }
   }
 
 
@@ -206,6 +272,9 @@ module.exports = function(container) {
       };
     }
 
+    // Check the full-file extents against the machine soft-limit envelope.
+    checkSoftLimits(self.originalBounds);
+
     // Always use original bounds for material, camera, and scene setup
     var sceneBounds = self.originalBounds;
     var size = util.maxDim(sceneBounds);
@@ -215,20 +284,13 @@ module.exports = function(container) {
     self.axes.update(size);
     self.tool.update(size, self.path.position);
 
-    // Initialize material simulation
-    var stockThickness = 0.75; // Default stock thickness
-    var materialTop = 0; // Default: material surface origin (Z=0 is top)
+    // Lift toolpath fractionally so on-surface segments don't z-fight the stock top.
+    if (self.path.obj) self.path.obj.position.z = self.isMetric() ? 0.13 : 0.005;
 
-    // Use VCarve/ShopBot file metadata if available
-    if (self.fileMetadata) {
-      if (self.fileMetadata.materialThickness) {
-        stockThickness = self.fileMetadata.materialThickness;
-      }
-      if (self.fileMetadata.zOrigin && self.fileMetadata.zOrigin.indexOf('table') !== -1) {
-        // Table Surface origin: Z=0 is at the table, material top at Z=stockThickness
-        materialTop = stockThickness;
-      }
-    }
+    // Initialize material simulation — values come from the effective accessors
+    // (Setup overrides win over file metadata; file metadata wins over defaults).
+    var stockThickness = getEffectiveStockThickness();
+    var materialTop = getEffectiveZOrigin() === 'table' ? stockThickness : 0;
 
     // Expand bounds to include material block
     var materialBounds = {
@@ -248,8 +310,9 @@ module.exports = function(container) {
     var materialBottom = materialTop - stockThickness;
     self.table.setZZoff(materialBottom);
 
-    // Tool info is now per-operation; initial material diameter uses first operation or default
-    var toolDia = 0.25;
+    // Tool info is now per-operation; initial material diameter uses the first
+    // operation's tool when available, falling back to the Setup default tool.
+    var toolDia = self.defaultTool.toolDiameter || 0.25;
     if (self.operations && self.operations.length > 0 && self.operations[0].toolInfo) {
       toolDia = self.operations[0].toolInfo.toolDiameter || toolDia;
     }
@@ -293,9 +356,10 @@ module.exports = function(container) {
       }
     }
 
-    // Tag each move with its operation's tool info so the material
-    // simulation can switch bit size/type per operation.
-    if (self.operations && self.path.moves.length) {
+    // Tag each move with tool info so the material simulation can switch
+    // bit size/type per operation; with no parsed ops, every move inherits
+    // the Setup default tool.
+    if (self.path.moves.length) {
       tagMovesWithToolInfo();
     }
 
@@ -323,6 +387,8 @@ module.exports = function(container) {
     }
     var p = self._materialParams;
     self.material.initialize(p.bounds, p.thickness, p.toolDia, p.materialTop);
+    // Sync the current light direction into the freshly-built mesh's hillshade.
+    applyLightDirectionToMaterial();
     self.gui.showLoading('Computing material\u2026');
     self.path.applyAllMaterial(
       function(progress) {
@@ -335,11 +401,23 @@ module.exports = function(container) {
     );
   }
 
-  // Assign toolInfo from operations to each move based on sourceLine ranges
+  // Assign toolInfo from operations to each move based on sourceLine ranges.
+  // Moves with no matching op (or all moves when there are no parsed ops)
+  // fall back to the Setup default tool so the material simulation reflects
+  // user-set bit type/diameter even when the file has no operation metadata.
   function tagMovesWithToolInfo() {
-    if (!self.operations || !self.path.hasSourceLines) return;
-    var ops = self.operations;
-    var moves = self.path.moves;
+    var moves = self.path && self.path.moves;
+    if (!moves || !moves.length) return;
+    var fallback = {
+      toolType: self.defaultTool.toolType,
+      toolDiameter: self.defaultTool.toolDiameter,
+      vbitAngle: self.defaultTool.vbitAngle
+    };
+    var ops = self.operations || [];
+    if (ops.length === 0 || !self.path.hasSourceLines) {
+      for (var i = 0; i < moves.length; i++) moves[i].toolInfo = fallback;
+      return;
+    }
     // Build sorted list of operation ranges (0-based source lines)
     var ranges = [];
     for (var i = 0; i < ops.length; i++) {
@@ -351,12 +429,15 @@ module.exports = function(container) {
     }
     for (var i = 0; i < moves.length; i++) {
       var sl = moves[i].sourceLine;
+      var matched = false;
       for (var r = 0; r < ranges.length; r++) {
         if (sl >= ranges[r].start && sl <= ranges[r].end) {
           moves[i].toolInfo = ranges[r].toolInfo;
+          matched = true;
           break;
         }
       }
+      if (!matched) moves[i].toolInfo = fallback;
     }
   }
 
@@ -422,39 +503,221 @@ module.exports = function(container) {
   // VCarve/ShopBot file metadata (Z origin mode, material thickness)
   self.fileMetadata = null;
 
+  // Session-only Setup overrides (null = follow file metadata / defaults).
+  // Populated when the user edits the Setup section in the operations panel.
+  self.setupOverrides = {
+    materialThickness: null,
+    zOrigin: null
+  };
+
+  // Default tool used by ops with no parsed toolInfo. User-editable in the
+  // Setup section. Per-op edits detach an op from this default; further
+  // changes here only update ops still tracking the default.
+  self.defaultTool = {
+    toolType: 'flat',
+    toolDiameter: 0.25,
+    vbitAngle: 90
+  };
+
+  function getEffectiveStockThickness() {
+    if (self.setupOverrides.materialThickness != null)
+      return self.setupOverrides.materialThickness;
+    if (self.fileMetadata && self.fileMetadata.materialThickness)
+      return self.fileMetadata.materialThickness;
+    return 0.75;
+  }
+
+  function getEffectiveZOrigin() {
+    if (self.setupOverrides.zOrigin != null) return self.setupOverrides.zOrigin;
+    if (self.fileMetadata && self.fileMetadata.zOrigin) {
+      return self.fileMetadata.zOrigin.indexOf('table') !== -1 ? 'table' : 'material';
+    }
+    return 'material';
+  }
+
   self.setFileMetadata = function(metadata) {
     self.fileMetadata = metadata;
     console.log('File metadata set:', JSON.stringify(metadata));
+    // Seed default tool from file-level toolInfo (used when there are 0 ops
+    // or to give Setup section a sensible starting value).
+    if (metadata && metadata.toolInfo) {
+      if (metadata.toolInfo.toolType) self.defaultTool.toolType = metadata.toolInfo.toolType;
+      if (metadata.toolInfo.toolDiameter) self.defaultTool.toolDiameter = metadata.toolInfo.toolDiameter;
+      if (metadata.toolInfo.vbitAngle) self.defaultTool.vbitAngle = metadata.toolInfo.vbitAngle;
+    }
   };
 
   // Operations list parsed from 'New Path blocks
   self.operations = null;
 
-  self.setOperations = function(ops) {
-    self.operations = ops;
-    if (!ops || ops.length === 0) {
-      $('#operations-panel').hide();
-      return;
+  // Helper: rebuild move tags and reload material after a tool override
+  function applyToolChange() {
+    if (self.path && self.path.moves && self.path.moves.length) {
+      tagMovesWithToolInfo();
+      computeMaterial(function() {
+        self.gui.hideLoading();
+        self.refresh();
+      });
     }
+  }
+
+  // Helper: rebuild material after a Setup change (thickness / Z origin /
+  // default tool when there are no ops). Updates material params from the
+  // current effective values; doesn't disturb camera or path geometry.
+  function applySetupChange() {
+    if (!self._materialParams || !self.path || !self.path.bounds) return;
+    var sceneBounds = self.originalBounds || self.path.bounds;
+    var stockThickness = getEffectiveStockThickness();
+    var materialTop = getEffectiveZOrigin() === 'table' ? stockThickness : 0;
+    var materialBottom = materialTop - stockThickness;
+    self._materialParams.thickness = stockThickness;
+    self._materialParams.materialTop = materialTop;
+    self._materialParams.bounds = {
+      min: { x: sceneBounds.min.x - 0.5, y: sceneBounds.min.y - 0.5, z: materialBottom },
+      max: { x: sceneBounds.max.x + 0.5, y: sceneBounds.max.y + 0.5, z: materialTop }
+    };
+    if (!self.operations || self.operations.length === 0) {
+      self._materialParams.toolDia = self.defaultTool.toolDiameter || 0.25;
+    }
+    self.table.setZZoff(materialBottom);
+    if (self.path.moves && self.path.moves.length) {
+      tagMovesWithToolInfo();
+      computeMaterial(function() {
+        self.gui.hideLoading();
+        self.refresh();
+      });
+    }
+  }
+
+  // One-time wiring of the always-visible Setup section. Pre-fills inputs
+  // from current effective values and persists user edits to setupOverrides
+  // / defaultTool, re-rendering the material on each change.
+  var setupSectionInitialized = false;
+  function initSetupSection() {
+    if (setupSectionInitialized) return;
+    setupSectionInitialized = true;
+
+    var $setup = $('#ops-setup');
+    var $thickness = $setup.find('.setup-material-thickness');
+    var $zOrigin = $setup.find('.setup-z-origin');
+    var $toolType = $setup.find('.setup-tool-type');
+    var $toolDia = $setup.find('.setup-tool-dia');
+    var $toolAngle = $setup.find('.setup-tool-angle');
+    var $vbitWrap = $setup.find('.setup-vbit-wrap');
+
+    $thickness.val(getEffectiveStockThickness());
+    $zOrigin.val(getEffectiveZOrigin());
+    $toolType.val(self.defaultTool.toolType);
+    $toolDia.val(self.defaultTool.toolDiameter);
+    $toolAngle.val(self.defaultTool.vbitAngle);
+    $vbitWrap.toggle(self.defaultTool.toolType === 'vbit');
+
+    $setup.find('.ops-setup-header').on('click', function() {
+      var $panel = $('#operations-panel');
+      var collapsed = $panel.toggleClass('setup-collapsed').hasClass('setup-collapsed');
+      $setup.find('.ops-setup-toggle').text(collapsed ? '+' : '−');
+    });
+
+    $thickness.on('change', function() {
+      var v = parseFloat($(this).val());
+      if (!isNaN(v) && v > 0) {
+        self.setupOverrides.materialThickness = v;
+        applySetupChange();
+      }
+    });
+
+    $zOrigin.on('change', function() {
+      self.setupOverrides.zOrigin = $(this).val();
+      applySetupChange();
+    });
+
+    $toolType.on('change', function() {
+      self.defaultTool.toolType = $(this).val();
+      $vbitWrap.toggle(self.defaultTool.toolType === 'vbit');
+      propagateDefaultToolToOps();
+      applySetupChange();
+    });
+
+    $toolDia.on('change', function() {
+      var v = parseFloat($(this).val());
+      if (!isNaN(v) && v > 0) {
+        self.defaultTool.toolDiameter = v;
+        propagateDefaultToolToOps();
+        applySetupChange();
+      }
+    });
+
+    $toolAngle.on('change', function() {
+      var v = parseFloat($(this).val());
+      if (!isNaN(v) && v > 0) {
+        self.defaultTool.vbitAngle = v;
+        propagateDefaultToolToOps();
+        applySetupChange();
+      }
+    });
+  }
+
+  // Update toolInfo on ops still tracking the Setup default, refreshing
+  // their per-op rows. Ops the user has explicitly edited keep their values.
+  function propagateDefaultToolToOps() {
+    if (!self.operations) return;
+    for (var i = 0; i < self.operations.length; i++) {
+      var op = self.operations[i];
+      if (!op._fromDefault) continue;
+      op.toolInfo = {
+        toolType: self.defaultTool.toolType,
+        toolDiameter: self.defaultTool.toolDiameter,
+        vbitAngle: self.defaultTool.vbitAngle
+      };
+      var $row = $('#ops-list .op-entry').eq(i);
+      $row.find('.op-tool-type').val(op.toolInfo.toolType);
+      $row.find('.op-tool-dia').val(op.toolInfo.toolDiameter);
+      $row.find('.op-tool-angle').val(op.toolInfo.vbitAngle);
+      $row.find('.op-angle-wrap').toggle(op.toolInfo.toolType === 'vbit');
+    }
+  }
+
+  self.setOperations = function(ops) {
+    ops = ops || [];
+    self.operations = ops;
+    initSetupSection();
 
     var list = $('#ops-list');
     list.empty();
 
-    // Helper: rebuild move tags and reload material after a tool override
-    function onToolOverride() {
-      if (self.path && self.path.moves.length) {
-        tagMovesWithToolInfo();
-        computeMaterial(function() {
-          self.gui.hideLoading();
-          self.refresh();
-        });
-      }
+    var $panel = $('#operations-panel');
+    var $empty = $('#ops-empty');
+    var $header = $panel.find('.ops-header');
+    var $toggleAll = $panel.find('.ops-toggle-all');
+    var $runSelected = $panel.find('.run-selected-ops');
+    var $submitSelected = $panel.find('.submit-selected-ops');
+
+    // Always show panel + Run Full Job; gate ops-only UI on whether ops exist.
+    $panel.show();
+    $empty.toggle(ops.length === 0);
+    $header.toggle(ops.length > 0);
+    $toggleAll.toggle(ops.length > 0);
+    $runSelected.toggle(ops.length > 0);
+    $submitSelected.toggle(ops.length > 0);
+
+    if (ops.length === 0) {
+      console.log('Operations panel: no operations parsed — showing Setup-only fallback');
+      return;
     }
 
     for (var i = 0; i < ops.length; i++) {
       (function(idx) {
         var op = ops[idx];
-        var ti = op.toolInfo || {};
+        // Inherit default tool when the file didn't supply one.
+        if (!op.toolInfo) {
+          op.toolInfo = {
+            toolType: self.defaultTool.toolType,
+            toolDiameter: self.defaultTool.toolDiameter,
+            vbitAngle: self.defaultTool.vbitAngle
+          };
+          op._fromDefault = true;
+        }
+        var ti = op.toolInfo;
         var entry = $('<div class="op-entry">');
         var topRow = $('<div class="op-top-row">');
         var checkbox = $('<input type="checkbox" checked>').attr('data-op-index', idx);
@@ -484,27 +747,27 @@ module.exports = function(container) {
 
         typeSelect.on('change', function() {
           var type = $(this).val();
-          if (!op.toolInfo) op.toolInfo = {};
           op.toolInfo.toolType = type;
+          op._fromDefault = false;
           angleWrap.toggle(type === 'vbit');
-          onToolOverride();
+          applyToolChange();
         });
 
         diaInput.on('change', function() {
           var dia = parseFloat($(this).val());
           if (dia > 0) {
-            if (!op.toolInfo) op.toolInfo = {};
             op.toolInfo.toolDiameter = dia;
-            onToolOverride();
+            op._fromDefault = false;
+            applyToolChange();
           }
         });
 
         angleInput.on('change', function() {
           var angle = parseFloat($(this).val());
           if (angle > 0) {
-            if (!op.toolInfo) op.toolInfo = {};
             op.toolInfo.vbitAngle = angle;
-            onToolOverride();
+            op._fromDefault = false;
+            applyToolChange();
           }
         });
 
@@ -543,7 +806,7 @@ module.exports = function(container) {
     }
 
     // Toggle all / none
-    $('.ops-toggle-all').off('click').on('click', function() {
+    $toggleAll.off('click').on('click', function() {
       var checkboxes = list.find('input[type="checkbox"]');
       var allChecked = checkboxes.length === checkboxes.filter(':checked').length;
       checkboxes.prop('checked', !allChecked);
@@ -551,7 +814,6 @@ module.exports = function(container) {
       self.reloadForSelectedOperations(self.getSelectedOperationIndices());
     });
 
-    $('#operations-panel').show();
     console.log('Operations panel: ' + ops.length + ' operations');
   };
 
@@ -710,13 +972,13 @@ module.exports = function(container) {
     var moveLine = self.path.moves[moveIdx].getLine();
     self.path.setMoveLinePosition(moveLine, position);
 
-    // Update the Line: display with the original file line number.
-    // SBP:   N = SBP_pc + 20, so 1-based source line = targetN - 19
-    // GCode: N21 = line 1,    so 1-based source line = targetN - 20
-    if (self.path.setCurrentLine && targetN > 0) {
-      var displayLine = self.isSBP ? (targetN - 19) : (targetN - 20);
-      if (displayLine < 1) displayLine = 1;
-      self.path.setCurrentLine(displayLine);
+    // Show both GCode and (when this is an SBP-derived run) SBP source line.
+    if (self.path.setCurrentLine) {
+      var liveMove = self.path.moves[moveIdx];
+      self.path.setCurrentLine(
+        liveMove.getLine(),
+        self.isSBP ? liveMove.sourceLine : undefined
+      );
     }
   }
   
@@ -869,9 +1131,39 @@ module.exports = function(container) {
   };
 
   // Lights
-  self.light2 = new THREE.DirectionalLight(0xffffff, 1);
+  self.light2 = new THREE.DirectionalLight(0xffffff, 0.4);
   self.scene.add(self.light2);
-  self.scene.add(new THREE.AmbientLight(0x808080));
+  // The DirectionalLight target must be in the scene for its world matrix
+  // to update — required so lightAzimuth/lightElevation correctly control
+  // the direction relative to the scene center (not just origin).
+  self.scene.add(self.light2.target);
+  // Dedicated top-down key light. Drives the wall-vs-top contrast on the
+  // material mesh: tops face it, walls don't.
+  var topLight = new THREE.DirectionalLight(0xffffff, 0.9);
+  topLight.position.set(0, 0, 1);
+  self.scene.add(topLight);
+  self.scene.add(new THREE.AmbientLight(0x404040));
+
+  function applyLightDirectionToMaterial() {
+    if (self.material && self.material.setLightDirection) {
+      self.material.setLightDirection(self.lightAzimuth, self.lightElevation);
+    }
+  }
+
+  util.connectSetting('light-azimuth', self.lightAzimuth, function (v) {
+    self.lightAzimuth = parseFloat(v);
+    cookie.set('light-azimuth', self.lightAzimuth);
+    updateLights();
+    applyLightDirectionToMaterial();
+    self.refresh();
+  });
+  util.connectSetting('light-elevation', self.lightElevation, function (v) {
+    self.lightElevation = parseFloat(v);
+    cookie.set('light-elevation', self.lightElevation);
+    updateLights();
+    applyLightDirectionToMaterial();
+    self.refresh();
+  });
 
   // Widgets
   self.dims = new Dimensions(self.scene, self.refresh);
@@ -998,7 +1290,8 @@ module.exports = function(container) {
       var moveIdx = self.path.lastMove;
       var move = self.path.moves[moveIdx];
       if (!move) return;
-      var srcLine = self.path.hasSourceLines ? move.sourceLine : move.getLine();
+      // 1-based: SBP source line = pc+1; GCode line is already 1-based.
+      var srcLine = self.path.hasSourceLines ? (move.sourceLine + 1) : move.getLine();
       self.gui.setInPoint(time, srcLine, moveIdx);
     },
     setOutPoint: function() {
@@ -1007,7 +1300,7 @@ module.exports = function(container) {
       var moveIdx = self.path.lastMove;
       var move = self.path.moves[moveIdx];
       if (!move) return;
-      var srcLine = self.path.hasSourceLines ? move.sourceLine : move.getLine();
+      var srcLine = self.path.hasSourceLines ? (move.sourceLine + 1) : move.getLine();
       self.gui.setOutPoint(time, srcLine, moveIdx);
     },
     stepForward: function() {
@@ -1130,7 +1423,8 @@ module.exports = function(container) {
 
   // --- Toolpath hover/click interaction ---
   var raycaster = new THREE.Raycaster();
-  raycaster.params.Line.threshold = 0.1;  // world-space pick tolerance
+  // Line.threshold is recomputed per pick in findMoveUnderMouse to stay
+  // at ~6 px regardless of zoom; the default value is unused.
   var mouse = new THREE.Vector2();
   var hoveredMove = null;
   var hoverThrottle = null;
@@ -1148,9 +1442,36 @@ module.exports = function(container) {
     if (!self.path.loaded) return null;
     getMouseNDC(event);
     raycaster.setFromCamera(mouse, self.camera);
+    // Scale the line-pick tolerance to a constant screen radius (~6 px),
+    // otherwise zoomed-out views miss most segments and zoomed-in views
+    // grab many at once. For perspective use camera→target distance;
+    // for ortho use the visible frustum height.
+    var pixelRadius = 6;
+    var canvasH = canvas.clientHeight || 1;
+    var worldPerPixel;
+    if (self.camera.isOrthographicCamera) {
+      var visH = (self.camera.top - self.camera.bottom) / (self.camera.zoom || 1);
+      worldPerPixel = visH / canvasH;
+    } else {
+      var dist = self.camera.position.distanceTo(self.controls.target);
+      worldPerPixel = 2 * dist * Math.tan((self.camera.fov * Math.PI / 180) / 2) / canvasH;
+    }
+    // This bundled three.js still consults the legacy `linePrecision` field
+    // for Line.raycast (default 1 world unit), so set it alongside the
+    // modern params.Line.threshold to cover both code paths.
+    var threshold = pixelRadius * worldPerPixel;
+    raycaster.params.Line.threshold = threshold;
+    raycaster.linePrecision = threshold;
     var intersects = raycaster.intersectObject(self.path.obj, true);
     if (intersects.length === 0) return null;
-    return self.path.getMoveAtIntersection(intersects[0].object, intersects[0].index);
+    // Only pick cuts. Rapids draw above the material and visually block
+    // the cut segments below, so including them in hover/click would
+    // surface the wrong move whenever a jog passes over a cut.
+    for (var i = 0; i < intersects.length; i++) {
+      var m = self.path.getMoveAtIntersection(intersects[i].object, intersects[i].index);
+      if (m && !m.rapid) return m;
+    }
+    return null;
   }
 
   canvas.addEventListener('mousemove', function(event) {
@@ -1164,15 +1485,21 @@ module.exports = function(container) {
     var move = findMoveUnderMouse(event);
     if (move) {
       if (hoveredMove !== move) {
+        if (hoveredMove) hoveredMove.setColor(hoveredMove.rapid ? [1,0,0] : [0,1,0]);
         hoveredMove = move;
-        var label = self.path.hasSourceLines
-          ? 'SBP Line ' + move.sourceLine.toLocaleString()
-          : 'Line ' + move.getLine().toLocaleString();
+        move.setColor([1, 1, 1]);  // glow
+        var label = 'GC ' + move.getLine().toLocaleString();
+        if (self.path.hasSourceLines) {
+          label += '  /  SBP ' + (move.sourceLine + 1).toLocaleString();
+        }
         self.path.codeLine.text(label);
         canvas.style.cursor = 'pointer';
+        self.refresh();
       }
     } else if (hoveredMove) {
+      hoveredMove.setColor(hoveredMove.rapid ? [1,0,0] : [0,1,0]);
       hoveredMove = null;
+      self.refresh();
       self.path.codeLine.text('');
       canvas.style.cursor = '';
     }

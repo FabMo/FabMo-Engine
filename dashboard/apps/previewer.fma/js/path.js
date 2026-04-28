@@ -88,6 +88,12 @@ module.exports = function(scene, callbacks) {
 
     geometry.setAttribute('position', buffers[0]);
     geometry.setAttribute('color', buffers[1]);
+    // Cap the raycaster (and renderer) at the actually-used vertices.
+    // The BufferAttribute spans the full pre-allocated 10000-segment slab,
+    // so without this raycaster tests phantom zero-length segments at the
+    // origin that mask hits on the real toolpath nearby.
+    geometry.setDrawRange(0, self.fill * 2);
+    geometry.computeBoundingSphere();
 
     var material = new THREE.LineBasicMaterial({
       vertexColors: THREE.VertexColors,
@@ -552,8 +558,15 @@ module.exports = function(scene, callbacks) {
   }
 
 
-  function setCurrentLine(line) {
-    self.codeLine.text(infoLine + line.toLocaleString());
+  // Displays GCode line plus SBP source line when available, so a mismatch
+  // is visible at a glance during line-mapping debugging. sourceLine is the
+  // 0-based pc (move.sourceLine); we display it 1-based.
+  function setCurrentLine(gcLine, sourceLine) {
+    var text = infoLine + 'GC ' + gcLine.toLocaleString();
+    if (typeof sourceLine === 'number') {
+      text += '  /  SBP ' + (sourceLine + 1).toLocaleString();
+    }
+    self.codeLine.text(text);
   }
   self.setCurrentLine = setCurrentLine;
 
@@ -696,8 +709,8 @@ module.exports = function(scene, callbacks) {
 
     callbacks.position(p);
 
-    setCurrentLine(move.getLine());
-    
+    setCurrentLine(move.getLine(), self.hasSourceLines ? move.sourceLine : undefined);
+
     // Force final material update when simulation completes
     // DO NOT AUTO-RESET - User wants to explore the result!
     if (time >= self.duration && callbacks.materialForceUpdate) {
@@ -717,7 +730,7 @@ module.exports = function(scene, callbacks) {
 
     if (typeof position == 'undefined') {
       self.setMoveTime(self.moves[move].getStartTime());
-      setCurrentLine(line);
+      setCurrentLine(line, self.hasSourceLines ? self.moves[move].sourceLine : undefined);
       return;
     }
 
@@ -738,7 +751,8 @@ module.exports = function(scene, callbacks) {
       self.setMoveTime(time);
     }
 
-    setCurrentLine(line);
+    var srcMove = (minMove !== undefined ? self.moves[minMove] : self.moves[move]);
+    setCurrentLine(line, self.hasSourceLines ? srcMove.sourceLine : undefined);
   }
 
 
@@ -787,7 +801,8 @@ module.exports = function(scene, callbacks) {
     if (!self.loaded) return;
     self.pause();
     self.setMoveTime(self.duration);
-    setCurrentLine(self.lines);
+    var lastMove = self.moves[self.moves.length - 1];
+    setCurrentLine(self.lines, self.hasSourceLines && lastMove ? lastMove.sourceLine : undefined);
   }
 
 
