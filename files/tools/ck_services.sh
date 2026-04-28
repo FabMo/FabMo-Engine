@@ -17,11 +17,11 @@ echo "------------------------------------------------------------"
 echo "----User Networking-----------------------------------------"
 systemctl --no-pager status network-monitor.service
 echo " "
-# Check setup-wlan0_ap.service if it exists
-if systemctl list-unit-files | grep -q "setup-wlan0_ap.service"; then
+# Check setup_wlan0_ap.service if it exists
+if systemctl list-unit-files | grep -q "setup_wlan0_ap.service"; then
     echo "------------------------------------------------------------"
     echo "----AP Setup Service (for SSID with IP)-----------------------"
-    systemctl --no-pager status setup-wlan0_ap.service
+    systemctl --no-pager status setup_wlan0_ap.service
     echo " "
 fi
 echo "------------------------------------------------------------"
