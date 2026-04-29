@@ -52,7 +52,15 @@ module.exports = function(container) {
 
   self.refresh = function() {
     render();
-    self.controls.update();
+    // In AR / overhead mode the camera is positioned manually (custom pose
+    // from calibration or an explicit top-down ortho) and OrbitControls is
+    // disabled. Calling controls.update() here would snap the camera back
+    // onto its spherical math against a stale target/up, flipping the
+    // render off the AR pose — visible whenever something inside a module
+    // (e.g. material.disposeMesh) calls back into refresh during a rebuild.
+    if (!self.ar || (!self.ar.enabled && !self.ar.overhead)) {
+      self.controls.update();
+    }
   }
 
 
@@ -140,6 +148,21 @@ module.exports = function(container) {
     
     self.gui.resize(width, height);
     self.refresh();
+    if (self.ar && (self.ar.enabled || self.ar.overhead)) {
+      if (self._syncAROverlayDims) self._syncAROverlayDims();
+      if (typeof _renderCalHandles === 'function' && self.ar.calibrating) _renderCalHandles();
+      // While entering or animating AR/overhead, skip camera setup so
+      // the in-flight transition can interpolate from / to the right
+      // poses without being snapped to ortho or AR each resize tick.
+      if (!self.ar._entering && !self.ar._animating) {
+        if (typeof _setTopDownCamera === 'function') _setTopDownCamera();
+        if (self.ar.overhead) {
+          if (typeof _applyOverheadWarp === 'function') _applyOverheadWarp();
+        } else {
+          if (typeof _applyHomography === 'function') _applyHomography();
+        }
+      }
+    }
   }
 
 
@@ -1548,6 +1571,1035 @@ module.exports = function(container) {
     }
   };
   
+  // ---------- AR overlay ----------------------------------------------------
+  //
+  // Stage 1 (CSS matrix3d homography on a top-down render):
+  //  - Lock the camera to top-down ortho framing the envelope.
+  //  - Render with a transparent background; show the live MJPEG behind.
+  //  - Compute a 2D homography from where the envelope corners actually project
+  //    on the canvas → where the user clicked the same corners on the video,
+  //    and apply it to the canvas as `transform: matrix3d(...)`.
+  //  - Calibration is saved as fractions of the preview container (resize-safe
+  //    since the video and canvas both fill the container at all times).
+  //
+  // Z-elevated motion is approximated as if it were on the table plane in this
+  // stage; Stage 2 will replace the CSS warp with a proper 3D camera pose.
+
+  self.ar = {
+      enabled: false,          // perspective AR (3D camera pose)
+      overhead: false,         // un-warped top-down view (matrix3d on the video)
+      calibrating: false,
+      cameraPort: null,
+      corners: null,           // persisted {tl, tr, br, bl} as {x,y} fractions [0..1]
+      _draftCorners: null,     // working copy during drag-to-calibrate
+      _backupCorners: null,    // pre-calibration snapshot for Cancel
+      _dragging: null,
+      _savedView: null,
+      // 2D zoom/pan applied as CSS transform on top of the AR composite
+      // (canvas + video + calibration overlay). Doesn't change the 3D
+      // camera or homography — just scales the rendered output.
+      viewZoom: 1,
+      viewPanX: 0,
+      viewPanY: 0,
+  };
+
+  // 4-point homography from src quad → dst quad (both as [[x,y], ...] in TL,TR,BR,BL order).
+  // Decomposes via the unit-square: H = H_dst * H_src^-1 where each H_* maps
+  // the unit square (0,0)→(1,0)→(1,1)→(0,1) to its quad. Closed-form, no SVD.
+  function _h_squareToQuad(p) {
+      var dx1 = p[1][0] - p[2][0],  dx2 = p[3][0] - p[2][0],  sx = p[0][0] - p[1][0] + p[2][0] - p[3][0];
+      var dy1 = p[1][1] - p[2][1],  dy2 = p[3][1] - p[2][1],  sy = p[0][1] - p[1][1] + p[2][1] - p[3][1];
+      var det = dx1 * dy2 - dx2 * dy1;
+      var g = (sx * dy2 - dx2 * sy) / det;
+      var h = (dx1 * sy - sx * dy1) / det;
+      return [
+          [p[1][0] - p[0][0] + g * p[1][0], p[3][0] - p[0][0] + h * p[3][0], p[0][0]],
+          [p[1][1] - p[0][1] + g * p[1][1], p[3][1] - p[0][1] + h * p[3][1], p[0][1]],
+          [g, h, 1],
+      ];
+  }
+  function _h_inverse3(m) {
+      var a = m[0][0], b = m[0][1], c = m[0][2];
+      var d = m[1][0], e = m[1][1], f = m[1][2];
+      var g = m[2][0], h = m[2][1], i = m[2][2];
+      var det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
+      return [
+          [(e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det],
+          [(f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det],
+          [(d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det],
+      ];
+  }
+  function _h_mul3(a, b) {
+      var r = [[0,0,0],[0,0,0],[0,0,0]];
+      for (var i = 0; i < 3; i++)
+          for (var j = 0; j < 3; j++)
+              r[i][j] = a[i][0]*b[0][j] + a[i][1]*b[1][j] + a[i][2]*b[2][j];
+      return r;
+  }
+  function _h_quadToQuad(src, dst) {
+      return _h_mul3(_h_squareToQuad(dst), _h_inverse3(_h_squareToQuad(src)));
+  }
+  // 3x3 H → 4x4 column-major for CSS matrix3d.
+  function _h_toMatrix3d(H) {
+      return 'matrix3d(' + [
+          H[0][0], H[1][0], 0, H[2][0],
+          H[0][1], H[1][1], 0, H[2][1],
+          0,       0,       1, 0,
+          H[0][2], H[1][2], 0, H[2][2],
+      ].map(function (n) { return n.toFixed(8); }).join(',') + ')';
+  }
+
+  // Return the canvas pixel positions of the 4 grid corners by projecting
+  // them through the current camera. With aspect-preserving framing the
+  // corners are inside the canvas (letterboxed), not at the edges — but
+  // that's fine: matrix3d uses these as the homography source and the
+  // transparent letterbox regions warp to invisible extrapolations.
+  function _envelopeCornersInCanvasPx() {
+      var w = self.renderer.domElement.clientWidth;
+      var h = self.renderer.domElement.clientHeight;
+      var halfX = (tableBounds.max.x - tableBounds.min.x) / 2;
+      var halfY = (tableBounds.max.y - tableBounds.min.y) / 2;
+      var cx = tableBounds.loc.x;
+      var cy = tableBounds.loc.y;
+      var corners = [
+          [cx - halfX, cy + halfY, 0],  // TL
+          [cx + halfX, cy + halfY, 0],  // TR
+          [cx + halfX, cy - halfY, 0],  // BR
+          [cx - halfX, cy - halfY, 0],  // BL
+      ];
+      return corners.map(function (c) {
+          var v = new THREE.Vector3(c[0], c[1], c[2]);
+          v.project(self.camera);
+          return [(v.x + 1) * 0.5 * w, (1 - v.y) * 0.5 * h];
+      });
+  }
+
+  function _previewSize() {
+      var c = self.renderer.domElement;
+      return { w: c.clientWidth, h: c.clientHeight };
+  }
+
+  // The video/calibration overlays use `position: absolute` inside #preview,
+  // but #preview has no explicit height — `height: 100%` resolves unpredictably.
+  // Pin them to the renderer canvas's bounding box instead.
+  function _syncAROverlayDims() {
+      if (!self.ar.enabled && !self.ar.overhead) return;
+      var c = self.renderer.domElement;
+      var pRect = container[0].getBoundingClientRect();
+      var rect = c.getBoundingClientRect();
+      var css = {
+          left:   (rect.left - pRect.left) + 'px',
+          top:    (rect.top  - pRect.top)  + 'px',
+          width:  rect.width  + 'px',
+          height: rect.height + 'px',
+      };
+      container.find('.ar-video, .ar-video-bg, .ar-calibration').css(css);
+  }
+  self._syncAROverlayDims = _syncAROverlayDims;
+
+  function _detectCamera(callback) {
+      if (!window.FabMoVideo) return callback(null);
+      window.FabMoVideo.detectCamera(1).then(function (ok) {
+          if (ok) return callback(1);
+          window.FabMoVideo.detectCamera(2).then(function (ok2) {
+              callback(ok2 ? 2 : null);
+          });
+      });
+  }
+
+  function _videoUrl(port) {
+      return 'http://' + window.location.hostname + ':' + (port === 2 ? 3142 : 3141) + '/?t=' + Date.now();
+  }
+
+  function _setTopDownCamera() {
+      // Aspect-preserving top-down framing. Whichever axis fits the canvas
+      // tightly determines scale; the other axis gets extra frustum (and the
+      // canvas has transparent letterbox bands on that axis). The homography
+      // warp uses the projected grid corners (inside the canvas, not at its
+      // edges), so letterbox regions warp to invisible extrapolations and the
+      // rendered grid stays at the correct aspect during calibration.
+      var ex = tableBounds.max.x - tableBounds.min.x;
+      var ey = tableBounds.max.y - tableBounds.min.y;
+      // Grid is positioned at tableBounds.loc (see grid.js).
+      var cx = tableBounds.loc.x;
+      var cy = tableBounds.loc.y;
+      var w = self.renderer.domElement.clientWidth || 1;
+      var h = self.renderer.domElement.clientHeight || 1;
+      // Pad the framing 10% in overhead mode so a bit of the area beyond
+      // the table edges shows in the warped live video — useful context
+      // for clamps/fixtures right at the table edge. Both the camera
+      // framing AND the overhead warp use this so toolpath and live
+      // video stay aligned. Calibration keeps the tighter framing.
+      var pad = self.ar && self.ar.overhead ? 1.10 : 1.0;
+      var spanX = ex * pad;
+      var spanY = ey * pad;
+      if (spanX / spanY > w / h) spanY = spanX * h / w;
+      else                       spanX = spanY * w / h;
+      // Shift the envelope leftward in overhead so the operations-panel
+      // (top-right setup controls) doesn't sit on top of it. We bias the
+      // camera frustum rightward in world coords by half the panel
+      // width, which moves rendered world content (envelope + warped
+      // video) left on the canvas by the same amount. Toolpath and video
+      // share the camera so they shift together.
+      var shiftWorld = 0;
+      if (self.ar && self.ar.overhead) {
+          var $panel = container.find('.operations-panel');
+          if ($panel.length && $panel.is(':visible')) {
+              var shiftPx = $panel.outerWidth() / 2;
+              shiftWorld = shiftPx * (spanX / w);
+          }
+      }
+      var cam = self.orthographicCamera;
+      cam.left   = -spanX / 2 + shiftWorld;
+      cam.right  =  spanX / 2 + shiftWorld;
+      cam.top    =  spanY / 2;
+      cam.bottom = -spanY / 2;
+      cam.zoom = 1;
+      cam.position.set(cx, cy, 100);
+      cam.up.set(0, 1, 0);          // screen-up = +Y world
+      cam.lookAt(new THREE.Vector3(cx, cy, 0));
+      cam.near = -1000;
+      cam.far  = 10000;
+      cam.updateProjectionMatrix();
+      self.camera = cam;
+      self.controls.object = cam;
+      self.controls.target.set(cx, cy, 0);
+      self.controls.update();
+  }
+
+  // Stage 2: solve for a true 3D camera pose from the 4 world↔image corner
+  // correspondences. The previous Stage 1 implementation warped a top-down
+  // render with CSS matrix3d — correct for points on the z=0 plane but ignored
+  // depth. Now we recover (R, t, f) so toolpath points above the table project
+  // with the right perspective and the bit visibly lifts off the surface.
+  //
+  // Math (Zhang-style decomposition for coplanar points):
+  //   • Compute 3x3 homography H from world (X, Y) → image (u, v).
+  //   • Shift principal point to image center (subtract cx, cy in image rows).
+  //   • For K = diag(f, f, 1) the columns r1 = K⁻¹h1 and r2 = K⁻¹h2 must be
+  //     orthonormal. The orthogonality constraint r1·r2 = 0 gives one equation
+  //     in one unknown (f), solvable in closed form.
+  //   • Scale to enforce |r1| = 1 (rotation column unit length).
+  //   • r3 = r1 × r2; Gram-Schmidt-orthogonalize r2 against r1 for numerical
+  //     stability. Flip sign if t_z < 0 (table must be in front of camera).
+  //   • Convert OpenCV pose to three.js: same +X axis, but +Y and +Z flip
+  //     (three.js camera has +Y up and looks down -Z; OpenCV is +Y down,
+  //     looking +Z).
+  function _solveCameraPose() {
+      var c = self.ar.calibrating ? self.ar._draftCorners : self.ar.corners;
+      if (!c) return null;
+      var w = self.renderer.domElement.clientWidth;
+      var h = self.renderer.domElement.clientHeight;
+      if (!w || !h) return null;
+      var halfX = (tableBounds.max.x - tableBounds.min.x) / 2;
+      var halfY = (tableBounds.max.y - tableBounds.min.y) / 2;
+      var cwx = tableBounds.loc.x;
+      var cwy = tableBounds.loc.y;
+      // World corners (z=0), TL/TR/BR/BL with "top" = +Y world.
+      var worldPts = [
+          [cwx - halfX, cwy + halfY],
+          [cwx + halfX, cwy + halfY],
+          [cwx + halfX, cwy - halfY],
+          [cwx - halfX, cwy - halfY],
+      ];
+      // Image corners in canvas pixels (y down).
+      var imgPts = [
+          [c.tl.x * w, c.tl.y * h],
+          [c.tr.x * w, c.tr.y * h],
+          [c.br.x * w, c.br.y * h],
+          [c.bl.x * w, c.bl.y * h],
+      ];
+
+      var H = _h_quadToQuad(worldPts, imgPts);
+      // Shift principal point: H' = T·H with T translating image origin to center.
+      var pcx = w / 2, pcy = h / 2;
+      var Hp = [
+          [H[0][0] - pcx * H[2][0], H[0][1] - pcx * H[2][1], H[0][2] - pcx * H[2][2]],
+          [H[1][0] - pcy * H[2][0], H[1][1] - pcy * H[2][1], H[1][2] - pcy * H[2][2]],
+          [H[2][0],                 H[2][1],                 H[2][2]],
+      ];
+      var h1 = [Hp[0][0], Hp[1][0], Hp[2][0]];
+      var h2 = [Hp[0][1], Hp[1][1], Hp[2][1]];
+      var h3 = [Hp[0][2], Hp[1][2], Hp[2][2]];
+
+      // f² from orthogonality: (h1x*h2x + h1y*h2y)/f² + h1z*h2z = 0.
+      var num = -(h1[0]*h2[0] + h1[1]*h2[1]);
+      var den = h1[2]*h2[2];
+      var f;
+      if (Math.abs(den) < 1e-9 || num / den <= 0) {
+          // Near-degenerate (top-down ortho-like). Pick a sensible default.
+          f = 2 * w;
+      } else {
+          f = Math.sqrt(num / den);
+      }
+
+      var m1 = [h1[0]/f, h1[1]/f, h1[2]];
+      var m2 = [h2[0]/f, h2[1]/f, h2[2]];
+      var m3 = [h3[0]/f, h3[1]/f, h3[2]];
+      var len1 = Math.sqrt(m1[0]*m1[0] + m1[1]*m1[1] + m1[2]*m1[2]);
+      if (len1 < 1e-9) return null;
+      var lambda = 1 / len1;
+      var r1 = [m1[0]*lambda, m1[1]*lambda, m1[2]*lambda];
+      var r2 = [m2[0]*lambda, m2[1]*lambda, m2[2]*lambda];
+      var t  = [m3[0]*lambda, m3[1]*lambda, m3[2]*lambda];
+
+      var dot = r1[0]*r2[0] + r1[1]*r2[1] + r1[2]*r2[2];
+      r2 = [r2[0] - dot*r1[0], r2[1] - dot*r1[1], r2[2] - dot*r1[2]];
+      var r2len = Math.sqrt(r2[0]*r2[0] + r2[1]*r2[1] + r2[2]*r2[2]);
+      if (r2len < 1e-9) return null;
+      r2 = [r2[0]/r2len, r2[1]/r2len, r2[2]/r2len];
+
+      var r3 = [
+          r1[1]*r2[2] - r1[2]*r2[1],
+          r1[2]*r2[0] - r1[0]*r2[2],
+          r1[0]*r2[1] - r1[1]*r2[0],
+      ];
+
+      if (t[2] < 0) {
+          r1 = [-r1[0], -r1[1], -r1[2]];
+          r2 = [-r2[0], -r2[1], -r2[2]];
+          r3 = [-r3[0], -r3[1], -r3[2]];
+          t  = [-t[0],  -t[1],  -t[2]];
+      }
+
+      // Camera position C = -R⁻¹t = -Rᵀt. R col i = r_(i+1).
+      var C = [
+          -(r1[0]*t[0] + r1[1]*t[1] + r1[2]*t[2]),
+          -(r2[0]*t[0] + r2[1]*t[1] + r2[2]*t[2]),
+          -(r3[0]*t[0] + r3[1]*t[1] + r3[2]*t[2]),
+      ];
+      // three.js camera local axes in world. OpenCV→three.js flips Y and Z.
+      var ex = [ r1[0],  r2[0],  r3[0]];
+      var ey = [-r1[1], -r2[1], -r3[1]];
+      var ez = [-r1[2], -r2[2], -r3[2]];
+
+      return { ex: ex, ey: ey, ez: ez, C: C, f: f, w: w, h: h };
+  }
+
+  function _applyARCamera() {
+      var pose = _solveCameraPose();
+      if (!pose) {
+          _setTopDownCamera();
+          self.refresh();
+          return;
+      }
+      var cam = self.perspectiveCamera;
+      var rotMat = new THREE.Matrix4();
+      rotMat.set(
+          pose.ex[0], pose.ey[0], pose.ez[0], 0,
+          pose.ex[1], pose.ey[1], pose.ez[1], 0,
+          pose.ex[2], pose.ey[2], pose.ez[2], 0,
+          0,          0,          0,          1
+      );
+      // Use lookAt + explicit up vector instead of quaternion. Equivalent
+      // mathematically but avoids any subtle quaternion-extraction bugs in
+      // bundled three.js r112. The homography solver treats world points
+      // at z=0 as the calibration plane, which in the previewer is the
+      // material top / cut surface — exactly what the user marked corners
+      // against, so no z-shift is needed.
+      cam.position.set(pose.C[0], pose.C[1], pose.C[2]);
+      cam.up.set(pose.ey[0], pose.ey[1], pose.ey[2]);
+      var fwd = [-pose.ez[0], -pose.ez[1], -pose.ez[2]];
+      cam.lookAt(new THREE.Vector3(
+          pose.C[0] + fwd[0],
+          pose.C[1] + fwd[1],
+          pose.C[2] + fwd[2]
+      ));
+      cam.fov = 2 * Math.atan(pose.h / (2 * pose.f)) * 180 / Math.PI;
+      cam.aspect = pose.w / pose.h;
+      cam.near = 0.01;
+      cam.far = 100000;
+      cam.updateMatrixWorld(true);
+      cam.updateProjectionMatrix();
+      self.camera = cam;
+      self.controls.object = cam;
+      // Re-apply the 2D view transform (zoom/pan) to the canvas; AR
+      // perspective doesn't have a matrix3d on the video so this is
+      // sufficient to keep zoom/pan applied to the composite output.
+      _applyARViewTransform();
+      self.renderer.render(self.scene, self.camera);
+  }
+
+  // Backwards-compat alias used by existing call sites in this module.
+  function _applyHomography() { _applyARCamera(); }
+  function _clearHomography() {
+      self.renderer.domElement.style.transform = '';
+      self.renderer.domElement.style.transformOrigin = '';
+  }
+
+  function _saveCalibration() {
+      if (!window.fabmo || !self.ar.corners) return;
+      window.fabmo.setConfig({
+          machine: { cameraCalibration: {
+              corners: self.ar.corners,
+              port: self.ar.cameraPort || 0,
+              savedAt: Date.now(),
+              calibrated: true,
+          }}
+      }, function (err) {
+          if (err) console.warn('AR calibration save failed:', err);
+      });
+  }
+
+  function _loadCalibration(config) {
+      var cal = config && config.machine && config.machine.cameraCalibration;
+      if (cal && cal.calibrated && cal.corners && cal.corners.tl && cal.corners.tr && cal.corners.br && cal.corners.bl) {
+          self.ar.corners = cal.corners;
+          if (cal.port) self.ar.cameraPort = cal.port;
+          if (typeof _refreshOverheadToggleVisibility === 'function') _refreshOverheadToggleVisibility();
+      }
+  }
+  self.loadARCalibration = _loadCalibration;
+
+  function _renderCalHandles() {
+      if (!self.ar._draftCorners) return;
+      var size = _previewSize();
+      ['tl', 'tr', 'br', 'bl'].forEach(function (k) {
+          var p = self.ar._draftCorners[k];
+          container.find('.ar-cal-handle[data-corner="' + k + '"]').css({
+              left: (p.x * size.w) + 'px',
+              top:  (p.y * size.h) + 'px',
+          });
+      });
+      var c = self.ar._draftCorners;
+      var pts = [c.tl, c.tr, c.br, c.bl].map(function (p) { return p.x + ',' + p.y; }).join(' ');
+      container.find('.ar-cal-quad').attr('points', pts);
+  }
+
+  function _startCalibration() {
+      // Reset 2D zoom/pan so the user marks corners against the raw,
+      // unscaled video frame. _applyARViewTransform also wipes transforms
+      // when calibrating=true, so the canvas/video render at 1:1.
+      _resetARView();
+      self.ar._backupCorners = self.ar.corners ? JSON.parse(JSON.stringify(self.ar.corners)) : null;
+      if (self.ar.corners) {
+          self.ar._draftCorners = JSON.parse(JSON.stringify(self.ar.corners));
+      } else {
+          // Default the handles to the projected grid corners, then lift the
+          // bottom two by 100px so they're not jammed against the bottom of
+          // the window (where they're hard to grab). The initial warp is a
+          // mild trapezoid; the user fixes it by dragging.
+          var size = _previewSize();
+          var src = _envelopeCornersInCanvasPx();
+          var bottomPad = Math.min(100, size.h * 0.2);
+          self.ar._draftCorners = {
+              tl: { x: src[0][0] / size.w, y: src[0][1] / size.h },
+              tr: { x: src[1][0] / size.w, y: src[1][1] / size.h },
+              br: { x: src[2][0] / size.w, y: (src[2][1] - bottomPad) / size.h },
+              bl: { x: src[3][0] / size.w, y: (src[3][1] - bottomPad) / size.h },
+          };
+      }
+      self.ar.calibrating = true;
+      container.find('.ar-calibration').show();
+      _renderCalHandles();
+      // In overhead mode the user marks corners on the *raw* video — strip
+      // the matrix3d warp off the <img> so the calibration handles align
+      // with where the table actually appears in the camera feed. The
+      // 3D scene stays in top-down ortho with no canvas transform; live
+      // homography preview is suppressed (would re-warp the raw video).
+      if (self.ar.overhead) {
+          container.find('.ar-video').css('transform', '');
+      } else {
+          _applyHomography();
+      }
+  }
+
+  function _onHandleDown(e) {
+      if (!self.ar.calibrating) return;
+      e.preventDefault();
+      var key = $(e.currentTarget).data('corner');
+      self.ar._dragging = key;
+      var move = function (ev) {
+          if (!self.ar._dragging) return;
+          var src = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+          var rect = container[0].getBoundingClientRect();
+          var x = (src.clientX - rect.left) / rect.width;
+          var y = (src.clientY - rect.top)  / rect.height;
+          x = Math.max(0, Math.min(1, x));
+          y = Math.max(0, Math.min(1, y));
+          self.ar._draftCorners[self.ar._dragging] = { x: x, y: y };
+          _renderCalHandles();
+          // In overhead recalibration the video must stay un-warped so the
+          // user can mark actual table corners on the raw feed.
+          if (!self.ar.overhead) _applyHomography();
+      };
+      var up = function () {
+          self.ar._dragging = null;
+          $(document).off('mousemove.arcal touchmove.arcal mouseup.arcal touchend.arcal');
+      };
+      $(document).on('mousemove.arcal touchmove.arcal', move);
+      $(document).on('mouseup.arcal touchend.arcal', up);
+  }
+
+  function _saveCalibrationDraft() {
+      if (!self.ar._draftCorners) return;
+      self.ar.corners = self.ar._draftCorners;
+      self.ar._draftCorners = null;
+      self.ar._backupCorners = null;
+      self.ar.calibrating = false;
+      container.find('.ar-calibration').hide();
+      _saveCalibration();
+      _refreshOverheadToggleVisibility();
+      // Re-apply the active mode's warp with the new corners.
+      if (self.ar.overhead) _applyOverheadWarp();
+      else                  _applyHomography();
+  }
+
+  function _cancelCalibration() {
+      self.ar.calibrating = false;
+      self.ar._draftCorners = null;
+      container.find('.ar-calibration').hide();
+      if (self.ar._backupCorners) {
+          self.ar.corners = self.ar._backupCorners;
+          self.ar._backupCorners = null;
+          if (self.ar.overhead) _applyOverheadWarp();
+          else                  _applyHomography();
+      } else {
+          // No prior calibration to restore — leave AR but unwarped, or exit.
+          self.exitAR();
+      }
+  }
+
+  self.enterAR = function () {
+      if (self.ar.enabled) return;
+      if (!self.ar.cameraPort) return;
+
+      var fromOverhead = !!self.ar.overhead;
+
+      // Mode swap from overhead — simple fade-out, snap, fade-in. Keep the
+      // saved view; tear down only overhead-specific bits (material hidden,
+      // overhead-mode class, bg blur, video matrix3d).
+      if (fromOverhead) {
+          self.ar.overhead = false;
+          container.removeClass('overhead-mode');
+          container.find('input[name="show-overhead"]').prop('checked', false);
+          if (self.material) {
+              if (self.material.mesh && typeof self.ar._materialMeshWasVisible !== 'undefined') {
+                  self.material.mesh.visible = self.ar._materialMeshWasVisible;
+                  delete self.ar._materialMeshWasVisible;
+              }
+              if (self.material.wireMesh && typeof self.ar._materialWireWasVisible !== 'undefined') {
+                  self.material.wireMesh.visible = self.ar._materialWireWasVisible;
+                  delete self.ar._materialWireWasVisible;
+              }
+          }
+      }
+
+      container.find('#ar-recalibrate').show();
+      self.ar.enabled = true;
+
+      if (!fromOverhead) {
+          _resetARView();
+          // Capture saved view, unless an exit animation is still in flight
+          // (in which case _savedView lingers — reuse it instead of
+          // overwriting with the mid-animation pose). self.refresh is
+          // AR-aware (skips controls.update while ar.enabled), so no
+          // refresh override is needed.
+          if (!self.ar._savedView) {
+              self.ar._savedView = {
+                  isOrtho: self.isOrtho,
+                  camera: self.camera,
+                  target: { x: self.controls.target.x, y: self.controls.target.y, z: self.controls.target.z },
+                  pos:    { x: self.camera.position.x, y: self.camera.position.y, z: self.camera.position.z },
+                  zoom: self.camera.zoom,
+              };
+              _applyARStyling();
+          }
+          var $video0 = container.find('.ar-video');
+          $video0.attr('src', _videoUrl(self.ar.cameraPort)).css('opacity', 0).show();
+          self.controls.enabled = false;
+      }
+      container.addClass('ar-mode');
+
+      // Shrink the canvas to leave room for the bottom-bar; suppress the
+      // resize branch's camera setup so _animateToAR can capture the user's
+      // current view as the start pose.
+      self.ar._entering = true;
+      $(window).trigger('resize');
+      self.ar._entering = false;
+
+      if (fromOverhead) {
+          // Simple fade between modes: dim out the warped overhead view,
+          // snap to AR pose, fade back in.
+          _fadeAR({ videoTo: 0, bgTo: 0, clearTo: 1, durationMs: 200,
+              onComplete: function () {
+                  container.find('.ar-video').css('transform', '');
+                  container.find('.ar-video-bg').hide().css('opacity', '');
+                  if (self.ar.corners) _applyARCamera();
+                  else                 _setTopDownCamera();
+                  self.renderer.setClearAlpha(0);
+                  _fadeAR({ videoTo: 1, bgTo: 0, clearTo: 0, durationMs: 200,
+                      onComplete: function () {
+                          if (!self.ar.corners) _startCalibration();
+                      }
+                  });
+              }
+          });
+          return;
+      }
+
+      // Regular → AR: the cool camera-tilt animation.
+      if (self.ar.corners) {
+          _animateToAR(1200);
+      } else {
+          // No saved calibration — go straight to top-down ortho for the
+          // calibration UI; no animation makes sense without a target pose.
+          self.renderer.setClearAlpha(0);
+          container.find('.ar-video').css('opacity', 1);
+          _setTopDownCamera();
+          self.refresh();
+          _startCalibration();
+      }
+  };
+
+  // Snap the scene's AR styling — table mesh hidden, grid moved to table z and
+  // brightened. Idempotent: only stashes original values once.
+  function _applyARStyling() {
+      if (self.table && self.table.table && typeof self.ar._tableWasVisible === 'undefined') {
+          self.ar._tableWasVisible = self.table.table.visible;
+          self.table.table.visible = false;
+      }
+      if (self.grid && self.grid.grid && typeof self.ar._gridZ === 'undefined') {
+          self.ar._gridZ = self.grid.grid.position.z;
+          // Sit the grid at the calibration plane (scene z=0), where the user
+          // marked the table edges. Tiny lift to avoid z-fighting with anything
+          // else exactly at z=0.
+          self.grid.grid.position.z = 0.01;
+          if (self.grid.grid.material) {
+              self.ar._gridOpacity = self.grid.grid.material.opacity;
+              self.ar._gridColor = self.grid.grid.material.color.getHex();
+              self.grid.grid.material.opacity = 0.65;
+              self.grid.grid.material.color = new THREE.Color(0xffffff);
+              self.grid.grid.material.needsUpdate = true;
+          }
+      }
+  }
+
+  // Simple opacity / clear-alpha crossfade. Used for all transitions
+  // except regular → AR (which has the cooler camera-tilt animation in
+  // _animateToAR). The 3D scene keeps rendering each frame so the user
+  // sees the underlying preview behind the fading video.
+  function _fadeAR(opts) {
+      var durationMs = opts.durationMs || 250;
+      var $video = container.find('.ar-video');
+      var $videoBg = container.find('.ar-video-bg');
+      var fromVideo = parseFloat($video.css('opacity'));
+      var fromBg    = parseFloat($videoBg.css('opacity'));
+      if (isNaN(fromVideo)) fromVideo = 0;
+      if (isNaN(fromBg))    fromBg = 0;
+      var fromClear = self.renderer.getClearAlpha();
+
+      var startTime = Date.now();
+      var animId = (self.ar._animId = (self.ar._animId || 0) + 1);
+      self.ar._animating = true;
+
+      function tick() {
+          if (self.ar._animId !== animId) return;
+          var t = Math.min(1, (Date.now() - startTime) / durationMs);
+          var ease = t * t * (3 - 2 * t);
+          $video.css(  'opacity', fromVideo + (opts.videoTo - fromVideo) * ease);
+          $videoBg.css('opacity', fromBg    + (opts.bgTo    - fromBg)    * ease);
+          self.renderer.setClearColor(0xebebeb, fromClear + (opts.clearTo - fromClear) * ease);
+          self.renderer.render(self.scene, self.camera);
+          if (t < 1) requestAnimationFrame(tick);
+          else {
+              self.ar._animating = false;
+              if (opts.onComplete) opts.onComplete();
+          }
+      }
+      requestAnimationFrame(tick);
+  }
+
+  // Cool transition for the regular → AR entry path: pull/tilt the camera
+  // onto the calibrated AR pose while fading the live video in and the
+  // canvas clear color out. Slerp + lerp on a perspective camera.
+  function _animateToAR(durationMs) {
+      durationMs = durationMs || 1200;
+      var pose = _solveCameraPose();
+      if (!pose) {
+          // Calibration is degenerate — skip animation, fall back.
+          self.renderer.setClearAlpha(0);
+          container.find('.ar-video').css('opacity', 1);
+          _applyARCamera();
+          return;
+      }
+
+      // If the scene is currently in ortho, copy its position+target onto the
+      // perspective camera so the animation has a sensible perspective start.
+      if (self.camera !== self.perspectiveCamera) {
+          self.perspectiveCamera.position.copy(self.camera.position);
+          self.perspectiveCamera.up.set(0, 0, 1);
+          self.perspectiveCamera.lookAt(self.controls.target);
+          self.perspectiveCamera.fov = 45;
+          var w0 = self.renderer.domElement.clientWidth || 1;
+          var h0 = self.renderer.domElement.clientHeight || 1;
+          self.perspectiveCamera.aspect = w0 / h0;
+          self.perspectiveCamera.updateProjectionMatrix();
+          self.camera = self.perspectiveCamera;
+          self.controls.object = self.camera;
+      }
+
+      var startPos  = self.camera.position.clone();
+      var startQuat = self.camera.quaternion.clone();
+      var startFov  = self.camera.fov;
+
+      var endPos = new THREE.Vector3(pose.C[0], pose.C[1], pose.C[2]);
+      var endFov = 2 * Math.atan(pose.h / (2 * pose.f)) * 180 / Math.PI;
+      var canvasAspect = (self.renderer.domElement.clientWidth || pose.w) /
+                         (self.renderer.domElement.clientHeight || pose.h);
+
+      var endCam = new THREE.PerspectiveCamera();
+      endCam.position.copy(endPos);
+      endCam.up.set(pose.ey[0], pose.ey[1], pose.ey[2]);
+      var fwd = [-pose.ez[0], -pose.ez[1], -pose.ez[2]];
+      endCam.lookAt(endPos.x + fwd[0], endPos.y + fwd[1], endPos.z + fwd[2]);
+      var endQuat = endCam.quaternion.clone();
+
+      var $video = container.find('.ar-video');
+      // Start with the scene fully opaque (so the 3D preview is solid) and
+      // fade out the canvas's own clear background as we fade the video in.
+      self.renderer.setClearColor(0xebebeb, 1);
+
+      var startTime = Date.now();
+      var animId = (self.ar._animId = (self.ar._animId || 0) + 1);
+
+      function tick() {
+          if (!self.ar.enabled || self.ar._animId !== animId) return;
+          var t = Math.min(1, (Date.now() - startTime) / durationMs);
+          var ease = t * t * (3 - 2 * t);  // smoothstep
+
+          self.camera.position.lerpVectors(startPos, endPos, ease);
+          THREE.Quaternion.slerp(startQuat, endQuat, self.camera.quaternion, ease);
+          self.camera.fov = startFov + (endFov - startFov) * ease;
+          self.camera.aspect = canvasAspect;
+          self.camera.updateProjectionMatrix();
+
+          $video.css('opacity', ease);
+          self.renderer.setClearColor(0xebebeb, 1 - ease);
+
+          self.renderer.render(self.scene, self.camera);
+
+          if (t < 1) {
+              requestAnimationFrame(tick);
+          } else {
+              // Final snap to ensure exact pose + transparent canvas.
+              self.renderer.setClearAlpha(0);
+              _applyARCamera();
+          }
+      }
+      requestAnimationFrame(tick);
+  }
+
+  self.exitAR = function () {
+      if (!self.ar.enabled) return;
+      self.ar.enabled = false;
+      self.ar.calibrating = false;
+      container.find('.ar-calibration').hide();
+      container.find('#ar-recalibrate').hide();
+      _fadeAR({ videoTo: 0, bgTo: 0, clearTo: 1, durationMs: 250,
+          onComplete: _exitARTeardown });
+  };
+
+  // Tear down all AR/overhead-specific state and restore the prior 3D view.
+  // Used by both exitAR and exitOverhead at the tail end of their animations.
+  function _exitARTeardown() {
+      container.removeClass('ar-mode overhead-mode');
+      _clearHomography();
+      container.find('.ar-video').hide().attr('src', '').css({ transform: '', opacity: '' });
+      container.find('.ar-video-bg').hide().attr('src', '').css('opacity', '');
+      self.renderer.setClearColor(0xebebeb, 1);
+      self.controls.enabled = true;
+      if (self.ar._debugSphere) self.scene.remove(self.ar._debugSphere);
+      if (self.table && self.table.table && typeof self.ar._tableWasVisible !== 'undefined') {
+          self.table.table.visible = self.ar._tableWasVisible;
+          delete self.ar._tableWasVisible;
+      }
+      if (self.grid && self.grid.grid && typeof self.ar._gridZ !== 'undefined') {
+          self.grid.grid.position.z = self.ar._gridZ;
+          if (self.grid.grid.material && typeof self.ar._gridOpacity !== 'undefined') {
+              self.grid.grid.material.opacity = self.ar._gridOpacity;
+              self.grid.grid.material.color = new THREE.Color(self.ar._gridColor || 0x000000);
+              self.grid.grid.material.needsUpdate = true;
+          }
+          delete self.ar._gridZ;
+          delete self.ar._gridOpacity;
+          delete self.ar._gridColor;
+      }
+      if (self.material) {
+          if (self.material.mesh && typeof self.ar._materialMeshWasVisible !== 'undefined') {
+              self.material.mesh.visible = self.ar._materialMeshWasVisible;
+              delete self.ar._materialMeshWasVisible;
+          }
+          if (self.material.wireMesh && typeof self.ar._materialWireWasVisible !== 'undefined') {
+              self.material.wireMesh.visible = self.ar._materialWireWasVisible;
+              delete self.ar._materialWireWasVisible;
+          }
+      }
+      if (self.ar._savedView) {
+          self.camera = self.ar._savedView.camera;
+          self.controls.object = self.camera;
+          self.camera.position.set(self.ar._savedView.pos.x, self.ar._savedView.pos.y, self.ar._savedView.pos.z);
+          self.controls.target.set(self.ar._savedView.target.x, self.ar._savedView.target.y, self.ar._savedView.target.z);
+          self.camera.zoom = self.ar._savedView.zoom;
+          self.camera.updateProjectionMatrix();
+          self.controls.update();
+          self.ar._savedView = null;
+      }
+      $(window).trigger('resize');
+      self.refresh();
+  }
+
+  self.recalibrateAR = function () {
+      if (self.ar.enabled || self.ar.overhead) _startCalibration();
+  };
+
+  self.isARAvailable = function () {
+      return !!self.ar.cameraPort;
+  };
+
+  // ---------- Overhead (un-warped top-down) ---------------------------------
+  //
+  // Re-uses the AR table-corner calibration to compute the inverse homography
+  // (camera-pixels → table-coords) and applies it to the live MJPEG <img>
+  // via CSS matrix3d. The 3D scene renders in top-down ortho with the same
+  // envelope framing, so the warped video corners land exactly on the canvas
+  // envelope corners. Material and table mesh are hidden so the toolpath
+  // appears over the actual table surface — useful for spotting clamps or
+  // fixtures the path would collide with.
+  // Apply the current 2D view (zoom + pan) plus the overhead warp (when
+  // applicable) to the canvas, video, and calibration overlay. Single
+  // source of truth for transforms on those elements while AR is active.
+  function _applyARViewTransform() {
+      var $video = container.find('.ar-video');
+      var $cal   = container.find('.ar-calibration');
+      var canvas = self.renderer.domElement;
+
+      // During calibration the user marks corners against the raw video,
+      // so wipe all transforms (including any overhead warp + zoom/pan)
+      // and let CSS-driven defaults apply.
+      if (self.ar.calibrating) {
+          if (canvas) canvas.style.transform = '';
+          $video.css({ 'transform-origin': '', transform: '' });
+          $cal.css({ 'transform-origin': '', transform: '' });
+          return;
+      }
+
+      var z  = self.ar.viewZoom  || 1;
+      var px = self.ar.viewPanX  || 0;
+      var py = self.ar.viewPanY  || 0;
+      var view = (z === 1 && px === 0 && py === 0)
+          ? '' : 'translate(' + px + 'px,' + py + 'px) scale(' + z + ')';
+
+      if (canvas) {
+          canvas.style.transformOrigin = '0 0';
+          canvas.style.transform = view;
+      }
+      $cal.css({ 'transform-origin': '0 0', transform: view });
+
+      // Compose with the overhead matrix3d homography when applicable.
+      // Order: matrix3d (warps the raw camera frame onto the envelope),
+      // then scale (zoom), then translate (pan) — read right-to-left.
+      var warp = '';
+      if (self.ar.overhead && self.ar.corners) {
+          var size = _previewSize();
+          if (size.w && size.h) {
+              var c = self.ar.corners;
+              var src = [
+                  [c.tl.x * size.w, c.tl.y * size.h],
+                  [c.tr.x * size.w, c.tr.y * size.h],
+                  [c.br.x * size.w, c.br.y * size.h],
+                  [c.bl.x * size.w, c.bl.y * size.h],
+              ];
+              var dst = _envelopeCornersInCanvasPx();
+              warp = _h_toMatrix3d(_h_quadToQuad(src, dst));
+          }
+      }
+      $video.css({
+          'transform-origin': '0 0',
+          'transform': (view && warp) ? (view + ' ' + warp) : (view || warp || '')
+      });
+  }
+
+  // Reset view to identity. Called on entry/exit and at calibration start.
+  function _resetARView() {
+      self.ar.viewZoom = 1;
+      self.ar.viewPanX = 0;
+      self.ar.viewPanY = 0;
+  }
+
+  // Backwards-compat alias — many existing call sites just want the warp.
+  function _applyOverheadWarp() { _applyARViewTransform(); }
+
+  self.enterOverhead = function () {
+      if (self.ar.overhead) return;
+      if (!self.ar.cameraPort || !self.ar.corners) return;
+
+      var fromAR = !!self.ar.enabled;
+      if (fromAR) {
+          self.ar.enabled = false;
+          container.find('input[name="show-ar"]').prop('checked', false);
+      } else if (!self.ar._savedView) {
+          _resetARView();
+          // Fresh entry — capture saved view. self.refresh is AR-aware
+          // (skips controls.update while ar.overhead), so no refresh
+          // override is needed.
+          self.ar._savedView = {
+              camera: self.camera,
+              target: { x: self.controls.target.x, y: self.controls.target.y, z: self.controls.target.z },
+              pos:    { x: self.camera.position.x, y: self.camera.position.y, z: self.camera.position.z },
+              zoom: self.camera.zoom,
+          };
+          _applyARStyling();
+          self.controls.enabled = false;
+      }
+
+      self.ar.overhead = true;
+      container.addClass('ar-mode overhead-mode');
+      container.find('#ar-recalibrate').show();
+
+      // Hide material so the live table shows through (overhead-only).
+      if (self.material) {
+          if (self.material.mesh && typeof self.ar._materialMeshWasVisible === 'undefined') {
+              self.ar._materialMeshWasVisible = self.material.mesh.visible;
+              self.material.mesh.visible = false;
+          }
+          if (self.material.wireMesh && typeof self.ar._materialWireWasVisible === 'undefined') {
+              self.ar._materialWireWasVisible = self.material.wireMesh.visible;
+              self.material.wireMesh.visible = false;
+          }
+      }
+
+      var videoSrc = _videoUrl(self.ar.cameraPort);
+      var $video = container.find('.ar-video');
+      var $videoBg = container.find('.ar-video-bg');
+      if (!fromAR) {
+          $video.attr('src', videoSrc).css('opacity', 0).show();
+      }
+      $videoBg.attr('src', videoSrc + '&bg=1').css('opacity', 0).show();
+
+      self.ar._entering = true;
+      $(window).trigger('resize');
+      self.ar._entering = false;
+      self.renderer.domElement.style.transform = '';
+
+      // Snap-then-fade. From AR, dim out the unwarped video first so the
+      // matrix3d swap-on isn't visible; from regular the video is already
+      // hidden so we go straight to the fade-in.
+      var snapAndFadeIn = function () {
+          _setTopDownCamera();
+          _applyOverheadWarp();
+          self.renderer.setClearColor(0xebebeb, 1);
+          _fadeAR({ videoTo: 1, bgTo: 0.45, clearTo: 0, durationMs: 250,
+              onComplete: function () {
+                  // Let CSS-driven bg opacity take over after fade-in completes.
+                  container.find('.ar-video-bg').css('opacity', '');
+                  self.renderer.setClearAlpha(0);
+                  self.refresh();
+              }
+          });
+      };
+      if (fromAR) {
+          _fadeAR({ videoTo: 0, bgTo: 0, clearTo: 1, durationMs: 200,
+              onComplete: snapAndFadeIn });
+      } else {
+          snapAndFadeIn();
+      }
+  };
+
+  self.exitOverhead = function () {
+      if (!self.ar.overhead) return;
+      self.ar.overhead = false;
+      container.find('#ar-recalibrate').hide();
+      _fadeAR({ videoTo: 0, bgTo: 0, clearTo: 1, durationMs: 250,
+          onComplete: _exitARTeardown });
+  };
+
+  // The Top toggle only makes sense once a calibration exists. Surface or
+  // hide it as calibration state changes (load, save, camera-detect).
+  function _refreshOverheadToggleVisibility() {
+      var $w = container.find('#overhead-toggle-wrap');
+      if (self.ar.cameraPort && self.ar.corners) $w.show();
+      else                                       $w.hide();
+  }
+  // ---------- end Overhead --------------------------------------------------
+
+  // Detect a camera and surface the toggles if found. Top toggle additionally
+  // requires that calibration corners exist (loaded from machine config).
+  _detectCamera(function (port) {
+      self.ar.cameraPort = port;
+      if (port) {
+          container.find('#ar-toggle-wrap').show();
+          _refreshOverheadToggleVisibility();
+      }
+  });
+
+  // Wire UI: AR toggle, Top toggle, recalibrate, calibration click capture, cancel.
+  container.on('change', 'input[name="show-ar"]', function () {
+      if (this.checked) self.enterAR();
+      else              self.exitAR();
+  });
+  container.on('change', 'input[name="show-overhead"]', function () {
+      if (this.checked) self.enterOverhead();
+      else              self.exitOverhead();
+  });
+  container.on('click', '#ar-recalibrate', function () {
+      self.recalibrateAR();
+  });
+  container.on('mousedown touchstart', '.ar-cal-handle', _onHandleDown);
+  container.on('click', '.ar-cal-save', function (e) {
+      e.stopPropagation();
+      _saveCalibrationDraft();
+  });
+  container.on('click', '.ar-cal-cancel', function (e) {
+      e.stopPropagation();
+      _cancelCalibration();
+  });
+
+  // 2D zoom/pan on the AR composite (canvas + warped video). Wheel zooms
+  // around the cursor; left-drag pans. Active only in AR or overhead, and
+  // skipped during calibration so handles stay 1:1 with the raw video.
+  self.renderer.domElement.addEventListener('wheel', function (e) {
+      if (!self.ar.enabled && !self.ar.overhead) return;
+      if (self.ar.calibrating) return;
+      e.preventDefault();
+      var rect = self.renderer.domElement.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var my = e.clientY - rect.top;
+      var step = e.deltaY < 0 ? 1.10 : 1 / 1.10;
+      var z0 = self.ar.viewZoom || 1;
+      var z1 = Math.max(0.5, Math.min(8, z0 * step));
+      if (z1 === z0) return;
+      var f = z1 / z0;
+      // Keep the cursor's underlying world point fixed while zooming.
+      self.ar.viewPanX = mx - (mx - (self.ar.viewPanX || 0)) * f;
+      self.ar.viewPanY = my - (my - (self.ar.viewPanY || 0)) * f;
+      self.ar.viewZoom = z1;
+      _applyARViewTransform();
+  }, { passive: false });
+
+  self.renderer.domElement.addEventListener('mousedown', function (e) {
+      if (!self.ar.enabled && !self.ar.overhead) return;
+      if (self.ar.calibrating) return;
+      if (e.button !== 0) return;
+      e.preventDefault();
+      var startX = e.clientX, startY = e.clientY;
+      var sx = self.ar.viewPanX || 0;
+      var sy = self.ar.viewPanY || 0;
+      function move(ev) {
+          self.ar.viewPanX = sx + (ev.clientX - startX);
+          self.ar.viewPanY = sy + (ev.clientY - startY);
+          _applyARViewTransform();
+      }
+      function up() {
+          document.removeEventListener('mousemove', move);
+          document.removeEventListener('mouseup', up);
+      }
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+  });
+
+  // ---------- end AR overlay ------------------------------------------------
+
   /**
    * Cleanup entire viewer when app exits
    */

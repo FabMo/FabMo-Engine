@@ -2,6 +2,141 @@ body {
   overflow: hidden;
 }
 
+/* AR overlay — live MJPEG behind a perspective-warped canvas. */
+.ar-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  z-index: -1;
+  background: #000;
+}
+/* Blurred full-frame backdrop used only in overhead mode. Sits behind the
+   warped .ar-video and fills any uncovered area with a soft, dimmed copy
+   of the live camera so you don't see hard black borders when the
+   calibrated table quad sits near the edges of the camera frame. */
+.ar-video-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.45;
+  filter: blur(28px) saturate(0.7);
+  /* Negative-space inset prevents the blur halo from showing un-blurred
+     edge artifacts where the image meets its element box. */
+  transform: scale(1.08);
+  transform-origin: center;
+  pointer-events: none;
+}
+#preview.ar-mode canvas {
+  background: transparent !important;
+  transform-origin: 0 0;
+}
+/* Overhead mode warps the video instead of the canvas — the canvas is a
+   straight top-down ortho render and the matrix3d homography stretches
+   the live MJPEG so the calibrated table quad fills the envelope.
+   Clipping is handled by `overflow: hidden` on `#preview.ar-mode`. */
+#preview.overhead-mode .ar-video {
+  transform-origin: 0 0;
+}
+/* `isolation: isolate` makes #preview a new stacking context so .ar-video's
+   z-index:-1 stays inside it instead of dropping behind the body. The canvas
+   stays in static flow (so #preview's height is still derived from it, and
+   the bottom bar positions correctly) but renders above the video. */
+#preview.ar-mode {
+  background: #000;
+  isolation: isolate;
+  /* matrix3d on the video extrapolates content well past the element
+     box; clip-path on the <img> clips in pre-transform local space and
+     doesn't help. Clip at the #preview box so the warp can't bleed
+     over the top bar / bottom bar / page edges. */
+  overflow: hidden;
+}
+.ar-toggle {
+  user-select: none;
+}
+.ar-recalibrate {
+  margin-left: 4px;
+  font-size: 11px;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+.ar-recalibrate:hover { color: #000; }
+
+/* Calibration overlay — draggable quad over the live video. Preview warps
+   in real time as the user drags corners; Save persists. */
+.ar-calibration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  user-select: none;
+}
+.ar-cal-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 21;
+}
+.ar-cal-handle {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  margin-top: -16px;
+  border-radius: 50%;
+  background: rgba(255, 60, 60, 0.9);
+  color: #fff;
+  border: 3px solid #fff;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 26px;
+  text-align: center;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+  cursor: grab;
+  z-index: 22;
+  touch-action: none;
+}
+.ar-cal-handle:active { cursor: grabbing; background: #ff3c3c; }
+.ar-cal-actions {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  z-index: 22;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ar-cal-actions button {
+  border: none;
+  border-radius: 3px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.ar-cal-save { background: #2e7d32; color: #fff; }
+.ar-cal-save:hover { background: #1b5e20; }
+.ar-cal-cancel { background: #555; color: #fff; }
+.ar-cal-cancel:hover { background: #777; }
+
 #little_menu {
     padding-right: 2.5rem;
     top: -.05rem;
@@ -652,9 +787,10 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 #preview .operations-panel .ops-setup-header {
-  padding: 6px 10px;
+  padding: 3px 10px;
   font-weight: bold;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.3;
   background: rgba(49, 51, 102, 0.5);
   display: flex;
   justify-content: space-between;
@@ -664,14 +800,14 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 #preview .operations-panel .ops-setup-toggle {
-  font-size: 14px;
+  font-size: 13px;
   color: #aac;
   width: 16px;
   text-align: center;
 }
 
 #preview .operations-panel .ops-setup-body {
-  padding: 6px 10px 8px;
+  padding: 3px 10px 4px;
 }
 
 #preview .operations-panel.setup-collapsed .ops-setup-body {
@@ -682,8 +818,9 @@ input[type="range"]::-webkit-slider-runnable-track {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin: 3px 0;
+  margin: 1px 0;
   font-size: 11px;
+  line-height: 1.2;
 }
 
 #preview .operations-panel .ops-setup-row label {
@@ -699,8 +836,10 @@ input[type="range"]::-webkit-slider-runnable-track {
   color: #ccc;
   border: 1px solid #555;
   border-radius: 3px;
-  padding: 1px 3px;
+  padding: 0 3px;
   font-size: 11px;
+  height: 18px;
+  line-height: 16px;
   width: 60px;
 }
 
@@ -734,9 +873,10 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 #preview .operations-panel .ops-header {
-  padding: 8px 10px;
+  padding: 4px 10px;
   font-weight: bold;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.3;
   border-bottom: 1px solid #444;
   background: rgba(49, 51, 102, 0.8);
   display: flex;
@@ -765,9 +905,9 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 #preview .operations-panel .ops-list .op-entry {
-  padding: 6px 10px;
+  padding: 3px 10px 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  line-height: 1.4;
+  line-height: 1.2;
 }
 
 #preview .operations-panel .ops-list .op-entry:hover {
@@ -799,9 +939,10 @@ input[type="range"]::-webkit-slider-runnable-track {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 4px;
+  margin-top: 1px;
   padding-left: 20px;
   font-size: 11px;
+  line-height: 1.2;
 }
 
 #preview .operations-panel .ops-list .op-tool-type {
@@ -809,8 +950,10 @@ input[type="range"]::-webkit-slider-runnable-track {
   color: #ccc;
   border: 1px solid #555;
   border-radius: 3px;
-  padding: 1px 2px;
+  padding: 0 2px;
   font-size: 11px;
+  height: 18px;
+  line-height: 16px;
   width: 52px;
 }
 
@@ -820,8 +963,10 @@ input[type="range"]::-webkit-slider-runnable-track {
   color: #ccc;
   border: 1px solid #555;
   border-radius: 3px;
-  padding: 1px 3px;
+  padding: 0 3px;
   font-size: 11px;
+  height: 18px;
+  line-height: 16px;
   width: 50px;
 }
 
