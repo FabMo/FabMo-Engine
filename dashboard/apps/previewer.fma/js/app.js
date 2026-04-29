@@ -26,6 +26,7 @@ var Fabmo  = require('../../../static/js/libs/fabmo.js');
 
 var preview = $('#preview');
 var fabmo = new Fabmo();
+window.fabmo = fabmo;  // exposed so the AR module in viewer.js can persist calibration
 var viewer = null;  // Module-level viewer reference
 var originalFileContent = null;  // Raw SBP file content for in/out extraction
 
@@ -34,10 +35,23 @@ var cached_Status = null;
 
 function resize() {
   var width = window.innerWidth - 4;
-  var height = window.innerHeight - $('#topbar').height() - 3;
-  preview.size(width, height);
+  var fullHeight = window.innerHeight - $('#topbar').height() - 3;
+  var canvasHeight = fullHeight;
+  // In AR / overhead modes the bottom bar would overlay the canvas (and
+  // hide live-table content under it). Shrink the canvas so it ends at
+  // the top of the bar, but pin #preview to fullHeight so the bar stays
+  // anchored to the viewport bottom (it's positioned `bottom:0` inside
+  // #preview, and #preview is inline-block whose natural height comes
+  // from the canvas).
+  if (viewer && viewer.ar && (viewer.ar.enabled || viewer.ar.overhead)) {
+    var $bb = $('#preview .bottom-bar');
+    if ($bb.length) canvasHeight = fullHeight - $bb.outerHeight();
+    preview.css({ height: fullHeight + 'px', width: width + 'px' });
+  } else {
+    preview.css({ height: '', width: '' });
+  }
   if (viewer) {
-    viewer.resize(width, height);
+    viewer.resize(width, canvasHeight);
   }
 }
 
@@ -770,6 +784,10 @@ function nowPreviewJob() {
 
     // Load point cloud if leveling is enabled
     viewer.loadPointCloud(cached_Config);
+
+    // Hand the saved AR calibration (if any) to the viewer so the AR toggle
+    // skips the calibration flow on subsequent sessions.
+    if (viewer.loadARCalibration) viewer.loadARCalibration(cached_Config);
 
     // Resize
     var job_started = false;

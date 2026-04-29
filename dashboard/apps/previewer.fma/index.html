@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="../../css/dashboard.css">
-    <link rel="stylesheet" href="./css/style.css?v=23">
+    <link rel="stylesheet" href="./css/style.css?v=ar11">
   </head>
 
   <body>
@@ -26,6 +26,26 @@
     </nav>
 
     <div id="preview" style="display: inline-block;">
+      <!-- AR overlay: live MJPEG behind a transparent canvas, calibration UI on top.
+           ar-video-bg is a blurred full-frame copy used in overhead mode to fill any
+           black gaps where the matrix3d warp doesn't quite reach the canvas edges. -->
+      <img id="ar-video-bg" class="ar-video-bg" style="display:none;" alt=""/>
+      <img id="ar-video" class="ar-video" style="display:none;" alt=""/>
+      <div id="ar-calibration" class="ar-calibration" style="display:none;">
+        <svg class="ar-cal-svg" preserveAspectRatio="none" viewBox="0 0 1 1">
+          <polygon class="ar-cal-quad" points="" fill="rgba(255,60,60,0.10)" stroke="#ff3c3c" stroke-width="0.003" stroke-linejoin="round"/>
+        </svg>
+        <div class="ar-cal-handle" data-corner="tl">TL</div>
+        <div class="ar-cal-handle" data-corner="tr">TR</div>
+        <div class="ar-cal-handle" data-corner="br">BR</div>
+        <div class="ar-cal-handle" data-corner="bl">BL</div>
+        <div class="ar-cal-actions">
+          <span class="ar-cal-instruction">Drag the corners to align with your table</span>
+          <button class="ar-cal-save" type="button">Save</button>
+          <button class="ar-cal-cancel" type="button">Cancel</button>
+        </div>
+      </div>
+
       <div class="code-line" title="Current File Line"></div>
 
       <div class="soft-limit-warning" id="soft-limit-warning" style="display: none;">
@@ -115,6 +135,13 @@
         <label class="quick-toggle" title="Show Material Simulation">
           <input type="checkbox" name="show-material"/> Material
         </label>
+        <label class="quick-toggle ar-toggle" id="ar-toggle-wrap" title="Overlay preview on the live camera feed (requires calibration)" style="display:none;">
+          <input type="checkbox" name="show-ar"/> AR
+        </label>
+        <label class="quick-toggle ar-toggle" id="overhead-toggle-wrap" title="Un-warped top-down view of the live table — toolpath over the real surface to spot clamps/fixtures" style="display:none;">
+          <input type="checkbox" name="show-overhead"/> Top
+        </label>
+        <span class="ar-recalibrate" id="ar-recalibrate" title="Recalibrate table corners" style="display:none;">⟳ Recalibrate</span>
         <img id="button-play"   src="images/play.png"
              title="Start or continue path simulation."/>
         <img id="button-pause"  src="images/pause.png"
@@ -262,73 +289,125 @@
             <tr><th>Right Mouse</th><td>Hold and drag to pan</td></tr>
             <tr><th>Mouse Wheel</th><td>Zoom in and out</td></tr>
           </table>
-          <h3>Buttons</h3>
+
+          <h3>Keyboard Shortcuts</h3>
+          <table>
+            <tr><th>I</th><td>Set Cut Start at current timeline position.</td></tr>
+            <tr><th>O</th><td>Set Cut Stop at current timeline position.</td></tr>
+            <tr><th>&larr; / &rarr;</th><td>Step backward / forward one line.</td></tr>
+            <tr><th>Shift+&larr; / Shift+&rarr;</th><td>Skip to the previous plunge / next retract.</td></tr>
+            <tr><th>Esc</th><td>Close any open dialog (Settings, Help, etc.).</td></tr>
+          </table>
+
+          <h3>View Buttons</h3>
+          <table>
+            <tr><th><img src="images/x.png"/></th><td>Snap to view down the X axis.</td></tr>
+            <tr><th><img src="images/y.png"/></th><td>Snap to view down the Y axis.</td></tr>
+            <tr><th><img src="images/z.png"/></th><td>Snap to view down the Z axis (top-down).</td></tr>
+            <tr><th><img src="images/ortho.png"/></th><td>Switch to orthographic (non-perspective) view.</td></tr>
+            <tr><th><img src="images/perspective.png"/></th><td>Switch to perspective view.</td></tr>
+            <tr><th><img src="images/settings.png"/></th><td>Open previewer settings.</td></tr>
+          </table>
+
+          <h3>Playback &amp; Timeline</h3>
+          <table>
+            <tr><th><img src="images/play.png"/></th><td>Start or continue simulation.</td></tr>
+            <tr><th><img src="images/pause.png"/></th><td>Pause simulation.</td></tr>
+            <tr><th><img src="images/reset.png"/></th><td>Restart simulation from the beginning.</td></tr>
+            <tr><th>|&lsaquo;&lsaquo; &nbsp; &rsaquo;&rsaquo;|</th><td>Skip to previous plunge / next retract.</td></tr>
+            <tr><th>&lsaquo; &nbsp; &rsaquo;</th><td>Step back / forward one line.</td></tr>
+            <tr><th>Timeline slider</th><td>Drag to scrub through the path.</td></tr>
+            <tr><th>Set Cut Start / Stop</th><td>Mark in/out points on the timeline. Used to play, run, or submit only a trimmed range. The &times; clears them.</td></tr>
+            <tr><th>Path / Material</th><td>Quick toggles to show or hide the toolpath lines and the material simulation surface.</td></tr>
+          </table>
+
+          <h3>Operations Panel</h3>
+          <p>Files compiled from SBP or with VCarve/ShopBot operation comments expose each operation as a checkable row. Use the panel to override tool defaults, run only what you need, or submit a trimmed/selected job.</p>
           <table>
             <tr>
-              <th><img src="images/pause.png"/></th>
-              <td>Pause path simulation.</td>
+              <th>Setup</th>
+              <td>Sets the file-wide defaults: <em>Material thickness</em>, <em>Z origin</em> (Material Surface or Table Surface), and the <em>Default tool</em> (Flat / Ball / V-Bit, plus diameter and V-bit angle). Changes here re-render the material simulation.</td>
             </tr>
             <tr>
-              <th><img src="images/reset.png"/></th>
-              <td>Restart path simulation.</td>
+              <th>Per-operation tool</th>
+              <td>Each operation row has its own bit type, diameter, and (for V-bit) angle. Editing these overrides the Setup default for that operation only.</td>
             </tr>
             <tr>
-              <th><img src="images/play.png"/></th>
-              <td>Start or continue path simulation.</td>
+              <th>Run Full Job</th>
+              <td>Submits the entire file as loaded.</td>
             </tr>
             <tr>
-              <th><img src="images/x.png"/></th>
-              <td>Snap to view down the X axis.</td>
+              <th>Run Trimmed / Submit Trimmed</th>
+              <td>Run or submit only the range between Cut Start and Cut Stop (set with I / O or the bottom-bar buttons).</td>
             </tr>
             <tr>
-              <th><img src="images/y.png"/></th>
-              <td>Snap to view down the Y axis.</td>
+              <th>Run Selected / Submit Selected</th>
+              <td>Run or submit only the operations whose checkboxes are ticked. The <em>All</em> link toggles every operation at once.</td>
+            </tr>
+          </table>
+
+          <h3>AR &amp; Top Overlays</h3>
+          <p>When a machine camera is detected and table corners have been calibrated, two extra toggles appear on the bottom bar:</p>
+          <table>
+            <tr>
+              <th>AR</th>
+              <td>Overlays the toolpath preview on the live camera feed using the calibrated camera pose, so the rendered path appears in the same perspective as the real table.</td>
             </tr>
             <tr>
-              <th><img src="images/z.png"/></th>
-              <td>Snap to view down the Z axis.</td>
+              <th>Top</th>
+              <td>Un-warped top-down view of the live table. The camera image is warped to a true overhead, with the toolpath rendered over it &mdash; useful for spotting clamps or fixtures the path would collide with.</td>
             </tr>
             <tr>
-              <th><img src="images/iso.png"/></th>
-              <td>Snap to isometric view.</td>
+              <th>&#x27F3; Recalibrate</th>
+              <td>Re-marks the four table corners against the live video. Drag each handle (TL, TR, BR, BL) onto the corresponding corner of the table, then Save. Calibration is stored in the machine config and shared between AR and Top modes.</td>
             </tr>
-            <tr>
-              <th><img src="images/settings.png"/></th>
-              <td>Open previewer settings.</td>
-            </tr>
-<!--
-            <tr>
-              <th><img src="images/help.png"/></th>
-              <td>Show this help screen.</td>
-            </tr>
--->
-        </table>
+          </table>
+
           <h3>Settings</h3>
           <table>
             <tr>
               <th>Simulation Speed</th>
-              <td>Sets the simulation play back speed relative to real time.
-              </td>
+              <td>Playback speed relative to real time (1/16x &ndash; 16x).</td>
             </tr>
             <tr>
               <th>Temp Change Boundary Units</th>
-              <td>Temporarily changes units (inches vs mm) for the file boundary indicators. 
-                  Note that a unit setting within file, if present, will over-ride machine setting 
-                  for motion units, but not change the machine unit display here.</td>
+              <td>Temporarily changes units (inches vs mm) for the file boundary indicators. A unit setting inside the file overrides the machine setting for motion, but does not change the machine&rsquo;s display units.</td>
+            </tr>
+            <tr>
+              <th>Grid Step</th>
+              <td>Grid step size in the current machine units.</td>
             </tr>
             <tr>
               <th>Table Offset from Z-Zero</th>
-              <td>Sets how far the table is below the Z-zero plane. If you zero at the table, then
-                  set the table at 0. If your material is 0.75" thick, set the offset to -0.75.
+              <td>How far the table sits below the Z-zero plane. If you zero at the table, set 0. If you zero on top of 0.75&quot; stock, set &minus;0.75.</td>
             </tr>
             <tr>
-                <th>Grid Step</th>
-                <td>Sets the grid step size in current machine units.</td>
-              </tr>
-              <tr>
-              <th>Checkboxes</th>
-              <td>The check boxes show or hide the grid, dimensions, axes and
-                tool</td>
+              <th>Live Sync Buffer Compensation</th>
+              <td>How many planner-buffered commands to skip ahead in the preview so the on-screen position tracks the actual machine more closely (SBP: SBP commands; GCode: gcode lines).</td>
+            </tr>
+            <tr>
+              <th>Display checkboxes</th>
+              <td>Show or hide grid, machine table, dimensions, axes, tool cone, and point-cloud / wireframe overlays.</td>
+            </tr>
+            <tr>
+              <th>Reset Material</th>
+              <td>Clears any cut material from the simulation surface and re-initializes a fresh stock block.</td>
+            </tr>
+            <tr>
+              <th>Point Cloud Opacity</th>
+              <td>Transparency of the leveler point-cloud overlay.</td>
+            </tr>
+            <tr>
+              <th>Material Opacity</th>
+              <td>Transparency of the simulated stock block.</td>
+            </tr>
+            <tr>
+              <th>Light Azimuth / Elevation</th>
+              <td>Direction of the scene light. Adjust for better depth shading on the cut surface.</td>
+            </tr>
+            <tr>
+              <th>Simulation Resolution</th>
+              <td>Height-map grid resolution for the material simulation. Higher is more accurate but slower to compute and re-render.</td>
             </tr>
           </table>
         </div>
@@ -336,6 +415,7 @@
       </div>
     </div>
 
-    <script src="../../preview.js"></script>
+    <script src="../../static/js/shared-video.js?v=2"></script>
+    <script src="../../preview.js?v=ar3d7"></script>
   </body>
 </html>

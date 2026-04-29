@@ -32,6 +32,17 @@
 		"zmin" : -2,
 		"zmax" : 6
 	},
+	"cameraCalibration" : {
+		"corners": {
+			"tl": { "x": 0, "y": 0 },
+			"tr": { "x": 0, "y": 0 },
+			"br": { "x": 0, "y": 0 },
+			"bl": { "x": 0, "y": 0 }
+		},
+		"port": 0,
+		"savedAt": 0,
+		"calibrated": false
+	},
 	"manual" : {
 		"xy_speed" : 3,
 		"xy_min" : 0.1,

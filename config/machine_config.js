@@ -28,7 +28,29 @@ util.inherits(MachineConfig, Config);
 
 MachineConfig.prototype.init = function (machine, callback) {
     this.machine = machine;
-    Config.prototype.init.call(this, callback);
+    Config.prototype.init.call(
+        this,
+        function (err) {
+            // Seed any newly-added top-level fields so util.extend's
+            // "only-existing-keys" rule accepts client updates. For installs
+            // predating this field, the cache wouldn't have it and POSTs to
+            // /config would silently drop it.
+            if (this._cache && !("cameraCalibration" in this._cache)) {
+                // util.extend only descends through existing keys; seed the
+                // full nested shape so client updates merge cleanly.
+                this._cache.cameraCalibration = {
+                    corners: {
+                        tl: { x: 0, y: 0 }, tr: { x: 0, y: 0 },
+                        br: { x: 0, y: 0 }, bl: { x: 0, y: 0 },
+                    },
+                    port: 0,
+                    savedAt: 0,
+                    calibrated: false,
+                };
+            }
+            if (typeof callback === "function") callback(err);
+        }.bind(this)
+    );
 };
 
 // Convenience function that rounds a number to the appropriate number of decimals for the current unit type.
