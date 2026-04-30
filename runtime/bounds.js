@@ -116,6 +116,20 @@ function checkAgainstEnvelope(bounds, envelope, g55) {
             violations.push({ axis: a, direction: "min", overage: envMin - (bMin + off) });
         }
     });
+
+    // Z ceiling is fixed at machine_z = 0 (homed top of travel) regardless of
+    // envelope.zmax — work-Z zero shifts every bit change, so the only stable
+    // ceiling is the invariant table-base top. No Z min check: low-Z in a CAM
+    // file is cut depth, which depends on bit length and would noise-fire on
+    // normal jobs.
+    var bMaxZ = bounds.max.z;
+    if (typeof bMaxZ === "number") {
+        var offZ = (g55 && typeof g55.z === "number") ? g55.z : 0;
+        if (bMaxZ + offZ > 0) {
+            violations.push({ axis: "z", direction: "max", overage: bMaxZ + offZ });
+        }
+    }
+
     return { exceeds: violations.length > 0, violations: violations };
 }
 

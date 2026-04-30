@@ -81,10 +81,10 @@ module.exports = function(container) {
   // Used to flag files whose cutting extents would exceed the machine envelope.
   var softLimits = null;
 
-  self.setSoftLimits = function (envelope, g55x, g55y, units) {
+  self.setSoftLimits = function (envelope, g55x, g55y, g55z, units) {
       softLimits = {
           envelope: envelope,
-          g55: { x: g55x || 0, y: g55y || 0 },
+          g55: { x: g55x || 0, y: g55y || 0, z: g55z || 0 },
           units: units || ''
       };
   }
@@ -116,6 +116,16 @@ module.exports = function(container) {
               violations.push({ axis: a, direction: 'min', overage: envMin - machineMin });
           }
       });
+
+      // Z ceiling is fixed at machine_z = 0 (homed top) regardless of envelope.zmax.
+      // No Z min check — low Z in a CAM file is cut depth and depends on bit length.
+      var bMaxZ = bounds.max.z;
+      if (typeof bMaxZ === 'number') {
+          var machineMaxZ = bMaxZ + g55.z;
+          if (machineMaxZ > 0) {
+              violations.push({ axis: 'z', direction: 'max', overage: machineMaxZ });
+          }
+      }
       if (violations.length) {
           self.gui.showSoftLimitWarning(violations, softLimits.units);
       } else {

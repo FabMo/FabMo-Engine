@@ -104,6 +104,14 @@ function offsets(args, callback) {
                     await config.driver.setManyWrapper(setVA_G2); // syncs FabMo and G2 configs
                 }
                 this.CUR_RUNTIME.emit_gcode("M0");
+                // Notify the dashboard that offsets / machine base changed so consumers
+                // (e.g. job-manager soft-limit badges) can re-evaluate against fresh g55.
+                // Required at call-time to avoid circular load with machine.js.
+                try {
+                    require("../../../machine").machine.emit("change", "offsets");
+                } catch (e) {
+                    log.debug("offsets change emit skipped: " + e.message);
+                }
                 if (callback) {
                     callback(log.debug("Completed offsets setting"));
                 }

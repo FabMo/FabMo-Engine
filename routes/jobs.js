@@ -26,12 +26,16 @@ function analyzeJobBounds(job) {
             var g55 = {
                 x: config.driver.get("g55x") || 0,
                 y: config.driver.get("g55y") || 0,
+                z: config.driver.get("g55z") || 0,
             };
             var check = bounds.checkAgainstEnvelope(result.bounds, envelope, g55);
             db.Job.getById(job._id, function (err, fresh) {
                 if (err || !fresh) return;
+                // Only persist work-coord bounds; the dashboard re-evaluates
+                // violations live against current envelope + g55 so the badge
+                // stays correct after VA/ZT/Z* offset changes (see job_manager.js
+                // and runtime/opensbp/commands/location.js).
                 fresh.bounds = result.bounds;
-                fresh.softLimitCheck = check;
                 fresh.save(function () {});
                 log.info(
                     "Bounds for job " + job._id + ": exceeds=" + check.exceeds +
