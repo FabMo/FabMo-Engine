@@ -48,6 +48,24 @@ MachineConfig.prototype.init = function (machine, callback) {
                     calibrated: false,
                 };
             }
+            if (this._cache && !("outputs" in this._cache)) {
+                // Outputs 1, 2, 4 have hardcoded labels and runtime ignores
+                // their policy. The other rows are configurable in the
+                // configuration app's Outputs tab.
+                var hardcoded = { "1": "Spindle 1", "2": "Spindle 2", "4": "Arm Motion" };
+                this._cache.outputs = {};
+                for (var i = 1; i <= 12; i++) {
+                    this._cache.outputs[String(i)] = {
+                        label: hardcoded[i] || ("Output " + i),
+                        // Output 4 (Arm Motion) goes on at file start; everything
+                        // else stays manual. All outputs auto-off at file end.
+                        on_mode: i === 4 ? "file_start" : "command",
+                        off_mode: "file_end",
+                        on_seconds: 0,
+                        off_seconds: 0,
+                    };
+                }
+            }
             if (typeof callback === "function") callback(err);
         }.bind(this)
     );

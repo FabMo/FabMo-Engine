@@ -32,6 +32,20 @@
 		"zmin" : -2,
 		"zmax" : 6
 	},
+	"outputs" : {
+		"1":  { "label": "Spindle 1",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"2":  { "label": "Spindle 2",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"3":  { "label": "Output 3",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"4":  { "label": "Arm Motion",  "on_mode": "file_start", "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"5":  { "label": "Output 5",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"6":  { "label": "Output 6",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"7":  { "label": "Output 7",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"8":  { "label": "Output 8",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"9":  { "label": "Output 9",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"10": { "label": "Output 10",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"11": { "label": "Output 11",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 },
+		"12": { "label": "Output 12",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0 }
+	},
 	"cameraCalibration" : {
 		"corners": {
 			"tl": { "x": 0, "y": 0 },

@@ -161,6 +161,17 @@ function update() {
         data.engine.profile = 'Default';
       }
       profilesList.val(data.engine.profile);
+
+      // Outputs tab: sync seconds-input visibility against the just-populated
+      // mode dropdowns. Done here (not on a timer) so initial render and any
+      // external config change refresh visibility correctly.
+      if (typeof syncSecondsVisibility === 'function') {
+        for (var nOut = 1; nOut <= 12; nOut++) {
+          if (OUTPUT_HARDCODED[nOut]) continue;
+          syncSecondsVisibility(nOut, 'on');
+          syncSecondsVisibility(nOut, 'off');
+        }
+      }
     }
   });
 }
@@ -391,6 +402,152 @@ $('#firmware-input').change(function(evt) {
 });
 
 
+// Outputs whose behavior is hardcoded — labels are fixed and modes are not
+// user-configurable. The runtime ignores their saved policy entirely (see
+// runtime/output_policy.js HARDCODED).
+var OUTPUT_HARDCODED = { 1: "Spindle 1", 2: "Spindle 2", 4: "Arm Motion" };
+
+var ON_MODES = [
+    { value: "file_start", label: "File Start" },
+    { value: "command", label: "Command" },
+    { value: "timed_after_file_end", label: "Timed after file end" }
+];
+var OFF_MODES = [
+    { value: "file_end", label: "File End" },
+    { value: "command", label: "Command" },
+    { value: "timed_after_file_end", label: "Timed after file end" }
+];
+
+function buildOutputFieldset(n) {
+    var isLocked = !!OUTPUT_HARDCODED[n];
+
+    // Legend: "Output N" + label. For locked outputs the label is fixed text
+    // with a "(locked)" tag; for configurable ones it's an inline input the
+    // user can rename.
+    var legendInner;
+    if (isLocked) {
+        legendInner =
+            'Output ' + n +
+            ' <span style="font-weight:normal;">' + OUTPUT_HARDCODED[n] + '</span>' +
+            ' <span style="color:#999; font-size:0.85em; font-weight:normal;">(locked)</span>' +
+            '<input type="hidden" id="machine-outputs-' + n + '-label" value="' + OUTPUT_HARDCODED[n] + '">';
+    } else {
+        legendInner =
+            'Output ' + n +
+            ' <input type="text" id="machine-outputs-' + n + '-label" class="machine-output"' +
+            ' style="display:inline-block; width:auto; margin:0 0 0 6px; height:1.8em; font-weight:normal;">';
+    }
+
+    function buildModeBlock(side, label, modes) {
+        var opts = modes.map(function (m) {
+            return '<option value="' + m.value + '">' + m.label + '</option>';
+        }).join('');
+        var lockedAttr = isLocked ? ' disabled' : '';
+        var selectCls = isLocked ? '' : ' class="machine-output output-mode" data-side="' + side + '" data-output="' + n + '"';
+        var secondsCls = isLocked ? '' : ' class="machine-output output-seconds"';
+        return [
+            '<div class="large-4 columns">',
+              '<div class="row collapse">',
+                '<label>' + label,
+                  '<select id="machine-outputs-' + n + '-' + side + '_mode"' + selectCls + lockedAttr + '>' + opts + '</select>',
+                '</label>',
+                '<input type="number" id="machine-outputs-' + n + '-' + side + '_seconds" min="0" step="0.1"' + secondsCls + lockedAttr +
+                  ' placeholder="seconds" style="display:none; margin-top:4px;">',
+              '</div>',
+            '</div>'
+        ].join('');
+    }
+
+    var toggleBlock = [
+        '<div class="large-4 columns">',
+          '<div class="row collapse">',
+            '<label>Test',
+              '<button type="button" class="button output-toggle" data-output="' + n + '"',
+                ' id="output-toggle-' + n + '"',
+                // Match the adjacent <select> dimensions so the row aligns:
+                ' style="width:100%; height:2.3125rem; padding:0; margin:0;">OFF</button>',
+            '</label>',
+          '</div>',
+        '</div>'
+    ].join('');
+
+    return [
+        '<div class="row">',
+          '<fieldset>',
+            '<legend>' + legendInner + '</legend>',
+            buildModeBlock('on', 'ON Condition', ON_MODES),
+            buildModeBlock('off', 'OFF Condition', OFF_MODES),
+            toggleBlock,
+          '</fieldset>',
+        '</div>'
+    ].join('');
+}
+
+// Toggle the seconds input visibility for a given (output, side) pair based
+// on the mode dropdown value. Called on init (to set initial visibility from
+// loaded config) and on every dropdown change.
+function syncSecondsVisibility(n, side) {
+    var mode = $('#machine-outputs-' + n + '-' + side + '_mode').val();
+    var $secs = $('#machine-outputs-' + n + '-' + side + '_seconds');
+    $secs.css('display', mode === 'timed_after_file_end' ? '' : 'none');
+}
+
+function setupOutputsTab() {
+    var $list = $('#outputs-list');
+    if (!$list.length) return;
+    var html = '';
+    for (var n = 1; n <= 12; n++) html += buildOutputFieldset(n);
+    $list.html(html);
+
+    // Generic save: any change in a row writes back to machine.outputs.<n>.<key>.
+    // setConfig already splits the id by "-" and rebuilds the nested object,
+    // so machine-outputs-3-on_mode → { machine: { outputs: { 3: { on_mode: ... } } } }.
+    $list.on('change', '.machine-output', function () {
+        setConfig(this.id, this.value);
+    });
+
+    // Show/hide seconds inputs whenever a mode changes.
+    $list.on('change', '.output-mode', function () {
+        var n = $(this).data('output');
+        var side = $(this).data('side');
+        syncSecondsVisibility(n, side);
+    });
+
+    // Toggle button: send SO,N,<opposite-of-current-state>. The SO command is
+    // always permitted regardless of policy; the firmware will reflect the
+    // new state in the next status report and updateOutputStates repaints.
+    $list.on('click', '.output-toggle', function () {
+        var n = $(this).data('output');
+        var $btn = $(this);
+        var nextState = $btn.hasClass('output-on') ? 0 : 1;
+        fabmo.runSBP('SO,' + n + ',' + nextState + '\n');
+    });
+
+    // Initial visibility is set inside update()'s getConfig callback
+    // (see syncSecondsVisibility loop near the end of update()) once the
+    // dropdown values have been populated from the loaded config.
+}
+
+// Live state — drives each output's toggle button label and color from
+// status.out1..out12 (piped through the engine status report; see machine.js
+// status init). Button text shows the *current* state; clicking it toggles
+// to the opposite (handled in setupOutputsTab).
+function updateOutputStates(status) {
+    if (!status) return;
+    for (var n = 1; n <= 12; n++) {
+        var v = status['out' + n];
+        var $btn = $('#output-toggle-' + n);
+        if (!$btn.length) continue;
+        if (v === 1 || v === true) {
+            $btn.text('ON').addClass('output-on')
+                .css({ background: '#4caf50', color: '#fff' });
+        } else {
+            $btn.text('OFF').removeClass('output-on')
+                .css({ background: '#888', color: '#fff' });
+        }
+    }
+}
+
 $(document).ready(function() {
     $(document).foundation();
 
@@ -402,10 +559,13 @@ $(document).ready(function() {
     registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
     registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');
 
+    setupOutputsTab();
+
     fabmo.on('status', function(status) {
       update();
+      updateOutputStates(status);
     });
-    
+
     // Trigger a status update to get the ball rolling
     fabmo.requestStatus();
 
