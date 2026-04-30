@@ -744,7 +744,11 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
     if (envelope[axisLower + "min"] === undefined || envelope[axisLower + "max"] === undefined) return Infinity;
     // Envelope is in table (G53) coords; convert to work coords by subtracting g55 offset.
     var workMin = envelope[axisLower + "min"] - offset;
-    var workMax = envelope[axisLower + "max"] - offset;
+    // Z ceiling is fixed at machine_z = 0 (homed top of travel) regardless of
+    // envelope.zmax — work-Z zero shifts every bit change, so the only stable
+    // ceiling is the invariant table-base top.
+    var zmaxTable = (axisLower === "z") ? 0 : envelope[axisLower + "max"];
+    var workMax = zmaxTable - offset;
 
     var margin;
     if (direction < 0) {

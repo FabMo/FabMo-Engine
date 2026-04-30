@@ -779,6 +779,7 @@ function nowPreviewJob() {
       cached_Config.machine.envelope,
       cached_Config.driver.g55x,
       cached_Config.driver.g55y,
+      cached_Config.driver.g55z,
       cached_Config.machine.units
     );
 

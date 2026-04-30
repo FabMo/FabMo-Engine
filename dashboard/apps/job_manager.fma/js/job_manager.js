@@ -294,13 +294,15 @@ function setFirstCard(job) {
   $('.edit').data('id', firstId);
 
   // Pre-flight soft-limit warning. analyzeJobBounds runs server-side after
-  // submit and tags `softLimitCheck.exceeds` on out-of-envelope jobs; the
-  // play button gets a red exclamation badge so the user can see the
-  // problem before opening the previewer.
-  if (job && job.softLimitCheck && job.softLimitCheck.exceeds) {
+  // submit and saves `bounds` (work-coord extents) on the job; we evaluate
+  // violations live here against the current envelope + g55 so the badge
+  // stays correct after the user re-zeroes (VA/ZT/Z* — see location.js,
+  // which fires `change`/`offsets` to retrigger this render path).
+  var check = evaluateSoftLimits(job && job.bounds, configData);
+  if (check && check.exceeds) {
     var $play = $('.play-button').first();
     $play.addClass('exceeds-limits');
-    var msg = (job.softLimitCheck.violations || [])
+    var msg = check.violations
       .map(function (v) { return v.axis.toUpperCase() + ' ' + v.direction + ' by ' + v.overage.toFixed(2); })
       .join(', ');
     // Real DOM badge (instead of ::after) so it can carry its own tooltip —
@@ -310,6 +312,42 @@ function setFirstCard(job) {
     $badge.find('.exceeds-limits-tooltip').text('Job exceeds soft limits: ' + msg);
     $play.append($badge);
   }
+}
+
+// Mirror of runtime/bounds.js:checkAgainstEnvelope. X/Y use envelope min/max;
+// Z ceiling is hardcoded at machine_z=0 (homed top of travel) and there's no
+// Z min check (low-Z is cut depth, depends on bit length). Returns
+// { exceeds, violations } or null if inputs are missing.
+function evaluateSoftLimits(jobBounds, cfg) {
+  if (!jobBounds || !cfg || !cfg.machine || !cfg.driver) return null;
+  var envelope = cfg.machine.envelope;
+  if (!envelope) return null;
+  var driver = cfg.driver;
+  var g55 = {
+    x: typeof driver.g55x === 'number' ? driver.g55x : 0,
+    y: typeof driver.g55y === 'number' ? driver.g55y : 0,
+    z: typeof driver.g55z === 'number' ? driver.g55z : 0
+  };
+  var violations = [];
+  ['x', 'y'].forEach(function (a) {
+    var bMin = jobBounds.min && jobBounds.min[a];
+    var bMax = jobBounds.max && jobBounds.max[a];
+    if (typeof bMin !== 'number' || typeof bMax !== 'number') return;
+    var off = g55[a];
+    var envMin = envelope[a + 'min'];
+    var envMax = envelope[a + 'max'];
+    if (typeof envMax === 'number' && bMax + off > envMax) {
+      violations.push({ axis: a, direction: 'max', overage: bMax + off - envMax });
+    }
+    if (typeof envMin === 'number' && bMin + off < envMin) {
+      violations.push({ axis: a, direction: 'min', overage: envMin - (bMin + off) });
+    }
+  });
+  var bMaxZ = jobBounds.max && jobBounds.max.z;
+  if (typeof bMaxZ === 'number' && bMaxZ + g55.z > 0) {
+    violations.push({ axis: 'z', direction: 'max', overage: bMaxZ + g55.z });
+  }
+  return { exceeds: violations.length > 0, violations: violations };
 }
 
 
@@ -1037,13 +1075,20 @@ var flattenObject = function(ob) {
   return toReturn;
 };
 
+var configFirstLoaded = false;
 function update() {
   fabmo.getConfig(function(err, data) {
     var ckTransform = false;  // for TRANSFORM state test below
     if(err) {
       console.error(err);
     } else {
+      var wasFirstLoad = !configFirstLoaded;
       configData = data;
+      configFirstLoaded = true;
+      // Soft-limit badges (setFirstCard) need configData to evaluate live.
+      // initialLoad runs before this callback resolves on page load, so the
+      // first render has no badge — repaint the queue once configData lands.
+      if (wasFirstLoad) updateQueue();
         ['opensbp'].forEach(function(branchname) {
                 branch = flattenObject(data[branchname]);
           for(key in branch) {
@@ -1149,10 +1194,20 @@ $(document).ready(function() {
     });
 
     // Server fires `change`/`jobs` after async work mutates a job record
-    // (e.g. analyzeJobBounds saving softLimitCheck post-submit). Without
-    // this listener the queue card never picks up the soft-limit badge.
+    // (e.g. analyzeJobBounds saving bounds post-submit). Without this
+    // listener the queue card never picks up the soft-limit badge.
+    // `offsets` fires when VA/ZT/Z* commands change g55 or machine base
+    // coords — we refresh configData first so live-eval sees fresh g55,
+    // then re-render so the badge reflects the new ceiling.
     fabmo.on('change', function (topic) {
-        if (topic === 'jobs') updateQueue();
+        if (topic === 'jobs') {
+            updateQueue();
+        } else if (topic === 'offsets') {
+            fabmo.getConfig(function (err, data) {
+                if (!err) configData = data;
+                updateQueue();
+            });
+        }
     });
 
     // The queue will update when the status report comes in
