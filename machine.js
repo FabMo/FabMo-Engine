@@ -30,6 +30,7 @@ var db = require("./db");
 var log = require("./log").logger("machine");
 var config = require("./config");
 var updater = require("./updater");
+var outputPolicy = require("./runtime/output_policy");
 var u = require("./util");
 var async = require("async");
 var canQuit = false;
@@ -1454,6 +1455,7 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                             // ... for a few cases such as coming out of probing on Stop input]
                             log.debug("... otherwise send final lines from machine");
                             this.driver.command({ out4: 0 }); // Permissive relay
+                            outputPolicy.onFileEnd(this); // Configurable per-output file-end policy (skips 1/2/4)
                             this.driver.command({ gc: "m30" }); // Generate End
                             log.debug("call MPO from machine");
                             this.driver._primed = false; // * important to clear for unusual endings
@@ -1534,6 +1536,15 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                 }
                 break;
             case "running":
+                // Detect idle->running specifically — paused->running and other
+                // transitions back into running shouldn't re-fire ON policies.
+                // status.state is still the previous state at this point;
+                // it gets updated to newstate after the switch (line ~1553).
+                if (this.status.state === "idle") {
+                    outputPolicy.onFileStart(this);
+                }
+                this.status.resumeFlag = false;
+                break;
             case "limit":
             case "lock":
             case "interlock":
