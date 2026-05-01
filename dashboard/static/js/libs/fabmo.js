@@ -1044,6 +1044,14 @@
         this._call("runSBP", text, callback);
     };
 
+    FabMoDashboard.prototype.runSBPDebug = function (text, callback) {
+        this._call("runSBPDebug", text, callback);
+    };
+
+    FabMoDashboard.prototype.setSimInput = function (inp, state, callback) {
+        this._call("setSimInput", { inp: inp, state: state }, callback);
+    };
+
     FabMoDashboard.prototype.connectToWifi = function (ssid, key, callback) {
         this._call("connectToWifi", { ssid: ssid, key: key }, callback);
     };

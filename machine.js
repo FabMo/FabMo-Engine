@@ -1113,7 +1113,7 @@ Machine.prototype.fire = function (force) {
         case "runtimeCode":
             var name = action.payload.name;
             var code = action.payload.code;
-            this._executeRuntimeCode(name, code);
+            this._executeRuntimeCode(name, code, action.payload.options);
             break;
 
         case "runFile":
@@ -1357,6 +1357,14 @@ Machine.prototype._runFile = function (filename) {
     var runtime = this.gcode_runtime;
     if (ext === ".sbp") {
         runtime = this.sbp_runtime;
+    }
+
+    // Submitted jobs always run in normal (non-debug) mode — clear any
+    // leftover sim flag from a previous /code debug run.
+    if (this.sbp_runtime && "simulation_mode" in this.sbp_runtime) {
+        this.sbp_runtime.simulation_mode = false;
+        this.status.simulation_mode = false;
+        this.status.simulated_inputs = {};
     }
 
     // Set the appropriate runtime
@@ -1753,8 +1761,10 @@ Machine.prototype.runNextJob = function (callback) {
 // runtimeName - the name of a valid runtime
 //        code - can be anything, it is runtime specific.
 //               example: if you pass gcode to the gcode runtime, it runs g-code.
-Machine.prototype.executeRuntimeCode = function (runtimeName, code) {
+//     options - optional. { debug: true } enables input simulation on the SBP runtime.
+Machine.prototype.executeRuntimeCode = function (runtimeName, code, options) {
     interlockBypass = false;
+    options = options || {};
     runtime = this.getRuntime(runtimeName);
     if (runtime === undefined) {
         log.debug("Rejecting attempt to execute runtime code with no defined runtime.");
@@ -1764,7 +1774,7 @@ Machine.prototype.executeRuntimeCode = function (runtimeName, code) {
     var needsAuth = runtime.needsAuth(code);
     if (needsAuth) {
         if (this.status.auth) {
-            return this._executeRuntimeCode(runtimeName, code);
+            return this._executeRuntimeCode(runtimeName, code, options);
         } else {
             this.arm(
                 {
@@ -1772,20 +1782,22 @@ Machine.prototype.executeRuntimeCode = function (runtimeName, code) {
                     payload: {
                         name: runtimeName,
                         code: code,
+                        options: options,
                     },
                 },
                 config.machine.get("auth_timeout")
             );
         }
     } else {
-        this._executeRuntimeCode(runtimeName, code);
+        this._executeRuntimeCode(runtimeName, code, options);
     }
 };
 
 // Just run this SBP code immediately
-// string - the code to run
-Machine.prototype.sbp = function (string) {
-    this.executeRuntimeCode("sbp", string);
+// string  - the code to run
+// options - optional. { debug: true } runs in input-simulation mode.
+Machine.prototype.sbp = function (string, options) {
+    this.executeRuntimeCode("sbp", string, options);
 };
 
 // Just run this gcode immediately
@@ -1970,9 +1982,20 @@ Machine.prototype.watchConfig = function () {
  * For documentation of these functions, see their corresponding "public" methods above.
  */
 
-Machine.prototype._executeRuntimeCode = function (runtimeName, code) {
+Machine.prototype._executeRuntimeCode = function (runtimeName, code, options) {
+    options = options || {};
     runtime = this.getRuntime(runtimeName);
     if (runtime) {
+        var applyOptions = function (rt) {
+            if (rt && typeof rt === "object" && "simulation_mode" in rt) {
+                rt.simulation_mode = !!options.debug;
+                if (this.status) {
+                    this.status.simulation_mode = rt.simulation_mode;
+                    this.status.simulated_inputs = rt.simulated_inputs || {};
+                }
+            }
+        }.bind(this);
+
         if (this.current_runtime == this.idle_runtime) {
             this.setRuntime(
                 runtime,
@@ -1980,11 +2003,13 @@ Machine.prototype._executeRuntimeCode = function (runtimeName, code) {
                     if (err) {
                         log.error(err);
                     } else {
+                        applyOptions(runtime);
                         runtime.executeCode(code);
                     }
                 }.bind(this)
             );
         } else {
+            applyOptions(this.current_runtime);
             this.current_runtime.executeCode(code);
         }
     }

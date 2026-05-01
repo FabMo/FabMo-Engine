@@ -34,16 +34,15 @@ function validateProbeArgs(cmdName, args, expectedCount) {
 function probe(runtime, opts) {
     var name = "prbin";
     var input = opts.inp;
-    var input_action = config.machine.get("di" + input + "ac");
     var cmd1 = {};
     cmd1[name] = opts.inp;
+    var word;
 
     // Determine tolerance for "already at target" check based on unit system
     var tolerance = runtime.units === "mm" ? 0.125 : 0.005;
 
     // Check if we're already at (or within tolerance of) the probe target location
     var allAtTarget = true;
-    var word;
     for (word in opts.dist) {
         var currentPos = runtime[axisPosMap[word]] || 0.0;
         var targetPos = opts.dist[word];
@@ -57,6 +56,42 @@ function probe(runtime, opts) {
               (runtime.units === "mm" ? "mm" : "in") + ") so probe has no distance to travel";
     }
 
+    // Simulation/debug mode: emit a normal G1 to target instead of G38.3.
+    // The runtime watches for a rising-edge sim input on opts.inp; if it fires
+    // mid-move it captures position, feedholds, flushes the queue, and emits a
+    // corrective G1 back to the captured trip position — mimicking a real probe.
+    // If no trip happens, the move runs to completion (treated as a "miss",
+    // equivalent to a real G38.3 no-fault-on-miss probe that didn't trip).
+    if (runtime.simulation_mode) {
+        // Mirror real-probe behavior: error if the sim input is already active.
+        if (runtime.simulated_inputs && runtime.simulated_inputs[opts.inp]) {
+            throw "Input#" + opts.inp + " is already active (ON) so cannot be used for Probing request ";
+        }
+        var simCmd = ["G1"];
+        var simAxes = [];
+        for (word in opts.dist) {
+            simCmd.push(word + opts.dist[word].toFixed(5));
+            simAxes.push(word);
+        }
+        var simFeed = opts.feed * 60.0;
+        simCmd.push("F" + simFeed.toFixed(3));
+        log.info("SIM probe: emitting " + simCmd.join(" ") + " (input " + opts.inp + ")");
+        runtime.sim_probe = {
+            input: opts.inp,
+            feed: simFeed,
+            axes: simAxes,
+            phase: "probing",
+            trip_pos: null,
+        };
+        runtime.emit_gcode(simCmd.join(" "));
+        // probingPending=true defers the next stack-breaking command until STAT_STOP
+        // fires after the probe move (or after the corrective backup move on trip).
+        runtime.probingPending = true;
+        runtime.prime();
+        return;
+    }
+
+    var input_action = config.machine.get("di" + input + "ac");
     // Determine if requested probe input already has a defined action then, except for "limit", generate an error and terminate file
     switch (input_action) {
         case "stop":

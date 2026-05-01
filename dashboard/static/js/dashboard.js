@@ -884,6 +884,39 @@ define(function (require) {
         );
 
         this._registerHandler(
+            "runSBPDebug",
+            function (text, callback) {
+                this.engine.sbpDebug(
+                    text,
+                    function (err, result) {
+                        if (err) {
+                            callback(err);
+                        } else {
+                            callback(null, result);
+                        }
+                    }.bind(this)
+                );
+            }.bind(this)
+        );
+
+        this._registerHandler(
+            "setSimInput",
+            function (data, callback) {
+                this.engine.setSimInput(
+                    data.inp,
+                    data.state,
+                    function (err, result) {
+                        if (err) {
+                            callback(err);
+                        } else {
+                            callback(null, result);
+                        }
+                    }.bind(this)
+                );
+            }.bind(this)
+        );
+
+        this._registerHandler(
             "getUpdaterConfig",
             function (data, callback) {
                 this.engine.getUpdaterConfig(
@@ -1437,7 +1470,52 @@ define(function (require) {
             this._fireEvent("job_start", null);
         }
         this.status = status;
+        this._renderSimInputs(status);
         this._fireEvent("status", status);
+    };
+
+    // Render the debug-mode input trigger row in the footer when the SBP runtime
+    // is running in simulation mode. Each button toggles a simulated input value.
+    Dashboard.prototype._renderSimInputs = function (status) {
+        var $row = $("#sim-input-row");
+        if (!$row.length) return;
+        if (!status || !status.simulation_mode) {
+            $row.hide();
+            return;
+        }
+        var $container = $row.find(".sim-inputs");
+        if (!$container.children().length) {
+            for (var i = 1; i <= 12; i++) {
+                $('<div class="sim-input-btn" data-inp="' + i + '">' + i + "</div>").appendTo($container);
+            }
+            var self = this;
+            // Momentary buttons: press to set ON, release/leave to set OFF.
+            // Touch events mirror mouse events for tablet use.
+            var setInput = function (inp, state) {
+                self.engine.setSimInput(inp, state, function (err) {
+                    if (err) console.warn("setSimInput failed:", err);
+                });
+            };
+            var press = function (e) {
+                e.preventDefault();
+                setInput(parseInt($(this).attr("data-inp"), 10), true);
+            };
+            var release = function (e) {
+                e.preventDefault();
+                var inp = parseInt($(this).attr("data-inp"), 10);
+                // Only release if currently held (avoids redundant OFF on mouseleave after mouseup)
+                var sim = (self.status && self.status.simulated_inputs) || {};
+                if (sim[inp]) setInput(inp, false);
+            };
+            $container.on("mousedown touchstart", ".sim-input-btn", press);
+            $container.on("mouseup mouseleave touchend touchcancel", ".sim-input-btn", release);
+        }
+        var sim = status.simulated_inputs || {};
+        $container.children().each(function () {
+            var inp = parseInt($(this).attr("data-inp"), 10);
+            $(this).toggleClass("active", !!sim[inp]);
+        });
+        $row.show();
     };
 
     // Brings up the DRO (if separate from the keypad) in the dashboard
