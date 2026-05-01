@@ -469,6 +469,17 @@
         this.runCode("sbp", code, callback);
     };
 
+    // Run SBP code in input-simulation (debug) mode.
+    FabMoAPI.prototype.sbpDebug = function (code, callback) {
+        var data = { cmd: code, runtime: "sbp", debug: true };
+        this._post("/code", data, callback, callback);
+    };
+
+    // Force a simulated input value during a debug-mode run.
+    FabMoAPI.prototype.setSimInput = function (inp, state, callback) {
+        this._post("/code/sim_input", { inp: inp, state: !!state }, callback, callback);
+    };
+
     FabMoAPI.prototype.goto = function (move, callback) {
         this.executeRuntimeCode("manual", { cmd: "goto", move: move });
     };

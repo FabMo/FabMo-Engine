@@ -92,6 +92,13 @@ function SBPRuntime() {
     this.driver = null;
 
     this.inManualMode = false;
+
+    // Input simulation (debug mode) — set by caller before runFile/executeCode
+    this.simulation_mode = false;
+    this.simulated_inputs = {};
+    // sim_probe is null when no probe is active. Otherwise:
+    //   { input, feed, axes, phase: "probing"|"tripping"|"returning", trip_pos }
+    this.sim_probe = null;
 }
 
 util.inherits(SBPRuntime, events.EventEmitter);
@@ -571,16 +578,54 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
 SBPRuntime.prototype.runFile = function (filename) {
     //log.info("####=.runFile");
     this.lastFilename = filename;
-    
+
     // Only set currentFilename if not already set (by machine._runFile)
     if (!this.currentFilename) {
         this.currentFilename = require('path').basename(filename);
     }
-    
+
     log.debug(`[Filename Tracking] runFile currentFilename: ${this.currentFilename}`);
-    
+
     var st = fs.createReadStream(filename);
     this.runStream(st);
+};
+
+// Force a simulated input value while running in debug/simulation mode.
+// IF INPUT(n) and other expression reads of %(51)..%(63) will see the forced
+// value via evaluateSystemVariable. If a sim probe is currently in flight on
+// this input, a rising-edge transition triggers a "probe trip": the in-flight
+// motion is feedheld, the queue is flushed, and a corrective G1 is emitted to
+// the position captured at click time — mimicking a real probe.
+//   inp - input number (1-based)
+//   state - boolean
+SBPRuntime.prototype.setSimulatedInput = function (inp, state) {
+    if (!this.simulation_mode) {
+        log.warn("setSimulatedInput called but runtime is not in simulation_mode");
+        return;
+    }
+    var prev = !!this.simulated_inputs[inp];
+    var next = !!state;
+    this.simulated_inputs[inp] = next;
+    log.info("SIM input " + inp + " = " + (next ? "ON" : "OFF"));
+    if (this.machine) {
+        this.machine.status.simulated_inputs = this.simulated_inputs;
+        this.machine.emit("status", this.machine.status);
+    }
+
+    // Probe trip: rising edge during a probe move on the matching input
+    if (next && !prev && this.sim_probe && this.sim_probe.phase === "probing" && this.sim_probe.input === inp) {
+        this.sim_probe.phase = "tripping";
+        this.sim_probe.trip_pos = {
+            X: this.driver.status.posx,
+            Y: this.driver.status.posy,
+            Z: this.driver.status.posz,
+            A: this.driver.status.posa,
+            B: this.driver.status.posb,
+            C: this.driver.status.posc,
+        };
+        log.info("SIM probe trip on input " + inp + " at " + JSON.stringify(this.sim_probe.trip_pos));
+        this.driver.feedHold();
+    }
 };
 
 // Simulate the provided file, returning the result as g-code string
@@ -930,8 +975,16 @@ SBPRuntime.prototype._run = function () {
                     this.probingPending = false;
                     this.probingActive = false;
                     this.probingHeld = false;
-                    this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
-                    this.prime();
+                    if (this.sim_probe) {
+                        // Sim probe never set prbin; just clear sim state.
+                        // Phase tells us whether this was a "miss" (probing → end of move)
+                        // or a completed trip cycle (returning → end of corrective backup).
+                        log.info("SIM probe cycle complete (phase=" + this.sim_probe.phase + ")");
+                        this.sim_probe = null;
+                    } else {
+                        this.emit_gcode('M100.1("{prbin:0}")'); // turn off probing targets
+                        this.prime();
+                    }
                     log.info("COMPLETED PENDING PROBING =(cleared)============####");
                     this._executeNext();
                     break;
@@ -945,6 +998,29 @@ SBPRuntime.prototype._run = function () {
                 break;
 
             case this.driver.STAT_HOLDING:
+                // Sim probe trip: hijack the hold sequence to flush the in-flight probe move
+                // and emit a corrective G1 back to the trip position. We bypass the normal
+                // "machine state → paused" transition entirely so the file appears to flow
+                // through naturally, like a real probe trip.
+                if (this.sim_probe && this.sim_probe.phase === "tripping") {
+                    var probeRuntime = this;
+                    log.info("SIM probe: STAT_HOLDING — flushing queue, queueing corrective backup");
+                    this.driver.queueFlush(function () {
+                        var simCmd = ["G1"];
+                        for (var i = 0; i < probeRuntime.sim_probe.axes.length; i++) {
+                            var ax = probeRuntime.sim_probe.axes[i];
+                            simCmd.push(ax + probeRuntime.sim_probe.trip_pos[ax].toFixed(5));
+                        }
+                        simCmd.push("F" + probeRuntime.sim_probe.feed.toFixed(3));
+                        log.info("SIM probe: corrective backup: " + simCmd.join(" "));
+                        probeRuntime.sim_probe.phase = "returning";
+                        probeRuntime.emit_gcode(simCmd.join(" "));
+                        probeRuntime.prime();
+                        probeRuntime.driver.resume();
+                    });
+                    return;
+                }
+
                 this.feedhold = true;
 
                 // Handle feedhold during probing - distinguish between active probe and post-completion
@@ -1294,8 +1370,20 @@ SBPRuntime.prototype._end = function (error) {
 SBPRuntime.prototype._finishEnd = function (error_msg) {
     this.resumeAllowed = true;
 
+    // End of run — clear input simulation state so the next run starts clean
+    // and the dashboard's sim input row hides.
+    if (this.simulation_mode) {
+        this.simulation_mode = false;
+        this.simulated_inputs = {};
+        this.sim_probe = null;
+        if (this.machine && this.machine.status) {
+            this.machine.status.simulation_mode = false;
+            this.machine.status.simulated_inputs = {};
+        }
+    }
+
     var self = this;
-    
+
     var doSetState = function () {
         if (self.machine && typeof self.machine.setState === 'function') {
             if (error_msg) {
@@ -2316,6 +2404,11 @@ SBPRuntime.prototype.init = function () {
     this.pending_error = null;
     this.pendingFeedhold = false;
 
+    // Reset input-simulation state on each program start. simulation_mode itself
+    // is preserved — it's set by the caller before runFile()/executeCode().
+    this.simulated_inputs = {};
+    this.sim_probe = null;
+
     if (this.transforms != null && this.transforms.level.apply === true) {
         this.leveler = new Leveler(this.transforms.level.ptDataFile);
     }
@@ -2569,6 +2662,9 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 61:
         case 62: // End of current inputs at #12
         case 63:
+            if (this.simulation_mode) {
+                return this.simulated_inputs[n - 50] ? 1 : 0;
+            }
             return this.machine.status["in" + (n - 50)];
 
         // NOTE: More inputs are imagined here

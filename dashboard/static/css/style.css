@@ -1163,6 +1163,59 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     overflow: hidden; /* Hide buttons when footer is closed */
 }
 
+/* ========== DEBUG MODE — Simulated Input trigger row ========== */
+.sim-input-row {
+    position: absolute;
+    top: 8px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    color: #ffe217;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.sim-input-label {
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.sim-inputs {
+    display: flex;
+    gap: 4px;
+}
+
+.sim-input-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 24px;
+    border-radius: 4px;
+    background: #555;
+    color: #ddd;
+    border: solid #222 1px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+}
+
+.sim-input-btn:hover {
+    background: #666;
+}
+
+.sim-input-btn.active {
+    background: #32B433;
+    color: #ffffff;
+    border-color: #00A600;
+}
+
 /* Container for both button groups - centers them with gap */
 .footer-buttons-container {
     display: flex;

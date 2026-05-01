@@ -44,6 +44,18 @@ require('./cm-fabmo-modes.js');
       }
     }
 
+    function executeDebug() {
+      $("#execute-menu").hide();
+      var text = editor.getValue();
+      overrideDirty = false;
+      if (lang !== 'opensbp') {
+        fabmo.notify('warn', 'Debug mode (input simulation) is only available for OpenSBP files.');
+        return;
+      }
+      fabmo.notify('info', 'Executing OpenSBP program in debug mode.');
+      fabmo.runSBPDebug(text);
+    }
+
     function supports_html5_storage() {
       try {
         return 'localStorage' in window && window['localStorage'] !== null;
@@ -386,6 +398,18 @@ require('./cm-fabmo-modes.js');
           isRunCodeImmediatelyClick = false;
         });
 
+        // "Run in Debug Mode" — same dirty-handling as Run Immediately
+        $(document).on('mousedown', '#submit-debug', function() {
+          isRunCodeImmediatelyClick = true;
+          if (!editor.hasFocus() && !alreadyBlurred) {
+            handleEditorBlur();
+          }
+          alreadyBlurred = false;
+        });
+        $(document).on('mouseup', '#submit-debug', function() {
+          isRunCodeImmediatelyClick = false;
+        });
+
         // And for "Macro Save" button
         $(document).on('mousedown', '#macro-save', function() {
           isMacroSaveClick = true;
@@ -454,6 +478,13 @@ require('./cm-fabmo-modes.js');
       if (!isDirty || overrideDirty) {
         console.log("Run Code Immediately from click");
         execute();
+      }
+      evt.preventDefault();
+    });
+    $("#submit-debug").click(function(evt) {
+      if (!isDirty || overrideDirty) {
+        console.log("Run in Debug Mode from click");
+        executeDebug();
       }
       evt.preventDefault();
     });
