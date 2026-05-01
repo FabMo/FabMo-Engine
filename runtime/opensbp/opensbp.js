@@ -2969,7 +2969,15 @@ SBPRuntime.prototype.pause = function () {
         this.machine.driver.status.stat == this.machine.driver.STAT_END ||
         this.machine.driver.status.stat == this.machine.driver.STAT_STOP
     ) {
+        // G2 is already stopped — there's no motion to feedhold against. Defer
+        // a feedhold for the next motion command (pendingFeedhold), but ALSO halt
+        // the runtime loop now: a no-motion polling loop (e.g. `IF INPUT(n) GOTO ...`)
+        // would otherwise spin forever, since pendingFeedhold only fires inside the
+        // STAT_RUNNING handler and STAT_RUNNING never arrives without motion.
         this.pendingFeedhold = true;
+        this.feedhold = true;
+        this.machine.status.inFeedHold = true;
+        this.machine.setState(this, "paused");
     } else {
         //Send feedhold to driver
         this.machine.driver.feedHold();
