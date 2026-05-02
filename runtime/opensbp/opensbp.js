@@ -368,6 +368,14 @@ SBPRuntime.prototype.runStream = function (text_stream) {
     this._endCalled = false; // Reset for new run so errors before _run() aren't suppressed
     //log.info("####=.runStream");
     try {
+        // Tear down any prior parser/input stream still bound to this runtime.
+        // Without this, pending `data` events from an interrupted prior parse
+        // can fire AFTER we reset this.program=[] and push leaked entries into
+        // the new program — yielding bogus duplicate-label errors. The data
+        // handler captures `this`, not `this.program`, so the leak follows
+        // whatever this.program currently points at.
+        this._destroyActiveParse();
+
         // Initialize the program
         this.pc = 0;
         this.program = [];
@@ -375,6 +383,8 @@ SBPRuntime.prototype.runStream = function (text_stream) {
         // the entire body of data before we can continue processing the file.
         // That's why the business end of this function occurs in the 'end' handler
         var st = parser.parseStream(text_stream);
+        this._activeInputStream = text_stream;
+        this._activeParser = st;
 
         // The stream produced by parser.parseStream produces fully parsed program lines,
         // which can just be added to the program as they come in.
@@ -390,6 +400,12 @@ SBPRuntime.prototype.runStream = function (text_stream) {
             "end",
             function () {
                 try {
+                    // Clear active-parse references — this parser is done and
+                    // any further events are spurious.
+                    if (this._activeParser === st) {
+                        this._activeParser = null;
+                        this._activeInputStream = null;
+                    }
                     log.tock("Parse file");
 
                     // The machine status `nb_lines` indicates the total number of lines in the currently running file
@@ -416,6 +432,11 @@ SBPRuntime.prototype.runStream = function (text_stream) {
                     // This step unfortunately requires the whole file
                     this._analyzeLabels();
                     log.tock("Labels analyzed...");
+                    var labelCount = Object.keys(this.label_index || {}).length;
+                    log.info("[macro-trace] LOADED depth=" + this.file_stack.length +
+                             "  filename=" + this.currentFilename +
+                             "  program.length=" + this.program.length +
+                             "  labels=" + labelCount);
 
                     // Check all the GOTO/GOSUBs against the label table
                     this._analyzeGOTOs();
@@ -570,6 +591,60 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
         log.error(error);
         callback(error);
     }
+};
+
+// Tear down any in-flight parser pipeline bound to this runtime. After an
+// abnormal end (STOP/motor-fault/driver-disconnect), pending `data` events
+// from the prior parse can still fire AFTER we reset this.program — pushing
+// leaked entries into the new array and yielding spurious duplicate-label
+// errors. The runStream `data` handler captures `this` (not this.program),
+// so the leak target is whatever this.program currently points at.
+SBPRuntime.prototype._destroyActiveParse = function () {
+    if (this._activeParser) {
+        try { this._activeParser.removeAllListeners("data"); } catch (e) { /* ignore */ }
+        try { this._activeParser.removeAllListeners("end"); } catch (e) { /* ignore */ }
+        try { this._activeParser.destroy(); } catch (e) { /* ignore */ }
+        this._activeParser = null;
+        log.info("[macro-trace] destroyed in-flight parser stream");
+    }
+    if (this._activeInputStream) {
+        try { this._activeInputStream.destroy(); } catch (e) { /* ignore */ }
+        this._activeInputStream = null;
+    }
+};
+
+// Defensive reset for the singleton runtime at the top of a new top-level job.
+// A prior job that ended abnormally (E-stop, motor fault, driver disconnect)
+// can leave file_stack frames, label_index, pc, etc. populated. The next run
+// would then POP into a stale frame and contaminate this.program. Logs what
+// it found so we can confirm if/when this guard is masking a real leak.
+SBPRuntime.prototype._resetForTopLevelRun = function () {
+    // Kill any leaked parser stream first — that's the bug mechanism behind
+    // the duplicate-label crash; state cleanup alone doesn't address it.
+    this._destroyActiveParse();
+    var stale = [];
+    if (this.file_stack && this.file_stack.length) stale.push("file_stack[" + this.file_stack.length + "]");
+    if (this.stack && this.stack.length) stale.push("stack[" + this.stack.length + "]");
+    if (this.program && this.program.length) stale.push("program[" + this.program.length + "]");
+    if (this.label_index && Object.keys(this.label_index).length) stale.push("label_index[" + Object.keys(this.label_index).length + "]");
+    if (this.pc) stale.push("pc=" + this.pc);
+    if (this.currentFilename) stale.push("currentFilename=" + this.currentFilename);
+    if (stale.length) {
+        log.warn("[macro-trace] FRESH-RUN found stale state: " + stale.join(", "));
+    } else {
+        log.info("[macro-trace] FRESH-RUN clean state");
+    }
+    this.file_stack = [];
+    this.stack = [];
+    this.program = [];
+    this.label_index = {};
+    this.pc = 0;
+    this.currentFilename = null;
+    this.paused = false;
+    this.feedhold = false;
+    this.resumeAllowed = true;
+    this.end_message = undefined;
+    this.quit_pending = false;
 };
 
 // Run a file on disk.
@@ -2495,15 +2570,65 @@ SBPRuntime.prototype._analyzeLabels = function () {
             switch (line.type) {
                 case "label":
                     if (line.value in this.label_index) {
-                        // Report ACTUAL line numbers (not +1)
                         const firstLine = this.label_index[line.value] + 1;
                         const duplicateLine = i + 1;
+                        this._dumpDuplicateLabelDiagnostics(line.value, this.label_index[line.value], i);
                         throw new Error(`@line-${firstLine} and @line-${duplicateLine}: Duplicate labels "${line.value}"`);
                     }
                     this.label_index[line.value] = i;
                     break;
             }
         }
+    }
+};
+
+// Diagnostic dump fired only when _analyzeLabels detects a duplicate.
+// Logs runtime context, file_stack, every label in this.program, and the entries
+// surrounding both occurrences — enough to reconstruct what this.program actually
+// contains when the duplicate fires.
+SBPRuntime.prototype._dumpDuplicateLabelDiagnostics = function (label, firstIdx, secondIdx) {
+    try {
+        var entryBrief = function (entry) {
+            if (!entry) return "<null>";
+            var t = entry.type || "?";
+            if (t === "label") return "label:" + entry.value;
+            if (t === "goto" || t === "gosub") return t + ":" + entry.label;
+            if (t === "custom") return "custom:CN" + entry.index;
+            if (t === "cmd") return "cmd:" + entry.cmd + (entry.args && entry.args.length ? "(" + entry.args.length + ")" : "");
+            if (t === "gcode") return "gcode:" + (entry.gcode || "").slice(0, 30);
+            return t;
+        };
+        log.error("=== DUPLICATE LABEL DIAGNOSTICS ===");
+        log.error("label='" + label + "'  firstIdx=" + firstIdx + "  secondIdx=" + secondIdx +
+                  "  gap=" + (secondIdx - firstIdx));
+        log.error("currentFilename=" + this.currentFilename);
+        log.error("program.length=" + this.program.length);
+        log.error("file_stack depth=" + this.file_stack.length);
+        for (var f = 0; f < this.file_stack.length; f++) {
+            var fr = this.file_stack[f];
+            log.error("  frame[" + f + "] filename=" + fr.filename +
+                      "  program.length=" + (fr.program ? fr.program.length : "<none>"));
+        }
+        var allLabels = [];
+        for (var j = 0; j < this.program.length; j++) {
+            var e = this.program[j];
+            if (e && e.type === "label") allLabels.push(j + ":" + e.value);
+        }
+        log.error("all labels in this.program (" + allLabels.length + "): " + allLabels.join(", "));
+        var dumpRange = function (centerIdx, label) {
+            var lo = Math.max(0, centerIdx - 8);
+            var hi = Math.min(this.program.length, centerIdx + 9);
+            log.error("--- entries around " + label + " (idx " + centerIdx + ") ---");
+            for (var k = lo; k < hi; k++) {
+                var marker = k === centerIdx ? " >>> " : "     ";
+                log.error(marker + k + "  " + entryBrief(this.program[k]));
+            }
+        }.bind(this);
+        dumpRange(firstIdx, "first");
+        dumpRange(secondIdx, "second");
+        log.error("=== END DUPLICATE LABEL DIAGNOSTICS ===");
+    } catch (dumpErr) {
+        log.error("Failed to dump duplicate-label diagnostics: " + dumpErr);
     }
 };
 
@@ -2847,11 +2972,17 @@ SBPRuntime.prototype._pushFileStack = function () {
     frame.label_index = this.label_index;
     frame.filename = this.currentFilename;  // filename tracking for reporting
     this.file_stack.push(frame);
+    log.info("[macro-trace] PUSH depth=" + this.file_stack.length +
+             "  saved filename=" + frame.filename +
+             "  saved program.length=" + (frame.program ? frame.program.length : 0) +
+             "  saved pc=" + frame.pc);
 };
 
 // Retrieve the execution frame on top of this.file_stack and restore the program context from it
 // The program context here means things like which coordinate system, speeds, the current PC, etc.
 SBPRuntime.prototype._popFileStack = function () {
+    var leavingFilename = this.currentFilename;
+    var leavingLength = this.program ? this.program.length : 0;
     var frame = this.file_stack.pop();
     this.movespeed_xy = frame.movespeed_xy;
     this.movespeed_z = frame.movespeed_z;
@@ -2863,6 +2994,10 @@ SBPRuntime.prototype._popFileStack = function () {
     this.label_index = frame.label_index;
     this.end_message = frame.end_message;
     this.currentFilename = frame.filename;
+    log.info("[macro-trace] POP  depth=" + this.file_stack.length +
+             "  leaving=" + leavingFilename + " (program.length=" + leavingLength + ")" +
+             "  restored=" + this.currentFilename + " (program.length=" + this.program.length +
+             ", pc=" + this.pc + ")");
 };    
 
 // Emit a g-code into the stream of running codes
