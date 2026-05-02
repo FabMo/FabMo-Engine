@@ -1323,6 +1323,14 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
 
+    // Defensive: clear any stale per-job state on the SBP runtime singleton
+    // before starting a new top-level job. A prior job that ended abnormally
+    // (E-stop, motor fault, driver disconnect) can leave file_stack/program
+    // populated, which would contaminate this run's _analyzeLabels.
+    if (ext === ".sbp" && this.sbp_runtime && typeof this.sbp_runtime._resetForTopLevelRun === "function") {
+        this.sbp_runtime._resetForTopLevelRun();
+    }
+
     // Save pre-run state for restoration after the run
     this._preRunUnits = config.machine.get("units");
     
