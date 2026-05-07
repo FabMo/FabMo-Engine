@@ -1,0 +1,24 @@
+[Unit]
+Description=FabMo IP Address Reporting and AP SSID Update
+After=NetworkManager.service graphical.target
+Wants=NetworkManager.service
+
+[Service]
+Type=simple
+User=root
+Group=pi
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+Environment=HOME=/home/pi
+ExecStart=/usr/bin/python3 /fabmo/files/network_conf_fabmo/ip-reporting.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Ensure service stops cleanly
+TimeoutStopSec=10
+KillMode=mixed
+
+[Install]
+WantedBy=graphical.target
