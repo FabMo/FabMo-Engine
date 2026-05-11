@@ -41,10 +41,10 @@ var RECONNECT_MAX_DELAY = 30000; // 30s max retry delay
 var MAX_RECONNECT_TIME = 300000; // 5 minutes total before giving up
 var RECONNECT_READY_TIMEOUT = 5000; // 5s to wait for SYSTEM READY on each attempt
 
-// Heartbeat constants
-var HEARTBEAT_INTERVAL = 5000; // 5s between heartbeat checks
-var HEARTBEAT_TIMEOUT = 3000; // 3s to wait for heartbeat response
-var HEARTBEAT_FEEDHOLD_TIMEOUT = 15000; // 15s timeout during feedhold — more tolerant
+// Status poll constants
+var STATUS_POLL_INTERVAL = 5000; // 5s between status poll checks
+var STATUS_POLL_TIMEOUT = 3000; // 3s to wait for status poll response
+var STATUS_POLL_FEEDHOLD_TIMEOUT = 15000; // 15s timeout during feedhold — more tolerant
 
 var _promiseCounter = 1;
 var intendedClose = false;
@@ -204,11 +204,11 @@ function G2() {
     this._reconnecting = false;
     this._reconnectTimer = null;
 
-    // Heartbeat state
+    // Status poll state
     this._lastDataReceived = 0;
-    this._heartbeatTimer = null;
-    this._heartbeatTimeout = null;
-    this._heartbeatPending = false;
+    this._statusPollTimer = null;
+    this._statusPollTimeout = null;
+    this._statusPollPending = false;
 }
 
 util.inherits(G2, events.EventEmitter);
@@ -408,7 +408,7 @@ G2.prototype.connect = function (path, callback) {
                     this.command({ clear: null });
                     this.requestStatusReport(
                         function () {
-                            this.startHeartbeat();
+                            this.startStatusPoll();
                             callback(null, this);
                         }.bind(this)
                     );
@@ -446,7 +446,7 @@ G2.prototype.disconnect = function (reason, callback) {
     if (reason === "firmware") {
         intendedClose = true;
     }
-    this.stopHeartbeat();
+    this.stopStatusPoll();
     this._serialPort.close(callback);
 };
 
@@ -497,7 +497,7 @@ G2.prototype.onSerialClose = function () {
 G2.prototype.reconnect = function () {
     var that = this;
     this._reconnecting = true;
-    this.stopHeartbeat();
+    this.stopStatusPoll();
 
     // Notify listeners (machine.js) that the connection was lost
     this.emit("disconnect");
@@ -571,7 +571,7 @@ G2.prototype.reconnect = function () {
                 that._write("\x04\n", function () {
                     that.requestStatusReport(function () {
                         log.info("G2 reconnection successful.");
-                        that.startHeartbeat();
+                        that.startStatusPoll();
                         that.emit("reconnected");
                     });
                 });
@@ -642,64 +642,71 @@ G2.prototype.reconnect = function () {
     }, RECONNECT_BASE_DELAY);
 };
 
-// Start periodic heartbeat to detect silent G2 failures.
+// Start periodic status poll to detect silent G2 failures.
 // Sends a status report request if no data has been received recently.
-G2.prototype.startHeartbeat = function () {
-    this.stopHeartbeat();
-    this._heartbeatTimer = setInterval(
+// (Distinct from the blue LED "heartbeat" pulsing on the G2 card itself.)
+G2.prototype.startStatusPoll = function () {
+    this.stopStatusPoll();
+    this._statusPollTimer = setInterval(
         function () {
             if (!this.connected || this._reconnecting) {
                 return;
             }
             // Use longer timeout during feedhold — G2 is alive but paused
             var inHold = this.pause_flag || this.status.inFeedHold;
-            var timeout = inHold ? HEARTBEAT_FEEDHOLD_TIMEOUT : HEARTBEAT_TIMEOUT;
+            var timeout = inHold ? STATUS_POLL_FEEDHOLD_TIMEOUT : STATUS_POLL_TIMEOUT;
             // Skip if we received data recently — G2 is alive
-            if (Date.now() - this._lastDataReceived < HEARTBEAT_INTERVAL) {
+            if (Date.now() - this._lastDataReceived < STATUS_POLL_INTERVAL) {
                 return;
             }
-            // Send a status report request as a heartbeat probe
-            log.debug("Sending heartbeat status request");
-            this._heartbeatPending = true;
-            this.command({ sr: null });
+            // Send a status report request as a status poll probe.
+            // During feedhold, bypass command_queue: sendMore() blocks all sends while
+            // pause_flag is true, so a queued probe would never reach G2. G2 still
+            // services JSON queries on its control channel during hold and will respond.
+            this._statusPollPending = true;
+            if (inHold) {
+                this._write(JSON.stringify({ sr: null }) + "\n", function () {});
+            } else {
+                this.command({ sr: null });
+            }
 
             // Set timeout for response
-            this._heartbeatTimeout = setTimeout(
+            this._statusPollTimeout = setTimeout(
                 function () {
-                    if (this._heartbeatPending) {
-                        this._onHeartbeatTimeout();
+                    if (this._statusPollPending) {
+                        this._onStatusPollTimeout();
                     }
                 }.bind(this),
                 timeout
             );
         }.bind(this),
-        HEARTBEAT_INTERVAL
+        STATUS_POLL_INTERVAL
     );
 };
 
-// Stop the heartbeat timer and any pending response timeout
-G2.prototype.stopHeartbeat = function () {
-    if (this._heartbeatTimer) {
-        clearInterval(this._heartbeatTimer);
-        this._heartbeatTimer = null;
+// Stop the status poll timer and any pending response timeout
+G2.prototype.stopStatusPoll = function () {
+    if (this._statusPollTimer) {
+        clearInterval(this._statusPollTimer);
+        this._statusPollTimer = null;
     }
-    if (this._heartbeatTimeout) {
-        clearTimeout(this._heartbeatTimeout);
-        this._heartbeatTimeout = null;
+    if (this._statusPollTimeout) {
+        clearTimeout(this._statusPollTimeout);
+        this._statusPollTimeout = null;
     }
-    this._heartbeatPending = false;
+    this._statusPollPending = false;
 };
 
-// Called when G2 fails to respond to a heartbeat within HEARTBEAT_TIMEOUT.
+// Called when G2 fails to respond to a status poll within STATUS_POLL_TIMEOUT.
 // Triggers reconnection by closing the serial port (which fires onSerialClose).
-G2.prototype._onHeartbeatTimeout = function () {
-    log.error("G2 heartbeat timeout — no response received. Triggering reconnection.");
-    this.stopHeartbeat();
+G2.prototype._onStatusPollTimeout = function () {
+    log.error("G2 status poll timeout — no response received. Triggering reconnection.");
+    this.stopStatusPoll();
     // Try to close the port gracefully, which triggers onSerialClose -> reconnect
     try {
         this._serialPort.close(function (err) {
             if (err) {
-                log.warn("Error closing port after heartbeat timeout: " + err);
+                log.warn("Error closing port after status poll timeout: " + err);
                 // Port may already be in a bad state — trigger reconnect directly
                 if (!this._reconnecting) {
                     this.reconnect();
@@ -707,7 +714,7 @@ G2.prototype._onHeartbeatTimeout = function () {
             }
         }.bind(this));
     } catch (e) {
-        log.warn("Exception closing port after heartbeat timeout: " + e);
+        log.warn("Exception closing port after status poll timeout: " + e);
         if (!this._reconnecting) {
             this.reconnect();
         }
@@ -768,9 +775,9 @@ G2.prototype.requestStatusReport = function (callback) {
 
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function (data) {
-    // Track data reception for heartbeat
+    // Track data reception for status poll
     this._lastDataReceived = Date.now();
-    this._heartbeatPending = false;
+    this._statusPollPending = false;
 
     var t = new Date().getTime(); // Get current time for logging
     // raw_data event for listeners that want to snoop on all data.
