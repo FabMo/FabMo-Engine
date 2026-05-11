@@ -1312,18 +1312,26 @@ SBPRuntime.prototype._finishEnd = function (error_msg) {
     if (this.machine && this.machine.status.job) {
         var job = this.machine.status.job;
         this.machine.status.job = null;
-        // job.finish() returns a Promise — chain it without async
-        var finishResult = job.finish();
-        if (finishResult && typeof finishResult.then === 'function') {
-            finishResult.then(
-                function () { doSetState(); },
-                function (err) {
-                    log.error("Error finishing job: " + err);
-                    doSetState();
-                }
-            );
-        } else {
+        var done = function (err) {
+            if (err) log.error("Error finalizing job: " + err);
             doSetState();
+        };
+        // If the user quit/cancelled (or the job errored), record it as
+        // cancelled/failed — not finished. Otherwise auto-restart logic
+        // attached to a clean finish (e.g. repeat mode) would fire on what
+        // was effectively an abort.
+        if (job.pending_cancel) {
+            job.cancel(done);
+        } else if (error_msg) {
+            job.fail(done);
+        } else {
+            // finish() returns a Promise — chain it without async
+            var finishResult = job.finish();
+            if (finishResult && typeof finishResult.then === 'function') {
+                finishResult.then(function () { doSetState(); }, done);
+            } else {
+                doSetState();
+            }
         }
     } else {
         doSetState();

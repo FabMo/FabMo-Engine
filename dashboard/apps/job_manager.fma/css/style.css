@@ -1051,3 +1051,37 @@ table {
   z-index: 10;
 }
 
+
+/* Repeat-mode toggle button on the next-in-queue card.
+   Sits just below the play button (bottom-right of the radial), fully clear
+   of the 100x100 play circle. Click toggles persistent server-side repeat. */
+.repeat-button {
+  position: absolute;
+  top: 78px;
+  right: 34px;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  color: #888;
+  cursor: pointer;
+  border-radius: 50%;
+  z-index: 51;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.repeat-button i {
+  font-size: 20px;
+}
+
+.repeat-button:hover {
+  color: #444;
+}
+
+.repeat-button.on {
+  color: #32B433;
+}
+
+.repeat-button.on:hover {
+  color: #1f8a1f;
+}
