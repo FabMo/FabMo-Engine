@@ -518,15 +518,48 @@ var getJobGCode = function (req, res, next) {
     });
 };
 
+// eslint-disable-next-line no-unused-vars
+var setJobRepeat = function (req, res, next) {
+    var desired = req.body && typeof req.body.repeat !== "undefined" ? !!req.body.repeat : null;
+    db.Job.getById(req.params.id, function (err, job) {
+        if (err || !job) {
+            return res.json({ status: "error", message: err || "Job not found" });
+        }
+        job.repeat = desired === null ? !job.repeat : desired;
+        job.save(function (saveErr, saved) {
+            if (saveErr) {
+                return res.json({ status: "error", message: saveErr });
+            }
+            // If the toggled job is currently running, the machine holds its
+            // own in-memory copy loaded at job start. Mirror the change there
+            // so a mid-run toggle takes effect when finish() decides whether
+            // to auto-restart (and so finish()'s save doesn't overwrite the
+            // toggled DB value with the stale in-memory one).
+            if (
+                machine &&
+                machine.status &&
+                machine.status.job &&
+                String(machine.status.job._id) === String(saved._id)
+            ) {
+                machine.status.job.repeat = saved.repeat;
+            }
+            res.json({ status: "success", data: { job: saved } });
+        });
+    });
+};
+
 module.exports = function (server) {
     server.post("/job", submitJob);
     server.get("/jobs", getAllJobs);
     server.get("/job/:id", getJobById);
     server.del("/job/:id", cancelJob);
     server.patch("/job/:id", updateOrder);
-    server.post("/job/:id", resubmitJob);
+    // More-specific :id sub-paths must register before the bare /:id route so
+    // restify matches them first.
+    server.post("/job/:id/repeat", setJobRepeat);
     server.get("/job/:id/file", getJobFile);
     server.get("/job/:id/gcode", getJobGCode);
+    server.post("/job/:id", resubmitJob);
     //server.get('/job/:id/thumbnail', getThumbnailImage);
 
     server.get("/jobs/queue", getQueue);

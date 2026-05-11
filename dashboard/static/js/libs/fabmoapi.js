@@ -377,6 +377,10 @@
         this._post("/job/" + id, {}, callback, callback);
     };
 
+    FabMoAPI.prototype.setJobRepeat = function (id, repeat, callback) {
+        this._post("/job/" + id + "/repeat", { repeat: !!repeat }, callback, callback);
+    };
+
     FabMoAPI.prototype.updateOrder = function (data, callback) {
         this._patch("/job/" + data.id, data, callback, callback);
         this.emit("change", "jobs");

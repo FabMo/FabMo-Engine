@@ -170,7 +170,7 @@ function createRecentMenu(id) {
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div><a class="repeat-button" title="Toggle Repeat (re-run this job when it finishes)"><i class="fa fa-repeat"></i></a></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -292,6 +292,14 @@ function setFirstCard(job) {
   $('.preview').data('id', firstId);
   $('.download').data('id', firstId);
   $('.edit').data('id', firstId);
+  $('.repeat-button').data('id', firstId);
+
+  // Reflect persisted repeat state on the toggle button
+  if (job && job.repeat) {
+    $('.repeat-button').addClass('on');
+  } else {
+    $('.repeat-button').removeClass('on');
+  }
 
   // Pre-flight soft-limit warning. analyzeJobBounds runs server-side after
   // submit and saves `bounds` (work-coord extents) on the job; we evaluate
@@ -882,7 +890,7 @@ var sortable = Sortable.create(el, {
   clickDelay: 0,
   touchDelay: 100,
   animation: 150,
-  filter: ".cancel, .preview, .edit, .download, .play, .previewJob, .editJob, .downloadJob, .deleteJob, .restartFromLine, .ellipses",
+  filter: ".cancel, .preview, .edit, .download, .play, .repeat-button, .previewJob, .editJob, .downloadJob, .deleteJob, .restartFromLine, .ellipses",
   onStart: function(evt) {
     var remove = document.getElementById('actions');
     remove.parentNode.removeChild(remove);
@@ -954,6 +962,26 @@ var sortable = Sortable.create(el, {
 });
 
 var current_job_id = 0;
+
+function bindRepeatToggle() {
+  $('#queue_table').on('click touchstart', '.repeat-button', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var jobid = $(this).data('id') || $(this).closest('.job_item').attr('id');
+    if (!jobid) return;
+    // Optimistic UI flip; server response is authoritative and will be
+    // reflected on the next queue refresh.
+    var willBeOn = !$(this).hasClass('on');
+    $(this).toggleClass('on', willBeOn);
+    fabmo.setJobRepeat(jobid, willBeOn, function(err) {
+      if (err) {
+        fabmo.notify('error', err);
+        // Roll back the optimistic flip
+        $('.repeat-button').toggleClass('on', !willBeOn);
+      }
+    });
+  });
+}
 
 function runNext() {
   $('#queue_table').on('click touchstart', '.play', function(e) {
@@ -1217,6 +1245,7 @@ $(document).ready(function() {
 
     setupDropTarget();
     runNext();
+    bindRepeatToggle();
 
     ////## this did not fix issue with another client
     ////## TODO // look for some sort of change 

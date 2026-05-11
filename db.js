@@ -65,14 +65,18 @@ var Job = function (options) {
     this.nb_lines = null;
     this.state = "pending";
     this.order = options.order || null;
+    this.repeat = !!options.repeat;
 };
 
 // Clone a job.  Used for re-running files, usually.
+// The `repeat` flag is carried into the clone so a repeating job keeps repeating
+// across the clone-on-finish cycle.
 Job.prototype.clone = function (callback) {
     var job = new Job({
         file_id: this.file_id,
         name: this.name,
         description: this.description,
+        repeat: this.repeat,
     });
     job.save(callback);
 };
@@ -95,15 +99,40 @@ Job.prototype.start = function (callback) {
 
 Job.prototype.finish = function (callback) {
     log.info("Finishing job id " + this._id ? this._id : "<volatile job>");
-    this.state = "finished";
+    // If a quit/cancel was already pending when finish() was called, treat the
+    // job as user-cancelled instead — so repeat mode doesn't auto-restart what
+    // was effectively an abort. Note: state save() deletes pending_cancel.
+    var wasCancelled = !!this.pending_cancel;
+    this.state = wasCancelled ? "cancelled" : "finished";
     this.finished_at = Date.now();
-    this.save(callback);
+    if (wasCancelled) this.repeat = false;
+    var that = this;
+    this.save(function (err, saved) {
+        if (callback) callback(err, saved);
+        if (err || !that.repeat) return;
+        // Repeat mode: clone the just-finished job back onto the queue and
+        // auto-start. Deferred so the runtime can complete its idle transition
+        // before we kick off the next run.
+        setImmediate(function () {
+            that.clone(function (cloneErr) {
+                if (cloneErr) {
+                    return log.error("Repeat clone failed: " + cloneErr);
+                }
+                var machine = require("./machine").machine;
+                if (!machine) return;
+                machine._runNextJob(true, function (runErr) {
+                    if (runErr) log.error("Repeat auto-restart failed: " + runErr);
+                });
+            });
+        });
+    });
 };
 
 Job.prototype.fail = function (callback) {
     log.info("Failing job id " + (this._id ? this._id : "<volatile job>"));
     this.state = "failed";
     this.finished_at = Date.now();
+    this.repeat = false; // failure clears repeat so a broken job doesn't loop
     this.save(callback);
 };
 
@@ -112,6 +141,7 @@ Job.prototype.cancel = function (callback) {
         log.debug("Cancelling running job id " + this._id);
         this.state = "cancelled";
         this.finished_at = Date.now();
+        this.repeat = false; // user-cancel clears repeat
         this.save(callback);
     } else {
         setImmediate(callback, new Error("Cannot cancel a job that is " + this.state));
