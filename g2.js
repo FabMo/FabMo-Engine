@@ -452,8 +452,21 @@ G2.prototype.disconnect = function (reason, callback) {
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function (data) {
-    log.error(new Error("There was a serial error"));
-    log.error(data);
+    // === ENHANCED SERIAL ERROR LOGGING ===
+    var errorTime = new Date().toISOString();
+    
+    log.error("╔════════════════════════════════════════════════════════════════");
+    log.error("║ G2 SERIAL ERROR EVENT");
+    log.error("╠════════════════════════════════════════════════════════════════");
+    log.error("║ Timestamp:           " + errorTime);
+    log.error("║ Error Data:          " + JSON.stringify(data));
+    log.error("║ Serial Path:         " + (this._serialPath || 'unknown'));
+    log.error("║ Port Open:           " + (this._serialPort && this._serialPort.isOpen ? "YES" : "NO"));
+    log.error("║ Connected:           " + this.connected);
+    log.error("║ In Cycle Context:    " + (this.context ? "YES - FILE RUNNING" : "NO"));
+    log.error("║ Lines Sent:          " + this.lines_sent);
+    log.error("║ Queue Length:        " + this.gcode_queue.getLength());
+    log.error("╚════════════════════════════════════════════════════════════════");
     
     // Save log immediately on serial errors
     require('./log').saveCurrentLog('g2-serial-error', function(err) {
@@ -468,7 +481,36 @@ G2.prototype.onSerialError = function (data) {
 // MAX_RECONNECT_TIME if reconnection fails.
 G2.prototype.onSerialClose = function () {
     this.connected = false;
-    log.error("G2 Core serial link was lost.");
+    
+    // === ENHANCED DIAGNOSTIC LOGGING ===
+    var disconnectTime = new Date().toISOString();
+    var timeSinceLastData = this._lastDataReceived ? (Date.now() - this._lastDataReceived) : 'N/A';
+    
+    log.error("╔════════════════════════════════════════════════════════════════");
+    log.error("║ G2 SERIAL DISCONNECT EVENT");
+    log.error("╠════════════════════════════════════════════════════════════════");
+    log.error("║ Timestamp:           " + disconnectTime);
+    log.error("║ Serial Path:         " + (this._serialPath || 'unknown'));
+    log.error("║ Time Since Last Rx:  " + timeSinceLastData + " ms");
+    log.error("║ Lines Sent:          " + this.lines_sent);
+    log.error("║ GCode Queue Length:  " + this.gcode_queue.getLength());
+    log.error("║ Command Queue Len:   " + this.command_queue.getLength());
+    log.error("║ In Cycle Context:    " + (this.context ? "YES - FILE RUNNING" : "NO - idle"));
+    log.error("║ Stream Done:         " + this._streamDone);
+    log.error("║ Primed:              " + this._primed);
+    log.error("║ Connected:           " + this.connected);
+    log.error("║ Reconnecting:        " + this._reconnecting);
+    log.error("║ Pause Flag:          " + this.pause_flag);
+    log.error("║ Quit Pending:        " + this.quit_pending);
+    log.error("║ Last G2 Status:      stat=" + (this.status.stat || 'unknown'));
+    log.error("║ Heartbeat Pending:   " + this._heartbeatPending);
+    
+    // Log current runtime if available
+    if (typeof global.CUR_RUNTIME !== 'undefined') {
+        log.error("║ Current Runtime:     " + global.CUR_RUNTIME);
+    }
+    
+    log.error("╚════════════════════════════════════════════════════════════════");
 
     // Save log for diagnostics
     require('./log').saveCurrentLog('g2-disconnect', function (err) {
@@ -479,11 +521,13 @@ G2.prototype.onSerialClose = function () {
 
     // Intentional close (firmware update) — do nothing
     if (intendedClose) {
+        log.info("Serial close was intentional (firmware update) - not reconnecting");
         return;
     }
 
     // Already in a reconnection cycle — let the retry loop handle it
     if (this._reconnecting) {
+        log.warn("Already in reconnection cycle - ignoring duplicate close event");
         return;
     }
 
@@ -693,7 +737,19 @@ G2.prototype.stopHeartbeat = function () {
 // Called when G2 fails to respond to a heartbeat within HEARTBEAT_TIMEOUT.
 // Triggers reconnection by closing the serial port (which fires onSerialClose).
 G2.prototype._onHeartbeatTimeout = function () {
-    log.error("G2 heartbeat timeout — no response received. Triggering reconnection.");
+    var timeoutTime = new Date().toISOString();
+    var timeSinceLastData = Date.now() - this._lastDataReceived;
+    
+    log.error("╔════════════════════════════════════════════════════════════════");
+    log.error("║ G2 HEARTBEAT TIMEOUT");
+    log.error("╠════════════════════════════════════════════════════════════════");
+    log.error("║ Timestamp:           " + timeoutTime);
+    log.error("║ Time Since Last Rx:  " + timeSinceLastData + " ms");
+    log.error("║ In Feedhold:         " + (this.pause_flag || this.status.inFeedHold));
+    log.error("║ G2 Status (stat):    " + (this.status.stat || 'unknown'));
+    log.error("║ In Cycle Context:    " + (this.context ? "YES" : "NO"));
+    log.error("╚════════════════════════════════════════════════════════════════");
+    
     this.stopHeartbeat();
     // Try to close the port gracefully, which triggers onSerialClose -> reconnect
     try {
