@@ -381,6 +381,10 @@
         this._post("/job/" + id + "/repeat", { repeat: !!repeat }, callback, callback);
     };
 
+    FabMoAPI.prototype.ghostRunJob = function (id, zOffset, callback) {
+        this._post("/job/" + id + "/ghost", { zOffset: zOffset }, callback, callback);
+    };
+
     FabMoAPI.prototype.updateOrder = function (data, callback) {
         this._patch("/job/" + data.id, data, callback, callback);
         this.emit("change", "jobs");

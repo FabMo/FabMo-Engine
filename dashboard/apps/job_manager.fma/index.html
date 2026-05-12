@@ -6,6 +6,23 @@
 	<link rel="stylesheet" href="../../css/dashboard.css">
 	<link rel="stylesheet" href="./css/style.css?v=3">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<div id="ghost-modal" class="reveal-modal small" data-reveal>
+		<div id="modal-title">Ghost Run</div>
+		<p>Run this job with a temporary Z lift so the toolpath plays out in the air.
+		The original job stays queued for a real run afterward.</p>
+		<div class="row">
+			<label for="ghost-zoffset">Z offset to add (inches):</label>
+			<input id="ghost-zoffset" type="number" step="0.05" min="0" value="0.5" />
+		</div>
+		<div class="row">
+			<div class="right">
+				<button id="ghost-cancel" class="button radius alert">Cancel</button>
+				<button id="ghost-go" class="button radius success">Start Ghost Run</button>
+			</div>
+		</div>
+		<a class="close-reveal-modal" id="close-ghost-modal">&#215;</a>
+	</div>
 </head>
 <body>
   <div class="filter"></div>

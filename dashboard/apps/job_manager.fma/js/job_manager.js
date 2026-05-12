@@ -170,7 +170,7 @@ function createRecentMenu(id) {
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div><a class="repeat-button" title="Toggle Repeat (re-run this job when it finishes)"><i class="fa fa-repeat"></i></a></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div><a class="repeat-button" title="Toggle Repeat (re-run this job when it finishes)"><i class="fa fa-repeat"></i></a></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="ghost-button" title="Ghost Run (dry-run with a Z lift)"><img class="svg" src="css/images/ghost.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -293,12 +293,25 @@ function setFirstCard(job) {
   $('.download').data('id', firstId);
   $('.edit').data('id', firstId);
   $('.repeat-button').data('id', firstId);
+  $('.ghost-button').data('id', firstId);
 
   // Reflect persisted repeat state on the toggle button
   if (job && job.repeat) {
     $('.repeat-button').addClass('on');
   } else {
     $('.repeat-button').removeClass('on');
+  }
+
+  // Ghost mode requires the OpenSBP runtime (transforms aren't applied to
+  // gcode); hide the slot for non-.sbp jobs and while a job is running.
+  // Hide the surrounding column so we don't leave a gap in the icon row.
+  var isSbp = job && /\.sbp$/i.test(job.name || '');
+  var isRunning = job && job.state === 'running';
+  var $ghostSlot = $('.ghost-button').closest('.columns');
+  if (isSbp && !isRunning) {
+    $ghostSlot.show();
+  } else {
+    $ghostSlot.hide();
   }
 
   // Pre-flight soft-limit warning. analyzeJobBounds runs server-side after
@@ -890,7 +903,7 @@ var sortable = Sortable.create(el, {
   clickDelay: 0,
   touchDelay: 100,
   animation: 150,
-  filter: ".cancel, .preview, .edit, .download, .play, .repeat-button, .previewJob, .editJob, .downloadJob, .deleteJob, .restartFromLine, .ellipses",
+  filter: ".cancel, .preview, .edit, .download, .play, .repeat-button, .ghost-button, .previewJob, .editJob, .downloadJob, .deleteJob, .restartFromLine, .ellipses",
   onStart: function(evt) {
     var remove = document.getElementById('actions');
     remove.parentNode.removeChild(remove);
@@ -980,6 +993,39 @@ function bindRepeatToggle() {
         $('.repeat-button').toggleClass('on', !willBeOn);
       }
     });
+  });
+}
+
+function bindGhostRun() {
+  // Sandboxed iframes block window.prompt(), so we drive a Foundation
+  // reveal-modal defined in index.html instead.
+  var pendingJobId = null;
+
+  $('#queue_table').on('click touchstart', '.ghost-button', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    pendingJobId = $(this).data('id') || $(this).closest('.job_item').attr('id');
+    if (!pendingJobId) return;
+    $('#ghost-zoffset').val('0.5');
+    $('#ghost-modal').foundation('reveal', 'open');
+    setTimeout(function() { $('#ghost-zoffset').focus().select(); }, 100);
+  });
+
+  $('#ghost-go').on('click', function() {
+    var zOffset = parseFloat($('#ghost-zoffset').val());
+    if (!isFinite(zOffset) || zOffset === 0) {
+      fabmo.notify('error', 'Z offset must be a non-zero number');
+      return;
+    }
+    var jobid = pendingJobId;
+    $('#ghost-modal').foundation('reveal', 'close');
+    fabmo.ghostRunJob(jobid, zOffset, function(err) {
+      if (err) fabmo.notify('error', err);
+    });
+  });
+
+  $('#ghost-cancel').on('click', function() {
+    $('#ghost-modal').foundation('reveal', 'close');
   });
 }
 
@@ -1246,6 +1292,7 @@ $(document).ready(function() {
     setupDropTarget();
     runNext();
     bindRepeatToggle();
+    bindGhostRun();
 
     ////## this did not fix issue with another client
     ////## TODO // look for some sort of change 

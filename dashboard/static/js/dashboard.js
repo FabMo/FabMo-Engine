@@ -428,6 +428,13 @@ define(function (require) {
         );
 
         this._registerHandler(
+            "ghostRunJob",
+            function (data, callback) {
+                this.engine.ghostRunJob(data.id, data.zOffset, callback);
+            }.bind(this)
+        );
+
+        this._registerHandler(
             "deleteJob",
             function (id, callback) {
                 this.engine.deleteJob(
