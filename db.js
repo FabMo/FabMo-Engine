@@ -66,6 +66,28 @@ var Job = function (options) {
     this.state = "pending";
     this.order = options.order || null;
     this.repeat = !!options.repeat;
+    // Ghost mode: a transient one-shot clone that runs the job with a Z lift
+    // for a dry-run / preview pass. ghost_restore_move snapshots the user's
+    // transforms.move so we can put it back when the ghost run ends.
+    this.ghost = !!options.ghost;
+    this.ghost_restore_move = options.ghost_restore_move || null;
+};
+
+// Restore the transforms.move config snapshotted at the start of a ghost run.
+// Called from finish/cancel/fail when this.ghost is true, so the user's
+// original transform state is restored regardless of how the ghost run ended.
+Job.prototype._restoreGhostTransform = function (callback) {
+    if (!this.ghost || !this.ghost_restore_move) {
+        return setImmediate(callback);
+    }
+    var snapshot = this.ghost_restore_move;
+    require("./config").opensbp.setMany(
+        { transforms: { move: snapshot } },
+        function (err) {
+            if (err) log.error("Failed to restore transform after ghost run: " + err);
+            callback();
+        }
+    );
 };
 
 // Clone a job.  Used for re-running files, usually.
@@ -107,21 +129,24 @@ Job.prototype.finish = function (callback) {
     this.finished_at = Date.now();
     if (wasCancelled) this.repeat = false;
     var that = this;
-    this.save(function (err, saved) {
-        if (callback) callback(err, saved);
-        if (err || !that.repeat) return;
-        // Repeat mode: clone the just-finished job back onto the queue and
-        // auto-start. Deferred so the runtime can complete its idle transition
-        // before we kick off the next run.
-        setImmediate(function () {
-            that.clone(function (cloneErr) {
-                if (cloneErr) {
-                    return log.error("Repeat clone failed: " + cloneErr);
-                }
-                var machine = require("./machine").machine;
-                if (!machine) return;
-                machine._runNextJob(true, function (runErr) {
-                    if (runErr) log.error("Repeat auto-restart failed: " + runErr);
+    this._restoreGhostTransform(function () {
+        that.save(function (err, saved) {
+            if (callback) callback(err, saved);
+            if (err || that.ghost || !that.repeat) return;
+            // Repeat mode: clone the just-finished job back onto the queue and
+            // auto-start. Deferred so the runtime can complete its idle
+            // transition before we kick off the next run. Skipped for ghost
+            // runs — those are intentionally one-shot.
+            setImmediate(function () {
+                that.clone(function (cloneErr) {
+                    if (cloneErr) {
+                        return log.error("Repeat clone failed: " + cloneErr);
+                    }
+                    var machine = require("./machine").machine;
+                    if (!machine) return;
+                    machine._runNextJob(true, function (runErr) {
+                        if (runErr) log.error("Repeat auto-restart failed: " + runErr);
+                    });
                 });
             });
         });
@@ -133,7 +158,10 @@ Job.prototype.fail = function (callback) {
     this.state = "failed";
     this.finished_at = Date.now();
     this.repeat = false; // failure clears repeat so a broken job doesn't loop
-    this.save(callback);
+    var that = this;
+    this._restoreGhostTransform(function () {
+        that.save(callback);
+    });
 };
 
 Job.prototype.cancel = function (callback) {
@@ -142,7 +170,10 @@ Job.prototype.cancel = function (callback) {
         this.state = "cancelled";
         this.finished_at = Date.now();
         this.repeat = false; // user-cancel clears repeat
-        this.save(callback);
+        var that = this;
+        this._restoreGhostTransform(function () {
+            that.save(callback);
+        });
     } else {
         setImmediate(callback, new Error("Cannot cancel a job that is " + this.state));
     }

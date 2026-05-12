@@ -548,6 +548,68 @@ var setJobRepeat = function (req, res, next) {
     });
 };
 
+// eslint-disable-next-line no-unused-vars
+var ghostRunJob = function (req, res, next) {
+    var fail = function (msg) {
+        return res.json({ status: "error", message: msg });
+    };
+    if (!machine || !machine.isConnected || !machine.isConnected()) {
+        return fail("Machine not connected");
+    }
+    if (machine.status.state !== "idle") {
+        return fail("Machine is not idle (state=" + machine.status.state + ")");
+    }
+    var zOffset = parseFloat(req.body && req.body.zOffset);
+    if (!isFinite(zOffset) || zOffset === 0) {
+        return fail("Invalid zOffset");
+    }
+
+    db.Job.getById(req.params.id, function (err, original) {
+        if (err || !original) return fail(err || "Job not found");
+
+        // SBP only — gcode runtime ignores transforms entirely
+        if (!/\.sbp$/i.test(original.name || "")) {
+            return fail("Ghost mode is only available for OpenSBP (.sbp) jobs");
+        }
+
+        var transforms = config.opensbp.get("transforms") || {};
+        var currentMove = transforms.move || { apply: false, x: 0, y: 0, z: 0 };
+        var snapshot = {
+            apply: !!currentMove.apply,
+            x: currentMove.x || 0,
+            y: currentMove.y || 0,
+            z: currentMove.z || 0,
+        };
+        var newMove = {
+            apply: true,
+            x: snapshot.x,
+            y: snapshot.y,
+            z: snapshot.z + zOffset,
+        };
+
+        config.opensbp.setMany({ transforms: { move: newMove } }, function (setErr) {
+            if (setErr) return fail("Failed to set transform: " + setErr);
+
+            var ghostJob = new db.Job({
+                file_id: original.file_id,
+                name: original.name + " (ghost)",
+                description: (original.description ? original.description + " — " : "") +
+                    "ghost run, Z+" + zOffset,
+                ghost: true,
+                ghost_restore_move: snapshot,
+            });
+            ghostJob.save(function (saveErr, saved) {
+                if (saveErr) return fail(saveErr);
+                saved.start(function (startErr) {
+                    if (startErr) return fail(startErr);
+                    machine.runJob(saved);
+                    res.json({ status: "success", data: { job: saved } });
+                });
+            });
+        });
+    });
+};
+
 module.exports = function (server) {
     server.post("/job", submitJob);
     server.get("/jobs", getAllJobs);
@@ -557,6 +619,7 @@ module.exports = function (server) {
     // More-specific :id sub-paths must register before the bare /:id route so
     // restify matches them first.
     server.post("/job/:id/repeat", setJobRepeat);
+    server.post("/job/:id/ghost", ghostRunJob);
     server.get("/job/:id/file", getJobFile);
     server.get("/job/:id/gcode", getJobGCode);
     server.post("/job/:id", resubmitJob);
