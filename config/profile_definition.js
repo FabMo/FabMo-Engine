@@ -41,8 +41,12 @@ ProfileDefinition.prototype.read = function (force) {
         var data = fs.readFileSync(this.definition_file, "utf8");
         var definition = JSON.parse(data);
 
-        // Validate structure
-        if (!definition.auto_profile || !definition.auto_profile.profile_name) {
+        // Validate structure - require auto_profile with at least one
+        // recovery target (profile_name or snapshot_name).
+        if (
+            !definition.auto_profile ||
+            (!definition.auto_profile.profile_name && !definition.auto_profile.snapshot_name)
+        ) {
             log.warn("Invalid profile definition structure");
             this._cache = null;
             this._cacheTime = now;
@@ -222,6 +226,88 @@ ProfileDefinition.prototype.hasAutoProfileDefinition = function () {
     } catch (err) {
         return false;
     }
+};
+
+// Atomically write the fabmo-def.json file. Preserves any keys outside
+// auto_profile and lets callers patch a subset of auto_profile fields.
+// Writes are best-effort - if /fabmo-def is not writable, the error is
+// surfaced via callback but does not throw.
+ProfileDefinition.prototype._writePatch = function (patch, callback) {
+    var self = this;
+    var existing = {};
+    try {
+        if (this.exists()) {
+            existing = JSON.parse(fs.readFileSync(this.definition_file, "utf8"));
+        }
+    } catch (err) {
+        log.warn(
+            "Existing fabmo-def.json is unreadable; rewriting from scratch: " + err.message
+        );
+        existing = {};
+    }
+    var nextAutoProfile = Object.assign(
+        {},
+        existing.auto_profile || {},
+        patch.auto_profile || {}
+    );
+    // If a key in the patch is explicitly null, remove it.
+    Object.keys(patch.auto_profile || {}).forEach(function (k) {
+        if (patch.auto_profile[k] === null) {
+            delete nextAutoProfile[k];
+        }
+    });
+    // Default auto_profile fields if creating from scratch.
+    if (!("enabled" in nextAutoProfile)) {
+        nextAutoProfile.enabled = true;
+    }
+    if (!("force_reapply" in nextAutoProfile)) {
+        nextAutoProfile.force_reapply = false;
+    }
+    var next = Object.assign({}, existing, { auto_profile: nextAutoProfile });
+    var dir = path.dirname(this.definition_file);
+    var tmp = this.definition_file + ".tmp";
+    try {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+    } catch (mkErr) {
+        log.warn("Could not ensure /fabmo-def directory: " + mkErr.message);
+        return callback && callback(mkErr);
+    }
+    fs.writeFile(tmp, JSON.stringify(next, null, 2), function (wErr) {
+        if (wErr) {
+            log.warn("Could not write fabmo-def.json tmp: " + wErr.message);
+            return callback && callback(wErr);
+        }
+        fs.rename(tmp, self.definition_file, function (rErr) {
+            if (rErr) {
+                log.warn("Could not rename fabmo-def.json: " + rErr.message);
+                try { fs.unlinkSync(tmp); } catch (e) { /* ignore */ }
+                return callback && callback(rErr);
+            }
+            self._cache = null;
+            self._cacheTime = 0;
+            log.info("fabmo-def.json updated");
+            callback && callback(null);
+        });
+    });
+};
+
+// Set the vanilla-profile fallback in fabmo-def.json.
+ProfileDefinition.prototype.setProfileName = function (profileName, callback) {
+    this._writePatch({ auto_profile: { profile_name: profileName } }, callback);
+};
+
+// Set the snapshot fallback in fabmo-def.json. Caller is responsible for
+// mirroring the snapshot's contents to /fabmo-def/snapshots/<name>/.
+ProfileDefinition.prototype.setSnapshotName = function (snapshotName, callback) {
+    this._writePatch({ auto_profile: { snapshot_name: snapshotName } }, callback);
+};
+
+// Clear the snapshot fallback. The vanilla profile_name (if any) remains
+// as the deeper fallback.
+ProfileDefinition.prototype.clearSnapshotName = function (callback) {
+    this._writePatch({ auto_profile: { snapshot_name: null } }, callback);
 };
 
 module.exports = new ProfileDefinition();

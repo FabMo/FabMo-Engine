@@ -31,6 +31,7 @@ var log = require("./log").logger("profiles");
 var ncp = require("ncp").ncp;
 var path = require("path");
 var util = require("./util");
+var snapshots = require("./snapshots");
 
 // Directories affected by profiles
 var PROFILE_DIRS = ["config", "macros", "apps"];
@@ -152,6 +153,18 @@ var apply = function (profileName, callback) {
             log.info("Auto-profile application - skipping config directory (already complete)");
         }
 
+        // Snapshot the current state before the destructive copy. If the
+        // user (or we) made a mistake choosing the profile, restoring from
+        // the auto-snapshot rolls back the change. Best-effort: failures
+        // are logged and do not block the profile change itself.
+        snapshots.createAuto("auto_pre_profile", function (snapErr) {
+            if (snapErr) {
+                log.warn("auto_pre_profile snapshot failed (continuing): " + snapErr.message);
+            }
+            doApply();
+        });
+
+        function doApply() {
         // For every directory affected by profiles...
         // Use eachSeries to copy directories sequentially (avoids I/O race conditions)
         async.eachSeries(
@@ -237,6 +250,7 @@ var apply = function (profileName, callback) {
                 });
             }
         );
+        }
     } else {
         log.warn(profileName + ", user selected profile.");
         callback(null, "not default profile"); // Continue without error

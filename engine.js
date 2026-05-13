@@ -896,9 +896,75 @@ Engine.prototype.start = function (callback) {
                                     log.warn("Could not mark profile as applied: " + markErr.message);
                                 }
 
+                                // /opt-loss recovery: if fabmo-def names a
+                                // user-default snapshot AND its mirror at
+                                // /fabmo-def/snapshots/<name>/ exists AND
+                                // the in-/opt .default pointer is absent
+                                // (i.e. there's no operational default in
+                                // /opt right now), restore the snapshot
+                                // from the mirror over the just-applied
+                                // profile defaults. We force a restart
+                                // instead of using the in-process reload
+                                // so the engine reads the restored files
+                                // cleanly.
+                                var definition = this.pending_profile_change &&
+                                                 this.pending_profile_change.definition;
+                                var snapshotName = definition &&
+                                                   definition.auto_profile &&
+                                                   definition.auto_profile.snapshot_name;
+                                var defaultPointer = "/opt/fabmo_snapshots/.default";
+                                var mirrorDir = snapshotName
+                                    ? "/fabmo-def/snapshots/" + snapshotName
+                                    : null;
+                                var shouldRecover = !!(
+                                    snapshotName &&
+                                    mirrorDir &&
+                                    fs.existsSync(mirrorDir) &&
+                                    !fs.existsSync(defaultPointer)
+                                );
+
+                                if (shouldRecover) {
+                                    log.info(
+                                        "Mirror snapshot present and no operational default in /opt; recovering '" +
+                                            snapshotName +
+                                            "' from " +
+                                            mirrorDir
+                                    );
+                                    var snapshotsModule = require("./snapshots");
+                                    snapshotsModule.recoverFromMirror(snapshotName, function (recErr) {
+                                        if (recErr) {
+                                            log.warn(
+                                                "Mirror recovery failed (continuing with profile-only state): " +
+                                                    recErr.message
+                                            );
+                                        }
+                                        // Our snapshot recovery is the canonical restore for this
+                                        // boot. Remove any pre-auto-profile-backup that the
+                                        // auto-profile flow may have just created (e.g. from stale
+                                        // /opt/fabmo_backup left over after a partial /opt wipe).
+                                        // Without this, the dashboard's backup-restore modal would
+                                        // fire on the next page load and offer to re-restore that
+                                        // older state, racing with the snapshot we just put down.
+                                        var configWatcher = require("./config_watcher");
+                                        configWatcher.cleanupPreAutoProfileBackup(function (cuErr) {
+                                            if (cuErr) {
+                                                log.warn(
+                                                    "Could not clean up pre-auto-profile backup after recovery: " +
+                                                        cuErr.message
+                                                );
+                                            }
+                                            log.info("Restarting after /opt-loss recovery...");
+                                            setTimeout(function () {
+                                                process.exit(0);
+                                            }, 2000);
+                                        });
+                                    });
+                                    return;
+                                }
+
                                 // Skip restart if flagged - config was already loaded correctly
                                 // OR this is a first run where next startup will load profile fresh
-                                var skipRestart = this.pending_profile_change && 
+                                var skipRestart = this.pending_profile_change &&
                                                   this.pending_profile_change.skipRestart;
 
                                 if (skipRestart) {

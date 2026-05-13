@@ -4,6 +4,8 @@ var config = require("../config");
 var log = require("../log").logger("config-routes");
 var engine = require("../engine");
 var profiles = require("../profiles");
+var recoveryLog = require("../config/recovery_log");
+var snapshots = require("../snapshots");
 
 const fs = require("fs");
 const path = require("path");
@@ -503,33 +505,73 @@ var post_manual_profile_change = function (req, res, next) {
 };
 
 // Helper function for manual profile changes
+//
+// IMPORTANT FLOW NOTE: config.engine.set("profile", ...) routes through
+// EngineConfig.update which detects a profile change, calls
+// profiles.apply(), and then synchronously calls process.exit(1) (see
+// config/engine_config.js). Control never returns to its callback. Any
+// bookkeeping we want to do for this manual change therefore has to
+// happen BEFORE we call config.engine.set - including updating
+// fabmo-def.json so /opt-loss recovery picks up the new profile.
 function applyManualProfileChange(profileName, res, next) {
-    // Set the engine config to the user's choice
-    config.engine.set("profile", profileName, function (err) {
-        if (err) {
-            log.error("Failed to set manual profile: " + err.message);
-            return res.json({
-                status: "error",
-                message: "Failed to set profile: " + err.message,
-            });
+    var profileDef = require("../config/profile_definition");
+    var ConfigClass = require("../config/config").Config;
+    var snapshots = require("../snapshots");
+    var profileDirName = ConfigClass.resolveProfileDirectory(profileName);
+
+    log.info(
+        "Updating fabmo-def.profile_name: '" + profileName + "' -> '" + profileDirName + "'"
+    );
+
+    // Step 1: update fabmo-def.profile_name (the vanilla fallback).
+    profileDef.setProfileName(profileDirName, function (pdErr) {
+        if (pdErr) {
+            log.warn("Could not update fabmo-def.json profile_name: " + pdErr.message);
         }
 
-        log.info("Manual profile change completed: " + profileName);
+        // Step 2: clear any previously-blessed user-default snapshot.
+        // The user has explicitly picked a new baseline, so the old
+        // snapshot is no longer the right fallback. clearDefault
+        // removes snapshot_name from fabmo-def, deletes the
+        // /fabmo-def/snapshots/<name>/ mirror, and clears the in-/opt
+        // .default pointer. The operational snapshot at
+        // /opt/fabmo_snapshots/<name>/ stays so the user can re-bless
+        // it later if they want.
+        snapshots.clearDefault(function (cdErr) {
+            if (cdErr) {
+                log.warn("Could not clear user-default snapshot after profile change: " + cdErr.message);
+            } else {
+                log.info("Profile change superseded any previously-blessed user-default snapshot");
+            }
 
-        res.json({
-            status: "success",
-            message: "Profile change initiated",
+            // Send the response before triggering the engine-exiting
+            // call. The dashboard treats the subsequent connection
+            // loss as the "engine restarting" signal.
+            res.json({
+                status: "success",
+                message: "Profile change initiated",
+            });
+            log.info("fabmo-def updated; handing off to engine profile-change pipeline");
+            res.end();
+
+            // Step 3: actually trigger the profile change. engine_config
+            // will call profiles.apply and then process.exit(1) - we
+            // don't expect this callback to fire on the happy path.
+            config.engine.set("profile", profileName, function (err) {
+                if (err) {
+                    log.error("Failed to set manual profile: " + err.message);
+                    return;
+                }
+                log.info("Manual profile change completed: " + profileName);
+                // Fallback restart in case engine_config didn't exit
+                // (e.g. "not default profile" branch). Restart=always
+                // in systemd handles bringing us back.
+                setTimeout(function () {
+                    log.info("Restarting for manual profile change...");
+                    process.exit(0);
+                }, 2000);
+            });
         });
-        
-        log.info("Response sent, waiting before restart...");
-        res.end();
-        next();
-
-        // Restart after a short delay
-        setTimeout(function () {
-            log.info("Restarting for manual profile change...");
-            process.exit(0);
-        }, 2000);
     });
 
     next();
@@ -737,6 +779,107 @@ var post_restore_backup = function (req, res, next) {
     }
 };
 
+// Return recovery events recorded when Config.load() fell back through
+// its backup -> profile -> shipped-profile chain. The optional query
+// parameter ?unacknowledged=1 filters to events the user hasn't dismissed.
+var get_recovery_events = function (req, res, next) {
+    var unackOnly = req.query && (req.query.unacknowledged === "1" || req.query.unacknowledged === "true");
+    var events = recoveryLog.getEvents({ unacknowledgedOnly: !!unackOnly });
+    res.json({ status: "success", data: { events: events } });
+};
+
+// Acknowledge a single event by id (POST body { id }) or all events if no id.
+var post_acknowledge_recovery = function (req, res, next) {
+    var id = req.body && req.body.id;
+    var changed;
+    if (id === undefined || id === null) {
+        changed = recoveryLog.acknowledgeAll();
+    } else {
+        var nId = parseInt(id, 10);
+        if (isNaN(nId)) {
+            return res.json({ status: "error", message: "id must be a number" });
+        }
+        changed = recoveryLog.acknowledge(nId);
+    }
+    res.json({ status: "success", data: { changed: !!changed } });
+};
+
+// List all snapshots (user-created and auto), newest first.
+var get_snapshots = function (req, res, next) {
+    snapshots.list(function (err, list) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({ status: "success", data: { snapshots: list } });
+    });
+};
+
+// Create a user snapshot. Body: { name, description? }.
+var post_snapshot = function (req, res, next) {
+    var name = req.body && req.body.name;
+    var description = req.body && req.body.description;
+    snapshots.create(name, description, function (err) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({ status: "success", data: { name: name } });
+    });
+};
+
+// Restore a snapshot by name. Engine restarts shortly after.
+var post_snapshot_restore = function (req, res, next) {
+    var name = req.params && req.params.name;
+    snapshots.restore(name, function (err, result) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({
+            status: "success",
+            data: result,
+            message: "Snapshot restored - engine will restart",
+        });
+        setTimeout(function () {
+            log.info("Restarting engine after snapshot restore...");
+            process.exit(0);
+        }, 1000);
+    });
+};
+
+// Delete a user snapshot (auto-snapshots rotate themselves).
+var delete_snapshot = function (req, res, next) {
+    var name = req.params && req.params.name;
+    snapshots.remove(name, function (err) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({ status: "success" });
+    });
+};
+
+// Mark a snapshot as the user-default fallback. The recovery chain will
+// reach for it after the auto-backup mirror but before the generic
+// profile defaults.
+var post_set_default_snapshot = function (req, res, next) {
+    var name = req.params && req.params.name;
+    snapshots.setDefault(name, function (err) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({ status: "success", data: { name: name } });
+    });
+};
+
+// Clear the user-default fallback pointer (recovery falls back to
+// profiles as before).
+var post_clear_default_snapshot = function (req, res, next) {
+    snapshots.clearDefault(function (err) {
+        if (err) {
+            return res.json({ status: "error", message: err.message });
+        }
+        res.json({ status: "success" });
+    });
+};
+
 module.exports = function (server) {
     server.post("/macros/restore", handleMacrosRestore);
     server.get("/macros/backup", backup_macros);
@@ -755,4 +898,14 @@ module.exports = function (server) {
     server.post('/config/dismiss-backup-restore', dismiss_backup_restore);
     server.get("/config/backup-restore-status", get_backup_restore_status);
     server.post("/config/restore-backup", post_restore_backup);
+
+    server.get("/config/recovery-events", get_recovery_events);
+    server.post("/config/recovery-events/acknowledge", post_acknowledge_recovery);
+
+    server.get("/snapshots", get_snapshots);
+    server.post("/snapshots", post_snapshot);
+    server.post("/snapshots/clear-default", post_clear_default_snapshot);
+    server.post("/snapshots/:name/restore", post_snapshot_restore);
+    server.post("/snapshots/:name/set-default", post_set_default_snapshot);
+    server.del("/snapshots/:name", delete_snapshot);
 };
