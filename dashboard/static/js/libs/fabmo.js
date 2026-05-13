@@ -764,6 +764,14 @@
         this._call("resubmitJob", args, callback);
     };
 
+    FabMoDashboard.prototype.setJobRepeat = function (id, repeat, callback) {
+        this._call("setJobRepeat", { id: id, repeat: !!repeat }, callback);
+    };
+
+    FabMoDashboard.prototype.ghostRunJob = function (id, zOffset, callback) {
+        this._call("ghostRunJob", { id: id, zOffset: zOffset }, callback);
+    };
+
     /**
      * Delete a job (cancels if running, sends to trash otherwise.)
      *
