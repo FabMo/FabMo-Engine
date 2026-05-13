@@ -5,13 +5,42 @@ var path = require('path');
 /**
  * @apiGroup Log
  * @api {get} /log Get log
- * @apiDescription Get the contents of the debug log.
- *   This is a pure read — no file saving or rotation.
- *   Use POST /log/save to explicitly save the log to disk.
+ * @apiDescription Get the contents of the debug log and save it to disk.
+ *   A timestamped log file is created in /opt/fabmo/log.
+ *   Logs are automatically rotated to keep the 10 most recent files.
  */
 // eslint-disable-next-line no-unused-vars
 var getLog = function (req, res, next) {
+    log.logger('routes').info('Log request received - saving log to disk');
+    
+    // Get log buffer to return
     var body = log.getLogBuffer();
+    
+    // Save log to disk asynchronously (don't block response)
+    try {
+        var dir = require('../config').getDataDir('log');
+        var fn = 'fabmo-' + Date.now() + '-log.txt';
+        var filename = path.join(dir, fn);
+        
+        fs.writeFile(filename, body, function(err) {
+            if (err) {
+                log.logger('routes').error("Failed to save log on GET: " + err);
+            } else {
+                log.logger('routes').info("Log saved to " + filename);
+                
+                // Rotate logs asynchronously (keeps 10 most recent)
+                log.rotateLogs(10, function(rotateErr) {
+                    if (rotateErr) {
+                        log.logger('routes').error("Error rotating logs: " + rotateErr);
+                    }
+                });
+            }
+        });
+    } catch(e) {
+        log.logger('routes').error("Exception saving log on GET: " + e);
+    }
+    
+    // Return log buffer immediately (don't wait for save to complete)
     res.setHeader("content-type", "text/plain");
     res.send(body);
     next();
