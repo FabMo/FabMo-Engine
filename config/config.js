@@ -38,6 +38,7 @@ var PLATFORM = require("process").platform;
 var log = require("../log").logger("config");
 var EventEmitter = require("events").EventEmitter;
 var util = require("util");
+var recoveryLog = require("./recovery_log");
 
 // Config is the superclass from which all configuration objects descend
 //   config_name - All configuration objects have a name, which among other things,
@@ -264,6 +265,39 @@ Config.prototype.load = function (filename, callback) {
         });
     };
 
+    // Try to load this config from the user's blessed snapshot. Slots
+    // into the recovery chain between the auto-backup mirror and the
+    // working/shipped profiles, so a customer's tuned baseline takes
+    // precedence over generic profile defaults when corruption hits.
+    // snapshots.js is required lazily here to avoid a circular dep
+    // (snapshots -> machine -> config).
+    const loadFromUserSnapshot = (next) => {
+        if (skipRecovery) {
+            log.info("Skipping user-snapshot recovery due to auto-profile system");
+            return next(new Error("User-snapshot recovery skipped due to auto-profile"));
+        }
+        var snapshots;
+        try {
+            snapshots = require("../snapshots");
+        } catch (e) {
+            return next(new Error("snapshots module unavailable: " + e.message));
+        }
+        var defaultName = snapshots.getDefault();
+        if (!defaultName) {
+            return next(new Error("No user-default snapshot set"));
+        }
+        var snapshotFile = path.join(
+            snapshots.snapshotPath(defaultName),
+            "config",
+            path.basename(filename)
+        );
+        if (!fs.existsSync(snapshotFile)) {
+            return next(new Error("User-default snapshot has no " + path.basename(filename)));
+        }
+        log.info(`Attempting to load from user-default snapshot '${defaultName}': ${snapshotFile}`);
+        tryLoadFile(snapshotFile, next);
+    };
+
     const loadFromWorkingProfile = (next) => {
         if (skipRecovery) {
             log.info("Skipping working profile recovery due to auto-profile system");
@@ -350,45 +384,89 @@ Config.prototype.load = function (filename, callback) {
         if (err) {
             log.warn(`Failed to load config file: ${filename}, trying backup.`);
 
-            // FIXED: Try each recovery method in sequence, stopping on first success
-            const tryRecoveryMethods = () => {
-                // Method 1: Try backup first
+            // Capture a copy of the source file for post-mortem analysis.
+            // Only meaningful when we're actually entering the recovery
+            // chain (i.e. not skipRecovery, which is the auto-profile path).
+            var corruptCopyPath = null;
+            var recordRecovery = function (recoveredFrom, finalError) {
+                if (skipRecovery) {
+                    return;
+                }
+                recoveryLog.record({
+                    config: path.basename(filename),
+                    source_path: filename,
+                    error: err && err.message ? err.message : String(err),
+                    recovered_from: recoveredFrom,
+                    final_error:
+                        finalError && finalError.message
+                            ? finalError.message
+                            : finalError || null,
+                    corrupt_copy: corruptCopyPath,
+                });
+            };
+
+            const beginRecovery = () => {
+                // Try each recovery method in sequence, stopping on first success.
+                // Order: live backup mirror -> user-default snapshot -> working
+                // profile -> shipped profile. The user-default snapshot is
+                // their blessed baseline, so it ranks above the generic
+                // profile defaults.
                 loadFromBackup((backupErr) => {
                     if (!backupErr) {
                         log.info("Successfully loaded from backup - stopping recovery chain");
                         this._loaded = true;
+                        recordRecovery("backup", null);
                         return callback(null, this._cache);
                     }
-                    
-                    log.debug("Backup recovery failed, trying working profile");
-                    
-                    // Method 2: Try working profile 
-                    loadFromWorkingProfile((workingErr) => {
-                        if (!workingErr) {
-                            log.info("Successfully loaded from working profile - stopping recovery chain");
+
+                    log.debug("Backup recovery failed, trying user-default snapshot");
+
+                    loadFromUserSnapshot((snapErr) => {
+                        if (!snapErr) {
+                            log.info("Successfully loaded from user-default snapshot - stopping recovery chain");
                             this._loaded = true;
+                            recordRecovery("user_default_snapshot", null);
                             return callback(null, this._cache);
                         }
-                        
-                        log.debug("Working profile recovery failed, trying original profile");
-                        
-                        // Method 3: Try original profile (final fallback)
-                        loadFromOriginalProfile((originalErr) => {
-                            if (!originalErr) {
-                                log.info("Successfully loaded from original profile");
+
+                        log.debug("User-snapshot recovery failed, trying working profile");
+
+                        loadFromWorkingProfile((workingErr) => {
+                            if (!workingErr) {
+                                log.info("Successfully loaded from working profile - stopping recovery chain");
                                 this._loaded = true;
+                                recordRecovery("working_profile", null);
                                 return callback(null, this._cache);
-                            } else {
-                                log.warn(`Failed to load configuration from all sources: ${originalErr.message}`);
-                                return callback(originalErr);
                             }
+
+                            log.debug("Working profile recovery failed, trying original profile");
+
+                            loadFromOriginalProfile((originalErr) => {
+                                if (!originalErr) {
+                                    log.info("Successfully loaded from original profile");
+                                    this._loaded = true;
+                                    recordRecovery("original_profile", null);
+                                    return callback(null, this._cache);
+                                } else {
+                                    log.warn(`Failed to load configuration from all sources: ${originalErr.message}`);
+                                    recordRecovery("failed", originalErr);
+                                    return callback(originalErr);
+                                }
+                            });
                         });
                     });
                 });
             };
-            
-            tryRecoveryMethods();
-            
+
+            if (skipRecovery) {
+                beginRecovery();
+            } else {
+                recoveryLog.saveCorruptCopy(filename, function (savedPath) {
+                    corruptCopyPath = savedPath;
+                    beginRecovery();
+                });
+            }
+
         } else {
             this._loaded = true;
             callback(null, this._cache);
@@ -479,7 +557,16 @@ Config.prototype.save = function (callback) {
                                         }
                                         fs.closeSync(fd); // no error reporting
                                         log.debug("  fsync done " + config_file);
-                                        callback(err);
+                                        // Mirror the just-saved file to the backup
+                                        // directory synchronously with this save so
+                                        // the backup never drifts. Mirror errors are
+                                        // logged but do not fail the save itself.
+                                        if (err) {
+                                            return callback(err);
+                                        }
+                                        mirrorConfigToBackup(config_file, function () {
+                                            callback(null);
+                                        });
                                     }.bind(this)
                                 );
                             }
@@ -492,6 +579,110 @@ Config.prototype.save = function (callback) {
         setImmediate(callback);
     }
 };
+
+// Mirror a just-saved config file to the backup mirror and the rotating
+// history. We validate by re-parsing the file we wrote, then atomically
+// write to /opt/fabmo_backup/config/<name>.json (write tmp + rename), and
+// append a timestamped copy under /opt/fabmo_backup/config_history/<name>/.
+// All errors are logged and swallowed — failure to mirror must not break
+// the primary save.
+var BACKUP_CONFIG_DIR = "/opt/fabmo_backup/config";
+var BACKUP_HISTORY_DIR = "/opt/fabmo_backup/config_history";
+var HISTORY_KEEP = 10;
+
+function mirrorConfigToBackup(savedFile, callback) {
+    fs.readFile(savedFile, "utf8", function (err, raw) {
+        if (err) {
+            log.warn("Mirror skipped, could not re-read saved file: " + err.message);
+            return callback();
+        }
+        try {
+            JSON.parse(raw);
+        } catch (e) {
+            log.warn("Mirror skipped, saved file is not valid JSON: " + e.message);
+            return callback();
+        }
+        var basename = path.basename(savedFile);
+        var mirrorPath = path.join(BACKUP_CONFIG_DIR, basename);
+        var tmpPath = mirrorPath + ".tmp";
+        fs.ensureDir(BACKUP_CONFIG_DIR, function (mkErr) {
+            if (mkErr) {
+                log.warn("Mirror skipped, ensureDir failed: " + mkErr.message);
+                return callback();
+            }
+            fs.writeFile(tmpPath, raw, function (wErr) {
+                if (wErr) {
+                    log.warn("Mirror write failed: " + wErr.message);
+                    return callback();
+                }
+                fs.rename(tmpPath, mirrorPath, function (rErr) {
+                    if (rErr) {
+                        log.warn("Mirror rename failed: " + rErr.message);
+                        fs.remove(tmpPath, function () {});
+                        return callback();
+                    }
+                    log.debug("Mirrored " + basename + " to " + mirrorPath);
+                    appendConfigHistory(basename, raw, callback);
+                });
+            });
+        });
+    });
+}
+
+function appendConfigHistory(basename, raw, callback) {
+    var name = basename.replace(/\.json$/i, "");
+    var dir = path.join(BACKUP_HISTORY_DIR, name);
+    fs.ensureDir(dir, function (mkErr) {
+        if (mkErr) {
+            log.warn("History skipped, ensureDir failed: " + mkErr.message);
+            return callback();
+        }
+        var stamp = new Date().toISOString().replace(/[:.]/g, "-");
+        var dest = path.join(dir, stamp + ".json");
+        var tmp = dest + ".tmp";
+        fs.writeFile(tmp, raw, function (wErr) {
+            if (wErr) {
+                log.warn("History write failed: " + wErr.message);
+                return callback();
+            }
+            fs.rename(tmp, dest, function (rErr) {
+                if (rErr) {
+                    log.warn("History rename failed: " + rErr.message);
+                    fs.remove(tmp, function () {});
+                    return callback();
+                }
+                pruneConfigHistory(dir, callback);
+            });
+        });
+    });
+}
+
+function pruneConfigHistory(dir, callback) {
+    fs.readdir(dir, function (err, files) {
+        if (err) {
+            return callback();
+        }
+        var entries = files.filter(function (f) {
+            return f.endsWith(".json");
+        });
+        if (entries.length <= HISTORY_KEEP) {
+            return callback();
+        }
+        entries.sort();
+        var excess = entries.slice(0, entries.length - HISTORY_KEEP);
+        async.each(
+            excess,
+            function (f, cb) {
+                fs.remove(path.join(dir, f), function () {
+                    cb();
+                });
+            },
+            function () {
+                callback();
+            }
+        );
+    });
+}
 
 // There are some redundancies here in how default and then specific machine files are loaded
 // ... as well as in the normal start-up sequence. Consider refactoring for efficiency.

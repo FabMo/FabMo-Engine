@@ -2063,11 +2063,58 @@
                   <a id="btn-macros-restore"  class="button radius small" style="background-color:rgb(41, 175, 41)">Restore saved Macros</a>
               </div>
             </div>
-          
+
           </fieldset>
         </div>
-            
+
       </section>
+
+<!-- MY DEFAULT SETTINGS SECTION -->
+      <section>
+        <div class="row">
+          <fieldset>
+            <legend>My Default Settings</legend>
+            <div class="large-12 columns">
+              <p style="margin-bottom: 10px;">
+                Save the current configuration as your personal default. If a settings file is ever damaged
+                and the most recent backup can't be used, the machine will fall back to your saved default
+                instead of the factory profile.
+              </p>
+            </div>
+            <div class="large-8 columns">
+              <div class="row collapse">
+                <a id="btn-save-default" class="button radius small" style="background-color:rgb(83, 133, 224)">Save current settings as my default</a>
+                <a id="btn-reset-default" class="button radius small" style="background-color:rgb(41, 175, 41); margin-left:8px;">Reset to my default settings</a>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse" style="line-height: 32px;">
+                <span>Current default: </span><span id="current-default-name" style="font-weight: bold;">none</span>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+
+<!-- Save-as-default dialog. Inline modal because the app runs in a
+     sandboxed iframe that blocks window.prompt(). -->
+      <div id="save-default-dialog" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+        <div style="background:white; max-width:420px; margin:80px auto; padding:20px; border-radius:6px;">
+          <h4 style="margin-top:0;">Save current settings as my default</h4>
+          <div style="margin-bottom:10px;">
+            <label>Name <span style="color:#999;font-weight:normal;">(1-25 chars: letters, digits, _ or -)</span></label>
+            <input type="text" id="save-default-name" maxlength="25" autocomplete="off">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label>Description <span style="color:#999;font-weight:normal;">(optional)</span></label>
+            <input type="text" id="save-default-description" autocomplete="off">
+          </div>
+          <div style="text-align:right;">
+            <a id="save-default-cancel" class="button radius small secondary" style="margin-right:8px;">Cancel</a>
+            <a id="save-default-confirm" class="button radius small" style="background-color:rgb(83, 133, 224); color:#fff;">Save</a>
+          </div>
+        </div>
+      </div>
 
     </div>
 

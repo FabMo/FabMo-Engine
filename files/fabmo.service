@@ -7,8 +7,10 @@ Wants=network-online.target
 ExecStart=/usr/bin/node /fabmo/server.js
 Type=simple
 User=root
-Restart=on-failure
+Restart=always
 RestartSec=3
+StartLimitBurst=5
+StartLimitIntervalSec=60
 SyslogIdentifier=FBMO
 WorkingDirectory = /fabmo/
 

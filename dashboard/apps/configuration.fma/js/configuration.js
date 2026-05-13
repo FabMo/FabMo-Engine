@@ -824,3 +824,135 @@ function ensureProfileDisplayCorrect() {
         }
     });
 }
+
+// "Save current settings as my default": create a snapshot from the
+// current /opt/fabmo/config + macros, then mark it as the user-default
+// fallback. This is the user-friendly entry into the snapshot system -
+// it does not modify any shipped profiles.
+function refreshDefaultSnapshotName() {
+    fetch('/snapshots')
+        .then(function (r) { return r.json(); })
+        .then(function (resp) {
+            if (resp && resp.status === 'success' && resp.data && resp.data.snapshots) {
+                var def = null;
+                for (var i = 0; i < resp.data.snapshots.length; i++) {
+                    if (resp.data.snapshots[i].is_user_default) {
+                        def = resp.data.snapshots[i];
+                        break;
+                    }
+                }
+                $('#current-default-name').text(def ? def.name : 'none');
+            }
+        })
+        .catch(function () { /* leave display alone on transient errors */ });
+}
+
+// The app is sandboxed and cannot use window.prompt(), so we drive an
+// inline modal in index.html (#save-default-dialog).
+$('#btn-save-default').click(function () {
+    $('#save-default-name').val('');
+    $('#save-default-description').val('');
+    $('#save-default-dialog').show();
+    setTimeout(function () { $('#save-default-name').focus(); }, 0);
+});
+
+$('#save-default-cancel').click(function () {
+    $('#save-default-dialog').hide();
+});
+
+$('#save-default-confirm').click(function () {
+    // Spaces are a common natural input; auto-convert to underscores
+    // rather than rejecting. Collapse runs of whitespace to a single _.
+    var name = ($('#save-default-name').val() || '').trim().replace(/\s+/g, '_');
+    var description = $('#save-default-description').val() || '';
+    if (!name) {
+        fabmo.notify('error', 'A name is required.');
+        return;
+    }
+    if (!/^[a-zA-Z0-9_-]{1,25}$/.test(name)) {
+        fabmo.notify('error', 'Name must be 1-25 characters: letters, digits, _ or -.');
+        return;
+    }
+    $('#save-default-dialog').hide();
+
+    fetch('/snapshots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, description: description })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (resp) {
+        if (!resp || resp.status !== 'success') {
+            var msg = resp && resp.message ? resp.message : 'unknown error';
+            throw new Error(msg);
+        }
+        return fetch('/snapshots/' + encodeURIComponent(name) + '/set-default', {
+            method: 'POST'
+        }).then(function (r) { return r.json(); });
+    })
+    .then(function (resp) {
+        if (!resp || resp.status !== 'success') {
+            var msg = resp && resp.message ? resp.message : 'could not mark as default';
+            throw new Error('Snapshot saved but not marked as default: ' + msg);
+        }
+        fabmo.notify('success', 'Saved current settings as your default: ' + name);
+        refreshDefaultSnapshotName();
+    })
+    .catch(function (err) {
+        fabmo.notify('error', err.message || 'Failed to save default.');
+    });
+});
+
+// Reset to whatever snapshot is currently marked as the user-default.
+// Uses fabmo.showModal (no input fields needed) since the sandbox blocks
+// window.confirm() the same way it blocks prompt().
+$('#btn-reset-default').click(function () {
+    fetch('/snapshots')
+        .then(function (r) { return r.json(); })
+        .then(function (resp) {
+            var def = null;
+            if (resp && resp.status === 'success' && resp.data && resp.data.snapshots) {
+                for (var i = 0; i < resp.data.snapshots.length; i++) {
+                    if (resp.data.snapshots[i].is_user_default) {
+                        def = resp.data.snapshots[i];
+                        break;
+                    }
+                }
+            }
+            if (!def) {
+                fabmo.notify('warning', 'No default is set yet. Use "Save current settings as my default" first.');
+                return;
+            }
+            fabmo.showModal({
+                title: 'Reset to my default settings?',
+                message: 'This will replace your current configuration and macros with your saved default "' + def.name + '". The tool will restart. A snapshot of your current settings is saved automatically first, so you can recover if needed.',
+                okText: 'Reset',
+                cancelText: 'Cancel',
+                ok: function () {
+                    fabmo.notify('info', 'Restoring "' + def.name + '"...');
+                    fetch('/snapshots/' + encodeURIComponent(def.name) + '/restore', {
+                        method: 'POST'
+                    })
+                        .then(function (r) { return r.json(); })
+                        .then(function (resp2) {
+                            if (!resp2 || resp2.status !== 'success') {
+                                var msg = resp2 && resp2.message ? resp2.message : 'unknown error';
+                                fabmo.notify('error', 'Reset failed: ' + msg);
+                            }
+                            // On success the engine restarts; the page will
+                            // reload on its own once it comes back up.
+                        })
+                        .catch(function (err) {
+                            fabmo.notify('error', 'Reset failed: ' + err.message);
+                        });
+                },
+                cancel: function () {}
+            });
+        })
+        .catch(function (err) {
+            fabmo.notify('error', 'Could not check for default: ' + err.message);
+        });
+});
+
+// Show current default on load.
+refreshDefaultSnapshotName();
