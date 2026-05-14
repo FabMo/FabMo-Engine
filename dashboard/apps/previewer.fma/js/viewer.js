@@ -191,6 +191,31 @@ module.exports = function(container) {
       camera[2] += (zoom + dims[2] / 2) / 1.4;
     }
 
+    // If a view-axis button is clicked while AR / overhead is active, the user
+    // means "get me back to a normal 3D view." Override _savedView with the
+    // snap target so the AR exit teardown lands here instead of restoring the
+    // pre-AR pose, then trigger the appropriate exit (which fades the overlay
+    // and unchecks its toggle).
+    if (self.ar && (self.ar.enabled || self.ar.overhead)) {
+        var savedCamera = (self.ar._savedView && self.ar._savedView.camera)
+            || self.perspectiveCamera || self.camera;
+        var savedZoom = (self.ar._savedView && typeof self.ar._savedView.zoom === 'number')
+            ? self.ar._savedView.zoom
+            : (self.camera.zoom || 1);
+        var savedIsOrtho = self.ar._savedView ? self.ar._savedView.isOrtho : self.isOrtho;
+        self.ar._savedView = {
+            camera: savedCamera,
+            isOrtho: savedIsOrtho,
+            pos:    { x: camera[0], y: camera[1], z: camera[2] },
+            target: { x: center[0], y: center[1], z: center[2] },
+            up:     { x: 0, y: 0, z: 1 },
+            zoom: savedZoom,
+        };
+        if (self.ar.enabled)  self.exitAR();
+        else                  self.exitOverhead();
+        return;
+    }
+
     var pos = self.controls.object.position;
     self.controls.reset();
     pos.set(camera[0], camera[1], camera[2]);
@@ -2111,6 +2136,11 @@ module.exports = function(container) {
                   camera: self.camera,
                   target: { x: self.controls.target.x, y: self.controls.target.y, z: self.controls.target.z },
                   pos:    { x: self.camera.position.x, y: self.camera.position.y, z: self.camera.position.z },
+                  // AR's _applyARCamera overwrites camera.up with the pose's
+                  // ey vector. OrbitControls uses object.up as world-up for
+                  // its spherical math, so we must restore the original on
+                  // exit or rotation rolls/twists.
+                  up:     { x: self.camera.up.x, y: self.camera.up.y, z: self.camera.up.z },
                   zoom: self.camera.zoom,
               };
               _applyARStyling();
@@ -2304,6 +2334,9 @@ module.exports = function(container) {
       if (!self.ar.enabled) return;
       self.ar.enabled = false;
       self.ar.calibrating = false;
+      // Sync the toggle in case exitAR was called programmatically (e.g. from
+      // a view-axis button) rather than via the user clicking the checkbox.
+      container.find('input[name="show-ar"]').prop('checked', false);
       container.find('.ar-calibration').hide();
       container.find('#ar-recalibrate').hide();
       _fadeAR({ videoTo: 0, bgTo: 0, clearTo: 1, durationMs: 250,
@@ -2350,6 +2383,11 @@ module.exports = function(container) {
           self.controls.object = self.camera;
           self.camera.position.set(self.ar._savedView.pos.x, self.ar._savedView.pos.y, self.ar._savedView.pos.z);
           self.controls.target.set(self.ar._savedView.target.x, self.ar._savedView.target.y, self.ar._savedView.target.z);
+          // Restore up before update() so OrbitControls' spherical math sees
+          // the right world-up; otherwise rotation rolls/twists after exit.
+          if (self.ar._savedView.up) {
+              self.camera.up.set(self.ar._savedView.up.x, self.ar._savedView.up.y, self.ar._savedView.up.z);
+          }
           self.camera.zoom = self.ar._savedView.zoom;
           self.camera.updateProjectionMatrix();
           self.controls.update();
@@ -2457,6 +2495,8 @@ module.exports = function(container) {
               camera: self.camera,
               target: { x: self.controls.target.x, y: self.controls.target.y, z: self.controls.target.z },
               pos:    { x: self.camera.position.x, y: self.camera.position.y, z: self.camera.position.z },
+              // See enterAR for why up must be captured/restored.
+              up:     { x: self.camera.up.x, y: self.camera.up.y, z: self.camera.up.z },
               zoom: self.camera.zoom,
           };
           _applyARStyling();
@@ -2519,6 +2559,8 @@ module.exports = function(container) {
   self.exitOverhead = function () {
       if (!self.ar.overhead) return;
       self.ar.overhead = false;
+      // Sync the toggle in case exitOverhead was called programmatically.
+      container.find('input[name="show-overhead"]').prop('checked', false);
       container.find('#ar-recalibrate').hide();
       _fadeAR({ videoTo: 0, bgTo: 0, clearTo: 1, durationMs: 250,
           onComplete: _exitARTeardown });
