@@ -777,6 +777,20 @@ engine.getVersion(function (err, version) {
                             var cancelFunction = function () {
                                 dashboard.engine.quit();
                             };
+                            var reconnectFunction = function () {
+                                dashboard.engine.reconnect(function (err) {
+                                    if (err) {
+                                        console.error("Reconnect request failed:", err);
+                                    }
+                                });
+                            };
+                            var cancelReconnectFunction = function () {
+                                dashboard.engine.cancelReconnect(function (err) {
+                                    if (err) {
+                                        console.error("Cancel reconnect request failed:", err);
+                                    }
+                                });
+                            };
 
                             // Check for presence of an "input" request in "name"
                             if (status.info["input"] && status.info.input["name"]) {
@@ -824,6 +838,12 @@ engine.getVersion(function (err, version) {
                                             case "quit":
                                                 modalOptions.ok = cancelFunction;
                                                 break;
+                                            case "reconnect":
+                                                modalOptions.ok = reconnectFunction;
+                                                break;
+                                            case "cancelReconnect":
+                                                modalOptions.ok = cancelReconnectFunction;
+                                                break;
                                             default:
                                                 modalOptions.ok = function () {
                                                     modalIsShown = false;
@@ -847,6 +867,12 @@ engine.getVersion(function (err, version) {
                                                 break;
                                             case "quit":
                                                 modalOptions.cancel = cancelFunction;
+                                                break;
+                                            case "reconnect":
+                                                modalOptions.cancel = reconnectFunction;
+                                                break;
+                                            case "cancelReconnect":
+                                                modalOptions.cancel = cancelReconnectFunction;
                                                 break;
                                             default:
                                                 modalOptions.cancel = function () {
