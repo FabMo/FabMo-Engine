@@ -406,12 +406,12 @@ G2.prototype.connect = function (path, callback) {
                 function () {
                     // Clear any leftover alarm state (e.g. soft limit from previous session)
                     this.command({ clear: null });
-                    this.requestStatusReport(
-                        function () {
-                            this.startStatusPoll();
-                            callback(null, this);
-                        }.bind(this)
-                    );
+                    // this.requestStatusReport(
+                    //     function () {
+                    //         this.startStatusPoll();
+                    //         callback(null, this);
+                    //     }.bind(this)
+                    // );
                 }.bind(this)
             );
         }.bind(this)
@@ -615,7 +615,7 @@ G2.prototype.reconnect = function () {
                 that._write("\x04\n", function () {
                     that.requestStatusReport(function () {
                         log.info("G2 reconnection successful.");
-                        that.startStatusPoll();
+//                        that.startStatusPoll();
                         that.emit("reconnected");
                     });
                 });
