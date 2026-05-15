@@ -404,16 +404,26 @@ G2.prototype.connect = function (path, callback) {
             this._write(
                 "\x04\n",
                 function () {
-                    // Clear any leftover alarm state (e.g. soft limit from previous session)
-                    this.command({ clear: null });
-                    // this.requestStatusReport(
-                    //     function () {
-                    //         this.startStatusPoll();
-                    //         callback(null, this);
-                    //     }.bind(this)
-                    // );
+                    this.requestStatusReport(
+                        function () {
+                            callback(null, this);
+                        }.bind(this)
+                    );
                 }.bind(this)
             );
+            // this._write(
+            //     "\x04\n",
+            //     function () {
+            //         // Clear any leftover alarm state (e.g. soft limit from previous session)
+            //         this.command({ clear: null });
+            //         this.requestStatusReport(
+            //             function () {
+            //                 this.startStatusPoll();
+            //                 callback(null, this);
+            //             }.bind(this)
+            //         );
+            //     }.bind(this)
+            // );
         }.bind(this)
     );
 
