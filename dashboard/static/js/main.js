@@ -340,13 +340,14 @@ function checkAuthenticationStatus(forceCheck = false) {
             sessionStorage.removeItem('fabmo_authenticated');
             localStorage.removeItem('fabmo_authenticated');
             
-            // Force redirect to authentication
-            setTimeout(function() {
-                if (window.location.hash !== "#/authentication") {
+            // Force redirect to authentication - but only if we're not already there
+            // This prevents stealing focus from the login form during periodic checks
+            if (window.location.hash !== "#/authentication") {
+                setTimeout(function() {
                     // console.log("DEBUG: Redirecting to authentication");
                     window.location.href = "#/authentication";
-                }
-            }, 100);
+                }, 100);
+            }
         } else {
             // console.log("DEBUG: User authenticated:", user.username);
             sessionStorage.setItem('fabmo_authenticated', 'true');
@@ -362,8 +363,11 @@ function performStartupAuthCheck() {
     checkAuthenticationStatus(true);
     
     // Also check after a short delay in case there are timing issues
+    // But skip it if we're already on the auth page to avoid disrupting login
     setTimeout(function() {
-        checkAuthenticationStatus(true);
+        if (window.location.hash !== "#/authentication") {
+            checkAuthenticationStatus(true);
+        }
     }, 2000);
     
     // Set up periodic checks for the first 30 seconds after startup
@@ -373,9 +377,19 @@ function performStartupAuthCheck() {
     const periodicCheck = setInterval(function() {
         checkCount++;
         
+        // Stop checking if user is authenticated
         if (sessionStorage.getItem('fabmo_authenticated') === 'true') {
             // console.log("DEBUG: Authentication confirmed, stopping periodic checks");
             clearInterval(periodicCheck);
+            return;
+        }
+
+        // Don't re-check if we're already on the authentication page to avoid disrupting login
+        if (window.location.hash === "#/authentication") {
+            // console.log("DEBUG: Already on auth page, skipping check #" + checkCount);
+            if (checkCount >= maxChecks) {
+                clearInterval(periodicCheck);
+            }
             return;
         }
 
