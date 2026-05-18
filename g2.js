@@ -869,19 +869,7 @@ G2.prototype.onData = function (data) {
                 this.onMessage(obj);
             } catch (e) {
                 this.handleExceptionReport(e);
-                // When suppressed = true
-                // Use to allow g2 streaming of additonal debug info even if not json-parsable
-                this._suppressJsonErrors = false;  // i.e. set true for debugging g2 firmware w/debug comments
-                if (this._suppressJsonErrors) {
-                    // Optionally log non-JSON debug lines
-                    // Comment/Uncomment log line to manage G2 debug visibility
-                    if (json_string && json_string.trim().length > 0) {
-                        log.g2("S", "in", json_string);  // Use "db" token for debug lines
-                    }
-                } else {
-                    throw e;
-                }
-
+                throw e;
             } finally {
                 // if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
                 // and if we fail to parse, we still clear the line and start anew.
