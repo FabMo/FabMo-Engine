@@ -444,19 +444,24 @@ module.exports = function(container) {
       return;
     }
     var p = self._materialParams;
-    self.material.initialize(p.bounds, p.thickness, p.toolDia, p.materialTop);
-    // Sync the current light direction into the freshly-built mesh's hillshade.
-    applyLightDirectionToMaterial();
-    self.gui.showLoading('Computing material\u2026');
-    self.path.applyAllMaterial(
-      function(progress) {
-        var pct = Math.round(progress * 100);
-        self.gui.showLoading('Computing material\u2026 <progress max="100" value="' + pct + '"></progress>');
-      },
-      function() {
-        if (onDone) onDone();
-      }
-    );
+    // Show the loading message immediately so the user gets feedback while
+    // the worker builds the initial uncut mesh (previously the UI froze with
+    // no indication). initialize is now async; chain the rest in its callback.
+    self.gui.showLoading('Preparing material\u2026');
+    self.material.initialize(p.bounds, p.thickness, p.toolDia, p.materialTop, function () {
+      // Sync the current light direction into the freshly-built mesh's hillshade.
+      applyLightDirectionToMaterial();
+      self.gui.showLoading('Computing material\u2026');
+      self.path.applyAllMaterial(
+        function(progress) {
+          var pct = Math.round(progress * 100);
+          self.gui.showLoading('Computing material\u2026 <progress max="100" value="' + pct + '"></progress>');
+        },
+        function() {
+          if (onDone) onDone();
+        }
+      );
+    });
   }
 
   // Assign toolInfo from operations to each move based on sourceLine ranges.

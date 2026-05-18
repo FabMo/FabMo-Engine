@@ -53,6 +53,38 @@ module.exports = function(scene, update) {
   // Shade range: deepest cut renders at depthMin, uncut top at 1.0.
   var depthMin = 0.15;
 
+  // Web Worker that builds the initial uncut mesh off the main thread. Created
+  // lazily on first use; null if Worker isn't supported (in which case we fall
+  // back to the synchronous path inline). The worker source is imported as a
+  // raw string (webpack 'asset/source' rule) and wrapped in a Blob URL so we
+  // don't rely on webpack's import.meta.url worker syntax (which doesn't parse
+  // cleanly inside CommonJS modules like this one).
+  var workerSource = require('./material.worker.js');
+  var _worker = null;
+  var _workerBlobUrl = null;
+  // Monotonic id stamped on each worker job; the main thread only accepts a
+  // response whose jobId matches the most recent dispatch.
+  var _workerJobId = 0;
+  function ensureWorker() {
+    if (_worker) return _worker;
+    if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return null;
+    try {
+      if (!_workerBlobUrl) {
+        var blob = new Blob([workerSource], { type: 'application/javascript' });
+        _workerBlobUrl = URL.createObjectURL(blob);
+      }
+      _worker = new Worker(_workerBlobUrl);
+      _worker.onerror = function (err) {
+        console.warn('Material worker error — future builds will fall back to sync:', err);
+        _worker = null;
+      };
+    } catch (e) {
+      console.warn('Material worker unavailable, falling back to sync build:', e);
+      _worker = null;
+    }
+    return _worker;
+  }
+
   /**
    * Helper to properly dispose a mesh and track its resources
    */
@@ -101,9 +133,16 @@ module.exports = function(scene, update) {
   }
 
   /**
-   * Initialize material block with height map
+   * Initialize material block with height map.
+   *
+   * The heavy fill of top vertices + indices + colors for the initial uncut
+   * mesh is dispatched to a Web Worker; that step is what locks the UI on
+   * low-performance systems. Bottom vertices are still filled inline (small
+   * loop, fast). The optional `onDone` callback fires after the mesh has
+   * been added to the scene. If Workers aren't available, the build runs
+   * synchronously and `onDone` fires before initialize returns.
    */
-  self.initialize = function(pathBounds, height, diameter, topZ) {
+  self.initialize = function(pathBounds, height, diameter, topZ, onDone) {
     var t0 = performance.now();
     // CHANGED: Just dispose old meshes, don't destroy everything
     self.mesh = disposeMesh(self.mesh);
@@ -182,9 +221,104 @@ module.exports = function(scene, update) {
                 'Stock:', stockHeight, 'TopZ:', materialTop, 'Tool:', toolDia,
                 'Verts:', totalVerts, 'MaxFaces:', maxFaces);
 
-    // Create initial mesh
-    self.createFullMesh();
+    // Build the initial uncut mesh (worker-dispatched when supported).
+    _buildInitialMeshAsync(onDone);
   };
+
+  /**
+   * Build the initial uncut mesh. Dispatches the heavy fill (top vertices,
+   * indices, colors) to material.worker.js when available, falling back to
+   * the synchronous createFullMesh path otherwise. The pre-allocated
+   * posArr / colorArr / idxArr are transferred to the worker and back to
+   * avoid copying; nothing else may touch them while the job is in flight,
+   * which is fine because initialize() is only called from a file-load path.
+   */
+  function _buildInitialMeshAsync(onDone) {
+    if (!heightMap || !posArr) {
+      if (onDone) onDone();
+      return;
+    }
+
+    var worker = ensureWorker();
+    if (!worker) {
+      // Sync fallback — original path.
+      self.createFullMesh();
+      if (onDone) onDone();
+      return;
+    }
+
+    var thisJob = ++_workerJobId;
+    var tStart = performance.now();
+
+    var onMsg = function (e) {
+      if (!e.data || e.data.jobId !== thisJob) return;
+      if (e.data.type !== 'buildUncutDone') return;
+      worker.removeEventListener('message', onMsg);
+
+      // Worker transferred the buffers back — rebind closure refs.
+      posArr = new Float32Array(e.data.posBuf);
+      colorArr = new Float32Array(e.data.colorBuf);
+      idxArr = new Uint32Array(e.data.idxBuf);
+      topVertCount = e.data.topVertCount;
+      botVertOffset = e.data.botVertOffset;
+
+      // Construct THREE.js geometry + mesh on the main thread.
+      var geometry = new THREE.BufferGeometry();
+      posAttr = new THREE.BufferAttribute(posArr, 3);
+      colorAttr = new THREE.BufferAttribute(colorArr, 3);
+      idxAttr = new THREE.BufferAttribute(idxArr, 1);
+      geometry.setAttribute('position', posAttr);
+      geometry.setAttribute('color', colorAttr);
+      geometry.setIndex(idxAttr);
+      geometry.setDrawRange(0, e.data.indexCount);
+      geometry.computeBoundingSphere();
+      activeGeometries.push(geometry);
+
+      if (!meshMaterial) {
+        meshMaterial = new THREE.MeshPhongMaterial({
+          vertexColors: true,
+          flatShading: true,
+          shininess: 0,
+          side: THREE.DoubleSide
+        });
+        activeMaterials.push(meshMaterial);
+      }
+
+      self.mesh = new THREE.Mesh(geometry, meshMaterial);
+      self.mesh.visible = !!self.show;
+      scene.add(self.mesh);
+
+      geometryCreated = true;
+      console.log('createFullMesh (worker): ' + (performance.now() - tStart).toFixed(0) + 'ms');
+      update();
+      if (onDone) onDone();
+    };
+
+    worker.addEventListener('message', onMsg);
+    worker.postMessage(
+      {
+        type: 'buildUncut',
+        jobId: thisJob,
+        params: {
+          xPoints: heightMap.xPoints,
+          yPoints: heightMap.yPoints,
+          xStep: heightMap.xStep,
+          yStep: heightMap.yStep,
+          boundsMinX: bounds.min.x,
+          boundsMinY: bounds.min.y,
+          materialTop: materialTop,
+          baseColor: baseColor,
+          depthMin: depthMin
+        },
+        posBuf: posArr.buffer,
+        colorBuf: colorArr.buffer,
+        idxBuf: idxArr.buffer
+      },
+      [posArr.buffer, colorArr.buffer, idxArr.buffer]
+    );
+    // After transfer, posArr/colorArr/idxArr in this scope are detached
+    // (length 0). They get rebound when the worker responds.
+  }
 
   /**
    * Get grid indices from world coordinates
@@ -502,6 +636,55 @@ module.exports = function(scene, update) {
     if (!heightMap || !segments.length) { if (onDone) onDone(); return; }
     var t0 = performance.now();
 
+    // Worker path: dispatch the per-cell minZ computation off the main
+    // thread so orbit/rotate stays smooth during the "Computing material…"
+    // phase. The heights Float32Array is transferred to the worker and
+    // rebound onto the heightMap when the worker responds. Falls through
+    // to the inline sync code below if Worker isn't available.
+    var worker = ensureWorker();
+    if (worker) {
+      var thisJob = ++_workerJobId;
+      var heightsBufIn = heightMap.heights.buffer;
+      var onMsg = function (e) {
+        if (!e.data || e.data.jobId !== thisJob) return;
+        if (e.data.type === 'progress') {
+          if (onProgress) onProgress(e.data.frac);
+          return;
+        }
+        if (e.data.type !== 'computeHeightsDone') return;
+        worker.removeEventListener('message', onMsg);
+        heightMap.heights = new Float32Array(e.data.heightsBuf);
+        isDirty = e.data.cutCount > 0;
+        pendingUpdates = e.data.cutCount;
+        console.log('computeFromSegmentsAsync (worker): ' + segments.length +
+                    ' segments, ' + e.data.cutCount + ' cells cut, total=' +
+                    (performance.now() - t0).toFixed(0) + 'ms');
+        if (onDone) onDone();
+      };
+      worker.addEventListener('message', onMsg);
+      worker.postMessage(
+        {
+          type: 'computeHeights',
+          jobId: thisJob,
+          params: {
+            xPoints: heightMap.xPoints,
+            yPoints: heightMap.yPoints,
+            xStep: heightMap.xStep,
+            yStep: heightMap.yStep,
+            boundsMinX: bounds.min.x,
+            boundsMinY: bounds.min.y,
+            boundsMaxX: bounds.max.x,
+            boundsMaxY: bounds.max.y,
+            materialTop: materialTop,
+          },
+          segments: segments,
+          heightsBuf: heightsBufIn,
+        },
+        [heightsBufIn]
+      );
+      return;
+    }
+
     var xP = heightMap.xPoints;
     var yP = heightMap.yPoints;
     var xS = heightMap.xStep;
@@ -553,65 +736,74 @@ module.exports = function(scene, update) {
       }
     }
 
-    // Process rows in batches
+    // Process rows in time-bounded batches: each batch runs until ~16ms of
+    // wall-clock has elapsed, then yields via setTimeout(0). Adapts to job
+    // complexity — dense jobs naturally shrink batches; sparse stay fast.
+    // The prior fixed-batch scheme (yP/20 rows) was too coarse on slower
+    // browsers (e.g. Safari): a single batch could lock the main thread for
+    // seconds. ~16ms keeps things visibly fluid at ~60fps.
     var rowPos = 0;
-    var rowsPerBatch = Math.max(1, Math.floor(yP / 20)); // ~20 progress steps
     var cutCount = 0;
+    var BATCH_BUDGET_MS = 16;
 
     function processBatch() {
-      var rowEnd = Math.min(rowPos + rowsPerBatch, yP);
-      for (var yi = rowPos; yi < rowEnd; yi++) {
+      var batchStart = performance.now();
+      while (rowPos < yP) {
+        var yi = rowPos;
         var py = minY + yi * yS;
         var gyy = Math.floor((py - minY) / cellSize);
-        if (gyy < 0 || gyy >= gridH) continue;
+        if (gyy >= 0 && gyy < gridH) {
+          for (var xi = 0; xi < xP; xi++) {
+            var px = minX + xi * xS;
+            var gx = Math.floor((px - minX) / cellSize);
+            if (gx < 0 || gx >= gridW) continue;
+            var cell = grid[gridKey(gx, gyy)];
+            if (!cell) continue;
 
-        for (var xi = 0; xi < xP; xi++) {
-          var px = minX + xi * xS;
-          var gx = Math.floor((px - minX) / cellSize);
-          if (gx < 0 || gx >= gridW) continue;
-          var cell = grid[gridKey(gx, gyy)];
-          if (!cell) continue;
-
-          var minZ = materialTop;
-          for (var s = 0; s < cell.length; s++) {
-            var seg = segments[cell[s]];
-            var ssx = seg.start, eex = seg.end;
-            var dx = eex[0] - ssx[0];
-            var dy = eex[1] - ssx[1];
-            var lenSq = dx * dx + dy * dy;
-            var t;
-            if (lenSq < 0.000001) { t = 0; }
-            else {
-              t = ((px - ssx[0]) * dx + (py - ssx[1]) * dy) / lenSq;
-              if (t < 0) t = 0; else if (t > 1) t = 1;
+            var minZ = materialTop;
+            for (var s = 0; s < cell.length; s++) {
+              var seg = segments[cell[s]];
+              var ssx = seg.start, eex = seg.end;
+              var dx = eex[0] - ssx[0];
+              var dy = eex[1] - ssx[1];
+              var lenSq = dx * dx + dy * dy;
+              var t;
+              if (lenSq < 0.000001) { t = 0; }
+              else {
+                t = ((px - ssx[0]) * dx + (py - ssx[1]) * dy) / lenSq;
+                if (t < 0) t = 0; else if (t > 1) t = 1;
+              }
+              var cx = ssx[0] + t * dx;
+              var cy = ssx[1] + t * dy;
+              var cz = ssx[2] + t * (eex[2] - ssx[2]);
+              var dist = Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+              var segRadius = seg.toolDia / 2;
+              var z;
+              if (seg.toolType === 'vbit') {
+                var tanHalf = Math.tan((seg.vbitAngle / 2) * Math.PI / 180);
+                z = cz + dist / tanHalf;
+                if (z >= materialTop) continue;
+              } else if (seg.toolType === 'ball') {
+                if (dist > segRadius) continue;
+                z = cz + segRadius - Math.sqrt(segRadius * segRadius - dist * dist);
+              } else {
+                if (dist > segRadius) continue;
+                z = cz;
+              }
+              if (z < minZ) minZ = z;
             }
-            var cx = ssx[0] + t * dx;
-            var cy = ssx[1] + t * dy;
-            var cz = ssx[2] + t * (eex[2] - ssx[2]);
-            var dist = Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
-            var segRadius = seg.toolDia / 2;
-            var z;
-            if (seg.toolType === 'vbit') {
-              var tanHalf = Math.tan((seg.vbitAngle / 2) * Math.PI / 180);
-              z = cz + dist / tanHalf;
-              if (z >= materialTop) continue;
-            } else if (seg.toolType === 'ball') {
-              if (dist > segRadius) continue;
-              z = cz + segRadius - Math.sqrt(segRadius * segRadius - dist * dist);
-            } else {
-              if (dist > segRadius) continue;
-              z = cz;
+            if (minZ < materialTop) {
+              heights[yi * xP + xi] = minZ;
+              cutCount++;
             }
-            if (z < minZ) minZ = z;
-          }
-          if (minZ < materialTop) {
-            heights[yi * xP + xi] = minZ;
-            cutCount++;
           }
         }
+        rowPos++;
+        // Time-based yield: check after each row to keep the UI responsive
+        // on slower browsers without bloating overhead on fast ones.
+        if (performance.now() - batchStart >= BATCH_BUDGET_MS) break;
       }
 
-      rowPos = rowEnd;
       if (onProgress) onProgress(rowPos / yP);
 
       if (rowPos < yP) {

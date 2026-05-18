@@ -69,6 +69,14 @@ var config = {
                 test: /\.(eot|otf|svg|ttf|woff|woff2|png|jpg|gif|pdf)$/,
                 type: "asset",
             },
+            {
+                // Web Worker sources: import as raw string so the main module
+                // can wrap them in a Blob URL and instantiate the Worker. This
+                // avoids relying on webpack's import.meta.url worker syntax,
+                // which doesn't parse cleanly in CommonJS modules.
+                test: /\.worker\.js$/,
+                type: "asset/source",
+            },
 
             // Add your rules for custom modules here
             // Learn more about loaders from https://webpack.js.org/loaders/
