@@ -423,7 +423,11 @@ define(function (require) {
         this._registerHandler(
             "setJobRepeat",
             function (data, callback) {
-                this.engine.setJobRepeat(data.id, data.repeat, callback);
+                var opts = { repeat: !!data.repeat };
+                if (Object.prototype.hasOwnProperty.call(data, "count")) {
+                    opts.count = data.count;
+                }
+                this.engine.setJobRepeat(data.id, opts, callback);
             }.bind(this)
         );
 

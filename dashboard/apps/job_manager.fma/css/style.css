@@ -1052,26 +1052,21 @@ table {
 }
 
 
-/* Repeat-mode toggle button on the next-in-queue card.
-   Sits just below the play button (bottom-right of the radial), fully clear
-   of the 100x100 play circle. Click toggles persistent server-side repeat. */
+/* Repeat-mode toggle button — lives inline with preview/ghost/edit in the
+   icon-row of the next-in-queue card. Click opens a modal where the operator
+   sets a count (blank = run until canceled). The optional .on class turns the
+   icon green; the .repeat-count-badge shows the remaining run count. */
 .repeat-button {
-  position: absolute;
-  top: 78px;
-  right: 34px;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
-  text-align: center;
+  position: relative;
+  display: inline-block;
   color: #888;
   cursor: pointer;
-  border-radius: 50%;
-  z-index: 51;
-  transition: color 0.2s, background-color 0.2s;
+  transition: color 0.2s;
 }
 
 .repeat-button i {
-  font-size: 20px;
+  font-size: 22px;
+  line-height: 1;
 }
 
 .repeat-button:hover {
@@ -1084,6 +1079,27 @@ table {
 
 .repeat-button.on:hover {
   color: #1f8a1f;
+}
+
+.repeat-count-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #32B433;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 8px;
+  display: none;
+}
+
+.repeat-count-badge.visible {
+  display: inline-block;
 }
 
 /* Ghost-run button sits inline with preview/edit/download/cancel in the

@@ -377,8 +377,21 @@
         this._post("/job/" + id, {}, callback, callback);
     };
 
-    FabMoAPI.prototype.setJobRepeat = function (id, repeat, callback) {
-        this._post("/job/" + id + "/repeat", { repeat: !!repeat }, callback, callback);
+    // setJobRepeat(id, opts, cb)
+    //   opts: boolean (legacy) — sets repeat on/off, leaves count untouched
+    //   opts: { repeat: bool, count?: number|null } — count is total runs
+    //         remaining (incl current); null/blank/<1 means indefinite.
+    FabMoAPI.prototype.setJobRepeat = function (id, opts, callback) {
+        var body;
+        if (typeof opts === "boolean") {
+            body = { repeat: opts };
+        } else {
+            body = { repeat: !!(opts && opts.repeat) };
+            if (opts && Object.prototype.hasOwnProperty.call(opts, "count")) {
+                body.count = opts.count;
+            }
+        }
+        this._post("/job/" + id + "/repeat", body, callback, callback);
     };
 
     FabMoAPI.prototype.ghostRunJob = function (id, zOffset, callback) {

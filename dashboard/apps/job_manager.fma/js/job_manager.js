@@ -170,7 +170,7 @@ function createRecentMenu(id) {
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div><a class="repeat-button" title="Toggle Repeat (re-run this job when it finishes)"><i class="fa fa-repeat"></i></a></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="ghost-button" title="Ghost Run (dry-run with a Z lift)"><img class="svg" src="css/images/ghost.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="repeat-button" title="Repeat Job (set a count or leave blank to repeat until canceled)"><i class="fa fa-repeat"></i><span class="repeat-count-badge"></span></a></div><div class="medium-1 small-2 columns"><a class="ghost-button" title="Ghost Run (dry-run with a Z lift)"><img class="svg" src="css/images/ghost.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -295,11 +295,22 @@ function setFirstCard(job) {
   $('.repeat-button').data('id', firstId);
   $('.ghost-button').data('id', firstId);
 
-  // Reflect persisted repeat state on the toggle button
-  if (job && job.repeat) {
-    $('.repeat-button').addClass('on');
+  // Reflect persisted repeat state on the toggle button. Stash the count on
+  // the button so the modal can pre-fill it. Badge shows remaining count when
+  // finite; hidden when null (indefinite) or repeat off.
+  var repeatOn = !!(job && job.repeat);
+  var repeatCount =
+    job && (job.repeatCount === 0 || job.repeatCount)
+      ? parseInt(job.repeatCount, 10)
+      : null;
+  $('.repeat-button')
+    .toggleClass('on', repeatOn)
+    .data('repeat-count', repeatCount);
+  var $badge = $('.repeat-button .repeat-count-badge');
+  if (repeatOn && repeatCount !== null && isFinite(repeatCount)) {
+    $badge.text(repeatCount).addClass('visible');
   } else {
-    $('.repeat-button').removeClass('on');
+    $badge.text('').removeClass('visible');
   }
 
   // Ghost mode requires the OpenSBP runtime (transforms aren't applied to
@@ -977,22 +988,74 @@ var sortable = Sortable.create(el, {
 var current_job_id = 0;
 
 function bindRepeatToggle() {
+  // Click on the repeat button opens a Foundation reveal-modal where the
+  // operator picks "Off", or sets a count (blank = run until canceled). The
+  // server response refreshes the queue, which then updates the button class
+  // and count badge — so we don't bother with optimistic UI flips here.
+  //
+  // Save/Off resolve the target job at *click* time (not modal-open time):
+  // if the modal is left open across a clone-on-finish, the originally-
+  // captured job ID is already finished and its repeat flag is irrelevant —
+  // the running clone is the one we need to mutate. The queue refresh keeps
+  // `.repeat-button`'s data('id') pointed at the current running/next job.
+  function currentRepeatJobId() {
+    return $('.repeat-button').first().data('id') || null;
+  }
+
   $('#queue_table').on('click touchstart', '.repeat-button', function(e) {
     e.preventDefault();
     e.stopPropagation();
     var jobid = $(this).data('id') || $(this).closest('.job_item').attr('id');
     if (!jobid) return;
-    // Optimistic UI flip; server response is authoritative and will be
-    // reflected on the next queue refresh.
-    var willBeOn = !$(this).hasClass('on');
-    $(this).toggleClass('on', willBeOn);
-    fabmo.setJobRepeat(jobid, willBeOn, function(err) {
-      if (err) {
-        fabmo.notify('error', err);
-        // Roll back the optimistic flip
-        $('.repeat-button').toggleClass('on', !willBeOn);
+    var isOn = $(this).hasClass('on');
+    var count = $(this).data('repeat-count');
+    $('#repeat-count').val(
+      isOn && count !== null && count !== undefined && isFinite(count) ? count : ''
+    );
+    // Hide "Turn Off" when repeat is already off — only "Save" / "Cancel"
+    // make sense in that case.
+    $('#repeat-off').toggle(isOn);
+    $('#repeat-modal').foundation('reveal', 'open');
+    setTimeout(function() { $('#repeat-count').focus().select(); }, 100);
+  });
+
+  $('#repeat-save').on('click', function() {
+    var jobid = currentRepeatJobId();
+    if (!jobid) {
+      $('#repeat-modal').foundation('reveal', 'close');
+      return;
+    }
+    var raw = $('#repeat-count').val();
+    var trimmed = (raw || '').toString().trim();
+    var count = null;
+    if (trimmed !== '') {
+      var n = parseInt(trimmed, 10);
+      if (!isFinite(n) || n < 1) {
+        fabmo.notify('error', 'Count must be a positive integer or blank');
+        return;
       }
+      count = n;
+    }
+    $('#repeat-modal').foundation('reveal', 'close');
+    fabmo.setJobRepeat(jobid, { repeat: true, count: count }, function(err) {
+      if (err) fabmo.notify('error', err);
     });
+  });
+
+  $('#repeat-off').on('click', function() {
+    var jobid = currentRepeatJobId();
+    if (!jobid) {
+      $('#repeat-modal').foundation('reveal', 'close');
+      return;
+    }
+    $('#repeat-modal').foundation('reveal', 'close');
+    fabmo.setJobRepeat(jobid, { repeat: false, count: null }, function(err) {
+      if (err) fabmo.notify('error', err);
+    });
+  });
+
+  $('#repeat-cancel').on('click', function() {
+    $('#repeat-modal').foundation('reveal', 'close');
   });
 }
 

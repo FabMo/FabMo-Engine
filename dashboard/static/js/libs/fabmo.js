@@ -764,8 +764,21 @@
         this._call("resubmitJob", args, callback);
     };
 
-    FabMoDashboard.prototype.setJobRepeat = function (id, repeat, callback) {
-        this._call("setJobRepeat", { id: id, repeat: !!repeat }, callback);
+    // setJobRepeat(id, opts, cb)
+    //   opts: boolean (legacy) — sets repeat on/off, leaves count untouched
+    //   opts: { repeat: bool, count?: number|null } — count is total runs
+    //         remaining (incl current); null/blank/<1 means indefinite.
+    FabMoDashboard.prototype.setJobRepeat = function (id, opts, callback) {
+        var payload;
+        if (typeof opts === "boolean") {
+            payload = { id: id, repeat: opts };
+        } else {
+            payload = { id: id, repeat: !!(opts && opts.repeat) };
+            if (opts && Object.prototype.hasOwnProperty.call(opts, "count")) {
+                payload.count = opts.count;
+            }
+        }
+        this._call("setJobRepeat", payload, callback);
     };
 
     FabMoDashboard.prototype.ghostRunJob = function (id, zOffset, callback) {
