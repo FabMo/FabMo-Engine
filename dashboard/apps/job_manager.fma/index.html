@@ -23,6 +23,24 @@
 		</div>
 		<a class="close-reveal-modal" id="close-ghost-modal">&#215;</a>
 	</div>
+
+	<div id="repeat-modal" class="reveal-modal small" data-reveal>
+		<div id="modal-title">Repeat Job</div>
+		<p>After this job finishes, requeue and run it again. Set a total run
+		count, or leave blank to repeat until you stop it manually.</p>
+		<div class="row">
+			<label for="repeat-count">Total times to run (blank = until canceled):</label>
+			<input id="repeat-count" type="number" step="1" min="1" placeholder="blank = unlimited" />
+		</div>
+		<div class="row">
+			<div class="right">
+				<button id="repeat-cancel" class="button radius secondary">Cancel</button>
+				<button id="repeat-off" class="button radius alert">Turn Off</button>
+				<button id="repeat-save" class="button radius success">Save</button>
+			</div>
+		</div>
+		<a class="close-reveal-modal" id="close-repeat-modal">&#215;</a>
+	</div>
 </head>
 <body>
   <div class="filter"></div>

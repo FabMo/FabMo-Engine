@@ -520,12 +520,27 @@ var getJobGCode = function (req, res, next) {
 
 // eslint-disable-next-line no-unused-vars
 var setJobRepeat = function (req, res, next) {
-    var desired = req.body && typeof req.body.repeat !== "undefined" ? !!req.body.repeat : null;
+    var body = req.body || {};
+    var desired = typeof body.repeat !== "undefined" ? !!body.repeat : null;
+    // count: integer = total runs (incl current), null = indefinite, absent =
+    // don't touch existing value. Negative/zero/NaN coerces to null.
+    var countProvided = Object.prototype.hasOwnProperty.call(body, "count");
+    var rawCount = body.count;
+    var parsedCount = null;
+    if (countProvided && rawCount !== null && rawCount !== "") {
+        var n = parseInt(rawCount, 10);
+        parsedCount = isFinite(n) && n >= 1 ? n : null;
+    }
     db.Job.getById(req.params.id, function (err, job) {
         if (err || !job) {
             return res.json({ status: "error", message: err || "Job not found" });
         }
         job.repeat = desired === null ? !job.repeat : desired;
+        if (!job.repeat) {
+            job.repeatCount = null;
+        } else if (countProvided) {
+            job.repeatCount = parsedCount;
+        }
         job.save(function (saveErr, saved) {
             if (saveErr) {
                 return res.json({ status: "error", message: saveErr });
@@ -542,6 +557,7 @@ var setJobRepeat = function (req, res, next) {
                 String(machine.status.job._id) === String(saved._id)
             ) {
                 machine.status.job.repeat = saved.repeat;
+                machine.status.job.repeatCount = saved.repeatCount;
             }
             res.json({ status: "success", data: { job: saved } });
         });

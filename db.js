@@ -44,6 +44,49 @@ function notifyChange() {
     }
 }
 
+// Wait for the driver's previous cycle context to be fully released
+// (driver.context === null, set when stat:4 resolves the cycle promise),
+// then clone the just-finished job and kick off the next run. Polls every
+// 25ms with a generous 10s ceiling; if the context is still held after
+// that, we abort the restart rather than crash the runtime — the next user
+// action will surface the underlying driver hang.
+function scheduleRepeatRestart(srcJob, nextCount) {
+    var MAX_WAIT_MS = 10000;
+    var POLL_MS = 25;
+    var deadline = Date.now() + MAX_WAIT_MS;
+
+    function poll() {
+        var machine = require("./machine").machine;
+        if (!machine) return;
+        var ready =
+            !machine.status.job &&
+            machine.status.state === "idle" &&
+            (!machine.driver || !machine.driver.context);
+        if (!ready) {
+            if (Date.now() < deadline) {
+                return setTimeout(poll, POLL_MS);
+            }
+            log.warn(
+                "Repeat auto-restart aborted: driver still busy after " +
+                    MAX_WAIT_MS +
+                    "ms (state=" +
+                    machine.status.state +
+                    ", hasContext=" +
+                    !!(machine.driver && machine.driver.context) +
+                    ")"
+            );
+            return;
+        }
+        srcJob.clone({ repeatCount: nextCount }, function (cloneErr) {
+            if (cloneErr) return log.error("Repeat clone failed: " + cloneErr);
+            machine._runNextJob(true, function (runErr) {
+                if (runErr) log.error("Repeat auto-restart failed: " + runErr);
+            });
+        });
+    }
+    setImmediate(poll);
+}
+
 /* Job object has all of the features described.
  *   file_id refers to objects in the File collection.  Each job has a file, which is the CNC data that is run for that job.
  *   states for jobs:
@@ -66,6 +109,14 @@ var Job = function (options) {
     this.state = "pending";
     this.order = options.order || null;
     this.repeat = !!options.repeat;
+    // repeatCount: total runs remaining (including the current one).
+    //   null = indefinite (operator-stopped)
+    //   N    = N total runs left; decremented on each clone, stops when < 2
+    // Ignored when repeat is false.
+    this.repeatCount =
+        options.repeatCount === undefined || options.repeatCount === null
+            ? null
+            : Math.max(0, Math.floor(options.repeatCount));
     // Ghost mode: a transient one-shot clone that runs the job with a Z lift
     // for a dry-run / preview pass. ghost_restore_move snapshots the user's
     // transforms.move so we can put it back when the ghost run ends.
@@ -91,14 +142,23 @@ Job.prototype._restoreGhostTransform = function (callback) {
 };
 
 // Clone a job.  Used for re-running files, usually.
-// The `repeat` flag is carried into the clone so a repeating job keeps repeating
-// across the clone-on-finish cycle.
-Job.prototype.clone = function (callback) {
+// The `repeat` flag (and remaining count) are carried into the clone so a
+// repeating job keeps repeating across the clone-on-finish cycle. The caller
+// may override repeatCount (used by the repeat-on-finish path to decrement).
+Job.prototype.clone = function (overrides, callback) {
+    if (typeof overrides === "function") {
+        callback = overrides;
+        overrides = {};
+    }
     var job = new Job({
         file_id: this.file_id,
         name: this.name,
         description: this.description,
         repeat: this.repeat,
+        repeatCount:
+            overrides && Object.prototype.hasOwnProperty.call(overrides, "repeatCount")
+                ? overrides.repeatCount
+                : this.repeatCount,
     });
     job.save(callback);
 };
@@ -133,22 +193,26 @@ Job.prototype.finish = function (callback) {
         that.save(function (err, saved) {
             if (callback) callback(err, saved);
             if (err || that.ghost || !that.repeat) return;
+            // Decide whether this finish triggers another run. Count semantics:
+            // repeatCount === null  → run forever
+            // repeatCount === N     → N total runs remain; this is one of them,
+            //                          so the next run only happens if N >= 2
+            //                          (the clone gets N-1).
+            var nextCount = null;
+            if (that.repeatCount !== null && that.repeatCount !== undefined) {
+                if (that.repeatCount < 2) return; // this was the final scheduled run
+                nextCount = that.repeatCount - 1;
+            }
             // Repeat mode: clone the just-finished job back onto the queue and
-            // auto-start. Deferred so the runtime can complete its idle
-            // transition before we kick off the next run. Skipped for ghost
-            // runs — those are intentionally one-shot.
-            setImmediate(function () {
-                that.clone(function (cloneErr) {
-                    if (cloneErr) {
-                        return log.error("Repeat clone failed: " + cloneErr);
-                    }
-                    var machine = require("./machine").machine;
-                    if (!machine) return;
-                    machine._runNextJob(true, function (runErr) {
-                        if (runErr) log.error("Repeat auto-restart failed: " + runErr);
-                    });
-                });
-            });
+            // auto-start once the previous run's driver cycle is actually
+            // closed. Previously this fired on setImmediate, which usually
+            // happened to land after stat:4 cleared the G2 cycle context —
+            // but under event-loop pressure (e.g. an in-flight queue-change
+            // notification triggered by the repeat-modal save) the next
+            // runStream could start before context=null, throwing "Cannot
+            // create a new cycle context. One already exists." Skipped for
+            // ghost runs — those are intentionally one-shot.
+            scheduleRepeatRestart(that, nextCount);
         });
     });
 };
