@@ -88,9 +88,7 @@ function EngineConfigFirstTime(callback) {
         case "linux":
             var ports = {
                 control_port_linux: "/dev/fabmo_g2_motion",
-                data_port_linux: "/dev/ttyfabmo_g2_motion",
-                // control_port_linux: "/dev/ttyACM0",
-                // data_port_linux: "/dev/ttyACM0",
+                spindle_control_port: "",
             };
             config.engine.update(ports, function () {
                 callback();
@@ -102,7 +100,7 @@ function EngineConfigFirstTime(callback) {
                 if (files.length >= 1) {
                     var ports = {
                         control_port_osx: files[0],
-                        data_port_osx: files[1] || files[0],
+                        spindle_control_port: "",
                     };
                     config.engine.update(ports, function () {
                         callback();
