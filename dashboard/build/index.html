@@ -308,6 +308,13 @@
 
     <div class="manual-drive-modal" id="keypad-modal" tabindex="0" oncontextmenu="return false;">
 
+        <!-- Authorize overlay: shown when manual controls require authorize
+             and the machine is not yet authorized. Pointer-events: auto on
+             the overlay blocks clicks on jog buttons underneath. -->
+        <div class="authorize-overlay" style="display: none;">
+            <div class="authorize-overlay-message">Press authorize button to enable manual controls</div>
+        </div>
+
         <!-- NEW: Minimal drag handle bar -->
         <div class="modal-drag-bar">
             <div class="drag-handle" title="Drag to move keypad">

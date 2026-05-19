@@ -641,6 +641,8 @@ engine.getVersion(function (err, version) {
                     keyboard.setEnabled(false);
                 }
 
+                syncAuthorizeOverlay(status);
+
                 if (
                     (status.state != "armed" && last_state_seen === "armed") ||
                     (status.state != "paused" && last_state_seen === "paused") ||
@@ -994,6 +996,12 @@ engine.getVersion(function (err, version) {
                     // quitFlag prevents authorize dialog from popping up
                     // after quitting from authorize dialog
                 } else if (status.state === "armed" && status.quitFlag === false) {
+                    // The soft overlay + disabled keypad/keyboard prevent jog
+                    // commands from reaching the server while unauthorized, so
+                    // any armed-state transition that reaches here is from a
+                    // command that genuinely warrants the strong popup
+                    // (file/macro/editor run, or spindle toggle from the
+                    // manual pad).
                     authorizeDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
@@ -2236,6 +2244,29 @@ function hideKeypadMessage() {
     document.querySelector(".manual-drive-message").style.display = "none";
     // Show title when hiding message
     document.getElementById("title_goto").style.display = "block";
+}
+
+// Show/hide the soft authorize overlay over the manual control modal.
+// Trigger condition: the manual drawer is visible AND auth_required is on
+// AND auth_scope includes manual ("all") AND the machine is not currently
+// authorized. While the overlay is up we also disable keypad and keyboard
+// jog input so a key press can't slip past pointer-events.
+function syncAuthorizeOverlay(status) {
+    var $overlay = $(".authorize-overlay");
+    var cfg = engine && engine.config && engine.config.machine;
+    var scope = (cfg && cfg.auth_scope) || "all";
+    var shouldShow =
+        $(".manual-drive-modal").is(":visible") &&
+        cfg && cfg.auth_required &&
+        scope !== "file_only" &&
+        !(status && status.auth);
+    if (shouldShow) {
+        $overlay.show();
+        if (typeof keypad !== "undefined" && keypad) keypad.setEnabled(false);
+        if (typeof keyboard !== "undefined" && keyboard) keyboard.setEnabled(false);
+    } else {
+        $overlay.hide();
+    }
 }
 
 function showSoftLimitPrompt(axis) {

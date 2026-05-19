@@ -1801,6 +1801,23 @@
                 <input id="machine-auth_required" class="machine-input" type="checkbox" checked>
               </div>
               <div class="row collapse">
+                <label>Lockout scope <span class="tooltip">i
+                  <span class="tooltiptext">
+                    Which actions require the authorize button press. <br>
+                    "Files and manual control" gates everything (the original <br>
+                    behavior). "File runs only" lets the on-screen manual <br>
+                    controls and keyboard jog work without pressing authorize <br>
+                    first, while still requiring it before any file, macro, or <br>
+                    editor code is allowed to run. [default=Files and manual control]
+                  </span>
+                  </span>
+                </label>
+                <select id="machine-auth_scope" class="machine-input">
+                  <option value="all">Files and manual control</option>
+                  <option value="file_only">File runs only (manual controls always available)</option>
+                </select>
+              </div>
+              <div class="row collapse">
                 <label>Authorization Button Input <span class="tooltip">i
                   <span class="tooltiptext">
                     The input line to which the authorization button is connected. <br>
