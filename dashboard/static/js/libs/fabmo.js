@@ -781,8 +781,12 @@
         this._call("setJobRepeat", payload, callback);
     };
 
-    FabMoDashboard.prototype.ghostRunJob = function (id, zOffset, callback) {
-        this._call("ghostRunJob", { id: id, zOffset: zOffset }, callback);
+    FabMoDashboard.prototype.ghostRunJob = function (id, options, callback) {
+        // Back-compat: legacy callers pass a number as the zOffset.
+        var opts = typeof options === "number"
+            ? { mode: "lift", zOffset: options }
+            : options || {};
+        this._call("ghostRunJob", { id: id, options: opts }, callback);
     };
 
     /**

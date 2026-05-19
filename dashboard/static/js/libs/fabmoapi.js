@@ -394,8 +394,12 @@
         this._post("/job/" + id + "/repeat", body, callback, callback);
     };
 
-    FabMoAPI.prototype.ghostRunJob = function (id, zOffset, callback) {
-        this._post("/job/" + id + "/ghost", { zOffset: zOffset }, callback, callback);
+    FabMoAPI.prototype.ghostRunJob = function (id, options, callback) {
+        // Back-compat: legacy callers pass a number as the zOffset.
+        var body = typeof options === "number"
+            ? { mode: "lift", zOffset: options }
+            : options || {};
+        this._post("/job/" + id + "/ghost", body, callback, callback);
     };
 
     FabMoAPI.prototype.updateOrder = function (data, callback) {
