@@ -203,12 +203,21 @@ function G2() {
     // Reconnection state
     this._reconnecting = false;
     this._reconnectTimer = null;
+    // Counts failed attempts within the current reconnect() loop, reset at
+    // each loop start. Used to drive the "first attempt failed" UX in machine.js.
+    this._reconnectAttempts = 0;
 
     // Status poll state
     this._lastDataReceived = 0;
     this._statusPollTimer = null;
     this._statusPollTimeout = null;
     this._statusPollPending = false;
+    // Set when the heartbeat probe has been written but its response not yet seen.
+    // Used to suppress logging of the probe's SR response in onData.
+    this._silentProbePending = false;
+    // Set after _handleDisconnect runs so onSerialClose / _write / etc. can
+    // short-circuit cleanly and only one "disconnect" event is emitted.
+    this._disconnected = false;
 }
 
 util.inherits(G2, events.EventEmitter);
@@ -486,16 +495,16 @@ G2.prototype.onSerialError = function (data) {
     });
 };
 
-// When the serial link to G2 is closed, attempt in-process reconnection
-// instead of exiting the process. Falls back to process.exit(14) after
-// MAX_RECONNECT_TIME if reconnection fails.
+// When the serial link to G2 is closed, log diagnostics and notify listeners.
+// Recovery is user-initiated — call G2.reconnect() explicitly (e.g. from the
+// /reconnect route or the dashboard's persistent disconnect dialog).
 G2.prototype.onSerialClose = function () {
     this.connected = false;
-    
+
     // === ENHANCED DIAGNOSTIC LOGGING ===
     var disconnectTime = new Date().toISOString();
     var timeSinceLastData = this._lastDataReceived ? (Date.now() - this._lastDataReceived) : 'N/A';
-    
+
     log.error("╔════════════════════════════════════════════════════════════════");
     log.error("║ G2 SERIAL DISCONNECT EVENT");
     log.error("╠════════════════════════════════════════════════════════════════");
@@ -514,12 +523,12 @@ G2.prototype.onSerialClose = function () {
     log.error("║ Quit Pending:        " + this.quit_pending);
     log.error("║ Last G2 Status:      stat=" + (this.status.stat || 'unknown'));
     log.error("║ Heartbeat Pending:   " + this._heartbeatPending);
-    
+
     // Log current runtime if available
     if (typeof global.CUR_RUNTIME !== 'undefined') {
         log.error("║ Current Runtime:     " + global.CUR_RUNTIME);
     }
-    
+
     log.error("╚════════════════════════════════════════════════════════════════");
 
     // Save log for diagnostics
@@ -531,37 +540,94 @@ G2.prototype.onSerialClose = function () {
 
     // Intentional close (firmware update) — do nothing
     if (intendedClose) {
-        log.info("Serial close was intentional (firmware update) - not reconnecting");
+        log.info("Serial close was intentional (firmware update) - not handling as disconnect");
         return;
     }
 
-    // Already in a reconnection cycle — let the retry loop handle it
+    // Already mid-reconnect — let the retry loop handle the close
     if (this._reconnecting) {
-        log.warn("Already in reconnection cycle - ignoring duplicate close event");
+        log.warn("Serial close during reconnect — handled by retry loop");
         return;
     }
 
-    // Start reconnection
-    this.reconnect();
+    this._handleDisconnect("serial_close");
 };
 
-// Attempt to reconnect to G2 with exponential backoff.
+// Mark the G2 link as down, clean up internal state, and notify listeners
+// so the dashboard can prompt the user. Idempotent — repeated calls are no-ops.
+// Recovery (G2.reconnect) is NOT triggered automatically; it must be invoked
+// explicitly (user action via /reconnect, or engine startup retry).
+G2.prototype._handleDisconnect = function (reason) {
+    if (this._disconnected) {
+        return;
+    }
+    this._disconnected = true;
+    this.connected = false;
+    this.stopStatusPoll();
+
+    var payload = {
+        reason: reason,
+        timestamp: new Date().toISOString(),
+        timeSinceLastData: this._lastDataReceived
+            ? Date.now() - this._lastDataReceived
+            : null,
+        lastStat: (this.status && this.status.stat) || null,
+        inCycle: !!this.context,
+        serialPath: this._serialPath || null,
+    };
+
+    // Drop listeners on the (now-stale) port so ghost events don't fire
+    if (this._serialPort) {
+        try {
+            this._serialPort.removeAllListeners();
+        } catch (e) {
+            log.warn("Error removing serial listeners on disconnect: " + e);
+        }
+    }
+
+    // Wipe queues / buffers / flags so a future reconnect starts clean
+    this._resetInternalState();
+
+    log.error(
+        "G2 link lost (reason=" + reason + ") — awaiting user-initiated reconnect"
+    );
+    this.emit("disconnect", payload);
+};
+
+// User-initiated reconnect to G2 with exponential backoff.
+// Called explicitly — by the /reconnect route, the dashboard's disconnect
+// dialog, or from engine startup when the initial connection failed.
 // Reuses the existing G2 object in-place so all external references
 // (machine.driver, runtimes, config) remain valid.
 G2.prototype.reconnect = function () {
+    if (this._reconnecting) {
+        log.warn("G2 reconnect already in progress — ignoring duplicate request");
+        return;
+    }
     var that = this;
     this._reconnecting = true;
+    this._reconnectAttempts = 0;
     this.stopStatusPoll();
 
-    // Notify listeners (machine.js) that the connection was lost
-    this.emit("disconnect");
+    // Notify listeners (machine.js) so the dashboard can swap the disconnect
+    // modal for a "Reconnecting…" modal. /reconnect returns 200 immediately;
+    // without this, the user would see the dialog dismiss and have no signal
+    // that retries are still in flight.
+    this.emit("reconnecting", {
+        timestamp: new Date().toISOString(),
+        maxTime: MAX_RECONNECT_TIME,
+        serialPath: this._serialPath || null,
+    });
 
-    // Clean up old serial port listeners to avoid ghost events
+    // _handleDisconnect normally has already cleaned up, but reconnect may also
+    // be called from a clean state (engine startup) — make these idempotent.
     if (this._serialPort) {
-        this._serialPort.removeAllListeners();
+        try {
+            this._serialPort.removeAllListeners();
+        } catch (e) {
+            log.warn("Error removing serial listeners during reconnect: " + e);
+        }
     }
-
-    // Reset all internal state (queues, buffers, callbacks, flags)
     this._resetInternalState();
 
     var startTime = Date.now();
@@ -618,7 +684,14 @@ G2.prototype.reconnect = function () {
 
                 that.connected = true;
                 that._reconnecting = false;
+                that._disconnected = false;
                 that._seen_ready = true;
+
+                // Wire the global serial close/error handlers to the new port so
+                // a subsequent disconnect is detected (the retry loop only
+                // attached local close/error handlers for the open attempt).
+                that._serialPort.on("close", that.onSerialClose.bind(that));
+                that._serialPort.on("error", that.onSerialError.bind(that));
 
                 // Send kill commands to clear any stale G2 state, then notify success
                 that._write("\x04\n", function () {});
@@ -681,6 +754,15 @@ G2.prototype.reconnect = function () {
     }
 
     function scheduleNextRetry() {
+        // Bail out if the user cancelled while an attempt was in flight
+        if (!that._reconnecting) {
+            return;
+        }
+        that._reconnectAttempts += 1;
+        that.emit("reconnect-attempt-failed", {
+            attempt: that._reconnectAttempts,
+            nextDelayMs: delay,
+        });
         that._reconnectTimer = setTimeout(function () {
             that._reconnectTimer = null;
             attemptReconnect();
@@ -696,6 +778,35 @@ G2.prototype.reconnect = function () {
     }, RECONNECT_BASE_DELAY);
 };
 
+// User-initiated cancel of the reconnect retry loop. Clears the pending timer
+// and re-emits "disconnect" so the dashboard restores the disconnect modal
+// (with the Reconnect button) for the user to try again later.
+G2.prototype.cancelReconnect = function () {
+    if (!this._reconnecting) {
+        return false;
+    }
+    log.warn("User cancelled G2 reconnect retry loop");
+    if (this._reconnectTimer) {
+        clearTimeout(this._reconnectTimer);
+        this._reconnectTimer = null;
+    }
+    this._reconnecting = false;
+    // _disconnected remains true — we are still not connected. Re-emit so the
+    // dashboard updates its modal (idempotency in _handleDisconnect would
+    // otherwise swallow this).
+    this.emit("disconnect", {
+        reason: "user_cancelled",
+        timestamp: new Date().toISOString(),
+        timeSinceLastData: this._lastDataReceived
+            ? Date.now() - this._lastDataReceived
+            : null,
+        lastStat: (this.status && this.status.stat) || null,
+        inCycle: !!this.context,
+        serialPath: this._serialPath || null,
+    });
+    return true;
+};
+
 // Start periodic status poll to detect silent G2 failures.
 // Sends a status report request if no data has been received recently.
 // (Distinct from the blue LED "heartbeat" pulsing on the G2 card itself.)
@@ -703,7 +814,7 @@ G2.prototype.startStatusPoll = function () {
     this.stopStatusPoll();
     this._statusPollTimer = setInterval(
         function () {
-            if (!this.connected || this._reconnecting) {
+            if (!this.connected || this._reconnecting || this._disconnected) {
                 return;
             }
             // Use longer timeout during feedhold — G2 is alive but paused
@@ -713,16 +824,8 @@ G2.prototype.startStatusPoll = function () {
             if (Date.now() - this._lastDataReceived < STATUS_POLL_INTERVAL) {
                 return;
             }
-            // Send a status report request as a status poll probe.
-            // During feedhold, bypass command_queue: sendMore() blocks all sends while
-            // pause_flag is true, so a queued probe would never reach G2. G2 still
-            // services JSON queries on its control channel during hold and will respond.
             this._statusPollPending = true;
-            if (inHold) {
-                this._write(JSON.stringify({ sr: null }) + "\n", function () {});
-            } else {
-                this.command({ sr: null });
-            }
+            this._sendSilentProbe();
 
             // Set timeout for response
             this._statusPollTimeout = setTimeout(
@@ -736,6 +839,20 @@ G2.prototype.startStatusPoll = function () {
         }.bind(this),
         STATUS_POLL_INTERVAL
     );
+};
+
+// Write the heartbeat probe directly to the serial port, bypassing command_queue
+// AND the normal g2 log. The probe is identical in shape to a user-requested SR,
+// so we tag _silentProbePending so onData can suppress logging of the response.
+// _ignored_responses is incremented to balance flow control accounting (the
+// returned {"r":{"sr":...}} should not be counted as a completed gcode line).
+G2.prototype._sendSilentProbe = function () {
+    if (!this._serialPort || !this._serialPort.isOpen) {
+        return;
+    }
+    this._silentProbePending = true;
+    this._ignored_responses += 1;
+    this._serialPort.write(JSON.stringify({ sr: null }) + "\n", function () {});
 };
 
 // Stop the status poll timer and any pending response timeout
@@ -752,7 +869,10 @@ G2.prototype.stopStatusPoll = function () {
 };
 
 // Called when G2 fails to respond to a status poll within STATUS_POLL_TIMEOUT.
-// Triggers reconnection by closing the serial port (which fires onSerialClose).
+// Logs diagnostics, closes the port (which triggers onSerialClose ->
+// _handleDisconnect), and falls back to _handleDisconnect directly if the
+// close attempt itself fails. No automatic reconnect — the user is notified
+// via the "disconnect" event and must invoke G2.reconnect() explicitly.
 G2.prototype._onStatusPollTimeout = function () {
     var timeoutTime = new Date().toISOString();
     var timeSinceLastData = Date.now() - this._lastDataReceived;
@@ -769,22 +889,16 @@ G2.prototype._onStatusPollTimeout = function () {
     log.error("╚════════════════════════════════════════════════════════════════");
 
     this.stopStatusPoll();
-    // Try to close the port gracefully, which triggers onSerialClose -> reconnect
     try {
         this._serialPort.close(function (err) {
             if (err) {
                 log.warn("Error closing port after status poll timeout: " + err);
-                // Port may already be in a bad state — trigger reconnect directly
-                if (!this._reconnecting) {
-                    this.reconnect();
-                }
+                this._handleDisconnect("heartbeat_timeout");
             }
         }.bind(this));
     } catch (e) {
         log.warn("Exception closing port after status poll timeout: " + e);
-        if (!this._reconnecting) {
-            this.reconnect();
-        }
+        this._handleDisconnect("heartbeat_timeout");
     }
 };
 
@@ -792,10 +906,8 @@ G2.prototype._onStatusPollTimeout = function () {
 G2.prototype._write = function (s, callback) {
     if (!this.connected || !this._serialPort || !this._serialPort.isOpen) {
         log.error("Attempted write while disconnected: " + String(s).substring(0, 50));
-        // Trigger reconnection if not already in progress
-        if (!this._reconnecting) {
-            log.error("Write to disconnected port — initiating reconnection.");
-            this.reconnect();
+        if (!this._reconnecting && !this._disconnected) {
+            this._handleDisconnect("write_failed");
         }
         if (callback) {
             setImmediate(callback);
@@ -865,7 +977,17 @@ G2.prototype.onData = function (data) {
             try {
                 // Responses from G2 are in JSON format (always) so we parse them out, and handle the messages
                 var obj = JSON.parse(json_string);
-                log.g2("S", "in", json_string);
+                // Suppress logging the SR response that came back from a silent
+                // heartbeat probe — keeps the g2 log free of idle noise.
+                var isSilentProbeResponse =
+                    this._silentProbePending &&
+                    obj &&
+                    ((obj.r && obj.r.sr) || obj.sr);
+                if (isSilentProbeResponse) {
+                    this._silentProbePending = false;
+                } else {
+                    log.g2("S", "in", json_string);
+                }
                 this.onMessage(obj);
             } catch (e) {
                 this.handleExceptionReport(e);

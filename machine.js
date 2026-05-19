@@ -306,16 +306,92 @@ function Machine(control_path, callback) {
         }.bind(this)
     );
 
-    // Handle G2 serial disconnection — set machine to not_ready and wait for reconnection
+    // Handle G2 serial disconnection — set machine to not_ready and prompt the
+    // user to recover. Auto-reconnect was removed so disconnects aren't masked;
+    // the dashboard surfaces a persistent modal with a "Reconnect" button that
+    // POSTs to /reconnect (which calls G2.reconnect()).
     this.driver.on(
         "disconnect",
-        function () {
+        function (payload) {
             log.warn("G2 driver reported disconnect — machine entering not_ready state");
             this.status.state = "not_ready";
             this.info_id += 1;
+            var reason = (payload && payload.reason) || "unknown";
+            var detail =
+                "Reason: " + reason +
+                (payload && payload.timeSinceLastData != null
+                    ? "  •  Last data: " + payload.timeSinceLastData + " ms ago"
+                    : "") +
+                (payload && payload.lastStat != null
+                    ? "  •  Last G2 stat: " + payload.lastStat
+                    : "");
             this.status.info = {
                 id: this.info_id,
-                message: "Motion controller disconnected — attempting to reconnect...",
+                message:
+                    "Motion controller disconnected. Check the USB cable / power, then click Reconnect to recover.",
+                custom: {
+                    title: "G2 Disconnected",
+                    detail: detail,
+                    ok: { text: "Reconnect", func: "reconnect" },
+                    cancel: null,
+                },
+            };
+            this.emit("status", this.status);
+        }.bind(this)
+    );
+
+    // While the user-initiated retry loop is running, keep a modal up so the
+    // user knows recovery is in progress (the disconnect modal was dismissed
+    // by the Reconnect click before the connection actually came back).
+    this.driver.on(
+        "reconnecting",
+        function (payload) {
+            log.info("G2 driver entering reconnect retry loop — notifying dashboard");
+            this.info_id += 1;
+            var maxMin = payload && payload.maxTime
+                ? Math.round(payload.maxTime / 60000)
+                : 5;
+            this.status.info = {
+                id: this.info_id,
+                message:
+                    "Reconnecting to motion controller… If the cable was unplugged, plug it back in now. " +
+                    "Retrying for up to " + maxMin + " minutes.",
+                custom: {
+                    title: "Reconnecting…",
+                    noButton: true,
+                    ok: null,
+                    cancel: null,
+                },
+            };
+            this.emit("status", this.status);
+        }.bind(this)
+    );
+
+    // After the first retry attempt fails (~1s after Reconnect was clicked),
+    // swap the "Reconnecting…" modal for one that exposes a Cancel button.
+    // The user clicks Reconnect, sees a brief Reconnecting modal, and within
+    // a second knows whether to wait or cancel.
+    this.driver.on(
+        "reconnect-attempt-failed",
+        function (payload) {
+            var attempt = (payload && payload.attempt) || 1;
+            // Only swap on the first failure — subsequent failures keep the
+            // same modal up. (Updating info_id every retry would flicker.)
+            if (attempt !== 1) {
+                return;
+            }
+            log.info("First G2 reconnect attempt failed — offering Cancel");
+            this.info_id += 1;
+            this.status.info = {
+                id: this.info_id,
+                message:
+                    "First reconnect attempt failed. Plug the cable in (or check power) and we'll keep retrying. " +
+                    "Click Cancel to stop.",
+                custom: {
+                    title: "Reconnecting — first attempt failed",
+                    ok: null,
+                    cancel: { text: "Cancel", func: "cancelReconnect" },
+                },
             };
             this.emit("status", this.status);
         }.bind(this)

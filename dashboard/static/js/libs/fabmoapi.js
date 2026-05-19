@@ -362,6 +362,18 @@
         this.command("resume", args, callback);
     };
 
+    // Trigger an explicit, user-initiated reconnect to the G2 motion controller.
+    // Used by the "Reconnect" button on the G2-disconnected modal.
+    FabMoAPI.prototype.reconnect = function (callback) {
+        this._post("/reconnect", {}, callback, callback);
+    };
+
+    // Cancel an in-flight reconnect retry loop. Used by the "Cancel" button
+    // on the "Reconnecting — first attempt failed" modal.
+    FabMoAPI.prototype.cancelReconnect = function (callback) {
+        this._post("/reconnect/cancel", {}, callback, callback);
+    };
+
     // Jobs
     FabMoAPI.prototype.getJobQueue = function (callback) {
         this._get("/jobs/queue", callback, callback, "jobs");
