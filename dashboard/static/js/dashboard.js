@@ -434,7 +434,9 @@ define(function (require) {
         this._registerHandler(
             "ghostRunJob",
             function (data, callback) {
-                this.engine.ghostRunJob(data.id, data.zOffset, callback);
+                // New callers pass `options` (object); old ones passed `zOffset`.
+                var opts = data.options || { mode: "lift", zOffset: data.zOffset };
+                this.engine.ghostRunJob(data.id, opts, callback);
             }.bind(this)
         );
 

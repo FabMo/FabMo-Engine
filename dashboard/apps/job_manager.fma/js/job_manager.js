@@ -170,7 +170,7 @@ function createRecentMenu(id) {
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="repeat-button" title="Repeat Job (set a count or leave blank to repeat until canceled)"><i class="fa fa-repeat"></i><span class="repeat-count-badge"></span></a></div><div class="medium-1 small-2 columns"><a class="ghost-button" title="Ghost Run (dry-run with a Z lift)"><img class="svg" src="css/images/ghost.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="repeat-button" title="Repeat Job (set a count or leave blank to repeat until canceled)"><i class="fa fa-repeat"></i><span class="repeat-count-badge"></span></a></div><div class="medium-1 small-2 columns"><a class="ghost-button" title="Ghost Run (dry-run with a Z lift)"><img class="svg" src="css/images/clipboard-check.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -1064,25 +1064,40 @@ function bindGhostRun() {
   // reveal-modal defined in index.html instead.
   var pendingJobId = null;
 
+  function syncGhostModeOpts() {
+    var mode = $('input[name="ghost-mode"]:checked').val();
+    $('#ghost-mode-lift-opts').toggle(mode === 'lift');
+    $('#ghost-mode-trace-opts').toggle(mode === 'trace');
+  }
+
   $('#queue_table').on('click touchstart', '.ghost-button', function(e) {
     e.preventDefault();
     e.stopPropagation();
     pendingJobId = $(this).data('id') || $(this).closest('.job_item').attr('id');
     if (!pendingJobId) return;
+    $('#ghost-mode-lift').prop('checked', true);
     $('#ghost-zoffset').val('0.5');
+    syncGhostModeOpts();
     $('#ghost-modal').foundation('reveal', 'open');
     setTimeout(function() { $('#ghost-zoffset').focus().select(); }, 100);
   });
 
+  $('input[name="ghost-mode"]').on('change', syncGhostModeOpts);
+
   $('#ghost-go').on('click', function() {
-    var zOffset = parseFloat($('#ghost-zoffset').val());
-    if (!isFinite(zOffset) || zOffset === 0) {
-      fabmo.notify('error', 'Z offset must be a non-zero number');
-      return;
+    var mode = $('input[name="ghost-mode"]:checked').val() || 'lift';
+    var payload = { mode: mode };
+    if (mode === 'lift') {
+      var zOffset = parseFloat($('#ghost-zoffset').val());
+      if (!isFinite(zOffset) || zOffset === 0) {
+        fabmo.notify('error', 'Z offset must be a non-zero number');
+        return;
+      }
+      payload.zOffset = zOffset;
     }
     var jobid = pendingJobId;
     $('#ghost-modal').foundation('reveal', 'close');
-    fabmo.ghostRunJob(jobid, zOffset, function(err) {
+    fabmo.ghostRunJob(jobid, payload, function(err) {
       if (err) fabmo.notify('error', err);
     });
   });

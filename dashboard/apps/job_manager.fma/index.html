@@ -8,17 +8,27 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
 	<div id="ghost-modal" class="reveal-modal small" data-reveal>
-		<div id="modal-title">Ghost Run</div>
-		<p>Run this job with a temporary Z lift so the toolpath plays out in the air.
-		The original job stays queued for a real run afterward.</p>
+		<div id="modal-title">Ghost / Preview Run</div>
+		<p>Preview the job without cutting. The original job stays queued for a real run afterward.</p>
 		<div class="row">
-			<label for="ghost-zoffset">Z offset to add (inches):</label>
-			<input id="ghost-zoffset" type="number" step="0.05" min="0" value="0.5" />
+			<input type="radio" name="ghost-mode" id="ghost-mode-lift" value="lift" checked />
+			<label for="ghost-mode-lift" style="display:inline; font-weight:bold;">Lift &amp; run file</label>
+			<div id="ghost-mode-lift-opts" style="margin:0.25em 0 0.5em 1.75em;">
+				<label for="ghost-zoffset">Z offset to add (inches):</label>
+				<input id="ghost-zoffset" type="number" step="0.05" min="0" value="0.5" />
+			</div>
+		</div>
+		<div class="row">
+			<input type="radio" name="ghost-mode" id="ghost-mode-trace" value="trace" />
+			<label for="ghost-mode-trace" style="display:inline; font-weight:bold;">Trace bounding rectangle</label>
+			<div id="ghost-mode-trace-opts" style="margin:0.25em 0 0.5em 1.75em; display:none; font-size:0.9em; color:#666;">
+				Drives around the perimeter of the cut at the configured jog rate without changing Z. You'll be prompted to set a safe Z before motion begins.
+			</div>
 		</div>
 		<div class="row">
 			<div class="right">
 				<button id="ghost-cancel" class="button radius alert">Cancel</button>
-				<button id="ghost-go" class="button radius success">Start Ghost Run</button>
+				<button id="ghost-go" class="button radius success">Start</button>
 			</div>
 		</div>
 		<a class="close-reveal-modal" id="close-ghost-modal">&#215;</a>
