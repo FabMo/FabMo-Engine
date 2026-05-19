@@ -641,6 +641,8 @@ engine.getVersion(function (err, version) {
                     keyboard.setEnabled(false);
                 }
 
+                syncAuthorizeOverlay(status);
+
                 if (
                     (status.state != "armed" && last_state_seen === "armed") ||
                     (status.state != "paused" && last_state_seen === "paused") ||
@@ -994,22 +996,30 @@ engine.getVersion(function (err, version) {
                     // quitFlag prevents authorize dialog from popping up
                     // after quitting from authorize dialog
                 } else if (status.state === "armed" && status.quitFlag === false) {
-                    authorizeDialog = true;
-                    keypad.setEnabled(false);
-                    keyboard.setEnabled(false);
-                    dashboard.showModal({
-                        title: "Authorization Required!",
-                        message: "To authorize your tool, press and hold the start button for one second.",
-                        cancelText: "Quit",
-                        cancel: function () {
-                            authorizeDialog = false;
-                            dashboard.engine.quit(function (err, result) {
-                                if (err) {
-                                    console.log("ERRROR: " + err);
-                                }
-                            });
-                        },
-                    });
+                    // If the manual drawer is open, the soft authorize overlay
+                    // already communicates the requirement — don't double up
+                    // with the popup modal.
+                    if ($(".manual-drive-modal").is(":visible")) {
+                        keypad.setEnabled(false);
+                        keyboard.setEnabled(false);
+                    } else {
+                        authorizeDialog = true;
+                        keypad.setEnabled(false);
+                        keyboard.setEnabled(false);
+                        dashboard.showModal({
+                            title: "Authorization Required!",
+                            message: "To authorize your tool, press and hold the start button for one second.",
+                            cancelText: "Quit",
+                            cancel: function () {
+                                authorizeDialog = false;
+                                dashboard.engine.quit(function (err, result) {
+                                    if (err) {
+                                        console.log("ERRROR: " + err);
+                                    }
+                                });
+                            },
+                        });
+                    }
                 } else if (status.state === "limit" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
@@ -2236,6 +2246,29 @@ function hideKeypadMessage() {
     document.querySelector(".manual-drive-message").style.display = "none";
     // Show title when hiding message
     document.getElementById("title_goto").style.display = "block";
+}
+
+// Show/hide the soft authorize overlay over the manual control modal.
+// Trigger condition: the manual drawer is visible AND auth_required is on
+// AND auth_scope includes manual ("all") AND the machine is not currently
+// authorized. While the overlay is up we also disable keypad and keyboard
+// jog input so a key press can't slip past pointer-events.
+function syncAuthorizeOverlay(status) {
+    var $overlay = $(".authorize-overlay");
+    var cfg = engine && engine.config && engine.config.machine;
+    var scope = (cfg && cfg.auth_scope) || "all";
+    var shouldShow =
+        $(".manual-drive-modal").is(":visible") &&
+        cfg && cfg.auth_required &&
+        scope !== "file_only" &&
+        !(status && status.auth);
+    if (shouldShow) {
+        $overlay.show();
+        if (typeof keypad !== "undefined" && keypad) keypad.setEnabled(false);
+        if (typeof keyboard !== "undefined" && keyboard) keyboard.setEnabled(false);
+    } else {
+        $overlay.hide();
+    }
 }
 
 function showSoftLimitPrompt(axis) {

@@ -1856,6 +1856,23 @@ Machine.prototype.executeRuntimeCode = function (runtimeName, code, options) {
         return;
     }
     var needsAuth = runtime.needsAuth(code);
+    // Authorize scope: the manual runtime handles jog buttons, on-screen
+    // keypad, and keyboard arrow keys. "Open the drawer" and bare safety
+    // commands never need auth; per-jog commands respect auth_scope —
+    // "all" keeps them gated, "file_only" exempts them. When still gated
+    // and not yet authorized, the dashboard shows a soft overlay over the
+    // manual drawer instead of the popup modal.
+    if (needsAuth && runtimeName === "manual") {
+        var manualCmd = code && code.cmd;
+        var alwaysAllowed =
+            manualCmd === "enter" || manualCmd === "exit" ||
+            manualCmd === "stop" || manualCmd === "quit" ||
+            manualCmd === "maint";
+        var scope = config.machine.get("auth_scope") || "all";
+        if (alwaysAllowed || scope === "file_only") {
+            needsAuth = false;
+        }
+    }
     if (needsAuth) {
         if (this.status.auth) {
             return this._executeRuntimeCode(runtimeName, code, options);

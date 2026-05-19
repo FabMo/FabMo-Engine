@@ -2665,6 +2665,34 @@ input[type='range']:focus {
     overflow: hidden;
 }
 
+/* Soft overlay over the manual control modal when authorize is required
+   for manual control and the machine is not yet authorized. Sits above
+   all jog buttons and absorbs clicks. */
+.authorize-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(60, 60, 60, 0.55);
+    z-index: 3010;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 25px;
+}
+.authorize-overlay-message {
+    color: #fff;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+    padding: 0.75em 1.5em;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+    max-width: 80%;
+    line-height: 1.3;
+}
+
 .manual-drive-container {
 	position: absolute;
 	width: 90%;
@@ -3134,6 +3162,9 @@ filter: blur(2px);
     background: rgba(0,0,0,0);
     border-bottom: 1px solid rgba(0,0,0,0);
     user-select: none;
+    /* Sit above the authorize overlay so the exit (X) and drag handle
+       remain reachable while the overlay is shown. */
+    z-index: 3020;
 }
 
 /* Centered drag handle - just the dots */
