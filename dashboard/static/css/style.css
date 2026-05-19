@@ -2665,6 +2665,16 @@ input[type='range']:focus {
     overflow: hidden;
 }
 
+/* Spindle toggle (action-5) sits above the authorize overlay so it
+   remains clickable. Clicking it while unauthorized triggers the
+   existing "Authorization Required!" popup — the spindle is the one
+   manual-pad button that warrants the strong prompt rather than the
+   soft overlay UX. */
+#action-5 {
+    position: relative;
+    z-index: 3020;
+}
+
 /* Soft overlay over the manual control modal when authorize is required
    for manual control and the machine is not yet authorized. Sits above
    all jog buttons and absorbs clicks. */

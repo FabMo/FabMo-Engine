@@ -1868,8 +1868,14 @@ Machine.prototype.executeRuntimeCode = function (runtimeName, code, options) {
             manualCmd === "enter" || manualCmd === "exit" ||
             manualCmd === "stop" || manualCmd === "quit" ||
             manualCmd === "maint";
+        // Output toggles (spindle, dust collection, etc.) stay gated in
+        // every scope — they trigger physical accessories that warrant
+        // the strong popup prompt.
+        var alwaysGated = manualCmd === "output";
         var scope = config.machine.get("auth_scope") || "all";
-        if (alwaysAllowed || scope === "file_only") {
+        if (alwaysAllowed) {
+            needsAuth = false;
+        } else if (!alwaysGated && scope === "file_only") {
             needsAuth = false;
         }
     }

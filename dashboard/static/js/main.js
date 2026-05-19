@@ -996,30 +996,28 @@ engine.getVersion(function (err, version) {
                     // quitFlag prevents authorize dialog from popping up
                     // after quitting from authorize dialog
                 } else if (status.state === "armed" && status.quitFlag === false) {
-                    // If the manual drawer is open, the soft authorize overlay
-                    // already communicates the requirement — don't double up
-                    // with the popup modal.
-                    if ($(".manual-drive-modal").is(":visible")) {
-                        keypad.setEnabled(false);
-                        keyboard.setEnabled(false);
-                    } else {
-                        authorizeDialog = true;
-                        keypad.setEnabled(false);
-                        keyboard.setEnabled(false);
-                        dashboard.showModal({
-                            title: "Authorization Required!",
-                            message: "To authorize your tool, press and hold the start button for one second.",
-                            cancelText: "Quit",
-                            cancel: function () {
-                                authorizeDialog = false;
-                                dashboard.engine.quit(function (err, result) {
-                                    if (err) {
-                                        console.log("ERRROR: " + err);
-                                    }
-                                });
-                            },
-                        });
-                    }
+                    // The soft overlay + disabled keypad/keyboard prevent jog
+                    // commands from reaching the server while unauthorized, so
+                    // any armed-state transition that reaches here is from a
+                    // command that genuinely warrants the strong popup
+                    // (file/macro/editor run, or spindle toggle from the
+                    // manual pad).
+                    authorizeDialog = true;
+                    keypad.setEnabled(false);
+                    keyboard.setEnabled(false);
+                    dashboard.showModal({
+                        title: "Authorization Required!",
+                        message: "To authorize your tool, press and hold the start button for one second.",
+                        cancelText: "Quit",
+                        cancel: function () {
+                            authorizeDialog = false;
+                            dashboard.engine.quit(function (err, result) {
+                                if (err) {
+                                    console.log("ERRROR: " + err);
+                                }
+                            });
+                        },
+                    });
                 } else if (status.state === "limit" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
