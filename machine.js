@@ -1918,6 +1918,11 @@ Machine.prototype.startAccessories = async function () {
     try {
         log.info("Initializing spindle system...");
 
+        // Ensure USB-RS485 adapter is bound to its kernel driver so a tty
+        // exists; updates spindle1_settings.json COM_PORT if the live path
+        // differs from what's stored.
+        await spindle.ensureAdapterBound();
+
         await spindle.loadVFDSettings();
         await spindle.connectVFD();
 

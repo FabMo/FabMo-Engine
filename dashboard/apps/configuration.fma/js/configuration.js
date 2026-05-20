@@ -956,3 +956,81 @@ $('#btn-reset-default').click(function () {
 
 // Show current default on load.
 refreshDefaultSnapshotName();
+
+// ---------- Spindle Setup ----------
+
+function renderSpindleDiscover(data) {
+    var adapterEl = $('#spindle-setup-adapter');
+    var profileEl = $('#spindle-setup-profile');
+    if (data.adapter) {
+        adapterEl.val(data.adapter.name + '  [' + data.adapter.vid + ':' + data.adapter.pid + ']  ' + (data.adapter.ttyPath || '(not bound)'));
+    } else {
+        adapterEl.val('Not detected');
+    }
+    profileEl.val(data.installedTemplate || '(none)');
+}
+
+function appendSpindleStatus(line) {
+    var el = $('#spindle-setup-status');
+    el.text((el.text() || '') + '\n' + line);
+}
+
+function setSpindleStatus(text) {
+    $('#spindle-setup-status').text(text);
+}
+
+function refreshSpindleDiscover() {
+    setSpindleStatus('Detecting...');
+    $.ajax({
+        url: '/acc/spindle/discover',
+        method: 'GET',
+        dataType: 'json'
+    }).done(function (resp) {
+        if (resp.status === 'success') {
+            renderSpindleDiscover(resp.data);
+            setSpindleStatus(resp.data.adapter
+                ? 'Found ' + resp.data.adapter.name + ' at ' + (resp.data.adapter.ttyPath || 'no tty')
+                : 'No known RS485 adapter detected on USB bus.');
+        } else {
+            setSpindleStatus('Error: ' + (resp.message || 'unknown'));
+        }
+    }).fail(function (xhr) {
+        setSpindleStatus('Request failed: ' + xhr.status);
+    });
+}
+
+function runSpindleConfigure() {
+    setSpindleStatus('Running detect & configure pipeline...');
+    $('#spindle-setup-configure').prop('disabled', true);
+    $.ajax({
+        url: '/acc/spindle/configure',
+        method: 'POST',
+        dataType: 'json'
+    }).done(function (resp) {
+        var d = resp.data || {};
+        var lines = [];
+        (d.steps || []).forEach(function (s) {
+            lines.push((s.ok ? '[ok]   ' : '[fail] ') + s.name + (s.detail ? '  -- ' + s.detail : ''));
+        });
+        if (d.ok) {
+            lines.push('');
+            lines.push('Spindle configured: ' + d.template + ' on ' + d.ttyPath);
+            fabmo.notify('success', 'Spindle configured: ' + d.template);
+        } else {
+            fabmo.notify('error', 'Spindle configuration failed');
+        }
+        setSpindleStatus(lines.join('\n'));
+        refreshSpindleDiscover();
+    }).fail(function (xhr) {
+        setSpindleStatus('Request failed: ' + xhr.status);
+        fabmo.notify('error', 'Spindle configure request failed');
+    }).always(function () {
+        $('#spindle-setup-configure').prop('disabled', false);
+    });
+}
+
+$('#spindle-setup-detect').on('click', refreshSpindleDiscover);
+$('#spindle-setup-configure').on('click', runSpindleConfigure);
+
+// Populate on load
+refreshSpindleDiscover();
