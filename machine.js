@@ -1145,11 +1145,14 @@ Machine.prototype.isSpindleStartBlocked = function (out, val) {
 };
 
 // True iff a gcode/SBP file string contains any command that would turn on
-// the spindle (M3/M03/M4/M04 or a direct {out1:N}/{out2:N} write where N!=0).
+// the spindle. Patterns matched:
+//   - g-code M3 / M03 / M4 / M04 (FC/CCW spindle-on, both zero-padded forms)
+//   - SBP "SO 1,1" / "SO 2,1" (Set Output for the spindle relays)
+//   - direct {out1:N} / {out2:N} writes where N != 0 (e.g. M100 ({out1:1}))
 // Used to pre-reject jobs at runFile time when an interlock input is active.
-// For M3/M4, ;... and ( ... ) comments are stripped first so commented-out
-// lines don't false-trigger. The {outN:N} pattern is scanned on the unstripped
-// line because FabMo's M100 idiom wraps it in parens: M100 ({out1:1}).
+// Comments stripped before matching M3/SO so commented-out lines don't false-
+// trigger: gcode "( ... )" and ";...", SBP "'...". The {outN:N} pattern is
+// scanned on the raw line because FabMo's M100 idiom wraps it in parens.
 function fileContainsSpindleStart(contents) {
     if (!contents) return false;
     var lines = contents.split(/\r?\n/);
@@ -1158,16 +1161,21 @@ function fileContainsSpindleStart(contents) {
         if (!raw) continue;
         // Direct out1/out2 write to a non-zero value. Scan on raw line.
         if (/\{\s*out[12]\s*:\s*[1-9]/i.test(raw)) {
-            // ...unless the whole line is commented out with a leading ;
-            if (!/^\s*;/.test(raw)) return true;
+            // ...unless the whole line is commented out (; for gcode, ' for SBP)
+            if (!/^\s*[;']/.test(raw)) return true;
         }
-        // M3/M03/M4/M04 spindle-on. Strip comments first.
+        // Strip comments before M3/SO checks.
         var line = raw
             .replace(/\([^)]*\)/g, "")
-            .replace(/;.*$/, "")
+            .replace(/[;'].*$/, "")
             .trim();
         if (!line) continue;
+        // G-code M3/M03/M4/M04 spindle-on
         if (/(^|\s)M0?[34](\s|$)/i.test(line)) return true;
+        // SBP "SO 1,1" / "SO,1,1" / "SO 2,1" etc. -- spindle relay or out2
+        // turned on. SBP accepts either whitespace or commas between the
+        // command and its args.
+        if (/^SO[\s,]+[12][\s,]+[1-9]/i.test(line)) return true;
     }
     return false;
 }
@@ -1510,6 +1518,30 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 // Run a file given a filename on disk.  Choose the runtime that is appropriate for that file.
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
+
+    // Interlock pre-scan. Both Machine.runFile (direct) and Machine.runNextJob
+    // (queue) converge here, so this is the single chokepoint to refuse files
+    // that would turn on the spindle while an interlock input is active.
+    // Motion-only files still run -- the firmware feedhold pauses them until
+    // the interlock clears.
+    if (this.isInterlockInputActive() && !interlockBypass) {
+        try {
+            var contents = fs.readFileSync(filename, "utf8");
+            if (fileContainsSpindleStart(contents)) {
+                var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running a job that turns on the spindle.";
+                log.warn("_runFile: refused -- interlock active and file contains spindle-start: " + filename);
+                this.info_id += 1;
+                this.status.info = { id: this.info_id, message: msg };
+                this.status.job = null;
+                this.disarm();
+                this.setState(this, "idle");
+                this.emit("status", this.status);
+                return;
+            }
+        } catch (e) {
+            log.warn("_runFile: pre-scan read failed (" + e.message + "); proceeding without scan");
+        }
+    }
 
     // Defensive: clear any stale per-job state on the SBP runtime singleton
     // before starting a new top-level job. A prior job that ended abnormally
@@ -1913,33 +1945,14 @@ Machine.prototype.resume = function (callback, input = false) {
     }
 };
 
-// Run a file from disk
+// Run a file from disk. The interlock pre-scan happens in _runFile, the
+// chokepoint both this path and runNextJob converge on.
 // filename - full path to the file to run
 Machine.prototype.runFile = function (filename, bypassInterlock) {
     interlockBypass = bypassInterlock;
     if (!bypassInterlock) {
         interlockBypass = false;
     }
-
-    // If an interlock input is active, refuse to start a job that contains
-    // any spindle-start command (M3/M03/M4/M04 or {out1:1}/{out2:1}). Pure
-    // motion files are allowed through -- they'll be paused by the firmware
-    // feedhold until the interlock clears, then resume normally.
-    if (this.isInterlockInputActive() && !bypassInterlock) {
-        try {
-            var contents = fs.readFileSync(filename, "utf8");
-            if (fileContainsSpindleStart(contents)) {
-                var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running a job that turns on the spindle.";
-                log.warn("runFile: refused -- interlock active and file contains spindle-start commands: " + filename);
-                this.status.info = { type: "warning", message: msg };
-                this.emit("status", this.status);
-                return;
-            }
-        } catch (e) {
-            log.warn("runFile: pre-scan read failed (" + e.message + "); proceeding without scan");
-        }
-    }
-
     this.arm(
         {
             type: "runFile",
@@ -1988,6 +2001,23 @@ Machine.prototype.executeRuntimeCode = function (runtimeName, code, options) {
         log.debug("Rejecting attempt to execute runtime code with no defined runtime.");
         log.debug(JSON.stringify(code));
         return;
+    }
+
+    // Interlock pre-scan for direct sbp/gcode submissions (editor "Run code",
+    // /code API). The runtime would otherwise hit our spindle-start block at
+    // the SO/M3 command site and report it as a parser-style error with a
+    // line number, which obscures the real cause. Catching it up front lets
+    // us surface a clean "interlock active" message instead. Manual-runtime
+    // code (jog buttons, output toggles) is gated at its own chokepoints.
+    if (runtimeName !== "manual" && typeof code === "string" && this.isInterlockInputActive()) {
+        if (fileContainsSpindleStart(code)) {
+            var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running code that turns on the spindle.";
+            log.warn("executeRuntimeCode: refused (" + runtimeName + ") -- interlock active and code contains spindle-start");
+            this.info_id += 1;
+            this.status.info = { id: this.info_id, message: msg };
+            this.emit("status", this.status);
+            return;
+        }
     }
     var needsAuth = runtime.needsAuth(code);
     // Authorize scope: the manual runtime handles jog buttons, on-screen
@@ -2230,6 +2260,21 @@ Machine.prototype.watchConfig = function () {
 
 Machine.prototype._executeRuntimeCode = function (runtimeName, code, options) {
     options = options || {};
+
+    // Interlock pre-scan at the actual choke point. The outer executeRuntimeCode
+    // also checks, but when auth is required it arms the action and fire() calls
+    // _executeRuntimeCode later, bypassing the outer check.
+    if (runtimeName !== "manual" && typeof code === "string" && this.isInterlockInputActive()) {
+        if (fileContainsSpindleStart(code)) {
+            var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running code that turns on the spindle.";
+            log.warn("_executeRuntimeCode: refused (" + runtimeName + ") -- interlock active and code contains spindle-start");
+            this.info_id += 1;
+            this.status.info = { id: this.info_id, message: msg };
+            this.emit("status", this.status);
+            return;
+        }
+    }
+
     runtime = this.getRuntime(runtimeName);
     if (runtime) {
         var applyOptions = function (rt) {
