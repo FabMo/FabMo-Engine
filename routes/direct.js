@@ -23,27 +23,35 @@ var code = function (req, res, next) {
             if (req.params.runtime !== undefined) {
                 var rt = req.params.runtime.toLowerCase().trim();
                 var debug = !!req.params.debug;
-                switch (rt) {
-                    case "opensbp":
-                    case "sbp":
-                        machine.sbp(req.params.cmd, { debug: debug });
-                        break;
+                try {
+                    switch (rt) {
+                        case "opensbp":
+                        case "sbp":
+                            machine.sbp(req.params.cmd, { debug: debug });
+                            break;
 
-                    case "g":
-                    case "nc":
-                    case "gcode":
-                        if (debug) {
-                            log.warn("debug flag ignored for gcode runtime");
-                        }
-                        machine.gcode(req.params.cmd);
-                        break;
+                        case "g":
+                        case "nc":
+                        case "gcode":
+                            if (debug) {
+                                log.warn("debug flag ignored for gcode runtime");
+                            }
+                            machine.gcode(req.params.cmd);
+                            break;
 
-                    default:
-                        answer = {
-                            status: "error",
-                            message: "Runtime '" + rt + "' is unknown.",
-                        };
-                        break;
+                        default:
+                            answer = {
+                                status: "error",
+                                message: "Runtime '" + rt + "' is unknown.",
+                            };
+                            break;
+                    }
+                } catch (e) {
+                    // machine.sbp/gcode -> executeRuntimeCode -> arm() throws
+                    // synchronously when state is busy. Surface as JSON error
+                    // instead of letting it escape as an uncaught exception.
+                    log.warn("/code: " + e.message);
+                    answer = { status: "error", message: e.message };
                 }
             } else {
                 answer = {
