@@ -1101,12 +1101,18 @@ Machine.prototype.isInterlockInputActive = function () {
 Machine.prototype._checkInterlockEdge = function () {
     var active = this.isInterlockInputActive();
     if (active && !this._interlockWasActive) {
-        this.info_id += 1;
-        this.status.info = {
-            id: this.info_id,
-            message: "Interlock triggered — clear the interlock input before resuming or starting the spindle.",
-        };
-        this.emit("status", this.status);
+        // Only push a popup when there's an in-flight activity to interrupt.
+        // At idle, the operator hasn't asked the machine to do anything, so a
+        // modal is just noise. The DRO/input view shows the input state, and
+        // any later action (spindle on, file run) will surface its own block.
+        if (this.status.state !== "idle") {
+            this.info_id += 1;
+            this.status.info = {
+                id: this.info_id,
+                message: "Interlock triggered — clear the interlock input before resuming or starting the spindle.",
+            };
+            this.emit("status", this.status);
+        }
     } else if (!active && this._interlockWasActive) {
         // Falling edge: clear only our own message, don't clobber unrelated info
         if (this.status.info && /interlock/i.test(this.status.info.message || "")) {
