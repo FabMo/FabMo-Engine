@@ -635,7 +635,15 @@ engine.getVersion(function (err, version) {
                     }
                 }
 
-                if (status.state !== "manual" && last_state_seen === "manual") {
+                // Hide modal whenever the server isn't reporting "manual".
+                // Previously this only fired on a transition (last_state_seen
+                // === "manual"), but if the websocket missed an early status
+                // update (common right after a page refresh — sometimes the
+                // first status arrives before last_state_seen is set, or the
+                // socket misses messages during reconnect), the transition
+                // condition would never be satisfied and the modal would
+                // stay stuck even though the server was idle.
+                if (status.state !== "manual" && $(".manual-drive-modal").is(":visible")) {
                     $(".modalDim").hide();
                     $(".manual-drive-modal").hide();
                     keyboard.setEnabled(false);
@@ -1495,8 +1503,11 @@ if (slider) {
 $(document).on("keydown", function (e) {
     // escape key press to quit the engine
     if (e.key === "Escape") {
-        // do this only if in manual mode
-        if (last_state_seen === "manual") {
+        // Trigger exit any time the modal is visible. Checking modal
+        // visibility avoids being blocked by a stale last_state_seen, which
+        // can happen if the dashboard missed early status updates after a
+        // page refresh.
+        if ($(".manual-drive-modal").is(":visible")) {
             console.warn("ESC key pressed - quitting manual mode.");
             startManualExit()
                 .then(() => {
