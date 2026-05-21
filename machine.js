@@ -268,7 +268,12 @@ function Machine(control_path, callback) {
         function (stat) {
             // First, update machine status from driver status (including transform check)
             this._updateStatusFromDriver(stat);
-            
+
+            // Surface interlock trigger immediately on rising edge so the
+            // operator sees it during the firmware-feedhold pause rather than
+            // waiting until they click Resume to discover the lockout.
+            this._checkInterlockEdge();
+
             var auth_input = "in" + config.machine.get("auth_input");
             var quit_input = "in" + config.machine.get("quit_input");
             var ap_input = "in" + config.machine.get("ap_input");
@@ -1087,6 +1092,29 @@ Machine.prototype.isInterlockInputActive = function () {
         if (this.driver.status["in" + pin]) return true;
     }
     return false;
+};
+
+// Edge-detect the interlock input across status updates so we can post a
+// "triggered" message as soon as the operator-visible event happens, rather
+// than waiting for them to click Resume and discover the lockout. Called
+// from the driver "status" event handler after _updateStatusFromDriver().
+Machine.prototype._checkInterlockEdge = function () {
+    var active = this.isInterlockInputActive();
+    if (active && !this._interlockWasActive) {
+        this.info_id += 1;
+        this.status.info = {
+            id: this.info_id,
+            message: "Interlock triggered — clear the interlock input before resuming or starting the spindle.",
+        };
+        this.emit("status", this.status);
+    } else if (!active && this._interlockWasActive) {
+        // Falling edge: clear only our own message, don't clobber unrelated info
+        if (this.status.info && /interlock/i.test(this.status.info.message || "")) {
+            this.status.info = null;
+            this.emit("status", this.status);
+        }
+    }
+    this._interlockWasActive = active;
 };
 
 // Returns null if the (out, val) write is permitted, or a reason string if it
