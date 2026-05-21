@@ -1113,6 +1113,15 @@ Machine.prototype._checkInterlockEdge = function () {
             this.status.info = null;
             this.emit("status", this.status);
         }
+        // If the user clicked Resume while the interlock was still active, the
+        // arm path will have transitioned state -> "interlock" to surface the
+        // standard popup. Now that the input is clear, demote back to "paused"
+        // so the next Resume runs through the normal paused-resume path
+        // instead of getting consumed by _resume's case "interlock" handler
+        // (which would otherwise eat the first click).
+        if (this.status.state === "interlock") {
+            this.setState(this, "paused");
+        }
     }
     this._interlockWasActive = active;
 };
