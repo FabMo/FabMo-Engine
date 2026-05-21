@@ -213,6 +213,15 @@ ManualRuntime.prototype.executeCode = function (code) {
                         log.error("Invalid 'out' field in the command:", code);
                         return;
                     }
+                    {
+                        var blockReason = this.machine.isSpindleStartBlocked(code.out.output, code.out.value);
+                        if (blockReason) {
+                            log.warn("manual output blocked: " + blockReason + " (out=" + code.out.output + " val=" + code.out.value + ")");
+                            this.machine.status.info = { type: "warning", message: blockReason };
+                            this.machine.emit("status", this.machine.status);
+                            return;
+                        }
+                    }
                     // this is a little awkward using the raw system here too, but it's the best way to get the output
                     this.helper.output(code.out.output, code.out.value);
                     break;

@@ -91,6 +91,15 @@ exports.SO = function (args) {
     if (outnum >= 1 && outnum <= 18) {
         ////## allow outputs 1-18
         if (state == 1 || state == 0) {
+            // Interlock check: turning on out1/out2 while an interlock input
+            // is active is blocked. OFF writes pass through (allow clearing).
+            if (this.machine && typeof this.machine.isSpindleStartBlocked === "function") {
+                var blockReason = this.machine.isSpindleStartBlocked(outnum, state);
+                if (blockReason) {
+                    log.warn("SBP SO blocked: " + blockReason + " (out=" + outnum + " state=" + state + ")");
+                    throw new Error(blockReason);
+                }
+            }
             if (outnum === 1) {
                 if (state === 1) {
                     this.emit_gcode("M3");

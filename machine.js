@@ -268,7 +268,12 @@ function Machine(control_path, callback) {
         function (stat) {
             // First, update machine status from driver status (including transform check)
             this._updateStatusFromDriver(stat);
-            
+
+            // Surface interlock trigger immediately on rising edge so the
+            // operator sees it during the firmware-feedhold pause rather than
+            // waiting until they click Resume to discover the lockout.
+            this._checkInterlockEdge();
+
             var auth_input = "in" + config.machine.get("auth_input");
             var quit_input = "in" + config.machine.get("quit_input");
             var ap_input = "in" + config.machine.get("ap_input");
@@ -946,9 +951,22 @@ function decideNextAction(
         result_arm_obj["next_action"] = "throw";
         return result_arm_obj;
     }
+    // "interlock"-kind inputs no longer abort the arm flow for fresh actions
+    // (file runs, manual entries, etc.) — they only block turning on the
+    // spindle outputs (out1/out2) at the runtime command sites, and are still
+    // surfaced to G2 as a feedhold via the di#ac setting. Other lock kinds
+    // (stop, faststop, halt, limit, driverFault) still abort here.
+    //
+    // Exception: resume is blocked even for plain "interlock". G2's spph
+    // behavior re-energizes the spindle on feedhold-release, so resuming a
+    // mid-job feedhold while the interlock input is still active would
+    // restart the spindle. Operator must clear the input before resuming.
     if (interlock_required_io && driver_status_interlock_in) {
-        result_arm_obj["next_action"] = "abort_due_to_interlock";
-        return result_arm_obj;
+        var isResume = current_action_io && current_action_io.type === "resume";
+        if (driver_status_interlock_in !== "interlock" || isResume) {
+            result_arm_obj["next_action"] = "abort_due_to_interlock";
+            return result_arm_obj;
+        }
     }
 
     // Now we decide what the next action should be if we haven't already aborted for some reason
@@ -1058,6 +1076,108 @@ function checkForInterlocks(thisMachine, action) {
         }
     }
     return getInterlockState;
+}
+
+// True iff any input currently assigned the "interlock" action is physically
+// active. Distinct from checkForInterlocks(), which returns the highest-priority
+// lock kind across all assigned-and-active inputs. This narrower check is what
+// the spindle-start lockout uses: "interlock" inputs only restrict spindle ON,
+// not motion or other outputs (motion is paused via the G2 firmware feedhold
+// on the same input).
+Machine.prototype.isInterlockInputActive = function () {
+    for (let pin = 1; pin < 16; pin++) {
+        let assigned = config.machine.get("di" + pin + "ac");
+        if (!assigned || typeof assigned !== "string") continue;
+        if (assigned.toLowerCase() !== "interlock") continue;
+        if (this.driver.status["in" + pin]) return true;
+    }
+    return false;
+};
+
+// Edge-detect the interlock input across status updates so we can post a
+// "triggered" message as soon as the operator-visible event happens, rather
+// than waiting for them to click Resume and discover the lockout. Called
+// from the driver "status" event handler after _updateStatusFromDriver().
+Machine.prototype._checkInterlockEdge = function () {
+    var active = this.isInterlockInputActive();
+    if (active && !this._interlockWasActive) {
+        // Only push a popup when there's an in-flight activity to interrupt.
+        // At idle, the operator hasn't asked the machine to do anything, so a
+        // modal is just noise. The DRO/input view shows the input state, and
+        // any later action (spindle on, file run) will surface its own block.
+        if (this.status.state !== "idle") {
+            this.info_id += 1;
+            this.status.info = {
+                id: this.info_id,
+                message: "Interlock triggered — clear the interlock input before resuming or starting the spindle.",
+            };
+            this.emit("status", this.status);
+        }
+    } else if (!active && this._interlockWasActive) {
+        // Falling edge: clear only our own message, don't clobber unrelated info
+        if (this.status.info && /interlock/i.test(this.status.info.message || "")) {
+            this.status.info = null;
+            this.emit("status", this.status);
+        }
+        // If the user clicked Resume while the interlock was still active, the
+        // arm path will have transitioned state -> "interlock" to surface the
+        // standard popup. Now that the input is clear, demote back to "paused"
+        // so the next Resume runs through the normal paused-resume path
+        // instead of getting consumed by _resume's case "interlock" handler
+        // (which would otherwise eat the first click).
+        if (this.status.state === "interlock") {
+            this.setState(this, "paused");
+        }
+    }
+    this._interlockWasActive = active;
+};
+
+// Returns null if the (out, val) write is permitted, or a reason string if it
+// must be blocked. Only blocks turning ON outputs 1 or 2 (the spindle relays)
+// while an interlock input is active. OFF writes always pass.
+Machine.prototype.isSpindleStartBlocked = function (out, val) {
+    var outNum = Number(out);
+    var valNum = Number(val);
+    if (!(outNum === 1 || outNum === 2)) return null;
+    if (!(valNum === 1 || valNum === true)) return null;
+    if (!this.isInterlockInputActive()) return null;
+    return "Spindle start blocked: interlock input is active";
+};
+
+// True iff a gcode/SBP file string contains any command that would turn on
+// the spindle. Patterns matched:
+//   - g-code M3 / M03 / M4 / M04 (FC/CCW spindle-on, both zero-padded forms)
+//   - SBP "SO 1,1" / "SO 2,1" (Set Output for the spindle relays)
+//   - direct {out1:N} / {out2:N} writes where N != 0 (e.g. M100 ({out1:1}))
+// Used to pre-reject jobs at runFile time when an interlock input is active.
+// Comments stripped before matching M3/SO so commented-out lines don't false-
+// trigger: gcode "( ... )" and ";...", SBP "'...". The {outN:N} pattern is
+// scanned on the raw line because FabMo's M100 idiom wraps it in parens.
+function fileContainsSpindleStart(contents) {
+    if (!contents) return false;
+    var lines = contents.split(/\r?\n/);
+    for (var i = 0; i < lines.length; i++) {
+        var raw = lines[i];
+        if (!raw) continue;
+        // Direct out1/out2 write to a non-zero value. Scan on raw line.
+        if (/\{\s*out[12]\s*:\s*[1-9]/i.test(raw)) {
+            // ...unless the whole line is commented out (; for gcode, ' for SBP)
+            if (!/^\s*[;']/.test(raw)) return true;
+        }
+        // Strip comments before M3/SO checks.
+        var line = raw
+            .replace(/\([^)]*\)/g, "")
+            .replace(/[;'].*$/, "")
+            .trim();
+        if (!line) continue;
+        // G-code M3/M03/M4/M04 spindle-on
+        if (/(^|\s)M0?[34](\s|$)/i.test(line)) return true;
+        // SBP "SO 1,1" / "SO,1,1" / "SO 2,1" etc. -- spindle relay or out2
+        // turned on. SBP accepts either whitespace or commas between the
+        // command and its args.
+        if (/^SO[\s,]+[12][\s,]+[1-9]/i.test(line)) return true;
+    }
+    return false;
 }
 
 // "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.
@@ -1399,6 +1519,30 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
 
+    // Interlock pre-scan. Both Machine.runFile (direct) and Machine.runNextJob
+    // (queue) converge here, so this is the single chokepoint to refuse files
+    // that would turn on the spindle while an interlock input is active.
+    // Motion-only files still run -- the firmware feedhold pauses them until
+    // the interlock clears.
+    if (this.isInterlockInputActive() && !interlockBypass) {
+        try {
+            var contents = fs.readFileSync(filename, "utf8");
+            if (fileContainsSpindleStart(contents)) {
+                var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running a job that turns on the spindle.";
+                log.warn("_runFile: refused -- interlock active and file contains spindle-start: " + filename);
+                this.info_id += 1;
+                this.status.info = { id: this.info_id, message: msg };
+                this.status.job = null;
+                this.disarm();
+                this.setState(this, "idle");
+                this.emit("status", this.status);
+                return;
+            }
+        } catch (e) {
+            log.warn("_runFile: pre-scan read failed (" + e.message + "); proceeding without scan");
+        }
+    }
+
     // Defensive: clear any stale per-job state on the SBP runtime singleton
     // before starting a new top-level job. A prior job that ended abnormally
     // (E-stop, motor fault, driver disconnect) can leave file_stack/program
@@ -1615,7 +1759,9 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                                 details_newstate = "limit";
                                 break;
                             case "interlock":
-                                details_newstate = "interlock";
+                                // "interlock" no longer transitions into a blocking state;
+                                // it only restricts spindle-start outputs at the runtime
+                                // command sites. Leave the paused state in place.
                                 break;
                             case "driverFault":
                                 details_newstate = "driverFault";
@@ -1799,7 +1945,8 @@ Machine.prototype.resume = function (callback, input = false) {
     }
 };
 
-// Run a file from disk
+// Run a file from disk. The interlock pre-scan happens in _runFile, the
+// chokepoint both this path and runNextJob converge on.
 // filename - full path to the file to run
 Machine.prototype.runFile = function (filename, bypassInterlock) {
     interlockBypass = bypassInterlock;
@@ -1854,6 +2001,23 @@ Machine.prototype.executeRuntimeCode = function (runtimeName, code, options) {
         log.debug("Rejecting attempt to execute runtime code with no defined runtime.");
         log.debug(JSON.stringify(code));
         return;
+    }
+
+    // Interlock pre-scan for direct sbp/gcode submissions (editor "Run code",
+    // /code API). The runtime would otherwise hit our spindle-start block at
+    // the SO/M3 command site and report it as a parser-style error with a
+    // line number, which obscures the real cause. Catching it up front lets
+    // us surface a clean "interlock active" message instead. Manual-runtime
+    // code (jog buttons, output toggles) is gated at its own chokepoints.
+    if (runtimeName !== "manual" && typeof code === "string" && this.isInterlockInputActive()) {
+        if (fileContainsSpindleStart(code)) {
+            var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running code that turns on the spindle.";
+            log.warn("executeRuntimeCode: refused (" + runtimeName + ") -- interlock active and code contains spindle-start");
+            this.info_id += 1;
+            this.status.info = { id: this.info_id, message: msg };
+            this.emit("status", this.status);
+            return;
+        }
     }
     var needsAuth = runtime.needsAuth(code);
     // Authorize scope: the manual runtime handles jog buttons, on-screen
@@ -2096,6 +2260,21 @@ Machine.prototype.watchConfig = function () {
 
 Machine.prototype._executeRuntimeCode = function (runtimeName, code, options) {
     options = options || {};
+
+    // Interlock pre-scan at the actual choke point. The outer executeRuntimeCode
+    // also checks, but when auth is required it arms the action and fire() calls
+    // _executeRuntimeCode later, bypassing the outer check.
+    if (runtimeName !== "manual" && typeof code === "string" && this.isInterlockInputActive()) {
+        if (fileContainsSpindleStart(code)) {
+            var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running code that turns on the spindle.";
+            log.warn("_executeRuntimeCode: refused (" + runtimeName + ") -- interlock active and code contains spindle-start");
+            this.info_id += 1;
+            this.status.info = { id: this.info_id, message: msg };
+            this.emit("status", this.status);
+            return;
+        }
+    }
+
     runtime = this.getRuntime(runtimeName);
     if (runtime) {
         var applyOptions = function (rt) {
