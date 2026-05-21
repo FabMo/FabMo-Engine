@@ -1,4 +1,5 @@
 var machine = require("../machine").machine;
+var spindle = require("../spindle1");
 
 /**
  * @api {post}  // Direct control of accessories like spindles
@@ -29,9 +30,29 @@ var spindle_speed = function (req, res, next) {
     res.json(answer);
 };
 
+var spindle_discover = function (req, res, next) {
+    try {
+        res.json({ status: "success", data: spindle.discover() });
+    } catch (e) {
+        res.json({ status: "error", message: e.message });
+    }
+};
+
+var spindle_configure = function (req, res, next) {
+    spindle.configureSpindle()
+        .then(result => {
+            res.json({ status: result.ok ? "success" : "error", data: result });
+        })
+        .catch(e => {
+            res.json({ status: "error", message: e.message });
+        });
+};
+
 module.exports = function (server) {
     server.post("/acc/spindle_speed", spindle_speed);
-    
+    server.get("/acc/spindle/discover", spindle_discover);
+    server.post("/acc/spindle/configure", spindle_configure);
+
     server.get('/backup/status', function(req, res, next) {
     const watcher = require('../config_watcher');
     res.send(watcher.getBackupStatus());

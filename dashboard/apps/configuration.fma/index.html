@@ -1941,6 +1941,49 @@
             </div>
           </fieldset> -->
 
+          <fieldset>
+            <legend>Spindle Setup <span class="tooltip tooltip-below">i
+              <span class="tooltiptext">
+                Detects the USB-to-RS485 adapter, identifies the connected <br>
+                VFD by probing known register layouts, and installs the <br>
+                matching profile so spindle RPM control is live. <br>
+                Run this after plugging in a new spindle controller. <br>
+              </span>
+            </span>
+            </legend>
+
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label>RS485 Adapter</label>
+                <div class="small-12 columns">
+                  <input type="text" id="spindle-setup-adapter" class="machine-input" readonly />
+                </div>
+              </div>
+              <div class="row collapse">
+                <label>Installed VFD Profile</label>
+                <div class="small-12 columns">
+                  <input type="text" id="spindle-setup-profile" class="machine-input" readonly />
+                </div>
+              </div>
+            </div>
+
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label>&nbsp;</label>
+                <div class="small-12 columns">
+                  <button type="button" id="spindle-setup-detect" class="button">Refresh Detection</button>
+                  <button type="button" id="spindle-setup-configure" class="button">Detect &amp; Configure Spindle</button>
+                </div>
+              </div>
+              <div class="row collapse">
+                <label>Status</label>
+                <div class="small-12 columns">
+                  <pre id="spindle-setup-status" style="min-height: 80px; padding: 6px; background: #f5f5f5; border: 1px solid #ddd; font-size: 12px; white-space: pre-wrap;">Click &ldquo;Refresh Detection&rdquo; to see what&rsquo;s connected.</pre>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
         </div>
       </section>
 

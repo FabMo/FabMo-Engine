@@ -7,6 +7,8 @@ const ModbusRTU = require("modbus-serial");
 const client = new ModbusRTU();
 const fs = require("fs");
 const log = require("./log").logger("spindleVFD");
+const usbBinder = require("./spindles/usb_binder");
+const vfdProbe = require("./spindles/vfd_probe");
 
 // At this time only using the Modbus-Serial library for VFD control of RPM and reading registers and status
 // RUN/STOP is still implemented as and OUPUT 1 from FabMo to RUN input on VFD (Delta = M1); FWD/REV is optional,
@@ -75,9 +77,7 @@ Spin.prototype.connectVFD = function() {
             clearTimeout(connectionTimeout);
             client.setID(settings.MB_ADDRESS);
             log.info("Connected to VFD via MODBUS");
-            if (settings.Registers.UNLOCK_PARAMETERS !== null) {
-                this.unlockRequired = true;
-            }
+            this.unlockRequired = (settings.Registers.UNLOCK_PARAMETERS !== null);
             log.info("Unlock required: " + this.unlockRequired);
             this.startSpindleVFD();
             resolve();
@@ -339,8 +339,22 @@ Spin.prototype.setFrequency = function(data) {
         }, 1000);
     }
 
+    // For drives where the frequency reference is held in a parameter rather
+    // than the comm-area freq-ref register (e.g. Yaskawa V1000 with b1-01=0,
+    // where d1-01 at 0x0280 is the active reference), an ENTER command is
+    // required to make the parameter write take effect. ENTER_REGISTER 0x0910
+    // is the RAM-only ENTER — value applies but is not written to EEPROM, so
+    // we don't wear the drive out on speed changes during a job.
+    const enterReg = this.vfdSettings.Registers.ENTER_REGISTER;
+
     // *** This return is critical - setSpindleVFDFreq calls .then() on this result ***
     return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple)
+        .then(result => {
+            if (enterReg != null) {
+                return writeVFD(enterReg, 0, useMultiple).then(() => result);
+            }
+            return result;
+        })
         .then(result => {
             log.info(`VFD write completed, result=${JSON.stringify(result)}`);
             return result;
@@ -419,6 +433,102 @@ function disconnectVFD() {
     });
 }
 
+// -------- Spindle bring-up / auto-configuration --------
+
+// Ensure the USB-RS485 adapter is bound to its kernel driver and a /dev/tty*
+// path exists. Returns { adapter, ttyPath } from the binder. Safe to call at
+// boot before loadVFDSettings(): if the live tty differs from the path baked
+// into the settings JSON, the settings COM_PORT is rewritten in place.
+Spin.prototype.ensureAdapterBound = async function() {
+    const result = await usbBinder.ensureAdapterBound();
+    if (result.ttyPath) {
+        try {
+            const cur = JSON.parse(fs.readFileSync(vfdProbe.SETTINGS_PATH, "utf8"));
+            if (cur.VFD_Settings && cur.VFD_Settings.COM_PORT !== result.ttyPath) {
+                log.info(`Updating spindle1_settings.json COM_PORT: ${cur.VFD_Settings.COM_PORT} -> ${result.ttyPath}`);
+                cur.VFD_Settings.COM_PORT = result.ttyPath;
+                fs.writeFileSync(vfdProbe.SETTINGS_PATH, JSON.stringify(cur, null, 4));
+            }
+        } catch (e) {
+            log.debug(`Could not sync COM_PORT in settings: ${e.message}`);
+        }
+    }
+    return result;
+};
+
+// Quick read-only snapshot of what's plugged in and what's currently
+// installed. Powers the UI's "current state" display.
+Spin.prototype.discover = function() {
+    const adapter = usbBinder.findAdapter();
+    let installed = null;
+    try {
+        installed = JSON.parse(fs.readFileSync(vfdProbe.SETTINGS_PATH, "utf8"));
+    } catch (e) { /* none installed */ }
+    return {
+        adapter: adapter ? {
+            name: adapter.info.name,
+            vid: adapter.vid,
+            pid: adapter.pid,
+            driver: adapter.info.driver,
+            ttyPath: usbBinder.resolveTtyForDevice(adapter.sysPath),
+        } : null,
+        installedTemplate: installed && installed.VFD_Settings ? installed.VFD_Settings.Name : null,
+        templates: vfdProbe.listTemplates(),
+    };
+};
+
+// Full pipeline: bind adapter, probe VFD, install matching template,
+// reload settings, reconnect. Returns a result summary suitable for the UI.
+Spin.prototype.configureSpindle = async function() {
+    const steps = [];
+    const step = (name, ok, detail) => { steps.push({ name, ok, detail }); log.info(`configure: ${name} -> ${ok ? "ok" : "fail"}${detail ? " (" + detail + ")" : ""}`); };
+
+    // Tear down current connection (if any) so the probe can open the port
+    if (this.vfdInterval) { clearInterval(this.vfdInterval); this.vfdInterval = null; }
+    try { if (client.isOpen) await client.close(); } catch (e) { /* ignore */ }
+
+    const bind = await this.ensureAdapterBound();
+    if (!bind.adapter) {
+        step("detect_adapter", false, "no known RS485 adapter on USB bus");
+        return { ok: false, steps };
+    }
+    step("detect_adapter", true, bind.adapter.info.name);
+
+    if (!bind.ttyPath) {
+        step("bind_driver", false, "no tty appeared after bind");
+        return { ok: false, steps };
+    }
+    step("bind_driver", true, bind.ttyPath);
+
+    const match = await vfdProbe.probeVFD(bind.ttyPath);
+    if (!match) {
+        step("probe_vfd", false, "no template responded");
+        return { ok: false, steps };
+    }
+    step("probe_vfd", true, match.name);
+
+    try {
+        vfdProbe.installTemplate(match.name, bind.ttyPath, match.address, match.parity);
+        step("install_template", true, `${match.name} @ addr ${match.address} parity ${match.parity}`);
+    } catch (e) {
+        step("install_template", false, e.message);
+        return { ok: false, steps };
+    }
+
+    try {
+        // Reset disabled state so connect can succeed
+        this.status.vfdEnabled = true;
+        this.status.vfdDesgFreq = 0;
+        await this.loadVFDSettings();
+        await this.connectVFD();
+        step("connect_vfd", true);
+    } catch (e) {
+        step("connect_vfd", false, e.message);
+        return { ok: false, steps };
+    }
+
+    return { ok: true, steps, template: match.name, ttyPath: bind.ttyPath };
+};
 
 // Setting up a single instance of Spindle
 const singletonInstance = new Spin();
