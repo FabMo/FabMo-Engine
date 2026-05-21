@@ -946,13 +946,22 @@ function decideNextAction(
         result_arm_obj["next_action"] = "throw";
         return result_arm_obj;
     }
-    // "interlock"-kind inputs no longer abort the arm flow — they only block
-    // turning on the spindle outputs (out1/out2) at the runtime command sites
-    // and are still surfaced to G2 as a feedhold via the di#ac setting. Other
-    // lock kinds (stop, faststop, halt, limit, driverFault) still abort here.
-    if (interlock_required_io && driver_status_interlock_in && driver_status_interlock_in !== "interlock") {
-        result_arm_obj["next_action"] = "abort_due_to_interlock";
-        return result_arm_obj;
+    // "interlock"-kind inputs no longer abort the arm flow for fresh actions
+    // (file runs, manual entries, etc.) — they only block turning on the
+    // spindle outputs (out1/out2) at the runtime command sites, and are still
+    // surfaced to G2 as a feedhold via the di#ac setting. Other lock kinds
+    // (stop, faststop, halt, limit, driverFault) still abort here.
+    //
+    // Exception: resume is blocked even for plain "interlock". G2's spph
+    // behavior re-energizes the spindle on feedhold-release, so resuming a
+    // mid-job feedhold while the interlock input is still active would
+    // restart the spindle. Operator must clear the input before resuming.
+    if (interlock_required_io && driver_status_interlock_in) {
+        var isResume = current_action_io && current_action_io.type === "resume";
+        if (driver_status_interlock_in !== "interlock" || isResume) {
+            result_arm_obj["next_action"] = "abort_due_to_interlock";
+            return result_arm_obj;
+        }
     }
 
     // Now we decide what the next action should be if we haven't already aborted for some reason
