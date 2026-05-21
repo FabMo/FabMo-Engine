@@ -946,7 +946,11 @@ function decideNextAction(
         result_arm_obj["next_action"] = "throw";
         return result_arm_obj;
     }
-    if (interlock_required_io && driver_status_interlock_in) {
+    // "interlock"-kind inputs no longer abort the arm flow — they only block
+    // turning on the spindle outputs (out1/out2) at the runtime command sites
+    // and are still surfaced to G2 as a feedhold via the di#ac setting. Other
+    // lock kinds (stop, faststop, halt, limit, driverFault) still abort here.
+    if (interlock_required_io && driver_status_interlock_in && driver_status_interlock_in !== "interlock") {
         result_arm_obj["next_action"] = "abort_due_to_interlock";
         return result_arm_obj;
     }
@@ -1058,6 +1062,62 @@ function checkForInterlocks(thisMachine, action) {
         }
     }
     return getInterlockState;
+}
+
+// True iff any input currently assigned the "interlock" action is physically
+// active. Distinct from checkForInterlocks(), which returns the highest-priority
+// lock kind across all assigned-and-active inputs. This narrower check is what
+// the spindle-start lockout uses: "interlock" inputs only restrict spindle ON,
+// not motion or other outputs (motion is paused via the G2 firmware feedhold
+// on the same input).
+Machine.prototype.isInterlockInputActive = function () {
+    for (let pin = 1; pin < 16; pin++) {
+        let assigned = config.machine.get("di" + pin + "ac");
+        if (!assigned || typeof assigned !== "string") continue;
+        if (assigned.toLowerCase() !== "interlock") continue;
+        if (this.driver.status["in" + pin]) return true;
+    }
+    return false;
+};
+
+// Returns null if the (out, val) write is permitted, or a reason string if it
+// must be blocked. Only blocks turning ON outputs 1 or 2 (the spindle relays)
+// while an interlock input is active. OFF writes always pass.
+Machine.prototype.isSpindleStartBlocked = function (out, val) {
+    var outNum = Number(out);
+    var valNum = Number(val);
+    if (!(outNum === 1 || outNum === 2)) return null;
+    if (!(valNum === 1 || valNum === true)) return null;
+    if (!this.isInterlockInputActive()) return null;
+    return "Spindle start blocked: interlock input is active";
+};
+
+// True iff a gcode/SBP file string contains any command that would turn on
+// the spindle (M3/M03/M4/M04 or a direct {out1:N}/{out2:N} write where N!=0).
+// Used to pre-reject jobs at runFile time when an interlock input is active.
+// For M3/M4, ;... and ( ... ) comments are stripped first so commented-out
+// lines don't false-trigger. The {outN:N} pattern is scanned on the unstripped
+// line because FabMo's M100 idiom wraps it in parens: M100 ({out1:1}).
+function fileContainsSpindleStart(contents) {
+    if (!contents) return false;
+    var lines = contents.split(/\r?\n/);
+    for (var i = 0; i < lines.length; i++) {
+        var raw = lines[i];
+        if (!raw) continue;
+        // Direct out1/out2 write to a non-zero value. Scan on raw line.
+        if (/\{\s*out[12]\s*:\s*[1-9]/i.test(raw)) {
+            // ...unless the whole line is commented out with a leading ;
+            if (!/^\s*;/.test(raw)) return true;
+        }
+        // M3/M03/M4/M04 spindle-on. Strip comments first.
+        var line = raw
+            .replace(/\([^)]*\)/g, "")
+            .replace(/;.*$/, "")
+            .trim();
+        if (!line) continue;
+        if (/(^|\s)M0?[34](\s|$)/i.test(line)) return true;
+    }
+    return false;
 }
 
 // "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.
@@ -1615,7 +1675,9 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                                 details_newstate = "limit";
                                 break;
                             case "interlock":
-                                details_newstate = "interlock";
+                                // "interlock" no longer transitions into a blocking state;
+                                // it only restricts spindle-start outputs at the runtime
+                                // command sites. Leave the paused state in place.
                                 break;
                             case "driverFault":
                                 details_newstate = "driverFault";
@@ -1806,6 +1868,26 @@ Machine.prototype.runFile = function (filename, bypassInterlock) {
     if (!bypassInterlock) {
         interlockBypass = false;
     }
+
+    // If an interlock input is active, refuse to start a job that contains
+    // any spindle-start command (M3/M03/M4/M04 or {out1:1}/{out2:1}). Pure
+    // motion files are allowed through -- they'll be paused by the firmware
+    // feedhold until the interlock clears, then resume normally.
+    if (this.isInterlockInputActive() && !bypassInterlock) {
+        try {
+            var contents = fs.readFileSync(filename, "utf8");
+            if (fileContainsSpindleStart(contents)) {
+                var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running a job that turns on the spindle.";
+                log.warn("runFile: refused -- interlock active and file contains spindle-start commands: " + filename);
+                this.status.info = { type: "warning", message: msg };
+                this.emit("status", this.status);
+                return;
+            }
+        } catch (e) {
+            log.warn("runFile: pre-scan read failed (" + e.message + "); proceeding without scan");
+        }
+    }
+
     this.arm(
         {
             type: "runFile",
