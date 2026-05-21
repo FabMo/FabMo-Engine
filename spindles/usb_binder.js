@@ -10,10 +10,35 @@
 
 const fs = require("fs");
 const path = require("path");
+const { execFileSync } = require("child_process");
 const log = require("../log").logger("spindleBind");
 
 const SYSFS_USB_DEVICES = "/sys/bus/usb/devices";
-const CP210X_NEW_ID = "/sys/bus/usb-serial/drivers/cp210x/new_id";
+const CP210X_DRIVER_DIR = "/sys/bus/usb-serial/drivers/cp210x";
+const CP210X_NEW_ID = CP210X_DRIVER_DIR + "/new_id";
+
+// Ensure a kernel module is loaded. cp210x is built but not auto-loaded on
+// some Pi images until a device with a known PID is plugged in — so for OEM
+// PIDs we have to modprobe it ourselves before we can write to new_id.
+function ensureModuleLoaded(modName, driverDir) {
+    if (fs.existsSync(driverDir)) return true;
+    try {
+        execFileSync("/sbin/modprobe", [modName], { stdio: "ignore" });
+    } catch (e) {
+        try {
+            execFileSync("modprobe", [modName], { stdio: "ignore" });
+        } catch (e2) {
+            log.error(`modprobe ${modName} failed: ${e2.message}`);
+            return false;
+        }
+    }
+    if (fs.existsSync(driverDir)) {
+        log.info(`Loaded kernel module: ${modName}`);
+        return true;
+    }
+    log.error(`Loaded ${modName} but ${driverDir} still missing`);
+    return false;
+}
 
 // Known RS485 adapters. `driver` is the in-kernel module that should claim
 // the device; `needsNewId` flags PIDs not in the driver's built-in table.
@@ -60,6 +85,9 @@ function findAdapter() {
 // bound the kernel returns EBUSY/EEXIST, which we treat as success.
 function bindCp210xPid(vid, pid) {
     const line = `${vid} ${pid}`;
+    if (!ensureModuleLoaded("cp210x", CP210X_DRIVER_DIR)) {
+        return false;
+    }
     try {
         fs.writeFileSync(CP210X_NEW_ID, line);
         log.info(`cp210x: registered VID:PID ${line}`);

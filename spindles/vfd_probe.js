@@ -43,34 +43,37 @@ function listTemplates() {
         .map(f => f.replace(/\.json$/, ""));
 }
 
-// Try one template against a given tty path. Resolves with the template
-// object on a successful read, null on any failure. Always closes the port.
-async function tryTemplate(ttyPath, templateName) {
+// Try one template with a given (address, parity) combo. Resolves with the
+// template object on a successful read, null on any failure. Always closes
+// the port.
+async function tryTemplate(ttyPath, templateName, address, parity) {
     const tpl = loadTemplate(templateName);
     const s = tpl.VFD_Settings;
+    const addr = address != null ? address : s.MB_ADDRESS;
+    const par = parity != null ? parity : s.PARITY;
     const client = new ModbusRTU();
 
-    log.info(`Probe: trying ${templateName} on ${ttyPath} @ ${s.BAUDRATE} ${s.BYTESIZE}${s.PARITY[0].toUpperCase()}${s.STOPBITS}, addr ${s.MB_ADDRESS}, reg ${s.Registers.TRIG_READ_FREQ}`);
+    log.info(`Probe: trying ${templateName} on ${ttyPath} @ ${s.BAUDRATE} ${s.BYTESIZE}${par[0].toUpperCase()}${s.STOPBITS}, addr ${addr}, reg ${s.Registers.TRIG_READ_FREQ}`);
 
     try {
         await client.connectRTUBuffered(ttyPath, {
             baudRate: s.BAUDRATE,
-            parity: s.PARITY,
+            parity: par,
             dataBits: s.BYTESIZE,
             stopBits: s.STOPBITS,
         });
-        client.setID(s.MB_ADDRESS);
+        client.setID(addr);
         client.setTimeout(READ_TIMEOUT_MS);
 
         const res = await client.readHoldingRegisters(s.Registers.TRIG_READ_FREQ, s.READ_LENGTH || 1);
         if (res && Array.isArray(res.data) && res.data.length > 0) {
-            log.info(`Probe: ${templateName} responded with ${res.data.length} registers: [${res.data.join(", ")}]`);
+            log.info(`Probe: ${templateName} responded at addr ${addr} parity ${par} with ${res.data.length} registers: [${res.data.join(", ")}]`);
             return tpl;
         }
-        log.info(`Probe: ${templateName} read returned no data`);
+        log.info(`Probe: ${templateName} addr ${addr} parity ${par} read returned no data`);
         return null;
     } catch (e) {
-        log.info(`Probe: ${templateName} failed: ${e.message}`);
+        log.info(`Probe: ${templateName} addr ${addr} parity ${par} failed: ${e.message}`);
         return null;
     } finally {
         try {
@@ -79,24 +82,46 @@ async function tryTemplate(ttyPath, templateName) {
     }
 }
 
-// Walk PROBE_ORDER, return { name, template } of the first match, or null.
+// For a template, return the list of values to try for a given probe-time
+// field. Defaults to a single-item list of the runtime value.
+function listOr(arrField, fallback) {
+    if (Array.isArray(arrField) && arrField.length > 0) return arrField;
+    return [fallback];
+}
+
+// Walk PROBE_ORDER and each template's (address × parity) matrix, return
+// { name, template, address, parity } of the first match, or null.
 async function probeVFD(ttyPath) {
     for (const name of PROBE_ORDER) {
-        const tpl = await tryTemplate(ttyPath, name);
-        if (tpl) {
-            return { name, template: tpl };
+        const tpl = loadTemplate(name);
+        const s = tpl.VFD_Settings;
+        const addrs = listOr(s.PROBE_ADDRESSES, s.MB_ADDRESS);
+        const parities = listOr(s.PROBE_PARITIES, s.PARITY);
+        for (const addr of addrs) {
+            for (const par of parities) {
+                const match = await tryTemplate(ttyPath, name, addr, par);
+                if (match) {
+                    return { name, template: match, address: addr, parity: par };
+                }
+            }
         }
     }
     return null;
 }
 
-// Copy a template's JSON into spindle1_settings.json, overwriting the
-// COM_PORT with the live tty path so the settings reflect the current bind.
-function installTemplate(templateName, ttyPath) {
+// Copy a template's JSON into spindle1_settings.json, overwriting COM_PORT,
+// MB_ADDRESS, and PARITY with the values discovered during probing so the
+// settings reflect the live connection.
+function installTemplate(templateName, ttyPath, address, parity) {
     const tpl = loadTemplate(templateName);
     tpl.VFD_Settings.COM_PORT = ttyPath;
+    if (address != null) tpl.VFD_Settings.MB_ADDRESS = address;
+    if (parity != null) tpl.VFD_Settings.PARITY = parity;
+    // Probe-time hints aren't part of the runtime settings
+    delete tpl.VFD_Settings.PROBE_ADDRESSES;
+    delete tpl.VFD_Settings.PROBE_PARITIES;
     fs.writeFileSync(SETTINGS_PATH, JSON.stringify(tpl, null, 4));
-    log.info(`Installed template ${templateName} -> ${SETTINGS_PATH} (COM_PORT=${ttyPath})`);
+    log.info(`Installed template ${templateName} -> ${SETTINGS_PATH} (COM_PORT=${ttyPath}, MB_ADDRESS=${tpl.VFD_Settings.MB_ADDRESS}, PARITY=${tpl.VFD_Settings.PARITY})`);
     return tpl;
 }
 

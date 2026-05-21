@@ -77,9 +77,7 @@ Spin.prototype.connectVFD = function() {
             clearTimeout(connectionTimeout);
             client.setID(settings.MB_ADDRESS);
             log.info("Connected to VFD via MODBUS");
-            if (settings.Registers.UNLOCK_PARAMETERS !== null) {
-                this.unlockRequired = true;
-            }
+            this.unlockRequired = (settings.Registers.UNLOCK_PARAMETERS !== null);
             log.info("Unlock required: " + this.unlockRequired);
             this.startSpindleVFD();
             resolve();
@@ -341,8 +339,22 @@ Spin.prototype.setFrequency = function(data) {
         }, 1000);
     }
 
+    // For drives where the frequency reference is held in a parameter rather
+    // than the comm-area freq-ref register (e.g. Yaskawa V1000 with b1-01=0,
+    // where d1-01 at 0x0280 is the active reference), an ENTER command is
+    // required to make the parameter write take effect. ENTER_REGISTER 0x0910
+    // is the RAM-only ENTER — value applies but is not written to EEPROM, so
+    // we don't wear the drive out on speed changes during a job.
+    const enterReg = this.vfdSettings.Registers.ENTER_REGISTER;
+
     // *** This return is critical - setSpindleVFDFreq calls .then() on this result ***
     return writeVFD(this.vfdSettings.Registers.SET_FREQUENCY, vfd_req, useMultiple)
+        .then(result => {
+            if (enterReg != null) {
+                return writeVFD(enterReg, 0, useMultiple).then(() => result);
+            }
+            return result;
+        })
         .then(result => {
             log.info(`VFD write completed, result=${JSON.stringify(result)}`);
             return result;
@@ -496,8 +508,8 @@ Spin.prototype.configureSpindle = async function() {
     step("probe_vfd", true, match.name);
 
     try {
-        vfdProbe.installTemplate(match.name, bind.ttyPath);
-        step("install_template", true, match.name);
+        vfdProbe.installTemplate(match.name, bind.ttyPath, match.address, match.parity);
+        step("install_template", true, `${match.name} @ addr ${match.address} parity ${match.parity}`);
     } catch (e) {
         step("install_template", false, e.message);
         return { ok: false, steps };
