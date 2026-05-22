@@ -82,64 +82,74 @@ function runMacro(machine, id) {
     }
 }
 
+// All manual-runtime dispatch goes through machine.executeRuntimeCode (the same
+// entry the dashboard uses via the websocket "code" event). That entry handles
+// runtime selection, lazy connect, and the auth-gate (arming if not yet
+// authorized). Calling manual_runtime.executeCode directly would skip the
+// connect step and throw because this.machine is null inside the runtime.
+function sendManual(machine, code) {
+    try {
+        machine.executeRuntimeCode("manual", code);
+    } catch (e) {
+        log.error("manual " + code.cmd + " threw: " + e.message);
+    }
+}
+
+// Enter manual mode explicitly (e.g. from a dedicated pendant button).
+function manualEnter(machine, opts) {
+    if (machine.status.state === "manual") return; // already in manual
+    sendManual(machine, {
+        cmd: "enter",
+        mode: (opts && opts.mode) || undefined,
+        hideKeypad: opts && opts.hideKeypad !== undefined ? opts.hideKeypad : true,
+    });
+}
+
+function manualExit(machine) {
+    if (machine.status.state !== "manual") return;
+    sendManual(machine, { cmd: "exit" });
+}
+
 // Continuous jog: start moving an axis at a constant speed. Used by joystick
 // devices when the stick crosses out of the deadzone. Caller must invoke
 // jogStop when the stick returns to center.
+//
+// Requires the machine to be in manual mode already. The pendant exposes a
+// dedicated button (LB on the F310) for entering manual; we don't auto-enter
+// here because a one-shot enter+move+nothing-else leaves the manual stream
+// open with no follow-up exit, parking the state machine in "running".
 function jogStart(machine, axis, speed) {
     if (!axis || !speed) return;
-    var manual = machine.runtimes && machine.runtimes.manual;
-    if (!manual) {
-        log.warn("jogStart: manual runtime unavailable");
+    if (machine.status.state !== "manual") {
+        log.debug("jogStart ignored — machine is in state '" + machine.status.state + "', not 'manual'");
         return;
     }
-    try {
-        if (machine.status.state !== "manual") {
-            manual.executeCode({ cmd: "enter", hideKeypad: true });
-        }
-        manual.executeCode({ cmd: "start", axis: axis, speed: speed });
-    } catch (e) {
-        log.error("jogStart threw: " + e.message);
-    }
+    sendManual(machine, { cmd: "start", axis: axis, speed: speed });
 }
 
 function jogStop(machine) {
-    var manual = machine.runtimes && machine.runtimes.manual;
-    if (!manual) return;
-    try {
-        manual.executeCode({ cmd: "stop" });
-    } catch (e) {
-        log.error("jogStop threw: " + e.message);
-    }
+    if (machine.status.state !== "manual") return;
+    sendManual(machine, { cmd: "stop" });
 }
 
-// Jog by wheel-tick. Ensures the machine is in the manual runtime and dispatches
-// a fixed move. ticks is the signed wheel delta; stepSize is the per-tick
-// distance in current machine units. speed is a sensible jog speed.
+// Jog by wheel-tick (or D-pad press). Sends a fixed-distance move through the
+// manual runtime. Same single-state precondition as jogStart: the machine must
+// already be in manual mode (entered via a dedicated pendant button).
 function jog(machine, axis, ticks, stepSize, speed) {
     if (!axis || !ticks || !stepSize) {
         return;
     }
-    var distance = ticks * stepSize;
-    var manual = machine.runtimes && machine.runtimes.manual;
-    if (!manual) {
-        log.warn("jog: manual runtime unavailable");
+    if (machine.status.state !== "manual") {
+        log.debug("jog ignored — machine is in state '" + machine.status.state + "', not 'manual'");
         return;
     }
-    try {
-        // If we're not already in manual mode, enter (hideKeypad keeps the modal
-        // off the screen — the operator is at the pendant, not the dashboard).
-        if (machine.status.state !== "manual") {
-            manual.executeCode({ cmd: "enter", hideKeypad: true });
-        }
-        manual.executeCode({
-            cmd: "fixed",
-            axis: axis,
-            speed: speed,
-            dist: distance,
-        });
-    } catch (e) {
-        log.error("jog threw: " + e.message);
-    }
+    var distance = ticks * stepSize;
+    sendManual(machine, {
+        cmd: "fixed",
+        axis: axis,
+        speed: speed,
+        dist: distance,
+    });
 }
 
 module.exports = {
@@ -149,6 +159,8 @@ module.exports = {
     quit: quit,
     authorize: authorize,
     runMacro: runMacro,
+    manualEnter: manualEnter,
+    manualExit: manualExit,
     jog: jog,
     jogStart: jogStart,
     jogStop: jogStop,

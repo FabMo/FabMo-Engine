@@ -46,6 +46,10 @@ function bindingsFor(BTN) {
     byCode[BTN.Y] = function (m) { actions.runMacro(m, 10); };
     byCode[BTN.START] = function (m) { actions.smartStartPause(m); };
     byCode[BTN.SELECT] = function (m) { actions.quit(m); };
+    // LB / RB toggle manual mode explicitly. The sticks and D-pad only jog
+    // while in manual mode — press LB once, jog freely, press RB when done.
+    if (BTN.LB) byCode[BTN.LB] = function (m) { actions.manualEnter(m, { hideKeypad: false }); };
+    if (BTN.RB) byCode[BTN.RB] = function (m) { actions.manualExit(m); };
     return byCode;
 }
 

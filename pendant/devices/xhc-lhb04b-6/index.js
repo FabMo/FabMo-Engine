@@ -51,13 +51,18 @@ var BINDINGS = {
     },
     // fn is a modifier — handled in dispatch, not as a direct binding
     fn: null,
-    // Override and mode buttons deferred to v2 (need FRO/SRO support).
+    // Override buttons deferred to v2 (need FRO/SRO support).
     "feed-plus": null,
     "feed-minus": null,
     "spindle-plus": null,
     "spindle-minus": null,
-    "mode-continuous": null,
-    "mode-step": null,
+    // Mode buttons toggle manual mode — wheel jogging only works while in it.
+    "mode-continuous": function (machine) {
+        actions.manualEnter(machine, { hideKeypad: false });
+    },
+    "mode-step": function (machine) {
+        actions.manualExit(machine);
+    },
 };
 
 function open(machine) {
