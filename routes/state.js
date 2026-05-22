@@ -1,4 +1,5 @@
 var machine = require("../machine").machine;
+var log = require("../log").logger("api");
 
 /**
  * @api {get} /quit Quit
@@ -49,12 +50,13 @@ var pause = function (req, res, next) {
  */
 // eslint-disable-next-line no-unused-vars
 var resume = function (req, res, next) {
-    machine.resume();
-    var answer = {
-        status: "success",
-        data: null,
-    };
-    res.json(answer);
+    try {
+        machine.resume();
+    } catch (e) {
+        log.warn("resume: " + e.message);
+        return res.json({ status: "error", message: e.message });
+    }
+    res.json({ status: "success", data: null });
 };
 
 module.exports = function (server) {

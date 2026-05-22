@@ -1,4 +1,5 @@
 var macros = require("../macros");
+var log = require("../log").logger("api");
 
 // eslint-disable-next-line no-unused-vars
 var updateMacro = function (req, res, next) {
@@ -102,7 +103,19 @@ var runMacro = function (req, res, next) {
     var id = req.params.id;
     var macro = macros.get(id);
     if (macro) {
-        macros.run(id);
+        // macros.run -> machine.runFile -> arm() throws synchronously if the
+        // machine is busy (e.g. already running another macro from a rapid
+        // double-click). Without this guard the throw escapes the route
+        // handler and tears down the process.
+        try {
+            macros.run(id);
+        } catch (e) {
+            log.warn("runMacro: " + e.message);
+            return res.json({
+                status: "error",
+                message: e.message,
+            });
+        }
         res.json({
             status: "success",
             data: macros.list(),

@@ -1974,12 +1974,20 @@ Machine.prototype.runNextJob = function (callback) {
                 return callback(err);
             }
             if (pendingJobs.length > 0) {
-                this.arm(
-                    {
-                        type: "nextJob",
-                    },
-                    config.machine.get("auth_timeout")
-                );
+                // arm() throws synchronously when state is busy (e.g. rapid
+                // double-fire from the queue UI). Catch it here so the error
+                // surfaces through the callback instead of escaping the db
+                // callback boundary as an uncaught exception.
+                try {
+                    this.arm(
+                        {
+                            type: "nextJob",
+                        },
+                        config.machine.get("auth_timeout")
+                    );
+                } catch (e) {
+                    return callback(e);
+                }
                 callback();
             } else {
                 callback(new Error("No pending jobs."));
