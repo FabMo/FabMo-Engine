@@ -77,7 +77,7 @@ var ABS = {
 // deflected. Intermediate deflections produce proportional speeds.
 var TUNABLES = {
     AXIS_MAX: 32767,
-    DEADZONE: 4000,         // ~12% — generous to absorb F310 center drift
+    DEADZONE: 8000,         // ~25% — absorbs worn-stick variable rest position
     JOG_SPEED_MAX: 60,      // IPM at full deflection (fallback if no config)
     DPAD_STEP_SIZE: 0.1,    // inches per D-pad press
     DPAD_SPEED: 30,         // IPM for D-pad fixed moves

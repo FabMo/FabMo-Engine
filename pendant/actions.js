@@ -82,6 +82,23 @@ function runMacro(machine, id) {
     }
 }
 
+// Set a discrete output to 0 or 1. Uses the manual runtime's output command —
+// same path as the dashboard's action-5 spindle button — so the machine must
+// already be in manual mode (LB press).
+function setOutput(machine, outNum, value) {
+    if (machine.status.state !== "manual") {
+        log.debug("setOutput ignored — machine not in manual mode");
+        return;
+    }
+    sendManual(machine, { cmd: "output", out: { output: outNum, value: value } });
+}
+
+// Flip a discrete output's current state.
+function toggleOutput(machine, outNum) {
+    var current = machine.status["out" + outNum];
+    setOutput(machine, outNum, current ? 0 : 1);
+}
+
 // All manual-runtime dispatch goes through machine.executeRuntimeCode (the same
 // entry the dashboard uses via the websocket "code" event). That entry handles
 // runtime selection, lazy connect, and the auth-gate (arming if not yet
@@ -119,21 +136,25 @@ function manualToggle(machine, opts) {
     }
 }
 
-// Continuous jog: start moving an axis at a constant speed. Used by joystick
-// devices when the stick crosses out of the deadzone. Caller must invoke
-// jogStop when the stick returns to center.
+// Continuous jog: start moving along one or two axes at constant signed speeds.
+// Used by joystick devices when sticks deflect past the deadzone. The manual
+// driver's startMotion deduplicates same-axis+same-speed calls and handles
+// smooth axis/speed transitions, so callers can re-issue this freely at any
+// rate without churning G2.
 //
-// Requires the machine to be in manual mode already. The pendant exposes a
-// dedicated button (LB on the F310) for entering manual; we don't auto-enter
-// here because a one-shot enter+move+nothing-else leaves the manual stream
-// open with no follow-up exit, parking the state machine in "running".
-function jogStart(machine, axis, speed) {
+// Requires the machine to be in manual mode already (entered via LB).
+function jogStart(machine, axis, speed, secondAxis, secondSpeed) {
     if (!axis || !speed) return;
     if (machine.status.state !== "manual") {
         log.debug("jogStart ignored — machine is in state '" + machine.status.state + "', not 'manual'");
         return;
     }
-    sendManual(machine, { cmd: "start", axis: axis, speed: speed });
+    var code = { cmd: "start", axis: axis, speed: speed };
+    if (secondAxis && secondSpeed) {
+        code.second_axis = secondAxis;
+        code.second_speed = secondSpeed;
+    }
+    sendManual(machine, code);
 }
 
 function jogStop(machine) {
@@ -168,6 +189,8 @@ module.exports = {
     quit: quit,
     authorize: authorize,
     runMacro: runMacro,
+    setOutput: setOutput,
+    toggleOutput: toggleOutput,
     manualEnter: manualEnter,
     manualExit: manualExit,
     manualToggle: manualToggle,
