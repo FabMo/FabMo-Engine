@@ -82,6 +82,36 @@ function runMacro(machine, id) {
     }
 }
 
+// Continuous jog: start moving an axis at a constant speed. Used by joystick
+// devices when the stick crosses out of the deadzone. Caller must invoke
+// jogStop when the stick returns to center.
+function jogStart(machine, axis, speed) {
+    if (!axis || !speed) return;
+    var manual = machine.runtimes && machine.runtimes.manual;
+    if (!manual) {
+        log.warn("jogStart: manual runtime unavailable");
+        return;
+    }
+    try {
+        if (machine.status.state !== "manual") {
+            manual.executeCode({ cmd: "enter", hideKeypad: true });
+        }
+        manual.executeCode({ cmd: "start", axis: axis, speed: speed });
+    } catch (e) {
+        log.error("jogStart threw: " + e.message);
+    }
+}
+
+function jogStop(machine) {
+    var manual = machine.runtimes && machine.runtimes.manual;
+    if (!manual) return;
+    try {
+        manual.executeCode({ cmd: "stop" });
+    } catch (e) {
+        log.error("jogStop threw: " + e.message);
+    }
+}
+
 // Jog by wheel-tick. Ensures the machine is in the manual runtime and dispatches
 // a fixed move. ticks is the signed wheel delta; stepSize is the per-tick
 // distance in current machine units. speed is a sensible jog speed.
@@ -120,4 +150,6 @@ module.exports = {
     authorize: authorize,
     runMacro: runMacro,
     jog: jog,
+    jogStart: jogStart,
+    jogStop: jogStop,
 };

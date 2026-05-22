@@ -11,7 +11,7 @@
 
 var log = require("../log").logger("pendant");
 
-var DEVICES = [require("./devices/xhc-lhb04b-6")];
+var DEVICES = [require("./devices/xhc-lhb04b-6"), require("./devices/logitech-f310")];
 
 var openHandles = [];
 
