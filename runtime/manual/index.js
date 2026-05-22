@@ -65,6 +65,16 @@ ManualRuntime.prototype.disconnect = function () {
 
 // Enter the manual drive state (and thus, the machining cycle)
 ManualRuntime.prototype.enter = function (mode, hideKeypad) {
+    // Guard against re-entry while a previous cycle is still active or
+    // draining. `this.stream` is cleared only when runStream's promise
+    // resolves, and g2's cycle context is cleared only when STAT_END
+    // arrives. A re-entry during that window throws "Cannot create a new
+    // cycle context" inside G2._createCycleContext, leaving the runtime
+    // wedged in a hot enter/exit/enter loop.
+    if (this.stream || (this.driver && this.driver.context)) {
+        log.warn("ManualRuntime.enter ignored — previous cycle still active or draining");
+        return;
+    }
     this.stream = new stream.PassThrough();
 
     // At a high level, this opens a stream to the driver, that subsequent commands
