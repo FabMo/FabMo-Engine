@@ -110,6 +110,15 @@ function manualExit(machine) {
     sendManual(machine, { cmd: "exit" });
 }
 
+// Toggle manual mode: enter if not in manual, exit if already in manual.
+function manualToggle(machine, opts) {
+    if (machine.status.state === "manual") {
+        manualExit(machine);
+    } else {
+        manualEnter(machine, opts);
+    }
+}
+
 // Continuous jog: start moving an axis at a constant speed. Used by joystick
 // devices when the stick crosses out of the deadzone. Caller must invoke
 // jogStop when the stick returns to center.
@@ -161,6 +170,7 @@ module.exports = {
     runMacro: runMacro,
     manualEnter: manualEnter,
     manualExit: manualExit,
+    manualToggle: manualToggle,
     jog: jog,
     jogStart: jogStart,
     jogStop: jogStop,
