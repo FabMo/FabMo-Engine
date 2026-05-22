@@ -230,31 +230,45 @@ $(document).ready(function() {
 function checkForGlobalBackupRestore() {
     // console.log("DEBUG: Global dashboard backup restore check");
 
+    // IMPORTANT: Only check for backup restore AFTER user is authenticated
+    // This prevents the modal from appearing during login and stealing focus
     setTimeout(function() {
-        // console.log("DEBUG: Making global API call to check backup status");
+        // console.log("DEBUG: Checking authentication before backup restore check");
         
-        $.ajax({
-            url: '/config/backup-restore-status',
-            method: 'GET',
-            success: function(response) {
-                // console.log("DEBUG: Global backup status response:", response);
-                
-                // Check both backup_available AND should_prompt
-                if (response.status === 'success' && 
-                    response.data.backup_available && 
-                    response.data.should_prompt) {
-                    // console.log("DEBUG: Global backup available and should prompt, showing modal");
-                    showGlobalBackupRestoreModal(response.data.backup_info);
-                } else {
-                    // console.log("DEBUG: No global backup available or should not prompt");
-                    if (response.data.backup_available && !response.data.should_prompt) {
-                    // console.log("DEBUG: Backup exists but not showing modal (not from recent auto-profile)");
-                    }
-                }
-            },
-            error: function(xhr, status, error) {
-                // console.log("DEBUG: Error in global backup status check:", error);
+        // First verify user is authenticated
+        engine.getCurrentUser(function (err, user) {
+            if (err || user === undefined || user === null) {
+                // console.log("DEBUG: User not authenticated, deferring backup check");
+                // User not logged in yet - check again in 2 seconds
+                setTimeout(checkForGlobalBackupRestore, 2000);
+                return;
             }
+            
+            // console.log("DEBUG: User authenticated, making API call to check backup status");
+            
+            $.ajax({
+                url: '/config/backup-restore-status',
+                method: 'GET',
+                success: function(response) {
+                    // console.log("DEBUG: Global backup status response:", response);
+                    
+                    // Check both backup_available AND should_prompt
+                    if (response.status === 'success' && 
+                        response.data.backup_available && 
+                        response.data.should_prompt) {
+                        // console.log("DEBUG: Global backup available and should prompt, showing modal");
+                        showGlobalBackupRestoreModal(response.data.backup_info);
+                    } else {
+                        // console.log("DEBUG: No global backup available or should not prompt");
+                        if (response.data.backup_available && !response.data.should_prompt) {
+                        // console.log("DEBUG: Backup exists but not showing modal (not from recent auto-profile)");
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // console.log("DEBUG: Error in global backup status check:", error);
+                }
+            });
         });
     }, 3000); 
 }

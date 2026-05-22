@@ -218,6 +218,13 @@ function copyExistingFiles() {
         let completedOps = 0;
         const results = [];
         
+        // Check if backup base directory exists - if not, this is a fresh install
+        // and we should NOT create backups of default configs
+        if (!fs.existsSync(backupBaseDir)) {
+            log.info(`Backup directory ${backupBaseDir} does not exist - skipping initial backup (fresh install)`);
+            return resolve([]);
+        }
+        
         watchDirs.forEach((watchDir) => {
             const backupDir = path.join(backupBaseDir, path.basename(watchDir));
             
