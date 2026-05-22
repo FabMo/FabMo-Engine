@@ -44,7 +44,18 @@
         return job;
     };
 
+    // Singleton: every `new FabMoAPI()` returns the same instance, so all
+    // dashboard modules (main.js, routers.js, apps) share one websocket
+    // connection. Previously each module created its own FabMoAPI which
+    // spawned a separate socket; after a page refresh the old sockets
+    // weren't getting torn down promptly (no disconnect events on the
+    // server until the socket.io ping timeout, ~45s), and the duplicate
+    // connections competed for status/ping messages, leaving the dashboard
+    // unable to see state updates ("stuck keypad" symptom).
+    var _instance = null;
     var FabMoAPI = function (base_url) {
+        if (_instance) return _instance;
+        _instance = this;
         this.events = {
             status: [],
             disconnect: [],
