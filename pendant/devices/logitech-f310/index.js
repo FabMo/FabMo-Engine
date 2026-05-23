@@ -37,22 +37,6 @@ function makeAxisState() {
     return { LX: 0, LY: 0, RY: 0 };
 }
 
-// Two motion vectors are "the same" if both axes match and the toolpath speed
-// (F) and per-axis ratios are nearly identical. Below the thresholds we skip
-// re-sending to avoid churn through the manual runtime when the stick creeps.
-var MOTION_EPSILON_IPM = 0.5;
-var RATIO_EPSILON = 0.02; // ~1.1° angle change for analog tilt
-
-function motionChanged(a, b) {
-    if (!a && !b) return false;
-    if (!a || !b) return true;
-    if (a.axis !== b.axis) return true;
-    if ((a.secondAxis || null) !== (b.secondAxis || null)) return true;
-    if (Math.abs(a.speed - b.speed) > MOTION_EPSILON_IPM) return true;
-    if (Math.abs((a.primaryRatio || 0) - (b.primaryRatio || 0)) > RATIO_EPSILON) return true;
-    if (Math.abs((a.secondaryRatio || 0) - (b.secondaryRatio || 0)) > RATIO_EPSILON) return true;
-    return false;
-}
 
 // Processor tick rate. ~20 Hz keeps the stick-to-tool latency under ~50ms while
 // staying well under the manual driver's renew rate. The driver's startMotion
@@ -281,8 +265,12 @@ function open(machine) {
             return;
         }
 
-        // Speed-only change (same axis, same sign): smooth transition is fine.
-        if (!motionChanged(motion, lastMotion)) return;
+        // Re-send on every tick while the stick is deflected, even if the
+        // motion vector is unchanged. The firmware's velocity-jog cycle has a
+        // 500 ms watchdog that auto-stops on host silence, so a stick held
+        // perfectly steady would otherwise time out after half a second. At
+        // PROCESS_HZ=20 the bandwidth cost is trivial (~600 B/s of JSON) and
+        // the firmware setter is a no-op when the velocity hasn't changed.
         actions.jogStart(machine, motion.axis, motion.speed, motion.secondAxis, motion.secondSpeed, motion.primaryRatio, motion.secondaryRatio);
         lastMotion = motion;
     }
@@ -296,9 +284,9 @@ function open(machine) {
             // Everything else acts on press only.
             if (ev.code === BTN.RB) {
                 slowMode = ev.value !== 0;
-                // Bump the next processMotion tick to apply the new scale to
-                // the current motion vector promptly. lastMotion needs reset
-                // so motionChanged sees the new speed as a difference.
+                // Clear lastMotion so isDirectionChange doesn't treat the new
+                // scale as a continuation; the next processMotion tick will
+                // re-issue jogStart with the slow-scaled speed.
                 if (lastMotion) lastMotion = null;
                 return;
             }

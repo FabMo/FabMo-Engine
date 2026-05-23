@@ -103,6 +103,21 @@ function ManualDriver(drv, st, mode) {
 
     // Setup to process status reports from G2
     this.driver.on("status", this.status_handler);
+
+    // Listen for the firmware velocity-jog cycle's exit notification. When
+    // the cycle has finished ramping down and exited, clear the in-flight
+    // flags so subsequent motions can start cleanly. Without this, a stop()
+    // → wait → start() sequence in analog mode would short-circuit on
+    // stop_pending because we'd never know the firmware had finished.
+    this._jogv_exit_handler = function () {
+        if (this.analogMode || this.stop_pending) {
+            this.moving        = false;
+            this.keep_moving   = false;
+            this.stop_pending  = false;
+            this.analogMode    = false;
+        }
+    }.bind(this);
+    this.driver.on("jogv_exit", this._jogv_exit_handler);
 }
 util.inherits(ManualDriver, events.EventEmitter);
 
@@ -211,6 +226,7 @@ ManualDriver.prototype.exit = function () {
         }
         
         this.driver.removeListener("status", this.status_handler);
+        this.driver.removeListener("jogv_exit", this._jogv_exit_handler);
         this.exited = true;
 
         // Give a brief moment for commands to flush
@@ -250,6 +266,42 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     }
 
     if (this.stop_pending) {
+        return;
+    }
+
+    // Analog fast-path. When the caller supplies ratios, drive the firmware's
+    // velocity-mode jog cycle directly via {"jgv*":...} commands. The cycle
+    // handles its own jerk-limited ramp + watchdog + planner queue depth, so
+    // we don't queue G1 segments at all. The pendant's processMotion loop
+    // (50 ms cadence) naturally heartbeats inside the firmware watchdog
+    // (500 ms default).
+    //
+    // Per-axis velocity = speed × ratio in the host's current display units
+    // (in/min if G20, mm/min if G21). The firmware's jgv setter converts to
+    // canonical mm/min internally, so units round-trip cleanly.
+    if (hasRatios) {
+        var vec = {};
+        vec[axis.toLowerCase()] = speed * dir;
+        if (second_axis) {
+            vec[second_axis.toLowerCase()] = speed * second_dir;
+        }
+        this.driver.jogVelocity(vec);
+
+        // Track minimal state so stopMotion knows we were in analog mode and
+        // so the boundary short-circuit above still works on repeat calls.
+        this.moving         = true;
+        this.keep_moving    = true;
+        this.analogMode     = true;
+        this.currentAxis    = axis;
+        this.currentSpeed   = speed;
+        this.currentDirection = dir;
+        if (second_axis) {
+            this.second_axis = second_axis;
+            this.second_currentDirection = second_dir;
+        } else {
+            this.second_axis = null;
+            this.second_currentDirection = null;
+        }
         return;
     }
 
@@ -386,6 +438,20 @@ ManualDriver.prototype.stopMotion = function () {
     this._limShownThisAttempt = false;
     if (this.renew_timer) {
         clearTimeout(this.renew_timer);
+    }
+    // Analog (firmware velocity-jog cycle) stops gracefully via jogStop: zero
+    // all axis velocities and let the cycle ramp down + exit. Feedhold + queue
+    // flush would also work but would force a hard decel and lose any motion
+    // still being smoothed at the planner level — jogStop matches the cycle's
+    // own intended exit path.
+    if (this.analogMode) {
+        this.driver.jogStop();
+        this.analogMode = false;
+        // The cycle clears stop_pending when its {"jgv":0} exit notification
+        // arrives (see g2.js handler). Until then, further startMotion calls
+        // will short-circuit on stop_pending — which is what we want during
+        // the ramp-down window.
+        return;
     }
     this.driver.feedHold();
     if (!this.gotoModeHold) {

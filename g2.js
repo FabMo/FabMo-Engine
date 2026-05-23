@@ -1237,6 +1237,15 @@ G2.prototype.onMessage = function (response) {
         r = response;
     }
 
+    // Notifications from the firmware velocity-jog cycle. The firmware emits
+    // a top-level (not response-wrapped) {"jgv":0} message when CYCLE_JGV has
+    // finished ramping to zero and exited. Hosts that called jogVelocity()
+    // listen for "jogv_exit" to know when stop_pending can be cleared and
+    // new motion can start.
+    if (response.jgv === 0) {
+        this.emit("jogv_exit");
+    }
+
     // Deal with G2 status (top priority)
     this.handleStatusReport(r);
 
@@ -1560,6 +1569,42 @@ G2.prototype.command = function (obj) {
         this.command_queue.enqueue(cmd);
     }
     this.sendMore();
+};
+
+// Velocity-mode jog (CYCLE_JGV in firmware ≥ this build).
+// Sends per-axis target velocities directly to G2's velocity-jog cycle.
+//
+//   vec  - object mapping axis letter ("x","y","z","a","b","c") to a signed
+//          velocity in *current g2 display units / min* (in/min if G20,
+//          mm/min if G21). Missing axes retain their previous v_target.
+//
+// The firmware enters the cycle on the first nonzero velocity and stays in
+// it until all targets are zero AND motion drains, or the host stops sending
+// updates (firmware watchdog, default 500 ms). Hosts driving analog inputs
+// should refresh at least every ~200 ms.
+G2.prototype.jogVelocity = function (vec) {
+    if (!vec || typeof vec !== "object") {
+        return;
+    }
+    var payload = {};
+    var axes = ["x", "y", "z", "a", "b", "c"];
+    for (var i = 0; i < axes.length; i++) {
+        var ax = axes[i];
+        if (vec[ax] === undefined || vec[ax] === null) continue;
+        payload["jgv" + ax] = Number(vec[ax]);
+    }
+    if (Object.keys(payload).length === 0) {
+        return;
+    }
+    this.command(payload);
+};
+
+// Ramp all axes to zero — this lets the firmware cycle decelerate and exit
+// cleanly. The cycle exits when motion has drained; callers that need to know
+// when that happens should listen for the {"jgv":0} notification on the
+// "response" stream.
+G2.prototype.jogStop = function () {
+    this.command({ jgvx: 0, jgvy: 0, jgvz: 0, jgva: 0, jgvb: 0, jgvc: 0 });
 };
 
 // Return a promise that resolves when one of the provided states is encountered
