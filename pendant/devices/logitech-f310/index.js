@@ -109,36 +109,9 @@ function open(machine) {
     log.info("Logitech F310 connected (" + modeLabel + " mode) at " + devPath);
 
     var axisState = makeAxisState();
-    var lastMotion = null;     // last motion vector sent to manual runtime
-    var pendingStart = null;   // motion to issue once the manual driver's stop clears
-    var stopWaiting = false;   // true after we've sent jogStop and are draining the helper
+    var lastMotion = null;     // last motion vector sent to manual runtime (null while stick is at rest)
     var slowMode = false;      // true while RB is held — caps jog speed at SLOW_MODE_SCALE
     var leftover = Buffer.alloc(0);
-
-    // True while the manual driver is mid-stop (feedhold + queue flush). Calls
-    // to startMotion during this window are silently dropped by the driver, so
-    // we have to wait it out before issuing a new direction.
-    function isStopPending() {
-        var helper = machine.manual_runtime && machine.manual_runtime.helper;
-        return !!(helper && helper.stop_pending);
-    }
-
-    // A motion change that requires a hard stop+restart (axis swap or true
-    // sign reversal on a component). Going from 0 to a non-zero ratio (cardinal
-    // → diagonal) is NOT a flip — the driver can update component ratios in
-    // place and let the renew cycle pick up the new angle.
-    function isDirectionChange(a, b) {
-        if (!a || !b) return false;
-        if (a.axis !== b.axis) return true;
-        if ((a.secondAxis || null) !== (b.secondAxis || null)) return true;
-        var ap = a.primaryRatio || 0;
-        var bp = b.primaryRatio || 0;
-        if (ap !== 0 && bp !== 0 && Math.sign(ap) !== Math.sign(bp)) return true;
-        var as = a.secondaryRatio || 0;
-        var bs = b.secondaryRatio || 0;
-        if (as !== 0 && bs !== 0 && Math.sign(as) !== Math.sign(bs)) return true;
-        return false;
-    }
 
     // Compute the current target motion from the joystick state:
     //   Left stick (LX, LY)  → XY at any angle (analog)
@@ -215,62 +188,32 @@ function open(machine) {
                 actions.jogStop(machine);
                 lastMotion = null;
             }
-            pendingStart = null;
-            stopWaiting = false;
             return;
         }
 
         var motion = computeMotion();
 
-        // Sticks back to neutral — stop and clear any pending direction change.
-        // Issue jogStop if anything is in flight: active motion OR a queued
-        // restart whose jogStart hasn't fired yet. Without the pendingStart
-        // check here, releasing the stick mid-direction-change leaves no
-        // signal to halt motion that the pending restart might have started.
+        // Sticks back to neutral — emit a single jogStop so the firmware can
+        // ramp down and exit the cycle. lastMotion is the marker that we have
+        // an in-flight cycle to stop.
         if (!motion) {
-            if (lastMotion || pendingStart) {
+            if (lastMotion) {
                 actions.jogStop(machine);
-                stopWaiting = true;
                 lastMotion = null;
             }
-            pendingStart = null;
             return;
         }
 
-        // Any new motion that follows a stop must wait for the helper to clear
-        // stop_pending before issuing jogStart. The driver's `moving` flag
-        // lingers for up to 2 s after STAT_END (movement_timer fallback) — if
-        // we restart during that window, we want the helper fully settled so
-        // the smooth-transition path properly updates currentDirection.
-        if (pendingStart || stopWaiting) {
-            pendingStart = motion;
-            if (!isStopPending()) {
-                actions.jogStart(machine, motion.axis, motion.speed, motion.secondAxis, motion.secondSpeed, motion.primaryRatio, motion.secondaryRatio);
-                lastMotion = motion;
-                pendingStart = null;
-                stopWaiting = false;
-            }
-            return;
-        }
-
-        // Direction change requires a hard stop — the driver's smooth path only
-        // updates feedrate, leaving already-queued G2 segments running in the
-        // old direction. stopMotion does feedhold + queue flush so the new
-        // direction takes effect promptly.
-        if (lastMotion && isDirectionChange(motion, lastMotion)) {
-            actions.jogStop(machine);
-            pendingStart = motion;
-            lastMotion = null;
-            stopWaiting = true;
-            return;
-        }
-
-        // Re-send on every tick while the stick is deflected, even if the
-        // motion vector is unchanged. The firmware's velocity-jog cycle has a
-        // 500 ms watchdog that auto-stops on host silence, so a stick held
-        // perfectly steady would otherwise time out after half a second. At
-        // PROCESS_HZ=20 the bandwidth cost is trivial (~600 B/s of JSON) and
-        // the firmware setter is a no-op when the velocity hasn't changed.
+        // Re-send on every tick while the stick is deflected, regardless of
+        // direction changes or whether the vector matches last tick. The
+        // firmware velocity-jog cycle handles sign flips and angle changes
+        // mid-flight — we do NOT need a host-side stop+restart dance for
+        // reversals (that was a legacy G1-segment-streaming workaround).
+        //
+        // The firmware also has a 500 ms watchdog that auto-stops on host
+        // silence, so a stick held steady would time out without the re-send.
+        // At PROCESS_HZ=20 the bandwidth cost is trivial (~600 B/s of JSON)
+        // and the firmware setter is a no-op when the velocity hasn't changed.
         actions.jogStart(machine, motion.axis, motion.speed, motion.secondAxis, motion.secondSpeed, motion.primaryRatio, motion.secondaryRatio);
         lastMotion = motion;
     }
@@ -284,9 +227,9 @@ function open(machine) {
             // Everything else acts on press only.
             if (ev.code === BTN.RB) {
                 slowMode = ev.value !== 0;
-                // Clear lastMotion so isDirectionChange doesn't treat the new
-                // scale as a continuation; the next processMotion tick will
-                // re-issue jogStart with the slow-scaled speed.
+                // Clear lastMotion so the next processMotion tick treats this
+                // as a fresh send rather than a no-op heartbeat — needed so
+                // the new (slow-scaled) speed reaches the firmware promptly.
                 if (lastMotion) lastMotion = null;
                 return;
             }
@@ -353,12 +296,10 @@ function open(machine) {
                 // ignore
             }
             clearInterval(processTimer);
-            if (lastMotion || pendingStart) {
+            if (lastMotion) {
                 actions.jogStop(machine);
                 lastMotion = null;
             }
-            pendingStart = null;
-            stopWaiting = false;
         },
     };
 }

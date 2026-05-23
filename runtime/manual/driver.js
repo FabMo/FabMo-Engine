@@ -257,16 +257,11 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     var hasRatios = primary_ratio !== undefined;
     var dir = hasRatios ? primary_ratio : (speed < 0 ? -1.0 : 1.0);
     var second_dir = hasRatios ? (secondary_ratio || 0) : (second_speed < 0 ? -1.0 : 1.0);
-    this.analogMode = hasRatios;
     speed = Math.abs(speed);
     this.gotoModeHold = false;
 
     if (this.mode != "normal") {
         throw new Error("Cannot start movement in " + this.mode + " mode.");
-    }
-
-    if (this.stop_pending) {
-        return;
     }
 
     // Analog fast-path. When the caller supplies ratios, drive the firmware's
@@ -275,6 +270,12 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     // we don't queue G1 segments at all. The pendant's processMotion loop
     // (50 ms cadence) naturally heartbeats inside the firmware watchdog
     // (500 ms default).
+    //
+    // This runs BEFORE the stop_pending gate because the firmware cycle
+    // accepts mid-flight velocity updates — there is no need to wait for a
+    // previous stop to finish ramping down. The cycle will simply pick up
+    // the new v_target and keep running, which is exactly the behavior we
+    // want when the user flicks the stick rapidly between directions.
     //
     // Per-axis velocity = speed × ratio in the host's current display units
     // (in/min if G20, mm/min if G21). The firmware's jgv setter converts to
@@ -287,8 +288,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         }
         this.driver.jogVelocity(vec);
 
-        // Track minimal state so stopMotion knows we were in analog mode and
-        // so the boundary short-circuit above still works on repeat calls.
+        // Track minimal state. analogMode is set here AND stays set through
+        // any subsequent stopMotion; only the jogv_exit handler clears it,
+        // when the firmware actually finishes the cycle. That way a
+        // stop→re-engage during ramp-down keeps taking this path.
         this.moving         = true;
         this.keep_moving    = true;
         this.analogMode     = true;
@@ -302,6 +305,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
             this.second_axis = null;
             this.second_currentDirection = null;
         }
+        return;
+    }
+
+    if (this.stop_pending) {
         return;
     }
 
@@ -427,6 +434,21 @@ ManualDriver.prototype.maintainMotion = function () {
 
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
+    // Analog (firmware velocity-jog cycle) path: emit jogStop and let the
+    // firmware cycle ramp down on its own decel. Don't set stop_pending —
+    // the cycle accepts mid-flight velocity updates, so if the user
+    // re-engages the stick during the ramp-down we want subsequent
+    // startMotion calls to flow straight through to a fresh jogVelocity.
+    // The jogv_exit handler will clear analogMode/moving/keep_moving when
+    // the cycle actually exits.
+    if (this.analogMode) {
+        this.driver.jogStop();
+        this.keep_moving = false;
+        this._limShownThisAttempt = false;
+        return;
+    }
+
+    // Legacy (cardinal/keypad) path: feedhold + queue flush.
     this.stop_pending = true;
     this.keep_moving = false;
     this.plannedPos = {};
@@ -438,20 +460,6 @@ ManualDriver.prototype.stopMotion = function () {
     this._limShownThisAttempt = false;
     if (this.renew_timer) {
         clearTimeout(this.renew_timer);
-    }
-    // Analog (firmware velocity-jog cycle) stops gracefully via jogStop: zero
-    // all axis velocities and let the cycle ramp down + exit. Feedhold + queue
-    // flush would also work but would force a hard decel and lose any motion
-    // still being smoothed at the planner level — jogStop matches the cycle's
-    // own intended exit path.
-    if (this.analogMode) {
-        this.driver.jogStop();
-        this.analogMode = false;
-        // The cycle clears stop_pending when its {"jgv":0} exit notification
-        // arrives (see g2.js handler). Until then, further startMotion calls
-        // will short-circuit on stop_pending — which is what we want during
-        // the ramp-down window.
-        return;
     }
     this.driver.feedHold();
     if (!this.gotoModeHold) {
