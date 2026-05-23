@@ -143,7 +143,7 @@ function manualToggle(machine, opts) {
 // rate without churning G2.
 //
 // Requires the machine to be in manual mode already (entered via LB).
-function jogStart(machine, axis, speed, secondAxis, secondSpeed) {
+function jogStart(machine, axis, speed, secondAxis, secondSpeed, primaryRatio, secondaryRatio) {
     if (!axis || !speed) return;
     if (machine.status.state !== "manual") {
         log.debug("jogStart ignored — machine is in state '" + machine.status.state + "', not 'manual'");
@@ -153,6 +153,14 @@ function jogStart(machine, axis, speed, secondAxis, secondSpeed) {
     if (secondAxis && secondSpeed) {
         code.second_axis = secondAxis;
         code.second_speed = secondSpeed;
+    }
+    // Optional analog vector form: ratios carry the toolpath unit vector
+    // components (signed, sum-of-squares = 1). When present, the driver uses
+    // them to scale per-axis segments instead of the legacy ±1 / second-sign
+    // mapping, which only encoded cardinals and 45° diagonals.
+    if (primaryRatio !== undefined) {
+        code.primary_ratio = primaryRatio;
+        code.secondary_ratio = secondaryRatio || 0;
     }
     sendManual(machine, code);
 }

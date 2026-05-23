@@ -23,6 +23,14 @@ var events = require("events");
 // Parameters related to filling the queue, motion, etc.
 // These are fussy.
 var T_RENEW = 300;
+// Per-batch travel = speed × (T_RENEW/60000) × safetyFactor. For button jogs,
+// safetyFactor=4 keeps the G2 planner deeply primed so brief timing hiccups
+// don't starve motion — but it also stacks ~4 batches of stale path ahead of
+// whatever's happening right now, which is invisible for cardinal jogs but
+// shows up as multi-second lag when an analog stick sweeps to a new heading.
+// For analog motion we run feed ≈ consumption: queue stays ~1 batch deep, so
+// ratio updates reach the planner within roughly one T_RENEW window.
+var ANALOG_SAFETY_FACTOR = 1.0;
 var DEFAULT_SAFETY_FACTOR = 4.0;
 // TODO should be in the ManualDriver instance?!
 var count = 0;
@@ -218,9 +226,22 @@ ManualDriver.prototype.exit = function () {
 //          speed - The speed in current units
 //    second_axis - The second axis to move
 //   second_speed - The second axis speed
-ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_speed) {
-    var dir = speed < 0 ? -1.0 : 1.0;
-    var second_dir = second_speed < 0 ? -1.0 : 1.0;
+ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_speed, primary_ratio, secondary_ratio) {
+    // Two callers:
+    //   Dashboard (legacy):  ratios omitted. speed is the F value (toolpath);
+    //                        per-axis segments use ±1 from the sign of speed
+    //                        and second_speed. Encodes cardinals + 45°.
+    //   Pendant analog:      ratios provided. speed is still the F value;
+    //                        per-axis segments use the signed ratios (each in
+    //                        [-1, +1], with sum-of-squares = 1) so any-angle
+    //                        diagonals are possible.
+    // Internally we collapse these into the same state: currentDirection and
+    // second_currentDirection always hold the signed *ratio* (±1 in the legacy
+    // case). _renewMoves multiplies by these ratios when emitting segments.
+    var hasRatios = primary_ratio !== undefined;
+    var dir = hasRatios ? primary_ratio : (speed < 0 ? -1.0 : 1.0);
+    var second_dir = hasRatios ? (secondary_ratio || 0) : (second_speed < 0 ? -1.0 : 1.0);
+    this.analogMode = hasRatios;
     speed = Math.abs(speed);
     this.gotoModeHold = false;
 
@@ -237,9 +258,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     // Emit LIM only on the first short-circuit since the last stopMotion —
     // i.e. user is deliberately pushing into a known limit, not just arriving.
     // On the second deliberate push we escalate to an override prompt.
+    // (Use sign comparison so analog ratios in [-1, +1] match ±1 legacy state.)
     if (this._atBoundary &&
         axis === this.currentAxis &&
-        dir === this.currentDirection &&
+        Math.sign(dir) === Math.sign(this.currentDirection || 0) &&
         !this.axisOverrides[axis.toLowerCase()]) {
         if (!this._limShownThisAttempt) {
             this._limShownThisAttempt = true;
@@ -266,41 +288,56 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
 
     // Improved axis switching without debug logging
     if (this.moving) {
-        if (axis === this.currentAxis && speed === this.currentSpeed) {
-            this.maintainMotion();
-            return;
-        } else {
-            // Smooth axis transitions
-            if (this._atBoundary) {
-                this._atBoundary = false;
-                this._limShownThisAttempt = false;
-                this._limPushCount = {};
-                this.emit("softLimitClear");
-            }
-            this.plannedPos = {};
-
-            if (this.renew_timer) {
-                clearTimeout(this.renew_timer);
-                this.renew_timer = null;
-            }
-
-            this.currentAxis = axis;
-            this.currentSpeed = speed;
+        // In-place ratio update: same axes, same F (toolpath), no sign flip on
+        // either component. Just refresh currentDirection / second_currentDirection
+        // and let the already-scheduled renew_timer pick up the new ratios on
+        // its next natural fire. Queuing fresh segments here (on every stick
+        // tick at PROCESS_HZ) stacked the G2 planner faster than it could
+        // drain, leaving multiple batches of stale direction queued ahead of
+        // the user's new direction. Sign flips and axis swaps still fall
+        // through to the stop-restart path below.
+        var sameAxes = (axis === this.currentAxis) &&
+                       ((second_axis || null) === (this.second_axis || null));
+        var oldDir = this.currentDirection || 0;
+        var oldSecondDir = this.second_currentDirection || 0;
+        var primaryFlip = oldDir !== 0 && dir !== 0 && Math.sign(dir) !== Math.sign(oldDir);
+        var secondaryFlip = oldSecondDir !== 0 && second_dir !== 0 && Math.sign(second_dir) !== Math.sign(oldSecondDir);
+        if (sameAxes && Math.abs(speed - this.currentSpeed) < 0.5 && !primaryFlip && !secondaryFlip) {
             this.currentDirection = dir;
-            
-            if (second_axis) {
-                this.second_axis = second_axis;
-                this.second_currentDirection = second_dir;
-            } else {
-                this.second_axis = null;
-                this.second_currentDirection = null;
-            }
-            
-            this.renewDistance = speed * (T_RENEW / 60000) * this.safetyFactor;
-            this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n");
-            this._renewMoves("axis_change");
+            if (second_axis) this.second_currentDirection = second_dir;
+            this.keep_moving = true;
             return;
         }
+        // Smooth axis transitions
+        if (this._atBoundary) {
+            this._atBoundary = false;
+            this._limShownThisAttempt = false;
+            this._limPushCount = {};
+            this.emit("softLimitClear");
+        }
+        this.plannedPos = {};
+
+        if (this.renew_timer) {
+            clearTimeout(this.renew_timer);
+            this.renew_timer = null;
+        }
+
+        this.currentAxis = axis;
+        this.currentSpeed = speed;
+        this.currentDirection = dir;
+
+        if (second_axis) {
+            this.second_axis = second_axis;
+            this.second_currentDirection = second_dir;
+        } else {
+            this.second_axis = null;
+            this.second_currentDirection = null;
+        }
+
+        this.renewDistance = speed * (T_RENEW / 60000) * (this.analogMode ? ANALOG_SAFETY_FACTOR : this.safetyFactor);
+        this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n");
+        this._renewMoves("axis_change");
+        return;
     } else {
         // Fresh motion start
         if (this._atBoundary) {
@@ -321,7 +358,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         this.currentSpeed = speed;
         this.currentDirection = dir;
         this.moving = this.keep_moving = true;
-        this.renewDistance = speed * (T_RENEW / 60000) * this.safetyFactor;
+        this.renewDistance = speed * (T_RENEW / 60000) * (this.analogMode ? ANALOG_SAFETY_FACTOR : this.safetyFactor);
         
         this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n" + "G61" + "\n");
         this._renewMoves("start");

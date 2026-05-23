@@ -585,6 +585,27 @@ engine.getVersion(function (err, version) {
                 }
             });
 
+            // Pendant joystick direction indicator (keypad center cell).
+            // The pendant adapter publishes post-deadzone deflection on each
+            // perceptible change; we just translate it into the dot's SVG
+            // position. The ring is unit-radius in the SVG viewBox so the
+            // deflection vector maps 1:1 to dot coordinates.
+            dashboard.engine.on("pendant_joystick", function (state) {
+                var dot = document.getElementById("joystick-dot");
+                if (!dot) return;
+                var x = Math.max(-1, Math.min(1, state.x || 0));
+                var y = Math.max(-1, Math.min(1, state.y || 0));
+                dot.setAttribute("cx", String(x));
+                // Invert Y for screen coordinates: stick up (+y) should show
+                // dot above center, but SVG y grows downward.
+                dot.setAttribute("cy", String(-y));
+                if (x === 0 && y === 0) {
+                    dot.classList.remove("active");
+                } else {
+                    dot.classList.add("active");
+                }
+            });
+
             setLocationDisplays();
 
             // ------------------------------------------------------------ STATUS HANDLER

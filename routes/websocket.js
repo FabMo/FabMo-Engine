@@ -85,6 +85,14 @@ function setupStatusBroadcasts(server) {
         log.debug('Broadcasting data_send: ' + message.channel);
     });
 
+    // Pendant joystick deflection — drives the on-keypad direction indicator.
+    // Throttled at the pendant adapter, so this only fires on perceptible
+    // change; otherwise the channel is silent.
+    machine.on("pendant_joystick", function (state) {
+        server.io.of("/private").emit("pendant_joystick", state);
+        server.io.of("/").emit("pendant_joystick", state);
+    });
+
     // REMOVE the data_request broadcast here
 }
 

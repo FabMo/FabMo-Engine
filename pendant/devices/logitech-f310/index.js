@@ -37,10 +37,11 @@ function makeAxisState() {
     return { LX: 0, LY: 0, RY: 0 };
 }
 
-// Two motion vectors are "the same" if both axes match and the speeds differ
-// by less than this many IPM. Below the threshold we skip re-sending to avoid
-// burning bandwidth through the manual runtime when the stick is creeping.
+// Two motion vectors are "the same" if both axes match and the toolpath speed
+// (F) and per-axis ratios are nearly identical. Below the thresholds we skip
+// re-sending to avoid churn through the manual runtime when the stick creeps.
 var MOTION_EPSILON_IPM = 0.5;
+var RATIO_EPSILON = 0.02; // ~1.1° angle change for analog tilt
 
 function motionChanged(a, b) {
     if (!a && !b) return false;
@@ -48,7 +49,8 @@ function motionChanged(a, b) {
     if (a.axis !== b.axis) return true;
     if ((a.secondAxis || null) !== (b.secondAxis || null)) return true;
     if (Math.abs(a.speed - b.speed) > MOTION_EPSILON_IPM) return true;
-    if (Math.abs((a.secondSpeed || 0) - (b.secondSpeed || 0)) > MOTION_EPSILON_IPM) return true;
+    if (Math.abs((a.primaryRatio || 0) - (b.primaryRatio || 0)) > RATIO_EPSILON) return true;
+    if (Math.abs((a.secondaryRatio || 0) - (b.secondaryRatio || 0)) > RATIO_EPSILON) return true;
     return false;
 }
 
@@ -125,6 +127,7 @@ function open(machine) {
     var axisState = makeAxisState();
     var lastMotion = null;     // last motion vector sent to manual runtime
     var pendingStart = null;   // motion to issue once the manual driver's stop clears
+    var stopWaiting = false;   // true after we've sent jogStop and are draining the helper
     var slowMode = false;      // true while RB is held — caps jog speed at SLOW_MODE_SCALE
     var leftover = Buffer.alloc(0);
 
@@ -136,49 +139,91 @@ function open(machine) {
         return !!(helper && helper.stop_pending);
     }
 
-    // A motion change that requires a hard stop+restart (axis swap or direction
-    // reversal) rather than the driver's smooth in-place feedrate update.
+    // A motion change that requires a hard stop+restart (axis swap or true
+    // sign reversal on a component). Going from 0 to a non-zero ratio (cardinal
+    // → diagonal) is NOT a flip — the driver can update component ratios in
+    // place and let the renew cycle pick up the new angle.
     function isDirectionChange(a, b) {
         if (!a || !b) return false;
         if (a.axis !== b.axis) return true;
-        if (Math.sign(a.speed) !== Math.sign(b.speed)) return true;
         if ((a.secondAxis || null) !== (b.secondAxis || null)) return true;
-        if (Math.sign(a.secondSpeed || 0) !== Math.sign(b.secondSpeed || 0)) return true;
+        var ap = a.primaryRatio || 0;
+        var bp = b.primaryRatio || 0;
+        if (ap !== 0 && bp !== 0 && Math.sign(ap) !== Math.sign(bp)) return true;
+        var as = a.secondaryRatio || 0;
+        var bs = b.secondaryRatio || 0;
+        if (as !== 0 && bs !== 0 && Math.sign(as) !== Math.sign(bs)) return true;
         return false;
     }
 
     // Compute the current target motion from the joystick state:
-    //   Left stick (LX, LY)  → XY combined or single-axis
+    //   Left stick (LX, LY)  → XY at any angle (analog)
     //   Right stick Y (RY)   → Z (only when no XY input)
     // Returns null if all sticks are in their deadzones.
+    //
+    // The toolpath F is always the configured jog speed (or slowMode * full
+    // when RB is held); the joystick angle is encoded in the unit-vector
+    // ratios sent alongside speed. G2 handles arbitrary-angle G1 segments
+    // natively, so we just feed it the per-segment X/Y components scaled by
+    // those ratios. With F constant past the deadzone, the renew batch size
+    // also stays constant, which keeps the G2 planner queue stable.
     function computeMotion() {
         var defLX = mapping.deflection(axisState.LX);
         var defLY = -mapping.deflection(axisState.LY); // invert: stick up = +Y
         var defRY = -mapping.deflection(axisState.RY); // invert: stick up = +Z
         var maxSpeed = jogSpeed(slowMode);
 
-        var hasXY = defLX !== 0 || defLY !== 0;
-        if (hasXY) {
-            if (defLX !== 0 && defLY !== 0) {
-                return {
-                    axis: "X",
-                    speed: defLX * maxSpeed,
-                    secondAxis: "Y",
-                    secondSpeed: defLY * maxSpeed,
-                };
-            }
-            if (defLX !== 0) {
-                return { axis: "X", speed: defLX * maxSpeed, secondAxis: null, secondSpeed: 0 };
-            }
-            return { axis: "Y", speed: defLY * maxSpeed, secondAxis: null, secondSpeed: 0 };
+        if (defLX !== 0 || defLY !== 0) {
+            // Always emit X as primary and Y as secondary for joystick motion
+            // (even if one component is zero). Keeping the axis pair stable
+            // across the cardinal/diagonal boundary means the driver can do
+            // an in-place ratio update — no axis-swap restart on small tilts.
+            var mag = Math.sqrt(defLX * defLX + defLY * defLY);
+            return {
+                axis: "X",
+                speed: maxSpeed,                  // toolpath F value (positive)
+                secondAxis: "Y",
+                secondSpeed: maxSpeed,            // present so the driver sees a second axis
+                primaryRatio: defLX / mag,        // signed in [-1, +1]
+                secondaryRatio: defLY / mag,      // signed in [-1, +1]
+            };
         }
         if (defRY !== 0) {
-            return { axis: "Z", speed: defRY * maxSpeed, secondAxis: null, secondSpeed: 0 };
+            return {
+                axis: "Z",
+                speed: maxSpeed,
+                secondAxis: null,
+                secondSpeed: 0,
+                primaryRatio: defRY > 0 ? 1 : -1,
+                secondaryRatio: 0,
+            };
         }
         return null;
     }
 
+    // Publish the post-deadzone joystick deflection to any listener (the
+    // dashboard renders a direction indicator from this). Only emits when
+    // the value moves enough to be perceptible — keeps idle socket traffic
+    // to zero, and active gestures at well under the processMotion rate.
+    var lastJoystickEmit = null;
+    function emitJoystickState() {
+        var defLX = mapping.deflection(axisState.LX);
+        var defLY = -mapping.deflection(axisState.LY);
+        var defRY = -mapping.deflection(axisState.RY);
+        var state = { x: defLX, y: defLY, z: defRY };
+        var EPSILON = 0.01;
+        if (lastJoystickEmit &&
+            Math.abs(state.x - lastJoystickEmit.x) < EPSILON &&
+            Math.abs(state.y - lastJoystickEmit.y) < EPSILON &&
+            Math.abs(state.z - lastJoystickEmit.z) < EPSILON) {
+            return;
+        }
+        lastJoystickEmit = state;
+        machine.emit("pendant_joystick", state);
+    }
+
     function processMotion() {
+        emitJoystickState();
         // No motion if not in manual mode — keep state clean so re-entering
         // manual picks up where the user has the sticks at that moment.
         if (machine.status.state !== "manual") {
@@ -187,30 +232,39 @@ function open(machine) {
                 lastMotion = null;
             }
             pendingStart = null;
+            stopWaiting = false;
             return;
         }
 
         var motion = computeMotion();
 
         // Sticks back to neutral — stop and clear any pending direction change.
+        // Issue jogStop if anything is in flight: active motion OR a queued
+        // restart whose jogStart hasn't fired yet. Without the pendingStart
+        // check here, releasing the stick mid-direction-change leaves no
+        // signal to halt motion that the pending restart might have started.
         if (!motion) {
-            if (lastMotion) {
+            if (lastMotion || pendingStart) {
                 actions.jogStop(machine);
+                stopWaiting = true;
                 lastMotion = null;
             }
             pendingStart = null;
             return;
         }
 
-        // Waiting for a previous stop (issued because direction changed) to
-        // clear. Keep the pending motion in sync with the latest stick state
-        // so we issue the right vector when the driver's queue drains.
-        if (pendingStart) {
+        // Any new motion that follows a stop must wait for the helper to clear
+        // stop_pending before issuing jogStart. The driver's `moving` flag
+        // lingers for up to 2 s after STAT_END (movement_timer fallback) — if
+        // we restart during that window, we want the helper fully settled so
+        // the smooth-transition path properly updates currentDirection.
+        if (pendingStart || stopWaiting) {
             pendingStart = motion;
             if (!isStopPending()) {
-                actions.jogStart(machine, motion.axis, motion.speed, motion.secondAxis, motion.secondSpeed);
+                actions.jogStart(machine, motion.axis, motion.speed, motion.secondAxis, motion.secondSpeed, motion.primaryRatio, motion.secondaryRatio);
                 lastMotion = motion;
                 pendingStart = null;
+                stopWaiting = false;
             }
             return;
         }
@@ -223,12 +277,13 @@ function open(machine) {
             actions.jogStop(machine);
             pendingStart = motion;
             lastMotion = null;
+            stopWaiting = true;
             return;
         }
 
         // Speed-only change (same axis, same sign): smooth transition is fine.
         if (!motionChanged(motion, lastMotion)) return;
-        actions.jogStart(machine, motion.axis, motion.speed, motion.secondAxis, motion.secondSpeed);
+        actions.jogStart(machine, motion.axis, motion.speed, motion.secondAxis, motion.secondSpeed, motion.primaryRatio, motion.secondaryRatio);
         lastMotion = motion;
     }
 
@@ -310,10 +365,12 @@ function open(machine) {
                 // ignore
             }
             clearInterval(processTimer);
-            if (lastMotion) {
+            if (lastMotion || pendingStart) {
                 actions.jogStop(machine);
                 lastMotion = null;
             }
+            pendingStart = null;
+            stopWaiting = false;
         },
     };
 }

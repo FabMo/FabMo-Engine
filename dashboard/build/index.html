@@ -469,7 +469,13 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-
+                  <div class="joystick-indicator" id="joystick-indicator" title="Pendant joystick direction">
+                    <svg viewBox="-1.1 -1.1 2.2 2.2" preserveAspectRatio="xMidYMid meet">
+                      <circle class="joystick-ring" cx="0" cy="0" r="1" fill="none"></circle>
+                      <circle class="joystick-deadzone" cx="0" cy="0" r="0.25" fill="none"></circle>
+                      <circle class="joystick-dot" id="joystick-dot" cx="0" cy="0" r="0.18"></circle>
+                    </svg>
+                  </div>
                 </div>
                 <div class="keypad-cell">
                   <div id="keyboardArrow_x_pos" class="x_pos keypad-button drive-button square">

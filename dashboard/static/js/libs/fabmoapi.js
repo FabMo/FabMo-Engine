@@ -57,7 +57,8 @@
             video_frame: [],
             upload_progress: [],
             data_send: [],
-            data_request: []
+            data_request: [],
+            pendant_joystick: []
         };
         var url = window.location.origin;
         this.is_refreshed = null;
@@ -103,6 +104,13 @@
                 function (message) {
                     //console.log('FabMoAPI received data_send:', message);
                     this.emit("data_send", message);
+                }.bind(this)
+            );
+
+            this.socket.on(
+                "pendant_joystick",
+                function (state) {
+                    this.emit("pendant_joystick", state);
                 }.bind(this)
             );
 
