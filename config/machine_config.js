@@ -48,6 +48,13 @@ MachineConfig.prototype.init = function (machine, callback) {
                     calibrated: false,
                 };
             }
+            // Seed soft-limit cushion for the JGV (analog/velocity-jog) path
+            // on installs predating runtime/manual/driver.js's cushion logic.
+            // Distance is in the cache's current units (in or mm — the regular
+            // unit-conversion path in update() handles it from here).
+            if (this._cache && this._cache.manual && !("softlimit_cushion" in this._cache.manual)) {
+                this._cache.manual.softlimit_cushion = (this._cache.units === "mm") ? 25 : 1.0;
+            }
             if (this._cache && !("outputs" in this._cache)) {
                 // Outputs 1, 2, 4 have hardcoded labels and runtime ignores
                 // their policy. The other rows are configurable in the
@@ -121,6 +128,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
             "z_jerk",
             "z_fast_speed",
             "z_slow_speed",
+            "softlimit_cushion",
         ].forEach(
             function (key) {
                 this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);
