@@ -48,12 +48,15 @@ MachineConfig.prototype.init = function (machine, callback) {
                     calibrated: false,
                 };
             }
-            // Seed soft-limit cushion for the JGV (analog/velocity-jog) path
-            // on installs predating runtime/manual/driver.js's cushion logic.
-            // Distance is in the cache's current units (in or mm — the regular
-            // unit-conversion path in update() handles it from here).
+            // Seed soft-limit safety buffer for the JGV (analog/velocity-jog)
+            // path on installs predating this field. The value is an extra
+            // distance subtracted from the raw margin before computing v_safe,
+            // i.e. the tool stops with at least this much margin remaining.
+            // Default 0 → stop right at the soft limit; the jerk-derived
+            // v_safe formula in runtime/manual/driver.js handles deceleration
+            // distance automatically.
             if (this._cache && this._cache.manual && !("softlimit_cushion" in this._cache.manual)) {
-                this._cache.manual.softlimit_cushion = (this._cache.units === "mm") ? 25 : 1.0;
+                this._cache.manual.softlimit_cushion = 0;
             }
             if (this._cache && !("outputs" in this._cache)) {
                 // Outputs 1, 2, 4 have hardcoded labels and runtime ignores

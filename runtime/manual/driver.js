@@ -287,25 +287,38 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
             vec[second_axis.toLowerCase()] = speed * second_dir;
         }
 
-        // Soft-limit cushion for the velocity-jog cycle. The G1 path's
-        // planned-position clip in _renewMoves doesn't apply here — JGV
-        // is a firmware-side velocity setpoint, not queued segments — so
-        // we taper each per-axis velocity toward zero as the tool nears
-        // its soft limit in that direction. Linear taper inside a fixed
-        // cushion zone: full speed beyond the cushion, scaled down through
-        // it, hard zero at the boundary. Each ratio update at the host's
-        // ~20 Hz tick keeps the firmware tracking the (reduced) setpoint
-        // with its own jerk-limited ramp, so the tool decelerates smoothly
-        // into the limit instead of slamming into it.
+        // Soft-limit speed cap for the velocity-jog cycle. The G1 path's
+        // planned-position clip in _renewMoves doesn't apply here — JGV is
+        // a firmware-side velocity setpoint, not queued segments — so we
+        // derive per-axis max velocity directly from the remaining margin
+        // and the configured jerk profile, then cap the requested velocity
+        // against it.
         //
-        // Per-axis cushioning (rather than scaling the whole toolpath) is
-        // deliberate: it lets the user slide along a wall — push into +X
-        // hard and the stick still moves on Y — which matches the analog-
-        // stick mental model. Skipped when softlimits_on is false or when
-        // the user has explicitly overridden the axis.
+        // Formula (jerk-limited S-curve stop):
+        //   stop_distance(v) ≈ v · √(v / j)   →   v_safe(m) ≈ (m² · j)^(1/3)
+        //
+        // Units: vec values are in display-units/min (IPM in G20), margin in
+        // display-units, the math runs in display-units/s, so we scale by 60
+        // on the way back out. The jerk coefficient is empirically calibrated
+        // against observed JGV stop behavior — at xy_jerk=75 a 6 IPS jog
+        // overshoots about 4", giving k ≈ 13.5, hence k = xy_jerk * 0.18.
+        // It scales linearly with xy_jerk so retuning jerk auto-retunes the
+        // soft-limit cap with no further math.
+        //
+        // softlimit_cushion (config) is a safety buffer subtracted from the
+        // raw margin: tool stops with at least that much margin remaining.
+        // Default 0 → stop right at the soft limit. Set higher for extra
+        // padding (e.g. 0.1") at the cost of usable envelope.
+        //
+        // Per-axis (not toolpath) capping lets the user slide along a wall —
+        // push hard into +X, the stick still moves on Y. Skipped when
+        // softlimits_on is false or the user has overridden that axis.
         if (config.machine._cache.softlimits_on) {
-            var cushion = (config.machine._cache.manual &&
-                config.machine._cache.manual.softlimit_cushion) || 1.0;
+            var jerk = (config.machine._cache.manual &&
+                config.machine._cache.manual.xy_jerk) || 75;
+            var buffer = (config.machine._cache.manual &&
+                config.machine._cache.manual.softlimit_cushion) || 0;
+            var k = jerk * 0.18;
             for (var axisKey in vec) {
                 var v = vec[axisKey];
                 if (v === 0) continue;
@@ -313,10 +326,14 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
                 var axisUpper = axisKey.toUpperCase();
                 var directionSign = v > 0 ? 1 : -1;
                 var margin = this._getMargin(axisUpper, directionSign);
-                if (margin <= 0) {
+                var effectiveMargin = Math.max(margin - buffer, 0);
+                if (effectiveMargin <= 0) {
                     vec[axisKey] = 0;
-                } else if (margin < cushion) {
-                    vec[axisKey] = v * (margin / cushion);
+                    continue;
+                }
+                var vSafeIpm = 60 * Math.cbrt(effectiveMargin * effectiveMargin * k);
+                if (Math.abs(v) > vSafeIpm) {
+                    vec[axisKey] = directionSign * vSafeIpm;
                 }
             }
         }
