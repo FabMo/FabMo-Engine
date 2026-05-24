@@ -2035,6 +2035,19 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .joystick-dot.active {
     fill: #2c8af0;
 }
+/* Draggable indicator: cursor + touch-action hints. The actual drag is
+   gated to manual mode by setupVirtualJoystick in main.js — drags outside
+   manual mode are silently ignored. */
+.joystick-indicator {
+    cursor: grab;
+    touch-action: none;
+}
+.joystick-indicator.dragging {
+    cursor: grabbing;
+}
+.joystick-indicator.dragging .joystick-dot {
+    transition: fill 80ms ease;
+}
 
 
 

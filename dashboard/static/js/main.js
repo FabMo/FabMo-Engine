@@ -590,7 +590,13 @@ engine.getVersion(function (err, version) {
             // perceptible change; we just translate it into the dot's SVG
             // position. The ring is unit-radius in the SVG viewBox so the
             // deflection vector maps 1:1 to dot coordinates.
+            //
+            // The dot is also draggable on PC/tablet — see setupVirtualJoystick
+            // below. While a local drag is in flight, remote pendant updates
+            // are suppressed so the two inputs don't fight each other.
+            var virtualJoystick = { dragging: false };
             dashboard.engine.on("pendant_joystick", function (state) {
+                if (virtualJoystick.dragging) return;
                 var dot = document.getElementById("joystick-dot");
                 if (!dot) return;
                 var x = Math.max(-1, Math.min(1, state.x || 0));
@@ -605,6 +611,7 @@ engine.getVersion(function (err, version) {
                     dot.classList.add("active");
                 }
             });
+            setupVirtualJoystick(virtualJoystick);
 
             setLocationDisplays();
 
@@ -1213,6 +1220,160 @@ function getManualNudgeIncrement(move) {
         console.error(e);
     }
     return increment_inches;
+}
+
+// Make the on-screen joystick indicator draggable. Active only while the
+// machine is in manual mode — drags outside that state are ignored so the
+// dot stays in sync with whatever the (real) pendant is doing.
+//
+// Coordinate flow:
+//   pointer position -> SVG-local (x, y in [-1.1, +1.1])
+//   -> clamp magnitude to 1.0 (radial)
+//   -> deadzone 0.25 (matches the visible ring)
+//   -> unit-vector ratios (x/mag, y/mag) for engine analog jog
+//   -> speed = 60 * manual-keypad slider IPS (same units the keypad uses)
+//
+// A 50 ms ticker (20 Hz) re-issues manualStart while the drag is active,
+// matching the F310 pendant's processMotion cadence — well inside the
+// firmware velocity-jog watchdog (500 ms) so the cycle stays alive.
+function setupVirtualJoystick(state) {
+    var indicator = document.getElementById("joystick-indicator");
+    var svg = indicator ? indicator.querySelector("svg") : null;
+    var dot = document.getElementById("joystick-dot");
+    if (!indicator || !svg || !dot) return;
+
+    var DEADZONE = 0.25;
+    var TICK_MS = 50;
+
+    var currentX = 0;
+    var currentY = 0;
+    var activePointerId = null;
+    var tickTimer = null;
+
+    function inManualMode() {
+        return dashboard.engine && dashboard.engine.status && dashboard.engine.status.state === "manual";
+    }
+
+    function pointerToSvgCoords(evt) {
+        // Use the SVG's own CTM so the math respects any responsive scaling
+        // applied by the keypad layout. Fall back to bounding-rect math if
+        // getScreenCTM returns null (older browsers / detached node).
+        var pt;
+        if (svg.createSVGPoint && svg.getScreenCTM()) {
+            pt = svg.createSVGPoint();
+            pt.x = evt.clientX;
+            pt.y = evt.clientY;
+            var ctm = svg.getScreenCTM();
+            if (ctm) {
+                var local = pt.matrixTransform(ctm.inverse());
+                return { x: local.x, y: local.y };
+            }
+        }
+        var rect = indicator.getBoundingClientRect();
+        var nx = (evt.clientX - rect.left) / rect.width;
+        var ny = (evt.clientY - rect.top) / rect.height;
+        return { x: nx * 2.2 - 1.1, y: ny * 2.2 - 1.1 };
+    }
+
+    function setRatiosFromEvent(evt) {
+        var p = pointerToSvgCoords(evt);
+        // Clamp to unit circle (radial), then apply deadzone.
+        var x = p.x;
+        var yScreen = p.y; // SVG y grows downward
+        var mag = Math.sqrt(x * x + yScreen * yScreen);
+        if (mag > 1) {
+            x = x / mag;
+            yScreen = yScreen / mag;
+            mag = 1;
+        }
+        if (mag < DEADZONE) {
+            currentX = 0;
+            currentY = 0;
+        } else {
+            // Map [DEADZONE, 1] -> [0, 1] so the user gets full range with a
+            // proportional deadzone, matching the F310's deflection helper.
+            var scaled = (mag - DEADZONE) / (1 - DEADZONE);
+            currentX = (x / mag) * scaled;
+            currentY = (-yScreen / mag) * scaled; // flip back to stick-up = +Y
+        }
+        // Update dot visually at the raw pointer position (clamped). Showing
+        // the dot inside the deadzone too gives natural drag feedback even
+        // when no motion is happening yet.
+        dot.setAttribute("cx", String(x));
+        dot.setAttribute("cy", String(yScreen));
+        dot.classList.add("active");
+    }
+
+    function sendMotion() {
+        if (!inManualMode()) {
+            stopDrag(null, true);
+            return;
+        }
+        // Read the keypad speed slider every tick so the user can re-tune
+        // mid-drag if they want. axis 'x' picks up the XY slider value.
+        var ips = (typeof getManualMoveSpeed === "function" ? getManualMoveSpeed({ axis: "x" }) : null) || 0.1;
+        var speed = 60.0 * ips;
+        if (currentX === 0 && currentY === 0) {
+            dashboard.engine.manualStop();
+            return;
+        }
+        // Always emit X primary, Y secondary (matches F310 — keeps the axis
+        // pair stable across the cardinal/diagonal boundary so the engine
+        // does in-place ratio updates instead of axis-swap restarts).
+        dashboard.engine.manualStart("X", speed, "Y", speed, currentX, currentY);
+    }
+
+    function startDrag(evt) {
+        if (!inManualMode()) return;
+        if (activePointerId !== null) return;
+        if (evt.button !== undefined && evt.button !== 0) return; // left button / primary only
+        if (evt.preventDefault) evt.preventDefault();
+        activePointerId = evt.pointerId != null ? evt.pointerId : 1;
+        state.dragging = true;
+        if (indicator.setPointerCapture && evt.pointerId != null) {
+            try { indicator.setPointerCapture(evt.pointerId); } catch (e) { /* ignore */ }
+        }
+        indicator.classList.add("dragging");
+        setRatiosFromEvent(evt);
+        sendMotion();
+        tickTimer = setInterval(sendMotion, TICK_MS);
+    }
+
+    function moveDrag(evt) {
+        if (activePointerId === null) return;
+        if (evt.pointerId != null && evt.pointerId !== activePointerId) return;
+        if (evt.preventDefault) evt.preventDefault();
+        setRatiosFromEvent(evt);
+    }
+
+    function stopDrag(evt, silent) {
+        if (activePointerId === null) return;
+        if (evt && evt.pointerId != null && evt.pointerId !== activePointerId) return;
+        if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+        if (indicator.releasePointerCapture && evt && evt.pointerId != null) {
+            try { indicator.releasePointerCapture(evt.pointerId); } catch (e) { /* ignore */ }
+        }
+        activePointerId = null;
+        currentX = 0;
+        currentY = 0;
+        indicator.classList.remove("dragging");
+        // Snap dot back to center.
+        dot.setAttribute("cx", "0");
+        dot.setAttribute("cy", "0");
+        dot.classList.remove("active");
+        if (!silent) dashboard.engine.manualStop();
+        // Defer clearing the dragging flag so the next inbound pendant
+        // update doesn't race the snap-to-center.
+        setTimeout(function () { state.dragging = false; }, 100);
+    }
+
+    indicator.addEventListener("pointerdown", startDrag);
+    indicator.addEventListener("pointermove", moveDrag);
+    indicator.addEventListener("pointerup", stopDrag);
+    indicator.addEventListener("pointercancel", stopDrag);
+    // Belt-and-braces for the rare case the pointer is released without an
+    // event reaching us (e.g. context menu interception).
+    window.addEventListener("blur", function () { stopDrag(null); });
 }
 
 function setupKeyboard() {

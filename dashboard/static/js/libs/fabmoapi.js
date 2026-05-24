@@ -549,14 +549,24 @@
         this.socket.emit("code", { rt: runtime, data: code });
     };
 
-    FabMoAPI.prototype.manualStart = function (axis, speed, second_axis, second_speed) {
-        this.executeRuntimeCode("manual", {
+    // Optional primary_ratio/secondary_ratio carry the toolpath unit vector
+    // (signed components in [-1, +1], sum-of-squares = 1) for analog any-angle
+    // motion. When present, speed is the positive toolpath F value and the
+    // engine's manual runtime scales per-axis segments by the ratios — same
+    // path the pendant analog stick uses. Omit for the legacy ±speed form.
+    FabMoAPI.prototype.manualStart = function (axis, speed, second_axis, second_speed, primary_ratio, secondary_ratio) {
+        var code = {
             cmd: "start",
             axis: axis,
             speed: speed,
             second_axis: second_axis,
             second_speed: second_speed,
-        });
+        };
+        if (primary_ratio !== undefined) {
+            code.primary_ratio = primary_ratio;
+            code.secondary_ratio = secondary_ratio || 0;
+        }
+        this.executeRuntimeCode("manual", code);
     };
 
     FabMoAPI.prototype.manualHeartbeat = function () {
