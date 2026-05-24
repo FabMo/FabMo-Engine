@@ -58,7 +58,8 @@
             upload_progress: [],
             data_send: [],
             data_request: [],
-            pendant_joystick: []
+            pendant_joystick: [],
+            pendant_file_select: []
         };
         var url = window.location.origin;
         this.is_refreshed = null;
@@ -111,6 +112,13 @@
                 "pendant_joystick",
                 function (state) {
                     this.emit("pendant_joystick", state);
+                }.bind(this)
+            );
+
+            this.socket.on(
+                "pendant_file_select",
+                function (state) {
+                    this.emit("pendant_file_select", state);
                 }.bind(this)
             );
 

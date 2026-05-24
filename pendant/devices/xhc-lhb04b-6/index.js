@@ -24,8 +24,16 @@ var TICK_HZ = wheel.TUNABLES.TICK_HZ;
 // Button → action binding. Hardcoded for v1; edit here to remap. Macro IDs
 // reference the user's macro numbers (visible in the Macros app). Set to null
 // to leave a button unbound.
+//
+// Browse-mode overload (axis selector in OFF position): the wheel scrolls
+// the file browser instead of jogging, and start-pause submits the
+// currently-highlighted file rather than acting as smartStartPause.
 var BINDINGS = {
-    "start-pause": function (machine) {
+    "start-pause": function (machine, fnHeld, ctx, axisOff) {
+        if (axisOff && ctx && ctx.fileBrowser && ctx.fileBrowser.current()) {
+            ctx.fileBrowser.select();
+            return;
+        }
         actions.smartStartPause(machine);
     },
     stop: function (machine) {
@@ -94,7 +102,8 @@ function readLcdEnabled() {
     }
 }
 
-function open(machine) {
+function open(machine, ctx) {
+    ctx = ctx || {};
     var hid;
     try {
         hid = require("node-hid");
@@ -169,16 +178,18 @@ function open(machine) {
         if (!event) return;
 
         // Rising-edge button dispatch: act only on buttons that weren't in the
-        // previous report.
+        // previous report. Bindings receive (machine, fnHeld, ctx, axisOff)
+        // so they can implement context-sensitive overloads.
         var fnHeld = event.buttons.indexOf("fn") !== -1;
+        var axisOff = event.axis == null;
         for (var i = 0; i < event.buttons.length; i++) {
             var b = event.buttons[i];
             if (previousButtons.indexOf(b) !== -1) continue;
             if (b === "fn") continue;
             var binding = BINDINGS[b];
             if (typeof binding === "function") {
-                log.debug("pendant button: " + b + (fnHeld ? " (fn)" : ""));
-                binding(machine, fnHeld);
+                log.debug("pendant button: " + b + (fnHeld ? " (fn)" : "") + (axisOff ? " (browse)" : ""));
+                binding(machine, fnHeld, ctx, axisOff);
             }
         }
         previousButtons = event.buttons;
@@ -195,7 +206,14 @@ function open(machine) {
         latestFeed = event.feed;
 
         if (event.wheelDelta !== 0) {
-            wheelSM.recordPulse(event.wheelDelta, Date.now());
+            // Browse mode: axis selector OFF and a file browser is wired in
+            // → wheel scrolls the file list instead of jogging. One detent
+            // per scroll step; we don't accumulate or rate-shape here.
+            if (event.axis == null && ctx.fileBrowser) {
+                ctx.fileBrowser.scroll(event.wheelDelta > 0 ? 1 : -1);
+            } else {
+                wheelSM.recordPulse(event.wheelDelta, Date.now());
+            }
         }
     });
 

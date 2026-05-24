@@ -93,6 +93,13 @@ function setupStatusBroadcasts(server) {
         server.io.of("/").emit("pendant_joystick", state);
     });
 
+    // Pendant file-browser scroll/select state. Fires on refresh, scroll, or
+    // submission so the Job Manager can highlight the current entry.
+    machine.on("pendant_file_select", function (state) {
+        server.io.of("/private").emit("pendant_file_select", state);
+        server.io.of("/").emit("pendant_file_select", state);
+    });
+
     // REMOVE the data_request broadcast here
 }
 
