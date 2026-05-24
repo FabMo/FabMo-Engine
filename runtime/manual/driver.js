@@ -767,14 +767,64 @@ ManualDriver.prototype.set = function (pos) {
 // and executed at the end of the current move.  This is the function that dequeues and executes them.
 // Nudges are made fixed and individual by G61.1.
 // TODO: Like start above, nudges should be arbritrary vectors rather than axis, second_axis
+// Snap a nudge to the next grid line in its direction of motion. The grid
+// is defined by the nudge increment relative to work zero — e.g. a 0.100"
+// nudge from 26.241" lands on 26.300", then 26.400", etc. Already on grid
+// counts as off — advance by one full increment to avoid no-ops.
+function snapNudgeDistance(currentPos, distance, increment) {
+    if (!increment || distance === 0) return distance;
+    var EPSILON = 1e-6;
+    var posInGrid = currentPos / increment;
+    var line;
+    if (distance > 0) {
+        line = Math.ceil(posInGrid);
+        if (Math.abs(line - posInGrid) < EPSILON) line += 1;
+    } else {
+        line = Math.floor(posInGrid);
+        if (Math.abs(line - posInGrid) < EPSILON) line -= 1;
+    }
+    return line * increment - currentPos;
+}
+
 // Returns the number of nudges
 ManualDriver.prototype._handleNudges = function () {
     count = this.fixedQueue.length;
 
     if (this.fixedQueue.length > 0) {
+        // Track planned position across queued nudges so back-to-back
+        // taps advance multiple grid lines instead of all snapping to
+        // the same one.
+        var snapPos = {};
         while (this.fixedQueue.length > 0) {
             var move = this.fixedQueue.shift();
             var axis = move.axis.toUpperCase();
+
+            // Snap-to-grid: rewrite distance so the move lands on the next
+            // grid line (multiple of the nudge increment) in the direction
+            // of motion, relative to work zero. Runs before the soft-limit
+            // clip so the boundary check still applies to the snapped move.
+            if ("XYZABC".indexOf(axis) >= 0) {
+                var axisLower = axis.toLowerCase();
+                var increment = Math.abs(move.distance);
+                var basePos = (snapPos[axisLower] !== undefined)
+                    ? snapPos[axisLower]
+                    : this.driver.status["pos" + axisLower];
+                if (basePos !== undefined && basePos !== null && increment > 0) {
+                    move.distance = snapNudgeDistance(basePos, move.distance, increment);
+                    snapPos[axisLower] = basePos + move.distance;
+                }
+                if (move.second_axis && move.second_distance) {
+                    var secondLower = move.second_axis.toLowerCase();
+                    var secondInc = Math.abs(move.second_distance);
+                    var secondBase = (snapPos[secondLower] !== undefined)
+                        ? snapPos[secondLower]
+                        : this.driver.status["pos" + secondLower];
+                    if (secondBase !== undefined && secondBase !== null && secondInc > 0) {
+                        move.second_distance = snapNudgeDistance(secondBase, move.second_distance, secondInc);
+                        snapPos[secondLower] = secondBase + move.second_distance;
+                    }
+                }
+            }
 
             // Soft-limit gate for nudges. Without this a quick tap could
             // bypass the boundary check that startMotion/_renewMoves enforce.
