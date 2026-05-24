@@ -286,6 +286,41 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         if (second_axis) {
             vec[second_axis.toLowerCase()] = speed * second_dir;
         }
+
+        // Soft-limit cushion for the velocity-jog cycle. The G1 path's
+        // planned-position clip in _renewMoves doesn't apply here — JGV
+        // is a firmware-side velocity setpoint, not queued segments — so
+        // we taper each per-axis velocity toward zero as the tool nears
+        // its soft limit in that direction. Linear taper inside a fixed
+        // cushion zone: full speed beyond the cushion, scaled down through
+        // it, hard zero at the boundary. Each ratio update at the host's
+        // ~20 Hz tick keeps the firmware tracking the (reduced) setpoint
+        // with its own jerk-limited ramp, so the tool decelerates smoothly
+        // into the limit instead of slamming into it.
+        //
+        // Per-axis cushioning (rather than scaling the whole toolpath) is
+        // deliberate: it lets the user slide along a wall — push into +X
+        // hard and the stick still moves on Y — which matches the analog-
+        // stick mental model. Skipped when softlimits_on is false or when
+        // the user has explicitly overridden the axis.
+        if (config.machine._cache.softlimits_on) {
+            var cushion = (config.machine._cache.manual &&
+                config.machine._cache.manual.softlimit_cushion) || 1.0;
+            for (var axisKey in vec) {
+                var v = vec[axisKey];
+                if (v === 0) continue;
+                if (this.axisOverrides[axisKey]) continue;
+                var axisUpper = axisKey.toUpperCase();
+                var directionSign = v > 0 ? 1 : -1;
+                var margin = this._getMargin(axisUpper, directionSign);
+                if (margin <= 0) {
+                    vec[axisKey] = 0;
+                } else if (margin < cushion) {
+                    vec[axisKey] = v * (margin / cushion);
+                }
+            }
+        }
+
         this.driver.jogVelocity(vec);
 
         // Track minimal state. analogMode is set here AND stays set through
