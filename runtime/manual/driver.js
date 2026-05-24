@@ -298,17 +298,27 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         //   stop_distance(v) ≈ v · √(v / j)   →   v_safe(m) ≈ (m² · j)^(1/3)
         //
         // Units: vec values are in display-units/min (IPM in G20), margin in
-        // display-units, the math runs in display-units/s, so we scale by 60
-        // on the way back out. The jerk coefficient is empirically calibrated
-        // against observed JGV stop behavior — at xy_jerk=75 a 6 IPS jog
-        // overshoots about 4", giving k ≈ 13.5, hence k = xy_jerk * 0.18.
-        // It scales linearly with xy_jerk so retuning jerk auto-retunes the
-        // soft-limit cap with no further math.
+        // display-units. Math runs in display-units/s; scale by 60 on the way
+        // out. The jerk coefficient scales linearly with xy_jerk so retuning
+        // jerk auto-retunes the cap.
         //
-        // softlimit_cushion (config) is a safety buffer subtracted from the
-        // raw margin: tool stops with at least that much margin remaining.
-        // Default 0 → stop right at the soft limit. Set higher for extra
-        // padding (e.g. 0.1") at the cost of usable envelope.
+        // Lookahead: the formula above is the irreducible physical stop
+        // distance, but the cap → firmware → physical-decel loop has ~150ms
+        // of round-trip lag. Without compensation the tool travels v·τ past
+        // the point where the cap commanded stop. We reserve that distance
+        // up front by subtracting toolpath_speed·LOOKAHEAD_S from each
+        // axis's margin before applying the formula.
+        //
+        // Using the toolpath speed (not per-axis |v|) is an empirical fix
+        // for diagonals: with per-axis |v|, single-axis 6 IPS stops cleanly
+        // but 45° diagonals at 6 IPS total overshoot ~0.25" per axis. The
+        // multi-axis JGV path appears to have either longer effective lag
+        // or reduced per-axis jerk, and scaling reservation by toolpath
+        // speed (which is √2× larger than per-axis on a 45° diagonal)
+        // absorbs the difference without affecting single-axis behavior.
+        //
+        // softlimit_cushion (config) is an additional safety buffer on top
+        // of the lookahead. Default 0 → stop right at the soft limit.
         //
         // Per-axis (not toolpath) capping lets the user slide along a wall —
         // push hard into +X, the stick still moves on Y. Skipped when
@@ -319,6 +329,21 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
             var buffer = (config.machine._cache.manual &&
                 config.machine._cache.manual.softlimit_cushion) || 0;
             var k = jerk * 0.18;
+            // Multi-axis JGV has more per-cycle timing jitter than single-
+            // axis, so multi-axis gets a slightly larger reservation.
+            var activeAxes = 0;
+            for (var k1 in vec) { if (vec[k1] !== 0) activeAxes++; }
+            var LOOKAHEAD_S = activeAxes > 1 ? 0.18 : 0.15;
+            // Don't let the cap park the tool short of the limit. Below this
+            // velocity the per-cycle stop distance is < 0.02" so we can ride
+            // it right up to the raw boundary safely.
+            var CREEP_IPM = 30;  // 0.5 IPS
+            // The same round-trip lag that motivates the high-speed lookahead
+            // also applies at creep, plus a fixed tail from the firmware's
+            // own decel ramp. Empirically the stop-from-creep distance is
+            // ~0.14" at CREEP_IPM=30 — pre-empt the zero-check by that much
+            // so the actual stop lands at the limit, not past it.
+            var creepStopDist = 0.14;
             for (var axisKey in vec) {
                 var v = vec[axisKey];
                 if (v === 0) continue;
@@ -326,12 +351,20 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
                 var axisUpper = axisKey.toUpperCase();
                 var directionSign = v > 0 ? 1 : -1;
                 var margin = this._getMargin(axisUpper, directionSign);
-                var effectiveMargin = Math.max(margin - buffer, 0);
-                if (effectiveMargin <= 0) {
+                // Only hard-stop when the actual margin (less any cushion
+                // and the creep-speed stop tail) is gone. The lookahead just
+                // sets when the high-speed cap kicks in — it shouldn't be
+                // the parking distance.
+                if (margin - buffer - creepStopDist <= 0) {
                     vec[axisKey] = 0;
                     continue;
                 }
+                var lookahead = (speed / 60) * LOOKAHEAD_S;
+                var effectiveMargin = Math.max(margin - buffer - lookahead, 0);
                 var vSafeIpm = 60 * Math.cbrt(effectiveMargin * effectiveMargin * k);
+                // Floor at creep so the tool keeps inching toward the limit
+                // instead of parking 0.5–1" short when the cap collapses.
+                if (vSafeIpm < CREEP_IPM) vSafeIpm = CREEP_IPM;
                 if (Math.abs(v) > vSafeIpm) {
                     vec[axisKey] = directionSign * vSafeIpm;
                 }
