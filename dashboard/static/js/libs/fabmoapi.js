@@ -70,7 +70,8 @@
             data_send: [],
             data_request: [],
             pendant_joystick: [],
-            pendant_file_select: []
+            pendant_file_select: [],
+            canned_cut_state: []
         };
         var url = window.location.origin;
         this.is_refreshed = null;
@@ -130,6 +131,13 @@
                 "pendant_file_select",
                 function (state) {
                     this.emit("pendant_file_select", state);
+                }.bind(this)
+            );
+
+            this.socket.on(
+                "canned_cut_state",
+                function (state) {
+                    this.emit("canned_cut_state", state);
                 }.bind(this)
             );
 

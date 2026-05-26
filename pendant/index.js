@@ -11,11 +11,13 @@
 
 var log = require("../log").logger("pendant");
 var fileBrowser = require("./fileBrowser");
+var cannedCutsController = require("./cannedCutsController");
 
 var DEVICES = [require("./devices/xhc-lhb04b-6"), require("./devices/logitech-f310")];
 
 var openHandles = [];
 var sharedBrowser = null;
+var sharedCannedCuts = null;
 
 function start(machine) {
     if (!machine) {
@@ -25,7 +27,17 @@ function start(machine) {
     // One file browser shared across devices — provides scroll/select state
     // for any pendant that wants to act as a remote for USB-file submission.
     sharedBrowser = fileBrowser.create(machine);
-    var ctx = { fileBrowser: sharedBrowser };
+    // One canned-cuts controller shared across devices. Holds the current
+    // cut type + parameter state; any device adapter can route button
+    // presses to its toggle/adjustParam/commit methods. Bridges to the
+    // dashboard via the canned_cut_state event below.
+    sharedCannedCuts = cannedCutsController.create(machine);
+    sharedCannedCuts.on("canned_cut_state", function (payload) {
+        // Surface to any connected dashboard via the same machine event
+        // bus used for pendant_joystick / pendant_file_select.
+        machine.emit("canned_cut_state", payload);
+    });
+    var ctx = { fileBrowser: sharedBrowser, cannedCuts: sharedCannedCuts };
     for (var i = 0; i < DEVICES.length; i++) {
         var device = DEVICES[i];
         try {
@@ -56,6 +68,10 @@ function stop() {
     if (sharedBrowser) {
         try { sharedBrowser.close(); } catch (e) { /* ignore */ }
         sharedBrowser = null;
+    }
+    if (sharedCannedCuts) {
+        try { sharedCannedCuts.close(); } catch (e) { /* ignore */ }
+        sharedCannedCuts = null;
     }
 }
 

@@ -100,6 +100,14 @@ function setupStatusBroadcasts(server) {
         server.io.of("/").emit("pendant_file_select", state);
     });
 
+    // Canned-cut controller state. Fires on enter/exit, every param adjust,
+    // commit, and done — payload contains current cutType + full params so
+    // a dashboard UI or pendant LCD can render the live values.
+    machine.on("canned_cut_state", function (state) {
+        server.io.of("/private").emit("canned_cut_state", state);
+        server.io.of("/").emit("canned_cut_state", state);
+    });
+
     // REMOVE the data_request broadcast here
 }
 

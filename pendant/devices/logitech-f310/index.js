@@ -11,13 +11,19 @@
 //   Left stick Y       → continuous jog on Y (inverted: stick up = +Y)
 //   Right stick Y      → continuous jog on Z (inverted: stick up = +Z)
 //   D-pad              → fixed-step jog on X / Y (0.1" per press)
+//                        OR (when cut mode active): up/down = diameter±,
+//                        left/right = depth±
 //   A                  → smart start/pause/authorize
 //   B                  → quit
-//   X                  → authorize (explicit)
-//   Y                  → run macro 10
+//   X                  → run macro 3
+//   Y                  → toggle output 1
 //   Start              → smart start/pause/authorize
 //   Back/Select        → quit
-//   LB / RB / LT / RT  → unbound (reserved for future spindle/feed overrides)
+//   LB                 → manual mode toggle
+//   RB (held)          → slow-mode modifier (0.2x jog speed)
+//   LSTICK click       → canned-cut mode toggle (enter/exit)
+//   RSTICK click       → canned-cut commit (execute the currently configured cut)
+//   LT / RT            → unbound (reserved)
 //
 // Because the manual runtime's `stop` halts all motion, the adapter enforces
 // single-axis-at-a-time jogging: pushing a new stick away from center stops
@@ -45,7 +51,8 @@ function makeAxisState() {
 var PROCESS_HZ = 20;
 
 // Returns the action handler for a given BTN code, given the active code set.
-function bindingsFor(BTN) {
+// ctx provides shared pendant state (fileBrowser, cannedCuts controller).
+function bindingsFor(BTN, ctx) {
     var byCode = {};
     byCode[BTN.A] = function (m) { actions.authorize(m); };
     byCode[BTN.B] = function (m) { actions.quit(m); };
@@ -57,6 +64,16 @@ function bindingsFor(BTN) {
     // D-pad only jog while in manual mode. RB is a held slow-mode modifier
     // (see press/release handling in handleEvent) rather than a press-action.
     if (BTN.LB) byCode[BTN.LB] = function (m) { actions.manualToggle(m, { hideKeypad: false }); };
+    // Canned-cut bindings: LSTICK enters/exits cut mode, RSTICK commits the
+    // currently configured cut (reads current XY/Z, generates G-code, runs
+    // it as a temp file). D-pad behavior is context-sensitive (see
+    // handleEvent below); these click bindings are toggles only.
+    if (BTN.LSTICK && ctx && ctx.cannedCuts) {
+        byCode[BTN.LSTICK] = function () { ctx.cannedCuts.toggle(); };
+    }
+    if (BTN.RSTICK && ctx && ctx.cannedCuts) {
+        byCode[BTN.RSTICK] = function () { ctx.cannedCuts.commit(); };
+    }
     return byCode;
 }
 
@@ -81,7 +98,8 @@ function jogSpeed(slowMode) {
     return slowMode ? base * SLOW_MODE_SCALE : base;
 }
 
-function open(machine) {
+function open(machine, ctx) {
+    ctx = ctx || {};
     var devPath = evdev.findDevice(mapping.MATCHERS);
     if (!devPath) {
         log.info("Logitech F310 not detected");
@@ -95,7 +113,7 @@ function open(machine) {
     }
 
     var BTN = mapping.buttonsForPid(ids.product);
-    var bindings = bindingsFor(BTN);
+    var bindings = bindingsFor(BTN, ctx);
     var modeLabel = ids.product === 0xc21d ? "X" : "D";
 
     var stream;
@@ -254,13 +272,27 @@ function open(machine) {
                     break;
                 case mapping.ABS.HAT_X:
                     if (ev.value !== 0) {
-                        actions.jog(machine, "X", ev.value, mapping.TUNABLES.DPAD_STEP_SIZE, mapping.TUNABLES.DPAD_SPEED);
+                        // Context switch: when a canned cut is active, the
+                        // D-pad adjusts the depth parameter; otherwise it
+                        // does its normal X-axis fixed-step jog.
+                        if (ctx.cannedCuts && ctx.cannedCuts.state === "active") {
+                            ctx.cannedCuts.adjustParam("depth", ev.value);
+                        } else {
+                            actions.jog(machine, "X", ev.value, mapping.TUNABLES.DPAD_STEP_SIZE, mapping.TUNABLES.DPAD_SPEED);
+                        }
                     }
                     break;
                 case mapping.ABS.HAT_Y:
                     if (ev.value !== 0) {
-                        // Invert so up = +Y
-                        actions.jog(machine, "Y", -ev.value, mapping.TUNABLES.DPAD_STEP_SIZE, mapping.TUNABLES.DPAD_SPEED);
+                        // Active cut: D-pad up/down adjusts diameter.
+                        // (HAT_Y value -1 = up, +1 = down per evdev; invert
+                        // so up = +diameter, down = -diameter.)
+                        if (ctx.cannedCuts && ctx.cannedCuts.state === "active") {
+                            ctx.cannedCuts.adjustParam("diameter", -ev.value);
+                        } else {
+                            // Invert so up = +Y for jog as well.
+                            actions.jog(machine, "Y", -ev.value, mapping.TUNABLES.DPAD_STEP_SIZE, mapping.TUNABLES.DPAD_SPEED);
+                        }
                     }
                     break;
             }
