@@ -619,6 +619,25 @@
       </div>
     </div>
 
+    <!-- Canned-cut HUD: shares the manual keypad's visual language — yellow
+         modal, rounded corners, fixed position. Compact and pinned top-right
+         so it's visible across apps without blocking the main dashboard
+         layout. Hidden by default; shown by setupCannedCutHud() in main.js
+         on canned_cut_state events. -->
+    <div id="canned-cut-hud" class="canned-cut-hud" aria-hidden="true">
+      <div class="canned-cut-hud-title">
+        Canned Cut: <span id="canned-cut-hud-type">BORE</span>
+      </div>
+      <table class="canned-cut-hud-table">
+        <tr><td class="canned-cut-hud-label">dia</td>   <td class="canned-cut-hud-value" id="canned-cut-hud-diameter">—</td></tr>
+        <tr><td class="canned-cut-hud-label">depth</td> <td class="canned-cut-hud-value" id="canned-cut-hud-depth">—</td></tr>
+        <tr><td class="canned-cut-hud-label">tool</td>  <td class="canned-cut-hud-value" id="canned-cut-hud-cutter">—</td></tr>
+        <tr><td class="canned-cut-hud-label">mode</td>  <td class="canned-cut-hud-value" id="canned-cut-hud-mode">—</td></tr>
+        <tr><td class="canned-cut-hud-label">at</td>    <td class="canned-cut-hud-value" id="canned-cut-hud-position">—</td></tr>
+      </table>
+      <div class="canned-cut-hud-state" id="canned-cut-hud-state">active</div>
+    </div>
+
     <script src="/js/libs/socket.io.js"></script>
     <script src="/dashboard.js"></script>
 

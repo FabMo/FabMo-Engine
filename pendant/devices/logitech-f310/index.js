@@ -256,6 +256,10 @@ function open(machine, ctx) {
             if (handler) {
                 log.debug("F310 button code 0x" + ev.code.toString(16));
                 handler(machine);
+            } else {
+                // Unbound buttons logged at debug so kernel-specific code
+                // discovery is still possible without spamming on every press.
+                log.debug("F310 unbound button code 0x" + ev.code.toString(16));
             }
         } else if (ev.type === evdev.EV.ABS) {
             switch (ev.code) {

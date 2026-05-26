@@ -627,6 +627,11 @@ engine.getVersion(function (err, version) {
             });
             setupVirtualJoystick(virtualJoystick);
 
+            // Canned-cut HUD — listens for controller state broadcasts from
+            // the pendant and renders the live param panel. No interactivity:
+            // input is on the physical pendant.
+            setupCannedCutHud(dashboard.engine);
+
             setLocationDisplays();
 
             // ------------------------------------------------------------ STATUS HANDLER
@@ -1258,6 +1263,110 @@ function getManualNudgeIncrement(move) {
 // A 50 ms ticker (20 Hz) re-issues manualStart while the drag is active,
 // matching the F310 pendant's processMotion cadence — well inside the
 // firmware velocity-jog watchdog (500 ms) so the cycle stays alive.
+// ------------------------------------------------------------ CANNED-CUT HUD
+//
+// Renders the pendant's canned-cut controller state in a floating panel
+// pinned top-right of the dashboard. The pendant publishes canned_cut_state
+// over WebSocket on every transition (enter / adjust / commit / done /
+// exit); we just translate that into DOM updates.
+//
+// The "at (X, Y)" row tracks the live machine position so the user can see
+// where the cut would land if they committed right now. We subscribe to
+// status events for that, gated by the HUD being visible.
+//
+// No buttons: this is a pure readout. All interaction is on the pendant.
+function setupCannedCutHud(engine) {
+    var hud = document.getElementById("canned-cut-hud");
+    if (!hud) return;
+
+    var elType     = document.getElementById("canned-cut-hud-type");
+    var elDiameter = document.getElementById("canned-cut-hud-diameter");
+    var elDepth    = document.getElementById("canned-cut-hud-depth");
+    var elCutter   = document.getElementById("canned-cut-hud-cutter");
+    var elMode     = document.getElementById("canned-cut-hud-mode");
+    var elPosition = document.getElementById("canned-cut-hud-position");
+    var elState    = document.getElementById("canned-cut-hud-state");
+
+    var visible = false;
+
+    function show() {
+        if (visible) return;
+        hud.classList.add("visible");
+        hud.setAttribute("aria-hidden", "false");
+        visible = true;
+    }
+    function hide() {
+        if (!visible) return;
+        hud.classList.remove("visible");
+        hud.setAttribute("aria-hidden", "true");
+        visible = false;
+    }
+
+    function fmtIn(v) {
+        if (v == null || isNaN(v)) return "—";
+        return Number(v).toFixed(4) + '"';
+    }
+
+    function shortCutType(type) {
+        if (!type) return "—";
+        // "circular_bore" → "BORE", future "rectangular_cut" → "RECT", etc.
+        var label = String(type).split("_").pop();
+        return label.toUpperCase();
+    }
+
+    function renderParams(params) {
+        if (!params) return;
+        elDiameter.textContent = fmtIn(params.diameter);
+        elDepth.textContent    = fmtIn(params.depth);
+        elCutter.textContent   = fmtIn(params.cutterDiameter);
+        elMode.textContent     = params.mode || "—";
+    }
+
+    function setState(label, executing) {
+        elState.textContent = label;
+        if (executing) {
+            elState.classList.add("executing");
+        } else {
+            elState.classList.remove("executing");
+        }
+    }
+
+    // Live machine position drives the "at" row when the HUD is open.
+    engine.on("status", function (status) {
+        if (!visible) return;
+        if (!status || status.posx == null || status.posy == null) return;
+        elPosition.textContent =
+            "(" + Number(status.posx).toFixed(3) +
+            ", " + Number(status.posy).toFixed(3) + ")";
+    });
+
+    engine.on("canned_cut_state", function (payload) {
+        if (!payload) return;
+        elType.textContent = shortCutType(payload.cutType);
+        renderParams(payload.params);
+
+        var reason = payload.reason || "";
+        if (payload.state === "idle") {
+            hide();
+            return;
+        }
+        // For all non-idle states, the HUD should be visible.
+        show();
+        if (payload.state === "executing") {
+            setState("cutting…", true);
+        } else if (payload.state === "active") {
+            // "done" comes through with state=active, reason=done — show
+            // a brief "ready" indicator to acknowledge completion; the
+            // next param adjust or further activity will overwrite it.
+            if (reason === "done") {
+                setState("ready", false);
+            } else {
+                setState("active", false);
+            }
+        }
+    });
+}
+
 function setupVirtualJoystick(state) {
     var indicator = document.getElementById("joystick-indicator");
     var svg = indicator ? indicator.querySelector("svg") : null;

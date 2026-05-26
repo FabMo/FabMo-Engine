@@ -3298,3 +3298,106 @@ filter: blur(2px);
 .manual-drive-container {
     margin-top: 0; /* Remove any existing top margin */
 }
+/* ------------------------------------------------------------------
+ * Canned-cut HUD — top-right floating panel that mirrors the manual
+ * keypad's visual style (ShopBot yellow #ffda29, rounded corners,
+ * fixed positioning, high z-index). Unlike the keypad, it's compact
+ * and never modal — purely a readout of the pendant's current canned-
+ * cut mode and parameters. Hidden until the controller emits an
+ * "enter" state event; updates live on every adjust.
+ *
+ * No buttons / no interactivity — input lives on the physical pendant
+ * per the project's physical-inputs-only stance.
+ * ------------------------------------------------------------------ */
+.canned-cut-hud {
+    display: none;
+    position: fixed;
+    top: 80px;
+    right: 24px;
+    z-index: 3001;
+    background-color: #ffda29;
+    border-radius: 16px;
+    padding: 14px 20px 12px;
+    min-width: 220px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    font-family: 'sourcesanspro', sans-serif;
+    color: #333;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+.canned-cut-hud.visible {
+    display: block;
+}
+
+.canned-cut-hud-title {
+    font-size: 1.05em;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.18);
+    padding-bottom: 4px;
+}
+
+.canned-cut-hud-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+.canned-cut-hud-label {
+    color: rgba(0, 0, 0, 0.6);
+    padding-right: 12px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.canned-cut-hud-value {
+    text-align: right;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+}
+
+/* State badge — colored pill below the table that flips when the
+ * controller transitions to executing (commit fired, file running).
+ * Default look matches the "active" state.  */
+.canned-cut-hud-state {
+    margin-top: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.12);
+    color: #222;
+    font-weight: bold;
+}
+
+.canned-cut-hud-state.executing {
+    background: #d62828;
+    color: #fff;
+    /* Pulse so the user can tell a cut is in flight at a glance. */
+    animation: cannedCutHudPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cannedCutHudPulse {
+    0%, 100% { opacity: 1.0; }
+    50%      { opacity: 0.55; }
+}
+
+/* Small screens: pin to the bottom and shrink so a phone-as-display
+ * scenario stays readable. */
+@media (max-width: 750px) {
+    .canned-cut-hud {
+        top: auto;
+        bottom: 16px;
+        right: 16px;
+        left: 16px;
+        min-width: 0;
+    }
+}
