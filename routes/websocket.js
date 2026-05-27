@@ -85,6 +85,21 @@ function setupStatusBroadcasts(server) {
         log.debug('Broadcasting data_send: ' + message.channel);
     });
 
+    // Pendant joystick deflection — drives the on-keypad direction indicator.
+    // Throttled at the pendant adapter, so this only fires on perceptible
+    // change; otherwise the channel is silent.
+    machine.on("pendant_joystick", function (state) {
+        server.io.of("/private").emit("pendant_joystick", state);
+        server.io.of("/").emit("pendant_joystick", state);
+    });
+
+    // Pendant file-browser scroll/select state. Fires on refresh, scroll, or
+    // submission so the Job Manager can highlight the current entry.
+    machine.on("pendant_file_select", function (state) {
+        server.io.of("/private").emit("pendant_file_select", state);
+        server.io.of("/").emit("pendant_file_select", state);
+    });
+
     // REMOVE the data_request broadcast here
 }
 

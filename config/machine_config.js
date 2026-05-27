@@ -48,6 +48,16 @@ MachineConfig.prototype.init = function (machine, callback) {
                     calibrated: false,
                 };
             }
+            // Seed soft-limit safety buffer for the JGV (analog/velocity-jog)
+            // path on installs predating this field. The value is an extra
+            // distance subtracted from the raw margin before computing v_safe,
+            // i.e. the tool stops with at least this much margin remaining.
+            // Default 0 → stop right at the soft limit; the jerk-derived
+            // v_safe formula in runtime/manual/driver.js handles deceleration
+            // distance automatically.
+            if (this._cache && this._cache.manual && !("softlimit_cushion" in this._cache.manual)) {
+                this._cache.manual.softlimit_cushion = 0;
+            }
             if (this._cache && !("outputs" in this._cache)) {
                 // Outputs 1, 2, 4 have hardcoded labels and runtime ignores
                 // their policy. The other rows are configurable in the
@@ -121,6 +131,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
             "z_jerk",
             "z_fast_speed",
             "z_slow_speed",
+            "softlimit_cushion",
         ].forEach(
             function (key) {
                 this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);

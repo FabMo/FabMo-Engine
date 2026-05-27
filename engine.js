@@ -833,6 +833,19 @@ Engine.prototype.start = function (callback) {
                 }
             }.bind(this),
 
+            // Open any connected pendants / USB input devices (XHC pendant,
+            // gamepads, etc.). Non-fatal: if no device is connected or node-hid
+            // isn't installed, this logs and continues.
+            function start_pendant(callback) {
+                try {
+                    var pendant = require("./pendant");
+                    pendant.start(this.machine);
+                } catch (e) {
+                    log.error("Pendant subsystem failed to start: " + e.message);
+                }
+                return callback(null);
+            }.bind(this),
+
             /**
              * Apply auto-profile if one is pending from the check_auto_profile step.
              * This runs after the engine has completed baseline startup to ensure

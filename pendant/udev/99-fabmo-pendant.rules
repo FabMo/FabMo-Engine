@@ -1,0 +1,13 @@
+# udev rules for FabMo pendant / input devices.
+#
+# Install: copy to /etc/udev/rules.d/ and reload:
+#   sudo cp pendant/udev/99-fabmo-pendant.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload
+#   sudo udevadm trigger
+#
+# Grants the fabmo runtime user (member of group "dialout") read/write access
+# to the raw HID device, and creates a stable /dev/fabmo-pendant symlink that
+# survives /dev/hidraw* index shuffling across reboots.
+
+# XHC LHB04B-6 / WHB04B-6 CNC pendant
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="10ce", ATTRS{idProduct}=="eb93", MODE="0660", GROUP="dialout", SYMLINK+="fabmo-pendant"

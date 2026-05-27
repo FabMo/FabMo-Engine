@@ -23,6 +23,14 @@ var events = require("events");
 // Parameters related to filling the queue, motion, etc.
 // These are fussy.
 var T_RENEW = 300;
+// Per-batch travel = speed × (T_RENEW/60000) × safetyFactor. For button jogs,
+// safetyFactor=4 keeps the G2 planner deeply primed so brief timing hiccups
+// don't starve motion — but it also stacks ~4 batches of stale path ahead of
+// whatever's happening right now, which is invisible for cardinal jogs but
+// shows up as multi-second lag when an analog stick sweeps to a new heading.
+// For analog motion we run feed ≈ consumption: queue stays ~1 batch deep, so
+// ratio updates reach the planner within roughly one T_RENEW window.
+var ANALOG_SAFETY_FACTOR = 1.0;
 var DEFAULT_SAFETY_FACTOR = 4.0;
 // TODO should be in the ManualDriver instance?!
 var count = 0;
@@ -95,6 +103,21 @@ function ManualDriver(drv, st, mode) {
 
     // Setup to process status reports from G2
     this.driver.on("status", this.status_handler);
+
+    // Listen for the firmware velocity-jog cycle's exit notification. When
+    // the cycle has finished ramping down and exited, clear the in-flight
+    // flags so subsequent motions can start cleanly. Without this, a stop()
+    // → wait → start() sequence in analog mode would short-circuit on
+    // stop_pending because we'd never know the firmware had finished.
+    this._jogv_exit_handler = function () {
+        if (this.analogMode || this.stop_pending) {
+            this.moving        = false;
+            this.keep_moving   = false;
+            this.stop_pending  = false;
+            this.analogMode    = false;
+        }
+    }.bind(this);
+    this.driver.on("jogv_exit", this._jogv_exit_handler);
 }
 util.inherits(ManualDriver, events.EventEmitter);
 
@@ -203,6 +226,7 @@ ManualDriver.prototype.exit = function () {
         }
         
         this.driver.removeListener("status", this.status_handler);
+        this.driver.removeListener("jogv_exit", this._jogv_exit_handler);
         this.exited = true;
 
         // Give a brief moment for commands to flush
@@ -218,14 +242,155 @@ ManualDriver.prototype.exit = function () {
 //          speed - The speed in current units
 //    second_axis - The second axis to move
 //   second_speed - The second axis speed
-ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_speed) {
-    var dir = speed < 0 ? -1.0 : 1.0;
-    var second_dir = second_speed < 0 ? -1.0 : 1.0;
+ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_speed, primary_ratio, secondary_ratio) {
+    // Two callers:
+    //   Dashboard (legacy):  ratios omitted. speed is the F value (toolpath);
+    //                        per-axis segments use ±1 from the sign of speed
+    //                        and second_speed. Encodes cardinals + 45°.
+    //   Pendant analog:      ratios provided. speed is still the F value;
+    //                        per-axis segments use the signed ratios (each in
+    //                        [-1, +1], with sum-of-squares = 1) so any-angle
+    //                        diagonals are possible.
+    // Internally we collapse these into the same state: currentDirection and
+    // second_currentDirection always hold the signed *ratio* (±1 in the legacy
+    // case). _renewMoves multiplies by these ratios when emitting segments.
+    var hasRatios = primary_ratio !== undefined;
+    var dir = hasRatios ? primary_ratio : (speed < 0 ? -1.0 : 1.0);
+    var second_dir = hasRatios ? (secondary_ratio || 0) : (second_speed < 0 ? -1.0 : 1.0);
     speed = Math.abs(speed);
     this.gotoModeHold = false;
 
     if (this.mode != "normal") {
         throw new Error("Cannot start movement in " + this.mode + " mode.");
+    }
+
+    // Analog fast-path. When the caller supplies ratios, drive the firmware's
+    // velocity-mode jog cycle directly via {"jgv*":...} commands. The cycle
+    // handles its own jerk-limited ramp + watchdog + planner queue depth, so
+    // we don't queue G1 segments at all. The pendant's processMotion loop
+    // (50 ms cadence) naturally heartbeats inside the firmware watchdog
+    // (500 ms default).
+    //
+    // This runs BEFORE the stop_pending gate because the firmware cycle
+    // accepts mid-flight velocity updates — there is no need to wait for a
+    // previous stop to finish ramping down. The cycle will simply pick up
+    // the new v_target and keep running, which is exactly the behavior we
+    // want when the user flicks the stick rapidly between directions.
+    //
+    // Per-axis velocity = speed × ratio in the host's current display units
+    // (in/min if G20, mm/min if G21). The firmware's jgv setter converts to
+    // canonical mm/min internally, so units round-trip cleanly.
+    if (hasRatios) {
+        var vec = {};
+        vec[axis.toLowerCase()] = speed * dir;
+        if (second_axis) {
+            vec[second_axis.toLowerCase()] = speed * second_dir;
+        }
+
+        // Soft-limit speed cap for the velocity-jog cycle. The G1 path's
+        // planned-position clip in _renewMoves doesn't apply here — JGV is
+        // a firmware-side velocity setpoint, not queued segments — so we
+        // derive per-axis max velocity directly from the remaining margin
+        // and the configured jerk profile, then cap the requested velocity
+        // against it.
+        //
+        // Formula (jerk-limited S-curve stop):
+        //   stop_distance(v) ≈ v · √(v / j)   →   v_safe(m) ≈ (m² · j)^(1/3)
+        //
+        // Units: vec values are in display-units/min (IPM in G20), margin in
+        // display-units. Math runs in display-units/s; scale by 60 on the way
+        // out. The jerk coefficient scales linearly with xy_jerk so retuning
+        // jerk auto-retunes the cap.
+        //
+        // Lookahead: the formula above is the irreducible physical stop
+        // distance, but the cap → firmware → physical-decel loop has ~150ms
+        // of round-trip lag. Without compensation the tool travels v·τ past
+        // the point where the cap commanded stop. We reserve that distance
+        // up front by subtracting toolpath_speed·LOOKAHEAD_S from each
+        // axis's margin before applying the formula.
+        //
+        // Using the toolpath speed (not per-axis |v|) is an empirical fix
+        // for diagonals: with per-axis |v|, single-axis 6 IPS stops cleanly
+        // but 45° diagonals at 6 IPS total overshoot ~0.25" per axis. The
+        // multi-axis JGV path appears to have either longer effective lag
+        // or reduced per-axis jerk, and scaling reservation by toolpath
+        // speed (which is √2× larger than per-axis on a 45° diagonal)
+        // absorbs the difference without affecting single-axis behavior.
+        //
+        // softlimit_cushion (config) is an additional safety buffer on top
+        // of the lookahead. Default 0 → stop right at the soft limit.
+        //
+        // Per-axis (not toolpath) capping lets the user slide along a wall —
+        // push hard into +X, the stick still moves on Y. Skipped when
+        // softlimits_on is false or the user has overridden that axis.
+        if (config.machine._cache.softlimits_on) {
+            var jerk = (config.machine._cache.manual &&
+                config.machine._cache.manual.xy_jerk) || 75;
+            var buffer = (config.machine._cache.manual &&
+                config.machine._cache.manual.softlimit_cushion) || 0;
+            var k = jerk * 0.18;
+            // Multi-axis JGV has more per-cycle timing jitter than single-
+            // axis, so multi-axis gets a slightly larger reservation.
+            var activeAxes = 0;
+            for (var k1 in vec) { if (vec[k1] !== 0) activeAxes++; }
+            var LOOKAHEAD_S = activeAxes > 1 ? 0.18 : 0.15;
+            // Don't let the cap park the tool short of the limit. Below this
+            // velocity the per-cycle stop distance is < 0.02" so we can ride
+            // it right up to the raw boundary safely.
+            var CREEP_IPM = 30;  // 0.5 IPS
+            // The same round-trip lag that motivates the high-speed lookahead
+            // also applies at creep, plus a fixed tail from the firmware's
+            // own decel ramp. Empirically the stop-from-creep distance is
+            // ~0.14" at CREEP_IPM=30 — pre-empt the zero-check by that much
+            // so the actual stop lands at the limit, not past it.
+            var creepStopDist = 0.14;
+            for (var axisKey in vec) {
+                var v = vec[axisKey];
+                if (v === 0) continue;
+                if (this.axisOverrides[axisKey]) continue;
+                var axisUpper = axisKey.toUpperCase();
+                var directionSign = v > 0 ? 1 : -1;
+                var margin = this._getMargin(axisUpper, directionSign);
+                // Only hard-stop when the actual margin (less any cushion
+                // and the creep-speed stop tail) is gone. The lookahead just
+                // sets when the high-speed cap kicks in — it shouldn't be
+                // the parking distance.
+                if (margin - buffer - creepStopDist <= 0) {
+                    vec[axisKey] = 0;
+                    continue;
+                }
+                var lookahead = (speed / 60) * LOOKAHEAD_S;
+                var effectiveMargin = Math.max(margin - buffer - lookahead, 0);
+                var vSafeIpm = 60 * Math.cbrt(effectiveMargin * effectiveMargin * k);
+                // Floor at creep so the tool keeps inching toward the limit
+                // instead of parking 0.5–1" short when the cap collapses.
+                if (vSafeIpm < CREEP_IPM) vSafeIpm = CREEP_IPM;
+                if (Math.abs(v) > vSafeIpm) {
+                    vec[axisKey] = directionSign * vSafeIpm;
+                }
+            }
+        }
+
+        this.driver.jogVelocity(vec);
+
+        // Track minimal state. analogMode is set here AND stays set through
+        // any subsequent stopMotion; only the jogv_exit handler clears it,
+        // when the firmware actually finishes the cycle. That way a
+        // stop→re-engage during ramp-down keeps taking this path.
+        this.moving         = true;
+        this.keep_moving    = true;
+        this.analogMode     = true;
+        this.currentAxis    = axis;
+        this.currentSpeed   = speed;
+        this.currentDirection = dir;
+        if (second_axis) {
+            this.second_axis = second_axis;
+            this.second_currentDirection = second_dir;
+        } else {
+            this.second_axis = null;
+            this.second_currentDirection = null;
+        }
+        return;
     }
 
     if (this.stop_pending) {
@@ -237,9 +402,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     // Emit LIM only on the first short-circuit since the last stopMotion —
     // i.e. user is deliberately pushing into a known limit, not just arriving.
     // On the second deliberate push we escalate to an override prompt.
+    // (Use sign comparison so analog ratios in [-1, +1] match ±1 legacy state.)
     if (this._atBoundary &&
         axis === this.currentAxis &&
-        dir === this.currentDirection &&
+        Math.sign(dir) === Math.sign(this.currentDirection || 0) &&
         !this.axisOverrides[axis.toLowerCase()]) {
         if (!this._limShownThisAttempt) {
             this._limShownThisAttempt = true;
@@ -266,41 +432,56 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
 
     // Improved axis switching without debug logging
     if (this.moving) {
-        if (axis === this.currentAxis && speed === this.currentSpeed) {
-            this.maintainMotion();
-            return;
-        } else {
-            // Smooth axis transitions
-            if (this._atBoundary) {
-                this._atBoundary = false;
-                this._limShownThisAttempt = false;
-                this._limPushCount = {};
-                this.emit("softLimitClear");
-            }
-            this.plannedPos = {};
-
-            if (this.renew_timer) {
-                clearTimeout(this.renew_timer);
-                this.renew_timer = null;
-            }
-
-            this.currentAxis = axis;
-            this.currentSpeed = speed;
+        // In-place ratio update: same axes, same F (toolpath), no sign flip on
+        // either component. Just refresh currentDirection / second_currentDirection
+        // and let the already-scheduled renew_timer pick up the new ratios on
+        // its next natural fire. Queuing fresh segments here (on every stick
+        // tick at PROCESS_HZ) stacked the G2 planner faster than it could
+        // drain, leaving multiple batches of stale direction queued ahead of
+        // the user's new direction. Sign flips and axis swaps still fall
+        // through to the stop-restart path below.
+        var sameAxes = (axis === this.currentAxis) &&
+                       ((second_axis || null) === (this.second_axis || null));
+        var oldDir = this.currentDirection || 0;
+        var oldSecondDir = this.second_currentDirection || 0;
+        var primaryFlip = oldDir !== 0 && dir !== 0 && Math.sign(dir) !== Math.sign(oldDir);
+        var secondaryFlip = oldSecondDir !== 0 && second_dir !== 0 && Math.sign(second_dir) !== Math.sign(oldSecondDir);
+        if (sameAxes && Math.abs(speed - this.currentSpeed) < 0.5 && !primaryFlip && !secondaryFlip) {
             this.currentDirection = dir;
-            
-            if (second_axis) {
-                this.second_axis = second_axis;
-                this.second_currentDirection = second_dir;
-            } else {
-                this.second_axis = null;
-                this.second_currentDirection = null;
-            }
-            
-            this.renewDistance = speed * (T_RENEW / 60000) * this.safetyFactor;
-            this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n");
-            this._renewMoves("axis_change");
+            if (second_axis) this.second_currentDirection = second_dir;
+            this.keep_moving = true;
             return;
         }
+        // Smooth axis transitions
+        if (this._atBoundary) {
+            this._atBoundary = false;
+            this._limShownThisAttempt = false;
+            this._limPushCount = {};
+            this.emit("softLimitClear");
+        }
+        this.plannedPos = {};
+
+        if (this.renew_timer) {
+            clearTimeout(this.renew_timer);
+            this.renew_timer = null;
+        }
+
+        this.currentAxis = axis;
+        this.currentSpeed = speed;
+        this.currentDirection = dir;
+
+        if (second_axis) {
+            this.second_axis = second_axis;
+            this.second_currentDirection = second_dir;
+        } else {
+            this.second_axis = null;
+            this.second_currentDirection = null;
+        }
+
+        this.renewDistance = speed * (T_RENEW / 60000) * (this.analogMode ? ANALOG_SAFETY_FACTOR : this.safetyFactor);
+        this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n");
+        this._renewMoves("axis_change");
+        return;
     } else {
         // Fresh motion start
         if (this._atBoundary) {
@@ -321,7 +502,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         this.currentSpeed = speed;
         this.currentDirection = dir;
         this.moving = this.keep_moving = true;
-        this.renewDistance = speed * (T_RENEW / 60000) * this.safetyFactor;
+        this.renewDistance = speed * (T_RENEW / 60000) * (this.analogMode ? ANALOG_SAFETY_FACTOR : this.safetyFactor);
         
         this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n" + "G61" + "\n");
         this._renewMoves("start");
@@ -338,6 +519,21 @@ ManualDriver.prototype.maintainMotion = function () {
 
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
+    // Analog (firmware velocity-jog cycle) path: emit jogStop and let the
+    // firmware cycle ramp down on its own decel. Don't set stop_pending —
+    // the cycle accepts mid-flight velocity updates, so if the user
+    // re-engages the stick during the ramp-down we want subsequent
+    // startMotion calls to flow straight through to a fresh jogVelocity.
+    // The jogv_exit handler will clear analogMode/moving/keep_moving when
+    // the cycle actually exits.
+    if (this.analogMode) {
+        this.driver.jogStop();
+        this.keep_moving = false;
+        this._limShownThisAttempt = false;
+        return;
+    }
+
+    // Legacy (cardinal/keypad) path: feedhold + queue flush.
     this.stop_pending = true;
     this.keep_moving = false;
     this.plannedPos = {};

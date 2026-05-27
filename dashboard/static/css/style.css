@@ -2005,6 +2005,50 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     box-sizing: border-box;
 }
 
+/* Pendant joystick direction indicator — circle with a dot showing how
+   fabmo interprets the current stick position (post-deadzone). Lives in
+   the empty center cell of the keypad. */
+.joystick-indicator {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.joystick-indicator svg {
+    width: 90%;
+    height: 90%;
+}
+.joystick-ring {
+    stroke: #999;
+    stroke-width: 0.06;
+}
+.joystick-deadzone {
+    stroke: #ccc;
+    stroke-width: 0.025;
+    stroke-dasharray: 0.06 0.06;
+}
+.joystick-dot {
+    fill: #ccc;
+    transition: cx 60ms linear, cy 60ms linear, fill 120ms ease;
+}
+.joystick-dot.active {
+    fill: #2c8af0;
+}
+/* Draggable indicator: cursor + touch-action hints. The actual drag is
+   gated to manual mode by setupVirtualJoystick in main.js — drags outside
+   manual mode are silently ignored. */
+.joystick-indicator {
+    cursor: grab;
+    touch-action: none;
+}
+.joystick-indicator.dragging {
+    cursor: grabbing;
+}
+.joystick-indicator.dragging .joystick-dot {
+    transition: fill 80ms ease;
+}
+
 
 
 .button-border{

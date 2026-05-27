@@ -166,7 +166,7 @@ ManualRuntime.prototype.executeCode = function (code) {
                     break;
 
                 case "start":
-                    this.helper.startMotion(code.axis, code.speed, code.second_axis, code.second_speed);
+                    this.helper.startMotion(code.axis, code.speed, code.second_axis, code.second_speed, code.primary_ratio, code.secondary_ratio);
                     break;
 
                 case "stop":

@@ -28,6 +28,34 @@ window.top.document.addEventListener("usbFileSelection", function (event) {
   jQuery("#file").trigger("click");
 });
 
+// Pendant file-browser bridge. Engine emits pendant_file_select when the
+// user scrolls or selects a USB file via the pendant wheel; we surface a
+// small status line so the user knows what's highlighted even without the
+// submit dialog open. On submission, refresh the queue so the new job
+// shows up immediately. Highlight inside the USB browser dialog is left
+// for a follow-up that can be visually verified.
+fabmo.on('pendant_file_select', function(state) {
+  if (!state) return;
+  if (state.reason === 'submitted' && state.job) {
+    fabmo.notify('success', 'Pendant submitted: ' + state.job.name);
+    updateQueue(false);
+  } else if (state.reason === 'submit-failed') {
+    fabmo.notify('error', 'Pendant submit failed: ' + (state.error || 'unknown'));
+  } else if (state.file) {
+    // scroll or refresh with a current selection
+    var label = state.file.name + ' (' + (state.index + 1) + '/' + state.total + ')';
+    $('#pendant-file-indicator').remove();
+    $('body').append(
+      '<div id="pendant-file-indicator" style="position:fixed;bottom:8px;right:8px;padding:6px 10px;background:rgba(0,0,0,0.7);color:#fff;border-radius:4px;font-size:12px;z-index:9999;">Pendant: ' +
+      $('<div>').text(label).html() + '</div>'
+    );
+    clearTimeout(window._pendantIndicatorTimer);
+    window._pendantIndicatorTimer = setTimeout(function() {
+      $('#pendant-file-indicator').fadeOut(400, function() { $(this).remove(); });
+    }, 3000);
+  }
+});
+
 function fileUploadProgress(progress) {
   var pg = (progress * 100).toFixed(0) + '%';
   $('.progressbar .bar-fill').width(pg);
