@@ -1,0 +1,36 @@
+# FabMo USB device naming rules — source of truth for /etc/udev/rules.d/99-fabmo-usb.rules
+#
+# Creates stable /dev/* symlinks for the motion controller and VFD/RS485 adapters
+# so code (and users) can refer to them by purpose rather than kernel-assigned
+# ttyACM*/ttyUSB* index, which can shuffle based on enumeration order.
+#
+# Install manually:
+#   sudo cp files/udev/99-fabmo-usb.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload && sudo udevadm trigger
+#
+# Symlinks produced:
+#   /dev/fabmo_g2_motion         — ShopBot/FabMo G2 motion controller
+#   /dev/vfdACM_controller1      — Waveshare USB-to-RS485 (ch341)
+#   /dev/vfdUSB_controller1      — Sparkfun FTDI or SciLabs cp210x USB-to-RS485
+
+# === Motion controller ===
+# ShopBot/FabMo G2 controller (v3.04 and later; older DUE-based boards not supported)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="606d", SYMLINK+="fabmo_g2_motion"
+
+# === VFD / RS485 adapters ===
+# Waveshare USB-to-RS485 (ch341 driver, ttyUSB*)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55d3", SYMLINK+="vfdACM_controller1"
+
+# Sparkfun USB-to-RS485 (FTDI ftdi_sio, ttyUSB*)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", SYMLINK+="vfdUSB_controller1"
+
+# SciLabs SpindleControl — Silicon Labs cp210x with an OEM VID:PID not in the
+# driver's built-in id_table, so cp210x will not claim the device until told to.
+# Two-step:
+#   1. On the USB-device-level event, ensure cp210x is loaded and write the OEM
+#      VID:PID to its new_id sysfs node. The driver then probes the device and
+#      creates a tty under it, which generates a second udev event.
+#   2. On the resulting tty event, install the symlink.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="83c4", \
+  RUN+="/bin/sh -c 'modprobe cp210x; echo 10c4 83c4 > /sys/bus/usb-serial/drivers/cp210x/new_id 2>/dev/null || true'"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="83c4", SYMLINK+="vfdUSB_controller1"

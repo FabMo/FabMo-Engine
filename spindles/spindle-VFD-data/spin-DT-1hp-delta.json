@@ -3,6 +3,7 @@
     "Name": "spin-DT-1hp-delta",
     "COM_PORT": "/dev/vfdACM_controller1",
     "MB_ADDRESS": 3,
+    "PROBE_ADDRESSES": [3, 1],
     "BAUDRATE": 9600,
     "BYTESIZE": 8,
     "STOPBITS": 1,
