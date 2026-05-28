@@ -4,10 +4,6 @@
 // encoder.js, and writes the three HID OUT reports through the hidraw handle
 // the device adapter opened. Skips writes when the encoded payload matches
 // the last one sent, so an idle machine produces no USB traffic.
-//
-// Off by default — gated by config.machine.pendant.lcd_enabled. Until the
-// real hardware has been validated against the LinuxCNC-derived encoder
-// byte layout, leave the flag false.
 
 var encoder = require("./encoder");
 
@@ -16,8 +12,8 @@ var IDLE_REPUSH_MS = 1500; // re-send even unchanged payload at this cadence
                            // so the pendant doesn't time-out the display
 
 // Translate FabMo's machine status into the encoder's state object.
-//   wheelMode: "step" | "velocity" | null  — the wheel state machine's view
-//              of the current selector, used for the CON/STEP display flag.
+//   wheelMode: "step" | "continuous" | null  — picked by the Step/Continuous
+//              buttons; drives the CON/STEP indicator on the LCD.
 //              The MPG/PERCENT modes are reserved for v2 (jog-while-running).
 function buildState(status, wheelMode, seed) {
     if (!status) status = {};

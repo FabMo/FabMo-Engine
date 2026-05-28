@@ -43,63 +43,78 @@ var BINDINGS = {
         actions.authorize(machine);
     },
     "m-home": function (machine) {
-        actions.runMacro(machine, 71);
+        // C3 — HOME TOOL (auto-set XYZ zero + position tool)
+        actions.runMacro(machine, 3);
     },
     "safe-z": function (machine) {
         actions.runMacro(machine, 72);
     },
     "w-home": function (machine) {
-        actions.runMacro(machine, 73);
+        // JH — built-in SBP Jog Home (go to work zero in current WCS)
+        actions.runSbp(machine, "JH");
     },
     "spindle-on-off": function (machine) {
-        actions.runMacro(machine, 78);
+        // Toggle output 1 — same path as the dashboard manual-control
+        // spindle button (action-5). Requires manual mode (the manual
+        // runtime's output command does).
+        actions.toggleOutput(machine, 1);
     },
     "probe-z": function (machine) {
-        actions.runMacro(machine, 79);
+        // C2 — Z-ZERO (Set Z-Zero with Zeroing Plate)
+        actions.runMacro(machine, 2);
     },
     "macro-10": function (machine) {
         actions.runMacro(machine, 10);
     },
     // fn is a modifier — handled in dispatch, not as a direct binding
     fn: null,
-    // Override buttons deferred to v2 (need FRO/SRO support).
-    "feed-plus": null,
-    "feed-minus": null,
-    "spindle-plus": null,
-    "spindle-minus": null,
-    // Mode buttons toggle manual mode — wheel jogging only works while in it.
-    "mode-continuous": function (machine) {
-        actions.manualEnter(machine, { hideKeypad: false });
+    // FRO ±5% (5..200), same step as the dashboard arrow keys.
+    "feed-plus": function (machine) {
+        actions.adjustFro(machine, +5);
     },
-    "mode-step": function (machine) {
-        actions.manualExit(machine);
+    "feed-minus": function (machine) {
+        actions.adjustFro(machine, -5);
     },
+    // Spindle RPM setpoint ±100, sent straight to the VFD; matches the
+    // dashboard "+"/"_" keys' step. Acts as a live setpoint adjust during
+    // a running job (and is harmless when idle).
+    "spindle-plus": function (machine) {
+        actions.adjustSpindleRpm(machine, +100);
+    },
+    "spindle-minus": function (machine) {
+        actions.adjustSpindleRpm(machine, -100);
+    },
+    // Mode buttons pick wheel behavior. They also enter manual mode if needed
+    // so a single press from idle is enough to start jogging. The actual
+    // wheelMode flag is owned by the adapter (see open()) — these placeholders
+    // are overridden per-device so they can mutate that closure.
+    "mode-continuous": null,
+    "mode-step": null,
 };
 
-// Read the configured manual XY feedrate ceiling, in IPM. xy_speed is stored
-// in IPS (units/sec); the manual runtime / G2 expects IPM. Mirrors the F310's
-// jogSpeed() conversion.
-function readMaxIpm() {
+// Read the manual feedrate ceiling for `axis`, in IPM. Mirrors the per-axis
+// split the manual runtime uses in driver.js:638-655 — XY (and unspecified
+// axes) follow manual.xy_speed (= the keypad's FR field); Z follows
+// manual.z_fast_speed; rotaries follow opensbp.move{a,b,c}_speed. All those
+// fields are stored in IPS and we convert to IPM for the manual runtime / G2.
+function readMaxIpm(axis) {
     try {
         var manualCfg = config.machine && config.machine.get && config.machine.get("manual");
-        if (manualCfg && manualCfg.xy_speed) return manualCfg.xy_speed * 60;
+        if (!manualCfg) return DEFAULT_MAX_IPM;
+        var ax = (axis || "").toUpperCase();
+        if (ax === "Z" && manualCfg.z_fast_speed) {
+            return manualCfg.z_fast_speed * 60;
+        }
+        if (ax === "A" || ax === "B" || ax === "C") {
+            var sbpCfg = config.opensbp && config.opensbp.get && config.opensbp.get();
+            var key = "move" + ax.toLowerCase() + "_speed";
+            if (sbpCfg && sbpCfg[key]) return sbpCfg[key] * 60;
+        }
+        if (manualCfg.xy_speed) return manualCfg.xy_speed * 60;
     } catch (e) {
         // fall through
     }
     return DEFAULT_MAX_IPM;
-}
-
-// Read whether the LCD display loop should be active. Default OFF — the
-// encoder is derived from LinuxCNC's reference driver and has not been
-// validated against the physical pendant yet. Flip
-// config.machine.pendant.lcd_enabled true to send display frames.
-function readLcdEnabled() {
-    try {
-        var pCfg = config.machine && config.machine.get && config.machine.get("pendant");
-        return !!(pCfg && pCfg.lcd_enabled);
-    } catch (e) {
-        return false;
-    }
 }
 
 function open(machine, ctx) {
@@ -143,18 +158,28 @@ function open(machine, ctx) {
     var latestAxis = null;
     var latestFeed = null;
     var latestSeed = 0;
+    // Wheel-mode is owned here so the Continuous/Step buttons can mutate it.
+    // Default to continuous (the joystick-like feel) so first-press behavior
+    // is predictable; the user can switch any time.
+    var wheelMode = "continuous";
 
-    var displayHandle = null;
-    if (readLcdEnabled()) {
-        displayHandle = display.create(machine, device, {
-            getSeed: function () { return latestSeed; },
-            getWheelMode: function () {
-                if (!latestFeed) return null;
-                return latestFeed.stepSize != null ? "step" : "velocity";
-            },
-        });
-        log.info("XHC LHB04B-6 LCD display loop enabled");
-    }
+    // Per-instance overrides for the mode buttons. They both enter manual
+    // mode (idempotent) and flip the wheelMode flag the tick loop reads.
+    var instanceBindings = Object.assign({}, BINDINGS, {
+        "mode-continuous": function (m) {
+            wheelMode = "continuous";
+            actions.manualEnter(m, { hideKeypad: false });
+        },
+        "mode-step": function (m) {
+            wheelMode = "step";
+            actions.manualEnter(m, { hideKeypad: false });
+        },
+    });
+
+    var displayHandle = display.create(machine, device, {
+        getSeed: function () { return latestSeed; },
+        getWheelMode: function () { return wheelMode; },
+    });
 
     function dispatchIntents(intents) {
         if (!intents || !intents.length) return;
@@ -165,7 +190,15 @@ function open(machine, ctx) {
             } else if (it.type === "start") {
                 actions.jogStart(machine, it.axis, it.speed, null, 0, it.ratio, 0);
             } else if (it.type === "nudge") {
-                actions.jog(machine, it.axis, it.ticks, it.stepSize, it.speed);
+                // The wheel state machine has already done the snap-to-grid
+                // (in step mode), tracking a planned position so back-to-back
+                // detents walk consecutive grid lines instead of all snapping
+                // to the same one. Pass through the precomputed distance and
+                // tell the driver to skip its own snap pass.
+                actions.jog(machine, it.axis, it.ticks, it.stepSize, it.speed, {
+                    snap: false,
+                    distance: it.distance,
+                });
             }
         }
     }
@@ -186,7 +219,7 @@ function open(machine, ctx) {
             var b = event.buttons[i];
             if (previousButtons.indexOf(b) !== -1) continue;
             if (b === "fn") continue;
-            var binding = BINDINGS[b];
+            var binding = instanceBindings[b];
             if (typeof binding === "function") {
                 log.debug("pendant button: " + b + (fnHeld ? " (fn)" : "") + (axisOff ? " (browse)" : ""));
                 binding(machine, fnHeld, ctx, axisOff);
@@ -212,7 +245,24 @@ function open(machine, ctx) {
             if (event.axis == null && ctx.fileBrowser) {
                 ctx.fileBrowser.scroll(event.wheelDelta > 0 ? 1 : -1);
             } else {
-                wheelSM.recordPulse(event.wheelDelta, Date.now());
+                // consumePulse records the pulse AND, in step mode with a
+                // valid selector, returns an immediate nudge intent so each
+                // detent dispatches without waiting for the next tick.
+                // Continuous-mode pulses just get recorded for the tick loop.
+                var posKey = latestAxis ? "pos" + latestAxis.toLowerCase() : null;
+                var currentPos = posKey ? machine.status[posKey] : null;
+                var immediate = wheelSM.consumePulse(
+                    event.wheelDelta,
+                    latestAxis,
+                    latestFeed,
+                    readMaxIpm(latestAxis),
+                    wheelMode,
+                    Date.now(),
+                    currentPos
+                );
+                if (immediate.length && machine.status.state === "manual") {
+                    dispatchIntents(immediate);
+                }
             }
         }
     });
@@ -231,7 +281,9 @@ function open(machine, ctx) {
             wheelSM.reset();
             return;
         }
-        var intents = wheelSM.tick(latestAxis, latestFeed, readMaxIpm(), Date.now());
+        var posKey = latestAxis ? "pos" + latestAxis.toLowerCase() : null;
+        var currentPos = posKey ? machine.status[posKey] : null;
+        var intents = wheelSM.tick(latestAxis, latestFeed, readMaxIpm(latestAxis), Date.now(), wheelMode, currentPos);
         dispatchIntents(intents);
     }, Math.round(1000 / TICK_HZ));
 

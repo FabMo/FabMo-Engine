@@ -333,6 +333,13 @@ const { last } = require("underscore");
             $("#override").css("color", "gray");
         } else {
             var cur_fro = (status.fro * 100).toFixed(0);
+            // If the user isn't actively editing the field, snap its value to
+            // the live fro. Without this, an external source (pendant, API)
+            // changing the FRO leaves the input box's old "request" stuck in
+            // mismatch with the live value, blinking forever.
+            if (!$("#override").is(":focus")) {
+                $("#override").val(cur_fro);
+            }
             cur_req_fro = $("#override").val();
             /* do the blink */
             if (cur_req_fro == cur_fro) {
