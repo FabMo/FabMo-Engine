@@ -74,12 +74,85 @@ function authorize(machine) {
     }
 }
 
-function runMacro(machine, id) {
-    try {
-        macros.run(id);
-    } catch (e) {
-        log.error("runMacro(" + id + ") threw: " + e.message);
+// Manual mode owns the runtime, so a runFile/runtime-switch issued from within
+// manual mode races the exit and gets dropped. Mirror the dashboard keypad
+// pattern (main.js calledFromModal): send exit, wait for the status update
+// that shows we've left manual, then dispatch the action. fn() is called once.
+function runAfterManualExit(machine, fn) {
+    if (machine.status.state !== "manual") {
+        fn();
+        return;
     }
+    var fired = false;
+    var fire = function () {
+        if (fired) return;
+        fired = true;
+        machine.removeListener("status", onStatus);
+        clearTimeout(timer);
+        fn();
+    };
+    var onStatus = function (status) {
+        if (status.state !== "manual") fire();
+    };
+    machine.on("status", onStatus);
+    // Fallback: if no status update transitions us out within 2 s, give up
+    // listening so we don't pin the handler forever. fn() does NOT fire on
+    // timeout — that would race the still-in-flight exit.
+    var timer = setTimeout(function () {
+        if (fired) return;
+        fired = true;
+        machine.removeListener("status", onStatus);
+        log.warn("runAfterManualExit: timed out waiting for manual to exit; action dropped");
+    }, 2000);
+    sendManual(machine, { cmd: "exit" });
+}
+
+function runMacro(machine, id) {
+    runAfterManualExit(machine, function () {
+        try {
+            macros.run(id);
+        } catch (e) {
+            log.error("runMacro(" + id + ") threw: " + e.message);
+        }
+    });
+}
+
+// Submit raw SBP code as a one-shot job. Use this for pendant buttons that
+// map to a built-in SBP command (JH, JZ, etc.) rather than a numbered macro.
+// machine.sbp() handles runtime selection.
+function runSbp(machine, code) {
+    runAfterManualExit(machine, function () {
+        try {
+            machine.sbp(code);
+        } catch (e) {
+            log.error("runSbp(" + JSON.stringify(code) + ") threw: " + e.message);
+        }
+    });
+}
+
+// Feedrate override — same path as the dashboard FRO arrows in events.js.
+// machine.frOverride takes a percent 5..200; status.fro is a fraction.
+// Step is in percent points (dashboard uses ±5; default that here).
+function adjustFro(machine, deltaPercent) {
+    var cur = (+machine.status.fro || 1) * 100;
+    var snapped = Math.round(cur / 5) * 5;
+    var next = Math.min(200, Math.max(5, snapped + deltaPercent));
+    if (next === snapped) return;
+    machine.frOverride(next);
+}
+
+// Spindle RPM setpoint adjust — same path as the dashboard SPINDLE arrows.
+// machine.spindleSpeed takes RPM and pushes it straight to the VFD. We step
+// from the VFD's designated frequency (already in RPM via RPM_MULT). If the
+// VFD isn't reporting yet, fall back to a sensible idle so a single press
+// doesn't lurch from 0; clamp to the machine's accepted 100..30000 range.
+function adjustSpindleRpm(machine, deltaRpm) {
+    var spStatus = machine.status.spindle;
+    var cur = (spStatus && spStatus.vfdDesgFreq > 0) ? spStatus.vfdDesgFreq : 12000;
+    var snapped = Math.round(cur / 100) * 100;
+    var next = Math.min(30000, Math.max(100, snapped + deltaRpm));
+    if (next === snapped) return;
+    machine.spindleSpeed(next);
 }
 
 // Set a discrete output to 0 or 1. Uses the manual runtime's output command —
@@ -173,7 +246,7 @@ function jogStop(machine) {
 // Jog by wheel-tick (or D-pad press). Sends a fixed-distance move through the
 // manual runtime. Same single-state precondition as jogStart: the machine must
 // already be in manual mode (entered via a dedicated pendant button).
-function jog(machine, axis, ticks, stepSize, speed) {
+function jog(machine, axis, ticks, stepSize, speed, opts) {
     if (!axis || !ticks || !stepSize) {
         return;
     }
@@ -181,13 +254,22 @@ function jog(machine, axis, ticks, stepSize, speed) {
         log.debug("jog ignored — machine is in state '" + machine.status.state + "', not 'manual'");
         return;
     }
-    var distance = ticks * stepSize;
-    sendManual(machine, {
+    // opts.distance overrides ticks*stepSize for callers that have already
+    // computed the exact move they want (e.g. the wheel state machine, which
+    // does its own snap-to-grid using a planned-position cache). Stepsize is
+    // still required up top so log/debug paths see what the caller intended.
+    var distance = (opts && opts.distance !== undefined) ? opts.distance : ticks * stepSize;
+    var cmd = {
         cmd: "fixed",
         axis: axis,
         speed: speed,
         dist: distance,
-    });
+    };
+    // opts.snap: false → caller has already snapped (or wants pure relative).
+    // Default snap-to-grid in the driver suits keypad-style jogging where each
+    // tap walks to the next round increment.
+    if (opts && opts.snap === false) cmd.snap = false;
+    sendManual(machine, cmd);
 }
 
 module.exports = {
@@ -197,6 +279,9 @@ module.exports = {
     quit: quit,
     authorize: authorize,
     runMacro: runMacro,
+    runSbp: runSbp,
+    adjustFro: adjustFro,
+    adjustSpindleRpm: adjustSpindleRpm,
     setOutput: setOutput,
     toggleOutput: toggleOutput,
     manualEnter: manualEnter,
