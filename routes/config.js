@@ -553,6 +553,7 @@ function applyManualProfileChange(profileName, res, next) {
             });
             log.info("fabmo-def updated; handing off to engine profile-change pipeline");
             res.end();
+            next();
 
             // Step 3: actually trigger the profile change. engine_config
             // will call profiles.apply and then process.exit(1) - we
@@ -573,8 +574,6 @@ function applyManualProfileChange(profileName, res, next) {
             });
         });
     });
-
-    next();
 }
 
 // Get backup restore status
