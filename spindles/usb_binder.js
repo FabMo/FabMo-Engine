@@ -42,10 +42,14 @@ function ensureModuleLoaded(modName, driverDir) {
 
 // Known RS485 adapters. `driver` is the in-kernel module that should claim
 // the device; `needsNewId` flags PIDs not in the driver's built-in table.
+// `stableSymlink` is the persistent path created by /etc/udev/rules.d/
+// 99-fabmo-usb.rules (deployed by the updater patch 001) — prefer it
+// over the raw /dev/ttyUSBN kernel path, which changes between reboots
+// depending on USB enumeration order.
 const KNOWN_ADAPTERS = [
-    { vid: "10c4", pid: "83c4", name: "Scilabs (Silicon Labs SpindleControl)", driver: "cp210x", needsNewId: true },
-    { vid: "1a86", pid: "55d3", name: "Waveshare USB-to-RS485",                driver: "ch341",  needsNewId: false },
-    { vid: "0403", pid: "6001", name: "Sparkfun USB-to-RS485 (FTDI)",          driver: "ftdi_sio", needsNewId: false },
+    { vid: "10c4", pid: "83c4", name: "Scilabs (Silicon Labs SpindleControl)", driver: "cp210x",   needsNewId: true,  stableSymlink: "/dev/vfdACM_controller1" },
+    { vid: "1a86", pid: "55d3", name: "Waveshare USB-to-RS485",                driver: "ch341",    needsNewId: false, stableSymlink: "/dev/vfdACM_controller1" },
+    { vid: "0403", pid: "6001", name: "Sparkfun USB-to-RS485 (FTDI)",          driver: "ftdi_sio", needsNewId: false, stableSymlink: "/dev/vfdUSB_controller1" },
 ];
 
 function readSysAttr(devPath, attr) {
@@ -105,7 +109,18 @@ function bindCp210xPid(vid, pid) {
 
 // After binding, the cp210x driver creates a tty under the device's interface
 // subdirectory. e.g. /sys/bus/usb/devices/1-1.1/1-1.1:1.0/ttyUSB0
-function resolveTtyForDevice(sysPath) {
+//
+// Prefer the udev-created symlink when it exists (e.g. /dev/vfdACM_controller1)
+// — that path is stable across reboots and USB plug order, whereas the raw
+// /dev/ttyUSBN kernel path is not. Falling back to the raw path keeps things
+// working on systems where the udev rule hasn't been deployed yet.
+function resolveTtyForDevice(sysPath, adapterInfo) {
+    if (adapterInfo && adapterInfo.stableSymlink) {
+        try {
+            fs.statSync(adapterInfo.stableSymlink);   // throws if missing
+            return adapterInfo.stableSymlink;
+        } catch (e) { /* symlink not present yet — fall through */ }
+    }
     try {
         const children = fs.readdirSync(sysPath);
         for (const child of children) {
@@ -127,12 +142,15 @@ function resolveTtyForDevice(sysPath) {
     return null;
 }
 
-// Wait up to `timeoutMs` for resolveTtyForDevice to find a path.
-function waitForTty(sysPath, timeoutMs = 2000) {
+// Wait up to `timeoutMs` for resolveTtyForDevice to find a path. Passes
+// adapterInfo through so the symlink-preferred resolution applies during
+// the wait — gives udev's RUN+= a moment to create the symlink after the
+// kernel creates the underlying tty.
+function waitForTty(sysPath, timeoutMs = 2000, adapterInfo) {
     return new Promise((resolve) => {
         const start = Date.now();
         const tick = () => {
-            const tty = resolveTtyForDevice(sysPath);
+            const tty = resolveTtyForDevice(sysPath, adapterInfo);
             if (tty) return resolve(tty);
             if (Date.now() - start >= timeoutMs) return resolve(null);
             setTimeout(tick, 100);
@@ -152,7 +170,7 @@ async function ensureAdapterBound() {
     log.info(`Detected RS485 adapter: ${found.info.name} (${found.vid}:${found.pid})`);
 
     // Try the existing tty first (already bound from a previous run)
-    let ttyPath = resolveTtyForDevice(found.sysPath);
+    let ttyPath = resolveTtyForDevice(found.sysPath, found.info);
     if (ttyPath) {
         log.info(`Adapter already bound at ${ttyPath}`);
         return { adapter: found, ttyPath };
@@ -162,7 +180,7 @@ async function ensureAdapterBound() {
         if (!bindCp210xPid(found.vid, found.pid)) {
             return { adapter: found, ttyPath: null };
         }
-        ttyPath = await waitForTty(found.sysPath, 2000);
+        ttyPath = await waitForTty(found.sysPath, 2000, found.info);
         if (ttyPath) {
             log.info(`Adapter bound at ${ttyPath}`);
             return { adapter: found, ttyPath };

@@ -470,7 +470,7 @@ Spin.prototype.discover = function() {
             vid: adapter.vid,
             pid: adapter.pid,
             driver: adapter.info.driver,
-            ttyPath: usbBinder.resolveTtyForDevice(adapter.sysPath),
+            ttyPath: usbBinder.resolveTtyForDevice(adapter.sysPath, adapter.info),
         } : null,
         installedTemplate: installed && installed.VFD_Settings ? installed.VFD_Settings.Name : null,
         templates: vfdProbe.listTemplates(),
