@@ -4,12 +4,15 @@ const EventEmitter = require("events").EventEmitter;
 const fs = require("fs");
 const path = require("path");
 
-const ctrl = require("../pendant/cannedCutsController");
+const ctrl = require("../pendant/toolboxController");
 
-// Fake machine: emits status events, records runFile calls.
+// Fake machine: emits status events, records runFile calls. Default
+// state is "idle" so commit's runAfterManualExit wrapper fires runFile
+// synchronously. Tests that exercise the manual-exit path explicitly
+// override status.state and define executeRuntimeCode.
 function makeMachine(initialStatus) {
     const m = new EventEmitter();
-    m.status = Object.assign({ posx: 0, posy: 0, posz: 0, state: "manual" }, initialStatus || {});
+    m.status = Object.assign({ posx: 0, posy: 0, posz: 0, state: "idle" }, initialStatus || {});
     m.runFileCalls = [];
     m.runFile = function (filename, bypassInterlock) {
         m.runFileCalls.push({ filename, bypassInterlock });
@@ -17,7 +20,7 @@ function makeMachine(initialStatus) {
     return m;
 }
 
-describe("CannedCutsController: state machine", () => {
+describe("ToolboxController: state machine", () => {
     test("starts idle with default circular_bore params", () => {
         const c = ctrl.create(makeMachine());
         expect(c.state).toBe("idle");
@@ -29,7 +32,7 @@ describe("CannedCutsController: state machine", () => {
     test("toggle: idle → active → idle", () => {
         const c = ctrl.create(makeMachine());
         const events = [];
-        c.on("canned_cut_state", (e) => events.push(e));
+        c.on("toolbox_state", (e) => events.push(e));
         c.toggle();
         expect(c.state).toBe("active");
         expect(events[0].reason).toBe("enter");
@@ -74,7 +77,7 @@ describe("CannedCutsController: state machine", () => {
     });
 });
 
-describe("CannedCutsController: commit", () => {
+describe("ToolboxController: commit", () => {
     test("commit ignored when not active", () => {
         const m = makeMachine();
         const c = ctrl.create(m);
@@ -95,7 +98,7 @@ describe("CannedCutsController: commit", () => {
         expect(m.runFileCalls[0].bypassInterlock).toBe(true);
         expect(c.state).toBe("executing");
         const fname = m.runFileCalls[0].filename;
-        expect(fname).toMatch(/canned-circular_bore-\d+\.nc$/);
+        expect(fname).toMatch(/toolbox-circular_bore-\d+\.nc$/);
         // File should contain G-code with center at the machine position.
         const content = fs.readFileSync(fname, "utf8");
         expect(content).toContain("G90 G61");
@@ -134,12 +137,12 @@ describe("CannedCutsController: commit", () => {
     });
 });
 
-describe("CannedCutsController: events", () => {
-    test("emits canned_cut_state on every transition", () => {
+describe("ToolboxController: events", () => {
+    test("emits toolbox_state on every transition", () => {
         const m = makeMachine({ posx: 0, posy: 0, posz: 0 });
         const c = ctrl.create(m);
         const events = [];
-        c.on("canned_cut_state", (e) => events.push(e.reason));
+        c.on("toolbox_state", (e) => events.push(e.reason));
         c.toggle();           // enter
         c.adjustParam("diameter", 1);  // adjust:diameter
         c.commit();           // commit
@@ -152,7 +155,7 @@ describe("CannedCutsController: events", () => {
     test("event payload includes current state, cutType, and params", () => {
         const c = ctrl.create(makeMachine());
         const seen = [];
-        c.on("canned_cut_state", (e) => seen.push(e));
+        c.on("toolbox_state", (e) => seen.push(e));
         c.toggle();
         expect(seen[0]).toMatchObject({
             state: "active",

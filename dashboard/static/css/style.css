@@ -2706,7 +2706,10 @@ input[type='range']:focus {
     background-color: #ffda29;
     border-radius: 25px;
     -webkit-font-smoothing: antialiased;
-    overflow: hidden;
+    /* overflow: visible so the toolbox sidebar (anchored at left:100%
+       of this modal) can extend past the right edge. The modal's own
+       contents are sized to fit, so this doesn't cause stray overflow. */
+    overflow: visible;
 }
 
 /* Spindle toggle (action-5) sits above the authorize overlay so it
@@ -3299,105 +3302,569 @@ filter: blur(2px);
     margin-top: 0; /* Remove any existing top margin */
 }
 /* ------------------------------------------------------------------
- * Canned-cut HUD — top-right floating panel that mirrors the manual
- * keypad's visual style (ShopBot yellow #ffda29, rounded corners,
- * fixed positioning, high z-index). Unlike the keypad, it's compact
- * and never modal — purely a readout of the pendant's current canned-
- * cut mode and parameters. Hidden until the controller emits an
- * "enter" state event; updates live on every adjust.
+ * Canned-cuts sidebar — slides out to the right of the jog pad inside
+ * the manual keypad modal. Collapsed-by-default tab on the right edge;
+ * click the tab to expand. Same controller the F310 pendant drives, so
+ * both surfaces stay in lockstep via toolbox_state broadcasts.
  *
- * No buttons / no interactivity — input lives on the physical pendant
- * per the project's physical-inputs-only stance.
+ * Layout: position:absolute against #keypad-modal so the panel can
+ * extend past the modal's right edge without reflowing the jog pad.
  * ------------------------------------------------------------------ */
-.canned-cut-hud {
-    display: none;
-    position: fixed;
-    top: 80px;
-    right: 24px;
-    z-index: 3001;
-    background-color: #ffda29;
-    border-radius: 16px;
-    padding: 14px 20px 12px;
-    min-width: 220px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-    font-family: 'sourcesanspro', sans-serif;
-    color: #333;
-    user-select: none;
-    -webkit-font-smoothing: antialiased;
+/* Grip-style toggle button: lives on the inside-right edge of the
+   keypad modal. Vertical etched lines (repeating linear-gradient)
+   evoke the score lines on a battery-cover release — a tactile cue
+   that this is a thing you press. Click toggles .open on the
+   sidebar, which slides the panel out to the right. */
+.toolbox-grip {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 28px;
+    padding: 14px 4px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.22);
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 6;
+    box-sizing: border-box;
+    /* Subtle relief shadow so the button reads as a raised part on
+       the yellow modal face. */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        0 1px 2px rgba(0, 0, 0, 0.12);
+    transition: background-color 0.12s ease;
 }
 
-.canned-cut-hud.visible {
+/* Vertical "TOOLBOX" label: writing-mode:vertical-lr puts the
+   text column on the LEFT side of the button (leaving room for the
+   grip lines on the right). text-orientation:mixed rotates Latin
+   characters 90° so the label reads as a single rotated word (head
+   tilt right), not as a stack of upright letters. */
+.toolbox-grip-label {
     display: block;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    font-family: 'sourcesanspro', sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    color: rgba(0, 0, 0, 0.72);
+    line-height: 1;
+    user-select: none;
 }
 
-.canned-cut-hud-title {
-    font-size: 1.05em;
+/* Two thin vertical grip lines, both on the right side of the
+   button — to the right of the label, like "TEXT ||". Pseudo-
+   elements so they don't perturb layout. */
+.toolbox-grip::before,
+.toolbox-grip::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    width: 1px;
+    background-color: rgba(0, 0, 0, 0.32);
+}
+
+.toolbox-grip::before { right: 4px; }
+.toolbox-grip::after  { right: 8px; }
+
+/* Foundation styles button:focus as dark blue with white text, which
+   leaves the grip looking pressed-in after the sidebar closes. Reset
+   focus to the idle look (outline killed so it doesn't ring either). */
+.toolbox-grip:focus {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.72);
+    outline: none;
+}
+
+.toolbox-grip:hover {
+    background-color: rgba(0, 0, 0, 0.09);
+}
+
+/* Open / pressed state — inset shadow like the button has been
+   pushed in. Single transition target (background-color only) so
+   the hover→active swap doesn't double-animate and feel twitchy. */
+.toolbox-grip.active {
+    background-color: rgba(0, 0, 0, 0.14);
+    box-shadow:
+        inset 0 2px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Sidebar root pinned just outside the modal's right edge
+   (left:100% relative to #keypad-modal). Holds only the panel
+   now — the trigger lives separately as .toolbox-grip. */
+.toolbox-sidebar {
+    position: absolute;
+    top: 30px;
+    bottom: 30px;            /* same inset as top so the panel doesn't
+                                grow/shrink with sub-view content */
+    left: 100%;
+    margin-left: -1px;       /* visually merge with modal edge */
+    z-index: 5;
+}
+
+.toolbox-sidebar-panel {
+    background: #ffda29;
+    border: none;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    width: 0;
+    height: 100%;            /* fill the fixed-height sidebar */
+    display: flex;
+    flex-direction: column;  /* lets tool-view flex-grow so its action
+                                row can pin to the panel bottom */
+    padding: 12px 0;
+    overflow: hidden;
+    /* Bump the base by 12% so everything inside (labels, inputs, slide
+       labels) scales together via its existing em-relative sizing. */
+    font-size: 1.12em;
+    opacity: 0;
+    transition: width 0.22s ease, opacity 0.18s ease, padding 0.22s ease;
+    font-family: 'sourcesanspro', sans-serif;
+    color: #222;
+    box-sizing: border-box;
+}
+
+.toolbox-sidebar.open .toolbox-sidebar-panel {
+    /* When content exceeds the fixed height, scroll inside the panel
+       rather than letting it push past the bottom inset. */
+    overflow-y: auto;
+}
+
+.toolbox-sidebar.open .toolbox-sidebar-panel {
+    width: 220px;
+    padding: 8px 10px;
+    opacity: 1;
+}
+
+.toolbox-sidebar-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+}
+
+.toolbox-sidebar-title {
+    font-size: 0.85em;
+}
+
+/* Back arrow shown only when a tool is open (home view hides it).
+   `[hidden]` is the canonical toggle so JS can flip with .hidden = ... */
+.toolbox-back-btn {
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    margin: 0;
+    cursor: pointer;
+    font-size: 1.1em;
+    line-height: 1;
+    color: #222;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.toolbox-back-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.toolbox-back-btn[hidden] {
+    display: none;
+}
+
+/* Toolbox grid: tool tiles laid out 2-up. Hidden when a tool is
+   open. JS toggles via .hidden. */
+.toolbox-toolbox {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    padding: 0;
+}
+
+.toolbox-toolbox[hidden] {
+    display: none;
+}
+
+.toolbox-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 2px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    font-family: inherit;
+    cursor: pointer;
+    color: #222;
+    transition: background-color 0.12s ease;
+}
+
+.toolbox-tile:hover {
+    background: #fff;
+}
+
+.toolbox-tile-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: #222;
+}
+
+.toolbox-tile-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.toolbox-tile-label {
     font-weight: bold;
+    font-size: 0.62em;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
     text-align: center;
-    margin-bottom: 8px;
+    line-height: 1.1;
+}
+
+/* Tool views — only the active one is visible. JS toggles [hidden].
+   When visible, fill the remaining panel height and use a flex column
+   so the action row inside (CUT button) can margin-top:auto its way
+   to the bottom regardless of how few params the tool has. */
+.toolbox-tool-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.toolbox-tool-view[hidden] {
+    display: none;
+}
+
+/* Pin the bottom cluster (plunge-from selector + action row) to the
+   panel base so the CUT button stays at a constant offset across
+   tools regardless of how many params the tool has. */
+.toolbox-tool-view .toolbox-tool-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Placeholder copy for tools that aren't wired up yet. */
+.toolbox-tool-stub {
+    text-align: center;
+    color: rgba(0, 0, 0, 0.55);
+    font-style: italic;
+    padding: 24px 8px;
+    margin: 0;
+}
+
+/* Sections on the home (toolbox) view that aren't the tool grid —
+   currently just the Bit settings. Visually grouped under a header
+   so the operator knows these apply across all tools. */
+.toolbox-home-section {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.toolbox-home-section[hidden] {
+    display: none;
+}
+
+.toolbox-home-section-header {
+    font-size: 0.7em;
+    font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.18);
-    padding-bottom: 4px;
+    color: rgba(0, 0, 0, 0.7);
+    margin-bottom: 4px;
 }
 
-.canned-cut-hud-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: 'Source Code Pro', 'Menlo', monospace;
-    font-size: 0.95em;
-    line-height: 1.5;
-}
-
-.canned-cut-hud-label {
-    color: rgba(0, 0, 0, 0.6);
-    padding-right: 12px;
-    text-align: left;
-    font-weight: 500;
-}
-
-.canned-cut-hud-value {
-    text-align: right;
+.toolbox-sidebar-title {
     font-weight: bold;
-    font-variant-numeric: tabular-nums;
-}
-
-/* State badge — colored pill below the table that flips when the
- * controller transitions to executing (commit fired, file running).
- * Default look matches the "active" state.  */
-.canned-cut-hud-state {
-    margin-top: 8px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 0.8em;
+    font-size: 1em;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.12);
-    color: #222;
+    letter-spacing: 0.04em;
+}
+
+
+.toolbox-sidebar-types {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.toolbox-type-btn {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: inherit;
+    font-size: 0.9em;
+    cursor: pointer;
+    color: #333;
+}
+
+.toolbox-type-btn.active {
+    background: #fff;
     font-weight: bold;
 }
 
-.canned-cut-hud-state.executing {
+.toolbox-sidebar-params {
+    margin-bottom: 6px;
+}
+
+.toolbox-param {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+}
+
+/* Label sits to the natural left of the control cluster — no flex
+   stretch, so the −/value/+ group hugs the label rather than the
+   panel edge. Fixed width keeps labels column-aligned across rows. */
+.toolbox-param label {
+    flex: 0 0 auto;
+    width: 94px;
+    min-width: 0;
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+    line-height: 1;
+}
+
+.toolbox-param .toolbox-param-row {
+    flex: 0 0 auto;
+}
+
+.toolbox-param-row {
+    display: flex;
+    align-items: stretch;     /* match heights so + / − align with input */
+    gap: 2px;
+    height: 20px;
+}
+
+/* Frameless icon-style ± buttons — just the glyph. The input next to
+   them carries the only visible frame in the row. */
+.toolbox-adjust {
+    width: 16px;
+    padding: 0;
+    background: none;
+    border: none;
+    font-size: 1.1em;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.75);
+    font-family: inherit;
+    flex: 0 0 auto;
+}
+
+.toolbox-adjust:hover:not(:disabled) {
+    color: #000;
+}
+
+.toolbox-adjust:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Value field: editable text input styled like a readout. Click /
+   focus to type a new value; commit with Enter or by blurring.
+   Selector includes the element so it beats Foundation's
+   input[type="text"] rule (which would otherwise force 100% width,
+   2.3rem height, 0.5rem padding, 1rem margin, and white background). */
+input.toolbox-param-value {
+    /* Fixed-width readout — sized for "X.XXX" at the monospace
+       glyph width, with a couple px of breathing room. */
+    flex: 0 0 auto;
+    display: inline-block;
+    width: 48px;
+    height: 20px;
+    min-width: 0;
+    margin: 0;
+    text-align: center;
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-weight: bold;
+    font-size: 0.75em;
+    font-variant-numeric: tabular-nums;
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 0 2px;
+    color: #222;
+    /* Mute the default input chrome (outline / inner shadow) so it
+       reads as a readout until the user actually focuses it. */
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+input.toolbox-param-value:focus {
+    outline: none;
+    background: rgba(0, 0, 0, 0.12);
+    border-color: rgba(0, 0, 0, 0.4);
+    box-shadow: none;
+}
+
+
+.toolbox-sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.toolbox-btn {
+    padding: 5px;
+    font-size: 0.82em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.toolbox-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.toolbox-btn-arm {
+    background: #fff;
+    color: #222;
+}
+
+.toolbox-btn-arm.armed {
+    background: #1f7a3b;
+    color: #fff;
+}
+
+.toolbox-btn-commit {
     background: #d62828;
     color: #fff;
-    /* Pulse so the user can tell a cut is in flight at a glance. */
-    animation: cannedCutHudPulse 1.2s ease-in-out infinite;
 }
 
-@keyframes cannedCutHudPulse {
-    0%, 100% { opacity: 1.0; }
-    50%      { opacity: 0.55; }
+.toolbox-btn-cancel {
+    background: rgba(0, 0, 0, 0.08);
+    color: #222;
 }
 
-/* Small screens: pin to the bottom and shrink so a phone-as-display
- * scenario stays readable. */
-@media (max-width: 750px) {
-    .canned-cut-hud {
-        top: auto;
-        bottom: 16px;
-        right: 16px;
-        left: 16px;
-        min-width: 0;
+/* Primary action — only button on per-tool views. Larger + bolder than
+   the legacy arm/commit/cancel trio since it's the lone CTA. */
+.toolbox-btn-cut {
+    background: #d62828;
+    color: #fff;
+    padding: 10px;
+    font-size: 1em;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+}
+
+.toolbox-btn-cut:hover:not(:disabled) {
+    background: #b81d1d;
+}
+
+/* Mode row has no left label — the slide's own POCKET/PROFILE text
+   self-describes, so we give the slide the full row width and centre
+   it for visual balance. */
+.toolbox-mode-param {
+    justify-content: center;
+}
+
+/* Plunge-from row needs to fit "PLUNGE FROM" + the ZERO/HEIGHT slide
+   in the panel width. Narrow this row's label so the slide can move
+   left into the freed space. Plunge-height row matches for visual
+   continuity in the bottom cluster. */
+.toolbox-param[data-param="plungeFrom"] label,
+.toolbox-plunge-height-row label {
+    width: 76px;
+}
+
+/* Two-state slide toggle with labels flanking a switch track. Modeled
+   on the keypad's "Fixed Distance" switch but with the option labels
+   on either side rather than above. Click either label or the track
+   to flip; the bolded label tells you which is currently selected. */
+.toolbox-slide {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 20px;
+    font-family: inherit;
+    line-height: 1;
+}
+
+.toolbox-slide-label {
+    font-size: 0.65em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.18s ease;
+}
+
+.toolbox-slide-label.selected {
+    color: #222;
+}
+
+/* Track + knob — a mini rocker switch. Background colour shifts
+   subtly when "on" (knob right) so the eye picks up which side is
+   live in addition to the bold label. */
+.toolbox-slide-track {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 14px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 7px;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: background-color 0.22s ease;
+}
+
+.toolbox-slide-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.22s ease;
+}
+
+.toolbox-slide.right .toolbox-slide-track {
+    background-color: #63A749;
+}
+
+.toolbox-slide.right .toolbox-slide-knob {
+    transform: translateX(14px);
+}
+
+.toolbox-slide-track:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 167, 73, 0.35);
+}
+
+/* Tighten things up on small screens so the sidebar still fits when
+ * the keypad modal gets squeezed. */
+@media (max-width: 900px) {
+    .toolbox-sidebar.open .toolbox-sidebar-panel {
+        width: 200px;
     }
 }

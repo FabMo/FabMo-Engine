@@ -9,7 +9,11 @@
  * engine via machine.runFile().
  */
 var circularBore = require("./circularBore").circularBore;
+var straightLine = require("./straightLine").straightLine;
+var planer = require("./planer").planer;
 
 module.exports = {
     circularBore: circularBore,
+    straightLine: straightLine,
+    planer: planer,
 };

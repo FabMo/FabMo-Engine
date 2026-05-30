@@ -535,11 +535,318 @@
               <span>Go To</span>
             </div>
             <div class="set-coordinates" title="Set a new value for the current location of one or more axes.">
-              <span>Set</span> 
+              <span>Set</span>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Canned-cuts grip button: sits on the inside-right edge of the
+           keypad modal, styled like a thumb-grip (vertical etched lines
+           like a battery-cover release). Click toggles the sidebar
+           panel that slides out to the right of the modal. -->
+      <button type="button" class="toolbox-grip" id="toolbox-grip"
+              aria-label="Toggle toolbox panel"
+              title="Canned cuts"><span class="toolbox-grip-label">TOOLBOX</span></button>
+
+      <!-- Canned-cuts sidebar: direct child of #keypad-modal so its
+           position:absolute left:100% resolves against the modal's
+           padding box (not the 90%-wide .manual-drive-container).
+           Slides out to the right of the modal when the grip is
+           clicked.
+
+           Layout is a two-level launcher: a "toolbox" grid of tool
+           tiles (Drill Press, Table Saw, Planer, …) is the default
+           view; clicking a tile swaps to that tool's settings panel.
+           The set of tools is defined in main.js (TOOLBOX_TOOLS)
+           — add new entries there to grow the toolbox. -->
+      <div class="toolbox-sidebar" id="toolbox-sidebar" aria-hidden="true">
+        <div class="toolbox-sidebar-panel" id="toolbox-sidebar-panel">
+          <div class="toolbox-sidebar-header">
+            <button type="button" class="toolbox-back-btn"
+                    id="toolbox-back"
+                    aria-label="Back to toolbox" hidden>←</button>
+            <span class="toolbox-sidebar-title"
+                  id="toolbox-sidebar-title">Toolbox</span>
+          </div>
+
+          <!-- Tool grid: tiles injected by JS from the tool registry. -->
+          <div class="toolbox-toolbox" id="toolbox-toolbox"></div>
+
+          <!-- Bit settings: shared across all tools so the operator only
+               defines the cutter once. Lives on the home view; the ±
+               buttons send `set` commands directly (not state-gated, so
+               they work whether or not a tool is armed). -->
+          <div class="toolbox-home-section" id="toolbox-bit-section">
+            <div class="toolbox-home-section-header">Bit</div>
+            <div class="toolbox-sidebar-params">
+              <div class="toolbox-param toolbox-bit-param" data-param="cutterDiameter">
+                <label>Cutter dia</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-cutterDiameter" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param toolbox-bit-param" data-param="plungePerPass">
+                <label>Plunge/pass</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-plungePerPass" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param toolbox-bit-param" data-param="feedRateXY">
+                <label>Feedrate</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-feedRateXY" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param toolbox-bit-param" data-param="feedRateZ">
+                <label>Plunge</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-feedRateZ" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Per-tool settings panels. Exactly one is visible at a time
+               (the one matching data-tool === active tool id); all are
+               hidden when the toolbox grid is showing. -->
+
+          <!-- Drill Press: maps to the existing circular_bore controller.
+               IDs preserved from earlier wiring so the param/state/action
+               handlers don't need to change. -->
+          <div class="toolbox-tool-view" data-tool="drill_press" hidden>
+            <div class="toolbox-sidebar-params" id="toolbox-sidebar-params">
+              <!-- Profile vs Pocket selector. Sliding two-state toggle:
+                   knob-left = pocket, knob-right = perimeter (profile).
+                   The currently-selected side's text label is bolded;
+                   the other side is dimmed so you can read selection at
+                   a glance without comparing colors. -->
+              <div class="toolbox-param toolbox-mode-param" data-param="mode">
+                <div class="toolbox-slide" data-param="mode"
+                     data-value-left="pocket" data-value-right="perimeter">
+                  <span class="toolbox-slide-label left" data-value="pocket">POCKET</span>
+                  <span class="toolbox-slide-track" role="switch" tabindex="0">
+                    <span class="toolbox-slide-knob"></span>
+                  </span>
+                  <span class="toolbox-slide-label right" data-value="perimeter">PROFILE</span>
+                </div>
+              </div>
+              <div class="toolbox-param" data-param="diameter">
+                <label>Diameter</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-diameter" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param" data-param="depth">
+                <label>Depth</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-depth" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Bottom cluster: plunge-from + cut action live together
+                 just above the panel base, separated from the cut
+                 parameters above. The keypad's DRO already shows the
+                 current position so no in-panel "at (X,Y,Z)" readout. -->
+            <div class="toolbox-tool-bottom">
+              <!-- Plunge-from selector. ZERO = cut from Z0 down to -depth
+                   (standard Z-zero-to-material-top workflow). HEIGHT =
+                   cut from an absolute Z (defaulted to current Z when the
+                   operator first flips here) down by depth. The Height
+                   input row appears only in HEIGHT mode. -->
+              <div class="toolbox-param" data-param="plungeFrom">
+                <label>Plunge from</label>
+                <div class="toolbox-slide" data-param="plungeFrom"
+                     data-value-left="zero" data-value-right="height">
+                  <span class="toolbox-slide-label left" data-value="zero">ZERO</span>
+                  <span class="toolbox-slide-track" role="switch" tabindex="0">
+                    <span class="toolbox-slide-knob"></span>
+                  </span>
+                  <span class="toolbox-slide-label right" data-value="height">HEIGHT</span>
+                </div>
+              </div>
+              <div class="toolbox-param toolbox-plunge-height-row" data-param="plungeHeight" hidden>
+                <label>Height</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-plungeHeight" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+
+              <div class="toolbox-sidebar-actions">
+                <button type="button" class="toolbox-btn toolbox-btn-cut"
+                        id="toolbox-cut">CUT</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Saw: maps to the straight_line cut type. Cuts a
+               line of `length` from the current bit position at the
+               given angle (0=+X, 90=+Y). Layout mirrors drill_press
+               (params on top, plunge cluster + CUT pinned bottom). -->
+          <div class="toolbox-tool-view" data-tool="table_saw" hidden>
+            <div class="toolbox-sidebar-params">
+              <div class="toolbox-param" data-param="length">
+                <label>Length</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-length" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param" data-param="angleDeg">
+                <label>Angle</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-angleDeg" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param" data-param="depth">
+                <label>Depth</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-ts-depth" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="toolbox-tool-bottom">
+              <div class="toolbox-param" data-param="plungeFrom">
+                <label>Plunge from</label>
+                <div class="toolbox-slide" data-param="plungeFrom"
+                     data-value-left="zero" data-value-right="height">
+                  <span class="toolbox-slide-label left" data-value="zero">ZERO</span>
+                  <span class="toolbox-slide-track" role="switch" tabindex="0">
+                    <span class="toolbox-slide-knob"></span>
+                  </span>
+                  <span class="toolbox-slide-label right" data-value="height">HEIGHT</span>
+                </div>
+              </div>
+              <div class="toolbox-param toolbox-plunge-height-row" data-param="plungeHeight" hidden>
+                <label>Height</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-ts-plungeHeight" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+
+              <div class="toolbox-sidebar-actions">
+                <button type="button" class="toolbox-btn toolbox-btn-cut"
+                        id="toolbox-ts-cut">CUT</button>
+              </div>
+            </div>
+          </div>
+          <!-- Planer: maps to the planer cut type. Plane a rectangular
+               area in a unidirectional raster aligned to grain. -->
+          <div class="toolbox-tool-view" data-tool="planer" hidden>
+            <div class="toolbox-sidebar-params">
+              <div class="toolbox-param" data-param="width">
+                <label>Width</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-pl-width" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param" data-param="length">
+                <label>Length</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-pl-length" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param" data-param="depth">
+                <label>Depth</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-pl-depth" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param" data-param="grainDeg">
+                <label>Grain</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-pl-grainDeg" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="toolbox-param" data-param="stepoverPct">
+                <label>Stepover</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-pl-stepoverPct" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="toolbox-tool-bottom">
+              <div class="toolbox-param" data-param="plungeFrom">
+                <label>Plunge from</label>
+                <div class="toolbox-slide" data-param="plungeFrom"
+                     data-value-left="zero" data-value-right="height">
+                  <span class="toolbox-slide-label left" data-value="zero">ZERO</span>
+                  <span class="toolbox-slide-track" role="switch" tabindex="0">
+                    <span class="toolbox-slide-knob"></span>
+                  </span>
+                  <span class="toolbox-slide-label right" data-value="height">HEIGHT</span>
+                </div>
+              </div>
+              <div class="toolbox-param toolbox-plunge-height-row" data-param="plungeHeight" hidden>
+                <label>Height</label>
+                <div class="toolbox-param-row">
+                  <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
+                  <input type="text" inputmode="decimal" class="toolbox-param-value"
+                         id="ccp-pl-plungeHeight" value="—" />
+                  <button type="button" class="toolbox-adjust" data-delta="1">+</button>
+                </div>
+              </div>
+
+              <div class="toolbox-sidebar-actions">
+                <button type="button" class="toolbox-btn toolbox-btn-cut"
+                        id="toolbox-pl-cut">CUT</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div class="newModal">
@@ -617,25 +924,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Canned-cut HUD: shares the manual keypad's visual language — yellow
-         modal, rounded corners, fixed position. Compact and pinned top-right
-         so it's visible across apps without blocking the main dashboard
-         layout. Hidden by default; shown by setupCannedCutHud() in main.js
-         on canned_cut_state events. -->
-    <div id="canned-cut-hud" class="canned-cut-hud" aria-hidden="true">
-      <div class="canned-cut-hud-title">
-        Canned Cut: <span id="canned-cut-hud-type">BORE</span>
-      </div>
-      <table class="canned-cut-hud-table">
-        <tr><td class="canned-cut-hud-label">dia</td>   <td class="canned-cut-hud-value" id="canned-cut-hud-diameter">—</td></tr>
-        <tr><td class="canned-cut-hud-label">depth</td> <td class="canned-cut-hud-value" id="canned-cut-hud-depth">—</td></tr>
-        <tr><td class="canned-cut-hud-label">tool</td>  <td class="canned-cut-hud-value" id="canned-cut-hud-cutter">—</td></tr>
-        <tr><td class="canned-cut-hud-label">mode</td>  <td class="canned-cut-hud-value" id="canned-cut-hud-mode">—</td></tr>
-        <tr><td class="canned-cut-hud-label">at</td>    <td class="canned-cut-hud-value" id="canned-cut-hud-position">—</td></tr>
-      </table>
-      <div class="canned-cut-hud-state" id="canned-cut-hud-state">active</div>
     </div>
 
     <script src="/js/libs/socket.io.js"></script>

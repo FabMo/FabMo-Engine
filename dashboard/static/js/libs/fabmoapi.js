@@ -71,7 +71,7 @@
             data_request: [],
             pendant_joystick: [],
             pendant_file_select: [],
-            canned_cut_state: []
+            toolbox_state: []
         };
         var url = window.location.origin;
         this.is_refreshed = null;
@@ -135,9 +135,9 @@
             );
 
             this.socket.on(
-                "canned_cut_state",
+                "toolbox_state",
                 function (state) {
-                    this.emit("canned_cut_state", state);
+                    this.emit("toolbox_state", state);
                 }.bind(this)
             );
 
@@ -707,6 +707,22 @@
     FabMoAPI.prototype.command = function (name, args, callback) {
         this.socket.emit("cmd", { name: name, args: args || {}, count: this.commandCounter }, callback);
         this.commandCounter += 1;
+    };
+
+    // Canned-cut operator commands from the dashboard sidebar. The
+    // server dispatches to the same shared controller the pendant
+    // drives; state echoes back via toolbox_state events.
+    //   op = "toggle" | "adjust" | "set" | "commit" | "cancel"
+    //   adjust: { name, delta }    set: { name, value }
+    FabMoAPI.prototype.toolboxCommand = function (op, args, callback) {
+        var payload = { op: op };
+        if (args) {
+            if (args.name !== undefined)    payload.name    = args.name;
+            if (args.delta !== undefined)   payload.delta   = args.delta;
+            if (args.value !== undefined)   payload.value   = args.value;
+            if (args.cutType !== undefined) payload.cutType = args.cutType;
+        }
+        this.socket.emit("toolbox_command", payload, callback);
     };
 
     FabMoAPI.prototype.submitFirmwareUpdate = function (file, options, callback, progress) {

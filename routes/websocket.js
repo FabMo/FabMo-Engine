@@ -103,9 +103,9 @@ function setupStatusBroadcasts(server) {
     // Canned-cut controller state. Fires on enter/exit, every param adjust,
     // commit, and done — payload contains current cutType + full params so
     // a dashboard UI or pendant LCD can render the live values.
-    machine.on("canned_cut_state", function (state) {
-        server.io.of("/private").emit("canned_cut_state", state);
-        server.io.of("/").emit("canned_cut_state", state);
+    machine.on("toolbox_state", function (state) {
+        server.io.of("/private").emit("toolbox_state", state);
+        server.io.of("/").emit("toolbox_state", state);
     });
 
     // REMOVE the data_request broadcast here
@@ -231,6 +231,56 @@ var onPrivateConnect = function (socket) {
 
     socket.on("user_kickout", function (data) {
         console.error(data);
+    });
+
+    // Canned-cut command channel. Dashboard sidebar sends operator
+    // intents (toggle / adjust / set / commit / cancel) here; we
+    // dispatch to the shared controller that the pendant also drives.
+    // State changes are broadcast back via the toolbox_state event,
+    // so all clients (this socket + others + the floating HUD if it
+    // were still there) stay in sync.
+    socket.on("toolbox_command", function (data, callback) {
+        if (!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId) {
+            socket.emit("authentication_failed", "not authenticated");
+            log.info("disconnect: authentication_failed, toolbox_command");
+            return socket.disconnect();
+        }
+        var cc = machine && machine.toolbox;
+        if (!cc) {
+            if (typeof callback === "function") callback({ ok: false, reason: "no_controller" });
+            return;
+        }
+        var op = data && data.op;
+        var result = { ok: true };
+        try {
+            switch (op) {
+                case "toggle":
+                    cc.toggle();
+                    break;
+                case "adjust":
+                    cc.adjustParam(data.name, data.delta);
+                    break;
+                case "set":
+                    cc.setParam(data.name, data.value);
+                    break;
+                case "commit":
+                    result = cc.commit() || { ok: true };
+                    break;
+                case "cancel":
+                    cc.cancel();
+                    break;
+                case "setCutType":
+                    cc.setCutType(data.cutType);
+                    break;
+                default:
+                    log.debug("toolbox_command unknown op: " + op);
+                    result = { ok: false, reason: "unknown_op" };
+            }
+        } catch (e) {
+            log.error("toolbox_command error: " + e.message);
+            result = { ok: false, reason: "exception", error: e.message };
+        }
+        if (typeof callback === "function") callback(result);
     });
 
     onPublicConnect(socket); // inherit routes from the public function

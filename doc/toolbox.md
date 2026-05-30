@@ -1,11 +1,11 @@
-# Canned Cuts — design notes
+# Toolbox — design notes
 
 Goal: replace common woodshop tools (chop saw, drill press, table saw,
 router table) with pendant-triggered canned operations that cut at the
 current machine position. The pendant + future small screen gives a
 near-headless workflow.
 
-This document describes the prototype shipped on `feature/canned-cuts`
+This document describes the prototype shipped on `feature/toolbox`
 and the path from here to the full vision.
 
 ---
@@ -17,7 +17,7 @@ extended on its own.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  Pure G-code generators           runtime/manual/cannedCuts/        │
+│  Pure G-code generators           runtime/manual/toolbox/        │
 │  - circularBore(params) -> {gcode, summary}                          │
 │  - (future) drill, rectangle, line, helix, ...                       │
 │  No engine coupling, no I/O. Tested in isolation with jest.          │
@@ -26,13 +26,13 @@ extended on its own.
                               │ generates G-code
                               │
 ┌─────────────────────────────────────────────────────────────────────┐
-│  Controller / state machine       pendant/cannedCutsController.js    │
+│  Controller / state machine       pendant/toolboxController.js    │
 │  - State: idle | active | executing                                  │
 │  - Holds the current cutType + param object                          │
 │  - toggle() / adjustParam(name, delta) / commit() / cancel()         │
 │  - On commit: reads machine.status for XY/Z, writes /tmp file,       │
 │    calls machine.runFile(file, bypassInterlock=true)                 │
-│  - Emits canned_cut_state events                                     │
+│  - Emits toolbox_state events                                     │
 └─────────────────────────────────────────────────────────────────────┘
                               ▲
                               │ method calls
@@ -48,10 +48,10 @@ extended on its own.
 Event flow back to clients:
 
 ```
-controller emits canned_cut_state
-   → machine.emit('canned_cut_state', payload)
+controller emits toolbox_state
+   → machine.emit('toolbox_state', payload)
    → routes/websocket.js broadcasts to / and /private
-   → fabmoapi.js .on('canned_cut_state', cb) on any dashboard
+   → fabmoapi.js .on('toolbox_state', cb) on any dashboard
 ```
 
 ## What's implemented
@@ -61,7 +61,7 @@ controller emits canned_cut_state
 | circularBore() pure   | ✅      | pocket + perimeter modes, depth passes, G2/G3, validation   |
 | Controller state mach | ✅      | toggle, adjust, commit, cancel, executing→active on idle    |
 | F310 input            | ✅      | LSTICK toggle, RSTICK commit, D-pad context-switched        |
-| WebSocket relay       | ✅      | canned_cut_state forwarded to dashboard listeners           |
+| WebSocket relay       | ✅      | toolbox_state forwarded to dashboard listeners           |
 | Jest coverage         | ✅      | 28 tests across pure generator + controller                 |
 | Dashboard UI          | ❌      | nothing yet — events are emitted but no consumer            |
 | Pendant LCD readout   | ❌      | XHC LCD has fixed numeric fields — see Known limits         |
@@ -95,7 +95,7 @@ through which value the D-pad targets. Out of scope for the prototype.
 
 ## Default parameters
 
-Defined in `pendant/cannedCutsController.js` → `DEFAULT_PARAMS`. For
+Defined in `pendant/toolboxController.js` → `DEFAULT_PARAMS`. For
 `circular_bore`:
 
 ```js
@@ -124,7 +124,7 @@ When the user commits:
    and starting Z.
 2. Calls `circularBore({ ...params, center, startZ })` → array of G-code
    lines + summary.
-3. Writes the G-code to `/tmp/fabmo-canned-cuts/canned-<type>-<ts>.nc`.
+3. Writes the G-code to `/tmp/fabmo-toolbox/toolbox-<type>-<ts>.nc`.
 4. Calls `machine.runFile(filename, true)` — `bypassInterlock=true`
    matches the macro-press privilege model (this is operator-driven).
 5. Engine transitions to file-running runtime, executes, returns to idle.
@@ -139,19 +139,19 @@ awkward, see "Re-enter manual automatically" in Open questions.
 
 ## Extending: adding a new cut type
 
-1. Add `runtime/manual/cannedCuts/<newCut>.js` exporting a pure function:
+1. Add `runtime/manual/toolbox/<newCut>.js` exporting a pure function:
    ```js
    function newCut({center, startZ, ...params}) {
        return { gcode: [...], summary: {...} };
    }
    ```
-2. Add it to `runtime/manual/cannedCuts/index.js` exports.
+2. Add it to `runtime/manual/toolbox/index.js` exports.
 3. Add a defaults entry in `DEFAULT_PARAMS` in
-   `pendant/cannedCutsController.js`.
+   `pendant/toolboxController.js`.
 4. Extend `commit()` switch to call the new generator.
 5. Add a way to select between cut types — TBD; suggestion: cycle on
    LB press while in cut mode (current cut type displayed on LCD/screen).
-6. Add jest tests under `test/cannedCuts.<newCut>.test.js`.
+6. Add jest tests under `test/toolbox.<newCut>.test.js`.
 
 The pure-function layer is the only place where geometry math lives.
 Controller, pendant, and dashboard are all geometry-agnostic.
@@ -177,7 +177,7 @@ Workflow:
    then the cut sequence).
 
 Required new code:
-- WS command handler (`routes/websocket.js`) for `canned_cut_commit_at`.
+- WS command handler (`routes/websocket.js`) for `toolbox_commit_at`.
 - Homography utility extracted from viewer.js into a shared module.
 - Dashboard app (or extension of video.fma) with the click handler.
 - ArUco detection module (would add ~200 LOC; OpenCV bindings or
@@ -218,7 +218,7 @@ in this prototype.
   back to manual to make the workflow seamless — but that's a state
   injection that might confuse the dashboard's mode indicator.
 - **Where do per-cut overrides live?** Currently `DEFAULT_PARAMS` are
-  in code. The natural home is `config.machine.cannedCuts.<type>`.
+  in code. The natural home is `config.machine.toolbox.<type>`.
 - **Camera vs. current-position as the default UX.** The current-
   position workflow is fastest (jog + commit). Camera picking is
   more visual but requires looking at a screen. Likely both should
@@ -226,12 +226,12 @@ in this prototype.
 
 ## File index
 
-- `runtime/manual/cannedCuts/circularBore.js` — pure G-code generator
-- `runtime/manual/cannedCuts/index.js` — barrel export
-- `pendant/cannedCutsController.js` — state machine + commit
+- `runtime/manual/toolbox/circularBore.js` — pure G-code generator
+- `runtime/manual/toolbox/index.js` — barrel export
+- `pendant/toolboxController.js` — state machine + commit
 - `pendant/index.js` — wires shared controller into ctx
 - `pendant/devices/logitech-f310/index.js` — F310 bindings + D-pad ctx
-- `routes/websocket.js` — `canned_cut_state` broadcast
+- `routes/websocket.js` — `toolbox_state` broadcast
 - `dashboard/static/js/libs/fabmoapi.js` — client-side event registration
-- `test/cannedCuts.circularBore.test.js` — 17 jest tests
-- `test/pendant.cannedCutsController.test.js` — 11 jest tests
+- `test/toolbox.circularBore.test.js` — 17 jest tests
+- `test/pendant.toolboxController.test.js` — 11 jest tests

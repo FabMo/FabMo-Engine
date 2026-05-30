@@ -627,10 +627,10 @@ engine.getVersion(function (err, version) {
             });
             setupVirtualJoystick(virtualJoystick);
 
-            // Canned-cut HUD — listens for controller state broadcasts from
-            // the pendant and renders the live param panel. No interactivity:
-            // input is on the physical pendant.
-            setupCannedCutHud(dashboard.engine);
+            // Canned-cuts sidebar — slides out from the keypad modal, lets
+            // the operator arm/adjust/commit cuts without the gamepad. Stays
+            // in lockstep with the pendant via toolbox_state broadcasts.
+            setupToolboxSidebar(dashboard.engine);
 
             setLocationDisplays();
 
@@ -1263,108 +1263,454 @@ function getManualNudgeIncrement(move) {
 // A 50 ms ticker (20 Hz) re-issues manualStart while the drag is active,
 // matching the F310 pendant's processMotion cadence — well inside the
 // firmware velocity-jog watchdog (500 ms) so the cycle stays alive.
-// ------------------------------------------------------------ CANNED-CUT HUD
+// ------------------------------------------------------------ TOOLBOX SIDEBAR
 //
-// Renders the pendant's canned-cut controller state in a floating panel
-// pinned top-right of the dashboard. The pendant publishes canned_cut_state
-// over WebSocket on every transition (enter / adjust / commit / done /
-// exit); we just translate that into DOM updates.
+// Right-side slide-out attached to the manual keypad modal. Operator can
+// arm cut mode, nudge params with ± buttons, and commit at the current
+// machine position — no gamepad required. The same controller backs the
+// F310 pendant, so both surfaces stay in sync via toolbox_state.
 //
-// The "at (X, Y)" row tracks the live machine position so the user can see
-// where the cut would land if they committed right now. We subscribe to
-// status events for that, gated by the HUD being visible.
+// Architecture mirrors the pendant adapter: clicks turn into intents
+// (toolbox_command WS sends), the controller responds, and the
+// broadcast tells us what state we're now in. We re-render purely from
+// the broadcast — never from local optimistic state.
+// Tool registry — the toolbox grid is built from this. Add a new entry
+// here to grow the launcher; the matching <div class="toolbox-tool-view"
+// data-tool="..."> in the HTML supplies that tool's settings panel.
 //
-// No buttons: this is a pure readout. All interaction is on the pendant.
-function setupCannedCutHud(engine) {
-    var hud = document.getElementById("canned-cut-hud");
-    if (!hud) return;
+// `controller` flags tools that are driven by the server-side
+// ToolboxController (the only one today is drill_press, which maps to
+// circular_bore). For controller-backed tools, an incoming toolbox_state
+// event with state !== "idle" auto-opens the sidebar and selects the tool.
+// Non-controller tools (stubs for now) are click-only from the dashboard.
+var TOOLBOX_TOOLS = [
+    {
+        id: "drill_press",
+        label: "Drill Press",
+        controller: true,
+        cutType: "circular_bore",
+        // Drill-press silhouette by user (Inkscape source cleaned and
+        // re-fitted to currentColor so it picks up tile/hover colour).
+        icon:
+            '<svg viewBox="0 0 50 50" fill="currentColor" aria-hidden="true">' +
+              '<path d="M 2.5998 22.0999 V 47.0999 H 47.6002 V 22.0999 H 34.9095 V 36.9094 H 15.0906 V 22.0999 Z"/>' +
+              '<path transform="matrix(-0.97803,0,0,-0.60089,47.2547,33.6161)" d="M 25.7224 34.2575 V 10.9110 H 30.3229 L 26.5387 4.3560 L 22.7540 -2.1989 L 18.9698 4.3560 L 15.1851 10.9110 H 19.7867 V 34.2575 Z"/>' +
+              '<circle cx="25" cy="11.5" r="7.4218"/>' +
+            '</svg>',
+    },
+    {
+        id: "table_saw",
+        label: "Table Saw",
+        controller: true,
+        cutType: "straight_line",
+        // Table-saw silhouette by user (Inkscape source cleaned).
+        icon:
+            '<svg viewBox="0 0 50 50" fill="currentColor" aria-hidden="true">' +
+              '<path d="M 27.9037 34.4282 V 20.3996 H 32.4032 L 28.7021 16.4609 L 25.0006 12.5221 L 21.2995 16.4609 L 17.5979 20.3996 H 22.0984 V 34.4282 Z"/>' +
+              '<path d="M 2.6004 2.6004 V 47.3992 H 16.3546 V 18.8407 A 8.6588 8.6588 0 0 1 16.3411 18.6562 A 8.6588 8.6588 0 0 1 25.0000 9.9978 A 8.6588 8.6588 0 0 1 33.6589 18.6562 A 8.6588 8.6588 0 0 1 33.6455 18.8423 V 47.3992 H 47.3992 V 2.6004 Z"/>' +
+            '</svg>',
+    },
+    {
+        id: "planer",
+        label: "Planer",
+        controller: true,
+        cutType: "planer",
+        // Planer silhouette by user (Inkscape source cleaned).
+        icon:
+            '<svg viewBox="0 0 50 50" fill="currentColor" aria-hidden="true">' +
+              '<path d="M 45.7877 14.5321 H 31.7590 V 10.0327 L 27.8203 13.7338 L 23.8815 17.4354 L 27.8203 21.1364 L 31.7590 24.8380 V 20.3375 H 45.7877 Z"/>' +
+              '<rect x="2.5697" y="22.5697" width="19.8606" height="24.8606"/>' +
+              '<rect x="2.5992" y="25.0992" width="44.8017" height="22.3017"/>' +
+              '<path transform="matrix(-1.13925,0,0,0.65400,-5.1158,18.3481)" d="m -15.3626,6.3846 2.1444,-3.7143 2.1444,-3.7143 2.1444,3.7143 2.1444,3.7143 -4.2889,0 z"/>' +
+              '<path transform="matrix(-1.13925,0,0,0.65400,4.8842,18.3481)" d="m -15.3626,6.3846 2.1444,-3.7143 2.1444,-3.7143 2.1444,3.7143 2.1444,3.7143 -4.2889,0 z"/>' +
+            '</svg>',
+    },
+];
 
-    var elType     = document.getElementById("canned-cut-hud-type");
-    var elDiameter = document.getElementById("canned-cut-hud-diameter");
-    var elDepth    = document.getElementById("canned-cut-hud-depth");
-    var elCutter   = document.getElementById("canned-cut-hud-cutter");
-    var elMode     = document.getElementById("canned-cut-hud-mode");
-    var elPosition = document.getElementById("canned-cut-hud-position");
-    var elState    = document.getElementById("canned-cut-hud-state");
+function setupToolboxSidebar(engine) {
+    var sidebar = document.getElementById("toolbox-sidebar");
+    if (!sidebar) return;
 
-    var visible = false;
+    var panel    = document.getElementById("toolbox-sidebar-panel");
+    var grip     = document.getElementById("toolbox-grip");
+    var titleEl  = document.getElementById("toolbox-sidebar-title");
+    var backBtn  = document.getElementById("toolbox-back");
+    var toolbox  = document.getElementById("toolbox-toolbox");
+    // Multiple tool views can each have a CUT button with the same
+    // class — collect all and treat as a group.
+    var btnCuts = sidebar.querySelectorAll(".toolbox-btn-cut");
 
-    function show() {
-        if (visible) return;
-        hud.classList.add("visible");
-        hud.setAttribute("aria-hidden", "false");
-        visible = true;
+    var toolViews   = sidebar.querySelectorAll(".toolbox-tool-view");
+    var homeSections = sidebar.querySelectorAll(".toolbox-home-section");
+
+    // Mirrors of the server's ADJUST_STEPS / DEFAULT_PARAMS for
+    // circular_bore in toolboxController.js. The dashboard needs
+    // these locally because bit-section ± buttons compute the new
+    // value client-side and send `set` (works any state) instead of
+    // `adjust` (only works when armed). Keep in sync if server defaults
+    // change.
+    var TOOLBOX_STEPS = {
+        diameter:       0.0625,
+        depth:          0.0625,
+        cutterDiameter: 0.0625,
+        plungePerPass:  0.0625,
+        feedRateXY:     5,
+        feedRateZ:      5,
+        plungeHeight:   0.0625,
+    };
+    var TOOLBOX_DEFAULTS = {
+        diameter:       0.5,
+        depth:          0.25,
+        cutterDiameter: 0.25,
+        plungePerPass:  0.125,
+        feedRateXY:     60,
+        feedRateZ:      30,
+        plungeFrom:     "zero",
+        plungeHeight:   0,
+    };
+
+    // Cached current Z, kept fresh by the status listener. Used to seed
+    // plungeHeight when the operator flips to "Plunge from HEIGHT" mode
+    // — that should default to "right here" without making them type.
+    var currentZ = 0;
+
+    // Local cache of the server's current params, kept up to date by
+    // toolbox_state events. Bit ± click handlers read from this to
+    // compute the new value.
+    var currentParams = Object.assign({}, TOOLBOX_DEFAULTS);
+
+    // --- Build the toolbox grid from the registry. Each tile is a button
+    //     so it's keyboard-focusable and gets free click semantics.
+    TOOLBOX_TOOLS.forEach(function (tool) {
+        var tile = document.createElement("button");
+        tile.type = "button";
+        tile.className = "toolbox-tile";
+        tile.setAttribute("data-tool", tool.id);
+        tile.innerHTML =
+            '<span class="toolbox-tile-icon">' + tool.icon + '</span>' +
+            '<span class="toolbox-tile-label">' + tool.label + '</span>';
+        tile.addEventListener("click", function () { showTool(tool.id); });
+        toolbox.appendChild(tile);
+    });
+
+    // Track which tool view is showing so we know when to auto-cancel.
+    // Null means we're on the home (toolbox grid).
+    var currentToolId = null;
+
+    function showHome() {
+        toolbox.hidden = false;
+        for (var i = 0; i < toolViews.length; i++) toolViews[i].hidden = true;
+        for (var k = 0; k < homeSections.length; k++) homeSections[k].hidden = false;
+        titleEl.textContent = "Toolbox";
+        backBtn.hidden = true;
+        // Leaving a tool view → drop the controller back to idle so a
+        // stray F310 press can't fire a cut for a tool the user is no
+        // longer looking at.
+        if (currentToolId && lastState === "active") {
+            engine.toolboxCommand("cancel");
+        }
+        currentToolId = null;
     }
-    function hide() {
-        if (!visible) return;
-        hud.classList.remove("visible");
-        hud.setAttribute("aria-hidden", "true");
-        visible = false;
+
+    function showTool(toolId) {
+        var tool = null;
+        for (var i = 0; i < TOOLBOX_TOOLS.length; i++) {
+            if (TOOLBOX_TOOLS[i].id === toolId) { tool = TOOLBOX_TOOLS[i]; break; }
+        }
+        if (!tool) return;
+        toolbox.hidden = true;
+        for (var k = 0; k < homeSections.length; k++) homeSections[k].hidden = true;
+        for (var j = 0; j < toolViews.length; j++) {
+            toolViews[j].hidden = toolViews[j].getAttribute("data-tool") !== toolId;
+        }
+        titleEl.textContent = tool.label;
+        backBtn.hidden = false;
+        currentToolId = toolId;
+        // Switch the server-side cut type to match this tool. The
+        // controller carries bit/plunge settings across, so only the
+        // cut-specific params reset to the new cut's defaults.
+        if (tool.cutType) {
+            engine.toolboxCommand("setCutType", { cutType: tool.cutType });
+        }
+        // Auto-arm so per-tool ± adjusts and the CUT button work without
+        // an explicit Arm step — picking a tool is the user expressing
+        // intent to use it.
+        if (lastState === "idle") {
+            engine.toolboxCommand("toggle");
+        }
     }
 
-    function fmtIn(v) {
+    backBtn.addEventListener("click", showHome);
+
+    // Mirror of the last controller state so click handlers know which
+    // intent to fire. Server is authoritative; this is just a cache.
+    var lastState = "idle";
+
+    // Param-aware formatter: feedrates display as integer IPM (no quote),
+    // angle in degrees, everything else as inches with 3dp + ". Used
+    // both for live display and for reverting on edit-cancel.
+    function fmtParam(name, v) {
         if (v == null || isNaN(v)) return "—";
-        return Number(v).toFixed(4) + '"';
+        if (name === "feedRateXY" || name === "feedRateZ") {
+            return String(Math.round(Number(v)));
+        }
+        if (name === "angleDeg" || name === "grainDeg") {
+            return String(Math.round(Number(v))) + "°";
+        }
+        if (name === "stepoverPct") {
+            return String(Math.round(Number(v))) + "%";
+        }
+        return Number(v).toFixed(3) + '"';
     }
 
-    function shortCutType(type) {
-        if (!type) return "—";
-        // "circular_bore" → "BORE", future "rectangular_cut" → "RECT", etc.
-        var label = String(type).split("_").pop();
-        return label.toUpperCase();
+    function setOpen(open) {
+        if (open) sidebar.classList.add("open");
+        else      sidebar.classList.remove("open");
+        sidebar.setAttribute("aria-hidden", open ? "false" : "true");
+        // Echo the open state on the grip so it reads as "pressed in"
+        // while the panel is out.
+        if (grip) {
+            if (open) grip.classList.add("active");
+            else      grip.classList.remove("active");
+        }
     }
 
     function renderParams(params) {
         if (!params) return;
-        elDiameter.textContent = fmtIn(params.diameter);
-        elDepth.textContent    = fmtIn(params.depth);
-        elCutter.textContent   = fmtIn(params.cutterDiameter);
-        elMode.textContent     = params.mode || "—";
-    }
-
-    function setState(label, executing) {
-        elState.textContent = label;
-        if (executing) {
-            elState.classList.add("executing");
-        } else {
-            elState.classList.remove("executing");
+        // Multiple tool views can share param names (depth, plungeHeight,
+        // etc.) with separate <input> elements. Query the DOM directly
+        // so every input bound to a given param name updates together.
+        var inputs = sidebar.querySelectorAll(".toolbox-param-value");
+        for (var i = 0; i < inputs.length; i++) {
+            var input = inputs[i];
+            var paramEl = input.closest(".toolbox-param");
+            if (!paramEl) continue;
+            var name = paramEl.getAttribute("data-param");
+            if (!name || !(name in params)) continue;
+            if (document.activeElement !== input) {
+                input.value = fmtParam(name, params[name]);
+            }
+            if (params[name] != null) currentParams[name] = params[name];
+        }
+        // Drive slide-toggle visuals: which side label is bolded, and
+        // which way the knob sits (.right class → translate the knob
+        // and recolour the track).
+        var slides = sidebar.querySelectorAll(".toolbox-slide");
+        for (var s = 0; s < slides.length; s++) {
+            var slide = slides[s];
+            var pname = slide.getAttribute("data-param");
+            var cur = params[pname];
+            var valRight = slide.getAttribute("data-value-right");
+            slide.classList.toggle("right", cur === valRight);
+            var labels = slide.querySelectorAll(".toolbox-slide-label");
+            for (var li = 0; li < labels.length; li++) {
+                labels[li].classList.toggle(
+                    "selected",
+                    labels[li].getAttribute("data-value") === cur
+                );
+            }
+        }
+        // The Height input row only makes sense in "Plunge from HEIGHT"
+        // mode; hide it when we're plunging from Z0 so the panel doesn't
+        // dangle an unused field.
+        var heightRows = sidebar.querySelectorAll(".toolbox-plunge-height-row");
+        var showHeight = params.plungeFrom === "height";
+        for (var hr = 0; hr < heightRows.length; hr++) {
+            heightRows[hr].hidden = !showHeight;
         }
     }
 
-    // Live machine position drives the "at" row when the HUD is open.
+    function renderState(state, reason) {
+        lastState = state;
+        // CUT is the only action button now. Enabled whenever the
+        // controller could plausibly accept a commit — i.e. armed
+        // (active). Disabled while a cut is executing.
+        var isActive    = state === "active";
+        var isExecuting = state === "executing";
+
+        for (var ci = 0; ci < btnCuts.length; ci++) {
+            btnCuts[ci].disabled = !isActive || isExecuting;
+        }
+
+        // Per-tool ± buttons (e.g. diameter / depth inside the drill-press
+        // view) only meaningful while active — they fire `adjust` which
+        // the server gates on state. Bit ± buttons on the home view stay
+        // enabled at all times (they fire `set`, which works any state).
+        var toolAdjusts = sidebar.querySelectorAll(
+            ".toolbox-tool-view .toolbox-adjust"
+        );
+        for (var i = 0; i < toolAdjusts.length; i++) {
+            toolAdjusts[i].disabled = !isActive;
+        }
+    }
+
+    // --- Grip click: open / close the panel.
+    if (grip) {
+        grip.addEventListener("click", function () {
+            setOpen(!sidebar.classList.contains("open"));
+        });
+    }
+
+    // --- CUT: single primary action. Auto-arming happens when the user
+    //     opens the tool view, so by the time they hit CUT the controller
+    //     is already active and ready to commit. Each tool view has its
+    //     own CUT button — wire them all to the same handler.
+    for (var ci2 = 0; ci2 < btnCuts.length; ci2++) {
+        btnCuts[ci2].addEventListener("click", function () {
+            if (lastState !== "active") return;
+            engine.toolboxCommand("commit");
+        });
+    }
+
+    // --- Two-state slide toggles for enum params (e.g. profile/pocket
+    //     mode). Clicking either label sets that side; clicking the
+    //     track flips. `set` works in any state so this matches the
+    //     bit-param pattern.
+    //
+    //     plungeFrom→HEIGHT has a side-effect: also seed plungeHeight
+    //     with the current Z so the operator gets "plunge from right
+    //     here" without typing anything. They can still override after.
+    function applySlideValue(name, val) {
+        engine.toolboxCommand("set", { name: name, value: val });
+        if (name === "plungeFrom" && val === "height") {
+            engine.toolboxCommand("set", { name: "plungeHeight", value: currentZ });
+        }
+    }
+
+    var slides = sidebar.querySelectorAll(".toolbox-slide");
+    for (var sl = 0; sl < slides.length; sl++) {
+        (function (slide) {
+            var name      = slide.getAttribute("data-param");
+            var valLeft   = slide.getAttribute("data-value-left");
+            var valRight  = slide.getAttribute("data-value-right");
+            var labels    = slide.querySelectorAll(".toolbox-slide-label");
+            var track     = slide.querySelector(".toolbox-slide-track");
+
+            for (var i = 0; i < labels.length; i++) {
+                labels[i].addEventListener("click", function (ev) {
+                    var val = ev.currentTarget.getAttribute("data-value");
+                    if (val) applySlideValue(name, val);
+                });
+            }
+            if (track) {
+                track.addEventListener("click", function () {
+                    var nextVal = slide.classList.contains("right") ? valLeft : valRight;
+                    applySlideValue(name, nextVal);
+                });
+                track.addEventListener("keydown", function (ev) {
+                    if (ev.key === " " || ev.key === "Enter") {
+                        ev.preventDefault();
+                        track.click();
+                    }
+                });
+            }
+        })(slides[sl]);
+    }
+
+    // --- Param ± buttons. Two flavors:
+    //     - Bit params (.toolbox-bit-param, on the home view) compute
+    //       the new value client-side and send `set` so they work
+    //       regardless of armed state.
+    //     - Tool params (inside a .toolbox-tool-view) send `adjust`
+    //       and let the server's per-param step + state gate apply.
+    var params = sidebar.querySelectorAll(".toolbox-param");
+    for (var p = 0; p < params.length; p++) {
+        (function (paramEl) {
+            var name = paramEl.getAttribute("data-param");
+            var isBit = paramEl.classList.contains("toolbox-bit-param");
+            var buttons = paramEl.querySelectorAll(".toolbox-adjust");
+            for (var b = 0; b < buttons.length; b++) {
+                buttons[b].addEventListener("click", function (ev) {
+                    var delta = parseInt(ev.currentTarget.getAttribute("data-delta"), 10);
+                    if (!delta) return;
+                    if (isBit) {
+                        var step = TOOLBOX_STEPS[name] || 0.0625;
+                        var current = currentParams[name];
+                        if (current == null) current = TOOLBOX_DEFAULTS[name] || 0;
+                        var next = current + step * delta;
+                        engine.toolboxCommand("set", { name: name, value: next });
+                    } else {
+                        engine.toolboxCommand("adjust", { name: name, delta: delta });
+                    }
+                });
+            }
+
+            // --- Direct edit: type a value and commit with Enter or by
+            //     blurring. Sends `set` for any param (server clamps to
+            //     bounds + snaps to 4dp, then echoes via state event).
+            //     Select-on-focus so a tap lets you replace the value.
+            var input = paramEl.querySelector(".toolbox-param-value");
+            if (input) {
+                input.addEventListener("focus", function () {
+                    input.select();
+                });
+                input.addEventListener("keydown", function (ev) {
+                    if (ev.key === "Enter") {
+                        ev.preventDefault();
+                        input.blur();    // triggers commit below
+                    } else if (ev.key === "Escape") {
+                        // Revert visible text to last known value and bail.
+                        input.value = fmtParam(name, currentParams[name]);
+                        input.blur();
+                    }
+                });
+                input.addEventListener("blur", function () {
+                    var raw = String(input.value).replace(/[^\d.\-]/g, "");
+                    var v = parseFloat(raw);
+                    if (isNaN(v)) {
+                        // Reject — restore the last known value
+                        input.value = fmtParam(name, currentParams[name]);
+                        return;
+                    }
+                    engine.toolboxCommand("set", { name: name, value: v });
+                });
+            }
+        })(params[p]);
+    }
+
+    // --- Live "at (X, Y, Z)" readout, gated by sidebar being open so we
+    //     don't churn the DOM on every status tick when collapsed.
     engine.on("status", function (status) {
-        if (!visible) return;
-        if (!status || status.posx == null || status.posy == null) return;
-        elPosition.textContent =
-            "(" + Number(status.posx).toFixed(3) +
-            ", " + Number(status.posy).toFixed(3) + ")";
+        if (!status) return;
+        // Track Z whenever it changes — even while the sidebar is closed
+        // — so flipping to HEIGHT mode immediately after opening still
+        // gets an accurate seed value.
+        if (status.posz != null) currentZ = Number(status.posz);
     });
 
-    engine.on("canned_cut_state", function (payload) {
+    // --- Server-driven state. Single source of truth for the UI.
+    engine.on("toolbox_state", function (payload) {
         if (!payload) return;
-        elType.textContent = shortCutType(payload.cutType);
         renderParams(payload.params);
-
-        var reason = payload.reason || "";
-        if (payload.state === "idle") {
-            hide();
-            return;
-        }
-        // For all non-idle states, the HUD should be visible.
-        show();
-        if (payload.state === "executing") {
-            setState("cutting…", true);
-        } else if (payload.state === "active") {
-            // "done" comes through with state=active, reason=done — show
-            // a brief "ready" indicator to acknowledge completion; the
-            // next param adjust or further activity will overwrite it.
-            if (reason === "done") {
-                setState("ready", false);
-            } else {
-                setState("active", false);
+        renderState(payload.state, payload.reason || "");
+        // Auto-open and jump to the tool matching the active cutType
+        // (so e.g. the F310 arming the controller pops the dashboard
+        // open on the correct tool view).
+        if (payload.state !== "idle") {
+            if (!sidebar.classList.contains("open")) setOpen(true);
+            var targetToolId = null;
+            for (var ti = 0; ti < TOOLBOX_TOOLS.length; ti++) {
+                if (TOOLBOX_TOOLS[ti].cutType === payload.cutType) {
+                    targetToolId = TOOLBOX_TOOLS[ti].id;
+                    break;
+                }
+            }
+            var activeView = sidebar.querySelector(".toolbox-tool-view:not([hidden])");
+            if (targetToolId &&
+                (!activeView || activeView.getAttribute("data-tool") !== targetToolId)) {
+                showTool(targetToolId);
             }
         }
     });
+
+    // Initial view: home (toolbox). Per-tool views start hidden in markup.
+    showHome();
+
+    // Initial render with client-side defaults so the bit + tool readouts
+    // show real numbers before the first toolbox_state event lands.
+    // The server will overwrite these as soon as it emits.
+    renderParams(TOOLBOX_DEFAULTS);
+    renderState("idle", "");
 }
 
 function setupVirtualJoystick(state) {

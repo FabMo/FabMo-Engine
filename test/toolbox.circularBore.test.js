@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 /*jshint esversion: 6 */
-const { circularBore, computeRings } = require("../runtime/manual/cannedCuts/circularBore");
+const { circularBore, computeRings } = require("../runtime/manual/toolbox/circularBore");
 
 // Helpers
 const linesMatching = (gcode, re) => gcode.filter((l) => re.test(l));
