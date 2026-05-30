@@ -53,6 +53,41 @@
             "run_failed": "Failed to run toolbox cut: {error}"
         }
     },
+    "sb4": {
+        "menu": {
+            "files": "Files",
+            "files_tooltip": "CUT, Edit, or Preview PART FILES",
+            "moves": "Moves",
+            "moves_tooltip": "Basic Movement Commands",
+            "jogs": "Jogs",
+            "jogs_tooltip": "Jog or Rapid Motion Commands",
+            "cuts": "Cuts",
+            "cuts_tooltip": "Simple Cut Commands and Custom Macros",
+            "zero": "Zero",
+            "zero_tooltip": "Zero an Axis or Axes at its Current Location",
+            "settings": "Settings",
+            "settings_tooltip": "Input or Change a Setting",
+            "values": "Values",
+            "values_tooltip": "Set or Change Current Configuration Values",
+            "tools": "Tools",
+            "tools_tooltip": "Tools for Special Purposes",
+            "design": "Design",
+            "design_tooltip": "Use a web-based CAD/CAM Design program",
+            "help": "Help",
+            "help_tooltip": "Get Help for ShopBot",
+            "menu": "menu"
+        },
+        "workflow": {
+            "panel_label": "Standard Workflow",
+            "tooltip": "This panel accesses the steps for starting-up your tool and Cutting or Managing your Part Files.",
+            "tooltip_checklist_prefix": "Click to download a detailed workflow",
+            "checklist": "Checklist",
+            "home_xy": "A - Home X & Y",
+            "home_xy_tooltip": "Home the X and Y Axes; C3 or Macro",
+            "set_z_zero": "B - Set Z Zero",
+            "set_z_zero_tooltip": "Set Z Zero; C2 or Macro2"
+        }
+    },
     "toolbox": {
         "title": "Toolbox",
         "grip_label": "TOOLBOX",

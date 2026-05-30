@@ -53,6 +53,41 @@
             "run_failed": "ツールボックスカットの実行に失敗: {error}"
         }
     },
+    "sb4": {
+        "menu": {
+            "files": "ファイル",
+            "files_tooltip": "パートファイルのカット・編集・プレビュー",
+            "moves": "移動",
+            "moves_tooltip": "基本移動コマンド",
+            "jogs": "ジョグ",
+            "jogs_tooltip": "ジョグまたはラピッド移動コマンド",
+            "cuts": "カット",
+            "cuts_tooltip": "シンプルカットコマンドとカスタムマクロ",
+            "zero": "ゼロ",
+            "zero_tooltip": "現在位置で軸をゼロ設定",
+            "settings": "設定",
+            "settings_tooltip": "設定の入力または変更",
+            "values": "値",
+            "values_tooltip": "現在の設定値の設定または変更",
+            "tools": "ツール",
+            "tools_tooltip": "特殊用途のツール",
+            "design": "デザイン",
+            "design_tooltip": "ウェブベースのCAD/CAMデザインプログラムを使用",
+            "help": "ヘルプ",
+            "help_tooltip": "ShopBotのヘルプを取得",
+            "menu": "メニュー"
+        },
+        "workflow": {
+            "panel_label": "標準ワークフロー",
+            "tooltip": "このパネルからツールの起動とパートファイルのカット・管理の手順にアクセスできます。",
+            "tooltip_checklist_prefix": "詳細なワークフローのダウンロードはこちら",
+            "checklist": "チェックリスト",
+            "home_xy": "A - X・Yをホーミング",
+            "home_xy_tooltip": "X軸とY軸をホーミング（C3またはマクロ）",
+            "set_z_zero": "B - Zゼロを設定",
+            "set_z_zero_tooltip": "Zゼロを設定（C2またはマクロ2）"
+        }
+    },
     "toolbox": {
         "title": "ツールボックス",
         "grip_label": "ツールボックス",

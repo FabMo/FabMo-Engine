@@ -18,6 +18,7 @@
     <!-- <link rel="stylesheet" href="css/stylejogdial.css"> -->
 
     <script src="js/lib/jquery.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="js/lib/foundation.min.js"></script>
     <script src="js/lib/foundation.dropdown.js"></script>
 <!--  <script src="js/lib/modernizr.js"></script> seems to fix mordernizr issue -->
@@ -48,42 +49,42 @@
   <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
     <ul class="title-area">
       <li class="name"></li>
-      <li class="toggle-topbar menu-icon"><a href="#"><span>menu</span></a></li>
+      <li class="toggle-topbar menu-icon"><a href="#"><span data-i18n="sb4.menu.menu">menu</span></a></li>
     </ul>
 
     <section class="top-bar-section">
       <ul class="left">
         <li class="divider"></li>
         <li class="has-dropdown">
-          <a style="background-color:rgb(92, 90, 90)" title="CUT, Edit, or Preview PART FILES"><strong>F</strong>iles</a>
+          <a style="background-color:rgb(92, 90, 90)" data-i18n-title="sb4.menu.files_tooltip" title="CUT, Edit, or Preview PART FILES" data-i18n="sb4.menu.files"><strong>F</strong>iles</a>
           <ul class="dropdown" id="menu_files">
             <li></li>
           </ul>
         </li>
         <li class="divider"></li>
         <li class="has-dropdown">
-          <a style="background-color:rgb(92, 90, 90)" title="Basic Movement Commands"><strong>M</strong>oves</a>
+          <a style="background-color:rgb(92, 90, 90)" data-i18n-title="sb4.menu.moves_tooltip" title="Basic Movement Commands" data-i18n="sb4.menu.moves"><strong>M</strong>oves</a>
           <ul class="dropdown" id="menu_moves">
             <li></li>
           </ul>
         </li>
         <li class="divider"></li>
         <li class="has-dropdown">
-          <a style="background-color:rgb(92, 90, 90)" title="Jog or Rapid Motion Commands"><strong>J</strong>ogs</a>
+          <a style="background-color:rgb(92, 90, 90)" data-i18n-title="sb4.menu.jogs_tooltip" title="Jog or Rapid Motion Commands" data-i18n="sb4.menu.jogs"><strong>J</strong>ogs</a>
           <ul class="dropdown" id="menu_jogs">
             <li></li>
           </ul>
         </li>
         <li class="divider"></li>
         <li class="has-dropdown">
-          <a style="background-color:rgb(92, 90, 90)" title="Simple Cut Commands and Custom Macros"><strong>C</strong>uts</a>
+          <a style="background-color:rgb(92, 90, 90)" data-i18n-title="sb4.menu.cuts_tooltip" title="Simple Cut Commands and Custom Macros" data-i18n="sb4.menu.cuts"><strong>C</strong>uts</a>
           <ul class="dropdown" id="menu_cuts">
             <li></li>
           </ul>
         </li>
         <li class="divider"></li>
         <li class="has-dropdown">
-          <a style="background-color:rgb(92, 90, 90)" title="Zero an Axis or Axes at its Current Location"><strong>Z</strong>ero</a>
+          <a style="background-color:rgb(92, 90, 90)" data-i18n-title="sb4.menu.zero_tooltip" title="Zero an Axis or Axes at its Current Location" data-i18n="sb4.menu.zero"><strong>Z</strong>ero</a>
           <ul class="dropdown" id="menu_zero">
             <li></li>
           </ul>
@@ -109,7 +110,7 @@
 
         <li class="divider hide"></li>
         <li class="has-dropdown hide">
-          <a style="background-color:rgb(92, 90, 90)" class="hide" title="Input or Change a Setting"><strong>S</strong>ettings</a>
+          <a style="background-color:rgb(92, 90, 90)" class="hide" data-i18n-title="sb4.menu.settings_tooltip" title="Input or Change a Setting" data-i18n="sb4.menu.settings"><strong>S</strong>ettings</a>
           <ul class="dropdown" id="menu_settings">
             <li></li>
           </ul>
@@ -117,7 +118,7 @@
 
         <li class="divider hide"></li>
         <li class="has-dropdown hide">
-          <a style="background-color:rgb(92, 90, 90)" class="hide" title="Set or Change Current Configuration Values"><strong>V</strong>alues</a>
+          <a style="background-color:rgb(92, 90, 90)" class="hide" data-i18n-title="sb4.menu.values_tooltip" title="Set or Change Current Configuration Values" data-i18n="sb4.menu.values"><strong>V</strong>alues</a>
           <ul class="dropdown" id="menu_values">
             <li></li>
           </ul>
@@ -125,7 +126,7 @@
 
         <li class="divider"></li>
         <li class="has-dropdown">
-          <a style="background-color:rgb(92, 90, 90)" title="Tools for Special Purposes"><strong>T</strong>ools</a>
+          <a style="background-color:rgb(92, 90, 90)" data-i18n-title="sb4.menu.tools_tooltip" title="Tools for Special Purposes" data-i18n="sb4.menu.tools"><strong>T</strong>ools</a>
           <ul class="dropdown" id="menu_tools">
             <li></li>
           </ul>
@@ -133,7 +134,7 @@
 
         <li class="divider hide"></li>
         <li class="has-dropdown hide">
-          <a style="background-color:rgb(92, 90, 90)" title="Use a web-based CAD/CAM Design program"><strong>D</strong>esign</a>
+          <a style="background-color:rgb(92, 90, 90)" data-i18n-title="sb4.menu.design_tooltip" title="Use a web-based CAD/CAM Design program" data-i18n="sb4.menu.design"><strong>D</strong>esign</a>
           <ul class="dropdown" id="menu_design">
             <li></li>
           </ul>
@@ -141,7 +142,7 @@
 
         <li class="divider"></li>
         <li class="has-dropdown">
-          <a style="background-color:rgb(92, 90, 90)" title="Get Help for ShopBot"><strong>H</strong>elp</a>
+          <a style="background-color:rgb(92, 90, 90)" data-i18n-title="sb4.menu.help_tooltip" title="Get Help for ShopBot" data-i18n="sb4.menu.help"><strong>H</strong>elp</a>
           <ul class="dropdown" id="menu_help">
             <li></li>
           </ul>
@@ -174,16 +175,16 @@
               <!-- Buttons (actions) -->
 
               <div class="macros">
-                <h9 class="panel-label" id="macro-panel-label"><strong>Standard Workflow</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
-                    This panel accesses the steps for starting-up your tool and Cutting or Managing your Part Files.<br><br>
-                    Click to download a detailed workflow <span class = "tooltiplink" id="ck-list">Checklist</span></span></span>
+                <h9 class="panel-label" id="macro-panel-label"><strong data-i18n="sb4.workflow.panel_label">Standard Workflow</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
+                    <span data-i18n="sb4.workflow.tooltip">This panel accesses the steps for starting-up your tool and Cutting or Managing your Part Files.</span><br><br>
+                    <span data-i18n="sb4.workflow.tooltip_checklist_prefix">Click to download a detailed workflow</span> <span class = "tooltiplink" id="ck-list" data-i18n="sb4.workflow.checklist">Checklist</span></span></span>
                 </h9>
-                    <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button" title="Home the X and Y Axes; C3 or Macro">
-                        A - Home X & Y 
+                    <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button" data-i18n-title="sb4.workflow.home_xy_tooltip" title="Home the X and Y Axes; C3 or Macro">
+                        <span data-i18n="sb4.workflow.home_xy">A - Home X & Y</span>
                         <span class="tog-homed" id="tog-xy-homed" style="color: grey;">&#10680;</span>
                     </button>
-                    <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button" title="Set Z Zero; C2 or Macro2">
-                        B - Set Z Zero 
+                    <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button" data-i18n-title="sb4.workflow.set_z_zero_tooltip" title="Set Z Zero; C2 or Macro2">
+                        <span data-i18n="sb4.workflow.set_z_zero">B - Set Z Zero</span>
                         <span class="tog-homed" id="tog-z-homed" style="color: grey;">&#10680;</span>
                     </button>
                     <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" title="Pick a Single Part File to Cut; FP">
