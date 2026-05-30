@@ -70,7 +70,7 @@
         <nav class="tab-bar">
           <section class="show-for-small-up fabmo-status" id="left-position-container">
             <div class="svg-container" style="display: table;">
-              <div style="display: table-cell; vertical-align: middle;" href="#" title="This PC's connection quality; Click for tool's Network Manager">
+              <div style="display: table-cell; vertical-align: middle;" href="#" data-i18n-title="status.connection_quality_tooltip" title="This PC's connection quality; Click for tool's Network Manager">
                 <svg style="display: table-cell; vertical-align: middle; padding-left:0.5em;"id="connection-strength-indicator" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
                   <path d="M-612,320v96h96v-96H-612z M-529,403h-70v-70h70V403z"/>
                   <path id="cs4" class="off" d="M233.503,70.369c93.726-6.75,189.622,28.317,256.515,94.363c8.765,9.023,7.622,24.807-1.625,33.076
@@ -100,13 +100,13 @@
           
           <section class="right show-for-small-up fabmo-status" id="right-position-container">
               <span id="transform_warning" class="transforms-on" style="display: none;">
-                  <strong style="white-space: nowrap;">Transforms&nbsp;-&nbsp;<span style="color: red;">ON</span></strong>
+                  <strong style="white-space: nowrap;"><span data-i18n="status.transforms_label">Transforms</span>&nbsp;-&nbsp;<span style="color: red;" data-i18n="status.transforms_on">ON</span></strong>
               </span>
-            <div class="manual-drive-enter show-for-small-up fabmo-status right" id="man-start" title="Click to open Motion Keypad">
+            <div class="manual-drive-enter show-for-small-up fabmo-status right" id="man-start" data-i18n-title="status.open_keypad_tooltip" title="Click to open Motion Keypad">
               <img src="../img/icon_keypad.png" id="icon_keypad"></img>
             </div>
 
-            <div class="DRO-button" id="dro-tab" title="Click to open larger Info Display">
+            <div class="DRO-button" id="dro-tab" data-i18n-title="status.open_dro_tooltip" title="Click to open larger Info Display">
                 <img src="../img/icon_DROout.png" id="icon_DROin-out">
             </div>
             
@@ -121,10 +121,10 @@
             </strong>
             </div>
             <div class="not-selectable">
-              <div class="inp-alert" id="inp-stop">STOP </div>
-              <div class="inp-alert" id="inp-limit">LIMIT </div>
+              <div class="inp-alert" id="inp-stop" data-i18n="status.stop">STOP </div>
+              <div class="inp-alert" id="inp-limit" data-i18n="status.limit">LIMIT </div>
               <div class="space input"> </div>
-              <div class="inoutLabel ">In:</div>
+              <div class="inoutLabel " data-i18n="status.input_label">In:</div>
               <div class="space input"> </div>
               <div class="space input"> </div>
               <div class="in1 input"> 1 </div>
@@ -147,9 +147,9 @@
             </div>
             <div class="not-selectable">
               <div class="space input"> </div>
-              <div class="inp-alert" id="inp-interlock">INTERLOCK </div>
-              <div class="inp-alert" id="inp-driverFault">DRIVE FAULT </div>
-              <div class="inoutLabel">Out:</div>
+              <div class="inp-alert" id="inp-interlock" data-i18n="status.interlock">INTERLOCK </div>
+              <div class="inp-alert" id="inp-driverFault" data-i18n="status.drive_fault">DRIVE FAULT </div>
+              <div class="inoutLabel" data-i18n="status.output_label">Out:</div>
               <div class="space input"> </div>
               <div class="space input"> </div>
               <div class="out1 output off"> 1 </div>
@@ -407,12 +407,12 @@
             <!--<img src="../img/icon_keypad.png" id="icon_keypad"></img>-->
 
             <div class="keypad-actions">
-              <div class="action-button" id="action-1" title="Do Z-Zero (Macro C2)">C2</div>
-              <div class="action-button" id="action-2" title="Do XYZ-Homing (Macro C3)">C3</div>
-              <div class="action-button" id="action-3" title="JH (Jog Home in XY)">JH</div>
-              <div class="action-button" id="action-4" title="Goto Park Location (Macro C#79; Settings in C#210)">JP</div>
+              <div class="action-button" id="action-1" data-i18n-title="actions.c2_tooltip" title="Do Z-Zero (Macro C2)">C2</div>
+              <div class="action-button" id="action-2" data-i18n-title="actions.c3_tooltip" title="Do XYZ-Homing (Macro C3)">C3</div>
+              <div class="action-button" id="action-3" data-i18n-title="actions.jh_tooltip" title="JH (Jog Home in XY)">JH</div>
+              <div class="action-button" id="action-4" data-i18n-title="actions.jp_tooltip" title="Goto Park Location (Macro C#79; Settings in C#210)">JP</div>
               <!--<div>....</div>-->
-              <div class="action-button" id="action-5" title="Toggle Spindle ON/OFF"><img src="../img/icon_spindle_off.png" style="max-width:70%;"></img></div>
+              <div class="action-button" id="action-5" data-i18n-title="actions.spindle_toggle_tooltip" title="Toggle Spindle ON/OFF"><img src="../img/icon_spindle_off.png" style="max-width:70%;"></img></div>
             </div>
 
           </div>
@@ -423,19 +423,19 @@
           <div id="keypad" tabindex="0" class="fabmo-manual-control keypad " style="text-align: center;">
             <div class="slidecontainer">
               <input type="range"  step="0.1" class="slider" id="manual-move-speed">
-              <label title="use Alt&lt and Alt&gt for speed up/dn"><u><</u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XY Move Speed&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<u>></u></label>
+              <label data-i18n-title="keypad.xy_move_speed_tooltip" title="use Alt&lt and Alt&gt for speed up/dn"><u><</u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="keypad.xy_move_speed">XY Move Speed</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<u>></u></label>
             </div>
             <div class="fixed-input-container ">
               <div>
-                <label>XY Distance</label>
+                <label data-i18n="keypad.xy_distance">XY Distance</label>
                 <input class="fixed-step-value xy-fixed">
               </div>
               <div>
-                <label>Z Distance</label>
+                <label data-i18n="keypad.z_distance">Z Distance</label>
                 <input class="fixed-step-value z-fixed">
               </div>
               <div>
-                <label>ABC Distance</label>
+                <label data-i18n="keypad.abc_distance">ABC Distance</label>
                 <input class="fixed-step-value abc-fixed">
               </div>
             </div>
@@ -469,7 +469,7 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="joystick-indicator" id="joystick-indicator" title="Pendant joystick direction">
+                  <div class="joystick-indicator" id="joystick-indicator" data-i18n-title="keypad.joystick_tooltip" title="Pendant joystick direction">
                     <svg viewBox="-1.1 -1.1 2.2 2.2" preserveAspectRatio="xMidYMid meet">
                       <circle class="joystick-ring" cx="0" cy="0" r="1" fill="none"></circle>
                       <circle class="joystick-deadzone" cx="0" cy="0" r="0.25" fill="none"></circle>
@@ -520,7 +520,7 @@
               </div>
             </div>
             <div class="switch-container">
-              <span class="fixed-label"><u>F</u>ixed Distance </span>
+              <span class="fixed-label" data-i18n="keypad.fixed_distance">Fixed Distance</span>
               <label class="fixed-switch">
               <input type="checkbox">
               <span class="slider-toggle round"></span>
@@ -529,13 +529,13 @@
           </div>
           <div class="go-to-container">
             <div class="manual-stop">
-                <span>STOP</span>
+                <span data-i18n="keypad.stop">STOP</span>
             </div>
-            <div class="go-to" title="Move to a new location in one or more axes.">
-              <span>Go To</span>
+            <div class="go-to" data-i18n-title="keypad.go_to_tooltip" title="Move to a new location in one or more axes.">
+              <span data-i18n="keypad.go_to">Go To</span>
             </div>
-            <div class="set-coordinates" title="Set a new value for the current location of one or more axes.">
-              <span>Set</span>
+            <div class="set-coordinates" data-i18n-title="keypad.set_tooltip" title="Set a new value for the current location of one or more axes.">
+              <span data-i18n="keypad.set">Set</span>
             </div>
           </div>
         </div>
@@ -546,8 +546,9 @@
            like a battery-cover release). Click toggles the sidebar
            panel that slides out to the right of the modal. -->
       <button type="button" class="toolbox-grip" id="toolbox-grip"
+              data-i18n-aria-label="toolbox.grip_aria"
               aria-label="Toggle toolbox panel"
-              title="Canned cuts"><span class="toolbox-grip-label">TOOLBOX</span></button>
+              title="Toolbox"><span class="toolbox-grip-label" data-i18n="toolbox.grip_label">TOOLBOX</span></button>
 
       <!-- Canned-cuts sidebar: direct child of #keypad-modal so its
            position:absolute left:100% resolves against the modal's
@@ -565,9 +566,10 @@
           <div class="toolbox-sidebar-header">
             <button type="button" class="toolbox-back-btn"
                     id="toolbox-back"
+                    data-i18n-aria-label="toolbox.back_aria"
                     aria-label="Back to toolbox" hidden>←</button>
             <span class="toolbox-sidebar-title"
-                  id="toolbox-sidebar-title">Toolbox</span>
+                  id="toolbox-sidebar-title" data-i18n="toolbox.title">Toolbox</span>
           </div>
 
           <!-- Tool grid: tiles injected by JS from the tool registry. -->
@@ -578,10 +580,10 @@
                buttons send `set` commands directly (not state-gated, so
                they work whether or not a tool is armed). -->
           <div class="toolbox-home-section" id="toolbox-bit-section">
-            <div class="toolbox-home-section-header">Bit</div>
+            <div class="toolbox-home-section-header" data-i18n="toolbox.sections.bit">Bit</div>
             <div class="toolbox-sidebar-params">
               <div class="toolbox-param toolbox-bit-param" data-param="cutterDiameter">
-                <label>Cutter dia</label>
+                <label data-i18n="toolbox.params.cutter_dia">Cutter dia</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -590,7 +592,7 @@
                 </div>
               </div>
               <div class="toolbox-param toolbox-bit-param" data-param="plungePerPass">
-                <label>Plunge/pass</label>
+                <label data-i18n="toolbox.params.plunge_per_pass">Plunge/pass</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -599,7 +601,7 @@
                 </div>
               </div>
               <div class="toolbox-param toolbox-bit-param" data-param="feedRateXY">
-                <label>Feedrate</label>
+                <label data-i18n="toolbox.params.feedrate">Feedrate</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -608,7 +610,7 @@
                 </div>
               </div>
               <div class="toolbox-param toolbox-bit-param" data-param="feedRateZ">
-                <label>Plunge</label>
+                <label data-i18n="toolbox.params.plunge">Plunge</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -636,15 +638,15 @@
               <div class="toolbox-param toolbox-mode-param" data-param="mode">
                 <div class="toolbox-slide" data-param="mode"
                      data-value-left="pocket" data-value-right="perimeter">
-                  <span class="toolbox-slide-label left" data-value="pocket">POCKET</span>
+                  <span class="toolbox-slide-label left" data-value="pocket" data-i18n="toolbox.modes.pocket">POCKET</span>
                   <span class="toolbox-slide-track" role="switch" tabindex="0">
                     <span class="toolbox-slide-knob"></span>
                   </span>
-                  <span class="toolbox-slide-label right" data-value="perimeter">PROFILE</span>
+                  <span class="toolbox-slide-label right" data-value="perimeter" data-i18n="toolbox.modes.profile">PROFILE</span>
                 </div>
               </div>
               <div class="toolbox-param" data-param="diameter">
-                <label>Diameter</label>
+                <label data-i18n="toolbox.params.diameter">Diameter</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -653,7 +655,7 @@
                 </div>
               </div>
               <div class="toolbox-param" data-param="depth">
-                <label>Depth</label>
+                <label data-i18n="toolbox.params.depth">Depth</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -675,18 +677,18 @@
                    operator first flips here) down by depth. The Height
                    input row appears only in HEIGHT mode. -->
               <div class="toolbox-param" data-param="plungeFrom">
-                <label>Plunge from</label>
+                <label data-i18n="toolbox.params.plunge_from">Plunge from</label>
                 <div class="toolbox-slide" data-param="plungeFrom"
                      data-value-left="zero" data-value-right="height">
-                  <span class="toolbox-slide-label left" data-value="zero">ZERO</span>
+                  <span class="toolbox-slide-label left" data-value="zero" data-i18n="toolbox.modes.zero">ZERO</span>
                   <span class="toolbox-slide-track" role="switch" tabindex="0">
                     <span class="toolbox-slide-knob"></span>
                   </span>
-                  <span class="toolbox-slide-label right" data-value="height">HEIGHT</span>
+                  <span class="toolbox-slide-label right" data-value="height" data-i18n="toolbox.modes.height">HEIGHT</span>
                 </div>
               </div>
               <div class="toolbox-param toolbox-plunge-height-row" data-param="plungeHeight" hidden>
-                <label>Height</label>
+                <label data-i18n="toolbox.params.height">Height</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -697,7 +699,7 @@
 
               <div class="toolbox-sidebar-actions">
                 <button type="button" class="toolbox-btn toolbox-btn-cut"
-                        id="toolbox-cut">CUT</button>
+                        id="toolbox-cut" data-i18n="toolbox.cut">CUT</button>
               </div>
             </div>
           </div>
@@ -709,7 +711,7 @@
           <div class="toolbox-tool-view" data-tool="table_saw" hidden>
             <div class="toolbox-sidebar-params">
               <div class="toolbox-param" data-param="length">
-                <label>Length</label>
+                <label data-i18n="toolbox.params.length">Length</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -718,7 +720,7 @@
                 </div>
               </div>
               <div class="toolbox-param" data-param="angleDeg">
-                <label>Angle</label>
+                <label data-i18n="toolbox.params.angle">Angle</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -727,7 +729,7 @@
                 </div>
               </div>
               <div class="toolbox-param" data-param="depth">
-                <label>Depth</label>
+                <label data-i18n="toolbox.params.depth">Depth</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -739,18 +741,18 @@
 
             <div class="toolbox-tool-bottom">
               <div class="toolbox-param" data-param="plungeFrom">
-                <label>Plunge from</label>
+                <label data-i18n="toolbox.params.plunge_from">Plunge from</label>
                 <div class="toolbox-slide" data-param="plungeFrom"
                      data-value-left="zero" data-value-right="height">
-                  <span class="toolbox-slide-label left" data-value="zero">ZERO</span>
+                  <span class="toolbox-slide-label left" data-value="zero" data-i18n="toolbox.modes.zero">ZERO</span>
                   <span class="toolbox-slide-track" role="switch" tabindex="0">
                     <span class="toolbox-slide-knob"></span>
                   </span>
-                  <span class="toolbox-slide-label right" data-value="height">HEIGHT</span>
+                  <span class="toolbox-slide-label right" data-value="height" data-i18n="toolbox.modes.height">HEIGHT</span>
                 </div>
               </div>
               <div class="toolbox-param toolbox-plunge-height-row" data-param="plungeHeight" hidden>
-                <label>Height</label>
+                <label data-i18n="toolbox.params.height">Height</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -761,7 +763,7 @@
 
               <div class="toolbox-sidebar-actions">
                 <button type="button" class="toolbox-btn toolbox-btn-cut"
-                        id="toolbox-ts-cut">CUT</button>
+                        id="toolbox-ts-cut" data-i18n="toolbox.cut">CUT</button>
               </div>
             </div>
           </div>
@@ -770,7 +772,7 @@
           <div class="toolbox-tool-view" data-tool="planer" hidden>
             <div class="toolbox-sidebar-params">
               <div class="toolbox-param" data-param="width">
-                <label>Width</label>
+                <label data-i18n="toolbox.params.width">Width</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -779,7 +781,7 @@
                 </div>
               </div>
               <div class="toolbox-param" data-param="length">
-                <label>Length</label>
+                <label data-i18n="toolbox.params.length">Length</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -788,7 +790,7 @@
                 </div>
               </div>
               <div class="toolbox-param" data-param="depth">
-                <label>Depth</label>
+                <label data-i18n="toolbox.params.depth">Depth</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -797,7 +799,7 @@
                 </div>
               </div>
               <div class="toolbox-param" data-param="grainDeg">
-                <label>Grain</label>
+                <label data-i18n="toolbox.params.grain">Grain</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -806,7 +808,7 @@
                 </div>
               </div>
               <div class="toolbox-param" data-param="stepoverPct">
-                <label>Stepover</label>
+                <label data-i18n="toolbox.params.stepover">Stepover</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -818,18 +820,18 @@
 
             <div class="toolbox-tool-bottom">
               <div class="toolbox-param" data-param="plungeFrom">
-                <label>Plunge from</label>
+                <label data-i18n="toolbox.params.plunge_from">Plunge from</label>
                 <div class="toolbox-slide" data-param="plungeFrom"
                      data-value-left="zero" data-value-right="height">
-                  <span class="toolbox-slide-label left" data-value="zero">ZERO</span>
+                  <span class="toolbox-slide-label left" data-value="zero" data-i18n="toolbox.modes.zero">ZERO</span>
                   <span class="toolbox-slide-track" role="switch" tabindex="0">
                     <span class="toolbox-slide-knob"></span>
                   </span>
-                  <span class="toolbox-slide-label right" data-value="height">HEIGHT</span>
+                  <span class="toolbox-slide-label right" data-value="height" data-i18n="toolbox.modes.height">HEIGHT</span>
                 </div>
               </div>
               <div class="toolbox-param toolbox-plunge-height-row" data-param="plungeHeight" hidden>
-                <label>Height</label>
+                <label data-i18n="toolbox.params.height">Height</label>
                 <div class="toolbox-param-row">
                   <button type="button" class="toolbox-adjust" data-delta="-1">−</button>
                   <input type="text" inputmode="decimal" class="toolbox-param-value"
@@ -840,7 +842,7 @@
 
               <div class="toolbox-sidebar-actions">
                 <button type="button" class="toolbox-btn toolbox-btn-cut"
-                        id="toolbox-pl-cut">CUT</button>
+                        id="toolbox-pl-cut" data-i18n="toolbox.cut">CUT</button>
               </div>
             </div>
           </div>

@@ -22,6 +22,7 @@ var Backbone = require("backbone");
 var underscore = require("underscore");
 
 // Our libraries
+require("./libs/i18n.js");   // installs window.t / window.i18nReady
 var FabMoAPI = require("./libs/fabmoapi.js");
 var FabMoUI = require("./libs/fabmoui.js");
 var Keyboard = require("./libs/keyboard.js");
@@ -1287,6 +1288,7 @@ var TOOLBOX_TOOLS = [
     {
         id: "drill_press",
         label: "Drill Press",
+        labelKey: "toolbox.tools.drill_press",
         controller: true,
         cutType: "circular_bore",
         // Drill-press silhouette by user (Inkscape source cleaned and
@@ -1301,6 +1303,7 @@ var TOOLBOX_TOOLS = [
     {
         id: "table_saw",
         label: "Table Saw",
+        labelKey: "toolbox.tools.table_saw",
         controller: true,
         cutType: "straight_line",
         // Table-saw silhouette by user (Inkscape source cleaned).
@@ -1313,6 +1316,7 @@ var TOOLBOX_TOOLS = [
     {
         id: "planer",
         label: "Planer",
+        labelKey: "toolbox.tools.planer",
         controller: true,
         cutType: "planer",
         // Planer silhouette by user (Inkscape source cleaned).
@@ -1379,19 +1383,39 @@ function setupToolboxSidebar(engine) {
     // compute the new value.
     var currentParams = Object.assign({}, TOOLBOX_DEFAULTS);
 
+    // Pick the displayed name for a tool — translated if a labelKey is
+    // registered, else the English `label` literal. Used for tiles and
+    // for the sidebar title when a tool is shown.
+    function toolDisplayName(tool) {
+        if (tool.labelKey && typeof window.t === "function") {
+            return window.t(tool.labelKey);
+        }
+        return tool.label;
+    }
+
     // --- Build the toolbox grid from the registry. Each tile is a button
     //     so it's keyboard-focusable and gets free click semantics.
+    //     data-i18n on the label lets the i18n walker re-render on
+    //     language change without re-creating the tile.
     TOOLBOX_TOOLS.forEach(function (tool) {
         var tile = document.createElement("button");
         tile.type = "button";
         tile.className = "toolbox-tile";
         tile.setAttribute("data-tool", tool.id);
+        var labelAttr = tool.labelKey ? ' data-i18n="' + tool.labelKey + '"' : "";
         tile.innerHTML =
             '<span class="toolbox-tile-icon">' + tool.icon + '</span>' +
-            '<span class="toolbox-tile-label">' + tool.label + '</span>';
+            '<span class="toolbox-tile-label"' + labelAttr + '>' + toolDisplayName(tool) + '</span>';
         tile.addEventListener("click", function () { showTool(tool.id); });
         toolbox.appendChild(tile);
     });
+
+    // Tiles were created above; the global i18n walker may have already
+    // run before setupToolboxSidebar() was called. Re-walk this subtree
+    // once the dict is ready so the labels translate either way.
+    if (window.i18nReady && window.i18nApply) {
+        window.i18nReady.then(function () { window.i18nApply(sidebar); });
+    }
 
     // Track which tool view is showing so we know when to auto-cancel.
     // Null means we're on the home (toolbox grid).
@@ -1401,7 +1425,10 @@ function setupToolboxSidebar(engine) {
         toolbox.hidden = false;
         for (var i = 0; i < toolViews.length; i++) toolViews[i].hidden = true;
         for (var k = 0; k < homeSections.length; k++) homeSections[k].hidden = false;
-        titleEl.textContent = "Toolbox";
+        titleEl.textContent = (typeof window.t === "function")
+            ? window.t("toolbox.title")
+            : "Toolbox";
+        titleEl.setAttribute("data-i18n", "toolbox.title");
         backBtn.hidden = true;
         // Leaving a tool view → drop the controller back to idle so a
         // stray F310 press can't fire a cut for a tool the user is no
@@ -1423,7 +1450,9 @@ function setupToolboxSidebar(engine) {
         for (var j = 0; j < toolViews.length; j++) {
             toolViews[j].hidden = toolViews[j].getAttribute("data-tool") !== toolId;
         }
-        titleEl.textContent = tool.label;
+        titleEl.textContent = toolDisplayName(tool);
+        if (tool.labelKey) titleEl.setAttribute("data-i18n", tool.labelKey);
+        else titleEl.removeAttribute("data-i18n");
         backBtn.hidden = false;
         currentToolId = toolId;
         // Switch the server-side cut type to match this tool. The

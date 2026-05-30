@@ -1,0 +1,92 @@
+{
+    "_meta": {
+        "language": "日本語",
+        "code": "ja"
+    },
+    "keypad": {
+        "xy_move_speed": "XY 移動速度",
+        "xy_move_speed_tooltip": "Alt< と Alt> で速度を上下",
+        "xy_distance": "XY 距離",
+        "z_distance": "Z 距離",
+        "abc_distance": "ABC 距離",
+        "fixed_distance": "固定距離",
+        "stop": "停止",
+        "go_to": "移動",
+        "go_to_tooltip": "1つ以上の軸で新しい位置へ移動します。",
+        "set": "設定",
+        "set_tooltip": "1つ以上の軸で現在位置の値を新しく設定します。",
+        "joystick_tooltip": "ペンダント・ジョイスティック方向"
+    },
+    "status": {
+        "transforms_label": "変換",
+        "transforms_on": "オン",
+        "stop": "停止",
+        "limit": "リミット",
+        "interlock": "インターロック",
+        "drive_fault": "ドライブ異常",
+        "input_label": "入力:",
+        "output_label": "出力:",
+        "connection_quality_tooltip": "このPCの接続品質。ネットワークマネージャーを開くにはクリック",
+        "open_keypad_tooltip": "モーションキーパッドを開くにはクリック",
+        "open_dro_tooltip": "拡大表示を開くにはクリック"
+    },
+    "actions": {
+        "c2_tooltip": "Zゼロ実行 (マクロ C2)",
+        "c3_tooltip": "XYZホーミング実行 (マクロ C3)",
+        "jh_tooltip": "JH (XYのホームへジョグ)",
+        "jp_tooltip": "パーク位置へ移動 (マクロ C#79; 設定は C#210)",
+        "spindle_toggle_tooltip": "スピンドル オン/オフ 切替"
+    },
+    "errors": {
+        "machine": {
+            "cannot_arm_from_state": "{state} 状態から {action} のため機械をアームできません",
+            "no_position": "機械位置が取得できません",
+            "interlock_active": "インターロック入力がアクティブです"
+        },
+        "toolbox": {
+            "not_active": "ツールボックスがアクティブではありません",
+            "no_position": "機械位置が取得できません",
+            "unknown_cut_type": "未知のカットタイプ: {cutType}",
+            "generation_failed": "カット生成に失敗: {error}",
+            "tmpdir_failed": "ツールボックスの一時ディレクトリ作成に失敗: {error}",
+            "tmpfile_write_failed": "ツールボックス一時ファイルの書き込みに失敗: {error}",
+            "run_failed": "ツールボックスカットの実行に失敗: {error}"
+        }
+    },
+    "toolbox": {
+        "title": "ツールボックス",
+        "grip_label": "ツールボックス",
+        "grip_aria": "ツールボックスパネルの開閉",
+        "back_aria": "ツールボックスへ戻る",
+        "tools": {
+            "drill_press": "ボール盤",
+            "table_saw": "テーブルソー",
+            "planer": "プレーナー"
+        },
+        "sections": {
+            "bit": "ビット"
+        },
+        "params": {
+            "cutter_dia": "ビット径",
+            "plunge_per_pass": "切込深さ/回",
+            "feedrate": "送り速度",
+            "plunge": "プランジ速度",
+            "diameter": "直径",
+            "depth": "深さ",
+            "length": "長さ",
+            "width": "幅",
+            "angle": "角度",
+            "grain": "木目",
+            "stepover": "ステップオーバー",
+            "height": "高さ",
+            "plunge_from": "プランジ基準"
+        },
+        "modes": {
+            "pocket": "ポケット",
+            "profile": "プロファイル",
+            "zero": "ゼロ",
+            "height": "高さ"
+        },
+        "cut": "カット"
+    }
+}

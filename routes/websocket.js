@@ -4,6 +4,8 @@ var log = require("../log").logger("websocket");
 var authentication = require("../authentication");
 var sessions = require("client-sessions");
 var parseCookie = require("./util").parseCookie;
+var config = require("../config");
+var i18n = require("../i18n");
 var server = null;
 
 // eslint-disable-next-line no-unused-vars
@@ -279,6 +281,17 @@ var onPrivateConnect = function (socket) {
         } catch (e) {
             log.error("toolbox_command error: " + e.message);
             result = { ok: false, reason: "exception", error: e.message };
+        }
+        // If the controller returned a reason code, surface a translated
+        // user-facing message so the dashboard doesn't have to know how
+        // to format errors itself.
+        if (result && !result.ok && result.reason) {
+            var lang = config.engine.get("language") || "en";
+            result.message = i18n.t(
+                "errors.toolbox." + result.reason,
+                lang,
+                { error: result.error || "", cutType: data && data.cutType }
+            );
         }
         if (typeof callback === "function") callback(result);
     });

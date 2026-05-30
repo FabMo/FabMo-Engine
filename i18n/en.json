@@ -1,0 +1,92 @@
+{
+    "_meta": {
+        "language": "English",
+        "code": "en"
+    },
+    "keypad": {
+        "xy_move_speed": "XY Move Speed",
+        "xy_move_speed_tooltip": "use Alt< and Alt> for speed up/dn",
+        "xy_distance": "XY Distance",
+        "z_distance": "Z Distance",
+        "abc_distance": "ABC Distance",
+        "fixed_distance": "Fixed Distance",
+        "stop": "STOP",
+        "go_to": "Go To",
+        "go_to_tooltip": "Move to a new location in one or more axes.",
+        "set": "Set",
+        "set_tooltip": "Set a new value for the current location of one or more axes.",
+        "joystick_tooltip": "Pendant joystick direction"
+    },
+    "status": {
+        "transforms_label": "Transforms",
+        "transforms_on": "ON",
+        "stop": "STOP",
+        "limit": "LIMIT",
+        "interlock": "INTERLOCK",
+        "drive_fault": "DRIVE FAULT",
+        "input_label": "In:",
+        "output_label": "Out:",
+        "connection_quality_tooltip": "This PC's connection quality; Click for tool's Network Manager",
+        "open_keypad_tooltip": "Click to open Motion Keypad",
+        "open_dro_tooltip": "Click to open larger Info Display"
+    },
+    "actions": {
+        "c2_tooltip": "Do Z-Zero (Macro C2)",
+        "c3_tooltip": "Do XYZ-Homing (Macro C3)",
+        "jh_tooltip": "JH (Jog Home in XY)",
+        "jp_tooltip": "Goto Park Location (Macro C#79; Settings in C#210)",
+        "spindle_toggle_tooltip": "Toggle Spindle ON/OFF"
+    },
+    "errors": {
+        "machine": {
+            "cannot_arm_from_state": "Cannot arm machine for {action} from the {state} state",
+            "no_position": "Machine position not available",
+            "interlock_active": "Interlock input is active"
+        },
+        "toolbox": {
+            "not_active": "Toolbox is not active",
+            "no_position": "Machine position not available",
+            "unknown_cut_type": "Unknown cut type: {cutType}",
+            "generation_failed": "Could not generate cut: {error}",
+            "tmpdir_failed": "Could not create temp directory for toolbox: {error}",
+            "tmpfile_write_failed": "Could not write toolbox temp file: {error}",
+            "run_failed": "Failed to run toolbox cut: {error}"
+        }
+    },
+    "toolbox": {
+        "title": "Toolbox",
+        "grip_label": "TOOLBOX",
+        "grip_aria": "Toggle toolbox panel",
+        "back_aria": "Back to toolbox",
+        "tools": {
+            "drill_press": "Drill Press",
+            "table_saw": "Table Saw",
+            "planer": "Planer"
+        },
+        "sections": {
+            "bit": "Bit"
+        },
+        "params": {
+            "cutter_dia": "Cutter dia",
+            "plunge_per_pass": "Plunge/pass",
+            "feedrate": "Feedrate",
+            "plunge": "Plunge",
+            "diameter": "Diameter",
+            "depth": "Depth",
+            "length": "Length",
+            "width": "Width",
+            "angle": "Angle",
+            "grain": "Grain",
+            "stepover": "Stepover",
+            "height": "Height",
+            "plunge_from": "Plunge from"
+        },
+        "modes": {
+            "pocket": "POCKET",
+            "profile": "PROFILE",
+            "zero": "ZERO",
+            "height": "HEIGHT"
+        },
+        "cut": "CUT"
+    }
+}
