@@ -1,0 +1,635 @@
+{
+    "keypad.xy_move_speed": {
+        "en_at_translation": "XY Move Speed"
+    },
+    "keypad.xy_move_speed_tooltip": {
+        "en_at_translation": "use Alt< and Alt> for speed up/dn"
+    },
+    "keypad.xy_distance": {
+        "en_at_translation": "XY Distance"
+    },
+    "keypad.z_distance": {
+        "en_at_translation": "Z Distance"
+    },
+    "keypad.abc_distance": {
+        "en_at_translation": "ABC Distance"
+    },
+    "keypad.fixed_distance": {
+        "en_at_translation": "Fixed Distance"
+    },
+    "keypad.stop": {
+        "en_at_translation": "STOP"
+    },
+    "keypad.go_to": {
+        "en_at_translation": "Go To"
+    },
+    "keypad.go_to_tooltip": {
+        "en_at_translation": "Move to a new location in one or more axes."
+    },
+    "keypad.set": {
+        "en_at_translation": "Set"
+    },
+    "keypad.set_tooltip": {
+        "en_at_translation": "Set a new value for the current location of one or more axes."
+    },
+    "keypad.joystick_tooltip": {
+        "en_at_translation": "Pendant joystick direction"
+    },
+    "status.transforms_label": {
+        "en_at_translation": "Transforms"
+    },
+    "status.transforms_on": {
+        "en_at_translation": "ON"
+    },
+    "status.stop": {
+        "en_at_translation": "STOP"
+    },
+    "status.limit": {
+        "en_at_translation": "LIMIT"
+    },
+    "status.interlock": {
+        "en_at_translation": "INTERLOCK"
+    },
+    "status.drive_fault": {
+        "en_at_translation": "DRIVE FAULT"
+    },
+    "status.input_label": {
+        "en_at_translation": "In:"
+    },
+    "status.output_label": {
+        "en_at_translation": "Out:"
+    },
+    "status.connection_quality_tooltip": {
+        "en_at_translation": "This PC's connection quality; Click for tool's Network Manager"
+    },
+    "status.open_keypad_tooltip": {
+        "en_at_translation": "Click to open Motion Keypad"
+    },
+    "status.open_dro_tooltip": {
+        "en_at_translation": "Click to open larger Info Display"
+    },
+    "actions.c2_tooltip": {
+        "en_at_translation": "Do Z-Zero (Macro C2)"
+    },
+    "actions.c3_tooltip": {
+        "en_at_translation": "Do XYZ-Homing (Macro C3)"
+    },
+    "actions.jh_tooltip": {
+        "en_at_translation": "JH (Jog Home in XY)"
+    },
+    "actions.jp_tooltip": {
+        "en_at_translation": "Goto Park Location (Macro C#79; Settings in C#210)"
+    },
+    "actions.spindle_toggle_tooltip": {
+        "en_at_translation": "Toggle Spindle ON/OFF"
+    },
+    "errors.machine.cannot_arm_from_state": {
+        "en_at_translation": "Cannot arm machine for {action} from the {state} state"
+    },
+    "errors.machine.no_position": {
+        "en_at_translation": "Machine position not available"
+    },
+    "errors.machine.interlock_active": {
+        "en_at_translation": "Interlock input is active"
+    },
+    "errors.toolbox.not_active": {
+        "en_at_translation": "Toolbox is not active"
+    },
+    "errors.toolbox.no_position": {
+        "en_at_translation": "Machine position not available"
+    },
+    "errors.toolbox.unknown_cut_type": {
+        "en_at_translation": "Unknown cut type: {cutType}"
+    },
+    "errors.toolbox.generation_failed": {
+        "en_at_translation": "Could not generate cut: {error}"
+    },
+    "errors.toolbox.tmpdir_failed": {
+        "en_at_translation": "Could not create temp directory for toolbox: {error}"
+    },
+    "errors.toolbox.tmpfile_write_failed": {
+        "en_at_translation": "Could not write toolbox temp file: {error}"
+    },
+    "errors.toolbox.run_failed": {
+        "en_at_translation": "Failed to run toolbox cut: {error}"
+    },
+    "config.tabs.general": {
+        "en_at_translation": "General"
+    },
+    "config.tabs.machine": {
+        "en_at_translation": "Machine"
+    },
+    "config.tabs.drivers": {
+        "en_at_translation": "Drivers"
+    },
+    "config.tabs.axes": {
+        "en_at_translation": "Axes"
+    },
+    "config.tabs.inputs": {
+        "en_at_translation": "Inputs"
+    },
+    "config.tabs.outputs": {
+        "en_at_translation": "Outputs"
+    },
+    "config.tabs.apps": {
+        "en_at_translation": "Apps"
+    },
+    "config.tabs.users": {
+        "en_at_translation": "Users"
+    },
+    "config.general.legend": {
+        "en_at_translation": "General Settings"
+    },
+    "config.general.machine_name": {
+        "en_at_translation": "Machine Name"
+    },
+    "config.general.machine_name_tooltip": {
+        "en_at_translation": "The name of your tool. The tool name will be displayed on the dashboard.<br>It is used as the Wifi name for AP mode and IP address display.<br>You can change the name here. The display will update the next time<br>you start the software.<br>"
+    },
+    "config.general.machine_profile": {
+        "en_at_translation": "Machine Profile"
+    },
+    "config.general.machine_profile_tooltip": {
+        "en_at_translation": "The Machine Profile sets the default values, apps and macros for your tool.<br>Changing this setting will restart FabMo and reset Configurations.<br>"
+    },
+    "config.general.unit_system": {
+        "en_at_translation": "Unit System"
+    },
+    "config.general.unit_system_tooltip": {
+        "en_at_translation": "The distance units that will be used for motion and display and in supported apps.<br>"
+    },
+    "config.general.distance_mode": {
+        "en_at_translation": "Distance Mode"
+    },
+    "config.general.distance_mode_tooltip": {
+        "en_at_translation": "Absolute distance means the tool moves to specified coordinates.<br>Relative distance means the tool moves from its current position <br>-by- the specified distance. (Relative is rarely used in modern CNC.)<br>This setting applies primarily to g-code files. Relative can be <br>applied if needed in an OpenSBP file by using the [SR] command.<br>"
+    },
+    "config.general.distance_absolute": {
+        "en_at_translation": "Absolute"
+    },
+    "config.general.distance_relative": {
+        "en_at_translation": "Relative/Incremental"
+    },
+    "config.general.language": {
+        "en_at_translation": "Language"
+    },
+    "config.general.language_tooltip": {
+        "en_at_translation": "Display language for the dashboard.<br>Changing this setting reloads the page so the new<br>translations take effect.<br>"
+    },
+    "config.logging.legend": {
+        "en_at_translation": "Logging"
+    },
+    "config.logging.log_level": {
+        "en_at_translation": "Log Level"
+    },
+    "config.logging.log_level_tooltip": {
+        "en_at_translation": "Determines how aggressively the tool records diagnostic <br>information in its log.<br>This should be set to 'Informational' except in certain <br>tech support situations.<br>Setting this value to something other than 'Informational' <br>may negatively impact tool performance.<br>"
+    },
+    "config.logging.log_g2": {
+        "en_at_translation": "G2"
+    },
+    "config.logging.log_debug": {
+        "en_at_translation": "Debug"
+    },
+    "config.logging.log_info": {
+        "en_at_translation": "Informational"
+    },
+    "config.logging.log_warning": {
+        "en_at_translation": "Warnings"
+    },
+    "config.logging.log_error": {
+        "en_at_translation": "Error"
+    },
+    "config.logging.status_report_interval": {
+        "en_at_translation": "Status Report Interval"
+    },
+    "config.logging.status_report_interval_tooltip": {
+        "en_at_translation": "The minimum interval between tool status reports.<br>A larger number here means position and status displays <br>will not update as frequently [range 100 - 500].<br>"
+    },
+    "config.software.legend": {
+        "en_at_translation": "Software"
+    },
+    "config.software.engine_version": {
+        "en_at_translation": "FabMo-Engine Software Version"
+    },
+    "config.software.check_updates": {
+        "en_at_translation": "Check for FabMo Software Updates"
+    },
+    "config.software.firmware_version": {
+        "en_at_translation": "G2 Firmware Version (realtime motion module)"
+    },
+    "config.software.firmware_loading": {
+        "en_at_translation": "Special Case - Firmware loading"
+    },
+    "config.software.firmware_loading_tooltip": {
+        "en_at_translation": "These are firmware load functions for special use cases:<br>&nbsp;&nbsp;Either to upload a firmware file you have been provided by tech support, <br>&nbsp;&nbsp;or to reload the current firmare in cases where there is a mismatch <br>&nbsp;&nbsp;between the SD card and the Control card (e.g. SD card replacement).<br>"
+    },
+    "config.software.firmware_upload": {
+        "en_at_translation": "SPECIAL |  Update G2 Firmware with a file provided by tech support"
+    },
+    "config.software.firmware_reload": {
+        "en_at_translation": "SPECIAL |  Reload G2 Firmware from current FabMo"
+    },
+    "config.axes.legend": {
+        "en_at_translation": "AXIS CONFIGURATIONS"
+    },
+    "config.axes.x_axis": {
+        "en_at_translation": "X-Axis"
+    },
+    "config.axes.y_axis": {
+        "en_at_translation": "Y-Axis"
+    },
+    "config.axes.z_axis": {
+        "en_at_translation": "Z-Axis"
+    },
+    "config.axes.a_axis": {
+        "en_at_translation": "A-Axis"
+    },
+    "config.axes.b_axis": {
+        "en_at_translation": "B-Axis"
+    },
+    "config.axes.c_axis": {
+        "en_at_translation": "C-Axis"
+    },
+    "config.axes.feedrate_max": {
+        "en_at_translation": "Feedrate Maximum"
+    },
+    "config.axes.jog_velocity": {
+        "en_at_translation": "Jog Velocity"
+    },
+    "config.axes.max_jerk": {
+        "en_at_translation": "Maximum Jerk"
+    },
+    "config.axes.high_brake_jerk": {
+        "en_at_translation": "High Brake Jerk"
+    },
+    "config.axes.axis_mode": {
+        "en_at_translation": "Axis Mode"
+    },
+    "config.axes.mode_disable": {
+        "en_at_translation": "Disable"
+    },
+    "config.axes.mode_linear": {
+        "en_at_translation": "Linear"
+    },
+    "config.axes.mode_rotary": {
+        "en_at_translation": "Rotary"
+    },
+    "config.drivers.channel_word": {
+        "en_at_translation": "Channel"
+    },
+    "config.drivers.unit_value": {
+        "en_at_translation": "Unit Value"
+    },
+    "config.drivers.direction": {
+        "en_at_translation": "Direction"
+    },
+    "config.drivers.axis": {
+        "en_at_translation": "Axis"
+    },
+    "config.drivers.dir_normal": {
+        "en_at_translation": "Normal"
+    },
+    "config.drivers.dir_reversed": {
+        "en_at_translation": "Reversed"
+    },
+    "config.drivers.steps_unit": {
+        "en_at_translation": "steps/unit"
+    },
+    "config.inputs.input_word": {
+        "en_at_translation": "Input"
+    },
+    "config.inputs.enabled": {
+        "en_at_translation": "Enabled"
+    },
+    "config.inputs.action": {
+        "en_at_translation": "Action"
+    },
+    "config.inputs.polarity": {
+        "en_at_translation": "Polarity"
+    },
+    "config.inputs.true": {
+        "en_at_translation": "True"
+    },
+    "config.inputs.false": {
+        "en_at_translation": "False"
+    },
+    "config.inputs.low": {
+        "en_at_translation": "Low"
+    },
+    "config.inputs.high": {
+        "en_at_translation": "High"
+    },
+    "config.inputs.action_none": {
+        "en_at_translation": "None"
+    },
+    "config.inputs.action_stop": {
+        "en_at_translation": "Stop"
+    },
+    "config.inputs.action_stop_fast": {
+        "en_at_translation": "Stop-Fast"
+    },
+    "config.inputs.action_interlock": {
+        "en_at_translation": "Interlock"
+    },
+    "config.inputs.action_limit": {
+        "en_at_translation": "Limit"
+    },
+    "config.inputs.action_halt": {
+        "en_at_translation": "Stop-Immediate*"
+    },
+    "config.machine.envelope": {
+        "en_at_translation": "Machine Envelope"
+    },
+    "config.machine.x_min": {
+        "en_at_translation": "X Min"
+    },
+    "config.machine.x_max": {
+        "en_at_translation": "X Max"
+    },
+    "config.machine.y_min": {
+        "en_at_translation": "Y Min"
+    },
+    "config.machine.y_max": {
+        "en_at_translation": "Y Max"
+    },
+    "config.machine.z_min": {
+        "en_at_translation": "Z Min"
+    },
+    "config.machine.z_max": {
+        "en_at_translation": "Z Max"
+    },
+    "config.machine.a_min": {
+        "en_at_translation": "A Min"
+    },
+    "config.machine.a_max": {
+        "en_at_translation": "A Max"
+    },
+    "config.machine.b_min": {
+        "en_at_translation": "B Min"
+    },
+    "config.machine.b_max": {
+        "en_at_translation": "B Max"
+    },
+    "config.machine.c_min": {
+        "en_at_translation": "C Min"
+    },
+    "config.machine.c_max": {
+        "en_at_translation": "C Max"
+    },
+    "config.outputs_tab.output_word": {
+        "en_at_translation": "Output"
+    },
+    "config.apps_tab.drop_to_install": {
+        "en_at_translation": "Drag app here to install..."
+    },
+    "config.apps_tab.set_default_home": {
+        "en_at_translation": "Set Default Home"
+    },
+    "config.apps_tab.name": {
+        "en_at_translation": "Name"
+    },
+    "config.apps_tab.version": {
+        "en_at_translation": "Version"
+    },
+    "config.apps_tab.description": {
+        "en_at_translation": "Description"
+    },
+    "config.users_tab.current_user": {
+        "en_at_translation": "Current User Information"
+    },
+    "config.users_tab.user_name": {
+        "en_at_translation": "User name"
+    },
+    "config.users_tab.admin_permission": {
+        "en_at_translation": "Admin permission"
+    },
+    "config.users_tab.user_created": {
+        "en_at_translation": "User Created"
+    },
+    "config.users_tab.change_password": {
+        "en_at_translation": "Change Password"
+    },
+    "config.users_tab.new_password": {
+        "en_at_translation": "New Password"
+    },
+    "config.users_tab.confirm_password": {
+        "en_at_translation": "Confirm Password"
+    },
+    "config.users_tab.submit": {
+        "en_at_translation": "Submit"
+    },
+    "config.users_tab.user_management": {
+        "en_at_translation": "User Management"
+    },
+    "config.users_tab.username": {
+        "en_at_translation": "Username"
+    },
+    "config.users_tab.admin": {
+        "en_at_translation": "Admin"
+    },
+    "config.users_tab.created": {
+        "en_at_translation": "Created"
+    },
+    "config.users_tab.add_user": {
+        "en_at_translation": "Add new user"
+    },
+    "config.backup.legend": {
+        "en_at_translation": "Backup & Restore"
+    },
+    "config.backup.backup_config": {
+        "en_at_translation": "Backup this Configuration"
+    },
+    "config.backup.restore_config": {
+        "en_at_translation": "Restore a Configuration"
+    },
+    "config.backup.backup_macros": {
+        "en_at_translation": "Backup current Macros"
+    },
+    "config.backup.restore_macros": {
+        "en_at_translation": "Restore saved Macros"
+    },
+    "config.defaults.legend": {
+        "en_at_translation": "My Default Settings"
+    },
+    "config.defaults.explanation": {
+        "en_at_translation": "Save the current configuration as your personal default. If a settings file is ever damaged and the most recent backup can't be used, the machine will fall back to your saved default instead of the factory profile."
+    },
+    "config.defaults.save_default": {
+        "en_at_translation": "Save current settings as my default"
+    },
+    "config.defaults.reset_default": {
+        "en_at_translation": "Reset to my default settings"
+    },
+    "config.defaults.current_default": {
+        "en_at_translation": "Current default:"
+    },
+    "config.defaults.none": {
+        "en_at_translation": "none"
+    },
+    "sb4.menu.files": {
+        "en_at_translation": "Files"
+    },
+    "sb4.menu.files_tooltip": {
+        "en_at_translation": "CUT, Edit, or Preview PART FILES"
+    },
+    "sb4.menu.moves": {
+        "en_at_translation": "Moves"
+    },
+    "sb4.menu.moves_tooltip": {
+        "en_at_translation": "Basic Movement Commands"
+    },
+    "sb4.menu.jogs": {
+        "en_at_translation": "Jogs"
+    },
+    "sb4.menu.jogs_tooltip": {
+        "en_at_translation": "Jog or Rapid Motion Commands"
+    },
+    "sb4.menu.cuts": {
+        "en_at_translation": "Cuts"
+    },
+    "sb4.menu.cuts_tooltip": {
+        "en_at_translation": "Simple Cut Commands and Custom Macros"
+    },
+    "sb4.menu.zero": {
+        "en_at_translation": "Zero"
+    },
+    "sb4.menu.zero_tooltip": {
+        "en_at_translation": "Zero an Axis or Axes at its Current Location"
+    },
+    "sb4.menu.settings": {
+        "en_at_translation": "Settings"
+    },
+    "sb4.menu.settings_tooltip": {
+        "en_at_translation": "Input or Change a Setting"
+    },
+    "sb4.menu.values": {
+        "en_at_translation": "Values"
+    },
+    "sb4.menu.values_tooltip": {
+        "en_at_translation": "Set or Change Current Configuration Values"
+    },
+    "sb4.menu.tools": {
+        "en_at_translation": "Tools"
+    },
+    "sb4.menu.tools_tooltip": {
+        "en_at_translation": "Tools for Special Purposes"
+    },
+    "sb4.menu.design": {
+        "en_at_translation": "Design"
+    },
+    "sb4.menu.design_tooltip": {
+        "en_at_translation": "Use a web-based CAD/CAM Design program"
+    },
+    "sb4.menu.help": {
+        "en_at_translation": "Help"
+    },
+    "sb4.menu.help_tooltip": {
+        "en_at_translation": "Get Help for ShopBot"
+    },
+    "sb4.menu.menu": {
+        "en_at_translation": "menu"
+    },
+    "sb4.workflow.panel_label": {
+        "en_at_translation": "Standard Workflow"
+    },
+    "sb4.workflow.tooltip": {
+        "en_at_translation": "This panel accesses the steps for starting-up your tool and Cutting or Managing your Part Files."
+    },
+    "sb4.workflow.tooltip_checklist_prefix": {
+        "en_at_translation": "Click to download a detailed workflow"
+    },
+    "sb4.workflow.checklist": {
+        "en_at_translation": "Checklist"
+    },
+    "sb4.workflow.home_xy": {
+        "en_at_translation": "A - Home X & Y"
+    },
+    "sb4.workflow.home_xy_tooltip": {
+        "en_at_translation": "Home the X and Y Axes; C3 or Macro"
+    },
+    "sb4.workflow.set_z_zero": {
+        "en_at_translation": "B - Set Z Zero"
+    },
+    "sb4.workflow.set_z_zero_tooltip": {
+        "en_at_translation": "Set Z Zero; C2 or Macro2"
+    },
+    "toolbox.title": {
+        "en_at_translation": "Toolbox"
+    },
+    "toolbox.grip_label": {
+        "en_at_translation": "TOOLBOX"
+    },
+    "toolbox.grip_aria": {
+        "en_at_translation": "Toggle toolbox panel"
+    },
+    "toolbox.back_aria": {
+        "en_at_translation": "Back to toolbox"
+    },
+    "toolbox.tools.drill_press": {
+        "en_at_translation": "Drill Press"
+    },
+    "toolbox.tools.table_saw": {
+        "en_at_translation": "Table Saw"
+    },
+    "toolbox.tools.planer": {
+        "en_at_translation": "Planer"
+    },
+    "toolbox.sections.bit": {
+        "en_at_translation": "Bit"
+    },
+    "toolbox.params.cutter_dia": {
+        "en_at_translation": "Cutter dia"
+    },
+    "toolbox.params.plunge_per_pass": {
+        "en_at_translation": "Plunge/pass"
+    },
+    "toolbox.params.feedrate": {
+        "en_at_translation": "Feedrate"
+    },
+    "toolbox.params.plunge": {
+        "en_at_translation": "Plunge"
+    },
+    "toolbox.params.diameter": {
+        "en_at_translation": "Diameter"
+    },
+    "toolbox.params.depth": {
+        "en_at_translation": "Depth"
+    },
+    "toolbox.params.length": {
+        "en_at_translation": "Length"
+    },
+    "toolbox.params.width": {
+        "en_at_translation": "Width"
+    },
+    "toolbox.params.angle": {
+        "en_at_translation": "Angle"
+    },
+    "toolbox.params.grain": {
+        "en_at_translation": "Grain"
+    },
+    "toolbox.params.stepover": {
+        "en_at_translation": "Stepover"
+    },
+    "toolbox.params.height": {
+        "en_at_translation": "Height"
+    },
+    "toolbox.params.plunge_from": {
+        "en_at_translation": "Plunge from"
+    },
+    "toolbox.modes.pocket": {
+        "en_at_translation": "POCKET"
+    },
+    "toolbox.modes.profile": {
+        "en_at_translation": "PROFILE"
+    },
+    "toolbox.modes.zero": {
+        "en_at_translation": "ZERO"
+    },
+    "toolbox.modes.height": {
+        "en_at_translation": "HEIGHT"
+    },
+    "toolbox.cut": {
+        "en_at_translation": "CUT"
+    }
+}

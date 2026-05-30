@@ -1,0 +1,20 @@
+{
+    "hello-i18n.title": {
+        "en_at_translation": "Hello, i18n!"
+    },
+    "hello-i18n.intro": {
+        "en_at_translation": "This is a sample FabMo app demonstrating the per-app translation convention."
+    },
+    "hello-i18n.buttons.greet": {
+        "en_at_translation": "Greet me"
+    },
+    "hello-i18n.buttons.reset": {
+        "en_at_translation": "Reset"
+    },
+    "hello-i18n.tooltips.greet": {
+        "en_at_translation": "Click to render a greeting in the active language"
+    },
+    "hello-i18n.greeting": {
+        "en_at_translation": "Hello, world!"
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "_meta": {
+        "app": "hello-i18n",
+        "language": "日本語",
+        "code": "ja"
+    },
+    "hello-i18n": {
+        "title": "こんにちは i18n!",
+        "intro": "これはアプリごとの翻訳の慣例を示すFabMoサンプルアプリです。",
+        "buttons": {
+            "greet": "挨拶する",
+            "reset": "リセット"
+        },
+        "tooltips": {
+            "greet": "現在の言語で挨拶を表示するにはクリック"
+        },
+        "greeting": "こんにちは、世界！"
+    }
+}

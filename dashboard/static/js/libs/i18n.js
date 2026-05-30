@@ -98,10 +98,20 @@
     // so untranslated UI never flashes a raw key.
     function applyDomTranslations(root) {
         root = root || document;
+        // data-i18n: replace text content (safe for plain strings).
         var els = root.querySelectorAll("[data-i18n]");
         for (var i = 0; i < els.length; i++) {
             var k = els[i].getAttribute("data-i18n");
             if (k) els[i].textContent = t(k);
+        }
+        // data-i18n-html: replace innerHTML. Use for translated tooltips
+        // / copy that embeds <br>, <strong>, etc. — translator-supplied
+        // markup. Trust comes from the translation file being part of
+        // the codebase, not user input.
+        var htmlEls = root.querySelectorAll("[data-i18n-html]");
+        for (var hi = 0; hi < htmlEls.length; hi++) {
+            var hk = htmlEls[hi].getAttribute("data-i18n-html");
+            if (hk) htmlEls[hi].innerHTML = t(hk);
         }
         var attrs = [
             ["data-i18n-title",       "title"],

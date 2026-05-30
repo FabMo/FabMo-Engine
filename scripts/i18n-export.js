@@ -1,24 +1,38 @@
 #!/usr/bin/env node
 /*
- * i18n-export — dump every (key, English, target-language) tuple to CSV
- * for handing off to a translator or feeding to an AI for first-pass
- * translation. The CSV layout is intentionally trivial so any tool
- * (Sheets, Excel, jq, awk) can roundtrip it.
+ * i18n-export — dump every (key, English, target-language, status) tuple
+ * to CSV for handing off to a translator or feeding to an AI.
  *
  * Usage:
  *   node scripts/i18n-export.js [targetLang] [outFile]
- *   node scripts/i18n-export.js ja > i18n/ja.csv
+ *   node scripts/i18n-export.js ja i18n/ja.csv
+ *   node scripts/i18n-export.js ja > /tmp/ja.csv
  *
  * Defaults: targetLang = "ja", outFile = stdout.
  *
- * Columns: key, english, target
- *   - key is the dotted path ("toolbox.drill_press")
- *   - english is the value from i18n/en.json
- *   - target is the current value from i18n/<lang>.json, or empty if
- *     not yet translated. Empty target = translator's TODO list.
+ * CSV columns:
+ *   key      — dotted path, e.g. "toolbox.drill_press"
+ *   english  — current value from i18n/en.json
+ *   <lang>   — current value from i18n/<lang>.json (or empty)
+ *   status   — one of:
+ *                ok        translation matches the English it was made
+ *                          from (per i18n/<lang>.meta.json sidecar)
+ *                new       no translation yet
+ *                stale     English has changed since the translation
+ *                          was last recorded. Format: stale (was: "...")
+ *                          so the translator sees what the old English
+ *                          said and can judge whether their translation
+ *                          still applies.
+ *                untracked translation exists but no sidecar record —
+ *                          translation predates the staleness system,
+ *                          or someone hand-edited the JSON. Treat as
+ *                          "probably ok, please confirm."
+ *                orphaned  translation exists but the key has been
+ *                          removed from en.json. Translator can delete
+ *                          the row, or keep the translation in case the
+ *                          key returns later.
  *
- * Skips the _meta block. Standard CSV escaping (double-quotes around
- * any field containing comma, quote, or newline).
+ * Skips the _meta block. Standard CSV escaping.
  */
 var fs = require("fs");
 var path = require("path");
@@ -33,6 +47,12 @@ try {
     target = JSON.parse(fs.readFileSync(path.join(i18nDir, targetLang + ".json"), "utf8"));
 } catch (e) {
     process.stderr.write("note: " + targetLang + ".json missing, target column will be empty\n");
+}
+var meta = {};
+try {
+    meta = JSON.parse(fs.readFileSync(path.join(i18nDir, targetLang + ".meta.json"), "utf8"));
+} catch (e) {
+    // No sidecar yet — every existing translation will be "untracked."
 }
 
 function walk(dict, prefix, out) {
@@ -68,22 +88,63 @@ function csvEscape(s) {
     return s;
 }
 
-var keys = [];
-walk(en, "", keys);
+// Build the union of keys: everything in en.json, plus any target-only
+// keys (so orphaned translations show up in the CSV and the translator
+// can review them rather than them silently lingering in the JSON).
+var enKeys = [];
+walk(en, "", enKeys);
+var targetKeys = [];
+walk(target, "", targetKeys);
 
-var lines = ["key,english," + targetLang];
-keys.forEach(function (k) {
-    lines.push([
-        csvEscape(k),
-        csvEscape(lookup(en, k)),
-        csvEscape(lookup(target, k) || ""),
-    ].join(","));
+var enKeySet = {};
+enKeys.forEach(function (k) { enKeySet[k] = true; });
+var orphanKeys = targetKeys.filter(function (k) { return !enKeySet[k]; });
+
+var rows = [];
+
+enKeys.forEach(function (k) {
+    var enVal = lookup(en, k) || "";
+    var trVal = lookup(target, k);
+    var metaEntry = meta[k];
+    var status;
+    if (trVal === undefined || trVal === "") {
+        status = "new";
+    } else if (!metaEntry || metaEntry.en_at_translation === undefined) {
+        status = "untracked";
+    } else if (metaEntry.en_at_translation === enVal) {
+        status = "ok";
+    } else {
+        status = "stale (was: \"" + metaEntry.en_at_translation + "\")";
+    }
+    rows.push([k, enVal, trVal || "", status]);
+});
+
+orphanKeys.forEach(function (k) {
+    rows.push([k, "", lookup(target, k) || "", "orphaned"]);
+});
+
+var lines = ["key,english," + targetLang + ",status"];
+rows.forEach(function (r) {
+    lines.push(r.map(csvEscape).join(","));
 });
 
 var output = lines.join("\n") + "\n";
 if (outFile) {
     fs.writeFileSync(outFile, output);
-    process.stderr.write("Wrote " + keys.length + " keys to " + outFile + "\n");
+    // Summary on stderr — useful when the script is part of a release flow.
+    var counts = { ok: 0, "new": 0, stale: 0, untracked: 0, orphaned: 0 };
+    rows.forEach(function (r) {
+        var s = r[3].split(" ")[0];   // "stale (was: ...)" → "stale"
+        if (counts[s] !== undefined) counts[s]++;
+    });
+    process.stderr.write(
+        "Wrote " + rows.length + " keys to " + outFile + "\n" +
+        "  ok: " + counts.ok +
+        ", new: " + counts["new"] +
+        ", stale: " + counts.stale +
+        ", untracked: " + counts.untracked +
+        ", orphaned: " + counts.orphaned + "\n"
+    );
 } else {
     process.stdout.write(output);
 }

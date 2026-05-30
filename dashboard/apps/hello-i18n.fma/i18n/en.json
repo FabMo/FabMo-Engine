@@ -1,0 +1,19 @@
+{
+    "_meta": {
+        "app": "hello-i18n",
+        "language": "English",
+        "code": "en"
+    },
+    "hello-i18n": {
+        "title": "Hello, i18n!",
+        "intro": "This is a sample FabMo app demonstrating the per-app translation convention.",
+        "buttons": {
+            "greet": "Greet me",
+            "reset": "Reset"
+        },
+        "tooltips": {
+            "greet": "Click to render a greeting in the active language"
+        },
+        "greeting": "Hello, world!"
+    }
+}

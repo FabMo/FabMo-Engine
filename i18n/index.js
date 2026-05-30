@@ -25,11 +25,79 @@ var log = require("../log").logger("i18n");
 var dicts = {};
 var loaded = false;
 
+// Directories scanned for app dictionaries on top of core. Each
+// matching <appdir>/i18n/<code>.json is merged into the in-memory
+// dict for that language. Apps from /opt/fabmo/approot/... are
+// installed third-party apps; apps under dashboard/apps/ are the
+// ones bundled with the engine.
+var APP_DICT_ROOTS = [
+    path.resolve(__dirname, "..", "dashboard", "apps"),
+    "/opt/fabmo/approot/approot",
+];
+
+// Deep-merge `src` into `dst` in place; later writes override earlier
+// ones at the leaf level. Used to layer app dicts on top of core.
+function deepMerge(dst, src) {
+    if (!src || typeof src !== "object") return dst;
+    Object.keys(src).forEach(function (k) {
+        if (src[k] && typeof src[k] === "object" && !Array.isArray(src[k])) {
+            if (!dst[k] || typeof dst[k] !== "object") dst[k] = {};
+            deepMerge(dst[k], src[k]);
+        } else {
+            dst[k] = src[k];
+        }
+    });
+    return dst;
+}
+
+// Pluck the top-level non-_meta keys to use as the expected namespace.
+// Apps must scope all their keys under their app id, e.g.
+//   { "my-app": { "buttons": { "go": "Go" } } }
+// Returns the set of top-level namespaces declared in the dict.
+function topLevelNamespaces(dict) {
+    if (!dict || typeof dict !== "object") return [];
+    return Object.keys(dict).filter(function (k) { return k !== "_meta"; });
+}
+
+function loadAppDicts() {
+    APP_DICT_ROOTS.forEach(function (root) {
+        var entries;
+        try { entries = fs.readdirSync(root); } catch (e) { return; }
+        entries.forEach(function (entry) {
+            if (!/\.fma$/.test(entry)) return;
+            var i18nDir = path.join(root, entry, "i18n");
+            var files;
+            try { files = fs.readdirSync(i18nDir); } catch (e) { return; }
+            files.forEach(function (file) {
+                // Skip meta sidecars (<lang>.meta.json) and non-json.
+                if (!/\.json$/.test(file)) return;
+                if (/\.meta\.json$/.test(file)) return;
+                var code = path.basename(file, ".json");
+                var fullPath = path.join(i18nDir, file);
+                try {
+                    var raw = fs.readFileSync(fullPath, "utf8");
+                    var appDict = JSON.parse(raw);
+                    if (!dicts[code]) dicts[code] = {};
+                    deepMerge(dicts[code], appDict);
+                    log.info("i18n: merged " + entry + "/" + file +
+                             " [namespaces: " +
+                             topLevelNamespaces(appDict).join(",") + "]");
+                } catch (e) {
+                    log.warn("i18n: failed to load " + fullPath +
+                             ": " + e.message);
+                }
+            });
+        });
+    });
+}
+
 function loadAll() {
+    // 1. Core dicts in /fabmo/i18n/*.json — source of truth, loaded first.
     var dir = __dirname;
     var files = fs.readdirSync(dir);
     files.forEach(function (file) {
         if (path.extname(file) !== ".json") return;
+        if (/\.meta\.json$/.test(file)) return;   // skip sidecars
         var code = path.basename(file, ".json");
         try {
             var raw = fs.readFileSync(path.join(dir, file), "utf8");
@@ -38,6 +106,8 @@ function loadAll() {
             log.warn("i18n: failed to load " + file + ": " + e.message);
         }
     });
+    // 2. App dicts merged on top, namespaced under each app's id.
+    loadAppDicts();
     loaded = true;
     log.info("i18n loaded: " + Object.keys(dicts).join(", "));
 }

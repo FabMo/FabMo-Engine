@@ -53,6 +53,146 @@
             "run_failed": "Failed to run toolbox cut: {error}"
         }
     },
+    "config": {
+        "tabs": {
+            "general": "General",
+            "machine": "Machine",
+            "drivers": "Drivers",
+            "axes": "Axes",
+            "inputs": "Inputs",
+            "outputs": "Outputs",
+            "apps": "Apps",
+            "users": "Users"
+        },
+        "general": {
+            "legend": "General Settings",
+            "machine_name": "Machine Name",
+            "machine_name_tooltip": "The name of your tool. The tool name will be displayed on the dashboard.<br>It is used as the Wifi name for AP mode and IP address display.<br>You can change the name here. The display will update the next time<br>you start the software.<br>",
+            "machine_profile": "Machine Profile",
+            "machine_profile_tooltip": "The Machine Profile sets the default values, apps and macros for your tool.<br>Changing this setting will restart FabMo and reset Configurations.<br>",
+            "unit_system": "Unit System",
+            "unit_system_tooltip": "The distance units that will be used for motion and display and in supported apps.<br>",
+            "distance_mode": "Distance Mode",
+            "distance_mode_tooltip": "Absolute distance means the tool moves to specified coordinates.<br>Relative distance means the tool moves from its current position <br>-by- the specified distance. (Relative is rarely used in modern CNC.)<br>This setting applies primarily to g-code files. Relative can be <br>applied if needed in an OpenSBP file by using the [SR] command.<br>",
+            "distance_absolute": "Absolute",
+            "distance_relative": "Relative/Incremental",
+            "language": "Language",
+            "language_tooltip": "Display language for the dashboard.<br>Changing this setting reloads the page so the new<br>translations take effect.<br>"
+        },
+        "logging": {
+            "legend": "Logging",
+            "log_level": "Log Level",
+            "log_level_tooltip": "Determines how aggressively the tool records diagnostic <br>information in its log.<br>This should be set to 'Informational' except in certain <br>tech support situations.<br>Setting this value to something other than 'Informational' <br>may negatively impact tool performance.<br>",
+            "log_g2": "G2",
+            "log_debug": "Debug",
+            "log_info": "Informational",
+            "log_warning": "Warnings",
+            "log_error": "Error",
+            "status_report_interval": "Status Report Interval",
+            "status_report_interval_tooltip": "The minimum interval between tool status reports.<br>A larger number here means position and status displays <br>will not update as frequently [range 100 - 500].<br>"
+        },
+        "software": {
+            "legend": "Software",
+            "engine_version": "FabMo-Engine Software Version",
+            "check_updates": "Check for FabMo Software Updates",
+            "firmware_version": "G2 Firmware Version (realtime motion module)",
+            "firmware_loading": "Special Case - Firmware loading",
+            "firmware_loading_tooltip": "These are firmware load functions for special use cases:<br>&nbsp;&nbsp;Either to upload a firmware file you have been provided by tech support, <br>&nbsp;&nbsp;or to reload the current firmare in cases where there is a mismatch <br>&nbsp;&nbsp;between the SD card and the Control card (e.g. SD card replacement).<br>",
+            "firmware_upload": "SPECIAL |  Update G2 Firmware with a file provided by tech support",
+            "firmware_reload": "SPECIAL |  Reload G2 Firmware from current FabMo"
+        },
+        "axes": {
+            "legend": "AXIS CONFIGURATIONS",
+            "x_axis": "X-Axis",
+            "y_axis": "Y-Axis",
+            "z_axis": "Z-Axis",
+            "a_axis": "A-Axis",
+            "b_axis": "B-Axis",
+            "c_axis": "C-Axis",
+            "feedrate_max": "Feedrate Maximum",
+            "jog_velocity": "Jog Velocity",
+            "max_jerk": "Maximum Jerk",
+            "high_brake_jerk": "High Brake Jerk",
+            "axis_mode": "Axis Mode",
+            "mode_disable": "Disable",
+            "mode_linear": "Linear",
+            "mode_rotary": "Rotary"
+        },
+        "drivers": {
+            "channel_word": "Channel",
+            "unit_value": "Unit Value",
+            "direction": "Direction",
+            "axis": "Axis",
+            "dir_normal": "Normal",
+            "dir_reversed": "Reversed",
+            "steps_unit": "steps/unit"
+        },
+        "inputs": {
+            "input_word": "Input",
+            "enabled": "Enabled",
+            "action": "Action",
+            "polarity": "Polarity",
+            "true": "True",
+            "false": "False",
+            "low": "Low",
+            "high": "High",
+            "action_none": "None",
+            "action_stop": "Stop",
+            "action_stop_fast": "Stop-Fast",
+            "action_interlock": "Interlock",
+            "action_limit": "Limit",
+            "action_halt": "Stop-Immediate*"
+        },
+        "machine": {
+            "envelope": "Machine Envelope",
+            "x_min": "X Min", "x_max": "X Max",
+            "y_min": "Y Min", "y_max": "Y Max",
+            "z_min": "Z Min", "z_max": "Z Max",
+            "a_min": "A Min", "a_max": "A Max",
+            "b_min": "B Min", "b_max": "B Max",
+            "c_min": "C Min", "c_max": "C Max"
+        },
+        "outputs_tab": {
+            "output_word": "Output"
+        },
+        "apps_tab": {
+            "drop_to_install": "Drag app here to install...",
+            "set_default_home": "Set Default Home",
+            "name": "Name",
+            "version": "Version",
+            "description": "Description"
+        },
+        "users_tab": {
+            "current_user": "Current User Information",
+            "user_name": "User name",
+            "admin_permission": "Admin permission",
+            "user_created": "User Created",
+            "change_password": "Change Password",
+            "new_password": "New Password",
+            "confirm_password": "Confirm Password",
+            "submit": "Submit",
+            "user_management": "User Management",
+            "username": "Username",
+            "admin": "Admin",
+            "created": "Created",
+            "add_user": "Add new user"
+        },
+        "backup": {
+            "legend": "Backup & Restore",
+            "backup_config": "Backup this Configuration",
+            "restore_config": "Restore a Configuration",
+            "backup_macros": "Backup current Macros",
+            "restore_macros": "Restore saved Macros"
+        },
+        "defaults": {
+            "legend": "My Default Settings",
+            "explanation": "Save the current configuration as your personal default. If a settings file is ever damaged and the most recent backup can't be used, the machine will fall back to your saved default instead of the factory profile.",
+            "save_default": "Save current settings as my default",
+            "reset_default": "Reset to my default settings",
+            "current_default": "Current default:",
+            "none": "none"
+        }
+    },
     "sb4": {
         "menu": {
             "files": "Files",

@@ -53,6 +53,152 @@
             "run_failed": "ツールボックスカットの実行に失敗: {error}"
         }
     },
+    "config": {
+        "tabs": {
+            "general": "一般",
+            "machine": "機械",
+            "drivers": "ドライバー",
+            "axes": "軸",
+            "inputs": "入力",
+            "outputs": "出力",
+            "apps": "アプリ",
+            "users": "ユーザー"
+        },
+        "general": {
+            "legend": "一般設定",
+            "machine_name": "機械名",
+            "machine_name_tooltip": "機械の名前です。ダッシュボードに表示されます。<br>APモードのWifi名およびIPアドレス表示にも使用されます。<br>ここで名前を変更できます。次回ソフトウェアを起動した時に<br>表示が更新されます。<br>",
+            "machine_profile": "機械プロファイル",
+            "machine_profile_tooltip": "機械プロファイルは、ツールのデフォルト値、アプリ、マクロを設定します。<br>この設定を変更するとFabMoが再起動し、構成がリセットされます。<br>",
+            "unit_system": "単位系",
+            "unit_system_tooltip": "動作と表示、対応アプリで使用される距離単位です。<br>",
+            "distance_mode": "距離モード",
+            "distance_mode_tooltip": "絶対距離は、ツールが指定座標へ移動することを意味します。<br>相対距離は、ツールが現在位置から指定距離分移動することを<br>意味します。（相対は現代のCNCではほとんど使われません。）<br>この設定は主にg-codeファイルに適用されます。OpenSBPファイル<br>では必要に応じて [SR] コマンドで相対を適用できます。<br>",
+            "distance_absolute": "絶対",
+            "distance_relative": "相対/インクリメンタル",
+            "language": "言語",
+            "language_tooltip": "ダッシュボードの表示言語。<br>この設定を変更するとページが再読み込みされ、<br>新しい翻訳が反映されます。<br>"
+        },
+        "logging": {
+            "legend": "ログ",
+            "log_level": "ログレベル",
+            "log_level_tooltip": "ツールがログに診断情報を記録する頻度を決定します。<br>テクニカルサポート時を除き、'Informational' に<br>設定してください。<br>'Informational' 以外に設定すると、ツールの性能に<br>悪影響を及ぼす可能性があります。<br>",
+            "log_g2": "G2",
+            "log_debug": "デバッグ",
+            "log_info": "情報",
+            "log_warning": "警告",
+            "log_error": "エラー",
+            "status_report_interval": "ステータスレポート間隔",
+            "status_report_interval_tooltip": "ツールのステータスレポート間の最小間隔。<br>数値を大きくすると位置とステータス表示の更新頻度が<br>下がります [範囲 100 - 500]。<br>"
+        },
+        "software": {
+            "legend": "ソフトウェア",
+            "engine_version": "FabMo-Engine ソフトウェアバージョン",
+            "check_updates": "FabMo ソフトウェア更新を確認",
+            "firmware_version": "G2 ファームウェアバージョン（リアルタイムモーションモジュール）",
+            "firmware_loading": "特殊ケース - ファームウェア読み込み",
+            "firmware_loading_tooltip": "これらは特殊用途のファームウェア読み込み機能です：<br>&nbsp;&nbsp;テクニカルサポートから提供されたファームウェアファイルのアップロード、<br>&nbsp;&nbsp;または SDカードとコントロールカードの不一致時（例：SDカード交換）<br>&nbsp;&nbsp;に現在のファームウェアを再読み込みする場合に使用します。<br>",
+            "firmware_upload": "特殊 | テクニカルサポート提供のファイルでG2ファームウェアを更新",
+            "firmware_reload": "特殊 | 現在のFabMoからG2ファームウェアを再読み込み"
+        },
+        "axes": {
+            "legend": "軸構成",
+            "x_axis": "X軸",
+            "y_axis": "Y軸",
+            "z_axis": "Z軸",
+            "a_axis": "A軸",
+            "b_axis": "B軸",
+            "c_axis": "C軸",
+            "feedrate_max": "最大送り速度",
+            "jog_velocity": "ジョグ速度",
+            "max_jerk": "最大ジャーク",
+            "high_brake_jerk": "ハイブレーキジャーク",
+            "axis_mode": "軸モード",
+            "mode_disable": "無効",
+            "mode_linear": "直線",
+            "mode_rotary": "回転"
+        },
+        "drivers": {
+            "channel_word": "チャンネル",
+            "unit_value": "ユニット値",
+            "direction": "方向",
+            "axis": "軸",
+            "dir_normal": "正方向",
+            "dir_reversed": "反転",
+            "steps_unit": "ステップ/単位"
+        },
+        "inputs": {
+            "input_word": "入力",
+            "enabled": "有効",
+            "action": "動作",
+            "polarity": "極性",
+            "true": "True",
+            "false": "False",
+            "low": "Low",
+            "high": "High",
+            "action_none": "なし",
+            "action_stop": "停止",
+            "action_stop_fast": "急停止",
+            "action_interlock": "インターロック",
+            "action_limit": "リミット",
+            "action_halt": "即時停止*"
+        },
+        "machine": {
+            "envelope": "機械エンベロープ",
+            "x_min": "X 最小",
+            "x_max": "X 最大",
+            "y_min": "Y 最小",
+            "y_max": "Y 最大",
+            "z_min": "Z 最小",
+            "z_max": "Z 最大",
+            "a_min": "A 最小",
+            "a_max": "A 最大",
+            "b_min": "B 最小",
+            "b_max": "B 最大",
+            "c_min": "C 最小",
+            "c_max": "C 最大"
+        },
+        "outputs_tab": {
+            "output_word": "出力"
+        },
+        "apps_tab": {
+            "drop_to_install": "アプリをここにドラッグしてインストール...",
+            "set_default_home": "デフォルトホームに設定",
+            "name": "名前",
+            "version": "バージョン",
+            "description": "説明"
+        },
+        "users_tab": {
+            "current_user": "現在のユーザー情報",
+            "user_name": "ユーザー名",
+            "admin_permission": "管理者権限",
+            "user_created": "作成日時",
+            "change_password": "パスワード変更",
+            "new_password": "新しいパスワード",
+            "confirm_password": "パスワード確認",
+            "submit": "送信",
+            "user_management": "ユーザー管理",
+            "username": "ユーザー名",
+            "admin": "管理者",
+            "created": "作成日時",
+            "add_user": "新規ユーザー追加"
+        },
+        "backup": {
+            "legend": "バックアップと復元",
+            "backup_config": "この構成をバックアップ",
+            "restore_config": "構成を復元",
+            "backup_macros": "現在のマクロをバックアップ",
+            "restore_macros": "保存されたマクロを復元"
+        },
+        "defaults": {
+            "legend": "マイ・デフォルト設定",
+            "explanation": "現在の構成を個人のデフォルトとして保存します。設定ファイルが破損し、最新のバックアップが使用できない場合、機械は工場プロファイルの代わりに保存されたデフォルトにフォールバックします。",
+            "save_default": "現在の設定を自分のデフォルトとして保存",
+            "reset_default": "自分のデフォルト設定にリセット",
+            "current_default": "現在のデフォルト:",
+            "none": "なし"
+        }
+    },
     "sb4": {
         "menu": {
             "files": "ファイル",
