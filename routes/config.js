@@ -879,6 +879,81 @@ var post_clear_default_snapshot = function (req, res, next) {
     });
 };
 
+// Stream a snapshot directory back as a zip file. Same archiver pattern as
+// backup_macros; output filename is `<name>.fmsnap.zip` so the import side
+// can recognize it on extension alone.
+var download_snapshot = function (req, res, next) {
+    var name = req.params && req.params.name;
+    var dir = snapshots.snapshotPath(name);
+    if (!fs.existsSync(dir)) {
+        res.send(404, { status: "error", message: "Snapshot not found: " + name });
+        return next();
+    }
+    var safeName = String(name).replace(/[^a-zA-Z0-9_-]/g, "_");
+    var fileName = safeName + ".fmsnap.zip";
+
+    res.setHeader("Content-Disposition", 'attachment; filename="' + fileName + '"');
+    res.setHeader("Content-Type", "application/zip");
+
+    var archive = archiver("zip", { zlib: { level: 9 } });
+    archive.on("error", function (err) {
+        log.error("snapshot download zip failed: " + err.message);
+        try { res.json({ status: "error", message: err.message }); } catch (e) {}
+        next();
+    });
+    archive.pipe(res);
+    archive.directory(dir, false);
+    archive.finalize();
+};
+
+// Accept an uploaded snapshot zip and register it as a user snapshot. Uses
+// the same temp-dir scavenge pattern as handleMacrosRestore — bodyParser
+// drops the file in tempDir and we pull the most recent one out.
+function handleSnapshotUpload(req, res, next) {
+    log.info("Snapshot upload endpoint hit");
+
+    var recentFiles = findRecentlyModifiedFiles(tempDir);
+    var zipCandidates = recentFiles.filter(function (f) {
+        return f.size > 0 && isZipFile(f.path) && f.name.indexOf("upload_") === 0;
+    });
+    if (zipCandidates.length === 0) {
+        res.send(400, { status: "error", message: "No valid ZIP file found in upload" });
+        return next();
+    }
+    var zipFile = zipCandidates[0];
+
+    // Extract to a per-request temp dir so concurrent uploads don't collide.
+    // Plain Node `fs` here (not fs-extra) — use recursive mkdir/rm rather
+    // than fs.ensureDir/fs.remove.
+    var extractDir = path.join(tempDir, "fabmo_snap_extract_" + Date.now() + "_" + process.pid);
+    var cleanup = function () {
+        fs.rm(extractDir, { recursive: true, force: true }, function () {});
+    };
+    fs.mkdir(extractDir, { recursive: true }, function (eErr) {
+        if (eErr) {
+            res.send(500, { status: "error", message: "Could not prep extract dir: " + eErr.message });
+            return next();
+        }
+        extract(zipFile.path, { dir: extractDir })
+            .then(function () {
+                snapshots.importFromDir(extractDir, function (impErr, finalName) {
+                    cleanup();
+                    if (impErr) {
+                        res.send(400, { status: "error", message: impErr.message });
+                        return next();
+                    }
+                    res.send(200, { status: "success", data: { name: finalName } });
+                    return next();
+                });
+            })
+            .catch(function (xErr) {
+                cleanup();
+                res.send(400, { status: "error", message: "ZIP extract failed: " + xErr.message });
+                return next();
+            });
+    });
+}
+
 module.exports = function (server) {
     server.post("/macros/restore", handleMacrosRestore);
     server.get("/macros/backup", backup_macros);
@@ -904,6 +979,10 @@ module.exports = function (server) {
     server.get("/snapshots", get_snapshots);
     server.post("/snapshots", post_snapshot);
     server.post("/snapshots/clear-default", post_clear_default_snapshot);
+    // Register literal-path routes (upload) before :name-parameterized ones
+    // so "upload" isn't mistaken for a snapshot name.
+    server.post("/snapshots/upload", handleSnapshotUpload);
+    server.get("/snapshots/:name/download", download_snapshot);
     server.post("/snapshots/:name/restore", post_snapshot_restore);
     server.post("/snapshots/:name/set-default", post_set_default_snapshot);
     server.del("/snapshots/:name", delete_snapshot);

@@ -157,6 +157,75 @@ function create(name, description, callback) {
     _create(name, { kind: "user", description: description || "" }, callback);
 }
 
+// Public: register an extracted snapshot directory (typically the contents
+// of an uploaded `.fmsnap.zip`) under SNAPSHOT_DIR as a user snapshot.
+//
+// The source directory must look like a snapshot root: a snapshot_info.json
+// at the top with at least the `name` field. Name is sanitized against
+// USER_NAME_RE, reserved-prefix collisions are avoided, and if a snapshot
+// with the same name already exists a `_N` suffix is appended so the
+// existing one isn't clobbered. Kind is forced to "user" on import — auto
+// kind is reserved for the engine's own rotation.
+function importFromDir(srcDir, callback) {
+    if (typeof callback !== "function") {
+        callback = function () {};
+    }
+    if (!isIdle()) {
+        return callback(new Error("Machine must be idle to import a snapshot"));
+    }
+    var infoPath = path.join(srcDir, "snapshot_info.json");
+    if (!fs.existsSync(infoPath)) {
+        return callback(new Error("Not a valid snapshot zip: snapshot_info.json missing"));
+    }
+    var info;
+    try {
+        info = JSON.parse(fs.readFileSync(infoPath, "utf8"));
+    } catch (e) {
+        return callback(new Error("Snapshot info is corrupt: " + e.message));
+    }
+
+    var rawName = (info.name || "imported").toString();
+    var sanitized = rawName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 25) || "imported";
+    if (isReservedName(sanitized)) {
+        sanitized = ("imported_" + sanitized).slice(0, 25);
+    }
+
+    // Resolve collisions by appending _N. Keep the existing snapshot
+    // untouched so the user can compare if they imported deliberately.
+    var finalName = sanitized;
+    if (fs.existsSync(snapshotPath(finalName))) {
+        var base = sanitized;
+        for (var n = 1; n <= 99; n++) {
+            var attempt = base.slice(0, 25 - (("_" + n).length)) + "_" + n;
+            if (!fs.existsSync(snapshotPath(attempt))) {
+                finalName = attempt;
+                break;
+            }
+            if (n === 99) {
+                return callback(new Error("Too many existing snapshots named '" + base + "*'"));
+            }
+        }
+    }
+
+    var dest = snapshotPath(finalName);
+    fs.copy(srcDir, dest, function (cpErr) {
+        if (cpErr) {
+            return callback(cpErr);
+        }
+        info.name = finalName;
+        info.kind = "user";
+        info.imported_at = new Date().toISOString();
+        fs.writeFile(path.join(dest, "snapshot_info.json"), JSON.stringify(info, null, 2), function (wErr) {
+            if (wErr) {
+                fs.remove(dest, function () {});
+                return callback(wErr);
+            }
+            log.info("imported snapshot as " + finalName);
+            callback(null, finalName);
+        });
+    });
+}
+
 // Public: create an automatic snapshot of the given kind, prune older ones
 // of the same kind. Bypasses idle and name-collision checks since callers
 // are the engine itself, not user actions.
@@ -637,6 +706,7 @@ function recoverFromMirror(name, callback) {
 module.exports = {
     create: create,
     createAuto: createAuto,
+    importFromDir: importFromDir,
     list: list,
     restore: restore,
     remove: remove,
