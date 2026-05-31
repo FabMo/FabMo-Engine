@@ -153,7 +153,18 @@
             "c_min": "C Min", "c_max": "C Max"
         },
         "outputs_tab": {
-            "output_word": "Output"
+            "output_word": "Output",
+            "locked": "(locked)",
+            "on_condition": "ON Condition",
+            "off_condition": "OFF Condition",
+            "test": "Test",
+            "seconds_placeholder": "seconds",
+            "state_on": "ON",
+            "state_off": "OFF",
+            "mode_file_start": "File Start",
+            "mode_file_end": "File End",
+            "mode_command": "Command",
+            "mode_timed_after_file_end": "Timed after file end"
         },
         "apps_tab": {
             "drop_to_install": "Drag app here to install...",

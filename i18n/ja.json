@@ -132,10 +132,10 @@
             "enabled": "有効",
             "action": "動作",
             "polarity": "極性",
-            "true": "True",
-            "false": "False",
-            "low": "Low",
-            "high": "High",
+            "true": "有効",
+            "false": "無効",
+            "low": "低",
+            "high": "高",
             "action_none": "なし",
             "action_stop": "停止",
             "action_stop_fast": "急停止",
@@ -159,7 +159,18 @@
             "c_max": "C 最大"
         },
         "outputs_tab": {
-            "output_word": "出力"
+            "output_word": "出力",
+            "locked": "(固定)",
+            "on_condition": "ON条件",
+            "off_condition": "OFF条件",
+            "test": "テスト",
+            "seconds_placeholder": "秒",
+            "state_on": "ON",
+            "state_off": "OFF",
+            "mode_file_start": "ファイル開始",
+            "mode_file_end": "ファイル終了",
+            "mode_command": "コマンド",
+            "mode_timed_after_file_end": "ファイル終了後タイマー"
         },
         "apps_tab": {
             "drop_to_install": "アプリをここにドラッグしてインストール...",

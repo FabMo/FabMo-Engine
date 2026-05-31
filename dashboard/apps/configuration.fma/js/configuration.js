@@ -409,14 +409,14 @@ $('#firmware-input').change(function(evt) {
 var OUTPUT_HARDCODED = { 1: "Spindle 1", 2: "Spindle 2", 4: "Arm Motion" };
 
 var ON_MODES = [
-    { value: "file_start", label: "File Start" },
-    { value: "command", label: "Command" },
-    { value: "timed_after_file_end", label: "Timed after file end" }
+    { value: "file_start",          label: "File Start",          i18n: "config.outputs_tab.mode_file_start" },
+    { value: "command",             label: "Command",             i18n: "config.outputs_tab.mode_command" },
+    { value: "timed_after_file_end", label: "Timed after file end", i18n: "config.outputs_tab.mode_timed_after_file_end" }
 ];
 var OFF_MODES = [
-    { value: "file_end", label: "File End" },
-    { value: "command", label: "Command" },
-    { value: "timed_after_file_end", label: "Timed after file end" }
+    { value: "file_end",            label: "File End",            i18n: "config.outputs_tab.mode_file_end" },
+    { value: "command",             label: "Command",             i18n: "config.outputs_tab.mode_command" },
+    { value: "timed_after_file_end", label: "Timed after file end", i18n: "config.outputs_tab.mode_timed_after_file_end" }
 ];
 
 function buildOutputFieldset(n) {
@@ -424,24 +424,25 @@ function buildOutputFieldset(n) {
 
     // Legend: "Output N" + label. For locked outputs the label is fixed text
     // with a "(locked)" tag; for configurable ones it's an inline input the
-    // user can rename.
+    // user can rename. The static words ("Output", "(locked)") are wrapped in
+    // spans with data-i18n so the i18n walker can translate them in place.
     var legendInner;
     if (isLocked) {
         legendInner =
-            'Output ' + n +
+            '<span data-i18n="config.outputs_tab.output_word">Output</span> ' + n +
             ' <span style="font-weight:normal;">' + OUTPUT_HARDCODED[n] + '</span>' +
-            ' <span style="color:#999; font-size:0.85em; font-weight:normal;">(locked)</span>' +
+            ' <span style="color:#999; font-size:0.85em; font-weight:normal;" data-i18n="config.outputs_tab.locked">(locked)</span>' +
             '<input type="hidden" id="machine-outputs-' + n + '-label" value="' + OUTPUT_HARDCODED[n] + '">';
     } else {
         legendInner =
-            'Output ' + n +
+            '<span data-i18n="config.outputs_tab.output_word">Output</span> ' + n +
             ' <input type="text" id="machine-outputs-' + n + '-label" class="machine-output"' +
             ' style="display:inline-block; width:auto; margin:0 0 0 6px; height:1.8em; font-weight:normal;">';
     }
 
-    function buildModeBlock(side, label, modes) {
+    function buildModeBlock(side, labelText, labelKey, modes) {
         var opts = modes.map(function (m) {
-            return '<option value="' + m.value + '">' + m.label + '</option>';
+            return '<option value="' + m.value + '" data-i18n="' + m.i18n + '">' + m.label + '</option>';
         }).join('');
         var lockedAttr = isLocked ? ' disabled' : '';
         var selectCls = isLocked ? '' : ' class="machine-output output-mode" data-side="' + side + '" data-output="' + n + '"';
@@ -449,11 +450,11 @@ function buildOutputFieldset(n) {
         return [
             '<div class="large-4 columns">',
               '<div class="row collapse">',
-                '<label>' + label,
+                '<label><span data-i18n="' + labelKey + '">' + labelText + '</span>',
                   '<select id="machine-outputs-' + n + '-' + side + '_mode"' + selectCls + lockedAttr + '>' + opts + '</select>',
                 '</label>',
                 '<input type="number" id="machine-outputs-' + n + '-' + side + '_seconds" min="0" step="0.1"' + secondsCls + lockedAttr +
-                  ' placeholder="seconds" style="display:none; margin-top:4px;">',
+                  ' placeholder="seconds" data-i18n-placeholder="config.outputs_tab.seconds_placeholder" style="display:none; margin-top:4px;">',
               '</div>',
             '</div>'
         ].join('');
@@ -462,11 +463,12 @@ function buildOutputFieldset(n) {
     var toggleBlock = [
         '<div class="large-4 columns">',
           '<div class="row collapse">',
-            '<label>Test',
+            '<label><span data-i18n="config.outputs_tab.test">Test</span>',
               '<button type="button" class="button output-toggle" data-output="' + n + '"',
                 ' id="output-toggle-' + n + '"',
                 // Match the adjacent <select> dimensions so the row aligns:
-                ' style="width:100%; height:2.3125rem; padding:0; margin:0;">OFF</button>',
+                ' style="width:100%; height:2.3125rem; padding:0; margin:0;"',
+                ' data-i18n="config.outputs_tab.state_off">OFF</button>',
             '</label>',
           '</div>',
         '</div>'
@@ -476,8 +478,8 @@ function buildOutputFieldset(n) {
         '<div class="row">',
           '<fieldset>',
             '<legend>' + legendInner + '</legend>',
-            buildModeBlock('on', 'ON Condition', ON_MODES),
-            buildModeBlock('off', 'OFF Condition', OFF_MODES),
+            buildModeBlock('on',  'ON Condition',  'config.outputs_tab.on_condition',  ON_MODES),
+            buildModeBlock('off', 'OFF Condition', 'config.outputs_tab.off_condition', OFF_MODES),
             toggleBlock,
           '</fieldset>',
         '</div>'
@@ -499,6 +501,13 @@ function setupOutputsTab() {
     var html = '';
     for (var n = 1; n <= 12; n++) html += buildOutputFieldset(n);
     $list.html(html);
+
+    // The outputs UI is built after the i18n walker's one-shot initial pass,
+    // so translations on these injected nodes only land if we re-run the
+    // walker once the dictionary is ready.
+    if (window.i18nReady && window.i18nApply) {
+        window.i18nReady.then(function () { window.i18nApply($list[0]); });
+    }
 
     // Generic save: any change in a row writes back to machine.outputs.<n>.<key>.
     // setConfig already splits the id by "-" and rebuilds the nested object,
@@ -535,15 +544,18 @@ function setupOutputsTab() {
 // to the opposite (handled in setupOutputsTab).
 function updateOutputStates(status) {
     if (!status) return;
+    // window.t is the i18n lookup; fall back to English if i18n isn't loaded.
+    var labelOn  = (window.t ? window.t('config.outputs_tab.state_on')  : 'ON');
+    var labelOff = (window.t ? window.t('config.outputs_tab.state_off') : 'OFF');
     for (var n = 1; n <= 12; n++) {
         var v = status['out' + n];
         var $btn = $('#output-toggle-' + n);
         if (!$btn.length) continue;
         if (v === 1 || v === true) {
-            $btn.text('ON').addClass('output-on')
+            $btn.text(labelOn).addClass('output-on')
                 .css({ background: '#4caf50', color: '#fff' });
         } else {
-            $btn.text('OFF').removeClass('output-on')
+            $btn.text(labelOff).removeClass('output-on')
                 .css({ background: '#888', color: '#fff' });
         }
     }

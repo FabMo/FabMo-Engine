@@ -380,6 +380,39 @@
     "config.outputs_tab.output_word": {
         "en_at_translation": "Output"
     },
+    "config.outputs_tab.locked": {
+        "en_at_translation": "(locked)"
+    },
+    "config.outputs_tab.on_condition": {
+        "en_at_translation": "ON Condition"
+    },
+    "config.outputs_tab.off_condition": {
+        "en_at_translation": "OFF Condition"
+    },
+    "config.outputs_tab.test": {
+        "en_at_translation": "Test"
+    },
+    "config.outputs_tab.seconds_placeholder": {
+        "en_at_translation": "seconds"
+    },
+    "config.outputs_tab.state_on": {
+        "en_at_translation": "ON"
+    },
+    "config.outputs_tab.state_off": {
+        "en_at_translation": "OFF"
+    },
+    "config.outputs_tab.mode_file_start": {
+        "en_at_translation": "File Start"
+    },
+    "config.outputs_tab.mode_file_end": {
+        "en_at_translation": "File End"
+    },
+    "config.outputs_tab.mode_command": {
+        "en_at_translation": "Command"
+    },
+    "config.outputs_tab.mode_timed_after_file_end": {
+        "en_at_translation": "Timed after file end"
+    },
     "config.apps_tab.drop_to_install": {
         "en_at_translation": "Drag app here to install..."
     },
