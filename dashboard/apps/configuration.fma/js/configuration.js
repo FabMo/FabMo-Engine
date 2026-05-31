@@ -970,17 +970,7 @@ function renderSpindleDiscover(data) {
     profileEl.val(data.installedTemplate || '(none)');
 }
 
-function appendSpindleStatus(line) {
-    var el = $('#spindle-setup-status');
-    el.text((el.text() || '') + '\n' + line);
-}
-
-function setSpindleStatus(text) {
-    $('#spindle-setup-status').text(text);
-}
-
 function refreshSpindleDiscover() {
-    setSpindleStatus('Detecting...');
     $.ajax({
         url: '/acc/spindle/discover',
         method: 'GET',
@@ -988,19 +978,15 @@ function refreshSpindleDiscover() {
     }).done(function (resp) {
         if (resp.status === 'success') {
             renderSpindleDiscover(resp.data);
-            setSpindleStatus(resp.data.adapter
-                ? 'Found ' + resp.data.adapter.name + ' at ' + (resp.data.adapter.ttyPath || 'no tty')
-                : 'No known RS485 adapter detected on USB bus.');
         } else {
-            setSpindleStatus('Error: ' + (resp.message || 'unknown'));
+            fabmo.notify('error', 'Spindle detection failed: ' + (resp.message || 'unknown'));
         }
     }).fail(function (xhr) {
-        setSpindleStatus('Request failed: ' + xhr.status);
+        fabmo.notify('error', 'Spindle detection request failed: ' + xhr.status);
     });
 }
 
 function runSpindleConfigure() {
-    setSpindleStatus('Running detect & configure pipeline...');
     $('#spindle-setup-configure').prop('disabled', true);
     $.ajax({
         url: '/acc/spindle/configure',
@@ -1008,28 +994,32 @@ function runSpindleConfigure() {
         dataType: 'json'
     }).done(function (resp) {
         var d = resp.data || {};
-        var lines = [];
-        (d.steps || []).forEach(function (s) {
-            lines.push((s.ok ? '[ok]   ' : '[fail] ') + s.name + (s.detail ? '  -- ' + s.detail : ''));
-        });
         if (d.ok) {
-            lines.push('');
-            lines.push('Spindle configured: ' + d.template + ' on ' + d.ttyPath);
             fabmo.notify('success', 'Spindle configured: ' + d.template);
         } else {
-            fabmo.notify('error', 'Spindle configuration failed');
+            fabmo.notify('error', 'Spindle configuration failed: ' + spindleFailureReason(d.steps));
         }
-        setSpindleStatus(lines.join('\n'));
         refreshSpindleDiscover();
-    }).fail(function (xhr) {
-        setSpindleStatus('Request failed: ' + xhr.status);
+    }).fail(function () {
         fabmo.notify('error', 'Spindle configure request failed');
     }).always(function () {
         $('#spindle-setup-configure').prop('disabled', false);
     });
 }
 
-$('#spindle-setup-detect').on('click', refreshSpindleDiscover);
+function spindleFailureReason(steps) {
+    var failed = (steps || []).filter(function (s) { return !s.ok; }).pop();
+    if (!failed) return 'unknown error';
+    switch (failed.name) {
+        case 'detect_adapter':   return 'no RS485 adapter detected';
+        case 'bind_driver':      return 'RS485 adapter found but kernel driver did not bind';
+        case 'probe_vfd':        return 'RS485 adapter found, no matching profile for VFD';
+        case 'install_template': return 'profile install failed (' + (failed.detail || 'unknown') + ')';
+        case 'connect_vfd':      return 'VFD connect failed (' + (failed.detail || 'unknown') + ')';
+        default:                 return failed.name + (failed.detail ? ' (' + failed.detail + ')' : '');
+    }
+}
+
 $('#spindle-setup-configure').on('click', runSpindleConfigure);
 
 // Populate on load
