@@ -825,24 +825,47 @@ function ensureProfileDisplayCorrect() {
     });
 }
 
-// "Save current settings as my default": create a snapshot from the
-// current /opt/fabmo/config + macros, then mark it as the user-default
-// fallback. This is the user-friendly entry into the snapshot system -
-// it does not modify any shipped profiles.
+// "My Custom Settings": create a snapshot from the current /opt/fabmo/config +
+// macros, then mark it as the Preferred fallback the recovery chain will reach
+// for. This is the user-friendly entry into the snapshot system — it does not
+// modify any shipped profiles.
+//
+// Refreshes both the snapshot dropdown and the Preferred Settings label.
+// Filters to kind="user" so auto recovery snapshots (which rotate on their
+// own and aren't user-meaningful) don't clutter the picker.
 function refreshDefaultSnapshotName() {
     fetch('/snapshots')
         .then(function (r) { return r.json(); })
         .then(function (resp) {
-            if (resp && resp.status === 'success' && resp.data && resp.data.snapshots) {
-                var def = null;
-                for (var i = 0; i < resp.data.snapshots.length; i++) {
-                    if (resp.data.snapshots[i].is_user_default) {
-                        def = resp.data.snapshots[i];
-                        break;
-                    }
-                }
-                $('#current-default-name').text(def ? def.name : 'none');
+            var all = (resp && resp.status === 'success' && resp.data) ? (resp.data.snapshots || []) : [];
+            var userSnaps = all.filter(function (s) { return (s.kind || 'user') === 'user'; });
+            var preferred = null;
+            for (var i = 0; i < userSnaps.length; i++) {
+                if (userSnaps[i].is_user_default) { preferred = userSnaps[i]; break; }
             }
+
+            var $sel = $('#custom-snapshot-select');
+            var prev = $sel.val();
+            $sel.empty();
+            if (userSnaps.length === 0) {
+                $sel.append('<option value="">(no custom profiles yet)</option>');
+            } else {
+                for (var j = 0; j < userSnaps.length; j++) {
+                    var s = userSnaps[j];
+                    var label = s.name + (s.is_user_default ? '  (Preferred)' : '');
+                    $sel.append($('<option></option>').val(s.name).text(label));
+                }
+            }
+            // Preserve the user's prior selection if it still exists; otherwise
+            // fall back to the Preferred snapshot so the action buttons act on
+            // the most useful default.
+            if (prev && userSnaps.some(function (s) { return s.name === prev; })) {
+                $sel.val(prev);
+            } else if (preferred) {
+                $sel.val(preferred.name);
+            }
+
+            $('#current-default-name').text(preferred ? preferred.name : 'none');
         })
         .catch(function () { /* leave display alone on transient errors */ });
 }
@@ -895,66 +918,166 @@ $('#save-default-confirm').click(function () {
             var msg = resp && resp.message ? resp.message : 'could not mark as default';
             throw new Error('Snapshot saved but not marked as default: ' + msg);
         }
-        fabmo.notify('success', 'Saved current settings as your default: ' + name);
+        fabmo.notify('success', 'Saved as custom profile: ' + name);
         refreshDefaultSnapshotName();
     })
     .catch(function (err) {
-        fabmo.notify('error', err.message || 'Failed to save default.');
+        fabmo.notify('error', err.message || 'Failed to save custom profile.');
     });
 });
 
-// Reset to whatever snapshot is currently marked as the user-default.
-// Uses fabmo.showModal (no input fields needed) since the sandbox blocks
-// window.confirm() the same way it blocks prompt().
+// Restore from whatever snapshot is currently picked in the dropdown.
+// fabmo.showModal is used here (instead of window.confirm) because the app
+// runs in a sandboxed iframe that blocks confirm/prompt.
 $('#btn-reset-default').click(function () {
-    fetch('/snapshots')
+    var name = $('#custom-snapshot-select').val();
+    if (!name) {
+        fabmo.notify('warning', 'No custom profile selected.');
+        return;
+    }
+    fabmo.showModal({
+        title: 'Restore from custom profile?',
+        message: 'This will replace your current configuration and macros with "' + name + '". The tool will restart. A snapshot of your current settings is saved automatically first, so you can recover if needed.',
+        okText: 'Restore',
+        cancelText: 'Cancel',
+        ok: function () {
+            fabmo.notify('info', 'Restoring "' + name + '"...');
+            fetch('/snapshots/' + encodeURIComponent(name) + '/restore', {
+                method: 'POST'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (resp) {
+                    if (!resp || resp.status !== 'success') {
+                        var msg = resp && resp.message ? resp.message : 'unknown error';
+                        fabmo.notify('error', 'Restore failed: ' + msg);
+                    }
+                    // On success the engine restarts; the page reloads on its own.
+                })
+                .catch(function (err) {
+                    fabmo.notify('error', 'Restore failed: ' + err.message);
+                });
+        },
+        cancel: function () {}
+    });
+});
+
+// Mark the dropdown's selected snapshot as the Preferred fallback. Refresh
+// the UI so the "(Preferred)" tag and label move to the new winner.
+$('#btn-set-preferred').click(function () {
+    var name = $('#custom-snapshot-select').val();
+    if (!name) {
+        fabmo.notify('warning', 'No custom profile selected.');
+        return;
+    }
+    fetch('/snapshots/' + encodeURIComponent(name) + '/set-default', {
+        method: 'POST'
+    })
         .then(function (r) { return r.json(); })
         .then(function (resp) {
-            var def = null;
-            if (resp && resp.status === 'success' && resp.data && resp.data.snapshots) {
-                for (var i = 0; i < resp.data.snapshots.length; i++) {
-                    if (resp.data.snapshots[i].is_user_default) {
-                        def = resp.data.snapshots[i];
-                        break;
-                    }
-                }
+            if (!resp || resp.status !== 'success') {
+                var msg = resp && resp.message ? resp.message : 'unknown error';
+                throw new Error(msg);
             }
-            if (!def) {
-                fabmo.notify('warning', 'No default is set yet. Use "Save current settings as my default" first.');
-                return;
-            }
-            fabmo.showModal({
-                title: 'Reset to my default settings?',
-                message: 'This will replace your current configuration and macros with your saved default "' + def.name + '". The tool will restart. A snapshot of your current settings is saved automatically first, so you can recover if needed.',
-                okText: 'Reset',
-                cancelText: 'Cancel',
-                ok: function () {
-                    fabmo.notify('info', 'Restoring "' + def.name + '"...');
-                    fetch('/snapshots/' + encodeURIComponent(def.name) + '/restore', {
-                        method: 'POST'
-                    })
-                        .then(function (r) { return r.json(); })
-                        .then(function (resp2) {
-                            if (!resp2 || resp2.status !== 'success') {
-                                var msg = resp2 && resp2.message ? resp2.message : 'unknown error';
-                                fabmo.notify('error', 'Reset failed: ' + msg);
-                            }
-                            // On success the engine restarts; the page will
-                            // reload on its own once it comes back up.
-                        })
-                        .catch(function (err) {
-                            fabmo.notify('error', 'Reset failed: ' + err.message);
-                        });
-                },
-                cancel: function () {}
-            });
+            fabmo.notify('success', 'Preferred Settings: ' + name);
+            refreshDefaultSnapshotName();
         })
         .catch(function (err) {
-            fabmo.notify('error', 'Could not check for default: ' + err.message);
+            fabmo.notify('error', 'Could not set Preferred: ' + err.message);
         });
 });
 
-// Show current default on load.
+// Delete the dropdown's selected snapshot. Confirmation modal because the
+// action is destructive and unrecoverable. Live machine settings are not
+// touched — only the saved profile is removed.
+$('#btn-delete-snapshot').click(function () {
+    var name = $('#custom-snapshot-select').val();
+    if (!name) {
+        fabmo.notify('warning', 'No custom profile selected.');
+        return;
+    }
+    fabmo.showModal({
+        title: 'Delete custom profile?',
+        message: 'This will permanently delete the custom profile "' + name + '". Your current machine settings are not affected.',
+        okText: 'Delete',
+        cancelText: 'Cancel',
+        ok: function () {
+            fetch('/snapshots/' + encodeURIComponent(name), {
+                method: 'DELETE'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (resp) {
+                    if (!resp || resp.status !== 'success') {
+                        var msg = resp && resp.message ? resp.message : 'unknown error';
+                        throw new Error(msg);
+                    }
+                    fabmo.notify('success', 'Deleted: ' + name);
+                    refreshDefaultSnapshotName();
+                })
+                .catch(function (err) {
+                    fabmo.notify('error', 'Delete failed: ' + err.message);
+                });
+        },
+        cancel: function () {}
+    });
+});
+
+// Download the dropdown-selected snapshot as a `.fmsnap.zip`. The browser
+// drives the download via a temporary anchor — server sets
+// Content-Disposition so the filename is `<name>.fmsnap.zip`.
+$('#btn-download-snapshot').click(function () {
+    var name = $('#custom-snapshot-select').val();
+    if (!name) {
+        fabmo.notify('warning', 'No custom profile selected.');
+        return;
+    }
+    var url = '/snapshots/' + encodeURIComponent(name) + '/download';
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name + '.fmsnap.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+});
+
+// Upload a previously-downloaded snapshot zip. Trigger flow mirrors the
+// macros restore: button -> hidden file input -> change -> multipart POST.
+$('#btn-upload-snapshot').click(function () {
+    $('#upload-snapshot-file').trigger('click');
+});
+
+$('#upload-snapshot-file').change(function () {
+    var files = $(this).prop('files');
+    if (!files || files.length !== 1) return;
+    var file = files[0];
+    fabmo.notify('info', 'Uploading custom profile...');
+    var formData = new FormData();
+    formData.append('file', file);
+
+    $.ajax({
+        url: '/snapshots/upload',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        timeout: 120000
+    }).done(function (resp) {
+        if (resp && resp.status === 'success') {
+            var importedName = (resp.data && resp.data.name) || file.name;
+            fabmo.notify('success', 'Imported custom profile: ' + importedName);
+            refreshDefaultSnapshotName();
+        } else {
+            fabmo.notify('error', 'Upload failed: ' + ((resp && resp.message) || 'unknown'));
+        }
+    }).fail(function (xhr) {
+        var msg = 'unknown error';
+        try { msg = (JSON.parse(xhr.responseText) || {}).message || msg; } catch (e) {}
+        fabmo.notify('error', 'Upload failed: ' + msg);
+    }).always(function () {
+        $('#upload-snapshot-file').val('');
+    });
+});
+
+// Populate the dropdown and Preferred label on load.
 refreshDefaultSnapshotName();
 
 // ---------- Spindle Setup ----------
