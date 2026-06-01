@@ -34,6 +34,7 @@ var db = require("./db");
 var macros = require("./macros");
 var dashboard = require("./dashboard");
 var network = require("./network");
+var mdns = require("./network/mdns");
 var glob = require("glob");
 var argv = require("minimist")(process.argv);
 var fs = require("fs");
@@ -807,6 +808,12 @@ Engine.prototype.start = function (callback) {
                             log.error(e);
                             log.error("Problem starting network manager:" + e);
                         }
+                        mdns.publish({
+                            name: config.engine.get("name"),
+                            engine_id: config.engine.get("engine_id"),
+                            version: this.version && this.version.number,
+                            port: config.engine.get("server_port"),
+                        });
                         return callback(null);
                     }.bind(this)
                 );

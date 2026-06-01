@@ -7,6 +7,8 @@
 var log = require("../log").logger("network");
 var config = require("../config");
 var util = require("../util");
+var os = require("os");
+var exec = require("child_process").exec;
 
 var LOGFILE = "/var/log/network_monitor.log";
 var fs = require("fs");
@@ -219,7 +221,10 @@ var setNetworkIdentity = function (req, res, next) {
 function getNetworkIdentity(req, res, next) {
     res.json({
         status: "success",
-        data: { name: config.engine.get("name"), id: config.engine.get("id") },
+        data: {
+            name: config.engine.get("name"),
+            engine_id: config.engine.get("engine_id"),
+        },
     });
 }
 
@@ -266,17 +271,58 @@ var isOnline = function (req, res, next) {
     });
 };
 
-// Get network status (???)
-// TODO : What actually is the network status
+// Shaped network status for launcher/discovery clients.
+// Returns { mode, ssid, hostname, interfaces } where mode is "ap" | "station" | "unknown".
 // eslint-disable-next-line no-unused-vars
-var getStatus = function (req, res, next) {
+var getNetworkStatus = function (req, res, next) {
     var network = require("../engine").networkManager;
 
-    network.getStatus(function (err, status) {
+    network.getStatus(function (err, ifaceStatus) {
         if (err) {
             return res.json({ status: "error", message: err.message });
         }
-        return res.json({ status: "success", data: { status: status } });
+
+        var interfaces = (ifaceStatus || [])
+            .filter(function (i) {
+                return i.interface !== "lo";
+            })
+            .map(function (i) {
+                return {
+                    name: i.interface,
+                    ipv4_address: i.ipv4_address || null,
+                    mac: i.address || null,
+                    up: !!i.up,
+                };
+            });
+
+        var respond = function (mode, ssid) {
+            res.json({
+                status: "success",
+                data: {
+                    mode: mode,
+                    ssid: ssid,
+                    hostname: os.hostname(),
+                    interfaces: interfaces,
+                },
+            });
+        };
+
+        exec("systemctl is-active hostapd", function (hostapdErr, hostapdOut) {
+            var apActive = !hostapdErr && (hostapdOut || "").trim() === "active";
+            if (apActive) {
+                return respond("ap", config.engine.get("name"));
+            }
+            exec(
+                "nmcli -t -f active,ssid dev wifi | grep '^yes' | cut -d: -f2",
+                function (ssidErr, ssidOut) {
+                    var ssid = null;
+                    if (!ssidErr && (ssidOut || "").trim()) {
+                        ssid = ssidOut.trim().split("\n")[0];
+                    }
+                    respond(ssid ? "station" : "unknown", ssid);
+                }
+            );
+        });
     });
 };
 
@@ -349,6 +395,7 @@ module.exports = function (server) {
     server.get("/network/identity", getNetworkIdentity);
     server.post("/network/identity", setNetworkIdentity);
     server.get("/network/online", isOnline);
+    server.get("/network/status", getNetworkStatus);
     server.post("/network/ethernet/config", setEthernetConfig);
     server.post("/network/wifi/config", setWifiConfig);
     server.get("/network/ethernet/config", getEthernetConfig);

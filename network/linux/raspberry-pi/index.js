@@ -7,6 +7,7 @@ var child_process = require("child_process");
 var exec = child_process.exec;
 var util = require("util");
 var NetworkManager = require("../../../network_manager").NetworkManager;
+var mdns = require("../../mdns");
 var dns = require("dns");
 
 var ifconfig = require("wireless-tools/ifconfig");
@@ -37,33 +38,37 @@ RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
     // ... this will be used as the default name for the FabMo
     // ... and will be used (with IP) as the default SSID for the FabMo until set by the user.
     // ... Once defined, it will subsequently be read from the config file.
+    // Only fills in fields that are currently missing, so a user-customized name is preserved
+    // when this runs to backfill engine_id on an existing install.
+    var existing_name = config.engine.get("name");
+    var existing_id = config.engine.get("engine_id");
     exec("cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2", function (err, result) {
+        var updates = {};
         if (err) {
-            var name = { name: "fabmo-?" };
-            config.engine.update(name, callback);
+            if (!existing_name) updates.name = "fabmo-?";
         } else {
             // Get Serial Number for name and clear out 0's to simplify
             log.debug("At RPI naming from SerialNum - ");
             result = result.split("0").join("").split("\n").join("").trim();
             log.debug("modifiedSerial- " + result);
-
-            // Update both values in a single call, first 6 digits for SSID name
             var trunc_result = result.length > 6 ? result.substring(0, 6) : result;
-            var updates = {
-                engine_id: result,
-                name: "FabMo-" + trunc_result,
-            };
-
-            config.engine.update(updates, function (err) {
-                if (err) {
-                    log.error("Failed to update engine config: " + err.message);
-                    callback(err);
-                } else {
-                    log.info("Successfully updated engine_id and name");
-                    callback(null, updates);
-                }
-            });
+            if (!existing_id) updates.engine_id = result;
+            if (!existing_name) updates.name = "FabMo-" + trunc_result;
         }
+
+        if (Object.keys(updates).length === 0) {
+            return callback(null, {});
+        }
+
+        config.engine.update(updates, function (err) {
+            if (err) {
+                log.error("Failed to update engine config: " + err.message);
+                callback(err);
+            } else {
+                log.info("Successfully updated " + Object.keys(updates).join(", "));
+                callback(null, updates);
+            }
+        });
     });
 };
 
@@ -553,6 +558,15 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
                 log.error(err);
                 typeof callback === "function" && callback(err);
             } else {
+                if (identity.name) {
+                    var engine = require("../../../engine");
+                    mdns.publish({
+                        name: config.engine.get("name"),
+                        engine_id: config.engine.get("engine_id"),
+                        version: engine.version && engine.version.number,
+                        port: config.engine.get("server_port"),
+                    });
+                }
                 typeof callback === "function" && callback(null, this);
             }
         }.bind(this)

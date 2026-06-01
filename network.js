@@ -26,7 +26,8 @@ exports.createNetworkManager = function (name, callback) {
         var nm = new NetworkManager();
         nm.os = OS;
         nm.platform = PLATFORM;
-        if (!name && nm.platform === "raspberry-pi") {
+        var engine_id = config.engine.get("engine_id");
+        if ((!name || !engine_id) && nm.platform === "raspberry-pi") {
             // eslint-disable-next-line no-unused-vars
             nm.set_serialnum(function (name) {
                 callback(null, nm);
