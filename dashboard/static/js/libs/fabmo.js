@@ -137,6 +137,7 @@
             upload_progress: [],
             data_send: [],
             data_request: [],
+            pendant_file_select: [],
         };
     };
 
