@@ -808,6 +808,7 @@ Engine.prototype.start = function (callback) {
                             log.error(e);
                             log.error("Problem starting network manager:" + e);
                         }
+                        mdns.ensureSystemdDropIn();
                         mdns.publish({
                             name: config.engine.get("name"),
                             engine_id: config.engine.get("engine_id"),
