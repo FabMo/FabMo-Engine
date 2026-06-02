@@ -2,6 +2,7 @@ require('./jquery.dragster.js');
 require('jquery');
 var setApps = require('./app_manager.js');
 var setUsers = require('./user_manager');
+require('./layout_orientation.js');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');

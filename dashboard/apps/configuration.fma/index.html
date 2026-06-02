@@ -37,6 +37,8 @@
           </li>
           <li class="tab-title" role="presentational"><a href="#tabpanel8" role="tab" tabindex="0" aria-selected="false" controls="tabpanel8">Outputs</a>
           </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel9" role="tab" tabindex="0" aria-selected="false" controls="tabpanel9">Layout</a>
+          </li>
           <li class="tab-title" role="presentational"><a href="#tabpanel6" role="tab" tabindex="0" aria-selected="false" controls="tabpanel6">Apps</a>
           </li>
           <li class="tab-title" role="presentational"><a href="#tabpanel7" role="tab" tabindex="0" aria-selected="false" controls="tabpanel7">Users</a>
@@ -1123,6 +1125,177 @@
       <!-- OUTPUTS ----------------------------------------------------------------------------------------------- -->
       <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8">
         <div id="outputs-list"><!-- fieldsets injected by configuration.js --></div>
+      </section>
+
+
+      <!-- LAYOUT ------------------------------------------------------------------------------------------------ -->
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel9">
+        <div class="row">
+          <fieldset>
+            <legend>Manual Control Orientation</legend>
+            <p style="margin-bottom: 12px;">
+              Pick the corner of the table where machine <strong>0,0</strong> lives, then click each
+              <strong>machine-motion arrow</strong> to assign which keypad direction should produce
+              that motion from where you stand.
+            </p>
+
+            <div class="layout-orientation-container" style="display: flex; gap: 24px; align-items: flex-start;">
+
+              <!-- Overhead view of the machine. Prototype geometry — replace
+                   with your real artwork later; the layout-orientation.js
+                   click handlers key off classnames, not specific coords.
+                   Table is 3:2 horizontal:vertical; gantry is the narrow
+                   vertical bar; spindle sits on the gantry. -->
+              <svg viewBox="0 0 520 360" class="machine-overhead"
+                   style="width: 520px; height: 360px; background: #f4f1ea; border: 1px solid #ccc;">
+
+                <!-- machine table (360 x 240, 3:2 ratio) — MDF tan -->
+                <rect x="80" y="60" width="360" height="240" fill="#d4b585" stroke="#7a5a30" stroke-width="2" rx="4"/>
+
+                <!-- vertical gantry beam (spans table height) — light silver -->
+                <rect x="232" y="66" width="36" height="228" fill="#cfd2d4" stroke="#888" stroke-width="1"/>
+                <line x1="240" y1="66" x2="240" y2="294" stroke="#999" stroke-width="1"/>
+                <line x1="260" y1="66" x2="260" y2="294" stroke="#999" stroke-width="1"/>
+
+                <!-- dark blue end plates at top and bottom of the gantry -->
+                <rect x="222" y="58" width="56" height="14" fill="#1f3a6e" stroke="#0e1d3b" stroke-width="1" rx="2"/>
+                <rect x="222" y="288" width="56" height="14" fill="#1f3a6e" stroke="#0e1d3b" stroke-width="1" rx="2"/>
+
+                <!-- spindle / Z carriage riding on the front (left) of the gantry -->
+                <rect x="182" y="155" width="50" height="50" fill="#4a4a4a" stroke="#222" stroke-width="1.5" rx="2"/>
+                <circle cx="207" cy="180" r="8" fill="#222"/>
+
+                <!-- corner origin radio buttons. The 0,0 label is added
+                     dynamically by layout_orientation.js next to the
+                     currently-selected corner. -->
+                <g class="origin-corners">
+                  <g class="origin-corner" data-corner="tl" style="cursor: pointer;">
+                    <circle cx="92" cy="72" r="9" fill="#fff" stroke="#333" stroke-width="2"/>
+                    <circle class="origin-dot" cx="92" cy="72" r="5" fill="transparent"/>
+                  </g>
+                  <g class="origin-corner" data-corner="tr" style="cursor: pointer;">
+                    <circle cx="428" cy="72" r="9" fill="#fff" stroke="#333" stroke-width="2"/>
+                    <circle class="origin-dot" cx="428" cy="72" r="5" fill="transparent"/>
+                  </g>
+                  <g class="origin-corner" data-corner="bl" style="cursor: pointer;">
+                    <circle cx="92" cy="288" r="9" fill="#fff" stroke="#333" stroke-width="2"/>
+                    <circle class="origin-dot" cx="92" cy="288" r="5" fill="transparent"/>
+                  </g>
+                  <g class="origin-corner" data-corner="br" style="cursor: pointer;">
+                    <circle cx="428" cy="288" r="9" fill="#fff" stroke="#333" stroke-width="2"/>
+                    <circle class="origin-dot" cx="428" cy="288" r="5" fill="transparent"/>
+                  </g>
+                </g>
+
+                <!-- machine-motion arrows around the perimeter, styled as
+                     miniature keypad buttons (rounded rect + white arrow
+                     icon) and colored to match the corresponding axis
+                     color on the keypad mockup. Click to arm; armed state
+                     gets a brighter outline. -->
+                <g class="motion-arrow" data-axis="X+" style="cursor: pointer;">
+                  <rect class="kp-mini" x="462" y="162" width="36" height="36" rx="5"
+                        fill="#0066cc" stroke="#003a6e" stroke-width="1.5"/>
+                  <polygon class="arrow-icon" points="474,170 494,180 474,190" fill="#fff"/>
+                </g>
+
+                <g class="motion-arrow" data-axis="X-" style="cursor: pointer;">
+                  <rect class="kp-mini" x="22" y="162" width="36" height="36" rx="5"
+                        fill="#e67e22" stroke="#7a3d04" stroke-width="1.5"/>
+                  <polygon class="arrow-icon" points="46,170 26,180 46,190" fill="#fff"/>
+                </g>
+
+                <g class="motion-arrow" data-axis="Y+" style="cursor: pointer;">
+                  <rect class="kp-mini" x="242" y="10" width="36" height="36" rx="5"
+                        fill="#27ae60" stroke="#0d5a2c" stroke-width="1.5"/>
+                  <polygon class="arrow-icon" points="260,18 250,38 270,38" fill="#fff"/>
+                </g>
+
+                <g class="motion-arrow" data-axis="Y-" style="cursor: pointer;">
+                  <rect class="kp-mini" x="242" y="314" width="36" height="36" rx="5"
+                        fill="#c0392b" stroke="#621509" stroke-width="1.5"/>
+                  <polygon class="arrow-icon" points="260,346 250,326 270,326" fill="#fff"/>
+                </g>
+
+              </svg>
+
+              <!-- Right side: faithful copy of the actual ShopBot manual
+                   control keypad (same .keypad-button / .keypad-table classes
+                   as the live dashboard keypad). Click a machine-motion arrow
+                   first, then click a keypad button to assign the mapping. -->
+              <div class="layout-keypad-pane" style="display: flex; gap: 20px; align-items: flex-start;">
+
+                <div class="pad-container" style="margin: 0;">
+                  <h5 style="margin: 0 0 8px 0;">Manual Control Keypad</h5>
+
+                  <!-- Yellow ShopBot-style frame around the keypad cluster.
+                       Tightened size + extra padding gives a square outer
+                       footprint with the buttons hugging the center. -->
+                  <div class="layout-yellow-frame" style="
+                       display: inline-block;
+                       background: #f7d447;
+                       border: 2px solid #b89100;
+                       border-radius: 12px;
+                       padding: 16px;
+                       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);">
+                    <div class="layout-keypad-mock" style="
+                         display: grid;
+                         grid-template-columns: 64px 64px 64px;
+                         grid-template-rows: 64px 64px 64px;
+                         gap: 6px;
+                         width: 204px;
+                         height: 204px;">
+                      <div></div>
+                      <div class="kp-btn keypad-button drive-button square" data-dir="↑" style="width:64px; height:64px;">
+                        <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                      </div>
+                      <div></div>
+                      <div class="kp-btn keypad-button drive-button square" data-dir="←" style="width:64px; height:64px;">
+                        <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
+                      </div>
+                      <div></div>
+                      <div class="kp-btn keypad-button drive-button square" data-dir="→" style="width:64px; height:64px;">
+                        <i class="fa fa-keypad fa-lg fa-arrow-right"></i>
+                      </div>
+                      <div></div>
+                      <div class="kp-btn keypad-button drive-button square" data-dir="↓" style="width:64px; height:64px;">
+                        <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
+                      </div>
+                      <div></div>
+                    </div>
+                  </div>
+
+                  <div class="layout-status" style="margin-top: 12px; font-size: 13px; min-height: 1.5em; max-width: 280px;">
+                    <span class="status-text" style="color: #666;">Click a machine-motion arrow on the left.</span>
+                  </div>
+                </div>
+
+                <!-- Axis labels off to the right of the yellow frame, one row
+                     per keypad direction; row spacing aligns with the
+                     buttons inside the frame. -->
+                <div class="layout-kp-labels" style="padding-top: 42px; font-size: 15px;">
+                  <div class="kp-label-row" data-dir="↑" style="height: 52px; display: flex; align-items: center;">
+                    <span class="kp-arrow" style="font-size: 20px; margin-right: 8px;">↑</span>
+                    <span class="kp-axis" data-dir="↑" style="font-weight: bold; color: #666;">—</span>
+                  </div>
+                  <div class="kp-label-row" data-dir="←" style="height: 52px; display: flex; align-items: center;">
+                    <span class="kp-arrow" style="font-size: 20px; margin-right: 8px;">←</span>
+                    <span class="kp-axis" data-dir="←" style="font-weight: bold; color: #666;">—</span>
+                  </div>
+                  <div class="kp-label-row" data-dir="→" style="height: 52px; display: flex; align-items: center;">
+                    <span class="kp-arrow" style="font-size: 20px; margin-right: 8px;">→</span>
+                    <span class="kp-axis" data-dir="→" style="font-weight: bold; color: #666;">—</span>
+                  </div>
+                  <div class="kp-label-row" data-dir="↓" style="height: 52px; display: flex; align-items: center;">
+                    <span class="kp-arrow" style="font-size: 20px; margin-right: 8px;">↓</span>
+                    <span class="kp-axis" data-dir="↓" style="font-weight: bold; color: #666;">—</span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </fieldset>
+        </div>
       </section>
 
 

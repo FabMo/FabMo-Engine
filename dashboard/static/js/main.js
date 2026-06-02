@@ -26,6 +26,7 @@ var FabMoAPI = require("./libs/fabmoapi.js");
 var FabMoUI = require("./libs/fabmoui.js");
 var Keyboard = require("./libs/keyboard.js");
 var Keypad = require("./libs/keypad.js");
+var KeypadOrientation = require("./libs/keypad_orientation.js");
 
 var keypad, keyboard;
 
@@ -1542,6 +1543,20 @@ function setupKeypad() {
     var keypad = new Keypad("#keypad", {
         refreshInterval: manual.refresh_interval || 50,
         pressTime: manual.press_delay != null ? manual.press_delay : 150
+    });
+    // Apply the user's manual-control orientation mapping (set in
+    // Configuration > Layout). Class-swaps the keypad buttons so the
+    // physical layout matches where the operator stands.
+    KeypadOrientation.apply("#keypad", manual.layout_mapping);
+    // Live updates from the Configuration tab arrive via the storage
+    // event — when the Layout tab saves a new mapping, it writes the
+    // JSON to localStorage which fires this listener in other tabs.
+    window.addEventListener("storage", function (ev) {
+        if (ev.key !== "fabmo.layout_mapping") return;
+        try {
+            var newMapping = ev.newValue ? JSON.parse(ev.newValue) : null;
+            KeypadOrientation.apply("#keypad", newMapping);
+        } catch (e) { /* ignore parse errors */ }
     });
     // Make sure the spindle icon is off when entering manual mode
     keypad.on("go", function (move) {
