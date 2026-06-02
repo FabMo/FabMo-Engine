@@ -414,7 +414,7 @@ SBPRuntime.prototype.runStream = function (text_stream) {
                     var lines = this.program.length;
                     if (this.machine) {
                         if (this.file_stack.length === 0) {
-                            this.machine.status.nb_lines = lines - 1;
+                            this.machine.status.nb_lines = lines;
                         }
                     }
 
@@ -1379,9 +1379,20 @@ SBPRuntime.prototype._end = function (error) {
         this.pending_error = error;
     }
 
-    // Capture final line info on the job before cleanup clears it
+    // Capture final line info on the job before cleanup clears it.
+    // Prefer G2's reported line (N-word value, which emit_gcode sets to the
+    // top-level SBP pc + 20) — the SBP runtime's pc races ahead of G2 because
+    // GCode is queued, so pc+1 can land past the program end while G2 is still
+    // executing an earlier statement. Convert pc (0-based) to 1-based source
+    // line. Fall back to pc+1 if G2 hasn't reported.
     if (this.machine && this.machine.status.job) {
-        this.machine.status.job.final_line = this.pc + 1;
+        var g2line = this.machine.status.line;
+        var lineFromG2 = g2line ? g2line - 20 + 1 : null;
+        if (lineFromG2 && lineFromG2 >= 1) {
+            this.machine.status.job.final_line = lineFromG2;
+        } else {
+            this.machine.status.job.final_line = this.pc + 1;
+        }
         this.machine.status.job.nb_lines = this.machine.status.nb_lines;
     }
 
