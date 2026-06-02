@@ -714,7 +714,10 @@ function bindMenuEvents() {
           // Get safeZ from config
           fabmo.getConfig(function(err, config) {
             var safeZ = (config && config.opensbp) ? config.opensbp.safeZpullUp : 0;
-            var inLine = job.final_line;
+            // Step back one line: the recorded final_line is where the machine
+            // was interrupted (potentially mid-move), so restart one line
+            // earlier to re-run the interrupted line in full.
+            var inLine = Math.max(1, job.final_line - 1);
             var jobName = job.name || '';
             var isSBP = /\.(sbp|sbc)$/i.test(jobName);
             var code, fileName, ext;
