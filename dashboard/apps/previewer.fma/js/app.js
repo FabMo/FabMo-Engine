@@ -422,13 +422,17 @@ function extractSBPSelection(fileContent, inLine, outLine, safeZ) {
     }
   }
 
-  // Scan backward from in-point to find tool setup commands
+  // Scan backward from in-point to find tool setup commands + last known
+  // position. Z is sticky in SBP (no retract between XY moves once plunged),
+  // so we must look back for the cut depth. We also need fallback X/Y in case
+  // the first selected move is 1D (MX/MY) and doesn't include both axes.
   var toolSetup = {
     toolVar: null,   // &tool = N
     toolChange: null, // C9
     spindleStart: null, // C6
     moveSpeed: null  // MS,xy,z
   };
+  var lastZ = null, lastX = null, lastY = null;
 
   for (var i = inLine - 2; i >= 0; i--) {  // -2 because 1-based, and we want lines before in-point
     var line = allLines[i].trim();
@@ -454,14 +458,54 @@ function extractSBPSelection(fileContent, inLine, outLine, safeZ) {
       toolSetup.moveSpeed = allLines[i];
     }
 
-    // Stop scanning once we have all commands
+    // Track last known X, Y, Z from any move command before the in-point.
+    // MZ,z  JZ,z
+    var mz = upper.match(/^[MJ]Z\s*,\s*([\d.\-]+)/);
+    if (mz && lastZ === null) lastZ = mz[1];
+    // MX,x  JX,x
+    var mx = upper.match(/^[MJ]X\s*,\s*([\d.\-]+)/);
+    if (mx && lastX === null) lastX = mx[1];
+    // MY,y  JY,y
+    var my = upper.match(/^[MJ]Y\s*,\s*([\d.\-]+)/);
+    if (my && lastY === null) lastY = my[1];
+    // M2,x,y  J2,x,y  (sets X and Y)
+    var m2 = upper.match(/^[MJ]2\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
+    if (m2) {
+      if (lastX === null) lastX = m2[1];
+      if (lastY === null) lastY = m2[2];
+    }
+    // M3,x,y,z  J3,x,y,z  (sets X, Y, Z)
+    var m3 = upper.match(/^[MJ]3\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
+    if (m3) {
+      if (lastX === null) lastX = m3[1];
+      if (lastY === null) lastY = m3[2];
+      if (lastZ === null) lastZ = m3[3];
+    }
+    // MO,x,y,z,a,b,c  (multi-axis; first three are X,Y,Z)
+    var mo = upper.match(/^MO\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
+    if (mo) {
+      if (lastX === null) lastX = mo[1];
+      if (lastY === null) lastY = mo[2];
+      if (lastZ === null) lastZ = mo[3];
+    }
+    // CG,dir,endX,endY,...  (arc endpoint sets X,Y)
+    var cg = upper.match(/^CG\s*,[^,]*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
+    if (cg) {
+      if (lastX === null) lastX = cg[1];
+      if (lastY === null) lastY = cg[2];
+    }
+
+    // Stop scanning once we have all commands + positions
     if (toolSetup.toolVar && toolSetup.toolChange &&
-        toolSetup.spindleStart && toolSetup.moveSpeed) {
+        toolSetup.spindleStart && toolSetup.moveSpeed &&
+        lastX !== null && lastY !== null && lastZ !== null) {
       break;
     }
   }
 
-  // Scan selected lines for the first XY position (for rapid jog to start)
+  // Scan selected lines for the first XY position (for rapid jog to start).
+  // Falls back to the backward-scan lastX/lastY if the selection starts with
+  // 1D moves (MX/MY) that don't supply both axes.
   var startX = null, startY = null;
   for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
     var scanLine = allLines[i].trim().toUpperCase();
@@ -479,6 +523,8 @@ function extractSBPSelection(fileContent, inLine, outLine, safeZ) {
       break;
     }
   }
+  if (startX === null && lastX !== null) startX = lastX;
+  if (startY === null && lastY !== null) startY = lastY;
 
   // Build the output file
   var output = [];
@@ -494,10 +540,15 @@ function extractSBPSelection(fileContent, inLine, outLine, safeZ) {
   if (toolSetup.toolChange) output.push(toolSetup.toolChange);
   if (toolSetup.spindleStart) output.push(toolSetup.spindleStart);
 
-  // 3. Jog to safe Z, then rapid to starting XY
+  // 3. Jog to safe Z, rapid to starting XY, then controlled plunge to cut Z.
+  // The plunge restores the sticky Z that was in effect just before the
+  // in-point — needed because SBP doesn't repeat Z on subsequent XY moves.
   output.push("JZ," + safeZ);
   if (startX !== null && startY !== null) {
     output.push("J2," + startX + "," + startY);
+  }
+  if (lastZ !== null) {
+    output.push("MZ," + lastZ);
   }
 
   output.push("' --- Begin selected cutting ---");
