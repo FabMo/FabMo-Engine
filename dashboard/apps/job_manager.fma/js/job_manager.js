@@ -3,6 +3,9 @@ require('jquery');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');
+var RestartExtract = require('../../../static/js/libs/restart_extract.js');
+var extractSBPSelection = RestartExtract.extractSBPSelection;
+var extractGCodeSelection = RestartExtract.extractGCodeSelection;
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 // ... there remains lots of old "tour" stuff here, needs to be carefully cleaned
@@ -290,7 +293,34 @@ function addQueueEntries(jobs) {
         recentItem.setAttribute("data-id", recent[i]._id);
         recentJobs.appendChild(recentItem);
         var id = document.getElementById(recent[i]._id);
-        id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div><div class="created-date">Last Run: '+ moment(recent[i].created_at).fromNow(); +'</div>';
+        // For incomplete jobs, surface an "Aborted at line N" note and a
+        // one-click Resume pill side-by-side on a single line directly
+        // under the Last Run text. Inline keeps narrow cards from pushing
+        // the button off the bottom.
+        var abortedBlock = '';
+        if (recent[i].final_line != null && recent[i].nb_lines != null &&
+            recent[i].final_line < recent[i].nb_lines) {
+          abortedBlock =
+            '<div class="aborted-wrap" style="position:absolute; top:24px; right:10px; ' +
+            'display:flex; align-items:center; gap:8px;">' +
+              '<span class="aborted-note" style="font-size:12px; color:#a23a2a;">' +
+                'Aborted at line ' + recent[i].final_line +
+              '</span>' +
+              '<a class="restartFromLine inline-resume-card" ' +
+                'data-jobid="' + recent[i]._id + '" ' +
+                'title="Resume from line ' + recent[i].final_line + ' of ' + recent[i].nb_lines + '" ' +
+                'style="display:inline-block; padding:2px 8px; ' +
+                'background:#2ca64a; color:#fff; border-radius:4px; ' +
+                'font-size:12px; font-weight:bold; cursor:pointer; white-space:nowrap;">' +
+                '<i class="fa fa-play" style="font-size:10px;"></i>&nbsp;Resume' +
+              '</a>' +
+            '</div>';
+        }
+        id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name +
+                       '</div><div class="description">' + recent[i].description +
+                       '</div><div class="created-date">Last Run: ' +
+                       moment(recent[i].created_at).fromNow() + '</div>' +
+                       abortedBlock;
         var menu = id.firstChild;
 
 
@@ -457,226 +487,10 @@ function clearHistory() {
   }
 }
 
-/**
- * Extract a runnable SBP selection from the original file starting at inLine.
- * Scans backward from the in-point to find the most recent tool setup commands:
- *   &tool = N, C9 (toolchange), C6 (spindle start), MS,xy,z (move speed)
- * Builds: preamble header lines + tool setup + safe Z + XY jog + selected lines.
- * Adapted from previewer extractSBPSelection().
- */
-function extractSBPSelection(fileContent, inLine, outLine, safeZ) {
-  if (!fileContent || !inLine) return null;
-  if (typeof safeZ === 'undefined' || safeZ === null) safeZ = 0;
-
-  var allLines = fileContent.split('\n');
-  if (!outLine) outLine = allLines.length;
-
-  inLine = Math.max(1, Math.min(inLine, allLines.length));
-  outLine = Math.max(inLine, Math.min(outLine, allLines.length));
-
-  // Collect header/variable lines from the top of the file (before first motion)
-  var headerLines = [];
-  for (var i = 0; i < allLines.length && i < inLine - 1; i++) {
-    var line = allLines[i].trim();
-    if (line === '' || line.charAt(0) === "'" || line.match(/^&\w+\s*=/)) {
-      headerLines.push(allLines[i]);
-    } else {
-      break;
-    }
-  }
-
-  // Scan backward from in-point to find tool setup commands + last known
-  // position. Z is sticky in SBP, so we must look back for the cut depth;
-  // X/Y track last known values to cover selections that start with 1D moves.
-  var toolSetup = { toolVar: null, toolChange: null, spindleStart: null, moveSpeed: null };
-  var lastZ = null, lastX = null, lastY = null;
-  for (var i = inLine - 2; i >= 0; i--) {
-    var line = allLines[i].trim();
-    var upper = line.toUpperCase();
-    if (!toolSetup.toolVar && line.match(/^&tool\s*=/i)) toolSetup.toolVar = allLines[i];
-    if (!toolSetup.toolChange && upper.match(/^C9\b/)) toolSetup.toolChange = allLines[i];
-    if (!toolSetup.spindleStart && upper.match(/^C6\b/)) toolSetup.spindleStart = allLines[i];
-    if (!toolSetup.moveSpeed && upper.match(/^MS\s*,/)) toolSetup.moveSpeed = allLines[i];
-
-    var mz = upper.match(/^[MJ]Z\s*,\s*([\d.\-]+)/);
-    if (mz && lastZ === null) lastZ = mz[1];
-    var mx = upper.match(/^[MJ]X\s*,\s*([\d.\-]+)/);
-    if (mx && lastX === null) lastX = mx[1];
-    var my = upper.match(/^[MJ]Y\s*,\s*([\d.\-]+)/);
-    if (my && lastY === null) lastY = my[1];
-    var m2 = upper.match(/^[MJ]2\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
-    if (m2) {
-      if (lastX === null) lastX = m2[1];
-      if (lastY === null) lastY = m2[2];
-    }
-    var m3 = upper.match(/^[MJ]3\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
-    if (m3) {
-      if (lastX === null) lastX = m3[1];
-      if (lastY === null) lastY = m3[2];
-      if (lastZ === null) lastZ = m3[3];
-    }
-    var mo = upper.match(/^MO\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
-    if (mo) {
-      if (lastX === null) lastX = mo[1];
-      if (lastY === null) lastY = mo[2];
-      if (lastZ === null) lastZ = mo[3];
-    }
-    var cg = upper.match(/^CG\s*,[^,]*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
-    if (cg) {
-      if (lastX === null) lastX = cg[1];
-      if (lastY === null) lastY = cg[2];
-    }
-
-    if (toolSetup.toolVar && toolSetup.toolChange && toolSetup.spindleStart && toolSetup.moveSpeed &&
-        lastX !== null && lastY !== null && lastZ !== null) break;
-  }
-
-  // Scan selected lines for the first XY position; fall back to backward-scan
-  // lastX/lastY when the selection starts with 1D moves (MX/MY).
-  var startX = null, startY = null;
-  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
-    var scanLine = allLines[i].trim().toUpperCase();
-    var moveMatch = scanLine.match(/^[MJ][23]\s*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
-    if (moveMatch) { startX = moveMatch[1]; startY = moveMatch[2]; break; }
-    var arcMatch = scanLine.match(/^CG\s*,[^,]*,\s*([\d.\-]+)\s*,\s*([\d.\-]+)/);
-    if (arcMatch) { startX = arcMatch[1]; startY = arcMatch[2]; break; }
-  }
-  if (startX === null && lastX !== null) startX = lastX;
-  if (startY === null && lastY !== null) startY = lastY;
-
-  // Build the output file
-  var output = [];
-  output = output.concat(headerLines);
-  output.push("' --- Restart from line " + inLine + " ---");
-
-  if (toolSetup.toolVar) output.push(toolSetup.toolVar);
-  if (toolSetup.moveSpeed) output.push(toolSetup.moveSpeed);
-  if (toolSetup.toolChange) output.push(toolSetup.toolChange);
-  if (toolSetup.spindleStart) output.push(toolSetup.spindleStart);
-
-  output.push("JZ," + safeZ);
-  if (startX !== null && startY !== null) {
-    output.push("J2," + startX + "," + startY);
-  }
-  // Restore sticky Z that was in effect before the in-point (SBP doesn't
-  // repeat Z on subsequent XY moves). Controlled plunge to be safe.
-  if (lastZ !== null) {
-    output.push("MZ," + lastZ);
-  }
-
-  output.push("' --- Begin cutting ---");
-  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
-    output.push(allLines[i]);
-  }
-
-  output.push("' --- End ---");
-  output.push("JZ," + safeZ);
-  output.push("C7");
-
-  return output.join('\n');
-}
-
-/**
- * Extract a runnable GCode selection from the original file starting at inLine.
- * Scans backward from the in-point for modal state: units, coord mode, tool, spindle, feed.
- * Builds: preamble + safe Z + XY jog + selected lines + retract + spindle off.
- */
-function extractGCodeSelection(fileContent, inLine, outLine, safeZ) {
-  if (!fileContent || !inLine) return null;
-  if (typeof safeZ === 'undefined' || safeZ === null) safeZ = 0;
-
-  var allLines = fileContent.split('\n');
-  if (!outLine) outLine = allLines.length;
-
-  inLine = Math.max(1, Math.min(inLine, allLines.length));
-  outLine = Math.max(inLine, Math.min(outLine, allLines.length));
-
-  // Collect header comments from file top
-  var headerLines = [];
-  for (var i = 0; i < allLines.length && i < inLine - 1; i++) {
-    var line = allLines[i].trim();
-    if (line === '' || line.charAt(0) === '(' || line.charAt(0) === ';' || line.charAt(0) === '%') {
-      headerLines.push(allLines[i]);
-    } else {
-      break;
-    }
-  }
-
-  // Scan backward from in-point for modal state
-  var setup = { units: null, coordMode: null, toolChange: null, spindleOn: null, feedRate: null };
-  for (var i = inLine - 2; i >= 0; i--) {
-    var line = allLines[i].trim().toUpperCase();
-    if (!setup.units && line.match(/G2[01]\b/)) setup.units = line.match(/G2[01]\b/)[0];
-    if (!setup.coordMode && line.match(/G9[01]\b/)) setup.coordMode = line.match(/G9[01]\b/)[0];
-    if (!setup.toolChange) {
-      var toolMatch = line.match(/T(\d+)/);
-      if (toolMatch) setup.toolChange = 'T' + toolMatch[1] + ' M6';
-    }
-    if (!setup.spindleOn) {
-      var spindleMatch = line.match(/(M[34])\b/);
-      var speedMatch = line.match(/S([\d.]+)/);
-      if (spindleMatch) {
-        setup.spindleOn = spindleMatch[1];
-        if (speedMatch) setup.spindleOn = 'S' + speedMatch[1] + ' ' + setup.spindleOn;
-      } else if (speedMatch && !setup.spindleOn) {
-        // S value without M3/M4 on same line — keep scanning for M3/M4
-      }
-    }
-    if (!setup.feedRate) {
-      var feedMatch = line.match(/F([\d.]+)/);
-      if (feedMatch) setup.feedRate = 'F' + feedMatch[1];
-    }
-    if (setup.units && setup.coordMode && setup.toolChange && setup.spindleOn && setup.feedRate) break;
-  }
-
-  // If we found S but not M3/M4 on same line, scan separately for spindle direction
-  if (!setup.spindleOn) {
-    var sValue = null, mDir = null;
-    for (var i = inLine - 2; i >= 0; i--) {
-      var line = allLines[i].trim().toUpperCase();
-      if (!sValue) { var sm = line.match(/S([\d.]+)/); if (sm) sValue = sm[1]; }
-      if (!mDir) { var mm = line.match(/(M[34])\b/); if (mm) mDir = mm[1]; }
-      if (sValue && mDir) { setup.spindleOn = 'S' + sValue + ' ' + mDir; break; }
-    }
-  }
-
-  // Scan forward from in-point for first XY position
-  var startX = null, startY = null;
-  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
-    var scanLine = allLines[i].trim().toUpperCase();
-    var xMatch = scanLine.match(/X([\d.\-]+)/);
-    var yMatch = scanLine.match(/Y([\d.\-]+)/);
-    if (xMatch && yMatch) { startX = xMatch[1]; startY = yMatch[1]; break; }
-  }
-
-  // Build the output
-  var output = [];
-  output = output.concat(headerLines);
-  output.push('(--- Restart from line ' + inLine + ' ---)');
-
-  if (setup.units) output.push(setup.units);
-  if (setup.coordMode) output.push(setup.coordMode);
-  if (setup.toolChange) output.push(setup.toolChange);
-  if (setup.spindleOn) output.push(setup.spindleOn);
-
-  output.push('G0 Z' + safeZ);
-  if (startX !== null && startY !== null) {
-    output.push('G0 X' + startX + ' Y' + startY);
-  }
-  if (setup.feedRate) output.push(setup.feedRate);
-
-  output.push('(--- Begin cutting ---)');
-  for (var i = inLine - 1; i < outLine && i < allLines.length; i++) {
-    output.push(allLines[i]);
-  }
-
-  output.push('(--- End ---)');
-  output.push('G0 Z' + safeZ);
-  output.push('M5');
-  output.push('M30');
-
-  return output.join('\n');
-}
+// extractSBPSelection / extractGCodeSelection moved to
+// dashboard/static/js/libs/restart_extract.js (required at top of file)
+// so the main dashboard's pause→clear-bit→resume flow can reuse the same
+// preamble-building logic.
 
 function createHistoryMenu(id) {
   var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='restartFromLine' data-jobid='JOBID'>Restart from Last Line</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
@@ -701,7 +515,22 @@ function addHistoryEntries(jobs) {
     done.innerHTML = moment(job.finished_at).fromNow();
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
     if (job.final_line != null && job.nb_lines != null) {
-      progress.innerHTML = job.final_line + ' / ' + job.nb_lines;
+      // Surface a one-click resume right in the row for jobs that didn't
+      // run to completion — pause+quit, stop-pressed, lost connection, etc.
+      // The same action lives in the ellipses menu, but most users will
+      // never dig in there for what's a common follow-up.
+      var didFinish = job.final_line >= job.nb_lines;
+      var progressHtml = job.final_line + ' / ' + job.nb_lines;
+      if (!didFinish) {
+        progressHtml += '&nbsp;&nbsp;<a class="restartFromLine inline-resume" data-jobid="' +
+                        job._id +
+                        '" title="Resume this job from the line it stopped at" ' +
+                        'style="display:inline-block; padding:2px 8px; margin-left:4px; ' +
+                        'background:#2ca64a; color:#fff; border-radius:4px; ' +
+                        'font-size:12px; font-weight:bold; cursor:pointer;">' +
+                        '<i class="fa fa-play" style="font-size:10px;"></i>&nbsp;Resume</a>';
+      }
+      progress.innerHTML = progressHtml;
     } else {
       progress.innerHTML = '—';
     }
