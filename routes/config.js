@@ -11,6 +11,7 @@ const fs = require("fs");
 const path = require("path");
 const archiver = require("archiver");
 const extract = require("extract-zip");
+const { spawn } = require("child_process");
 const { runtime } = require("webpack");
 
 const macrosDir = "/opt/fabmo/macros/";
@@ -287,6 +288,156 @@ const backup_macros = function (req, res, next) {
     archive.directory(macrosDir, false);
     archive.finalize();
 };
+
+// Job history export: produce a .zip containing the jobs/files metadata
+// from /opt/fabmo/db/ AND the actual cut files from /opt/fabmo/files/,
+// plus a manifest.json. Uses the system `zip` command so we don't load
+// hundreds of MB into the Node process. The zip is built in /tmp/ and
+// streamed back to the client.
+const FABMO_ROOT = "/opt/fabmo";
+const HISTORY_EXPORT_FILE = path.join(tempDir, "fabmo_history_export.zip");
+
+const export_history = function (req, res, next) {
+    var manifestPath = path.join(tempDir, "fabmo_history_manifest.json");
+    var jobsPath = path.join(FABMO_ROOT, "db/jobs");
+    var filesDir = path.join(FABMO_ROOT, "files");
+
+    // Best-effort counts for the manifest. Treat missing inputs as zero
+    // so an export from a brand-new machine still succeeds.
+    var jobCount = 0, fileCount = 0;
+    try {
+        if (fs.existsSync(jobsPath)) {
+            jobCount = fs
+                .readFileSync(jobsPath, "utf8")
+                .split("\n")
+                .filter(function (l) { return l.trim().length > 0; }).length;
+        }
+    } catch (e) { /* ignore */ }
+    try {
+        if (fs.existsSync(filesDir)) {
+            fileCount = fs.readdirSync(filesDir).length;
+        }
+    } catch (e) { /* ignore */ }
+
+    var machineName = "";
+    try {
+        machineName = (config.engine && config.engine.get && config.engine.get("name")) || "";
+    } catch (e) { /* ignore */ }
+
+    var manifest = {
+        kind: "fabmo_history_export",
+        version: 1,
+        exported_at: new Date().toISOString(),
+        machine_name: machineName,
+        job_count: jobCount,
+        file_count: fileCount
+    };
+
+    try {
+        fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    } catch (e) {
+        log.error("history export: failed to write manifest: " + e.message);
+        res.send(500, { status: "error", message: "Failed to write manifest" });
+        return next();
+    }
+
+    // Stale archive from a prior export — rebuild fresh every time.
+    try { fs.unlinkSync(HISTORY_EXPORT_FILE); } catch (e) { /* ignore */ }
+
+    // zip args: -r recursive, -q quiet, -X strip extra file attrs. Run
+    // from FABMO_ROOT so paths inside the zip are relative (db/, files/).
+    // We include the manifest by copying it into FABMO_ROOT briefly.
+    var manifestInRoot = path.join(FABMO_ROOT, "manifest.json");
+    try {
+        fs.copyFileSync(manifestPath, manifestInRoot);
+    } catch (e) {
+        log.warn("history export: manifest copy failed (continuing): " + e.message);
+    }
+
+    var args = ["-rqX", HISTORY_EXPORT_FILE, "db", "files", "manifest.json"];
+    var proc = spawn("zip", args, { cwd: FABMO_ROOT });
+
+    var stderrBuf = "";
+    proc.stderr.on("data", function (chunk) { stderrBuf += chunk.toString(); });
+
+    proc.on("error", function (err) {
+        try { fs.unlinkSync(manifestInRoot); } catch (e) {}
+        log.error("history export: zip spawn failed: " + err.message);
+        res.send(500, { status: "error", message: "zip command not available" });
+        next();
+    });
+
+    proc.on("close", function (code) {
+        try { fs.unlinkSync(manifestInRoot); } catch (e) {}
+        if (code !== 0) {
+            log.error("history export: zip exited " + code + " stderr=" + stderrBuf);
+            res.send(500, { status: "error", message: "Archive creation failed" });
+            return next();
+        }
+        res.setHeader("Content-Disposition", 'attachment; filename="fabmo_history_export.zip"');
+        res.setHeader("Content-Type", "application/zip");
+        var stream = fs.createReadStream(HISTORY_EXPORT_FILE);
+        stream.pipe(res);
+        stream.on("end", function () {
+            log.info("history export: streamed " + jobCount + " jobs, " + fileCount + " files");
+            next();
+        });
+        stream.on("error", function (err) {
+            log.error("history export: stream failed: " + err.message);
+            next();
+        });
+    });
+};
+
+// Job history import: accept a .zip produced by export_history above and
+// unpack it back into /opt/fabmo/db/ and /opt/fabmo/files/. Same upload
+// pattern as the macros restore — restify drops the file in /tmp/ as
+// upload_xxx and we find the most recent zip there. Caller is expected
+// to restart fabmo afterwards so the in-memory DB picks up the new state.
+function handleHistoryImport(req, res, next) {
+    log.info("History import endpoint hit");
+
+    var recentFiles = findRecentlyModifiedFiles(tempDir);
+    var candidates = recentFiles.filter(function (f) {
+        return f.size > 0 && isZipFile(f.path) && f.name.startsWith("upload_");
+    });
+    if (candidates.length === 0) {
+        log.error("history import: no zip upload found");
+        res.send(400, { status: "error", message: "No valid ZIP file in upload" });
+        return next();
+    }
+    var zipPath = candidates[0].path;
+    log.info("history import: using " + zipPath + " (" + candidates[0].size + " bytes)");
+
+    // unzip -o overwrite, -q quiet, -d target dir
+    var args = ["-oq", zipPath, "-d", FABMO_ROOT];
+    var proc = spawn("unzip", args);
+
+    var stderrBuf = "";
+    proc.stderr.on("data", function (chunk) { stderrBuf += chunk.toString(); });
+
+    proc.on("error", function (err) {
+        log.error("history import: unzip spawn failed: " + err.message);
+        res.send(500, { status: "error", message: "unzip command not available" });
+        next();
+    });
+
+    proc.on("close", function (code) {
+        try { fs.unlinkSync(zipPath); } catch (e) { /* ignore */ }
+        if (code !== 0) {
+            log.error("history import: unzip exited " + code + " stderr=" + stderrBuf);
+            res.send(500, { status: "error", message: "Archive extraction failed" });
+            return next();
+        }
+        log.info("history import: extracted into " + FABMO_ROOT + ". Restart required.");
+        res.send(200, {
+            status: "success",
+            message: "Job history imported. Restart FabMo to load the new history.",
+            restart_required: true
+        });
+        next();
+    });
+}
 
 // Function to check if a file is a ZIP file
 function isZipFile(filePath) {
@@ -957,6 +1108,8 @@ function handleSnapshotUpload(req, res, next) {
 module.exports = function (server) {
     server.post("/macros/restore", handleMacrosRestore);
     server.get("/macros/backup", backup_macros);
+    server.get("/history/export", export_history);
+    server.post("/history/import", handleHistoryImport);
     server.get("/status", get_status);
     server.get("/config", get_config);
     server.post("/config", post_config);

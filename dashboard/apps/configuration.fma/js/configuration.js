@@ -302,7 +302,7 @@ $('#restore_macros_dir').change(function() {
     fabmo.notify('info', 'Uploading and restoring macros...');
     const formData = new FormData();
     formData.append('file', macroFile);
-    
+
     $.ajax({
       url: '/macros/restore',
       type: 'POST',
@@ -316,7 +316,7 @@ $('#restore_macros_dir').change(function() {
       error: function(xhr, status, error) {
         console.error('Upload error:', xhr.responseText);
         let errorMessage = 'Failed to restore macros';
-        
+
         try {
           const errorObj = JSON.parse(xhr.responseText);
           if (errorObj && errorObj.message) {
@@ -334,6 +334,59 @@ $('#restore_macros_dir').change(function() {
       }
     });
   }
+});
+
+// Export Job History (.zip) — streams the server-built archive directly
+// to a download. Payload can be large (cut files included) so we don't
+// fetch().blob() the whole thing through memory if we can avoid it; a
+// simple anchor click hands the response to the browser's downloader.
+$('#btn-history-export').click(function () {
+  fabmo.notify('info', 'Preparing job history archive…');
+  const link = document.createElement('a');
+  link.href = '/history/export';
+  link.download = 'fabmo_history_export.zip';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+
+// Import Job History — upload a .zip produced by export. The server
+// unpacks it back into /opt/fabmo/db/ and /opt/fabmo/files/; restart
+// is required afterwards for the in-memory DB to pick up new state.
+$('#btn-history-import').click(function () {
+  if (!confirm('Importing replaces your current job history and cut files. Continue?')) return;
+  $('#history-import-file').trigger('click');
+});
+
+$('#history-import-file').change(function() {
+  const files = $(this).prop('files');
+  if (files.length !== 1) return;
+  const f = files[0];
+  fabmo.notify('info', 'Uploading job history archive…');
+  const formData = new FormData();
+  formData.append('file', f);
+  $.ajax({
+    url: '/history/import',
+    type: 'POST',
+    data: formData,
+    processData: false,
+    contentType: false,
+    timeout: 600000, // 10-minute timeout for large archives
+    success: function(response) {
+      fabmo.notify('success', (response && response.message) || 'Job history imported. Restart FabMo to load.');
+    },
+    error: function(xhr, status, error) {
+      let msg = 'Failed to import job history';
+      try {
+        const obj = JSON.parse(xhr.responseText);
+        if (obj && obj.message) msg += ': ' + obj.message;
+      } catch (e) { msg += ': ' + error; }
+      fabmo.notify('error', msg);
+    },
+    complete: function() {
+      $('#history-import-file').val('');
+    }
+  });
 });
 
 // Other Config page functions

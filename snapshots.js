@@ -27,6 +27,11 @@ var SNAPSHOT_DIR = "/opt/fabmo_snapshots";
 var DEFAULT_POINTER = "/opt/fabmo_snapshots/.default";
 var LIVE_CONFIG_DIR = "/opt/fabmo/config";
 var LIVE_MACROS_DIR = "/opt/fabmo/macros";
+// Job history metadata (jobs + files tables). Small (<1 MB at the 500
+// entry MAX_HISTORY_LENGTH cap) so we include it in every snapshot.
+// The bulky cut files in /opt/fabmo/files/ are NOT captured — they
+// travel via the separate "Export Job History" archive instead.
+var LIVE_DB_DIR = "/opt/fabmo/db";
 var MAX_AUTO_PER_KIND = 5;
 
 // Snapshots marked as the user-default are mirrored here so they survive
@@ -114,6 +119,25 @@ function _create(name, opts, callback) {
                             return cb(eErr);
                         }
                         fs.copy(LIVE_MACROS_DIR, macrosDest, cb);
+                    });
+                },
+                function (cb) {
+                    // Copy job history metadata (db/) into the snapshot.
+                    // Best-effort: a missing DB shouldn't fail the snapshot.
+                    if (!fs.existsSync(LIVE_DB_DIR)) {
+                        return cb();
+                    }
+                    var dbDest = path.join(dest, "db");
+                    fs.ensureDir(dbDest, function (eErr) {
+                        if (eErr) {
+                            return cb(eErr);
+                        }
+                        fs.copy(LIVE_DB_DIR, dbDest, function (copyErr) {
+                            if (copyErr) {
+                                log.warn("snapshot: db/ copy failed (continuing): " + copyErr.message);
+                            }
+                            cb();
+                        });
                     });
                 },
                 function (cb) {
@@ -553,6 +577,7 @@ function restore(name, callback) {
         }
         var snapConfigDir = path.join(dest, "config");
         var snapMacrosDir = path.join(dest, "macros");
+        var snapDbDir = path.join(dest, "db");
         async.series(
             [
                 function (cb) {
@@ -566,6 +591,15 @@ function restore(name, callback) {
                         return cb();
                     }
                     fs.copy(snapMacrosDir, LIVE_MACROS_DIR, { overwrite: true }, cb);
+                },
+                function (cb) {
+                    // Restore job history metadata if the snapshot has db/.
+                    // Older snapshots (pre-history-in-snapshot) just won't
+                    // have this dir and that's fine.
+                    if (!fs.existsSync(snapDbDir)) {
+                        return cb();
+                    }
+                    fs.copy(snapDbDir, LIVE_DB_DIR, { overwrite: true }, cb);
                 },
             ],
             function (err) {
