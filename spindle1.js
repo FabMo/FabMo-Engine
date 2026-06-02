@@ -22,7 +22,9 @@ function Spin() {
         vfdEnabled: true,
         vfdDesgFreq: 0,
         vfdAchvFreq: 0,
-        vfdAmps: 0
+        vfdAmps: 0,
+        vfdRatedAmps: null,
+        vfdLoadPct: null
     };
     this.vfdSettings = {};
     this.vfdBusy = false;
@@ -92,18 +94,78 @@ Spin.prototype.connectVFD = function() {
 
 let vfdFailures = 0;
 let vfdDisabled = false;
-// Set up 1-second UPDATES to spindleVFD status 
+// One-shot read of the motor rated current from a VFD parameter register
+// (e.g. Delta S1 P07.00 at Modbus 0x0700 = 1792). Used as the denominator
+// for the spindle load percentage.
+//
+// Some drives (e.g. Delta S1) store motor rated current as a percentage of
+// the drive's max output current; when RATED_AS_PCT_OF is set in the config
+// to the drive's max output in Amps, the read value is treated as a percent
+// and the rated current is computed (motor_pct/100 * drive_max). Otherwise
+// the read value is treated as a direct current reading with AMP_MULT.
+//
+// Result is stored in vfdRatedAmps in the same scaling as vfdAmps (raw
+// register units, typically 0.01A) so the load ratio works directly without
+// further unit conversion. Read failures leave vfdRatedAmps null and the UI
+// hides the load bar.
+Spin.prototype.readRatedCurrent = function() {
+    const settings = this.settings.VFD_Settings;
+    const reg = settings.Registers.READ_RATED_CURRENT;
+    if (reg === null || reg === undefined) {
+        log.info("VFD: no READ_RATED_CURRENT register configured; load % disabled");
+        return Promise.resolve(null);
+    }
+    return readVFD(reg, 1)
+        .then((data) => {
+            var raw = data[0];
+            var rated;
+            var pctOf = settings.Registers.RATED_AS_PCT_OF;
+            var scale = settings.Registers.RATED_CURRENT_SCALE;
+            if (pctOf) {
+                // Delta-style: raw is a percentage of drive max output. Convert
+                // to 0.01A units (matches vfdAmps):  raw/100 * pctOf * 100 = raw * pctOf
+                rated = raw * pctOf;
+                log.info(`VFD: motor rated = ${(raw/100*pctOf).toFixed(2)}A (${raw}% of ${pctOf}A drive max, reg ${reg})`);
+            } else if (scale) {
+                // Lenze-style: raw is a direct current reading where raw/scale = Amps.
+                // Convert to 0.01A units to match vfdAmps:  raw * 100 / scale
+                rated = raw * 100 / scale;
+                log.info(`VFD: motor rated = ${(raw/scale).toFixed(2)}A (raw ${raw} ÷ ${scale}, reg ${reg})`);
+            } else {
+                rated = settings.Registers.READ_AMPS_HI === true
+                    ? ((raw >> 8) & 0xFF) * settings.Registers.AMP_MULT
+                    : raw * settings.Registers.AMP_MULT;
+                log.info(`VFD: motor rated current = ${rated} (raw ${raw} from reg ${reg})`);
+            }
+            if (rated > 0) {
+                this.status.vfdRatedAmps = rated;
+            } else {
+                log.warn(`VFD: rated-current read returned ${raw} from reg ${reg}; load % disabled`);
+            }
+            return rated;
+        })
+        .catch((err) => {
+            log.warn(`VFD: rated-current read failed at reg ${reg}: ${err.message}`);
+            return null;
+        });
+};
+
+// Set up 1-second UPDATES to spindleVFD status
 Spin.prototype.startSpindleVFD = function() {
     const settings = this.settings.VFD_Settings;
-    const MAX_VFD_FAILS = 10;  
+    const MAX_VFD_FAILS = 10;
     // Reset the disabled flag when starting
     vfdDisabled = false;
     vfdFailures = 0;
-    
+
     // Store intervalId as instance property so it can be cleared properly
     if (this.vfdInterval) {
         clearInterval(this.vfdInterval);
     }
+
+    // Kick off one-shot rated-current read so load % is available shortly
+    // after connect. Doesn't block the poll loop; just populates vfdRatedAmps.
+    this.readRatedCurrent();
 
     if (this.status.vfdEnabled) {
         this.vfdInterval = setInterval(() => {
@@ -137,7 +199,16 @@ Spin.prototype.startSpindleVFD = function() {
                 var vCur = settings.Registers.READ_AMPS_HI === true ? ((data[ampsOffset] >> 8) & 0xFF) : data[ampsOffset];
                 vCur = vCur * settings.Registers.AMP_MULT;
                 this.status.vfdAmps = vCur;
-                
+
+                // Load % relative to motor rated current (read once at connect).
+                // Capped at 999 so a wildly bad rated value can't blow up the bar.
+                if (this.status.vfdRatedAmps && this.status.vfdRatedAmps > 0) {
+                    var pct = (vCur / this.status.vfdRatedAmps) * 100;
+                    this.status.vfdLoadPct = Math.min(Math.round(pct * 10) / 10, 999);
+                } else {
+                    this.status.vfdLoadPct = null;
+                }
+
                 this.updateStatus(this.status);
                 vfdFailures = 0; // Reset failure count on success
             })
@@ -174,9 +245,11 @@ Spin.prototype.startSpindleVFD = function() {
 // Method to update VFD status Globally via "machine"
 Spin.prototype.updateStatus = function(newStatus) {
     // for the change-check here, probably most efficient to just do this manual comparison
-    if (this.laststatus.vfdDesgFreq !== newStatus.vfdDesgFreq || 
+    if (this.laststatus.vfdDesgFreq !== newStatus.vfdDesgFreq ||
         this.laststatus.vfdAchvFreq !== newStatus.vfdAchvFreq ||
-        this.laststatus.vfdAmps !== newStatus.vfdAmps) {
+        this.laststatus.vfdAmps !== newStatus.vfdAmps ||
+        this.laststatus.vfdLoadPct !== newStatus.vfdLoadPct ||
+        this.laststatus.vfdRatedAmps !== newStatus.vfdRatedAmps) {
         this.status = Object.assign({}, this.status, newStatus);
         this.emit('statusChanged', this.status); // Emit status change to trigger event on machine
         // log.info("VFD Status Changed: " + JSON.stringify(this.status));
@@ -194,6 +267,8 @@ Spin.prototype.disableSpindle = function(reason, isInitialFailure = false) {
     this.status.vfdDesgFreq = -1;
     this.status.vfdAchvFreq = 0;
     this.status.vfdAmps = 0;
+    this.status.vfdLoadPct = null;
+    this.status.vfdRatedAmps = null;
     
     // Clear any running interval
     if (this.vfdInterval) {

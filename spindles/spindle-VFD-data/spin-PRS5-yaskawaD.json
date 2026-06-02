@@ -19,6 +19,8 @@
       "TRIG_READ_FREQ": 35,
       "SET_FREQUENCY": 640,
       "ENTER_REGISTER": 2320,
+      "READ_RATED_CURRENT": 782,
+      "RATED_CURRENT_SCALE": 100,
       "RPM_MULT": 1,
       "READ_AMPS_HI": false,
       "AMP_MULT": 10,

@@ -17,6 +17,8 @@
       "READ_STATUS": 8449,
       "TRIG_READ_FREQ": 8450,
       "SET_FREQUENCY": 8193,
+      "READ_RATED_CURRENT": 1792,
+      "RATED_AS_PCT_OF": 4.2,
       "RPM_MULT": 1,
       "READ_AMPS_HI": null,
       "AMP_MULT": 1,
