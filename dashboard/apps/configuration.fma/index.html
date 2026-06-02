@@ -261,12 +261,21 @@
                 <a id="btn-restore" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore saved Profile</a>
               </div>
             </div>
-            <div class="large-12 columns">
+            <div class="large-12 columns" style="margin-bottom: 8px;">
               <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <label style="margin:0; line-height:32px; min-width: 200px;">Save/Restore Macros Only:</label>
                 <a id="btn-macros-backup" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Backup current Macros</a>
                 <input type="file" id="restore_macros_dir" class="hidden" multiple accept=".zip">
                 <a id="btn-macros-restore" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore saved Macros</a>
+              </div>
+            </div>
+            <div class="large-12 columns">
+              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <label style="margin:0; line-height:32px; min-width: 200px;">Export/Import Job History:</label>
+                <a id="btn-history-export" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Export Job History</a>
+                <input type="file" id="history-import-file" class="hidden" accept=".zip,application/zip">
+                <a id="btn-history-import" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Import Job History</a>
+                <span style="font-size:12px; color:#888;">(includes cut files; may be large)</span>
               </div>
             </div>
           </fieldset>
