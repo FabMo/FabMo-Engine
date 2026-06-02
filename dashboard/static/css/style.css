@@ -465,6 +465,45 @@ input#override {
     padding-right: 18px;
 }
 
+/* spindle load bar (LOAD row) — match the visual rhythm of the RPM/AMP
+   rows above so the LOAD label lines up with RPM/AMP and the right edge
+   sits where the input/value sits on the other rows. */
+.dro-addon-value.spindle-load {
+    align-items: center;
+    margin-bottom: 5px;
+}
+.dro-addon-value.spindle-load .sp-load-bar {
+    width: 30%;
+    height: 1rem;
+    margin-left: 20px;
+    margin-right: 5px;
+    border: 1px solid gray;
+    background-color: #2a2a2a;
+    overflow: hidden;
+    position: relative;
+}
+.dro-addon-value.spindle-load .sp-load-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background-color: #3aa757;
+    transition: width 0.2s linear, background-color 0.3s ease;
+}
+.dro-addon-value.spindle-load.warn .sp-load-fill {
+    background-color: #e0b020;
+}
+.dro-addon-value.spindle-load.over .sp-load-fill {
+    background-color: #c83030;
+}
+.dro-addon-value.spindle-load .sp-load-pct {
+    width: 3rem;
+    text-align: right;
+    padding-right: 18px;
+    font-size: large;
+    font-weight: bold;
+    color: #ddd;
+}
+
 
 /**       Input / Output Display         ## DEAL WITH varied Input DEFINITIONS in Display **/
 

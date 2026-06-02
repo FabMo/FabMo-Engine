@@ -393,12 +393,31 @@ const { last } = require("underscore");
                     $(".spindle-power .sp-power").css("color", "black");
                 }
                 $(".spindle-power .sp-power").text(formattedDraw);
+
+                // LOAD bar: only shown when the drive reported a usable motor
+                // rated current. Color steps at 70%/90% give an at-a-glance
+                // headroom indicator without users having to read the number.
+                var loadPct = status.spindle.vfdLoadPct;
+                var $loadRow = $(".spindle-load");
+                if (typeof loadPct === "number" && status.spindle.vfdRatedAmps) {
+                    var capped = Math.min(loadPct, 100);
+                    $loadRow.find(".sp-load-fill").css("width", capped + "%");
+                    $loadRow.find(".sp-load-pct").text(Math.round(loadPct) + "%");
+                    $loadRow.removeClass("warn over");
+                    if (loadPct >= 90) $loadRow.addClass("over");
+                    else if (loadPct >= 70) $loadRow.addClass("warn");
+                    $loadRow.show();
+                } else {
+                    $loadRow.hide();
+                }
+
                 $("#dro-addon-3").css("visibility", "visible");
             }
         } else {
             updateSpindleSpeed("- No VFD/USB -  ");
             $(".spindle-speed input").css("color", "gray");
             $(".spindle-power .sp-power").css("color", "gray");
+            $(".spindle-load").hide();
             // hide display when no VFD
             $("#dro-addon-3").css("visibility", "hidden");
         }
