@@ -826,12 +826,12 @@ function ensureProfileDisplayCorrect() {
     });
 }
 
-// "My Custom Settings": create a snapshot from the current /opt/fabmo/config +
+// "My Custom Profile": create a snapshot from the current /opt/fabmo/config +
 // macros, then mark it as the Preferred fallback the recovery chain will reach
 // for. This is the user-friendly entry into the snapshot system — it does not
 // modify any shipped profiles.
 //
-// Refreshes both the snapshot dropdown and the Preferred Settings label.
+// Refreshes both the snapshot dropdown and the Preferred Profile label.
 // Filters to kind="user" so auto recovery snapshots (which rotate on their
 // own and aren't user-meaningful) don't clutter the picker.
 function refreshDefaultSnapshotName() {
@@ -979,7 +979,7 @@ $('#btn-set-preferred').click(function () {
                 var msg = resp && resp.message ? resp.message : 'unknown error';
                 throw new Error(msg);
             }
-            fabmo.notify('success', 'Preferred Settings: ' + name);
+            fabmo.notify('success', 'Preferred Profile: ' + name);
             refreshDefaultSnapshotName();
         })
         .catch(function (err) {

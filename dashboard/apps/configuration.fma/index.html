@@ -219,6 +219,59 @@
           </fieldset>
         </div>
 
+        <!-- MY CUSTOM PROFILE — lives inside the General tab so it
+             doesn't bleed onto Axes/Inputs/etc. -->
+        <div class="row">
+          <fieldset>
+            <legend>My Custom Profile</legend>
+            <div class="large-12 columns">
+              <p style="margin-bottom: 10px;">
+                Save the current configuration as a custom profile you can restore later. The
+                most recently saved profile is marked as your Preferred Profile &mdash; if a
+                settings file is ever damaged and the most recent backup can't be used, the
+                machine falls back to the Preferred Profile instead of the factory profile.
+              </p>
+            </div>
+            <div class="large-12 columns" style="margin-bottom: 10px;">
+              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <a id="btn-save-default" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Save current settings as custom profile</a>
+                <a id="btn-reset-default" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore machine settings to custom profile</a>
+              </div>
+            </div>
+            <div class="large-12 columns" style="margin-bottom: 10px;">
+              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <label style="margin:0; line-height:32px;">Snapshot:</label>
+                <select id="custom-snapshot-select" style="width:200px; margin:0;"></select>
+                <a id="btn-set-preferred" class="button radius small secondary" style="margin:0;">Set as Preferred</a>
+                <a id="btn-download-snapshot" class="button radius small secondary" title="Download selected custom profile" style="margin:0;">Download</a>
+                <a id="btn-upload-snapshot" class="button radius small secondary" title="Upload a custom profile from a .fmsnap.zip" style="margin:0;">Upload</a>
+                <input type="file" id="upload-snapshot-file" class="hidden" accept=".zip,application/zip">
+                <span style="margin-left:12px; line-height:32px;">Preferred Profile: <span id="current-default-name" style="font-weight: bold;">none</span></span>
+                <a id="btn-delete-snapshot" class="button radius small alert" title="Delete selected snapshot" style="display:none; margin:0; padding:0 10px;"><i class="fa fa-trash"></i></a>
+              </div>
+            </div>
+
+            <hr style="margin: 14px 0 12px; border: 0; border-top: 1px solid #ccc;">
+
+            <div class="large-12 columns" style="margin-bottom: 8px;">
+              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <label style="margin:0; line-height:32px; min-width: 200px;">Save/Restore Profile Only:</label>
+                <a id="btn-backup" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Backup current Profile</a>
+                <input type="file" id="restore_conf_file" class="hidden" multiple accept=".fmc">
+                <a id="btn-restore" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore saved Profile</a>
+              </div>
+            </div>
+            <div class="large-12 columns">
+              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <label style="margin:0; line-height:32px; min-width: 200px;">Save/Restore Macros Only:</label>
+                <a id="btn-macros-backup" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Backup current Macros</a>
+                <input type="file" id="restore_macros_dir" class="hidden" multiple accept=".zip">
+                <a id="btn-macros-restore" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore saved Macros</a>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
       </section>
 
      <!-- AXES ----------------------------------------------------------------------------------------------- -->
@@ -2256,79 +2309,6 @@
           </fieldset>
       </section>
 
-
-<!-- TEST BACKUP & RESTORE SECTION  (Applied to All) -->
-      <section>
-
-        <div class="row">
-          <fieldset>
-
-          <legend>Backup & Restore</legend>
-            <div class="large-6 columns">
-                <div class="row collapse">
-                    <a id="btn-backup" class="button radius small" style="background-color:rgb(83, 133, 224)">Backup this Configuration</a>
-                </div>
-            </div>
-            <div class="large-6 columns">
-                <div class="row collapse">
-                    <input type="file" id="restore_conf_file" class="hidden" multiple accept=".fmc">
-                    <a id="btn-restore"  class="button radius small" style="background-color:rgb(41, 175, 41) ">Restore a Configuration</a>
-                </div>
-            </div>
-
-            <hr style="margin: 20px 0; border: 1px solid #ccc;"> 
-
-            <div class="large-6 columns">
-              <div class="row collapse">
-                  <a id="btn-macros-backup" class="button radius small" style="background-color:rgb(83, 133, 224)">Backup current Macros</a>
-              </div>
-            </div>
-            <div class="large-6 columns">
-              <div class="row collapse">
-                  <input type="file" id="restore_macros_dir" class="hidden" multiple accept=".zip">
-                  <a id="btn-macros-restore"  class="button radius small" style="background-color:rgb(41, 175, 41)">Restore saved Macros</a>
-              </div>
-            </div>
-
-          </fieldset>
-        </div>
-
-      </section>
-
-<!-- MY CUSTOM SETTINGS SECTION -->
-      <section>
-        <div class="row">
-          <fieldset>
-            <legend>My Custom Settings</legend>
-            <div class="large-12 columns">
-              <p style="margin-bottom: 10px;">
-                Save the current configuration as a custom profile you can restore later. The
-                most recently saved profile is marked as your Preferred Settings &mdash; if a
-                settings file is ever damaged and the most recent backup can't be used, the
-                machine falls back to the Preferred profile instead of the factory profile.
-              </p>
-            </div>
-            <div class="large-12 columns" style="margin-bottom: 10px;">
-              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <a id="btn-save-default" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Save current settings as custom profile</a>
-                <a id="btn-reset-default" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore machine settings to custom profile</a>
-              </div>
-            </div>
-            <div class="large-12 columns">
-              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <label style="margin:0; line-height:32px;">Snapshot:</label>
-                <select id="custom-snapshot-select" style="width:200px; margin:0;"></select>
-                <a id="btn-set-preferred" class="button radius small secondary" style="margin:0;">Set as Preferred</a>
-                <a id="btn-download-snapshot" class="button radius small secondary" title="Download selected custom profile" style="margin:0;">Download</a>
-                <a id="btn-upload-snapshot" class="button radius small secondary" title="Upload a custom profile from a .fmsnap.zip" style="margin:0;">Upload</a>
-                <input type="file" id="upload-snapshot-file" class="hidden" accept=".zip,application/zip">
-                <span style="margin-left:12px; line-height:32px;">Preferred Settings: <span id="current-default-name" style="font-weight: bold;">none</span></span>
-                <a id="btn-delete-snapshot" class="button radius small alert" title="Delete selected snapshot" style="display:none; margin:0; padding:0 10px;"><i class="fa fa-trash"></i></a>
-              </div>
-            </div>
-          </fieldset>
-        </div>
-      </section>
 
 <!-- Save-as-custom-profile dialog. Inline modal because the app runs in a
      sandboxed iframe that blocks window.prompt(). -->
