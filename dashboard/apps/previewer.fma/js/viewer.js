@@ -1551,11 +1551,10 @@ module.exports = function(container) {
         if (hoveredMove) hoveredMove.setColor(hoveredMove.rapid ? [1,0,0] : [0,1,0]);
         hoveredMove = move;
         move.setColor([1, 1, 1]);  // glow
-        var label = 'GC ' + move.getLine().toLocaleString();
-        if (self.path.hasSourceLines) {
-          label += '  /  SBP ' + (move.sourceLine + 1).toLocaleString();
-        }
-        self.path.codeLine.text(label);
+        var lineNum = self.path.hasSourceLines
+          ? (move.sourceLine + 1)
+          : move.getLine();
+        self.path.codeLine.text(lineNum.toLocaleString());
         canvas.style.cursor = 'pointer';
         self.refresh();
       }
