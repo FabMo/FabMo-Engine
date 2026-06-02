@@ -79,7 +79,7 @@ module.exports = function(callbacks) {
 
 
   self.showLoadingProgress = function(progress) {
-    var msg = 'Processing GCode.  Please wait.' +
+    var msg = 'Processing Toolpath. Please Wait.' +
         '<progress max="100" value="' + (100 * progress) + '"></progress>';
     self.showLoading(msg);
   }
