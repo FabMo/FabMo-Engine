@@ -1058,6 +1058,10 @@
         this._call("setConfig", data, callback);
     };
 
+    FabMoDashboard.prototype.lookupVariable = function (name, callback) {
+        this._call("lookupVariable", { name: name }, callback);
+    };
+
     FabMoDashboard.prototype.deleteApp = function (id, callback) {
         this._call("deleteApp", id, callback);
     };

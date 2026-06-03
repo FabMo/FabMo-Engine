@@ -351,6 +351,18 @@
         });
     };
 
+    // Look up the current value of a single OpenSBP variable (e.g. "$X", "&FOO",
+    // "%(1)", "%machine.envelope.xmax"). Returns { name, type, defined, value }.
+    FabMoAPI.prototype.lookupVariable = function (name, callback) {
+        callback = callback || function () {};
+        this._post(
+            "/variables/lookup",
+            { name: name },
+            function (err) { callback(err || "lookup failed"); },
+            function (err, data) { callback(null, data); }
+        );
+    };
+
     // Version/Info
     FabMoAPI.prototype.getVersion = function (callback) {
         this._get(

@@ -108,3 +108,22 @@ h1, h2, h3, h4, h5, h6 {
     color: #ddd;
     background-color:#555;
 }
+
+/* Variable hover tooltip */
+.fabmo-var-hover {
+    position: fixed;
+    z-index: 9999;
+    background: #2b2b2b;
+    color: #eee;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 5px 9px;
+    font-family: Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    max-width: 400px;
+    word-break: break-all;
+}
+.fabmo-var-hover .hv-val { color: #b5e853; }
+.fabmo-var-hover .hv-undef { color: #999; font-style: italic; }
