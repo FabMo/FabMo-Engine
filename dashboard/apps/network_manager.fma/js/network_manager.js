@@ -256,7 +256,13 @@ $(document).ready(function() {
             fabmo.connectToWifi(name, passwd,function(err,data){
                 if(err) {
                     console.log(err);
-                    fabmo.showModal({message:err});
+                    var msg = (err && err.message) ? err.message : (typeof err === 'string' ? err : 'Could not join the network. Check the password and try again.');
+                    fabmo.showModal({
+                        title: 'Could not connect to ' + name,
+                        message: msg,
+                        okText: 'OK',
+                        ok: function() { fabmo.hideModal(); }
+                    });
                 } else {
                     console.log(data);
                     // Remove everything up to and including the first ":" and then trim the result for the variable "address" 
