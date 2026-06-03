@@ -13,6 +13,14 @@ body {
     background-color: #eee;
 }
 
+/* Outer dashboard chrome only — prevent a brief scrollbar flash during load.
+   Scoped to body#body (the outer dashboard) so iframe apps (macros, apps grid,
+   etc.) still scroll naturally. */
+html:has(body#body),
+body#body {
+    overflow: hidden;
+}
+
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
