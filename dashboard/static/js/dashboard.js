@@ -1911,7 +1911,12 @@ define(function (require) {
             $(".modalOkay").show();
             $(".modalOkay").text("Quit");
             $(".modalOkay").on("click", function () {
-                options.cancel(); // Use options.cancel() here
+                // Guard the cancel callback — when callers pass only { message }
+                // (e.g. an error popup) there's no cancel handler, and the
+                // unguarded call would throw and leave the modal stuck.
+                if (typeof options.cancel === "function") {
+                    try { options.cancel(); } catch (e) { console.warn("modal cancel handler threw:", e); }
+                }
                 $(".newModal").hide();
                 $(".modalDim").hide();
                 $(".yes-no-buttons").remove(); // Clean up the yes-no buttons if they were used
