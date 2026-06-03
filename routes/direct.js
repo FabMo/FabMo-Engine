@@ -1,4 +1,6 @@
 var machine = require("../machine").machine;
+var config = require("../config");
+var bounds = require("../runtime/bounds");
 var log = require("../log").logger("api");
 
 /**
@@ -103,7 +105,54 @@ var simInput = function (req, res, next) {
     res.json({ status: "success", data: { inp: inp, state: state } });
 };
 
+/**
+ * @api {post} /code/check_bounds Soft-limit pre-check for editor-run code
+ * @apiGroup Direct
+ * @apiDescription Compute work-coord extents for the given code and compare
+ *   against the current machine envelope + active G55 offsets. Used by the
+ *   editor so Run Code Immediately gets the same soft-limit warning as a
+ *   submitted job. Does not start motion.
+ * @apiParam {String} runtime "sbp" or "gcode"
+ * @apiParam {String} cmd The code to analyze
+ */
+var checkBounds = function (req, res, next) {
+    var rt = (req.params && req.params.runtime || "").toLowerCase().trim();
+    var cmd = req.params && req.params.cmd;
+    if (typeof cmd !== "string" || !cmd) {
+        return res.json({ status: "error", message: "No code specified in request." });
+    }
+    if (rt !== "sbp" && rt !== "opensbp" && rt !== "g" && rt !== "nc" && rt !== "gcode") {
+        return res.json({ status: "error", message: "Runtime '" + rt + "' is unknown." });
+    }
+    var rtNorm = (rt === "sbp" || rt === "opensbp") ? "sbp" : "gcode";
+
+    bounds.computeStringBounds(cmd, rtNorm, function (err, result) {
+        if (err) {
+            log.warn("/code/check_bounds: " + err.message);
+            return res.json({ status: "error", message: err.message });
+        }
+        var envelope = config.machine.get("envelope");
+        var g55 = {
+            x: config.driver.get("g55x"),
+            y: config.driver.get("g55y"),
+            z: config.driver.get("g55z"),
+        };
+        var check = bounds.checkAgainstEnvelope(result.bounds, envelope, g55);
+        res.json({
+            status: "success",
+            data: {
+                runtime: rtNorm,
+                bounds: result.bounds,
+                exceeds: check.exceeds,
+                violations: check.violations,
+                durationMs: result.durationMs,
+            },
+        });
+    });
+};
+
 module.exports = function (server) {
     server.post("/code", code);
     server.post("/code/sim_input", simInput);
+    server.post("/code/check_bounds", checkBounds);
 };

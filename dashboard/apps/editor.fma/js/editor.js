@@ -28,18 +28,48 @@ require('./cm-fabmo-modes.js');
     let alreadyBlurred = false; // Flag to prevent multiple blur events
 
 
+    // Run code through the soft-limit pre-check, then call `proceed` if the
+    // user accepts (or the code is clean). Mirrors the job-manager warning
+    // pattern — warn-and-confirm, never refuse outright.
+    function runWithBoundsCheck(text, runtime, proceed) {
+      fabmo.checkCodeBounds(text, runtime, function (err, data) {
+        if (err || !data) {
+          // If the check itself fails, don't block the run — log and proceed,
+          // matching prior behavior. G2 still enforces soft limits at firmware.
+          console.warn('bounds pre-check failed:', err);
+          return proceed();
+        }
+        if (!data.exceeds) return proceed();
+        var msg = (data.violations || []).map(function (v) {
+          return v.axis.toUpperCase() + ' ' + v.direction + ' by ' + Number(v.overage).toFixed(2);
+        }).join(', ');
+        fabmo.showModal({
+          title: 'Code exceeds soft limits',
+          message: 'This code would move outside the machine envelope: ' + msg + '.<br>Run anyway?',
+          okText: 'Run anyway',
+          ok: function () { fabmo.hideModal(); proceed(); },
+          cancelText: 'Cancel',
+          cancel: function () { fabmo.hideModal(); }
+        });
+      });
+    }
+
     function execute() {
       $("#execute-menu").hide();
       var text = editor.getValue();
       overrideDirty = false; // only over-ride once
       switch(lang) {
         case "gcode":
-          fabmo.notify('info', 'Executing G-Code program.');
-          fabmo.runGCode(text);
+          runWithBoundsCheck(text, 'gcode', function () {
+            fabmo.notify('info', 'Executing G-Code program.');
+            fabmo.runGCode(text);
+          });
         break;
         case "opensbp":
-          fabmo.notify('info', 'Executing OpenSBP program.');
-          fabmo.runSBP(text);
+          runWithBoundsCheck(text, 'sbp', function () {
+            fabmo.notify('info', 'Executing OpenSBP program.');
+            fabmo.runSBP(text);
+          });
         break;
       }
     }
@@ -52,8 +82,10 @@ require('./cm-fabmo-modes.js');
         fabmo.notify('warn', 'Debug mode (input simulation) is only available for OpenSBP files.');
         return;
       }
-      fabmo.notify('info', 'Executing OpenSBP program in debug mode.');
-      fabmo.runSBPDebug(text);
+      runWithBoundsCheck(text, 'sbp', function () {
+        fabmo.notify('info', 'Executing OpenSBP program in debug mode.');
+        fabmo.runSBPDebug(text);
+      });
     }
 
     function supports_html5_storage() {

@@ -1062,6 +1062,10 @@
         this._call("lookupVariable", { name: name }, callback);
     };
 
+    FabMoDashboard.prototype.checkCodeBounds = function (cmd, runtime, callback) {
+        this._call("checkCodeBounds", { cmd: cmd, runtime: runtime }, callback);
+    };
+
     FabMoDashboard.prototype.deleteApp = function (id, callback) {
         this._call("deleteApp", id, callback);
     };
