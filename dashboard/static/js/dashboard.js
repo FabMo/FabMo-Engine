@@ -1014,6 +1014,23 @@ define(function (require) {
             }.bind(this)
         );
 
+        this._registerHandler(
+            "checkCodeBounds",
+            function (data, callback) {
+                this.engine.checkCodeBounds(
+                    data && data.cmd,
+                    data && data.runtime,
+                    function (err, result) {
+                        if (err) {
+                            callback(err);
+                        } else {
+                            callback(null, result);
+                        }
+                    }.bind(this)
+                );
+            }.bind(this)
+        );
+
         ///
         /// NETWORK MANAGEMENT
         ///

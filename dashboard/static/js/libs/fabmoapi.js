@@ -564,6 +564,17 @@
         this._post("/code/sim_input", { inp: inp, state: !!state }, callback, callback);
     };
 
+    // Soft-limit pre-check for editor-run code. Returns { exceeds, violations, bounds }.
+    FabMoAPI.prototype.checkCodeBounds = function (cmd, runtime, callback) {
+        callback = callback || function () {};
+        this._post(
+            "/code/check_bounds",
+            { cmd: cmd, runtime: runtime },
+            function (err) { callback(err || "bounds check failed"); },
+            function (err, data) { callback(null, data); }
+        );
+    };
+
     FabMoAPI.prototype.goto = function (move, callback) {
         this.executeRuntimeCode("manual", { cmd: "goto", move: move });
     };
