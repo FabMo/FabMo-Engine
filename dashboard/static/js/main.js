@@ -2435,6 +2435,96 @@ $(".icon_sign_out").on("click", function (e) {
     });
 });
 
+// ========================================================================================= CALCULATOR
+// Lightweight calculator modal driven by the sidebar Calculator icon. Backed
+// by POST /eval, which uses the OpenSBP parser + evaluator — so expressions
+// can include the full math library (SIN, SQRT, ROUND, ...), constants (PI),
+// MOD, and references to live variables ($persistent, &temp, %(N), %config.path).
+(function () {
+    function openCalculator() {
+        $(".calc-modal-dim").show();
+        $(".calc-modal").show();
+        $("#calc-error").hide().text("");
+        // Focus expression input, place caret at end of any existing text
+        var el = document.getElementById("calc-expr");
+        if (el) {
+            el.focus();
+            var v = el.value;
+            el.setSelectionRange(v.length, v.length);
+        }
+    }
+    function closeCalculator() {
+        $(".calc-modal").hide();
+        $(".calc-modal-dim").hide();
+    }
+    function insertAtCursor(textarea, insertion) {
+        var start = textarea.selectionStart, end = textarea.selectionEnd;
+        var v = textarea.value;
+        textarea.value = v.slice(0, start) + insertion + v.slice(end);
+        // Place caret. For things like "POW(,)" / "ATAN2(,)" land between the
+        // parens so the user can start typing the first argument.
+        var landing = start + insertion.length;
+        var m = insertion.match(/\(,/);
+        if (m) landing = start + insertion.indexOf("(") + 1;
+        textarea.focus();
+        textarea.setSelectionRange(landing, landing);
+    }
+    function calculate() {
+        var expr = $("#calc-expr").val();
+        $("#calc-error").hide().text("");
+        if (!expr || !expr.trim()) {
+            $("#calc-result").val("");
+            return;
+        }
+        engine.evalExpression(expr, function (err, data) {
+            if (err || !data) {
+                $("#calc-result").val("");
+                $("#calc-error").text(typeof err === "string" ? err : "Could not evaluate.").show();
+                return;
+            }
+            var v = data.value;
+            var rendered;
+            if (v === null || v === undefined) {
+                rendered = "(undefined)";
+            } else if (typeof v === "number") {
+                rendered = (Math.abs(v) >= 1e6 || (v !== 0 && Math.abs(v) < 1e-4))
+                    ? String(v)
+                    : String(Math.round(v * 1e6) / 1e6);
+            } else if (typeof v === "object") {
+                try { rendered = JSON.stringify(v); } catch (e) { rendered = String(v); }
+            } else {
+                rendered = String(v);
+            }
+            $("#calc-result").val(rendered);
+        });
+    }
+
+    $("#icon_calculator").on("click", function (e) {
+        e.preventDefault();
+        openCalculator();
+    });
+    $(".calc-close").on("click", closeCalculator);
+    $(".calc-modal-dim").on("click", closeCalculator);
+    $("#calc-button").on("click", calculate);
+    $("#calc-expr").on("keydown", function (e) {
+        // Enter (without shift) calculates; Shift+Enter inserts newline.
+        if ((e.key === "Enter" || e.keyCode === 13) && !e.shiftKey) {
+            e.preventDefault();
+            calculate();
+        } else if (e.key === "Escape") {
+            closeCalculator();
+        }
+    });
+    $("#calc-helper").on("change", function () {
+        var v = this.value;
+        if (!v) return;
+        var ta = document.getElementById("calc-expr");
+        insertAtCursor(ta, v);
+        // Reset dropdown so picking the same item twice still fires.
+        this.selectedIndex = 0;
+    });
+})();
+
 // ========================================================================================= KEYPAD DRAGABILITY
 // Keypad Modal Drag Functionality
 function makeKeypadDraggable() {

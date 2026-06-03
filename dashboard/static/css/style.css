@@ -902,6 +902,103 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_network 		{ background-image: url('../img/icon_network.png');	}
 #icon_sign_out 		{ background-image: url('../img/icon_sign_out.png');	}
 
+/* Calculator sidebar icon — FontAwesome glyph instead of a background PNG.
+   Vertically center the glyph so it aligns with the text label in the
+   expanded sidebar (icons in the wide collapsed bar are also centered
+   inside their cells, so this works in both layouts). */
+#icon_calculator { background-image: none; position: relative; }
+#icon_calculator:before {
+    position: absolute;
+    font-family: 'FontAwesome';
+    font-size: 22px;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    content: "\f1ec"; /* fa-calculator */
+}
+
+/* Calculator modal */
+.calc-modal-dim {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 3000;
+}
+.calc-modal {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 420px;
+    max-width: 92vw;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    z-index: 3001;
+    color: #333;
+    font-family: 'source_sans_proregular', sans-serif;
+}
+.calc-modal .calc-header {
+    background: #313366;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.calc-modal .calc-title { font-weight: bold; font-size: 16px; }
+.calc-modal .calc-close {
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    padding: 0 6px;
+    user-select: none;
+}
+.calc-modal .calc-close:hover { color: #ffda29; }
+.calc-modal .calc-body { padding: 12px 14px 14px; }
+.calc-modal .calc-body label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: #555;
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+.calc-modal #calc-expr,
+.calc-modal #calc-result {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 14px;
+    padding: 6px 8px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    margin: 0;
+}
+.calc-modal #calc-result { background: #f5f5f5; }
+.calc-modal .calc-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+.calc-modal #calc-helper { flex: 1; padding: 4px 6px; }
+.calc-modal #calc-button {
+    background: #5Daa35;
+    color: #fff;
+    border: none;
+    padding: 4px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.calc-modal #calc-button:hover { background: #4d9128; }
+.calc-modal .calc-error {
+    color: #b00020;
+    font-size: 13px;
+    margin-top: 6px;
+    font-family: Menlo, Consolas, monospace;
+}
+
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
 
 
