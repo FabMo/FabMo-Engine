@@ -823,6 +823,11 @@ engine.getVersion(function (err, version) {
                             modalOptions.okText = null;
                             modalOptions.cancelText = null;
                             modalOptions.input = null;
+                            // Carry the pause timer (seconds) through to the modal
+                            // so it can render a countdown and label the OK button "Skip".
+                            if (status.info["timer"]) {
+                                modalOptions.timer = status.info["timer"];
+                            }
 
                             // "Resume" and "Cancel" functions are called after a MODAL is shown to offer to different exits
                             // or actions.  The "resume" function is used to resume the engine, while the "cancel" function
@@ -960,14 +965,14 @@ engine.getVersion(function (err, version) {
 
                                 //Set defaults if both buttons are still null
                                 if (modalOptions.ok === null && modalOptions.cancel === null && !modalOptions.noButton) {
-                                    modalOptions.okText = "Resume";
+                                    modalOptions.okText = modalOptions.timer ? "Skip" : "Resume";
                                     modalOptions.ok = resumeFunction;
                                     modalOptions.cancelText = "Quit";
                                     modalOptions.cancel = cancelFunction;
                                 }
                             } else {
                                 // No custom parameters; use default buttons
-                                modalOptions.okText = "Resume";
+                                modalOptions.okText = modalOptions.timer ? "Skip" : "Resume";
                                 modalOptions.cancelText = "Quit";
                                 modalOptions.ok = resumeFunction;
                                 modalOptions.cancel = cancelFunction;
