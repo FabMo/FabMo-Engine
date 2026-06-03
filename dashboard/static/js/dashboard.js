@@ -1615,6 +1615,13 @@ define(function (require) {
 
         modalIsShown = true;
 
+        // Clear any countdown left over from a previous modal
+        if (Dashboard._pauseTimerInterval) {
+            clearInterval(Dashboard._pauseTimerInterval);
+            Dashboard._pauseTimerInterval = null;
+        }
+        $(".modalCountdown").remove();
+
         $(".modalDim").show();
         $(".newModal").show();
         $(".modalLogo").show();
@@ -1636,6 +1643,32 @@ define(function (require) {
             $(".modalDialogue").html(options.message).show();
         } else {
             $(".modalDialogue").hide();
+        }
+
+        // Live countdown for timed PAUSE (e.g. PAUSE 20). Engine auto-resumes
+        // when the timer expires; this block just renders the visible tick.
+        if (options["timer"] && Number(options.timer) > 0) {
+            var totalSeconds = Math.floor(Number(options.timer));
+            var remaining = totalSeconds;
+            var fmt = function (s) {
+                if (s < 60) return s + "s";
+                var m = Math.floor(s / 60);
+                var r = s % 60;
+                return m + ":" + (r < 10 ? "0" + r : r);
+            };
+            var $countdown = $('<div class="modalCountdown" style="font-size: 1.6em; font-weight: bold; margin-top: 10px; text-align: center;"></div>');
+            $countdown.text(fmt(remaining));
+            $(".modalDialogue").after($countdown).show();
+            Dashboard._pauseTimerInterval = setInterval(function () {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    $countdown.text("0s");
+                    clearInterval(Dashboard._pauseTimerInterval);
+                    Dashboard._pauseTimerInterval = null;
+                } else {
+                    $countdown.text(fmt(remaining));
+                }
+            }, 1000);
         }
 
         // if (options["message"]) {
@@ -1806,6 +1839,11 @@ define(function (require) {
             $(".modalOkay")
                 .off("click")
                 .on("click", function () {
+                    if (Dashboard._pauseTimerInterval) {
+                        clearInterval(Dashboard._pauseTimerInterval);
+                        Dashboard._pauseTimerInterval = null;
+                    }
+                    $(".modalCountdown").remove();
                     if (options.input?.name && options.input.type && selectedValue !== null && selectedValue !== undefined) {
                         options.ok(selectedValue); // Pass the selected YES_NO value OR variable value to the OK callback
                     } else {
@@ -1834,6 +1872,11 @@ define(function (require) {
             $(".modalCancel")
                 .off("click")
                 .on("click", function () {
+                    if (Dashboard._pauseTimerInterval) {
+                        clearInterval(Dashboard._pauseTimerInterval);
+                        Dashboard._pauseTimerInterval = null;
+                    }
+                    $(".modalCountdown").remove();
                     options.cancel();
                     $("#inputVal").val("");
                     $(".newModal").hide();
@@ -1903,6 +1946,11 @@ define(function (require) {
         $(".yes-no-buttons").remove();
         $(".modalYes").remove();
         $(".modalNo").remove();
+        if (Dashboard._pauseTimerInterval) {
+            clearInterval(Dashboard._pauseTimerInterval);
+            Dashboard._pauseTimerInterval = null;
+        }
+        $(".modalCountdown").remove();
     };
 
     // Open and close the right menu
