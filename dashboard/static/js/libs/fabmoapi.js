@@ -564,6 +564,17 @@
         this._post("/code/sim_input", { inp: inp, state: !!state }, callback, callback);
     };
 
+    // Evaluate a single OpenSBP expression. Returns { expr, value } or an error.
+    FabMoAPI.prototype.evalExpression = function (expr, callback) {
+        callback = callback || function () {};
+        this._post(
+            "/eval",
+            { expr: expr },
+            function (err) { callback(err || "eval failed"); },
+            function (err, data) { callback(null, data); }
+        );
+    };
+
     // Soft-limit pre-check for editor-run code. Returns { exceeds, violations, bounds }.
     FabMoAPI.prototype.checkCodeBounds = function (cmd, runtime, callback) {
         callback = callback || function () {};

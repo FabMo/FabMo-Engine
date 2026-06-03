@@ -151,8 +151,55 @@ var checkBounds = function (req, res, next) {
     });
 };
 
+/**
+ * @api {post} /eval Evaluate a single OpenSBP expression
+ * @apiGroup Direct
+ * @apiDescription Evaluate an OpenSBP expression and return the resulting value.
+ *   Supports the same math (SIN, COS, SQRT, ROUND, MIN, MAX, MOD, PI, ...),
+ *   variables ($persistent, &temp, %(N), %config.path), and operators that
+ *   work in user code. Powers the dashboard's calculator app.
+ * @apiParam {String} expr The expression text (e.g. "SQRT(POW(3,2)+POW(4,2))")
+ */
+var evalExpr = function (req, res, next) {
+    var expr = req.params && req.params.expr;
+    if (typeof expr !== "string" || !expr.trim()) {
+        return res.json({ status: "fail", message: "Missing 'expr'" });
+    }
+    expr = expr.trim();
+
+    var parser = require("../runtime/opensbp/sbp_parser");
+    var SBPRuntime = require("../runtime/opensbp").SBPRuntime;
+
+    var ast;
+    try {
+        ast = parser.parse("&__eval__=" + expr);
+    } catch (e) {
+        return res.json({ status: "fail", message: "Parse error: " + e.message });
+    }
+    var node = ast && ast.expr;
+    if (node === undefined || node === null) {
+        return res.json({ status: "fail", message: "Empty expression" });
+    }
+
+    var stub = Object.create(SBPRuntime.prototype);
+    stub.driver = machine.driver;
+    stub.machine = machine;
+    stub.pc = 0;
+    stub.simulation_mode = false;
+    stub.simulated_inputs = {};
+
+    var value;
+    try {
+        value = stub._eval(node);
+    } catch (e) {
+        return res.json({ status: "fail", message: e.message });
+    }
+    res.json({ status: "success", data: { expr: expr, value: value } });
+};
+
 module.exports = function (server) {
     server.post("/code", code);
     server.post("/code/sim_input", simInput);
     server.post("/code/check_bounds", checkBounds);
+    server.post("/eval", evalExpr);
 };
