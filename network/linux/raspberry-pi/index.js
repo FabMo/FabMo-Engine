@@ -15,6 +15,8 @@ var iwconfig = require("wireless-tools/iwconfig");
 const commands = require("./commands.js");
 
 var NETWORK_HEALTH_RETRIES = 8;
+var STATION_RECONNECT_COOLDOWN_MS = 5 * 60 * 1000;
+var STATION_UNHEALTHY_GRACE_TICKS = 2;
 
 var RaspberryPiNetworkManager = function () {
     this.mode = "unknown";
@@ -28,6 +30,10 @@ var RaspberryPiNetworkManager = function () {
         wireless: null,
         wired: null,
     };
+    this.stationReconnectAttempts = 0;
+    this.stationUnhealthyTicks = 0;
+    this.stationGiveUpUntil = 0;
+    this.expectedStationProfile = null;
 };
 util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
@@ -220,6 +226,100 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             }
         });
     }
+
+    this._tryStationReconnect();
+};
+
+// Find the most-recently-used wifi profile (other than the AP) that the user
+// expects to stay connected to. Returns null if the only known wifi profile
+// is wlan0_ap, or if no wifi profile has autoconnect enabled.
+RaspberryPiNetworkManager.prototype._getExpectedStationProfile = function (callback) {
+    exec("nmcli -t -f NAME,TYPE,AUTOCONNECT,TIMESTAMP connection show", (err, stdout) => {
+        if (err) return callback(err);
+        let best = null;
+        stdout
+            .split("\n")
+            .filter(Boolean)
+            .forEach((line) => {
+                const m = line.match(/^(.*):([^:]*):([^:]*):([^:]*)$/);
+                if (!m) return;
+                const name = m[1].replace(/\\:/g, ":");
+                const type = m[2];
+                const autoconnect = m[3];
+                const ts = parseInt(m[4], 10) || 0;
+                if (type !== "802-11-wireless") return;
+                if (name === "wlan0_ap") return;
+                if (autoconnect !== "yes") return;
+                if (!best || ts > best.ts) best = { name, ts };
+            });
+        callback(null, best ? best.name : null);
+    });
+};
+
+// Verify wlan0 is actually carrying the expected station profile; if not,
+// attempt up to NETWORK_HEALTH_RETRIES `nmcli con up` reconnects with a
+// cooldown after exhaustion. NM's own autoconnect-retries default is only 4
+// and stops permanently after that, so we need our own watchdog.
+RaspberryPiNetworkManager.prototype._tryStationReconnect = function () {
+    const now = Date.now();
+    if (now < this.stationGiveUpUntil) return;
+
+    this._getExpectedStationProfile((err, profile) => {
+        if (err || !profile) return;
+        this.expectedStationProfile = profile;
+
+        exec("nmcli -t -f GENERAL.STATE,GENERAL.CONNECTION,IP4.ADDRESS dev show wlan0", (err2, stdout) => {
+            if (err2) return;
+            let state = "";
+            let conn = "";
+            let ip = "";
+            stdout.split("\n").forEach((line) => {
+                if (line.startsWith("GENERAL.STATE:")) {
+                    state = line.substring("GENERAL.STATE:".length);
+                } else if (line.startsWith("GENERAL.CONNECTION:")) {
+                    conn = line.substring("GENERAL.CONNECTION:".length);
+                } else if (line.startsWith("IP4.ADDRESS")) {
+                    ip = (line.split(":")[1] || "").trim();
+                }
+            });
+            const healthy = state.indexOf("100") !== -1 && conn === profile && ip;
+
+            if (healthy) {
+                if (this.stationReconnectAttempts > 0 || this.stationUnhealthyTicks > 0) {
+                    log.info(`Wifi station "${profile}" healthy again; resetting reconnect counter.`);
+                }
+                this.stationReconnectAttempts = 0;
+                this.stationUnhealthyTicks = 0;
+                return;
+            }
+
+            this.stationUnhealthyTicks += 1;
+            if (this.stationUnhealthyTicks < STATION_UNHEALTHY_GRACE_TICKS) return;
+
+            if (this.stationReconnectAttempts >= NETWORK_HEALTH_RETRIES) {
+                log.warn(
+                    `Wifi station "${profile}" still down after ${NETWORK_HEALTH_RETRIES} reconnect attempts; backing off ${STATION_RECONNECT_COOLDOWN_MS / 1000}s.`
+                );
+                this.stationGiveUpUntil = now + STATION_RECONNECT_COOLDOWN_MS;
+                this.stationReconnectAttempts = 0;
+                this.stationUnhealthyTicks = 0;
+                return;
+            }
+
+            this.stationReconnectAttempts += 1;
+            log.warn(
+                `Wifi station "${profile}" not connected (state="${state}", conn="${conn}", ip="${ip}"). Reconnect attempt ${this.stationReconnectAttempts}/${NETWORK_HEALTH_RETRIES}.`
+            );
+            const safeProfile = profile.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+            exec(`nmcli con up "${safeProfile}"`, (err3, stdout3, stderr3) => {
+                if (err3) {
+                    log.warn(`Reconnect for "${profile}" failed: ${(stderr3 || err3.message).trim()}`);
+                } else {
+                    log.info(`Reconnect for "${profile}" issued: ${stdout3.trim()}`);
+                }
+            });
+        });
+    });
 };
 
 RaspberryPiNetworkManager.prototype.confirmIP = function (callback) {
