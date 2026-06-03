@@ -76,6 +76,113 @@ var get_config = function (req, res, next) {
 };
 
 /**
+ * @api {post} /variables/lookup Look up the current value of an OpenSBP variable
+ * @apiGroup Config
+ * @apiDescription Resolves a single variable reference (`&name`, `$name`, `%(N)`, or
+ *   `%config.path.to.thing`) against live engine state. Returns the current value,
+ *   or `defined:false` if the variable is not set / not recognized. Used by the
+ *   editor to show hover tooltips with current values.
+ * @apiParam {String} name Variable reference text (e.g. `"$TOOLDIAM"`, `"%(1)"`).
+ */
+var post_variable_lookup = function (req, res, next) {
+    var name = req.params && req.params.name;
+    if (typeof name !== "string" || !name.trim()) {
+        return res.json({ status: "fail", message: "Missing 'name'" });
+    }
+    name = name.trim();
+
+    var parser = require("../runtime/opensbp/sbp_parser");
+    var SBPRuntime = require("../runtime/opensbp").SBPRuntime;
+
+    var ast;
+    try {
+        ast = parser.parse("&__lookup__=" + name);
+    } catch (e) {
+        return res.json({ status: "fail", message: "Parse error: " + e.message });
+    }
+    var expr = ast && ast.expr;
+    if (!expr || typeof expr !== "object" || !expr.type) {
+        return res.json({ status: "fail", message: "Not a variable expression" });
+    }
+
+    // Build a minimal SBPRuntime-shaped object so we can call its read-only
+    // variable lookup methods without booting a full runtime. evaluateSystemVariable
+    // reads from this.driver/this.machine/config, and _getVariableValue reads
+    // straight from config caches.
+    var stub = Object.create(SBPRuntime.prototype);
+    stub.driver = machine.driver;
+    stub.machine = machine;
+    stub.pc = 0;
+    stub.simulation_mode = false;
+    stub.simulated_inputs = {};
+
+    var type = null;
+    var defined = true;
+    var value = null;
+    var partial = false;
+    var partialReason = null;
+
+    function lookupVar(e) {
+        if (e.type === "user_variable" || e.type === "persistent_variable") {
+            return stub._getVariableValue(e);
+        }
+        if (e.type === "system_variable") {
+            return stub.evaluateSystemVariable(e);
+        }
+        throw new Error("Not a variable: " + name);
+    }
+
+    try {
+        if (expr.type === "user_variable") type = "user";
+        else if (expr.type === "persistent_variable") type = "persistent";
+        else if (expr.type === "system_variable") type = "system";
+        else return res.json({ status: "fail", message: "Not a variable: " + name });
+
+        try {
+            value = lookupVar(expr);
+        } catch (firstErr) {
+            // If a $foo[&i] / $foo.bar access path failed (e.g. index variable
+            // not yet defined), fall back to the base variable so the hover
+            // still shows something useful at edit time.
+            if ((expr.type === "user_variable" || expr.type === "persistent_variable")
+                && expr.access && expr.access.length) {
+                try {
+                    var baseExpr = { type: expr.type, name: expr.name, access: [] };
+                    value = lookupVar(baseExpr);
+                    partial = true;
+                    partialReason = firstErr.message;
+                } catch (baseErr) {
+                    defined = false;
+                    value = null;
+                }
+            } else {
+                defined = false;
+                value = null;
+            }
+        }
+        if (value === undefined) {
+            defined = false;
+            value = null;
+        }
+    } catch (e) {
+        defined = false;
+        value = null;
+    }
+
+    res.json({
+        status: "success",
+        data: {
+            name: name,
+            type: type,
+            defined: defined,
+            value: value,
+            partial: partial,
+            partialReason: partialReason,
+        },
+    });
+};
+
+/**
  * @api {post} /config Update engine configuration
  * @apiGroup Config
  * @apiDescription Incorporate the POSTed object into the engine configuration.  Configuration updates take effect immediately.
@@ -1113,6 +1220,7 @@ module.exports = function (server) {
     server.get("/status", get_status);
     server.get("/config", get_config);
     server.post("/config", post_config);
+    server.post("/variables/lookup", post_variable_lookup);
     server.get("/version", get_version);
     server.get("/info", get_info);
     server.get("/profiles", getProfiles);

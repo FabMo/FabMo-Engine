@@ -254,6 +254,131 @@ require('./cm-fabmo-modes.js');
       }
     }
 
+    // ---- Variable hover tooltip ------------------------------------------------
+    // Looks for OpenSBP variable references (&name, $name, %(expr),
+    // %config.path) at the mouse position and shows the live value via the
+    // /variables/lookup endpoint.
+    var VAR_PATTERNS = [
+      /\$[A-Za-z_][A-Za-z0-9_]*(?:\[[^\]]*\])?(?:\.[A-Za-z_][A-Za-z0-9_]*)*/g,
+      /&[A-Za-z_][A-Za-z0-9_]*(?:\[[^\]]*\])?(?:\.[A-Za-z_][A-Za-z0-9_]*)*/g,
+      /%\([^)]*\)/g,
+      /%[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+/g,
+    ];
+
+    function findVariableAt(lineText, col) {
+      for (var i = 0; i < VAR_PATTERNS.length; i++) {
+        var re = new RegExp(VAR_PATTERNS[i].source, 'g');
+        var m;
+        while ((m = re.exec(lineText)) !== null) {
+          if (col >= m.index && col <= m.index + m[0].length) {
+            return { text: m[0], start: m.index, end: m.index + m[0].length };
+          }
+          if (m.index === re.lastIndex) re.lastIndex++;
+        }
+      }
+      return null;
+    }
+
+    function formatHoverValue(data, requested) {
+      var label = requested;
+      if (!data || data.defined === false) {
+        return label + ' <span class="hv-undef">(not defined)</span>';
+      }
+      var v = data.value;
+      var rendered;
+      if (v === null || v === undefined) {
+        rendered = '<span class="hv-undef">(not defined)</span>';
+      } else if (typeof v === 'number') {
+        rendered = (Math.abs(v) < 1e-9 || Math.abs(v) >= 1e6)
+          ? String(v)
+          : (Math.round(v * 10000) / 10000).toString();
+      } else if (typeof v === 'object') {
+        try { rendered = JSON.stringify(v); } catch (e) { rendered = String(v); }
+      } else {
+        rendered = String(v);
+      }
+      // When the index/property couldn't resolve we fell back to the base
+      // variable on the server — call that out so the user knows what they're
+      // looking at isn't the indexed value.
+      if (data.partial) {
+        var hint = data.partialReason
+          ? '(index unresolved: ' + escapeHtml(data.partialReason) + ')'
+          : '(index unresolved — showing base)';
+        return label + ' = <span class="hv-val">' + escapeHtml(rendered) + '</span>'
+          + ' <span class="hv-undef">' + hint + '</span>';
+      }
+      return label + ' = <span class="hv-val">' + escapeHtml(rendered) + '</span>';
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function setupVariableHover(cm) {
+      var dwellTimer = null;
+      var tipEl = null;
+      var lastVarText = null;
+      var pending = null; // { varText, x, y }
+
+      function hideTip() {
+        if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
+        if (tipEl && tipEl.parentNode) tipEl.parentNode.removeChild(tipEl);
+        tipEl = null;
+        lastVarText = null;
+        pending = null;
+      }
+
+      function showTip(x, y, html) {
+        if (!tipEl) {
+          tipEl = document.createElement('div');
+          tipEl.className = 'fabmo-var-hover';
+          document.body.appendChild(tipEl);
+        }
+        tipEl.innerHTML = html;
+        // Clamp to viewport
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+        var left = x + 12, top = y + 18;
+        if (left + w > vw - 8) left = vw - w - 8;
+        if (top + h > vh - 8) top = y - h - 8;
+        tipEl.style.left = left + 'px';
+        tipEl.style.top = top + 'px';
+      }
+
+      var wrapper = cm.getWrapperElement();
+      wrapper.addEventListener('mousemove', function (e) {
+        if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
+        var x = e.clientX, y = e.clientY;
+        dwellTimer = setTimeout(function () {
+          var pos = cm.coordsChar({ left: x, top: y });
+          if (pos.outside) { hideTip(); return; }
+          var lineText = cm.getLine(pos.line);
+          if (!lineText) { hideTip(); return; }
+          var found = findVariableAt(lineText, pos.ch);
+          if (!found) { hideTip(); return; }
+          if (found.text === lastVarText && tipEl) return; // already showing
+          lastVarText = found.text;
+          pending = { varText: found.text, x: x, y: y };
+          fabmo.lookupVariable(found.text, function (err, data) {
+            if (!pending || pending.varText !== found.text) return;
+            if (err) { showTip(pending.x, pending.y, escapeHtml(found.text) + ' <span class="hv-undef">(lookup error)</span>'); return; }
+            showTip(pending.x, pending.y, formatHoverValue(data, escapeHtml(found.text)));
+          });
+        }, 350);
+      });
+
+      wrapper.addEventListener('mouseleave', hideTip);
+      cm.on('change', hideTip);
+      cm.on('scroll', hideTip);
+      cm.on('cursorActivity', function () { /* don't hide on cursor move only */ });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') hideTip();
+      });
+    }
+    // ---- end variable hover ---------------------------------------------------
+
     $(document).ready(function() {
       $(document).foundation();
       isDirty = false; // Flag to track if the editor has unsaved changes
@@ -297,6 +422,10 @@ require('./cm-fabmo-modes.js');
             find();
           }
       })
+
+      // Hover-tooltip: when the user dwells over an OpenSBP variable (&x, $y,
+      // %(N), %a.b.c), show its current value in a small popup.
+      setupVariableHover(editor);
 
       // Attach the blur event handler
       editor.on('blur', function(cm) {

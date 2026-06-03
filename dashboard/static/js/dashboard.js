@@ -998,6 +998,22 @@ define(function (require) {
             }.bind(this)
         );
 
+        this._registerHandler(
+            "lookupVariable",
+            function (data, callback) {
+                this.engine.lookupVariable(
+                    data && data.name,
+                    function (err, result) {
+                        if (err) {
+                            callback(err);
+                        } else {
+                            callback(null, result);
+                        }
+                    }.bind(this)
+                );
+            }.bind(this)
+        );
+
         ///
         /// NETWORK MANAGEMENT
         ///
