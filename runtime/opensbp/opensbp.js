@@ -2397,6 +2397,12 @@ SBPRuntime.prototype._eval_value = function (expr) {
     if (typeof expr === "object" && expr.type === "system_variable") {
         return this.evaluateSystemVariable(expr);
     }
+    if (typeof expr === "object" && expr.type === "func") {
+        return this._evalFunction(expr);
+    }
+    if (typeof expr === "object" && expr.type === "const") {
+        return this._evalConstant(expr);
+    }
     var n = Number(String(expr));
     if (!isNaN(n)) {
         return n;
@@ -2406,6 +2412,67 @@ SBPRuntime.prototype._eval_value = function (expr) {
         return expr;
     }
     return expr;
+};
+
+SBPRuntime.prototype._evalConstant = function (expr) {
+    switch (expr.name) {
+        case "PI": return Math.PI;
+        default:
+            throw new Error("Unknown constant: " + expr.name);
+    }
+};
+
+// Built-in math functions for user expressions. Trig functions take and return
+// degrees (matches angle convention elsewhere in OpenSBP, e.g. CG/CP).
+SBPRuntime.prototype._evalFunction = function (expr) {
+    var self = this;
+    var args = expr.args.map(function (a) { return self._eval(a); });
+    var name = expr.name;
+    var DEG = Math.PI / 180;
+    var requireArgs = function (min, max) {
+        if (args.length < min || (max !== undefined && args.length > max)) {
+            var range = (max === undefined || min === max) ? min : (min + "-" + max);
+            throw new Error(name + "() expects " + range + " argument(s), got " + args.length);
+        }
+    };
+    switch (name) {
+        // basic numeric
+        case "ABS":    requireArgs(1, 1); return Math.abs(args[0]);
+        case "SQRT":   requireArgs(1, 1); return Math.sqrt(args[0]);
+        case "POW":    requireArgs(2, 2); return Math.pow(args[0], args[1]);
+        case "MIN":    requireArgs(1);    return Math.min.apply(null, args);
+        case "MAX":    requireArgs(1);    return Math.max.apply(null, args);
+        case "MOD":    requireArgs(2, 2); return args[0] % args[1];
+        case "SIGN":   requireArgs(1, 1); return Math.sign(args[0]);
+        // rounding
+        case "ROUND":
+            requireArgs(1, 2);
+            if (args.length === 1) return Math.round(args[0]);
+            var m = Math.pow(10, args[1]);
+            return Math.round(args[0] * m) / m;
+        case "FLOOR":  requireArgs(1, 1); return Math.floor(args[0]);
+        case "CEIL":   requireArgs(1, 1); return Math.ceil(args[0]);
+        case "TRUNC":  requireArgs(1, 1); return Math.trunc(args[0]);
+        // trig (degrees in / degrees out)
+        case "SIN":    requireArgs(1, 1); return Math.sin(args[0] * DEG);
+        case "COS":    requireArgs(1, 1); return Math.cos(args[0] * DEG);
+        case "TAN":    requireArgs(1, 1); return Math.tan(args[0] * DEG);
+        case "ASIN":   requireArgs(1, 1); return Math.asin(args[0]) / DEG;
+        case "ACOS":   requireArgs(1, 1); return Math.acos(args[0]) / DEG;
+        case "ATAN":   requireArgs(1, 1); return Math.atan(args[0]) / DEG;
+        case "ATAN2":  requireArgs(2, 2); return Math.atan2(args[0], args[1]) / DEG;
+        // exp / log / random
+        case "EXP":    requireArgs(1, 1); return Math.exp(args[0]);
+        case "LN":     requireArgs(1, 1); return Math.log(args[0]);
+        case "LOG10":  requireArgs(1, 1); return Math.log10(args[0]);
+        case "RANDOM":
+            if (args.length === 0) return Math.random();
+            if (args.length === 1) return Math.random() * args[0];
+            if (args.length === 2) return args[0] + Math.random() * (args[1] - args[0]);
+            throw new Error("RANDOM() expects 0-2 arguments, got " + args.length);
+        default:
+            throw new Error("Unknown function: " + name + "()");
+    }
 };
 
 SBPRuntime.prototype._getVariableValue = function (identifier) {
@@ -2468,6 +2535,8 @@ SBPRuntime.prototype._eval = function (expr) {
                 return this._eval(expr.left) * this._eval(expr.right);
             case "/":
                 return this._eval(expr.left) / this._eval(expr.right);
+            case "MOD":
+                return this._eval(expr.left) % this._eval(expr.right);
             case ">":
                 return this._eval(expr.left) > this._eval(expr.right);
             case "<":

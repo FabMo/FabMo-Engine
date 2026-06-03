@@ -269,6 +269,8 @@ e2
 
 factor
   = "(" __ expr:expression __ ")" { return expr; }
+  / function_call
+  / constant
   / float
   / integer
   / variable
@@ -276,7 +278,28 @@ factor
   / quotedstring
   / barestring
 
-mul_op = "*" / "/"
+function_call
+  = name:identifier "(" __ args:arg_list? __ ")" {
+      return { type: "func", name: name.toUpperCase(), args: args || [] };
+    }
+
+arg_list
+  = first:expression rest:(__ "," __ expression)* {
+      var out = [first];
+      rest.forEach(function (r) { out.push(r[3]); });
+      return out;
+    }
+
+constant
+  = "PI"i !identifier_tail { return { type: "const", name: "PI" }; }
+
+identifier_tail
+  = [A-Za-z0-9_]
+
+mul_op
+  = "*"
+  / "/"
+  / "MOD"i !identifier_tail { return "MOD"; }
 add_op = "+" / "-"
 cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "=" / "<>"
 
