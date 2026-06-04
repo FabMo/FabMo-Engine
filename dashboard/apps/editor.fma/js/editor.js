@@ -39,6 +39,12 @@ require('./cm-fabmo-modes.js');
           console.warn('bounds pre-check failed:', err);
           return proceed();
         }
+        if (data.partial) {
+          // Simulator hit its line budget — likely an unbounded loop. Bounds
+          // are based on whatever portion ran before the cutoff, so they may
+          // miss later motion. Don't refuse; just log and proceed.
+          console.warn('bounds pre-check truncated (likely loop in source); proceeding without full bounds.');
+        }
         if (!data.exceeds) return proceed();
         var msg = (data.violations || []).map(function (v) {
           return v.axis.toUpperCase() + ' ' + v.direction + ' by ' + Number(v.overage).toFixed(2);

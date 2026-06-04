@@ -146,9 +146,11 @@ function computeFileBounds(filePath, callback) {
             var SBPRuntime = require("./opensbp/opensbp").SBPRuntime;
             var runtime = new SBPRuntime();
             try {
-                runtime.simulateString(data, 0, 0, 0, function (err, gcode) {
+                runtime.simulateString(data, 0, 0, 0, function (err, gcode, info) {
                     if (err) return callback(err);
-                    callback(null, { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 });
+                    var result = { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 };
+                    if (info && info.partial) result.partial = true;
+                    callback(null, result);
                 });
             } catch (e) {
                 callback(e);
@@ -171,9 +173,11 @@ function computeStringBounds(code, runtime, callback) {
         var SBPRuntime = require("./opensbp/opensbp").SBPRuntime;
         var sbp = new SBPRuntime();
         try {
-            sbp.simulateString(code, 0, 0, 0, function (err, gcode) {
+            sbp.simulateString(code, 0, 0, 0, function (err, gcode, info) {
                 if (err) return callback(err);
-                callback(null, { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 });
+                var result = { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 };
+                if (info && info.partial) result.partial = true;
+                callback(null, result);
             });
         } catch (e) {
             callback(e);

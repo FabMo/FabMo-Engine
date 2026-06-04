@@ -29,6 +29,16 @@ var config = require("../../config");
 var stream = require("stream");
 var ManualDriver = require("../manual").ManualDriver;
 
+// Maximum program lines a simulation run will expand before bailing out.
+// `simulateString` / `runFile` in non-driver mode loop through GOTO/GOSUB
+// the same way real execution does, with no natural backpressure — an
+// infinite loop in user code (e.g. `START:\nJA,1\nJA,0\nGOTO START`) would
+// otherwise peg the engine. Hitting this budget ends the run cleanly,
+// keeps whatever gcode was produced, and surfaces `info.partial = true`
+// to the simulateString callback so the bounds/previewer paths can warn
+// rather than refuse.
+var MAX_SIM_LINES = 200000;
+
 // Constructor for the OpenSBP runtime
 // The SBPRuntime object is responsible for running OpenSBP code.
 // For more info and command reference: http://www.opensbp.com/
@@ -299,6 +309,11 @@ SBPRuntime.prototype.needsAuth = function (s) {
 SBPRuntime.prototype.runString = function (s) {
     this.currentFilename = "direct input";
     this._endCalled = false; // Reset for new run so errors before _run() aren't suppressed
+    // Sim-mode runaway guard counters. Reset here (not in init()) because
+    // _end() calls init() as part of cleanup, which would otherwise clear
+    // sim_budget_exceeded before simulateString's "end" callback reads it.
+    this.sim_lines_executed = 0;
+    this.sim_budget_exceeded = false;
     //log.info("####=.runString");
     try {
         // Initialize the program
@@ -726,11 +741,17 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
             return callback(new Error("Failed to start simulation: runString returned no stream."));
         }
         var chunks = [];
+        var self = this;
         st.on("data", function (chunk) {
             chunks.push(chunk);
         });
         st.on("end", function () {
-            callback(null, chunks.join(""));
+            // info.partial signals truncated simulation (e.g. infinite loop
+            // hit MAX_SIM_LINES). Callers that care can warn/badge; callers
+            // that don't (legacy 2-arg) silently get the truncated gcode,
+            // which is still strictly better than hanging.
+            var info = { partial: !!self.sim_budget_exceeded };
+            callback(null, chunks.join(""), info);
         });
     } else {
         callback(new Error("Cannot simulate while OpenSBP runtime is busy."));
@@ -1235,6 +1256,24 @@ SBPRuntime.prototype._executeNext = function () {
     if (this.feedhold) {
         log.info("Program is in feedhold.");
         return;
+    }
+
+    // Sim-mode runaway guard. Only enforced when there's no driver attached
+    // (i.e. we're being driven by simulateString / preview / bounds-check, not
+    // executing on real hardware). A program with `GOTO` back to a label would
+    // otherwise loop forever and peg the engine. Once tripped, skip further
+    // counting so we don't re-log on the EOF-handling tail recursions.
+    if (!this.driver && !this.sim_budget_exceeded) {
+        this.sim_lines_executed++;
+        if (this.sim_lines_executed > MAX_SIM_LINES) {
+            log.warn("Simulation budget exhausted at " + MAX_SIM_LINES + " lines — likely infinite loop in source. Truncating.");
+            this.sim_budget_exceeded = true;
+            // Jump past end-of-program so the existing EOF handling in
+            // _executeNext flushes output and calls _end() cleanly. Avoids
+            // having to call _end() reentrantly from here.
+            this.pc = this.program.length;
+            return setImmediate(this._executeNext.bind(this));
+        }
     }
 
     if (this.pc >= this.program.length) {
