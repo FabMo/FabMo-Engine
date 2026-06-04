@@ -1201,3 +1201,256 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
 
 // Populate on load
 refreshSpindleDiscover();
+
+// ----- Variables tab -------------------------------------------------------
+// Lists persistent OpenSBP variables ($-prefixed) with type-aware editors and
+// auto-save on blur. Layout mirrors the rest of the configuration app:
+// prefix-group fieldsets; scalar leaves use the Foundation
+// "large-4 columns > row collapse > label + input" pattern; object variables
+// nest a child fieldset whose leaves are flattened into the same columns.
+(function () {
+    var $list, $statusEl, $search;
+    var currentVariables = null;
+    var loaded = false;
+
+    function init() {
+        $list = $('#variables-list');
+        $statusEl = $('#variables-status');
+        $search = $('#variables-search');
+        if (!$list.length) return;
+        $('#variables-refresh-btn').on('click', function () { load(true); });
+        $search.on('input', renderFiltered);
+        $('a[controls="tabpanel10"]').on('click', function () {
+            if (!loaded) load(false);
+        });
+    }
+
+    function load(announce) {
+        $statusEl.text('Loading…').css('color', '#555');
+        fabmo.getConfig(function (err, data) {
+            if (err) {
+                $statusEl.text('Error: ' + err).css('color', '#c33');
+                return;
+            }
+            currentVariables = (data && data.opensbp && data.opensbp.variables) || {};
+            loaded = true;
+            $statusEl.text(Object.keys(currentVariables).length + ' variables').css('color', '#555');
+            renderFiltered();
+            if (announce) $statusEl.text('Reloaded · ' + Object.keys(currentVariables).length + ' variables');
+        });
+    }
+
+    function renderFiltered() {
+        if (!currentVariables) return;
+        var filter = ($search.val() || '').toLowerCase().trim();
+        var names = Object.keys(currentVariables).sort();
+        if (filter) {
+            names = names.filter(function (n) {
+                return n.toLowerCase().indexOf(filter) >= 0;
+            });
+        }
+        var html = '';
+        names.forEach(function (n) {
+            html += renderVariable(n, currentVariables[n]);
+        });
+        $list.html(html || '<p style="color:#888;">No variables match.</p>');
+        attachInputHandlers();
+    }
+
+    // Each root variable becomes a labeled frame; the value inside is
+    // rendered structurally — objects as nested frames, scalars as
+    // label+input pairs. Mirrors prettified JSON visually.
+    function renderVariable(name, value) {
+        return '<div class="var-frame var-root">'
+             +   '<div class="var-frame-label">$' + escapeHtml(name) + '</div>'
+             +   renderBody(name, value, [])
+             + '</div>';
+    }
+
+    // Body of a frame: groups scalar children on one wrapping row, and
+    // expands object children into their own nested frames.
+    function renderBody(varName, value, path) {
+        if (value === null || typeof value !== 'object') {
+            // Root scalar (a variable that's just a number/string/bool).
+            return '<div class="var-kv-row">' + renderKV(varName, '', value, path) + '</div>';
+        }
+        var keys = Object.keys(value);
+        var labels = detectKeyLabels(varName, keys);
+        var scalarKeys = [];
+        var objectKeys = [];
+        keys.forEach(function (k) {
+            if (value[k] !== null && typeof value[k] === 'object') objectKeys.push(k);
+            else scalarKeys.push(k);
+        });
+        var html = '';
+        if (scalarKeys.length) {
+            html += '<div class="var-kv-row">';
+            scalarKeys.forEach(function (k) {
+                html += renderKV(varName, labels[k] || k, value[k], path.concat(k));
+            });
+            html += '</div>';
+        }
+        objectKeys.forEach(function (k) {
+            var label = labels[k] || k;
+            var unitClass = label === 'in' ? ' var-frame-in' : (label === 'mm' ? ' var-frame-mm' : '');
+            html += '<div class="var-frame' + unitClass + '">'
+                  +   '<div class="var-frame-label">' + escapeHtml(label) + '</div>'
+                  +   renderBody(varName, value[k], path.concat(k))
+                  + '</div>';
+        });
+        return html;
+    }
+
+    function renderKV(varName, label, value, path) {
+        var dataAttr = 'data-var="' + escapeAttr(varName) + '"'
+                     + ' data-path=\'' + escapeAttr(JSON.stringify(path)) + '\'';
+        var t = jsType(value);
+        var input;
+        if (t === 'boolean') {
+            input = '<input type="checkbox" class="var-input" ' + dataAttr + (value ? ' checked' : '') + '>';
+        } else if (t === 'number') {
+            input = '<input type="number" step="any" class="var-input" ' + dataAttr
+                  + ' value="' + escapeAttr(String(value)) + '">';
+        } else {
+            input = '<input type="text" class="var-input" ' + dataAttr
+                  + ' value="' + escapeAttr(value == null ? '' : String(value)) + '">';
+        }
+        var labelHtml = label ? '<span class="var-key">' + escapeHtml(label) + ':</span>' : '';
+        return '<span class="var-kv">' + labelHtml + input + '</span>';
+    }
+
+    // Friendlier labels for known patterns. {0,1} on a *UU variable → in/mm.
+    function detectKeyLabels(varName, keys) {
+        var labels = {};
+        var keySet = keys.slice().sort().join(',');
+        if (keySet === '0,1' && /UU$/i.test(varName)) {
+            labels['0'] = 'in'; labels['1'] = 'mm'; return labels;
+        }
+        keys.forEach(function (k) { labels[k] = k; });
+        return labels;
+    }
+
+    function attachInputHandlers() {
+        $list.find('.var-input').each(function () {
+            var $in = $(this);
+            var original = $in.is(':checkbox') ? !!$in.prop('checked') : $in.val();
+            $in.data('original', original);
+            $in.on('input change', function () {
+                var $wrap = $in.closest('.var-kv');
+                var current = $in.is(':checkbox') ? !!$in.prop('checked') : $in.val();
+                if (String(current) !== String($in.data('original'))) {
+                    $wrap.addClass('dirty').removeClass('saved error');
+                } else {
+                    $wrap.removeClass('dirty saved error');
+                }
+            });
+            $in.on('blur change', function (e) {
+                // Checkbox change saves immediately; text/number saves on blur.
+                if (e.type === 'change' && !$in.is(':checkbox')) return;
+                if (e.type === 'blur' && $in.is(':checkbox')) return;
+                var current = $in.is(':checkbox') ? !!$in.prop('checked') : $in.val();
+                if (String(current) === String($in.data('original'))) return;
+                save($in);
+            });
+            $in.on('keydown', function (e) {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    if (!$in.is(':checkbox')) $in.blur();
+                } else if (e.key === 'Escape' || e.keyCode === 27) {
+                    if ($in.is(':checkbox')) $in.prop('checked', !!$in.data('original'));
+                    else $in.val($in.data('original'));
+                    $in.closest('.var-kv').removeClass('dirty saved error');
+                }
+            });
+        });
+    }
+
+    function save($in) {
+        var name = $in.data('var');
+        // jQuery auto-parses data-* attributes that look like JSON, so .data()
+        // gives us the array directly — but fall back if not.
+        var path = $in.data('path');
+        if (typeof path === 'string') {
+            try { path = JSON.parse(path); } catch (e) { path = []; }
+        }
+        if (!Array.isArray(path)) path = [];
+
+        var raw = $in.is(':checkbox') ? !!$in.prop('checked') : $in.val();
+        var originalVar = currentVariables[name];
+        var leafOriginal = path.length === 0 ? originalVar : navigatePath(originalVar, path);
+        var newVal = coerce(raw, leafOriginal, $in);
+        var updatedVar = path.length === 0 ? newVal : deepSetPath(originalVar, path, newVal);
+
+        var updatedVars = Object.assign({}, currentVariables);
+        updatedVars[name] = updatedVar;
+        var payload = { opensbp: { variables: updatedVars } };
+
+        var $wrap = $in.closest('.var-kv');
+        fabmo.setConfig(payload, function (err) {
+            if (err) {
+                $wrap.addClass('error').removeClass('dirty saved');
+                $statusEl.text('Save failed: ' + err).css('color', '#c33');
+                return;
+            }
+            currentVariables = updatedVars;
+            $in.data('original', $in.is(':checkbox') ? !!$in.prop('checked') : $in.val());
+            $wrap.addClass('saved').removeClass('dirty error');
+            var pathStr = path.length ? '[' + path.join('][') + ']' : '';
+            $statusEl.text('Saved $' + name + pathStr).css('color', '#0a0');
+            setTimeout(function () { $wrap.removeClass('saved'); }, 1200);
+        });
+    }
+
+    function navigatePath(obj, path) {
+        for (var i = 0; i < path.length; i++) {
+            if (obj == null) return undefined;
+            obj = obj[path[i]];
+        }
+        return obj;
+    }
+
+    // Return a shallow-copied tree with the leaf at `path` set to `value`,
+    // so the resulting object is safe to send back to setConfig without
+    // mutating our currentVariables cache.
+    function deepSetPath(obj, path, value) {
+        var clone = Array.isArray(obj) ? obj.slice() : Object.assign({}, obj || {});
+        if (path.length === 1) {
+            clone[path[0]] = value;
+            return clone;
+        }
+        clone[path[0]] = deepSetPath(obj && obj[path[0]], path.slice(1), value);
+        return clone;
+    }
+
+    // Type-coerce the user's text back to the same JS type as the original
+    // value. Falls back to string when there's no reference type.
+    function coerce(raw, ref, $in) {
+        if ($in && $in.hasClass('var-input-json')) {
+            try { return JSON.parse(raw); } catch (e) { return raw; }
+        }
+        if (typeof ref === 'number') {
+            var n = Number(raw);
+            return isNaN(n) ? raw : n;
+        }
+        if (typeof ref === 'boolean') {
+            if (typeof raw === 'boolean') return raw;
+            return raw === 'true' || raw === '1' || raw === 'yes';
+        }
+        return raw;
+    }
+
+    function jsType(v) {
+        if (v === null || v === undefined) return 'null';
+        if (Array.isArray(v)) return 'array';
+        if (typeof v === 'object') return 'object';
+        return typeof v;
+    }
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    $(document).ready(init);
+})();

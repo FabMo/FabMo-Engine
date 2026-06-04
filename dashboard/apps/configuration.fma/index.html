@@ -43,6 +43,8 @@
           </li>
           <li class="tab-title" role="presentational"><a href="#tabpanel7" role="tab" tabindex="0" aria-selected="false" controls="tabpanel7">Users</a>
           </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel10" role="tab" tabindex="0" aria-selected="false" controls="tabpanel10">Variables</a>
+          </li>
         </ul>
         <ul class="right">
           <li>
@@ -2316,6 +2318,26 @@
               <button id="add-user" class="button radius small">Add new user</button>
             </div>
           </fieldset>
+      </section>
+
+      <!-- VARIABLES ----------------------------------------------------------------------------------------------- -->
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel10">
+        <div class="row">
+          <fieldset>
+            <legend>OpenSBP Persistent Variables ($)</legend>
+            <p style="margin: 0 0 6px 0;">
+              Persistent variables ($-prefixed) referenced from macros and OpenSBP code.
+              Changes save when you leave a field. Many of these drive homing, tool changes,
+              and ATC behavior &mdash; edit with care.
+            </p>
+            <div id="variables-toolbar">
+              <input type="text" id="variables-search" placeholder="Filter by name..." style="width: 260px; display: inline-block; margin-right: 8px; margin-bottom: 0;">
+              <button id="variables-refresh-btn" type="button" class="button radius small" style="margin: 0;">Refresh</button>
+              <span id="variables-status" style="margin-left: 10px; color: #555;"></span>
+            </div>
+            <div id="variables-list"></div>
+          </fieldset>
+        </div>
       </section>
 
 

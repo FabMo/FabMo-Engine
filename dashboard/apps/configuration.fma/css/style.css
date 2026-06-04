@@ -518,3 +518,85 @@ input[type=number] {
 select {
     -moz-appearance: none;
 }
+
+/* ----- Variables tab -----
+   Renders OpenSBP variables structurally: a `{ }` becomes a labeled box
+   (.var-frame), a `"key": value` pair becomes a label+input (.var-kv).
+   Nested objects nest frames. Layout is independent of Foundation grid
+   so the JSON shape comes through visually. */
+/* Fieldsets default to `min-width: min-content`, so any wide non-wrapping
+   child grows the fieldset past its parent. Constrain the variables tab
+   fieldset and its list explicitly. */
+#tabpanel10 fieldset { min-width: 0; max-width: 100%; box-sizing: border-box; }
+#variables-toolbar { padding: 4px 0 10px 0; font-size: 14px; }
+#variables-list {
+    font-size: 14px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.var-frame {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    width: auto;
+    max-width: 100%;
+    border: 1px solid #c8c8c8;
+    border-radius: 4px;
+    padding: 14px 10px 6px 10px;
+    margin: 14px 0 6px 0;
+    background: #fff;
+}
+.var-frame-label {
+    position: absolute;
+    top: -9px;
+    left: 10px;
+    background: #fff;
+    padding: 0 6px;
+    font-family: Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    color: #444;
+    font-weight: bold;
+    line-height: 1;
+}
+.var-frame.var-root > .var-frame-label { color: #2E3865; font-size: 13px; }
+.var-frame.var-frame-in { background: #f2f2f2; }
+.var-frame.var-frame-in > .var-frame-label { background: #f2f2f2; }
+
+.var-kv-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    align-items: center;
+    margin: 2px 0;
+}
+.var-kv {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.var-kv label,
+.var-kv .var-key {
+    font-family: Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+#variables-list input.var-input {
+    font-family: Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    width: 150px;
+    height: 24px;
+    padding: 2px 5px;
+    margin: 0;
+    box-sizing: border-box;
+    display: inline-block;
+}
+#variables-list input.var-input[type="checkbox"] { width: auto; height: auto; }
+
+.var-kv.dirty input { background: #fff8d6; }
+.var-kv.saved input { background: #e8f5e2; }
+.var-kv.error input { background: #fde2e2; }
