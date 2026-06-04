@@ -146,6 +146,7 @@ var checkBounds = function (req, res, next) {
                 exceeds: check.exceeds,
                 violations: check.violations,
                 durationMs: result.durationMs,
+                partial: !!result.partial,
             },
         });
     });

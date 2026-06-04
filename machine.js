@@ -1506,7 +1506,12 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
                     var tx = this.driver.status.posx;
                     var ty = this.driver.status.posy;
                     var tz = this.driver.status.posz;
-                    new SBPRuntime().simulateString(data, tx, ty, tz, callback);
+                    new SBPRuntime().simulateString(data, tx, ty, tz, function (err, gcode, info) {
+                        if (info && info.partial) {
+                            log.warn("Preview simulation truncated for " + filename + " (likely unbounded GOTO/loop); rendering partial result.");
+                        }
+                        callback(err, gcode);
+                    });
                 } else {
                     fs.readFile(filename, callback);
                 }
