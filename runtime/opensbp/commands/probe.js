@@ -38,6 +38,15 @@ function probe(runtime, opts) {
     cmd1[name] = opts.inp;
     var word;
 
+    // If an ON INPUT watcher is armed, an explicit probe would clobber prbin
+    // and leave the watcher in an inconsistent state on the firmware side.
+    // Only allow if the input numbers match — otherwise error and abort.
+    if (runtime.on_input_watcher && runtime.on_input_watcher.input !== opts.inp) {
+        throw "Cannot probe input#" + opts.inp +
+            " while ON INPUT(" + runtime.on_input_watcher.input + ",...) is armed. " +
+            "Disarm the watcher first (re-issue ON INPUT or let the program flow past the armed window).";
+    }
+
     // Determine tolerance for "already at target" check based on unit system
     var tolerance = runtime.units === "mm" ? 0.125 : 0.005;
 
