@@ -1777,16 +1777,32 @@ SBPRuntime.prototype._execute = function (command, callback) {
             return false;
 
         case "event":
-            // ON INPUT(N,S) <stmt>: arm a one-shot input watcher. While armed,
-            // emit_move rewrites every G0/G1 as G38.3 with prbin=N. On trip,
-            // motion stops at the trip point (firmware probe path) and <stmt>
-            // executes. STAT_STOP handles trip detection; _disarmOnInput cleans up.
+            // ON INPUT(N,1) <stmt>: arm a one-shot rising-edge watcher. While
+            // armed, emit_move rewrites every G0/G1 as G38.3 with prbin=N. On
+            // trip, motion stops at the trip point (firmware probe path) and
+            // <stmt> executes. STAT_STOP handles trip detection.
+            //
+            // ON INPUT(N,0): disarm whatever watcher is currently armed (SB3
+            // convention). Any trailing stmt is ignored. Falling-edge arming
+            // (state=0 with a stmt) is not yet supported.
             var sw = command.sw;
             var st = command.state;
+            if (st === 0) {
+                this._disarmOnInput();
+                log.info("ON INPUT(" + sw + ",0) explicit disarm");
+                this.pc += 1;
+                return false;
+            }
             if (st !== 1) {
                 this.pc += 1;
                 throw new Error(
-                    "ON INPUT(" + sw + "," + st + "): falling-edge (state=0) is not yet supported. Line: " + (this.pc + 1)
+                    "ON INPUT(" + sw + "," + st + "): state must be 0 (disarm) or 1 (arm). Line: " + (this.pc + 1)
+                );
+            }
+            if (!command.stmt) {
+                this.pc += 1;
+                throw new Error(
+                    "ON INPUT(" + sw + ",1): rising-edge arm requires a trailing statement (e.g. GOTO LABEL). Line: " + (this.pc + 1)
                 );
             }
             if (!this.simulation_mode) {
