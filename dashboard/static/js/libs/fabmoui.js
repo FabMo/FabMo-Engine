@@ -377,10 +377,12 @@ const { last } = require("underscore");
                 if (status.spindle.vfdAchvFreq !== 0) {
                     $(".spindle-speed input").css("color", "#42e6f5");
                     $(".spindle-power .sp-power").css("color", "black");
+                    $(".spindle-load .sp-load-pct").css("color", "black");
                     updateSpindleSpeed(status.spindle.vfdAchvFreq);
                 } else {
                     $(".spindle-speed input").css("color", "gray");
                     $(".spindle-power .sp-power").css("color", "gray");
+                    $(".spindle-load .sp-load-pct").css("color", "gray");
                     if (status.spindle.vfdDesgFreq < 0) {
                         updateSpindleSpeed("- disabled -  ");
                     } else {
@@ -391,8 +393,10 @@ const { last } = require("underscore");
                 var formattedDraw = (pwrDraw * 0.01).toFixed(2);
                 if (status.spindle.vfdAmps !== 0) {
                     $(".spindle-power .sp-power").css("color", "black");
+                    $(".spindle-load .sp-load-pct").css("color", "black");
                 }
                 $(".spindle-power .sp-power").text(formattedDraw);
+                $(".spindle-load .sp-load-pct").text(Math.round(status.spindle.vfdLoadPct) + "%");
 
                 // LOAD bar: only shown when the drive reported a usable motor
                 // rated current. Color steps at 70%/90% give an at-a-glance
@@ -417,6 +421,7 @@ const { last } = require("underscore");
             updateSpindleSpeed("- No VFD/USB -  ");
             $(".spindle-speed input").css("color", "gray");
             $(".spindle-power .sp-power").css("color", "gray");
+            $(".spindle-load .spindle-load-pct").css("color", "gray");
             $(".spindle-load").hide();
             // hide display when no VFD
             $("#dro-addon-3").css("visibility", "hidden");
