@@ -482,11 +482,11 @@ input#override {
 }
 .dro-addon-value.spindle-load .sp-load-bar {
     width: 30%;
-    height: 1rem;
-    margin-left: 20px;
+    height: 1.4rem;
+    margin-left: 16px;
     margin-right: 5px;
     border: 1px solid gray;
-    background-color: #2a2a2a;
+    background-color: #931B14;
     overflow: hidden;
     position: relative;
 }
@@ -509,7 +509,7 @@ input#override {
     padding-right: 18px;
     font-size: large;
     font-weight: bold;
-    color: #ddd;
+    color: gray;
 }
 
 
