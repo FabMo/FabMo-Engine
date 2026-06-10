@@ -142,6 +142,8 @@ function Machine(control_path, callback) {
         lastState: null,
         clientDisconnected: false,
         softLimit: null,
+        qr: null,  // G2 planner queue report: remaining buffer slots (0-48)
+        fabmo_gcode_queue: 0,  // FabMo host gcode_queue length
     };
 
     this.fireButtonDebounce = false;

@@ -157,7 +157,14 @@ function G2() {
     this._currentData = [];
     this._currentGCodeData = [];
     this.g2_status = { stat: null, posx: 0, posy: 0, posz: 0 };
-    this.status = { stat: "idle", posx: 0, posy: 0, posz: 0 };
+    this.status = { 
+        stat: "idle", 
+        posx: 0, 
+        posy: 0, 
+        posz: 0, 
+        qr: null,  // G2 planner buffer remaining slots (0-48)
+        fabmo_gcode_queue: 0  // FabMo host gcode_queue length
+    };
     this._seen_ready = false;
     this.gcode_queue = new Queue();
     this.command_queue = new Queue();
@@ -1200,6 +1207,8 @@ G2.prototype.handleStatusReport = function (response) {
             }
         }
 
+        // Update FabMo queue length in status before emitting
+        this.status.fabmo_gcode_queue = this.gcode_queue.getLength();
         this.emit("status", this.status); // ##==> Primary low level 'g2.status' update; communicated to 'machine.status'
 
         //If an input induced feedhold is received during a resume then adjust so that
@@ -1244,6 +1253,16 @@ G2.prototype.onMessage = function (response) {
     // new motion can start.
     if (response.jgv === 0) {
         this.emit("jogv_exit");
+    }
+
+    // Handle queue reports from G2. Queue reports indicate how many slots
+    // are available in G2's planner buffer (out of 48 total).
+    // This allows apps to monitor queue depth for joystick-style control.
+    if (response.qr !== undefined) {
+        this.status.qr = response.qr;
+        // Also include FabMo's host queue length for complete picture
+        this.status.fabmo_gcode_queue = this.gcode_queue.getLength();
+        this.emit("status", this.status);
     }
 
     // Deal with G2 status (top priority)
