@@ -1,0 +1,84 @@
+body { background: #f5f5f5; }
+
+.view { display: none; padding: 1rem 0; }
+.view.active { display: block; }
+
+.intro { font-size: 1.1rem; color: #555; margin: 1rem 0 1.5rem; }
+
+/* Main tile grid */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  padding: 0 1rem;
+}
+.tile {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #2c7a7b;
+}
+.tile-img {
+  width: 100%;
+  height: 160px;
+  background: #eee center/contain no-repeat;
+}
+.tile-label {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+
+/* Rotary model picker */
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+.model-card {
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  padding: 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.1s;
+}
+.model-card:hover { border-color: #999; }
+.model-card.selected { border-color: #2c7a7b; background: #f0f9f9; }
+.model-card-img {
+  width: 100%;
+  height: 120px;
+  background: #f0f0f0 center/contain no-repeat;
+  margin-bottom: 0.5rem;
+}
+.model-card-name { font-weight: 600; }
+
+.selected-panel {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.selected-info { flex: 1; }
+.status { font-size: 0.9rem; color: #666; }
+.status.ok { color: #2c7a7b; }
+.status.err { color: #c0392b; }
+
+.docs { color: #555; padding: 0 1rem; }
+
+#app-header { color: #fff; }

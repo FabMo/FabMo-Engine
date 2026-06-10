@@ -1,0 +1,12 @@
+{
+	"name": "Peripherals",
+	"main": "./index.html",
+	"icon": "icon.png",
+	"icon_color": "#2c7a7b",
+	"icon_display": "none",
+	"version": "0.0.1",
+	"author": "FabMo",
+	"website": "http://shopbottools.com",
+	"id": "peripherals",
+	"description": "Setup and usage for accessories: rotary indexers, spindles, pendants, and more"
+}

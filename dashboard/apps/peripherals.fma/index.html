@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <title>Peripherals</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../../css/dashboard.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+  <div class="sticky">
+    <nav class="top-bar" data-topbar role="navigation">
+      <ul class="title-area">
+        <li class="name">
+          <h1><a id="app-header">Peripherals</a></h1>
+        </li>
+      </ul>
+      <section class="top-bar-section">
+        <ul class="left">
+          <li><a href="#" id="nav-home" class="active">Home</a></li>
+          <li><a href="#" id="nav-back" style="display:none">&larr; Back</a></li>
+        </ul>
+      </section>
+    </nav>
+  </div>
+
+  <!-- HOME / TILE GRID -->
+  <section id="view-home" class="view active">
+    <div class="row">
+      <p class="intro">Pick an accessory to set up or learn about.</p>
+      <div class="tile-grid">
+        <div class="tile" data-target="view-rotary">
+          <div class="tile-img" style="background-image:url('images/tile-rotary.png')"></div>
+          <div class="tile-label">Rotary Indexer</div>
+        </div>
+        <div class="tile" data-target="view-spindle">
+          <div class="tile-img" style="background-image:url('images/tile-spindle.png')"></div>
+          <div class="tile-label">Spindle / VFD</div>
+        </div>
+        <div class="tile" data-target="view-pendant">
+          <div class="tile-img" style="background-image:url('images/tile-pendant.png')"></div>
+          <div class="tile-label">Pendant / Gamepad</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROTARY -->
+  <section id="view-rotary" class="view">
+    <div class="row">
+      <h2>Rotary Indexer</h2>
+      <p>Pick the model you own. We'll apply the matching axis assignment and unit values automatically.</p>
+
+      <div id="rotary-model-grid" class="model-grid">
+        <!-- Filled by JS from rotary models preset -->
+      </div>
+
+      <div id="rotary-selected" class="selected-panel" style="display:none">
+        <div class="selected-info">
+          <strong>Selected:</strong> <span id="rotary-selected-name"></span>
+        </div>
+        <button id="rotary-apply" class="button primary">Apply Setup</button>
+        <span id="rotary-status" class="status"></span>
+      </div>
+
+      <h3>How to use</h3>
+      <p class="docs">Once applied, mount the indexer on your machine and home as usual. Detailed usage docs will live here.</p>
+    </div>
+  </section>
+
+  <!-- SPINDLE (stub) -->
+  <section id="view-spindle" class="view">
+    <div class="row">
+      <h2>Spindle / VFD</h2>
+      <p>Spindle speed controller setup will move here from the Configuration app.</p>
+      <p class="docs">Coming soon: VFD model selection, run/stop wiring guide, and connection status.</p>
+    </div>
+  </section>
+
+  <!-- PENDANT (stub) -->
+  <section id="view-pendant" class="view">
+    <div class="row">
+      <h2>Pendant / Gamepad</h2>
+      <p>Gamepad and pendant device setup will move here.</p>
+      <p class="docs">Coming soon: device pairing, axis mapping, and button assignment.</p>
+    </div>
+  </section>
+
+  <script src="../../js/libs/jquery.min.js"></script>
+  <script src="../../js/libs/fabmo.js"></script>
+  <script src="js/peripherals.js"></script>
+</body>
+</html>

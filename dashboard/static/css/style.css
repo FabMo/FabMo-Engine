@@ -917,6 +917,17 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     content: "\f1ec"; /* fa-calculator */
 }
 
+#icon_peripherals { background-image: none; position: relative; }
+#icon_peripherals:before {
+    position: absolute;
+    font-family: 'FontAwesome';
+    font-size: 22px;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    content: "\f067"; /* fa-plus */
+}
+
 /* Calculator modal */
 .calc-modal-dim {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
