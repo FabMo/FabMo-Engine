@@ -106,6 +106,11 @@ function SBPRuntime() {
     // Input simulation (debug mode) — set by caller before runFile/executeCode
     this.simulation_mode = false;
     this.simulated_inputs = {};
+    // When non-null, SBP user/system variable reads & writes route here instead
+    // of the process-global config.opensbp._cache. Set for the duration of a
+    // simulation (see simulateString) so a sim can never clobber the variables a
+    // concurrently-running live job depends on. See _varStore().
+    this._isolatedVars = null;
     // sim_probe is null when no probe is active. Otherwise:
     //   { input, feed, axes, phase: "probing"|"tripping"|"returning", trip_pos }
     this.sim_probe = null;
@@ -727,6 +732,14 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
     this.cmd_StartX = x; // need to capture these for processing commands outside of runtime
     this.cmd_StartY = y;
     this.cmd_StartZ = z;
+    // Isolate all SBP variable state for the lifetime of this simulation. Without
+    // this, the sim writes &tool/$vars into the process-global cache that a
+    // concurrently-running live job reads — e.g. the background soft-limit
+    // bounds pre-check (analyzeJobBounds) clobbering &tool while a C9 toolchange
+    // is mid-flight, which on long files picks up the wrong tool. Teardown must
+    // run on every exit path below.
+    this._enterIsolatedVars();
+    var self = this;
     if (this.ok_to_disconnect) {
         this.disconnect();
         var st;
@@ -734,26 +747,39 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
             st = this.runString(s);
         } catch (err) {
             log.error("simulateString: runString threw: " + err.message);
+            this._exitIsolatedVars();
             return callback(err);
         }
         if (!st) {
             log.error("simulateString: runString returned undefined");
+            this._exitIsolatedVars();
             return callback(new Error("Failed to start simulation: runString returned no stream."));
         }
         var chunks = [];
-        var self = this;
+        var done = false; // guard: 'end' and 'error' are mutually exclusive, but
+        // never let isolation teardown / callback fire twice if both arrive.
         st.on("data", function (chunk) {
             chunks.push(chunk);
         });
         st.on("end", function () {
+            if (done) return;
+            done = true;
             // info.partial signals truncated simulation (e.g. infinite loop
             // hit MAX_SIM_LINES). Callers that care can warn/badge; callers
             // that don't (legacy 2-arg) silently get the truncated gcode,
             // which is still strictly better than hanging.
             var info = { partial: !!self.sim_budget_exceeded };
+            self._exitIsolatedVars();
             callback(null, chunks.join(""), info);
         });
+        st.on("error", function (err) {
+            if (done) return;
+            done = true;
+            self._exitIsolatedVars();
+            callback(err);
+        });
     } else {
+        this._exitIsolatedVars();
         callback(new Error("Cannot simulate while OpenSBP runtime is busy."));
     }
 };
@@ -2229,6 +2255,39 @@ SBPRuntime.prototype._execute = function (command, callback) {
     }
 };
 
+// Returns the variable store backing user (&) and system ($) variable reads
+// and writes. Normally this is the process-global config.opensbp._cache, shared
+// by every SBPRuntime. During a simulation it's an isolated per-instance copy
+// (see _enterIsolatedVars) so the sim never mutates the variables a live job is
+// reading — e.g. the soft-limit bounds pre-check expanding &tool out from under
+// a running toolchange.
+SBPRuntime.prototype._varStore = function () {
+    return this._isolatedVars || config.opensbp._cache;
+};
+
+// Begin variable isolation: snapshot the current global variable store into a
+// per-instance copy so the sim sees real starting values ($toolsUU, $ATC.*, etc.)
+// but every assignment it makes stays local and is discarded at _exitIsolatedVars.
+SBPRuntime.prototype._enterIsolatedVars = function () {
+    var cache = config.opensbp._cache || {};
+    function deepCopy(o) {
+        try {
+            return JSON.parse(JSON.stringify(o || {}));
+        } catch (e) {
+            return Object.assign({}, o);
+        }
+    }
+    this._isolatedVars = {
+        tempVariables: deepCopy(cache.tempVariables),
+        variables: deepCopy(cache.variables),
+    };
+};
+
+// End variable isolation: subsequent reads/writes go back to the global store.
+SBPRuntime.prototype._exitIsolatedVars = function () {
+    this._isolatedVars = null;
+};
+
 // Return true if the provided variable exists in the current program context
 // &Tool is a weird case.  (literally) - it will be accepted as defined no matter what it's case
 // &Tool == &TOOL == &TOoL
@@ -2240,9 +2299,9 @@ SBPRuntime.prototype._varExists = function (identifier) {
         let variables;
 
         if (identifier.type == "user_variable") {
-            variables = config.opensbp._cache["tempVariables"];
+            variables = this._varStore()["tempVariables"];
         } else {
-            variables = config.opensbp._cache["variables"];
+            variables = this._varStore()["variables"];
         }
 
         if (!(variableName in variables)) {
@@ -2471,9 +2530,9 @@ SBPRuntime.prototype._assign = function (identifier, value) {
             // Determine which variable collection to use
             let variables;
             if (identifier.type === "user_variable") {
-                variables = config.opensbp._cache["tempVariables"];
+                variables = this._varStore()["tempVariables"];
             } else {
-                variables = config.opensbp._cache["variables"];
+                variables = this._varStore()["variables"];
             }
             
             // Ensure base variable exists
@@ -2503,9 +2562,9 @@ SBPRuntime.prototype._assign = function (identifier, value) {
             
             let variables;
             if (identifier.type === "user_variable") {
-                variables = config.opensbp._cache["tempVariables"];
+                variables = this._varStore()["tempVariables"];
             } else {
-                variables = config.opensbp._cache["variables"];
+                variables = this._varStore()["variables"];
             }
             
             if (!(variableName in variables)) {
@@ -2648,9 +2707,9 @@ SBPRuntime.prototype._getVariableValue = function (identifier) {
     let variables;
 
     if (identifier.type === "user_variable") {
-        variables = config.opensbp._cache["tempVariables"];
+        variables = this._varStore()["tempVariables"];
     } else {
-        variables = config.opensbp._cache["variables"];
+        variables = this._varStore()["variables"];
     }
 
     if (!(variableName in variables)) {
