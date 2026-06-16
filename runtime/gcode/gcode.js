@@ -4,6 +4,7 @@ var log = require("../../log").logger("gcode");
 var config = require("../../config");
 var countLineNumbers = require("../../util").countLineNumbers;
 var LineNumberer = require("../../util").LineNumberer;
+var SegmentFilter = require("../segment_filter");
 const util = require("util");
 
 function GCodeRuntime() {
@@ -227,8 +228,14 @@ GCodeRuntime.prototype.runStream = function (st) {
     this.machine.status.line = 1;
     var manualPrime = this.machine.status.nb_lines < this.driver.primedThreshold;
     var ln = new LineNumberer();
+    // Optionally pre-process the (line-numbered) stream to combine very short
+    // segments before they reach G2. Returns the stream unchanged when the
+    // small-segment transform is disabled. Placed AFTER the LineNumberer so the
+    // filter sees N-words and can preserve them on merged moves (keeps
+    // status.line -> nb_lines progress reaching completion).
+    var src = SegmentFilter.maybeWrap(st.pipe(ln), config);
     return this.driver
-        .runStream(st.pipe(ln), manualPrime) ////## This is where we might put prepend RE: Rob
+        .runStream(src, manualPrime) ////## This is where we might put prepend RE: Rob
         .on("stat", this._handleStateChange.bind(this))
         .then(this._handleStop.bind(this));
 };
