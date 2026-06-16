@@ -32,7 +32,9 @@ gcode_line
 
 event
    = "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
-      {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
+      {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};}
+   / "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")"
+      {return {"type":"event", "sw":sw, "state":state, "stmt":null};}
 
 command 
    = m:mnemonic arg1:(("," / whitespace?) __ argument)?

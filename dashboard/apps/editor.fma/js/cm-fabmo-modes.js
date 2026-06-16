@@ -531,7 +531,9 @@ CodeMirror.defineMode("opensbp", function() {
           return "error";
 
         case "on":
-          // Handle ON statements
+          // Handle ON INPUT(N,S) <stmt>. The (N,S) is the watcher-arming
+          // header; after the closing paren, <stmt> is any valid event-stmt
+          // (jump, pause, single, assignment, command).
           if (stream.eatSpace()) {
             return null;
           }
@@ -545,12 +547,39 @@ CodeMirror.defineMode("opensbp", function() {
           if (stream.match(/\d+/)) {
             return "number";
           }
+          if (stream.match(/[()]/)) {
+            return "bracket";
+          }
+          if (stream.match(/,/)) {
+            return "operator";
+          }
+          // Statement after the (N,S) header — delegate to the same matchers
+          // sol uses, so the trailing GOTO/PAUSE/assign/cmd highlights right.
           if (stream.match(/GOTO\b|GOSUB\b/i)) {
             state.name = "goto";
             return "keyword";
           }
-          if (stream.match(/,/)) {
-            return "operator";
+          if (stream.match(/^PAUSE\b/i)) {
+            state.name = "pause";
+            return "keyword";
+          }
+          if (stream.match(/^RETURN\b|END\b/i)) {
+            state.name = "sol";
+            return "keyword";
+          }
+          if (stream.match(USR_VAR_REGEX)) {
+            state.tokenize = tokenVariableAccess("variable-2");
+            state.name = "assign";
+            return "variable-2";
+          }
+          if (stream.match(PERSIST_VAR_REGEX)) {
+            state.tokenize = tokenVariableAccess("variable-3");
+            state.name = "assign";
+            return "variable-3";
+          }
+          if (stream.match(CMD_REGEX)) {
+            state.name = "args";
+            return "cmd";
           }
           stream.next();
           return "error";
