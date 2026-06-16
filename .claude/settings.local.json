@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "/fabmo-updater",
+      "/fabmo-def"
+    ]
+  }
+}
