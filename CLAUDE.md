@@ -86,6 +86,9 @@ npm run debug           # Debug mode (enhanced logging, no webpack)
 npm run dev             # Webpack + debug server
 npm start               # Production mode
 npm run webpack         # Build dashboard only
+npm run lint            # ESLint over the repo (npx eslint .)
+npm run prettier        # Auto-format with Prettier (npx prettier --write .)
+npm test                # Jest tests (npx jest --verbose)
 ```
 
 **Important**: Dashboard requires webpack build before running. Debug mode reloads apps more aggressively.
@@ -102,7 +105,7 @@ npm run webpack         # Build dashboard only
 Jest tests in `/test`. Run with `npm test`. Limited coverage currently (`util.test.js`, `machine.test.js`).
 
 ### Code Quality
-- **ESLint**: Uses `eslint-config-prettier`. Config in `.eslintrc.js`. Many files have selective `eslint-disable` comments.
+- **ESLint**: Uses `eslint-config-prettier`. Both `eslint.config.js` (v9 flat config — the active format) and a legacy `.eslintrc.js` are present. The flat config ignores generated/vendor code (`dashboard/static/js/libs`, `dashboard/apps`, `runtime/opensbp/sbp_parser.js`, etc.). Many files have selective `eslint-disable` comments.
 - **Prettier**: `printWidth: 120`, `endOfLine: lf`. Config in `.prettierrc`.
 - **Husky + lint-staged**: Pre-commit hooks (configured in `package.json`).
 
@@ -164,6 +167,14 @@ See API docs: http://fabmo.github.io/FabMo-Engine/api
 - `/routes/index.js` - Route auto-loader
 - `db.js` - Database operations and job management
 - `/doc/project_layout.md` - Additional architecture notes
+
+## Reference Documentation
+In-repo docs worth consulting before touching the related subsystem:
+- `doc/system-architecture.md` - Cross-cutting three-repo (engine / updater / def) deployment picture into `/opt/fabmo`.
+- `doc/project_layout.md` - Package-by-package walkthrough of the engine's directories.
+- `CONFIG_VARIABLE_FEATURE.md` - Referencing config values from OpenSBP cut files via `%<config>.<property>` dot notation.
+- `doc/canned_cuts.md` - Design notes for pendant-triggered canned cuts (chop saw / drill press / etc.) at the current machine position.
+- `DEPENDENCY_UPDATE_MIGRATION.md` - Phased dependency-upgrade log, incl. the Node 16→18 and SerialPort v9→v12 migration.
 
 ## When Modifying Code
 
