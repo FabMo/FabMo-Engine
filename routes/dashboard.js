@@ -218,16 +218,24 @@ module.exports = function (server) {
     server.post("/apps/:id/config", postAppConfig);
     server.del("/apps/:id", deleteApp);
     server.get("/apps/:id/files", listAppFiles);
+    // Apps are served from stable /approot paths (no version stamp like the
+    // dashboard bundle gets), and their assets aren't content-hashed, so a
+    // long max-age would leave customers staring at a stale app for up to an
+    // hour after an update. maxAge: 0 makes the browser revalidate every load;
+    // static.js answers unchanged files with a cheap 304, so updates appear on
+    // the next refresh without a full re-download each time.
     server.get(
         "/approot/*",
         static({
             directory: config.getDataDir("approot"),
+            maxAge: 0,
         })
     );
     server.get(
         "/approot*",
         static({
             directory: config.getDataDir("approot"),
+            maxAge: 0,
         })
     );
     server.get("/updater", updater);
