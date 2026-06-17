@@ -298,8 +298,7 @@ function addQueueEntries(jobs) {
         // under the Last Run text. Inline keeps narrow cards from pushing
         // the button off the bottom.
         var abortedBlock = '';
-        if (recent[i].final_line != null && recent[i].nb_lines != null &&
-            recent[i].final_line < recent[i].nb_lines) {
+        if (jobIsResumable(recent[i])) {
           abortedBlock =
             '<div class="aborted-wrap" style="position:absolute; top:24px; right:10px; ' +
             'display:flex; align-items:center; gap:8px;">' +
@@ -497,6 +496,19 @@ function createHistoryMenu(id) {
   return menu.replace(/JOBID/g, id)
 }
 
+// Whether a job is genuinely incomplete and worth offering a one-click resume.
+// The authoritative signal is the job's terminal STATE recorded by the engine
+// — NOT a final_line vs nb_lines comparison. ShopBot (.sbp) programs routinely
+// terminate with an END / RETURN statement (or M30) well before the physical
+// end of the file, so final_line < nb_lines is normal for a CLEAN run and must
+// not be read as "aborted". Only jobs the engine marked 'cancelled' (user
+// quit/stop) or 'failed' (error, lost connection) actually stopped short.
+function jobIsResumable(job) {
+  return !!job &&
+         (job.state === 'cancelled' || job.state === 'failed') &&
+         job.final_line != null;
+}
+
 function addHistoryEntries(jobs) {
   var table = document.getElementById('history_table');
   jobs.forEach(function(job) {
@@ -514,23 +526,25 @@ function addHistoryEntries(jobs) {
     name.innerHTML = '<div class="job-' + job.state + '">' + job.name + '</div>';
     done.innerHTML = moment(job.finished_at).fromNow();
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
-    if (job.final_line != null && job.nb_lines != null) {
-      // Surface a one-click resume right in the row for jobs that didn't
-      // run to completion — pause+quit, stop-pressed, lost connection, etc.
-      // The same action lives in the ellipses menu, but most users will
-      // never dig in there for what's a common follow-up.
-      var didFinish = job.final_line >= job.nb_lines;
-      var progressHtml = job.final_line + ' / ' + job.nb_lines;
-      if (!didFinish) {
-        progressHtml += '&nbsp;&nbsp;<a class="restartFromLine inline-resume" data-jobid="' +
-                        job._id +
-                        '" title="Resume this job from the line it stopped at" ' +
-                        'style="display:inline-block; padding:2px 8px; margin-left:4px; ' +
-                        'background:#2ca64a; color:#fff; border-radius:4px; ' +
-                        'font-size:12px; font-weight:bold; cursor:pointer;">' +
-                        '<i class="fa fa-play" style="font-size:10px;"></i>&nbsp;Resume</a>';
-      }
+    if (jobIsResumable(job)) {
+      // Job stopped short — pause+quit, stop-pressed, lost connection, etc.
+      // Surface a one-click resume right in the row; the same action lives in
+      // the ellipses menu, but most users will never dig in there for what's a
+      // common follow-up. Show progress as a ratio against the file length.
+      var progressHtml = job.final_line + (job.nb_lines != null ? ' / ' + job.nb_lines : '');
+      progressHtml += '&nbsp;&nbsp;<a class="restartFromLine inline-resume" data-jobid="' +
+                      job._id +
+                      '" title="Resume this job from the line it stopped at" ' +
+                      'style="display:inline-block; padding:2px 8px; margin-left:4px; ' +
+                      'background:#2ca64a; color:#fff; border-radius:4px; ' +
+                      'font-size:12px; font-weight:bold; cursor:pointer;">' +
+                      '<i class="fa fa-play" style="font-size:10px;"></i>&nbsp;Resume</a>';
       progress.innerHTML = progressHtml;
+    } else if (job.state === 'finished') {
+      // Ran to completion. Don't show a final_line / nb_lines ratio here — a
+      // clean run that ENDs before the physical end of file (END/RETURN/M30)
+      // has final_line < nb_lines and would misleadingly read as incomplete.
+      progress.innerHTML = '<span style="color:#2ca64a;"><i class="fa fa-check"></i>&nbsp;Complete</span>';
     } else {
       progress.innerHTML = '—';
     }
