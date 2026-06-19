@@ -135,12 +135,23 @@ ManualDriver.prototype.enter = function () {
             // Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
             var jerkXY = config.machine._cache.manual.xy_jerk || 100;
             var jerkZ = config.machine._cache.manual.z_jerk || 100;
+            // Rotary axes get their own manual jerk because the rotary velocity
+            // range (deg/min) is much lower than linear (units/min), so the
+            // same absolute jerk value feels "floaty" on A/B if shared with XY.
+            // Fall back to whatever the firmware already has (don't write) when
+            // the config field is missing — preserves the pre-A/B behavior.
+            var jerkA = config.machine._cache.manual.a_jerk;
+            var jerkB = config.machine._cache.manual.b_jerk;
             // Read configurable manual control parameters
             this.safetyFactor = config.machine._cache.manual.safety_factor || DEFAULT_SAFETY_FACTOR;
             this.maxNudges = config.machine._cache.manual.max_nudges || DEFAULT_MAX_NUDGES;
             this.stream.write("{xjm:" + jerkXY + "}\n");
             this.stream.write("{yjm:" + jerkXY + "}\n");
             this.stream.write("{zjm:" + jerkZ + "}\n");
+            if (jerkA) this.stream.write("{ajm:" + jerkA + "}\n");
+            if (jerkB) this.stream.write("{bjm:" + jerkB + "}\n");
+            log.info("Manual enter: jerks XY=" + jerkXY + " Z=" + jerkZ +
+                     " A=" + (jerkA || "(unchanged)") + " B=" + (jerkB || "(unchanged)"));
             this.stream.write("{spph:false}\n"); // turn off spph so G2 feedhold doesn't turn off spindle
             // Send "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
@@ -196,9 +207,20 @@ ManualDriver.prototype.exit = function () {
                 // Restore the sbp_runtime config settings for jerk
                 var jerkXY = config.opensbp._cache.xy_maxjerk || 75;
                 var jerkZ = config.opensbp._cache.z_maxjerk || 75;
+                // Only restore A/B if we wrote them on enter — i.e. only when
+                // the manual config has values for them. Otherwise opensbp
+                // hasn't touched A/B either (no symmetric restore needed).
+                var jerkA = config.opensbp._cache.a_maxjerk;
+                var jerkB = config.opensbp._cache.b_maxjerk;
                 this.stream.write("{xjm:" + jerkXY + "}\n");
                 this.stream.write("{yjm:" + jerkXY + "}\n");
                 this.stream.write("{zjm:" + jerkZ + "}\n");
+                if (config.machine._cache.manual.a_jerk && jerkA) {
+                    this.stream.write("{ajm:" + jerkA + "}\n");
+                }
+                if (config.machine._cache.manual.b_jerk && jerkB) {
+                    this.stream.write("{bjm:" + jerkB + "}\n");
+                }
                 this.stream.write("{spph:true}\n");
                 
                 var feedXY = config.opensbp._cache.movexy_speed || 3;
@@ -771,6 +793,21 @@ ManualDriver.prototype.set = function (pos) {
 // is defined by the nudge increment relative to work zero — e.g. a 0.100"
 // nudge from 26.241" lands on 26.300", then 26.400", etc. Already on grid
 // counts as off — advance by one full increment to avoid no-ops.
+// True when the given axis (A/B/C) is configured as rotary
+// (aam/bam/cam: 1 = rotary, 2 = linear, 3 = radius). X/Y/Z are never
+// rotary. Rotary axes skip nudge snap-to-grid: their step resolution
+// (e.g. 33.333 steps/deg) doesn't divide the unit grid, so snapping to
+// integer-unit lines fights firmware quantization and produces erratic,
+// oscillating bump distances. They step by the raw increment instead.
+function isRotaryAxis(axis) {
+    switch (axis) {
+        case "A": return config.driver._cache.aam === 1;
+        case "B": return config.driver._cache.bam === 1;
+        case "C": return config.driver._cache.cam === 1;
+        default: return false;
+    }
+}
+
 function snapNudgeDistance(currentPos, distance, increment) {
     if (!increment || distance === 0) return distance;
     var EPSILON = 1e-6;
@@ -803,7 +840,11 @@ ManualDriver.prototype._handleNudges = function () {
             // grid line (multiple of the nudge increment) in the direction
             // of motion, relative to work zero. Runs before the soft-limit
             // clip so the boundary check still applies to the snapped move.
-            if ("XYZABC".indexOf(axis) >= 0) {
+            // Rotary axes (isRotaryAxis) are excluded from snapping and step
+            // by the raw increment; linear axes snap to the unit grid. Primary
+            // and second axes are gated independently so a mixed linear/rotary
+            // two-axis nudge handles each correctly.
+            if ("XYZABC".indexOf(axis) >= 0 && !isRotaryAxis(axis)) {
                 var axisLower = axis.toLowerCase();
                 var increment = Math.abs(move.distance);
                 var basePos = (snapPos[axisLower] !== undefined)
@@ -813,8 +854,11 @@ ManualDriver.prototype._handleNudges = function () {
                     move.distance = snapNudgeDistance(basePos, move.distance, increment);
                     snapPos[axisLower] = basePos + move.distance;
                 }
-                if (move.second_axis && move.second_distance) {
-                    var secondLower = move.second_axis.toLowerCase();
+            }
+            if (move.second_axis && move.second_distance) {
+                var secondAxis = move.second_axis.toUpperCase();
+                if ("XYZABC".indexOf(secondAxis) >= 0 && !isRotaryAxis(secondAxis)) {
+                    var secondLower = secondAxis.toLowerCase();
                     var secondInc = Math.abs(move.second_distance);
                     var secondBase = (snapPos[secondLower] !== undefined)
                         ? snapPos[secondLower]
