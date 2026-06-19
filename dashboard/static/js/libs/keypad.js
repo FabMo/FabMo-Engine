@@ -22,6 +22,8 @@
         this.tapInterval = 150;
         this.target = null;
         this.slideOffDetected = false; // Track slide-off state
+        this.nudgeExecuted = false; // Track if nudge executed for current gesture
+        
         this.setOptions(options);
         this.init();
     };
@@ -253,6 +255,7 @@
                 
                 hammer.on("pressup", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
+                    this.nudgeExecuted = false; // Reset for next gesture
                     this.end();
                 }.bind(this));
                 
@@ -294,6 +297,8 @@
                 $(element).on("touchend", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
                
+                    this.nudgeExecuted = false; // Reset for next gesture
+                    
                     // Only call end if we haven't already handled slide-off
                     if (this.going && !this.slideOffDetected) {
                         this.end();
@@ -311,6 +316,7 @@
                 $(element).on("mouseleave", this.onDriveMouseleave.bind(this));
                 $(element).on("touchcancel", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
+                    this.nudgeExecuted = false; // Reset for next gesture
                     if (this.going && !this.slideOffDetected) {
                         this.cleanStop();
                     }
@@ -624,9 +630,14 @@
 
     Keypad.prototype.onDrivePress = function (evt) {
         if (this.guardAgainstExitButton()) return;
+        
+        // Stop any ongoing motion
         if (this.going) {
             this.stop();
         }
+        
+        // Ensure going flag is false for fixed mode (defensive)
+        this.going = false;
         
         this.target = evt.target;
         this.setEnabled(true);
@@ -635,7 +646,12 @@
         e.focus();
 
         if (e.hasClass("drive-button-fixed")) {
-            this.onDriveTap(evt);
+            // Fixed mode: Execute nudge only if not already done (prevents doublets)
+            if (!this.nudgeExecuted) {
+                this.onDriveTap(evt);  // This will set the flag
+            }
+            // Use tan styling for fixed mode (not green like continuous)
+            e.addClass("drive-button-active-transient").removeClass("drive-button-inactive");
         } else {
             if (!this.going) {
                 if (e.hasClass("x_pos") && e.hasClass("y_pos")) {
@@ -688,6 +704,12 @@
         if (this.going) {
             this.end();
         } else {
+            // For fixed-distance buttons, only execute nudge once per gesture
+            if (this.nudgeExecuted) {
+                return; // Already executed by press event
+            }
+            this.nudgeExecuted = true;
+            
             if (e.hasClass("x_pos") && e.hasClass("y_pos")) {
                 this.nudge("x", 1, "y", 1);
             } else if (e.hasClass("x_neg") && e.hasClass("y_pos")) {
@@ -737,6 +759,8 @@
                             "drive-button-inactive"
                         );
                     }
+                    // Reset flag for next gesture (important for quick taps that don't trigger pressup)
+                    this.nudgeExecuted = false;
                 }.bind(this),
                 200
             );
@@ -762,12 +786,9 @@
             return;
         }
         
-        // Don't process mouseleave if we're not actually in motion
-        if (!this.going) {
-            return;
-        }
+        this.nudgeExecuted = false; // Reset for next gesture
         
-        // Only process once - use cleanStop instead of end
+        // Stop continuous motion if active
         if (this.going) {
             console.log("Keypad: Mouse left button - clean stopping");
             this.cleanStop();
