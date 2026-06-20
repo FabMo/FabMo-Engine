@@ -35,6 +35,7 @@ var DEFAULT_SAFETY_FACTOR = 4.0;
 // TODO should be in the ManualDriver instance?!
 var count = 0;
 var RENEW_SEGMENTS = 10;
+var RENEW_SEGMENTS_ROTARY = 2; // Fewer, larger segments for ABC rotary axes to provide adequate steps/segment
 var DEFAULT_MAX_NUDGES = 3;
 
 // ManualDriver constructor
@@ -132,15 +133,32 @@ ManualDriver.prototype.enter = function () {
     this.driver.manual_hold = true;
     switch (this.mode) {
         case "normal":
+            // Unit-aware fallback for the manual XY/Z jerk. The stored
+            // manual.xy_jerk / z_jerk are kept in the current unit system
+            // (machine_config converts them on a unit change), so the default
+            // must match too: 100 in/min^3 is 2540 mm/min^3 (×25.4).
+            var jerkDefault = config.machine._cache.units === "in" ? 100 : 2540;
             // Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
-            var jerkXY = config.machine._cache.manual.xy_jerk || 100;
-            var jerkZ = config.machine._cache.manual.z_jerk || 100;
+            var jerkXY = config.machine._cache.manual.xy_jerk || jerkDefault;
+            var jerkZ = config.machine._cache.manual.z_jerk || jerkDefault;
+            // A/B/C have no keypad-specific jerk, so pull from the general
+            // machine (opensbp) jerk config — the same source exit() restores
+            // XY/Z from. This makes sure the extra/rotary axes jog at their
+            // configured rate instead of whatever (often low) value the firmware
+            // was last left with. These are NOT restored on exit: we are setting
+            // them to the general config values, not temporarily overriding them.
+            var jerkA = config.opensbp._cache.a_maxjerk || 50;
+            var jerkB = config.opensbp._cache.b_maxjerk || 50;
+            var jerkC = config.opensbp._cache.c_maxjerk || 50;
             // Read configurable manual control parameters
             this.safetyFactor = config.machine._cache.manual.safety_factor || DEFAULT_SAFETY_FACTOR;
             this.maxNudges = config.machine._cache.manual.max_nudges || DEFAULT_MAX_NUDGES;
             this.stream.write("{xjm:" + jerkXY + "}\n");
             this.stream.write("{yjm:" + jerkXY + "}\n");
             this.stream.write("{zjm:" + jerkZ + "}\n");
+            this.stream.write("{ajm:" + jerkA + "}\n");
+            this.stream.write("{bjm:" + jerkB + "}\n");
+            this.stream.write("{cjm:" + jerkC + "}\n");
             this.stream.write("{spph:false}\n"); // turn off spph so G2 feedhold doesn't turn off spindle
             // Send "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
@@ -791,40 +809,46 @@ ManualDriver.prototype._handleNudges = function () {
     count = this.fixedQueue.length;
 
     if (this.fixedQueue.length > 0) {
-        // Track planned position across queued nudges so back-to-back
-        // taps advance multiple grid lines instead of all snapping to
-        // the same one.
-        var snapPos = {};
+        // Fixed distance nudges: always move by the exact specified distance.
+        // The snap-to-grid logic below is disabled because it caused erratic
+        // behavior, especially with rotary axes (small steps/degree ratio).
+        // If grid-snapping is needed in the future, it should be a separate
+        // optional mode, not the default "fixed distance" behavior.
+        //
+        // var snapPos = {};  // Disabled: was used for snap-to-grid tracking
         while (this.fixedQueue.length > 0) {
             var move = this.fixedQueue.shift();
             var axis = move.axis.toUpperCase();
 
-            // Snap-to-grid: rewrite distance so the move lands on the next
-            // grid line (multiple of the nudge increment) in the direction
-            // of motion, relative to work zero. Runs before the soft-limit
-            // clip so the boundary check still applies to the snapped move.
-            if ("XYZABC".indexOf(axis) >= 0) {
-                var axisLower = axis.toLowerCase();
-                var increment = Math.abs(move.distance);
-                var basePos = (snapPos[axisLower] !== undefined)
-                    ? snapPos[axisLower]
-                    : this.driver.status["pos" + axisLower];
-                if (basePos !== undefined && basePos !== null && increment > 0) {
-                    move.distance = snapNudgeDistance(basePos, move.distance, increment);
-                    snapPos[axisLower] = basePos + move.distance;
-                }
-                if (move.second_axis && move.second_distance) {
-                    var secondLower = move.second_axis.toLowerCase();
-                    var secondInc = Math.abs(move.second_distance);
-                    var secondBase = (snapPos[secondLower] !== undefined)
-                        ? snapPos[secondLower]
-                        : this.driver.status["pos" + secondLower];
-                    if (secondBase !== undefined && secondBase !== null && secondInc > 0) {
-                        move.second_distance = snapNudgeDistance(secondBase, move.second_distance, secondInc);
-                        snapPos[secondLower] = secondBase + move.second_distance;
-                    }
-                }
-            }
+            // Snap-to-grid logic DISABLED — use exact distance as specified.
+            // The original logic recalculated distance based on current position
+            // to land on grid lines (multiples of the increment), but this caused
+            // wildly varying actual distances (e.g., 0.99°, then 0.01°, then 0.01°)
+            // which made "fixed distance" mode unusable. For true fixed increments,
+            // move.distance is used as-is without modification.
+            //
+            // if ("XYZABC".indexOf(axis) >= 0) {
+            //     var axisLower = axis.toLowerCase();
+            //     var increment = Math.abs(move.distance);
+            //     var basePos = (snapPos[axisLower] !== undefined)
+            //         ? snapPos[axisLower]
+            //         : this.driver.status["pos" + axisLower];
+            //     if (basePos !== undefined && basePos !== null && increment > 0) {
+            //         move.distance = snapNudgeDistance(basePos, move.distance, increment);
+            //         snapPos[axisLower] = basePos + move.distance;
+            //     }
+            //     if (move.second_axis && move.second_distance) {
+            //         var secondLower = move.second_axis.toLowerCase();
+            //         var secondInc = Math.abs(move.second_distance);
+            //         var secondBase = (snapPos[secondLower] !== undefined)
+            //             ? snapPos[secondLower]
+            //             : this.driver.status["pos" + secondLower];
+            //         if (secondBase !== undefined && secondBase !== null && secondInc > 0) {
+            //             move.second_distance = snapNudgeDistance(secondBase, move.second_distance, secondInc);
+            //             snapPos[secondLower] = secondBase + move.second_distance;
+            //         }
+            //     }
+            // }
 
             // Soft-limit gate for nudges. Without this a quick tap could
             // bypass the boundary check that startMotion/_renewMoves enforce.
@@ -921,7 +945,6 @@ ManualDriver.prototype._handleNudges = function () {
 
 // Issue a nudge (small fixed move).
 // Don't queue more than maxNudges (configurable), to keep the machines behavior from running away.
-// (TODO: Might consider making this a typematic sort of thing where after a time you get a machine gun effect.)
 // ie: You shoudln't be allowed to queue 50 nudges during a long slow move, and see them execute at the end.
 //              axis - The first axis to move (eg "X")
 //             speed - The speed in current units
@@ -1023,9 +1046,19 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 this.moving = true;
             }
 
-            var segment = this.currentDirection * (this.renewDistance / RENEW_SEGMENTS);
-            var second_segment = this.second_currentDirection * (this.renewDistance / RENEW_SEGMENTS);
-            var segmentCount = RENEW_SEGMENTS;
+            // Use fewer, larger segments for rotary axes (A/B/C in rotary mode) to
+            // provide adequate steps-per-segment for efficient G2 motion planning.
+            // Linear axes: 10 segments → ~0.4" each → ~1600 steps/segment at 4000 steps/inch
+            // Rotary axes: 2 segments → ~10° each → ~333 steps/segment at 33.3 steps/degree
+            var isRotary = false;
+            var axisUpper = this.currentAxis.toUpperCase();
+            if (axisUpper === 'A' && config.driver._cache.aam === 1) isRotary = true;
+            if (axisUpper === 'B' && config.driver._cache.bam === 1) isRotary = true;
+            if (axisUpper === 'C' && config.driver._cache.cam === 1) isRotary = true;
+            
+            var segmentCount = isRotary ? RENEW_SEGMENTS_ROTARY : RENEW_SEGMENTS;
+            var segment = this.currentDirection * (this.renewDistance / segmentCount);
+            var second_segment = this.second_currentDirection * (this.renewDistance / segmentCount);
 
             // --- Planned-position tracking for overshoot prevention ---
             // plannedPos tracks the endpoint of all queued incremental moves.
