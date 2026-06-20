@@ -1184,6 +1184,9 @@ function update() {
             if (key === "transforms-level-apply") {
                 if (v===true) {ckTransform = true};
             }
+            if (key === "transforms-smallsegments-apply") {
+                if (v===true || v==="true") {ckTransform = true};
+            }
             if (ckTransform === true) {
                 $('#nav-transforms').html(
                   '<strong>Transforms:</strong>' +

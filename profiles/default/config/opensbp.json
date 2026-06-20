@@ -58,6 +58,12 @@
     "level": {
       "apply": false,
       "ptDataFile": "C:/SbParts/PtData.json"
+    },
+    "smallsegments": {
+      "apply": false,
+      "minSegLen": 0.03,
+      "maxRun": 6,
+      "angleTol": 0.5
     }
   },
   "cRes": 0.01,
