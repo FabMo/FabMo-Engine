@@ -27,7 +27,6 @@ var u = require("../../util");
 var util = require("util");
 var config = require("../../config");
 var stream = require("stream");
-var SegmentFilter = require("../segment_filter");
 var ManualDriver = require("../manual").ManualDriver;
 
 // Maximum program lines a simulation run will expand before bailing out.
@@ -1258,12 +1257,8 @@ SBPRuntime.prototype._run = function () {
         // and start executing with it.  As the program is processed the stream will be fed
         this.stream = new stream.PassThrough();
         if (this.driver) {
-            // Optionally combine very short segments before they reach G2. The
-            // gcode written via emit_gcode already carries N-words, which the
-            // filter preserves on merged moves. Returns the stream unchanged
-            // when the small-segment transform is disabled.
             this.driver
-                .runStream(SegmentFilter.maybeWrap(this.stream, config))
+                .runStream(this.stream)
                 .on("stat", onStat.bind(this))
                 .then(
                     function () {
