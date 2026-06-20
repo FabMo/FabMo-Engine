@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Segment Optimizer</title>
+    <link rel="stylesheet" href="../../css/dashboard.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Segment Optimizer</h1>
+            <p class="subtitle">
+                Combine runs of very small toolpath segments in an OpenSBP file
+                so they execute efficiently. Cut moves (M2/M3/MX/MY/MZ) with
+                literal coordinates are merged; everything else &mdash; arcs,
+                jogs, speeds, spindle, pauses, tool changes, comments and any
+                move using a variable &mdash; is left untouched.
+            </p>
+        </div>
+
+        <!-- Step 1: choose a source file -->
+        <fieldset class="card">
+            <legend>1 &middot; Choose a file</legend>
+            <div class="source-tabs">
+                <label><input type="radio" name="source" value="disk" checked> From my computer</label>
+                <label><input type="radio" name="source" value="queue"> From the job queue</label>
+            </div>
+
+            <div id="source-disk" class="source-panel">
+                <input type="file" id="file-input" accept=".sbp">
+            </div>
+
+            <div id="source-queue" class="source-panel" style="display:none;">
+                <select id="queue-select"><option value="">Loading jobs&hellip;</option></select>
+                <button id="queue-refresh" class="btn">Refresh</button>
+            </div>
+
+            <div id="file-info" class="file-info"></div>
+        </fieldset>
+
+        <!-- Step 2: parameters -->
+        <fieldset class="card">
+            <legend>2 &middot; Settings</legend>
+            <div class="params">
+                <label>Min Segment Length
+                    <input type="number" id="minSegLen" value="0.03" step="0.001" min="0">
+                    <span id="units-label" class="units">in</span>
+                </label>
+                <label>Max Run (segments)
+                    <input type="number" id="maxRun" value="6" step="1" min="1">
+                </label>
+                <label>Collinear Tolerance
+                    <input type="number" id="angleTol" value="0.5" step="0.1" min="0">
+                    <span class="units">deg</span>
+                </label>
+            </div>
+            <p class="hint">
+                Segments shorter than the minimum are coalesced into a chord up
+                to the max run; nearly-straight runs (within the tolerance) merge
+                regardless of length. Values are in the file's units
+                (<span id="units-note">inches</span>, auto-detected from a leading
+                <code>SU</code> command when present).
+            </p>
+            <button id="process-btn" class="btn btn-primary" disabled>Optimize</button>
+        </fieldset>
+
+        <!-- Step 3: results -->
+        <fieldset class="card" id="results-card" style="display:none;">
+            <legend>3 &middot; Result</legend>
+            <div id="results" class="results"></div>
+            <div class="actions">
+                <button id="download-btn" class="btn btn-success" disabled>Download .sbp</button>
+                <button id="submit-btn" class="btn btn-info" disabled>Add to job queue</button>
+            </div>
+        </fieldset>
+    </div>
+
+    <script src="../../js/libs/jquery.min.js"></script>
+    <script src="../../js/libs/fabmo.js"></script>
+    <script src="js/sbp_filter.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

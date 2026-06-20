@@ -2384,7 +2384,7 @@ Machine.prototype._updateStatusFromDriver = function (status) {
         if (config.opensbp && config.opensbp.get) {
             var transforms = config.opensbp.get('transforms');
             if (transforms) {
-                this.status.transformsEnabled = 
+                this.status.transformsEnabled =
                     transforms.rotate.apply ||
                     transforms.scale.apply ||
                     transforms.move.apply ||
