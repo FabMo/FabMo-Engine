@@ -809,46 +809,53 @@ ManualDriver.prototype._handleNudges = function () {
     count = this.fixedQueue.length;
 
     if (this.fixedQueue.length > 0) {
-        // Fixed distance nudges: always move by the exact specified distance.
-        // The snap-to-grid logic below is disabled because it caused erratic
-        // behavior, especially with rotary axes (small steps/degree ratio).
-        // If grid-snapping is needed in the future, it should be a separate
-        // optional mode, not the default "fixed distance" behavior.
-        //
-        // var snapPos = {};  // Disabled: was used for snap-to-grid tracking
+        // Fixed-distance nudges snap to the unit grid for X/Y/Z only.
+        // snapPos tracks the commanded target per axis across the batch so
+        // that multiple stacked nudges in one pass snap relative to each
+        // other instead of all reading the same (stale) live position.
+        var snapPos = {};
         while (this.fixedQueue.length > 0) {
             var move = this.fixedQueue.shift();
             var axis = move.axis.toUpperCase();
 
-            // Snap-to-grid logic DISABLED — use exact distance as specified.
-            // The original logic recalculated distance based on current position
-            // to land on grid lines (multiples of the increment), but this caused
-            // wildly varying actual distances (e.g., 0.99°, then 0.01°, then 0.01°)
-            // which made "fixed distance" mode unusable. For true fixed increments,
-            // move.distance is used as-is without modification.
+            // Snap-to-grid: re-aim each fixed-distance nudge at the next grid
+            // line — a multiple of the nudge increment relative to work zero —
+            // in the direction of motion (e.g. 0.100" nudge from 32.141" lands
+            // on 32.200", then 32.300"). The snapped move is always <= the
+            // increment, so the user is never surprised by a larger step.
             //
-            // if ("XYZABC".indexOf(axis) >= 0) {
-            //     var axisLower = axis.toLowerCase();
-            //     var increment = Math.abs(move.distance);
-            //     var basePos = (snapPos[axisLower] !== undefined)
-            //         ? snapPos[axisLower]
-            //         : this.driver.status["pos" + axisLower];
-            //     if (basePos !== undefined && basePos !== null && increment > 0) {
-            //         move.distance = snapNudgeDistance(basePos, move.distance, increment);
-            //         snapPos[axisLower] = basePos + move.distance;
-            //     }
-            //     if (move.second_axis && move.second_distance) {
-            //         var secondLower = move.second_axis.toLowerCase();
-            //         var secondInc = Math.abs(move.second_distance);
-            //         var secondBase = (snapPos[secondLower] !== undefined)
-            //             ? snapPos[secondLower]
-            //             : this.driver.status["pos" + secondLower];
-            //         if (secondBase !== undefined && secondBase !== null && secondInc > 0) {
-            //             move.second_distance = snapNudgeDistance(secondBase, move.second_distance, secondInc);
-            //             snapPos[secondLower] = secondBase + move.second_distance;
-            //         }
-            //     }
-            // }
+            // Restricted to X/Y/Z: rotary/ABC axes have a step resolution that
+            // doesn't divide the unit grid (e.g. 33.333 steps/deg), so snapping
+            // there fights firmware quantization and yields erratic, oscillating
+            // bumps. A/B/C step by the raw increment as specified. Primary and
+            // second axes are gated independently so a mixed linear/rotary
+            // two-axis nudge handles each correctly. Runs before the soft-limit
+            // clip so the boundary check still applies to the snapped move.
+            if ("XYZ".indexOf(axis) >= 0) {
+                var axisLower = axis.toLowerCase();
+                var increment = Math.abs(move.distance);
+                var basePos = (snapPos[axisLower] !== undefined)
+                    ? snapPos[axisLower]
+                    : this.driver.status["pos" + axisLower];
+                if (basePos !== undefined && basePos !== null && increment > 0) {
+                    move.distance = snapNudgeDistance(basePos, move.distance, increment);
+                    snapPos[axisLower] = basePos + move.distance;
+                }
+            }
+            if (move.second_axis && move.second_distance) {
+                var secondAxis = move.second_axis.toUpperCase();
+                if ("XYZ".indexOf(secondAxis) >= 0) {
+                    var secondLower = secondAxis.toLowerCase();
+                    var secondInc = Math.abs(move.second_distance);
+                    var secondBase = (snapPos[secondLower] !== undefined)
+                        ? snapPos[secondLower]
+                        : this.driver.status["pos" + secondLower];
+                    if (secondBase !== undefined && secondBase !== null && secondInc > 0) {
+                        move.second_distance = snapNudgeDistance(secondBase, move.second_distance, secondInc);
+                        snapPos[secondLower] = secondBase + move.second_distance;
+                    }
+                }
+            }
 
             // Soft-limit gate for nudges. Without this a quick tap could
             // bypass the boundary check that startMotion/_renewMoves enforce.
