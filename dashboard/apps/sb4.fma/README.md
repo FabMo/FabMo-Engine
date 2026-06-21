@@ -13,3 +13,4 @@ Currently the only available documentation is this README and the "CommandRef" P
 ## When Building
  - Include latest:  /js/lib/fabmo.js
  - Update: /assets and /assets/docs (source for Help documents)
+ - Build with: grunt build

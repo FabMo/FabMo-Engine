@@ -17,6 +17,20 @@ function sendCmd(command) {
         var cmd_eval = thisCmd.substring(0,2);
         console.log(thisCmd);
         switch (cmd_eval) {
+            case "VN":
+                var mult_cmds=[
+                thisCmd,
+                'SV'						        // Make Permanent
+                ].join("\n");
+                fabmo.runSBP(mult_cmds);	        // SEND MULTI >>>  
+                break;
+            case "VR":
+                var mult_cmds=[
+                thisCmd,
+                'SV'						        // Make Permanent
+                ].join("\n");
+                fabmo.runSBP(mult_cmds);	        // SEND MULTI >>>  
+                break;
             case "VS":
                 var mult_cmds=[
                 thisCmd,
