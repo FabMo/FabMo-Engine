@@ -633,6 +633,9 @@ engine.getVersion(function (err, version) {
             // input is on the physical pendant.
             setupCannedCutHud(dashboard.engine);
 
+            // PRINT OUTPUT panel at the bottom of the slide-out DRO.
+            setupPrintOutput(dashboard.engine);
+
             setLocationDisplays();
 
             // ------------------------------------------------------------ STATUS HANDLER
@@ -1281,6 +1284,83 @@ function getManualNudgeIncrement(move) {
 // status events for that, gated by the HUD being visible.
 //
 // No buttons: this is a pure readout. All interaction is on the pendant.
+// PRINT OUTPUT panel (bottom of the slide-out DRO). Persistent text lines
+// emitted by the SBP PRINT command, delivered over the data_send bus on the
+// reserved "print" channel; CLEARPRINT arrives on "print_clear". Newest line
+// is prepended at the top. The buffer is mirrored to localStorage so a page
+// reload restores it (cleared only by CLEARPRINT or the clear button).
+function setupPrintOutput(engine) {
+    var STORAGE_KEY = "fabmo_print_output";
+    var MAX_LINES = 200; // hard cap on retained lines
+    var listEl = document.getElementById("print-output-list");
+    var clearBtn = document.getElementById("print-output-clear");
+    if (!listEl) return;
+
+    var lines = []; // newest first
+    try {
+        var saved = window.localStorage.getItem(STORAGE_KEY);
+        if (saved) lines = JSON.parse(saved) || [];
+    } catch (e) {
+        lines = [];
+    }
+
+    function persist() {
+        try {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+        } catch (e) {
+            // storage full/unavailable — non-fatal, panel still works in-memory
+        }
+    }
+
+    function render() {
+        if (!lines.length) {
+            listEl.innerHTML = '<div class="print-output-empty">(no output)</div>';
+            return;
+        }
+        // Build off-DOM, newest at top. textContent (not innerHTML) avoids
+        // HTML injection from job-supplied PRINT strings.
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < lines.length; i++) {
+            var div = document.createElement("div");
+            div.className = "print-output-line";
+            div.textContent = lines[i];
+            frag.appendChild(div);
+        }
+        listEl.innerHTML = "";
+        listEl.appendChild(frag);
+        listEl.scrollTop = 0; // keep the newest (top) line in view
+    }
+
+    function addLine(text) {
+        lines.unshift(String(text));
+        if (lines.length > MAX_LINES) lines.length = MAX_LINES;
+        persist();
+        render();
+    }
+
+    function clear() {
+        lines = [];
+        persist();
+        render();
+    }
+
+    engine.on("data_send", function (message) {
+        if (!message || !message.channel) return;
+        if (message.channel === "print") {
+            var d = message.data;
+            addLine(Array.isArray(d) ? d.join("") : d == null ? "" : d);
+        } else if (message.channel === "print_clear") {
+            clear();
+        }
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", clear);
+    }
+
+    render();
+}
+
 function setupCannedCutHud(engine) {
     var hud = document.getElementById("canned-cut-hud");
     if (!hud) return;

@@ -377,6 +377,27 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	bottom: 0;
 	z-index: 1002;
 	transition: right 0.5s;
+	/* Flex column so the print-output list can absorb leftover height and
+	   scroll internally instead of overflowing past the frame bottom. */
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+}
+
+/* Stack the add-on blocks and let them take the space below the position
+   readout. min-height:0 lets the print list shrink/scroll rather than push
+   the whole panel past the bottom of the frame. */
+.dro-addons {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	min-height: 0;
+}
+#dro-addon-print {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;   /* this add-on grows to fill the remaining height */
+	min-height: 0;
 }
 
 /** Large DRO add-ons or TOOLS **/
@@ -499,6 +520,46 @@ input#override {
 }
 .dro-addon-value.spindle-load.warn .sp-load-fill {
     background-color: #e0b020;
+}
+
+/* PRINT OUTPUT panel — persistent SBP PRINT lines at the bottom of the DRO.
+   Newest line is prepended at the top; the list scrolls once it exceeds
+   ~10 lines. Fed via the data_send 'print' channel; cleared by CLEARPRINT
+   or the clear button. */
+.print-output-clear {
+    margin-left: auto;
+    padding: 0 6px;
+    font-weight: bold;
+    color: #313131;
+    cursor: pointer;
+}
+.print-output-clear:hover {
+    color: #fff;
+    background-color: rgb(105, 125, 64);
+}
+.print-output-list {
+    margin: 2px 8px 18px 8px;   /* 18px bottom margin = gap above the DRO frame bottom */
+    padding: 3px 5px;
+    flex: 1 1 auto;             /* fill the add-on's height (grows with the panel) */
+    min-height: 80px;          /* ~5 lines minimum on short screens */
+    max-height: 220px;         /* cap growth on tall screens */
+    overflow-y: auto;
+    border: 1px solid gray;
+    background-color: #931B14;
+    font-family: "Droid_Sans_Mono", monospace;
+    font-size: 9pt;
+    line-height: 1.35;
+    color: #ffffff;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+.print-output-line {
+    padding: 1px 0;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.15);
+}
+.print-output-empty {
+    opacity: 0.5;
+    font-style: italic;
 }
 .dro-addon-value.spindle-load.over .sp-load-fill {
     background-color: #c83030;

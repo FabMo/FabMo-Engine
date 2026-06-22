@@ -274,7 +274,17 @@
                 </div>
               </div>
 
-            </div>    
+              <div class="dro-addon" id="dro-addon-print">
+                <div class="dro-addon-spacer-row"></div>
+                <div class="dro-addon-label"> PRINT OUTPUT
+                  <span id="print-output-clear" class="print-output-clear" title="Clear the print output (or use CLEARPRINT in a file)">clear</span>
+                </div>
+                <!-- Newest line is prepended at the top; scrolls past ~10 lines.
+                     Fed by the SBP PRINT command via the data_send 'print' channel. -->
+                <div class="print-output-list" id="print-output-list"></div>
+              </div>
+
+            </div>
 
       </aside>
 

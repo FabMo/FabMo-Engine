@@ -1802,6 +1802,47 @@ SBPRuntime.prototype._execute = function (command, callback) {
             // DATA_SEND does NOT break the stack - evaluation happens inline
             return false;
 
+        case "print":
+            // PRINT emits one persistent line to the dashboard output panel.
+            // Args are evaluated now (so &vars/system vars resolve) and
+            // concatenated SB3-style with no separator -- the author controls
+            // spacing via the literal strings. Reuses the data_send bus on a
+            // reserved "print" channel, so no extra socket plumbing is needed.
+            var printParts = (command.args || []).map(function (arg) {
+                var v = this._eval(arg);
+                return v === undefined || v === null ? "" : String(v);
+            }.bind(this));
+            var printLine = printParts.join("");
+            if (this.machine) {
+                this.machine.emit("data_send", {
+                    channel: "print",
+                    data: [printLine],
+                    timestamp: Date.now(),
+                });
+                log.debug("PRINT: " + printLine);
+            }
+            this.pc += 1;
+            if (callback) {
+                setImmediate(callback);
+            }
+            return false;
+
+        case "print_clear":
+            // CLEARPRINT empties the dashboard output panel via the same bus.
+            if (this.machine) {
+                this.machine.emit("data_send", {
+                    channel: "print_clear",
+                    data: [],
+                    timestamp: Date.now(),
+                });
+                log.debug("CLEARPRINT");
+            }
+            this.pc += 1;
+            if (callback) {
+                setImmediate(callback);
+            }
+            return false;
+
         case "event":
             // ON INPUT(N,1) <stmt>: arm a one-shot rising-edge watcher. While
             // armed, emit_move rewrites every G0/G1 as G38.3 with prbin=N. On
