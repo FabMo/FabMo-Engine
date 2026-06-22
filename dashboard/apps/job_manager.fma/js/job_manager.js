@@ -300,7 +300,7 @@ function addQueueEntries(jobs) {
         var abortedBlock = '';
         if (jobIsResumable(recent[i])) {
           abortedBlock =
-            '<div class="aborted-wrap" style="position:absolute; top:24px; right:10px; ' +
+            '<div class="aborted-wrap" style="position:absolute; top:30px; right:10px; ' +
             'display:flex; align-items:center; gap:8px;">' +
               '<span class="aborted-note" style="font-size:12px; color:#a23a2a;">' +
                 'Aborted at line ' + recent[i].final_line +

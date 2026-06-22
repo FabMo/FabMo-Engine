@@ -1214,9 +1214,19 @@ ManualDriver.prototype._onG2Status = function (status) {
         clearTimeout(this.movement_timer);
     }
 
+    // Watchdog: clear the moving flag if status reports stall. On a slow Pi or a
+    // weak link a STAT_STOP can be lagged or dropped, which would otherwise leave
+    // moving stuck true — wedging the nudge queue (taps queue, then drop at
+    // maxNudges) until the keypad is reopened. Also drain any nudges stranded
+    // behind the missed report so taps self-recover instead of needing a retry.
+    // NOTE: bound to the driver — a bare function here makes `this` the Timeout
+    // object (this file is not strict mode), so the flag was never actually cleared.
     this.movement_timer = setTimeout(function () {
         this.moving = false;
-    }, 2000);
+        if (this.fixedQueue.length > 0) {
+            this._handleNudges();
+        }
+    }.bind(this), 2000);
 
     switch (status.stat) {
         case this.driver.STAT_INTERLOCK:

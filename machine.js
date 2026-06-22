@@ -127,6 +127,10 @@ function Machine(control_path, callback) {
         out12: 0,
         fro: 1.0,
         feed: 0.0,
+        // G2 motion mode (0=G0 rapid/jog, 1=G1 feed, 2/3=arc). Must be listed
+        // here or _updateStatusFromDriver drops it before it reaches clients.
+        // Default 1 (feed) so nothing reads as a rapid before the first report.
+        momo: 1,
         job: null,
         info: null,
         unit: null,
@@ -2367,7 +2371,14 @@ Machine.prototype._runNextJob = function (force, callback) {
 
 // Setup a transform-on warning that is available in status
 Machine.prototype._updateStatusFromDriver = function (status) {
-    // Update the base status fields
+    // Update the base status fields.
+    // NOTE: this copies ONLY keys that already exist in this.status (see its
+    // init in the constructor). A G2 status-report field that isn't declared
+    // there is SILENTLY DROPPED here — it reaches the server from the driver
+    // but never propagates to clients, with no error. To expose a new SR field
+    // end-to-end: (1) request it in config/g2_config.js sr:{...} (and ensure
+    // G2core's max-SR size fits it), (2) add it to this.status here. The
+    // websocket layer forwards the whole object, so no change is needed there.
     for (var key in status) {
         if (key in this.status) {
             this.status[key] = status[key];

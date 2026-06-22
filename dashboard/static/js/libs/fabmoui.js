@@ -297,19 +297,29 @@ const { last } = require("underscore");
         });
 
         // Update big DRO Speed Display (Feedrate and Override)
+        // momo is the G2 motion mode: 0 = G0 rapid/jog, 1 = G1 feed,
+        // 2/3 = G2/G3 arc feed. During a rapid the tool moves at the axis jog
+        // velocity, not a programmed feedrate, and G2 keeps reporting the last
+        // real feed — which would mislead the user (often much slower than the
+        // actual jog). So show "---" for rapids and the real feedrate otherwise.
+        const isRapid = status.state != "idle" && Number(status.momo) === 0;
         if (status.state != "idle") {
-            const feedrate = Number(status.feed) * Number(status.fro);
-            $("#fr-inp").css("color", "#42e6f5");
-            if (status.unit === "mm") {
-                $(".feedrate-unit").text("mm/sec");
-                // status.feed from G2 is in mm/min — divide by 60 for mm/sec
-                const displayValue = (feedrate / 60).toFixed(2);
-                $("#fr-inp").text(displayValue);
+            $(".feedrate-unit").text(status.unit === "mm" ? "mm/sec" : "in/sec");
+            if (isRapid) {
+                $("#fr-inp").css("color", "#42e6f5");
+                $("#fr-inp").text("---");
             } else {
-                $(".feedrate-unit").text("in/sec");
-                // status.feed from G2 is in mm/min — divide by 25.4 for in/min, then by 60 for in/sec
-                const displayValue = (feedrate / 1524).toFixed(2);
-                $("#fr-inp").text(displayValue);
+                const feedrate = Number(status.feed) * Number(status.fro);
+                $("#fr-inp").css("color", "#42e6f5");
+                if (status.unit === "mm") {
+                    // status.feed from G2 is in mm/min — divide by 60 for mm/sec
+                    const displayValue = (feedrate / 60).toFixed(2);
+                    $("#fr-inp").text(displayValue);
+                } else {
+                    // status.feed from G2 is in mm/min — divide by 25.4 for in/min, then by 60 for in/sec
+                    const displayValue = (feedrate / 1524).toFixed(2);
+                    $("#fr-inp").text(displayValue);
+                }
             }
         } else {
             var speed = 0;
@@ -348,12 +358,14 @@ const { last } = require("underscore");
                 $("#override").addClass("blinking-text");
             }
             /* do the color */
+            // Don't tint fr-inp by the override during a rapid — G0 ignores
+            // feed override, so the "---" stays its neutral rapid color.
             if (cur_req_fro > 100) {
                 $("#override").css("color", "yellow");
-                $("#fr-inp").css("color", "yellow");
+                if (!isRapid) $("#fr-inp").css("color", "yellow");
             } else if (cur_req_fro < 100) {
                 $("#override").css("color", "blue");
-                $("#fr-inp").css("color", "blue");
+                if (!isRapid) $("#fr-inp").css("color", "blue");
             } else {
                 $("#override").css("color", "gray");
             }

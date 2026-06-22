@@ -1689,7 +1689,7 @@ define(function (require) {
                 var r = s % 60;
                 return m + ":" + (r < 10 ? "0" + r : r);
             };
-            var $countdown = $('<div class="modalCountdown" style="font-size: 1.6em; font-weight: bold; margin-top: 10px; text-align: center;"></div>');
+            var $countdown = $('<div class="modalCountdown" style="font-size: 1.6em; font-weight: bold; color: #55555595; margin-top: 10px; text-align: center;"></div>');
             $countdown.text(fmt(remaining));
             $(".modalDialogue").after($countdown).show();
             Dashboard._pauseTimerInterval = setInterval(function () {
