@@ -1999,6 +1999,40 @@
               </div>
 
               <div class="row collapse">
+                <label> A Max Jerk <span class="tooltip">i
+                  <span class="tooltiptext">
+                    A-axis acceleration for jog control (Motion Keypad and gamepad). <br>
+                    Rotary axes typically need higher values than XY/Z to avoid <br>
+                    a floaty feel at low jog speeds. [default=5000] <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-a_jerk" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min<sup>3</sup></span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label> B Max Jerk <span class="tooltip">i
+                  <span class="tooltiptext">
+                    B-axis acceleration for jog control (Motion Keypad and gamepad). <br>
+                    Rotary axes typically need higher values than XY/Z to avoid <br>
+                    a floaty feel at low jog speeds. [default=5000] <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-b_jerk" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min<sup>3</sup></span>
+                </div>
+              </div>
+
+              <div class="row collapse">
                 <label>Fixed Move Delay <span class="tooltip">i
                   <span class="tooltiptext">
                     How long a button must be held before continuous motion <br>

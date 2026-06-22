@@ -75,13 +75,28 @@ var ABS = {
 //
 // JOG_SPEED_MAX is the speed sent to manualStart when the stick is fully
 // deflected. Intermediate deflections produce proportional speeds.
+//
+// Right-stick A/Z wedge: the right stick disambiguates between A (horizontal
+// jog) and Z (vertical jog) by angle. Within RIGHT_WEDGE_DEG of a cardinal
+// axis the stick drives that axis at full configured speed; the ~70° band
+// between wedges is a dead zone, so the user cannot accidentally drive A and
+// Z simultaneously.
+//
+// Trigger range on the F310 (both modes) is 0..255 — a one-sided analog axis
+// that rests at 0 and saturates at 255 on full pull.
 var TUNABLES = {
     AXIS_MAX: 32767,
-    DEADZONE: 8000,         // ~25% — absorbs worn-stick variable rest position
-    JOG_SPEED_MAX: 60,      // IPM at full deflection (fallback if no config)
-    DPAD_STEP_SIZE: 0.1,    // inches per D-pad press
-    DPAD_SPEED: 30,         // IPM for D-pad fixed moves
+    DEADZONE: 8000,             // ~25% — absorbs worn-stick variable rest position
+    JOG_SPEED_MAX: 60,          // IPM at full deflection (fallback if no config)
+    DPAD_STEP_SIZE: 0.1,        // inches per D-pad press
+    DPAD_SPEED: 30,             // IPM for D-pad fixed moves
+    RIGHT_WEDGE_DEG: 10,        // half-angle of the A/Z active wedges (vs cardinal)
+    TRIGGER_MAX: 255,           // raw range of LT/RT
+    TRIGGER_DEADZONE: 16,       // ~6% — keeps spring-return noise from firing B
 };
+
+// tan(RIGHT_WEDGE_DEG) — precomputed so computeMotion can stay branch-light.
+var RIGHT_WEDGE_TAN = Math.tan((TUNABLES.RIGHT_WEDGE_DEG * Math.PI) / 180);
 
 // Pure: classify a raw axis value into a deflection in [-1.0, +1.0],
 // returning 0 inside the deadzone.
@@ -95,6 +110,15 @@ function deflection(raw) {
     return Math.max(-1.0, (v + dead) / (max - dead));
 }
 
+// Pure: classify a raw trigger value (one-sided, 0..TRIGGER_MAX) into a
+// deflection in [0, 1.0]. Returns 0 below the deadzone.
+function triggerDeflection(raw) {
+    var dead = TUNABLES.TRIGGER_DEADZONE;
+    var max = TUNABLES.TRIGGER_MAX;
+    if (raw <= dead) return 0;
+    return Math.min(1.0, (raw - dead) / (max - dead));
+}
+
 module.exports = {
     MATCHERS: MATCHERS,
     BTN_X: BTN_X,
@@ -102,5 +126,7 @@ module.exports = {
     buttonsForPid: buttonsForPid,
     ABS: ABS,
     TUNABLES: TUNABLES,
+    RIGHT_WEDGE_TAN: RIGHT_WEDGE_TAN,
     deflection: deflection,
+    triggerDeflection: triggerDeflection,
 };

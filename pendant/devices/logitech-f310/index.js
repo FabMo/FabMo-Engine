@@ -9,7 +9,13 @@
 // Mapping (user-requested for v1):
 //   Left stick X       → continuous jog on X
 //   Left stick Y       → continuous jog on Y (inverted: stick up = +Y)
-//   Right stick Y      → continuous jog on Z (inverted: stick up = +Z)
+//   Right stick (wedged): only one axis per gesture, decided by stick angle
+//                        — within ±10° of horizontal → A (stick right = +A)
+//                        — within ±10° of vertical   → Z (stick up    = +Z)
+//                        — everywhere else (~70° dead band per quadrant) → no motion
+//                        This guarantees A and Z can never run together.
+//   Triggers (analog)  → B (proportional to pull): RT = +B, LT = −B
+//                        Right stick wins if both are active.
 //   D-pad              → fixed-step jog on X / Y (0.1" per press)
 //                        OR (when cut mode active): up/down = diameter±,
 //                        left/right = depth±
@@ -23,7 +29,6 @@
 //   RB (held)          → slow-mode modifier (0.2x jog speed)
 //   LSTICK click       → canned-cut mode toggle (enter/exit)
 //   RSTICK click       → canned-cut commit (execute the currently configured cut)
-//   LT / RT            → unbound (reserved)
 //
 // Because the manual runtime's `stop` halts all motion, the adapter enforces
 // single-axis-at-a-time jogging: pushing a new stick away from center stops
@@ -39,8 +44,9 @@ var mapping = require("./mapping");
 var actions = require("../../actions");
 
 // Per-axis raw values from the latest events; updated on every ABS event.
+// LT/RT rest at 0 (one-sided 0..255), sticks rest at 0 (signed -32768..+32767).
 function makeAxisState() {
-    return { LX: 0, LY: 0, RY: 0 };
+    return { LX: 0, LY: 0, RX: 0, RY: 0, LT: 0, RT: 0 };
 }
 
 
@@ -80,6 +86,18 @@ function bindingsFor(BTN, ctx) {
 // Slow-mode (RB held) multiplies the effective jog speed by this fraction.
 var SLOW_MODE_SCALE = 0.2;
 
+// Read an opensbp speed config value (units/sec) safely. Returns null on
+// any miss so callers can fall back.
+function opensbpSpeed(key) {
+    try {
+        var v = config.opensbp && config.opensbp.get && config.opensbp.get(key);
+        if (typeof v === "number" && v > 0) return v;
+    } catch (e) {
+        // fall through
+    }
+    return null;
+}
+
 // Returns the max XY jog speed in IPM (machine units per minute) for full
 // stick deflection. Honors the manual-keypad speed slider, which writes its
 // value to config.machine.manual.xy_speed in IPS. Dashboard multiplies by 60
@@ -95,6 +113,22 @@ function jogSpeed(slowMode) {
         // fall through
     }
     if (base == null) base = mapping.TUNABLES.JOG_SPEED_MAX;
+    return slowMode ? base * SLOW_MODE_SCALE : base;
+}
+
+// A-axis jog speed in units/min from opensbp.movea_speed. Falls back to the
+// XY jog speed if movea_speed isn't configured (avoids zero-speed lockouts on
+// a freshly initialized machine).
+function jogSpeedA(slowMode) {
+    var v = opensbpSpeed("movea_speed");
+    var base = v != null ? v * 60 : jogSpeed(false);
+    return slowMode ? base * SLOW_MODE_SCALE : base;
+}
+
+// B-axis jog speed in units/min from opensbp.moveb_speed (same fallback).
+function jogSpeedB(slowMode) {
+    var v = opensbpSpeed("moveb_speed");
+    var base = v != null ? v * 60 : jogSpeed(false);
     return slowMode ? base * SLOW_MODE_SCALE : base;
 }
 
@@ -132,23 +166,29 @@ function open(machine, ctx) {
     var leftover = Buffer.alloc(0);
 
     // Compute the current target motion from the joystick state:
-    //   Left stick (LX, LY)  → XY at any angle (analog)
-    //   Right stick Y (RY)   → Z (only when no XY input)
-    // Returns null if all sticks are in their deadzones.
+    //   Left stick (LX, LY)            → XY at any angle (analog)
+    //   Right stick (RX, RY) in wedge  → A (horizontal wedge) or Z (vertical wedge)
+    //                                    Wedges are ±RIGHT_WEDGE_DEG of a cardinal.
+    //                                    The ~70° band between wedges is dead.
+    //   Triggers (LT, RT)              → B, proportional to pull (RT=+, LT=−)
     //
-    // The toolpath F is always the configured jog speed (or slowMode * full
-    // when RB is held); the joystick angle is encoded in the unit-vector
-    // ratios sent alongside speed. G2 handles arbitrary-angle G1 segments
-    // natively, so we just feed it the per-segment X/Y components scaled by
-    // those ratios. With F constant past the deadzone, the renew batch size
-    // also stays constant, which keeps the G2 planner queue stable.
+    // Priority: left stick wins, then right stick, then triggers. Returns null
+    // if everything is at rest.
+    //
+    // For analog stick gestures the toolpath F is always the configured jog
+    // speed (or slowMode * full when RB is held); the stick angle is encoded
+    // in the unit-vector ratios sent alongside speed. G2 handles arbitrary-
+    // angle G1 segments natively. With F constant past the deadzone, the
+    // renew batch size stays constant, which keeps the G2 planner queue stable.
     function computeMotion() {
         var defLX = mapping.deflection(axisState.LX);
         var defLY = -mapping.deflection(axisState.LY); // invert: stick up = +Y
+        var defRX = mapping.deflection(axisState.RX);
         var defRY = -mapping.deflection(axisState.RY); // invert: stick up = +Z
-        var maxSpeed = jogSpeed(slowMode);
 
+        // 1. Left stick → XY.
         if (defLX !== 0 || defLY !== 0) {
+            var xySpeed = jogSpeed(slowMode);
             // Always emit X as primary and Y as secondary for joystick motion
             // (even if one component is zero). Keeping the axis pair stable
             // across the cardinal/diagonal boundary means the driver can do
@@ -156,23 +196,67 @@ function open(machine, ctx) {
             var mag = Math.sqrt(defLX * defLX + defLY * defLY);
             return {
                 axis: "X",
-                speed: maxSpeed,                  // toolpath F value (positive)
+                speed: xySpeed,                   // toolpath F value (positive)
                 secondAxis: "Y",
-                secondSpeed: maxSpeed,            // present so the driver sees a second axis
+                secondSpeed: xySpeed,             // present so the driver sees a second axis
                 primaryRatio: defLX / mag,        // signed in [-1, +1]
                 secondaryRatio: defLY / mag,      // signed in [-1, +1]
             };
         }
-        if (defRY !== 0) {
+
+        // 2. Right stick → A or Z, picked by wedge. Inside the wedge the
+        //    cardinal direction wins at full configured speed; the band
+        //    between wedges yields no motion (returns null).
+        if (defRX !== 0 || defRY !== 0) {
+            var absRX = Math.abs(defRX);
+            var absRY = Math.abs(defRY);
+            // Horizontal wedge: |RY| < |RX| * tan(wedge).
+            if (defRX !== 0 && absRY < absRX * mapping.RIGHT_WEDGE_TAN) {
+                return {
+                    axis: "A",
+                    speed: jogSpeedA(slowMode),
+                    secondAxis: null,
+                    secondSpeed: 0,
+                    primaryRatio: defRX > 0 ? 1 : -1,
+                    secondaryRatio: 0,
+                };
+            }
+            // Vertical wedge: |RX| < |RY| * tan(wedge).
+            if (defRY !== 0 && absRX < absRY * mapping.RIGHT_WEDGE_TAN) {
+                return {
+                    axis: "Z",
+                    speed: jogSpeed(slowMode),
+                    secondAxis: null,
+                    secondSpeed: 0,
+                    primaryRatio: defRY > 0 ? 1 : -1,
+                    secondaryRatio: 0,
+                };
+            }
+            // In the dead band between wedges — fall through to null so the
+            // user gets clear feedback that the gesture is ambiguous.
+            return null;
+        }
+
+        // 3. Triggers → B, proportional. RT is positive, LT is negative.
+        //    If both are held, the larger pull wins (no opposing tug-of-war).
+        var defLT = mapping.triggerDeflection(axisState.LT);
+        var defRT = mapping.triggerDeflection(axisState.RT);
+        if (defLT > 0 || defRT > 0) {
+            var bDeflection = defRT >= defLT ? defRT : defLT;
+            var bDir = defRT >= defLT ? 1 : -1;
+            // Proportional: trigger pull scales the toolpath F directly. The
+            // driver tolerates F changes inside the jog cycle (firmware JGV
+            // accepts updated velocity setpoints without stop/restart).
             return {
-                axis: "Z",
-                speed: maxSpeed,
+                axis: "B",
+                speed: jogSpeedB(slowMode) * bDeflection,
                 secondAxis: null,
                 secondSpeed: 0,
-                primaryRatio: defRY > 0 ? 1 : -1,
+                primaryRatio: bDir,
                 secondaryRatio: 0,
             };
         }
+
         return null;
     }
 
@@ -184,13 +268,39 @@ function open(machine, ctx) {
     function emitJoystickState() {
         var defLX = mapping.deflection(axisState.LX);
         var defLY = -mapping.deflection(axisState.LY);
+        var defRX = mapping.deflection(axisState.RX);
         var defRY = -mapping.deflection(axisState.RY);
-        var state = { x: defLX, y: defLY, z: defRY };
+        var defLT = mapping.triggerDeflection(axisState.LT);
+        var defRT = mapping.triggerDeflection(axisState.RT);
+        // a/b are the *resolved* axis signals — what the right stick wedge or
+        // the trigger pair would currently drive — so dashboard indicators
+        // can show the actual selection rather than reproducing the wedge
+        // math. x/y/z keep their raw stick deflection (legacy contract).
+        var a = 0;
+        var z = defRY;
+        if (defRX !== 0 || defRY !== 0) {
+            var absRX = Math.abs(defRX);
+            var absRY = Math.abs(defRY);
+            if (defRX !== 0 && absRY < absRX * mapping.RIGHT_WEDGE_TAN) {
+                a = defRX > 0 ? 1 : -1;
+                z = 0;
+            } else if (defRY !== 0 && absRX < absRY * mapping.RIGHT_WEDGE_TAN) {
+                a = 0;
+                // z keeps its signed deflection
+            } else {
+                a = 0;
+                z = 0;
+            }
+        }
+        var b = defRT >= defLT ? defRT : -defLT;
+        var state = { x: defLX, y: defLY, z: z, a: a, b: b };
         var EPSILON = 0.01;
         if (lastJoystickEmit &&
             Math.abs(state.x - lastJoystickEmit.x) < EPSILON &&
             Math.abs(state.y - lastJoystickEmit.y) < EPSILON &&
-            Math.abs(state.z - lastJoystickEmit.z) < EPSILON) {
+            Math.abs(state.z - lastJoystickEmit.z) < EPSILON &&
+            Math.abs(state.a - lastJoystickEmit.a) < EPSILON &&
+            Math.abs(state.b - lastJoystickEmit.b) < EPSILON) {
             return;
         }
         lastJoystickEmit = state;
@@ -271,8 +381,17 @@ function open(machine, ctx) {
                 case mapping.ABS.LY:
                     axisState.LY = ev.value;
                     break;
+                case mapping.ABS.RX:
+                    axisState.RX = ev.value;
+                    break;
                 case mapping.ABS.RY:
                     axisState.RY = ev.value;
+                    break;
+                case mapping.ABS.LT:
+                    axisState.LT = ev.value;
+                    break;
+                case mapping.ABS.RT:
+                    axisState.RT = ev.value;
                     break;
                 case mapping.ABS.HAT_X:
                     if (ev.value !== 0) {

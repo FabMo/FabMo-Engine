@@ -58,6 +58,16 @@ MachineConfig.prototype.init = function (machine, callback) {
             if (this._cache && this._cache.manual && !("softlimit_cushion" in this._cache.manual)) {
                 this._cache.manual.softlimit_cushion = 0;
             }
+            // Seed manual-mode jerk for rotary axes. Without these, A/B jog
+            // inherits whatever opensbp last wrote, which feels "floaty" at
+            // typical rotary jog speeds. The fallback only fires when the key
+            // is missing — anyone who's already tuned A/B keeps their value.
+            if (this._cache && this._cache.manual && !("a_jerk" in this._cache.manual)) {
+                this._cache.manual.a_jerk = 5000;
+            }
+            if (this._cache && this._cache.manual && !("b_jerk" in this._cache.manual)) {
+                this._cache.manual.b_jerk = 5000;
+            }
             // Seed layout-orientation fields so the Configuration > Layout tab
             // can persist its assignments. util.extend only descends through
             // existing keys, so without these seeds a client POST silently
