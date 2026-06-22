@@ -526,6 +526,9 @@ input#override {
    Newest line is prepended at the top; the list scrolls once it exceeds
    ~10 lines. Fed via the data_send 'print' channel; cleared by CLEARPRINT
    or the clear button. */
+#dro-addon-print .dro-addon-label {
+    padding-left: 8px;   /* small indent before "PRINT OUTPUT" */
+}
 .print-output-clear {
     margin-left: auto;
     padding: 0 6px;
