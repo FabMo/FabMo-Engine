@@ -6,11 +6,16 @@
 // its TRIG_READ_FREQ register. If the read succeeds (no exception, sensible
 // length), the template matches the connected drive.
 //
-// Probe order matters. Delta uses high-range registers (0x2100+) that
-// Lenze/Yaskawa cleanly reject with Modbus exception 02 (Illegal Data
-// Address), so trying Delta first is safe. Yaskawa and Lenze both use
-// low-numbered registers but at different addresses, so a successful read
-// at one drive's address will typically fail at the other.
+// Probe order matters. Delta uses high-range registers (0x2100+) that most
+// Lenze/Yaskawa drives cleanly reject with Modbus exception 02 (Illegal
+// Data Address). Yaskawa V1000 is an exception — it answers reads in that
+// range with all-zero data instead of rejecting, which would falsely match
+// the Delta template. Two safeguards rule that out:
+//   1) Any TRIG read that returns all zeros is rejected as a non-match
+//      (a real drive answering its own template returns at least one
+//      non-zero status/setpoint bit).
+//   2) A template may define a SIGNATURE_REGISTER; if set, a second read
+//      is issued there and must return non-zero for the match to stand.
 
 const fs = require("fs");
 const path = require("path");
@@ -66,12 +71,33 @@ async function tryTemplate(ttyPath, templateName, address, parity) {
         client.setTimeout(READ_TIMEOUT_MS);
 
         const res = await client.readHoldingRegisters(s.Registers.TRIG_READ_FREQ, s.READ_LENGTH || 1);
-        if (res && Array.isArray(res.data) && res.data.length > 0) {
-            log.info(`Probe: ${templateName} responded at addr ${addr} parity ${par} with ${res.data.length} registers: [${res.data.join(", ")}]`);
-            return tpl;
+        if (!res || !Array.isArray(res.data) || res.data.length === 0) {
+            log.info(`Probe: ${templateName} addr ${addr} parity ${par} read returned no data`);
+            return null;
         }
-        log.info(`Probe: ${templateName} addr ${addr} parity ${par} read returned no data`);
-        return null;
+        log.info(`Probe: ${templateName} responded at addr ${addr} parity ${par} with ${res.data.length} registers: [${res.data.join(", ")}]`);
+
+        const sigReg = s.Registers && s.Registers.SIGNATURE_REGISTER;
+        if (sigReg != null) {
+            const sigLen = s.Registers.SIGNATURE_LENGTH || 1;
+            try {
+                const sig = await client.readHoldingRegisters(sigReg, sigLen);
+                const data = sig && Array.isArray(sig.data) ? sig.data : [];
+                if (data.length === 0 || data.every(v => v === 0)) {
+                    log.info(`Probe: ${templateName} signature reg ${sigReg} returned all-zero [${data.join(", ")}] — rejecting match`);
+                    return null;
+                }
+                log.info(`Probe: ${templateName} signature reg ${sigReg} = [${data.join(", ")}] — match confirmed`);
+            } catch (e) {
+                log.info(`Probe: ${templateName} signature reg ${sigReg} read failed: ${e.message} — rejecting match`);
+                return null;
+            }
+        } else if (res.data.every(v => v === 0)) {
+            log.info(`Probe: ${templateName} TRIG read was all-zero with no SIGNATURE_REGISTER to confirm — rejecting (likely a foreign drive that didn't exception)`);
+            return null;
+        }
+
+        return tpl;
     } catch (e) {
         log.info(`Probe: ${templateName} addr ${addr} parity ${par} failed: ${e.message}`);
         return null;
