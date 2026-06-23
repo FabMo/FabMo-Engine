@@ -60,7 +60,7 @@ function getUsrResource(remote, local) { // just a simplified version of fabmo.n
 // Display after entry of simple Command in Console
 function postSbpAction(action) {
   setTimeout(function() { 
-    $("#file_txt_area").text("-------Running:" + '\n' + "    " + action); }, 
+    $("#file_txt_area").text(window.t("sb4.status.running_prefix") + '\n' + "    " + action); },
     200);
 }
 
@@ -103,23 +103,23 @@ function displayFillIn(command, title, info) {
     $(".fi-listing").empty();
     $("#fill_in_table").css("overflow-y", "scroll");
 
-    if (title.substring(0,4) === "File") { // handle an FP run file case
+    if (title === window.t("sb4.fillin.title_file_ready")) { // handle an FP run file case
         $("#fill_in_table").css("overflow-y", "hidden");
         $('#fill_in_table').css("visibility", "hidden");
         $('#btn_adv_file').show();
-        $('#btn_ok_run').text("OK-Run")
+        $('#btn_ok_run').text(window.t("sb4.fillin.ok_run"))
         $('#btn_ok_run').focus();
-    } else if (title.substring(0,5) === "Rerun") { // handle an FL run last file case
+    } else if (title === window.t("sb4.fillin.title_rerun_ready")) { // handle an FL run last file case
         $("#fill_in_table").css("overflow-y", "hidden");
         $('#fill_in_table').css("visibility", "hidden");
         $('#btn_adv_file').show();
-        $('#btn_ok_run').text("OK-Run")
+        $('#btn_ok_run').text(window.t("sb4.fillin.ok_run"))
         $('#btn_ok_run').focus();
     } else {
         $("#fill_in_table").css("overflow-y", "scroll");
         $('#fill_in_table').css("visibility", "visible");
         $('#btn_adv_file').hide();
-        $('#btn_ok_run').text("Run Command");
+        $('#btn_ok_run').text(window.t("sb4.fillin.run_command"));
         console.log(cmds[command])
         param_num = 0;
         cmds[command].params.forEach(function(entry) {
@@ -153,7 +153,7 @@ function displayFillIn(command, title, info) {
 
     $('#fi_cur_info').empty();
     if (info === "") {
-        $('#fi_cur_info').append("Editing Parameters: complete required(*) fields; over-write defaults as needed; and/or provide {optional} values.")
+        $('#fi_cur_info').append(window.t("sb4.fillin.edit_params_info"))
     } else {
         $('#fi_cur_info').append(info);
     }
@@ -173,7 +173,7 @@ function getaFile(command) {
                 // Set the global variable for the file path and name
                 window.curFilePath = result.filePath;
                 window.curFilename = result.filePath.split('/').pop();
-                displayFillIn("", "File Ready to Run", window.curFilename);
+                displayFillIn("", window.t("sb4.fillin.title_file_ready"), window.curFilename);
             }
         });
     } else {
@@ -181,7 +181,7 @@ function getaFile(command) {
         $("#cmd-input").val(command);
         $('#file').val('');
         $('#file').trigger('click');
-        $("#cmd-input").val("... downloading file to tool ...");
+        $("#cmd-input").val(window.t("sb4.status.downloading_file"));
     }
 }
 window.getaFile = getaFile;
@@ -285,7 +285,7 @@ function processCommandInput(command) {
             getaFile(command);  // get a file to run
             break;
         case "FL": 
-            $("#cmd-input").val("... downloading file to tool ...");  // ... just a little message to show we're working
+            $("#cmd-input").val(window.t("sb4.status.downloading_file"));  // ... just a little message to show we're working
             fabmo.clearJobQueue(function (err, data) {
                 if (err) {
                     cosole.log(err);
@@ -303,10 +303,10 @@ function processCommandInput(command) {
                                         console.log("Job resubmitted successfully:", lastJob.name);
                                     }
                                 });
-                                displayFillIn("", "Rerun File; Ready to Run", lastJob.name);
+                                displayFillIn("", window.t("sb4.fillin.title_rerun_ready"), lastJob.name);
                             } else {
                                 console.log("No recent job to rerun.");
-                                fabmo.notify("info", "No recent job to rerun!");
+                                fabmo.notify("info", window.t("sb4.notify.no_recent_rerun"));
                                 $('#cmd-input').val("");    // remove 
                             }
                         }
@@ -326,7 +326,7 @@ function processCommandInput(command) {
                         });
                     } else {
                         console.log("No recent job to edit.");
-                        fabmo.notify("info", "No recent job to edit!");
+                        fabmo.notify("info", window.t("sb4.notify.no_recent_edit"));
                         $('#cmd-input').val("");    // remove 
                     }
                 }

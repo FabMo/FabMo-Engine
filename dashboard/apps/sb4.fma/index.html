@@ -187,23 +187,23 @@
                         <span data-i18n="sb4.workflow.set_z_zero">B - Set Z Zero</span>
                         <span class="tog-homed" id="tog-z-homed" style="color: grey;">&#10680;</span>
                     </button>
-                    <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" title="Pick a Single Part File to Cut; FP">
-                        <strong>C - CUT PART</strong>
+                    <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" data-i18n-title="sb4.workflow.cut_part_tooltip" title="Pick a Single Part File to Cut; FP">
+                        <strong data-i18n="sb4.workflow.cut_part">C - CUT PART</strong>
                     </button>
-                    <button type="button" class="macro-button success button small medium-expanded" id="to_job_manager" title="Advanced: Select and Order Parts in Job Manager">
+                    <button type="button" class="macro-button success button small medium-expanded" id="to_job_manager" data-i18n-title="sb4.workflow.manage_parts_tooltip" title="Advanced: Select and Order Parts in Job Manager">
                         <span class="icon"></span>
-                        <strong>(D) - MANAGE PARTS</strong>
+                        <strong data-i18n="sb4.workflow.manage_parts">(D) - MANAGE PARTS</strong>
                     </button>
               </div>
 
               <div class="other-macros">
               <!-- <label class="panel-label show-for-medium-up" title="Access other helpful macros and quick command calls; User configurable in ..."><strong>Other Helpful Macros</strong></label> -->
-              <label class="panel-label show-for-medium-up"><strong>Other Helpful Macros</strong></label>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button1" title="Jog Home X & Y; Z to Safe Height (MH moves home at feed rate)">JH</button>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button2" title="Zero Z axis; ZZ (ZT to fully zero all axes and offsets)">ZZ</button>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button3" title="Move to Park location; C79 or Macro79">Park</button>
-              <button type="button" class="macro-button secondary button small medium-expanded" id="third_macro_button" title="Runs Spindle warm-up cycle; C5 or Macro5">Spindle Warm Up</button>
-              <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button"title="Square Gantry against the end stops; C10 or Macro10">Square Gantry</button>
+              <label class="panel-label show-for-medium-up"><strong data-i18n="sb4.macros.other_helpful">Other Helpful Macros</strong></label>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button1" data-i18n-title="sb4.macros.jh_tooltip" title="Jog Home X & Y; Z to Safe Height (MH moves home at feed rate)">JH</button>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button2" data-i18n-title="sb4.macros.zz_tooltip" title="Zero Z axis; ZZ (ZT to fully zero all axes and offsets)">ZZ</button>
+              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button3" data-i18n-title="sb4.macros.park_tooltip" title="Move to Park location; C79 or Macro79" data-i18n="sb4.macros.park">Park</button>
+              <button type="button" class="macro-button secondary button small medium-expanded" id="third_macro_button" data-i18n-title="sb4.macros.spindle_warmup_tooltip" title="Runs Spindle warm-up cycle; C5 or Macro5" data-i18n="sb4.macros.spindle_warmup">Spindle Warm Up</button>
+              <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button" data-i18n-title="sb4.macros.square_gantry_tooltip" title="Square Gantry against the end stops; C10 or Macro10" data-i18n="sb4.macros.square_gantry">Square Gantry</button>
               <!-- <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button">Test Cut (C210)</button> -->
               <!--<button type="button" class="macro-button secondary button small medium-expanded" id="fifth_macro_button">First Project - Bit Holder (C211)</button> -->
               </div>
@@ -218,19 +218,19 @@
                 <form>
                 <div class="row">
                     <div class="small-11  medium-11 large-11 columns">
-                    <label class="show-for-small-only"><strong>Cmd</strong></label>
-                    <h9 class="panel-label show-for-medium-up cmds"><strong>Individual Command Input</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
-                        Run specific OpenSBP Commands. Select from menu above or type directly here.<br><br> See: Help > <span class = "tooltiplink" id="cmd-ref">Command Reference</span><br><br></span></span>
+                    <label class="show-for-small-only"><strong data-i18n="sb4.cmd.label_short">Cmd</strong></label>
+                    <h9 class="panel-label show-for-medium-up cmds"><strong data-i18n="sb4.cmd.panel_label">Individual Command Input</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
+                        <span data-i18n="sb4.cmd.tooltip">Run specific OpenSBP Commands. Select from menu above or type directly here.</span><br><br> See: Help > <span class = "tooltiplink" id="cmd-ref" data-i18n="sb4.cmd.command_reference">Command Reference</span><br><br></span></span>
                     </h9>
-                    <img class="right" id="vid-button" "vid-button-off" title="Toggle Video" style="height:20px; width:20px; position:absolute; top:5px; right:-40px" src="./assets/icon_video.png">
+                    <img class="right" id="vid-button" "vid-button-off" data-i18n-title="sb4.cmd.toggle_video_tooltip" title="Toggle Video" style="height:20px; width:20px; position:absolute; top:5px; right:-40px" src="./assets/icon_video.png">
                     <form><strong>
-                        <input class="cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" font-weight="bold" placeholder="2-Letter OpenSBP Command, {followed by parameters ...}" value="" />
+                        <input class="cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" font-weight="bold" data-i18n-placeholder="sb4.cmd.input_placeholder" placeholder="2-Letter OpenSBP Command, {followed by parameters ...}" value="" />
                 <!--      <input class="show-for-medium-up cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" placeholder="2-Letter OpenSBP Command, {followed by parameters ...}" value="" />
                         <input class="show-for-small-only cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" placeholder="{2-Letters...}" value="" /> -->
                     </strong></form>
                     </div>
                     <div class="medium-1 large-1 columns">
-                        <button type="button" class="secondary button small hide-for-small-only medium-expanded" title="Get Command Help in OpenSBP Reference." id="cmd-help">?--</button>
+                        <button type="button" class="secondary button small hide-for-small-only medium-expanded" data-i18n-title="sb4.cmd.help_tooltip" title="Get Command Help in OpenSBP Reference." id="cmd-help">?--</button>
                     </div>
                 </div>
                 
@@ -264,22 +264,22 @@
 
                         <div class="logo-box small-6 medium-4 large-4 columns">
                             <span class="tooltip tooltip-logo">i<span class="tooltiptext">
-                               This app is ShopBot's CNC interface for setting up your tool and
-                               cutting Part Files (left panel). You can also send individual Commands in the OpenSBP language (top right panel). See HELP > 
-                               <span class = "tooltiplink" id="cmd-ref2">Command Reference</span> for info on OpenSBP language.</span></span>
-                            <img panel-label class="top" tabindex="1" id="sb-logo" src="./assets/image6b_transparent.png">   
-                            <p class="small show-for-medium-up text-left at-foot">[ ESC backs out; 'K' opens Keypad; F11 (or right-click) exits fullscreen ]</p>
+                               <span data-i18n="sb4.logo.tooltip">This app is ShopBot's CNC interface for setting up your tool and
+                               cutting Part Files (left panel). You can also send individual Commands in the OpenSBP language (top right panel). See HELP ></span>
+                               <span class = "tooltiplink" id="cmd-ref2" data-i18n="sb4.cmd.command_reference">Command Reference</span> <span data-i18n="sb4.logo.tooltip_suffix">for info on OpenSBP language.</span></span></span>
+                            <img panel-label class="top" tabindex="1" id="sb-logo" src="./assets/image6b_transparent.png">
+                            <p class="small show-for-medium-up text-left at-foot" data-i18n="sb4.hints.shortcuts">[ ESC backs out; 'K' opens Keypad; F11 (or right-click) exits fullscreen ]</p>
                         </div> 
 
                         <div class="move-speed-box small-11 medium-8 large-8 columns">
                             <div class="row">
                                 <div class="large-2 medium-3 small-12 columns">
-                                    <label class="left speed-labels show-for-medium-up" style="white-space: nowrap;">Default:&nbsp;<span class="tooltip">i<span class="tooltiptext">
+                                    <label class="left speed-labels show-for-medium-up" style="white-space: nowrap;"><span data-i18n="sb4.speed.default_label">Default:</span>&nbsp;<span class="tooltip">i<span class="tooltiptext" data-i18n-html="sb4.speed.default_tooltip">
                                         Default speeds are used for Move and Jog commands entered from <br>
                                         the Command Input box above, or from the Editor, or Files in which <br>
-                                        speeds are not specified.<br></span></span>  
-                                    </span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Move<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Speed</label>
-                                    <label class="left speed-labels show-for-small-only">Move Speed</label>
+                                        speeds are not specified.<br></span></span>
+                                    </span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="sb4.speed.move_word">Move</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="sb4.speed.speed_word">Speed</span></label>
+                                    <label class="left speed-labels show-for-small-only" data-i18n="sb4.speed.move_speed">Move Speed</label>
                                 </div>
                                 <div class="large-9 medium-9 small-12 columns">
                                     <div class="speed-inputs-container">
@@ -309,8 +309,8 @@
 
                             <div class="row">
                                 <div class="large-2 medium-3 small-12 columns">
-                                    <label class="left speed-labels show-for-medium-up"><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Jog<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Speed</label>
-                                    <label class="left speed-labels show-for-small-only">Jog Speed</label>
+                                    <label class="left speed-labels show-for-medium-up"><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="sb4.speed.jog_word">Jog</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="sb4.speed.speed_word">Speed</span></label>
+                                    <label class="left speed-labels show-for-small-only" data-i18n="sb4.speed.jog_speed">Jog Speed</label>
                                 </div>
                                 <div class="large-9 medium-9 small-12 columns">
                                     <div class="speed-inputs-container">
@@ -338,7 +338,7 @@
                                 </div>
                             </div>
                             <div>
-                                <p class="small text-left at-foot show-for-medium-up" id="copyright">© Copyright ShopBot Tools 2026.</p>
+                                <p class="small text-left at-foot show-for-medium-up" id="copyright"><span data-i18n="sb4.footer.copyright">© Copyright ShopBot Tools 2026.</span></p>
                             </div>
                         </div>
                     </div>
@@ -354,8 +354,8 @@
     </div>
 
     
-  <a href="#" data-reveal-id="moPad">beta MOtion-PAD</a><br>
-  <a href="#" data-reveal-id="insertStream">beta INSERT</a>
+  <a href="#" data-reveal-id="moPad" data-i18n="sb4.beta.motion_pad_link">beta MOtion-PAD</a><br>
+  <a href="#" data-reveal-id="insertStream" data-i18n="sb4.beta.insert_link">beta INSERT</a>
 
 
  <!-- needed this setting here to prevent closing; left in later for redundancy -->
@@ -366,7 +366,7 @@
     <!-- Fill-In Sheet -->
     <div id="fi-modal" class="reveal-modal" data-reveal role="dialog">
       <form autocomplete="off">
-        <h3 class="fi-title" id="fi_modal_title">File Ready to Run</h3>
+        <h3 class="fi-title" id="fi_modal_title" data-i18n="sb4.fillin.title_file_ready">File Ready to Run</h3>
         <p class="fi-title" id="fi_cur_info"></p>
         
         <div id="fi_container">
@@ -376,9 +376,9 @@
         </div>
 
         <ul class="button-group">
-            <li><a class="secondary button fi-button" role="button" id="btn_ok_run" tabindex="0" style="background-color:green; color:white">OK-RUN</a></li>
-            <li><a class="secondary button fi-button" role="button" id="btn_adv_file" title="handle in Job Manager; Queue, Preview, Edit, Scale, etc..">Advanced Functions</a></li>
-            <li><a class="secondary button fi-button" role="button" id="btn_cmd_quit">Close</a></li>
+            <li><a class="secondary button fi-button" role="button" id="btn_ok_run" tabindex="0" style="background-color:green; color:white" data-i18n="sb4.fillin.ok_run">OK-RUN</a></li>
+            <li><a class="secondary button fi-button" role="button" id="btn_adv_file" data-i18n-title="sb4.fillin.advanced_tooltip" title="handle in Job Manager; Queue, Preview, Edit, Scale, etc.." data-i18n="sb4.fillin.advanced">Advanced Functions</a></li>
+            <li><a class="secondary button fi-button" role="button" id="btn_cmd_quit" data-i18n="sb4.fillin.close">Close</a></li>
         </ul>
       </form>
 
@@ -387,15 +387,15 @@
 
     <!-- Provide Info Sheets in Help -->
     <div id="helpModal" class="reveal-modal" data-reveal role="dialog">
-        <h2>Config Values and Persistent Variables ('esc' to close)</h2>
-        <p> <pre id="full-config">No configuration loaded yet.</pre> </p>
+        <h2 data-i18n="sb4.help.config_values_title">Config Values and Persistent Variables ('esc' to close)</h2>
+        <p> <pre id="full-config" data-i18n="sb4.help.no_config_loaded">No configuration loaded yet.</pre> </p>
     </div>
 
 
     <!-- INSERT BETA -->
     <div id="insertStream" class="reveal-modal" data-reveal role="dialog">
-        <h2 id="fi_modal_title">Insert Command Into G2 Stream:</h2>
-        <input class="inserts" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="insert-input" font-weight="bold" placeholder="RAW: g2 json OR g-code (& = end-line; ^ = kill; # = reset-G2)" value="" />
+        <h2 id="fi_modal_title" data-i18n="sb4.insert.title">Insert Command Into G2 Stream:</h2>
+        <input class="inserts" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="insert-input" font-weight="bold" data-i18n-placeholder="sb4.insert.placeholder" placeholder="RAW: g2 json OR g-code (& = end-line; ^ = kill; # = reset-G2)" value="" />
     </div>
 
     <!-- MOTION PAD BETA -->
@@ -422,7 +422,7 @@
             </div>
 
             <div class="small-1 medium-1 large-1 columns">
-                <a id="padCloseX" class="close-reveal-modal" aria-label="Close" style="z-index:999">&#215;</a>
+                <a id="padCloseX" class="close-reveal-modal" data-i18n-aria-label="sb4.fillin.close" aria-label="Close" style="z-index:999">&#215;</a>
             </div>
 
         </div>

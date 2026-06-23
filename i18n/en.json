@@ -522,7 +522,100 @@
             "home_xy": "A - Home X & Y",
             "home_xy_tooltip": "Home the X and Y Axes; C3 or Macro",
             "set_z_zero": "B - Set Z Zero",
-            "set_z_zero_tooltip": "Set Z Zero; C2 or Macro2"
+            "set_z_zero_tooltip": "Set Z Zero; C2 or Macro2",
+            "cut_part": "C - CUT PART",
+            "cut_part_tooltip": "Pick a Single Part File to Cut; FP",
+            "manage_parts": "(D) - MANAGE PARTS",
+            "manage_parts_tooltip": "Advanced: Select and Order Parts in Job Manager"
+        },
+        "macros": {
+            "other_helpful": "Other Helpful Macros",
+            "jh_tooltip": "Jog Home X & Y; Z to Safe Height (MH moves home at feed rate)",
+            "zz_tooltip": "Zero Z axis; ZZ (ZT to fully zero all axes and offsets)",
+            "park": "Park",
+            "park_tooltip": "Move to Park location; C79 or Macro79",
+            "spindle_warmup": "Spindle Warm Up",
+            "spindle_warmup_tooltip": "Runs Spindle warm-up cycle; C5 or Macro5",
+            "square_gantry": "Square Gantry",
+            "square_gantry_tooltip": "Square Gantry against the end stops; C10 or Macro10"
+        },
+        "cmd": {
+            "label_short": "Cmd",
+            "panel_label": "Individual Command Input",
+            "tooltip": "Run specific OpenSBP Commands. Select from menu above or type directly here.",
+            "command_reference": "Command Reference",
+            "toggle_video_tooltip": "Toggle Video",
+            "input_placeholder": "2-Letter OpenSBP Command, {followed by parameters ...}",
+            "help_tooltip": "Get Command Help in OpenSBP Reference.",
+            "unnamed_command": "Unnamed"
+        },
+        "logo": {
+            "tooltip": "This app is ShopBot's CNC interface for setting up your tool and cutting Part Files (left panel). You can also send individual Commands in the OpenSBP language (top right panel). See HELP >",
+            "tooltip_suffix": "for info on OpenSBP language."
+        },
+        "hints": {
+            "shortcuts": "[ ESC backs out; 'K' opens Keypad; F11 (or right-click) exits fullscreen ]"
+        },
+        "speed": {
+            "default_label": "Default:",
+            "default_tooltip": "Default speeds are used for Move and Jog commands entered from <br> the Command Input box above, or from the Editor, or Files in which <br> speeds are not specified.<br>",
+            "move_speed": "Move Speed",
+            "jog_speed": "Jog Speed",
+            "move_word": "Move",
+            "speed_word": "Speed",
+            "jog_word": "Jog"
+        },
+        "footer": {
+            "copyright": "© Copyright ShopBot Tools 2026."
+        },
+        "beta": {
+            "motion_pad_link": "beta MOtion-PAD",
+            "insert_link": "beta INSERT"
+        },
+        "fillin": {
+            "title_file_ready": "File Ready to Run",
+            "title_rerun_ready": "Rerun File; Ready to Run",
+            "ok_run": "OK-RUN",
+            "run_command": "Run Command",
+            "advanced": "Advanced Functions",
+            "advanced_tooltip": "handle in Job Manager; Queue, Preview, Edit, Scale, etc..",
+            "close": "Close",
+            "edit_params_info": "Editing Parameters: complete required(*) fields; over-write defaults as needed; and/or provide {optional} values."
+        },
+        "help": {
+            "config_values_title": "Config Values and Persistent Variables ('esc' to close)",
+            "no_config_loaded": "No configuration loaded yet."
+        },
+        "insert": {
+            "title": "Insert Command Into G2 Stream:",
+            "placeholder": "RAW: g2 json OR g-code (& = end-line; ^ = kill; # = reset-G2)"
+        },
+        "status": {
+            "running_prefix": "-------Running:",
+            "downloading_file": "... downloading file to tool ..."
+        },
+        "job": {
+            "description_from_sb4": "... called from Sb4"
+        },
+        "notify": {
+            "no_job_history": "Could not get job history",
+            "no_pending_jobs": "No pending jobs found",
+            "fetch_pending_failed": "Failed to fetch pending job file:",
+            "no_recent_rerun": "No recent job to rerun!",
+            "no_recent_edit": "No recent job to edit!"
+        },
+        "alert": {
+            "haptics_not_loaded": "The haptics.js library is not loaded."
+        },
+        "mopad": {
+            "zoom_label": "ZOOM: ",
+            "zoom_tip": "Click for Reset to Full View; Ctl-Scroll to Zoom",
+            "snap_label": "SNAP",
+            "snap_tip": "SNAP to intersections",
+            "cycle_label": "Cycle:  X-Y  [X-Y-Z]",
+            "cycle_tip": "Cycle between 2 or 3 axes on click/tap/space",
+            "smallest_moves_label": "Smallest Moves: ",
+            "smallest_moves_tip": "Set smallest move at normal Zoom"
         }
     },
     "toolbox": {
