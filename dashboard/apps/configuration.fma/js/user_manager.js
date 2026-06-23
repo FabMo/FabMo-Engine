@@ -31,13 +31,13 @@ function setupUserManager() {
       fabmo.modifyUser(user_info,function(err){
         if(err)fabmo.notify('error',err);
         else{
-          fabmo.notify('success',"password successfully changed for user "+current_user.username);
+          fabmo.notify('success',window.t('config.users_tab.password_changed')+current_user.username);
         }
         setupUserManager();
       });
     }
     else{
-      fabmo.notify('error',"passwords don't match");
+      fabmo.notify('error',window.t('config.users_tab.passwords_no_match'));
     }
   });
 }
@@ -53,24 +53,24 @@ function createAdminPanel(){
   $('#add-user').one('click',function() { //add new user
     form=[
       '<div id="adduser-modal" class="reveal-modal medium" data-reveal>',
-        '<div id="modal-title">Add User</div>',
+        '<div id="modal-title">'+window.t('config.users_tab.add_user_title')+'</div>',
         '<div id="adduser-form">',
             '<div class="row">',
-                '<label for="adduser-username">Username :</label>',
+                '<label for="adduser-username">'+window.t('config.users_tab.username_label')+'</label>',
                 '<input id="adduser-username" type="text" name="adduser-username" value="" />',
             '</div>',
             '<div class="row">',
-                '<label for="adduser-password">New Password :</label>',
+                '<label for="adduser-password">'+window.t('config.users_tab.new_password_label')+'</label>',
                 '<input id="adduser-password" type="password" name="adduser-password" value="" />',
             '</div>',
             '<div class="row">',
-                '<label for="adduser-name">Confirm New Password:</label>',
+                '<label for="adduser-name">'+window.t('config.users_tab.confirm_password_label')+'</label>',
                 '<input id="adduser-passwordConfirmation" type="password" name="adduser-passwordConfirmation" value="" />',
             '</div>',
             '<div class="row">',
                  '<div class="right">',
-                     '<button id="adduser-cancel" class="button radius alert">Cancel</button>',
-                     '<button id="adduser-submit" class="button radius success">Add User</button>',
+                     '<button id="adduser-cancel" class="button radius alert">'+window.t('config.modal.cancel')+'</button>',
+                     '<button id="adduser-submit" class="button radius success">'+window.t('config.users_tab.add_user_submit')+'</button>',
                  '</div>',
              '</div>',
          '</div>',
@@ -95,12 +95,12 @@ function createAdminPanel(){
           if (err) {
               fabmo.notify('error', err);
           }else{
-              fabmo.notify('success', 'User '+user.username+' created !');
+              fabmo.notify('success', window.t('config.users_tab.user_created_prefix')+user.username+window.t('config.users_tab.user_created_suffix'));
           }
           createAdminPanel();
         });
       }else{
-        fabmo.notify('error',"passwords don't match"+event);
+        fabmo.notify('error',window.t('config.users_tab.passwords_no_match')+event);
       }
       $('#adduser-modal').foundation('reveal', 'close');
       $("#adduser-form").trigger('reset');
@@ -164,16 +164,16 @@ function refreshUsersListView(users){
 
       $('#delete_' + userid).on('click',function() { //delete button listener
         fabmo.showModal({
-          title : 'Delete user '+ user.username,
-          message : 'Are you sure you want to delete this user?',
-          okText : 'Yes',
-          cancelText : 'No',
+          title : window.t('config.users_tab.delete_user_title')+ user.username,
+          message : window.t('config.users_tab.delete_user_message'),
+          okText : window.t('config.modal.yes'),
+          cancelText : window.t('config.modal.no'),
           ok : function() {
             fabmo.deleteUser({user:user}, function(err) {
             if (err) {
               fabmo.notify('error', err);
             }else{
-              fabmo.notify('success','user '+user.username+' deleted !')
+              fabmo.notify('success',window.t('config.users_tab.user_deleted_prefix')+user.username+window.t('config.users_tab.user_deleted_suffix'))
             }
             createAdminPanel();
             });
@@ -193,7 +193,7 @@ function refreshUsersListView(users){
         if (err) {
           fabmo.notify('error', err);
         }else{
-          fabmo.notify('success','admin permission granted to user '+user.username)
+          fabmo.notify('success',window.t('config.users_tab.admin_granted_notify')+user.username)
         }
         createAdminPanel();
         });
@@ -210,7 +210,7 @@ function refreshUsersListView(users){
         if (err) {
           fabmo.notify('error', err);
         }else{
-          fabmo.notify('success','admin permission removed for user '+user.username)
+          fabmo.notify('success',window.t('config.users_tab.admin_revoked_notify')+user.username)
         }
         createAdminPanel();
         });
@@ -219,20 +219,20 @@ function refreshUsersListView(users){
       $('#changepassword_' + userid).on('click',function() { //change user password
         form=[
           '<div id="changepassword-modal" class="reveal-modal medium" data-reveal>',
-            '<div id="modal-title">Change user '+user.username+'\'s password</div>',
+            '<div id="modal-title">'+window.t('config.users_tab.change_password_title_prefix')+user.username+window.t('config.users_tab.change_password_title_suffix')+'</div>',
             '<div id="changepassword-form">',
                 '<div class="row">',
-                    '<label for="changepassword-password">New Password :</label>',
+                    '<label for="changepassword-password">'+window.t('config.users_tab.new_password_label')+'</label>',
                     '<input id="changepassword-password" type="password" name="changepassword-password" value="" />',
                 '</div>',
                 '<div class="row">',
-                    '<label for="changepassword-name">Confirm New Password:</label>',
+                    '<label for="changepassword-name">'+window.t('config.users_tab.confirm_password_label')+'</label>',
                     '<input id="changepassword-passwordConfirmation" type="password" name="changepassword-passwordConfirmation" value="" />',
                 '</div>',
                 '<div class="row">',
                      '<div class="right">',
-                         '<button id="changepassword-cancel" class="button radius alert">Cancel</button>',
-                         '<button id="changepassword-submit" class="button radius success">Change Password</button>',
+                         '<button id="changepassword-cancel" class="button radius alert">'+window.t('config.modal.cancel')+'</button>',
+                         '<button id="changepassword-submit" class="button radius success">'+window.t('config.users_tab.change_password_submit')+'</button>',
                      '</div>',
                  '</div>',
              '</div>',
@@ -256,12 +256,12 @@ function refreshUsersListView(users){
               if (err) {
                   fabmo.notify('error', err);
               }else{
-                  fabmo.notify('success',"password successfully changed for user "+user.username);
+                  fabmo.notify('success',window.t('config.users_tab.password_changed')+user.username);
               }
               createAdminPanel();
             });
           }else{
-            fabmo.notify('error',"passwords don't match"+event);
+            fabmo.notify('error',window.t('config.users_tab.passwords_no_match')+event);
           }
           $('#changepassword-modal').foundation('reveal', 'close');
           $("#changepassword-form").trigger('reset');

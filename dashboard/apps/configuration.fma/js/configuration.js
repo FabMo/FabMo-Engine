@@ -212,7 +212,7 @@ var configData = null;
 $('#btn-backup').click(function(evt) {
     fabmo.getConfig(function(err,conf){
         if(err){
-            fabmo.notify('error','cannot backup the config !');
+            fabmo.notify('error',window.t('config.notify.backup_failed'));
         }else{
             fabmo._download(JSON.stringify(conf), 'fabmo_config_backup.fmc','text/json');
         }
@@ -229,7 +229,7 @@ $("#restore_conf_file").change(function() {
         var conf_file = files[0];
         if(!conf_file)return;
         if(conf_file.name.split('.').pop()!=='fmc'){
-            fabmo.notify('error','the file you submitted is not valid');
+            fabmo.notify('error',window.t('config.notify.invalid_file'));
             $("#restore_conf_file").attr("value", "");
             return;
         }
@@ -240,7 +240,7 @@ $("#restore_conf_file").change(function() {
             try{
                 conf = JSON.parse(evt.target.result);
             }catch(ex){
-            fabmo.notify("error","Error reading file : "+ex);
+            fabmo.notify("error",window.t('config.notify.error_reading_file_detail')+ex);
             $("#restore_conf_file").attr("value", "");
             return;
             }
@@ -250,12 +250,12 @@ $("#restore_conf_file").change(function() {
                     $("#restore_conf_file").attr("value", "");
                     return;
                 }
-                fabmo.notify("success","the configuration file have been successfully loaded !");
+                fabmo.notify("success",window.t('config.notify.config_loaded'));
                 $("#restore_conf_file").attr("value", "");
             });
         }
         reader.onerror = function (evt) {
-            fabmo.notify("error","Error reading file");
+            fabmo.notify("error",window.t('config.notify.error_reading_file'));
             $("#restore_conf_file").attr("value", "");
         }
     }
@@ -268,7 +268,7 @@ $('#btn-macros-backup').click(function () {
   })
     .then((response) => {
         if (!response.ok) {
-            throw new Error('Failed to backup macros');
+            throw new Error(window.t('config.notify.macros_backup_failed'));
         }
         return response.blob(); // Get the response as a binary Blob
     })
@@ -282,10 +282,10 @@ $('#btn-macros-backup').click(function () {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url); // Clean up the URL
-        fabmo.notify('success', 'Macros backup completed successfully!');
+        fabmo.notify('success', window.t('config.notify.macros_backup_ok'));
     })
   .catch((err) => {
-      fabmo.notify('error', 'Failed to backup macros: ' + err.message);
+      fabmo.notify('error', window.t('config.notify.macros_backup_failed_detail') + err.message);
   });
 });
 
@@ -299,7 +299,7 @@ $('#restore_macros_dir').change(function() {
   const files = $(this).prop('files');
   if (files.length === 1) {
     const macroFile = files[0];
-    fabmo.notify('info', 'Uploading and restoring macros...');
+    fabmo.notify('info', window.t('config.notify.macros_uploading'));
     const formData = new FormData();
     formData.append('file', macroFile);
     
@@ -311,11 +311,11 @@ $('#restore_macros_dir').change(function() {
       contentType: false,
       timeout: 120000, // 2-minute timeout
       success: function(response) {
-        fabmo.notify('success', 'Macros restored successfully!');
+        fabmo.notify('success', window.t('config.notify.macros_restored'));
       },
       error: function(xhr, status, error) {
         console.error('Upload error:', xhr.responseText);
-        let errorMessage = 'Failed to restore macros';
+        let errorMessage = window.t('config.notify.macros_restore_failed');
         
         try {
           const errorObj = JSON.parse(xhr.responseText);
@@ -344,17 +344,17 @@ $('#btn-flash-firm').click(function() {
 
 $('#btn-reload-firm').click(function() {
     fabmo.showModal({
-      title: 'Reload G2 Firmware?',
-      message: 'This will reload the G2 firmware from the current FabMo version. The tool will restart.',
-      okText: 'Reload',
-      cancelText: 'Cancel',
+      title: window.t('config.modal.reload_firmware_title'),
+      message: window.t('config.modal.reload_firmware_message'),
+      okText: window.t('config.modal.reload'),
+      cancelText: window.t('config.modal.cancel'),
       ok: function() {
-        fabmo.notify('info', 'Reloading G2 firmware ...');
+        fabmo.notify('info', window.t('config.notify.reloading_firmware'));
         fabmo.reloadFirmware({}, function(err, data) {
           if (err) {
-            fabmo.notify('error', 'Firmware reload failed: ' + (err.message || err));
+            fabmo.notify('error', window.t('config.notify.firmware_reload_failed') + (err.message || err));
           } else {
-            fabmo.notify('info', 'Firmware reload started — tool will restart.');
+            fabmo.notify('info', window.t('config.notify.firmware_reload_started'));
           }
         });
       },
@@ -771,10 +771,10 @@ $(document).ready(function() {
     $('#profile-listbox').on('change', function(evt) {
         evt.preventDefault();
         fabmo.showModal({
-            title : 'Change Profiles?',
-            message : 'Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?',
-            okText : 'Yes',
-            cancelText : 'No',
+            title : window.t('config.modal.change_profiles_title'),
+            message : window.t('config.modal.change_profiles_message'),
+            okText : window.t('config.modal.yes'),
+            cancelText : window.t('config.modal.no'),
             ok : function() {
                 // NEW: Use the special manual profile change route
                 var selectedProfile = $("#profile-listbox option:checked").val();
@@ -785,14 +785,14 @@ $(document).ready(function() {
                     data: JSON.stringify({ profile: selectedProfile }),
                     contentType: 'application/json',
                     success: function(response) {
-                        fabmo.notify('info', 'Profile change initiated...');
+                        fabmo.notify('info', window.t('config.notify.profile_change_initiated'));
                     },
                     error: function(xhr, status, error) {
                         // Server restart causes connection error - this is expected
                         if (status === 'error' && (xhr.status === 0 || xhr.status >= 500)) {
-                            fabmo.notify('info', 'Profile change initiated - engine restarting...');
+                            fabmo.notify('info', window.t('config.notify.profile_change_restarting'));
                         } else {
-                            fabmo.notify('error', 'Profile change failed: ' + error);
+                            fabmo.notify('error', window.t('config.notify.profile_change_failed') + error);
                             // Reset the dropdown to current profile if failed
                             update();
                         }
@@ -835,10 +835,10 @@ function setupLanguageSelector(fabmo) {
         var lang = this.value;
         fabmo.setConfig({ engine: { language: lang } }, function (err) {
             if (err) {
-                fabmo.notify('error', 'Could not change language: ' + err);
+                fabmo.notify('error', window.t('config.notify.language_change_failed') + err);
                 return;
             }
-            fabmo.notify('info', 'Language changed — reloading dashboard...');
+            fabmo.notify('info', window.t('config.notify.language_changed'));
             // Reload the parent (the dashboard iframe host) so its
             // chrome picks up the new dict. Fall back to this app's
             // location if there's no parent (standalone testing).
@@ -892,7 +892,7 @@ function refreshDefaultSnapshotName() {
                         break;
                     }
                 }
-                $('#current-default-name').text(def ? def.name : 'none');
+                $('#current-default-name').text(def ? def.name : window.t('config.defaults.none'));
             }
         })
         .catch(function () { /* leave display alone on transient errors */ });
@@ -917,11 +917,11 @@ $('#save-default-confirm').click(function () {
     var name = ($('#save-default-name').val() || '').trim().replace(/\s+/g, '_');
     var description = $('#save-default-description').val() || '';
     if (!name) {
-        fabmo.notify('error', 'A name is required.');
+        fabmo.notify('error', window.t('config.notify.name_required'));
         return;
     }
     if (!/^[a-zA-Z0-9_-]{1,25}$/.test(name)) {
-        fabmo.notify('error', 'Name must be 1-25 characters: letters, digits, _ or -.');
+        fabmo.notify('error', window.t('config.notify.name_invalid'));
         return;
     }
     $('#save-default-dialog').hide();
@@ -934,7 +934,7 @@ $('#save-default-confirm').click(function () {
     .then(function (r) { return r.json(); })
     .then(function (resp) {
         if (!resp || resp.status !== 'success') {
-            var msg = resp && resp.message ? resp.message : 'unknown error';
+            var msg = resp && resp.message ? resp.message : window.t('config.notify.unknown_error');
             throw new Error(msg);
         }
         return fetch('/snapshots/' + encodeURIComponent(name) + '/set-default', {
@@ -943,14 +943,14 @@ $('#save-default-confirm').click(function () {
     })
     .then(function (resp) {
         if (!resp || resp.status !== 'success') {
-            var msg = resp && resp.message ? resp.message : 'could not mark as default';
-            throw new Error('Snapshot saved but not marked as default: ' + msg);
+            var msg = resp && resp.message ? resp.message : window.t('config.notify.mark_default_failed');
+            throw new Error(window.t('config.notify.snapshot_not_default') + msg);
         }
-        fabmo.notify('success', 'Saved current settings as your default: ' + name);
+        fabmo.notify('success', window.t('config.notify.saved_default') + name);
         refreshDefaultSnapshotName();
     })
     .catch(function (err) {
-        fabmo.notify('error', err.message || 'Failed to save default.');
+        fabmo.notify('error', err.message || window.t('config.notify.save_default_failed'));
     });
 });
 
@@ -971,37 +971,37 @@ $('#btn-reset-default').click(function () {
                 }
             }
             if (!def) {
-                fabmo.notify('warning', 'No default is set yet. Use "Save current settings as my default" first.');
+                fabmo.notify('warning', window.t('config.notify.no_default_set'));
                 return;
             }
             fabmo.showModal({
-                title: 'Reset to my default settings?',
-                message: 'This will replace your current configuration and macros with your saved default "' + def.name + '". The tool will restart. A snapshot of your current settings is saved automatically first, so you can recover if needed.',
-                okText: 'Reset',
-                cancelText: 'Cancel',
+                title: window.t('config.modal.reset_default_title'),
+                message: window.t('config.modal.reset_default_message_prefix') + def.name + window.t('config.modal.reset_default_message_suffix'),
+                okText: window.t('config.modal.reset'),
+                cancelText: window.t('config.modal.cancel'),
                 ok: function () {
-                    fabmo.notify('info', 'Restoring "' + def.name + '"...');
+                    fabmo.notify('info', window.t('config.notify.restoring_default_prefix') + def.name + window.t('config.notify.restoring_default_suffix'));
                     fetch('/snapshots/' + encodeURIComponent(def.name) + '/restore', {
                         method: 'POST'
                     })
                         .then(function (r) { return r.json(); })
                         .then(function (resp2) {
                             if (!resp2 || resp2.status !== 'success') {
-                                var msg = resp2 && resp2.message ? resp2.message : 'unknown error';
-                                fabmo.notify('error', 'Reset failed: ' + msg);
+                                var msg = resp2 && resp2.message ? resp2.message : window.t('config.notify.unknown_error');
+                                fabmo.notify('error', window.t('config.notify.reset_failed') + msg);
                             }
                             // On success the engine restarts; the page will
                             // reload on its own once it comes back up.
                         })
                         .catch(function (err) {
-                            fabmo.notify('error', 'Reset failed: ' + err.message);
+                            fabmo.notify('error', window.t('config.notify.reset_failed') + err.message);
                         });
                 },
                 cancel: function () {}
             });
         })
         .catch(function (err) {
-            fabmo.notify('error', 'Could not check for default: ' + err.message);
+            fabmo.notify('error', window.t('config.notify.check_default_failed') + err.message);
         });
 });
 
@@ -1016,9 +1016,9 @@ function renderSpindleDiscover(data) {
     if (data.adapter) {
         adapterEl.val(data.adapter.name + '  [' + data.adapter.vid + ':' + data.adapter.pid + ']  ' + (data.adapter.ttyPath || '(not bound)'));
     } else {
-        adapterEl.val('Not detected');
+        adapterEl.val(window.t('config.spindle.not_detected'));
     }
-    profileEl.val(data.installedTemplate || '(none)');
+    profileEl.val(data.installedTemplate || window.t('config.spindle.none'));
 }
 
 function appendSpindleStatus(line) {
@@ -1031,7 +1031,7 @@ function setSpindleStatus(text) {
 }
 
 function refreshSpindleDiscover() {
-    setSpindleStatus('Detecting...');
+    setSpindleStatus(window.t('config.spindle.detecting'));
     $.ajax({
         url: '/acc/spindle/discover',
         method: 'GET',
@@ -1040,18 +1040,18 @@ function refreshSpindleDiscover() {
         if (resp.status === 'success') {
             renderSpindleDiscover(resp.data);
             setSpindleStatus(resp.data.adapter
-                ? 'Found ' + resp.data.adapter.name + ' at ' + (resp.data.adapter.ttyPath || 'no tty')
-                : 'No known RS485 adapter detected on USB bus.');
+                ? window.t('config.spindle.found_prefix') + resp.data.adapter.name + window.t('config.spindle.found_at') + (resp.data.adapter.ttyPath || window.t('config.spindle.no_tty'))
+                : window.t('config.spindle.no_adapter'));
         } else {
-            setSpindleStatus('Error: ' + (resp.message || 'unknown'));
+            setSpindleStatus(window.t('config.spindle.error_prefix') + (resp.message || window.t('config.spindle.unknown')));
         }
     }).fail(function (xhr) {
-        setSpindleStatus('Request failed: ' + xhr.status);
+        setSpindleStatus(window.t('config.spindle.request_failed') + xhr.status);
     });
 }
 
 function runSpindleConfigure() {
-    setSpindleStatus('Running detect & configure pipeline...');
+    setSpindleStatus(window.t('config.spindle.running_pipeline'));
     $('#spindle-setup-configure').prop('disabled', true);
     $.ajax({
         url: '/acc/spindle/configure',
@@ -1065,16 +1065,16 @@ function runSpindleConfigure() {
         });
         if (d.ok) {
             lines.push('');
-            lines.push('Spindle configured: ' + d.template + ' on ' + d.ttyPath);
-            fabmo.notify('success', 'Spindle configured: ' + d.template);
+            lines.push(window.t('config.spindle.configured') + d.template + window.t('config.spindle.configured_on') + d.ttyPath);
+            fabmo.notify('success', window.t('config.spindle.configured') + d.template);
         } else {
-            fabmo.notify('error', 'Spindle configuration failed');
+            fabmo.notify('error', window.t('config.spindle.configure_failed'));
         }
         setSpindleStatus(lines.join('\n'));
         refreshSpindleDiscover();
     }).fail(function (xhr) {
-        setSpindleStatus('Request failed: ' + xhr.status);
-        fabmo.notify('error', 'Spindle configure request failed');
+        setSpindleStatus(window.t('config.spindle.request_failed') + xhr.status);
+        fabmo.notify('error', window.t('config.spindle.configure_request_failed'));
     }).always(function () {
         $('#spindle-setup-configure').prop('disabled', false);
     });

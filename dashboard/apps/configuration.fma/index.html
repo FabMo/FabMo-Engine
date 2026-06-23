@@ -240,7 +240,7 @@
         <div class="row">
           <fieldset>
             <legend><span data-i18n="config.axes.legend">AXIS CONFIGURATIONS</span> <span class="tooltip tooltip-below">i
-                <span class="tooltiptext">
+                <span class="tooltiptext" data-i18n-html="config.axes.legend_tooltip">
                 This page contains default/current settings for Axis characteristics: <br><br>
                 <strong>Feedrate Maximum:</strong> The maximum allowable feedrate for this machine in a move <br>
                 &nbsp;&nbsp;&nbsp; speed command ([M] commands in OpenSBP or G1 commands in g-code).<br>
@@ -356,7 +356,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="">High Brake Jerk</label>
+                <label data-tip="" data-i18n="config.axes.high_brake_jerk">High Brake Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-yjh" class="driver-input" />
                 </div>
@@ -413,7 +413,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="">High Brake Jerk</label>
+                <label data-tip="" data-i18n="config.axes.high_brake_jerk">High Brake Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-zjh" class="driver-input" />
                 </div>
@@ -482,8 +482,8 @@
             <div class="large-4 columns"> 
               <div class="row collapse">
 
-                <label>Axis Mode <span class="tooltip tooltip-left">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.axes.axis_mode">Axis Mode</span> <span class="tooltip tooltip-left">i
+                  <span class="tooltiptext" data-i18n-html="config.axes.axis_mode_abc_tooltip">
                     Axis Mode for this axis:
                     &nbsp;&nbsp;&nbsp;<strong>Resetting mode resets Axis defaults.</strong> <br>
                     &nbsp;&nbsp;&nbsp;Default Linear values are estimated from the Z axis. <br>
@@ -553,8 +553,8 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode <span class="tooltip tooltip-left">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.axes.axis_mode">Axis Mode</span> <span class="tooltip tooltip-left">i
+                  <span class="tooltiptext" data-i18n-html="config.axes.axis_mode_abc_tooltip">
                     Axis Mode for this axis:
                     &nbsp;&nbsp;&nbsp;<strong>Resetting mode resets Axis defaults.</strong> <br>
                     &nbsp;&nbsp;&nbsp;Default Linear values are estimated from the Z axis. <br>
@@ -623,8 +623,8 @@
               </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode <span class="tooltip tooltip-left">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.axes.axis_mode">Axis Mode</span> <span class="tooltip tooltip-left">i
+                  <span class="tooltiptext" data-i18n-html="config.axes.axis_mode_abc_tooltip">
                     Axis Mode for this axis:
                     &nbsp;&nbsp;&nbsp;<strong>Resetting mode resets Axis defaults.</strong> <br>
                     &nbsp;&nbsp;&nbsp;Default Linear values are estimated from the Z axis. <br>
@@ -654,14 +654,14 @@
         <div class="row">
           <fieldset>
             <legend><span data-i18n="config.inputs.input_word">Input</span> 1 <span class="tooltip">i
-              <span class="tooltiptext">
+              <span class="tooltiptext" data-i18n-html="config.inputs.input_tooltip">
                 These settings define the functionality of each of your tools Input lines <br>
               </span>
             </span></legend>
             <div class="large-4 columns">
               <div class="row collapse">
                 <label><span data-i18n="config.inputs.enabled">Enabled</span> <span class="tooltip tooltip-below">i
-                  <span class="tooltiptext">
+                  <span class="tooltiptext" data-i18n-html="config.inputs.enabled_tooltip">
                     Determines whether the Input is enabled or not.<br>
                   </span>
                 </span>
@@ -675,7 +675,7 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label><span data-i18n="config.inputs.action">Action</span> <span class="tooltip tooltip-below">i
-                  <span class="tooltiptext">
+                  <span class="tooltiptext" data-i18n-html="config.inputs.action_tooltip">
                     Defines the action of the Input: <br><br>
                     &nbsp;&nbsp;<Strong>None:</Strong> No specific action but icon will display when active. <br>
                     &nbsp;&nbsp;<Strong>Stop:</Strong> Tool will come to a controlled Stop if Input is activated.<br>
@@ -699,7 +699,7 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label><span data-i18n="config.inputs.polarity">Polarity</span> <span class="tooltip tooltip-below">i
-                  <span class="tooltiptext">
+                  <span class="tooltiptext" data-i18n-html="config.inputs.polarity_tooltip">
                     Voltage level for activation. <br>
                     High = Normally low; Active when changed to High. <br>
                     Low = Normally high; Active when changed to Low. <br>
@@ -718,7 +718,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 2</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di2en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -728,7 +728,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di2ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -742,7 +742,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di2po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -756,7 +756,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 3</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di3en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -766,7 +766,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di3ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -780,7 +780,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di3po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -794,7 +794,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 4</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di4en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -804,7 +804,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di4ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -818,7 +818,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di4po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -832,7 +832,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 5</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di5en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -842,7 +842,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di5ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -856,7 +856,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di5po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -870,7 +870,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 6</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di6en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -880,7 +880,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di6ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -894,7 +894,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di6po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -908,7 +908,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 7</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di7en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -918,7 +918,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di7ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -932,7 +932,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di7po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -946,7 +946,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 8</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di8en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -956,7 +956,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di8ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -970,7 +970,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di8po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -984,7 +984,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 9</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di9en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -994,7 +994,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di9ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -1008,7 +1008,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di9po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -1022,7 +1022,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 10</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di10en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -1032,7 +1032,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di10ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -1046,7 +1046,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di10po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -1060,7 +1060,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 11</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di11en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -1070,7 +1070,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di11ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -1084,7 +1084,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di11po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -1098,7 +1098,7 @@
             <legend><span data-i18n="config.inputs.input_word">Input</span> 12</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Enabled
+                <label><span data-i18n="config.inputs.enabled">Enabled</span>
                   <select id="driver-di12en" class="driver-input">
                     <option value="false" data-i18n="config.inputs.false">False</option>
                     <option value="true" data-i18n="config.inputs.true">True</option>
@@ -1108,7 +1108,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Action
+                <label><span data-i18n="config.inputs.action">Action</span>
                   <select id="machine-di12ac" class="machine-input">
                     <option value="none" data-i18n="config.inputs.action_none">None</option>
                     <option value="stop" data-i18n="config.inputs.action_stop">Stop</option>
@@ -1122,7 +1122,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Polarity
+                <label><span data-i18n="config.inputs.polarity">Polarity</span>
                   <select id="driver-di12po" class="driver-input">
                     <option value="0" data-i18n="config.inputs.low">Low</option>
                     <option value="1" data-i18n="config.inputs.high">High</option>
@@ -1147,7 +1147,7 @@
         <div class="row">
           <fieldset>
             <legend><span data-i18n="config.drivers.channel_word">Channel</span> 1 <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+              <span class="tooltiptext" data-i18n-html="config.drivers.channel_tooltip">
                 These settings provide the lowest level assignment for <br>
                 each motor output driver channel. The driver channel is <br>
                 assigned an Axis name, a direction, and a Unit Value. <br>
@@ -1410,7 +1410,7 @@
 
           <fieldset>
             <legend><span data-i18n="config.machine.envelope">Machine Envelope</span> <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+              <span class="tooltiptext" data-i18n-html="config.machine.envelope_tooltip">
                 The minimum and maximum positions on each axis. <br>
                 These values define the working limits of the tool <br>
                 and are used as software limits. Mechanical stops <br>
@@ -1494,8 +1494,8 @@
 
               <div class="large-6 columns">
                 <div class="row collapse">
-                  <label>Enforce Software Limits <span class="tooltip">i
-                    <span class="tooltiptext">
+                  <label><span data-i18n="config.machine.enforce_softlimits">Enforce Software Limits</span> <span class="tooltip">i
+                    <span class="tooltiptext" data-i18n-html="config.machine.enforce_softlimits_tooltip">
                       When checked, manual jogging stops at the envelope <br>
                       boundary in work coordinates. Uncheck to allow <br>
                       jogging past the envelope (e.g. for setup or <br>
@@ -1509,11 +1509,11 @@
           </fieldset>
 
           <fieldset>
-            <legend>Z-Lift</legend>
+            <legend data-i18n="config.machine.zlift_legend">Z-Lift</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Height <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.zlift_height">Height</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.zlift_height_tooltip">
                     The pull-up height automatically moved to when tool is stopped or <br>
                     paused. This height may be different than the safe traversing <br>
                     height set within a file. <br>
@@ -1535,13 +1535,13 @@
           </fieldset>
 
           <fieldset>
-            <legend>Machining Parameters (Tool Path Tuning)</legend>
+            <legend data-i18n="config.machine.machining_legend">Machining Parameters (Tool Path Tuning)</legend>
 
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Chordal Tolerance <span class="tooltip">i
-                  <span class="tooltiptext">
-                    When an arc segment is being computed from code, this is the <br> 
+                <label><span data-i18n="config.machine.chordal_tolerance">Chordal Tolerance</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.chordal_tolerance_tooltip">
+                    When an arc segment is being computed from code, this is the <br>
                     maximum deviation that a segment may take from its "ideal" <br>
                     trajectory. A smaller number here means finer segments and higher <br>
                     resolution, but possibly slower execution. [default=0.001]<br>
@@ -1558,10 +1558,10 @@
             </div>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Junction Integration Time <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.junction_integration_time">Junction Integration Time</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.junction_integration_time_tooltip">
                     Determines how aggressively the machine takes corners. <br>
-                    Values should be between 0.5 and 2.0.  Higher values <br> 
+                    Values should be between 0.5 and 2.0.  Higher values <br>
                     mean faster and more aggressive corners. [default=1.5]<br>
                   </span>
                 </span></label>
@@ -1573,9 +1573,9 @@
 
             <div class="large-6 columns">
               <div class="row collapse">
-                <label> Spindle Delay <span class="tooltip">i
-                  <span class="tooltiptext">
-                    The amount of time allowed for the spindle to spin-up <br> 
+                <label> <span data-i18n="config.machine.spindle_delay">Spindle Delay</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.spindle_delay_tooltip">
+                    The amount of time allowed for the spindle to spin-up <br>
                     before motion starts. This interval is applied when the <br>
                     spindle starts (or restarts) to delay when the tool moves. <br>
                     [default=2] <br>
@@ -1592,31 +1592,31 @@
             </div>  
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Planning Mode Selection <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.planning_mode">Planning Mode Selection</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.planning_mode_tooltip">
                     Selects the planning mode for the machine. 2D-mode <br>
                     prioritizes maintaining constant feedrate in XY. 3D-mode <br>
                     prioritizes maintaining constant reedrate in XYZ. 2D-mode <br>
                     can be used to minimize dwell in linear motions for tabs <br>
                     and and to optimize 3D raster carving. [default=3D]<br>
                   </span>
-                </span>   
+                </span>
                 </label>
                 <select id="driver-plmo" class="driver-input">
-                  <option value="2">2D planning mode</option>
-                  <option value="3">3D planning mode (default)</option>
+                  <option value="2" data-i18n="config.machine.planning_mode_2d">2D planning mode</option>
+                  <option value="3" data-i18n="config.machine.planning_mode_3d">3D planning mode (default)</option>
                 </select>
               </div>
             </div>  
           </fieldset>
 
           <fieldset>
-            <legend>Manual Control</legend>
+            <legend data-i18n="config.machine.manual_control_legend">Manual Control</legend>
 
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>XY Speed <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.xy_speed">XY Speed</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.xy_speed_tooltip">
                     The initial XY speed used when driving the tool with <br>
                     the Motion Keypad (yellow icon). [adjustable] <br>
                   </span>
@@ -1631,8 +1631,8 @@
               </div>
 
               <div class="row collapse">
-                <label>Min XY Speed <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.min_xy_speed">Min XY Speed</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.min_xy_speed_tooltip">
                     The the lowest speed for the XY speed range <br>
                     slider for the Motion Keypad (yellow icon). [default=0.1] <br>
                   </span>
@@ -1647,8 +1647,8 @@
               </div>
 
               <div class="row collapse">
-                <label>Max XY Speed <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.max_xy_speed">Max XY Speed</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.max_xy_speed_tooltip">
                     The the highest speed for the XY speed range <br>
                     slider for the Motion Keypad (yellow icon). [default=6.0] <br>
                   </span>
@@ -1663,8 +1663,8 @@
               </div>
 
               <div class="row collapse">
-                <label>Z Speed Fast <span class="tooltip">i
-                    <span class="tooltiptext">
+                <label><span data-i18n="config.machine.z_speed_fast">Z Speed Fast</span> <span class="tooltip">i
+                    <span class="tooltiptext" data-i18n-html="config.machine.z_speed_fast_tooltip">
                       The "fast" Z speed used when driving the tool with the <br>
                       Motion Keypad (yellow icon). [ &lt;&lt; &gt;&gt; ] <br>
                     </span>
@@ -1679,8 +1679,8 @@
               </div>
 
               <div class="row collapse">
-                <label>Z Speed Slow <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.z_speed_slow">Z Speed Slow</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.z_speed_slow_tooltip">
                     The "slow" Z speed used when driving the tool with the <br>
                     Motion Keypad (yellow icon). [ &lt; &gt; ] <br>
                   </span>
@@ -1695,8 +1695,8 @@
               </div>
 
               <div class="row collapse">
-                <label>XY Increment <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.xy_increment">XY Increment</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.xy_increment_tooltip">
                     The initial "Fixed Distance" move in the X or Y axis <br>
                     for each "tap" when in Fixed mode. Also the smallest <br>
                     move attainable with a quick keytap in continuous motion <br>
@@ -1713,8 +1713,8 @@
               </div>
 
               <div class="row collapse">
-                <label>Z Increment <span class="tooltip">i
-                    <span class="tooltiptext">
+                <label><span data-i18n="config.machine.z_increment">Z Increment</span> <span class="tooltip">i
+                    <span class="tooltiptext" data-i18n-html="config.machine.z_increment_tooltip">
                       The initial "Fixed Distance" move in the Z axis for each <br>
                       "tap" when in Fixed mode. Also the smallest move attainable <br>
                       with a quick keytap in continuous motion mode. [default start = 0.005] <br>
@@ -1730,8 +1730,8 @@
               </div>
 
               <div class="row collapse">
-                <label>ABC Increment <span class="tooltip">i
-                    <span class="tooltiptext">
+                <label><span data-i18n="config.machine.abc_increment">ABC Increment</span> <span class="tooltip">i
+                    <span class="tooltiptext" data-i18n-html="config.machine.abc_increment_tooltip">
                       The initial "Fixed Distance" move in the A, B or C axis for each <br>
                       "tap" when in Fixed mode. Also the smallest move attainable with a <br>
                       quick keytap in continuous motion mode. [default start = 1.0] <br>
@@ -1747,8 +1747,8 @@
               </div>
 
               <div class="row collapse">
-                <label> XY Max Jerk <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label> <span data-i18n="config.machine.xy_max_jerk">XY Max Jerk</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.xy_max_jerk_tooltip">
                     XY acceleration for the Motion Keypad. [default=50] <br>
                   </span>
                 </span>
@@ -1762,8 +1762,8 @@
               </div>
 
               <div class="row collapse">
-                <label> Z Max Jerk <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label> <span data-i18n="config.machine.z_max_jerk">Z Max Jerk</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.z_max_jerk_tooltip">
                     Z acceleration for the Motion Keypad. [default=50] <br>
                   </span>
                 </span>
@@ -1777,8 +1777,8 @@
               </div>
 
               <div class="row collapse">
-                <label>Fixed Move Delay <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.fixed_move_delay">Fixed Move Delay</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.fixed_move_delay_tooltip">
                     How long a button must be held before continuous motion <br>
                     starts (in milliseconds). A quick tap shorter than this <br>
                     triggers a fixed-distance nudge instead. Set to 0 to <br>
@@ -1799,11 +1799,11 @@
           </fieldset>
 
           <fieldset>
-            <legend>Safety</legend>
+            <legend data-i18n="config.machine.safety_legend">Safety</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Use Authorization Button <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.use_auth_button">Use Authorization Button</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.use_auth_button_tooltip">
                     If checked, the tool will require "authorization" before <br>
                     executing a motion command originating from a wireless <br>
                     or wired network.  Authorization is issued by pressing the <br>
@@ -1816,8 +1816,8 @@
                 <input id="machine-auth_required" class="machine-input" type="checkbox" checked>
               </div>
               <div class="row collapse">
-                <label>Lockout scope <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.lockout_scope">Lockout scope</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.lockout_scope_tooltip">
                     Which actions require the authorize button press. <br>
                     "Files and manual control" gates everything (the original <br>
                     behavior). "File runs only" lets the on-screen manual <br>
@@ -1828,22 +1828,22 @@
                   </span>
                 </label>
                 <select id="machine-auth_scope" class="machine-input">
-                  <option value="all">Files and manual control</option>
-                  <option value="file_only">File runs only (manual controls always available)</option>
+                  <option value="all" data-i18n="config.machine.lockout_scope_all">Files and manual control</option>
+                  <option value="file_only" data-i18n="config.machine.lockout_scope_file_only">File runs only (manual controls always available)</option>
                 </select>
               </div>
               <div class="row collapse">
-                <label>Authorization Button Input <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.auth_button_input">Authorization Button Input</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.auth_button_input_tooltip">
                     The input line to which the authorization button is connected. <br>
                     If the tool is configured to require authorization, this <br>
                     input must be pressed before any motion command can be <br>
                     executed. [default=5] <br>
                   </span>
                   </span>
-                </label>   
+                </label>
                   <select id="machine-auth_input" class="machine-input">
-                    <option value="0">none</option>
+                    <option value="0" data-i18n="config.machine.input_none">none</option>
                     <option value="1">Input 1</option>
                     <option value="2">Input 2</option>
                     <option value="3">Input 3</option>
@@ -1859,8 +1859,8 @@
                   </select>
               </div>
               <div class="row collapse">
-                <label> Authorization Timeout <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label> <span data-i18n="config.machine.auth_timeout">Authorization Timeout</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.auth_timeout_tooltip">
                     The amount of time the tool remains authorized for use after <br>
                     authorization has been issued with the authorization button. <br>
                     Tool authorization is used to confirm that you are physically <br>
@@ -1873,18 +1873,18 @@
                   <input type="number" id="machine-auth_timeout" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">seconds</span>
+                  <span class="postfix" data-i18n="config.machine.seconds">seconds</span>
                 </div>
               </div>
             </div>
           </fieldset>
 
           <fieldset>
-            <legend>AP Mode Button</legend>
+            <legend data-i18n="config.machine.ap_mode_legend">AP Mode Button</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>AP Mode Button Input <span class="tooltip">i
-                  <span class="tooltiptext">
+                <label><span data-i18n="config.machine.ap_button_input">AP Mode Button Input</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.ap_button_input_tooltip">
                     The input to which the AP mode toggle button is connected. <br>
                     Holding down the AP mode button for the required duration <br>
                     causes the tool to enter AP mode, in which it becomes <br>
@@ -1893,10 +1893,10 @@
                     See: FabMo's network manager (Wifi icon at upper left). <br>
                     [default=No AP Mode Button] <br>
                   </span>
-                  </span>    
+                  </span>
                 </label>
                   <select id="machine-ap_input" class="machine-input">
-                    <option value="0">No AP Mode Button</option>
+                    <option value="0" data-i18n="config.machine.ap_input_none">No AP Mode Button</option>
                     <option value="1">Input 1</option>
                     <option value="2">Input 2</option>
                     <option value="3">Input 3</option>
@@ -1913,12 +1913,12 @@
 
               </div>
               <div class="row collapse">
-                <label data-tip="">AP Mode Button Required Duration</label>
+                <label data-tip="" data-i18n="config.machine.ap_button_duration">AP Mode Button Required Duration</label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-ap_time" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">seconds</span>
+                  <span class="postfix" data-i18n="config.machine.seconds">seconds</span>
                 </div>
               </div>
             </div>
@@ -1957,8 +1957,8 @@
           </fieldset> -->
 
           <fieldset>
-            <legend>Spindle Setup <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+            <legend><span data-i18n="config.machine.spindle_setup_legend">Spindle Setup</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="config.machine.spindle_setup_tooltip">
                 Detects the USB-to-RS485 adapter, identifies the connected <br>
                 VFD by probing known register layouts, and installs the <br>
                 matching profile so spindle RPM control is live. <br>
@@ -1969,13 +1969,13 @@
 
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>RS485 Adapter</label>
+                <label data-i18n="config.machine.rs485_adapter">RS485 Adapter</label>
                 <div class="small-12 columns">
                   <input type="text" id="spindle-setup-adapter" class="machine-input" readonly />
                 </div>
               </div>
               <div class="row collapse">
-                <label>Installed VFD Profile</label>
+                <label data-i18n="config.machine.installed_vfd_profile">Installed VFD Profile</label>
                 <div class="small-12 columns">
                   <input type="text" id="spindle-setup-profile" class="machine-input" readonly />
                 </div>
@@ -1986,14 +1986,14 @@
               <div class="row collapse">
                 <label>&nbsp;</label>
                 <div class="small-12 columns">
-                  <button type="button" id="spindle-setup-detect" class="button">Refresh Detection</button>
-                  <button type="button" id="spindle-setup-configure" class="button">Detect &amp; Configure Spindle</button>
+                  <button type="button" id="spindle-setup-detect" class="button" data-i18n="config.machine.refresh_detection">Refresh Detection</button>
+                  <button type="button" id="spindle-setup-configure" class="button" data-i18n="config.machine.detect_configure_spindle">Detect &amp; Configure Spindle</button>
                 </div>
               </div>
               <div class="row collapse">
-                <label>Status</label>
+                <label data-i18n="config.machine.status_label">Status</label>
                 <div class="small-12 columns">
-                  <pre id="spindle-setup-status" style="min-height: 80px; padding: 6px; background: #f5f5f5; border: 1px solid #ddd; font-size: 12px; white-space: pre-wrap;">Click &ldquo;Refresh Detection&rdquo; to see what&rsquo;s connected.</pre>
+                  <pre id="spindle-setup-status" style="min-height: 80px; padding: 6px; background: #f5f5f5; border: 1px solid #ddd; font-size: 12px; white-space: pre-wrap;" data-i18n="config.machine.spindle_status_initial">Click &ldquo;Refresh Detection&rdquo; to see what&rsquo;s connected.</pre>
                 </div>
               </div>
             </div>
@@ -2175,18 +2175,18 @@
      sandboxed iframe that blocks window.prompt(). -->
       <div id="save-default-dialog" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
         <div style="background:white; max-width:420px; margin:80px auto; padding:20px; border-radius:6px;">
-          <h4 style="margin-top:0;">Save current settings as my default</h4>
+          <h4 style="margin-top:0;" data-i18n="config.defaults.save_default">Save current settings as my default</h4>
           <div style="margin-bottom:10px;">
-            <label>Name <span style="color:#999;font-weight:normal;">(1-25 chars: letters, digits, _ or -)</span></label>
+            <label><span data-i18n="config.defaults.name_label">Name</span> <span style="color:#999;font-weight:normal;" data-i18n="config.defaults.name_hint">(1-25 chars: letters, digits, _ or -)</span></label>
             <input type="text" id="save-default-name" maxlength="25" autocomplete="off">
           </div>
           <div style="margin-bottom:14px;">
-            <label>Description <span style="color:#999;font-weight:normal;">(optional)</span></label>
+            <label><span data-i18n="config.defaults.description_label">Description</span> <span style="color:#999;font-weight:normal;" data-i18n="config.defaults.optional_hint">(optional)</span></label>
             <input type="text" id="save-default-description" autocomplete="off">
           </div>
           <div style="text-align:right;">
-            <a id="save-default-cancel" class="button radius small secondary" style="margin-right:8px;">Cancel</a>
-            <a id="save-default-confirm" class="button radius small" style="background-color:rgb(83, 133, 224); color:#fff;">Save</a>
+            <a id="save-default-cancel" class="button radius small secondary" style="margin-right:8px;" data-i18n="config.defaults.cancel">Cancel</a>
+            <a id="save-default-confirm" class="button radius small" style="background-color:rgb(83, 133, 224); color:#fff;" data-i18n="config.defaults.save">Save</a>
           </div>
         </div>
       </div>
