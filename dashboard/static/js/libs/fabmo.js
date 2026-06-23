@@ -334,6 +334,14 @@
     FabMoDashboard.prototype._on = function (name, callback) {
         var message = { on: name };
         if (callback) {
+            // Auto-register events not in the predeclared list (e.g.
+            // pendant_file_select, vfd_error). Without this, on() throws
+            // for any event missing from _event_listeners, which aborts
+            // the calling module. Mirrors the `|| []` guard in off() and
+            // the dispatcher's `name in this._event_listeners` check.
+            if (!this._event_listeners[name]) {
+                this._event_listeners[name] = [];
+            }
             this._event_listeners[name].push(callback);
         }
         this.target.postMessage(message, "*");
