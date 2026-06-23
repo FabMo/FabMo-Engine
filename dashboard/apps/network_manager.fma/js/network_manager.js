@@ -4,6 +4,7 @@ var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 const { info } = require('toastr');
+require('./i18n.js');   // installs window.t / window.i18nReady / window.i18nApply
 var fabmo = new Fabmo;
 
 var networks = {};
@@ -23,10 +24,10 @@ function refreshWifiTable(callback){
         }
         if(wifion) {
             wifi_state = true;
-            $('#wifi-mode-button').html('<strong>Wifi:</strong><strong style="color: #ffe217;">&nbsp;&nbsp;&nbsp;ON</strong> |<span style="color: lightgray; opacity: 0.5;"> off</span>');
+            $('#wifi-mode-button').html('<strong>' + window.t("network_manager.header.wifi_label") + '</strong><strong style="color: #ffe217;">&nbsp;&nbsp;&nbsp;' + window.t("network_manager.status.on") + '</strong> |<span style="color: lightgray; opacity: 0.5;"> ' + window.t("network_manager.status.off") + '</span>');
                 fabmo.getWifiNetworks(function(err, networks) {
                 if(err) {
-                    fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
+                    fabmo.notify('error', window.t("network_manager.notify.error_retrieve_network_info"));
                     return callback(err);
                 }
                 addWifiEntries(networks);
@@ -35,7 +36,7 @@ function refreshWifiTable(callback){
         } else {
             networks = {};
             wifi_state = false;
-            $('#wifi-mode-button').html('<strong>Wifi:</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">on</span> |<strong style="color: #ffe217;">&nbsp;OFF</strong');
+            $('#wifi-mode-button').html('<strong>' + window.t("network_manager.header.wifi_label") + '</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">' + window.t("network_manager.status.on_lower") + '</span> |<strong style="color: #ffe217;">&nbsp;' + window.t("network_manager.status.off_upper") + '</strong');
             callback(null, {});
         }
         refreshHistoryTable();
@@ -74,7 +75,7 @@ function addWifiEntries(network_entries, callback) {
             security.className = 'security noselect';
             var strength = row.insertCell(2);
             strength.className = 'wifi' + strengthNumber;
-            var ssidText = entry.ssid || '<Hidden SSID>';
+            var ssidText = entry.ssid || window.t("network_manager.wifi.hidden_ssid");
             var securityText = entry.flags ? entry.flags : '';
             ssid.innerHTML = ssidText;
             security.innerHTML = securityText;
@@ -112,23 +113,23 @@ function addHistoryEntries(history_entries, callback) {
         var intInfoText = '';
 
         if (interfaceText === 'eth0') {
-            intInfoText = 'Ethernet: a LAN or direct PC connection';
+            intInfoText = window.t("network_manager.interfaces.info_ethernet");
         }
         if (interfaceText === 'wlan0_ap') {
-            intInfoText = 'Access Point (AP mode) ACTIVE';
+            intInfoText = window.t("network_manager.interfaces.info_ap_active");
             $('#ap-mode-button').addClass('active');
-            $('#ap-mode-button').html('<strong>AP Mode:</strong><strong style="color: #ffe217;">&nbsp;&nbsp;&nbsp;ENABLED</strong> |<span style="color: lightgray; opacity: 0.5;"> disabled</span>');
+            $('#ap-mode-button').html('<strong>' + window.t("network_manager.header.ap_mode_label") + '</strong><strong style="color: #ffe217;">&nbsp;&nbsp;&nbsp;' + window.t("network_manager.status.enabled") + '</strong> |<span style="color: lightgray; opacity: 0.5;"> ' + window.t("network_manager.status.disabled") + '</span>');
         } else {
             $('#ap-mode-button').removeClass('active');
-            $('#ap-mode-button').html('<strong>AP Mode:</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">enabled</span> |<strong style="color: #ffe217;">&nbsp;DISABLED</strong');
+            $('#ap-mode-button').html('<strong>' + window.t("network_manager.header.ap_mode_label") + '</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">' + window.t("network_manager.status.enabled_lower") + '</span> |<strong style="color: #ffe217;">&nbsp;' + window.t("network_manager.status.disabled_upper") + '</strong');
         }
         if (interfaceText === 'wlan0') {
             $('#wifi-mode-button').addClass('active');
             if (history_entries[entry].includes(',')) {
                 ipAddressText = history_entries[entry].split(',')[0];
-                intInfoText = 'Wifi Network: ' + history_entries[entry].split(',')[1];
+                intInfoText = window.t("network_manager.interfaces.info_wifi_network_prefix") + history_entries[entry].split(',')[1];
             } else {
-                intInfoText = 'Wifi: Network unknown';
+                intInfoText = window.t("network_manager.interfaces.info_wifi_unknown");
             }
         }
         $row.append($('<td></td>').addClass('interface con-int noselect').html(interfaceText));
@@ -151,10 +152,10 @@ function confirm(options) {
     // Check if only the cancel button should be displayed
     if (options.cancelOnly) {
         $('#confirm-modal-ok').hide(); // Hide the OK button
-        $('#confirm-modal-cancel').text(options.cancel_message || 'Cancel').show();
+        $('#confirm-modal-cancel').text(options.cancel_message || window.t("network_manager.dialog.cancel")).show();
     } else {
-        $('#confirm-modal-ok').text(options.ok_message || 'Ok').show();
-        $('#confirm-modal-cancel').text(options.cancel_message || 'Cancel').show();
+        $('#confirm-modal-ok').text(options.ok_message || window.t("network_manager.dialog.ok")).show();
+        $('#confirm-modal-cancel').text(options.cancel_message || window.t("network_manager.dialog.cancel")).show();
     }
 
     $('#confirm-modal-ok').one('click', function (evt) {
@@ -176,7 +177,7 @@ function confirm(options) {
 let passphrase = '';
 function requestPassword(ssid, callback){
     $('#passwd-modal').foundation('reveal', 'open');
-    $('#modal-title').text('Enter the passphrase for:  ' + ssid);
+    $('#modal-title').text(window.t("network_manager.dialog.enter_passphrase_for") + ssid);
     $('#toggleIcon').removeClass('fa-eye-slash');
     $('#toggleIcon').addClass('fa-eye');
     passphrase = '';
@@ -238,7 +239,7 @@ $(document).ready(function() {
     // Check for new networks initially, and then every 5 seconds
     refreshWifiTable(function(err, data) {
         if(err){
-            fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
+            fabmo.notify('error', window.t("network_manager.notify.error_retrieve_network_info"));
             return;
         }
         setInterval(refreshWifiTable, 5000);
@@ -249,7 +250,7 @@ $(document).ready(function() {
         var name = $(this).text();
         requestPassword(name, function(passwd){
             fabmo.showModal({
-                title: 'Trying to connect to network ' + name,
+                title: window.t("network_manager.notify.trying_to_connect", {name: name}),
                 message: '<i class="fa fa-circle-o-notch fa-spin" style="font-size:40px;color:#313366" aria-hidden="true"></i>',
                 noButton : true
             });
@@ -263,9 +264,9 @@ $(document).ready(function() {
                     var address = data.ip.replace(/.*:/, "").trim();
                     fabmo.hideModal();
                     confirm({
-                        title : "Successfully connected!",
-                        description : "<p>Access your tool on Wifi network:<br>  &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp" + name + " at IP:  " + address + "<p>",
-                        ok_message : "OK",
+                        title : window.t("network_manager.dialog.connect_success_title"),
+                        description : window.t("network_manager.dialog.connect_success_description", {name: name, address: address}),
+                        ok_message : window.t("network_manager.dialog.ok_upper"),
                         ok : function() {
                             setTimeout(function() {
                                 console.log('Refreshing tables and iframe');
@@ -287,7 +288,7 @@ $(document).ready(function() {
     });
 
     $('.not-implemented').on('click', function() {
-        fabmo.showModal({message:"Feature coming soon."});
+        fabmo.showModal({message:window.t("network_manager.notify.feature_coming_soon")});
     });
 
     // Display message for clicks on Interface Entries
@@ -296,8 +297,8 @@ $(document).ready(function() {
         if (name === 'eth0') {
             confirm({
                 title : "",
-                description : "To remove a LAN or direct PC interface; disconnect the Ethernet cable from your tool. Always allow 10 seconds before reconnecting another cable.",
-                cancel_message : "Close",
+                description : window.t("network_manager.dialog.remove_ethernet_description"),
+                cancel_message : window.t("network_manager.dialog.close"),
                 cancelOnly : true,
                 cancel : function() {
                 	// No action required.
@@ -308,12 +309,12 @@ $(document).ready(function() {
         } else if (name === 'wlan0') {
             // Retrieve the SSID from the third column in the same row; pretty ugly but it works
             var ssid = $(evt.target).closest('tr').find('td').eq(2).text();
-            ssid = ssid.replace("Wifi Network: ", "").trim();
+            ssid = ssid.replace(window.t("network_manager.interfaces.info_wifi_network_prefix"), "").trim();
             confirm({
-                title : "Disconnect and forget this Wifi Interface ?",
+                title : window.t("network_manager.dialog.disconnect_wifi_title"),
                 description : "",
-                ok_message : "OK",
-                cancel_message : "Cancel",
+                ok_message : window.t("network_manager.dialog.ok_upper"),
+                cancel_message : window.t("network_manager.dialog.cancel"),
                 ok : function() {
                     fabmo.disconnectFromWifi(ssid, function(err, data) {
                         if(err) {
@@ -346,10 +347,10 @@ $(document).ready(function() {
         console.log("-got click on AP");
         if ($('#ap-mode-button').hasClass('active')) {
             confirm({
-                title : "Turn Off AP (Access Point) Mode ?",
+                title : window.t("network_manager.dialog.turn_off_ap_title"),
                 description : "",
-                ok_message : "OK",
-                cancel_message : "Cancel",
+                ok_message : window.t("network_manager.dialog.ok_upper"),
+                cancel_message : window.t("network_manager.dialog.cancel"),
                 ok : function() {
                     fabmo.disableWifiHotspot(function(err, data) {
                         if(err) {
@@ -368,10 +369,10 @@ $(document).ready(function() {
             });
         } else {
             confirm({
-                title : "Start AP (Access Point) Mode ?",
+                title : window.t("network_manager.dialog.start_ap_title"),
                 description : "",
-                ok_message : "OK",
-                cancel_message : "Cancel",
+                ok_message : window.t("network_manager.dialog.ok_upper"),
+                cancel_message : window.t("network_manager.dialog.cancel"),
                 ok : function() {
                     fabmo.enableWifiHotspot(function(err, data) {
                         if(err) {
@@ -396,10 +397,10 @@ $(document).ready(function() {
         console.log("-got click on wifi");
         if (wifi_state) { // Wifi is ON
             confirm({
-                title : "Turn Off Wifi ?",
-                description : "<p>WARNING! This action also turns off AP Mode and IP address display. All Wifi Access will be eliminated!<br><p>",
-                ok_message : "OK",
-                cancel_message : "Cancel",
+                title : window.t("network_manager.dialog.turn_off_wifi_title"),
+                description : window.t("network_manager.dialog.turn_off_wifi_warning"),
+                ok_message : window.t("network_manager.dialog.ok_upper"),
+                cancel_message : window.t("network_manager.dialog.cancel"),
                 ok : function() {
                     fabmo.disableWifi(function(err, data) {
                         if(err) {
@@ -418,10 +419,10 @@ $(document).ready(function() {
             });
         } else {
             confirm({
-                title : "Turn On Wifi ?",
+                title : window.t("network_manager.dialog.turn_on_wifi_title"),
                 description : "",
-                ok_message : "OK",
-                cancel_message : "Cancel",
+                ok_message : window.t("network_manager.dialog.ok_upper"),
+                cancel_message : window.t("network_manager.dialog.cancel"),
                 ok : function() {
                     fabmo.enableWifi(function(err, data) {
                         if(err) {

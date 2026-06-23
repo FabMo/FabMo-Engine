@@ -1047,5 +1047,68 @@
         "notify": {
             "deleted": "Macro \"{name}\" was deleted."
         }
+    },
+    "network_manager": {
+        "page_title": "Network Manager",
+        "header": {
+            "app_header": "Wifi ",
+            "menu": "Menu ",
+            "wifi_label": "Wifi:",
+            "ap_mode_label": "AP Mode:",
+            "toggle_wifi_power_tooltip": "Toggle Wifi Power",
+            "toggle_ap_mode_tooltip": "Toggle AP Mode Presence"
+        },
+        "status": {
+            "on": "ON",
+            "off": "off",
+            "on_lower": "on",
+            "off_upper": "OFF",
+            "enabled": "ENABLED",
+            "disabled": "disabled",
+            "enabled_lower": "enabled",
+            "disabled_upper": "DISABLED"
+        },
+        "wifi": {
+            "networks_available_heading": "Wifi Networks Available",
+            "networks_available_tooltip": "Wifi networks available to your tool. Click on SSID name to set up a new wifi interface to access your tool.",
+            "col_ssid_name": "SSID Name",
+            "col_security": "Security",
+            "col_strength": "Strength",
+            "hidden_ssid": "<Hidden SSID>"
+        },
+        "interfaces": {
+            "heading": "Access Interfaces",
+            "tooltip": "Your tool is connected to each of these interfaces for access. The favored interface access is at the top of the list and is shown on the R-Pi screen (if available). (if attached). To remove an interface, click on its name.",
+            "col_interface": "Interface",
+            "col_ip_address": "IP Address on Interface",
+            "col_interfaced_via": "Interfaced Via:",
+            "info_ethernet": "Ethernet: a LAN or direct PC connection",
+            "info_ap_active": "Access Point (AP mode) ACTIVE",
+            "info_wifi_network_prefix": "Wifi Network: ",
+            "info_wifi_unknown": "Wifi: Network unknown"
+        },
+        "dialog": {
+            "passphrase_placeholder": "passphrase",
+            "connect": "Connect",
+            "cancel": "Cancel",
+            "ok": "Ok",
+            "ok_upper": "OK",
+            "close": "Close",
+            "enter_passphrase_for": "Enter the passphrase for:  ",
+            "connect_success_title": "Successfully connected!",
+            "connect_success_description": "<p>Access your tool on Wifi network:<br>  &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{name} at IP:  {address}<p>",
+            "remove_ethernet_description": "To remove a LAN or direct PC interface; disconnect the Ethernet cable from your tool. Always allow 10 seconds before reconnecting another cable.",
+            "disconnect_wifi_title": "Disconnect and forget this Wifi Interface ?",
+            "turn_off_ap_title": "Turn Off AP (Access Point) Mode ?",
+            "start_ap_title": "Start AP (Access Point) Mode ?",
+            "turn_off_wifi_title": "Turn Off Wifi ?",
+            "turn_off_wifi_warning": "<p>WARNING! This action also turns off AP Mode and IP address display. All Wifi Access will be eliminated!<br><p>",
+            "turn_on_wifi_title": "Turn On Wifi ?"
+        },
+        "notify": {
+            "error_retrieve_network_info": "failed to retrieve network information. Network management may not be available on your tool.",
+            "trying_to_connect": "Trying to connect to network {name}",
+            "feature_coming_soon": "Feature coming soon."
+        }
     }
 }

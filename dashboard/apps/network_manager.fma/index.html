@@ -4,7 +4,7 @@
 <head>
 
     <meta charset="utf-8">
-    <title>Network Manager</title>
+    <title data-i18n="network_manager.page_title">Network Manager</title>
       <link rel="stylesheet" href="../../css/dashboard.css">
 	    <link rel="stylesheet" href="./css/style.css">
       <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +19,7 @@
         
           <div id="wifiLogin">
             <div class="passphrase-container">
-                <input type="text" id="passphraseInput" autocomplete="off" placeholder="passphrase">
+                <input type="text" id="passphraseInput" autocomplete="off" placeholder="passphrase" data-i18n-placeholder="network_manager.dialog.passphrase_placeholder">
                 <span class="toggle-passphrase">
                     <i id="toggleIcon" class="fa fa-eye"></i>
                 </span>
@@ -28,7 +28,7 @@
 
         <div class="row">
             <div class="right">
-                <button class="button radius success" id="btn-connect">Connect</button>
+                <button class="button radius success" id="btn-connect" data-i18n="network_manager.dialog.connect">Connect</button>
             </div>
         </div>
     
@@ -41,8 +41,8 @@
         <div id="confirm-modal-description"></div>
         <div class="row">
             <div class="right">
-                <button id="confirm-modal-cancel" class="button radius alert">Cancel</button>
-                <button id="confirm-modal-ok" class="button radius success">Ok</button>
+                <button id="confirm-modal-cancel" class="button radius alert" data-i18n="network_manager.dialog.cancel">Cancel</button>
+                <button id="confirm-modal-ok" class="button radius success" data-i18n="network_manager.dialog.ok">Ok</button>
             </div>
         </div>
     </div>
@@ -50,32 +50,32 @@
     <nav class="top-bar" data-topbar role="navigation">
         <ul class="title-area">
             <li class="name">
-              <h1><a id="app-header" class="menu-name" >Wifi </a></h1>
+              <h1><a id="app-header" class="menu-name" data-i18n="network_manager.header.app_header">Wifi </a></h1>
             </li>
             <li class="toggle-topbar">
-              <a href="#" id="little_menu"><span>Menu </span>
+              <a href="#" id="little_menu"><span data-i18n="network_manager.header.menu">Menu </span>
               <!-- <span class="exit-button" id="exit_small">X</span></a> -->
             </li>
         </ul>
             <section class="top-bar-section">
             <ul class="left">
               <li>
-                <a id="wifi-mode-button" class="submit-button" title="Toggle Wifi Power" href="#">
-                  <strong>Wifi:</strong><strong style="color: #ffe217;">&nbsp;&nbsp;ON</strong> | 
-                  <span style="color: lightgray; opacity: 0.5;"> off</span>
+                <a id="wifi-mode-button" class="submit-button" title="Toggle Wifi Power" data-i18n-title="network_manager.header.toggle_wifi_power_tooltip" href="#">
+                  <strong data-i18n="network_manager.header.wifi_label">Wifi:</strong><strong style="color: #ffe217;" data-i18n="network_manager.status.on">&nbsp;&nbsp;ON</strong> |
+                  <span style="color: lightgray; opacity: 0.5;" data-i18n="network_manager.status.off"> off</span>
                 </a>
               </li>
               <li>
-                <a id="ap-mode-button" class="submit-button" title="Toggle AP Mode Presence" href="#">
-                  <strong>AP Mode:</strong><strong style="color: #ffe217;">&nbsp;&nbsp;ENABLED</strong> | 
-                  <span style="color: lightgray; opacity: 0.5;"> disabled</span>
+                <a id="ap-mode-button" class="submit-button" title="Toggle AP Mode Presence" data-i18n-title="network_manager.header.toggle_ap_mode_tooltip" href="#">
+                  <strong data-i18n="network_manager.header.ap_mode_label">AP Mode:</strong><strong style="color: #ffe217;" data-i18n="network_manager.status.enabled">&nbsp;&nbsp;ENABLED</strong> |
+                  <span style="color: lightgray; opacity: 0.5;" data-i18n="network_manager.status.disabled"> disabled</span>
                 </a>
           </ul>  
           </section>
       </nav>
 
-        <h1>Wifi Networks Available<span class="tooltip">i<span class="tooltiptext tooltiptext::after">
-            Wifi networks available to your tool. 
+        <h1><span data-i18n="network_manager.wifi.networks_available_heading">Wifi Networks Available</span><span class="tooltip">i<span class="tooltiptext tooltiptext::after" data-i18n="network_manager.wifi.networks_available_tooltip">
+            Wifi networks available to your tool.
             Click on SSID name to set up a new wifi interface to access your tool.</span></span>
         </h1>
        
@@ -83,9 +83,9 @@
             <table class="small-12 columns" style="width:100%" id="wifi_table">
             <thead>
                 <tr>
-                    <th>SSID Name</th>
-                    <th>Security</th>
-                    <th style="text-align: center;">Strength</th>
+                    <th data-i18n="network_manager.wifi.col_ssid_name">SSID Name</th>
+                    <th data-i18n="network_manager.wifi.col_security">Security</th>
+                    <th style="text-align: center;" data-i18n="network_manager.wifi.col_strength">Strength</th>
                 </tr>
             </thead>
             <tbody><tr></tr></tbody>
@@ -94,7 +94,7 @@
 
         <div id="recent" class="hidden">
 
-            <h1>Access Interfaces<span class="tooltip">i<span class="tooltiptext tooltiptext::after">
+            <h1><span data-i18n="network_manager.interfaces.heading">Access Interfaces</span><span class="tooltip">i<span class="tooltiptext tooltiptext::after" data-i18n="network_manager.interfaces.tooltip">
                 Your tool is connected to each of these interfaces for access. The favored interface access is at the top of the list and is shown on the R-Pi screen (if available).
                 (if attached). To remove an interface, click on its name.</span></span>
             </h1>
@@ -103,9 +103,9 @@
             <table class="small-12 columns" style="width:100%" id="history_table">
             <thead>
                 <tr>
-                    <th>Interface</th>
-                    <th>IP Address on Interface</th>
-                    <th>Interfaced Via:</th>
+                    <th data-i18n="network_manager.interfaces.col_interface">Interface</th>
+                    <th data-i18n="network_manager.interfaces.col_ip_address">IP Address on Interface</th>
+                    <th data-i18n="network_manager.interfaces.col_interfaced_via">Interfaced Via:</th>
                 </tr>
             </thead>
             <tbody><tr></tr></tbody>
