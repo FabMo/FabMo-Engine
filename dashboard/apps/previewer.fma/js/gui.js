@@ -67,19 +67,19 @@ module.exports = function(callbacks) {
 
 
   self.showLoading = function(msg) {
-    self.loading.innerHTML = msg || 'Loading file. Please wait.';
+    self.loading.innerHTML = msg || window.t('previewer.loading.default');
     show(self.loading, true);
   }
 
 
   self.showLoadingSize = function(size) {
-    var msg = 'Loaded ' + util.toSIBytes(size) + '.  Please wait.';
+    var msg = window.t('previewer.loading.loaded', {size: util.toSIBytes(size)});
     self.showLoading(msg);
   }
 
 
   self.showLoadingProgress = function(progress) {
-    var msg = 'Processing GCode.  Please wait.' +
+    var msg = window.t('previewer.loading.processing') +
         '<progress max="100" value="' + (100 * progress) + '"></progress>';
     self.showLoading(msg);
   }
@@ -94,8 +94,12 @@ module.exports = function(callbacks) {
     var u = units || '';
     for (var i = 0; i < violations.length; i++) {
       var v = violations[i];
-      var line = v.axis.toUpperCase() + ' exceeds ' + v.direction +
-                 ' by ' + v.overage.toFixed(2) + ' ' + u;
+      var line = window.t('previewer.soft_limit.violation', {
+        axis: v.axis.toUpperCase(),
+        direction: v.direction,
+        overage: v.overage.toFixed(2),
+        units: u
+      });
       $('<li>').text(line).appendTo($list);
     }
     show(self.softLimitWarning, true);
@@ -348,8 +352,8 @@ module.exports = function(callbacks) {
 
   function updateInOutInfo() {
     var parts = [];
-    if (self.inPoint) parts.push('In: ' + self.inPoint.sourceLine);
-    if (self.outPoint) parts.push('Out: ' + self.outPoint.sourceLine);
+    if (self.inPoint) parts.push(window.t('previewer.inout.in', {line: self.inPoint.sourceLine}));
+    if (self.outPoint) parts.push(window.t('previewer.inout.out', {line: self.outPoint.sourceLine}));
     inoutInfo.text(parts.join(' | '));
 
     inBtn.toggleClass('active', !!self.inPoint);

@@ -12,7 +12,7 @@
     <nav class="top-bar" data-topbar role="navigation" id="topbar">
         <ul class="title-area">
             <li class="name">
-            <h1><a id="app-header">Tool Path Preview</a></h1>
+            <h1><a id="app-header" data-i18n="previewer.header.title">Tool Path Preview</a></h1>
             </li>
             <li class="toggle-topbar">
                 <a></a><span class="exit-button"id="exit_small">X</span></a>
@@ -40,43 +40,43 @@
         <div class="ar-cal-handle" data-corner="br">BR</div>
         <div class="ar-cal-handle" data-corner="bl">BL</div>
         <div class="ar-cal-actions">
-          <span class="ar-cal-instruction">Drag the corners to align with your table</span>
-          <button class="ar-cal-save" type="button">Save</button>
-          <button class="ar-cal-cancel" type="button">Cancel</button>
+          <span class="ar-cal-instruction" data-i18n="previewer.ar.calibration_instruction">Drag the corners to align with your table</span>
+          <button class="ar-cal-save" type="button" data-i18n="previewer.ar.save">Save</button>
+          <button class="ar-cal-cancel" type="button" data-i18n="previewer.ar.cancel">Cancel</button>
         </div>
       </div>
 
-      <div class="code-line" title="Current File Line"></div>
+      <div class="code-line" data-i18n-title="previewer.code_line_title" title="Current File Line"></div>
 
       <div class="soft-limit-warning" id="soft-limit-warning" style="display: none;">
-        <div class="soft-limit-warning-title">File exceeds machine soft limits</div>
+        <div class="soft-limit-warning-title" data-i18n="previewer.soft_limit.title">File exceeds machine soft limits</div>
         <ul class="soft-limit-warning-list"></ul>
       </div>
 
       <div class="operations-panel" id="operations-panel" style="display: none;">
         <div class="ops-setup" id="ops-setup">
-          <div class="ops-setup-header" title="Click to collapse/expand">
-            <span>Setup</span>
+          <div class="ops-setup-header" data-i18n-title="previewer.setup.toggle_title" title="Click to collapse/expand">
+            <span data-i18n="previewer.setup.title">Setup</span>
             <span class="ops-setup-toggle">−</span>
           </div>
           <div class="ops-setup-body">
             <div class="ops-setup-row">
-              <label>Material thickness</label>
+              <label data-i18n="previewer.setup.material_thickness">Material thickness</label>
               <input type="number" class="setup-material-thickness" min="0" step="any"/>
             </div>
             <div class="ops-setup-row">
-              <label>Z origin</label>
+              <label data-i18n="previewer.setup.z_origin">Z origin</label>
               <select class="setup-z-origin">
-                <option value="material">Material Surface</option>
-                <option value="table">Table Surface</option>
+                <option value="material" data-i18n="previewer.setup.z_material">Material Surface</option>
+                <option value="table" data-i18n="previewer.setup.z_table">Table Surface</option>
               </select>
             </div>
             <div class="ops-setup-row">
-              <label>Default tool</label>
+              <label data-i18n="previewer.setup.default_tool">Default tool</label>
               <select class="setup-tool-type">
-                <option value="flat">Flat</option>
-                <option value="ball">Ball</option>
-                <option value="vbit">V-Bit</option>
+                <option value="flat" data-i18n="previewer.tool.flat">Flat</option>
+                <option value="ball" data-i18n="previewer.tool.ball">Ball</option>
+                <option value="vbit" data-i18n="previewer.tool.vbit">V-Bit</option>
               </select>
               <input type="number" class="setup-tool-dia" min="0.01" step="any"/>
               <span class="setup-tool-dia-label">"</span>
@@ -88,37 +88,37 @@
           </div>
         </div>
         <div class="ops-header">
-          <span class="ops-header-title">Operations</span>
-          <span class="ops-toggle-all" title="Select All / None">All</span>
+          <span class="ops-header-title" data-i18n="previewer.ops.title">Operations</span>
+          <span class="ops-toggle-all" data-i18n-title="previewer.ops.toggle_all_title" title="Select All / None" data-i18n="previewer.ops.toggle_all">All</span>
         </div>
         <div class="ops-list" id="ops-list"></div>
-        <div class="ops-empty" id="ops-empty" style="display: none;">No operations parsed in file. Use Setup to set tool defaults, then run the full job.</div>
+        <div class="ops-empty" id="ops-empty" style="display: none;" data-i18n="previewer.ops.empty">No operations parsed in file. Use Setup to set tool defaults, then run the full job.</div>
         <div class="ops-actions">
-          <div class="run-now">Run Full Job</div>
-          <button class="run-trimmed" title="Run only the in/out selection">Run Trimmed</button>
-          <button class="submit-trimmed" title="Submit the in/out selection as a new job">Submit Trimmed</button>
-          <button class="run-selected-ops" title="Run only the checked operations">Run Selected</button>
-          <button class="submit-selected-ops" title="Submit checked operations as a new job">Submit Selected</button>
+          <div class="run-now" data-i18n="previewer.ops.run_full_job">Run Full Job</div>
+          <button class="run-trimmed" data-i18n-title="previewer.ops.run_trimmed_title" title="Run only the in/out selection" data-i18n="previewer.ops.run_trimmed">Run Trimmed</button>
+          <button class="submit-trimmed" data-i18n-title="previewer.ops.submit_trimmed_title" title="Submit the in/out selection as a new job" data-i18n="previewer.ops.submit_trimmed">Submit Trimmed</button>
+          <button class="run-selected-ops" data-i18n-title="previewer.ops.run_selected_title" title="Run only the checked operations" data-i18n="previewer.ops.run_selected">Run Selected</button>
+          <button class="submit-selected-ops" data-i18n-title="previewer.ops.submit_selected_title" title="Submit checked operations as a new job" data-i18n="previewer.ops.submit_selected">Submit Selected</button>
         </div>
       </div>
 
       <div class="actions">
         <img id="button-x"      src="images/x.png"
-             title="Change orientation to view down the X axis."/>
+             data-i18n-title="previewer.view.x_title" title="Change orientation to view down the X axis."/>
         <img id="button-y"      src="images/y.png"
-             title="Change orientation to view down the Y axis."/>
+             data-i18n-title="previewer.view.y_title" title="Change orientation to view down the Y axis."/>
         <img id="button-z"      src="images/z.png"
-             title="Change orientation to view down the Z axis."/>
+             data-i18n-title="previewer.view.z_title" title="Change orientation to view down the Z axis."/>
         <img id="button-ortho"    src="images/ortho.png"
-             title="Toggle to Ortho (non-perspective) view."/>
+             data-i18n-title="previewer.view.ortho_title" title="Toggle to Ortho (non-perspective) view."/>
         <img id="button-perspective"    src="images/perspective.png"
-             title="Toggle to Perspective view."/>
+             data-i18n-title="previewer.view.persp_title" title="Toggle to Perspective view."/>
       </div>
 
       <div class="bottom-bar">
         <img id="button-settings" src="images/settings.png"
-             title="Open previewer settings."/>
-        <select name="speed" class="quick-setting" title="Simulation Speed">
+             data-i18n-title="previewer.bottom.settings_title" title="Open previewer settings."/>
+        <select name="speed" class="quick-setting" data-i18n-title="previewer.bottom.speed_title" title="Simulation Speed">
           <option value="0.0625">1/16x</option>
           <option value="0.125">1/8x</option>
           <option value="0.25">1/4x</option>
@@ -129,289 +129,289 @@
           <option value="8">8x</option>
           <option value="16">16x</option>
         </select>
-        <label class="quick-toggle" title="Show Toolpath">
-          <input type="checkbox" name="show-toolpath"/> Path
+        <label class="quick-toggle" data-i18n-title="previewer.bottom.toolpath_title" title="Show Toolpath">
+          <input type="checkbox" name="show-toolpath"/> <span data-i18n="previewer.bottom.path">Path</span>
         </label>
-        <label class="quick-toggle" title="Show Material Simulation">
-          <input type="checkbox" name="show-material"/> Material
+        <label class="quick-toggle" data-i18n-title="previewer.bottom.material_title" title="Show Material Simulation">
+          <input type="checkbox" name="show-material"/> <span data-i18n="previewer.bottom.material">Material</span>
         </label>
-        <label class="quick-toggle ar-toggle" id="ar-toggle-wrap" title="Overlay preview on the live camera feed (requires calibration)" style="display:none;">
-          <input type="checkbox" name="show-ar"/> AR
+        <label class="quick-toggle ar-toggle" id="ar-toggle-wrap" data-i18n-title="previewer.bottom.ar_title" title="Overlay preview on the live camera feed (requires calibration)" style="display:none;">
+          <input type="checkbox" name="show-ar"/> <span data-i18n="previewer.bottom.ar">AR</span>
         </label>
-        <label class="quick-toggle ar-toggle" id="overhead-toggle-wrap" title="Un-warped top-down view of the live table — toolpath over the real surface to spot clamps/fixtures" style="display:none;">
-          <input type="checkbox" name="show-overhead"/> Top
+        <label class="quick-toggle ar-toggle" id="overhead-toggle-wrap" data-i18n-title="previewer.bottom.top_title" title="Un-warped top-down view of the live table — toolpath over the real surface to spot clamps/fixtures" style="display:none;">
+          <input type="checkbox" name="show-overhead"/> <span data-i18n="previewer.bottom.top">Top</span>
         </label>
-        <span class="ar-recalibrate" id="ar-recalibrate" title="Recalibrate table corners" style="display:none;">⟳ Recalibrate</span>
+        <span class="ar-recalibrate" id="ar-recalibrate" data-i18n-title="previewer.bottom.recal_title" title="Recalibrate table corners" style="display:none;">⟳ <span data-i18n="previewer.bottom.recalibrate">Recalibrate</span></span>
         <img id="button-play"   src="images/play.png"
-             title="Start or continue path simulation."/>
+             data-i18n-title="previewer.bottom.play_title" title="Start or continue path simulation."/>
         <img id="button-pause"  src="images/pause.png"
-             title="Pause path simulation."/>
+             data-i18n-title="previewer.bottom.pause_title" title="Pause path simulation."/>
         <img id="button-reset"  src="images/reset.png"
-             title="Restart path simulation."/>
-        <span id="button-skip-back" class="nav-btn" title="Skip to previous plunge (Shift+Left)">|&lsaquo;&lsaquo;</span>
-        <span id="button-step-back" class="nav-btn" title="Step back one line (Left arrow)">&lsaquo;</span>
+             data-i18n-title="previewer.bottom.reset_title" title="Restart path simulation."/>
+        <span id="button-skip-back" class="nav-btn" data-i18n-title="previewer.bottom.skip_back_title" title="Skip to previous plunge (Shift+Left)">|&lsaquo;&lsaquo;</span>
+        <span id="button-step-back" class="nav-btn" data-i18n-title="previewer.bottom.step_back_title" title="Step back one line (Left arrow)">&lsaquo;</span>
         <input type="range" id="timeline" min="0" max="1000" value="0" step="1"/>
-        <span id="button-step-fwd" class="nav-btn" title="Step forward one line (Right arrow)">&rsaquo;</span>
-        <span id="button-skip-fwd" class="nav-btn" title="Skip to next retract (Shift+Right)">&rsaquo;&rsaquo;|</span>
+        <span id="button-step-fwd" class="nav-btn" data-i18n-title="previewer.bottom.step_fwd_title" title="Step forward one line (Right arrow)">&rsaquo;</span>
+        <span id="button-skip-fwd" class="nav-btn" data-i18n-title="previewer.bottom.skip_fwd_title" title="Skip to next retract (Shift+Right)">&rsaquo;&rsaquo;|</span>
         <div class="timeline-range" id="timeline-range"></div>
         <div class="timeline-stripes" id="timeline-stripes"></div>
-        <span id="button-in" class="inout-btn" title="Set Cut Start at current position (I)">Set Cut Start</span>
-        <span id="button-out" class="inout-btn" title="Set Cut Stop at current position (O)">Set Cut Stop</span>
-        <span id="button-clear-inout" class="inout-btn clear-btn" title="Clear In/Out points">&times;</span>
+        <span id="button-in" class="inout-btn" data-i18n-title="previewer.bottom.cut_start_title" title="Set Cut Start at current position (I)" data-i18n="previewer.bottom.cut_start">Set Cut Start</span>
+        <span id="button-out" class="inout-btn" data-i18n-title="previewer.bottom.cut_stop_title" title="Set Cut Stop at current position (O)" data-i18n="previewer.bottom.cut_stop">Set Cut Stop</span>
+        <span id="button-clear-inout" class="inout-btn clear-btn" data-i18n-title="previewer.bottom.clear_title" title="Clear In/Out points">&times;</span>
         <span id="inout-info" class="inout-info"></span>
       </div>
-      <a id="button-help" title="Show Help" hidden> i </a>
+      <a id="button-help" data-i18n-title="previewer.help.button_title" title="Show Help" hidden> i </a>
 
       <div class="loading dialog"></div>
 
       <div class="errors dialog">
-        <div class="header">Errors</div>
+        <div class="header" data-i18n="previewer.errors.title">Errors</div>
         <div class="content">
-          <p>Be careful.  Errors were detected in this file.  The machine may
+          <p data-i18n="previewer.errors.body">Be careful.  Errors were detected in this file.  The machine may
             not operate as displayed here.</p>
           <table>
             <thead>
-              <tr><th>Line</th><th>Description</th></tr>
+              <tr><th data-i18n="previewer.errors.col_line">Line</th><th data-i18n="previewer.errors.col_desc">Description</th></tr>
             </thead>
             <tbody>
             </tbody>
           </table>
         </div>
-        <div class="footer"><button class="close">Ok</button></div>
+        <div class="footer"><button class="close" data-i18n="previewer.ok">Ok</button></div>
       </div>
 
       <div class="settings dialog">
-        <div class="header">Settings</div>
+        <div class="header" data-i18n="previewer.settings.title">Settings</div>
         <div class="content">
-          <label>Temporarily Change File-Boundary Indicator Units </label>
+          <label data-i18n="previewer.settings.boundary_units">Temporarily Change File-Boundary Indicator Units </label>
           <select name="units">
             <!-- <option value="auto">auto</option> -->
-            <option value="mm">millimeters</option>
-            <option value="in">inches</option>
+            <option value="mm" data-i18n="previewer.settings.units_mm">millimeters</option>
+            <option value="in" data-i18n="previewer.settings.units_in">inches</option>
           </select>
 
-          <label>Grid Step (in current machine display units)</label>
+          <label data-i18n="previewer.settings.grid_step">Grid Step (in current machine display units)</label>
           <input name="grid-step" type="number" min="0" max="1000000"
                  step="1" value="1"/>
 
-          <label>Table Offset from Z-Zero (in current machine display units)</label>
+          <label data-i18n="previewer.settings.table_zzoff">Table Offset from Z-Zero (in current machine display units)</label>
           <input name="table-zzoff" type="number" min="-100" max="100"
                  step=".1" value="-1"/>
 
-          <label>Live Sync Buffer Compensation (SBP: SBP commands; GCode: gcode lines)</label>
+          <label data-i18n="previewer.settings.lookahead">Live Sync Buffer Compensation (SBP: SBP commands; GCode: gcode lines)</label>
           <input name="planner-lookahead" type="number" min="0" max="40"
                 step="1" value="5"/>
 
-          <h5>Display Options</h5>
+          <h5 data-i18n="previewer.settings.display_opts">Display Options</h5>
 
           <label>
             <input type="checkbox" name="show-grid"/>
-            Show Grid
+            <span data-i18n="previewer.settings.show_grid">Show Grid</span>
           </label>
 
           <label>
             <input name="show-table" type="checkbox" checked="true"/>
-            Show Machine Table
+            <span data-i18n="previewer.settings.show_table">Show Machine Table</span>
           </label>
 
           <label>
             <input type="checkbox" name="show-dims"/>
-            Show Dimensions
+            <span data-i18n="previewer.settings.show_dims">Show Dimensions</span>
           </label>
 
           <label>
             <input type="checkbox" name="show-axes"/>
-            Show Axes
+            <span data-i18n="previewer.settings.show_axes">Show Axes</span>
           </label>
 
           <label>
             <input type="checkbox" name="show-tool"/>
-            Show Tool (Yellow Cone)
+            <span data-i18n="previewer.settings.show_tool">Show Tool (Yellow Cone)</span>
           </label>
 
           <label>
             <input name="show-pointcloud" type="checkbox"/>
-            Show Point Cloud Shape for Leveler
+            <span data-i18n="previewer.settings.show_pc">Show Point Cloud Shape for Leveler</span>
           </label>
 
           <label>
             <input name="show-pointcloud-wireframe" type="checkbox" checked="true"/>
-            Show Point Cloud Wireframe
+            <span data-i18n="previewer.settings.show_pc_wire">Show Point Cloud Wireframe</span>
           </label>
 
-          <button class="reset-material">Reset Material</button>
+          <button class="reset-material" data-i18n="previewer.settings.reset_material">Reset Material</button>
 
           <hr/>
 
-          <h5>Simulation Options</h5>
+          <h5 data-i18n="previewer.settings.sim_opts">Simulation Options</h5>
 
-          <label>Set Point Cloud Opacity</label>
+          <label data-i18n="previewer.settings.pc_opacity">Set Point Cloud Opacity</label>
           <input class="opacity-slider" id=#op-slider name="pointcloud-opacity" type="range" min="0" max="1" step="0.1" value="0.3"/>
 
-          <label>Set Material Opacity</label>
+          <label data-i18n="previewer.settings.mat_opacity">Set Material Opacity</label>
           <div class="range-container">
             <input name="material-opacity" type="range" min="0" max="1" step="0.1" value="0.5"/>
           </div>
 
-          <label>Light Azimuth (rotation around scene)</label>
+          <label data-i18n="previewer.settings.light_azimuth">Light Azimuth (rotation around scene)</label>
           <div class="range-container">
             <input name="light-azimuth" type="range" min="0" max="360" step="5" value="135"/>
           </div>
 
-          <label>Light Elevation (above table)</label>
+          <label data-i18n="previewer.settings.light_elevation">Light Elevation (above table)</label>
           <div class="range-container">
             <input name="light-elevation" type="range" min="5" max="90" step="5" value="25"/>
           </div>
 
-          <label>Simulation Resolution (grid points)</label>
+          <label data-i18n="previewer.settings.resolution">Simulation Resolution (grid points)</label>
           <select name="material-resolution">
-            <option value="100">Low (100 - Fast)</option>
-            <option value="200">Medium (200)</option>
-            <option value="400">High (400)</option>
-            <option value="600">Very High (600)</option>
-            <option value="1000" selected>Ultra (1000)</option>
-            <option value="2000">Extreme (2000)</option>
+            <option value="100" data-i18n="previewer.settings.res_low">Low (100 - Fast)</option>
+            <option value="200" data-i18n="previewer.settings.res_med">Medium (200)</option>
+            <option value="400" data-i18n="previewer.settings.res_high">High (400)</option>
+            <option value="600" data-i18n="previewer.settings.res_vhigh">Very High (600)</option>
+            <option value="1000" selected data-i18n="previewer.settings.res_ultra">Ultra (1000)</option>
+            <option value="2000" data-i18n="previewer.settings.res_extreme">Extreme (2000)</option>
           </select>
 
           <hr/>
 
         </div>
-        <div class="footer"><button class="close">Ok</button></div>
+        <div class="footer"><button class="close" data-i18n="previewer.ok">Ok</button></div>
       </div>
 
       <div class="help dialog">
-        <div class="header">Preview Help</div>
+        <div class="header" data-i18n="previewer.help.title">Preview Help</div>
         <div class="content">
-          <h3>Mouse Controls</h3>
+          <h3 data-i18n="previewer.help.mouse">Mouse Controls</h3>
           <table>
-            <tr><th>Left Mouse</th><td>Hold and drag to rotate</td></tr>
-            <tr><th>Middle Mouse</th><td>Hold and drag to zoom</td></tr>
-            <tr><th>Right Mouse</th><td>Hold and drag to pan</td></tr>
-            <tr><th>Mouse Wheel</th><td>Zoom in and out</td></tr>
+            <tr><th data-i18n="previewer.help.mouse_left">Left Mouse</th><td data-i18n="previewer.help.mouse_left_d">Hold and drag to rotate</td></tr>
+            <tr><th data-i18n="previewer.help.mouse_mid">Middle Mouse</th><td data-i18n="previewer.help.mouse_mid_d">Hold and drag to zoom</td></tr>
+            <tr><th data-i18n="previewer.help.mouse_right">Right Mouse</th><td data-i18n="previewer.help.mouse_right_d">Hold and drag to pan</td></tr>
+            <tr><th data-i18n="previewer.help.mouse_wheel">Mouse Wheel</th><td data-i18n="previewer.help.mouse_wheel_d">Zoom in and out</td></tr>
           </table>
 
-          <h3>Keyboard Shortcuts</h3>
+          <h3 data-i18n="previewer.help.keyboard">Keyboard Shortcuts</h3>
           <table>
-            <tr><th>I</th><td>Set Cut Start at current timeline position.</td></tr>
-            <tr><th>O</th><td>Set Cut Stop at current timeline position.</td></tr>
-            <tr><th>&larr; / &rarr;</th><td>Step backward / forward one line.</td></tr>
-            <tr><th>Shift+&larr; / Shift+&rarr;</th><td>Skip to the previous plunge / next retract.</td></tr>
-            <tr><th>Esc</th><td>Close any open dialog (Settings, Help, etc.).</td></tr>
+            <tr><th>I</th><td data-i18n="previewer.help.key_i">Set Cut Start at current timeline position.</td></tr>
+            <tr><th>O</th><td data-i18n="previewer.help.key_o">Set Cut Stop at current timeline position.</td></tr>
+            <tr><th>&larr; / &rarr;</th><td data-i18n="previewer.help.key_arrows">Step backward / forward one line.</td></tr>
+            <tr><th>Shift+&larr; / Shift+&rarr;</th><td data-i18n="previewer.help.key_shift_arrows">Skip to the previous plunge / next retract.</td></tr>
+            <tr><th>Esc</th><td data-i18n="previewer.help.key_esc">Close any open dialog (Settings, Help, etc.).</td></tr>
           </table>
 
-          <h3>View Buttons</h3>
+          <h3 data-i18n="previewer.help.view_btns">View Buttons</h3>
           <table>
-            <tr><th><img src="images/x.png"/></th><td>Snap to view down the X axis.</td></tr>
-            <tr><th><img src="images/y.png"/></th><td>Snap to view down the Y axis.</td></tr>
-            <tr><th><img src="images/z.png"/></th><td>Snap to view down the Z axis (top-down).</td></tr>
-            <tr><th><img src="images/ortho.png"/></th><td>Switch to orthographic (non-perspective) view.</td></tr>
-            <tr><th><img src="images/perspective.png"/></th><td>Switch to perspective view.</td></tr>
-            <tr><th><img src="images/settings.png"/></th><td>Open previewer settings.</td></tr>
+            <tr><th><img src="images/x.png"/></th><td data-i18n="previewer.help.view_x">Snap to view down the X axis.</td></tr>
+            <tr><th><img src="images/y.png"/></th><td data-i18n="previewer.help.view_y">Snap to view down the Y axis.</td></tr>
+            <tr><th><img src="images/z.png"/></th><td data-i18n="previewer.help.view_z">Snap to view down the Z axis (top-down).</td></tr>
+            <tr><th><img src="images/ortho.png"/></th><td data-i18n="previewer.help.view_ortho">Switch to orthographic (non-perspective) view.</td></tr>
+            <tr><th><img src="images/perspective.png"/></th><td data-i18n="previewer.help.view_persp">Switch to perspective view.</td></tr>
+            <tr><th><img src="images/settings.png"/></th><td data-i18n="previewer.help.view_settings">Open previewer settings.</td></tr>
           </table>
 
-          <h3>Playback &amp; Timeline</h3>
+          <h3 data-i18n="previewer.help.playback">Playback &amp; Timeline</h3>
           <table>
-            <tr><th><img src="images/play.png"/></th><td>Start or continue simulation.</td></tr>
-            <tr><th><img src="images/pause.png"/></th><td>Pause simulation.</td></tr>
-            <tr><th><img src="images/reset.png"/></th><td>Restart simulation from the beginning.</td></tr>
-            <tr><th>|&lsaquo;&lsaquo; &nbsp; &rsaquo;&rsaquo;|</th><td>Skip to previous plunge / next retract.</td></tr>
-            <tr><th>&lsaquo; &nbsp; &rsaquo;</th><td>Step back / forward one line.</td></tr>
-            <tr><th>Timeline slider</th><td>Drag to scrub through the path.</td></tr>
-            <tr><th>Set Cut Start / Stop</th><td>Mark in/out points on the timeline. Used to play, run, or submit only a trimmed range. The &times; clears them.</td></tr>
-            <tr><th>Path / Material</th><td>Quick toggles to show or hide the toolpath lines and the material simulation surface.</td></tr>
+            <tr><th><img src="images/play.png"/></th><td data-i18n="previewer.help.play">Start or continue simulation.</td></tr>
+            <tr><th><img src="images/pause.png"/></th><td data-i18n="previewer.help.pause">Pause simulation.</td></tr>
+            <tr><th><img src="images/reset.png"/></th><td data-i18n="previewer.help.reset">Restart simulation from the beginning.</td></tr>
+            <tr><th>|&lsaquo;&lsaquo; &nbsp; &rsaquo;&rsaquo;|</th><td data-i18n="previewer.help.skip">Skip to previous plunge / next retract.</td></tr>
+            <tr><th>&lsaquo; &nbsp; &rsaquo;</th><td data-i18n="previewer.help.step">Step back / forward one line.</td></tr>
+            <tr><th data-i18n="previewer.help.timeline">Timeline slider</th><td data-i18n="previewer.help.timeline_d">Drag to scrub through the path.</td></tr>
+            <tr><th data-i18n="previewer.help.set_cut">Set Cut Start / Stop</th><td data-i18n-html="previewer.help.set_cut_d">Mark in/out points on the timeline. Used to play, run, or submit only a trimmed range. The &times; clears them.</td></tr>
+            <tr><th data-i18n="previewer.help.path_mat">Path / Material</th><td data-i18n="previewer.help.path_mat_d">Quick toggles to show or hide the toolpath lines and the material simulation surface.</td></tr>
           </table>
 
-          <h3>Operations Panel</h3>
-          <p>Files compiled from SBP or with VCarve/ShopBot operation comments expose each operation as a checkable row. Use the panel to override tool defaults, run only what you need, or submit a trimmed/selected job.</p>
+          <h3 data-i18n="previewer.help.ops">Operations Panel</h3>
+          <p data-i18n="previewer.help.ops_intro">Files compiled from SBP or with VCarve/ShopBot operation comments expose each operation as a checkable row. Use the panel to override tool defaults, run only what you need, or submit a trimmed/selected job.</p>
           <table>
             <tr>
-              <th>Setup</th>
-              <td>Sets the file-wide defaults: <em>Material thickness</em>, <em>Z origin</em> (Material Surface or Table Surface), and the <em>Default tool</em> (Flat / Ball / V-Bit, plus diameter and V-bit angle). Changes here re-render the material simulation.</td>
+              <th data-i18n="previewer.help.ops_setup">Setup</th>
+              <td data-i18n-html="previewer.help.ops_setup_d">Sets the file-wide defaults: <em>Material thickness</em>, <em>Z origin</em> (Material Surface or Table Surface), and the <em>Default tool</em> (Flat / Ball / V-Bit, plus diameter and V-bit angle). Changes here re-render the material simulation.</td>
             </tr>
             <tr>
-              <th>Per-operation tool</th>
-              <td>Each operation row has its own bit type, diameter, and (for V-bit) angle. Editing these overrides the Setup default for that operation only.</td>
+              <th data-i18n="previewer.help.ops_per">Per-operation tool</th>
+              <td data-i18n="previewer.help.ops_per_d">Each operation row has its own bit type, diameter, and (for V-bit) angle. Editing these overrides the Setup default for that operation only.</td>
             </tr>
             <tr>
-              <th>Run Full Job</th>
-              <td>Submits the entire file as loaded.</td>
+              <th data-i18n="previewer.help.ops_full">Run Full Job</th>
+              <td data-i18n="previewer.help.ops_full_d">Submits the entire file as loaded.</td>
             </tr>
             <tr>
-              <th>Run Trimmed / Submit Trimmed</th>
-              <td>Run or submit only the range between Cut Start and Cut Stop (set with I / O or the bottom-bar buttons).</td>
+              <th data-i18n="previewer.help.ops_trim">Run Trimmed / Submit Trimmed</th>
+              <td data-i18n="previewer.help.ops_trim_d">Run or submit only the range between Cut Start and Cut Stop (set with I / O or the bottom-bar buttons).</td>
             </tr>
             <tr>
-              <th>Run Selected / Submit Selected</th>
-              <td>Run or submit only the operations whose checkboxes are ticked. The <em>All</em> link toggles every operation at once.</td>
+              <th data-i18n="previewer.help.ops_sel">Run Selected / Submit Selected</th>
+              <td data-i18n-html="previewer.help.ops_sel_d">Run or submit only the operations whose checkboxes are ticked. The <em>All</em> link toggles every operation at once.</td>
             </tr>
           </table>
 
-          <h3>AR &amp; Top Overlays</h3>
-          <p>When a machine camera is detected and table corners have been calibrated, two extra toggles appear on the bottom bar:</p>
+          <h3 data-i18n="previewer.help.ar">AR &amp; Top Overlays</h3>
+          <p data-i18n="previewer.help.ar_intro">When a machine camera is detected and table corners have been calibrated, two extra toggles appear on the bottom bar:</p>
           <table>
             <tr>
               <th>AR</th>
-              <td>Overlays the toolpath preview on the live camera feed using the calibrated camera pose, so the rendered path appears in the same perspective as the real table.</td>
+              <td data-i18n="previewer.help.ar_d">Overlays the toolpath preview on the live camera feed using the calibrated camera pose, so the rendered path appears in the same perspective as the real table.</td>
             </tr>
             <tr>
               <th>Top</th>
-              <td>Un-warped top-down view of the live table. The camera image is warped to a true overhead, with the toolpath rendered over it &mdash; useful for spotting clamps or fixtures the path would collide with.</td>
+              <td data-i18n-html="previewer.help.top_d">Un-warped top-down view of the live table. The camera image is warped to a true overhead, with the toolpath rendered over it &mdash; useful for spotting clamps or fixtures the path would collide with.</td>
             </tr>
             <tr>
-              <th>&#x27F3; Recalibrate</th>
-              <td>Re-marks the four table corners against the live video. Drag each handle (TL, TR, BR, BL) onto the corresponding corner of the table, then Save. Calibration is stored in the machine config and shared between AR and Top modes.</td>
+              <th data-i18n-html="previewer.help.recal">&#x27F3; Recalibrate</th>
+              <td data-i18n="previewer.help.recal_d">Re-marks the four table corners against the live video. Drag each handle (TL, TR, BR, BL) onto the corresponding corner of the table, then Save. Calibration is stored in the machine config and shared between AR and Top modes.</td>
             </tr>
           </table>
 
-          <h3>Settings</h3>
+          <h3 data-i18n="previewer.help.settings">Settings</h3>
           <table>
             <tr>
-              <th>Simulation Speed</th>
-              <td>Playback speed relative to real time (1/16x &ndash; 16x).</td>
+              <th data-i18n="previewer.help.s_speed">Simulation Speed</th>
+              <td data-i18n-html="previewer.help.s_speed_d">Playback speed relative to real time (1/16x &ndash; 16x).</td>
             </tr>
             <tr>
-              <th>Temp Change Boundary Units</th>
-              <td>Temporarily changes units (inches vs mm) for the file boundary indicators. A unit setting inside the file overrides the machine setting for motion, but does not change the machine&rsquo;s display units.</td>
+              <th data-i18n="previewer.help.s_bound">Temp Change Boundary Units</th>
+              <td data-i18n-html="previewer.help.s_bound_d">Temporarily changes units (inches vs mm) for the file boundary indicators. A unit setting inside the file overrides the machine setting for motion, but does not change the machine&rsquo;s display units.</td>
             </tr>
             <tr>
-              <th>Grid Step</th>
-              <td>Grid step size in the current machine units.</td>
+              <th data-i18n="previewer.help.s_grid">Grid Step</th>
+              <td data-i18n="previewer.help.s_grid_d">Grid step size in the current machine units.</td>
             </tr>
             <tr>
-              <th>Table Offset from Z-Zero</th>
-              <td>How far the table sits below the Z-zero plane. If you zero at the table, set 0. If you zero on top of 0.75&quot; stock, set &minus;0.75.</td>
+              <th data-i18n="previewer.help.s_zzoff">Table Offset from Z-Zero</th>
+              <td data-i18n-html="previewer.help.s_zzoff_d">How far the table sits below the Z-zero plane. If you zero at the table, set 0. If you zero on top of 0.75&quot; stock, set &minus;0.75.</td>
             </tr>
             <tr>
-              <th>Live Sync Buffer Compensation</th>
-              <td>How many planner-buffered commands to skip ahead in the preview so the on-screen position tracks the actual machine more closely (SBP: SBP commands; GCode: gcode lines).</td>
+              <th data-i18n="previewer.help.s_look">Live Sync Buffer Compensation</th>
+              <td data-i18n="previewer.help.s_look_d">How many planner-buffered commands to skip ahead in the preview so the on-screen position tracks the actual machine more closely (SBP: SBP commands; GCode: gcode lines).</td>
             </tr>
             <tr>
-              <th>Display checkboxes</th>
-              <td>Show or hide grid, machine table, dimensions, axes, tool cone, and point-cloud / wireframe overlays.</td>
+              <th data-i18n="previewer.help.s_disp">Display checkboxes</th>
+              <td data-i18n="previewer.help.s_disp_d">Show or hide grid, machine table, dimensions, axes, tool cone, and point-cloud / wireframe overlays.</td>
             </tr>
             <tr>
-              <th>Reset Material</th>
-              <td>Clears any cut material from the simulation surface and re-initializes a fresh stock block.</td>
+              <th data-i18n="previewer.help.s_reset">Reset Material</th>
+              <td data-i18n="previewer.help.s_reset_d">Clears any cut material from the simulation surface and re-initializes a fresh stock block.</td>
             </tr>
             <tr>
-              <th>Point Cloud Opacity</th>
-              <td>Transparency of the leveler point-cloud overlay.</td>
+              <th data-i18n="previewer.help.s_pc">Point Cloud Opacity</th>
+              <td data-i18n="previewer.help.s_pc_d">Transparency of the leveler point-cloud overlay.</td>
             </tr>
             <tr>
-              <th>Material Opacity</th>
-              <td>Transparency of the simulated stock block.</td>
+              <th data-i18n="previewer.help.s_mat">Material Opacity</th>
+              <td data-i18n="previewer.help.s_mat_d">Transparency of the simulated stock block.</td>
             </tr>
             <tr>
-              <th>Light Azimuth / Elevation</th>
-              <td>Direction of the scene light. Adjust for better depth shading on the cut surface.</td>
+              <th data-i18n="previewer.help.s_light">Light Azimuth / Elevation</th>
+              <td data-i18n="previewer.help.s_light_d">Direction of the scene light. Adjust for better depth shading on the cut surface.</td>
             </tr>
             <tr>
-              <th>Simulation Resolution</th>
-              <td>Height-map grid resolution for the material simulation. Higher is more accurate but slower to compute and re-render.</td>
+              <th data-i18n="previewer.help.s_res">Simulation Resolution</th>
+              <td data-i18n="previewer.help.s_res_d">Height-map grid resolution for the material simulation. Higher is more accurate but slower to compute and re-render.</td>
             </tr>
           </table>
         </div>
-        <div class="footer"><button class="close">Ok</button></div>
+        <div class="footer"><button class="close" data-i18n="previewer.ok">Ok</button></div>
       </div>
     </div>
 

@@ -784,7 +784,7 @@ module.exports = function(container) {
         var entry = $('<div class="op-entry">');
         var topRow = $('<div class="op-top-row">');
         var checkbox = $('<input type="checkbox" checked>').attr('data-op-index', idx);
-        var nameSpan = $('<span class="op-name">').text(op.name || ('Operation ' + (idx + 1)));
+        var nameSpan = $('<span class="op-name">').text(op.name || window.t('previewer.ops.operation_n', {n: idx + 1}));
         topRow.append(checkbox).append(nameSpan);
         entry.append(topRow);
 
@@ -792,9 +792,9 @@ module.exports = function(container) {
         var toolRow = $('<div class="op-tool-row">');
 
         var typeSelect = $('<select class="op-tool-type">')
-          .append('<option value="flat">Flat</option>')
-          .append('<option value="ball">Ball</option>')
-          .append('<option value="vbit">V-Bit</option>')
+          .append($('<option value="flat">').text(window.t('previewer.tool.flat')))
+          .append($('<option value="ball">').text(window.t('previewer.tool.ball')))
+          .append($('<option value="vbit">').text(window.t('previewer.tool.vbit')))
           .val(ti.toolType || 'flat');
 
         var diaInput = $('<input class="op-tool-dia" type="number" min="0.01" max="3" step="any">')

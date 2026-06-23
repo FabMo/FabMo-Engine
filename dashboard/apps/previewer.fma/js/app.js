@@ -23,6 +23,7 @@ var Viewer = require('./viewer');
 var util   = require('./util');
 var cookie = require('./cookie');
 var Fabmo  = require('../../../static/js/libs/fabmo.js');
+require('./i18n.js');   // installs window.t / window.i18nReady / window.i18nApply
 
 var preview = $('#preview');
 var fabmo = new Fabmo();
@@ -61,7 +62,7 @@ function getMachineData(err, callback) {
         if (!err) {
           callback();
         } else {
-          fabmo.notify('error', 'Could not load machine data!');
+          fabmo.notify('error', window.t('previewer.notify.machine_data_failed'));
         }
     });
 }
@@ -73,7 +74,7 @@ function getStartStatus(err, callback) {
         if (!err) {
           callback();
         } else {
-          fabmo.notify('error', 'Could not load status data!');
+          fabmo.notify('error', window.t('previewer.notify.status_data_failed'));
         }
     });
 }
@@ -99,7 +100,7 @@ function cleanupBeforeExit() {
 
 $(function () {                             
   if (!util.webGLEnabled()) {
-    fabmo.notify('error', 'WebGL is not enabled. Impossible to preview.');
+    fabmo.notify('error', window.t('previewer.notify.webgl_disabled'));
     return;
   }
   let err = null;
@@ -634,7 +635,7 @@ function nowPreviewJob() {
   function buildTrimmedSelection() {
     var inOut = viewer ? viewer.getInOutPoints() : null;
     if (!inOut || (!inOut.inPoint && !inOut.outPoint) || !originalFileContent) {
-      fabmo.notify('Set In and/or Out points first', 'error');
+      fabmo.notify(window.t('previewer.notify.set_inout_first'), 'error');
       return null;
     }
     var inLine = inOut.inPoint ? inOut.inPoint.sourceLine : 1;
@@ -645,7 +646,7 @@ function nowPreviewJob() {
       ? extractSBPSelection(originalFileContent, inLine, outLine, safeZ)
       : extractGCodeSelection(originalFileContent, inLine, outLine, safeZ);
     if (!code) {
-      fabmo.notify('Could not extract selection from file', 'error');
+      fabmo.notify(window.t('previewer.notify.extract_failed'), 'error');
       return null;
     }
     return { code: code, isSBP: isSBP, inLine: inLine, outLine: outLine };
@@ -671,7 +672,7 @@ function nowPreviewJob() {
 
     var currentJobID = cookie.get('job-id');
     if (!currentJobID || currentJobID == -1) {
-      fabmo.notify('No current job to replace', 'error');
+      fabmo.notify(window.t('previewer.notify.no_current_job'), 'error');
       return;
     }
 
@@ -686,7 +687,7 @@ function nowPreviewJob() {
       fabmo.submitJob(file, {}, function(err) {
         $('.submit-trimmed').css('opacity', '').css('pointer-events', '');
         if (err) {
-          fabmo.notify('Failed to submit trimmed job: ' + err, 'error');
+          fabmo.notify(window.t('previewer.notify.submit_trim_failed', {error: err}), 'error');
         } else {
           cleanupBeforeExit();
           fabmo.launchApp('job-manager');
@@ -701,7 +702,7 @@ function nowPreviewJob() {
 
     var selected = viewer.getSelectedOperationIndices();
     if (selected.length === 0) {
-      fabmo.notify('No operations selected', 'error');
+      fabmo.notify(window.t('previewer.notify.no_ops_selected'), 'error');
       return;
     }
 
@@ -713,7 +714,7 @@ function nowPreviewJob() {
         if (err) fabmo.notify(err, 'error');
       });
     } else {
-      fabmo.notify('Could not build selected operations', 'error');
+      fabmo.notify(window.t('previewer.notify.build_failed'), 'error');
     }
   });
 
@@ -723,20 +724,20 @@ function nowPreviewJob() {
 
     var selected = viewer.getSelectedOperationIndices();
     if (selected.length === 0) {
-      fabmo.notify('No operations selected', 'error');
+      fabmo.notify(window.t('previewer.notify.no_ops_selected'), 'error');
       return;
     }
 
     var safeZ = (cached_Config && cached_Config.opensbp) ? cached_Config.opensbp.safeZpullUp : 0;
     var sbpCode = extractSelectedOperations(originalFileContent, viewer.operations, selected, safeZ);
     if (!sbpCode) {
-      fabmo.notify('Could not build selected operations', 'error');
+      fabmo.notify(window.t('previewer.notify.build_failed'), 'error');
       return;
     }
 
     var currentJobID = cookie.get('job-id');
     if (!currentJobID || currentJobID == -1) {
-      fabmo.notify('No current job to replace', 'error');
+      fabmo.notify(window.t('previewer.notify.no_current_job'), 'error');
       return;
     }
 
@@ -752,7 +753,7 @@ function nowPreviewJob() {
       fabmo.submitJob(file, {}, function(err, data) {
         $('.submit-selected-ops').css('opacity', '').css('pointer-events', '');
         if (err) {
-          fabmo.notify('Failed to submit selected operations: ' + err, 'error');
+          fabmo.notify(window.t('previewer.notify.submit_sel_failed', {error: err}), 'error');
         } else {
           cleanupBeforeExit();
           fabmo.launchApp('job-manager');
