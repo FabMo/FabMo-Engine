@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-  <title>G-Code Editor</title>
+  <title data-i18n="editor.page_title">G-Code Editor</title>
   <meta charset="utf-8"/>
   <link rel="stylesheet" href="../../css/dashboard.css">
 	<link rel="stylesheet" href="./css/style.css">
@@ -12,21 +12,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <div id="jobsubmit-modal" class="reveal-modal medium" data-reveal>
-    <div id="modal-title">Submit Job</div>
+    <div id="modal-title" data-i18n="editor.jobsubmit.modal_title">Submit Job</div>
     <div id="jobsubmit-form">
         <div class="row">
-            <label for="jobsubmit-name">Job Name:</label>
+            <label for="jobsubmit-name" data-i18n="editor.jobsubmit.job_name_label">Job Name:</label>
             <input autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" id="jobsubmit-name" type="text" name="jobsubmit-name" value="" />
         </div>
         <div class="row">
-            <label for="jobsubmit-name">Description:</label>
+            <label for="jobsubmit-name" data-i18n="editor.jobsubmit.description_label">Description:</label>
             <input autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" id="jobsubmit-description" type="text" name="jobsubmit-name" value="" />
         </div>
 
         <div class="row">
              <div class="right">
-                 <button id="jobsubmit-cancel" class="button radius alert">Cancel</button>
-                 <button id="jobsubmit-submit" class="button radius success">Submit Job</button>
+                 <button id="jobsubmit-cancel" class="button radius alert" data-i18n="editor.jobsubmit.cancel">Cancel</button>
+                 <button id="jobsubmit-submit" class="button radius success" data-i18n="editor.jobsubmit.submit">Submit Job</button>
              </div>
          </div>
      </div>
@@ -39,17 +39,17 @@
 
     <ul class="title-area">
       <li class="name noselect">
-        <h1 id="app-header" class="menu-name">Editor
+        <h1 id="app-header" class="menu-name"><span data-i18n="editor.header">Editor</span>
           <span class="tooltip tooltip-below">i
             <span class="tooltiptext">
-              Edits in scratchpad are automatically saved<br>
-              Edits to Jobfile or Macro REQUIRE saving<br><br>
+              <span data-i18n="editor.tooltip.scratchpad_autosave">Edits in scratchpad are automatically saved</span><br>
+              <span data-i18n="editor.tooltip.jobfile_macro_require_save">Edits to Jobfile or Macro REQUIRE saving</span><br><br>
               <ul style="text-align: left;">
-                <li>Ctrl-F / Cmd-F <strong>&gt; Start searching</strong></li>
-                <li>Ctrl-G / Cmd-G <strong>&gt; Find next</strong></li>
+                <li>Ctrl-F / Cmd-F <strong data-i18n-html="editor.tooltip.start_searching">&gt; Start searching</strong></li>
+                <li>Ctrl-G / Cmd-G <strong data-i18n-html="editor.tooltip.find_next">&gt; Find next</strong></li>
               </ul><br>
-                <span class = "tooltiplink" id="cmd-ref">Command Reference</span><br>
-                <span class = "tooltiplink" id="sys-vars">System Variables</span>
+                <span class = "tooltiplink" id="cmd-ref" data-i18n="editor.tooltip.command_reference">Command Reference</span><br>
+                <span class = "tooltiplink" id="sys-vars" data-i18n="editor.tooltip.system_variables">System Variables</span>
             </span>
           </span>
         </h1>
@@ -57,7 +57,7 @@
 
       <li class="toggle-topbar">
         <a href="#" id="small_menu">
-          <span>Menu</span>
+          <span data-i18n="editor.menu.toggle">Menu</span>
           <span class="exit-button" id="exit_small">X</span>
         </a>
       </li>
@@ -84,25 +84,25 @@
         </li>
 
         <li class="has-dropdown hidden" id="macro-menu">
-          <a href="#macromenu">MACRO Saves</a>
+          <a href="#macromenu" data-i18n="editor.menu.macro_saves">MACRO Saves</a>
           <ul class="dropdown">
-            <li><a id="macro-save" href="#macrosave">Save Macro</a></li>
-            <li><a id="macro-save-and-close" href="#macrosaveandclose">Save Macro and Close</a></li>          
+            <li><a id="macro-save" href="#macrosave" data-i18n="editor.menu.save_macro">Save Macro</a></li>
+            <li><a id="macro-save-and-close" href="#macrosaveandclose" data-i18n="editor.menu.save_macro_and_close">Save Macro and Close</a></li>
           </ul>        
         </li>
         <li class="has-dropdown language-dropdown"> 
-          <a href="#languagemenu">Language</a>
+          <a href="#languagemenu" data-i18n="editor.menu.language">Language</a>
           <ul class="dropdown">
             <li><a id="lang-opensbp" href="#languageopensbp">OpenSBP</a></li>
             <li><a id="lang-gcode" href="#languagegcode">G-Code</a></li>
           </ul>
         </li>
         <li class="has-dropdown" id="execute-menu">
-          <a href="#executemenu" class="success">Execute/Save</a>
+          <a href="#executemenu" class="success" data-i18n="editor.menu.execute_save">Execute/Save</a>
           <ul class="dropdown">
-            <li><a id="submit-immediate" href="#submitimmediate">Run Code Immediately (Ctrl+Enter)</a></li>
-            <li><a id="submit-debug" href="#submitdebug">Run in Debug Mode (input simulation)</a></li>
-            <li><a id="submit-job" href="#submitasjob">Save and Submit as Separate New Job</a></li>
+            <li><a id="submit-immediate" href="#submitimmediate" data-i18n="editor.menu.run_immediate">Run Code Immediately (Ctrl+Enter)</a></li>
+            <li><a id="submit-debug" href="#submitdebug" data-i18n="editor.menu.run_debug">Run in Debug Mode (input simulation)</a></li>
+            <li><a id="submit-job" href="#submitasjob" data-i18n="editor.menu.submit_as_job">Save and Submit as Separate New Job</a></li>
           </ul>
         </li>
       </ul>

@@ -3,6 +3,55 @@
         "language": "English",
         "code": "en"
     },
+    "editor": {
+        "page_title": "G-Code Editor",
+        "header": "Editor",
+        "tooltip": {
+            "scratchpad_autosave": "Edits in scratchpad are automatically saved",
+            "jobfile_macro_require_save": "Edits to Jobfile or Macro REQUIRE saving",
+            "start_searching": "&gt; Start searching",
+            "find_next": "&gt; Find next",
+            "command_reference": "Command Reference",
+            "system_variables": "System Variables"
+        },
+        "menu": {
+            "toggle": "Menu",
+            "macro_saves": "MACRO Saves",
+            "save_macro": "Save Macro",
+            "save_macro_and_close": "Save Macro and Close",
+            "language": "Language",
+            "execute_save": "Execute/Save",
+            "run_immediate": "Run Code Immediately (Ctrl+Enter)",
+            "run_debug": "Run in Debug Mode (input simulation)",
+            "submit_as_job": "Save and Submit as Separate New Job"
+        },
+        "jobsubmit": {
+            "modal_title": "Submit Job",
+            "job_name_label": "Job Name:",
+            "description_label": "Description:",
+            "cancel": "Cancel",
+            "submit": "Submit Job",
+            "default_description_gcode": "G-Code job from the editor",
+            "default_description_opensbp": "OpenSBP job from the editor"
+        },
+        "modal": {
+            "unsaved_changes_title": "Unsaved Changes",
+            "unsaved_changes_message": "You have unsaved changes. Do you want to save before next action?",
+            "yes": "Yes",
+            "no_click_again": "No (click action again)"
+        },
+        "content_label": {
+            "scratchpad": "[ editor scratchpad ]"
+        },
+        "notify": {
+            "executing_gcode": "Executing G-Code program.",
+            "executing_opensbp": "Executing OpenSBP program.",
+            "debug_opensbp_only": "Debug mode (input simulation) is only available for OpenSBP files.",
+            "executing_opensbp_debug": "Executing OpenSBP program in debug mode.",
+            "macro_saved": "Macro '{name}' saved.",
+            "unknown_file_format": "Unknown file format in editor?!"
+        }
+    },
     "keypad": {
         "xy_move_speed": "XY Move Speed",
         "xy_move_speed_tooltip": "use Alt< and Alt> for speed up/dn",
