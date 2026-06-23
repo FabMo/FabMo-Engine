@@ -558,15 +558,12 @@ module.exports = function(scene, callbacks) {
   }
 
 
-  // Displays GCode line plus SBP source line when available, so a mismatch
-  // is visible at a glance during line-mapping debugging. sourceLine is the
-  // 0-based pc (move.sourceLine); we display it 1-based.
+  // Display the line number in the file's native language: SBP source line
+  // if the GCode was simulated from an SBP file (sourceLine is the 0-based
+  // pc, displayed 1-based), otherwise the GCode line as-is.
   function setCurrentLine(gcLine, sourceLine) {
-    var text = infoLine + 'GC ' + gcLine.toLocaleString();
-    if (typeof sourceLine === 'number') {
-      text += '  /  SBP ' + (sourceLine + 1).toLocaleString();
-    }
-    self.codeLine.text(text);
+    var displayed = (typeof sourceLine === 'number') ? (sourceLine + 1) : gcLine;
+    self.codeLine.text(infoLine + displayed.toLocaleString());
   }
   self.setCurrentLine = setCurrentLine;
 

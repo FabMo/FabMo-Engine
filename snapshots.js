@@ -27,6 +27,11 @@ var SNAPSHOT_DIR = "/opt/fabmo_snapshots";
 var DEFAULT_POINTER = "/opt/fabmo_snapshots/.default";
 var LIVE_CONFIG_DIR = "/opt/fabmo/config";
 var LIVE_MACROS_DIR = "/opt/fabmo/macros";
+// Job history metadata (jobs + files tables). Small (<1 MB at the 500
+// entry MAX_HISTORY_LENGTH cap) so we include it in every snapshot.
+// The bulky cut files in /opt/fabmo/files/ are NOT captured — they
+// travel via the separate "Export Job History" archive instead.
+var LIVE_DB_DIR = "/opt/fabmo/db";
 var MAX_AUTO_PER_KIND = 5;
 
 // Snapshots marked as the user-default are mirrored here so they survive
@@ -117,6 +122,25 @@ function _create(name, opts, callback) {
                     });
                 },
                 function (cb) {
+                    // Copy job history metadata (db/) into the snapshot.
+                    // Best-effort: a missing DB shouldn't fail the snapshot.
+                    if (!fs.existsSync(LIVE_DB_DIR)) {
+                        return cb();
+                    }
+                    var dbDest = path.join(dest, "db");
+                    fs.ensureDir(dbDest, function (eErr) {
+                        if (eErr) {
+                            return cb(eErr);
+                        }
+                        fs.copy(LIVE_DB_DIR, dbDest, function (copyErr) {
+                            if (copyErr) {
+                                log.warn("snapshot: db/ copy failed (continuing): " + copyErr.message);
+                            }
+                            cb();
+                        });
+                    });
+                },
+                function (cb) {
                     var info = {
                         name: name,
                         kind: opts.kind || "user",
@@ -155,6 +179,75 @@ function create(name, description, callback) {
         return callback(new Error("A snapshot named '" + name + "' already exists"));
     }
     _create(name, { kind: "user", description: description || "" }, callback);
+}
+
+// Public: register an extracted snapshot directory (typically the contents
+// of an uploaded `.fmsnap.zip`) under SNAPSHOT_DIR as a user snapshot.
+//
+// The source directory must look like a snapshot root: a snapshot_info.json
+// at the top with at least the `name` field. Name is sanitized against
+// USER_NAME_RE, reserved-prefix collisions are avoided, and if a snapshot
+// with the same name already exists a `_N` suffix is appended so the
+// existing one isn't clobbered. Kind is forced to "user" on import — auto
+// kind is reserved for the engine's own rotation.
+function importFromDir(srcDir, callback) {
+    if (typeof callback !== "function") {
+        callback = function () {};
+    }
+    if (!isIdle()) {
+        return callback(new Error("Machine must be idle to import a snapshot"));
+    }
+    var infoPath = path.join(srcDir, "snapshot_info.json");
+    if (!fs.existsSync(infoPath)) {
+        return callback(new Error("Not a valid snapshot zip: snapshot_info.json missing"));
+    }
+    var info;
+    try {
+        info = JSON.parse(fs.readFileSync(infoPath, "utf8"));
+    } catch (e) {
+        return callback(new Error("Snapshot info is corrupt: " + e.message));
+    }
+
+    var rawName = (info.name || "imported").toString();
+    var sanitized = rawName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 25) || "imported";
+    if (isReservedName(sanitized)) {
+        sanitized = ("imported_" + sanitized).slice(0, 25);
+    }
+
+    // Resolve collisions by appending _N. Keep the existing snapshot
+    // untouched so the user can compare if they imported deliberately.
+    var finalName = sanitized;
+    if (fs.existsSync(snapshotPath(finalName))) {
+        var base = sanitized;
+        for (var n = 1; n <= 99; n++) {
+            var attempt = base.slice(0, 25 - (("_" + n).length)) + "_" + n;
+            if (!fs.existsSync(snapshotPath(attempt))) {
+                finalName = attempt;
+                break;
+            }
+            if (n === 99) {
+                return callback(new Error("Too many existing snapshots named '" + base + "*'"));
+            }
+        }
+    }
+
+    var dest = snapshotPath(finalName);
+    fs.copy(srcDir, dest, function (cpErr) {
+        if (cpErr) {
+            return callback(cpErr);
+        }
+        info.name = finalName;
+        info.kind = "user";
+        info.imported_at = new Date().toISOString();
+        fs.writeFile(path.join(dest, "snapshot_info.json"), JSON.stringify(info, null, 2), function (wErr) {
+            if (wErr) {
+                fs.remove(dest, function () {});
+                return callback(wErr);
+            }
+            log.info("imported snapshot as " + finalName);
+            callback(null, finalName);
+        });
+    });
 }
 
 // Public: create an automatic snapshot of the given kind, prune older ones
@@ -484,6 +577,7 @@ function restore(name, callback) {
         }
         var snapConfigDir = path.join(dest, "config");
         var snapMacrosDir = path.join(dest, "macros");
+        var snapDbDir = path.join(dest, "db");
         async.series(
             [
                 function (cb) {
@@ -497,6 +591,15 @@ function restore(name, callback) {
                         return cb();
                     }
                     fs.copy(snapMacrosDir, LIVE_MACROS_DIR, { overwrite: true }, cb);
+                },
+                function (cb) {
+                    // Restore job history metadata if the snapshot has db/.
+                    // Older snapshots (pre-history-in-snapshot) just won't
+                    // have this dir and that's fine.
+                    if (!fs.existsSync(snapDbDir)) {
+                        return cb();
+                    }
+                    fs.copy(snapDbDir, LIVE_DB_DIR, { overwrite: true }, cb);
                 },
             ],
             function (err) {
@@ -637,6 +740,7 @@ function recoverFromMirror(name, callback) {
 module.exports = {
     create: create,
     createAuto: createAuto,
+    importFromDir: importFromDir,
     list: list,
     restore: restore,
     remove: remove,

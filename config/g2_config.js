@@ -269,6 +269,7 @@ G2Config.prototype.configureStatusReports = function (callback) {
                 out12: true,
                 fro: true,
                 feed: true,
+                momo: true,
             },
         });
         this.driver.command({ qv: 0 });

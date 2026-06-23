@@ -137,6 +137,7 @@
             upload_progress: [],
             data_send: [],
             data_request: [],
+            pendant_file_select: [],
         };
     };
 
@@ -1063,6 +1064,14 @@
 
     FabMoDashboard.prototype.setConfig = function (data, callback) {
         this._call("setConfig", data, callback);
+    };
+
+    FabMoDashboard.prototype.lookupVariable = function (name, callback) {
+        this._call("lookupVariable", { name: name }, callback);
+    };
+
+    FabMoDashboard.prototype.checkCodeBounds = function (cmd, runtime, callback) {
+        this._call("checkCodeBounds", { cmd: cmd, runtime: runtime }, callback);
     };
 
     FabMoDashboard.prototype.deleteApp = function (id, callback) {

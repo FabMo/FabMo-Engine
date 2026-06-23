@@ -127,6 +127,10 @@ function Machine(control_path, callback) {
         out12: 0,
         fro: 1.0,
         feed: 0.0,
+        // G2 motion mode (0=G0 rapid/jog, 1=G1 feed, 2/3=arc). Must be listed
+        // here or _updateStatusFromDriver drops it before it reaches clients.
+        // Default 1 (feed) so nothing reads as a rapid before the first report.
+        momo: 1,
         job: null,
         info: null,
         unit: null,
@@ -1506,7 +1510,12 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
                     var tx = this.driver.status.posx;
                     var ty = this.driver.status.posy;
                     var tz = this.driver.status.posz;
-                    new SBPRuntime().simulateString(data, tx, ty, tz, callback);
+                    new SBPRuntime().simulateString(data, tx, ty, tz, function (err, gcode, info) {
+                        if (info && info.partial) {
+                            log.warn("Preview simulation truncated for " + filename + " (likely unbounded GOTO/loop); rendering partial result.");
+                        }
+                        callback(err, gcode);
+                    });
                 } else {
                     fs.readFile(filename, callback);
                 }
@@ -2362,7 +2371,14 @@ Machine.prototype._runNextJob = function (force, callback) {
 
 // Setup a transform-on warning that is available in status
 Machine.prototype._updateStatusFromDriver = function (status) {
-    // Update the base status fields
+    // Update the base status fields.
+    // NOTE: this copies ONLY keys that already exist in this.status (see its
+    // init in the constructor). A G2 status-report field that isn't declared
+    // there is SILENTLY DROPPED here — it reaches the server from the driver
+    // but never propagates to clients, with no error. To expose a new SR field
+    // end-to-end: (1) request it in config/g2_config.js sr:{...} (and ensure
+    // G2core's max-SR size fits it), (2) add it to this.status here. The
+    // websocket layer forwards the whole object, so no change is needed there.
     for (var key in status) {
         if (key in this.status) {
             this.status[key] = status[key];
@@ -2379,7 +2395,7 @@ Machine.prototype._updateStatusFromDriver = function (status) {
         if (config.opensbp && config.opensbp.get) {
             var transforms = config.opensbp.get('transforms');
             if (transforms) {
-                this.status.transformsEnabled = 
+                this.status.transformsEnabled =
                     transforms.rotate.apply ||
                     transforms.scale.apply ||
                     transforms.move.apply ||

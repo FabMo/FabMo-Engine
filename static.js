@@ -69,8 +69,30 @@ function serveStatic(options) {
             res.handledGzip();
         }
 
-        var fstream = fs.createReadStream(file + (isGzip ? ".gz" : ""));
         var maxAge = opts.maxAge === undefined ? 3600 : opts.maxAge;
+
+        // Conditional GET. If the client already holds a copy at least as new
+        // as the file on disk, answer 304 and skip the body. This is what makes
+        // a low/zero maxAge cheap: the browser revalidates on every load, but an
+        // unchanged file costs a tiny header round-trip instead of a full
+        // re-download. mtime is compared at whole-second precision because HTTP
+        // dates (If-Modified-Since / Last-Modified) carry no milliseconds — a
+        // sub-second mtime would otherwise always look "newer" and never match.
+        var ims = req.headers["if-modified-since"];
+        if (ims) {
+            var since = Date.parse(ims);
+            var mtimeSec = Math.floor(stats.mtime.getTime() / 1000) * 1000;
+            if (!isNaN(since) && mtimeSec <= since) {
+                res.cache({ maxAge: maxAge });
+                res.set("Last-Modified", stats.mtime);
+                res.writeHead(304);
+                res.end();
+                next(false);
+                return;
+            }
+        }
+
+        var fstream = fs.createReadStream(file + (isGzip ? ".gz" : ""));
         // eslint-disable-next-line no-unused-vars
         fstream.once("open", function (fd) {
             res.cache({ maxAge: maxAge });

@@ -351,6 +351,18 @@
         });
     };
 
+    // Look up the current value of a single OpenSBP variable (e.g. "$X", "&FOO",
+    // "%(1)", "%machine.envelope.xmax"). Returns { name, type, defined, value }.
+    FabMoAPI.prototype.lookupVariable = function (name, callback) {
+        callback = callback || function () {};
+        this._post(
+            "/variables/lookup",
+            { name: name },
+            function (err) { callback(err || "lookup failed"); },
+            function (err, data) { callback(null, data); }
+        );
+    };
+
     // Version/Info
     FabMoAPI.prototype.getVersion = function (callback) {
         this._get(
@@ -550,6 +562,28 @@
     // Force a simulated input value during a debug-mode run.
     FabMoAPI.prototype.setSimInput = function (inp, state, callback) {
         this._post("/code/sim_input", { inp: inp, state: !!state }, callback, callback);
+    };
+
+    // Evaluate a single OpenSBP expression. Returns { expr, value } or an error.
+    FabMoAPI.prototype.evalExpression = function (expr, callback) {
+        callback = callback || function () {};
+        this._post(
+            "/eval",
+            { expr: expr },
+            function (err) { callback(err || "eval failed"); },
+            function (err, data) { callback(null, data); }
+        );
+    };
+
+    // Soft-limit pre-check for editor-run code. Returns { exceeds, violations, bounds }.
+    FabMoAPI.prototype.checkCodeBounds = function (cmd, runtime, callback) {
+        callback = callback || function () {};
+        this._post(
+            "/code/check_bounds",
+            { cmd: cmd, runtime: runtime },
+            function (err) { callback(err || "bounds check failed"); },
+            function (err, data) { callback(null, data); }
+        );
     };
 
     FabMoAPI.prototype.goto = function (move, callback) {

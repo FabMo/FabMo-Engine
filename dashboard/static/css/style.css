@@ -13,6 +13,14 @@ body {
     background-color: #eee;
 }
 
+/* Outer dashboard chrome only — prevent a brief scrollbar flash during load.
+   Scoped to body#body (the outer dashboard) so iframe apps (macros, apps grid,
+   etc.) still scroll naturally. */
+html:has(body#body),
+body#body {
+    overflow: hidden;
+}
+
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -82,6 +90,216 @@ label {
 	text-align: center;
 }
 .tab-bar .right-small, .left-small { border-color: #efefef;}
+
+/* ===== PRINT OUTPUT widget — docked in the top bar ========================
+   Absolutely positioned within the fixed .tab-bar; JS sets left/right so it
+   fills the gap between the machine name and the mini-DRO. */
+.print-widget.docked {
+    position: absolute;
+    top: 0;
+    height: 56px;
+    display: flex;
+    align-items: flex-end;      /* sit the module at the bottom of the bar */
+    z-index: 1;                 /* tab-bar itself is 1005 */
+}
+/* Hide on small screens (replaces the Foundation show-for-medium-up class,
+   which forced display:inherit and broke the flex alignment). */
+@media only screen and (max-width: 40em) {
+    .print-widget.docked { display: none; }
+}
+.print-widget-dockline {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;     /* caption + line sit at the bottom */
+    width: 100%;
+    box-sizing: border-box;
+    padding: 3px 8px;
+    /* The frame — caption, caret, and output line all live inside it so the
+       docked widget reads as one detachable module. */
+    background-color: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: "Droid_Sans_Mono", monospace;
+    line-height: 1.2;              /* override .tab-bar's inherited 45px line-height */
+}
+.print-widget-header,
+.print-widget-title,
+.print-widget-latest {
+    line-height: 1.2;
+}
+.print-widget-header {
+    display: flex;
+    align-items: center;
+    font-size: 10px;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+/* Drag grip — 3x3 dot grid (⋮⋮⋮) at the right end of the caption row,
+   matching the manual-controls modal handle. */
+.print-widget-grip {
+    margin-left: auto;             /* push to the right end of the caption row */
+    cursor: grab;
+    color: #cccccc;
+    font-size: 16px;
+    letter-spacing: 1px;
+    line-height: 1;
+    opacity: 0.85;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.print-widget-title {
+    white-space: nowrap;
+    font-size: 12px;               /* same size as the output line */
+}
+.print-widget-expand {
+    flex: 0 0 auto;
+    margin: 0 6px 0 0;            /* caret sits left of the output line */
+    padding: 0 4px;
+    height: auto;                  /* cancel Foundation's fixed button height */
+    min-height: 0;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+}
+.print-widget-expand:hover { color: #ffe217; }
+/* Output row — caret on the left, then the single output line. */
+.print-widget-outputrow {
+    display: flex;
+    align-items: center;
+}
+/* The single output line is a 1-line viewport; a new line gently scrolls up
+   into view (old line up and out) so a quick burst isn't missed. */
+.print-widget-latest {
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+    height: 1.3em;
+    font-size: 12px;
+}
+.print-widget-latest-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 12px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+}
+.print-widget-latest-line.incoming {     /* starts just below the viewport */
+    transform: translateY(100%);
+    opacity: 0;
+}
+.print-widget-latest-line.outgoing {     /* scrolls up and out */
+    transform: translateY(-100%);
+    opacity: 0;
+}
+.print-widget-latest-line.empty {
+    opacity: 0.45;
+    font-style: italic;
+}
+/* Flash the output line on new input (applied via inline animation in JS). */
+@keyframes print-widget-flash {
+    0%, 100% { background-color: rgba(0, 0, 0, 0.18); }
+    50%      { background-color: rgba(255, 205, 70, 0.55); }
+}
+/* ===== Stream list (shared by the docked dropdown and the floating modal) == */
+.print-widget-stream {
+    display: none;
+    overflow-y: auto;
+    font-family: "Droid_Sans_Mono", monospace;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #ffffff;
+}
+.print-widget-line {
+    padding: 2px 8px;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.12);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.print-widget-empty {
+    padding: 6px 8px;
+    opacity: 0.5;
+    font-style: italic;
+}
+/* Docked + expanded: dropdown hanging below the module. */
+.print-widget.docked.expanded .print-widget-stream {
+    display: block;
+    position: absolute;
+    top: 52px;                 /* just below the module (bar 56 - 4px gap) */
+    right: 0;
+    width: 100%;
+    max-height: 50vh;
+    background: #2a2c54;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+}
+.print-widget.docked.expanded .print-widget-expand {
+    transform: rotate(180deg);  /* caret flips when open */
+}
+/* Close (X) — only in the floating modal. */
+.print-widget-close {
+    flex: 0 0 auto;
+    margin: 0 0 0 8px;
+    padding: 0 4px;
+    height: auto;
+    min-height: 0;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+}
+.print-widget-close:hover { color: #ff6b6b; }
+.print-widget.docked .print-widget-close { display: none; }
+/* ===== Floating modal (pulled off the bar) ================================= */
+.print-widget.floating {
+    position: fixed;
+    width: 360px;
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    /* Mostly-transparent grey. */
+    background: rgba(45, 45, 45, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    overflow: hidden;
+    z-index: 4000;
+}
+.print-widget.floating .print-widget-dockline {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    background: rgba(0, 0, 0, 0.25);
+    border: none;
+    border-radius: 0;
+    padding: 6px 10px;
+}
+.print-widget.floating .print-widget-outputrow { display: none; }
+.print-widget.floating .print-widget-stream {
+    display: block;
+    position: static;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+/* Distinctive glowing-green output text in the floating modal (first pass). */
+.print-widget.floating .print-widget-stream,
+.print-widget.floating .print-widget-line {
+    color: #5cff7a;
+    text-shadow: 0 0 5px rgba(92, 255, 122, 0.55);
+}
 .left-small {position: inherit;}
 
 .top-bar h1  {
@@ -415,10 +633,23 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-size: large;
 	cursor: default;
 }
-/* feedrate display span */
+/* feedrate display span (MOVE SPEED) — independent of .sp-power */
 #fr-inp {
-	margin-left: 10px;
-	margin-right: 5px;
+	width: 50%;
+	height: 1.5rem;
+	text-align: right;
+	padding-right: 15px;       /* pad the displayed number off the right edge */
+	margin-bottom: 5px;
+	margin-left: 15px;
+	margin-right: 10px;       /* nudge the whole box ~5px inward from the right */
+	margin-top: 3px;
+	font-size: large;
+	font-weight: bold;
+	border: 1px solid gray;
+	background-color: #931B14;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
 }
 /* kludge to get feed-rate override input box in right place */
 input#override {
@@ -441,7 +672,6 @@ input#override {
 	display: flex;
 }
 /* Display-only spans styled to match input appearance */
-#fr-inp,
 .dro-addon-value .sp-power {
 	width: 50%;
 	height: 1.5rem;
@@ -463,6 +693,45 @@ input#override {
 .dro-addon-value.spindle-power .sp-power {
     text-align: right;
     padding-right: 18px;
+}
+
+/* spindle load bar (LOAD row) — match the visual rhythm of the RPM/AMP
+   rows above so the LOAD label lines up with RPM/AMP and the right edge
+   sits where the input/value sits on the other rows. */
+.dro-addon-value.spindle-load {
+    align-items: center;
+    margin-bottom: 5px;
+}
+.dro-addon-value.spindle-load .sp-load-bar {
+    width: 30%;
+    height: 1.4rem;
+    margin-left: 16px;
+    margin-right: 5px;
+    border: 1px solid gray;
+    background-color: #931B14;
+    overflow: hidden;
+    position: relative;
+}
+.dro-addon-value.spindle-load .sp-load-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background-color: #3aa757;
+    transition: width 0.2s linear, background-color 0.3s ease;
+}
+.dro-addon-value.spindle-load.warn .sp-load-fill {
+    background-color: #e0b020;
+}
+.dro-addon-value.spindle-load.over .sp-load-fill {
+    background-color: #c83030;
+}
+.dro-addon-value.spindle-load .sp-load-pct {
+    width: 3rem;
+    text-align: right;
+    padding-right: 18px;
+    font-size: large;
+    font-weight: bold;
+    color: gray;
 }
 
 
@@ -854,6 +1123,103 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_log 			{ background-image: url('../img/icon_log.png');	}
 #icon_network 		{ background-image: url('../img/icon_network.png');	}
 #icon_sign_out 		{ background-image: url('../img/icon_sign_out.png');	}
+
+/* Calculator sidebar icon — FontAwesome glyph instead of a background PNG.
+   Vertically center the glyph so it aligns with the text label in the
+   expanded sidebar (icons in the wide collapsed bar are also centered
+   inside their cells, so this works in both layouts). */
+#icon_calculator { background-image: none; position: relative; }
+#icon_calculator:before {
+    position: absolute;
+    font-family: 'FontAwesome';
+    font-size: 22px;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    content: "\f1ec"; /* fa-calculator */
+}
+
+/* Calculator modal */
+.calc-modal-dim {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 3000;
+}
+.calc-modal {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 420px;
+    max-width: 92vw;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    z-index: 3001;
+    color: #333;
+    font-family: 'source_sans_proregular', sans-serif;
+}
+.calc-modal .calc-header {
+    background: #313366;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.calc-modal .calc-title { font-weight: bold; font-size: 16px; }
+.calc-modal .calc-close {
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    padding: 0 6px;
+    user-select: none;
+}
+.calc-modal .calc-close:hover { color: #ffda29; }
+.calc-modal .calc-body { padding: 12px 14px 14px; }
+.calc-modal .calc-body label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: #555;
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+.calc-modal #calc-expr,
+.calc-modal #calc-result {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 14px;
+    padding: 6px 8px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    margin: 0;
+}
+.calc-modal #calc-result { background: #f5f5f5; }
+.calc-modal .calc-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+.calc-modal #calc-helper { flex: 1; padding: 4px 6px; }
+.calc-modal #calc-button {
+    background: #5Daa35;
+    color: #fff;
+    border: none;
+    padding: 4px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.calc-modal #calc-button:hover { background: #4d9128; }
+.calc-modal .calc-error {
+    color: #b00020;
+    font-size: 13px;
+    margin-top: 6px;
+    font-family: Menlo, Consolas, monospace;
+}
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
 

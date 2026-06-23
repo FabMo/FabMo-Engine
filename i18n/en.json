@@ -112,7 +112,8 @@
             "sign_out": "Sign Out",
             "expand_collapse": "Expand/Collapse",
             "collapse": "Collapse",
-            "expand": "Expand"
+            "expand": "Expand",
+            "calculator": "Calculator"
         },
         "dro_outputs_tooltip": "Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad.",
         "dro_outputs_label": "OUTPUTS (Toggle)",
@@ -124,6 +125,7 @@
         "dro_rpm_label": "RPM",
         "dro_no_vfd_placeholder": "- No VFD/USB -  ",
         "dro_amp_label": "AMP",
+        "dro_load_label": "LOAD",
         "modal": {
             "title_placeholder": "Title",
             "invalid_value": "Please Enter a Valid Value.",
@@ -195,6 +197,7 @@
         "quit": "QUIT",
         "resume_button": "Resume",
         "quit_button": "Quit",
+        "skip_button": "Skip",
         "pause_feedhold": "Pause / Feedhold",
         "pause_feedhold_tooltip": "When a file is running, Pause/Feedhold will execute a controlled stop <br> allowing the file to be subsequently Resumed or Fully Quit.<br><br> If an immediate Emergency Stop (E-Stop) is needed, use the physical <br> RED Button/Lever to brake and shutdown the equipment.  The tool's <br> position will be lost and your file will need to be restarted. <br> On some tools, the E-Stop may also be the main power switch.<br>"
     },
@@ -570,8 +573,8 @@
             "checklist": "Checklist",
             "home_xy": "A - Home X & Y",
             "home_xy_tooltip": "Home the X and Y Axes; C3 or Macro",
-            "set_z_zero": "B - Set Z Zero",
-            "set_z_zero_tooltip": "Set Z Zero; C2 or Macro2",
+            "set_z_zero": "B - Set Z-Zero",
+            "set_z_zero_tooltip": "Set Z-Zero using Zeroing Plate; C2 or Macro2",
             "cut_part": "C - CUT PART",
             "cut_part_tooltip": "Pick a Single Part File to Cut; FP",
             "manage_parts": "(D) - MANAGE PARTS",
@@ -1015,7 +1018,7 @@
         "loading": {
             "default": "Loading file. Please wait.",
             "loaded": "Loaded {size}.  Please wait.",
-            "processing": "Processing GCode.  Please wait."
+            "processing": "Processing Toolpath. Please Wait."
         },
         "inout": {
             "in": "In: {line}",

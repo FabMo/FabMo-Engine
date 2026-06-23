@@ -1,0 +1,12 @@
+{
+  "name": "Segment Optimizer",
+  "main": "./index.html",
+  "icon": "icon.png",
+  "icon_color": "#2f6f4f",
+  "icon_display": "none",
+  "version": "0.1.0",
+  "author": "FabMo",
+  "website": "http://shopbottools.com",
+  "id": "segment-optimizer",
+  "description": "Pre-processes OpenSBP files to combine very small toolpath segments so they run efficiently"
+}

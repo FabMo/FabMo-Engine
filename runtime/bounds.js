@@ -146,9 +146,11 @@ function computeFileBounds(filePath, callback) {
             var SBPRuntime = require("./opensbp/opensbp").SBPRuntime;
             var runtime = new SBPRuntime();
             try {
-                runtime.simulateString(data, 0, 0, 0, function (err, gcode) {
+                runtime.simulateString(data, 0, 0, 0, function (err, gcode, info) {
                     if (err) return callback(err);
-                    callback(null, { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 });
+                    var result = { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 };
+                    if (info && info.partial) result.partial = true;
+                    callback(null, result);
                 });
             } catch (e) {
                 callback(e);
@@ -159,6 +161,33 @@ function computeFileBounds(filePath, callback) {
     });
 }
 
+// Compute bounds for in-memory code (no disk file). Used by the editor-run
+// pre-check so code typed/pasted in the editor gets the same soft-limit
+// scrutiny as submitted jobs. `runtime` is "sbp" or "gcode".
+function computeStringBounds(code, runtime, callback) {
+    var t0 = Date.now();
+    if (typeof code !== "string") return callback(new Error("code must be a string"));
+    var rt = (runtime || "gcode").toLowerCase();
+
+    if (rt === "sbp" || rt === "opensbp") {
+        var SBPRuntime = require("./opensbp/opensbp").SBPRuntime;
+        var sbp = new SBPRuntime();
+        try {
+            sbp.simulateString(code, 0, 0, 0, function (err, gcode, info) {
+                if (err) return callback(err);
+                var result = { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 };
+                if (info && info.partial) result.partial = true;
+                callback(null, result);
+            });
+        } catch (e) {
+            callback(e);
+        }
+    } else {
+        callback(null, { bounds: scanGCodeBounds(code), durationMs: Date.now() - t0 });
+    }
+}
+
 exports.scanGCodeBounds = scanGCodeBounds;
 exports.checkAgainstEnvelope = checkAgainstEnvelope;
 exports.computeFileBounds = computeFileBounds;
+exports.computeStringBounds = computeStringBounds;

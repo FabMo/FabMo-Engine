@@ -96,8 +96,25 @@
             </div>
           </section>
 
+          <!-- ***** PRINT OUTPUT widget (docked in top bar; can pull off into a
+               floating modal). Fed by the SBP PRINT command. ***** -->
+          <div id="print-widget" class="print-widget docked" title="Print output from running files">
+            <div class="print-widget-dockline" id="print-widget-dockline">
+              <div class="print-widget-header">
+                <span class="print-widget-title">Machine output:</span>
+                <span class="print-widget-grip" id="print-widget-grip" title="Drag to pull off the bar">&#8942;&#8942;&#8942;</span>
+                <button type="button" class="print-widget-close" id="print-widget-close" title="Close (return to top bar)" aria-label="Close">&#10005;</button>
+              </div>
+              <div class="print-widget-outputrow">
+                <button type="button" class="print-widget-expand" id="print-widget-expand" title="Expand to see past messages" aria-label="Expand print output">&#9662;</button>
+                <div class="print-widget-latest" id="print-widget-latest"></div>
+              </div>
+            </div>
+            <div class="print-widget-stream" id="print-widget-stream"></div>
+          </div>
+
           <!-- ***** Tool Position Section ***** -->
-          
+
           <section class="right show-for-small-up fabmo-status" id="right-position-container">
               <span id="transform_warning" class="transforms-on" style="display: none;">
                   <strong style="white-space: nowrap;"><span data-i18n="status.transforms_label">Transforms</span>&nbsp;-&nbsp;<span style="color: red;" data-i18n="status.transforms_on">ON</span></strong>
@@ -189,6 +206,7 @@
             <li><a href="#/app/apps" id="icon_apps" data-i18n-title="status.menu.apps" title="Apps"><span data-i18n="status.menu.apps">Apps</span></a></li>
             <li><a href="#/app/video" id="icon_video" data-i18n-title="status.menu.video" title="Video"><span data-i18n="status.menu.video">Video</span></a></li>
             <li><a href="#/app/config" id="icon_settings" data-i18n-title="status.menu.configuration" title="Configuration"><span data-i18n="status.menu.configuration">Configuration</span></a></li>
+            <li><a href="#" id="icon_calculator" data-i18n-title="status.menu.calculator" title="Calculator"><span data-i18n="status.menu.calculator">Calculator</span></a></li>
             <li><a id="icon_sign_out" class="icon_sign_out" data-i18n-title="status.menu.sign_out" title="Sign Out"><span data-i18n="status.menu.sign_out">Sign Out</span></a></li>
             <li><a href="#" id="icon_colapse" data-i18n-title="status.menu.expand_collapse" title="Expand/Collapse"><span data-i18n="status.menu.collapse">Collapse</span></a></li>
             <li><p class="expand-text"><small data-i18n="status.menu.expand">Expand</small></p></lip>
@@ -205,6 +223,7 @@
             <li><a href="#/app/apps" id="icon_apps" title="Apps"></a></li>
             <li><a href="#/app/video" id="icon_video" title="Video"></a></li>
             <li><a href="#/app/config" id="icon_settings" title="Configuration"></a></li>
+            <li><a href="#" id="icon_calculator" title="Calculator"></a></li>
             <li><a id="icon_sign_out" class="icon_sign_out" title="Sign Out"></a></li>
           </ul>
         </div>
@@ -265,9 +284,14 @@
                   AMP value displays the spindle load expressed as current in amps.</span></span><br></div>
                 <div class="dro-addon-value spindle-speed"><span class="sub-label" data-i18n="status.dro_rpm_label"> RPM </span><input id="sp-speed" type="number" step="25" min="100" max="30000" data-i18n-placeholder="status.dro_no_vfd_placeholder" placeholder="- No VFD/USB -  "></div>
                 <div class="dro-addon-value spindle-power"><span class="sub-label" data-i18n="status.dro_amp_label"> AMP </span><span class="no-select-input sp-power">0.00</span></div>
+                <div class="dro-addon-value spindle-load" id="spindle-load-row" style="display:none;">
+                  <span class="sub-label" data-i18n="status.dro_load_label"> LOAD </span>
+                  <span class="sp-load-bar"><span class="sp-load-fill"></span></span>
+                  <span class="no-select-input sp-load-pct">0%</span>
+                </div>
               </div>
 
-            </div>    
+            </div>
 
       </aside>
 
@@ -443,7 +467,7 @@
             <div class="pad-container">
               <div class="keypad-table">
                 <div class="keypad-cell">
-                  <div class="x_neg y_pos keypad-button drive-button square">
+                  <div class="x_neg y_pos keypad-button drive-button square" data-keypad-orig="↑←">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button a_pos keypad-button drive-button square">
@@ -451,12 +475,12 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div id="keyboardArrow_y_pos" class="y_pos keypad-button drive-button square">
+                  <div id="keyboardArrow_y_pos" class="y_pos keypad-button drive-button square" data-keypad-orig="↑">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="x_pos y_pos keypad-button drive-button square">
+                  <div class="x_pos y_pos keypad-button drive-button square" data-keypad-orig="↑→">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button b_pos keypad-button drive-button square">
@@ -464,7 +488,7 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div id="keyboardArrow_x_neg" class="x_neg keypad-button drive-button square">
+                  <div id="keyboardArrow_x_neg" class="x_neg keypad-button drive-button square" data-keypad-orig="←">
                     <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
                   </div>
                 </div>
@@ -478,12 +502,12 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div id="keyboardArrow_x_pos" class="x_pos keypad-button drive-button square">
+                  <div id="keyboardArrow_x_pos" class="x_pos keypad-button drive-button square" data-keypad-orig="→">
                     <i class="fa fa-keypad fa-lg fa-arrow-right"></i>
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="x_neg y_neg keypad-button drive-button square">
+                  <div class="x_neg y_neg keypad-button drive-button square" data-keypad-orig="↓←">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button a_neg keypad-button drive-button square">
@@ -491,12 +515,12 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div id="keyboardArrow_y_neg" class="y_neg keypad-button drive-button square">
+                  <div id="keyboardArrow_y_neg" class="y_neg keypad-button drive-button square" data-keypad-orig="↓">
                     <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="x_pos y_neg keypad-button drive-button square">
+                  <div class="x_pos y_neg keypad-button drive-button square" data-keypad-orig="↓→">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button b_neg keypad-button drive-button square">
@@ -925,6 +949,88 @@
             </span></span>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Canned-cut HUD: shares the manual keypad's visual language — yellow
+         modal, rounded corners, fixed position. Compact and pinned top-right
+         so it's visible across apps without blocking the main dashboard
+         layout. Hidden by default; shown by setupCannedCutHud() in main.js
+         on canned_cut_state events. -->
+    <div id="canned-cut-hud" class="canned-cut-hud" aria-hidden="true">
+      <div class="canned-cut-hud-title">
+        Canned Cut: <span id="canned-cut-hud-type">BORE</span>
+      </div>
+      <table class="canned-cut-hud-table">
+        <tr><td class="canned-cut-hud-label">dia</td>   <td class="canned-cut-hud-value" id="canned-cut-hud-diameter">—</td></tr>
+        <tr><td class="canned-cut-hud-label">depth</td> <td class="canned-cut-hud-value" id="canned-cut-hud-depth">—</td></tr>
+        <tr><td class="canned-cut-hud-label">tool</td>  <td class="canned-cut-hud-value" id="canned-cut-hud-cutter">—</td></tr>
+        <tr><td class="canned-cut-hud-label">mode</td>  <td class="canned-cut-hud-value" id="canned-cut-hud-mode">—</td></tr>
+        <tr><td class="canned-cut-hud-label">at</td>    <td class="canned-cut-hud-value" id="canned-cut-hud-position">—</td></tr>
+      </table>
+      <div class="canned-cut-hud-state" id="canned-cut-hud-state">active</div>
+    </div>
+
+    <!-- Calculator modal — sidebar Calculator icon opens this -->
+    <div class="calc-modal-dim" style="display:none;"></div>
+    <div class="calc-modal" style="display:none;" role="dialog" aria-label="Calculator">
+      <div class="calc-header">
+        <span class="calc-title">Calculator</span>
+        <span class="calc-close" title="Close">&times;</span>
+      </div>
+      <div class="calc-body">
+        <label for="calc-expr">Expression</label>
+        <textarea id="calc-expr" rows="2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. SQRT(POW(3,2)+POW(4,2)) or $tooldiam * 2 + PI"></textarea>
+        <div class="calc-actions">
+          <select id="calc-helper" title="Insert function or constant at cursor">
+            <option value="">Insert…</option>
+            <optgroup label="Constants">
+              <option value="PI">PI</option>
+            </optgroup>
+            <optgroup label="Basic">
+              <option value="ABS(">ABS(</option>
+              <option value="SQRT(">SQRT(</option>
+              <option value="POW(,)">POW(,)</option>
+              <option value="MIN(,)">MIN(,)</option>
+              <option value="MAX(,)">MAX(,)</option>
+              <option value="MOD(,)">MOD(,)</option>
+              <option value="SIGN(">SIGN(</option>
+            </optgroup>
+            <optgroup label="Rounding">
+              <option value="ROUND(">ROUND(</option>
+              <option value="ROUND(,)">ROUND(,n)</option>
+              <option value="FLOOR(">FLOOR(</option>
+              <option value="CEIL(">CEIL(</option>
+              <option value="TRUNC(">TRUNC(</option>
+            </optgroup>
+            <optgroup label="Trig (degrees)">
+              <option value="SIN(">SIN(</option>
+              <option value="COS(">COS(</option>
+              <option value="TAN(">TAN(</option>
+              <option value="ASIN(">ASIN(</option>
+              <option value="ACOS(">ACOS(</option>
+              <option value="ATAN(">ATAN(</option>
+              <option value="ATAN2(,)">ATAN2(,)</option>
+            </optgroup>
+            <optgroup label="Exp / Log / Random">
+              <option value="EXP(">EXP(</option>
+              <option value="LN(">LN(</option>
+              <option value="LOG10(">LOG10(</option>
+              <option value="RANDOM()">RANDOM()</option>
+            </optgroup>
+            <optgroup label="Operators">
+              <option value=" + ">+ (add)</option>
+              <option value=" - ">- (subtract)</option>
+              <option value=" * ">* (multiply)</option>
+              <option value=" / ">/ (divide)</option>
+              <option value=" MOD ">MOD (modulo)</option>
+            </optgroup>
+          </select>
+          <button id="calc-button" type="button">Calculate</button>
+        </div>
+        <label for="calc-result">Result</label>
+        <input type="text" id="calc-result" readonly>
+        <div class="calc-error" id="calc-error" style="display:none;"></div>
       </div>
     </div>
 

@@ -2,10 +2,10 @@ require('./jquery.dragster.js');
 require('jquery');
 var setApps = require('./app_manager.js');
 var setUsers = require('./user_manager');
+require('./layout_orientation.js');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
-require('../../../static/js/libs/i18n.js');   // installs window.t / window.i18nReady / window.i18nApply
 var fabmo = new Fabmo;
 
 // Having ABC operate differently than XYZ and G2 makes this axis overloaded with special cases
@@ -212,7 +212,7 @@ var configData = null;
 $('#btn-backup').click(function(evt) {
     fabmo.getConfig(function(err,conf){
         if(err){
-            fabmo.notify('error',window.t('config.notify.backup_failed'));
+            fabmo.notify('error','cannot backup the config !');
         }else{
             fabmo._download(JSON.stringify(conf), 'fabmo_config_backup.fmc','text/json');
         }
@@ -229,7 +229,7 @@ $("#restore_conf_file").change(function() {
         var conf_file = files[0];
         if(!conf_file)return;
         if(conf_file.name.split('.').pop()!=='fmc'){
-            fabmo.notify('error',window.t('config.notify.invalid_file'));
+            fabmo.notify('error','the file you submitted is not valid');
             $("#restore_conf_file").attr("value", "");
             return;
         }
@@ -240,7 +240,7 @@ $("#restore_conf_file").change(function() {
             try{
                 conf = JSON.parse(evt.target.result);
             }catch(ex){
-            fabmo.notify("error",window.t('config.notify.error_reading_file_detail')+ex);
+            fabmo.notify("error","Error reading file : "+ex);
             $("#restore_conf_file").attr("value", "");
             return;
             }
@@ -250,12 +250,12 @@ $("#restore_conf_file").change(function() {
                     $("#restore_conf_file").attr("value", "");
                     return;
                 }
-                fabmo.notify("success",window.t('config.notify.config_loaded'));
+                fabmo.notify("success","the configuration file have been successfully loaded !");
                 $("#restore_conf_file").attr("value", "");
             });
         }
         reader.onerror = function (evt) {
-            fabmo.notify("error",window.t('config.notify.error_reading_file'));
+            fabmo.notify("error","Error reading file");
             $("#restore_conf_file").attr("value", "");
         }
     }
@@ -268,7 +268,7 @@ $('#btn-macros-backup').click(function () {
   })
     .then((response) => {
         if (!response.ok) {
-            throw new Error(window.t('config.notify.macros_backup_failed'));
+            throw new Error('Failed to backup macros');
         }
         return response.blob(); // Get the response as a binary Blob
     })
@@ -282,10 +282,10 @@ $('#btn-macros-backup').click(function () {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url); // Clean up the URL
-        fabmo.notify('success', window.t('config.notify.macros_backup_ok'));
+        fabmo.notify('success', 'Macros backup completed successfully!');
     })
   .catch((err) => {
-      fabmo.notify('error', window.t('config.notify.macros_backup_failed_detail') + err.message);
+      fabmo.notify('error', 'Failed to backup macros: ' + err.message);
   });
 });
 
@@ -299,10 +299,10 @@ $('#restore_macros_dir').change(function() {
   const files = $(this).prop('files');
   if (files.length === 1) {
     const macroFile = files[0];
-    fabmo.notify('info', window.t('config.notify.macros_uploading'));
+    fabmo.notify('info', 'Uploading and restoring macros...');
     const formData = new FormData();
     formData.append('file', macroFile);
-    
+
     $.ajax({
       url: '/macros/restore',
       type: 'POST',
@@ -311,12 +311,12 @@ $('#restore_macros_dir').change(function() {
       contentType: false,
       timeout: 120000, // 2-minute timeout
       success: function(response) {
-        fabmo.notify('success', window.t('config.notify.macros_restored'));
+        fabmo.notify('success', 'Macros restored successfully!');
       },
       error: function(xhr, status, error) {
         console.error('Upload error:', xhr.responseText);
-        let errorMessage = window.t('config.notify.macros_restore_failed');
-        
+        let errorMessage = 'Failed to restore macros';
+
         try {
           const errorObj = JSON.parse(xhr.responseText);
           if (errorObj && errorObj.message) {
@@ -336,6 +336,59 @@ $('#restore_macros_dir').change(function() {
   }
 });
 
+// Export Job History (.zip) — streams the server-built archive directly
+// to a download. Payload can be large (cut files included) so we don't
+// fetch().blob() the whole thing through memory if we can avoid it; a
+// simple anchor click hands the response to the browser's downloader.
+$('#btn-history-export').click(function () {
+  fabmo.notify('info', 'Preparing job history archive…');
+  const link = document.createElement('a');
+  link.href = '/history/export';
+  link.download = 'fabmo_history_export.zip';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+
+// Import Job History — upload a .zip produced by export. The server
+// unpacks it back into /opt/fabmo/db/ and /opt/fabmo/files/; restart
+// is required afterwards for the in-memory DB to pick up new state.
+$('#btn-history-import').click(function () {
+  if (!confirm('Importing replaces your current job history and cut files. Continue?')) return;
+  $('#history-import-file').trigger('click');
+});
+
+$('#history-import-file').change(function() {
+  const files = $(this).prop('files');
+  if (files.length !== 1) return;
+  const f = files[0];
+  fabmo.notify('info', 'Uploading job history archive…');
+  const formData = new FormData();
+  formData.append('file', f);
+  $.ajax({
+    url: '/history/import',
+    type: 'POST',
+    data: formData,
+    processData: false,
+    contentType: false,
+    timeout: 600000, // 10-minute timeout for large archives
+    success: function(response) {
+      fabmo.notify('success', (response && response.message) || 'Job history imported. Restart FabMo to load.');
+    },
+    error: function(xhr, status, error) {
+      let msg = 'Failed to import job history';
+      try {
+        const obj = JSON.parse(xhr.responseText);
+        if (obj && obj.message) msg += ': ' + obj.message;
+      } catch (e) { msg += ': ' + error; }
+      fabmo.notify('error', msg);
+    },
+    complete: function() {
+      $('#history-import-file').val('');
+    }
+  });
+});
+
 // Other Config page functions
 
 $('#btn-flash-firm').click(function() {
@@ -344,17 +397,17 @@ $('#btn-flash-firm').click(function() {
 
 $('#btn-reload-firm').click(function() {
     fabmo.showModal({
-      title: window.t('config.modal.reload_firmware_title'),
-      message: window.t('config.modal.reload_firmware_message'),
-      okText: window.t('config.modal.reload'),
-      cancelText: window.t('config.modal.cancel'),
+      title: 'Reload G2 Firmware?',
+      message: 'This will reload the G2 firmware from the current FabMo version. The tool will restart.',
+      okText: 'Reload',
+      cancelText: 'Cancel',
       ok: function() {
-        fabmo.notify('info', window.t('config.notify.reloading_firmware'));
+        fabmo.notify('info', 'Reloading G2 firmware ...');
         fabmo.reloadFirmware({}, function(err, data) {
           if (err) {
-            fabmo.notify('error', window.t('config.notify.firmware_reload_failed') + (err.message || err));
+            fabmo.notify('error', 'Firmware reload failed: ' + (err.message || err));
           } else {
-            fabmo.notify('info', window.t('config.notify.firmware_reload_started'));
+            fabmo.notify('info', 'Firmware reload started — tool will restart.');
           }
         });
       },
@@ -409,14 +462,14 @@ $('#firmware-input').change(function(evt) {
 var OUTPUT_HARDCODED = { 1: "Spindle 1", 2: "Spindle 2", 4: "Arm Motion" };
 
 var ON_MODES = [
-    { value: "file_start",          label: "File Start",          i18n: "config.outputs_tab.mode_file_start" },
-    { value: "command",             label: "Command",             i18n: "config.outputs_tab.mode_command" },
-    { value: "timed_after_file_end", label: "Timed after file end", i18n: "config.outputs_tab.mode_timed_after_file_end" }
+    { value: "file_start", label: "File Start" },
+    { value: "command", label: "Command" },
+    { value: "timed_after_file_end", label: "Timed after file end" }
 ];
 var OFF_MODES = [
-    { value: "file_end",            label: "File End",            i18n: "config.outputs_tab.mode_file_end" },
-    { value: "command",             label: "Command",             i18n: "config.outputs_tab.mode_command" },
-    { value: "timed_after_file_end", label: "Timed after file end", i18n: "config.outputs_tab.mode_timed_after_file_end" }
+    { value: "file_end", label: "File End" },
+    { value: "command", label: "Command" },
+    { value: "timed_after_file_end", label: "Timed after file end" }
 ];
 
 function buildOutputFieldset(n) {
@@ -424,25 +477,24 @@ function buildOutputFieldset(n) {
 
     // Legend: "Output N" + label. For locked outputs the label is fixed text
     // with a "(locked)" tag; for configurable ones it's an inline input the
-    // user can rename. The static words ("Output", "(locked)") are wrapped in
-    // spans with data-i18n so the i18n walker can translate them in place.
+    // user can rename.
     var legendInner;
     if (isLocked) {
         legendInner =
-            '<span data-i18n="config.outputs_tab.output_word">Output</span> ' + n +
+            'Output ' + n +
             ' <span style="font-weight:normal;">' + OUTPUT_HARDCODED[n] + '</span>' +
-            ' <span style="color:#999; font-size:0.85em; font-weight:normal;" data-i18n="config.outputs_tab.locked">(locked)</span>' +
+            ' <span style="color:#999; font-size:0.85em; font-weight:normal;">(locked)</span>' +
             '<input type="hidden" id="machine-outputs-' + n + '-label" value="' + OUTPUT_HARDCODED[n] + '">';
     } else {
         legendInner =
-            '<span data-i18n="config.outputs_tab.output_word">Output</span> ' + n +
+            'Output ' + n +
             ' <input type="text" id="machine-outputs-' + n + '-label" class="machine-output"' +
             ' style="display:inline-block; width:auto; margin:0 0 0 6px; height:1.8em; font-weight:normal;">';
     }
 
-    function buildModeBlock(side, labelText, labelKey, modes) {
+    function buildModeBlock(side, label, modes) {
         var opts = modes.map(function (m) {
-            return '<option value="' + m.value + '" data-i18n="' + m.i18n + '">' + m.label + '</option>';
+            return '<option value="' + m.value + '">' + m.label + '</option>';
         }).join('');
         var lockedAttr = isLocked ? ' disabled' : '';
         var selectCls = isLocked ? '' : ' class="machine-output output-mode" data-side="' + side + '" data-output="' + n + '"';
@@ -450,11 +502,11 @@ function buildOutputFieldset(n) {
         return [
             '<div class="large-4 columns">',
               '<div class="row collapse">',
-                '<label><span data-i18n="' + labelKey + '">' + labelText + '</span>',
+                '<label>' + label,
                   '<select id="machine-outputs-' + n + '-' + side + '_mode"' + selectCls + lockedAttr + '>' + opts + '</select>',
                 '</label>',
                 '<input type="number" id="machine-outputs-' + n + '-' + side + '_seconds" min="0" step="0.1"' + secondsCls + lockedAttr +
-                  ' placeholder="seconds" data-i18n-placeholder="config.outputs_tab.seconds_placeholder" style="display:none; margin-top:4px;">',
+                  ' placeholder="seconds" style="display:none; margin-top:4px;">',
               '</div>',
             '</div>'
         ].join('');
@@ -463,12 +515,11 @@ function buildOutputFieldset(n) {
     var toggleBlock = [
         '<div class="large-4 columns">',
           '<div class="row collapse">',
-            '<label><span data-i18n="config.outputs_tab.test">Test</span>',
+            '<label>Test',
               '<button type="button" class="button output-toggle" data-output="' + n + '"',
                 ' id="output-toggle-' + n + '"',
                 // Match the adjacent <select> dimensions so the row aligns:
-                ' style="width:100%; height:2.3125rem; padding:0; margin:0;"',
-                ' data-i18n="config.outputs_tab.state_off">OFF</button>',
+                ' style="width:100%; height:2.3125rem; padding:0; margin:0;">OFF</button>',
             '</label>',
           '</div>',
         '</div>'
@@ -478,8 +529,8 @@ function buildOutputFieldset(n) {
         '<div class="row">',
           '<fieldset>',
             '<legend>' + legendInner + '</legend>',
-            buildModeBlock('on',  'ON Condition',  'config.outputs_tab.on_condition',  ON_MODES),
-            buildModeBlock('off', 'OFF Condition', 'config.outputs_tab.off_condition', OFF_MODES),
+            buildModeBlock('on', 'ON Condition', ON_MODES),
+            buildModeBlock('off', 'OFF Condition', OFF_MODES),
             toggleBlock,
           '</fieldset>',
         '</div>'
@@ -501,13 +552,6 @@ function setupOutputsTab() {
     var html = '';
     for (var n = 1; n <= 12; n++) html += buildOutputFieldset(n);
     $list.html(html);
-
-    // The outputs UI is built after the i18n walker's one-shot initial pass,
-    // so translations on these injected nodes only land if we re-run the
-    // walker once the dictionary is ready.
-    if (window.i18nReady && window.i18nApply) {
-        window.i18nReady.then(function () { window.i18nApply($list[0]); });
-    }
 
     // Generic save: any change in a row writes back to machine.outputs.<n>.<key>.
     // setConfig already splits the id by "-" and rebuilds the nested object,
@@ -544,18 +588,15 @@ function setupOutputsTab() {
 // to the opposite (handled in setupOutputsTab).
 function updateOutputStates(status) {
     if (!status) return;
-    // window.t is the i18n lookup; fall back to English if i18n isn't loaded.
-    var labelOn  = (window.t ? window.t('config.outputs_tab.state_on')  : 'ON');
-    var labelOff = (window.t ? window.t('config.outputs_tab.state_off') : 'OFF');
     for (var n = 1; n <= 12; n++) {
         var v = status['out' + n];
         var $btn = $('#output-toggle-' + n);
         if (!$btn.length) continue;
         if (v === 1 || v === true) {
-            $btn.text(labelOn).addClass('output-on')
+            $btn.text('ON').addClass('output-on')
                 .css({ background: '#4caf50', color: '#fff' });
         } else {
-            $btn.text(labelOff).removeClass('output-on')
+            $btn.text('OFF').removeClass('output-on')
                 .css({ background: '#888', color: '#fff' });
         }
     }
@@ -771,10 +812,10 @@ $(document).ready(function() {
     $('#profile-listbox').on('change', function(evt) {
         evt.preventDefault();
         fabmo.showModal({
-            title : window.t('config.modal.change_profiles_title'),
-            message : window.t('config.modal.change_profiles_message'),
-            okText : window.t('config.modal.yes'),
-            cancelText : window.t('config.modal.no'),
+            title : 'Change Profiles?',
+            message : 'Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?',
+            okText : 'Yes',
+            cancelText : 'No',
             ok : function() {
                 // NEW: Use the special manual profile change route
                 var selectedProfile = $("#profile-listbox option:checked").val();
@@ -785,14 +826,14 @@ $(document).ready(function() {
                     data: JSON.stringify({ profile: selectedProfile }),
                     contentType: 'application/json',
                     success: function(response) {
-                        fabmo.notify('info', window.t('config.notify.profile_change_initiated'));
+                        fabmo.notify('info', 'Profile change initiated...');
                     },
                     error: function(xhr, status, error) {
                         // Server restart causes connection error - this is expected
                         if (status === 'error' && (xhr.status === 0 || xhr.status >= 500)) {
-                            fabmo.notify('info', window.t('config.notify.profile_change_restarting'));
+                            fabmo.notify('info', 'Profile change initiated - engine restarting...');
                         } else {
-                            fabmo.notify('error', window.t('config.notify.profile_change_failed') + error);
+                            fabmo.notify('error', 'Profile change failed: ' + error);
                             // Reset the dropdown to current profile if failed
                             update();
                         }
@@ -809,46 +850,8 @@ $(document).ready(function() {
 
     setApps(fabmo);
     setUsers(fabmo);
-    setupLanguageSelector(fabmo);
 
 });
-
-// Populate the language dropdown from /i18n/languages (which knows
-// what dicts ship on the machine + which is currently active) and
-// wire a change handler that writes the engine config and reloads
-// the dashboard so the new dictionary takes effect.
-function setupLanguageSelector(fabmo) {
-    $.getJSON('/i18n/languages', function (info) {
-        var $sel = $('#engine-language');
-        if (!$sel.length || !info) return;
-        $sel.empty();
-        (info.available || []).forEach(function (lang) {
-            var opt = $('<option>').attr('value', lang.code).text(lang.language);
-            if (lang.code === info.current) opt.prop('selected', true);
-            $sel.append(opt);
-        });
-    }).fail(function () {
-        // i18n route missing — leave the select empty; user can't switch.
-    });
-
-    $('#engine-language').on('change', function () {
-        var lang = this.value;
-        fabmo.setConfig({ engine: { language: lang } }, function (err) {
-            if (err) {
-                fabmo.notify('error', window.t('config.notify.language_change_failed') + err);
-                return;
-            }
-            fabmo.notify('info', window.t('config.notify.language_changed'));
-            // Reload the parent (the dashboard iframe host) so its
-            // chrome picks up the new dict. Fall back to this app's
-            // location if there's no parent (standalone testing).
-            setTimeout(function () {
-                try { window.parent.location.reload(); }
-                catch (e) { window.location.reload(); }
-            }, 600);
-        });
-    });
-}
 
 function ensureProfileDisplayCorrect() {
     fabmo.getConfig(function(err, data) {
@@ -876,24 +879,47 @@ function ensureProfileDisplayCorrect() {
     });
 }
 
-// "Save current settings as my default": create a snapshot from the
-// current /opt/fabmo/config + macros, then mark it as the user-default
-// fallback. This is the user-friendly entry into the snapshot system -
-// it does not modify any shipped profiles.
+// "My Custom Profile": create a snapshot from the current /opt/fabmo/config +
+// macros, then mark it as the Preferred fallback the recovery chain will reach
+// for. This is the user-friendly entry into the snapshot system — it does not
+// modify any shipped profiles.
+//
+// Refreshes both the snapshot dropdown and the Preferred Profile label.
+// Filters to kind="user" so auto recovery snapshots (which rotate on their
+// own and aren't user-meaningful) don't clutter the picker.
 function refreshDefaultSnapshotName() {
     fetch('/snapshots')
         .then(function (r) { return r.json(); })
         .then(function (resp) {
-            if (resp && resp.status === 'success' && resp.data && resp.data.snapshots) {
-                var def = null;
-                for (var i = 0; i < resp.data.snapshots.length; i++) {
-                    if (resp.data.snapshots[i].is_user_default) {
-                        def = resp.data.snapshots[i];
-                        break;
-                    }
-                }
-                $('#current-default-name').text(def ? def.name : window.t('config.defaults.none'));
+            var all = (resp && resp.status === 'success' && resp.data) ? (resp.data.snapshots || []) : [];
+            var userSnaps = all.filter(function (s) { return (s.kind || 'user') === 'user'; });
+            var preferred = null;
+            for (var i = 0; i < userSnaps.length; i++) {
+                if (userSnaps[i].is_user_default) { preferred = userSnaps[i]; break; }
             }
+
+            var $sel = $('#custom-snapshot-select');
+            var prev = $sel.val();
+            $sel.empty();
+            if (userSnaps.length === 0) {
+                $sel.append('<option value="">(no custom profiles yet)</option>');
+            } else {
+                for (var j = 0; j < userSnaps.length; j++) {
+                    var s = userSnaps[j];
+                    var label = s.name + (s.is_user_default ? '  (Preferred)' : '');
+                    $sel.append($('<option></option>').val(s.name).text(label));
+                }
+            }
+            // Preserve the user's prior selection if it still exists; otherwise
+            // fall back to the Preferred snapshot so the action buttons act on
+            // the most useful default.
+            if (prev && userSnaps.some(function (s) { return s.name === prev; })) {
+                $sel.val(prev);
+            } else if (preferred) {
+                $sel.val(preferred.name);
+            }
+
+            $('#current-default-name').text(preferred ? preferred.name : 'none');
         })
         .catch(function () { /* leave display alone on transient errors */ });
 }
@@ -917,11 +943,11 @@ $('#save-default-confirm').click(function () {
     var name = ($('#save-default-name').val() || '').trim().replace(/\s+/g, '_');
     var description = $('#save-default-description').val() || '';
     if (!name) {
-        fabmo.notify('error', window.t('config.notify.name_required'));
+        fabmo.notify('error', 'A name is required.');
         return;
     }
     if (!/^[a-zA-Z0-9_-]{1,25}$/.test(name)) {
-        fabmo.notify('error', window.t('config.notify.name_invalid'));
+        fabmo.notify('error', 'Name must be 1-25 characters: letters, digits, _ or -.');
         return;
     }
     $('#save-default-dialog').hide();
@@ -934,7 +960,7 @@ $('#save-default-confirm').click(function () {
     .then(function (r) { return r.json(); })
     .then(function (resp) {
         if (!resp || resp.status !== 'success') {
-            var msg = resp && resp.message ? resp.message : window.t('config.notify.unknown_error');
+            var msg = resp && resp.message ? resp.message : 'unknown error';
             throw new Error(msg);
         }
         return fetch('/snapshots/' + encodeURIComponent(name) + '/set-default', {
@@ -943,69 +969,169 @@ $('#save-default-confirm').click(function () {
     })
     .then(function (resp) {
         if (!resp || resp.status !== 'success') {
-            var msg = resp && resp.message ? resp.message : window.t('config.notify.mark_default_failed');
-            throw new Error(window.t('config.notify.snapshot_not_default') + msg);
+            var msg = resp && resp.message ? resp.message : 'could not mark as default';
+            throw new Error('Snapshot saved but not marked as default: ' + msg);
         }
-        fabmo.notify('success', window.t('config.notify.saved_default') + name);
+        fabmo.notify('success', 'Saved as custom profile: ' + name);
         refreshDefaultSnapshotName();
     })
     .catch(function (err) {
-        fabmo.notify('error', err.message || window.t('config.notify.save_default_failed'));
+        fabmo.notify('error', err.message || 'Failed to save custom profile.');
     });
 });
 
-// Reset to whatever snapshot is currently marked as the user-default.
-// Uses fabmo.showModal (no input fields needed) since the sandbox blocks
-// window.confirm() the same way it blocks prompt().
+// Restore from whatever snapshot is currently picked in the dropdown.
+// fabmo.showModal is used here (instead of window.confirm) because the app
+// runs in a sandboxed iframe that blocks confirm/prompt.
 $('#btn-reset-default').click(function () {
-    fetch('/snapshots')
+    var name = $('#custom-snapshot-select').val();
+    if (!name) {
+        fabmo.notify('warning', 'No custom profile selected.');
+        return;
+    }
+    fabmo.showModal({
+        title: 'Restore from custom profile?',
+        message: 'This will replace your current configuration and macros with "' + name + '". The tool will restart. A snapshot of your current settings is saved automatically first, so you can recover if needed.',
+        okText: 'Restore',
+        cancelText: 'Cancel',
+        ok: function () {
+            fabmo.notify('info', 'Restoring "' + name + '"...');
+            fetch('/snapshots/' + encodeURIComponent(name) + '/restore', {
+                method: 'POST'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (resp) {
+                    if (!resp || resp.status !== 'success') {
+                        var msg = resp && resp.message ? resp.message : 'unknown error';
+                        fabmo.notify('error', 'Restore failed: ' + msg);
+                    }
+                    // On success the engine restarts; the page reloads on its own.
+                })
+                .catch(function (err) {
+                    fabmo.notify('error', 'Restore failed: ' + err.message);
+                });
+        },
+        cancel: function () {}
+    });
+});
+
+// Mark the dropdown's selected snapshot as the Preferred fallback. Refresh
+// the UI so the "(Preferred)" tag and label move to the new winner.
+$('#btn-set-preferred').click(function () {
+    var name = $('#custom-snapshot-select').val();
+    if (!name) {
+        fabmo.notify('warning', 'No custom profile selected.');
+        return;
+    }
+    fetch('/snapshots/' + encodeURIComponent(name) + '/set-default', {
+        method: 'POST'
+    })
         .then(function (r) { return r.json(); })
         .then(function (resp) {
-            var def = null;
-            if (resp && resp.status === 'success' && resp.data && resp.data.snapshots) {
-                for (var i = 0; i < resp.data.snapshots.length; i++) {
-                    if (resp.data.snapshots[i].is_user_default) {
-                        def = resp.data.snapshots[i];
-                        break;
-                    }
-                }
+            if (!resp || resp.status !== 'success') {
+                var msg = resp && resp.message ? resp.message : 'unknown error';
+                throw new Error(msg);
             }
-            if (!def) {
-                fabmo.notify('warning', window.t('config.notify.no_default_set'));
-                return;
-            }
-            fabmo.showModal({
-                title: window.t('config.modal.reset_default_title'),
-                message: window.t('config.modal.reset_default_message_prefix') + def.name + window.t('config.modal.reset_default_message_suffix'),
-                okText: window.t('config.modal.reset'),
-                cancelText: window.t('config.modal.cancel'),
-                ok: function () {
-                    fabmo.notify('info', window.t('config.notify.restoring_default_prefix') + def.name + window.t('config.notify.restoring_default_suffix'));
-                    fetch('/snapshots/' + encodeURIComponent(def.name) + '/restore', {
-                        method: 'POST'
-                    })
-                        .then(function (r) { return r.json(); })
-                        .then(function (resp2) {
-                            if (!resp2 || resp2.status !== 'success') {
-                                var msg = resp2 && resp2.message ? resp2.message : window.t('config.notify.unknown_error');
-                                fabmo.notify('error', window.t('config.notify.reset_failed') + msg);
-                            }
-                            // On success the engine restarts; the page will
-                            // reload on its own once it comes back up.
-                        })
-                        .catch(function (err) {
-                            fabmo.notify('error', window.t('config.notify.reset_failed') + err.message);
-                        });
-                },
-                cancel: function () {}
-            });
+            fabmo.notify('success', 'Preferred Profile: ' + name);
+            refreshDefaultSnapshotName();
         })
         .catch(function (err) {
-            fabmo.notify('error', window.t('config.notify.check_default_failed') + err.message);
+            fabmo.notify('error', 'Could not set Preferred: ' + err.message);
         });
 });
 
-// Show current default on load.
+// Delete the dropdown's selected snapshot. Confirmation modal because the
+// action is destructive and unrecoverable. Live machine settings are not
+// touched — only the saved profile is removed.
+$('#btn-delete-snapshot').click(function () {
+    var name = $('#custom-snapshot-select').val();
+    if (!name) {
+        fabmo.notify('warning', 'No custom profile selected.');
+        return;
+    }
+    fabmo.showModal({
+        title: 'Delete custom profile?',
+        message: 'This will permanently delete the custom profile "' + name + '". Your current machine settings are not affected.',
+        okText: 'Delete',
+        cancelText: 'Cancel',
+        ok: function () {
+            fetch('/snapshots/' + encodeURIComponent(name), {
+                method: 'DELETE'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (resp) {
+                    if (!resp || resp.status !== 'success') {
+                        var msg = resp && resp.message ? resp.message : 'unknown error';
+                        throw new Error(msg);
+                    }
+                    fabmo.notify('success', 'Deleted: ' + name);
+                    refreshDefaultSnapshotName();
+                })
+                .catch(function (err) {
+                    fabmo.notify('error', 'Delete failed: ' + err.message);
+                });
+        },
+        cancel: function () {}
+    });
+});
+
+// Download the dropdown-selected snapshot as a `.fmsnap.zip`. The browser
+// drives the download via a temporary anchor — server sets
+// Content-Disposition so the filename is `<name>.fmsnap.zip`.
+$('#btn-download-snapshot').click(function () {
+    var name = $('#custom-snapshot-select').val();
+    if (!name) {
+        fabmo.notify('warning', 'No custom profile selected.');
+        return;
+    }
+    var url = '/snapshots/' + encodeURIComponent(name) + '/download';
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name + '.fmsnap.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+});
+
+// Upload a previously-downloaded snapshot zip. Trigger flow mirrors the
+// macros restore: button -> hidden file input -> change -> multipart POST.
+$('#btn-upload-snapshot').click(function () {
+    $('#upload-snapshot-file').trigger('click');
+});
+
+$('#upload-snapshot-file').change(function () {
+    var files = $(this).prop('files');
+    if (!files || files.length !== 1) return;
+    var file = files[0];
+    fabmo.notify('info', 'Uploading custom profile...');
+    var formData = new FormData();
+    formData.append('file', file);
+
+    $.ajax({
+        url: '/snapshots/upload',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        timeout: 120000
+    }).done(function (resp) {
+        if (resp && resp.status === 'success') {
+            var importedName = (resp.data && resp.data.name) || file.name;
+            fabmo.notify('success', 'Imported custom profile: ' + importedName);
+            refreshDefaultSnapshotName();
+        } else {
+            fabmo.notify('error', 'Upload failed: ' + ((resp && resp.message) || 'unknown'));
+        }
+    }).fail(function (xhr) {
+        var msg = 'unknown error';
+        try { msg = (JSON.parse(xhr.responseText) || {}).message || msg; } catch (e) {}
+        fabmo.notify('error', 'Upload failed: ' + msg);
+    }).always(function () {
+        $('#upload-snapshot-file').val('');
+    });
+});
+
+// Populate the dropdown and Preferred label on load.
 refreshDefaultSnapshotName();
 
 // ---------- Spindle Setup ----------
@@ -1016,22 +1142,12 @@ function renderSpindleDiscover(data) {
     if (data.adapter) {
         adapterEl.val(data.adapter.name + '  [' + data.adapter.vid + ':' + data.adapter.pid + ']  ' + (data.adapter.ttyPath || '(not bound)'));
     } else {
-        adapterEl.val(window.t('config.spindle.not_detected'));
+        adapterEl.val('Not detected');
     }
-    profileEl.val(data.installedTemplate || window.t('config.spindle.none'));
-}
-
-function appendSpindleStatus(line) {
-    var el = $('#spindle-setup-status');
-    el.text((el.text() || '') + '\n' + line);
-}
-
-function setSpindleStatus(text) {
-    $('#spindle-setup-status').text(text);
+    profileEl.val(data.installedTemplate || '(none)');
 }
 
 function refreshSpindleDiscover() {
-    setSpindleStatus(window.t('config.spindle.detecting'));
     $.ajax({
         url: '/acc/spindle/discover',
         method: 'GET',
@@ -1039,19 +1155,15 @@ function refreshSpindleDiscover() {
     }).done(function (resp) {
         if (resp.status === 'success') {
             renderSpindleDiscover(resp.data);
-            setSpindleStatus(resp.data.adapter
-                ? window.t('config.spindle.found_prefix') + resp.data.adapter.name + window.t('config.spindle.found_at') + (resp.data.adapter.ttyPath || window.t('config.spindle.no_tty'))
-                : window.t('config.spindle.no_adapter'));
         } else {
-            setSpindleStatus(window.t('config.spindle.error_prefix') + (resp.message || window.t('config.spindle.unknown')));
+            fabmo.notify('error', 'Spindle detection failed: ' + (resp.message || 'unknown'));
         }
     }).fail(function (xhr) {
-        setSpindleStatus(window.t('config.spindle.request_failed') + xhr.status);
+        fabmo.notify('error', 'Spindle detection request failed: ' + xhr.status);
     });
 }
 
 function runSpindleConfigure() {
-    setSpindleStatus(window.t('config.spindle.running_pipeline'));
     $('#spindle-setup-configure').prop('disabled', true);
     $.ajax({
         url: '/acc/spindle/configure',
@@ -1059,29 +1171,286 @@ function runSpindleConfigure() {
         dataType: 'json'
     }).done(function (resp) {
         var d = resp.data || {};
-        var lines = [];
-        (d.steps || []).forEach(function (s) {
-            lines.push((s.ok ? '[ok]   ' : '[fail] ') + s.name + (s.detail ? '  -- ' + s.detail : ''));
-        });
         if (d.ok) {
-            lines.push('');
-            lines.push(window.t('config.spindle.configured') + d.template + window.t('config.spindle.configured_on') + d.ttyPath);
-            fabmo.notify('success', window.t('config.spindle.configured') + d.template);
+            fabmo.notify('success', 'Spindle configured: ' + d.template);
         } else {
-            fabmo.notify('error', window.t('config.spindle.configure_failed'));
+            fabmo.notify('error', 'Spindle configuration failed: ' + spindleFailureReason(d.steps));
         }
-        setSpindleStatus(lines.join('\n'));
         refreshSpindleDiscover();
-    }).fail(function (xhr) {
-        setSpindleStatus(window.t('config.spindle.request_failed') + xhr.status);
-        fabmo.notify('error', window.t('config.spindle.configure_request_failed'));
+    }).fail(function () {
+        fabmo.notify('error', 'Spindle configure request failed');
     }).always(function () {
         $('#spindle-setup-configure').prop('disabled', false);
     });
 }
 
-$('#spindle-setup-detect').on('click', refreshSpindleDiscover);
+function spindleFailureReason(steps) {
+    var failed = (steps || []).filter(function (s) { return !s.ok; }).pop();
+    if (!failed) return 'unknown error';
+    switch (failed.name) {
+        case 'detect_adapter':   return 'no RS485 adapter detected';
+        case 'bind_driver':      return 'RS485 adapter found but kernel driver did not bind';
+        case 'probe_vfd':        return 'RS485 adapter found, no matching profile for VFD';
+        case 'install_template': return 'profile install failed (' + (failed.detail || 'unknown') + ')';
+        case 'connect_vfd':      return 'VFD connect failed (' + (failed.detail || 'unknown') + ')';
+        default:                 return failed.name + (failed.detail ? ' (' + failed.detail + ')' : '');
+    }
+}
+
 $('#spindle-setup-configure').on('click', runSpindleConfigure);
 
 // Populate on load
 refreshSpindleDiscover();
+
+// ----- Variables tab -------------------------------------------------------
+// Lists persistent OpenSBP variables ($-prefixed) with type-aware editors and
+// auto-save on blur. Layout mirrors the rest of the configuration app:
+// prefix-group fieldsets; scalar leaves use the Foundation
+// "large-4 columns > row collapse > label + input" pattern; object variables
+// nest a child fieldset whose leaves are flattened into the same columns.
+(function () {
+    var $list, $statusEl, $search;
+    var currentVariables = null;
+    var loaded = false;
+
+    function init() {
+        $list = $('#variables-list');
+        $statusEl = $('#variables-status');
+        $search = $('#variables-search');
+        if (!$list.length) return;
+        $('#variables-refresh-btn').on('click', function () { load(true); });
+        $search.on('input', renderFiltered);
+        $('a[controls="tabpanel10"]').on('click', function () {
+            if (!loaded) load(false);
+        });
+    }
+
+    function load(announce) {
+        $statusEl.text('Loading…').css('color', '#555');
+        fabmo.getConfig(function (err, data) {
+            if (err) {
+                $statusEl.text('Error: ' + err).css('color', '#c33');
+                return;
+            }
+            currentVariables = (data && data.opensbp && data.opensbp.variables) || {};
+            loaded = true;
+            $statusEl.text(Object.keys(currentVariables).length + ' variables').css('color', '#555');
+            renderFiltered();
+            if (announce) $statusEl.text('Reloaded · ' + Object.keys(currentVariables).length + ' variables');
+        });
+    }
+
+    function renderFiltered() {
+        if (!currentVariables) return;
+        var filter = ($search.val() || '').toLowerCase().trim();
+        var names = Object.keys(currentVariables).sort();
+        if (filter) {
+            names = names.filter(function (n) {
+                return n.toLowerCase().indexOf(filter) >= 0;
+            });
+        }
+        var html = '';
+        names.forEach(function (n) {
+            html += renderVariable(n, currentVariables[n]);
+        });
+        $list.html(html || '<p style="color:#888;">No variables match.</p>');
+        attachInputHandlers();
+    }
+
+    // Each root variable becomes a labeled frame; the value inside is
+    // rendered structurally — objects as nested frames, scalars as
+    // label+input pairs. Mirrors prettified JSON visually.
+    function renderVariable(name, value) {
+        return '<div class="var-frame var-root">'
+             +   '<div class="var-frame-label">$' + escapeHtml(name) + '</div>'
+             +   renderBody(name, value, [])
+             + '</div>';
+    }
+
+    // Body of a frame: groups scalar children on one wrapping row, and
+    // expands object children into their own nested frames.
+    function renderBody(varName, value, path) {
+        if (value === null || typeof value !== 'object') {
+            // Root scalar (a variable that's just a number/string/bool).
+            return '<div class="var-kv-row">' + renderKV(varName, '', value, path) + '</div>';
+        }
+        var keys = Object.keys(value);
+        var labels = detectKeyLabels(varName, keys);
+        var scalarKeys = [];
+        var objectKeys = [];
+        keys.forEach(function (k) {
+            if (value[k] !== null && typeof value[k] === 'object') objectKeys.push(k);
+            else scalarKeys.push(k);
+        });
+        var html = '';
+        if (scalarKeys.length) {
+            html += '<div class="var-kv-row">';
+            scalarKeys.forEach(function (k) {
+                html += renderKV(varName, labels[k] || k, value[k], path.concat(k));
+            });
+            html += '</div>';
+        }
+        objectKeys.forEach(function (k) {
+            var label = labels[k] || k;
+            var unitClass = label === 'in' ? ' var-frame-in' : (label === 'mm' ? ' var-frame-mm' : '');
+            html += '<div class="var-frame' + unitClass + '">'
+                  +   '<div class="var-frame-label">' + escapeHtml(label) + '</div>'
+                  +   renderBody(varName, value[k], path.concat(k))
+                  + '</div>';
+        });
+        return html;
+    }
+
+    function renderKV(varName, label, value, path) {
+        var dataAttr = 'data-var="' + escapeAttr(varName) + '"'
+                     + ' data-path=\'' + escapeAttr(JSON.stringify(path)) + '\'';
+        var t = jsType(value);
+        var input;
+        if (t === 'boolean') {
+            input = '<input type="checkbox" class="var-input" ' + dataAttr + (value ? ' checked' : '') + '>';
+        } else if (t === 'number') {
+            input = '<input type="number" step="any" class="var-input" ' + dataAttr
+                  + ' value="' + escapeAttr(String(value)) + '">';
+        } else {
+            input = '<input type="text" class="var-input" ' + dataAttr
+                  + ' value="' + escapeAttr(value == null ? '' : String(value)) + '">';
+        }
+        var labelHtml = label ? '<span class="var-key">' + escapeHtml(label) + ':</span>' : '';
+        return '<span class="var-kv">' + labelHtml + input + '</span>';
+    }
+
+    // Friendlier labels for known patterns. {0,1} on a *UU variable → in/mm.
+    function detectKeyLabels(varName, keys) {
+        var labels = {};
+        var keySet = keys.slice().sort().join(',');
+        if (keySet === '0,1' && /UU$/i.test(varName)) {
+            labels['0'] = 'in'; labels['1'] = 'mm'; return labels;
+        }
+        keys.forEach(function (k) { labels[k] = k; });
+        return labels;
+    }
+
+    function attachInputHandlers() {
+        $list.find('.var-input').each(function () {
+            var $in = $(this);
+            var original = $in.is(':checkbox') ? !!$in.prop('checked') : $in.val();
+            $in.data('original', original);
+            $in.on('input change', function () {
+                var $wrap = $in.closest('.var-kv');
+                var current = $in.is(':checkbox') ? !!$in.prop('checked') : $in.val();
+                if (String(current) !== String($in.data('original'))) {
+                    $wrap.addClass('dirty').removeClass('saved error');
+                } else {
+                    $wrap.removeClass('dirty saved error');
+                }
+            });
+            $in.on('blur change', function (e) {
+                // Checkbox change saves immediately; text/number saves on blur.
+                if (e.type === 'change' && !$in.is(':checkbox')) return;
+                if (e.type === 'blur' && $in.is(':checkbox')) return;
+                var current = $in.is(':checkbox') ? !!$in.prop('checked') : $in.val();
+                if (String(current) === String($in.data('original'))) return;
+                save($in);
+            });
+            $in.on('keydown', function (e) {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    if (!$in.is(':checkbox')) $in.blur();
+                } else if (e.key === 'Escape' || e.keyCode === 27) {
+                    if ($in.is(':checkbox')) $in.prop('checked', !!$in.data('original'));
+                    else $in.val($in.data('original'));
+                    $in.closest('.var-kv').removeClass('dirty saved error');
+                }
+            });
+        });
+    }
+
+    function save($in) {
+        var name = $in.data('var');
+        // jQuery auto-parses data-* attributes that look like JSON, so .data()
+        // gives us the array directly — but fall back if not.
+        var path = $in.data('path');
+        if (typeof path === 'string') {
+            try { path = JSON.parse(path); } catch (e) { path = []; }
+        }
+        if (!Array.isArray(path)) path = [];
+
+        var raw = $in.is(':checkbox') ? !!$in.prop('checked') : $in.val();
+        var originalVar = currentVariables[name];
+        var leafOriginal = path.length === 0 ? originalVar : navigatePath(originalVar, path);
+        var newVal = coerce(raw, leafOriginal, $in);
+        var updatedVar = path.length === 0 ? newVal : deepSetPath(originalVar, path, newVal);
+
+        var updatedVars = Object.assign({}, currentVariables);
+        updatedVars[name] = updatedVar;
+        var payload = { opensbp: { variables: updatedVars } };
+
+        var $wrap = $in.closest('.var-kv');
+        fabmo.setConfig(payload, function (err) {
+            if (err) {
+                $wrap.addClass('error').removeClass('dirty saved');
+                $statusEl.text('Save failed: ' + err).css('color', '#c33');
+                return;
+            }
+            currentVariables = updatedVars;
+            $in.data('original', $in.is(':checkbox') ? !!$in.prop('checked') : $in.val());
+            $wrap.addClass('saved').removeClass('dirty error');
+            var pathStr = path.length ? '[' + path.join('][') + ']' : '';
+            $statusEl.text('Saved $' + name + pathStr).css('color', '#0a0');
+            setTimeout(function () { $wrap.removeClass('saved'); }, 1200);
+        });
+    }
+
+    function navigatePath(obj, path) {
+        for (var i = 0; i < path.length; i++) {
+            if (obj == null) return undefined;
+            obj = obj[path[i]];
+        }
+        return obj;
+    }
+
+    // Return a shallow-copied tree with the leaf at `path` set to `value`,
+    // so the resulting object is safe to send back to setConfig without
+    // mutating our currentVariables cache.
+    function deepSetPath(obj, path, value) {
+        var clone = Array.isArray(obj) ? obj.slice() : Object.assign({}, obj || {});
+        if (path.length === 1) {
+            clone[path[0]] = value;
+            return clone;
+        }
+        clone[path[0]] = deepSetPath(obj && obj[path[0]], path.slice(1), value);
+        return clone;
+    }
+
+    // Type-coerce the user's text back to the same JS type as the original
+    // value. Falls back to string when there's no reference type.
+    function coerce(raw, ref, $in) {
+        if ($in && $in.hasClass('var-input-json')) {
+            try { return JSON.parse(raw); } catch (e) { return raw; }
+        }
+        if (typeof ref === 'number') {
+            var n = Number(raw);
+            return isNaN(n) ? raw : n;
+        }
+        if (typeof ref === 'boolean') {
+            if (typeof raw === 'boolean') return raw;
+            return raw === 'true' || raw === '1' || raw === 'yes';
+        }
+        return raw;
+    }
+
+    function jsType(v) {
+        if (v === null || v === undefined) return 'null';
+        if (Array.isArray(v)) return 'array';
+        if (typeof v === 'object') return 'object';
+        return typeof v;
+    }
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    $(document).ready(init);
+})();

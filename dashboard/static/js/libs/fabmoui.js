@@ -297,19 +297,29 @@ const { last } = require("underscore");
         });
 
         // Update big DRO Speed Display (Feedrate and Override)
+        // momo is the G2 motion mode: 0 = G0 rapid/jog, 1 = G1 feed,
+        // 2/3 = G2/G3 arc feed. During a rapid the tool moves at the axis jog
+        // velocity, not a programmed feedrate, and G2 keeps reporting the last
+        // real feed — which would mislead the user (often much slower than the
+        // actual jog). So show "---" for rapids and the real feedrate otherwise.
+        const isRapid = status.state != "idle" && Number(status.momo) === 0;
         if (status.state != "idle") {
-            const feedrate = Number(status.feed) * Number(status.fro);
-            $("#fr-inp").css("color", "#42e6f5");
-            if (status.unit === "mm") {
-                $(".feedrate-unit").text("mm/sec");
-                // status.feed from G2 is in mm/min — divide by 60 for mm/sec
-                const displayValue = (feedrate / 60).toFixed(2);
-                $("#fr-inp").text(displayValue);
+            $(".feedrate-unit").text(status.unit === "mm" ? "mm/sec" : "in/sec");
+            if (isRapid) {
+                $("#fr-inp").css("color", "#42e6f5");
+                $("#fr-inp").text("---");
             } else {
-                $(".feedrate-unit").text("in/sec");
-                // status.feed from G2 is in mm/min — divide by 25.4 for in/min, then by 60 for in/sec
-                const displayValue = (feedrate / 1524).toFixed(2);
-                $("#fr-inp").text(displayValue);
+                const feedrate = Number(status.feed) * Number(status.fro);
+                $("#fr-inp").css("color", "#42e6f5");
+                if (status.unit === "mm") {
+                    // status.feed from G2 is in mm/min — divide by 60 for mm/sec
+                    const displayValue = (feedrate / 60).toFixed(2);
+                    $("#fr-inp").text(displayValue);
+                } else {
+                    // status.feed from G2 is in mm/min — divide by 25.4 for in/min, then by 60 for in/sec
+                    const displayValue = (feedrate / 1524).toFixed(2);
+                    $("#fr-inp").text(displayValue);
+                }
             }
         } else {
             var speed = 0;
@@ -348,12 +358,14 @@ const { last } = require("underscore");
                 $("#override").addClass("blinking-text");
             }
             /* do the color */
+            // Don't tint fr-inp by the override during a rapid — G0 ignores
+            // feed override, so the "---" stays its neutral rapid color.
             if (cur_req_fro > 100) {
                 $("#override").css("color", "yellow");
-                $("#fr-inp").css("color", "yellow");
+                if (!isRapid) $("#fr-inp").css("color", "yellow");
             } else if (cur_req_fro < 100) {
                 $("#override").css("color", "blue");
-                $("#fr-inp").css("color", "blue");
+                if (!isRapid) $("#fr-inp").css("color", "blue");
             } else {
                 $("#override").css("color", "gray");
             }
@@ -377,10 +389,12 @@ const { last } = require("underscore");
                 if (status.spindle.vfdAchvFreq !== 0) {
                     $(".spindle-speed input").css("color", "#42e6f5");
                     $(".spindle-power .sp-power").css("color", "black");
+                    $(".spindle-load .sp-load-pct").css("color", "black");
                     updateSpindleSpeed(status.spindle.vfdAchvFreq);
                 } else {
                     $(".spindle-speed input").css("color", "gray");
                     $(".spindle-power .sp-power").css("color", "gray");
+                    $(".spindle-load .sp-load-pct").css("color", "gray");
                     if (status.spindle.vfdDesgFreq < 0) {
                         updateSpindleSpeed("- disabled -  ");
                     } else {
@@ -391,14 +405,36 @@ const { last } = require("underscore");
                 var formattedDraw = (pwrDraw * 0.01).toFixed(2);
                 if (status.spindle.vfdAmps !== 0) {
                     $(".spindle-power .sp-power").css("color", "black");
+                    $(".spindle-load .sp-load-pct").css("color", "black");
                 }
                 $(".spindle-power .sp-power").text(formattedDraw);
+                $(".spindle-load .sp-load-pct").text(Math.round(status.spindle.vfdLoadPct) + "%");
+
+                // LOAD bar: only shown when the drive reported a usable motor
+                // rated current. Color steps at 70%/90% give an at-a-glance
+                // headroom indicator without users having to read the number.
+                var loadPct = status.spindle.vfdLoadPct;
+                var $loadRow = $(".spindle-load");
+                if (typeof loadPct === "number" && status.spindle.vfdRatedAmps) {
+                    var capped = Math.min(loadPct, 100);
+                    $loadRow.find(".sp-load-fill").css("width", capped + "%");
+                    $loadRow.find(".sp-load-pct").text(Math.round(loadPct) + "%");
+                    $loadRow.removeClass("warn over");
+                    if (loadPct >= 90) $loadRow.addClass("over");
+                    else if (loadPct >= 70) $loadRow.addClass("warn");
+                    $loadRow.show();
+                } else {
+                    $loadRow.hide();
+                }
+
                 $("#dro-addon-3").css("visibility", "visible");
             }
         } else {
             updateSpindleSpeed("- No VFD/USB -  ");
             $(".spindle-speed input").css("color", "gray");
             $(".spindle-power .sp-power").css("color", "gray");
+            $(".spindle-load .spindle-load-pct").css("color", "gray");
+            $(".spindle-load").hide();
             // hide display when no VFD
             $("#dro-addon-3").css("visibility", "hidden");
         }

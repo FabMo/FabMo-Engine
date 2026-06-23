@@ -20,7 +20,7 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / fail / jump / pause / dialog / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / data_send / data_request / command / __)
+   = (label / single / fail / jump / pause / dialog / clearprint / print / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / data_send / data_request / command / __)
 
 custom_cut
    = [Cc] index:integer __ ","?
@@ -31,8 +31,10 @@ gcode_line
    { return {"type":"gcode", "gcode":gcode.join('').trim()}; }
 
 event
-   = "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
-      {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
+   = "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / clearprint / print / command)
+      {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};}
+   / "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")"
+      {return {"type":"event", "sw":sw, "state":state, "stmt":null};}
 
 command 
    = m:mnemonic arg1:(("," / whitespace?) __ argument)?
@@ -133,7 +135,7 @@ dialog
    }
 
 conditional
-   = "IF"i ___ cmp:comparison ___ "THEN"i ___ stmt:(jump / single / fail / pause / assignment / command) 
+   = "IF"i ___ cmp:comparison ___ "THEN"i ___ stmt:(jump / single / fail / pause / clearprint / print / assignment / command)
      { return {"type":"cond", "cmp":cmp, "stmt":stmt}; }
 
 string
@@ -269,6 +271,8 @@ e2
 
 factor
   = "(" __ expr:expression __ ")" { return expr; }
+  / function_call
+  / constant
   / float
   / integer
   / variable
@@ -276,12 +280,48 @@ factor
   / quotedstring
   / barestring
 
-mul_op = "*" / "/"
+function_call
+  = name:identifier "(" __ args:arg_list? __ ")" {
+      return { type: "func", name: name.toUpperCase(), args: args || [] };
+    }
+
+arg_list
+  = first:expression rest:(__ "," __ expression)* {
+      var out = [first];
+      rest.forEach(function (r) { out.push(r[3]); });
+      return out;
+    }
+
+constant
+  = "PI"i !identifier_tail { return { type: "const", name: "PI" }; }
+
+identifier_tail
+  = [A-Za-z0-9_]
+
+mul_op
+  = "*"
+  / "/"
+  / "MOD"i !identifier_tail { return "MOD"; }
 add_op = "+" / "-"
 cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "=" / "<>"
 
 whitespace
    = [ \t]
+
+// PRINT emits one persistent line to the dashboard output panel. Args are
+// concatenated (SB3 style: PRINT "Tool: ", &num -> "Tool: 3"). The first arg
+// may be space- or comma-separated; remaining args are comma-separated.
+print
+   = "PRINT"i first:(("," / whitespace) __ a:argument { return a; })? rest:("," __ a:argument __ { return a; })* {
+      var args = [];
+      if (first != null) { args.push(first); }
+      args = args.concat(rest);
+      return { type: 'print', args: args };
+   }
+
+// CLEARPRINT empties the dashboard output panel (no arguments).
+clearprint
+   = "CLEARPRINT"i { return { type: 'print_clear' }; }
 
 data_send
    = "DATA_SEND"i __ "," __ channel:argument args:("," __ arg:argument __ { return arg; })* {

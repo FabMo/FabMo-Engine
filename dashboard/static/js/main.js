@@ -27,6 +27,7 @@ var FabMoAPI = require("./libs/fabmoapi.js");
 var FabMoUI = require("./libs/fabmoui.js");
 var Keyboard = require("./libs/keyboard.js");
 var Keypad = require("./libs/keypad.js");
+var KeypadOrientation = require("./libs/keypad_orientation.js");
 
 var keypad, keyboard;
 
@@ -633,6 +634,13 @@ engine.getVersion(function (err, version) {
             // in lockstep with the pendant via toolbox_state broadcasts.
             setupToolboxSidebar(dashboard.engine);
 
+            // PRINT OUTPUT widget — docked in the top bar (detachable later).
+            setupPrintWidget(dashboard.engine);
+
+            // Canned-cut HUD — compact readout pinned top-right, shown on
+            // canned_cut_state events.
+            setupCannedCutHud(dashboard.engine);
+
             setLocationDisplays();
 
             // ------------------------------------------------------------ STATUS HANDLER
@@ -823,6 +831,11 @@ engine.getVersion(function (err, version) {
                             modalOptions.okText = null;
                             modalOptions.cancelText = null;
                             modalOptions.input = null;
+                            // Carry the pause timer (seconds) through to the modal
+                            // so it can render a countdown and label the OK button "Skip".
+                            if (status.info["timer"]) {
+                                modalOptions.timer = status.info["timer"];
+                            }
 
                             // "Resume" and "Cancel" functions are called after a MODAL is shown to offer to different exits
                             // or actions.  The "resume" function is used to resume the engine, while the "cancel" function
@@ -960,14 +973,14 @@ engine.getVersion(function (err, version) {
 
                                 //Set defaults if both buttons are still null
                                 if (modalOptions.ok === null && modalOptions.cancel === null && !modalOptions.noButton) {
-                                    modalOptions.okText = window.t("actions.resume_button");
+                                    modalOptions.okText = modalOptions.timer ? window.t("actions.skip_button") : window.t("actions.resume_button");
                                     modalOptions.ok = resumeFunction;
                                     modalOptions.cancelText = window.t("actions.quit_button");
                                     modalOptions.cancel = cancelFunction;
                                 }
                             } else {
                                 // No custom parameters; use default buttons
-                                modalOptions.okText = window.t("actions.resume_button");
+                                modalOptions.okText = modalOptions.timer ? window.t("actions.skip_button") : window.t("actions.resume_button");
                                 modalOptions.cancelText = window.t("actions.quit_button");
                                 modalOptions.ok = resumeFunction;
                                 modalOptions.cancel = cancelFunction;
@@ -1327,6 +1340,498 @@ var TOOLBOX_TOOLS = [
             '</svg>',
     },
 ];
+
+function setupPrintWidget(engine) {
+    var STORAGE_KEY = "fabmo_print_output";
+    var MAX_LINES = 200; // hard cap on retained lines
+
+    var widget = document.getElementById("print-widget");
+    var latestEl = document.getElementById("print-widget-latest");
+    var streamEl = document.getElementById("print-widget-stream");
+    var docklineEl = document.getElementById("print-widget-dockline");
+    var expandBtn = document.getElementById("print-widget-expand");
+    if (!widget || !latestEl) return;
+
+    var lines = []; // newest first
+    try {
+        var saved = window.localStorage.getItem(STORAGE_KEY);
+        if (saved) lines = JSON.parse(saved) || [];
+    } catch (e) {
+        lines = [];
+    }
+
+    function persist() {
+        try {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+        } catch (e) {
+            // storage full/unavailable — non-fatal, still works in-memory
+        }
+    }
+
+    function renderStream() {
+        if (!streamEl) return;
+        if (!lines.length) {
+            streamEl.innerHTML = '<div class="print-widget-empty">(no output)</div>';
+            return;
+        }
+        // textContent (not innerHTML) avoids HTML injection from PRINT strings.
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < lines.length; i++) {
+            var div = document.createElement("div");
+            div.className = "print-widget-line";
+            div.textContent = lines[i];
+            frag.appendChild(div);
+        }
+        streamEl.innerHTML = "";
+        streamEl.appendChild(frag);
+        streamEl.scrollTop = 0; // newest (top) in view
+    }
+
+    function makeLine(text, isEmpty, incoming) {
+        var d = document.createElement("div");
+        d.className =
+            "print-widget-latest-line" +
+            (isEmpty ? " empty" : "") +
+            (incoming ? " incoming" : "");
+        d.textContent = text;
+        return d;
+    }
+
+    // Docked single-line "ticker": queue incoming lines and roll them up one at
+    // a time so every line in a burst is seen, not just the last. (Collapsing
+    // to the most recent line meant intermediate lines were inserted silently.)
+    var scrollQueue = [];
+    var scrolling = false;
+    var SCROLL_MS = 360; // per-line roll duration (>= CSS transition)
+    var SCROLL_QUEUE_MAX = 12; // bound lag on huge bursts (the stream has all)
+
+    function setLatestDirect(text, isEmpty) {
+        scrollQueue.length = 0;
+        scrolling = false;
+        latestEl.innerHTML = "";
+        latestEl.appendChild(makeLine(text, isEmpty, false));
+    }
+
+    function processScrollQueue() {
+        if (scrolling || !scrollQueue.length) return;
+        if (!isDocked()) {
+            // Floating: the modal shows the full stream, so just settle the
+            // docked line to the most recent without animating.
+            setLatestDirect(scrollQueue[scrollQueue.length - 1], false);
+            return;
+        }
+        scrolling = true;
+        var text = scrollQueue.shift();
+        // Keep only the current resting line as the outgoing "old" line.
+        var all = latestEl.querySelectorAll(".print-widget-latest-line");
+        var oldLine = all.length ? all[all.length - 1] : null;
+        for (var i = 0; i < all.length - 1; i++) {
+            if (all[i].parentNode) all[i].parentNode.removeChild(all[i]);
+        }
+        var newLine = makeLine(text, false, true);
+        latestEl.appendChild(newLine);
+        void newLine.offsetWidth; // commit the incoming (below) start position
+        if (oldLine) oldLine.classList.add("outgoing");
+        newLine.classList.remove("incoming"); // transition up into view
+        window.setTimeout(function () {
+            if (oldLine && oldLine.parentNode) oldLine.parentNode.removeChild(oldLine);
+            scrolling = false;
+            processScrollQueue(); // roll the next queued line
+        }, SCROLL_MS);
+    }
+
+    function updateLatest(text, isEmpty, animate) {
+        if (!latestEl) return;
+        if (!animate || !isDocked()) {
+            setLatestDirect(text, isEmpty);
+            return;
+        }
+        scrollQueue.push(text);
+        if (scrollQueue.length > SCROLL_QUEUE_MAX) scrollQueue.shift();
+        processScrollQueue();
+    }
+
+    function render() {
+        updateLatest(
+            lines.length ? lines[0] : "(no print output)",
+            !lines.length,
+            false
+        );
+        renderStream();
+        layout();
+    }
+
+    function flash() {
+        if (!docklineEl) return;
+        docklineEl.style.animation = "none";
+        void docklineEl.offsetWidth; // reflow to restart
+        docklineEl.style.animation = "print-widget-flash 0.5s ease-in-out 2";
+    }
+
+    function addLine(text) {
+        var s = String(text);
+        lines.unshift(s);
+        if (lines.length > MAX_LINES) lines.length = MAX_LINES;
+        persist();
+        renderStream();
+        updateLatest(s, false, true); // animated scroll-in (docked)
+        flash();
+        layout();
+    }
+
+    function clear() {
+        lines = [];
+        persist();
+        render();
+    }
+
+    // ---- Docked placement ---------------------------------------------------
+    // The widget sits between the machine-name block (left, in flow) and the
+    // mini-DRO (absolute, right). Both have dynamic widths, so measure them and
+    // set the widget's left/right to fill the gap.
+    var bar = document.querySelector(".tab-bar");
+    var leftEl =
+        document.querySelector("#left-position-container .svg-container") ||
+        document.getElementById("tool-name");
+    var miniDro = document.getElementById("right-position-container");
+    // The visible yellow keypad button is the #icon_keypad <img>, which is
+    // absolutely positioned (right:105%) and rendered to the LEFT of its
+    // #man-start container — so measure the icon's own rendered box, not the
+    // container, for both the right boundary and the vertical alignment.
+    var keypadBtn = document.getElementById("icon_keypad");
+    var GAP = 16; // min gap from the machine name
+    var RIGHT_PAD = 12; // gap before the keypad button
+    var BOTTOM_GAP = 4; // gap above the top bar's bottom edge
+    var MAX_WIDTH = 400; // capped docked width
+
+    function layout() {
+        if (!widget.classList.contains("docked")) return; // floating: skip
+        if (!bar) return;
+        var barRect = bar.getBoundingClientRect();
+        var leftX = leftEl ? leftEl.getBoundingClientRect().right : barRect.left + 200;
+        var rightAnchor = keypadBtn || miniDro;
+        var rightRect = rightAnchor ? rightAnchor.getBoundingClientRect() : null;
+        var rightX = rightRect ? rightRect.left : barRect.right;
+        var rightPx = Math.max(0, barRect.right - rightX + RIGHT_PAD);
+        // Pin to the right (against the keypad button) and cap the width, but
+        // never run past the machine name on the left.
+        var rightEdgeX = barRect.right - rightPx; // widget's right edge
+        var available = rightEdgeX - (leftX + GAP); // room before the machine name
+        var width = Math.min(MAX_WIDTH, available);
+        widget.style.left = "auto";
+        widget.style.right = rightPx + "px";
+        widget.style.width = Math.max(0, width) + "px";
+        // Sit the docked module a few pixels above the bar's bottom edge.
+        widget.style.paddingBottom = BOTTOM_GAP + "px";
+        // Hide if there isn't enough room to be useful (small screens).
+        widget.style.visibility = width < 80 ? "hidden" : "visible";
+    }
+
+    window.addEventListener("resize", layout);
+    // The keypad button is an <img>; its box isn't final until it loads.
+    if (keypadBtn && !keypadBtn.complete) {
+        keypadBtn.addEventListener("load", layout);
+    }
+    if (window.ResizeObserver) {
+        var ro = new ResizeObserver(layout);
+        if (miniDro) ro.observe(miniDro);
+        if (keypadBtn) ro.observe(keypadBtn);
+        if (leftEl) ro.observe(leftEl);
+    }
+    // Recompute after first paint and once more after layout/fonts settle.
+    setTimeout(layout, 0);
+    setTimeout(layout, 500);
+
+    engine.on("data_send", function (message) {
+        if (!message || !message.channel) return;
+        if (message.channel === "print") {
+            var d = message.data;
+            addLine(Array.isArray(d) ? d.join("") : d == null ? "" : d);
+        } else if (message.channel === "print_clear") {
+            clear();
+        }
+    });
+
+    // ---- Expand / detach / redock / persistence ----------------------------
+    var STATE_KEY = "fabmo_print_widget";
+    var gripEl = document.getElementById("print-widget-grip");
+    var closeBtn = document.getElementById("print-widget-close");
+    // Remember the dock location so the modal can return to the same spot.
+    var dockParent = widget.parentNode;
+    var dockNext = widget.nextSibling;
+    var floatPos = null; // {x, y} of the floating modal
+
+    function isDocked() {
+        return widget.classList.contains("docked");
+    }
+
+    function persistState() {
+        try {
+            window.localStorage.setItem(
+                STATE_KEY,
+                JSON.stringify({
+                    floating: widget.classList.contains("floating"),
+                    expanded: widget.classList.contains("expanded"),
+                    x: floatPos ? floatPos.x : null,
+                    y: floatPos ? floatPos.y : null,
+                })
+            );
+        } catch (e) {
+            // non-fatal
+        }
+    }
+
+    function moveTo(left, top) {
+        var w = widget.offsetWidth;
+        var h = widget.offsetHeight;
+        left = Math.max(4, Math.min(window.innerWidth - w - 4, left));
+        top = Math.max(4, Math.min(window.innerHeight - h - 4, top));
+        widget.style.left = left + "px";
+        widget.style.top = top + "px";
+        floatPos = { x: left, y: top };
+    }
+
+    // Pull the module off the bar into a floating modal at the given screen
+    // position. Re-parents to <body> so it isn't trapped in the bar's stacking
+    // context.
+    function detach(left, top) {
+        widget.classList.remove("docked", "expanded");
+        widget.classList.add("floating");
+        widget.style.right = "";
+        widget.style.width = "";
+        widget.style.paddingBottom = "";
+        widget.style.visibility = "";
+        document.body.appendChild(widget);
+        renderStream();
+        moveTo(left, top);
+    }
+
+    // Send the modal back to its original spot in the top bar.
+    function redock() {
+        widget.classList.remove("floating");
+        widget.classList.add("docked");
+        widget.style.left = "";
+        widget.style.top = "";
+        widget.style.width = "";
+        if (dockNext && dockNext.parentNode === dockParent) {
+            dockParent.insertBefore(widget, dockNext);
+        } else {
+            dockParent.appendChild(widget);
+        }
+        floatPos = null;
+        layout();
+        persistState();
+    }
+
+    // Drag the grip: in docked mode, crossing a small threshold detaches into a
+    // floating modal; in floating mode it repositions. A plain click (no drag)
+    // does nothing, so the grip stays click-safe.
+    var GRAB_THRESHOLD = 6;
+    var pending = null;
+    var dragging = false;
+
+    function onGripDown(e) {
+        if (e.button != null && e.button !== 0) return;
+        var rect = widget.getBoundingClientRect();
+        pending = {
+            startX: e.clientX,
+            startY: e.clientY,
+            offX: e.clientX - rect.left,
+            offY: e.clientY - rect.top,
+            pointerId: e.pointerId,
+        };
+        if (gripEl.setPointerCapture) {
+            try { gripEl.setPointerCapture(e.pointerId); } catch (err) {}
+        }
+        e.preventDefault();
+    }
+    function onGripMove(e) {
+        if (!pending) return;
+        if (!dragging) {
+            if (Math.abs(e.clientX - pending.startX) + Math.abs(e.clientY - pending.startY) < GRAB_THRESHOLD) {
+                return;
+            }
+            dragging = true;
+            gripEl.style.cursor = "grabbing";
+            document.body.style.userSelect = "none";
+            if (isDocked()) {
+                var rect = widget.getBoundingClientRect();
+                detach(rect.left, rect.top);
+                // The floating modal differs in size/parent from the docked
+                // module, so re-anchor the drag to the grip's position within
+                // it (keeps it under the cursor), and re-acquire pointer
+                // capture, which re-parenting to <body> releases.
+                var wRect = widget.getBoundingClientRect();
+                var gRect = gripEl.getBoundingClientRect();
+                pending.offX = gRect.left + gRect.width / 2 - wRect.left;
+                pending.offY = gRect.top + gRect.height / 2 - wRect.top;
+                if (gripEl.setPointerCapture) {
+                    try { gripEl.setPointerCapture(pending.pointerId); } catch (err) {}
+                }
+            }
+        }
+        moveTo(e.clientX - pending.offX, e.clientY - pending.offY);
+    }
+    function onGripUp() {
+        if (pending && gripEl.releasePointerCapture) {
+            try { gripEl.releasePointerCapture(pending.pointerId); } catch (err) {}
+        }
+        if (dragging) {
+            dragging = false;
+            gripEl.style.cursor = "";
+            document.body.style.userSelect = "";
+            persistState();
+        }
+        pending = null;
+    }
+    if (gripEl) {
+        gripEl.addEventListener("pointerdown", onGripDown);
+        gripEl.addEventListener("pointermove", onGripMove);
+        gripEl.addEventListener("pointerup", onGripUp);
+        gripEl.addEventListener("pointercancel", onGripUp);
+    }
+
+    // Expand caret — toggle the docked dropdown.
+    if (expandBtn) {
+        expandBtn.addEventListener("click", function () {
+            if (!isDocked()) return;
+            widget.classList.toggle("expanded");
+            persistState();
+        });
+    }
+    // Close (X) — redock the floating modal.
+    if (closeBtn) {
+        closeBtn.addEventListener("click", redock);
+    }
+    // Click outside collapses the docked dropdown.
+    document.addEventListener("click", function (e) {
+        if (
+            widget.classList.contains("docked") &&
+            widget.classList.contains("expanded") &&
+            !widget.contains(e.target)
+        ) {
+            widget.classList.remove("expanded");
+            persistState();
+        }
+    });
+    // Keep a floating modal within the viewport on resize.
+    window.addEventListener("resize", function () {
+        if (widget.classList.contains("floating") && floatPos) {
+            moveTo(floatPos.x, floatPos.y);
+        }
+    });
+
+    // Restore persisted mode/position/expanded state.
+    (function restoreState() {
+        var st = null;
+        try {
+            st = JSON.parse(window.localStorage.getItem(STATE_KEY) || "null");
+        } catch (e) {
+            st = null;
+        }
+        if (!st) return;
+        if (st.floating) {
+            detach(st.x != null ? st.x : 80, st.y != null ? st.y : 80);
+        } else if (st.expanded) {
+            widget.classList.add("expanded");
+        }
+    })();
+
+    render();
+}
+
+function setupCannedCutHud(engine) {
+    var hud = document.getElementById("canned-cut-hud");
+    if (!hud) return;
+
+    var elType     = document.getElementById("canned-cut-hud-type");
+    var elDiameter = document.getElementById("canned-cut-hud-diameter");
+    var elDepth    = document.getElementById("canned-cut-hud-depth");
+    var elCutter   = document.getElementById("canned-cut-hud-cutter");
+    var elMode     = document.getElementById("canned-cut-hud-mode");
+    var elPosition = document.getElementById("canned-cut-hud-position");
+    var elState    = document.getElementById("canned-cut-hud-state");
+
+    var visible = false;
+
+    function show() {
+        if (visible) return;
+        hud.classList.add("visible");
+        hud.setAttribute("aria-hidden", "false");
+        visible = true;
+    }
+    function hide() {
+        if (!visible) return;
+        hud.classList.remove("visible");
+        hud.setAttribute("aria-hidden", "true");
+        visible = false;
+    }
+
+    function fmtIn(v) {
+        if (v == null || isNaN(v)) return "—";
+        return Number(v).toFixed(4) + '"';
+    }
+
+    function shortCutType(type) {
+        if (!type) return "—";
+        // "circular_bore" → "BORE", future "rectangular_cut" → "RECT", etc.
+        var label = String(type).split("_").pop();
+        return label.toUpperCase();
+    }
+
+    function renderParams(params) {
+        if (!params) return;
+        elDiameter.textContent = fmtIn(params.diameter);
+        elDepth.textContent    = fmtIn(params.depth);
+        elCutter.textContent   = fmtIn(params.cutterDiameter);
+        elMode.textContent     = params.mode || "—";
+    }
+
+    function setState(label, executing) {
+        elState.textContent = label;
+        if (executing) {
+            elState.classList.add("executing");
+        } else {
+            elState.classList.remove("executing");
+        }
+    }
+
+    // Live machine position drives the "at" row when the HUD is open.
+    engine.on("status", function (status) {
+        if (!visible) return;
+        if (!status || status.posx == null || status.posy == null) return;
+        elPosition.textContent =
+            "(" + Number(status.posx).toFixed(3) +
+            ", " + Number(status.posy).toFixed(3) + ")";
+    });
+
+    engine.on("canned_cut_state", function (payload) {
+        if (!payload) return;
+        elType.textContent = shortCutType(payload.cutType);
+        renderParams(payload.params);
+
+        var reason = payload.reason || "";
+        if (payload.state === "idle") {
+            hide();
+            return;
+        }
+        // For all non-idle states, the HUD should be visible.
+        show();
+        if (payload.state === "executing") {
+            setState("cutting…", true);
+        } else if (payload.state === "active") {
+            // "done" comes through with state=active, reason=done — show
+            // a brief "ready" indicator to acknowledge completion; the
+            // next param adjust or further activity will overwrite it.
+            if (reason === "done") {
+                setState("ready", false);
+            } else {
+                setState("active", false);
+            }
+        }
+    });
+}
+
 
 function setupToolboxSidebar(engine) {
     var sidebar = document.getElementById("toolbox-sidebar");
@@ -1914,6 +2419,20 @@ function setupKeypad() {
     var keypad = new Keypad("#keypad", {
         refreshInterval: manual.refresh_interval || 50,
         pressTime: manual.press_delay != null ? manual.press_delay : 150
+    });
+    // Apply the user's manual-control orientation mapping (set in
+    // Configuration > Layout). Class-swaps the keypad buttons so the
+    // physical layout matches where the operator stands.
+    KeypadOrientation.apply("#keypad", manual.layout_mapping);
+    // Live updates from the Configuration tab arrive via the storage
+    // event — when the Layout tab saves a new mapping, it writes the
+    // JSON to localStorage which fires this listener in other tabs.
+    window.addEventListener("storage", function (ev) {
+        if (ev.key !== "fabmo.layout_mapping") return;
+        try {
+            var newMapping = ev.newValue ? JSON.parse(ev.newValue) : null;
+            KeypadOrientation.apply("#keypad", newMapping);
+        } catch (e) { /* ignore parse errors */ }
     });
     // Make sure the spindle icon is off when entering manual mode
     keypad.on("go", function (move) {
@@ -2786,6 +3305,96 @@ $(".icon_sign_out").on("click", function (e) {
         cancel: function () {},
     });
 });
+
+// ========================================================================================= CALCULATOR
+// Lightweight calculator modal driven by the sidebar Calculator icon. Backed
+// by POST /eval, which uses the OpenSBP parser + evaluator — so expressions
+// can include the full math library (SIN, SQRT, ROUND, ...), constants (PI),
+// MOD, and references to live variables ($persistent, &temp, %(N), %config.path).
+(function () {
+    function openCalculator() {
+        $(".calc-modal-dim").show();
+        $(".calc-modal").show();
+        $("#calc-error").hide().text("");
+        // Focus expression input, place caret at end of any existing text
+        var el = document.getElementById("calc-expr");
+        if (el) {
+            el.focus();
+            var v = el.value;
+            el.setSelectionRange(v.length, v.length);
+        }
+    }
+    function closeCalculator() {
+        $(".calc-modal").hide();
+        $(".calc-modal-dim").hide();
+    }
+    function insertAtCursor(textarea, insertion) {
+        var start = textarea.selectionStart, end = textarea.selectionEnd;
+        var v = textarea.value;
+        textarea.value = v.slice(0, start) + insertion + v.slice(end);
+        // Place caret. For things like "POW(,)" / "ATAN2(,)" land between the
+        // parens so the user can start typing the first argument.
+        var landing = start + insertion.length;
+        var m = insertion.match(/\(,/);
+        if (m) landing = start + insertion.indexOf("(") + 1;
+        textarea.focus();
+        textarea.setSelectionRange(landing, landing);
+    }
+    function calculate() {
+        var expr = $("#calc-expr").val();
+        $("#calc-error").hide().text("");
+        if (!expr || !expr.trim()) {
+            $("#calc-result").val("");
+            return;
+        }
+        engine.evalExpression(expr, function (err, data) {
+            if (err || !data) {
+                $("#calc-result").val("");
+                $("#calc-error").text(typeof err === "string" ? err : "Could not evaluate.").show();
+                return;
+            }
+            var v = data.value;
+            var rendered;
+            if (v === null || v === undefined) {
+                rendered = "(undefined)";
+            } else if (typeof v === "number") {
+                rendered = (Math.abs(v) >= 1e6 || (v !== 0 && Math.abs(v) < 1e-4))
+                    ? String(v)
+                    : String(Math.round(v * 1e6) / 1e6);
+            } else if (typeof v === "object") {
+                try { rendered = JSON.stringify(v); } catch (e) { rendered = String(v); }
+            } else {
+                rendered = String(v);
+            }
+            $("#calc-result").val(rendered);
+        });
+    }
+
+    $("#icon_calculator").on("click", function (e) {
+        e.preventDefault();
+        openCalculator();
+    });
+    $(".calc-close").on("click", closeCalculator);
+    $(".calc-modal-dim").on("click", closeCalculator);
+    $("#calc-button").on("click", calculate);
+    $("#calc-expr").on("keydown", function (e) {
+        // Enter (without shift) calculates; Shift+Enter inserts newline.
+        if ((e.key === "Enter" || e.keyCode === 13) && !e.shiftKey) {
+            e.preventDefault();
+            calculate();
+        } else if (e.key === "Escape") {
+            closeCalculator();
+        }
+    });
+    $("#calc-helper").on("change", function () {
+        var v = this.value;
+        if (!v) return;
+        var ta = document.getElementById("calc-expr");
+        insertAtCursor(ta, v);
+        // Reset dropdown so picking the same item twice still fires.
+        this.selectedIndex = 0;
+    });
+})();
 
 // ========================================================================================= KEYPAD DRAGABILITY
 // Keypad Modal Drag Functionality

@@ -58,6 +58,22 @@ MachineConfig.prototype.init = function (machine, callback) {
             if (this._cache && this._cache.manual && !("softlimit_cushion" in this._cache.manual)) {
                 this._cache.manual.softlimit_cushion = 0;
             }
+            // Seed layout-orientation fields so the Configuration > Layout tab
+            // can persist its assignments. util.extend only descends through
+            // existing keys, so without these seeds a client POST silently
+            // drops the new fields and the user's selection won't survive a
+            // page refresh.
+            if (this._cache && this._cache.manual && !("layout_mapping" in this._cache.manual)) {
+                this._cache.manual.layout_mapping = {
+                    "X+": "→",
+                    "X-": "←",
+                    "Y+": "↑",
+                    "Y-": "↓"
+                };
+            }
+            if (this._cache && this._cache.manual && !("layout_origin_corner" in this._cache.manual)) {
+                this._cache.manual.layout_origin_corner = "bl";
+            }
             if (this._cache && !("outputs" in this._cache)) {
                 // Outputs 1, 2, 4 have hardcoded labels and runtime ignores
                 // their policy. The other rows are configurable in the

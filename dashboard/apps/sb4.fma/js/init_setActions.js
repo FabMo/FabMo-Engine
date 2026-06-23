@@ -249,22 +249,22 @@ $(document).ready(function () {
         
     $('.opensbp_input_formattedspeeds').change(function (event) {  // Handle and Bind updates from formatted SPEED textboxes
         event.preventDefault();  // Prevent the default action
-        event.stopPropagation(); // Stop the event from propagating
-        switch (this.id) {
+        event.stopPropagation(); // Stop the event from propagating       VS,xy,z,a,b,c ,xy,z,a,b,c
+        switch (this.id) {                                                  //  moves  //  jogs 
             case 'formatted_movexy_speed':
-                var thisSpeedCmd = 'VS,' + this.value;
+                var thisSpeedCmd = 'VS,' + this.value; 
                 break;
             case 'formatted_movez_speed':
                 var thisSpeedCmd = 'VS,,' + this.value;
                 break;
             case 'formatted_movea_speed':
-                var thisSpeedCmd = 'VS,,,,' + this.value;
+                var thisSpeedCmd = 'VS,,,' + this.value;
                 break;
             case 'formatted_moveb_speed':
-                var thisSpeedCmd = 'VS,,,,,,' + this.value;
+                var thisSpeedCmd = 'VS,,,,' + this.value;
                 break;
             case 'formatted_movec_speed':
-                var thisSpeedCmd = 'VS,,,,,,,,' + this.value;
+                var thisSpeedCmd = 'VS,,,,,' + this.value;
                 break;
             case 'formatted_jogxy_speed':
                 var thisSpeedCmd = 'VS,,,,,,' + this.value;
@@ -273,13 +273,13 @@ $(document).ready(function () {
                 var thisSpeedCmd = 'VS,,,,,,,' + this.value;
                 break;    
             case 'formatted_joga_speed':
-                var thisSpeedCmd = 'VS,,,,' + this.value;
+                var thisSpeedCmd = 'VS,,,,,,,,' + this.value;
                 break;
             case 'formatted_jogb_speed':
-                var thisSpeedCmd = 'VS,,,,,,' + this.value;
+                var thisSpeedCmd = 'VS,,,,,,,,,' + this.value;
                 break;
             case 'formatted_jogc_speed':
-                var thisSpeedCmd = 'VS,,,,,,,,' + this.value;
+                var thisSpeedCmd = 'VS,,,,,,,,,,' + this.value;
                 break;
         }
         var mult_cmds = [thisSpeedCmd, 'SV'].join("\n");

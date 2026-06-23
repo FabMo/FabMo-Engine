@@ -29,6 +29,16 @@ var config = require("../../config");
 var stream = require("stream");
 var ManualDriver = require("../manual").ManualDriver;
 
+// Maximum program lines a simulation run will expand before bailing out.
+// `simulateString` / `runFile` in non-driver mode loop through GOTO/GOSUB
+// the same way real execution does, with no natural backpressure — an
+// infinite loop in user code (e.g. `START:\nJA,1\nJA,0\nGOTO START`) would
+// otherwise peg the engine. Hitting this budget ends the run cleanly,
+// keeps whatever gcode was produced, and surfaces `info.partial = true`
+// to the simulateString callback so the bounds/previewer paths can warn
+// rather than refuse.
+var MAX_SIM_LINES = 200000;
+
 // Constructor for the OpenSBP runtime
 // The SBPRuntime object is responsible for running OpenSBP code.
 // For more info and command reference: http://www.opensbp.com/
@@ -96,6 +106,11 @@ function SBPRuntime() {
     // Input simulation (debug mode) — set by caller before runFile/executeCode
     this.simulation_mode = false;
     this.simulated_inputs = {};
+    // When non-null, SBP user/system variable reads & writes route here instead
+    // of the process-global config.opensbp._cache. Set for the duration of a
+    // simulation (see simulateString) so a sim can never clobber the variables a
+    // concurrently-running live job depends on. See _varStore().
+    this._isolatedVars = null;
     // sim_probe is null when no probe is active. Otherwise:
     //   { input, feed, axes, phase: "probing"|"tripping"|"returning", trip_pos }
     this.sim_probe = null;
@@ -299,6 +314,11 @@ SBPRuntime.prototype.needsAuth = function (s) {
 SBPRuntime.prototype.runString = function (s) {
     this.currentFilename = "direct input";
     this._endCalled = false; // Reset for new run so errors before _run() aren't suppressed
+    // Sim-mode runaway guard counters. Reset here (not in init()) because
+    // _end() calls init() as part of cleanup, which would otherwise clear
+    // sim_budget_exceeded before simulateString's "end" callback reads it.
+    this.sim_lines_executed = 0;
+    this.sim_budget_exceeded = false;
     //log.info("####=.runString");
     try {
         // Initialize the program
@@ -414,7 +434,7 @@ SBPRuntime.prototype.runStream = function (text_stream) {
                     var lines = this.program.length;
                     if (this.machine) {
                         if (this.file_stack.length === 0) {
-                            this.machine.status.nb_lines = lines - 1;
+                            this.machine.status.nb_lines = lines;
                         }
                     }
 
@@ -712,6 +732,14 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
     this.cmd_StartX = x; // need to capture these for processing commands outside of runtime
     this.cmd_StartY = y;
     this.cmd_StartZ = z;
+    // Isolate all SBP variable state for the lifetime of this simulation. Without
+    // this, the sim writes &tool/$vars into the process-global cache that a
+    // concurrently-running live job reads — e.g. the background soft-limit
+    // bounds pre-check (analyzeJobBounds) clobbering &tool while a C9 toolchange
+    // is mid-flight, which on long files picks up the wrong tool. Teardown must
+    // run on every exit path below.
+    this._enterIsolatedVars();
+    var self = this;
     if (this.ok_to_disconnect) {
         this.disconnect();
         var st;
@@ -719,20 +747,39 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
             st = this.runString(s);
         } catch (err) {
             log.error("simulateString: runString threw: " + err.message);
+            this._exitIsolatedVars();
             return callback(err);
         }
         if (!st) {
             log.error("simulateString: runString returned undefined");
+            this._exitIsolatedVars();
             return callback(new Error("Failed to start simulation: runString returned no stream."));
         }
         var chunks = [];
+        var done = false; // guard: 'end' and 'error' are mutually exclusive, but
+        // never let isolation teardown / callback fire twice if both arrive.
         st.on("data", function (chunk) {
             chunks.push(chunk);
         });
         st.on("end", function () {
-            callback(null, chunks.join(""));
+            if (done) return;
+            done = true;
+            // info.partial signals truncated simulation (e.g. infinite loop
+            // hit MAX_SIM_LINES). Callers that care can warn/badge; callers
+            // that don't (legacy 2-arg) silently get the truncated gcode,
+            // which is still strictly better than hanging.
+            var info = { partial: !!self.sim_budget_exceeded };
+            self._exitIsolatedVars();
+            callback(null, chunks.join(""), info);
+        });
+        st.on("error", function (err) {
+            if (done) return;
+            done = true;
+            self._exitIsolatedVars();
+            callback(err);
         });
     } else {
+        this._exitIsolatedVars();
         callback(new Error("Cannot simulate while OpenSBP runtime is busy."));
     }
 };
@@ -1010,6 +1057,7 @@ SBPRuntime.prototype._run = function () {
     this.probingActive = false;
     this.probingHeld = false;
     this.probePin = null;
+    this.on_input_watcher = null;
 
     // Reset spindle authorization at program start
     try {
@@ -1056,10 +1104,37 @@ SBPRuntime.prototype._run = function () {
                     break;
                 }
                 if ((this.probingPending && !this.probingInitialized) || this.driver.status.targetHit) {
+                    var tripped = !!this.driver.status.targetHit;
                     this.driver.status.targetHit = false;
                     this.probingPending = false;
                     this.probingActive = false;
                     this.probingHeld = false;
+
+                    // ON INPUT armed: each emit_move sends a G38.3 with prbin=N.
+                    // On trip → execute the deferred stmt and disarm. On no-trip
+                    // (G38.3 completed naturally) → keep watcher armed for the next move.
+                    if (this.on_input_watcher) {
+                        if (tripped) {
+                            var watcher = this.on_input_watcher;
+                            log.info(
+                                "ON INPUT(" + watcher.input + "," + watcher.state +
+                                ") tripped — executing deferred stmt (type=" +
+                                (watcher.stmt && watcher.stmt.type) + ")"
+                            );
+                            this._disarmOnInput();
+                            this._execute(
+                                watcher.stmt,
+                                function () {
+                                    this._executeNext();
+                                }.bind(this)
+                            );
+                        } else {
+                            log.debug("ON INPUT: G38.3 completed without trip; watcher remains armed");
+                            this._executeNext();
+                        }
+                        break;
+                    }
+
                     if (this.sim_probe) {
                         // Sim probe never set prbin; just clear sim state.
                         // Phase tells us whether this was a "miss" (probing → end of move)
@@ -1237,6 +1312,24 @@ SBPRuntime.prototype._executeNext = function () {
         return;
     }
 
+    // Sim-mode runaway guard. Only enforced when there's no driver attached
+    // (i.e. we're being driven by simulateString / preview / bounds-check, not
+    // executing on real hardware). A program with `GOTO` back to a label would
+    // otherwise loop forever and peg the engine. Once tripped, skip further
+    // counting so we don't re-log on the EOF-handling tail recursions.
+    if (!this.driver && !this.sim_budget_exceeded) {
+        this.sim_lines_executed++;
+        if (this.sim_lines_executed > MAX_SIM_LINES) {
+            log.warn("Simulation budget exhausted at " + MAX_SIM_LINES + " lines — likely infinite loop in source. Truncating.");
+            this.sim_budget_exceeded = true;
+            // Jump past end-of-program so the existing EOF handling in
+            // _executeNext flushes output and calls _end() cleanly. Avoids
+            // having to call _end() reentrantly from here.
+            this.pc = this.program.length;
+            return setImmediate(this._executeNext.bind(this));
+        }
+    }
+
     if (this.pc >= this.program.length) {
         log.info("End of program reached. (pc = " + this.pc + ")");
         // Here we've reached the end of the program, but there's possibly not enough
@@ -1345,6 +1438,41 @@ SBPRuntime.prototype.prime = function () {
     }
 };
 
+// Pick a feedrate to use when rewriting a G0 rapid as a G38.3 under an armed
+// ON INPUT watcher. Z-only moves use jogspeed_z; everything else uses jogspeed_xy.
+// Returns IPM/MMPM (units/min) — matches the F-word convention emitted by the
+// move commands (movespeed_xy * 60, etc.).
+SBPRuntime.prototype._jogFeedrateFor = function (pt) {
+    var hasZ = pt && pt.Z !== undefined;
+    var hasXY = pt && (pt.X !== undefined || pt.Y !== undefined);
+    var rate;
+    if (hasZ && !hasXY) {
+        rate = this.jogspeed_z || this.movespeed_z;
+    } else {
+        rate = this.jogspeed_xy || this.movespeed_xy;
+    }
+    return (rate || 1) * 60;
+};
+
+// Tear down an armed ON INPUT watcher: clear the watcher, restore prbin in
+// firmware, and clear any leftover probe-cycle flags. Safe to call multiple times.
+SBPRuntime.prototype._disarmOnInput = function () {
+    if (!this.on_input_watcher) {
+        return;
+    }
+    var inp = this.on_input_watcher.input;
+    this.on_input_watcher = null;
+    this.probingPending = false;
+    this.probingInitialized = false;
+    this.probingActive = false;
+    this.probingHeld = false;
+    if (!this.simulation_mode && this.stream && this.driver) {
+        this.emit_gcode('M100.1("{prbin:0}")');
+        this.prime();
+    }
+    log.info("ON INPUT disarmed (was watching input#" + inp + ")");
+};
+
 // Set a pending error and end the stream feeding the motion system
 // The pending error is picked up by _executeNext and the program is ended as a result.
 //   error - The error message
@@ -1379,9 +1507,20 @@ SBPRuntime.prototype._end = function (error) {
         this.pending_error = error;
     }
 
-    // Capture final line info on the job before cleanup clears it
+    // Capture final line info on the job before cleanup clears it.
+    // Prefer G2's reported line (N-word value, which emit_gcode sets to the
+    // top-level SBP pc + 20) — the SBP runtime's pc races ahead of G2 because
+    // GCode is queued, so pc+1 can land past the program end while G2 is still
+    // executing an earlier statement. Convert pc (0-based) to 1-based source
+    // line. Fall back to pc+1 if G2 hasn't reported.
     if (this.machine && this.machine.status.job) {
-        this.machine.status.job.final_line = this.pc + 1;
+        var g2line = this.machine.status.line;
+        var lineFromG2 = g2line ? g2line - 20 + 1 : null;
+        if (lineFromG2 && lineFromG2 >= 1) {
+            this.machine.status.job.final_line = lineFromG2;
+        } else {
+            this.machine.status.job.final_line = this.pc + 1;
+        }
         this.machine.status.job.nb_lines = this.machine.status.nb_lines;
     }
 
@@ -1417,6 +1556,14 @@ SBPRuntime.prototype._end = function (error) {
     
     if (error) {
         log.error(error);
+    }
+
+    // Disarm any active ON INPUT watcher before we tear down the stream/driver
+    // so the M100.1 prbin:0 reset still gets sent.
+    try {
+        this._disarmOnInput();
+    } catch (e) {
+        log.warn("Error disarming ON INPUT during _end: " + e);
     }
 
     // Clear runtime state
@@ -1655,13 +1802,116 @@ SBPRuntime.prototype._execute = function (command, callback) {
             // DATA_SEND does NOT break the stack - evaluation happens inline
             return false;
 
-        case "event":
-            // Throw a useful exception for the no-longer-supported ON INPUT command
+        case "print":
+            // PRINT emits one persistent line to the dashboard output panel.
+            // Args are evaluated now (so &vars/system vars resolve) and
+            // concatenated SB3-style with no separator -- the author controls
+            // spacing via the literal strings. Reuses the data_send bus on a
+            // reserved "print" channel, so no extra socket plumbing is needed.
+            var printParts = (command.args || []).map(function (arg) {
+                var v = this._eval(arg);
+                return v === undefined || v === null ? "" : String(v);
+            }.bind(this));
+            var printLine = printParts.join("");
+            if (this.machine) {
+                this.machine.emit("data_send", {
+                    channel: "print",
+                    data: [printLine],
+                    timestamp: Date.now(),
+                });
+                log.debug("PRINT: " + printLine);
+            }
             this.pc += 1;
-            throw new Error(
-                "ON INPUT is no longer a supported command.  Make sure the program you are using is up to date.  Line: " +
-                    (this.pc + 1)
-            );
+            if (callback) {
+                setImmediate(callback);
+            }
+            return false;
+
+        case "print_clear":
+            // CLEARPRINT empties the dashboard output panel via the same bus.
+            if (this.machine) {
+                this.machine.emit("data_send", {
+                    channel: "print_clear",
+                    data: [],
+                    timestamp: Date.now(),
+                });
+                log.debug("CLEARPRINT");
+            }
+            this.pc += 1;
+            if (callback) {
+                setImmediate(callback);
+            }
+            return false;
+
+        case "event":
+            // ON INPUT(N,1) <stmt>: arm a one-shot rising-edge watcher. While
+            // armed, emit_move rewrites every G0/G1 as G38.3 with prbin=N. On
+            // trip, motion stops at the trip point (firmware probe path) and
+            // <stmt> executes. STAT_STOP handles trip detection.
+            //
+            // ON INPUT(N,0): disarm whatever watcher is currently armed (SB3
+            // convention). Any trailing stmt is ignored. Falling-edge arming
+            // (state=0 with a stmt) is not yet supported.
+            var sw = command.sw;
+            var st = command.state;
+            if (st === 0) {
+                this._disarmOnInput();
+                log.info("ON INPUT(" + sw + ",0) explicit disarm");
+                this.pc += 1;
+                return false;
+            }
+            if (st !== 1) {
+                this.pc += 1;
+                throw new Error(
+                    "ON INPUT(" + sw + "," + st + "): state must be 0 (disarm) or 1 (arm). Line: " + (this.pc + 1)
+                );
+            }
+            if (!command.stmt) {
+                this.pc += 1;
+                throw new Error(
+                    "ON INPUT(" + sw + ",1): rising-edge arm requires a trailing statement (e.g. GOTO LABEL). Line: " + (this.pc + 1)
+                );
+            }
+            if (!this.simulation_mode) {
+                var inputAction = config.machine.get("di" + sw + "ac");
+                if (inputAction === "stop" || inputAction === "faststop" || inputAction === "interlock") {
+                    this.pc += 1;
+                    throw new Error(
+                        "ON INPUT: Input#" + sw + " is assigned to action (" + inputAction +
+                        ") and cannot be used as an event trigger. Line: " + (this.pc + 1)
+                    );
+                }
+                if (this.machine.status["in" + sw]) {
+                    this.pc += 1;
+                    throw new Error(
+                        "ON INPUT: Input#" + sw + " is already active (ON) so cannot arm rising-edge watch. Line: " + (this.pc + 1)
+                    );
+                }
+            } else {
+                if (this.simulated_inputs && this.simulated_inputs[sw]) {
+                    this.pc += 1;
+                    throw new Error(
+                        "ON INPUT: Input#" + sw + " is already active (ON) in sim so cannot arm rising-edge watch. Line: " + (this.pc + 1)
+                    );
+                }
+            }
+            // A second ON INPUT replaces any prior one. Disarm first (clears
+            // state and emits M100.1 prbin:0), then arm the new watcher.
+            if (this.on_input_watcher) {
+                this._disarmOnInput();
+            }
+            this.on_input_watcher = {
+                input: sw,
+                state: st,
+                stmt: command.stmt,
+                armed_pc: this.pc,
+            };
+            if (!this.simulation_mode) {
+                this.emit_gcode('M100.1("{prbin:' + sw + '}")');
+            }
+            log.info("ON INPUT(" + sw + "," + st + ") armed; stmt type=" + (command.stmt && command.stmt.type));
+            this.pc += 1;
+            return false;
 
         case "cmd":
             var broke = this._executeCommand(command, callback);
@@ -2037,18 +2287,46 @@ SBPRuntime.prototype._execute = function (command, callback) {
             this.machine.setState(this, "paused", modalParams);
             return true;
 
-        case "event":
-            // Throw a useful exception for the no-longer-supported ON INPUT command
-            this.pc += 1;
-            throw new Error(
-                "ON INPUT is no longer a supported command.  Make sure the program you are using is up to date.  Line: " +
-                    (this.pc + 1)
-            );
+        // NOTE: `case "event"` is handled earlier in this switch (see ON INPUT
+        // re-enablement). The duplicate that lived here was unreachable dead code.
 
         default:
             this.pc += 1;
             throw new Error("Unknown command: " + JSON.stringify(command));
     }
+};
+
+// Returns the variable store backing user (&) and system ($) variable reads
+// and writes. Normally this is the process-global config.opensbp._cache, shared
+// by every SBPRuntime. During a simulation it's an isolated per-instance copy
+// (see _enterIsolatedVars) so the sim never mutates the variables a live job is
+// reading — e.g. the soft-limit bounds pre-check expanding &tool out from under
+// a running toolchange.
+SBPRuntime.prototype._varStore = function () {
+    return this._isolatedVars || config.opensbp._cache;
+};
+
+// Begin variable isolation: snapshot the current global variable store into a
+// per-instance copy so the sim sees real starting values ($toolsUU, $ATC.*, etc.)
+// but every assignment it makes stays local and is discarded at _exitIsolatedVars.
+SBPRuntime.prototype._enterIsolatedVars = function () {
+    var cache = config.opensbp._cache || {};
+    function deepCopy(o) {
+        try {
+            return JSON.parse(JSON.stringify(o || {}));
+        } catch (e) {
+            return Object.assign({}, o);
+        }
+    }
+    this._isolatedVars = {
+        tempVariables: deepCopy(cache.tempVariables),
+        variables: deepCopy(cache.variables),
+    };
+};
+
+// End variable isolation: subsequent reads/writes go back to the global store.
+SBPRuntime.prototype._exitIsolatedVars = function () {
+    this._isolatedVars = null;
 };
 
 // Return true if the provided variable exists in the current program context
@@ -2062,9 +2340,9 @@ SBPRuntime.prototype._varExists = function (identifier) {
         let variables;
 
         if (identifier.type == "user_variable") {
-            variables = config.opensbp._cache["tempVariables"];
+            variables = this._varStore()["tempVariables"];
         } else {
-            variables = config.opensbp._cache["variables"];
+            variables = this._varStore()["variables"];
         }
 
         if (!(variableName in variables)) {
@@ -2293,9 +2571,9 @@ SBPRuntime.prototype._assign = function (identifier, value) {
             // Determine which variable collection to use
             let variables;
             if (identifier.type === "user_variable") {
-                variables = config.opensbp._cache["tempVariables"];
+                variables = this._varStore()["tempVariables"];
             } else {
-                variables = config.opensbp._cache["variables"];
+                variables = this._varStore()["variables"];
             }
             
             // Ensure base variable exists
@@ -2325,9 +2603,9 @@ SBPRuntime.prototype._assign = function (identifier, value) {
             
             let variables;
             if (identifier.type === "user_variable") {
-                variables = config.opensbp._cache["tempVariables"];
+                variables = this._varStore()["tempVariables"];
             } else {
-                variables = config.opensbp._cache["variables"];
+                variables = this._varStore()["variables"];
             }
             
             if (!(variableName in variables)) {
@@ -2386,6 +2664,12 @@ SBPRuntime.prototype._eval_value = function (expr) {
     if (typeof expr === "object" && expr.type === "system_variable") {
         return this.evaluateSystemVariable(expr);
     }
+    if (typeof expr === "object" && expr.type === "func") {
+        return this._evalFunction(expr);
+    }
+    if (typeof expr === "object" && expr.type === "const") {
+        return this._evalConstant(expr);
+    }
     var n = Number(String(expr));
     if (!isNaN(n)) {
         return n;
@@ -2397,15 +2681,76 @@ SBPRuntime.prototype._eval_value = function (expr) {
     return expr;
 };
 
+SBPRuntime.prototype._evalConstant = function (expr) {
+    switch (expr.name) {
+        case "PI": return Math.PI;
+        default:
+            throw new Error("Unknown constant: " + expr.name);
+    }
+};
+
+// Built-in math functions for user expressions. Trig functions take and return
+// degrees (matches angle convention elsewhere in OpenSBP, e.g. CG/CP).
+SBPRuntime.prototype._evalFunction = function (expr) {
+    var self = this;
+    var args = expr.args.map(function (a) { return self._eval(a); });
+    var name = expr.name;
+    var DEG = Math.PI / 180;
+    var requireArgs = function (min, max) {
+        if (args.length < min || (max !== undefined && args.length > max)) {
+            var range = (max === undefined || min === max) ? min : (min + "-" + max);
+            throw new Error(name + "() expects " + range + " argument(s), got " + args.length);
+        }
+    };
+    switch (name) {
+        // basic numeric
+        case "ABS":    requireArgs(1, 1); return Math.abs(args[0]);
+        case "SQRT":   requireArgs(1, 1); return Math.sqrt(args[0]);
+        case "POW":    requireArgs(2, 2); return Math.pow(args[0], args[1]);
+        case "MIN":    requireArgs(1);    return Math.min.apply(null, args);
+        case "MAX":    requireArgs(1);    return Math.max.apply(null, args);
+        case "MOD":    requireArgs(2, 2); return args[0] % args[1];
+        case "SIGN":   requireArgs(1, 1); return Math.sign(args[0]);
+        // rounding
+        case "ROUND":
+            requireArgs(1, 2);
+            if (args.length === 1) return Math.round(args[0]);
+            var m = Math.pow(10, args[1]);
+            return Math.round(args[0] * m) / m;
+        case "FLOOR":  requireArgs(1, 1); return Math.floor(args[0]);
+        case "CEIL":   requireArgs(1, 1); return Math.ceil(args[0]);
+        case "TRUNC":  requireArgs(1, 1); return Math.trunc(args[0]);
+        // trig (degrees in / degrees out)
+        case "SIN":    requireArgs(1, 1); return Math.sin(args[0] * DEG);
+        case "COS":    requireArgs(1, 1); return Math.cos(args[0] * DEG);
+        case "TAN":    requireArgs(1, 1); return Math.tan(args[0] * DEG);
+        case "ASIN":   requireArgs(1, 1); return Math.asin(args[0]) / DEG;
+        case "ACOS":   requireArgs(1, 1); return Math.acos(args[0]) / DEG;
+        case "ATAN":   requireArgs(1, 1); return Math.atan(args[0]) / DEG;
+        case "ATAN2":  requireArgs(2, 2); return Math.atan2(args[0], args[1]) / DEG;
+        // exp / log / random
+        case "EXP":    requireArgs(1, 1); return Math.exp(args[0]);
+        case "LN":     requireArgs(1, 1); return Math.log(args[0]);
+        case "LOG10":  requireArgs(1, 1); return Math.log10(args[0]);
+        case "RANDOM":
+            if (args.length === 0) return Math.random();
+            if (args.length === 1) return Math.random() * args[0];
+            if (args.length === 2) return args[0] + Math.random() * (args[1] - args[0]);
+            throw new Error("RANDOM() expects 0-2 arguments, got " + args.length);
+        default:
+            throw new Error("Unknown function: " + name + "()");
+    }
+};
+
 SBPRuntime.prototype._getVariableValue = function (identifier) {
     const variableName = identifier.name.toUpperCase();
     const accessPath = identifier.access || [];
     let variables;
 
     if (identifier.type === "user_variable") {
-        variables = config.opensbp._cache["tempVariables"];
+        variables = this._varStore()["tempVariables"];
     } else {
-        variables = config.opensbp._cache["variables"];
+        variables = this._varStore()["variables"];
     }
 
     if (!(variableName in variables)) {
@@ -2457,6 +2802,8 @@ SBPRuntime.prototype._eval = function (expr) {
                 return this._eval(expr.left) * this._eval(expr.right);
             case "/":
                 return this._eval(expr.left) / this._eval(expr.right);
+            case "MOD":
+                return this._eval(expr.left) % this._eval(expr.right);
             case ">":
                 return this._eval(expr.left) > this._eval(expr.right);
             case "<":
@@ -2501,6 +2848,7 @@ SBPRuntime.prototype.init = function () {
     // is preserved — it's set by the caller before runFile()/executeCode().
     this.simulated_inputs = {};
     this.sim_probe = null;
+    this.on_input_watcher = null;
 
     if (this.transforms != null && this.transforms.level.apply === true) {
         this.leveler = new Leveler(this.transforms.level.ptDataFile);
@@ -3040,6 +3388,24 @@ SBPRuntime.prototype.emit_gcode = function (s) {
 // on the specified position after having applied transformations to that position
 // TODO - Gordon, provide some documentation here?
 SBPRuntime.prototype.emit_move = function (code, pt) {
+    // ON INPUT armed: rewrite every move as G38.3 (probe-toward, no-fault-on-miss)
+    // so the firmware monitors prbin for an edge and stops at the trip point with
+    // firmware-grade latency. G0 rapids get a jog-rate F injected since G38.3
+    // requires a feedrate. Skipped in simulation mode — sim path uses the
+    // simulated_inputs/sim_probe mechanism instead.
+    if (this.on_input_watcher && !this.simulation_mode) {
+        if (code === "G0") {
+            pt = Object.assign({}, pt);
+            if (pt.F === undefined) {
+                pt.F = this._jogFeedrateFor(pt);
+            }
+        }
+        code = "G38.3";
+        // Mirror the flag pattern from probe.js so the existing STAT_PROBE/STAT_STOP
+        // handlers fire the trip-detection path.
+        this.probingPending = true;
+        this.probingInitialized = true;
+    }
     var gcode = code;
 
     ["X", "Y", "Z", "A", "B", "C", "I", "J", "K", "F"].forEach(
