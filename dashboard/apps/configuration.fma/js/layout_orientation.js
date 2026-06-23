@@ -135,7 +135,7 @@
         }, function (err) {
           if (err) {
             console.warn('Failed to save layout config:', err);
-            setStatus('Saved locally, but engine config write failed.', '#c0392b');
+            setStatus(window.t('config.layout.status_save_failed'), '#c0392b');
           }
         });
       }
@@ -199,7 +199,7 @@
         });
       }
       armed = null;
-      setStatus(axis + ' assigned to keypad ' + dir + ' (saved)', '#27ae60');
+      setStatus(axis + window.t('config.layout.status_assigned_prefix') + dir + window.t('config.layout.status_assigned_suffix'), '#27ae60');
       repaintAll();
       persist();
     }
@@ -216,9 +216,9 @@
       var axis = $(this).data('axis');
       armed = (armed === axis) ? null : axis;
       if (armed) {
-        setStatus('Armed: ' + armed + ' — now click or drag a keypad button.', DIR_COLOR[mapping[axis]]);
+        setStatus(window.t('config.layout.status_armed_prefix') + armed + window.t('config.layout.status_armed_suffix'), DIR_COLOR[mapping[axis]]);
       } else {
-        setStatus('Click a machine-motion arrow, or drag a keypad button onto one.');
+        setStatus(window.t('config.layout.status_click_arrow'));
       }
       repaintAll();
     });
@@ -272,7 +272,7 @@
           if (dx * dx + dy * dy < 25) return; // 5px dead-zone
           dragging = true;
           $ghost = makeGhost();
-          setStatus('Drop ' + dir + ' on a machine-motion arrow.', '#666');
+          setStatus(window.t('config.layout.status_drop_prefix') + dir + window.t('config.layout.status_drop_suffix'), '#666');
         }
         $ghost.css({ left: (ev.clientX - 22) + 'px', top: (ev.clientY - 22) + 'px' });
         // Live drop-target highlight
@@ -293,7 +293,7 @@
         if ($tgt.length) {
           assign($tgt.data('axis'), dir);
         } else {
-          setStatus('Drop cancelled.', '#999');
+          setStatus(window.t('config.layout.status_drop_cancelled'), '#999');
         }
       }
 
