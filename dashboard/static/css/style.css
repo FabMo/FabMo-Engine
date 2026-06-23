@@ -90,6 +90,216 @@ label {
 	text-align: center;
 }
 .tab-bar .right-small, .left-small { border-color: #efefef;}
+
+/* ===== PRINT OUTPUT widget — docked in the top bar ========================
+   Absolutely positioned within the fixed .tab-bar; JS sets left/right so it
+   fills the gap between the machine name and the mini-DRO. */
+.print-widget.docked {
+    position: absolute;
+    top: 0;
+    height: 56px;
+    display: flex;
+    align-items: flex-end;      /* sit the module at the bottom of the bar */
+    z-index: 1;                 /* tab-bar itself is 1005 */
+}
+/* Hide on small screens (replaces the Foundation show-for-medium-up class,
+   which forced display:inherit and broke the flex alignment). */
+@media only screen and (max-width: 40em) {
+    .print-widget.docked { display: none; }
+}
+.print-widget-dockline {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;     /* caption + line sit at the bottom */
+    width: 100%;
+    box-sizing: border-box;
+    padding: 3px 8px;
+    /* The frame — caption, caret, and output line all live inside it so the
+       docked widget reads as one detachable module. */
+    background-color: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: "Droid_Sans_Mono", monospace;
+    line-height: 1.2;              /* override .tab-bar's inherited 45px line-height */
+}
+.print-widget-header,
+.print-widget-title,
+.print-widget-latest {
+    line-height: 1.2;
+}
+.print-widget-header {
+    display: flex;
+    align-items: center;
+    font-size: 10px;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+/* Drag grip — 3x3 dot grid (⋮⋮⋮) at the right end of the caption row,
+   matching the manual-controls modal handle. */
+.print-widget-grip {
+    margin-left: auto;             /* push to the right end of the caption row */
+    cursor: grab;
+    color: #cccccc;
+    font-size: 16px;
+    letter-spacing: 1px;
+    line-height: 1;
+    opacity: 0.85;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.print-widget-title {
+    white-space: nowrap;
+    font-size: 12px;               /* same size as the output line */
+}
+.print-widget-expand {
+    flex: 0 0 auto;
+    margin: 0 6px 0 0;            /* caret sits left of the output line */
+    padding: 0 4px;
+    height: auto;                  /* cancel Foundation's fixed button height */
+    min-height: 0;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+}
+.print-widget-expand:hover { color: #ffe217; }
+/* Output row — caret on the left, then the single output line. */
+.print-widget-outputrow {
+    display: flex;
+    align-items: center;
+}
+/* The single output line is a 1-line viewport; a new line gently scrolls up
+   into view (old line up and out) so a quick burst isn't missed. */
+.print-widget-latest {
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+    height: 1.3em;
+    font-size: 12px;
+}
+.print-widget-latest-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 12px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+}
+.print-widget-latest-line.incoming {     /* starts just below the viewport */
+    transform: translateY(100%);
+    opacity: 0;
+}
+.print-widget-latest-line.outgoing {     /* scrolls up and out */
+    transform: translateY(-100%);
+    opacity: 0;
+}
+.print-widget-latest-line.empty {
+    opacity: 0.45;
+    font-style: italic;
+}
+/* Flash the output line on new input (applied via inline animation in JS). */
+@keyframes print-widget-flash {
+    0%, 100% { background-color: rgba(0, 0, 0, 0.18); }
+    50%      { background-color: rgba(255, 205, 70, 0.55); }
+}
+/* ===== Stream list (shared by the docked dropdown and the floating modal) == */
+.print-widget-stream {
+    display: none;
+    overflow-y: auto;
+    font-family: "Droid_Sans_Mono", monospace;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #ffffff;
+}
+.print-widget-line {
+    padding: 2px 8px;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.12);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.print-widget-empty {
+    padding: 6px 8px;
+    opacity: 0.5;
+    font-style: italic;
+}
+/* Docked + expanded: dropdown hanging below the module. */
+.print-widget.docked.expanded .print-widget-stream {
+    display: block;
+    position: absolute;
+    top: 52px;                 /* just below the module (bar 56 - 4px gap) */
+    right: 0;
+    width: 100%;
+    max-height: 50vh;
+    background: #2a2c54;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+}
+.print-widget.docked.expanded .print-widget-expand {
+    transform: rotate(180deg);  /* caret flips when open */
+}
+/* Close (X) — only in the floating modal. */
+.print-widget-close {
+    flex: 0 0 auto;
+    margin: 0 0 0 8px;
+    padding: 0 4px;
+    height: auto;
+    min-height: 0;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+}
+.print-widget-close:hover { color: #ff6b6b; }
+.print-widget.docked .print-widget-close { display: none; }
+/* ===== Floating modal (pulled off the bar) ================================= */
+.print-widget.floating {
+    position: fixed;
+    width: 360px;
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    /* Mostly-transparent grey. */
+    background: rgba(45, 45, 45, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    overflow: hidden;
+    z-index: 4000;
+}
+.print-widget.floating .print-widget-dockline {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    background: rgba(0, 0, 0, 0.25);
+    border: none;
+    border-radius: 0;
+    padding: 6px 10px;
+}
+.print-widget.floating .print-widget-outputrow { display: none; }
+.print-widget.floating .print-widget-stream {
+    display: block;
+    position: static;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+/* Distinctive glowing-green output text in the floating modal (first pass). */
+.print-widget.floating .print-widget-stream,
+.print-widget.floating .print-widget-line {
+    color: #5cff7a;
+    text-shadow: 0 0 5px rgba(92, 255, 122, 0.55);
+}
 .left-small {position: inherit;}
 
 .top-bar h1  {
@@ -377,27 +587,6 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	bottom: 0;
 	z-index: 1002;
 	transition: right 0.5s;
-	/* Flex column so the print-output list can absorb leftover height and
-	   scroll internally instead of overflowing past the frame bottom. */
-	display: flex;
-	flex-direction: column;
-	box-sizing: border-box;
-}
-
-/* Stack the add-on blocks and let them take the space below the position
-   readout. min-height:0 lets the print list shrink/scroll rather than push
-   the whole panel past the bottom of the frame. */
-.dro-addons {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 auto;
-	min-height: 0;
-}
-#dro-addon-print {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 auto;   /* this add-on grows to fill the remaining height */
-	min-height: 0;
 }
 
 /** Large DRO add-ons or TOOLS **/
@@ -520,49 +709,6 @@ input#override {
 }
 .dro-addon-value.spindle-load.warn .sp-load-fill {
     background-color: #e0b020;
-}
-
-/* PRINT OUTPUT panel — persistent SBP PRINT lines at the bottom of the DRO.
-   Newest line is prepended at the top; the list scrolls once it exceeds
-   ~10 lines. Fed via the data_send 'print' channel; cleared by CLEARPRINT
-   or the clear button. */
-#dro-addon-print .dro-addon-label {
-    padding-left: 8px;   /* small indent before "PRINT OUTPUT" */
-}
-.print-output-clear {
-    margin-left: auto;
-    padding: 0 6px;
-    font-weight: bold;
-    color: #313131;
-    cursor: pointer;
-}
-.print-output-clear:hover {
-    color: #fff;
-    background-color: rgb(105, 125, 64);
-}
-.print-output-list {
-    margin: 2px 8px 18px 8px;   /* 18px bottom margin = gap above the DRO frame bottom */
-    padding: 3px 5px;
-    flex: 1 1 auto;             /* fill the add-on's height (grows with the panel) */
-    min-height: 80px;          /* ~5 lines minimum on short screens */
-    max-height: 220px;         /* cap growth on tall screens */
-    overflow-y: auto;
-    border: 1px solid gray;
-    background-color: #931B14;
-    font-family: "Droid_Sans_Mono", monospace;
-    font-size: 9pt;
-    line-height: 1.35;
-    color: #ffffff;
-    word-break: break-word;
-    white-space: pre-wrap;
-}
-.print-output-line {
-    padding: 1px 0;
-    border-bottom: 1px dotted rgba(255, 255, 255, 0.15);
-}
-.print-output-empty {
-    opacity: 0.5;
-    font-style: italic;
 }
 .dro-addon-value.spindle-load.over .sp-load-fill {
     background-color: #c83030;

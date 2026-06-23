@@ -96,8 +96,25 @@
             </div>
           </section>
 
+          <!-- ***** PRINT OUTPUT widget (docked in top bar; can pull off into a
+               floating modal). Fed by the SBP PRINT command. ***** -->
+          <div id="print-widget" class="print-widget docked" title="Print output from running files">
+            <div class="print-widget-dockline" id="print-widget-dockline">
+              <div class="print-widget-header">
+                <span class="print-widget-title">Machine output:</span>
+                <span class="print-widget-grip" id="print-widget-grip" title="Drag to pull off the bar">&#8942;&#8942;&#8942;</span>
+                <button type="button" class="print-widget-close" id="print-widget-close" title="Close (return to top bar)" aria-label="Close">&#10005;</button>
+              </div>
+              <div class="print-widget-outputrow">
+                <button type="button" class="print-widget-expand" id="print-widget-expand" title="Expand to see past messages" aria-label="Expand print output">&#9662;</button>
+                <div class="print-widget-latest" id="print-widget-latest"></div>
+              </div>
+            </div>
+            <div class="print-widget-stream" id="print-widget-stream"></div>
+          </div>
+
           <!-- ***** Tool Position Section ***** -->
-          
+
           <section class="right show-for-small-up fabmo-status" id="right-position-container">
               <span id="transform_warning" class="transforms-on" style="display: none;">
                   <strong style="white-space: nowrap;">Transforms&nbsp;-&nbsp;<span style="color: red;">ON</span></strong>
@@ -272,16 +289,6 @@
                   <span class="sp-load-bar"><span class="sp-load-fill"></span></span>
                   <span class="no-select-input sp-load-pct">0%</span>
                 </div>
-              </div>
-
-              <div class="dro-addon" id="dro-addon-print">
-                <div class="dro-addon-spacer-row"></div>
-                <div class="dro-addon-label"> PRINT OUTPUT
-                  <span id="print-output-clear" class="print-output-clear" title="Clear the print output (or use CLEARPRINT in a file)">clear</span>
-                </div>
-                <!-- Newest line is prepended at the top; scrolls past ~10 lines.
-                     Fed by the SBP PRINT command via the data_send 'print' channel. -->
-                <div class="print-output-list" id="print-output-list"></div>
               </div>
 
             </div>
