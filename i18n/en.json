@@ -1033,5 +1033,19 @@
             "build_failed": "Could not build selected operations",
             "submit_sel_failed": "Failed to submit selected operations: {error}"
         }
+    },
+    "macro_manager": {
+        "page_title": "Macro Manager",
+        "header": "Custom Macros",
+        "menu_toggle": "Menu",
+        "create_new": "Create new custom macro...",
+        "table": {
+            "custom_number": "Custom #",
+            "name": "Name",
+            "description": "Description"
+        },
+        "notify": {
+            "deleted": "Macro \"{name}\" was deleted."
+        }
     }
 }
