@@ -4,6 +4,7 @@ var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
+require('./i18n.js');   // installs window.t / window.i18nReady / window.i18nApply
 var fabmo = new Fabmo;
 // ... there remains lots of old "tour" stuff here, needs to be carefully cleaned
 // eg > var cameFromTour = false;
@@ -37,16 +38,16 @@ window.top.document.addEventListener("usbFileSelection", function (event) {
 fabmo.on('pendant_file_select', function(state) {
   if (!state) return;
   if (state.reason === 'submitted' && state.job) {
-    fabmo.notify('success', 'Pendant submitted: ' + state.job.name);
+    fabmo.notify('success', window.t('job_manager.notify.pendant_submitted') + state.job.name);
     updateQueue(false);
   } else if (state.reason === 'submit-failed') {
-    fabmo.notify('error', 'Pendant submit failed: ' + (state.error || 'unknown'));
+    fabmo.notify('error', window.t('job_manager.notify.pendant_submit_failed') + (state.error || window.t('job_manager.notify.unknown')));
   } else if (state.file) {
     // scroll or refresh with a current selection
     var label = state.file.name + ' (' + (state.index + 1) + '/' + state.total + ')';
     $('#pendant-file-indicator').remove();
     $('body').append(
-      '<div id="pendant-file-indicator" style="position:fixed;bottom:8px;right:8px;padding:6px 10px;background:rgba(0,0,0,0.7);color:#fff;border-radius:4px;font-size:12px;z-index:9999;">Pendant: ' +
+      '<div id="pendant-file-indicator" style="position:fixed;bottom:8px;right:8px;padding:6px 10px;background:rgba(0,0,0,0.7);color:#fff;border-radius:4px;font-size:12px;z-index:9999;">' + window.t('job_manager.notify.pendant_prefix') +
       $('<div>').text(label).html() + '</div>'
     );
     clearTimeout(window._pendantIndicatorTimer);
@@ -188,17 +189,17 @@ function clearRecent() {
 }
 
 function createQueueMenu(id) {
-  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
+  var menu = "<div data-jobid='JOBID' class='ellipses' title='" + window.t('job_manager.actions.more_actions') + "'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>" + window.t('job_manager.actions.preview_job') + "</a></li><li><a class='editJob' data-jobid='JOBID'>" + window.t('job_manager.actions.edit_job') + "</a></li><li><a class='downloadJob' data-jobid='JOBID'>" + window.t('job_manager.actions.download_job') + "</a></li><li><a class='deleteJob' data-jobid='JOBID'>" + window.t('job_manager.actions.delete_job') + "</a></li></ul></div>";
   return menu.replace(/JOBID/g, id);
 }
 
 function createRecentMenu(id) {
-  var menu = "<div  class='ellipses' title='Run Again'><i data-jobid='JOBID'class='fa fa-arrow-circle-up add resubmitJob' aria-hidden='true'></i></div>";
+  var menu = "<div  class='ellipses' title='" + window.t('job_manager.actions.run_again') + "'><i data-jobid='JOBID'class='fa fa-arrow-circle-up add resubmitJob' aria-hidden='true'></i></div>";
   return menu.replace(/JOBID/g, id);
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="Start/Resume"></i></div> </div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="repeat-button" title="Repeat Job (set a count or leave blank to repeat until canceled)"><i class="fa fa-repeat"></i><span class="repeat-count-badge"></span></a></div><div class="medium-1 small-2 columns"><a class="ghost-button" title="Ghost Run (dry-run with a Z lift)"><img class="svg" src="css/images/clipboard-check.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><i class="fa fa-play" title="' + window.t('job_manager.actions.start_resume') + '"></i></div> </div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="' + window.t('job_manager.actions.preview_job') + '"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="repeat-button" title="' + window.t('job_manager.actions.repeat_job') + '"><i class="fa fa-repeat"></i><span class="repeat-count-badge"></span></a></div><div class="medium-1 small-2 columns"><a class="ghost-button" title="' + window.t('job_manager.actions.ghost_run') + '"><img class="svg" src="css/images/clipboard-check.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="' + window.t('job_manager.actions.edit_job') + '"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="' + window.t('job_manager.actions.download_job') + '"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="' + window.t('job_manager.actions.cancel_job') + '"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -290,7 +291,7 @@ function addQueueEntries(jobs) {
         recentItem.setAttribute("data-id", recent[i]._id);
         recentJobs.appendChild(recentItem);
         var id = document.getElementById(recent[i]._id);
-        id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div><div class="created-date">Last Run: '+ moment(recent[i].created_at).fromNow(); +'</div>';
+        id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div><div class="created-date">' + window.t('job_manager.history.last_run') + moment(recent[i].created_at).fromNow(); +'</div>';
         var menu = id.firstChild;
 
 
@@ -369,7 +370,7 @@ function setFirstCard(job) {
     // the play icon's own `title` would otherwise shadow a title set on the
     // play button.
     var $badge = $('<span class="exceeds-limits-badge">!<span class="exceeds-limits-tooltip"></span></span>');
-    $badge.find('.exceeds-limits-tooltip').text('Job exceeds soft limits: ' + msg);
+    $badge.find('.exceeds-limits-tooltip').text(window.t('job_manager.notify.exceeds_soft_limits') + msg);
     $play.append($badge);
   }
 }
@@ -637,7 +638,7 @@ function extractGCodeSelection(fileContent, inLine, outLine, safeZ) {
 }
 
 function createHistoryMenu(id) {
-  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='restartFromLine' data-jobid='JOBID'>Restart from Last Line</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
+  var menu = "<div class='ellipses' title='" + window.t('job_manager.actions.more_actions_caps') + "'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>" + window.t('job_manager.actions.preview_job') + "</a></li><li><a class='editJob' data-jobid='JOBID'>" + window.t('job_manager.actions.edit_job') + "</a></li><li><a class='resubmitJob' data-jobid='JOBID'>" + window.t('job_manager.actions.add_to_queue') + "</a></li><li><a class='restartFromLine' data-jobid='JOBID'>" + window.t('job_manager.actions.restart_from_last_line') + "</a></li><li><a class='downloadJob' data-jobid='JOBID'>" + window.t('job_manager.actions.download_job') + "</a></li><li><a class='deleteJob' data-jobid='JOBID'>" + window.t('job_manager.actions.delete_job') + "</a></li></ul></div>"
   return menu.replace(/JOBID/g, id)
 }
 
@@ -697,11 +698,11 @@ function bindMenuEvents() {
 
     fabmo.getJobInfo(jobid, function(err, job) {
       if (err || !job) {
-        fabmo.notify('Could not load job info', 'error');
+        fabmo.notify(window.t('job_manager.notify.could_not_load_job_info'), 'error');
         return;
       }
       if (job.final_line == null) {
-        fabmo.notify('No line data available for this job', 'error');
+        fabmo.notify(window.t('job_manager.notify.no_line_data'), 'error');
         return;
       }
 
@@ -728,7 +729,7 @@ function bindMenuEvents() {
             }
 
             if (!code) {
-              fabmo.notify('Could not generate restart file', 'error');
+              fabmo.notify(window.t('job_manager.notify.could_not_generate_restart'), 'error');
               return;
             }
 
@@ -739,9 +740,9 @@ function bindMenuEvents() {
 
             fabmo.submitJob(file, {}, function(err, data) {
               if (err) {
-                fabmo.notify('Failed to submit restart job: ' + err, 'error');
+                fabmo.notify(window.t('job_manager.notify.failed_submit_restart') + err, 'error');
               } else {
-                fabmo.notify('Restart job added to queue');
+                fabmo.notify(window.t('job_manager.notify.restart_added'));
                 updateOrder();
                 fabmo.getJobsInQueue(function(err, data) {
                   $('.toggle-topbar').click();
@@ -753,7 +754,7 @@ function bindMenuEvents() {
           });
         },
         error: function() {
-          fabmo.notify('Could not fetch job file', 'error');
+          fabmo.notify(window.t('job_manager.notify.could_not_fetch_job_file'), 'error');
         }
       });
     });
@@ -1059,7 +1060,7 @@ function bindRepeatToggle() {
     if (trimmed !== '') {
       var n = parseInt(trimmed, 10);
       if (!isFinite(n) || n < 1) {
-        fabmo.notify('error', 'Count must be a positive integer or blank');
+        fabmo.notify('error', window.t('job_manager.notify.count_positive_integer'));
         return;
       }
       count = n;
@@ -1118,7 +1119,7 @@ function bindGhostRun() {
     if (mode === 'lift') {
       var zOffset = parseFloat($('#ghost-zoffset').val());
       if (!isFinite(zOffset) || zOffset === 0) {
-        fabmo.notify('error', 'Z offset must be a non-zero number');
+        fabmo.notify('error', window.t('job_manager.notify.z_offset_nonzero'));
         return;
       }
       payload.zOffset = zOffset;
@@ -1298,15 +1299,15 @@ function update() {
             }
             if (ckTransform === true) {
                 $('#nav-transforms').html(
-                  '<strong>Transforms:</strong>' +
-                  '<strong style="color: #FF4013;">&nbsp;&nbsp;ON</strong>' +
-                  ' |<span style="color: lightgray; opacity: 0.5;"> off</span>'
+                  '<strong>' + window.t('job_manager.nav.transforms_label') + '</strong>' +
+                  '<strong style="color: #FF4013;">&nbsp;&nbsp;' + window.t('job_manager.nav.on_caps') + '</strong>' +
+                  ' |<span style="color: lightgray; opacity: 0.5;"> ' + window.t('job_manager.nav.off') + '</span>'
                 );
             } else {
                 $('#nav-transforms').html(
-                  'Transforms:&nbsp;&nbsp;' +
-                  '<span style="color: lightgray; opacity: 0.5;">on</span>' +
-                  ' |<span style="color: lightgray;"><strong>&nbsp;OFF</strong></span');
+                  window.t('job_manager.nav.transforms_label') + '&nbsp;&nbsp;' +
+                  '<span style="color: lightgray; opacity: 0.5;">' + window.t('job_manager.nav.on') + '</span>' +
+                  ' |<span style="color: lightgray;"><strong>&nbsp;' + window.t('job_manager.nav.off_caps') + '</strong></span');
             }
 
             input = $('#' + branchname + '-' + key);

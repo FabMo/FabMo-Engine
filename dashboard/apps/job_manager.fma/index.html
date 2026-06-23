@@ -2,51 +2,51 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Job Manager</title>
+	<title data-i18n="job_manager.title">Job Manager</title>
 	<link rel="stylesheet" href="../../css/dashboard.css">
 	<link rel="stylesheet" href="./css/style.css?v=3">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
 	<div id="ghost-modal" class="reveal-modal small" data-reveal>
-		<div id="modal-title">Ghost / Preview Run</div>
-		<p>Preview the job without cutting. The original job stays queued for a real run afterward.</p>
+		<div id="modal-title" data-i18n="job_manager.ghost_modal.title">Ghost / Preview Run</div>
+		<p data-i18n="job_manager.ghost_modal.intro">Preview the job without cutting. The original job stays queued for a real run afterward.</p>
 		<div class="row">
 			<input type="radio" name="ghost-mode" id="ghost-mode-lift" value="lift" checked />
-			<label for="ghost-mode-lift" style="display:inline; font-weight:bold;">Lift &amp; run file</label>
+			<label for="ghost-mode-lift" style="display:inline; font-weight:bold;" data-i18n="job_manager.ghost_modal.lift_run_file">Lift &amp; run file</label>
 			<div id="ghost-mode-lift-opts" style="margin:0.25em 0 0.5em 1.75em;">
-				<label for="ghost-zoffset">Z offset to add (inches):</label>
+				<label for="ghost-zoffset" data-i18n="job_manager.ghost_modal.z_offset_label">Z offset to add (inches):</label>
 				<input id="ghost-zoffset" type="number" step="0.05" min="0" value="0.5" />
 			</div>
 		</div>
 		<div class="row">
 			<input type="radio" name="ghost-mode" id="ghost-mode-trace" value="trace" />
-			<label for="ghost-mode-trace" style="display:inline; font-weight:bold;">Trace bounding rectangle</label>
-			<div id="ghost-mode-trace-opts" style="margin:0.25em 0 0.5em 1.75em; display:none; font-size:0.9em; color:#666;">
+			<label for="ghost-mode-trace" style="display:inline; font-weight:bold;" data-i18n="job_manager.ghost_modal.trace_rectangle">Trace bounding rectangle</label>
+			<div id="ghost-mode-trace-opts" style="margin:0.25em 0 0.5em 1.75em; display:none; font-size:0.9em; color:#666;" data-i18n="job_manager.ghost_modal.trace_help">
 				Drives around the perimeter of the cut at the configured jog rate without changing Z. You'll be prompted to set a safe Z before motion begins.
 			</div>
 		</div>
 		<div class="row">
 			<div class="right">
-				<button id="ghost-cancel" class="button radius alert">Cancel</button>
-				<button id="ghost-go" class="button radius success">Start</button>
+				<button id="ghost-cancel" class="button radius alert" data-i18n="job_manager.ghost_modal.cancel">Cancel</button>
+				<button id="ghost-go" class="button radius success" data-i18n="job_manager.ghost_modal.start">Start</button>
 			</div>
 		</div>
 		<a class="close-reveal-modal" id="close-ghost-modal">&#215;</a>
 	</div>
 
 	<div id="repeat-modal" class="reveal-modal small" data-reveal>
-		<div id="modal-title">Repeat Job</div>
-		<p>After this job finishes, requeue and run it again. Set a total run
+		<div id="modal-title" data-i18n="job_manager.repeat_modal.title">Repeat Job</div>
+		<p data-i18n="job_manager.repeat_modal.intro">After this job finishes, requeue and run it again. Set a total run
 		count, or leave blank to repeat until you stop it manually.</p>
 		<div class="row">
-			<label for="repeat-count">Total times to run (blank = until canceled):</label>
-			<input id="repeat-count" type="number" step="1" min="1" placeholder="blank = unlimited" />
+			<label for="repeat-count" data-i18n="job_manager.repeat_modal.count_label">Total times to run (blank = until canceled):</label>
+			<input id="repeat-count" type="number" step="1" min="1" placeholder="blank = unlimited" data-i18n-placeholder="job_manager.repeat_modal.count_placeholder" />
 		</div>
 		<div class="row">
 			<div class="right">
-				<button id="repeat-cancel" class="button radius secondary">Cancel</button>
-				<button id="repeat-off" class="button radius alert">Turn Off</button>
-				<button id="repeat-save" class="button radius success">Save</button>
+				<button id="repeat-cancel" class="button radius secondary" data-i18n="job_manager.repeat_modal.cancel">Cancel</button>
+				<button id="repeat-off" class="button radius alert" data-i18n="job_manager.repeat_modal.turn_off">Turn Off</button>
+				<button id="repeat-save" class="button radius success" data-i18n="job_manager.repeat_modal.save">Save</button>
 			</div>
 		</div>
 		<a class="close-reveal-modal" id="close-repeat-modal">&#215;</a>
@@ -58,21 +58,21 @@
   <nav class="top-bar" data-topbar role="navigation">
   <ul class="title-area">
     <li class="name noselect no-hover">
-      <h1><a id="app-header" class="menu-name" class="noselect">Job Manager </a></h1>
+      <h1><a id="app-header" class="menu-name" class="noselect" data-i18n="job_manager.header">Job Manager </a></h1>
     </li>
     <li class="toggle-topbar">
-        <a href="#" id="little_menu"><span>Menu </span>
+        <a href="#" id="little_menu"><span data-i18n="job_manager.nav.menu">Menu </span>
         <span class="exit-button" id="exit_small">X</span></a>
     </li>
   </ul>
     <section class="top-bar-section">
         <ul class="left">
-          <li><a id="nav-submit" class="submit-button" href="#">Select Parts ...</a></li>
+          <li><a id="nav-submit" class="submit-button" href="#" data-i18n="job_manager.nav.select_parts">Select Parts ...</a></li>
         </ul>
         <ul class="left" role="tablist" data-tab>
-        <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
-        <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
-        <li class=""><a id="nav-transforms" href="#tabpanel8"  text-align="right">Transforms:&nbsp;&nbsp;on | <strong>OFF</strong></a></li>
+        <li class="active"><a id="nav-pending" href="#tabpending" data-i18n="job_manager.nav.pending">Pending</a></li>
+        <li class=""><a id="nav-history" href="#tabhistory" data-i18n="job_manager.nav.history">History</a></li>
+        <li class=""><a id="nav-transforms" href="#tabpanel8"  text-align="right"><span data-i18n="job_manager.nav.transforms_label">Transforms:</span>&nbsp;&nbsp;<span data-i18n="job_manager.nav.on">on</span> | <strong data-i18n="job_manager.nav.off_caps">OFF</strong></a></li>
         </ul>
         <ul class="right">    
         <h2 class="exit-button"  id="exit_btn"><strong>X</strong></h2>
@@ -95,16 +95,16 @@
 	  <div id="droptarget"></div>
 			<div class="title jobs-title">
 				<div class="small-12 columns">
-					<h4 class="up-next">Next Part(s) to Cut ... drag to change order</h4>
-					<h4 class="now-running">Now Running</h4>
+					<h4 class="up-next" data-i18n="job_manager.pending.up_next">Next Part(s) to Cut ... drag to change order</h4>
+					<h4 class="now-running" data-i18n="job_manager.pending.now_running">Now Running</h4>
                     <div class="no-jobs">
-						<h4>No Job Pending</h4>
+						<h4 data-i18n="job_manager.pending.no_job_pending">No Job Pending</h4>
 						<div class="without-job">
 							<div class="submitWrapper">
 								<div class="submitActions">
-									<h5 class='no-job'>Click to Select Parts to Cut</h5>
-									<p>or</p>
-									<h5 class='no-job'>Drag Parts Here</h5>
+									<h5 class='no-job' data-i18n="job_manager.pending.click_to_select">Click to Select Parts to Cut</h5>
+									<p data-i18n="job_manager.pending.or">or</p>
+									<h5 class='no-job' data-i18n="job_manager.pending.drag_parts_here">Drag Parts Here</h5>
 								</div>
 							</div>
 							<div class="small-11 columns">
@@ -112,7 +112,7 @@
 							</div>
 						</div>
 						<hr>
-						<h5 class='no-job'>Recent (not in queue)</h5>
+						<h5 class='no-job' data-i18n="job_manager.pending.recent">Recent (not in queue)</h5>
 						<div id="recent">
 						</div>
 					</div>
@@ -127,24 +127,24 @@
 		<thead>
 	    <tr>
 	        <th>&nbsp;</th>
-	        <th>Name</th>
-	        <th>Run At</th>
-	        <th>Duration</th>
-	        <th>Progress</th>
+	        <th data-i18n="job_manager.history.name">Name</th>
+	        <th data-i18n="job_manager.history.run_at">Run At</th>
+	        <th data-i18n="job_manager.history.duration">Duration</th>
+	        <th data-i18n="job_manager.history.progress">Progress</th>
 	    </tr>
 		</thead>
 		<tbody><tr></tr></tbody>
 		</table>
-		<div href="#" class="noselect" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
-        <div href="#" class="noselect" id="history_page_next"><p>Next &gt;&gt;</p></div>
+		<div href="#" class="noselect" id="history_page_prev"><p data-i18n="job_manager.history.prev">&lt;&lt; Prev</p></div>
+        <div href="#" class="noselect" id="history_page_next"><p data-i18n="job_manager.history.next">Next &gt;&gt;</p></div>
   </div>
 
   <!-- TRANSFORM SECTION -->
       <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8">    
         <div class="row">
           <fieldset>
-            <legend class ="transform-heading">Transforms <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+            <legend class ="transform-heading"><span data-i18n="job_manager.transforms.heading">Transforms</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="job_manager.transforms.heading_tooltip">
                 Transforms can be used to modify a job to be run. <br>
                 When enabled, the job will be Scaled in X, Y, or Z and <br>
                 it may be Offset, Rotated, or an X or Y Shear applied. <br>
@@ -157,8 +157,8 @@
             </span>
             </legend>
 
-            <h4>Scale <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+            <h4><span data-i18n="job_manager.transforms.scale">Scale</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="job_manager.transforms.scale_tooltip">
                 Each axis may be proportionally scaled. <br>
                 Scaling can be applied about a point in the axis; <br>
                 the default Scale Point is 0 in each axis. <br>
@@ -170,8 +170,8 @@
               <div class="large-3 columns">
                 <div class="row collapse">
                   <select id="opensbp-transforms-scale-apply" class="opensbp-input apply">
-                    <option value="false">Disabled</option>
-                    <option value="true">Enabled</option>
+                    <option value="false" data-i18n="job_manager.transforms.disabled">Disabled</option>
+                    <option value="true" data-i18n="job_manager.transforms.enabled">Enabled</option>
                   </select>
                 </div>
               </div>
@@ -181,34 +181,34 @@
             <div class="row scale-row">
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>Scale X</label>
+                  <label data-i18n="job_manager.transforms.scale_x">Scale X</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-scale-scalex" class="opensbp-input" />
                   </div>
                   <div class="small-3 columns">
-                    <span class="postfix">prop</span>
+                    <span class="postfix" data-i18n="job_manager.transforms.prop">prop</span>
                   </div>
                 </div>
               </div>
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>Scale Y</label>
+                  <label data-i18n="job_manager.transforms.scale_y">Scale Y</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-scale-scaley" class="opensbp-input" />
                   </div>
                   <div class="small-3 columns">
-                    <span class="postfix">prop</span>
+                    <span class="postfix" data-i18n="job_manager.transforms.prop">prop</span>
                   </div>
                 </div>
               </div>
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>Scale Z</label>
+                  <label data-i18n="job_manager.transforms.scale_z">Scale Z</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-scale-scalez" class="opensbp-input" />
                   </div>
                   <div class="small-3 columns">
-                    <span class="postfix">prop</span>
+                    <span class="postfix" data-i18n="job_manager.transforms.prop">prop</span>
                   </div>
                 </div>
               </div>
@@ -218,7 +218,7 @@
             <div class="row scale-row">
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>X Scale Point</label>
+                  <label data-i18n="job_manager.transforms.x_scale_point">X Scale Point</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-scale-x" class="opensbp-input" />
                   </div>
@@ -229,7 +229,7 @@
               </div>
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>Y Scale Point</label>
+                  <label data-i18n="job_manager.transforms.y_scale_point">Y Scale Point</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-scale-y" class="opensbp-input" />
                   </div>
@@ -240,7 +240,7 @@
               </div>
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>Z Scale Point</label>
+                  <label data-i18n="job_manager.transforms.z_scale_point">Z Scale Point</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-scale-z" class="opensbp-input" />
                   </div>
@@ -253,8 +253,8 @@
           </fieldset> 
 
           <fieldset>
-            <h4>Offset <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+            <h4><span data-i18n="job_manager.transforms.offset">Offset</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="job_manager.transforms.offset_tooltip">
                 Positions Offsets can be applied in each axis. <br>
               </span>
             </span></h4>
@@ -262,8 +262,8 @@
               <div class="large-3 columns">
                 <div class="row collapse">
                     <select id="opensbp-transforms-move-apply" class="opensbp-input apply">
-                      <option value="false">Disabled</option>
-                      <option value="true">Enabled</option>
+                      <option value="false" data-i18n="job_manager.transforms.disabled">Disabled</option>
+                      <option value="true" data-i18n="job_manager.transforms.enabled">Enabled</option>
                     </select>
                 </div>
               </div>
@@ -273,7 +273,7 @@
             <div class="row scale-row">
               <div class="large-4 columns">
                 <div class="row collapse">
-                  <label>Offset X</label>
+                  <label data-i18n="job_manager.transforms.offset_x">Offset X</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-move-x" class="opensbp-input" />
                   </div>
@@ -284,7 +284,7 @@
               </div>
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>Offset Y</label>
+                  <label data-i18n="job_manager.transforms.offset_y">Offset Y</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-move-y" class="opensbp-input" />
                 </div>
@@ -295,7 +295,7 @@
             </div>
             <div class="large-3 columns">
               <div class="row collapse">
-                <label>Offset Z</label>
+                <label data-i18n="job_manager.transforms.offset_z">Offset Z</label>
                 <div class="small-9 columns">
                   <input type="number" id="opensbp-transforms-move-z" class="opensbp-input" />
                 </div>
@@ -307,8 +307,8 @@
           </fieldset>
 
           <fieldset>
-            <h4>Rotation <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+            <h4><span data-i18n="job_manager.transforms.rotation">Rotation</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="job_manager.transforms.rotation_tooltip">
                 A Job can be rotated about an X / Y point. <br>
               </span>
             </span></h4>
@@ -316,8 +316,8 @@
               <div class="large-3 columns">
                 <div class="row collapse">
                   <select id="opensbp-transforms-rotate-apply" class="opensbp-input apply">
-                    <option value="false">Disabled</option>
-                    <option value="true">Enabled</option>
+                    <option value="false" data-i18n="job_manager.transforms.disabled">Disabled</option>
+                    <option value="true" data-i18n="job_manager.transforms.enabled">Enabled</option>
                   </select>
                 </div>
               </div>  
@@ -327,18 +327,18 @@
             <div class="row scale-row">
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>Rotation Angle</label>
+                  <label data-i18n="job_manager.transforms.rotation_angle">Rotation Angle</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input" />
                   </div>
                   <div class="small-3 columns">
-                    <span class="postfix">degrees</span>
+                    <span class="postfix" data-i18n="job_manager.transforms.degrees">degrees</span>
                   </div>
                 </div>
               </div>  
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>X Rotation Point</label>
+                  <label data-i18n="job_manager.transforms.x_rotation_point">X Rotation Point</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input" />
                   </div>
@@ -349,7 +349,7 @@
               </div>
               <div class="large-3 columns">
                 <div class="row collapse">
-                  <label>Y Rotation Point</label>
+                  <label data-i18n="job_manager.transforms.y_rotation_point">Y Rotation Point</label>
                   <div class="small-9 columns">
                     <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input" />
                   </div>
@@ -361,8 +361,8 @@
            </fieldset>
 
             <fieldset>
-                <h4>Shear X <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+                <h4><span data-i18n="job_manager.transforms.shear_x">Shear X</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="job_manager.transforms.shear_tooltip">
                 Applying a shear will slant the Job along an axis. <br>
               </span>
             </span></h4>
@@ -370,8 +370,8 @@
           		<div class="large-3 columns">
           			<div class="row collapse">
         					<select id="opensbp-transforms-shearx-apply" class="opensbp-input apply">
-        						<option value="false">Disabled</option>
-        						<option value="true">Enabled</option>
+        						<option value="false" data-i18n="job_manager.transforms.disabled">Disabled</option>
+        						<option value="true" data-i18n="job_manager.transforms.enabled">Enabled</option>
         					</select>
         				</div>
         			</div>
@@ -381,12 +381,12 @@
               <div class="row scale-row">
             		<div class="large-3 columns">
             			<div class="row collapse">
-        	    			<label>Shear Angle X</label>
+        	    			<label data-i18n="job_manager.transforms.shear_angle_x">Shear Angle X</label>
         			    	<div class="small-9 columns">
         					    <input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
         				    </div>
         				    <div class="small-3 columns">
-        					    <span class="postfix">degrees</span>
+        					    <span class="postfix" data-i18n="job_manager.transforms.degrees">degrees</span>
         				    </div>
         			    </div>
         		    </div>
@@ -394,8 +394,8 @@
         	</fieldset>
 
           <fieldset>
-        		<h4>Shear Y <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+        		<h4><span data-i18n="job_manager.transforms.shear_y">Shear Y</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="job_manager.transforms.shear_tooltip">
                 Applying a shear will slant the Job along an axis. <br>
               </span>
             </span></h4>
@@ -403,8 +403,8 @@
           		<div class="large-3 columns">
           			<div class="row collapse">
          					<select id="opensbp-transforms-sheary-apply" class="opensbp-input apply">
-         						<option value="false">Disabled</option>
-       	  					<option value="true">Enabled</option>
+         						<option value="false" data-i18n="job_manager.transforms.disabled">Disabled</option>
+       	  					<option value="true" data-i18n="job_manager.transforms.enabled">Enabled</option>
        		  			</select>
                 </div>
           		</div>
@@ -413,12 +413,12 @@
             <div class="row scale-row">
               <div class="large-3 columns">
           			<div class="row collapse">
-          				<label>Shear Angle Y</label>
+          				<label data-i18n="job_manager.transforms.shear_angle_y">Shear Angle Y</label>
           				<div class="small-9 columns">
           					<input type="number" id="opensbp-transforms-sheary-angle" class="opensbp-input"/>
         	  			</div>
         		  		<div class="small-3 columns">
-        			  		<span class="postfix">degrees</span>
+        			  		<span class="postfix" data-i18n="job_manager.transforms.degrees">degrees</span>
         				  </div>
         		    </div>
         		  </div>
@@ -429,8 +429,8 @@
 
 
           <fieldset>
-        		<h4>Leveler (Z Height Mapping) <span class="tooltip tooltip-below">i
-              <span class="tooltiptext">
+        		<h4><span data-i18n="job_manager.transforms.leveler">Leveler (Z Height Mapping)</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="job_manager.transforms.leveler_tooltip">
                 The Leveler, using a Z-height point cloud map, adjusts the Z height across the Job to compensate for uneven surfaces. <br>
               </span>
             </span></h4>
@@ -438,8 +438,8 @@
           		<div class="large-3 columns">
           			<div class="row collapse">
          					<select id="opensbp-transforms-level-apply" class="opensbp-input apply">
-         						<option value="false">Disabled</option>
-       	  					<option value="true">Enabled</option>
+         						<option value="false" data-i18n="job_manager.transforms.disabled">Disabled</option>
+       	  					<option value="true" data-i18n="job_manager.transforms.enabled">Enabled</option>
        		  			</select>
                 </div>
           		</div>
@@ -448,7 +448,7 @@
             <div class="row scale-row">
               <div class="large-3 columns">
           			<div class="row collapse">
-          				<label>Point Cloud Map (full path)</label>
+          				<label data-i18n="job_manager.transforms.point_cloud_map">Point Cloud Map (full path)</label>
           				<div class="small-9 columns">
           					<input type="text" id="opensbp-transforms-level-ptDataFile" class="opensbp-input"/>
         	  			</div>
