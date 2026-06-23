@@ -121,12 +121,12 @@ define(function (require) {
             } else {
                 if (this.apps) {
                     callback(
-                        "Couldn't launch app: " +
+                        window.t("status.app_launch_failed_prefix") + " " +
                             id +
-                            ": Apps list not available yet."
+                            ": " + window.t("status.app_launch_failed_no_list")
                     );
                 } else {
-                    callback("Couldn't launch app: " + id + ": No such app?");
+                    callback(window.t("status.app_launch_failed_prefix") + " " + id + ": " + window.t("status.app_launch_failed_no_app"));
                 }
             }
         } else {

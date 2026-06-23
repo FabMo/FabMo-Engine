@@ -20,12 +20,12 @@ module.exports = function auth() {
         if (getUrlParameter("message") === "kicked-out") {
             $("#add_err").css("display", "inline", "important");
             $("#add_err").html(
-                '<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span>You have been kicked out from the tool.</span></div>'
+                '<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span>' + window.t("status.auth.kicked_out") + '</span></div>'
             );
         } else if (getUrlParameter("message") === "not-authenticated") {
             $("#add_err").css("display", "inline", "important");
             $("#add_err").html(
-                '<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> You need to be authenticated to access this page.</span></div>'
+                '<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> ' + window.t("status.auth.not_authenticated") + '</span></div>'
             );
         }
 
@@ -53,13 +53,13 @@ module.exports = function auth() {
                 if (data.status === "success") {
                     $("#add_err").css("display", "inline", "important");
                     $("#add_err").html(
-                        '<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span> Successful Log in!</span></div>'
+                        '<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span> ' + window.t("status.auth.login_success") + '</span></div>'
                     );
                     window.location = "/";
                 } else {
                     $("#add_err").css("display", "inline", "important");
                     $("#add_err").html(
-                        '<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> Wrong username or password</span></div>'
+                        '<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> ' + window.t("status.auth.wrong_credentials") + '</span></div>'
                     );
                 }
             },
@@ -67,7 +67,7 @@ module.exports = function auth() {
                 if (data.responseJSON.userAlreadyLogedIn) {
                     r = confirm(
                         data.responseJSON.message +
-                            "\n do you want to kick this user out ? "
+                            "\n " + window.t("status.auth.kick_confirm") + " "
                     );
                     if (r) {
                         login_request(username, password, true); // kick the user out
@@ -91,7 +91,7 @@ module.exports = function auth() {
             beforeSend: function () {
                 $("#add_err").css("display", "inline", "important");
                 $("#add_err").html(
-                    '<div class="loading"><i class="fa fa-circle-o-notch fa-spin fa-fw margin-bottom"></i><span"> Loading...</span></div>'
+                    '<div class="loading"><i class="fa fa-circle-o-notch fa-spin fa-fw margin-bottom"></i><span"> ' + window.t("status.auth.loading") + '</span></div>'
                 );
             },
         });
@@ -108,7 +108,7 @@ module.exports = function auth() {
                 if (data.status === "success") {
                     $("#add_err").css("display", "inline", "important");
                     $("#add_err").html(
-                        '<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span> User successfully created !</span></div>'
+                        '<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span> ' + window.t("status.auth.user_created") + '</span></div>'
                     );
                     window.location = "/";
                 } else {
@@ -131,7 +131,7 @@ module.exports = function auth() {
             beforeSend: function () {
                 $("#add_err").css("display", "inline", "important");
                 $("#add_err").html(
-                    '<div class="loading"><i class="fa fa-circle-o-notch fa-spin fa-fw margin-bottom"></i><span"> Loading...</span></div>'
+                    '<div class="loading"><i class="fa fa-circle-o-notch fa-spin fa-fw margin-bottom"></i><span"> ' + window.t("status.auth.loading") + '</span></div>'
                 );
             },
         });

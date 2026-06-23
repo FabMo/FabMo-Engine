@@ -182,16 +182,16 @@
         <aside class="left-off-canvas-menu colapsed" id="left-menu">
         <div id="widget-links-general" class="widget colapsed">
           <ul class="off-canvas-list" id="util-menu-small">
-            <li><a href="#/app/def" id="icon_def" title="Default App"><span>Default App</span></a></li>
-            <li><a href="#/app/job-manager" id="icon_jobs" title="Job Manager"><span>Job Manager</span></a></li>
-            <li><a href="#/app/editor" id="icon_editor" title="Editor"><span>Editor</span></a></li>
-            <li><a href="#/app/macros" id="icon_folder" title="Custom Macros"><span>Macros</span></a></li>
-            <li><a href="#/app/apps" id="icon_apps" title="Apps"><span>Apps</span></a></li>
-            <li><a href="#/app/video" id="icon_video" title="Video"><span>Video</span></a></li>
-            <li><a href="#/app/config" id="icon_settings" title="Configuration"><span>Configuration</span></a></li>
-            <li><a id="icon_sign_out" class="icon_sign_out" title="Sign Out"><span>Sign Out</span></a></li>
-            <li><a href="#" id="icon_colapse" title="Expand/Collapse"><span>Collapse</span></a></li>
-            <li><p class="expand-text"><small>Expand</small></p></lip>        
+            <li><a href="#/app/def" id="icon_def" data-i18n-title="status.menu.default_app" title="Default App"><span data-i18n="status.menu.default_app">Default App</span></a></li>
+            <li><a href="#/app/job-manager" id="icon_jobs" data-i18n-title="status.menu.job_manager" title="Job Manager"><span data-i18n="status.menu.job_manager">Job Manager</span></a></li>
+            <li><a href="#/app/editor" id="icon_editor" data-i18n-title="status.menu.editor" title="Editor"><span data-i18n="status.menu.editor">Editor</span></a></li>
+            <li><a href="#/app/macros" id="icon_folder" data-i18n-title="status.menu.macros_title" title="Custom Macros"><span data-i18n="status.menu.macros">Macros</span></a></li>
+            <li><a href="#/app/apps" id="icon_apps" data-i18n-title="status.menu.apps" title="Apps"><span data-i18n="status.menu.apps">Apps</span></a></li>
+            <li><a href="#/app/video" id="icon_video" data-i18n-title="status.menu.video" title="Video"><span data-i18n="status.menu.video">Video</span></a></li>
+            <li><a href="#/app/config" id="icon_settings" data-i18n-title="status.menu.configuration" title="Configuration"><span data-i18n="status.menu.configuration">Configuration</span></a></li>
+            <li><a id="icon_sign_out" class="icon_sign_out" data-i18n-title="status.menu.sign_out" title="Sign Out"><span data-i18n="status.menu.sign_out">Sign Out</span></a></li>
+            <li><a href="#" id="icon_colapse" data-i18n-title="status.menu.expand_collapse" title="Expand/Collapse"><span data-i18n="status.menu.collapse">Collapse</span></a></li>
+            <li><p class="expand-text"><small data-i18n="status.menu.expand">Expand</small></p></lip>
             
           </ul>
         </div>
@@ -224,7 +224,7 @@
           <div class="dro-addons fabmo-status">
               <div class="dro-addon" id="dro-addon-1">
                   <div class="dro-addon-spacer-row"></div>
-                  <div class="dro-addon-label" title="Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad."> OUTPUTS (Toggle) </div>
+                  <div class="dro-addon-label" data-i18n-title="status.dro_outputs_tooltip" title="Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad." data-i18n="status.dro_outputs_label"> OUTPUTS (Toggle) </div>
                   <div class="dro-addon-outputs">
                     <div class="out1 output toggle-out off" id="spindle-1"> 1 </div>
                     <div class="out2 output toggle-out off"> 2 </div>
@@ -246,25 +246,25 @@
               </div>
               <div class="dro-addon" id="dro-addon-2">
                 <div class="dro-addon-spacer-row""></div>
-                <div class="dro-addon-label"> MOVE SPEED  (Feedrate)  <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 26px; top:0px">i<span class="tooltiptext">
+                <div class="dro-addon-label"> <span data-i18n="status.dro_move_speed_label">MOVE SPEED  (Feedrate)</span>  <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 26px; top:0px">i<span class="tooltiptext" data-i18n-html="status.dro_move_speed_tooltip">
                   When a file is running, the move-speed/feedrate of the moving axis is <br>
-                  shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br> 
+                  shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br>
                   Override will decrease or increase the assigned speed in a file (down <br>
                   to 5%, up to 200%; with 100% being the assigned speed.).<br>
                   </span></span>
                 </div>
                 <div class="dro-addon-value feedrate"><span class="sub-label feedrate-input"><span class="units"> in</span>/sec </span><span id="fr-inp" class="no-select-input">--tbd--</span></div>
-                <div class="dro-addon-value ovr-ride"><span class="sub-label ov-ride">Override %</span><input id="override" type="number" step="5" min="5" max="200" value="100"></div>
+                <div class="dro-addon-value ovr-ride"><span class="sub-label ov-ride" data-i18n="status.dro_override_label">Override %</span><input id="override" type="number" step="5" min="5" max="200" value="100"></div>
               </div>
 
               <div class="dro-addon" id="dro-addon-3">
                 <div class="dro-addon-spacer-row"></div>
-                <div class="dro-addon-label"> Spindle-1 <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 65px; top:0px">i<span class="tooltiptext">
+                <div class="dro-addon-label"> <span data-i18n="status.dro_spindle_label">Spindle-1</span> <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 65px; top:0px">i<span class="tooltiptext" data-i18n-html="status.dro_spindle_tooltip">
                   Set spindle RPM. Gray/Black values indicate commanded RPM; Blue <br>
-                  values indicate Achieved RPM.<br><br> 
+                  values indicate Achieved RPM.<br><br>
                   AMP value displays the spindle load expressed as current in amps.</span></span><br></div>
-                <div class="dro-addon-value spindle-speed"><span class="sub-label"> RPM </span><input id="sp-speed" type="number" step="25" min="100" max="30000" placeholder="- No VFD/USB -  "></div>
-                <div class="dro-addon-value spindle-power"><span class="sub-label"> AMP </span><span class="no-select-input sp-power">0.00</span></div>
+                <div class="dro-addon-value spindle-speed"><span class="sub-label" data-i18n="status.dro_rpm_label"> RPM </span><input id="sp-speed" type="number" step="25" min="100" max="30000" data-i18n-placeholder="status.dro_no_vfd_placeholder" placeholder="- No VFD/USB -  "></div>
+                <div class="dro-addon-value spindle-power"><span class="sub-label" data-i18n="status.dro_amp_label"> AMP </span><span class="no-select-input sp-power">0.00</span></div>
               </div>
 
             </div>    
@@ -312,12 +312,12 @@
              and the machine is not yet authorized. Pointer-events: auto on
              the overlay blocks clicks on jog buttons underneath. -->
         <div class="authorize-overlay" style="display: none;">
-            <div class="authorize-overlay-message">Press authorize button to enable manual controls</div>
+            <div class="authorize-overlay-message" data-i18n="keypad.authorize_overlay_message">Press authorize button to enable manual controls</div>
         </div>
 
         <!-- NEW: Minimal drag handle bar -->
         <div class="modal-drag-bar">
-            <div class="drag-handle" title="Drag to move keypad">
+            <div class="drag-handle" data-i18n-title="keypad.drag_handle_tooltip" title="Drag to move keypad">
                 <span class="drag-dots">⋮⋮⋮</span>
             </div>
             <div class="manual-drive-exit"><i class="fa fa-times"></i></div>
@@ -325,12 +325,12 @@
 
         <!-- Content area with the previously hidden elements -->
         <div class="modal-content-header">
-            <div class="manual-drive-message" style="display: none; margin-bottom: 15px; padding: 10px;">
+            <div class="manual-drive-message" style="display: none; margin-bottom: 15px; padding: 10px;" data-i18n="keypad.message_placeholder">
                 This is where a message will go
             </div>
             <div class="title-container">
-                <class="noselect" id="title_goto" title="Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000">
-                   <p>Select and change a value in order to: 'GoTo' a location or 'Set' a location</p>
+                <class="noselect" id="title_goto" data-i18n-title="keypad.title_goto_tooltip" title="Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000">
+                   <p data-i18n="keypad.title_goto_prompt">Select and change a value in order to: 'GoTo' a location or 'Set' a location</p>
                 </class>
             </div>
         </div>
@@ -344,13 +344,13 @@
                click-outside dismissal). -->
           <div class="manual-drive-prompt" id="soft-limit-prompt" style="display: none;">
               <div class="prompt-message">
-                  Allow temporary soft-limit override on the
-                  <span class="prompt-axis"></span> axis?
-                  <span class="prompt-note">Override clears when you close the keypad.</span>
+                  <span data-i18n="keypad.soft_limit_prompt_message">Allow temporary soft-limit override on the</span>
+                  <span class="prompt-axis"></span> <span data-i18n="keypad.soft_limit_axis_suffix">axis?</span>
+                  <span class="prompt-note" data-i18n="keypad.soft_limit_prompt_note">Override clears when you close the keypad.</span>
               </div>
               <div class="prompt-actions">
-                  <button type="button" class="prompt-allow">Allow</button>
-                  <button type="button" class="prompt-cancel">Cancel</button>
+                  <button type="button" class="prompt-allow" data-i18n="keypad.soft_limit_allow">Allow</button>
+                  <button type="button" class="prompt-cancel" data-i18n="keypad.soft_limit_cancel">Cancel</button>
               </div>
           </div>
           <div class="read-out-wrapper">
@@ -361,7 +361,7 @@
                 </label>
                 <input id="X" autocomplete="off" class="posx pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
-                <div class="zero-button zero-x" title="set this axis to zero">zero</div>
+                <div class="zero-button zero-x" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
             <div class="axis yaxis">
                 <label class="noselect">
@@ -369,7 +369,7 @@
                 </label>
                 <input id="Y" autocomplete="off" class="posy pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
-                <div class="zero-button zero-y" title="set this axis to zero">zero</div>
+                <div class="zero-button zero-y" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
             <div class="axis zaxis">
                 <label class="noselect">
@@ -377,7 +377,7 @@
                 </label>
                 <input id="Z" autocomplete="off" class="posz pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
-                <div class="zero-button zero-z" title="set this axis to zero">zero</div>
+                <div class="zero-button zero-z" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
             <div class="axis aaxis">
                 <label class="noselect">
@@ -385,7 +385,7 @@
                 </label>
                 <input id="A" autocomplete="off" class="posa pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-a" title="set this axis to zero">zero</div>
+                <div class="zero-button zero-a" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
             <div class="axis baxis">
                 <label class="noselect">
@@ -393,7 +393,7 @@
                 </label>
                 <input id="B" autocomplete="off" class="posb pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-b" title="set this axis to zero">zero</div>
+                <div class="zero-button zero-b" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
             <div class="axis caxis">
                 <label class="noselect">
@@ -401,7 +401,7 @@
                 </label>
                 <input id="C" autocomplete="off" class="posc pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-c" title="set this axis to zero">zero</div>
+                <div class="zero-button zero-c" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
 
             <!--<img src="../img/icon_keypad.png" id="icon_keypad"></img>-->
@@ -853,7 +853,7 @@
 
     <div class="newModal">
       <div class="modalContent">
-        <h3 class="modalTitle">Title</h3>
+        <h3 class="modalTitle" data-i18n="status.modal.title_placeholder">Title</h3>
         <div class="modalSubContent">
           <h4 class="modalDialogue">&nbsp;</h4>
           <div class="modalImage">
@@ -863,20 +863,20 @@
             <input type="hidden" id="inputVar"/>
             <input type="hidden" id="inputType"/>
             <input type="text" id="inputVal" class="inputVal" autocomplete="off" style="text-align: center"/>
-            <p class="inputError">Please Enter a Valid Value.</p>
+            <p class="inputError" data-i18n="status.modal.invalid_value">Please Enter a Valid Value.</p>
           </div>
           <div class="modalDetail">&nbsp</div>
         </div>
         <div class="modalButtons">
-          <div class="modalCancel"><span>Cancel</span></div>
-          <div class="modalOkay"><span>Okay</span></div>
+          <div class="modalCancel"><span data-i18n="status.modal.cancel">Cancel</span></div>
+          <div class="modalOkay"><span data-i18n="status.modal.okay">Okay</span></div>
         </div>
       </div>
     </div>
 
     <div class="footBar fabmo-file-control">
       <div class="sim-input-row" id="sim-input-row" style="display:none;">
-        <span class="sim-input-label">DEBUG — click to toggle inputs:</span>
+        <span class="sim-input-label" data-i18n="status.sim_input_label">DEBUG — click to toggle inputs:</span>
         <div class="sim-inputs"></div>
       </div>
       <div class="currentContainer">
@@ -892,7 +892,7 @@
         </div>
         <div class="percent_comp">10%</div>
         <div class="line_number">
-          <p class="line_number_label">line:</p>
+          <p class="line_number_label" data-i18n="status.footer_line_label">line:</p>
           <p class="line_number_text">0</p>
         </div>
       </div>
@@ -901,10 +901,10 @@
         <!-- Left side: Resume/Quit -->
         <span class='fabmo-resume-stop'>
           <div class='but resumeJob'>
-            <div>RESUME &nbsp;&nbsp;<i class="fa fa-play" style="color: rgb(190, 204, 194);"></i></div>
+            <div><span data-i18n="actions.resume">RESUME</span> &nbsp;&nbsp;<i class="fa fa-play" style="color: rgb(190, 204, 194);"></i></div>
           </div>
           <div class='but stopJob'>
-            <div>QUIT &nbsp;&nbsp;<i class="fa fa-stop" style="color: rgb(205, 189, 189);"></i></div>
+            <div><span data-i18n="actions.quit">QUIT</span> &nbsp;&nbsp;<i class="fa fa-stop" style="color: rgb(205, 189, 189);"></i></div>
           </div>
         </span>
         
@@ -912,10 +912,10 @@
         <div class='pauseJob-wrapper'>
           <div class='pauseJob fabmo-pause-button'>
             <div><i class="fa fa-pause"></i></div>
-            <div class="pause-subtext">Pause / Feedhold</div>
+            <div class="pause-subtext" data-i18n="actions.pause_feedhold">Pause / Feedhold</div>
           </div>
           <!-- Tooltip info for Pause/Feedhold ## NOT POSITIONED CORRECTLY-->
-          <div class="footer-tips"><span class="tooltip tooltip-below tooltiptext::after" style="justify-content: right; left: 250px; top:-160px">i<span class="tooltiptext">
+          <div class="footer-tips"><span class="tooltip tooltip-below tooltiptext::after" style="justify-content: right; left: 250px; top:-160px">i<span class="tooltiptext" data-i18n-html="actions.pause_feedhold_tooltip">
             When a file is running, Pause/Feedhold will execute a controlled stop <br>
             allowing the file to be subsequently Resumed or Fully Quit.<br><br>
             If an immediate Emergency Stop (E-Stop) is needed, use the physical <br>

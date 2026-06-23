@@ -278,21 +278,21 @@ function showGlobalBackupRestoreModal(backupInfo) {
     // console.log("DEBUG: Showing global backup restore modal");
     
     var backupDate = new Date(backupInfo.created_at).toLocaleString();
-    var message = 
-        'FabMo has found a configuration backup made before this update.<br>' +
-        'Backup created: ' + backupDate + '<br>' +
-        'Would you like to restore your previous configuration?';
+    var message =
+        window.t("status.backup.found_message") + '<br>' +
+        window.t("status.backup.created_at") + ' ' + backupDate + '<br>' +
+        window.t("status.backup.restore_question");
 
     dashboard.showModal({
-        title: 'Configuration Backup Available',
+        title: window.t("status.backup.title"),
         message: message,
-        okText: 'Use My Previous Config',
-        cancelText: 'Keep the New Config',
+        okText: window.t("status.backup.ok"),
+        cancelText: window.t("status.backup.cancel"),
         ok: function() {
             // console.log("DEBUG: User chose to restore global backup");
             
             // Show progress message
-            dashboard.notification('info', 'Restoring backup... System will restart shortly.');
+            dashboard.notification('info', window.t("status.backup.restoring"));
             
             // Use direct API call
             $.ajax({
@@ -301,7 +301,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
                 success: function(response) {
                     // console.log("DEBUG: Restore backup response:", response);
                     if (response.status === 'success') {
-                        dashboard.notification('success', 'Backup restored - restarting...');
+                        dashboard.notification('success', window.t("status.backup.restored"));
                         
                         // Set up authentication check for after restart
                         sessionStorage.setItem('fabmo_expect_restart', 'backup_restore');
@@ -311,12 +311,12 @@ function showGlobalBackupRestoreModal(backupInfo) {
                         monitorRestartAndAuth();
                         
                     } else {
-                        dashboard.notification('error', 'Failed to restore backup: ' + response.message);
+                        dashboard.notification('error', window.t("status.backup.restore_failed") + ' ' + response.message);
                     }
                 },
                 error: function(xhr, status, error) {
                     // console.log("DEBUG: Error restoring backup:", error);
-                    dashboard.notification('error', 'Failed to restore backup: ' + error);
+                    dashboard.notification('error', window.t("status.backup.restore_failed") + ' ' + error);
                 }
             });
         },
@@ -329,11 +329,11 @@ function showGlobalBackupRestoreModal(backupInfo) {
                 method: 'POST',
                 success: function(response) {
                     // console.log("DEBUG: Cleanup response:", response);
-                    dashboard.notification('info', 'Keeping current configuration');
+                    dashboard.notification('info', window.t("status.backup.keeping"));
                 },
                 error: function(xhr, status, error) {
                     // console.log("DEBUG: Error during cleanup:", error);
-                    dashboard.notification('info', 'Keeping current configuration');
+                    dashboard.notification('info', window.t("status.backup.keeping"));
                 }
             });
         }
@@ -641,7 +641,7 @@ engine.getVersion(function (err, version) {
                 console.log(status);
                 if (status.state == "dead") {
                     dashboard.showModal({
-                        title: "An Error Occurred!",
+                        title: window.t("status.error_occurred_title"),
                         message: status.info.error,
                         noButton: true,
                     });
@@ -960,15 +960,15 @@ engine.getVersion(function (err, version) {
 
                                 //Set defaults if both buttons are still null
                                 if (modalOptions.ok === null && modalOptions.cancel === null && !modalOptions.noButton) {
-                                    modalOptions.okText = "Resume";
+                                    modalOptions.okText = window.t("actions.resume_button");
                                     modalOptions.ok = resumeFunction;
-                                    modalOptions.cancelText = "Quit";
+                                    modalOptions.cancelText = window.t("actions.quit_button");
                                     modalOptions.cancel = cancelFunction;
                                 }
                             } else {
                                 // No custom parameters; use default buttons
-                                modalOptions.okText = "Resume";
-                                modalOptions.cancelText = "Quit";
+                                modalOptions.okText = window.t("actions.resume_button");
+                                modalOptions.cancelText = window.t("actions.quit_button");
                                 modalOptions.ok = resumeFunction;
                                 modalOptions.cancel = cancelFunction;
                             }
@@ -1027,21 +1027,21 @@ engine.getVersion(function (err, version) {
                             if (dashboard.engine.status.job) {
                             var detailHTML =
                                 "<p>" +
-                                "<b>Job Name:  </b>" +
+                                "<b>" + window.t("status.error.job_name") + "  </b>" +
                                 dashboard.engine.status.job.name +
                                 "<br />" +
-                                "<b>Job Description:  </b>" +
+                                "<b>" + window.t("status.error.job_description") + "  </b>" +
                                 dashboard.engine.status.job.description +
                                 "</p>";
                         } else {
                             detailHTML =
-                                '<p>Check the log <a href="/log" target="_blank"><span style="color: blue"> for more information</span>.</a></p>';
+                                '<p>' + window.t("status.error.check_log_prefix") + ' <a href="/log" target="_blank"><span style="color: blue"> ' + window.t("status.error.check_log_link") + '</span>.</a></p>';
                         }
                         dashboard.showModal({
-                            title: "An Error Occurred!",
+                            title: window.t("status.error_occurred_title"),
                             message: status.info.error,
                             detail: detailHTML,
-                            cancelText: "Close",
+                            cancelText: window.t("status.close_button"),
                             cancel: function () {
                                 modalIsShown = false;
                             },
@@ -1062,9 +1062,9 @@ engine.getVersion(function (err, version) {
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
-                        title: "Authorization Required!",
-                        message: "To authorize your tool, press and hold the start button for one second.",
-                        cancelText: "Quit",
+                        title: window.t("status.authorize.title"),
+                        message: window.t("status.authorize.message"),
+                        cancelText: window.t("actions.quit_button"),
                         cancel: function () {
                             authorizeDialog = false;
                             dashboard.engine.quit(function (err, result) {
@@ -1079,10 +1079,9 @@ engine.getVersion(function (err, version) {
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
-                        title: "Limit Hit!",
-                        message:
-                            "Limit Switch has been Hit! Quit will temporarily over-ride Limit sensor to allow backing off with Keypad.",
-                        cancelText: "Quit",
+                        title: window.t("status.limit_alert.title"),
+                        message: window.t("status.limit_alert.message"),
+                        cancelText: window.t("actions.quit_button"),
                         cancel: function () {
                             interlockDialog = false;
                             dashboard.engine.quit(function (err, result) {
@@ -1097,10 +1096,9 @@ engine.getVersion(function (err, version) {
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
-                        title: "Safety Interlock Activated!",
-                        message:
-                            "You cannot perform the specified action with the safety interlock open.  Please close the safety interlock before Resuming.",
-                        cancelText: "Quit",
+                        title: window.t("status.interlock_alert.title"),
+                        message: window.t("status.interlock_alert.message"),
+                        cancelText: window.t("actions.quit_button"),
                         cancel: function () {
                             interlockDialog = false;
                             dashboard.engine.quit(function (err, result) {
@@ -1109,7 +1107,7 @@ engine.getVersion(function (err, version) {
                                 }
                             });
                         },
-                        okText: "Resume",
+                        okText: window.t("actions.resume_button"),
                         ok: function () {
                             dashboard.engine.resume();
                         },
@@ -1119,10 +1117,9 @@ engine.getVersion(function (err, version) {
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
-                        title: "DRIVE FAULT!",
-                        message:
-                            "A stepper motor driver fault has been detected. The system must be reset before continuing. Check for mechanical issues and then Quit to return to Idle.",
-                        cancelText: "Quit",
+                        title: window.t("status.drive_fault_alert.title"),
+                        message: window.t("status.drive_fault_alert.message"),
+                        cancelText: window.t("actions.quit_button"),
                         cancel: function () {
                             interlockDialog = false;
                             dashboard.engine.quit(function (err, result) {
@@ -1131,7 +1128,7 @@ engine.getVersion(function (err, version) {
                                 }
                             });
                         },
-                        okText: "Resume",
+                        okText: window.t("actions.resume_button"),
                         ok: function () {
                             dashboard.engine.resume();
                         },
@@ -1141,9 +1138,9 @@ engine.getVersion(function (err, version) {
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
                     dashboard.showModal({
-                        title: "Stop Input Activated!",
-                        message: "Please release any Stop Input before continuing.",
-                        cancelText: "Quit",
+                        title: window.t("status.lock.title"),
+                        message: window.t("status.lock.message"),
+                        cancelText: window.t("actions.quit_button"),
                         cancel: function () {
                             interlockDialog = false;
                             dashboard.engine.quit(function (err, result) {
@@ -1152,7 +1149,7 @@ engine.getVersion(function (err, version) {
                                 }
                             });
                         },
-                        okText: "Resume",
+                        okText: window.t("actions.resume_button"),
                         ok: function () {
                             dashboard.engine.resume();
                         },
@@ -2103,7 +2100,7 @@ function showDaisy(callback) {
         dashboard.hideModal();
         daisyIsShown = true;
         dashboard.showModal({
-            title: "Waiting for FabMo...",
+            title: window.t("status.waiting_title"),
             message: '<i class="fa fa-cog fa-spin" aria-hidden="true" style="font-size:40px;color:#313366" ></i>',
             noButton: true,
             noLogo: true,
@@ -2779,10 +2776,10 @@ touchScreen();
 $(".icon_sign_out").on("click", function (e) {
     e.preventDefault();
     dashboard.showModal({
-        title: "Log Out?",
-        message: "Are you sure you want to sign out of this machine?",
-        okText: "Yes",
-        cancelText: "No",
+        title: window.t("status.logout.title"),
+        message: window.t("status.logout.message"),
+        okText: window.t("status.yes"),
+        cancelText: window.t("status.no"),
         ok: function () {
             window.location.href = "#/authentication";
         },

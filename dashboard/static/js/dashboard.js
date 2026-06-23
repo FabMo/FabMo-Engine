@@ -1472,7 +1472,7 @@ define(function (require) {
                     callback(err);
                 } else {
                     var name = result.name || "";
-                    name = "TOOL:  " + name;
+                    name = window.t("status.tool_name_prefix") + name;
                     $("#tool-name").text(name);
                     document.title = name || "FabMo Dashboard";
                     callback(null, result);

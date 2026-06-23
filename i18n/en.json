@@ -15,7 +15,20 @@
         "go_to_tooltip": "Move to a new location in one or more axes.",
         "set": "Set",
         "set_tooltip": "Set a new value for the current location of one or more axes.",
-        "joystick_tooltip": "Pendant joystick direction"
+        "joystick_tooltip": "Pendant joystick direction",
+        "authorize_overlay_message": "Press authorize button to enable manual controls",
+        "drag_handle_tooltip": "Drag to move keypad",
+        "message_placeholder": "This is where a message will go",
+        "title_goto_tooltip": "Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000",
+        "title_goto_prompt": "Select and change a value in order to: 'GoTo' a location or 'Set' a location",
+        "soft_limit_prompt_message": "Allow temporary soft-limit override on the",
+        "soft_limit_axis_suffix": "axis?",
+        "soft_limit_prompt_note": "Override clears when you close the keypad.",
+        "soft_limit_allow": "Allow",
+        "soft_limit_cancel": "Cancel",
+        "zero_button_tooltip": "set this axis to zero",
+        "zero_button": "zero",
+        "dro_enter_prompt": "Move the tool if necessary, then hit \"Enter"
     },
     "status": {
         "transforms_label": "Transforms",
@@ -28,14 +41,113 @@
         "output_label": "Out:",
         "connection_quality_tooltip": "This PC's connection quality; Click for tool's Network Manager",
         "open_keypad_tooltip": "Click to open Motion Keypad",
-        "open_dro_tooltip": "Click to open larger Info Display"
+        "open_dro_tooltip": "Click to open larger Info Display",
+        "close_dro_tooltip": "Click to close large Display",
+        "error_occurred_title": "An Error Occurred!",
+        "close_button": "Close",
+        "waiting_title": "Waiting for FabMo...",
+        "yes": "Yes",
+        "no": "No",
+        "sim_input_label": "DEBUG — click to toggle inputs:",
+        "footer_line_label": "line:",
+        "tool_name_prefix": "TOOL:  ",
+        "menu": {
+            "default_app": "Default App",
+            "job_manager": "Job Manager",
+            "editor": "Editor",
+            "macros_title": "Custom Macros",
+            "macros": "Macros",
+            "apps": "Apps",
+            "video": "Video",
+            "configuration": "Configuration",
+            "sign_out": "Sign Out",
+            "expand_collapse": "Expand/Collapse",
+            "collapse": "Collapse",
+            "expand": "Expand"
+        },
+        "dro_outputs_tooltip": "Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad.",
+        "dro_outputs_label": "OUTPUTS (Toggle)",
+        "dro_move_speed_label": "MOVE SPEED  (Feedrate)",
+        "dro_move_speed_tooltip": "When a file is running, the move-speed/feedrate of the moving axis is <br> shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br> Override will decrease or increase the assigned speed in a file (down <br> to 5%, up to 200%; with 100% being the assigned speed.).<br>",
+        "dro_override_label": "Override %",
+        "dro_spindle_label": "Spindle-1",
+        "dro_spindle_tooltip": "Set spindle RPM. Gray/Black values indicate commanded RPM; Blue <br> values indicate Achieved RPM.<br><br> AMP value displays the spindle load expressed as current in amps.",
+        "dro_rpm_label": "RPM",
+        "dro_no_vfd_placeholder": "- No VFD/USB -  ",
+        "dro_amp_label": "AMP",
+        "modal": {
+            "title_placeholder": "Title",
+            "invalid_value": "Please Enter a Valid Value.",
+            "cancel": "Cancel",
+            "okay": "Okay"
+        },
+        "error": {
+            "job_name": "Job Name:",
+            "job_description": "Job Description:",
+            "check_log_prefix": "Check the log",
+            "check_log_link": "for more information"
+        },
+        "backup": {
+            "found_message": "FabMo has found a configuration backup made before this update.",
+            "created_at": "Backup created:",
+            "restore_question": "Would you like to restore your previous configuration?",
+            "title": "Configuration Backup Available",
+            "ok": "Use My Previous Config",
+            "cancel": "Keep the New Config",
+            "restoring": "Restoring backup... System will restart shortly.",
+            "restored": "Backup restored - restarting...",
+            "restore_failed": "Failed to restore backup:",
+            "keeping": "Keeping current configuration"
+        },
+        "authorize": {
+            "title": "Authorization Required!",
+            "message": "To authorize your tool, press and hold the start button for one second."
+        },
+        "limit_alert": {
+            "title": "Limit Hit!",
+            "message": "Limit Switch has been Hit! Quit will temporarily over-ride Limit sensor to allow backing off with Keypad."
+        },
+        "interlock_alert": {
+            "title": "Safety Interlock Activated!",
+            "message": "You cannot perform the specified action with the safety interlock open.  Please close the safety interlock before Resuming."
+        },
+        "drive_fault_alert": {
+            "title": "DRIVE FAULT!",
+            "message": "A stepper motor driver fault has been detected. The system must be reset before continuing. Check for mechanical issues and then Quit to return to Idle."
+        },
+        "lock": {
+            "title": "Stop Input Activated!",
+            "message": "Please release any Stop Input before continuing."
+        },
+        "logout": {
+            "title": "Log Out?",
+            "message": "Are you sure you want to sign out of this machine?"
+        },
+        "auth": {
+            "kicked_out": "You have been kicked out from the tool.",
+            "not_authenticated": "You need to be authenticated to access this page.",
+            "login_success": "Successful Log in!",
+            "wrong_credentials": "Wrong username or password",
+            "kick_confirm": "do you want to kick this user out ?",
+            "loading": "Loading...",
+            "user_created": "User successfully created !"
+        },
+        "app_launch_failed_prefix": "Couldn't launch app:",
+        "app_launch_failed_no_list": "Apps list not available yet.",
+        "app_launch_failed_no_app": "No such app?"
     },
     "actions": {
         "c2_tooltip": "Do Z-Zero (Macro C2)",
         "c3_tooltip": "Do XYZ-Homing (Macro C3)",
         "jh_tooltip": "JH (Jog Home in XY)",
         "jp_tooltip": "Goto Park Location (Macro C#79; Settings in C#210)",
-        "spindle_toggle_tooltip": "Toggle Spindle ON/OFF"
+        "spindle_toggle_tooltip": "Toggle Spindle ON/OFF",
+        "resume": "RESUME",
+        "quit": "QUIT",
+        "resume_button": "Resume",
+        "quit_button": "Quit",
+        "pause_feedhold": "Pause / Feedhold",
+        "pause_feedhold_tooltip": "When a file is running, Pause/Feedhold will execute a controlled stop <br> allowing the file to be subsequently Resumed or Fully Quit.<br><br> If an immediate Emergency Stop (E-Stop) is needed, use the physical <br> RED Button/Lever to brake and shutdown the equipment.  The tool's <br> position will be lost and your file will need to be restarted. <br> On some tools, the E-Stop may also be the main power switch.<br>"
     },
     "errors": {
         "machine": {
