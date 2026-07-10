@@ -135,17 +135,13 @@ exports.M6 = function (args) {
 var process_move = function (args) {
     this.cmd_result = 0;
     var params = {};
-    var feedrate = this.movespeed_xy * 60;
-    //	log.debug("    (process_move)movespeed_xy = " + this.movespeed_xy);
     if (args[0] === 0 || (args[0] && typeof args[0] === "number")) {
-        //args[0] === 0 ||
         params.X = args[0];
         if (params.X === this.cmd_posx) {
             this.cmd_result += 1;
         }
     }
     if (args[1] === 0 || (args[1] && typeof args[1] === "number")) {
-        //args[1] === 0 ||
         params.Y = args[1];
         if (params.Y === this.cmd_posy) {
             this.cmd_result += 1;
@@ -174,6 +170,28 @@ var process_move = function (args) {
         if (params.C === this.cmd_posc) {
             this.cmd_result += 1;
         }
+    }
+
+    // Select feedrate based on which axes are present in the move, in priority order:
+    // XY > Z > A > B > C. The F-word controls the path speed for the dominant axis.
+    // Note: when secondary axes (e.g. a rotary A) are included alongside a linear move,
+    // G2 coordinates all axes to arrive simultaneously at the commanded path speed. The
+    // secondary axis will be velocity-blended by G2 up to its own avm/bvm/cvm maximum —
+    // it is NOT independently capped to movespeed_a/b/c. This is expected behavior for
+    // coordinated multi-axis motion; single-axis MA/MB/MC commands do use their own speeds.
+    var feedrate;
+    if (params.X !== undefined || params.Y !== undefined) {
+        feedrate = this.movespeed_xy * 60;
+    } else if (params.Z !== undefined) {
+        feedrate = this.movespeed_z * 60;
+    } else if (params.A !== undefined) {
+        feedrate = this.movespeed_a * 60;
+    } else if (params.B !== undefined) {
+        feedrate = this.movespeed_b * 60;
+    } else if (params.C !== undefined) {
+        feedrate = this.movespeed_c * 60;
+    } else {
+        feedrate = this.movespeed_xy * 60;
     }
     params.F = feedrate;
 
