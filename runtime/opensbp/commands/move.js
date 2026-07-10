@@ -172,7 +172,33 @@ var process_move = function (args) {
         }
     }
 
-    // Select feedrate based on which axes are present in the move, in priority order:
+    // Determine which axes are actually moving so we can select the correct feedrate.
+    // In absolute mode (the default, SA command), an axis moves only if its target
+    // differs from the current commanded position. In relative mode (SR command), a
+    // displacement of 0 (or a blank, which arrives as undefined) means no motion.
+    var isMoving;
+    if (this.absoluteMode) {
+        isMoving = {
+            X: params.X !== undefined && params.X !== this.cmd_posx,
+            Y: params.Y !== undefined && params.Y !== this.cmd_posy,
+            Z: params.Z !== undefined && params.Z !== this.cmd_posz,
+            A: params.A !== undefined && params.A !== this.cmd_posa,
+            B: params.B !== undefined && params.B !== this.cmd_posb,
+            C: params.C !== undefined && params.C !== this.cmd_posc,
+        };
+    } else {
+        // Relative mode: blank (undefined) or 0 displacement means no motion
+        isMoving = {
+            X: params.X !== undefined && params.X !== 0,
+            Y: params.Y !== undefined && params.Y !== 0,
+            Z: params.Z !== undefined && params.Z !== 0,
+            A: params.A !== undefined && params.A !== 0,
+            B: params.B !== undefined && params.B !== 0,
+            C: params.C !== undefined && params.C !== 0,
+        };
+    }
+
+    // Select feedrate based on which axes are actually moving, in priority order:
     // XY > Z > A > B > C. The F-word controls the path speed for the dominant axis.
     // Note: when secondary axes (e.g. a rotary A) are included alongside a linear move,
     // G2 coordinates all axes to arrive simultaneously at the commanded path speed. The
@@ -180,17 +206,19 @@ var process_move = function (args) {
     // it is NOT independently capped to movespeed_a/b/c. This is expected behavior for
     // coordinated multi-axis motion; single-axis MA/MB/MC commands do use their own speeds.
     var feedrate;
-    if (params.X !== undefined || params.Y !== undefined) {
+    if (isMoving.X || isMoving.Y) {
         feedrate = this.movespeed_xy * 60;
-    } else if (params.Z !== undefined) {
+    } else if (isMoving.Z) {
         feedrate = this.movespeed_z * 60;
-    } else if (params.A !== undefined) {
+    } else if (isMoving.A) {
         feedrate = this.movespeed_a * 60;
-    } else if (params.B !== undefined) {
+    } else if (isMoving.B) {
         feedrate = this.movespeed_b * 60;
-    } else if (params.C !== undefined) {
+    } else if (isMoving.C) {
         feedrate = this.movespeed_c * 60;
     } else {
+        // No axis is actually changing position (all posted to current location, or all
+        // blank). Fall back to XY speed; the move will be a no-op anyway.
         feedrate = this.movespeed_xy * 60;
     }
     params.F = feedrate;
