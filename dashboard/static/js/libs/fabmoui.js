@@ -316,8 +316,8 @@ const { last } = require("underscore");
                     const displayValue = (feedrate / 60).toFixed(2);
                     $("#fr-inp").text(displayValue);
                 } else {
-                    // status.feed from G2 is in mm/min — divide by 25.4 for in/min, then by 60 for in/sec
-                    const displayValue = (feedrate / 1524).toFixed(2);
+                    // status.feed from G2 is in in/min — divide by 60 for in/sec
+                    const displayValue = (feedrate / 60).toFixed(2);
                     $("#fr-inp").text(displayValue);
                 }
             }
