@@ -198,28 +198,40 @@ var process_move = function (args) {
         };
     }
 
-    // Select feedrate based on which axes are actually moving, in priority order:
-    // XY > Z > A > B > C. The F-word controls the path speed for the dominant axis.
-    // Note: when secondary axes (e.g. a rotary A) are included alongside a linear move,
-    // G2 coordinates all axes to arrive simultaneously at the commanded path speed. The
-    // secondary axis will be velocity-blended by G2 up to its own avm/bvm/cvm maximum —
-    // it is NOT independently capped to movespeed_a/b/c. This is expected behavior for
-    // coordinated multi-axis motion; single-axis MA/MB/MC commands do use their own speeds.
+    // Select feedrate to send to G2 based on which axes are actually moving, in priority
+    // order: XY > Z > A > B > C.
+    //
+    // G2 implements NIST RS274NGC §2.1.2.5: F is the XYZ Euclidean path speed. Rotary
+    // axes (ABC) are excluded from the feed_time distance sum and are instead synchronized
+    // to finish with the linear segment, automatically rate-limited by their individual
+    // feedrate_max (bvm/avm/cvm) firmware setting. For pure rotary moves (no XYZ) G2
+    // falls back to treating F as degrees/min for the rotary path.
+    //
+    // This means we simply send the configured speed for the dominant linear axis and let
+    // G2 handle rotary coordination. The isMoving check correctly skips axes whose target
+    // equals their current position in absolute mode (or equals zero in relative mode), so
+    // a repeated XY position in a multi-axis sequence no longer incorrectly overrides the
+    // rotary feedrate.
+
+    var speedXY = this.movespeed_xy * 60;
+    var speedZ  = this.movespeed_z  * 60;
+    var speedA  = this.movespeed_a  * 60;
+    var speedB  = this.movespeed_b  * 60;
+    var speedC  = this.movespeed_c  * 60;
+
     var feedrate;
     if (isMoving.X || isMoving.Y) {
-        feedrate = this.movespeed_xy * 60;
+        feedrate = speedXY;
     } else if (isMoving.Z) {
-        feedrate = this.movespeed_z * 60;
+        feedrate = speedZ;
     } else if (isMoving.A) {
-        feedrate = this.movespeed_a * 60;
+        feedrate = speedA;
     } else if (isMoving.B) {
-        feedrate = this.movespeed_b * 60;
+        feedrate = speedB;
     } else if (isMoving.C) {
-        feedrate = this.movespeed_c * 60;
+        feedrate = speedC;
     } else {
-        // No axis is actually changing position (all posted to current location, or all
-        // blank). Fall back to XY speed; the move will be a no-op anyway.
-        feedrate = this.movespeed_xy * 60;
+        feedrate = speedXY; // no-op fallback
     }
     params.F = feedrate;
 
