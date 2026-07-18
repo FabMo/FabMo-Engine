@@ -771,8 +771,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   border: 2px solid #201f2b;
   border-radius: 10px;
   max-height: 60vh;
-  min-width: 200px;
-  max-width: 300px;
+  width: 230px;
   z-index: 5;
   font-size: 12px;
   color: #eee;
@@ -810,15 +809,26 @@ input[type="range"]::-webkit-slider-runnable-track {
   padding: 3px 10px 4px;
 }
 
-#preview .operations-panel.setup-collapsed .ops-setup-body {
-  display: none;
+/* Collapsing rolls up everything except the Setup header bar and the
+   run/submit buttons. !important because ops-header/list/empty visibility
+   is otherwise driven by inline styles from jQuery .toggle(). */
+#preview .operations-panel.setup-collapsed .ops-setup-body,
+#preview .operations-panel.setup-collapsed .ops-header,
+#preview .operations-panel.setup-collapsed .ops-list,
+#preview .operations-panel.setup-collapsed .ops-empty {
+  display: none !important;
+}
+
+#preview .operations-panel.setup-collapsed .ops-setup {
+  border-bottom: none;
 }
 
 #preview .operations-panel .ops-setup-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  margin: 1px 0;
+  margin: 5px 0;
   font-size: 11px;
   line-height: 1.2;
 }
@@ -837,10 +847,16 @@ input[type="range"]::-webkit-slider-runnable-track {
   border: 1px solid #555;
   border-radius: 3px;
   padding: 0 3px;
+  margin: 0; /* Foundation's default margin-bottom skews vertical centering */
   font-size: 11px;
   height: 18px;
   line-height: 16px;
   width: 60px;
+}
+
+/* Match the combined width of the tool type + diameter + unit fields below */
+#preview .operations-panel .ops-setup-row .setup-z-origin {
+  width: 121px;
 }
 
 #preview .operations-panel .ops-setup-row .setup-tool-type {
@@ -861,7 +877,8 @@ input[type="range"]::-webkit-slider-runnable-track {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  margin-left: 4px;
+  /* Right-aligns under the diameter field when the row wraps */
+  margin-left: auto;
 }
 
 #preview .operations-panel .ops-empty {
@@ -902,6 +919,25 @@ input[type="range"]::-webkit-slider-runnable-track {
 #preview .operations-panel .ops-list {
   overflow-y: auto;
   max-height: 45vh;
+  /* Firefox: thin persistent scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #778 rgba(255, 255, 255, 0.08);
+}
+
+/* Chromium: styling the scrollbar opts out of the auto-hiding overlay bar,
+   so overflow is visibly indicated even when not scrolling */
+#preview .operations-panel .ops-list::-webkit-scrollbar {
+  width: 8px;
+}
+#preview .operations-panel .ops-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+#preview .operations-panel .ops-list::-webkit-scrollbar-thumb {
+  background: #778;
+  border-radius: 4px;
+}
+#preview .operations-panel .ops-list::-webkit-scrollbar-thumb:hover {
+  background: #99a;
 }
 
 #preview .operations-panel .ops-list .op-entry {
@@ -951,6 +987,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   border: 1px solid #555;
   border-radius: 3px;
   padding: 0 2px;
+  margin: 0;
   font-size: 11px;
   height: 18px;
   line-height: 16px;
@@ -964,6 +1001,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   border: 1px solid #555;
   border-radius: 3px;
   padding: 0 3px;
+  margin: 0;
   font-size: 11px;
   height: 18px;
   line-height: 16px;
@@ -987,16 +1025,11 @@ input[type="range"]::-webkit-slider-runnable-track {
   padding: 6px 10px;
   border-top: 1px solid #444;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
 }
 
-#preview .operations-panel .ops-actions .run-now {
-  flex-basis: 100%;
-}
-
 #preview .operations-panel .ops-actions button {
-  flex: 1;
   padding: 6px 8px;
   border: 2px solid #024a16;
   border-radius: 8px;
@@ -1030,5 +1063,16 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 #preview.has-selection .operations-panel .ops-actions .run-trimmed,
 #preview.has-selection .operations-panel .ops-actions .submit-trimmed {
+  display: inline-block;
+}
+
+/* Selected-ops buttons need parsed ops (has-ops, set in JS) AND a cut
+   start/stop selection. */
+#preview .operations-panel .ops-actions .run-selected-ops,
+#preview .operations-panel .ops-actions .submit-selected-ops {
+  display: none;
+}
+#preview.has-selection .operations-panel .ops-actions .run-selected-ops.has-ops,
+#preview.has-selection .operations-panel .ops-actions .submit-selected-ops.has-ops {
   display: inline-block;
 }

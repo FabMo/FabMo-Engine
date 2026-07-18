@@ -119,8 +119,10 @@ module.exports = function(container) {
 
       // Z ceiling is fixed at machine_z = 0 (homed top) regardless of envelope.zmax.
       // No Z min check — low Z in a CAM file is cut depth and depends on bit length.
+      // g55z of exactly 0 means Z has never been zeroed (a real zero always lands
+      // at a fractional offset) — skip the Z check rather than flag every file.
       var bMaxZ = bounds.max.z;
-      if (typeof bMaxZ === 'number') {
+      if (typeof bMaxZ === 'number' && g55.z !== 0) {
           var machineMaxZ = bMaxZ + g55.z;
           if (machineMaxZ > 0) {
               violations.push({ axis: 'z', direction: 'max', overage: machineMaxZ });
@@ -760,8 +762,10 @@ module.exports = function(container) {
     $empty.toggle(ops.length === 0);
     $header.toggle(ops.length > 0);
     $toggleAll.toggle(ops.length > 0);
-    $runSelected.toggle(ops.length > 0);
-    $submitSelected.toggle(ops.length > 0);
+    // Visibility is class-driven (CSS): shown only when ops exist AND a cut
+    // start/stop (in/out) selection is set on #preview (has-selection).
+    $runSelected.toggleClass('has-ops', ops.length > 0);
+    $submitSelected.toggleClass('has-ops', ops.length > 0);
 
     if (ops.length === 0) {
       console.log('Operations panel: no operations parsed — showing Setup-only fallback');
@@ -797,10 +801,11 @@ module.exports = function(container) {
           .append('<option value="vbit">V-Bit</option>')
           .val(ti.toolType || 'flat');
 
-        var diaInput = $('<input class="op-tool-dia" type="number" min="0.01" max="3" step="any">')
+        var diaInput = $('<input class="op-tool-dia" type="number" min="0.01" step="any">')
+          .attr('max', self.isMetric() ? 76 : 3)
           .val(ti.toolDiameter || 0.25);
 
-        var diaLabel = $('<span class="op-tool-dia-label">').text('"');
+        var diaLabel = $('<span class="op-tool-dia-label">').text(self.isMetric() ? 'mm' : 'in');
 
         var angleInput = $('<input class="op-tool-angle" type="number" min="10" max="180" step="1">')
           .val(ti.vbitAngle || 90);
@@ -974,6 +979,35 @@ module.exports = function(container) {
     }
   }
 
+  function updateUnitLabels() {
+    var metric = self.isMetric();
+    if (self._diaUnitsMetric !== undefined && self._diaUnitsMetric !== metric) {
+      convertToolDiameters(metric);
+    }
+    self._diaUnitsMetric = metric;
+    $('.setup-tool-dia-label, .op-tool-dia-label').text(metric ? 'mm' : 'in');
+  }
+
+  // Convert stored tool diameters between inches and mm so the values keep
+  // describing the same physical tool when the unit labels flip, and refresh
+  // the visible fields to match.
+  function convertToolDiameters(toMetric) {
+    var factor = toMetric ? 25.4 : 1 / 25.4;
+    var convert = function(v) { return Math.round(v * factor * 10000) / 10000; };
+    if (self.defaultTool.toolDiameter) {
+      self.defaultTool.toolDiameter = convert(self.defaultTool.toolDiameter);
+    }
+    $('#ops-setup .setup-tool-dia').val(self.defaultTool.toolDiameter);
+    if (!self.operations) return;
+    for (var i = 0; i < self.operations.length; i++) {
+      var ti = self.operations[i].toolInfo;
+      if (ti && ti.toolDiameter) ti.toolDiameter = convert(ti.toolDiameter);
+      var $dia = $('#ops-list .op-entry').eq(i).find('.op-tool-dia');
+      $dia.attr('max', toMetric ? 76 : 3);
+      if (ti && ti.toolDiameter) $dia.val(ti.toolDiameter);
+    }
+  }
+
 
   self.setMetric = function (metric) {
     if (self.path && self.path.bounds) {
@@ -986,14 +1020,16 @@ module.exports = function(container) {
   // Setting from within file here
   self.setPathMetric = function (metric) {
     self.setMetric(metric);
+    updateUnitLabels();
   }
 
 
   // Initially set Units and Location to current machine values 
-  self.setUnits = function (units, status) {             
+  self.setUnits = function (units, status) {
     self.units = units;
     self.setMetric(self.isMetric());
     self.path.metric = (self.isMetric());
+    updateUnitLabels();
     if (status) {self.path.position = [status.posx, status.posy, status.posz]};
   }
 
