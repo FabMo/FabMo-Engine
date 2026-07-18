@@ -1293,6 +1293,8 @@ function getManualNudgeIncrement(move) {
 // between the machine name and the mini-DRO; (Phase B) an expand control opens
 // a stream dropdown; (Phase C) it can be dragged off into a floating modal.
 // Fed by the SBP PRINT command over the data_send 'print'/'print_clear' bus.
+// Absent from the UI until a file prints something; the X dismisses it
+// completely (persisted) until the next PRINT arrives.
 function setupPrintWidget(engine) {
     var STORAGE_KEY = "fabmo_print_output";
     var MAX_LINES = 200; // hard cap on retained lines
@@ -1310,6 +1312,16 @@ function setupPrintWidget(engine) {
         if (saved) lines = JSON.parse(saved) || [];
     } catch (e) {
         lines = [];
+    }
+
+    // The widget only exists in the UI while a file has printed something and
+    // the user hasn't dismissed it. A new PRINT line always brings it back.
+    var dismissed = false;
+
+    function updateVisibility() {
+        var show = lines.length > 0 && !dismissed;
+        widget.classList.toggle("dismissed", !show);
+        if (show) layout();
     }
 
     function persist() {
@@ -1410,6 +1422,7 @@ function setupPrintWidget(engine) {
             false
         );
         renderStream();
+        updateVisibility();
         layout();
     }
 
@@ -1425,6 +1438,12 @@ function setupPrintWidget(engine) {
         lines.unshift(s);
         if (lines.length > MAX_LINES) lines.length = MAX_LINES;
         persist();
+        // A file printing output always re-summons a dismissed widget.
+        if (dismissed) {
+            dismissed = false;
+            persistState();
+        }
+        updateVisibility();
         renderStream();
         updateLatest(s, false, true); // animated scroll-in (docked)
         flash();
@@ -1473,8 +1492,27 @@ function setupPrintWidget(engine) {
         widget.style.left = "auto";
         widget.style.right = rightPx + "px";
         widget.style.width = Math.max(0, width) + "px";
-        // Sit the docked module a few pixels above the bar's bottom edge.
-        widget.style.paddingBottom = BOTTOM_GAP + "px";
+        // Match the keypad button's visible face vertically. The PNG has
+        // transparent padding: the yellow rect starts 55/256 down the image
+        // and is 171/256 of its height, so compute that box and size the
+        // widget to it (same height, same top edge, same corner treatment).
+        var visTop = null;
+        var visHeight = null;
+        if (keypadBtn && rightRect && rightAnchor === keypadBtn && rightRect.height > 0) {
+            visTop = rightRect.top + rightRect.height * (55 / 256);
+            visHeight = rightRect.height * (171 / 256);
+        }
+        if (visTop !== null && visTop >= barRect.top && visTop + visHeight <= barRect.bottom + 2) {
+            widget.style.top = Math.round(visTop - barRect.top) + "px";
+            widget.style.height = Math.round(visHeight) + "px";
+            widget.style.paddingBottom = "0px";
+        } else {
+            // Keypad missing or off the bar (small screens): fall back to
+            // bottom-aligned in the bar as before.
+            widget.style.top = "0px";
+            widget.style.height = "";
+            widget.style.paddingBottom = BOTTOM_GAP + "px";
+        }
         // Hide if there isn't enough room to be useful (small screens).
         widget.style.visibility = width < 80 ? "hidden" : "visible";
     }
@@ -1524,6 +1562,7 @@ function setupPrintWidget(engine) {
                 JSON.stringify({
                     floating: widget.classList.contains("floating"),
                     expanded: widget.classList.contains("expanded"),
+                    dismissed: dismissed,
                     x: floatPos ? floatPos.x : null,
                     y: floatPos ? floatPos.y : null,
                 })
@@ -1551,6 +1590,7 @@ function setupPrintWidget(engine) {
         widget.classList.add("floating");
         widget.style.right = "";
         widget.style.width = "";
+        widget.style.height = "";
         widget.style.paddingBottom = "";
         widget.style.visibility = "";
         document.body.appendChild(widget);
@@ -1651,9 +1691,17 @@ function setupPrintWidget(engine) {
             persistState();
         });
     }
-    // Close (X) — redock the floating modal.
+    // Close (X) — dismiss the widget from the UI entirely. It returns the
+    // next time a file prints output. A floating modal is redocked first so
+    // it reappears in the bar, not hovering mid-screen.
     if (closeBtn) {
-        closeBtn.addEventListener("click", redock);
+        closeBtn.addEventListener("click", function () {
+            if (!isDocked()) redock();
+            widget.classList.remove("expanded");
+            dismissed = true;
+            persistState();
+            updateVisibility();
+        });
     }
     // Click outside collapses the docked dropdown.
     document.addEventListener("click", function (e) {
@@ -1682,6 +1730,7 @@ function setupPrintWidget(engine) {
             st = null;
         }
         if (!st) return;
+        dismissed = !!st.dismissed;
         if (st.floating) {
             detach(st.x != null ? st.x : 80, st.y != null ? st.y : 80);
         } else if (st.expanded) {

@@ -94,13 +94,25 @@ label {
 /* ===== PRINT OUTPUT widget — docked in the top bar ========================
    Absolutely positioned within the fixed .tab-bar; JS sets left/right so it
    fills the gap between the machine name and the mini-DRO. */
+/* Dismissed (or nothing printed yet): gone from the UI entirely. JS removes
+   the class when a PRINT line arrives. !important so it beats the inline
+   visibility/size styles the docked layout code sets. */
+.print-widget.dismissed {
+    display: none !important;
+}
 .print-widget.docked {
     position: absolute;
     top: 0;
-    height: 56px;
+    height: 56px;               /* fallback; JS matches the keypad button's box */
     display: flex;
     align-items: flex-end;      /* sit the module at the bottom of the bar */
     z-index: 1;                 /* tab-bar itself is 1005 */
+}
+/* When docked, the frame fills the widget box exactly — JS sizes/positions
+   that box to match the visible face of the keypad button to its right. */
+.print-widget.docked .print-widget-dockline {
+    height: 100%;
+    justify-content: center;
 }
 /* Hide on small screens (replaces the Foundation show-for-medium-up class,
    which forced display:inherit and broke the flex alignment). */
@@ -118,7 +130,7 @@ label {
        docked widget reads as one detachable module. */
     background-color: rgba(0, 0, 0, 0.18);
     border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 4px;
+    border-radius: 5px;         /* matches the keypad button's corner radius */
     color: #ffffff;
     font-family: "Droid_Sans_Mono", monospace;
     line-height: 1.2;              /* override .tab-bar's inherited 45px line-height */
@@ -234,7 +246,7 @@ label {
 .print-widget.docked.expanded .print-widget-stream {
     display: block;
     position: absolute;
-    top: 52px;                 /* just below the module (bar 56 - 4px gap) */
+    top: 100%;                 /* hang just below the module frame */
     right: 0;
     width: 100%;
     max-height: 50vh;
@@ -247,7 +259,7 @@ label {
 .print-widget.docked.expanded .print-widget-expand {
     transform: rotate(180deg);  /* caret flips when open */
 }
-/* Close (X) — only in the floating modal. */
+/* Close (X) — dismisses the widget entirely (docked or floating). */
 .print-widget-close {
     flex: 0 0 auto;
     margin: 0 0 0 8px;
@@ -262,7 +274,10 @@ label {
     cursor: pointer;
 }
 .print-widget-close:hover { color: #ff6b6b; }
-.print-widget.docked .print-widget-close { display: none; }
+.print-widget.docked .print-widget-close {
+    font-size: 11px;
+    margin-left: 6px;
+}
 /* ===== Floating modal (pulled off the bar) ================================= */
 .print-widget.floating {
     position: fixed;
