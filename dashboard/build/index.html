@@ -97,13 +97,14 @@
           </section>
 
           <!-- ***** PRINT OUTPUT widget (docked in top bar; can pull off into a
-               floating modal). Fed by the SBP PRINT command. ***** -->
-          <div id="print-widget" class="print-widget docked" title="Print output from running files">
+               floating modal). Fed by the SBP PRINT command. Starts dismissed;
+               JS shows it when a file actually prints. ***** -->
+          <div id="print-widget" class="print-widget docked dismissed" title="Print output from running files">
             <div class="print-widget-dockline" id="print-widget-dockline">
               <div class="print-widget-header">
-                <span class="print-widget-title">Machine output:</span>
+                <span class="print-widget-title">File Output:</span>
                 <span class="print-widget-grip" id="print-widget-grip" title="Drag to pull off the bar">&#8942;&#8942;&#8942;</span>
-                <button type="button" class="print-widget-close" id="print-widget-close" title="Close (return to top bar)" aria-label="Close">&#10005;</button>
+                <button type="button" class="print-widget-close" id="print-widget-close" title="Dismiss (reappears when a file prints output)" aria-label="Dismiss">&#10005;</button>
               </div>
               <div class="print-widget-outputrow">
                 <button type="button" class="print-widget-expand" id="print-widget-expand" title="Expand to see past messages" aria-label="Expand print output">&#9662;</button>
