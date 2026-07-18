@@ -128,6 +128,18 @@ module.exports = function(container) {
               violations.push({ axis: 'z', direction: 'max', overage: machineMaxZ });
           }
       }
+      // Zeroed or not, the file's own Z range is a hard constraint: if it spans
+      // more than the machine's total Z travel, it goes out of bounds no matter
+      // where Z is zeroed. Travel is ceiling (machine 0 — zmax is not
+      // meaningful for Z) down to envelope.zmin.
+      var bMinZ = bounds.min.z;
+      if (typeof bMaxZ === 'number' && typeof bMinZ === 'number' &&
+          typeof env.zmin === 'number') {
+          var zTravel = -env.zmin;
+          if (zTravel > 0 && bMaxZ - bMinZ > zTravel) {
+              violations.push({ axis: 'z', direction: 'span', overage: bMaxZ - bMinZ - zTravel });
+          }
+      }
       if (violations.length) {
           self.gui.showSoftLimitWarning(violations, softLimits.units);
       } else {

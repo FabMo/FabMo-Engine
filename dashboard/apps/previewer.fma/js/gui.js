@@ -94,8 +94,14 @@ module.exports = function(callbacks) {
     var u = units || '';
     for (var i = 0; i < violations.length; i++) {
       var v = violations[i];
-      var line = v.axis.toUpperCase() + ' exceeds ' + v.direction +
-                 ' by ' + v.overage.toFixed(2) + ' ' + u;
+      var line;
+      if (v.direction === 'span') {
+        line = v.axis.toUpperCase() + ' range of file exceeds machine travel by ' +
+               v.overage.toFixed(2) + ' ' + u;
+      } else {
+        line = v.axis.toUpperCase() + ' exceeds ' + v.direction +
+               ' by ' + v.overage.toFixed(2) + ' ' + u;
+      }
       $('<li>').text(line).appendTo($list);
     }
     show(self.softLimitWarning, true);
