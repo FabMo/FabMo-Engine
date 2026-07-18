@@ -56,7 +56,7 @@
       <div class="operations-panel" id="operations-panel" style="display: none;">
         <div class="ops-setup" id="ops-setup">
           <div class="ops-setup-header" title="Click to collapse/expand">
-            <span>Setup</span>
+            <span>Toolpath Details</span>
             <span class="ops-setup-toggle">−</span>
           </div>
           <div class="ops-setup-body">
@@ -79,7 +79,7 @@
                 <option value="vbit">V-Bit</option>
               </select>
               <input type="number" class="setup-tool-dia" min="0.01" step="any"/>
-              <span class="setup-tool-dia-label">"</span>
+              <span class="setup-tool-dia-label">in</span>
               <span class="setup-vbit-wrap">
                 <input type="number" class="setup-tool-angle" min="10" max="180" step="1"/>
                 <span class="setup-tool-angle-label">°</span>
@@ -92,7 +92,7 @@
           <span class="ops-toggle-all" title="Select All / None">All</span>
         </div>
         <div class="ops-list" id="ops-list"></div>
-        <div class="ops-empty" id="ops-empty" style="display: none;">No operations parsed in file. Use Setup to set tool defaults, then run the full job.</div>
+        <div class="ops-empty" id="ops-empty" style="display: none;">No operations parsed in file. Use Toolpath Details to set tool defaults, then run the full job.</div>
         <div class="ops-actions">
           <div class="run-now">Run Full Job</div>
           <button class="run-trimmed" title="Run only the in/out selection">Run Trimmed</button>
@@ -325,12 +325,12 @@
           <p>Files compiled from SBP or with VCarve/ShopBot operation comments expose each operation as a checkable row. Use the panel to override tool defaults, run only what you need, or submit a trimmed/selected job.</p>
           <table>
             <tr>
-              <th>Setup</th>
+              <th>Toolpath Details</th>
               <td>Sets the file-wide defaults: <em>Material thickness</em>, <em>Z origin</em> (Material Surface or Table Surface), and the <em>Default tool</em> (Flat / Ball / V-Bit, plus diameter and V-bit angle). Changes here re-render the material simulation.</td>
             </tr>
             <tr>
               <th>Per-operation tool</th>
-              <td>Each operation row has its own bit type, diameter, and (for V-bit) angle. Editing these overrides the Setup default for that operation only.</td>
+              <td>Each operation row has its own bit type, diameter, and (for V-bit) angle. Editing these overrides the Toolpath Details default for that operation only.</td>
             </tr>
             <tr>
               <th>Run Full Job</th>
