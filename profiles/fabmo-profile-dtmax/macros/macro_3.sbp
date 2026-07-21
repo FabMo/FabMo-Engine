@@ -3,7 +3,7 @@
 '!FABMO!enabled:true
 ' Name: HOME TOOL
 ' Description: Automatically Set Axis Zero for XYZ and position tool
-' 2026/12/5 - Refactored (th)
+' 2026/7/15 - Refactored (th)
 
 ' === Initialize ===
 ' make sure Standard Macro Variables have been read from Macro 201 
@@ -28,9 +28,26 @@ OK:
     Z3    ' Zeoring all axes at their current location (sets worst case homing distances)
     GOSUB backOffProx_if_needed
     GOSUB home_z
-    GOSUB home_x
+    IF $sb_dtType == 3 THEN GOTO X_first                                 ' Standard Desktop has X on Gantry so different layout
     GOSUB home_y
+        'Center Y
+        &ymax = %machine.envelope.ymax
+        MY, (&ymax / 2)
+    GOSUB home_x
+    GOTO finish
+
+X_first:
+    GOSUB home_x
+        'Center X
+        &xmax = %machine.envelope.xmax
+        MX, (&xmax / 2)
+    GOSUB home_y
+
+finish:
+    J2, 0,0
     &xyHOMED = true
+    DIALOG "XY Homing Complete <br> (continuing in 8 sec ...)", TIMER=8, OKTEXT="Continue, now ..."
+
 END
 '===============================
 
@@ -78,8 +95,6 @@ home_y:
     ZY
     JY, $sb_homeOffUU[&u].y
     VA,,0,,,,,,0,,,,
-
-    DIALOG "XY Homing Complete <br> (continuing in 8 sec ...)", TIMER=8, OKTEXT="Continue, now ..."
     RETURN
 END
 
