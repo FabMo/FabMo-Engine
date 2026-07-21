@@ -17,13 +17,13 @@ VN,0                                                                            
 SF,0                                                                            ' ## functional??? Turn off table limits
 &u = %(25)
 &debug = 0 
-JS, $xyJogUU[&u], $zJogUU[&u]                                                   ' Set Jog speeds
+JS, $xyJogUU[&u], $zJogUU[&u]                                                   ' Set Jog speeds.
 
 
 ' === Main =========================================================================
 PAUSE "How many positions exist on your toolbar" &count                         ' Maybe user does not want to use all 7 positions...so give them a choice
 $ATC.numClips = &count                                                          ' Update ATC settings based on user selection
-J2, $firstClipUU[&u].x - %(7), $firstClipUU[&u].y - %(8)                        ' Jog to known first clip location. Offset by table base coordinates
+J2, $firstClipUU[&u].x - %(7) - $sb_homeOffUU[&u].x, $firstClipUU[&u].y - %(8) - $sb_homeOffUU[&u].y                       ' Jog to known first clip location. Offset by table base coordinates
 PAUSE "Insert an empty tool holder in the spindle (no collet or nut)... (M-0051)"
 PAUSE "...Insert an empty tool holder upside down in the #1 clip (no collet or nut)... (M-0052)"
 PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 and the other end on the fixed z zero plate. Click OK when ready to proceed! (M-0055)"
@@ -69,10 +69,10 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     JY, &RIGHTSTART + $smallBackOffUU[&u]                                        ' Break contact between tool holders
     JZ, %(3) + $safe_liftUU[&u]                                                  ' Lift up clear of the tool holder
     &CENTER_Y = &LEFTSTART + ((&RIGHTSTART - &LEFTSTART) / 2)                    ' Calculate center position in Y axis
-    J2, $firstClipUU[&u].x - $TOOL_OFFSETUU[&u] - %(7), &CENTER_Y                ' Jog in front of tool holder
+    J2, $firstClipUU[&u].x - $TOOL_OFFSETUU[&u] - %(7) - $sb_homeOffUU[&u].x, &CENTER_Y                ' Jog in front of tool holder
     JZ, &alignment_height                                                        ' Drop down to prepare for probe
-    &check = $firstClipUU[&u].x - %(7)                                           ' Calculate max distance for X probe
-    PX, $firstClipUU[&u].x - %(7), $xySlowUU[&u], $sb_zZeroNum                   ' Probe in X to find inverted tool holder
+    &check = $firstClipUU[&u].x - %(7) -$sb_homeOffUU[&u].x                                           ' Calculate max distance for X probe
+    PX, $firstClipUU[&u].x - %(7) - $sb_homeOffUU[&u].x, $xySlowUU[&u], $sb_zZeroNum                   ' Probe in X to find inverted tool holder
       'IF &Debug = 1 THEN PAUSE "Press OK"
       'IF %(1) >= &check THEN MX,%(1) - $smallBackOffUU[&u]                       ' If we went too far without contact -- first back off in case we crashed
     IF %(1) >= &check THEN GOSUB CONTACT_ERROR
@@ -85,8 +85,8 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     JZ, %(3) + $safe_liftUU[&u]                                                  ' Lift up clear of tool holder
     JX, &CENTER_X                                                                ' Move to center of tool holder to demonstrate that we've calculated the correct position
 
-    &center_X = &center_X - $sb_homeOffUU[&u].x                                  ' Clean offsets for storage
-    &center_Y = &center_Y - $sb_homeOffUU[&u].y
+    &center_X = &center_X + $sb_homeOffUU[&u].x                                  ' Clean offsets for storage
+    &center_Y = &center_Y + $sb_homeOffUU[&u].y
     &thisZ = &Z_clipbase + %(9)
 
     '--------------------------------------------

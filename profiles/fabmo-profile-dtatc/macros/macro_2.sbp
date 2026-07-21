@@ -58,8 +58,8 @@ find_z_zero_plate:                                                   ' Now probe
     $sb_current_cutter_ZoffsetUU[] = &target_ck - $sb_zPlateThickUU[&u]    ' RECORD as persistent variable: offset of this cutter to the material
 
     SET_Z:    
-        JZ, ($sb_current_cutter_ZoffsetUU[&u] + $sb_zPlateOffUU[&u]) ' Pull up by offset
-        VA,,,($sb_zPlateOffUU[&u])                                   ' Correct the local Z to the offset
+        JZ, ($sb_current_cutter_ZoffsetUU[&u] + $sb_zPlateOffUU[&u] + $sb_zPlateThickUU[&u]) ' Pull up by offset
+        VA,,,($sb_zPlateOffUU[&u] + $sb_zPlateThickUU[&u])                                   ' Correct the local Z to the offset
         RETURN
 
 finish:
