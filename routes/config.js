@@ -323,6 +323,12 @@ var post_config = function (req, res, next) {
                             };
                             res.json(answer);
                         }
+                        // Request a fresh status report so the position DRO
+                        // refreshes immediately after a config restore/apply
+                        // without the user needing to make a move first.
+                        if (machine && machine.driver && machine.isConnected()) {
+                            machine.driver.requestStatusReport(function () {});
+                        }
                     }
                 });
             }

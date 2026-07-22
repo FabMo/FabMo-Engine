@@ -126,12 +126,30 @@ MachineConfig.prototype.update = function (data, callback, force) {
 
     // Convert internal values for machine that are in length units back and forth between the two unit
     // systems if the unit systems has changed.
+    //
+    // IMPORTANT: Only convert values that were NOT explicitly supplied in `data`.  When a value is
+    // present in the incoming data alongside a units change (e.g. during a full config restore from a
+    // .fmc backup), the supplied value is already in the target unit system and must not be converted
+    // again.  Only cache values that were carried over from the old unit system (i.e. NOT in `data`)
+    // need the multiplier applied.
     if (current_units && new_units && current_units !== new_units && !isStartupSequence) {
+        // Always record the pre-update unit as last_units so that apply() →
+        // setPreferredUnits() sees a genuine mismatch and syncs G2's gun
+        // register.  Without this, a full config restore where the backup
+        // already has last_units == units (e.g. both "mm") causes
+        // setPreferredUnits to skip the G2 unit change entirely, leaving G2
+        // in the old unit while machine.json reflects the new one.
+        this._cache.last_units = current_units;
+
         var conv = new_units == "mm" ? 25.4 : 1 / 25.4;
+        var incomingEnvelope = (data && data.envelope) ? data.envelope : {};
+        var incomingManual   = (data && data.manual)   ? data.manual   : {};
 
         ["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"].forEach(
             function (key) {
-                this._cache.envelope[key] = round(this._cache.envelope[key] * conv, new_units);
+                if (!(key in incomingEnvelope)) {
+                    this._cache.envelope[key] = round(this._cache.envelope[key] * conv, new_units);
+                }
             }.bind(this)
         );
 
@@ -150,7 +168,9 @@ MachineConfig.prototype.update = function (data, callback, force) {
             "softlimit_cushion",
         ].forEach(
             function (key) {
-                this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);
+                if (!(key in incomingManual)) {
+                    this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);
+                }
             }.bind(this)
         );
     } else if (isStartupSequence) {
