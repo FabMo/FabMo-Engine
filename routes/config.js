@@ -329,6 +329,28 @@ var post_config = function (req, res, next) {
                         if (machine && machine.driver && machine.isConnected()) {
                             machine.driver.requestStatusReport(function () {});
                         }
+                        // If opensbp values were also part of this request,
+                        // setPreferredUnits (called by machine apply above) will
+                        // have re-loaded them via _loadConfig() and then
+                        // unit-converted them -- treating already-correct restored
+                        // mm values as if they were in inches and multiplying by
+                        // 25.4.  Re-apply the original opensbp data now that the
+                        // unit-change chain has fully settled, then reload the
+                        // runtime's in-memory state so it is consistent with disk.
+                        if ("opensbp" in req.params) {
+                            config.opensbp.update(
+                                util.fixJSON(req.params.opensbp),
+                                function (reErr) {
+                                    if (reErr) {
+                                        log.warn("post_config: opensbp re-apply after machine apply failed: " + reErr);
+                                    }
+                                    if (machine.sbp_runtime && typeof machine.sbp_runtime._loadConfig === "function") {
+                                        machine.sbp_runtime._loadConfig();
+                                    }
+                                },
+                                true
+                            );
+                        }
                     }
                 });
             }
