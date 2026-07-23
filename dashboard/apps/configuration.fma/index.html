@@ -221,23 +221,25 @@
           </fieldset>
         </div>
 
-        <!-- MY CUSTOM PROFILE — lives inside the General tab so it
+        <!-- CUSTOM PROFILE — lives inside the General tab so it
              doesn't bleed onto Axes/Inputs/etc. -->
         <div class="row">
           <fieldset>
-            <legend>My Custom Profile</legend>
+            <legend>Custom Profile</legend>
             <div class="large-12 columns">
               <p style="margin-bottom: 10px;">
-                Save the current configuration as a custom profile you can restore later. The
-                most recently saved profile is marked as your Preferred Profile &mdash; if a
-                settings file is ever damaged and the most recent backup can't be used, the
-                machine falls back to the Preferred Profile instead of the factory profile.
+                A "Profile" is made up of your tool's Configuration settings, its Macros (Custom Cuts), and its Apps.
+                You can save the current version of this full setup in a Custom Profile in order to restore exactly the same state later. 
+                This can save you time when you do a software upgrade or make significant changes to your tool's configuration.
+                You can save as many Custom Profiles as you would like. Your preferred Profile (or the most recently saved) will also be
+                be used if your setup becomes corrupted and the current backup can not be used. In this case the 
+                machine will fall back to the your Profile instead of the factory profile.
               </p>
             </div>
             <div class="large-12 columns" style="margin-bottom: 10px;">
               <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <a id="btn-save-default" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Save current settings as custom profile</a>
-                <a id="btn-reset-default" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore machine settings to custom profile</a>
+                <a id="btn-save-default" class="button radius small" title="Save the custom profile to this FabMo tool" style="background-color:rgb(83, 133, 224); margin:0;">Save the current setup as a Custom Profile</a>
+                <a id="btn-reset-default" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore setup from a Custom Profile on tool</a>
               </div>
             </div>
             <div class="large-12 columns" style="margin-bottom: 10px;">
@@ -245,10 +247,10 @@
                 <label style="margin:0; line-height:32px;">Snapshot:</label>
                 <select id="custom-snapshot-select" style="width:200px; margin:0;"></select>
                 <a id="btn-set-preferred" class="button radius small secondary" style="margin:0;">Set as Preferred</a>
-                <a id="btn-download-snapshot" class="button radius small secondary" title="Download selected custom profile" style="margin:0;">Download</a>
-                <a id="btn-upload-snapshot" class="button radius small secondary" title="Upload a custom profile from a .fmsnap.zip" style="margin:0;">Upload</a>
+                <a id="btn-download-snapshot" class="button radius small secondary" title="Download selected custom profile to user device" style="margin:0;">Download</a>
+                <a id="btn-upload-snapshot" class="button radius small secondary" title="Upload a custom profile from a .fmsnap.zip on user device" style="margin:0;">Upload</a>
                 <input type="file" id="upload-snapshot-file" class="hidden" accept=".zip,application/zip">
-                <span style="margin-left:12px; line-height:32px;">Preferred Profile: <span id="current-default-name" style="font-weight: bold;">none</span></span>
+                <span style="margin-left:12px; line-height:24px; font-size:0.75em;">Preferred Profile: <span id="current-default-name" style="font-weight: bold;">none</span></span>
                 <a id="btn-delete-snapshot" class="button radius small alert" title="Delete selected snapshot" style="display:none; margin:0; padding:0 10px;"><i class="fa fa-trash"></i></a>
               </div>
             </div>
@@ -257,27 +259,27 @@
 
             <div class="large-12 columns" style="margin-bottom: 8px;">
               <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <label style="margin:0; line-height:32px; min-width: 200px;">Save/Restore Profile Only:</label>
-                <a id="btn-backup" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Backup current Profile</a>
+                <label style="margin:0; line-height:32px; min-width: 200px;">Save/Restore Configuration Settings Only:</label>
+                <a id="btn-backup" class="button radius small" title="Save to user device" style="background-color:rgb(83, 133, 224); margin:0;">Backup current Configuration Settings</a>
                 <input type="file" id="restore_conf_file" class="hidden" multiple accept=".fmc">
-                <a id="btn-restore" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore saved Profile</a>
+                <a id="btn-restore" class="button radius small" title="Restore from a previously saved configuration on user device" style="background-color:rgb(41, 175, 41); margin:0;">Restore saved Configuration Settings</a>
               </div>
             </div>
             <div class="large-12 columns" style="margin-bottom: 8px;">
               <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <label style="margin:0; line-height:32px; min-width: 200px;">Save/Restore Macros Only:</label>
-                <a id="btn-macros-backup" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Backup current Macros</a>
+                <a id="btn-macros-backup" class="button radius small" title="Save to user device" style="background-color:rgb(83, 133, 224); margin:0;">Backup current Macros</a>
                 <input type="file" id="restore_macros_dir" class="hidden" multiple accept=".zip">
-                <a id="btn-macros-restore" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Restore saved Macros</a>
+                <a id="btn-macros-restore" class="button radius small" title="Restore from a previously saved macros archive on user device" style="background-color:rgb(41, 175, 41); margin:0;">Restore saved Macros</a>
               </div>
             </div>
             <div class="large-12 columns">
               <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <label style="margin:0; line-height:32px; min-width: 200px;">Export/Import Job History:</label>
-                <a id="btn-history-export" class="button radius small" style="background-color:rgb(83, 133, 224); margin:0;">Export Job History</a>
+                <a id="btn-history-export" class="button radius small" title="Save to user device" style="background-color:rgb(83, 133, 224); margin:0;">Export Job History</a>
                 <input type="file" id="history-import-file" class="hidden" accept=".zip,application/zip">
-                <a id="btn-history-import" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;">Import Job History</a>
-                <span style="font-size:12px; color:#888;">(includes cut files; may be large)</span>
+                <a id="btn-history-import" class="button radius small" title="Restore from a previously saved job history archive on user device" style="background-color:rgb(41, 175, 41); margin:0;">Import Job History</a>
+                <span style="font-size:12px; color:#888;">(includes cutting files; may be large)</span>
               </div>
             </div>
           </fieldset>
