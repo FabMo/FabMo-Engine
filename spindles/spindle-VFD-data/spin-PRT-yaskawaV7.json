@@ -1,0 +1,37 @@
+{
+  "VFD_Settings": {
+    "Name": "spin-PRT-yaskawaV7",
+    "COM_PORT": "/dev/vfdACM_controller1",
+    "MB_ADDRESS": 1,
+    "PROBE_ADDRESSES": [1, 2],
+    "BAUDRATE": 9600,
+    "BYTESIZE": 8,
+    "STOPBITS": 1,
+    "PARITY": "none",
+    "PROBE_PARITIES": ["none", "even"],
+    "MAX_RPM": 18000,
+    "MIN_RPM": 6000,
+    "Registers": {
+      "READ_FREQUENCY": 35,
+      "READ_ATTAINED_FREQUENCY": 36,
+      "READ_OUTPUT_CURRENT": 37,
+      "READ_STATUS": 32,
+      "TRIG_READ_FREQ": 35,
+      "SET_FREQUENCY": 2,
+      "ENTER_REGISTER": null,
+      "SIGNATURE_REGISTER": 267,
+      "READ_RATED_CURRENT": 292,
+      "RATED_CURRENT_SCALE": 10,
+      "RPM_MULT": 6,
+      "READ_AMPS_HI": false,
+      "AMP_MULT": 10,
+      "UNLOCK_PARAMETERS": null,
+      "PASSWORD": 0
+    },
+    "Modbus_Function_Codes": {
+      "READ_REGISTER": 3,
+      "WRITE_SINGLE_REGISTER": 16
+    },
+    "READ_LENGTH": 3
+  }
+}

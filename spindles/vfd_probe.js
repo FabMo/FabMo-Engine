@@ -25,7 +25,8 @@ const SETTINGS_PATH = path.join(__dirname, "spindle1_settings.json");
 // add its name here.
 const PROBE_ORDER = [
     "spin-DT-1hp-delta",     // Delta DT/MS300 — 0x2100-range registers, distinct from Lenze/Yaskawa
-    "spin-PRS5-yaskawaD",    // Yaskawa V1000 — low register set, FC16 writes
+    "spin-PRS5-yaskawaD",    // Yaskawa V1000 — low register set, FC16 writes; signature reg 77 rejects a V7
+    "spin-PRT-yaskawaV7",    // Yaskawa V7/V7-4X — same low register set as V1000, factory no-parity; must come after V1000
     "spin-DT-1hp-lenze",     // Lenze SMVector — low register set
 ];
 
@@ -68,6 +69,40 @@ async function tryTemplate(ttyPath, templateName, address, parity) {
         const res = await client.readHoldingRegisters(s.Registers.TRIG_READ_FREQ, s.READ_LENGTH || 1);
         if (res && Array.isArray(res.data) && res.data.length > 0) {
             log.info(`Probe: ${templateName} responded at addr ${addr} parity ${par} with ${res.data.length} registers: [${res.data.join(", ")}]`);
+
+            // A successful TRIG read alone can false-match: some foreign drives
+            // answer reads in another template's register range instead of
+            // Modbus-exceptioning (e.g. both Yaskawa V7 and V1000 serve the
+            // 0x0020 monitor area). Two-layer defense:
+            //
+            // 1. If the template defines a SIGNATURE_REGISTER, read it and
+            //    require non-zero data. The signature is chosen per-template
+            //    to exception or read zero on look-alike drives (V1000: reg 77
+            //    drive capacity, which a V7 rejects; V7: reg 267 = n011 max
+            //    frequency, never zero on a real V7). When a signature is
+            //    defined, TRIG content is NOT validated — a stopped drive may
+            //    legitimately read all zeros there.
+            // 2. Without a signature, reject an all-zero TRIG response as a
+            //    likely foreign drive.
+            const sigReg = s.Registers.SIGNATURE_REGISTER;
+            if (sigReg != null) {
+                try {
+                    const sig = await client.readHoldingRegisters(sigReg, s.Registers.SIGNATURE_LENGTH || 1);
+                    if (sig && Array.isArray(sig.data) && sig.data.some(v => v !== 0)) {
+                        log.info(`Probe: ${templateName} signature reg ${sigReg} confirmed: [${sig.data.join(", ")}]`);
+                        return tpl;
+                    }
+                    log.info(`Probe: ${templateName} signature reg ${sigReg} read all-zero — rejecting match`);
+                    return null;
+                } catch (sigErr) {
+                    log.info(`Probe: ${templateName} signature reg ${sigReg} failed (${sigErr.message}) — rejecting match`);
+                    return null;
+                }
+            }
+            if (!res.data.some(v => v !== 0)) {
+                log.info(`Probe: ${templateName} TRIG read all-zero and no signature register — rejecting match`);
+                return null;
+            }
             return tpl;
         }
         log.info(`Probe: ${templateName} addr ${addr} parity ${par} read returned no data`);
