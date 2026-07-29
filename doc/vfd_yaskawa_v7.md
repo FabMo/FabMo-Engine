@@ -20,37 +20,49 @@ All register numbers below were verified live against a V7-4X on the bench
 | Param | Value | Meaning |
 |-------|-------|---------|
 | n003  | 1     | Run source = control terminals (ShopBot run/stop relay) |
-| n004  | 6     | Frequency source = MEMOBUS communication (verified: monitor follows register 0x0002 immediately after setting this) |
-| n152  | 0     | MEMOBUS frequency units = 0.1 Hz (factory default; the template's RPM_MULT=6 depends on this) |
+| n004  | 1     | Frequency source = preset reference 1 (n024) — FabMo writes n024 over MEMOBUS, same scheme the legacy ShopBot speed-control software used |
+| n152  | 1     | MEMOBUS monitor frequency units = 0.01 Hz, matching n024's native unit (verified to take effect immediately, no power cycle; the template's RPM_MULT=0.6 depends on this) |
 | n153  | 1     | Slave address |
 | n154  | 2     | 9600 baud |
 | n155  | 2     | No parity |
 
-Comm parameter (n15x) changes may require a power cycle to take effect.
+Address/baud/parity (n153–n155) changes may require a power cycle to take
+effect; n152 applies immediately.
+
+**Do NOT set n004=6 (communication frequency source).** It works while the
+engine is polling, but the V7's MEMOBUS timeout watchdog (n151, default:
+fault + stop after ~2 s of comm silence) then raises a CE fault whenever
+FabMo restarts or the Pi reboots, and the latched fault blocks the terminal
+run signal until reset. Observed on the bench 2026-07-29. With n004=1 the
+drive tolerates comm gaps exactly like it did under the legacy software.
 
 ## Register map used by the template
 
 | Register | Hex | Use | Units |
 |----------|-----|-----|-------|
-| 2   | 0x0002 | SET_FREQUENCY (comm frequency reference) | 0.1 Hz (per n152=0) |
+| 280 | 0x0118 | SET_FREQUENCY (n024, preset reference 1 — the active reference with n004=1) | 0.01 Hz (fixed, regardless of n152) |
 | 32  | 0x0020 | READ_STATUS (unit status word) | bitfield |
-| 35  | 0x0023 | TRIG_READ_FREQ / READ_FREQUENCY (freq ref monitor) | 0.1 Hz |
-| 36  | 0x0024 | READ_ATTAINED_FREQUENCY (output frequency) | 0.1 Hz |
+| 35  | 0x0023 | TRIG_READ_FREQ / READ_FREQUENCY (freq ref monitor) | 0.01 Hz (per n152=1) |
+| 36  | 0x0024 | READ_ATTAINED_FREQUENCY (output frequency) | 0.01 Hz (per n152=1) |
 | 37  | 0x0025 | READ_OUTPUT_CURRENT (output current) | 0.1 A |
 | 267 | 0x010B | SIGNATURE_REGISTER (n011 max frequency — always non-zero on a V7; V1000 exceptions here are irrelevant because V1000 is probed first with its own signature) | 0.1 Hz |
 | 292 | 0x0124 | READ_RATED_CURRENT (n036 motor rated current) | 0.1 A |
 
-Parameter registers are `0x0100 + n###` (e.g. n011 → 0x010B, n036 → 0x0124).
+Parameter registers are `0x0100 + n###` (e.g. n011 → 0x010B, n024 → 0x0118,
+n036 → 0x0124).
 
-`RPM_MULT = 6`: 2-pole 300 Hz/18,000 RPM spindle with 0.1 Hz registers →
-RPM = reg × 6 on reads, reg = RPM ÷ 6 on writes. Same multiplier both
-directions because n152=0 puts the comm reference and the monitors in the
-same 0.1 Hz unit.
+`RPM_MULT = 0.6`: 2-pole spindle (RPM = Hz × 60) with 0.01 Hz registers →
+RPM = reg × 0.6 on reads, reg = RPM ÷ 0.6 on writes (18,000 RPM → 30000 =
+300.00 Hz). n024's register unit is fixed at 0.01 Hz, so **writes are
+correct even on a factory drive that still has n152=0** — only the monitor
+readback (dashboard RPM display) is off by ×10 until n152 is set to 1.
 
-Writes to the comm frequency reference (0x0002) take effect immediately and
-need **no ENTER command** (`ENTER_REGISTER: null`) and touch no EEPROM, so
-per-job speed changes don't wear the drive out. 0x0002 resets to 0 on power
-cycle; FabMo writes the reference before each run, so that's fine.
+MEMOBUS writes to n024 land in RAM, take effect immediately (verified:
+the frequency-reference monitor follows the write with no ENTER command),
+and touch no EEPROM, so per-job speed changes don't wear the drive out
+(`ENTER_REGISTER: null`). On power cycle n024 reverts to its last
+keypad/EEPROM value; FabMo rewrites it on each speed command, so that's
+fine.
 
 ## Probe disambiguation vs Yaskawa V1000
 
