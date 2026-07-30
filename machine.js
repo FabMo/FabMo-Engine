@@ -1528,6 +1528,40 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
 
+    // Refuse missing or zero-length files up front. A power cut shortly
+    // after an upload can leave a zero-length file on disk behind a valid
+    // job record (see util.move) — handing that to a runtime hangs the
+    // machine in "running" with nothing to execute. Fail the job cleanly
+    // and tell the user to re-upload instead.
+    var fileSize = null;
+    try {
+        fileSize = fs.statSync(filename).size;
+    } catch (e) {
+        log.error("_runFile: could not stat file: " + e.message);
+    }
+    if (!fileSize) {
+        var emptyMsg =
+            fileSize === 0
+                ? "This job's file on disk is empty — it was most likely corrupted by a power loss shortly after it was uploaded. Please delete the job and upload the file again."
+                : "This job's file could not be read from disk. Please delete the job and upload the file again.";
+        log.error("_runFile: refused — missing/empty file: " + filename);
+        var failedJob = this.status.job;
+        this.status.job = null;
+        if (failedJob && typeof failedJob.fail === "function") {
+            failedJob.fail(function (err) {
+                if (err) {
+                    log.error("_runFile: error failing job for empty file: " + err);
+                }
+            });
+        }
+        this.info_id += 1;
+        this.status.info = { id: this.info_id, message: emptyMsg };
+        this.disarm();
+        this.setState(this, "idle");
+        this.emit("status", this.status);
+        return;
+    }
+
     // Interlock pre-scan. Both Machine.runFile (direct) and Machine.runNextJob
     // (queue) converge here, so this is the single chokepoint to refuse files
     // that would turn on the spindle while an interlock input is active.

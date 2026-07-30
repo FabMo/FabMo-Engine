@@ -199,6 +199,40 @@ function allowedAppFile(filename) {
     }
 }
 
+// Flush a just-written file's data and its directory entry to physical media.
+// rename() is metadata-only and ext4 flushes data lazily (and its
+// replace-via-rename safety heuristic doesn't apply to renames onto new
+// names), so without this a power cut within ~30s of an upload leaves a
+// zero-length file behind a valid directory entry.
+var syncToDisk = function (dest, cb) {
+    fs.open(dest, "r", function (err, fd) {
+        if (err) {
+            return cb(err);
+        }
+        fs.fsync(fd, function (syncErr) {
+            fs.close(fd, function () {
+                if (syncErr) {
+                    return cb(syncErr);
+                }
+                fs.open(path.dirname(dest), "r", function (dirErr, dirfd) {
+                    if (dirErr) {
+                        log.warn("syncToDisk: could not open directory for fsync: " + dirErr);
+                        return cb(null);
+                    }
+                    fs.fsync(dirfd, function (dirSyncErr) {
+                        fs.close(dirfd, function () {
+                            if (dirSyncErr) {
+                                log.warn("syncToDisk: directory fsync failed: " + dirSyncErr);
+                            }
+                            cb(null);
+                        });
+                    });
+                });
+            });
+        });
+    });
+};
+
 /**
  * Move a file from src to dest, avoiding cross-device rename failures.
  * This method will first try fs.rename and call the supplied callback if it succeeds. Otherwise
@@ -206,6 +240,10 @@ function allowedAppFile(filename) {
  *
  * This might take a little more time than a single fs.rename, but it avoids error when
  * trying to rename files from one device to the other.
+ *
+ * The destination is fsynced (data + directory entry) before the callback
+ * fires, so a caller that records dest in a database afterward can never end
+ * up with a record pointing at unflushed data.
  */
 var move = function (src, dest, cb) {
     var renamePromise = new Promise(function(resolve, reject) {
@@ -221,7 +259,7 @@ var move = function (src, dest, cb) {
     renamePromise.then(
         function () {
             // rename worked
-            return cb(null);
+            return syncToDisk(dest, cb);
         },
         function (err) {
             log.warn("io.move: standard rename failed, trying stream pipe... (" + err + ")");
@@ -232,9 +270,12 @@ var move = function (src, dest, cb) {
 
             is.pipe(os);
 
-            is.on("end", function () {
+            // 'finish' on the write stream (not 'end' on the read stream) —
+            // 'end' fires when reading completes, before the data has
+            // necessarily been handed to the OS on the write side.
+            os.on("finish", function () {
                 fs.unlinkSync(src);
-                cb(null);
+                syncToDisk(dest, cb);
             });
 
             is.on("error", function (err) {
