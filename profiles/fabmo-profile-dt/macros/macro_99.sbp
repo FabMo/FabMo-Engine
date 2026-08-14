@@ -1,0 +1,32 @@
+'!FABMO!name:Manually set new XY Home
+'!FABMO!description:Easily set offset distance from proximity switch for XY home
+'!FABMO!enabled:true
+' Name: Manually set new XY Home
+' Description: Easily set offset distance from proximity switch for XY home (for changing default home position)
+' 2026/8/15
+
+' === Main Program =============
+DIALOG "This Macro will set a new XY Home location for your tool."
+IF &xyHOMED == "true" THEN GOTO Skip_M3
+GOSUB Run_M3
+
+Skip_M3:
+SK "Exit Keypad after you have moved the tool to the the exact location for your new XY Zero (where you want X=0, Y=0)."
+
+$SB_HOMEOFFUU[].X = $SB_HOMEOFFUU[&U].X + %(1)
+$SB_HOMEOFFUU[].Y = $SB_HOMEOFFUU[&U].Y + %(2)
+
+VA,,,,,,, 0, 0
+
+DIALOG "XY Home has been reset to this location!" OKTEXT="OK", CANCELTEXT=FALSE
+
+END
+
+'===============================
+
+
+' --- Primary Subroutines ---                                      
+Run_M3:
+DIALOG "First we will run the M3(C3) Macro to Home the tool."
+C3
+RETURN

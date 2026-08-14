@@ -21,6 +21,8 @@ IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
   IF $sb_dtType == 0 then GOSUB NOT_A_DESKTOP
   IF $sb_dtType > 3 then GOSUB NOT_A_DESKTOP
   
+  ' We SQUARE against the end stops at the end away from the motors because there is less likelihood of binding
+
   PAUSE "This routine will Square Gantry by pushing it into End Stops (loudly). For ATC: remove tool. For all tools: Raise Z if not up. Resume to Continue."
   Z3
   GOSUB clear_z
@@ -38,7 +40,7 @@ IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
       PX, (-1 * $sb_searchDistUU[&u].x), $sb_searchSpeedUU[&u].xy, $sb_proxNum.x
       ZX
       &xmax = %machine.envelope.xmax
-      MY, (&xmax / 2)
+      MX, (&xmax / 2)
       GOSUB square_y_gantry                                                      'here, the axis with 2 motors pushing the X beam
       GOSUB run_C3
   END
@@ -58,7 +60,7 @@ square_y_gantry:
     MY, (-1 * $sb_squaringMoveUU[&u])                                            ' Move Y axis .75 inches past prox switch, which will force it into end stop  
     VA,,0,,,,,,0,,,,                                                             ' Zero Y again so we know where we are at
     VR, %opensbp.xy_maxjerk
-    MY, ($sb_squaringMoveUU[&u] * 5)                                             ' Backoff
+    MY, ($sb_squaringMoveUU[&u] * 2)                                             ' Backoff
     VA,,%machine.envelope.ymax,,,,,,0,,,,
     RETURN
 
@@ -69,12 +71,12 @@ square_x_gantry:
     MX, (-1 * $sb_squaringMoveUU[&u])                                            ' Move Y axis .75 inches past prox switch, which will force it into end stop  
     VA,0,,,,,,0,,,,,                                                             ' Zero Y again so we know where we are at
     VR,%opensbp.xy_maxjerk
-    MX, ($sb_squaringMoveUU[&u] * 5)
+    MX, ($sb_squaringMoveUU[&u] * 4)
     VA,%machine.envelope.xmax,,,,,,0,,,,,
     RETURN
 
 run_C3: 
-    PAUSE "Tool is squared.You should run the Homing Macro now? Press RESUME to HOME; QUIT to Skip."
+    DIALOG "Tool is squared. Now doing the Homing Macro to reset X & Y zero locations!", OKTEXT="OK", CANCELTEXT=FALSE 
   ' * MAYBE Jog the squared axis back near zero in above routines ???
     C3
     RETURN
@@ -84,4 +86,4 @@ no_variables:
     RETURN
 
 NOT_A_DESKTOP:
-    PAUSE "Your tool is not a DESKTOP Type. This squaring routine is not appropriate!"
+    PAUSE "Your tool is not a DESKTOP Type. This squaring routine is not appropriate!", OKTEXT="OK", CANCELTEXT=FALSE

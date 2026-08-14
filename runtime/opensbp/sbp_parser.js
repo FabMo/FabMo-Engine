@@ -1221,7 +1221,7 @@ function peg$parse(input, options) {
   }
 
   function peg$parseboolean() {
-    var s0, s1;
+    var s0, s1, s2, s3;
 
     s0 = peg$currPos;
     s1 = input.substr(peg$currPos, 4);
@@ -1232,10 +1232,27 @@ function peg$parse(input, options) {
       if (peg$silentFails === 0) { peg$fail(peg$e12); }
     }
     if (s1 !== peg$FAILED) {
-      peg$savedPos = s0;
-      s1 = peg$f9();
+      s2 = peg$currPos;
+      peg$silentFails++;
+      s3 = peg$parseidentifier_tail();
+      peg$silentFails--;
+      if (s3 === peg$FAILED) {
+        s2 = undefined;
+      } else {
+        peg$currPos = s2;
+        s2 = peg$FAILED;
+      }
+      if (s2 !== peg$FAILED) {
+        peg$savedPos = s0;
+        s0 = peg$f9();
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
     }
-    s0 = s1;
     if (s0 === peg$FAILED) {
       s0 = peg$currPos;
       s1 = input.substr(peg$currPos, 5);
@@ -1246,10 +1263,27 @@ function peg$parse(input, options) {
         if (peg$silentFails === 0) { peg$fail(peg$e13); }
       }
       if (s1 !== peg$FAILED) {
-        peg$savedPos = s0;
-        s1 = peg$f10();
+        s2 = peg$currPos;
+        peg$silentFails++;
+        s3 = peg$parseidentifier_tail();
+        peg$silentFails--;
+        if (s3 === peg$FAILED) {
+          s2 = undefined;
+        } else {
+          peg$currPos = s2;
+          s2 = peg$FAILED;
+        }
+        if (s2 !== peg$FAILED) {
+          peg$savedPos = s0;
+          s0 = peg$f10();
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
       }
-      s0 = s1;
     }
 
     return s0;
@@ -3306,17 +3340,20 @@ function peg$parse(input, options) {
       if (s0 === peg$FAILED) {
         s0 = peg$parseconstant();
         if (s0 === peg$FAILED) {
-          s0 = peg$parsefloat();
+          s0 = peg$parseboolean();
           if (s0 === peg$FAILED) {
-            s0 = peg$parseinteger();
+            s0 = peg$parsefloat();
             if (s0 === peg$FAILED) {
-              s0 = peg$parsevariable();
+              s0 = peg$parseinteger();
               if (s0 === peg$FAILED) {
-                s0 = peg$parseobject_literal();
+                s0 = peg$parsevariable();
                 if (s0 === peg$FAILED) {
-                  s0 = peg$parsequotedstring();
+                  s0 = peg$parseobject_literal();
                   if (s0 === peg$FAILED) {
-                    s0 = peg$parsebarestring();
+                    s0 = peg$parsequotedstring();
+                    if (s0 === peg$FAILED) {
+                      s0 = peg$parsebarestring();
+                    }
                   }
                 }
               }
