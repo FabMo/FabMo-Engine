@@ -2459,8 +2459,8 @@ SBPRuntime.prototype._roundNumeric = function(value) {
         return value;
     }
     
-    // If it's a string, return as-is
-    if (typeof value === 'string') {
+    // If it's a string or boolean, return as-is
+    if (typeof value === 'string' || typeof value === 'boolean') {
         return value;
     }
     

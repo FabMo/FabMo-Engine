@@ -23,6 +23,7 @@ $sb_proxNum.y            = 3
 $sb_proxNum.z            = 3
 $sb_zZeroNum             = 1
 $sb_proxType             = 0
+$sb_hasZProx             = 1
 
 'Switch Derived System variable number (pre-compute switch "system numbers" needed for switch reads (equals input # + 50)
 $sb_proxCk.x = $sb_proxNum.x + 50

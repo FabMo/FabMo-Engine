@@ -18,9 +18,9 @@ $ATC.type := 0                                                        ' Set ATC.
 ' === Main Program =============
     &zHOMED = false
     ZZ    ' Set current Z location to 0.00 as a known starting point
-    GOSUB backOffProx_if_needed
+    IF $sb_hasZProx = 1 THEN GOSUB backOffProx_if_needed
     GOSUB check_plate_clearance
-    GOSUB first_home_z_toProx
+    IF $sb_hasZProx = 1 THEN GOSUB first_home_z_toProx
     GOSUB find_z_zero_plate
     GOSUB finish
     &zHOMED = true
