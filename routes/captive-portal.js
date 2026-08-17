@@ -62,7 +62,7 @@ module.exports = function (server) {
             }
         }
         
-        log.debug("Path parsing: original=" + path + " endpoint=" + endpoint + " host=" + host);
+        //log.debug("Path parsing: original=" + path + " endpoint=" + endpoint + " host=" + host);
         
         // Check if this is a captive portal endpoint
         var captiveEndpoints = [
