@@ -2,6 +2,18 @@ body {
   overflow: hidden;
 }
 
+/* iOS Safari registers the WebGL canvas touch-hit area while the parent
+   container may still be visibility:hidden, misanchoring the area and
+   causing the canvas to intercept all taps in the parent frame.
+   touch-action:none tells iOS to treat the canvas as the sole gesture
+   target within its bounds, giving other elements back their touches. */
+#preview canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* AR overlay — live MJPEG behind a perspective-warped canvas. */
 .ar-video {
   position: absolute;

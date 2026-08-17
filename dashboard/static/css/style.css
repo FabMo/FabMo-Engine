@@ -1515,7 +1515,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .app-iframe {
 	width: 100%;
 	height: 100%;
-	border:0px;
+	border: 0px;
+	touch-action: manipulation;  /* no double-tap zoom; still forwards touches to iframe content */
 }
 
 #app_menu_container {

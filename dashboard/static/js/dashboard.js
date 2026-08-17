@@ -11,6 +11,11 @@ define(function (require) {
     var toastr = require("./libs/toastr.min.js");
     var context = require("./context.js");
     var modalIsShown = false;
+    // Detect iOS (Safari or Chrome) - needs to be at module level for both handlers
+    var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+                 /CriOS/.test(navigator.userAgent); // Chrome on iOS
+
     var Dashboard = function (target) {
         this.engine = null;
         this.router = null;
@@ -157,42 +162,41 @@ define(function (require) {
     // The events member is a mapping of event type to sources and ids which map back to functions in the client dashboard
     Dashboard.prototype._registerEventListener = function (name, source) {
         if (name in this.events) {
-            listeners = this.events[name];
-            for (var i in listeners) {
-                if (listeners[i] == source) {
-                    return;
-                }
+            // Purge dead contentWindows before adding the new one.
+            // Each app visit adds the iframe's contentWindow; without pruning,
+            // dead windows accumulate and _fireEvent spams iOS with postMessages
+            // into destroyed browsing contexts, corrupting touch-event routing.
+            this.events[name] = this.events[name].filter(function(s) {
+                if (!s) return false;
+                try { return s === source || !s.closed; } catch(e) { return false; }
+            });
+            for (var i in this.events[name]) {
+                if (this.events[name][i] === source) return;
             }
             this.events[name].push(source);
         }
     };
 
     Dashboard.prototype._fireEvent = function (name, data) {
-        //console.log('Dashboard._fireEvent called for:', name, 'with', this.events[name]?.length || 0, 'listeners');
-        
-        if (name in this.events) {
-            listeners = this.events[name];
-            for (var i in listeners) {
-                var source = listeners[i];
-                var msg = {
-                    status: "success",
-                    type: "evt",
-                    id: name,
-                    evt: name,
-                    data: data,
-                };
-                try {
-                    if (source) {
-                        //console.log('Posting', name, 'event to app iframe', i);
-                        source.postMessage(msg, "*");
-                    }
-                } catch (e) {
-                    //console.error('Error posting event to app:', e);
-                }
-            }
-        } else {
-            //console.warn('No event listeners registered for:', name);
+        if (!(name in this.events)) return;
+
+        // Only fire to the currently-active iframe window.
+        // window.closed is false for detached iframes, so the old source
+        // list accumulated dead JobManager/Editor windows that received
+        // repeated postMessages (~250 ms status cadence) and corrupted
+        // iOS WebKit gesture state.  There is only ever one active iframe.
+        var currentIframe = document.getElementById('app-iframe');
+        var currentWindow = currentIframe ? currentIframe.contentWindow : null;
+
+        var alive = [];
+        for (var i in this.events[name]) {
+            var source = this.events[name][i];
+            if (!source || source !== currentWindow) continue;  // skip dead/replaced windows
+            alive.push(source);
+            var msg = { status: "success", type: "evt", id: name, evt: name, data: data };
+            try { source.postMessage(msg, "*"); } catch (e) {}
         }
+        this.events[name] = alive;  // prune dead entries so the list stays clean
     };
 
     Dashboard.prototype._setupMessageListener = function () {
@@ -227,9 +231,17 @@ define(function (require) {
                                         id: cbid,
                                     };
                                 }
-                                if (source) {
-                                    source.postMessage(msg, evt.origin);
-                                }
+                                // Check at callback time (asynchronous) whether source is
+                                // still the active iframe.  For launchApp, the callback fires
+                                // after the new app has loaded — source is already replaced.
+                                // On iOS, postMessage into a dead WKWebView browsing context
+                                // does not throw but silently corrupts the WebKit gesture
+                                // state; the check must happen here (at callback time) not at
+                                // message-receipt time, because navigation is asynchronous.
+                                // For iOS, launchApp already returns early via location.reload()
+                                // so no dead-window callback is ever issued.  For non-iOS,
+                                // posting to a dead window is harmless (no WKWebView IPC).
+                                try { if (source) source.postMessage(msg, evt.origin); } catch(e) {}
                             });
                         } catch (e) {
                             msg = {
@@ -238,9 +250,7 @@ define(function (require) {
                                 message: JSON.stringify(e),
                                 id: id,
                             };
-                            if (source) {
-                                source.postMessage(JSON.stringify(msg), evt.origin);
-                            }
+                            try { if (source) source.postMessage(JSON.stringify(msg), evt.origin); } catch(e) {}
                         }
                     }
                 } else if ("on" in evt.data) {
@@ -1405,6 +1415,23 @@ define(function (require) {
             function (data, callback) {
                 id = data.id;
                 args = data.args || {};
+                // On iOS, SPA iframe-replacement leaves dead WKWebView browsing contexts
+                // whose IPC channels corrupt the gesture-recogniser state regardless of
+                // JS-level guards.  A full page reload is the only reliable escape: iOS
+                // resets all compositing and gesture state on a real navigation.
+                // localStorage is the only storage iOS Safari/Chrome does not clear
+                // during window.location.hash navigation or location.reload().
+                if (_isIOS) {
+                    try {
+                        localStorage.setItem('fabmo_launch', JSON.stringify({id:id, args:args}));
+                    } catch(e) {}
+                    window.location.replace(
+                        window.location.origin + window.location.pathname +
+                        '?_r=' + Date.now() +
+                        '#/app/' + encodeURIComponent(id)
+                    );
+                    return;
+                }
                 this.launchApp(id, args, callback);
             }.bind(this)
         );
@@ -1412,6 +1439,17 @@ define(function (require) {
         this._registerHandler(
             "getAppArgs",
             function (data, callback) {
+                // After an iOS reload, args are in localStorage; current_app_args
+                // is populated by context.launchApp as a fallback for second calls.
+                try {
+                    var _s = localStorage.getItem('fabmo_launch');
+                    if (_s) {
+                        var _p = JSON.parse(_s);
+                        localStorage.removeItem('fabmo_launch');
+                        callback(null, _p.args || {});
+                        return;
+                    }
+                } catch(e) { localStorage.removeItem('fabmo_launch'); }
                 callback(null, context.current_app_args || {});
             }.bind(this)
         );
