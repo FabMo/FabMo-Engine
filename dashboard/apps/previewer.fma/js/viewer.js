@@ -1119,10 +1119,17 @@ module.exports = function(container) {
   // Renderer
   self.renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
   self.renderer.domElement.style.zIndex = 1;
+  // tell iOS the canvas owns all its touch input so it doesn't try to
+  // share them with the parent frame
+  self.renderer.domElement.style.touchAction = 'none';
   container.append(self.renderer.domElement);
 
   self.renderer.setClearColor(0xebebeb);
-  self.renderer.setPixelRatio(window.devicePixelRatio);
+  // Cap pixel ratio at 1 on iOS — Retina 2× doubles GPU surface area and
+  // compounds the memory pressure that causes the iOS UI-freeze bug.
+  var _rendererIsIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  self.renderer.setPixelRatio(_rendererIsIOS ? 1 : window.devicePixelRatio);
 
   self.scene = new THREE.Scene();
 
@@ -1148,7 +1155,7 @@ module.exports = function(container) {
   self.orthographicCamera.position.set(100, 100, 100);
   
   // Initialize view mode from saved preference (default to perspective)
-  var savedView = cookie.get('view-mode', 'perspective');  // Changed from 'fabmo-previewer-view'
+  var savedView = sessionStorage.getItem('preview-view-mode') || 'perspective';
   self.isOrtho = (savedView === 'ortho');
   
   // Set initial camera based on saved preference
@@ -1195,14 +1202,14 @@ module.exports = function(container) {
       },
       zoom: self.camera.zoom
     };
-    cookie.set('view-state', JSON.stringify(viewState));  // Changed from 'fabmo-previewer-view-state'
-    cookie.set('view-mode', viewState.mode);              // Changed from 'fabmo-previewer-view'
+    sessionStorage.setItem('preview-view-state', JSON.stringify(viewState));
+    sessionStorage.setItem('preview-view-mode', viewState.mode);
   };
 
   // Method to restore saved view state
   self.restoreViewState = function() {
     try {
-      var viewStateStr = cookie.get('view-state');  // Changed from 'fabmo-previewer-view-state'
+      var viewStateStr = sessionStorage.getItem('preview-view-state');
       if (!viewStateStr) return false;
       
       var viewState = JSON.parse(viewStateStr);
@@ -1236,7 +1243,6 @@ module.exports = function(container) {
       self.controls.update();
       return true;
     } catch (e) {
-      console.warn('Could not restore view state:', e);
       return false;
     }
   };
@@ -1324,8 +1330,7 @@ module.exports = function(container) {
   });
 
   // Initialize camera position BEFORE path loads
-  // This prevents the "jump" effect
-  var initialViewState = cookie.get('view-state');  // Changed from 'fabmo-previewer-view-state'
+  var initialViewState = sessionStorage.getItem('preview-view-state');
   if (initialViewState) {
     try {
       var parsed = JSON.parse(initialViewState);
@@ -2804,42 +2809,31 @@ module.exports = function(container) {
       }
     }
     
-    // 5. CRITICAL: Force WebGL context loss and dispose renderer
-    if (self.renderer) {
-      // Get the WebGL context
-      var gl = self.renderer.getContext();
-      
-      // Dispose all render targets
-      self.renderer.renderLists.dispose();
-      
-      // Clear any cached programs
-      if (self.renderer.info && self.renderer.info.programs) {
-        self.renderer.info.programs.length = 0;
-      }
-      
-      // Dispose renderer
-      self.renderer.dispose();
-      
-      // FORCE context loss (critical for memory release)
-      if (gl) {
-        var loseContext = gl.getExtension('WEBGL_lose_context');
-        if (loseContext) {
-          loseContext.loseContext();
-        }
-      }
-      
-      // Remove canvas from DOM
-      if (self.renderer.domElement && self.renderer.domElement.parentNode) {
-        self.renderer.domElement.parentNode.removeChild(self.renderer.domElement);
-      }
-      
-      self.renderer = null;
-    }
-    
-    // 6. Cleanup controls
+    // 5. Remove event listeners FIRST so iOS releases native gesture recognisers
+    // while the canvas is still in the document (iOS ignores removeEventListener
+    // on already-detached elements, leaving orphaned gesture recognisers that
+    // corrupt touch routing in the parent frame on every subsequent app load).
     if (self.controls) {
       self.controls.dispose();
       self.controls = null;
+    }
+
+    // 6. Force WebGL context loss and dispose renderer
+    if (self.renderer) {
+      var gl = self.renderer.getContext();
+      self.renderer.renderLists.dispose();
+      if (self.renderer.info && self.renderer.info.programs) {
+        self.renderer.info.programs.length = 0;
+      }
+      self.renderer.dispose();
+      if (gl) {
+        var loseContext = gl.getExtension('WEBGL_lose_context');
+        if (loseContext) loseContext.loseContext();
+      }
+      if (self.renderer.domElement && self.renderer.domElement.parentNode) {
+        self.renderer.domElement.parentNode.removeChild(self.renderer.domElement);
+      }
+      self.renderer = null;
     }
     
     // 7. Null out all references

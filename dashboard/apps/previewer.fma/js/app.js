@@ -815,11 +815,10 @@ function nowPreviewJob() {
     // CRITICAL: Assign to module-level viewer variable
     viewer = new Viewer(preview);
     
-    // IMPORTANT: Add unload handler AFTER viewer is created
-    window.addEventListener('unload', function() {
-        console.log('Window unloading - cleaning up viewer');
-        cleanupBeforeExit();
-    });
+    // pagehide is more reliable than unload on iOS Safari when the parent
+    // frame removes the iframe from the DOM (unload is not guaranteed to fire).
+    window.addEventListener('pagehide', cleanupBeforeExit);
+    window.addEventListener('unload', cleanupBeforeExit);
 
     // Setup grid and table
     viewer.setTable(cached_Config.machine.envelope, cached_Config.driver.g55x, cached_Config.driver.g55y, -1);

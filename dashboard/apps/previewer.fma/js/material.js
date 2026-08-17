@@ -11,11 +11,19 @@ var cookie = require('./cookie');
 module.exports = function(scene, update) {
   var self = this;
 
+  // iOS Safari freezes the JS event loop when allocating the large TypedArrays
+  // needed for 1000-resolution material mesh (~155 MB peak).  Cap to 400 on iOS
+  // so peak memory stays ~4 MB.  Also skip the Web Worker: large ArrayBuffer
+  // transfers via Blob URL workers are unreliable on iOS and unnecessary at low res.
+  var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var _maxResolution = _isIOS ? 400 : 3000;
+
   self.mesh = null;
   self.wireMesh = null;
   self.show = parseInt(cookie.get('show-material', 0));
   self.opacity = parseFloat(cookie.get('material-opacity', 0.5));
-  self.resolution = Math.min(parseInt(cookie.get('material-resolution', 1000)), 3000);
+  self.resolution = Math.min(parseInt(cookie.get('material-resolution', _isIOS ? 400 : 1000)), _maxResolution);
   
   // NEW: Tool settings with defaults
   self.toolType = cookie.get('tool-type', 'flat');
@@ -66,6 +74,7 @@ module.exports = function(scene, update) {
   // response whose jobId matches the most recent dispatch.
   var _workerJobId = 0;
   function ensureWorker() {
+    if (_isIOS) return null;  // large buffer transfers via Blob URL workers hang on iOS
     if (_worker) return _worker;
     if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return null;
     try {
@@ -1517,7 +1526,7 @@ module.exports = function(scene, update) {
    */
   self.setResolution = function(resolution) {
     console.log('Setting resolution to:', resolution);
-    self.resolution = Math.min(parseInt(resolution), 3000);
+    self.resolution = Math.min(parseInt(resolution), _maxResolution);
     cookie.set('material-resolution', self.resolution);
     
     // Reinitialize will call reset() internally

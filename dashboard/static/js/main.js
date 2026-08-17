@@ -2872,12 +2872,13 @@ ping();
 engine.sendTime();
 
 function touchScreen() {
-    if (supportsTouch && window.innerWidth < 800) {
-        $("#app-client-container").css({
-            "-webkit-overflow-scrolling": "touch",
-            "overflow-y": "scroll",
-        });
-    }
+    // Removed: applying overflow-y:scroll + -webkit-overflow-scrolling:touch to
+    // #app-client-container on narrow touch screens created a UIScrollView whose
+    // gesture recogniser competed with the WebGL canvas's non-passive touchstart
+    // listener on iOS. The competition caused iOS to cancel pending tap recognisers
+    // for fixed-position elements (nav bar, keypad icon, DRO) — touchstart still
+    // fired (elements went :active) but click/focus was never synthesised. The
+    // container is overflow:hidden in CSS; the scroll override was fighting that.
 }
 touchScreen();
 
