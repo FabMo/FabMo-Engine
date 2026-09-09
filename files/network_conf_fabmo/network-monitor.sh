@@ -114,15 +114,15 @@ monitor_network() {
                     if ! check_active_profile "$PC_PROFILE"; then
                         bring_down_profile "$LAN_PROFILE"
                         bring_up_profile "$PC_PROFILE"
-                        restart_dnsmasq_if_needed "direct"
                     fi
+                    restart_dnsmasq_if_needed "direct"
                 else
                     log "LAN profile detected. Ensuring LAN profile is active."
                     if ! check_active_profile "$LAN_PROFILE"; then
                         bring_down_profile "$PC_PROFILE"
                         bring_up_profile "$LAN_PROFILE"
-                        restart_dnsmasq_if_needed "lan"
                     fi
+                    restart_dnsmasq_if_needed "lan"
                 fi
                 reset_failure_count
                 ;;
@@ -161,4 +161,7 @@ monitor_network() {
 }
 
 log "Starting network monitor script."
+# Reset to ap-only (safe) mode at startup; monitor loop will switch to direct if needed
+ln -sf /etc/dnsmasq.d/ap-only.conf /etc/dnsmasq.d/active-mode.conf
+sudo systemctl restart dnsmasq
 monitor_network
