@@ -5,6 +5,7 @@
 ' Description: - internal -
 ' Author: Brian Owen, Josh Ayers
 ' 2026/2/27 - Added handling for changing to bit 0 (bo)
+' 2026/8/25/ - initialize &CURRENT_TOOL (th)
 
 '   - Core routine for swapping out tools
 '   - Called by C1(user) and other ATC Macros 
@@ -12,6 +13,7 @@
 ' Initialize ------------------------------------------------------------------------------------------
     &debug = 0    
     &AtNow = "Initialize"
+    &CURRENT_TOOL := 0
     &u = %(25)
     
     CN,75                                                             ' Load primary ATC variables and ck status (calls CN 70)
