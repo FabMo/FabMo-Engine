@@ -661,6 +661,9 @@ engine.getVersion(function (err, version) {
                         adjustModalHeight();
                         console.log("Status: " + status.state + "  Cmd: " + status.currentCmd);
                         if (status.stat === 5 && (status.currentCmd === "goto" || status.currentCmd === "resume")) {
+                            // Once the move is underway, drop the go-to entry state so
+                            // completion falls through to the default keypad view below
+                            in_goto_flag = false;
                             $(".manual-stop").show();
                             $(".go-to, .set-coordinates").hide();
                             keyboard.setEnabled(false);
