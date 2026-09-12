@@ -1531,13 +1531,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 /* ========== FOOTER STYLES ========== */
 /* ========== Bounds pre-check ("Checking...") footer state ========== */
-/* Rich footer state in the same visual language as run/pause: color-coded
-   background (blue = checking, vs yellow = paused), a large centered title
-   with animated dots, an indeterminate pulsing bar, and a Skip/Cancel stack
-   that mirrors the Resume/Quit group's geometry. */
-.footBar.bounds-checking {
-    background-color: #23405c;
-}
+/* Rich footer state in the same visual language as run/pause: the standard
+   footer background, a large centered title with animated dots, an
+   indeterminate pulsing bar, and a Skip/Cancel stack that mirrors the
+   Resume/Quit group's geometry. No new theme colors — the pulse animation
+   alone distinguishes "checking" from a real progress fill. */
 
 /* The normal job controls and numeric readouts make no sense mid-check */
 .footBar.bounds-checking .footer-buttons-container,
@@ -1585,8 +1583,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     75%  { content: "..."; }
 }
 
-/* Indeterminate bar centered below the title; blue fill (not the green
-   progress color) signals "working", pulse instead of a fill percentage */
+/* Indeterminate bar centered below the title; the theme's standard fill
+   green, but pulsing at full width instead of showing a fill percentage */
 .footBar.bounds-checking .load_container {
     position: absolute;
     left: 50%;
@@ -1600,7 +1598,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .footBar.bounds-checking .loading_bar .horizontal_fill {
-    background-color: #3a86c8;
     width: 100% !important;
     animation: bounds-checking-pulse 1.6s ease-in-out infinite;
 }
