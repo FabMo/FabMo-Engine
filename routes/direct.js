@@ -126,6 +126,16 @@ var checkBounds = function (req, res, next) {
     }
     var rtNorm = (rt === "sbp" || rt === "opensbp") ? "sbp" : "gcode";
 
+    // "Enforce Software Limits" (machine.softlimits_on) unchecked → the
+    // envelope isn't being enforced, so the pre-check would only produce
+    // warnings the user has opted out of. Skip the simulation entirely.
+    if (!config.machine.get("softlimits_on")) {
+        return res.json({
+            status: "success",
+            data: { runtime: rtNorm, exceeds: false, violations: [], limitsDisabled: true },
+        });
+    }
+
     bounds.computeStringBounds(cmd, rtNorm, function (err, result) {
         if (err) {
             log.warn("/code/check_bounds: " + err.message);

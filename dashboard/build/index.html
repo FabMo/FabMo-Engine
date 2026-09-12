@@ -642,6 +642,20 @@
           </div>
         </div>
       </div>
+
+      <!-- Bounds pre-check controls: shown only while .footBar has the
+           bounds-checking class (see showCheckingFooter in dashboard.js).
+           Mirrors the Resume/Quit stack's geometry and color language. -->
+      <span class="bounds-check-controls">
+        <div class="but skipCheck">
+          <div>SKIP &nbsp;&nbsp;<i class="fa fa-forward"></i></div>
+          <div class="check-subtext">Run file without checking</div>
+        </div>
+        <div class="but cancelCheck">
+          <div>CANCEL &nbsp;&nbsp;<i class="fa fa-stop"></i></div>
+          <div class="check-subtext">Don't run the file</div>
+        </div>
+      </span>
     </div>
 
     <!-- Canned-cut HUD: shares the manual keypad's visual language — yellow

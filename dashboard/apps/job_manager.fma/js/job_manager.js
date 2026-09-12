@@ -414,6 +414,10 @@ function setFirstCard(job) {
 // { exceeds, violations } or null if inputs are missing.
 function evaluateSoftLimits(jobBounds, cfg) {
   if (!jobBounds || !cfg || !cfg.machine || !cfg.driver) return null;
+  // "Enforce Software Limits" unchecked → the user has opted out of envelope
+  // enforcement, so don't badge jobs against it (matches the server-side
+  // skip in routes/direct.js checkBounds).
+  if (!cfg.machine.softlimits_on) return null;
   var envelope = cfg.machine.envelope;
   if (!envelope) return null;
   var driver = cfg.driver;
@@ -1072,15 +1076,19 @@ function runNext() {
       } else {
         // Not running or paused - start the next job
         //console.log('JobManager: Starting next job');
-        jobLoading = true; 
-//        $('.play').addClass('loading');
-        fabmo.runNext(function(err, data) {
-          if (err) {
-            fabmo.notify('error', err);
-//            $('.play').removeClass('loading');
-            jobLoading = false;
-          }
-        });
+        var startJob = function () {
+          jobLoading = true;
+          fabmo.runNext(function(err, data) {
+            if (err) {
+              fabmo.notify('error', err);
+              jobLoading = false;
+            }
+          });
+        };
+        // Soft-limit checking happens centrally in the dashboard's runNext
+        // handler (and the server backstops /jobs/queue/run), so this just
+        // starts the job.
+        startJob();
       }
     }
   });

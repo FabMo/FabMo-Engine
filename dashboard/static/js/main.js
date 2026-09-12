@@ -730,7 +730,12 @@ engine.getVersion(function (err, version) {
                         }
                         break;
                     default:
-                        dashboard.handlers.hideFooter();
+                        // Keep the footer up while a bounds pre-check is in
+                        // flight — the machine reports idle during the check
+                        // and would otherwise close it immediately.
+                        if (!dashboard.boundsCheckInProgress) {
+                            dashboard.handlers.hideFooter();
+                        }
                         break;
                 }
 

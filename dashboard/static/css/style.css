@@ -1530,6 +1530,150 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 /* ...existing code... */
 
 /* ========== FOOTER STYLES ========== */
+/* ========== Bounds pre-check ("Checking...") footer state ========== */
+/* Rich footer state in the same visual language as run/pause: color-coded
+   background (blue = checking, vs yellow = paused), a large centered title
+   with animated dots, an indeterminate pulsing bar, and a Skip/Cancel stack
+   that mirrors the Resume/Quit group's geometry. */
+.footBar.bounds-checking {
+    background-color: #23405c;
+}
+
+/* The normal job controls and numeric readouts make no sense mid-check */
+.footBar.bounds-checking .footer-buttons-container,
+.footBar.bounds-checking .load_container .elapsed_time,
+.footBar.bounds-checking .load_container .percent_comp,
+.footBar.bounds-checking .load_container .line_number {
+    display: none;
+}
+
+/* Title centered in the upper half — the default .currentContainer is pinned
+   left and clipped to 28% width, which can cut the message off entirely */
+.footBar.bounds-checking .currentContainer {
+    left: 50%;
+    right: auto;
+    top: 38%;
+    transform: translate(-50%, -50%);
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+}
+
+.footBar.bounds-checking .currentJobTitle {
+    text-align: center;
+    white-space: nowrap;
+    font-size: 28px;
+}
+
+/* Fixed-width dot area so the centered message doesn't shift as dots cycle */
+.footBar.bounds-checking .currentJobTitle::after {
+    content: "";
+    display: inline-block;
+    width: 2em;
+    text-align: left;
+    font-size: 34px;
+    font-weight: bold;
+    line-height: 0;
+    vertical-align: baseline;
+    animation: bounds-checking-dots 1.6s steps(1, end) infinite;
+}
+
+@keyframes bounds-checking-dots {
+    0%   { content: ""; }
+    25%  { content: "."; }
+    50%  { content: ".."; }
+    75%  { content: "..."; }
+}
+
+/* Indeterminate bar centered below the title; blue fill (not the green
+   progress color) signals "working", pulse instead of a fill percentage */
+.footBar.bounds-checking .load_container {
+    position: absolute;
+    left: 50%;
+    right: auto;
+    top: 68%;
+    transform: translate(-50%, -50%);
+    width: 38%;
+    margin: 0;
+    padding: 0;
+    float: none;
+}
+
+.footBar.bounds-checking .loading_bar .horizontal_fill {
+    background-color: #3a86c8;
+    width: 100% !important;
+    animation: bounds-checking-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes bounds-checking-pulse {
+    0%, 100% { opacity: 0.25; }
+    50%      { opacity: 0.75; }
+}
+
+/* Skip/Cancel stack — same footprint as the Resume/Quit group, pinned right
+   where the job buttons normally sit */
+.bounds-check-controls {
+    display: none;
+}
+
+.footBar.bounds-checking .bounds-check-controls {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 240px;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.bounds-check-controls .but {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial;
+    color: #ffffff;
+    font-size: 22px;
+    width: 100%;
+    height: 50%;
+    transition: background 0.2s;
+}
+
+.bounds-check-controls .skipCheck {
+    background: #32B433;
+    border: solid #00A600 1px;
+    border-radius: 10px 10px 0 0;
+    margin-bottom: 2px;
+}
+
+.bounds-check-controls .skipCheck:hover {
+    background: #3bcf3c;
+}
+
+.bounds-check-controls .cancelCheck {
+    background: #cc2222;
+    border: solid #a60000 1px;
+    border-radius: 0 0 10px 10px;
+}
+
+.bounds-check-controls .cancelCheck:hover {
+    background: #ff0000;
+}
+
+.bounds-check-controls .check-subtext {
+    font-size: 12px;
+    font-weight: normal;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
 .footBar {
     position: fixed;
     bottom: 0;
