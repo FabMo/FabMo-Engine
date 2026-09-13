@@ -31,6 +31,7 @@ var log = require("./log").logger("machine");
 var config = require("./config");
 var updater = require("./updater");
 var outputPolicy = require("./runtime/output_policy");
+var positionTrigger = require("./runtime/position_trigger");
 var u = require("./util");
 var async = require("async");
 var canQuit = false;
@@ -163,6 +164,11 @@ function Machine(control_path, callback) {
     this.driver.on("error", function (err) {
         log.error(err);
     });
+
+    // Position-based output triggers listen directly on the driver's status
+    // event; registered first so they evaluate ahead of the heavier status
+    // fan-out below.
+    positionTrigger.init(this);
 
     // Create runtimes up front so they exist even before G2 connects.
     // This allows the engine startup sequence to proceed (web server, etc.)

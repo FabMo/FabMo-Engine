@@ -470,12 +470,14 @@ var OUTPUT_HARDCODED = { 1: "Spindle 1", 2: "Spindle 2", 4: "Arm Motion" };
 var ON_MODES = [
     { value: "file_start", label: "File Start" },
     { value: "command", label: "Command" },
-    { value: "timed_after_file_end", label: "Timed after file end" }
+    { value: "timed_after_file_end", label: "Timed after file end" },
+    { value: "position", label: "Position" }
 ];
 var OFF_MODES = [
     { value: "file_end", label: "File End" },
     { value: "command", label: "Command" },
-    { value: "timed_after_file_end", label: "Timed after file end" }
+    { value: "timed_after_file_end", label: "Timed after file end" },
+    { value: "position", label: "Position" }
 ];
 
 function buildOutputFieldset(n) {
@@ -513,6 +515,29 @@ function buildOutputFieldset(n) {
             '<option value="once">Once per cut</option>',
             '<option value="always">Always</option>'
         ].join('');
+        // Position-trigger condition: [above/below] [axis] [value], shown only
+        // while the mode dropdown is set to Position. Value is in working
+        // coordinates (what the DRO reads), current units.
+        var positionRow = [
+            '<div id="machine-outputs-' + n + '-' + side + '_position_row"',
+              ' title="Turn this output ' + sideWord + ' when the axis crosses this position (working coordinates, current units)"',
+              ' style="display:none; margin-top:4px;">',
+              '<select id="machine-outputs-' + n + '-' + side + '_position-side" class="machine-output"',
+                ' style="display:inline-block; width:31%; margin:0 2% 0 0;">',
+                '<option value="below">Below</option>',
+                '<option value="above">Above</option>',
+              '</select>',
+              '<select id="machine-outputs-' + n + '-' + side + '_position-axis" class="machine-output"',
+                ' style="display:inline-block; width:31%; margin:0 2% 0 0;">',
+                ['x','y','z','a','b','c'].map(function (ax) {
+                    return '<option value="' + ax + '">' + ax.toUpperCase() + '</option>';
+                }).join(''),
+              '</select>',
+              '<input type="number" step="any" id="machine-outputs-' + n + '-' + side + '_position-value" class="machine-output"',
+                ' placeholder="position" style="display:inline-block; width:34%; margin:0;">',
+            '</div>'
+        ].join('');
+
         return [
             '<div class="large-4 columns">',
               '<div class="row collapse">',
@@ -521,6 +546,7 @@ function buildOutputFieldset(n) {
                 '</label>',
                 '<input type="number" id="machine-outputs-' + n + '-' + side + '_seconds" min="0" step="0.1"' + secondsCls + lockedAttr +
                   ' placeholder="seconds" style="display:none; margin-top:4px;">',
+                positionRow,
                 '<label style="font-weight:normal; margin-top:4px;">Notify for ' + sideWord,
                   '<select id="machine-outputs-' + n + '-notify_' + side + '"',
                     ' class="machine-output output-notify" data-output="' + n + '" data-side="' + side + '">',
@@ -567,6 +593,8 @@ function syncSecondsVisibility(n, side) {
     var mode = $('#machine-outputs-' + n + '-' + side + '_mode').val();
     var $secs = $('#machine-outputs-' + n + '-' + side + '_seconds');
     $secs.css('display', mode === 'timed_after_file_end' ? '' : 'none');
+    $('#machine-outputs-' + n + '-' + side + '_position_row')
+        .css('display', mode === 'position' ? '' : 'none');
 }
 
 // Show the notification-message input only while its "Notify for ON/OFF"

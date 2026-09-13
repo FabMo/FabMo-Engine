@@ -6,8 +6,12 @@
  *   { "<N>": { label, on_mode, off_mode, on_seconds, off_seconds } }
  *
  * Supported modes (this branch — "input_trigger" reserved for follow-up):
- *   on_mode:  "file_start" | "command" | "timed_after_file_end"
- *   off_mode: "file_end"   | "command" | "timed_after_file_end"
+ *   on_mode:  "file_start" | "command" | "timed_after_file_end" | "position"
+ *   off_mode: "file_end"   | "command" | "timed_after_file_end" | "position"
+ *
+ * "position" mode is enforced by runtime/position_trigger.js (a watcher on
+ * driver status reports, live in any machine state); this module takes no
+ * file-start/file-end action for a side configured as "position".
  *
  * Outputs 1, 2, 4 are hardcoded (Spindle 1, Spindle 2, Arm Motion) and the
  * runtime ignores their policy entirely — their existing behavior in machine.js
