@@ -462,7 +462,7 @@ $('#firmware-input').change(function(evt) {
 
 // Outputs whose behavior is hardcoded — labels are fixed and modes are not
 // user-configurable. The runtime ignores their saved policy entirely (see
-// runtime/output_policy.js HARDCODED). The notify checkboxes are still live
+// runtime/output_policy.js HARDCODED). The notify dropdowns are still live
 // for these outputs: notification is enforced at the SO command, not by the
 // output policy, and the spindle is the primary notify use case.
 var OUTPUT_HARDCODED = { 1: "Spindle 1", 2: "Spindle 2", 4: "Arm Motion" };
@@ -508,6 +508,11 @@ function buildOutputFieldset(n) {
         // Notify controls are never locked — notification is enforced at the
         // SO command in the runtime, independent of the on/off mode policy.
         var sideWord = side === 'on' ? 'ON' : 'OFF';
+        var notifyOpts = [
+            '<option value="never">Never</option>',
+            '<option value="once">Once per cut</option>',
+            '<option value="always">Always</option>'
+        ].join('');
         return [
             '<div class="large-4 columns">',
               '<div class="row collapse">',
@@ -516,11 +521,11 @@ function buildOutputFieldset(n) {
                 '</label>',
                 '<input type="number" id="machine-outputs-' + n + '-' + side + '_seconds" min="0" step="0.1"' + secondsCls + lockedAttr +
                   ' placeholder="seconds" style="display:none; margin-top:4px;">',
-                '<label style="font-weight:normal; margin-top:4px; white-space:nowrap;">',
-                  '<input type="checkbox" id="machine-outputs-' + n + '-notify_' + side + '"',
-                    ' class="machine-output output-notify" data-output="' + n + '" data-side="' + side + '"',
-                    ' style="margin:0 4px 0 0; vertical-align:middle;">',
-                  'Notify for ' + sideWord,
+                '<label style="font-weight:normal; margin-top:4px;">Notify for ' + sideWord,
+                  '<select id="machine-outputs-' + n + '-notify_' + side + '"',
+                    ' class="machine-output output-notify" data-output="' + n + '" data-side="' + side + '">',
+                    notifyOpts,
+                  '</select>',
                 '</label>',
                 '<input type="text" id="machine-outputs-' + n + '-notify_' + side + '_message" class="machine-output"',
                   ' placeholder="Notification message" title="Message shown when the file pauses before turning this output ' + sideWord + '"',
@@ -565,11 +570,11 @@ function syncSecondsVisibility(n, side) {
 }
 
 // Show the notification-message input only while its "Notify for ON/OFF"
-// checkbox is checked. Called on init (from update()'s getConfig callback)
-// and on every checkbox change.
+// dropdown is set to something other than "never". Called on init (from
+// update()'s getConfig callback) and on every dropdown change.
 function syncNotifyVisibility(n, side) {
-    var checked = $('#machine-outputs-' + n + '-notify_' + side).prop('checked');
-    $('#machine-outputs-' + n + '-notify_' + side + '_message').css('display', checked ? '' : 'none');
+    var mode = $('#machine-outputs-' + n + '-notify_' + side).val();
+    $('#machine-outputs-' + n + '-notify_' + side + '_message').css('display', mode && mode !== 'never' ? '' : 'none');
 }
 
 function setupOutputsTab() {
@@ -583,9 +588,7 @@ function setupOutputsTab() {
     // setConfig already splits the id by "-" and rebuilds the nested object,
     // so machine-outputs-3-on_mode → { machine: { outputs: { 3: { on_mode: ... } } } }.
     $list.on('change', '.machine-output', function () {
-        // Checkboxes (the notify toggles) save their checked state, not .value.
-        var value = this.type === 'checkbox' ? this.checked : this.value;
-        setConfig(this.id, value);
+        setConfig(this.id, this.value);
     });
 
     // Show/hide seconds inputs whenever a mode changes.

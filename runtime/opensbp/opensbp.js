@@ -96,6 +96,9 @@ function SBPRuntime() {
     // whose notify-pause has already been shown, so re-execution after
     // resume drives the output instead of pausing again.
     this._notifiedPC = null;
+    // "Once per cut" bookkeeping: keys ("<n>:on" / "<n>:off") that have
+    // already notified during the current top-level run.
+    this._notifiedOnce = {};
     this.vs_change = 0;
     this.absoluteMode = true;
 
@@ -670,6 +673,7 @@ SBPRuntime.prototype._resetForTopLevelRun = function () {
     this.end_message = undefined;
     this.quit_pending = false;
     this._notifiedPC = null;
+    this._notifiedOnce = {};
 };
 
 // Run a file on disk.
@@ -1030,12 +1034,24 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
     }
 };
 
-// Output-change notification (machine.outputs.<n>.notify_on / notify_off):
-// returns { message } if this SO command's target output is configured to
-// notify for the state it's being set to, else null. Only literal-constant
-// args participate — the stack-break decision has to be made before argument
-// evaluation, so SO with computed args skips notification. Never throws;
-// inert in simulation and when detached from a machine.
+// Normalize a notify_on/notify_off config value to one of the three modes.
+// Legacy boolean/numeric values (early builds of this feature) map onto
+// "always"/"never".
+function soNotifyMode(v) {
+    if (v === "once" || v === "always") return v;
+    if (v === true || v === 1) return "always";
+    return "never";
+}
+
+// Output-change notification (machine.outputs.<n>.notify_on / notify_off,
+// modes "never" | "once" | "always"): returns { message, once, key } if this
+// SO command's target output should notify for the state it's being set to,
+// else null. "once" means once per cut — suppressed if this output+direction
+// already notified during the current top-level run (see _notifiedOnce; the
+// caller records the key when the pause is actually shown). Only literal-
+// constant args participate — the stack-break decision has to be made before
+// argument evaluation, so SO with computed args skips notification. Never
+// throws; inert in simulation and when detached from a machine.
 SBPRuntime.prototype._soNotifyPolicy = function (args) {
     if (!this.machine || this.simulation_mode) return null;
     if (!args || args.length < 2) return null;
@@ -1050,16 +1066,21 @@ SBPRuntime.prototype._soNotifyPolicy = function (args) {
     }
     var p = outputs && outputs[String(n)];
     if (!p) return null;
+
+    var side = state === 1 ? "on" : state === 0 ? "off" : null;
+    if (!side) return null;
+    var mode = soNotifyMode(side === "on" ? p.notify_on : p.notify_off);
+    if (mode === "never") return null;
+
+    var key = n + ":" + side;
+    if (mode === "once" && this._notifiedOnce && this._notifiedOnce[key]) return null;
+
     var label = p.label || "Output " + n;
-    if (state === 1 && p.notify_on) {
-        var onMsg = (p.notify_on_message || "").trim();
-        return { message: onMsg || label + " will turn ON when you resume." };
+    var msg = ((side === "on" ? p.notify_on_message : p.notify_off_message) || "").trim();
+    if (!msg) {
+        msg = label + " will turn " + side.toUpperCase() + " when you resume.";
     }
-    if (state === 0 && p.notify_off) {
-        var offMsg = (p.notify_off_message || "").trim();
-        return { message: offMsg || label + " will turn OFF when you resume." };
-    }
-    return null;
+    return { message: msg, once: mode === "once", key: key };
 };
 
 // Start the stored program running; manage changes
@@ -1971,6 +1992,9 @@ SBPRuntime.prototype._execute = function (command, callback) {
                     var notify = this._soNotifyPolicy(command.args);
                     if (notify) {
                         this._notifiedPC = this.pc;
+                        if (notify.once) {
+                            this._notifiedOnce[notify.key] = true;
+                        }
                         var notifyModal = u.packageModalParams({
                             message: notify.message,
                             input: { name: null, type: null },

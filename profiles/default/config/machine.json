@@ -34,18 +34,18 @@
 		"zmax" : 6
 	},
 	"outputs" : {
-		"1":  { "label": "Spindle 1",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"2":  { "label": "Spindle 2",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"3":  { "label": "Output 3",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"4":  { "label": "Arm Motion",  "on_mode": "file_start", "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"5":  { "label": "Output 5",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"6":  { "label": "Output 6",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"7":  { "label": "Output 7",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"8":  { "label": "Output 8",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"9":  { "label": "Output 9",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"10": { "label": "Output 10",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"11": { "label": "Output 11",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" },
-		"12": { "label": "Output 12",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": false, "notify_off": false, "notify_on_message": "", "notify_off_message": "" }
+		"1":  { "label": "Spindle 1",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"2":  { "label": "Spindle 2",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"3":  { "label": "Output 3",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"4":  { "label": "Arm Motion",  "on_mode": "file_start", "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"5":  { "label": "Output 5",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"6":  { "label": "Output 6",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"7":  { "label": "Output 7",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"8":  { "label": "Output 8",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"9":  { "label": "Output 9",    "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"10": { "label": "Output 10",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"11": { "label": "Output 11",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" },
+		"12": { "label": "Output 12",   "on_mode": "command",    "off_mode": "file_end", "on_seconds": 0, "off_seconds": 0, "notify_on": "never", "notify_off": "never", "notify_on_message": "", "notify_off_message": "" }
 	},
 	"cameraCalibration" : {
 		"corners": {

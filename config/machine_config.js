@@ -89,24 +89,30 @@ MachineConfig.prototype.init = function (machine, callback) {
                         off_mode: "file_end",
                         on_seconds: 0,
                         off_seconds: 0,
-                        notify_on: false,
-                        notify_off: false,
+                        notify_on: "never",
+                        notify_off: "never",
                         notify_on_message: "",
                         notify_off_message: "",
                     };
                 }
             }
-            // Older configs predate the notify fields — backfill so the
-            // Outputs tab renders them and the runtime reads real values.
+            // Older configs predate the notify fields (or hold the early
+            // boolean form) — backfill/normalize to "never"|"once"|"always"
+            // so the Outputs tab renders them and the runtime reads real
+            // values.
+            var normNotify = function (v) {
+                if (v === "once" || v === "always") return v;
+                if (v === true || v === 1) return "always";
+                return "never";
+            };
             if (this._cache && this._cache.outputs) {
                 for (var j = 1; j <= 12; j++) {
                     var out = this._cache.outputs[String(j)];
-                    if (out && !("notify_on" in out)) {
-                        out.notify_on = false;
-                        out.notify_off = false;
-                        out.notify_on_message = "";
-                        out.notify_off_message = "";
-                    }
+                    if (!out) continue;
+                    out.notify_on = normNotify(out.notify_on);
+                    out.notify_off = normNotify(out.notify_off);
+                    if (typeof out.notify_on_message !== "string") out.notify_on_message = "";
+                    if (typeof out.notify_off_message !== "string") out.notify_off_message = "";
                 }
             }
             if (typeof callback === "function") callback(err);
