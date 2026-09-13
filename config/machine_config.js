@@ -96,25 +96,7 @@ MachineConfig.prototype.init = function (machine, callback) {
                     };
                 }
             }
-            // Older configs predate the notify fields (or hold the early
-            // boolean form) — backfill/normalize to "never"|"once"|"always"
-            // so the Outputs tab renders them and the runtime reads real
-            // values.
-            var normNotify = function (v) {
-                if (v === "once" || v === "always") return v;
-                if (v === true || v === 1) return "always";
-                return "never";
-            };
-            if (this._cache && this._cache.outputs) {
-                for (var j = 1; j <= 12; j++) {
-                    var out = this._cache.outputs[String(j)];
-                    if (!out) continue;
-                    out.notify_on = normNotify(out.notify_on);
-                    out.notify_off = normNotify(out.notify_off);
-                    if (typeof out.notify_on_message !== "string") out.notify_on_message = "";
-                    if (typeof out.notify_off_message !== "string") out.notify_off_message = "";
-                }
-            }
+            this._normalizeOutputNotify();
             if (typeof callback === "function") callback(err);
         }.bind(this)
     );
@@ -126,10 +108,33 @@ function round(number, units) {
     return Math.round(number * decimals) / decimals;
 }
 
+// Normalize the per-output notify fields (machine.outputs.<n>.notify_on/
+// notify_off + *_message). Called at init (older configs predate the fields
+// or hold the early boolean form) and after every update (the /config route
+// runs values through util.fixJSON, whose Number() coercion turns a cleared
+// text field — "" — into 0).
+MachineConfig.prototype._normalizeOutputNotify = function () {
+    if (!this._cache || !this._cache.outputs) return;
+    var normNotify = function (v) {
+        if (v === "once" || v === "always") return v;
+        if (v === true || v === 1) return "always";
+        return "never";
+    };
+    for (var j = 1; j <= 12; j++) {
+        var out = this._cache.outputs[String(j)];
+        if (!out) continue;
+        out.notify_on = normNotify(out.notify_on);
+        out.notify_off = normNotify(out.notify_off);
+        if (typeof out.notify_on_message !== "string") out.notify_on_message = "";
+        if (typeof out.notify_off_message !== "string") out.notify_off_message = "";
+    }
+};
+
 MachineConfig.prototype.update = function (data, callback, force) {
     var current_units = this.get("units"); // Get BEFORE extending cache
     try {
         u.extend(this._cache, data, force);
+        this._normalizeOutputNotify();
     } catch (e) {
         return callback(e);
     }
