@@ -1699,6 +1699,17 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                             // [We should be in some state other than idle, but allow redundancy
                             // ... for a few cases such as coming out of probing on Stop input]
                             log.debug("... otherwise send final lines from machine");
+                            // Spindle off at idle must be explicit and immediate. M30's own
+                            // spindle_stop is queued in G2's planner (_exec_program_finalize) and
+                            // executes ~2s later — and a new job started inside that window
+                            // flushes it, carrying a live spindle into the next file. gc:"m5"
+                            // clears G2's spindle model synchronously (so spph can't resume it);
+                            // the direct out writes drop the physical outputs without waiting on
+                            // the queue. out2 (Spindle 2) has no M30 semantics at all and would
+                            // otherwise stay on indefinitely.
+                            this.driver.command({ gc: "m5" });
+                            this.driver.command({ out1: 0 });
+                            this.driver.command({ out2: 0 });
                             this.driver.command({ out4: 0 }); // Permissive relay
                             outputPolicy.onFileEnd(this); // Configurable per-output file-end policy (skips 1/2/4)
                             this.driver.command({ gc: "m30" }); // Generate End
