@@ -89,7 +89,24 @@ MachineConfig.prototype.init = function (machine, callback) {
                         off_mode: "file_end",
                         on_seconds: 0,
                         off_seconds: 0,
+                        notify_on: false,
+                        notify_off: false,
+                        notify_on_message: "",
+                        notify_off_message: "",
                     };
+                }
+            }
+            // Older configs predate the notify fields — backfill so the
+            // Outputs tab renders them and the runtime reads real values.
+            if (this._cache && this._cache.outputs) {
+                for (var j = 1; j <= 12; j++) {
+                    var out = this._cache.outputs[String(j)];
+                    if (out && !("notify_on" in out)) {
+                        out.notify_on = false;
+                        out.notify_off = false;
+                        out.notify_on_message = "";
+                        out.notify_off_message = "";
+                    }
                 }
             }
             if (typeof callback === "function") callback(err);

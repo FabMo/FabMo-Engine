@@ -168,6 +168,10 @@ function update() {
       // external config change refresh visibility correctly.
       if (typeof syncSecondsVisibility === 'function') {
         for (var nOut = 1; nOut <= 12; nOut++) {
+          // Notify visibility syncs for every output — the notify controls
+          // are live even on the hardcoded outputs (spindles, arm motion).
+          syncNotifyVisibility(nOut, 'on');
+          syncNotifyVisibility(nOut, 'off');
           if (OUTPUT_HARDCODED[nOut]) continue;
           syncSecondsVisibility(nOut, 'on');
           syncSecondsVisibility(nOut, 'off');
@@ -458,7 +462,9 @@ $('#firmware-input').change(function(evt) {
 
 // Outputs whose behavior is hardcoded — labels are fixed and modes are not
 // user-configurable. The runtime ignores their saved policy entirely (see
-// runtime/output_policy.js HARDCODED).
+// runtime/output_policy.js HARDCODED). The notify checkboxes are still live
+// for these outputs: notification is enforced at the SO command, not by the
+// output policy, and the spindle is the primary notify use case.
 var OUTPUT_HARDCODED = { 1: "Spindle 1", 2: "Spindle 2", 4: "Arm Motion" };
 
 var ON_MODES = [
@@ -499,6 +505,9 @@ function buildOutputFieldset(n) {
         var lockedAttr = isLocked ? ' disabled' : '';
         var selectCls = isLocked ? '' : ' class="machine-output output-mode" data-side="' + side + '" data-output="' + n + '"';
         var secondsCls = isLocked ? '' : ' class="machine-output output-seconds"';
+        // Notify controls are never locked — notification is enforced at the
+        // SO command in the runtime, independent of the on/off mode policy.
+        var sideWord = side === 'on' ? 'ON' : 'OFF';
         return [
             '<div class="large-4 columns">',
               '<div class="row collapse">',
@@ -507,6 +516,15 @@ function buildOutputFieldset(n) {
                 '</label>',
                 '<input type="number" id="machine-outputs-' + n + '-' + side + '_seconds" min="0" step="0.1"' + secondsCls + lockedAttr +
                   ' placeholder="seconds" style="display:none; margin-top:4px;">',
+                '<label style="font-weight:normal; margin-top:4px; white-space:nowrap;">',
+                  '<input type="checkbox" id="machine-outputs-' + n + '-notify_' + side + '"',
+                    ' class="machine-output output-notify" data-output="' + n + '" data-side="' + side + '"',
+                    ' style="margin:0 4px 0 0; vertical-align:middle;">',
+                  'Notify for ' + sideWord,
+                '</label>',
+                '<input type="text" id="machine-outputs-' + n + '-notify_' + side + '_message" class="machine-output"',
+                  ' placeholder="Notification message" title="Message shown when the file pauses before turning this output ' + sideWord + '"',
+                  ' style="display:none; margin-top:4px; height:1.8em;">',
               '</div>',
             '</div>'
         ].join('');
@@ -546,6 +564,14 @@ function syncSecondsVisibility(n, side) {
     $secs.css('display', mode === 'timed_after_file_end' ? '' : 'none');
 }
 
+// Show the notification-message input only while its "Notify for ON/OFF"
+// checkbox is checked. Called on init (from update()'s getConfig callback)
+// and on every checkbox change.
+function syncNotifyVisibility(n, side) {
+    var checked = $('#machine-outputs-' + n + '-notify_' + side).prop('checked');
+    $('#machine-outputs-' + n + '-notify_' + side + '_message').css('display', checked ? '' : 'none');
+}
+
 function setupOutputsTab() {
     var $list = $('#outputs-list');
     if (!$list.length) return;
@@ -557,7 +583,9 @@ function setupOutputsTab() {
     // setConfig already splits the id by "-" and rebuilds the nested object,
     // so machine-outputs-3-on_mode → { machine: { outputs: { 3: { on_mode: ... } } } }.
     $list.on('change', '.machine-output', function () {
-        setConfig(this.id, this.value);
+        // Checkboxes (the notify toggles) save their checked state, not .value.
+        var value = this.type === 'checkbox' ? this.checked : this.value;
+        setConfig(this.id, value);
     });
 
     // Show/hide seconds inputs whenever a mode changes.
@@ -565,6 +593,13 @@ function setupOutputsTab() {
         var n = $(this).data('output');
         var side = $(this).data('side');
         syncSecondsVisibility(n, side);
+    });
+
+    // Show/hide notification message inputs whenever a notify checkbox changes.
+    $list.on('change', '.output-notify', function () {
+        var n = $(this).data('output');
+        var side = $(this).data('side');
+        syncNotifyVisibility(n, side);
     });
 
     // Toggle button: send SO,N,<opposite-of-current-state>. The SO command is

@@ -92,6 +92,10 @@ function SBPRuntime() {
     this.resumeAllowed = true;
     this.lastNoZPullup = 0;
     this.continue_callback = null;
+    // One-shot latch for output-change notification: pc of the SO command
+    // whose notify-pause has already been shown, so re-execution after
+    // resume drives the output instead of pausing again.
+    this._notifiedPC = null;
     this.vs_change = 0;
     this.absoluteMode = true;
 
@@ -665,6 +669,7 @@ SBPRuntime.prototype._resetForTopLevelRun = function () {
     this.resumeAllowed = true;
     this.end_message = undefined;
     this.quit_pending = false;
+    this._notifiedPC = null;
 };
 
 // Run a file on disk.
@@ -930,6 +935,13 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
                     return true;
                 }
             }
+            // An SO command targeting an output configured with "Notify for
+            // ON/OFF" breaks the stack: the machine must come to a stop before
+            // we pause and show the notification modal (see case "cmd" in
+            // _execute).
+            if (name === "SO" && this._soNotifyPolicy(cmd.args)) {
+                return true;
+            }
             // Check if the command itself contains any expressions that break the stack
             if (cmd.args) {
                 for (i = 0; i < cmd.args.length; i++) {
@@ -1016,6 +1028,38 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
     } else {
         return this._exprBreaksStack(expr.left) || this._exprBreaksStack(expr.right);
     }
+};
+
+// Output-change notification (machine.outputs.<n>.notify_on / notify_off):
+// returns { message } if this SO command's target output is configured to
+// notify for the state it's being set to, else null. Only literal-constant
+// args participate — the stack-break decision has to be made before argument
+// evaluation, so SO with computed args skips notification. Never throws;
+// inert in simulation and when detached from a machine.
+SBPRuntime.prototype._soNotifyPolicy = function (args) {
+    if (!this.machine || this.simulation_mode) return null;
+    if (!args || args.length < 2) return null;
+    var n = Number(args[0]);
+    var state = Number(args[1]);
+    if (!isFinite(n) || !isFinite(state)) return null;
+    var outputs;
+    try {
+        outputs = config.machine.get("outputs");
+    } catch (e) {
+        return null;
+    }
+    var p = outputs && outputs[String(n)];
+    if (!p) return null;
+    var label = p.label || "Output " + n;
+    if (state === 1 && p.notify_on) {
+        var onMsg = (p.notify_on_message || "").trim();
+        return { message: onMsg || label + " will turn ON when you resume." };
+    }
+    if (state === 0 && p.notify_off) {
+        var offMsg = (p.notify_off_message || "").trim();
+        return { message: offMsg || label + " will turn OFF when you resume." };
+    }
+    return null;
 };
 
 // Start the stored program running; manage changes
@@ -1914,6 +1958,32 @@ SBPRuntime.prototype._execute = function (command, callback) {
             return false;
 
         case "cmd":
+            // Output-change notification: an SO command whose target output is
+            // configured with "Notify for ON/OFF" pauses with a modal BEFORE
+            // driving the output. _breaksStack returned true for this command,
+            // so the machine is already stopped when we get here. The pc is
+            // NOT advanced: after the user resumes, this same command executes
+            // again, the latch below skips the pause, and the output changes.
+            if (command.cmd === "SO") {
+                if (this._notifiedPC === this.pc) {
+                    this._notifiedPC = null; // resumed — fall through and drive the output
+                } else {
+                    var notify = this._soNotifyPolicy(command.args);
+                    if (notify) {
+                        this._notifiedPC = this.pc;
+                        var notifyModal = u.packageModalParams({
+                            message: notify.message,
+                            input: { name: null, type: null },
+                            okText: null,
+                            cancelText: null,
+                        });
+                        this.paused = true;
+                        this.machine.driver.pause_hold = true;
+                        this.machine.setState(this, "paused", notifyModal);
+                        return true;
+                    }
+                }
+            }
             var broke = this._executeCommand(command, callback);
             if (!broke) {
                 if (callback != undefined) {
