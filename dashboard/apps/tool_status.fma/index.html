@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Status</title>
+    <link rel="stylesheet" href="../../css/font-awesome.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="ts-page">
+
+        <div class="ts-header">
+            <h1>Tool Status</h1>
+            <div class="ts-badges">
+                <span class="ts-badge" id="atc-type-badge">&mdash;</span>
+                <span class="ts-badge ts-state" id="machine-state">&mdash;</span>
+            </div>
+        </div>
+
+        <div class="ts-grid">
+
+            <!-- Current tool -->
+            <div class="ts-card" id="card-current-tool">
+                <div class="ts-card-title">Current Tool</div>
+                <div class="ts-tool-display">
+                    <div class="ts-tool-number" id="current-tool-number">&mdash;</div>
+                    <div class="ts-tool-caption" id="current-tool-caption">unknown</div>
+                </div>
+                <div class="ts-sensors" id="sensor-row">
+                    <div class="ts-sensor" id="sensor-toolbar" style="display:none;">
+                        <span class="ts-led"></span><span class="ts-sensor-label">Toolbar</span>
+                    </div>
+                    <div class="ts-sensor" id="sensor-tool" style="display:none;">
+                        <span class="ts-led"></span><span class="ts-sensor-label">Tool</span>
+                    </div>
+                    <div class="ts-sensor" id="sensor-drawbar" style="display:none;">
+                        <span class="ts-led"></span><span class="ts-sensor-label">Drawbar</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Position / offsets -->
+            <div class="ts-card" id="card-position">
+                <div class="ts-card-title">Position &amp; Offsets <span class="ts-units" id="units-label"></span></div>
+                <table class="ts-postable">
+                    <thead>
+                        <tr><th></th><th>Position</th><th>Offset</th><th>Machine</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td id="mach-x">&mdash;</td></tr>
+                        <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td id="mach-y">&mdash;</td></tr>
+                        <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td id="mach-z">&mdash;</td></tr>
+                    </tbody>
+                </table>
+                <div class="ts-note">Offset = working zero in machine coordinates (G55)</div>
+            </div>
+
+            <!-- ATC rack -->
+            <div class="ts-card ts-card-wide" id="card-rack" style="display:none;">
+                <div class="ts-card-title">Tool Rack <span class="ts-note-inline" id="rack-note">press a tool to change to it</span></div>
+                <div class="ts-rack" id="rack"></div>
+            </div>
+
+            <!-- Commands -->
+            <div class="ts-card ts-card-wide" id="card-commands">
+                <div class="ts-card-title">Commands</div>
+                <div class="ts-commands" id="commands"></div>
+                <div class="ts-note" id="commands-note"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="../../js/libs/jquery.min.js"></script>
+    <script src="../../js/libs/fabmo.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

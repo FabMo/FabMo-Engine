@@ -1,0 +1,124 @@
+/* Tool Status app — compact card layout, no Foundation dependency. */
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: #f4f5f7;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.ts-page { padding: 12px 14px; max-width: 900px; margin: 0 auto; }
+
+.ts-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.ts-header h1 { font-size: 1.25em; margin: 0; font-weight: 600; }
+
+.ts-badges { display: flex; gap: 6px; }
+.ts-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: #dfe4ea;
+    color: #2c3e50;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+.ts-state.idle    { background: #d4efdf; color: #1e6b3a; }
+.ts-state.running { background: #d6eaf8; color: #1a5276; }
+.ts-state.paused  { background: #fdebd0; color: #935116; }
+.ts-state.stopped,
+.ts-state.dead    { background: #fadbd8; color: #922b21; }
+
+.ts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.ts-card {
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+.ts-card-wide { grid-column: 1 / -1; }
+@media (max-width: 640px) { .ts-grid { grid-template-columns: 1fr; } }
+
+.ts-card-title {
+    font-size: 0.8em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+}
+.ts-units { text-transform: none; letter-spacing: 0; }
+.ts-note { font-size: 0.78em; color: #95a5a6; margin-top: 6px; }
+.ts-note-inline { font-weight: 400; text-transform: none; letter-spacing: 0; color: #95a5a6; }
+
+/* Current tool */
+.ts-tool-display { text-align: center; padding: 4px 0 8px; }
+.ts-tool-number { font-size: 3.2em; font-weight: 700; line-height: 1.1; }
+.ts-tool-number.empty { color: #b2bec3; }
+.ts-tool-caption { font-size: 0.85em; color: #7f8c8d; }
+
+.ts-sensors { display: flex; justify-content: center; gap: 14px; border-top: 1px solid #f0f2f4; padding-top: 8px; }
+.ts-sensor { display: flex; align-items: center; gap: 5px; font-size: 0.82em; color: #7f8c8d; }
+.ts-led {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #d5dbdb; border: 1px solid #b8c2c2;
+}
+.ts-led.on { background: #2ecc71; border-color: #27ae60; }
+
+/* Position table */
+.ts-postable { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ts-postable th {
+    font-size: 0.75em; font-weight: 600; color: #95a5a6;
+    text-align: right; padding: 2px 6px;
+}
+.ts-postable td { text-align: right; padding: 3px 6px; font-size: 1.0em; }
+.ts-postable td.ts-axis { font-weight: 700; text-align: left; color: #7f8c8d; }
+
+/* Rack */
+.ts-rack { display: flex; flex-wrap: wrap; gap: 8px; }
+.ts-clip {
+    min-width: 64px;
+    padding: 8px 6px 6px;
+    border: 1px solid #d5dbdb;
+    border-radius: 6px;
+    background: #fafbfc;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+}
+.ts-clip:hover { background: #eef3f7; }
+.ts-clip .ts-clip-num { font-size: 1.3em; font-weight: 700; }
+.ts-clip .ts-clip-len { font-size: 0.72em; color: #95a5a6; margin-top: 2px; }
+.ts-clip.current {
+    border-color: #2980b9;
+    background: #d6eaf8;
+    cursor: default;
+}
+.ts-clip.current .ts-clip-num { color: #1a5276; }
+.ts-clip.disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Commands */
+.ts-commands { display: flex; flex-wrap: wrap; gap: 8px; }
+.ts-cmd {
+    padding: 8px 14px;
+    border: 1px solid #b8c8d4;
+    border-radius: 5px;
+    background: #eef3f7;
+    color: #2c3e50;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ts-cmd:hover { background: #dfeaf2; }
+.ts-cmd:disabled { opacity: 0.5; cursor: not-allowed; }
