@@ -186,7 +186,16 @@ body {
     border-radius: 4px;
     color: #2c3e50;
 }
-.ts-cmd-add { border-style: dashed; background: #fff; color: #7f8c8d; }
+.ts-cmd-add {
+    border-style: dashed;
+    background: #fff;
+    color: #7f8c8d;
+    grid-column: 1 / -1;
+    justify-self: end;
+    width: auto;
+    padding: 4px 10px;
+    font-size: 0.8em;
+}
 .ts-cmd-add:hover { background: #eef3f7; }
 .ts-custom-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
 .ts-custom-row input { flex: 1; height: 1.9em; font-size: 0.95em; padding: 1px 6px; margin: 0; border: 1px solid #d5dbdb; border-radius: 4px; color: #2c3e50; }
