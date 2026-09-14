@@ -28,7 +28,7 @@ exports.createNetworkManager = function (name, callback) {
         nm.platform = PLATFORM;
         if (!name && nm.platform === "raspberry-pi") {
             // eslint-disable-next-line no-unused-vars
-            nm.set_serialnum(function (name) {
+            nm.set_serialnum(function (machine_id) {
                 callback(null, nm);
             });
         } else {

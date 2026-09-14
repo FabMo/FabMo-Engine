@@ -1542,8 +1542,8 @@ define(function (require) {
                 if (err) {
                     callback(err);
                 } else {
-                    var name = result.name || "";
-                    name = "TOOL:  " + name;
+                    var name = result.machine_name || "";
+                    name = "Machine:  " + name;
                     $("#tool-name").text(name);
                     document.title = name || "FabMo Dashboard";
                     callback(null, result);

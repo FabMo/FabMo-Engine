@@ -5,7 +5,8 @@
     "upload_dir" : "/tmp",
     "profile": "Default",
     "engine_id" : null,
-    "name" : null,
+    "machine_id" : null,
+    "machine_name" : null,
 	"password" : "go2fabmo",
     "platform" : "raspberry-pi",
     "network" : {

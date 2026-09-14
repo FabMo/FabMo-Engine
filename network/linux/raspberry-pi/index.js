@@ -31,37 +31,56 @@ var RaspberryPiNetworkManager = function () {
 };
 util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
+// Sanitize a user-supplied name into a valid hostname label (RFC 952/1123).
+function sanitizeHostname(name) {
+    return (name || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .substring(0, 63) || "fabmo";
+}
+
 RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
-    log.info("SETTING FabMo Serial Number from R-Pi and used for default SSID");
-    // We are putting the R-Pi serial number into the FabMo name
-    // ... this will be used as the default name for the FabMo
-    // ... and will be used (with IP) as the default SSID for the FabMo until set by the user.
-    // ... Once defined, it will subsequently be read from the config file.
+    log.info("SETTING FabMo Serial Number from R-Pi for machine_id and SSID");
+    // engine_id = RPi serial with zeros stripped; permanent hardware identifier.
+    // machine_id = "FabMo-" + first-6-chars of engine_id; permanent, never changes.
+    // machine_name = user-friendly name; defaults to machine_id; drives SSID and Avahi .local.
     exec("cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2", function (err, result) {
         if (err) {
-            var name = { name: "fabmo-?" };
-            config.engine.update(name, callback);
+            config.engine.update({ machine_id: "fabmo-unknown" }, callback);
         } else {
-            // Get Serial Number for name and clear out 0's to simplify
             log.debug("At RPI naming from SerialNum - ");
             result = result.split("0").join("").split("\n").join("").trim();
             log.debug("modifiedSerial- " + result);
 
-            // Update both values in a single call, first 6 digits for SSID name
             var trunc_result = result.length > 6 ? result.substring(0, 6) : result;
+            var machine_id = "FabMo-" + trunc_result;
             var updates = {
                 engine_id: result,
-                name: "FabMo-" + trunc_result,
+                machine_id: machine_id,
             };
+            // Default machine_name to machine_id; preserve any name the user has already set
+            if (!config.engine.get("machine_name")) {
+                updates.machine_name = machine_id;
+            }
 
             config.engine.update(updates, function (err) {
                 if (err) {
                     log.error("Failed to update engine config: " + err.message);
-                    callback(err);
-                } else {
-                    log.info("Successfully updated engine_id and name");
-                    callback(null, updates);
+                    return callback(err);
                 }
+                log.info("Updated engine_id, machine_id" + (updates.machine_name ? ", machine_name" : ""));
+                // Set hostname so Avahi advertises <machine_name>.local
+                var initial_name = updates.machine_name || config.engine.get("machine_name") || machine_id;
+                exec("hostnamectl set-hostname " + sanitizeHostname(initial_name), function (hostnameErr) {
+                    if (hostnameErr) {
+                        log.warn("Could not set hostname: " + hostnameErr.message);
+                    } else {
+                        log.info("Hostname set to " + sanitizeHostname(initial_name));
+                    }
+                    callback(null, machine_id);
+                });
             });
         }
     });
@@ -509,8 +528,8 @@ RaspberryPiNetworkManager.prototype.getStatus = function (callback) {
 };
 
 // Set the network identity
-// This sets the hostname, SSID to `name` and the root password/network key to `password`
-//    identity - Object of this format {name : 'thisismyname', password : 'thisismypassword'}
+// Sets machine_name (user-friendly label) and optionally the network password.
+//    identity - Object of this format {name : 'My Tool Name', password : 'mypassword'}
 //               Identity need not contain both values - only the values specified will be changed
 //    callback - Called when identity has been changed or with error if error
 RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) {
@@ -518,15 +537,54 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
         [
             function set_name(callback) {
                 if (identity.name) {
-                    log.info("Setting network name to " + identity.name);
+                    log.info("Setting machine_name to " + identity.name);
+                }
+                callback(null);
+            }.bind(this),
+
+            function set_name_config(callback) {
+                if (identity.name) {
+                    config.engine.set("machine_name", identity.name, callback);
                 } else {
                     callback(null);
                 }
             }.bind(this),
 
-            function set_name_config(callback) {
+            // Update hostname and Avahi .local advertisement whenever machine_name changes
+            function set_hostname(callback) {
                 if (identity.name) {
-                    config.engine.set("name", identity.name, callback);
+                    var h = sanitizeHostname(identity.name);
+                    exec("hostnamectl set-hostname " + h, function (hostnameErr) {
+                        if (hostnameErr) {
+                            log.warn("Could not update hostname: " + hostnameErr.message);
+                            return callback(null);
+                        }
+                        log.info("Hostname updated to " + h);
+                        // Avahi uses its own host-name in avahi-daemon.conf; patch it directly
+                        exec("sed -i 's|^host-name=.*|host-name=" + h + "|' /etc/avahi/avahi-daemon.conf", function (sedErr) {
+                            if (sedErr) log.warn("Could not update avahi-daemon.conf: " + sedErr.message);
+                            exec("systemctl restart avahi-daemon", function (avahiErr) {
+                                if (avahiErr) log.warn("Could not restart avahi-daemon: " + avahiErr.message);
+                                callback(null);
+                            });
+                        });
+                    });
+                } else {
+                    callback(null);
+                }
+            }.bind(this),
+
+            // Update AP SSID to match the new machine_name
+            function update_ssid(callback) {
+                if (identity.name) {
+                    commands.updateSSID(identity.name, function (err, newSsid) {
+                        if (err) {
+                            log.warn("Could not update SSID: " + err.message);
+                        } else if (newSsid) {
+                            log.info("SSID updated to " + newSsid);
+                        }
+                        callback(null); // non-fatal
+                    });
                 } else {
                     callback(null);
                 }
@@ -535,9 +593,8 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
             function set_password(callback) {
                 if (identity.password) {
                     log.info("Setting network password to " + identity.password);
-                } else {
-                    callback(null);
                 }
+                callback(null);
             }.bind(this),
 
             function set_password_config(callback) {

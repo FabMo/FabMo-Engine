@@ -140,7 +140,7 @@ class commands {
                 }
                 console.log(`wlan0_ap brought up: ${stdout}`);
                 // Step 3: Update SSID in NM profile and hostapd.conf before restarting hostapd
-                const machineName = config.engine.get("name") || "fabmoAP";
+                const machineName = config.engine.get("machine_name") || config.engine.get("machine_id") || "fabmoAP";
                 exec("ip -4 addr show eth0 2>/dev/null | grep inet | awk '{print $2}' | cut -d/ -f1", (ipErr, ipStdout) => {
                     const ethIp = (ipStdout || "").trim();
                     const ssid = ethIp ? `${machineName}-LAN@${ethIp}` : `${machineName}-AP@192.168.42.1`;
@@ -182,6 +182,32 @@ class commands {
                 });
             });
         }
+    }
+
+    // Update the AP SSID in NetworkManager and hostapd.conf, restarting hostapd only if it is already running.
+    static updateSSID(name, callback) {
+        exec("ip -4 addr show eth0 2>/dev/null | grep inet | awk '{print $2}' | cut -d/ -f1", (ipErr, ipStdout) => {
+            const ethIp = (ipStdout || "").trim();
+            const ssid = ethIp ? `${name}-LAN@${ethIp}` : `${name}-AP@192.168.42.1`;
+            const truncatedSsid = ssid.substring(0, 32);
+            exec(`nmcli con modify wlan0_ap 802-11-wireless.ssid "${truncatedSsid}"`, (modErr) => {
+                if (modErr) console.warn(`Warning: Could not update NM SSID: ${modErr}`);
+                exec(`sed -i "s|^ssid=.*|ssid=${truncatedSsid}|" /etc/hostapd/hostapd.conf`, (sedErr) => {
+                    if (sedErr) console.warn(`Warning: Could not update hostapd.conf SSID: ${sedErr}`);
+                    // Restart hostapd only when AP mode is configured on
+                    const networkConfig = config.engine.get("network") || {};
+                    const apEnabled = networkConfig.wifi && networkConfig.wifi.enabled;
+                    if (apEnabled) {
+                        exec("systemctl restart hostapd", (hapdErr, hapdStdout, hapdStderr) => {
+                            if (hapdErr) console.error(`Error restarting hostapd: ${hapdStderr}`);
+                            callback(hapdErr || null, truncatedSsid);
+                        });
+                    } else {
+                        callback(null, truncatedSsid);
+                    }
+                });
+            });
+        });
     }
 
     // Join a WiFi network

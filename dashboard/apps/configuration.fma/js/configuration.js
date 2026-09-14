@@ -735,6 +735,7 @@ $(document).ready(function() {
         setConfig(this.id, this.value);
     });
 
+
     $("#machine-auth_required").on('change', function() {
         if ($(this).is(':checked')) {
             $(this).attr('value', 'true');
