@@ -21,11 +21,16 @@
 
 var fabmo = new FabMoDashboard();
 
-// $ATC.Type enum → display label. 0 is the only value with fixed meaning
-// (manual change); other codes identify ATC models. Extend as needed.
+// $ATC.Type enum → display label.
 var ATC_TYPE_LABELS = {
     0: "Manual Tool Change",
-    7: "ATC (DT-MAX)",
+    1: "PRS3 ATC",
+    2: "PRS4 ATC",
+    3: "Desktop ATC",
+    4: "Desktop MAX ATC V1",
+    5: "5-axis",
+    6: "PRS5 ATC",
+    7: "Desktop MAX ATC V2",
 };
 
 var state = {
