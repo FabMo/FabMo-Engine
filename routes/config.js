@@ -456,7 +456,7 @@ const export_history = function (req, res, next) {
 
     var machineName = "";
     try {
-        machineName = (config.engine && config.engine.get && config.engine.get("name")) || "";
+        machineName = (config.engine && config.engine.get && config.engine.get("machine_name")) || "";
     } catch (e) { /* ignore */ }
 
     var manifest = {

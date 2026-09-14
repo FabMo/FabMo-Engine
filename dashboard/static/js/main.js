@@ -228,8 +228,33 @@ $(document).ready(function() {
 
 });
 
+// Show/hide a full-screen blocking overlay while the config-restore question is pending.
+// z-index 2999 sits below the modal system (3000/3001) so the question dialog appears on top.
+function _showConfigRestoreOverlay() {
+    if ($('#config-restore-overlay').length) { return; }
+    $('<div id="config-restore-overlay"><div id="config-restore-overlay-msg">Checking configuration&hellip;</div></div>')
+        .css({
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.55)',
+            zIndex: 2999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'all'
+        })
+        .find('#config-restore-overlay-msg').css({
+            color: '#eee', fontSize: '1.1em', padding: '1em 2em',
+            background: 'rgba(0,0,0,0.6)', borderRadius: '6px'
+        }).end()
+        .appendTo('body');
+}
+function _hideConfigRestoreOverlay() {
+    $('#config-restore-overlay').remove();
+}
+
 function checkForGlobalBackupRestore() {
     // console.log("DEBUG: Global dashboard backup restore check");
+
+    // Block the UI immediately so the user cannot interact before the question is answered
+    _showConfigRestoreOverlay();
 
     // IMPORTANT: Only check for backup restore AFTER user is authenticated
     // This prevents the modal from appearing during login and stealing focus
@@ -261,6 +286,7 @@ function checkForGlobalBackupRestore() {
                         showGlobalBackupRestoreModal(response.data.backup_info);
                     } else {
                         // console.log("DEBUG: No global backup available or should not prompt");
+                        _hideConfigRestoreOverlay();
                         if (response.data.backup_available && !response.data.should_prompt) {
                         // console.log("DEBUG: Backup exists but not showing modal (not from recent auto-profile)");
                         }
@@ -268,6 +294,7 @@ function checkForGlobalBackupRestore() {
                 },
                 error: function(xhr, status, error) {
                     // console.log("DEBUG: Error in global backup status check:", error);
+                    _hideConfigRestoreOverlay();
                 }
             });
         });
@@ -290,6 +317,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
         cancelText: 'Keep the New Config',
         ok: function() {
             // console.log("DEBUG: User chose to restore global backup");
+            _hideConfigRestoreOverlay();
             
             // Show progress message
             dashboard.notification('info', 'Restoring backup... System will restart shortly.');
@@ -322,6 +350,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
         },
         cancel: function() {
             // console.log("DEBUG: User chose to keep current config - cleaning up markers");
+            _hideConfigRestoreOverlay();
             
             // Clean up the marker files so modal doesn't appear again
             $.ajax({

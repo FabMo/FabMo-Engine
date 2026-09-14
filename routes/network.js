@@ -213,13 +213,16 @@ var setNetworkIdentity = function (req, res, next) {
     );
 };
 
-// Retrieve the network ID (but only return the name, not password)
-// This is the AP SSID/Hostname
+// Retrieve the network identity (machine_name, machine_id, engine_id)
 // eslint-disable-next-line no-unused-vars
 function getNetworkIdentity(req, res, next) {
     res.json({
         status: "success",
-        data: { name: config.engine.get("name"), id: config.engine.get("id") },
+        data: {
+            machine_name: config.engine.get("machine_name"),
+            machine_id: config.engine.get("machine_id"),
+            engine_id: config.engine.get("engine_id"),
+        },
     });
 }
 

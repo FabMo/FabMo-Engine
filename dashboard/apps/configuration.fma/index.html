@@ -74,15 +74,14 @@
               <div class="row collapse">
                 <label>Machine Name  <span class="tooltip">i
                   <span class="tooltiptext">
-                    The name of your tool. The tool name will be displayed on the dashboard.<br>
-                    It is used as the Wifi name for AP mode and IP address display.<br>
-                    You can change the name here. The display will update the next time <br>
-                    you start the software.<br>
+                    The name of your tool. Displayed on the dashboard, used as the WiFi AP name,
+                    and as the Avahi .local hostname (e.g. MyTool.local).<br>
+                    Changes take effect immediately for the hostname and at the next AP restart for WiFi.
                   </span>
                 </span>
                 </label>
                 <div class="small-12 columns">
-                  <input type="text"  id="engine-name" class="engine-input"/>
+                  <input type="text" id="engine-machine_name" class="machine-name-input" readonly/>
                 </div>
               </div>
             </div>
