@@ -762,13 +762,24 @@ $(document).ready(function () {
         });
     });
 
-    // Tool row: load tool N via the standard toolchange dispatcher
+    // Tool row: load tool N via the standard toolchange dispatcher.
+    // NB: window.confirm() is silently blocked by the dashboard's sandboxed
+    // app iframe (no allow-modals) — confirmation must use fabmo.showModal.
     $("#rack").on("click", ".ts-clip", function () {
         var tool = Number($(this).data("tool"));
         var current = Number(atcVar("TOOLIN", 0));
         if (tool === current || !isIdle()) return;
-        if (!window.confirm("Change to Tool " + tool + "?")) return;
-        runCommand("&Tool = " + tool + "\nC9");
+        var name = toolName(tool);
+        fabmo.showModal({
+            title: "Tool Change",
+            message: "Change to Tool " + tool + (name ? " (" + name + ")" : "") + "?",
+            okText: "Change Tool",
+            cancelText: "Cancel",
+            ok: function () {
+                runCommand("&Tool = " + tool + "\nC9");
+            },
+            cancel: function () {},
+        });
     });
 
     $("#btn-measure").on("click", function () {
