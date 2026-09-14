@@ -118,6 +118,44 @@ function toolName(n) {
     return nameFromInfo(toolInfo(n));
 }
 
+// ---------------------------------------------------------------------------
+// Dual-unit table access ($xxUU = {"0": inches, "1": mm} — the standard
+// macro-variable convention; saves write both slots)
+
+function uuGet(varName, field) {
+    var t = (state.vars || {})[varName];
+    var slot = t && t[unitIdx()];
+    var v = slot && Number(slot[field]);
+    return typeof v === "number" && isFinite(v) ? v : null;
+}
+
+// Build a full dual-unit table for fields entered in the CURRENT units.
+function uuBoth(fields) {
+    var toMM = state.unit !== "mm";
+    var here = {};
+    var there = {};
+    for (var k in fields) {
+        var v = Number(fields[k]);
+        here[k] = v;
+        there[k] = Math.round(v * (toMM ? 25.4 : 1 / 25.4) * 10000) / 10000;
+    }
+    var out = {};
+    out[unitIdx()] = here;
+    out[unitIdx() === "0" ? "1" : "0"] = there;
+    return out;
+}
+
+// The Home Z button: optionally jog to the configured fixed XY location
+// (new $SB_ZZEROLOCUU / $SB_ZZEROLOC_USE variables) before running C2.
+function homeZCommand() {
+    if (Number((state.vars || {}).SB_ZZEROLOC_USE)) {
+        var x = uuGet("SB_ZZEROLOCUU", "X");
+        var y = uuGet("SB_ZZEROLOCUU", "Y");
+        if (x !== null && y !== null) return "J2, " + x + ", " + y + "\nC2";
+    }
+    return "C2";
+}
+
 function atcType() {
     return Number(atcVar("TYPE", 0));
 }
@@ -380,10 +418,71 @@ $(document).ready(function () {
     // (e.g. edited in another app).
     setInterval(refreshConfig, 10000);
 
-    // Machine buttons (SB4 equivalents)
+    // Machine buttons (SB4 equivalents). Home Z composes an optional jog to
+    // the configured fixed Z-zero XY location ahead of C2.
     $(".machine-cmd").on("click", function () {
         if (!isIdle()) return;
-        runCommand($(this).data("cmd"));
+        var cmd = $(this).data("cmd");
+        runCommand(cmd === "C2" ? homeZCommand() : cmd);
+    });
+
+    // ---- Machine routine settings modal ----
+
+    function setNum($el, v) {
+        $el.val(v === null ? "" : v);
+    }
+
+    $("#btn-machine-settings").on("click", function () {
+        setNum($("#ms-homeoff-x"), uuGet("SB_HOMEOFFUU", "X"));
+        setNum($("#ms-homeoff-y"), uuGet("SB_HOMEOFFUU", "Y"));
+        $("#ms-zzero-use").prop("checked", !!Number((state.vars || {}).SB_ZZEROLOC_USE));
+        setNum($("#ms-zzero-x"), uuGet("SB_ZZEROLOCUU", "X"));
+        setNum($("#ms-zzero-y"), uuGet("SB_ZZEROLOCUU", "Y"));
+        setNum($("#ms-park-x"), uuGet("SB_PARKUU", "X"));
+        setNum($("#ms-park-y"), uuGet("SB_PARKUU", "Y"));
+        setNum($("#ms-park-z"), uuGet("SB_PARKUU", "Z"));
+        $("#machine-settings-units").text("dimensions in current units (" + state.unit + ")");
+        $("#machine-settings-modal").css("display", "flex");
+    });
+
+    function closeMachineSettings() {
+        $("#machine-settings-modal").hide();
+    }
+    $("#btn-machine-settings-cancel").on("click", closeMachineSettings);
+    $("#machine-settings-modal").on("click", function (e) {
+        if (e.target === this) closeMachineSettings();
+    });
+
+    $("#btn-machine-settings-save").on("click", function () {
+        // Blank/invalid fields fall back to the current stored value (or 0)
+        // so a partial edit never writes NaN into a table.
+        var read = function (sel, varName, field) {
+            var v = parseFloat($(sel).val());
+            if (isFinite(v)) return v;
+            var cur = uuGet(varName, field);
+            return cur === null ? 0 : cur;
+        };
+        var payload = {
+            SB_HOMEOFFUU: uuBoth({
+                X: read("#ms-homeoff-x", "SB_HOMEOFFUU", "X"),
+                Y: read("#ms-homeoff-y", "SB_HOMEOFFUU", "Y"),
+            }),
+            SB_ZZEROLOCUU: uuBoth({
+                X: read("#ms-zzero-x", "SB_ZZEROLOCUU", "X"),
+                Y: read("#ms-zzero-y", "SB_ZZEROLOCUU", "Y"),
+            }),
+            SB_ZZEROLOC_USE: $("#ms-zzero-use").is(":checked") ? 1 : 0,
+            SB_PARKUU: uuBoth({
+                X: read("#ms-park-x", "SB_PARKUU", "X"),
+                Y: read("#ms-park-y", "SB_PARKUU", "Y"),
+                Z: read("#ms-park-z", "SB_PARKUU", "Z"),
+            }),
+        };
+        fabmo.setConfig({ opensbp: { variables: payload } }, function (err) {
+            if (err) return fabmo.notify("error", err.message || err);
+            closeMachineSettings();
+            refreshConfig();
+        });
     });
 
     // Tool row: load tool N via the standard toolchange dispatcher

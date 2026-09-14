@@ -215,6 +215,42 @@ body {
     padding: 12px 16px;
 }
 
+.ts-settings-section { margin-bottom: 14px; }
+.ts-settings-heading {
+    font-size: 0.8em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7f8c8d;
+    margin-bottom: 6px;
+}
+.ts-field-row { display: flex; gap: 10px; }
+.ts-field-row label {
+    flex: 1;
+    font-size: 0.82em;
+    color: #7f8c8d;
+}
+.ts-field-row input {
+    display: block;
+    width: 100%;
+    height: 1.9em;
+    font-size: 1.05em;
+    padding: 1px 6px;
+    margin-top: 2px;
+    border: 1px solid #d5dbdb;
+    border-radius: 4px;
+    color: #2c3e50;
+}
+.ts-check-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.9em;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+.ts-check-row input { margin: 0; }
+
 .ts-settings-table { width: 100%; border-collapse: collapse; }
 .ts-settings-table th {
     font-size: 0.75em;

@@ -72,7 +72,10 @@
                 </div>
 
                 <div class="ts-card">
-                    <div class="ts-card-title">Machine</div>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Machine</span>
+                        <button class="ts-iconbtn" id="btn-machine-settings" title="Routine settings"><i class="fa fa-gear"></i></button>
+                    </div>
                     <div class="ts-btn-grid">
                         <button class="ts-cmd machine-cmd" data-cmd="C3" title="Home the X and Y axes (C3)">Home XY</button>
                         <button class="ts-cmd machine-cmd" data-cmd="C2" title="Set Z-Zero using zeroing plate (C2)">Home Z</button>
@@ -92,6 +95,55 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- Machine routine settings modal -->
+    <div class="ts-modal-backdrop" id="machine-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Routine Settings</span>
+                <span class="ts-note-inline" id="machine-settings-units"></span>
+            </div>
+            <div class="ts-modal-body">
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Home XY <span class="ts-note-inline">limit switch offsets</span></div>
+                    <div class="ts-field-row">
+                        <label>X offset <input id="ms-homeoff-x" type="number" step="any"></label>
+                        <label>Y offset <input id="ms-homeoff-y" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">Pull-back distance from each proximity switch to true zero (used by Home XY / C3).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Home Z <span class="ts-note-inline">fixed Z-zero location</span></div>
+                    <label class="ts-check-row">
+                        <input id="ms-zzero-use" type="checkbox">
+                        Move to a fixed XY location before zeroing Z
+                    </label>
+                    <div class="ts-field-row">
+                        <label>X location <input id="ms-zzero-x" type="number" step="any"></label>
+                        <label>Y location <input id="ms-zzero-y" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">When enabled, the Home Z button jogs here (J2) before running Z-Zero (C2).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Park <span class="ts-note-inline">parking location</span></div>
+                    <div class="ts-field-row">
+                        <label>X <input id="ms-park-x" type="number" step="any"></label>
+                        <label>Y <input id="ms-park-y" type="number" step="any"></label>
+                        <label>Z lift <input id="ms-park-z" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">Jog to Park (C79) lifts to Z, then moves to X/Y.</div>
+                </div>
+
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-machine-settings-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-machine-settings-save">Save</button>
             </div>
         </div>
     </div>
