@@ -84,9 +84,12 @@ body {
 .ts-drag-handle {
     color: #b2bec3;
     cursor: grab;
-    font-size: 0.9em;
-    letter-spacing: -3px;
-    padding: 2px 2px 2px 0;
+    font-size: 1em;
+    letter-spacing: -1px;
+    padding: 4px 5px 4px 2px;
+    flex: 0 0 auto;
+    min-width: 16px;
+    text-align: center;
     user-select: none;
     touch-action: none;
 }
