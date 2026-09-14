@@ -229,9 +229,10 @@ body {
 .ts-postable td.ts-axis { font-weight: 700; text-align: left; color: #7f8c8d; }
 
 .ts-sensors {
-    display: flex; justify-content: center; gap: 14px;
+    display: flex; justify-content: center; gap: 6px 14px; flex-wrap: wrap;
     border-top: 1px solid #f0f2f4; margin-top: 8px; padding-top: 8px;
 }
+.ts-sensors:empty { display: none; }
 .ts-sensor { display: flex; align-items: center; gap: 5px; font-size: 0.82em; color: #7f8c8d; }
 .ts-led {
     width: 10px; height: 10px; border-radius: 50%;

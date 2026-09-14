@@ -208,21 +208,76 @@ function renderCurrentTool() {
     }
 }
 
-function renderSensors() {
-    var defs = [
-        { id: "#sensor-toolbar", input: state.vars && state.vars.TOOLBAR_SENSOR },
-        { id: "#sensor-tool", input: state.vars && state.vars.TOOL_SENSOR },
-        { id: "#sensor-drawbar", input: state.vars && state.vars.DRAWBAR_SENSOR },
-    ];
+// Sensor LEDs are driven by the per-input Type assignments from the
+// configuration app's Inputs tab (machine.di<N>type); machines with no
+// types assigned fall back to the legacy sensor-number variables.
+var INPUT_TYPE_LABELS = {
+    x_limit: "X Limit",
+    y_limit: "Y Limit",
+    z_limit: "Z Limit",
+    a_limit: "A Limit",
+    b_limit: "B Limit",
+    c_limit: "C Limit",
+    zzero_plate: "Z Plate",
+    toolbar_present: "Toolbar",
+    toolbar_up: "Toolbar Up",
+    drawbar_open: "Drawbar",
+    tool_present: "Tool",
+};
+
+function sensorDefs() {
+    var defs = [];
+    var types = state.diTypes || {};
+    Object.keys(types)
+        .sort(function (a, b) {
+            return a - b;
+        })
+        .forEach(function (n) {
+            var label = INPUT_TYPE_LABELS[types[n]];
+            if (label) defs.push({ input: Number(n), label: label });
+        });
+    if (defs.length) return defs;
+    // Legacy fallback: hand-set sensor-number variables
+    var vars = state.vars || {};
+    [
+        { input: Number(vars.TOOLBAR_SENSOR), label: "Toolbar" },
+        { input: Number(vars.TOOL_SENSOR), label: "Tool" },
+        { input: Number(vars.DRAWBAR_SENSOR), label: "Drawbar" },
+    ].forEach(function (d) {
+        if (d.input >= 1) defs.push(d);
+    });
+    return defs;
+}
+
+// Rebuild the LED row only when the set of sensors changes (renderSensors
+// runs on every status report; DOM churn at 10Hz would be wasteful).
+var sensorLayoutKey = null;
+
+function renderSensorLayout() {
+    var defs = sensorDefs();
+    var key = JSON.stringify(defs);
+    if (key === sensorLayoutKey) return;
+    sensorLayoutKey = key;
+    var $row = $("#sensor-row").empty();
     defs.forEach(function (d) {
-        var n = Number(d.input);
-        var $el = $(d.id);
-        if (!(n >= 1)) {
-            $el.hide();
-            return;
-        }
-        $el.show();
-        $el.find(".ts-led").toggleClass("on", !!state.inputs["in" + n]);
+        var $s = $(
+            '<div class="ts-sensor" data-input="' + d.input + '">' +
+                '<span class="ts-led"></span><span class="ts-sensor-label"></span>' +
+                "</div>"
+        );
+        $s.attr("title", d.label + " (input " + d.input + ")");
+        $s.find(".ts-sensor-label").text(d.label);
+        $row.append($s);
+    });
+}
+
+function renderSensors() {
+    renderSensorLayout();
+    $("#sensor-row .ts-sensor").each(function () {
+        var n = $(this).data("input");
+        $(this)
+            .find(".ts-led")
+            .toggleClass("on", !!state.inputs["in" + n]);
     });
 }
 
@@ -530,6 +585,13 @@ function refreshConfig(callback) {
         state.vars = (data.opensbp && data.opensbp.variables) || {};
         var d = data.driver || {};
         state.g55 = { x: Number(d.g55x) || 0, y: Number(d.g55y) || 0, z: Number(d.g55z) || 0 };
+        // Per-input semantic types (machine.di<N>type) drive the sensor LEDs
+        state.diTypes = {};
+        var m = data.machine || {};
+        for (var k in m) {
+            var match = /^di(\d+)type$/.exec(k);
+            if (match && m[k] && m[k] !== "none") state.diTypes[match[1]] = m[k];
+        }
         renderAll();
         callback && callback(null);
     });
