@@ -331,19 +331,23 @@ function renderJobs() {
         return;
     }
     state.history.forEach(function (job) {
-        var $row = $(
-            '<div class="ts-job">' +
-                '<div class="ts-job-info">' +
-                    '<div class="ts-job-name"></div>' +
-                    '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
-                "</div>" +
-                '<button class="ts-iconbtn ts-job-rerun" title="Add to queue again">&#8635;</button>' +
-                "</div>"
-        );
-        $row.find(".ts-job-name").text(job.name || "job " + job._id);
-        $row.find(".ts-job-rerun").data("id", job._id);
-        $h.append($row);
+        $h.append(historyRow(job));
     });
+}
+
+function historyRow(job) {
+    var $row = $(
+        '<div class="ts-job">' +
+            '<div class="ts-job-info">' +
+                '<div class="ts-job-name"></div>' +
+                '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
+            "</div>" +
+            '<button class="ts-iconbtn ts-job-rerun" title="Add to queue again">&#8635;</button>' +
+            "</div>"
+    );
+    $row.find(".ts-job-name").text(job.name || "job " + job._id);
+    $row.find(".ts-job-rerun").data("id", job._id);
+    return $row;
 }
 
 function renderAll() {
@@ -662,11 +666,55 @@ $(document).ready(function () {
         fabmo.launchApp("editor", { job: $(this).data("id") });
     });
 
-    $("#job-history").on("click", ".ts-job-rerun", function () {
+    $("#job-history, #history-list").on("click", ".ts-job-rerun", function () {
         var id = $(this).data("id");
         fabmo.resubmitJob(id, { stayHere: true }, function (err) {
             if (err) fabmo.notify("error", err.message || err);
+            else fabmo.notify("info", "Job added to the queue");
             refreshJobs();
         });
+    });
+
+    // ---- Full history modal (paged) ----
+
+    var HISTORY_PAGE = 25;
+    var historyStart = 0;
+
+    function loadHistoryPage(start) {
+        fabmo.getJobHistory({ start: start, count: HISTORY_PAGE }, function (err, res) {
+            if (err || !res) return;
+            historyStart = start;
+            var total = res.total_count || 0;
+            var jobs = res.data || [];
+            var $list = $("#history-list").empty();
+            if (!jobs.length) $list.append('<div class="ts-empty">No jobs in history</div>');
+            jobs.forEach(function (job) {
+                $list.append(historyRow(job));
+            });
+            $("#history-page-label").text(
+                total ? start + 1 + "–" + Math.min(start + jobs.length, total) + " of " + total : "no jobs"
+            );
+            $("#btn-history-prev").prop("disabled", start <= 0);
+            $("#btn-history-next").prop("disabled", start + HISTORY_PAGE >= total);
+            $("#history-modal .ts-modal-body").scrollTop(0);
+        });
+    }
+
+    $("#btn-full-history").on("click", function () {
+        $("#history-modal").css("display", "flex");
+        loadHistoryPage(0);
+    });
+    $("#btn-history-prev").on("click", function () {
+        loadHistoryPage(Math.max(0, historyStart - HISTORY_PAGE));
+    });
+    $("#btn-history-next").on("click", function () {
+        loadHistoryPage(historyStart + HISTORY_PAGE);
+    });
+    function closeHistory() {
+        $("#history-modal").hide();
+    }
+    $("#btn-history-close").on("click", closeHistory);
+    $("#history-modal").on("click", function (e) {
+        if (e.target === this) closeHistory();
     });
 });

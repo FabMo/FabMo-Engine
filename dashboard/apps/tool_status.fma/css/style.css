@@ -214,6 +214,9 @@ body {
     gap: 8px;
     padding: 12px 16px;
 }
+.ts-modal-footer-split { justify-content: space-between; }
+.ts-modal-footer-split > div { display: flex; gap: 8px; }
+.ts-cmd-block { display: block; width: 100%; margin-top: 8px; }
 
 .ts-settings-section { margin-bottom: 14px; }
 .ts-settings-heading {

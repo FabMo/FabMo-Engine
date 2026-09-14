@@ -34,6 +34,7 @@
                     </div>
                     <div class="ts-card-title ts-history-title">Recent</div>
                     <div class="ts-job-list ts-job-history" id="job-history"></div>
+                    <button class="ts-cmd ts-cmd-block" id="btn-full-history">View Full History</button>
                 </div>
             </div>
 
@@ -95,6 +96,26 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- Full job history modal -->
+    <div class="ts-modal-backdrop" id="history-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Job History</span>
+                <span class="ts-note-inline" id="history-page-label"></span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-job-list" id="history-list"></div>
+            </div>
+            <div class="ts-modal-footer ts-modal-footer-split">
+                <div>
+                    <button class="ts-cmd" id="btn-history-prev">&larr; Newer</button>
+                    <button class="ts-cmd" id="btn-history-next">Older &rarr;</button>
+                </div>
+                <button class="ts-cmd" id="btn-history-close">Close</button>
             </div>
         </div>
     </div>
