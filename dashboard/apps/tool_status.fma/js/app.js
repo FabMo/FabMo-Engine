@@ -187,7 +187,10 @@ function jobMeta(job) {
     return when + ' &mdash; <span class="' + cls + '">' + job.state + "</span>";
 }
 
+var dragging = false;
+
 function renderJobs() {
+    if (dragging) return; // don't rebuild the list out from under a drag
     var $q = $("#job-queue").empty();
     (state.running || []).forEach(function (job) {
         var $row = $(
@@ -206,7 +209,8 @@ function renderJobs() {
     } else {
         state.queue.forEach(function (job, i) {
             var $row = $(
-                '<div class="ts-job' + (i === 0 ? " next" : "") + '">' +
+                '<div class="ts-job ts-job-sortable' + (i === 0 ? " next" : "") + '">' +
+                    '<span class="ts-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>' +
                     '<div class="ts-job-info">' +
                         '<div class="ts-job-name"></div>' +
                         '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
@@ -214,6 +218,7 @@ function renderJobs() {
                     '<button class="ts-iconbtn ts-job-delete" title="Remove from queue">&#10005;</button>' +
                     "</div>"
             );
+            $row.attr("data-id", job._id);
             $row.find(".ts-job-name").text(job.name || "job " + job._id);
             $row.find(".ts-job-delete").data("id", job._id);
             $q.append($row);
@@ -369,6 +374,42 @@ $(document).ready(function () {
         });
         this.value = "";
     });
+
+    // Drag-to-reorder (same Sortable + PATCH order flow as the Job Manager;
+    // this is the same engine queue the Job Manager shows, so order changes
+    // appear in both apps)
+    /* global Sortable */
+    var sortable = Sortable.create(document.getElementById("job-queue"), {
+        draggable: ".ts-job-sortable",
+        handle: ".ts-drag-handle",
+        ghostClass: "ts-drag-ghost",
+        chosenClass: "ts-drag-chosen",
+        dataIdAttr: "data-id",
+        animation: 150,
+        touchDelay: 100,
+        onStart: function () {
+            dragging = true;
+        },
+        onEnd: function () {
+            dragging = false;
+            persistOrder(sortable.toArray());
+        },
+    });
+
+    function persistOrder(ids) {
+        // PATCH each job's order sequentially (1-based, matching the Job
+        // Manager), then refresh once.
+        var i = 0;
+        (function nextPatch() {
+            if (i >= ids.length) return refreshJobs();
+            var id = Number(ids[i]);
+            i++;
+            fabmo.updateOrder({ id: id, order: i }, function (err) {
+                if (err) fabmo.notify("error", err.message || err);
+                nextPatch();
+            });
+        })();
+    }
 
     $("#job-queue").on("click", ".ts-job-delete", function () {
         var id = $(this).data("id");

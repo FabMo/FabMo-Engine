@@ -79,6 +79,18 @@ body {
     background: #fafbfc;
 }
 .ts-job.next { border-color: #2980b9; background: #eef6fc; }
+.ts-drag-handle {
+    color: #b2bec3;
+    cursor: grab;
+    font-size: 0.9em;
+    letter-spacing: -3px;
+    padding: 2px 2px 2px 0;
+    user-select: none;
+    touch-action: none;
+}
+.ts-job-sortable:active .ts-drag-handle { cursor: grabbing; }
+.ts-drag-ghost { opacity: 0.4; }
+.ts-drag-chosen { border-color: #2980b9; box-shadow: 0 2px 6px rgba(41, 128, 185, 0.3); }
 .ts-job-info { flex: 1; min-width: 0; }
 .ts-job-name {
     font-weight: 600;
