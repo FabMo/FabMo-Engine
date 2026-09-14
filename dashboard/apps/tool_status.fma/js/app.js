@@ -38,7 +38,7 @@ var ATC_TYPE_LABELS = {
 // 5 (5-axis) has its own toolchange flow.
 var TOOL_ROW_TYPES = { 1: true, 2: true, 3: true, 4: true, 6: true, 7: true };
 
-var HISTORY_COUNT = 5;
+var HISTORY_COUNT = 3;
 
 var state = {
     machineState: null,
