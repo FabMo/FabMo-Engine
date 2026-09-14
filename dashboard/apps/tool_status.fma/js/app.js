@@ -290,6 +290,47 @@ function renderPosition() {
     $("#units-label").text(state.unit);
 }
 
+// Key machine locations, merged under the position readout. Values come
+// from the same variables the routines use: tool clip locations from
+// $toolsUU (recorded by ATC calibration/C74), measurement plate from
+// $atcUU.ZZero_X/Y, fixed Z-zero location from $SB_ZZEROLOCUU (when
+// enabled), park from $SB_PARKUU.
+function renderLocations() {
+    var rows = [];
+    var cur = Number(atcVar("TOOLIN", 0));
+    if (cur >= 1) {
+        var t = toolTable()[cur] || {};
+        if (isFinite(Number(t.X))) rows.push(["Tool " + cur + " clip", t.X, t.Y, t.Z]);
+    }
+    if (isATC()) {
+        var px = uuGet("ATCUU", "ZZERO_X");
+        var py = uuGet("ATCUU", "ZZERO_Y");
+        if (px !== null || py !== null) rows.push(["Plate", px, py, null]);
+    }
+    if (Number((state.vars || {}).SB_ZZEROLOC_USE)) {
+        rows.push(["Z-Zero XY", uuGet("SB_ZZEROLOCUU", "X"), uuGet("SB_ZZEROLOCUU", "Y"), null]);
+    }
+    var parkX = uuGet("SB_PARKUU", "X");
+    if (parkX !== null) rows.push(["Park", parkX, uuGet("SB_PARKUU", "Y"), uuGet("SB_PARKUU", "Z")]);
+
+    var $table = $("#locations-table");
+    if (!rows.length) {
+        $table.hide();
+        return;
+    }
+    var $body = $table.find("tbody").empty();
+    rows.forEach(function (r) {
+        var $tr = $("<tr>");
+        $tr.append($('<td class="ts-axis">').text(r[0]));
+        [r[1], r[2], r[3]].forEach(function (v) {
+            var n = Number(v);
+            $tr.append($("<td>").text(v !== null && v !== undefined && isFinite(n) ? fmt(n) : "—"));
+        });
+        $body.append($tr);
+    });
+    $table.show();
+}
+
 function renderToolRow() {
     if (!showToolRow()) {
         $("#card-tools").hide();
@@ -313,7 +354,12 @@ function renderToolRow() {
         var $len = $clip.find(".ts-clip-len");
         if (sub) $len.text(sub);
         else $len.html("&nbsp;");
-        var tip = [name, h ? "len " + fmt(Number(h)) : ""].filter(Boolean).join(" · ");
+        var clip = table[n] || {};
+        var clipLoc =
+            isFinite(Number(clip.X)) && Number(clip.X) !== 0
+                ? "clip " + fmt(Number(clip.X)) + ", " + fmt(Number(clip.Y))
+                : "";
+        var tip = [name, h ? "len " + fmt(Number(h)) : "", clipLoc].filter(Boolean).join(" · ");
         if (tip) $clip.attr("title", tip);
         if (n === current) $clip.addClass("current");
         else if (!idle) $clip.addClass("disabled");
@@ -470,6 +516,7 @@ function renderAll() {
     renderSensors();
     renderPosition();
     renderToolRow();
+    renderLocations();
     renderCustomButtons();
     renderCommands();
     renderJobs();

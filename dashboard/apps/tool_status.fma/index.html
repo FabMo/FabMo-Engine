@@ -56,16 +56,24 @@
                             <div class="ts-tool-number" id="current-tool-number">&mdash;</div>
                             <div class="ts-tool-caption" id="current-tool-caption"></div>
                         </div>
-                        <table class="ts-postable">
-                            <thead>
-                                <tr><th></th><th>Position</th><th>Offset</th><th id="units-label"></th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td></td></tr>
-                                <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td></td></tr>
-                                <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td></td></tr>
-                            </tbody>
-                        </table>
+                        <div>
+                            <table class="ts-postable">
+                                <thead>
+                                    <tr><th></th><th>Position</th><th>Offset</th><th id="units-label"></th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td></td></tr>
+                                    <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td></td></tr>
+                                    <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td></td></tr>
+                                </tbody>
+                            </table>
+                            <table class="ts-postable ts-locations" id="locations-table" style="display:none;">
+                                <thead>
+                                    <tr><th></th><th>X</th><th>Y</th><th>Z</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="ts-sensors" id="sensor-row"></div>
                 </div>

@@ -227,6 +227,9 @@ body {
 }
 .ts-postable td { text-align: right; padding: 2px 8px; font-size: 0.95em; }
 .ts-postable td.ts-axis { font-weight: 700; text-align: left; color: #7f8c8d; }
+.ts-locations { margin-top: 6px; border-top: 1px solid #f0f2f4; }
+.ts-locations td.ts-axis { font-weight: 600; font-size: 0.82em; white-space: nowrap; }
+.ts-locations td { font-size: 0.88em; color: #7f8c8d; }
 
 .ts-sensors {
     display: flex; justify-content: center; gap: 6px 14px; flex-wrap: wrap;
