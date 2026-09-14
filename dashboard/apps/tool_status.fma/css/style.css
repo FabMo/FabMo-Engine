@@ -121,6 +121,37 @@ body {
 .ts-history-title { margin-top: 12px; }
 .ts-job-history .ts-job { background: #fff; }
 
+/* USB browser */
+.ts-usb-list {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.ts-usb-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border: 1px solid #e8ebee;
+    border-radius: 5px;
+    background: #fafbfc;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.ts-usb-entry:hover { background: #eef3f7; }
+.ts-usb-entry .fa { color: #7f8c8d; width: 14px; text-align: center; }
+.ts-usb-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ts-usb-meta { font-size: 0.78em; color: #95a5a6; }
+.ts-usb-entry .ts-iconbtn { padding: 2px 4px; }
+
 /* Current tool strip */
 .ts-current-strip {
     display: flex;

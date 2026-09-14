@@ -335,6 +335,125 @@ function renderJobs() {
     });
 }
 
+// ---------------------------------------------------------------------------
+// USB file browser (below the Jobs card): scrollable list of cuttable files
+// (.sbp/.nc/.tap) on any connected USB drive; folders navigable; clicking a
+// file adds it to the job queue via /usb/submit.
+
+var USB_FILE_RE = /\.(sbp|nc|tap)$/i;
+var usb = {
+    devices: [],
+    cwd: null, // current directory path, null = drive list (or auto-entered single drive)
+    root: null, // root path of the drive we're inside (bounds "up")
+};
+
+function fmtSize(bytes) {
+    var n = Number(bytes);
+    if (!isFinite(n)) return "";
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(0) + " KB";
+    return (n / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+function usbEntry(icon, name, meta) {
+    var $e = $(
+        '<div class="ts-usb-entry">' +
+            '<i class="fa ' + icon + '"></i>' +
+            '<span class="ts-usb-name"></span>' +
+            '<span class="ts-usb-meta"></span>' +
+            "</div>"
+    );
+    $e.find(".ts-usb-name").text(name);
+    $e.find(".ts-usb-meta").text(meta || "");
+    return $e;
+}
+
+function renderUSBDeviceList() {
+    var $list = $("#usb-list").empty();
+    $("#usb-crumb").text("");
+    usb.devices.forEach(function (dev) {
+        var $e = usbEntry("fa-usb", dev.name, "drive");
+        $e.on("click", function () {
+            enterUSBDir(dev.path, dev.path);
+        });
+        $list.append($e);
+    });
+}
+
+function enterUSBDir(path, root) {
+    fabmo.getUSBDirectory(path, function (err, res) {
+        if (err) return fabmo.notify("error", err.message || err);
+        usb.cwd = path;
+        usb.root = root;
+        var contents = (res && (res.contents || res)) || [];
+        var $list = $("#usb-list").empty();
+
+        // Breadcrumb: drive name + relative path
+        var rel = path.substring(path.lastIndexOf("/", usb.root.length - 1) + 1);
+        $("#usb-crumb").text(rel);
+
+        // Up: to parent dir, or back to the drive list at drive root
+        var $up = usbEntry("fa-level-up", "..", "");
+        $up.on("click", function () {
+            if (usb.cwd === usb.root) {
+                usb.cwd = usb.root = null;
+                if (usb.devices.length === 1) refreshUSB(true);
+                else renderUSBDeviceList();
+            } else {
+                enterUSBDir(usb.cwd.substring(0, usb.cwd.lastIndexOf("/")), usb.root);
+            }
+        });
+        // Hide "up" when a single auto-entered drive is at its root
+        if (!(usb.devices.length === 1 && usb.cwd === usb.root)) $list.append($up);
+
+        contents.forEach(function (entry) {
+            if (entry.isDirectory) {
+                var $d = usbEntry("fa-folder", entry.name, "");
+                $d.on("click", function () {
+                    enterUSBDir(entry.path, usb.root);
+                });
+                $list.append($d);
+            } else if (USB_FILE_RE.test(entry.name)) {
+                var $f = usbEntry("fa-file-o", entry.name, fmtSize(entry.size));
+                $f.attr("title", "Add " + entry.name + " to the job queue");
+                $f.on("click", function () {
+                    fabmo.submitUSBFile(entry.path, {}, function (err) {
+                        if (err) return fabmo.notify("error", err.message || err);
+                        fabmo.notify("info", entry.name + " added to the queue");
+                        refreshJobs();
+                    });
+                });
+                $list.append($f);
+            }
+        });
+        $("#usb-list").scrollTop(0);
+    });
+}
+
+// Poll for connected drives; keep the card hidden when there are none.
+// `autoEnter` re-enters a single drive's root listing.
+function refreshUSB(autoEnter) {
+    fabmo.getUSBDevices(function (err, res) {
+        if (err) return;
+        var devices = (res && (res.devices || res)) || [];
+        var changed = JSON.stringify(devices) !== JSON.stringify(usb.devices);
+        usb.devices = devices;
+        if (!devices.length) {
+            usb.cwd = usb.root = null;
+            $("#card-usb").hide();
+            return;
+        }
+        $("#card-usb").show();
+        if (usb.cwd && !changed && !autoEnter) return; // stay where the user is browsing
+        if (devices.length === 1) {
+            enterUSBDir(devices[0].path, devices[0].path);
+        } else {
+            usb.cwd = usb.root = null;
+            renderUSBDeviceList();
+        }
+    });
+}
+
 function historyRow(job) {
     var $row = $(
         '<div class="ts-job">' +
@@ -432,6 +551,10 @@ $(document).ready(function () {
     // Backstop: variables can change without a machine state transition
     // (e.g. edited in another app).
     setInterval(refreshConfig, 10000);
+
+    // USB drives come and go; poll for presence (cheap fs check engine-side).
+    refreshUSB();
+    setInterval(refreshUSB, 8000);
 
     // Machine buttons (SB4 equivalents). Home Z composes an optional jog to
     // the configured fixed Z-zero XY location ahead of C2.
