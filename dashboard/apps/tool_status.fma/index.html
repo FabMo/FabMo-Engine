@@ -82,13 +82,45 @@
                 </div>
 
                 <div class="ts-card" id="card-tools" style="display:none;">
-                    <div class="ts-card-title">Tools <span class="ts-note-inline" id="rack-note"></span></div>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Tools <span class="ts-note-inline" id="rack-note"></span></span>
+                        <button class="ts-iconbtn" id="btn-tool-settings" title="Tool settings"><i class="fa fa-gear"></i></button>
+                    </div>
                     <div class="ts-rack" id="rack"></div>
                     <div class="ts-btn-grid ts-btn-grid-single">
                         <button class="ts-cmd" id="btn-measure" title="Measure the current tool (C72)">Measure Tool</button>
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- Tool settings modal -->
+    <div class="ts-modal-backdrop" id="tool-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Tool Settings</span>
+                <span class="ts-note-inline" id="tool-settings-units"></span>
+            </div>
+            <div class="ts-modal-body">
+                <table class="ts-settings-table">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Cutter Type</th>
+                            <th>Diameter</th>
+                            <th>Length</th>
+                            <th>Angle&deg;</th>
+                            <th>Name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tool-settings-rows"></tbody>
+                </table>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-tool-settings-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-tool-settings-save">Save</button>
             </div>
         </div>
     </div>

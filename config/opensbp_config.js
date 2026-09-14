@@ -224,6 +224,15 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
 ////## xy version of values is kludge for SBP legacy compatibility with dummy 'y' entry
 OpenSBPConfig.prototype.update = function (data, callback, force) {
     try {
+        // The variables map is schemaless — macros create arbitrary keys via
+        // setVariable, which merges with force. Client updates (POST /config)
+        // must be able to introduce new keys the same way, so merge the
+        // variables subtree with force before the normal only-existing-keys
+        // extend (which then re-merges the same values; harmless).
+        if (data && data.variables && typeof data.variables === "object") {
+            if (!this._cache.variables) this._cache.variables = {};
+            extend(this._cache.variables, data.variables, true);
+        }
         extend(this._cache, data, force);
     } catch (e) {
         return callback(e);

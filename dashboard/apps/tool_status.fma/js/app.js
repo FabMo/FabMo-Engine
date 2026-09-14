@@ -81,6 +81,43 @@ function fmt(v) {
     return v.toFixed(state.unit === "mm" ? 2 : 3);
 }
 
+// ---------------------------------------------------------------------------
+// Tool info ($TOOLINFO.<n> = {TYPE, DIA, LEN, ANG}, written by the tool
+// settings modal; values in whatever units they were entered in)
+
+var CUTTER_TYPES = [
+    { value: "", label: "—" },
+    { value: "flat", label: "Flat" },
+    { value: "vbit", label: "V-Bit" },
+    { value: "ballnose", label: "Ballnose" },
+    { value: "taperball", label: "Tapered Ballnose" },
+];
+var CUTTER_SHORT = { flat: "Flat", vbit: "V-Bit", ballnose: "Ballnose", taperball: "T-Ball" };
+var ANGLE_TYPES = { vbit: true, taperball: true };
+
+function toolInfo(n) {
+    var ti = (state.vars || {}).TOOLINFO;
+    return (ti && ti[String(n)]) || null;
+}
+
+// Concatenated display name, e.g. "0.25 V-Bit 90°". Empty string when the
+// tool has no cutter type set (fixJSON can coerce cleared fields to 0, so
+// any non-string / falsy TYPE reads as unset).
+function nameFromInfo(info) {
+    if (!info || typeof info.TYPE !== "string" || !info.TYPE) return "";
+    var parts = [];
+    var dia = Number(info.DIA);
+    if (isFinite(dia) && dia > 0) parts.push(String(dia));
+    parts.push(CUTTER_SHORT[info.TYPE] || info.TYPE);
+    var ang = Number(info.ANG);
+    if (ANGLE_TYPES[info.TYPE] && isFinite(ang) && ang > 0) parts.push(ang + "°");
+    return parts.join(" ");
+}
+
+function toolName(n) {
+    return nameFromInfo(toolInfo(n));
+}
+
 function atcType() {
     return Number(atcVar("TYPE", 0));
 }
@@ -111,7 +148,11 @@ function renderCurrentTool() {
     if (tool >= 1) {
         $num.text(tool).removeClass("empty");
         var h = (toolTable()[tool] || {}).H;
-        $("#current-tool-caption").text(h ? "length " + fmt(Number(h)) : "in spindle");
+        var bits = [];
+        var name = toolName(tool);
+        if (name) bits.push(name);
+        if (h) bits.push("len " + fmt(Number(h)));
+        $("#current-tool-caption").text(bits.join(" · ") || "in spindle");
     } else {
         $num.text("—").addClass("empty");
         $("#current-tool-caption").text(showToolRow() ? "no tool in spindle" : "");
@@ -157,11 +198,18 @@ function renderToolRow() {
     var $rack = $("#rack").empty();
     for (var n = 1; n <= clips; n++) {
         var h = (table[n] || {}).H;
+        var name = toolName(n);
+        var sub = name || (h ? fmt(Number(h)) : "");
         var $clip = $(
             '<div class="ts-clip" data-tool="' + n + '">' + n +
-                '<div class="ts-clip-len">' + (h ? fmt(Number(h)) : "&nbsp;") + "</div>" +
+                '<div class="ts-clip-len"></div>' +
                 "</div>"
         );
+        var $len = $clip.find(".ts-clip-len");
+        if (sub) $len.text(sub);
+        else $len.html("&nbsp;");
+        var tip = [name, h ? "len " + fmt(Number(h)) : ""].filter(Boolean).join(" · ");
+        if (tip) $clip.attr("title", tip);
         if (n === current) $clip.addClass("current");
         else if (!idle) $clip.addClass("disabled");
         $rack.append($clip);
@@ -350,6 +398,81 @@ $(document).ready(function () {
     $("#btn-measure").on("click", function () {
         if (!isIdle()) return;
         runCommand("C72");
+    });
+
+    // ---- Tool settings modal ----
+
+    function rowInfo($tr) {
+        var num = function (v) {
+            var x = parseFloat(v);
+            return isFinite(x) && x > 0 ? x : 0;
+        };
+        return {
+            TYPE: $tr.find(".tsi-type").val() || "",
+            DIA: num($tr.find(".tsi-dia").val()),
+            LEN: num($tr.find(".tsi-len").val()),
+            ANG: num($tr.find(".tsi-ang").val()),
+        };
+    }
+
+    function syncRow($tr) {
+        var info = rowInfo($tr);
+        $tr.find(".tsi-ang").prop("disabled", !ANGLE_TYPES[info.TYPE]);
+        $tr.find(".ts-name-cell").text(nameFromInfo(info));
+    }
+
+    $("#btn-tool-settings").on("click", function () {
+        var clips = Number(atcVar("NUMCLIPS", 0));
+        var $rows = $("#tool-settings-rows").empty();
+        for (var n = 1; n <= clips; n++) {
+            var info = toolInfo(n) || {};
+            var opts = CUTTER_TYPES.map(function (t) {
+                var sel = info.TYPE === t.value && t.value ? " selected" : "";
+                return '<option value="' + t.value + '"' + sel + ">" + t.label + "</option>";
+            }).join("");
+            var $tr = $(
+                '<tr data-tool="' + n + '">' +
+                    '<td class="ts-tool-cell">' + n + "</td>" +
+                    '<td><select class="tsi-type">' + opts + "</select></td>" +
+                    '<td><input class="tsi-dia" type="number" step="any" min="0"></td>' +
+                    '<td><input class="tsi-len" type="number" step="any" min="0"></td>' +
+                    '<td><input class="tsi-ang" type="number" step="any" min="0" max="180"></td>' +
+                    '<td class="ts-name-cell"></td>' +
+                    "</tr>"
+            );
+            if (Number(info.DIA) > 0) $tr.find(".tsi-dia").val(info.DIA);
+            if (Number(info.LEN) > 0) $tr.find(".tsi-len").val(info.LEN);
+            if (Number(info.ANG) > 0) $tr.find(".tsi-ang").val(info.ANG);
+            $rows.append($tr);
+            syncRow($tr);
+        }
+        $("#tool-settings-units").text("dimensions in current units (" + state.unit + ")");
+        $("#tool-settings-modal").css("display", "flex");
+    });
+
+    $("#tool-settings-rows").on("change input", "select, input", function () {
+        syncRow($(this).closest("tr"));
+    });
+
+    function closeToolSettings() {
+        $("#tool-settings-modal").hide();
+    }
+    $("#btn-tool-settings-cancel").on("click", closeToolSettings);
+    $("#tool-settings-modal").on("click", function (e) {
+        if (e.target === this) closeToolSettings();
+    });
+
+    $("#btn-tool-settings-save").on("click", function () {
+        var toolinfo = {};
+        $("#tool-settings-rows tr").each(function () {
+            var $tr = $(this);
+            toolinfo[String($tr.data("tool"))] = rowInfo($tr);
+        });
+        fabmo.setConfig({ opensbp: { variables: { TOOLINFO: toolinfo } } }, function (err) {
+            if (err) return fabmo.notify("error", err.message || err);
+            closeToolSettings();
+            refreshConfig();
+        });
     });
 
     // Jobs

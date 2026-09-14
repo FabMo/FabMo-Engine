@@ -174,6 +174,80 @@ body {
 .ts-cmd-primary { background: #2980b9; border-color: #2471a3; color: #fff; }
 .ts-cmd-primary:hover { background: #2471a3; }
 
+.ts-card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.ts-card-title-row .ts-iconbtn { padding: 0 2px; font-size: 1.05em; }
+
+/* Tool settings modal */
+.ts-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(44, 62, 80, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+.ts-modal {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    width: min(680px, 94vw);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+}
+.ts-modal-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 12px 16px 8px;
+    font-weight: 700;
+}
+.ts-modal-body { padding: 0 16px; overflow-y: auto; }
+.ts-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+}
+
+.ts-settings-table { width: 100%; border-collapse: collapse; }
+.ts-settings-table th {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: #95a5a6;
+    text-align: left;
+    padding: 4px 6px 4px 0;
+}
+.ts-settings-table td { padding: 3px 6px 3px 0; vertical-align: middle; }
+.ts-settings-table td.ts-tool-cell { font-weight: 700; color: #7f8c8d; width: 2em; }
+.ts-settings-table select,
+.ts-settings-table input {
+    width: 100%;
+    height: 1.9em;
+    font-size: 0.9em;
+    padding: 1px 4px;
+    margin: 0;
+    border: 1px solid #d5dbdb;
+    border-radius: 4px;
+    background: #fff;
+    color: #2c3e50;
+}
+.ts-settings-table input:disabled { background: #f4f5f7; color: #b2bec3; }
+.ts-settings-table td.ts-name-cell {
+    font-size: 0.82em;
+    color: #7f8c8d;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ts-settings-table col.dia, .ts-settings-table col.len, .ts-settings-table col.ang { width: 5.2em; }
+
 /* Tool rack row */
 .ts-rack { display: flex; flex-wrap: wrap; gap: 6px; }
 .ts-clip {
@@ -189,7 +263,16 @@ body {
     font-weight: 700;
 }
 .ts-clip:hover { background: #eef3f7; }
-.ts-clip .ts-clip-len { font-size: 0.6em; font-weight: 400; color: #95a5a6; }
+.ts-clip .ts-clip-len {
+    font-size: 0.6em;
+    font-weight: 400;
+    color: #95a5a6;
+    max-width: 76px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0 auto;
+}
 .ts-clip.current {
     border-color: #2980b9;
     background: #2980b9;
