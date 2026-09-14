@@ -72,12 +72,14 @@ body {
 .ts-job {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     border: 1px solid #e1e4e8;
     border-radius: 5px;
     padding: 6px 8px;
     background: #fafbfc;
 }
+.ts-job .ts-iconbtn { padding: 4px 3px; }
+.ts-job .ts-job-delete:hover { color: #c0392b; }
 .ts-job.next { border-color: #2980b9; background: #eef6fc; }
 .ts-drag-handle {
     color: #b2bec3;

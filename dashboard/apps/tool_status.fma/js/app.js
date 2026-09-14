@@ -215,12 +215,14 @@ function renderJobs() {
                         '<div class="ts-job-name"></div>' +
                         '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
                     "</div>" +
-                    '<button class="ts-iconbtn ts-job-delete" title="Remove from queue">&#10005;</button>' +
+                    '<button class="ts-iconbtn ts-job-preview" title="Preview"><i class="fa fa-eye"></i></button>' +
+                    '<button class="ts-iconbtn ts-job-edit" title="View code (edit)"><i class="fa fa-code"></i></button>' +
+                    '<button class="ts-iconbtn ts-job-delete" title="Remove from queue"><i class="fa fa-trash"></i></button>' +
                     "</div>"
             );
             $row.attr("data-id", job._id);
             $row.find(".ts-job-name").text(job.name || "job " + job._id);
-            $row.find(".ts-job-delete").data("id", job._id);
+            $row.find(".ts-iconbtn").data("id", job._id);
             $q.append($row);
         });
     }
@@ -417,6 +419,14 @@ $(document).ready(function () {
             if (err) fabmo.notify("error", err.message || err);
             refreshJobs();
         });
+    });
+
+    $("#job-queue").on("click", ".ts-job-preview", function () {
+        fabmo.launchApp("previewer", { job: $(this).data("id") });
+    });
+
+    $("#job-queue").on("click", ".ts-job-edit", function () {
+        fabmo.launchApp("editor", { job: $(this).data("id") });
     });
 
     $("#job-history").on("click", ".ts-job-rerun", function () {
