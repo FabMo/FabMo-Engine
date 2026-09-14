@@ -18,57 +18,78 @@
             </div>
         </div>
 
-        <div class="ts-grid">
+        <div class="ts-split">
 
-            <!-- Current tool -->
-            <div class="ts-card" id="card-current-tool">
-                <div class="ts-card-title">Current Tool</div>
-                <div class="ts-tool-display">
-                    <div class="ts-tool-number" id="current-tool-number">&mdash;</div>
-                    <div class="ts-tool-caption" id="current-tool-caption">unknown</div>
-                </div>
-                <div class="ts-sensors" id="sensor-row">
-                    <div class="ts-sensor" id="sensor-toolbar" style="display:none;">
-                        <span class="ts-led"></span><span class="ts-sensor-label">Toolbar</span>
+            <!-- LEFT: slim job manager -->
+            <div class="ts-pane" id="pane-jobs">
+                <div class="ts-card">
+                    <div class="ts-card-title">Jobs</div>
+                    <div class="ts-jobs-actions">
+                        <button class="ts-cmd ts-cmd-primary" id="btn-run-next" disabled>&#9654;&nbsp; Run Next Job</button>
+                        <button class="ts-cmd" id="btn-add-job">+ Add</button>
+                        <input type="file" id="job-file-input" style="display:none;" multiple>
                     </div>
-                    <div class="ts-sensor" id="sensor-tool" style="display:none;">
-                        <span class="ts-led"></span><span class="ts-sensor-label">Tool</span>
+                    <div class="ts-job-list" id="job-queue">
+                        <div class="ts-empty">No jobs in queue</div>
                     </div>
-                    <div class="ts-sensor" id="sensor-drawbar" style="display:none;">
-                        <span class="ts-led"></span><span class="ts-sensor-label">Drawbar</span>
-                    </div>
+                    <div class="ts-card-title ts-history-title">Recent</div>
+                    <div class="ts-job-list ts-job-history" id="job-history"></div>
                 </div>
             </div>
 
-            <!-- Position / offsets -->
-            <div class="ts-card" id="card-position">
-                <div class="ts-card-title">Position &amp; Offsets <span class="ts-units" id="units-label"></span></div>
-                <table class="ts-postable">
-                    <thead>
-                        <tr><th></th><th>Position</th><th>Offset</th><th>Machine</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td id="mach-x">&mdash;</td></tr>
-                        <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td id="mach-y">&mdash;</td></tr>
-                        <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td id="mach-z">&mdash;</td></tr>
-                    </tbody>
-                </table>
-                <div class="ts-note">Offset = working zero in machine coordinates (G55)</div>
-            </div>
+            <!-- RIGHT: status + commands -->
+            <div class="ts-pane" id="pane-controls">
 
-            <!-- ATC rack -->
-            <div class="ts-card ts-card-wide" id="card-rack" style="display:none;">
-                <div class="ts-card-title">Tool Rack <span class="ts-note-inline" id="rack-note">press a tool to change to it</span></div>
-                <div class="ts-rack" id="rack"></div>
-            </div>
+                <div class="ts-card">
+                    <div class="ts-current-strip">
+                        <div class="ts-tool-display">
+                            <div class="ts-tool-label">Current Tool</div>
+                            <div class="ts-tool-number" id="current-tool-number">&mdash;</div>
+                            <div class="ts-tool-caption" id="current-tool-caption"></div>
+                        </div>
+                        <table class="ts-postable">
+                            <thead>
+                                <tr><th></th><th>Position</th><th>Offset</th><th id="units-label"></th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td></td></tr>
+                                <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td></td></tr>
+                                <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="ts-sensors" id="sensor-row">
+                        <div class="ts-sensor" id="sensor-toolbar" style="display:none;">
+                            <span class="ts-led"></span><span class="ts-sensor-label">Toolbar</span>
+                        </div>
+                        <div class="ts-sensor" id="sensor-tool" style="display:none;">
+                            <span class="ts-led"></span><span class="ts-sensor-label">Tool</span>
+                        </div>
+                        <div class="ts-sensor" id="sensor-drawbar" style="display:none;">
+                            <span class="ts-led"></span><span class="ts-sensor-label">Drawbar</span>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Commands -->
-            <div class="ts-card ts-card-wide" id="card-commands">
-                <div class="ts-card-title">Commands</div>
-                <div class="ts-commands" id="commands"></div>
-                <div class="ts-note" id="commands-note"></div>
-            </div>
+                <div class="ts-card">
+                    <div class="ts-card-title">Machine</div>
+                    <div class="ts-btn-grid">
+                        <button class="ts-cmd machine-cmd" data-cmd="C3" title="Home the X and Y axes (C3)">Home XY</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C2" title="Set Z-Zero using zeroing plate (C2)">Home Z</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="JH" title="Jog Home X &amp; Y; Z to safe height (JH)">Jog Home</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C79" title="Move to park location (C79)">Jog to Park</button>
+                    </div>
+                </div>
 
+                <div class="ts-card" id="card-tools" style="display:none;">
+                    <div class="ts-card-title">Tools <span class="ts-note-inline" id="rack-note"></span></div>
+                    <div class="ts-rack" id="rack"></div>
+                    <div class="ts-btn-grid ts-btn-grid-single">
+                        <button class="ts-cmd" id="btn-measure" title="Measure the current tool (C72)">Measure Tool</button>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 

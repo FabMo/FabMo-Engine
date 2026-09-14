@@ -1,4 +1,5 @@
-/* Tool Status app — compact card layout, no Foundation dependency. */
+/* Tool Status app — split layout: slim job manager left, machine/tool
+ * commands right. Compact custom styles, no Foundation dependency. */
 
 * { box-sizing: border-box; }
 
@@ -10,7 +11,7 @@ body {
     font-size: 14px;
 }
 
-.ts-page { padding: 12px 14px; max-width: 900px; margin: 0 auto; }
+.ts-page { padding: 12px 14px; max-width: 1100px; margin: 0 auto; }
 
 .ts-header {
     display: flex;
@@ -36,20 +37,23 @@ body {
 .ts-state.stopped,
 .ts-state.dead    { background: #fadbd8; color: #922b21; }
 
-.ts-grid {
+/* Two panes: jobs left, controls right */
+.ts-split {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+    align-items: start;
 }
+@media (max-width: 700px) { .ts-split { grid-template-columns: 1fr; } }
+
+.ts-pane { display: flex; flex-direction: column; gap: 10px; }
+
 .ts-card {
     background: #fff;
     border: 1px solid #e1e4e8;
     border-radius: 6px;
     padding: 10px 12px;
 }
-.ts-card-wide { grid-column: 1 / -1; }
-@media (max-width: 640px) { .ts-grid { grid-template-columns: 1fr; } }
-
 .ts-card-title {
     font-size: 0.8em;
     font-weight: 700;
@@ -58,17 +62,79 @@ body {
     color: #7f8c8d;
     margin-bottom: 8px;
 }
-.ts-units { text-transform: none; letter-spacing: 0; }
-.ts-note { font-size: 0.78em; color: #95a5a6; margin-top: 6px; }
 .ts-note-inline { font-weight: 400; text-transform: none; letter-spacing: 0; color: #95a5a6; }
 
-/* Current tool */
-.ts-tool-display { text-align: center; padding: 4px 0 8px; }
-.ts-tool-number { font-size: 3.2em; font-weight: 700; line-height: 1.1; }
-.ts-tool-number.empty { color: #b2bec3; }
-.ts-tool-caption { font-size: 0.85em; color: #7f8c8d; }
+/* Jobs pane */
+.ts-jobs-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+.ts-jobs-actions #btn-run-next { flex: 1; }
 
-.ts-sensors { display: flex; justify-content: center; gap: 14px; border-top: 1px solid #f0f2f4; padding-top: 8px; }
+.ts-job-list { display: flex; flex-direction: column; gap: 4px; }
+.ts-job {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e1e4e8;
+    border-radius: 5px;
+    padding: 6px 8px;
+    background: #fafbfc;
+}
+.ts-job.next { border-color: #2980b9; background: #eef6fc; }
+.ts-job-info { flex: 1; min-width: 0; }
+.ts-job-name {
+    font-weight: 600;
+    font-size: 0.92em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ts-job-meta { font-size: 0.75em; color: #95a5a6; }
+.ts-job-meta .ok        { color: #27ae60; }
+.ts-job-meta .cancelled,
+.ts-job-meta .failed    { color: #c0392b; }
+
+.ts-iconbtn {
+    border: none;
+    background: none;
+    color: #95a5a6;
+    font-size: 1em;
+    cursor: pointer;
+    padding: 4px 6px;
+}
+.ts-iconbtn:hover { color: #2c3e50; }
+.ts-iconbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ts-empty { font-size: 0.85em; color: #b2bec3; padding: 8px 2px; }
+.ts-history-title { margin-top: 12px; }
+.ts-job-history .ts-job { background: #fff; }
+
+/* Current tool strip */
+.ts-current-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.ts-tool-display { text-align: center; min-width: 110px; }
+.ts-tool-label {
+    font-size: 0.8em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: #7f8c8d;
+}
+.ts-tool-number { font-size: 2.8em; font-weight: 700; line-height: 1.1; }
+.ts-tool-number.empty { color: #b2bec3; }
+.ts-tool-caption { font-size: 0.78em; color: #7f8c8d; min-height: 1.2em; }
+
+.ts-postable { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ts-postable th {
+    font-size: 0.72em; font-weight: 600; color: #95a5a6;
+    text-align: right; padding: 1px 8px;
+}
+.ts-postable td { text-align: right; padding: 2px 8px; font-size: 0.95em; }
+.ts-postable td.ts-axis { font-weight: 700; text-align: left; color: #7f8c8d; }
+
+.ts-sensors {
+    display: flex; justify-content: center; gap: 14px;
+    border-top: 1px solid #f0f2f4; margin-top: 8px; padding-top: 8px;
+}
 .ts-sensor { display: flex; align-items: center; gap: 5px; font-size: 0.82em; color: #7f8c8d; }
 .ts-led {
     width: 10px; height: 10px; border-radius: 50%;
@@ -76,49 +142,45 @@ body {
 }
 .ts-led.on { background: #2ecc71; border-color: #27ae60; }
 
-/* Position table */
-.ts-postable { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.ts-postable th {
-    font-size: 0.75em; font-weight: 600; color: #95a5a6;
-    text-align: right; padding: 2px 6px;
+/* Buttons */
+.ts-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ts-btn-grid-single { grid-template-columns: 1fr; margin-top: 8px; }
+.ts-cmd {
+    padding: 10px 12px;
+    border: 1px solid #b8c8d4;
+    border-radius: 5px;
+    background: #eef3f7;
+    color: #2c3e50;
+    font-size: 0.92em;
+    font-weight: 600;
+    cursor: pointer;
 }
-.ts-postable td { text-align: right; padding: 3px 6px; font-size: 1.0em; }
-.ts-postable td.ts-axis { font-weight: 700; text-align: left; color: #7f8c8d; }
+.ts-cmd:hover { background: #dfeaf2; }
+.ts-cmd:disabled { opacity: 0.5; cursor: not-allowed; }
+.ts-cmd-primary { background: #2980b9; border-color: #2471a3; color: #fff; }
+.ts-cmd-primary:hover { background: #2471a3; }
 
-/* Rack */
-.ts-rack { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Tool rack row */
+.ts-rack { display: flex; flex-wrap: wrap; gap: 6px; }
 .ts-clip {
-    min-width: 64px;
-    padding: 8px 6px 6px;
+    min-width: 46px;
+    padding: 8px 4px;
     border: 1px solid #d5dbdb;
     border-radius: 6px;
     background: #fafbfc;
     text-align: center;
     cursor: pointer;
     user-select: none;
+    font-size: 1.15em;
+    font-weight: 700;
 }
 .ts-clip:hover { background: #eef3f7; }
-.ts-clip .ts-clip-num { font-size: 1.3em; font-weight: 700; }
-.ts-clip .ts-clip-len { font-size: 0.72em; color: #95a5a6; margin-top: 2px; }
+.ts-clip .ts-clip-len { font-size: 0.6em; font-weight: 400; color: #95a5a6; }
 .ts-clip.current {
     border-color: #2980b9;
-    background: #d6eaf8;
+    background: #2980b9;
+    color: #fff;
     cursor: default;
 }
-.ts-clip.current .ts-clip-num { color: #1a5276; }
+.ts-clip.current .ts-clip-len { color: #d6eaf8; }
 .ts-clip.disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* Commands */
-.ts-commands { display: flex; flex-wrap: wrap; gap: 8px; }
-.ts-cmd {
-    padding: 8px 14px;
-    border: 1px solid #b8c8d4;
-    border-radius: 5px;
-    background: #eef3f7;
-    color: #2c3e50;
-    font-size: 0.9em;
-    font-weight: 600;
-    cursor: pointer;
-}
-.ts-cmd:hover { background: #dfeaf2; }
-.ts-cmd:disabled { opacity: 0.5; cursor: not-allowed; }

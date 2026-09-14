@@ -1,8 +1,11 @@
 /*
  * Tool Status app
  *
- * Displays the machine's tool state — current tool, working offsets, ATC
- * rack — and offers one-press tool commands (change tool, measure, park...).
+ * Split layout: a slim job manager on the left (pending queue + run next +
+ * recent history), machine/tool commands on the right — SB4's standard
+ * buttons (Home XY = C3, Home Z = C2, Jog Home = JH, Jog to Park = C79),
+ * plus a tool row (1..$ATC.numClips) for rack-style ATC types and
+ * Measure Tool (C72).
  *
  * Data sources:
  *   - opensbp persistent variables (config.opensbp.variables): $ATC.* nested
@@ -11,10 +14,8 @@
  *     (TOOLSUU, dual-unit: {"0": inches, "1": mm}).
  *   - driver config g55x/y/z: working-zero offsets (FabMo runs in G55).
  *   - live status: posx/y/z, inN sensor states, machine state.
- *
- * Commands run the standard ShopBot macros: C9 (tool change dispatcher,
- * reads &Tool), C72 (measure tool), C73 (plate offset), C74 (ATC calibrate),
- * C79 (park). Motion commands confirm first and only enable at idle.
+ *   - job queue/history via getQueueAndHistory, refreshed on job_start /
+ *     job_end / change events.
  */
 /* global $, FabMoDashboard */
 "use strict";
@@ -33,6 +34,12 @@ var ATC_TYPE_LABELS = {
     7: "Desktop MAX ATC V2",
 };
 
+// Types that get the numbered tool row (rack-style ATCs). 0 is manual and
+// 5 (5-axis) has its own toolchange flow.
+var TOOL_ROW_TYPES = { 1: true, 2: true, 3: true, 4: true, 6: true, 7: true };
+
+var HISTORY_COUNT = 5;
+
 var state = {
     machineState: null,
     unit: "in",
@@ -40,6 +47,9 @@ var state = {
     g55: { x: 0, y: 0, z: 0 },
     pos: { x: null, y: null, z: null },
     inputs: {}, // inN -> 0/1
+    queue: [],
+    running: [],
+    history: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -71,15 +81,23 @@ function fmt(v) {
     return v.toFixed(state.unit === "mm" ? 2 : 3);
 }
 
-function isATC() {
-    return Number(atcVar("TYPE", 0)) !== 0;
+function atcType() {
+    return Number(atcVar("TYPE", 0));
+}
+
+function showToolRow() {
+    return !!TOOL_ROW_TYPES[atcType()];
+}
+
+function isIdle() {
+    return state.machineState === "idle";
 }
 
 // ---------------------------------------------------------------------------
-// Rendering
+// Rendering — status
 
 function renderHeader() {
-    var type = Number(atcVar("TYPE", 0));
+    var type = atcType();
     $("#atc-type-badge").text(ATC_TYPE_LABELS[type] || "ATC (type " + type + ")");
     var st = state.machineState || "—";
     $("#machine-state")
@@ -93,10 +111,10 @@ function renderCurrentTool() {
     if (tool >= 1) {
         $num.text(tool).removeClass("empty");
         var h = (toolTable()[tool] || {}).H;
-        $("#current-tool-caption").text(h ? "measured length " + fmt(Number(h)) : "in spindle");
+        $("#current-tool-caption").text(h ? "length " + fmt(Number(h)) : "in spindle");
     } else {
         $num.text("—").addClass("empty");
-        $("#current-tool-caption").text(isATC() ? "no tool in spindle" : "current tool not tracked");
+        $("#current-tool-caption").text(showToolRow() ? "no tool in spindle" : "");
     }
 }
 
@@ -120,31 +138,27 @@ function renderSensors() {
 
 function renderPosition() {
     ["x", "y", "z"].forEach(function (ax) {
-        var pos = state.pos[ax];
-        var off = state.g55[ax];
-        $("#pos-" + ax).text(fmt(pos));
-        $("#off-" + ax).text(fmt(off));
-        $("#mach-" + ax).text(typeof pos === "number" ? fmt(pos + off) : "—");
+        $("#pos-" + ax).text(fmt(state.pos[ax]));
+        $("#off-" + ax).text(fmt(state.g55[ax]));
     });
-    $("#units-label").text("(" + state.unit + ")");
+    $("#units-label").text(state.unit);
 }
 
-function renderRack() {
-    if (!isATC()) {
-        $("#card-rack").hide();
+function renderToolRow() {
+    if (!showToolRow()) {
+        $("#card-tools").hide();
         return;
     }
-    $("#card-rack").show();
+    $("#card-tools").show();
     var clips = Number(atcVar("NUMCLIPS", 0));
     var current = Number(atcVar("TOOLIN", 0));
-    var idle = state.machineState === "idle";
+    var idle = isIdle();
     var table = toolTable();
     var $rack = $("#rack").empty();
     for (var n = 1; n <= clips; n++) {
         var h = (table[n] || {}).H;
         var $clip = $(
-            '<div class="ts-clip" data-tool="' + n + '">' +
-                '<div class="ts-clip-num">' + n + "</div>" +
+            '<div class="ts-clip" data-tool="' + n + '">' + n +
                 '<div class="ts-clip-len">' + (h ? fmt(Number(h)) : "&nbsp;") + "</div>" +
                 "</div>"
         );
@@ -152,31 +166,80 @@ function renderRack() {
         else if (!idle) $clip.addClass("disabled");
         $rack.append($clip);
     }
-    $("#rack-note").text(idle ? "press a tool to change to it" : "tool change available when idle");
+    $("#rack-note").text(idle ? "press a tool to load it" : "available when idle");
+    $("#btn-measure").prop("disabled", !idle);
 }
 
-var COMMANDS = [
-    { label: "Measure Current Tool", macro: 72, atcOnly: true, confirm: "Measure the current tool? The machine will move to the measurement plate." },
-    { label: "Park", macro: 79, atcOnly: false, confirm: "Move the tool to the parking location?" },
-    { label: "Plate Offset", macro: 73, atcOnly: true, confirm: "Set the measurement plate offset? Follow the prompts." },
-    { label: "Calibrate ATC", macro: 74, atcOnly: true, confirm: "Run ATC clip-location calibration? This is a setup routine — continue?" },
-];
-
 function renderCommands() {
-    var idle = state.machineState === "idle";
-    var $c = $("#commands").empty();
-    COMMANDS.forEach(function (cmd) {
-        if (cmd.atcOnly && !isATC()) return;
-        var $btn = $('<button class="ts-cmd"></button>').text(cmd.label).prop("disabled", !idle);
-        $btn.on("click", function () {
-            if (!window.confirm(cmd.confirm)) return;
-            fabmo.runMacro(cmd.macro, function (err) {
-                if (err) fabmo.notify("error", err.message || err);
-            });
-        });
-        $c.append($btn);
+    $(".machine-cmd").prop("disabled", !isIdle());
+}
+
+// ---------------------------------------------------------------------------
+// Rendering — jobs
+
+function jobMeta(job) {
+    var d = new Date(job.created_at);
+    var when =
+        d.getMonth() + 1 + "/" + d.getDate() + " " +
+        d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2);
+    if (job.state === "pending") return when;
+    var cls = job.state === "finished" ? "ok" : job.state;
+    return when + ' &mdash; <span class="' + cls + '">' + job.state + "</span>";
+}
+
+function renderJobs() {
+    var $q = $("#job-queue").empty();
+    (state.running || []).forEach(function (job) {
+        var $row = $(
+            '<div class="ts-job next">' +
+                '<div class="ts-job-info">' +
+                    '<div class="ts-job-name"></div>' +
+                    '<div class="ts-job-meta"><span class="ok">running&hellip;</span></div>' +
+                "</div>" +
+                "</div>"
+        );
+        $row.find(".ts-job-name").text(job.name || "job " + job._id);
+        $q.append($row);
     });
-    $("#commands-note").text(idle ? "" : "Commands are available when the machine is idle.");
+    if (!state.queue.length && !(state.running || []).length) {
+        $q.append('<div class="ts-empty">No jobs in queue</div>');
+    } else {
+        state.queue.forEach(function (job, i) {
+            var $row = $(
+                '<div class="ts-job' + (i === 0 ? " next" : "") + '">' +
+                    '<div class="ts-job-info">' +
+                        '<div class="ts-job-name"></div>' +
+                        '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
+                    "</div>" +
+                    '<button class="ts-iconbtn ts-job-delete" title="Remove from queue">&#10005;</button>' +
+                    "</div>"
+            );
+            $row.find(".ts-job-name").text(job.name || "job " + job._id);
+            $row.find(".ts-job-delete").data("id", job._id);
+            $q.append($row);
+        });
+    }
+    $("#btn-run-next").prop("disabled", !state.queue.length || !isIdle());
+
+    var $h = $("#job-history").empty();
+    if (!state.history.length) {
+        $h.append('<div class="ts-empty">No recent jobs</div>');
+        return;
+    }
+    state.history.forEach(function (job) {
+        var $row = $(
+            '<div class="ts-job">' +
+                '<div class="ts-job-info">' +
+                    '<div class="ts-job-name"></div>' +
+                    '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
+                "</div>" +
+                '<button class="ts-iconbtn ts-job-rerun" title="Add to queue again">&#8635;</button>' +
+                "</div>"
+        );
+        $row.find(".ts-job-name").text(job.name || "job " + job._id);
+        $row.find(".ts-job-rerun").data("id", job._id);
+        $h.append($row);
+    });
 }
 
 function renderAll() {
@@ -184,8 +247,9 @@ function renderAll() {
     renderCurrentTool();
     renderSensors();
     renderPosition();
-    renderRack();
+    renderToolRow();
     renderCommands();
+    renderJobs();
 }
 
 // ---------------------------------------------------------------------------
@@ -202,6 +266,16 @@ function refreshConfig(callback) {
     });
 }
 
+function refreshJobs() {
+    fabmo.getQueueAndHistory({ start: 0, count: HISTORY_COUNT }, function (err, data) {
+        if (err || !data) return;
+        state.running = data.running || [];
+        state.queue = data.pending || [];
+        state.history = (data.history && data.history.data) || [];
+        renderJobs();
+    });
+}
+
 fabmo.on("status", function (status) {
     var stateChanged = status.state !== state.machineState;
     state.machineState = status.state;
@@ -212,18 +286,34 @@ fabmo.on("status", function (status) {
             state.inputs[k] = status[k];
         }
     }
-    // Cheap live updates on every report; full re-render + config re-read on
-    // state transitions (a finished toolchange/measure updates TOOLIN, g55).
+    // Cheap live updates on every report; full re-render + config/job
+    // re-read on state transitions (a finished toolchange/measure updates
+    // TOOLIN and g55; a finished job updates the queue).
     renderPosition();
     renderSensors();
     if (stateChanged) {
         renderHeader();
+        renderCommands();
         refreshConfig();
+        refreshJobs();
     }
 });
 
+fabmo.on("job_start", refreshJobs);
+fabmo.on("job_end", refreshJobs);
+fabmo.on("change", function (topic) {
+    if (topic === "jobs") refreshJobs();
+});
+
+function runCommand(cmd) {
+    fabmo.runSBP(cmd + "\n", function (err) {
+        if (err) fabmo.notify("error", err.message || err);
+    });
+}
+
 $(document).ready(function () {
     refreshConfig();
+    refreshJobs();
     fabmo.requestStatus(function (err, status) {
         if (err || !status) return;
         state.machineState = status.state;
@@ -235,15 +325,64 @@ $(document).ready(function () {
     // (e.g. edited in another app).
     setInterval(refreshConfig, 10000);
 
-    // Tool change from the rack
+    // Machine buttons (SB4 equivalents)
+    $(".machine-cmd").on("click", function () {
+        if (!isIdle()) return;
+        runCommand($(this).data("cmd"));
+    });
+
+    // Tool row: load tool N via the standard toolchange dispatcher
     $("#rack").on("click", ".ts-clip", function () {
         var tool = Number($(this).data("tool"));
         var current = Number(atcVar("TOOLIN", 0));
-        if (tool === current) return;
-        if (state.machineState !== "idle") return;
-        if (!window.confirm("Change to Tool " + tool + "? The machine will move.")) return;
-        fabmo.runSBP("&Tool = " + tool + "\nC9\n", function (err) {
+        if (tool === current || !isIdle()) return;
+        if (!window.confirm("Change to Tool " + tool + "?")) return;
+        runCommand("&Tool = " + tool + "\nC9");
+    });
+
+    $("#btn-measure").on("click", function () {
+        if (!isIdle()) return;
+        runCommand("C72");
+    });
+
+    // Jobs
+    $("#btn-run-next").on("click", function () {
+        if (!isIdle()) return;
+        fabmo.runNext(function (err) {
             if (err) fabmo.notify("error", err.message || err);
+        });
+    });
+
+    $("#btn-add-job").on("click", function () {
+        $("#job-file-input").trigger("click");
+    });
+    $("#job-file-input").on("change", function () {
+        var files = this.files;
+        if (!files || !files.length) return;
+        var jobs = [];
+        for (var i = 0; i < files.length; i++) {
+            jobs.push({ file: files[i] });
+        }
+        fabmo.submitJob(jobs, { stayHere: true }, function (err) {
+            if (err) fabmo.notify("error", err.message || err);
+            refreshJobs();
+        });
+        this.value = "";
+    });
+
+    $("#job-queue").on("click", ".ts-job-delete", function () {
+        var id = $(this).data("id");
+        fabmo.deleteJob(id, function (err) {
+            if (err) fabmo.notify("error", err.message || err);
+            refreshJobs();
+        });
+    });
+
+    $("#job-history").on("click", ".ts-job-rerun", function () {
+        var id = $(this).data("id");
+        fabmo.resubmitJob(id, { stayHere: true }, function (err) {
+            if (err) fabmo.notify("error", err.message || err);
+            refreshJobs();
         });
     });
 });
