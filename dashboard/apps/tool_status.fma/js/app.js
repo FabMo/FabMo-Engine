@@ -145,13 +145,24 @@ function uuBoth(fields) {
     return out;
 }
 
-// The Home Z button: optionally jog to the configured fixed XY location
-// (new $SB_ZZEROLOCUU / $SB_ZZEROLOC_USE variables) before running C2.
+// The Home Z button: optionally lift to safe-Z and jog to the configured
+// fixed XY location (new $SB_ZZEROLOCUU / $SB_ZZEROLOC_USE variables)
+// before running C2.
 function homeZCommand() {
     if (Number((state.vars || {}).SB_ZZEROLOC_USE)) {
         var x = uuGet("SB_ZZEROLOCUU", "X");
         var y = uuGet("SB_ZZEROLOCUU", "Y");
-        if (x !== null && y !== null) return "J2, " + x + ", " + y + "\nC2";
+        if (x !== null && y !== null) {
+            var parts = [];
+            // Lift first unless already at/above safe-Z (JZ is absolute — an
+            // unconditional JZ would jog DOWN from a higher position).
+            var safeZ = Number((state.vars || {}).SB_SAFE_Z);
+            if (isFinite(safeZ) && !(typeof state.pos.z === "number" && state.pos.z >= safeZ)) {
+                parts.push("JZ, " + safeZ);
+            }
+            parts.push("J2, " + x + ", " + y, "C2");
+            return parts.join("\n");
+        }
     }
     return "C2";
 }
