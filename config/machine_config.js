@@ -95,11 +95,14 @@ MachineConfig.prototype.init = function (machine, callback) {
                         notify_off_message: "",
                         on_position: { axis: "z", side: "below", value: 0 },
                         off_position: { axis: "z", side: "above", value: 0 },
+                        on_input: { input: 1, state: "on" },
+                        off_input: { input: 1, state: "off" },
                     };
                 }
             }
             this._normalizeOutputNotify();
             this._normalizeOutputPosition();
+            this._normalizeOutputInput();
             if (typeof callback === "function") callback(err);
         }.bind(this)
     );
@@ -158,12 +161,34 @@ MachineConfig.prototype._normalizeOutputPosition = function () {
     }
 };
 
+// Normalize/backfill the per-output input-trigger fields
+// (machine.outputs.<n>.on_input/off_input: { input, state }). Same rationale
+// as _normalizeOutputPosition: older configs predate the fields, and the
+// nested shape must exist in the cache for client updates to merge.
+MachineConfig.prototype._normalizeOutputInput = function () {
+    if (!this._cache || !this._cache.outputs) return;
+    var normInput = function (p, defState) {
+        if (!p || typeof p !== "object") p = {};
+        var input = Math.round(Number(p.input));
+        if (!(input >= 1 && input <= 12)) input = 1;
+        var state = p.state === "on" || p.state === "off" ? p.state : defState;
+        return { input: input, state: state };
+    };
+    for (var j = 1; j <= 12; j++) {
+        var out = this._cache.outputs[String(j)];
+        if (!out) continue;
+        out.on_input = normInput(out.on_input, "on");
+        out.off_input = normInput(out.off_input, "off");
+    }
+};
+
 MachineConfig.prototype.update = function (data, callback, force) {
     var current_units = this.get("units"); // Get BEFORE extending cache
     try {
         u.extend(this._cache, data, force);
         this._normalizeOutputNotify();
         this._normalizeOutputPosition();
+        this._normalizeOutputInput();
     } catch (e) {
         return callback(e);
     }

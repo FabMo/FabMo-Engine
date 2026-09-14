@@ -167,6 +167,7 @@ function update() {
       // mode dropdowns. Done here (not on a timer) so initial render and any
       // external config change refresh visibility correctly.
       if (typeof syncSecondsVisibility === 'function') {
+        refreshInputOptionLabels(data.machine);
         for (var nOut = 1; nOut <= 12; nOut++) {
           // Notify visibility syncs for every output — the notify controls
           // are live even on the hardcoded outputs (spindles, arm motion).
@@ -471,13 +472,15 @@ var ON_MODES = [
     { value: "file_start", label: "File Start" },
     { value: "command", label: "Command" },
     { value: "timed_after_file_end", label: "Timed after file end" },
-    { value: "position", label: "Position" }
+    { value: "position", label: "Position" },
+    { value: "input", label: "Input" }
 ];
 var OFF_MODES = [
     { value: "file_end", label: "File End" },
     { value: "command", label: "Command" },
     { value: "timed_after_file_end", label: "Timed after file end" },
-    { value: "position", label: "Position" }
+    { value: "position", label: "Position" },
+    { value: "input", label: "Input" }
 ];
 
 function buildOutputFieldset(n) {
@@ -538,6 +541,30 @@ function buildOutputFieldset(n) {
             '</div>'
         ].join('');
 
+        // Input-trigger condition: [input] [goes ON/goes OFF], shown only
+        // while the mode dropdown is set to Input. Binding both sides of an
+        // output to the same input with complementary states = follow
+        // ("momentary"); one side alone = latch ("permanent").
+        var inputRow = [
+            '<div id="machine-outputs-' + n + '-' + side + '_input_row"',
+              ' title="Turn this output ' + sideWord + ' when the input changes to the selected state"',
+              ' style="display:none; margin-top:4px;">',
+              '<select id="machine-outputs-' + n + '-' + side + '_input-input" class="machine-output output-trigger-input"',
+                ' style="display:inline-block; width:55%; margin:0 2% 0 0;">',
+                (function () {
+                    var o = '';
+                    for (var inp = 1; inp <= 12; inp++) o += '<option value="' + inp + '">Input ' + inp + '</option>';
+                    return o;
+                })(),
+              '</select>',
+              '<select id="machine-outputs-' + n + '-' + side + '_input-state" class="machine-output"',
+                ' style="display:inline-block; width:43%; margin:0;">',
+                '<option value="on">goes ON</option>',
+                '<option value="off">goes OFF</option>',
+              '</select>',
+            '</div>'
+        ].join('');
+
         return [
             '<div class="large-4 columns">',
               '<div class="row collapse">',
@@ -547,6 +574,7 @@ function buildOutputFieldset(n) {
                 '<input type="number" id="machine-outputs-' + n + '-' + side + '_seconds" min="0" step="0.1"' + secondsCls + lockedAttr +
                   ' placeholder="seconds" style="display:none; margin-top:4px;">',
                 positionRow,
+                inputRow,
                 '<label style="font-weight:normal; margin-top:4px;">Notify for ' + sideWord,
                   '<select id="machine-outputs-' + n + '-notify_' + side + '"',
                     ' class="machine-output output-notify" data-output="' + n + '" data-side="' + side + '">',
@@ -595,6 +623,28 @@ function syncSecondsVisibility(n, side) {
     $secs.css('display', mode === 'timed_after_file_end' ? '' : 'none');
     $('#machine-outputs-' + n + '-' + side + '_position_row')
         .css('display', mode === 'position' ? '' : 'none');
+    $('#machine-outputs-' + n + '-' + side + '_input_row')
+        .css('display', mode === 'input' ? '' : 'none');
+}
+
+// Annotate the input-trigger dropdowns with each input's assigned special
+// function (stop, limit, auth button, ...) so nobody wires a dust collector
+// to their stop button by accident. Inputs stay selectable either way —
+// annotation only. Called from update() once config data is loaded.
+function refreshInputOptionLabels(machineData) {
+    if (!machineData) return;
+    var tags = {};
+    for (var i = 1; i <= 12; i++) {
+        var action = machineData['di' + i + 'ac'];
+        if (action && action !== 'none') tags[i] = action;
+    }
+    if (machineData.auth_input >= 1) tags[machineData.auth_input] = 'auth button';
+    if (machineData.quit_input >= 1) tags[machineData.quit_input] = 'quit button';
+    if (machineData.ap_input >= 1) tags[machineData.ap_input] = 'AP button';
+    $('.output-trigger-input option').each(function () {
+        var inp = Number(this.value);
+        this.text = 'Input ' + inp + (tags[inp] ? ' (' + tags[inp] + ')' : '');
+    });
 }
 
 // Show the notification-message input only while its "Notify for ON/OFF"
