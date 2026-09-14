@@ -139,24 +139,45 @@ class commands {
                     return callback(err);
                 }
                 console.log(`wlan0_ap brought up: ${stdout}`);
-                // Step 3: Start or restart hostapd and dnsmasq
-                exec("systemctl restart hostapd dnsmasq", (err, stdout, stderr) => {
-                    if (err) {
-                        console.error(`Error starting hostapd and dnsmasq: ${stderr}`);
-                        return callback(err);
-                    }
-                    console.log(`hostapd and dnsmasq started: ${stdout}`);
-                    // Step 4: Update the configuration
-                    const networkConfig = config.engine.get("network") || {};
-                    networkConfig.wifi = networkConfig.wifi || {};
-                    networkConfig.wifi.enabled = true; // Update the nested property
-                    config.engine.set("network", networkConfig, (err) => {
-                        if (err) {
-                            console.error("Failed to update network configuration:", err);
-                            return callback(err);
-                        }
-                        console.log("Network configuration updated successfully.");
-                        callback(null, stdout);
+                // Step 3: Update SSID in NM profile and hostapd.conf before restarting hostapd
+                const machineName = config.engine.get("name") || "fabmoAP";
+                exec("ip -4 addr show eth0 2>/dev/null | grep inet | awk '{print $2}' | cut -d/ -f1", (ipErr, ipStdout) => {
+                    const ethIp = (ipStdout || "").trim();
+                    const ssid = ethIp ? `${machineName}-LAN@${ethIp}` : `${machineName}-AP@192.168.42.1`;
+                    const truncatedSsid = ssid.substring(0, 32);
+                    // Update NM connection profile SSID
+                    exec(`nmcli con modify wlan0_ap 802-11-wireless.ssid "${truncatedSsid}"`, (modErr) => {
+                        if (modErr) console.warn(`Warning: Could not update NM SSID: ${modErr}`);
+                        // Update /etc/hostapd/hostapd.conf so standalone hostapd broadcasts the correct name
+                        exec(`sed -i "s|^ssid=.*|ssid=${truncatedSsid}|" /etc/hostapd/hostapd.conf`, (sedErr) => {
+                            if (sedErr) console.warn(`Warning: Could not update hostapd.conf SSID: ${sedErr}`);
+                            // Step 4: Restart hostapd only (fatal on failure)
+                            exec("systemctl restart hostapd", (hapdErr, hapdStdout, hapdStderr) => {
+                                if (hapdErr) {
+                                    console.error(`Error restarting hostapd: ${hapdStderr}`);
+                                    return callback(hapdErr);
+                                }
+                                console.log(`hostapd restarted: ${hapdStdout}`);
+                                // Step 5: Update config — AP is active regardless of dnsmasq
+                                const networkConfig = config.engine.get("network") || {};
+                                networkConfig.wifi = networkConfig.wifi || {};
+                                networkConfig.wifi.enabled = true;
+                                config.engine.set("network", networkConfig, (configErr) => {
+                                    if (configErr) {
+                                        console.error("Failed to update network configuration:", configErr);
+                                        return callback(configErr);
+                                    }
+                                    console.log("Network configuration updated successfully.");
+                                    // Step 6: Restart dnsmasq (non-fatal; managed by network-monitor in LAN mode)
+                                    exec("systemctl restart dnsmasq", (dnsErr, dnsStdout, dnsStderr) => {
+                                        if (dnsErr) {
+                                            console.warn(`Note: dnsmasq restart failed (expected in LAN mode): ${dnsStderr}`);
+                                        }
+                                        callback(null, hapdStdout);
+                                    });
+                                });
+                            });
+                        });
                     });
                 });
             });

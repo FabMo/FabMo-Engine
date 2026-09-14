@@ -155,8 +155,11 @@ class NetworkConfigApp:
         cmd_modify = f"nmcli con modify {ap_connection_name} 802-11-wireless.ssid {new_ssid}"
         cmd_down = f"nmcli con down {ap_connection_name}"
         cmd_up = f"nmcli con up {ap_connection_name}"
+        # Also keep hostapd.conf in sync so standalone hostapd broadcasts the same SSID
+        cmd_hostapd_ssid = f"sed -i \"s|^ssid=.*|ssid={new_ssid}|\" /etc/hostapd/hostapd.conf"
         try:
             subprocess.run(cmd_modify, shell=True, check=True)
+            subprocess.run(cmd_hostapd_ssid, shell=True, check=False)  # non-fatal
             subprocess.run(cmd_down, shell=True, check=True)
             subprocess.run(cmd_up, shell=True, check=True)
             syslog.syslog(f"###=> Changing AP Name; NewName={new_ssid}")
