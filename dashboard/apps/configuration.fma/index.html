@@ -711,7 +711,7 @@
                 These settings define the functionality of each of your tools Input lines <br>
               </span>
             </span></legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled  <span class="tooltip tooltip-below">i
                   <span class="tooltiptext">
@@ -725,7 +725,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action   <span class="tooltip tooltip-below">i
                   <span class="tooltiptext">
@@ -749,7 +749,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity   <span class="tooltip tooltip-below">i
                   <span class="tooltiptext">
@@ -765,11 +765,36 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type   <span class="tooltip tooltip-below">i
+                  <span class="tooltiptext">
+                    What this input physically is (limit switch, ATC sensor, ...).<br>
+                    Lets apps and routines find the right input by role.<br>
+                  </span>
+                </span>
+                  <select id="machine-di1type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 2</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di2en" class="driver-input">
@@ -779,7 +804,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di2ac" class="machine-input">
@@ -793,7 +818,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di2po" class="driver-input">
@@ -803,11 +828,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di2type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 3</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di3en" class="driver-input">
@@ -817,7 +862,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di3ac" class="machine-input">
@@ -831,7 +876,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di3po" class="driver-input">
@@ -841,11 +886,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di3type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 4</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di4en" class="driver-input">
@@ -855,7 +920,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di4ac" class="machine-input">
@@ -869,7 +934,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di4po" class="driver-input">
@@ -879,11 +944,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di4type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 5</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di5en" class="driver-input">
@@ -893,7 +978,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di5ac" class="machine-input">
@@ -907,7 +992,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di5po" class="driver-input">
@@ -917,11 +1002,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di5type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
          <fieldset>
             <legend>Input 6</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di6en" class="driver-input">
@@ -931,7 +1036,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di6ac" class="machine-input">
@@ -945,7 +1050,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di6po" class="driver-input">
@@ -955,11 +1060,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di6type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 7</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di7en" class="driver-input">
@@ -969,7 +1094,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di7ac" class="machine-input">
@@ -983,7 +1108,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di7po" class="driver-input">
@@ -993,11 +1118,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di7type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 8</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di8en" class="driver-input">
@@ -1007,7 +1152,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di8ac" class="machine-input">
@@ -1021,7 +1166,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di8po" class="driver-input">
@@ -1031,11 +1176,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di8type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 9</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di9en" class="driver-input">
@@ -1045,7 +1210,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di9ac" class="machine-input">
@@ -1059,7 +1224,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di9po" class="driver-input">
@@ -1069,11 +1234,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di9type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 10</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di10en" class="driver-input">
@@ -1083,7 +1268,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di10ac" class="machine-input">
@@ -1097,7 +1282,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di10po" class="driver-input">
@@ -1107,11 +1292,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di10type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 11</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di11en" class="driver-input">
@@ -1121,7 +1326,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di11ac" class="machine-input">
@@ -1135,7 +1340,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di11po" class="driver-input">
@@ -1145,11 +1350,31 @@
                 </label>
               </div>
             </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di11type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
             <legend>Input 12</legend>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Enabled
                   <select id="driver-di12en" class="driver-input">
@@ -1159,7 +1384,7 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Action
                   <select id="machine-di12ac" class="machine-input">
@@ -1173,12 +1398,32 @@
                 </label>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="large-3 columns">
               <div class="row collapse">
                 <label>Polarity
                   <select id="driver-di12po" class="driver-input">
                     <option value="0">Low</option>
                     <option value="1">High</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <label>Type
+                  <select id="machine-di12type" class="machine-input">
+                    <option value="none">None</option>
+                    <option value="x_limit">X Limit</option>
+                    <option value="y_limit">Y Limit</option>
+                    <option value="z_limit">Z Limit</option>
+                    <option value="a_limit">A Limit</option>
+                    <option value="b_limit">B Limit</option>
+                    <option value="c_limit">C Limit</option>
+                    <option value="zzero_plate">Z-Zero Plate</option>
+                    <option value="toolbar_present">Tool Bar Present</option>
+                    <option value="toolbar_up">Tool Bar Up</option>
+                    <option value="drawbar_open">Draw Bar Open</option>
+                    <option value="tool_present">Tool Present in Spindle</option>
                   </select>
                 </label>
               </div>
