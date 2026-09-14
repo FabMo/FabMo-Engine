@@ -85,7 +85,7 @@
                         <span>Machine</span>
                         <button class="ts-iconbtn" id="btn-machine-settings" title="Routine settings"><i class="fa fa-gear"></i></button>
                     </div>
-                    <div class="ts-btn-grid">
+                    <div class="ts-btn-grid" id="machine-btn-grid">
                         <button class="ts-cmd machine-cmd" data-cmd="C3" title="Home the X and Y axes (C3)">Home XY</button>
                         <button class="ts-cmd machine-cmd" data-cmd="C2" title="Set Z-Zero using zeroing plate (C2)">Home Z</button>
                         <button class="ts-cmd machine-cmd" data-cmd="JH" title="Jog Home X &amp; Y; Z to safe height (JH)">Jog Home</button>
@@ -104,6 +104,26 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- Add macro button modal -->
+    <div class="ts-modal-backdrop" id="macro-pick-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Add Macro Button</span>
+                <a class="ts-link" id="macro-pick-manager">open Macro Manager</a>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-pick-list" id="macro-pick-list"></div>
+                <label class="ts-label-field">Button label
+                    <input id="macro-btn-label" type="text" placeholder="select a macro above">
+                </label>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-macro-pick-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-macro-pick-save" disabled>Add Button</button>
             </div>
         </div>
     </div>
@@ -157,6 +177,11 @@
                         <label>Y location <input id="ms-zzero-y" type="number" step="any"></label>
                     </div>
                     <div class="ts-note">When enabled, the Home Z button lifts to safe-Z, jogs here (J2), then runs Z-Zero (C2).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Custom Buttons <span class="ts-note-inline">rename or remove</span></div>
+                    <div id="ms-custom-list"></div>
                 </div>
 
                 <div class="ts-settings-section">

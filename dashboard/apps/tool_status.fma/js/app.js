@@ -267,6 +267,47 @@ function renderToolRow() {
     $("#btn-measure").prop("disabled", !idle);
 }
 
+// ---------------------------------------------------------------------------
+// Custom macro buttons ($TS_MACRO_BUTTONS — stored as a JSON string so saves
+// replace the whole list atomically; util.extend's index-wise array merge
+// would otherwise leave stale entries behind on deletion)
+
+function customButtons() {
+    var s = (state.vars || {}).TS_MACRO_BUTTONS;
+    if (typeof s !== "string" || !s) return [];
+    try {
+        var a = JSON.parse(s);
+        return Array.isArray(a) ? a : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveCustomButtons(list, callback) {
+    fabmo.setConfig(
+        { opensbp: { variables: { TS_MACRO_BUTTONS: JSON.stringify(list) } } },
+        function (err) {
+            if (err) fabmo.notify("error", err.message || err);
+            refreshConfig(callback);
+        }
+    );
+}
+
+function renderCustomButtons() {
+    var $grid = $("#machine-btn-grid");
+    $grid.find(".ts-dyn").remove();
+    customButtons().forEach(function (b) {
+        var macro = Number(b.macro);
+        if (!(macro >= 1)) return;
+        var $btn = $('<button class="ts-cmd machine-cmd ts-dyn"></button>')
+            .attr("data-cmd", "C" + macro)
+            .attr("title", "Run macro " + macro)
+            .text(b.label || "Macro " + macro);
+        $grid.append($btn);
+    });
+    $grid.append('<button class="ts-cmd ts-dyn ts-cmd-add" id="btn-add-macro" title="Add a macro button">+ Add</button>');
+}
+
 function renderCommands() {
     $(".machine-cmd").prop("disabled", !isIdle());
 }
@@ -475,6 +516,7 @@ function renderAll() {
     renderSensors();
     renderPosition();
     renderToolRow();
+    renderCustomButtons();
     renderCommands();
     renderJobs();
 }
@@ -556,12 +598,74 @@ $(document).ready(function () {
     refreshUSB();
     setInterval(refreshUSB, 8000);
 
-    // Machine buttons (SB4 equivalents). Home Z composes an optional jog to
-    // the configured fixed Z-zero XY location ahead of C2.
-    $(".machine-cmd").on("click", function () {
+    // Machine buttons (SB4 equivalents + user macro buttons; delegated —
+    // custom buttons are re-rendered dynamically). Home Z composes an
+    // optional jog to the configured fixed Z-zero XY location ahead of C2.
+    $("#machine-btn-grid").on("click", ".machine-cmd", function () {
         if (!isIdle()) return;
-        var cmd = $(this).data("cmd");
+        var cmd = $(this).attr("data-cmd");
         runCommand(cmd === "C2" ? homeZCommand() : cmd);
+    });
+
+    // ---- Add-macro-button modal ----
+
+    var pickedMacro = null;
+
+    $("#machine-btn-grid").on("click", "#btn-add-macro", function () {
+        pickedMacro = null;
+        $("#macro-btn-label").val("");
+        $("#btn-macro-pick-save").prop("disabled", true);
+        var $list = $("#macro-pick-list").html('<div class="ts-empty">Loading macros&hellip;</div>');
+        fabmo.getMacros(function (err, macros) {
+            $list.empty();
+            if (err || !macros || !macros.length) {
+                $list.append('<div class="ts-empty">No macros found</div>');
+                return;
+            }
+            macros.forEach(function (m) {
+                var $row = $(
+                    '<div class="ts-pick-entry">' +
+                        '<div class="ts-pick-name"></div>' +
+                        '<div class="ts-pick-desc"></div>' +
+                        "</div>"
+                );
+                $row.find(".ts-pick-name").text("C" + m.index + " — " + (m.name || "Macro " + m.index));
+                $row.find(".ts-pick-desc").text(m.description || "");
+                $row.data("macro", m);
+                $list.append($row);
+            });
+        });
+        $("#macro-pick-modal").css("display", "flex");
+    });
+
+    $("#macro-pick-list").on("click", ".ts-pick-entry", function () {
+        $("#macro-pick-list .ts-pick-entry").removeClass("selected");
+        $(this).addClass("selected");
+        pickedMacro = $(this).data("macro");
+        $("#macro-btn-label").val(pickedMacro.name || "Macro " + pickedMacro.index);
+        $("#btn-macro-pick-save").prop("disabled", false);
+    });
+
+    $("#macro-pick-manager").on("click", function () {
+        fabmo.launchApp("macros");
+    });
+
+    function closeMacroPick() {
+        $("#macro-pick-modal").hide();
+    }
+    $("#btn-macro-pick-cancel").on("click", closeMacroPick);
+    $("#macro-pick-modal").on("click", function (e) {
+        if (e.target === this) closeMacroPick();
+    });
+
+    $("#btn-macro-pick-save").on("click", function () {
+        if (!pickedMacro) return;
+        var list = customButtons();
+        list.push({
+            macro: pickedMacro.index,
+            label: ($("#macro-btn-label").val() || "").trim() || pickedMacro.name || "Macro " + pickedMacro.index,
+        });
+        saveCustomButtons(list, closeMacroPick);
     });
 
     // ---- Machine routine settings modal ----
@@ -579,8 +683,32 @@ $(document).ready(function () {
         setNum($("#ms-park-x"), uuGet("SB_PARKUU", "X"));
         setNum($("#ms-park-y"), uuGet("SB_PARKUU", "Y"));
         setNum($("#ms-park-z"), uuGet("SB_PARKUU", "Z"));
+        var $custom = $("#ms-custom-list").empty();
+        var buttons = customButtons();
+        if (!buttons.length) {
+            $custom.append('<div class="ts-empty">No custom buttons — use + Add on the Machine card</div>');
+        }
+        buttons.forEach(function (b) {
+            var $row = $(
+                '<div class="ts-custom-row">' +
+                    '<span class="ts-custom-macro">C' + Number(b.macro) + "</span>" +
+                    '<input type="text">' +
+                    '<button class="ts-iconbtn ms-custom-remove" title="Remove button"><i class="fa fa-trash"></i></button>' +
+                    "</div>"
+            );
+            $row.data("macro", Number(b.macro));
+            $row.find("input").val(b.label || "");
+            $custom.append($row);
+        });
         $("#machine-settings-units").text("dimensions in current units (" + state.unit + ")");
         $("#machine-settings-modal").css("display", "flex");
+    });
+
+    $("#ms-custom-list").on("click", ".ms-custom-remove", function () {
+        $(this).closest(".ts-custom-row").remove();
+        if (!$("#ms-custom-list .ts-custom-row").length) {
+            $("#ms-custom-list").append('<div class="ts-empty">No custom buttons — use + Add on the Machine card</div>');
+        }
     });
 
     function closeMachineSettings() {
@@ -616,6 +744,17 @@ $(document).ready(function () {
                 Z: read("#ms-park-z", "SB_PARKUU", "Z"),
             }),
         };
+        var buttons = [];
+        $("#ms-custom-list .ts-custom-row").each(function () {
+            var $row = $(this);
+            var macro = Number($row.data("macro"));
+            if (!(macro >= 1)) return;
+            buttons.push({
+                macro: macro,
+                label: ($row.find("input").val() || "").trim() || "Macro " + macro,
+            });
+        });
+        payload.TS_MACRO_BUTTONS = JSON.stringify(buttons);
         fabmo.setConfig({ opensbp: { variables: payload } }, function (err) {
             if (err) return fabmo.notify("error", err.message || err);
             closeMachineSettings();
