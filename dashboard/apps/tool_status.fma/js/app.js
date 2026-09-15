@@ -54,6 +54,54 @@ var state = {
 };
 
 // ---------------------------------------------------------------------------
+// Themes (ShopBot Labs token themes — css/themes.css + css/theme-bridge.css).
+// A theme-<id> class on <body> activates one; no class = the app's default
+// look from style.css. Choice is per-browser (localStorage), same as the
+// labs ui_testbed, since a theme is a display preference, not a machine
+// setting. Preview colors mirror each theme's bg/accent/text tokens so the
+// picker swatches are accurate without applying the theme.
+
+var THEME_KEY = "tool-status-theme";
+
+var THEMES = [
+    { id: "", label: "Default", bg: "#f4f5f7", accent: "#2980b9", text: "#2c3e50" },
+    { id: "shopbot1", label: "ShopBot 1.0", bg: "#000000", accent: "#f09040", text: "#a05818" },
+    { id: "shopbot-light", label: "ShopBot Light", bg: "#ffffff", accent: "#333333", text: "#111111" },
+    { id: "shopbot-color", label: "ShopBot Color", bg: "#ffffff", accent: "#d05820", text: "#222222" },
+    { id: "binbows", label: "Binbows XP", bg: "#ECE9D8", accent: "#0054E3", text: "#000000" },
+    { id: "sbweb", label: "ShopBot Web", bg: "#e6e4d3", accent: "#a5ce42", text: "#171b60" },
+    { id: "devdark", label: "SBcode", bg: "#1e1e1e", accent: "#569cd6", text: "#d4d4d4" },
+    { id: "shopbot3", label: "ShopBot 3", bg: "#fef9c3", accent: "#00acc1", text: "#000000" },
+    { id: "toolpath-net", label: "toolpath.net", bg: "#85847f", accent: "#d68a2e", text: "#f4f4f1" },
+    { id: "ai-ya", label: "AI-YA!", bg: "#f7f6f2", accent: "#1b2a6b", text: "#22263a" },
+];
+
+function currentTheme() {
+    try {
+        return localStorage.getItem(THEME_KEY) || "";
+    } catch (e) {
+        return "";
+    }
+}
+
+function applyTheme(id) {
+    document.body.className = document.body.className.replace(/\btheme-\S+/g, "").trim();
+    if (id) document.body.classList.add("theme-" + id);
+    try {
+        if (id) localStorage.setItem(THEME_KEY, id);
+        else localStorage.removeItem(THEME_KEY);
+    } catch (e) {
+        /* private mode etc. — theme just won't persist */
+    }
+    $("#theme-grid .ts-theme-swatch").each(function () {
+        $(this).toggleClass("selected", $(this).data("theme") === id);
+    });
+}
+
+// Apply the saved theme immediately (script runs at end of body).
+applyTheme(currentTheme());
+
+// ---------------------------------------------------------------------------
 // Variable access
 
 function atcVar(name, dflt) {
@@ -1011,5 +1059,40 @@ $(document).ready(function () {
     $("#btn-history-close").on("click", closeHistory);
     $("#history-modal").on("click", function (e) {
         if (e.target === this) closeHistory();
+    });
+
+    // ---- App settings modal (theme picker) ----
+
+    var $grid = $("#theme-grid");
+    THEMES.forEach(function (t) {
+        var $btn = $(
+            '<button class="ts-theme-swatch">' +
+                '<span class="ts-swatch-preview"><span></span><span></span><span></span></span>' +
+                '<span class="ts-swatch-label"></span>' +
+                "</button>"
+        );
+        $btn.data("theme", t.id);
+        $btn.find(".ts-swatch-label").text(t.label);
+        var $dots = $btn.find(".ts-swatch-preview");
+        $dots.css("background", t.bg);
+        $dots.children().eq(0).css("background", t.accent);
+        $dots.children().eq(1).css("background", t.text);
+        $dots.children().eq(2).css("background", t.bg === "#ffffff" ? "#e1e4e8" : "#ffffff");
+        $btn.on("click", function () {
+            applyTheme(t.id);
+        });
+        $grid.append($btn);
+    });
+
+    $("#btn-app-settings").on("click", function () {
+        applyTheme(currentTheme()); // refresh selected highlight
+        $("#app-settings-modal").css("display", "flex");
+    });
+    function closeAppSettings() {
+        $("#app-settings-modal").hide();
+    }
+    $("#btn-app-settings-close").on("click", closeAppSettings);
+    $("#app-settings-modal").on("click", function (e) {
+        if (e.target === this) closeAppSettings();
     });
 });

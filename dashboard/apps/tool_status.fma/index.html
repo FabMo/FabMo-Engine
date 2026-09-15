@@ -6,6 +6,8 @@
     <title>Tool Status</title>
     <link rel="stylesheet" href="../../css/font-awesome.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/theme-bridge.css">
 </head>
 <body>
     <div class="ts-page">
@@ -15,6 +17,7 @@
             <div class="ts-badges">
                 <span class="ts-badge" id="atc-type-badge">&mdash;</span>
                 <span class="ts-badge ts-state" id="machine-state">&mdash;</span>
+                <button class="ts-iconbtn" id="btn-app-settings" title="App settings"><i class="fa fa-gear"></i></button>
             </div>
         </div>
 
@@ -102,6 +105,24 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- App settings modal (appearance / theme) -->
+    <div class="ts-modal-backdrop" id="app-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>App Settings</span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Theme <span class="ts-note-inline">saved on this display</span></div>
+                    <div class="ts-theme-grid" id="theme-grid"></div>
+                </div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd ts-cmd-primary" id="btn-app-settings-close">Done</button>
             </div>
         </div>
     </div>
