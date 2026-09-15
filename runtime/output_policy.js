@@ -5,9 +5,13 @@
  * Configuration lives at machine.outputs (see profiles/default/config/machine.json):
  *   { "<N>": { label, on_mode, off_mode, on_seconds, off_seconds } }
  *
- * Supported modes (this branch — "input_trigger" reserved for follow-up):
- *   on_mode:  "file_start" | "command" | "timed_after_file_end"
- *   off_mode: "file_end"   | "command" | "timed_after_file_end"
+ * Supported modes:
+ *   on_mode:  "file_start" | "command" | "timed_after_file_end" | "position" | "input"
+ *   off_mode: "file_end"   | "command" | "timed_after_file_end" | "position" | "input"
+ *
+ * "position" and "input" modes are enforced by runtime/output_triggers.js (a
+ * watcher on driver status reports, live in any machine state); this module
+ * takes no file-start/file-end action for a side configured with either.
  *
  * Outputs 1, 2, 4 are hardcoded (Spindle 1, Spindle 2, Arm Motion) and the
  * runtime ignores their policy entirely — their existing behavior in machine.js

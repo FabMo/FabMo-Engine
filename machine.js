@@ -31,6 +31,7 @@ var log = require("./log").logger("machine");
 var config = require("./config");
 var updater = require("./updater");
 var outputPolicy = require("./runtime/output_policy");
+var outputTriggers = require("./runtime/output_triggers");
 var u = require("./util");
 var async = require("async");
 var canQuit = false;
@@ -163,6 +164,11 @@ function Machine(control_path, callback) {
     this.driver.on("error", function (err) {
         log.error(err);
     });
+
+    // Position- and input-based output triggers listen directly on the
+    // driver's status event; registered first so they evaluate ahead of the
+    // heavier status fan-out below.
+    outputTriggers.init(this);
 
     // Create runtimes up front so they exist even before G2 connects.
     // This allows the engine startup sequence to proceed (web server, etc.)
@@ -1699,6 +1705,17 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                             // [We should be in some state other than idle, but allow redundancy
                             // ... for a few cases such as coming out of probing on Stop input]
                             log.debug("... otherwise send final lines from machine");
+                            // Spindle off at idle must be explicit and immediate. M30's own
+                            // spindle_stop is queued in G2's planner (_exec_program_finalize) and
+                            // executes ~2s later — and a new job started inside that window
+                            // flushes it, carrying a live spindle into the next file. gc:"m5"
+                            // clears G2's spindle model synchronously (so spph can't resume it);
+                            // the direct out writes drop the physical outputs without waiting on
+                            // the queue. out2 (Spindle 2) has no M30 semantics at all and would
+                            // otherwise stay on indefinitely.
+                            this.driver.command({ gc: "m5" });
+                            this.driver.command({ out1: 0 });
+                            this.driver.command({ out2: 0 });
                             this.driver.command({ out4: 0 }); // Permissive relay
                             outputPolicy.onFileEnd(this); // Configurable per-output file-end policy (skips 1/2/4)
                             this.driver.command({ gc: "m30" }); // Generate End
