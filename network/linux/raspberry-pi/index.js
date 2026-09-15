@@ -41,6 +41,22 @@ function sanitizeHostname(name) {
         .substring(0, 63) || "fabmo";
 }
 
+// Keep /etc/hosts in sync with the running hostname so sudo can resolve it.
+function updateHostsFile(hostname, callback) {
+    var entry = "127.0.1.1\t" + hostname;
+    // Replace existing 127.0.1.1 line, or append if absent
+    var cmd =
+        "grep -q '^127\\.0\\.1\\.1' /etc/hosts " +
+        "&& sed -i 's|^127\\.0\\.1\\.1.*|" + entry + "|' /etc/hosts " +
+        "|| echo '" + entry + "' >> /etc/hosts";
+    exec(cmd, function (err) {
+        if (err) {
+            log.warn("Could not update /etc/hosts: " + err.message);
+        }
+        callback();
+    });
+}
+
 RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
     log.info("SETTING FabMo Serial Number from R-Pi for machine_id and SSID");
     // engine_id = RPi serial with zeros stripped; permanent hardware identifier.
@@ -73,13 +89,16 @@ RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
                 log.info("Updated engine_id, machine_id" + (updates.machine_name ? ", machine_name" : ""));
                 // Set hostname so Avahi advertises <machine_name>.local
                 var initial_name = updates.machine_name || config.engine.get("machine_name") || machine_id;
-                exec("hostnamectl set-hostname " + sanitizeHostname(initial_name), function (hostnameErr) {
+                var initial_h = sanitizeHostname(initial_name);
+                exec("hostnamectl set-hostname " + initial_h, function (hostnameErr) {
                     if (hostnameErr) {
                         log.warn("Could not set hostname: " + hostnameErr.message);
-                    } else {
-                        log.info("Hostname set to " + sanitizeHostname(initial_name));
+                        return callback(null, machine_id);
                     }
-                    callback(null, machine_id);
+                    log.info("Hostname set to " + initial_h);
+                    updateHostsFile(initial_h, function () {
+                        callback(null, machine_id);
+                    });
                 });
             });
         }
@@ -560,12 +579,14 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
                             return callback(null);
                         }
                         log.info("Hostname updated to " + h);
-                        // Avahi uses its own host-name in avahi-daemon.conf; patch it directly
-                        exec("sed -i 's|^host-name=.*|host-name=" + h + "|' /etc/avahi/avahi-daemon.conf", function (sedErr) {
-                            if (sedErr) log.warn("Could not update avahi-daemon.conf: " + sedErr.message);
-                            exec("systemctl restart avahi-daemon", function (avahiErr) {
-                                if (avahiErr) log.warn("Could not restart avahi-daemon: " + avahiErr.message);
-                                callback(null);
+                        updateHostsFile(h, function () {
+                            // Avahi uses its own host-name in avahi-daemon.conf; patch it directly
+                            exec("sed -i 's|^host-name=.*|host-name=" + h + "|' /etc/avahi/avahi-daemon.conf", function (sedErr) {
+                                if (sedErr) log.warn("Could not update avahi-daemon.conf: " + sedErr.message);
+                                exec("systemctl restart avahi-daemon", function (avahiErr) {
+                                    if (avahiErr) log.warn("Could not restart avahi-daemon: " + avahiErr.message);
+                                    callback(null);
+                                });
                             });
                         });
                     });
