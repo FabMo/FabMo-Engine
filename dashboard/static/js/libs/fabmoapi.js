@@ -466,8 +466,14 @@
         this.emit("change", "jobs");
     };
 
-    FabMoAPI.prototype.runNextJob = function (callback) {
-        this._post("/jobs/queue/run", {}, callback, callback);
+    FabMoAPI.prototype.runNextJob = function (force, callback) {
+        if (typeof force === "function") {
+            callback = force;
+            force = false;
+        }
+        // force skips the server's soft-limit backstop — sent by the
+        // dashboard's runNext handler after its own check + confirmation.
+        this._post("/jobs/queue/run", force ? { force: true } : {}, callback, callback);
     };
 
     FabMoAPI.prototype.getJobHistory = function (options, callback) {
@@ -581,6 +587,18 @@
         this._post(
             "/code/check_bounds",
             { cmd: cmd, runtime: runtime },
+            function (err) { callback(err || "bounds check failed"); },
+            function (err, data) { callback(null, data); }
+        );
+    };
+
+    // Soft-limit check for a queued job. Stored bounds return instantly;
+    // otherwise the server computes and persists them before responding.
+    FabMoAPI.prototype.checkJobBounds = function (id, callback) {
+        callback = callback || function () {};
+        this._post(
+            "/job/" + id + "/check_bounds",
+            {},
             function (err) { callback(err || "bounds check failed"); },
             function (err, data) { callback(null, data); }
         );

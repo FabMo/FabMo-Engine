@@ -684,12 +684,54 @@ define(function (require) {
         this._registerHandler(
             "runNext",
             function (data, callback) {
-                this.engine.runNextJob(function (err, result) {
-                    if (err) {
-                        callback(err);
-                    } else {
-                        callback(null);
+                var self = this;
+                var engine = this.engine;
+                // Central soft-limit gate: every app's runNext funnels through
+                // here, so apps need no bounds-check code of their own. After
+                // the check (or an explicit user override) we pass force so
+                // the server-side backstop on /jobs/queue/run doesn't
+                // re-refuse a run the user already confirmed.
+                var run = function (force) {
+                    engine.runNextJob(force, function (err) {
+                        callback(err || null);
+                    });
+                };
+                engine.getJobsInQueue(function (err, jobs) {
+                    var pending = (!err && jobs && jobs.pending && jobs.pending[0]) || null;
+                    if (!pending) {
+                        // Nothing to check — let the server report "no pending jobs"
+                        return run(false);
                     }
+                    self._boundsCheckWithFooter(function (done) {
+                        engine.checkJobBounds(pending._id, done);
+                    }, function (err, result) {
+                        // Fail-open on check errors, matching the editor's
+                        // philosophy: the check must never strand a run.
+                        if (err || !result || result.limitsDisabled) return run(true);
+                        if (result.skipped) return run(true);
+                        if (result.canceled) return callback(null);
+                        if (!result.exceeds) return run(true);
+                        var msg = (result.violations || [])
+                            .map(function (v) {
+                                if (v.direction === "span") {
+                                    return v.axis.toUpperCase() + " range of file exceeds machine travel by " + Number(v.overage).toFixed(2);
+                                }
+                                return v.axis.toUpperCase() + " " + v.direction + " by " + Number(v.overage).toFixed(2);
+                            })
+                            .join(", ");
+                        self.showModal({
+                            title: "Job exceeds soft limits",
+                            message: "This job would move outside the machine envelope: " + msg + ".<br>Run anyway?",
+                            okText: "Run anyway",
+                            ok: function () {
+                                run(true);
+                            },
+                            cancelText: "Cancel",
+                            cancel: function () {
+                                callback(null);
+                            },
+                        });
+                    });
                 });
             }.bind(this)
         );
@@ -1027,17 +1069,20 @@ define(function (require) {
         this._registerHandler(
             "checkCodeBounds",
             function (data, callback) {
-                this.engine.checkCodeBounds(
-                    data && data.cmd,
-                    data && data.runtime,
-                    function (err, result) {
-                        if (err) {
-                            callback(err);
-                        } else {
-                            callback(null, result);
-                        }
-                    }.bind(this)
-                );
+                var engine = this.engine;
+                this._boundsCheckWithFooter(function (done) {
+                    engine.checkCodeBounds(data && data.cmd, data && data.runtime, done);
+                }, callback);
+            }.bind(this)
+        );
+
+        this._registerHandler(
+            "checkJobBounds",
+            function (data, callback) {
+                var engine = this.engine;
+                this._boundsCheckWithFooter(function (done) {
+                    engine.checkJobBounds(data && data.id, done);
+                }, callback);
             }.bind(this)
         );
 
@@ -1668,6 +1713,84 @@ define(function (require) {
     };
 
     //Open Footer
+    // Bounds pre-check footer state: the check simulates the whole program
+    // server-side (seconds for a big SBP file), so surface it in the footer
+    // like a running job instead of leaving the UI silent. The flag lets
+    // main.js's status handler skip its idle-state hideFooter while a check
+    // is in flight.
+    // Run a bounds-check request with the "Checking..." footer UX, shared by
+    // the checkCodeBounds and checkJobBounds handlers. The footer only
+    // appears if the check is still pending after a short delay (instant
+    // responses — tiny files, softlimits disabled server-side, stored job
+    // bounds — never flash it), and its Skip/Cancel buttons resolve the
+    // check early; the token makes the late server response a no-op so the
+    // app callback only ever fires once. `start` receives a node-style done
+    // callback and should kick off the engine request.
+    Dashboard.prototype._boundsCheckWithFooter = function (start, callback) {
+        var self = this;
+        var token = {};
+        var footerTimer = setTimeout(function () {
+            footerTimer = null;
+            self.showCheckingFooter();
+        }, 250);
+        var finish = function (err, result) {
+            if (self._boundsCheckToken !== token) {
+                return;
+            }
+            self._boundsCheckToken = null;
+            self._boundsCheckFinish = null;
+            if (footerTimer) {
+                clearTimeout(footerTimer);
+                footerTimer = null;
+            } else {
+                self.hideCheckingFooter();
+            }
+            if (err) {
+                callback(err);
+            } else {
+                callback(null, result);
+            }
+        };
+        this._boundsCheckToken = token;
+        this._boundsCheckFinish = finish;
+        start(function (err, result) {
+            finish(err, err ? undefined : result);
+        });
+    };
+
+    Dashboard.prototype.showCheckingFooter = function () {
+        var self = this;
+        this.boundsCheckInProgress = true;
+        $(".footBar").addClass("bounds-checking");
+        $(".currentJobTitle").text("Checking file against machine limits");
+        // fabmoui hides the load container whenever no job is active — bring
+        // it back for the indeterminate bar (its numeric readouts stay hidden
+        // via the .bounds-checking CSS)
+        $(".load_container").show();
+        // Skip = abandon the check and run the file; Cancel = abandon the
+        // check and don't run. Both resolve the pending app callback early;
+        // the server's eventual response is discarded by the token guard.
+        $(".bounds-check-controls .skipCheck")
+            .off("click")
+            .on("click", function () {
+                self._boundsCheckFinish && self._boundsCheckFinish(null, { skipped: true });
+            });
+        $(".bounds-check-controls .cancelCheck")
+            .off("click")
+            .on("click", function () {
+                self._boundsCheckFinish && self._boundsCheckFinish(null, { canceled: true });
+            });
+        this.openFooter();
+    };
+
+    Dashboard.prototype.hideCheckingFooter = function () {
+        this.boundsCheckInProgress = false;
+        $(".footBar").removeClass("bounds-checking");
+        $(".bounds-check-controls .skipCheck, .bounds-check-controls .cancelCheck").off("click");
+        $(".currentJobTitle").text("");
+        this.closeFooter();
+    };
+
     Dashboard.prototype.openFooter = function () {
         $(".footBar").css("height", "175px");
         //Set size of app container (so footer does not hide content)

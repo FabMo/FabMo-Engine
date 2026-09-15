@@ -490,15 +490,21 @@ const { last } = require("underscore");
             $(".line_number_text").text(comped_line);
             $(that.progress_selector).css("width", prog.toString() + "%");
         } else {
-            $(that.file_info_div_selector).addClass("hide");
-            $(".load_container").hide();
-            $("#loadbar").hide();
-            $(".radial_progress").hide();
-            $(that.filename_selector).empty();
-            $(that.progress_selector).empty();
-            $(".currentJobTitle").text("");
-            $(".horizontal_fill").css("width", "0%");
-            this.progress = 0;
+            // A bounds pre-check runs with no active job, so this reset fires
+            // on every status tick and would wipe the "Checking..." footer
+            // content set by showCheckingFooter (dashboard.js). Skip it while
+            // the check owns the footer.
+            if (!$(".footBar").hasClass("bounds-checking")) {
+                $(that.file_info_div_selector).addClass("hide");
+                $(".load_container").hide();
+                $("#loadbar").hide();
+                $(".radial_progress").hide();
+                $(that.filename_selector).empty();
+                $(that.progress_selector).empty();
+                $(".currentJobTitle").text("");
+                $(".horizontal_fill").css("width", "0%");
+                this.progress = 0;
+            }
         }
 
         // Update inputs and set the small DRO display depending on input definitions

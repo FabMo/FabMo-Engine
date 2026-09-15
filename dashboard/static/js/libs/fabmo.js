@@ -1066,6 +1066,14 @@
         this._call("checkCodeBounds", { cmd: cmd, runtime: runtime }, callback);
     };
 
+    // Bounds check for a queued job by id. Returns stored bounds instantly if
+    // submit-time analysis has finished, otherwise computes (and persists)
+    // them now. Shares the "Checking..." footer UX with checkCodeBounds, so
+    // the result may also be { skipped } or { canceled } from its buttons.
+    FabMoDashboard.prototype.checkJobBounds = function (id, callback) {
+        this._call("checkJobBounds", { id: id }, callback);
+    };
+
     FabMoDashboard.prototype.deleteApp = function (id, callback) {
         this._call("deleteApp", id, callback);
     };

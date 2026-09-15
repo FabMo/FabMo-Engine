@@ -140,24 +140,97 @@ var clearQueue = function (req, res, next) {
  * @apiError {Object} message Error message
  */
 // eslint-disable-next-line no-unused-vars
+// Return stored bounds for a job, computing and persisting them when missing
+// (submit-time analysis may still be running, or the job predates analysis).
+function getOrComputeJobBounds(job, callback) {
+    if (job.bounds) {
+        return callback(null, job.bounds);
+    }
+    db.Job.getFileForJobId(job._id, function (err, file) {
+        if (err || !file || !file.path) {
+            return callback(err || new Error("File for job not found"));
+        }
+        bounds.computeFileBounds(file.path, function (err, result) {
+            if (err) {
+                return callback(err);
+            }
+            db.Job.getById(job._id, function (gerr, fresh) {
+                if (!gerr && fresh) {
+                    fresh.bounds = result.bounds;
+                    fresh.save(function () {});
+                }
+            });
+            callback(null, result.bounds);
+        });
+    });
+}
+
+function evaluateJobBoundsAgainstEnvelope(jobBounds) {
+    var envelope = config.machine.get("envelope") || {};
+    var g55 = {
+        x: config.driver.get("g55x") || 0,
+        y: config.driver.get("g55y") || 0,
+        z: config.driver.get("g55z") || 0,
+    };
+    return bounds.checkAgainstEnvelope(jobBounds, envelope, g55);
+}
+
 var runNextJob = function (req, res, next) {
     var answer;
-    log.info("Running the jobs.js:nextJob in the queue");
-    machine.runNextJob(function (err, job) {
-        if (err) {
-            log.error(err);
-            answer = {
-                status: "failed",
-                data: { job: err },
-            };
-            res.json(answer);
-        } else {
-            answer = {
-                status: "success",
-                data: { job: job },
-            };
-            res.json(answer);
+    var doRun = function () {
+        log.info("Running the jobs.js:nextJob in the queue");
+        machine.runNextJob(function (err, job) {
+            if (err) {
+                log.error(err);
+                answer = {
+                    status: "failed",
+                    data: { job: err },
+                };
+                res.json(answer);
+            } else {
+                answer = {
+                    status: "success",
+                    data: { job: job },
+                };
+                res.json(answer);
+            }
+        });
+    };
+    // Soft-limit backstop: refuse an exceeding job unless the caller passes
+    // force. The dashboard's runNext handler always sends force after its own
+    // check + user confirmation, so this only bites callers that skipped the
+    // check (raw API, unpatched apps). Fail-open on any check error — the
+    // backstop must never strand a legitimate run.
+    var force = !!(req.params && req.params.force);
+    if (force || !config.machine.get("softlimits_on")) {
+        return doRun();
+    }
+    db.Job.getPending(function (err, pendingJobs) {
+        if (err || !pendingJobs || !pendingJobs.length) {
+            return doRun();
         }
+        getOrComputeJobBounds(pendingJobs[0], function (err, jobBounds) {
+            if (err || !jobBounds) {
+                return doRun();
+            }
+            var check = evaluateJobBoundsAgainstEnvelope(jobBounds);
+            if (!check.exceeds) {
+                return doRun();
+            }
+            log.warn("Refusing to run job " + pendingJobs[0]._id + " — exceeds soft limits (no force flag)");
+            res.json({
+                status: "error",
+                message:
+                    "Job exceeds soft limits: " +
+                    check.violations
+                        .map(function (v) {
+                            return v.axis.toUpperCase() + " " + v.direction + " by " + Number(v.overage).toFixed(2);
+                        })
+                        .join(", ") +
+                    ". Pass force to run anyway, or disable 'Enforce Software Limits'.",
+                data: { code: "SOFT_LIMITS", violations: check.violations, bounds: jobBounds },
+            });
+        });
     });
 };
 
@@ -172,6 +245,34 @@ var runNextJob = function (req, res, next) {
  * @apiError {Object} message Error message
  */
 // eslint-disable-next-line no-unused-vars
+// On-demand bounds check for a queued job. Covers the race where play is
+// clicked before the background analyzeJobBounds from submit has finished,
+// and legacy jobs with no stored bounds. Stored bounds respond instantly;
+// otherwise compute now and persist so the next check is instant.
+var checkJobBounds = function (req, res, next) {
+    if (!config.machine.get("softlimits_on")) {
+        return res.json({
+            status: "success",
+            data: { exceeds: false, violations: [], limitsDisabled: true },
+        });
+    }
+    db.Job.getById(req.params.id, function (err, job) {
+        if (err || !job) {
+            return res.json({ status: "error", message: "No such job" });
+        }
+        getOrComputeJobBounds(job, function (err, jobBounds) {
+            if (err) {
+                return res.json({ status: "error", message: err.message || String(err) });
+            }
+            var check = evaluateJobBoundsAgainstEnvelope(jobBounds);
+            res.json({
+                status: "success",
+                data: { bounds: jobBounds, exceeds: check.exceeds, violations: check.violations },
+            });
+        });
+    });
+};
+
 var resubmitJob = function (req, res, next) {
     var answer;
     log.debug("Resubmitting job " + req.params.id);
@@ -194,6 +295,12 @@ var resubmitJob = function (req, res, next) {
                 };
                 res.json(answer);
             } else {
+                // Jobs submitted before bounds analysis existed have none to
+                // inherit through clone() — backfill so the soft-limit badge
+                // works on the resubmitted copy.
+                if (!result.bounds) {
+                    analyzeJobBounds(result);
+                }
                 answer = {
                     status: "success",
                     data: { job: result },
@@ -728,6 +835,7 @@ module.exports = function (server) {
     server.post("/job/:id/ghost", ghostRunJob);
     server.get("/job/:id/file", getJobFile);
     server.get("/job/:id/gcode", getJobGCode);
+    server.post("/job/:id/check_bounds", checkJobBounds);
     server.post("/job/:id", resubmitJob);
     //server.get('/job/:id/thumbnail', getThumbnailImage);
 
