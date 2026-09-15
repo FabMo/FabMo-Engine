@@ -502,12 +502,14 @@ define(function (require) {
                                                         } else {
                                                             callback(null, submitResult);
 
-                                                            // Notify job_manager to update queue
-                                                            var jobManagerIframe = document.querySelector(
-                                                                'iframe[src*="job_manager.fma"]'
-                                                            );
-                                                            if (jobManagerIframe) {
-                                                                jobManagerIframe.contentWindow.postMessage(
+                                                            // Notify the active app to update its queue view.
+                                                            // (Not just job_manager — other apps, e.g. Tool
+                                                            // Status, host queue views too.)
+                                                            var appIframe =
+                                                                document.getElementById("app-iframe") ||
+                                                                document.querySelector('iframe[src*="job_manager.fma"]');
+                                                            if (appIframe) {
+                                                                appIframe.contentWindow.postMessage(
                                                                     { type: "updateQueueEvent" },
                                                                     "*"
                                                                 );

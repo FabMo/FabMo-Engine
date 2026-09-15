@@ -38,7 +38,7 @@ var ATC_TYPE_LABELS = {
 // 5 (5-axis) has its own toolchange flow.
 var TOOL_ROW_TYPES = { 1: true, 2: true, 3: true, 4: true, 6: true, 7: true };
 
-var HISTORY_COUNT = 5;
+var HISTORY_COUNT = 3;
 
 var state = {
     machineState: null,
@@ -50,7 +50,56 @@ var state = {
     queue: [],
     running: [],
     history: [],
+    usbDrive: null,
 };
+
+// ---------------------------------------------------------------------------
+// Themes (ShopBot Labs token themes — css/themes.css + css/theme-bridge.css).
+// A theme-<id> class on <body> activates one; no class = the app's default
+// look from style.css. Choice is per-browser (localStorage), same as the
+// labs ui_testbed, since a theme is a display preference, not a machine
+// setting. Preview colors mirror each theme's bg/accent/text tokens so the
+// picker swatches are accurate without applying the theme.
+
+var THEME_KEY = "tool-status-theme";
+
+var THEMES = [
+    { id: "", label: "Default", bg: "#f4f5f7", accent: "#2980b9", text: "#2c3e50" },
+    { id: "shopbot1", label: "ShopBot 1.0", bg: "#000000", accent: "#f09040", text: "#a05818" },
+    { id: "shopbot-light", label: "ShopBot Light", bg: "#ffffff", accent: "#333333", text: "#111111" },
+    { id: "shopbot-color", label: "ShopBot Color", bg: "#ffffff", accent: "#d05820", text: "#222222" },
+    { id: "binbows", label: "Binbows XP", bg: "#ECE9D8", accent: "#0054E3", text: "#000000" },
+    { id: "sbweb", label: "ShopBot Web", bg: "#e6e4d3", accent: "#a5ce42", text: "#171b60" },
+    { id: "devdark", label: "SBcode", bg: "#1e1e1e", accent: "#569cd6", text: "#d4d4d4" },
+    { id: "shopbot3", label: "ShopBot 3", bg: "#fef9c3", accent: "#00acc1", text: "#000000" },
+    { id: "toolpath-net", label: "toolpath.net", bg: "#85847f", accent: "#d68a2e", text: "#f4f4f1" },
+    { id: "ai-ya", label: "AI-YA!", bg: "#f7f6f2", accent: "#1b2a6b", text: "#22263a" },
+];
+
+function currentTheme() {
+    try {
+        return localStorage.getItem(THEME_KEY) || "";
+    } catch (e) {
+        return "";
+    }
+}
+
+function applyTheme(id) {
+    document.body.className = document.body.className.replace(/\btheme-\S+/g, "").trim();
+    if (id) document.body.classList.add("theme-" + id);
+    try {
+        if (id) localStorage.setItem(THEME_KEY, id);
+        else localStorage.removeItem(THEME_KEY);
+    } catch (e) {
+        /* private mode etc. — theme just won't persist */
+    }
+    $("#theme-grid .ts-theme-swatch").each(function () {
+        $(this).toggleClass("selected", $(this).data("theme") === id);
+    });
+}
+
+// Apply the saved theme immediately (script runs at end of body).
+applyTheme(currentTheme());
 
 // ---------------------------------------------------------------------------
 // Variable access
@@ -208,21 +257,76 @@ function renderCurrentTool() {
     }
 }
 
-function renderSensors() {
-    var defs = [
-        { id: "#sensor-toolbar", input: state.vars && state.vars.TOOLBAR_SENSOR },
-        { id: "#sensor-tool", input: state.vars && state.vars.TOOL_SENSOR },
-        { id: "#sensor-drawbar", input: state.vars && state.vars.DRAWBAR_SENSOR },
-    ];
+// Sensor LEDs are driven by the per-input Type assignments from the
+// configuration app's Inputs tab (machine.di<N>type); machines with no
+// types assigned fall back to the legacy sensor-number variables.
+var INPUT_TYPE_LABELS = {
+    x_limit: "X Limit",
+    y_limit: "Y Limit",
+    z_limit: "Z Limit",
+    a_limit: "A Limit",
+    b_limit: "B Limit",
+    c_limit: "C Limit",
+    zzero_plate: "Z Plate",
+    toolbar_present: "Toolbar",
+    toolbar_up: "Toolbar Up",
+    drawbar_open: "Drawbar",
+    tool_present: "Tool",
+};
+
+function sensorDefs() {
+    var defs = [];
+    var types = state.diTypes || {};
+    Object.keys(types)
+        .sort(function (a, b) {
+            return a - b;
+        })
+        .forEach(function (n) {
+            var label = INPUT_TYPE_LABELS[types[n]];
+            if (label) defs.push({ input: Number(n), label: label });
+        });
+    if (defs.length) return defs;
+    // Legacy fallback: hand-set sensor-number variables
+    var vars = state.vars || {};
+    [
+        { input: Number(vars.TOOLBAR_SENSOR), label: "Toolbar" },
+        { input: Number(vars.TOOL_SENSOR), label: "Tool" },
+        { input: Number(vars.DRAWBAR_SENSOR), label: "Drawbar" },
+    ].forEach(function (d) {
+        if (d.input >= 1) defs.push(d);
+    });
+    return defs;
+}
+
+// Rebuild the LED row only when the set of sensors changes (renderSensors
+// runs on every status report; DOM churn at 10Hz would be wasteful).
+var sensorLayoutKey = null;
+
+function renderSensorLayout() {
+    var defs = sensorDefs();
+    var key = JSON.stringify(defs);
+    if (key === sensorLayoutKey) return;
+    sensorLayoutKey = key;
+    var $row = $("#sensor-row").empty();
     defs.forEach(function (d) {
-        var n = Number(d.input);
-        var $el = $(d.id);
-        if (!(n >= 1)) {
-            $el.hide();
-            return;
-        }
-        $el.show();
-        $el.find(".ts-led").toggleClass("on", !!state.inputs["in" + n]);
+        var $s = $(
+            '<div class="ts-sensor" data-input="' + d.input + '">' +
+                '<span class="ts-led"></span><span class="ts-sensor-label"></span>' +
+                "</div>"
+        );
+        $s.attr("title", d.label + " (input " + d.input + ")");
+        $s.find(".ts-sensor-label").text(d.label);
+        $row.append($s);
+    });
+}
+
+function renderSensors() {
+    renderSensorLayout();
+    $("#sensor-row .ts-sensor").each(function () {
+        var n = $(this).data("input");
+        $(this)
+            .find(".ts-led")
+            .toggleClass("on", !!state.inputs["in" + n]);
     });
 }
 
@@ -232,6 +336,47 @@ function renderPosition() {
         $("#off-" + ax).text(fmt(state.g55[ax]));
     });
     $("#units-label").text(state.unit);
+}
+
+// Key machine locations, merged under the position readout. Values come
+// from the same variables the routines use: tool clip locations from
+// $toolsUU (recorded by ATC calibration/C74), measurement plate from
+// $atcUU.ZZero_X/Y, fixed Z-zero location from $SB_ZZEROLOCUU (when
+// enabled), park from $SB_PARKUU.
+function renderLocations() {
+    var rows = [];
+    var cur = Number(atcVar("TOOLIN", 0));
+    if (cur >= 1) {
+        var t = toolTable()[cur] || {};
+        if (isFinite(Number(t.X))) rows.push(["Tool " + cur + " clip", t.X, t.Y, t.Z]);
+    }
+    if (atcType() !== 0) {
+        var px = uuGet("ATCUU", "ZZERO_X");
+        var py = uuGet("ATCUU", "ZZERO_Y");
+        if (px !== null || py !== null) rows.push(["Plate", px, py, null]);
+    }
+    if (Number((state.vars || {}).SB_ZZEROLOC_USE)) {
+        rows.push(["Z-Zero XY", uuGet("SB_ZZEROLOCUU", "X"), uuGet("SB_ZZEROLOCUU", "Y"), null]);
+    }
+    var parkX = uuGet("SB_PARKUU", "X");
+    if (parkX !== null) rows.push(["Park", parkX, uuGet("SB_PARKUU", "Y"), uuGet("SB_PARKUU", "Z")]);
+
+    var $table = $("#locations-table");
+    if (!rows.length) {
+        $table.hide();
+        return;
+    }
+    var $body = $table.find("tbody").empty();
+    rows.forEach(function (r) {
+        var $tr = $("<tr>");
+        $tr.append($('<td class="ts-axis">').text(r[0]));
+        [r[1], r[2], r[3]].forEach(function (v) {
+            var n = Number(v);
+            $tr.append($("<td>").text(v !== null && v !== undefined && isFinite(n) ? fmt(n) : "—"));
+        });
+        $body.append($tr);
+    });
+    $table.show();
 }
 
 function renderToolRow() {
@@ -257,7 +402,12 @@ function renderToolRow() {
         var $len = $clip.find(".ts-clip-len");
         if (sub) $len.text(sub);
         else $len.html("&nbsp;");
-        var tip = [name, h ? "len " + fmt(Number(h)) : ""].filter(Boolean).join(" · ");
+        var clip = table[n] || {};
+        var clipLoc =
+            isFinite(Number(clip.X)) && Number(clip.X) !== 0
+                ? "clip " + fmt(Number(clip.X)) + ", " + fmt(Number(clip.Y))
+                : "";
+        var tip = [name, h ? "len " + fmt(Number(h)) : "", clipLoc].filter(Boolean).join(" · ");
         if (tip) $clip.attr("title", tip);
         if (n === current) $clip.addClass("current");
         else if (!idle) $clip.addClass("disabled");
@@ -377,122 +527,20 @@ function renderJobs() {
 }
 
 // ---------------------------------------------------------------------------
-// USB file browser (below the Jobs card): scrollable list of cuttable files
-// (.sbp/.nc/.tap) on any connected USB drive; folders navigable; clicking a
-// file adds it to the job queue via /usb/submit.
+// USB drive (below the Jobs card): presence comes from status.usbDrive
+// (the engine's 5s drive checker — same signal the Job Manager uses);
+// browsing/selection uses the standard dashboard-level USB file browser
+// (fabmo.showUSBFileBrowser), whose default flow submits the picked file
+// as a job and posts updateQueueEvent back to the active app.
 
-var USB_FILE_RE = /\.(sbp|nc|tap)$/i;
-var usb = {
-    devices: [],
-    cwd: null, // current directory path, null = drive list (or auto-entered single drive)
-    root: null, // root path of the drive we're inside (bounds "up")
-};
-
-function fmtSize(bytes) {
-    var n = Number(bytes);
-    if (!isFinite(n)) return "";
-    if (n < 1024) return n + " B";
-    if (n < 1024 * 1024) return (n / 1024).toFixed(0) + " KB";
-    return (n / (1024 * 1024)).toFixed(1) + " MB";
-}
-
-function usbEntry(icon, name, meta) {
-    var $e = $(
-        '<div class="ts-usb-entry">' +
-            '<i class="fa ' + icon + '"></i>' +
-            '<span class="ts-usb-name"></span>' +
-            '<span class="ts-usb-meta"></span>' +
-            "</div>"
-    );
-    $e.find(".ts-usb-name").text(name);
-    $e.find(".ts-usb-meta").text(meta || "");
-    return $e;
-}
-
-function renderUSBDeviceList() {
-    var $list = $("#usb-list").empty();
-    $("#usb-crumb").text("");
-    usb.devices.forEach(function (dev) {
-        var $e = usbEntry("fa-usb", dev.name, "drive");
-        $e.on("click", function () {
-            enterUSBDir(dev.path, dev.path);
-        });
-        $list.append($e);
-    });
-}
-
-function enterUSBDir(path, root) {
-    fabmo.getUSBDirectory(path, function (err, res) {
-        if (err) return fabmo.notify("error", err.message || err);
-        usb.cwd = path;
-        usb.root = root;
-        var contents = (res && (res.contents || res)) || [];
-        var $list = $("#usb-list").empty();
-
-        // Breadcrumb: drive name + relative path
-        var rel = path.substring(path.lastIndexOf("/", usb.root.length - 1) + 1);
-        $("#usb-crumb").text(rel);
-
-        // Up: to parent dir, or back to the drive list at drive root
-        var $up = usbEntry("fa-level-up", "..", "");
-        $up.on("click", function () {
-            if (usb.cwd === usb.root) {
-                usb.cwd = usb.root = null;
-                if (usb.devices.length === 1) refreshUSB(true);
-                else renderUSBDeviceList();
-            } else {
-                enterUSBDir(usb.cwd.substring(0, usb.cwd.lastIndexOf("/")), usb.root);
-            }
-        });
-        // Hide "up" when a single auto-entered drive is at its root
-        if (!(usb.devices.length === 1 && usb.cwd === usb.root)) $list.append($up);
-
-        contents.forEach(function (entry) {
-            if (entry.isDirectory) {
-                var $d = usbEntry("fa-folder", entry.name, "");
-                $d.on("click", function () {
-                    enterUSBDir(entry.path, usb.root);
-                });
-                $list.append($d);
-            } else if (USB_FILE_RE.test(entry.name)) {
-                var $f = usbEntry("fa-file-o", entry.name, fmtSize(entry.size));
-                $f.attr("title", "Add " + entry.name + " to the job queue");
-                $f.on("click", function () {
-                    fabmo.submitUSBFile(entry.path, {}, function (err) {
-                        if (err) return fabmo.notify("error", err.message || err);
-                        fabmo.notify("info", entry.name + " added to the queue");
-                        refreshJobs();
-                    });
-                });
-                $list.append($f);
-            }
-        });
-        $("#usb-list").scrollTop(0);
-    });
-}
-
-// Poll for connected drives; keep the card hidden when there are none.
-// `autoEnter` re-enters a single drive's root listing.
-function refreshUSB(autoEnter) {
-    fabmo.getUSBDevices(function (err, res) {
-        if (err) return;
-        var devices = (res && (res.devices || res)) || [];
-        var changed = JSON.stringify(devices) !== JSON.stringify(usb.devices);
-        usb.devices = devices;
-        if (!devices.length) {
-            usb.cwd = usb.root = null;
-            $("#card-usb").hide();
-            return;
-        }
-        $("#card-usb").show();
-        if (usb.cwd && !changed && !autoEnter) return; // stay where the user is browsing
-        if (devices.length === 1) {
-            enterUSBDir(devices[0].path, devices[0].path);
-        } else {
-            usb.cwd = usb.root = null;
-            renderUSBDeviceList();
-        }
-    });
+function renderUSB() {
+    var drive = state.usbDrive;
+    if (!drive) {
+        $("#card-usb").hide();
+        return;
+    }
+    $("#card-usb").show();
+    $("#usb-crumb").text(String(drive).replace(/^.*\//, ""));
 }
 
 function historyRow(job) {
@@ -516,6 +564,7 @@ function renderAll() {
     renderSensors();
     renderPosition();
     renderToolRow();
+    renderLocations();
     renderCustomButtons();
     renderCommands();
     renderJobs();
@@ -530,6 +579,13 @@ function refreshConfig(callback) {
         state.vars = (data.opensbp && data.opensbp.variables) || {};
         var d = data.driver || {};
         state.g55 = { x: Number(d.g55x) || 0, y: Number(d.g55y) || 0, z: Number(d.g55z) || 0 };
+        // Per-input semantic types (machine.di<N>type) drive the sensor LEDs
+        state.diTypes = {};
+        var m = data.machine || {};
+        for (var k in m) {
+            var match = /^di(\d+)type$/.exec(k);
+            if (match && m[k] && m[k] !== "none") state.diTypes[match[1]] = m[k];
+        }
         renderAll();
         callback && callback(null);
     });
@@ -550,6 +606,10 @@ fabmo.on("status", function (status) {
     state.machineState = status.state;
     state.unit = status.unit || state.unit;
     state.pos = { x: status.posx, y: status.posy, z: status.posz };
+    if (status.usbDrive !== state.usbDrive) {
+        state.usbDrive = status.usbDrive;
+        renderUSB();
+    }
     for (var k in status) {
         if (k.substring(0, 2) === "in" && !isNaN(Number(k.substring(2)))) {
             state.inputs[k] = status[k];
@@ -588,15 +648,25 @@ $(document).ready(function () {
         state.machineState = status.state;
         state.unit = status.unit || state.unit;
         state.pos = { x: status.posx, y: status.posy, z: status.posz };
+        state.usbDrive = status.usbDrive;
         renderAll();
+        renderUSB();
     });
     // Backstop: variables can change without a machine state transition
     // (e.g. edited in another app).
     setInterval(refreshConfig, 10000);
 
-    // USB drives come and go; poll for presence (cheap fs check engine-side).
-    refreshUSB();
-    setInterval(refreshUSB, 8000);
+    // USB: open the standard dashboard file browser (tree view, same as the
+    // Job Manager); its default flow submits the selection as a job.
+    $("#btn-usb-browse").on("click", function () {
+        fabmo.showUSBFileBrowser({}, function () {});
+    });
+
+    // The dashboard posts updateQueueEvent to the active app after the USB
+    // browser submits a job.
+    window.addEventListener("message", function (e) {
+        if (e.data && e.data.type === "updateQueueEvent") refreshJobs();
+    });
 
     // Machine buttons (SB4 equivalents + user macro buttons; delegated —
     // custom buttons are re-rendered dynamically). Home Z composes an
@@ -989,5 +1059,40 @@ $(document).ready(function () {
     $("#btn-history-close").on("click", closeHistory);
     $("#history-modal").on("click", function (e) {
         if (e.target === this) closeHistory();
+    });
+
+    // ---- App settings modal (theme picker) ----
+
+    var $grid = $("#theme-grid");
+    THEMES.forEach(function (t) {
+        var $btn = $(
+            '<button class="ts-theme-swatch">' +
+                '<span class="ts-swatch-preview"><span></span><span></span><span></span></span>' +
+                '<span class="ts-swatch-label"></span>' +
+                "</button>"
+        );
+        $btn.data("theme", t.id);
+        $btn.find(".ts-swatch-label").text(t.label);
+        var $dots = $btn.find(".ts-swatch-preview");
+        $dots.css("background", t.bg);
+        $dots.children().eq(0).css("background", t.accent);
+        $dots.children().eq(1).css("background", t.text);
+        $dots.children().eq(2).css("background", t.bg === "#ffffff" ? "#e1e4e8" : "#ffffff");
+        $btn.on("click", function () {
+            applyTheme(t.id);
+        });
+        $grid.append($btn);
+    });
+
+    $("#btn-app-settings").on("click", function () {
+        applyTheme(currentTheme()); // refresh selected highlight
+        $("#app-settings-modal").css("display", "flex");
+    });
+    function closeAppSettings() {
+        $("#app-settings-modal").hide();
+    }
+    $("#btn-app-settings-close").on("click", closeAppSettings);
+    $("#app-settings-modal").on("click", function (e) {
+        if (e.target === this) closeAppSettings();
     });
 });

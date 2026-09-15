@@ -6,6 +6,8 @@
     <title>Tool Status</title>
     <link rel="stylesheet" href="../../css/font-awesome.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/theme-bridge.css">
 </head>
 <body>
     <div class="ts-page">
@@ -15,6 +17,7 @@
             <div class="ts-badges">
                 <span class="ts-badge" id="atc-type-badge">&mdash;</span>
                 <span class="ts-badge ts-state" id="machine-state">&mdash;</span>
+                <button class="ts-iconbtn" id="btn-app-settings" title="App settings"><i class="fa fa-gear"></i></button>
             </div>
         </div>
 
@@ -42,7 +45,7 @@
                         <span><i class="fa fa-usb"></i> USB Drive</span>
                         <span class="ts-note-inline" id="usb-crumb"></span>
                     </div>
-                    <div class="ts-usb-list" id="usb-list"></div>
+                    <button class="ts-cmd ts-cmd-block" id="btn-usb-browse" style="margin-top:0;">Browse USB Drive&hellip;</button>
                 </div>
             </div>
 
@@ -56,28 +59,26 @@
                             <div class="ts-tool-number" id="current-tool-number">&mdash;</div>
                             <div class="ts-tool-caption" id="current-tool-caption"></div>
                         </div>
-                        <table class="ts-postable">
-                            <thead>
-                                <tr><th></th><th>Position</th><th>Offset</th><th id="units-label"></th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td></td></tr>
-                                <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td></td></tr>
-                                <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="ts-sensors" id="sensor-row">
-                        <div class="ts-sensor" id="sensor-toolbar" style="display:none;">
-                            <span class="ts-led"></span><span class="ts-sensor-label">Toolbar</span>
-                        </div>
-                        <div class="ts-sensor" id="sensor-tool" style="display:none;">
-                            <span class="ts-led"></span><span class="ts-sensor-label">Tool</span>
-                        </div>
-                        <div class="ts-sensor" id="sensor-drawbar" style="display:none;">
-                            <span class="ts-led"></span><span class="ts-sensor-label">Drawbar</span>
+                        <div>
+                            <table class="ts-postable">
+                                <thead>
+                                    <tr><th></th><th>Position</th><th>Offset</th><th id="units-label"></th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td></td></tr>
+                                    <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td></td></tr>
+                                    <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td></td></tr>
+                                </tbody>
+                            </table>
+                            <table class="ts-postable ts-locations" id="locations-table" style="display:none;">
+                                <thead>
+                                    <tr><th></th><th>X</th><th>Y</th><th>Z</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
                     </div>
+                    <div class="ts-sensors" id="sensor-row"></div>
                 </div>
 
                 <div class="ts-card">
@@ -104,6 +105,24 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- App settings modal (appearance / theme) -->
+    <div class="ts-modal-backdrop" id="app-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>App Settings</span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Theme <span class="ts-note-inline">saved on this display</span></div>
+                    <div class="ts-theme-grid" id="theme-grid"></div>
+                </div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd ts-cmd-primary" id="btn-app-settings-close">Done</button>
             </div>
         </div>
     </div>

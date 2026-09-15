@@ -227,11 +227,15 @@ body {
 }
 .ts-postable td { text-align: right; padding: 2px 8px; font-size: 0.95em; }
 .ts-postable td.ts-axis { font-weight: 700; text-align: left; color: #7f8c8d; }
+.ts-locations { margin-top: 6px; border-top: 1px solid #f0f2f4; }
+.ts-locations td.ts-axis { font-weight: 600; font-size: 0.82em; white-space: nowrap; }
+.ts-locations td { font-size: 0.88em; color: #7f8c8d; }
 
 .ts-sensors {
-    display: flex; justify-content: center; gap: 14px;
+    display: flex; justify-content: center; gap: 6px 14px; flex-wrap: wrap;
     border-top: 1px solid #f0f2f4; margin-top: 8px; padding-top: 8px;
 }
+.ts-sensors:empty { display: none; }
 .ts-sensor { display: flex; align-items: center; gap: 5px; font-size: 0.82em; color: #7f8c8d; }
 .ts-led {
     width: 10px; height: 10px; border-radius: 50%;
@@ -301,7 +305,13 @@ body {
 .ts-modal-footer-split > div { display: flex; gap: 8px; }
 .ts-cmd-block { display: block; width: 100%; margin-top: 8px; }
 
-.ts-settings-section { margin-bottom: 14px; }
+.ts-settings-section {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e8ebee;
+    border-radius: 6px;
+    background: #fafbfc;
+}
 .ts-settings-heading {
     font-size: 0.8em;
     font-weight: 700;
@@ -310,15 +320,14 @@ body {
     color: #7f8c8d;
     margin-bottom: 6px;
 }
-.ts-field-row { display: flex; gap: 10px; }
+.ts-field-row { display: flex; gap: 14px; }
 .ts-field-row label {
-    flex: 1;
     font-size: 0.82em;
     color: #7f8c8d;
 }
 .ts-field-row input {
     display: block;
-    width: 100%;
+    width: 7em;
     height: 1.9em;
     font-size: 1.05em;
     padding: 1px 6px;
@@ -326,6 +335,11 @@ body {
     border: 1px solid #d5dbdb;
     border-radius: 4px;
     color: #2c3e50;
+}
+.ts-note {
+    font-size: 0.78em;
+    color: #95a5a6;
+    margin-top: 6px;
 }
 .ts-check-row {
     display: flex;

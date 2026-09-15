@@ -103,6 +103,7 @@ MachineConfig.prototype.init = function (machine, callback) {
             this._normalizeOutputNotify();
             this._normalizeOutputPosition();
             this._normalizeOutputInput();
+            this._normalizeInputTypes();
             if (typeof callback === "function") callback(err);
         }.bind(this)
     );
@@ -182,6 +183,38 @@ MachineConfig.prototype._normalizeOutputInput = function () {
     }
 };
 
+// Valid values for the per-input "type" (semantic role) setting,
+// machine.di<N>type — what the switch physically is, so apps/routines can
+// find an input by role rather than hardcoded number.
+var INPUT_TYPES = {
+    none: true,
+    x_limit: true,
+    y_limit: true,
+    z_limit: true,
+    a_limit: true,
+    b_limit: true,
+    c_limit: true,
+    zzero_plate: true,
+    toolbar_present: true,
+    toolbar_up: true,
+    drawbar_open: true,
+    tool_present: true,
+};
+var INPUT_TYPE_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15];
+
+// Seed/normalize machine.di<N>type. Seeding matters because util.extend's
+// only-existing-keys rule silently drops client updates for keys absent
+// from the cache; normalization guards against fixJSON coercion.
+MachineConfig.prototype._normalizeInputTypes = function () {
+    if (!this._cache) return;
+    INPUT_TYPE_NUMBERS.forEach(
+        function (n) {
+            var key = "di" + n + "type";
+            if (!INPUT_TYPES[this._cache[key]]) this._cache[key] = "none";
+        }.bind(this)
+    );
+};
+
 MachineConfig.prototype.update = function (data, callback, force) {
     var current_units = this.get("units"); // Get BEFORE extending cache
     try {
@@ -189,6 +222,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
         this._normalizeOutputNotify();
         this._normalizeOutputPosition();
         this._normalizeOutputInput();
+        this._normalizeInputTypes();
     } catch (e) {
         return callback(e);
     }

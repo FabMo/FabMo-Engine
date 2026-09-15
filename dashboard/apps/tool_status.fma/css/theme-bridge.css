@@ -1,0 +1,394 @@
+/* Theme bridge — maps the ShopBot Labs --t-* tokens (css/themes.css) onto
+ * the Tool Status ts-* components. Every rule is scoped to a theme-<name>
+ * class on <body>; with no theme class, style.css defaults apply untouched.
+ * Loads after style.css so equal-or-higher specificity wins by source order.
+ *
+ * Button categories follow the labs convention: .ts-cmd = "setting",
+ * .ts-cmd-primary = "action". */
+
+/* ── Base ── */
+
+body[class*="theme-"] {
+    font-family: var(--t-font-main);
+    font-size: var(--t-fs-label);
+    background: var(--t-bg-secondary);
+    color: var(--t-text);
+}
+body[class*="theme-"] * {
+    font-family: inherit;
+}
+/* Icon font must survive the inherit catch-all */
+body[class*="theme-"] .fa {
+    font-family: FontAwesome !important;
+}
+
+body[class*="theme-"] .ts-header h1 {
+    text-shadow: var(--t-text-glow, none);
+}
+
+/* ── Badges ── */
+
+body[class*="theme-"] .ts-badge {
+    background: var(--t-bg-tertiary);
+    color: var(--t-text);
+    border-radius: var(--t-radius);
+}
+/* Machine-state colors are semantic — re-declared so they win the
+   specificity raise of the themed base badge above. */
+body[class*="theme-"] .ts-state.idle    { background: #d4efdf; color: #1e6b3a; }
+body[class*="theme-"] .ts-state.running { background: #d6eaf8; color: #1a5276; }
+body[class*="theme-"] .ts-state.paused  { background: #fdebd0; color: #935116; }
+body[class*="theme-"] .ts-state.stopped,
+body[class*="theme-"] .ts-state.dead    { background: #fadbd8; color: #922b21; }
+
+/* ── Cards & section titles ── */
+
+body[class*="theme-"] .ts-card {
+    background: var(--t-bg-primary);
+    border: var(--t-border-width) solid var(--t-border);
+    border-radius: var(--t-radius);
+}
+body[class*="theme-"] .ts-card-title,
+body[class*="theme-"] .ts-settings-heading,
+body[class*="theme-"] .ts-tool-label {
+    font-size: var(--t-fs-section);
+    color: var(--t-text-dim);
+    text-shadow: var(--t-text-glow, none);
+}
+body[class*="theme-"] .ts-note-inline,
+body[class*="theme-"] .ts-note,
+body[class*="theme-"] .ts-empty,
+body[class*="theme-"] .ts-tool-caption,
+body[class*="theme-"] .ts-job-meta,
+body[class*="theme-"] .ts-usb-meta,
+body[class*="theme-"] .ts-pick-desc,
+body[class*="theme-"] .ts-label-field,
+body[class*="theme-"] .ts-field-row label,
+body[class*="theme-"] .ts-custom-row .ts-custom-macro {
+    color: var(--t-text-dim);
+}
+
+/* ── Buttons ── */
+
+body[class*="theme-"] .ts-cmd {
+    background: var(--t-btn-setting-bg);
+    color: var(--t-btn-setting-text);
+    border: var(--t-border-width) solid var(--t-btn-setting-border);
+    border-radius: var(--t-radius);
+    font-size: var(--t-fs-btn);
+    text-shadow: var(--t-text-glow, none);
+    box-shadow: var(--t-shadow-btn, none);
+    transition: all 0.15s;
+}
+body[class*="theme-"] .ts-cmd:hover:not(:disabled) {
+    background: var(--t-btn-setting-bg);
+    color: var(--t-text);
+    border-color: var(--t-accent);
+    box-shadow: var(--t-shadow-btn-hover, none);
+}
+body[class*="theme-"] .ts-cmd:active:not(:disabled) {
+    transform: translate(1px, 1px);
+}
+body[class*="theme-"] .ts-cmd-primary {
+    background: var(--t-btn-action-bg);
+    color: var(--t-btn-action-text);
+    border-color: var(--t-btn-action-border);
+    text-shadow: none;
+}
+body[class*="theme-"] .ts-cmd-primary:hover:not(:disabled) {
+    background: var(--t-btn-action-bg);
+    color: var(--t-btn-action-text);
+    border-color: var(--t-btn-action-border);
+    filter: brightness(1.1);
+}
+body[class*="theme-"] .ts-cmd-add {
+    background: transparent;
+    color: var(--t-text-dim);
+    border-style: dashed;
+    box-shadow: none;
+}
+body[class*="theme-"] .ts-iconbtn {
+    background: none;
+    border: none;
+    color: var(--t-text-dim);
+    box-shadow: none;
+}
+body[class*="theme-"] .ts-iconbtn:hover {
+    color: var(--t-text);
+}
+body[class*="theme-"] .ts-job .ts-job-delete:hover {
+    color: #c0392b;
+}
+body[class*="theme-"] .ts-link {
+    color: var(--t-accent);
+}
+
+/* ── Job / USB / macro-pick rows ── */
+
+body[class*="theme-"] .ts-job,
+body[class*="theme-"] .ts-usb-entry,
+body[class*="theme-"] .ts-pick-entry {
+    background: var(--t-bg-tertiary);
+    border: 1px solid var(--t-border);
+    border-radius: var(--t-radius);
+    color: var(--t-text);
+}
+body[class*="theme-"] .ts-job.next,
+body[class*="theme-"] .ts-pick-entry.selected {
+    border-color: var(--t-accent);
+    background: var(--t-hover-bg);
+}
+body[class*="theme-"] .ts-usb-entry:hover,
+body[class*="theme-"] .ts-pick-entry:hover {
+    background: var(--t-hover-bg);
+}
+body[class*="theme-"] .ts-drag-handle {
+    color: var(--t-text-dim);
+}
+body[class*="theme-"] .ts-drag-chosen {
+    border-color: var(--t-accent);
+    box-shadow: var(--t-shadow-halo, none);
+}
+body[class*="theme-"] .ts-usb-entry .fa {
+    color: var(--t-text-dim);
+}
+
+/* ── Current-tool strip & position readout ── */
+
+body[class*="theme-"] .ts-tool-number {
+    font-family: var(--t-font-mono);
+    color: var(--t-accent);
+    text-shadow: var(--t-text-glow, none);
+}
+body[class*="theme-"] .ts-tool-number.empty {
+    color: var(--t-text-dim);
+    opacity: 0.6;
+}
+body[class*="theme-"] .ts-postable {
+    font-family: var(--t-font-mono);
+}
+body[class*="theme-"] .ts-postable th,
+body[class*="theme-"] .ts-postable td.ts-axis,
+body[class*="theme-"] .ts-locations td {
+    color: var(--t-text-dim);
+}
+body[class*="theme-"] .ts-locations {
+    border-top-color: var(--t-border);
+}
+body[class*="theme-"] .ts-sensors {
+    border-top-color: var(--t-border);
+}
+body[class*="theme-"] .ts-sensor {
+    color: var(--t-text-dim);
+}
+body[class*="theme-"] .ts-led {
+    background: var(--t-bg-tertiary);
+    border-color: var(--t-border);
+}
+body[class*="theme-"] .ts-led.on {
+    background: #2ecc71;
+    border-color: #27ae60;
+    box-shadow: 0 0 6px rgba(46, 204, 113, 0.5);
+}
+
+/* ── Tool rack clips ── */
+
+body[class*="theme-"] .ts-clip {
+    background: var(--t-btn-setting-bg);
+    color: var(--t-btn-setting-text);
+    border: var(--t-border-width) solid var(--t-btn-setting-border);
+    border-radius: var(--t-radius);
+}
+body[class*="theme-"] .ts-clip:hover {
+    border-color: var(--t-accent);
+}
+body[class*="theme-"] .ts-clip .ts-clip-len {
+    color: var(--t-text-dim);
+}
+body[class*="theme-"] .ts-clip.current {
+    background: var(--t-accent);
+    color: var(--t-accent-text);
+    border-color: var(--t-accent);
+}
+body[class*="theme-"] .ts-clip.current .ts-clip-len {
+    color: var(--t-accent-text);
+    opacity: 0.8;
+}
+
+/* ── Form fields ── */
+
+body[class*="theme-"] input[type="text"],
+body[class*="theme-"] input[type="number"],
+body[class*="theme-"] select {
+    background: var(--t-input-bg);
+    border: var(--t-border-width) solid var(--t-input-border);
+    border-radius: var(--t-radius);
+    color: var(--t-input-text, var(--t-text));
+    font-weight: var(--t-input-weight, normal);
+    font-size: var(--t-fs-input);
+}
+body[class*="theme-"] input[type="text"]:focus,
+body[class*="theme-"] input[type="number"]:focus,
+body[class*="theme-"] select:focus {
+    border-color: var(--t-accent);
+    box-shadow: var(--t-shadow-halo, none);
+    outline: none;
+}
+body[class*="theme-"] select option {
+    background: var(--t-input-bg);
+    color: var(--t-input-text, var(--t-text));
+}
+body[class*="theme-"] .ts-settings-table input:disabled {
+    background: var(--t-bg-tertiary);
+    color: var(--t-text-dim);
+}
+body[class*="theme-"] .ts-settings-table th,
+body[class*="theme-"] .ts-settings-table td.ts-tool-cell,
+body[class*="theme-"] .ts-settings-table td.ts-name-cell {
+    color: var(--t-text-dim);
+}
+
+/* ── Modals ── */
+
+body[class*="theme-"] .ts-settings-section {
+    background: var(--t-bg-tertiary);
+    border: 1px solid var(--t-border);
+    border-radius: var(--t-radius);
+}
+body[class*="theme-"] .ts-modal-backdrop {
+    background: rgba(0, 0, 0, 0.55);
+}
+body[class*="theme-"] .ts-modal {
+    background: var(--t-bg-primary);
+    border: var(--t-border-width) solid var(--t-border);
+    border-radius: var(--t-radius);
+    color: var(--t-text);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+body[class*="theme-"] .ts-modal-header {
+    text-shadow: var(--t-text-glow, none);
+}
+
+/* ── Scrollbars ── */
+
+body[class*="theme-"] ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+body[class*="theme-"] ::-webkit-scrollbar-track {
+    background: var(--t-bg-secondary);
+}
+body[class*="theme-"] ::-webkit-scrollbar-thumb {
+    background: var(--t-border);
+    border-radius: var(--t-radius);
+}
+
+/* ── Theme picker (App Settings modal) ──
+   Styled for the default look too — the grid exists in every theme. */
+
+.ts-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 8px;
+}
+.ts-theme-swatch {
+    border: 1px solid #d5dbdb;
+    border-radius: 6px;
+    padding: 0;
+    background: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    text-align: left;
+    font: inherit;
+}
+.ts-swatch-preview {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.ts-swatch-preview span {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.ts-swatch-label {
+    display: block;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: #2c3e50;
+}
+.ts-theme-swatch.selected {
+    outline: 2px solid #2980b9;
+    outline-offset: -2px;
+}
+body[class*="theme-"] .ts-theme-swatch {
+    border-color: var(--t-border);
+    border-radius: var(--t-radius);
+    box-shadow: none;
+}
+body[class*="theme-"] .ts-swatch-label {
+    color: var(--t-text);
+    background: var(--t-bg-tertiary);
+}
+body[class*="theme-"] .ts-theme-swatch.selected {
+    outline-color: var(--t-accent);
+}
+
+/* ════════════════════════════════════════════════════════════
+   Per-theme flourishes (ported from testbed components.css)
+   ════════════════════════════════════════════════════════════ */
+
+/* SB 1.0: CRT scanlines over the whole page */
+body.theme-shopbot1::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.06) 2px,
+        rgba(0, 0, 0, 0.06) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+}
+/* SB 1.0: hide number-input spinners (terminal fields) */
+body.theme-shopbot1 input[type="number"]::-webkit-inner-spin-button,
+body.theme-shopbot1 input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+body.theme-shopbot1 input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* ShopBot 3: ruled legal-pad paper on cards (rules-only recipe from the
+   tokens file — painted once per surface, background-attachment: local
+   keeps the rules moving with any scrolling content). */
+body.theme-shopbot3 .ts-card,
+body.theme-shopbot3 .ts-modal {
+    background-color: var(--sb3-paper-color);
+    background-image: var(--sb3-paper-rules);
+    background-attachment: local;
+    box-shadow: var(--sb3-bevel);
+}
+
+/* Binbows XP: signature title-bar gradient on modal headers */
+body.theme-binbows .ts-modal-header {
+    background: var(--t-bg-header);
+    color: #fff;
+    padding-bottom: 10px;
+    border-radius: 5px 5px 0 0;
+    margin-bottom: 8px;
+}
+body.theme-binbows .ts-modal-header .ts-note-inline,
+body.theme-binbows .ts-modal-header .ts-link {
+    color: #d6e4ff;
+}
