@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Status</title>
+    <link rel="stylesheet" href="../../css/font-awesome.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="ts-page">
+
+        <div class="ts-header">
+            <h1>Tool Status</h1>
+            <div class="ts-badges">
+                <span class="ts-badge" id="atc-type-badge">&mdash;</span>
+                <span class="ts-badge ts-state" id="machine-state">&mdash;</span>
+            </div>
+        </div>
+
+        <div class="ts-split">
+
+            <!-- LEFT: slim job manager -->
+            <div class="ts-pane" id="pane-jobs">
+                <div class="ts-card">
+                    <div class="ts-card-title">Jobs</div>
+                    <div class="ts-jobs-actions">
+                        <button class="ts-cmd ts-cmd-primary" id="btn-run-next" disabled>&#9654;&nbsp; Run Next Job</button>
+                        <button class="ts-cmd" id="btn-add-job">+ Add</button>
+                        <input type="file" id="job-file-input" style="display:none;" multiple>
+                    </div>
+                    <div class="ts-job-list" id="job-queue">
+                        <div class="ts-empty">No jobs in queue</div>
+                    </div>
+                    <div class="ts-card-title ts-history-title">Recent</div>
+                    <div class="ts-job-list ts-job-history" id="job-history"></div>
+                    <button class="ts-cmd ts-cmd-block" id="btn-full-history">View Full History</button>
+                </div>
+
+                <div class="ts-card" id="card-usb" style="display:none;">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span><i class="fa fa-usb"></i> USB Drive</span>
+                        <span class="ts-note-inline" id="usb-crumb"></span>
+                    </div>
+                    <div class="ts-usb-list" id="usb-list"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: status + commands -->
+            <div class="ts-pane" id="pane-controls">
+
+                <div class="ts-card">
+                    <div class="ts-current-strip">
+                        <div class="ts-tool-display">
+                            <div class="ts-tool-label">Current Tool</div>
+                            <div class="ts-tool-number" id="current-tool-number">&mdash;</div>
+                            <div class="ts-tool-caption" id="current-tool-caption"></div>
+                        </div>
+                        <table class="ts-postable">
+                            <thead>
+                                <tr><th></th><th>Position</th><th>Offset</th><th id="units-label"></th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td></td></tr>
+                                <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td></td></tr>
+                                <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="ts-sensors" id="sensor-row">
+                        <div class="ts-sensor" id="sensor-toolbar" style="display:none;">
+                            <span class="ts-led"></span><span class="ts-sensor-label">Toolbar</span>
+                        </div>
+                        <div class="ts-sensor" id="sensor-tool" style="display:none;">
+                            <span class="ts-led"></span><span class="ts-sensor-label">Tool</span>
+                        </div>
+                        <div class="ts-sensor" id="sensor-drawbar" style="display:none;">
+                            <span class="ts-led"></span><span class="ts-sensor-label">Drawbar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ts-card">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Machine</span>
+                        <button class="ts-iconbtn" id="btn-machine-settings" title="Routine settings"><i class="fa fa-gear"></i></button>
+                    </div>
+                    <div class="ts-btn-grid" id="machine-btn-grid">
+                        <button class="ts-cmd machine-cmd" data-cmd="C3" title="Home the X and Y axes (C3)">Home XY</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C2" title="Set Z-Zero using zeroing plate (C2)">Home Z</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="JH" title="Jog Home X &amp; Y; Z to safe height (JH)">Jog Home</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C79" title="Move to park location (C79)">Jog to Park</button>
+                    </div>
+                </div>
+
+                <div class="ts-card" id="card-tools" style="display:none;">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Tools <span class="ts-note-inline" id="rack-note"></span></span>
+                        <button class="ts-iconbtn" id="btn-tool-settings" title="Tool settings"><i class="fa fa-gear"></i></button>
+                    </div>
+                    <div class="ts-rack" id="rack"></div>
+                    <div class="ts-btn-grid ts-btn-grid-single">
+                        <button class="ts-cmd" id="btn-measure" title="Measure the current tool (C72)">Measure Tool</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Add macro button modal -->
+    <div class="ts-modal-backdrop" id="macro-pick-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Add Macro Button</span>
+                <a class="ts-link" id="macro-pick-manager">open Macro Manager</a>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-pick-list" id="macro-pick-list"></div>
+                <label class="ts-label-field">Button label
+                    <input id="macro-btn-label" type="text" placeholder="select a macro above">
+                </label>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-macro-pick-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-macro-pick-save" disabled>Add Button</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full job history modal -->
+    <div class="ts-modal-backdrop" id="history-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Job History</span>
+                <span class="ts-note-inline" id="history-page-label"></span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-job-list" id="history-list"></div>
+            </div>
+            <div class="ts-modal-footer ts-modal-footer-split">
+                <div>
+                    <button class="ts-cmd" id="btn-history-prev">&larr; Newer</button>
+                    <button class="ts-cmd" id="btn-history-next">Older &rarr;</button>
+                </div>
+                <button class="ts-cmd" id="btn-history-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Machine routine settings modal -->
+    <div class="ts-modal-backdrop" id="machine-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Routine Settings</span>
+                <span class="ts-note-inline" id="machine-settings-units"></span>
+            </div>
+            <div class="ts-modal-body">
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Home XY <span class="ts-note-inline">limit switch offsets</span></div>
+                    <div class="ts-field-row">
+                        <label>X offset <input id="ms-homeoff-x" type="number" step="any"></label>
+                        <label>Y offset <input id="ms-homeoff-y" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">Pull-back distance from each proximity switch to true zero (used by Home XY / C3).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Home Z <span class="ts-note-inline">fixed Z-zero location</span></div>
+                    <label class="ts-check-row">
+                        <input id="ms-zzero-use" type="checkbox">
+                        Move to a fixed XY location before zeroing Z
+                    </label>
+                    <div class="ts-field-row">
+                        <label>X location <input id="ms-zzero-x" type="number" step="any"></label>
+                        <label>Y location <input id="ms-zzero-y" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">When enabled, the Home Z button lifts to safe-Z, jogs here (J2), then runs Z-Zero (C2).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Custom Buttons <span class="ts-note-inline">rename or remove</span></div>
+                    <div id="ms-custom-list"></div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Park <span class="ts-note-inline">parking location</span></div>
+                    <div class="ts-field-row">
+                        <label>X <input id="ms-park-x" type="number" step="any"></label>
+                        <label>Y <input id="ms-park-y" type="number" step="any"></label>
+                        <label>Z lift <input id="ms-park-z" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">Jog to Park (C79) lifts to Z, then moves to X/Y.</div>
+                </div>
+
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-machine-settings-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-machine-settings-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tool settings modal -->
+    <div class="ts-modal-backdrop" id="tool-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Tool Settings</span>
+                <span class="ts-note-inline" id="tool-settings-units"></span>
+            </div>
+            <div class="ts-modal-body">
+                <table class="ts-settings-table">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Cutter Type</th>
+                            <th>Diameter</th>
+                            <th>Length</th>
+                            <th>Angle&deg;</th>
+                            <th>Name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tool-settings-rows"></tbody>
+                </table>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-tool-settings-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-tool-settings-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/libs/jquery.min.js"></script>
+    <script src="../../js/libs/fabmo.js"></script>
+    <script src="js/Sortable.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
