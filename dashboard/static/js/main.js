@@ -253,9 +253,6 @@ function _hideConfigRestoreOverlay() {
 function checkForGlobalBackupRestore() {
     // console.log("DEBUG: Global dashboard backup restore check");
 
-    // Block the UI immediately so the user cannot interact before the question is answered
-    _showConfigRestoreOverlay();
-
     // IMPORTANT: Only check for backup restore AFTER user is authenticated
     // This prevents the modal from appearing during login and stealing focus
     setTimeout(function() {
@@ -283,6 +280,7 @@ function checkForGlobalBackupRestore() {
                         response.data.backup_available && 
                         response.data.should_prompt) {
                         // console.log("DEBUG: Global backup available and should prompt, showing modal");
+                        _showConfigRestoreOverlay();
                         showGlobalBackupRestoreModal(response.data.backup_info);
                     } else {
                         // console.log("DEBUG: No global backup available or should not prompt");
