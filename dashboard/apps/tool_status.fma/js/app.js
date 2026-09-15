@@ -350,7 +350,7 @@ function renderLocations() {
         var t = toolTable()[cur] || {};
         if (isFinite(Number(t.X))) rows.push(["Tool " + cur + " clip", t.X, t.Y, t.Z]);
     }
-    if (isATC()) {
+    if (atcType() !== 0) {
         var px = uuGet("ATCUU", "ZZERO_X");
         var py = uuGet("ATCUU", "ZZERO_Y");
         if (px !== null || py !== null) rows.push(["Plate", px, py, null]);
