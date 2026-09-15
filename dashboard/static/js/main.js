@@ -253,6 +253,23 @@ function _hideConfigRestoreOverlay() {
 function checkForGlobalBackupRestore() {
     // console.log("DEBUG: Global dashboard backup restore check");
 
+    // Immediately check whether a backup prompt is pending so the overlay can
+    // block the UI before the user can interact.  This runs with no delay and
+    // without waiting for auth — if it succeeds and a prompt is needed the
+    // overlay goes up right away.  The full auth-gated check below handles the
+    // actual modal after the normal 3-second stabilisation delay.
+    $.ajax({
+        url: '/config/backup-restore-status',
+        method: 'GET',
+        success: function(earlyResponse) {
+            if (earlyResponse.status === 'success' &&
+                earlyResponse.data.backup_available &&
+                earlyResponse.data.should_prompt) {
+                _showConfigRestoreOverlay();
+            }
+        }
+    });
+
     // IMPORTANT: Only check for backup restore AFTER user is authenticated
     // This prevents the modal from appearing during login and stealing focus
     setTimeout(function() {
