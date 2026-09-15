@@ -305,7 +305,13 @@ body {
 .ts-modal-footer-split > div { display: flex; gap: 8px; }
 .ts-cmd-block { display: block; width: 100%; margin-top: 8px; }
 
-.ts-settings-section { margin-bottom: 14px; }
+.ts-settings-section {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e8ebee;
+    border-radius: 6px;
+    background: #fafbfc;
+}
 .ts-settings-heading {
     font-size: 0.8em;
     font-weight: 700;
@@ -314,15 +320,14 @@ body {
     color: #7f8c8d;
     margin-bottom: 6px;
 }
-.ts-field-row { display: flex; gap: 10px; }
+.ts-field-row { display: flex; gap: 14px; }
 .ts-field-row label {
-    flex: 1;
     font-size: 0.82em;
     color: #7f8c8d;
 }
 .ts-field-row input {
     display: block;
-    width: 100%;
+    width: 7em;
     height: 1.9em;
     font-size: 1.05em;
     padding: 1px 6px;
@@ -330,6 +335,11 @@ body {
     border: 1px solid #d5dbdb;
     border-radius: 4px;
     color: #2c3e50;
+}
+.ts-note {
+    font-size: 0.78em;
+    color: #95a5a6;
+    margin-top: 6px;
 }
 .ts-check-row {
     display: flex;
