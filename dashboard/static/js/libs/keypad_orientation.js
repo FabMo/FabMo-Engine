@@ -73,7 +73,7 @@
       if (dirs.length === 1) {
         var labelAxis = inv[dirs[0]];
         if (labelAxis) {
-          $btn.find(".glyph-label").text(labelAxis.replace("-", "−"));
+          $btn.find(".glyph-label").text(labelAxis);
         }
       }
     });

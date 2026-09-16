@@ -2942,8 +2942,12 @@ input[type='range']:focus {
 .drive-button .glyph-label {
 	font-family: inherit;
 	font-size: 32px;
-	font-weight: 700;
+	font-weight: 800;
 	fill: #23223a;
+	stroke: #23223a;
+	stroke-width: 1.25;
+	paint-order: stroke;
+	dominant-baseline: central;
 }
 
 .drive-button .glyph-stroke path {
