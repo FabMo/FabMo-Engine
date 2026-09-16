@@ -1,9 +1,10 @@
 // Applies a user's manual-control orientation mapping to the live keypad
 // DOM by swapping the action classes (x_pos/x_neg/y_pos/y_neg) on each
-// button while leaving the visual icon untouched. This lets a user
-// standing on a non-default side of the machine press the button that
-// LOOKS like "up" and have it move the machine in whatever direction
-// they configured.
+// button. The arrow glyph keeps its apparent direction, but the axis
+// label inside it (.glyph-label) is rewritten to the machine motion the
+// button now produces. This lets a user standing on a non-default side
+// of the machine press the button that LOOKS like "up" and have it move
+// the machine in whatever direction they configured.
 //
 // mapping: object keyed by machine motion (X+, X-, Y+, Y-), valued by the
 //   keypad direction that should produce it (↑, ↓, ←, →). Defaults to the
@@ -66,6 +67,15 @@
           $btn.addClass(AXIS_CLASS[axis]);
         }
       });
+
+      // Cardinal buttons carry an axis label inside the arrowhead glyph;
+      // keep it in sync with the motion the button now produces.
+      if (dirs.length === 1) {
+        var labelAxis = inv[dirs[0]];
+        if (labelAxis) {
+          $btn.find(".glyph-label").text(labelAxis.replace("-", "−"));
+        }
+      }
     });
   }
 

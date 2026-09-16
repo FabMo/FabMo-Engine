@@ -2920,41 +2920,48 @@ input[type='range']:focus {
 	border-radius: 50%;
   }
 
-.fa-keypad {
-	line-height: inherit;
-	text-shadow: 1px 1px 4px black;
+/* Directional arrowhead glyphs: one pentagon path per button, rotated in
+   the SVG itself; the axis label is counter-rotated so it stays upright.
+   Labels on cardinal buttons are rewritten by keypad_orientation.js when
+   the user remaps orientation. */
+.drive-button .dir-glyph {
 	display: block;
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	margin-right: -50%;
 	transform: translate(-50%, -50%);
+	width: 84%;
+	height: 84%;
 	pointer-events: none;
 }
 
-.keypad-cell:first-child .fa-keypad{
-	transform: translate(-50%, -50%) rotate(-45deg);
+.drive-button .glyph-shape {
+	fill: #fff;
 }
 
-.keypad-cell:nth-child(3) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(45deg);
+.drive-button .glyph-label {
+	font-family: inherit;
+	font-size: 32px;
+	font-weight: 700;
+	fill: #23223a;
 }
 
-.keypad-cell:nth-child(7) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(-135deg);
+.drive-button .glyph-stroke path {
+	stroke: #fff;
+	stroke-width: 13;
+	fill: none;
+	stroke-linecap: round;
+	stroke-linejoin: round;
 }
 
-.keypad-cell:nth-child(9) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(135deg);
+.drive-button.bar .dir-glyph {
+	width: 82%;
+	height: 78%;
 }
 
-.z-fa-double {
-	font-size: 16px;
-    display: block;
-    padding: 0;
-    margin: 0;
-	height: 5px;
-	pointer-events: none;
+.drive-button.bar .dir-glyph.fastz {
+	width: 68%;
+	height: 72%;
 }
 
 .manual-right-side-container {
