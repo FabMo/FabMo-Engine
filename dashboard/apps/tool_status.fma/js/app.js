@@ -72,6 +72,8 @@ var THEMES = [
     { id: "sbweb", label: "ShopBot Web", bg: "#e6e4d3", accent: "#a5ce42", text: "#171b60" },
     { id: "devdark", label: "SBcode", bg: "#1e1e1e", accent: "#569cd6", text: "#d4d4d4" },
     { id: "shopbot3", label: "ShopBot 3", bg: "#fef9c3", accent: "#00acc1", text: "#000000" },
+    { id: "sb4", label: "SB4 Console", bg: "#979696", accent: "#008000", text: "#333333" },
+    { id: "config", label: "Configuration", bg: "#ffffff", accent: "#313366", text: "#222222" },
     { id: "toolpath-net", label: "toolpath.net", bg: "#85847f", accent: "#d68a2e", text: "#f4f4f1" },
     { id: "ai-ya", label: "AI-YA!", bg: "#f7f6f2", accent: "#1b2a6b", text: "#22263a" },
 ];
@@ -100,6 +102,162 @@ function applyTheme(id) {
 
 // Apply the saved theme immediately (script runs at end of body).
 applyTheme(currentTheme());
+
+// ---------------------------------------------------------------------------
+// Card layout: order across the two panes plus user show/hide, draggable by
+// the ⋮⋮ grip in each card title. Stored per-browser like the theme — layout
+// is a display preference, not a machine setting. Availability (USB drive
+// present, rack-style ATC) composes with the user's choice: a card shows
+// only when it's both enabled in App Settings AND applicable to the machine.
+
+var LAYOUT_KEY = "tool-status-layout";
+
+var CARDS = [
+    { id: "jobs", label: "Jobs" },
+    { id: "usb", label: "USB Drive", note: "shown when a drive is plugged in" },
+    { id: "console", label: "Console" },
+    { id: "current", label: "Current Tool" },
+    { id: "machine", label: "Machine" },
+    { id: "tools", label: "Tools", note: "shown for rack-style ATCs" },
+];
+
+var DEFAULT_LAYOUT = { left: ["jobs", "usb", "console"], right: ["current", "machine", "tools"], hidden: [] };
+
+// Cards whose availability is machine-driven start unavailable until the
+// first status/config arrives (they carry display:none in the markup).
+var cardAvail = { usb: false, tools: false };
+
+function loadLayout() {
+    var raw = null;
+    try {
+        raw = JSON.parse(localStorage.getItem(LAYOUT_KEY));
+    } catch (e) {
+        /* missing/corrupt — fall through to default */
+    }
+    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+    var known = {};
+    CARDS.forEach(function (c) {
+        known[c.id] = true;
+    });
+    var out = { left: [], right: [], hidden: [] };
+    var placed = {};
+    ["left", "right"].forEach(function (side) {
+        (Array.isArray(raw[side]) ? raw[side] : []).forEach(function (id) {
+            if (known[id] && !placed[id]) {
+                out[side].push(id);
+                placed[id] = true;
+            }
+        });
+    });
+    (Array.isArray(raw.hidden) ? raw.hidden : []).forEach(function (id) {
+        if (known[id] && out.hidden.indexOf(id) === -1) out.hidden.push(id);
+    });
+    // Cards missing from a stored layout (added in an app update) land at
+    // their default position instead of vanishing.
+    ["left", "right"].forEach(function (side) {
+        DEFAULT_LAYOUT[side].forEach(function (id) {
+            if (!placed[id]) {
+                out[side].push(id);
+                placed[id] = true;
+            }
+        });
+    });
+    return out;
+}
+
+var layout = loadLayout();
+
+function saveLayout() {
+    try {
+        localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+    } catch (e) {
+        /* private mode etc. — layout just won't persist */
+    }
+}
+
+function isCardHidden(id) {
+    return layout.hidden.indexOf(id) !== -1;
+}
+
+function updateCardVisibility(id) {
+    var show = cardAvail[id] !== false && !isCardHidden(id);
+    $('[data-card-id="' + id + '"]').toggle(show);
+}
+
+function setCardAvailable(id, avail) {
+    cardAvail[id] = avail;
+    updateCardVisibility(id);
+}
+
+// Move each card node into its pane in saved order. Moving nodes preserves
+// their event handlers, so this is safe to re-run (e.g. on layout reset).
+function applyLayout() {
+    var panes = { left: "#pane-jobs", right: "#pane-controls" };
+    Object.keys(panes).forEach(function (side) {
+        var $pane = $(panes[side]);
+        layout[side].forEach(function (id) {
+            $pane.append($('[data-card-id="' + id + '"]'));
+        });
+    });
+    CARDS.forEach(function (c) {
+        updateCardVisibility(c.id);
+    });
+}
+
+applyLayout();
+
+// ---------------------------------------------------------------------------
+// Console card: an SBP command line plus the Sb4-style teal window. Typed
+// commands are echoed and run via runSBP; while a file runs, each executing
+// line scrolls by — the file is fetched once per job from /job/<id>/file
+// and indexed by the 1-based status.line, same as Sb4's file display.
+
+var CONSOLE_MAX_LINES = 400;
+
+function consoleLog(text, cls) {
+    var $out = $("#console-output");
+    if (!$out.length) return;
+    var $line = $("<div>").text(text);
+    if (cls) $line.addClass(cls);
+    $out.append($line);
+    while ($out.children().length > CONSOLE_MAX_LINES) $out.children().first().remove();
+    $out.scrollTop($out[0].scrollHeight);
+}
+
+var consoleFile = { jobId: null, lines: null, loading: false, lastLine: null };
+
+function consoleTrackRun(status) {
+    if (status.state !== "running" && status.state !== "paused") {
+        consoleFile.jobId = null;
+        consoleFile.lines = null;
+        consoleFile.lastLine = null;
+        return;
+    }
+    var jobId = status.job && status.job._id;
+    if (jobId && jobId !== consoleFile.jobId) {
+        // One fetch attempt per job; on failure the run just scrolls nothing.
+        consoleFile.jobId = jobId;
+        consoleFile.lines = null;
+        consoleFile.lastLine = null;
+        if (!consoleFile.loading) {
+            consoleFile.loading = true;
+            $.get("/job/" + jobId + "/file")
+                .done(function (data) {
+                    consoleFile.lines = String(data).split("\n");
+                })
+                .always(function () {
+                    consoleFile.loading = false;
+                });
+        }
+    }
+    if (!consoleFile.lines || typeof status.line !== "number") return;
+    if (status.line === consoleFile.lastLine) return;
+    consoleFile.lastLine = status.line;
+    var text = consoleFile.lines[status.line - 1];
+    if (typeof text === "string" && text.trim() !== "") {
+        consoleLog(status.line + "  " + text, "ts-console-dim");
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Variable access
@@ -338,53 +496,9 @@ function renderPosition() {
     $("#units-label").text(state.unit);
 }
 
-// Key machine locations, merged under the position readout. Values come
-// from the same variables the routines use: tool clip locations from
-// $toolsUU (recorded by ATC calibration/C74), measurement plate from
-// $atcUU.ZZero_X/Y, fixed Z-zero location from $SB_ZZEROLOCUU (when
-// enabled), park from $SB_PARKUU.
-function renderLocations() {
-    var rows = [];
-    var cur = Number(atcVar("TOOLIN", 0));
-    if (cur >= 1) {
-        var t = toolTable()[cur] || {};
-        if (isFinite(Number(t.X))) rows.push(["Tool " + cur + " clip", t.X, t.Y, t.Z]);
-    }
-    if (atcType() !== 0) {
-        var px = uuGet("ATCUU", "ZZERO_X");
-        var py = uuGet("ATCUU", "ZZERO_Y");
-        if (px !== null || py !== null) rows.push(["Plate", px, py, null]);
-    }
-    if (Number((state.vars || {}).SB_ZZEROLOC_USE)) {
-        rows.push(["Z-Zero XY", uuGet("SB_ZZEROLOCUU", "X"), uuGet("SB_ZZEROLOCUU", "Y"), null]);
-    }
-    var parkX = uuGet("SB_PARKUU", "X");
-    if (parkX !== null) rows.push(["Park", parkX, uuGet("SB_PARKUU", "Y"), uuGet("SB_PARKUU", "Z")]);
-
-    var $table = $("#locations-table");
-    if (!rows.length) {
-        $table.hide();
-        return;
-    }
-    var $body = $table.find("tbody").empty();
-    rows.forEach(function (r) {
-        var $tr = $("<tr>");
-        $tr.append($('<td class="ts-axis">').text(r[0]));
-        [r[1], r[2], r[3]].forEach(function (v) {
-            var n = Number(v);
-            $tr.append($("<td>").text(v !== null && v !== undefined && isFinite(n) ? fmt(n) : "—"));
-        });
-        $body.append($tr);
-    });
-    $table.show();
-}
-
 function renderToolRow() {
-    if (!showToolRow()) {
-        $("#card-tools").hide();
-        return;
-    }
-    $("#card-tools").show();
+    setCardAvailable("tools", showToolRow());
+    if (!showToolRow()) return;
     var clips = Number(atcVar("NUMCLIPS", 0));
     var current = Number(atcVar("TOOLIN", 0));
     var idle = isIdle();
@@ -535,12 +649,8 @@ function renderJobs() {
 
 function renderUSB() {
     var drive = state.usbDrive;
-    if (!drive) {
-        $("#card-usb").hide();
-        return;
-    }
-    $("#card-usb").show();
-    $("#usb-crumb").text(String(drive).replace(/^.*\//, ""));
+    setCardAvailable("usb", !!drive);
+    if (drive) $("#usb-crumb").text(String(drive).replace(/^.*\//, ""));
 }
 
 function historyRow(job) {
@@ -564,7 +674,6 @@ function renderAll() {
     renderSensors();
     renderPosition();
     renderToolRow();
-    renderLocations();
     renderCustomButtons();
     renderCommands();
     renderJobs();
@@ -603,6 +712,10 @@ function refreshJobs() {
 
 fabmo.on("status", function (status) {
     var stateChanged = status.state !== state.machineState;
+    if (stateChanged && state.machineState !== null) {
+        consoleLog("— " + status.state + " —", "ts-console-dim");
+    }
+    consoleTrackRun(status);
     state.machineState = status.state;
     state.unit = status.unit || state.unit;
     state.pos = { x: status.posx, y: status.posy, z: status.posz };
@@ -1061,6 +1174,115 @@ $(document).ready(function () {
         if (e.target === this) closeHistory();
     });
 
+    // ---- Card layout: drag between/within panes, show/hide in settings ----
+
+    function paneCardIds(sel) {
+        return $(sel)
+            .children("[data-card-id]")
+            .map(function () {
+                return $(this).attr("data-card-id");
+            })
+            .get();
+    }
+
+    function saveLayoutFromDOM() {
+        layout.left = paneCardIds("#pane-jobs");
+        layout.right = paneCardIds("#pane-controls");
+        saveLayout();
+    }
+
+    // Cards are fixed in place until the pencil in the header enables edit
+    // mode, which reveals the ⋮⋮ grips and arms the sortables — so a stray
+    // touch on a shop machine can never shuffle the layout.
+    var cardSortables = ["pane-jobs", "pane-controls"].map(function (paneId) {
+        return Sortable.create(document.getElementById(paneId), {
+            group: "ts-cards",
+            draggable: ".ts-card",
+            handle: ".ts-card-grip",
+            ghostClass: "ts-drag-ghost",
+            chosenClass: "ts-drag-chosen",
+            animation: 150,
+            touchDelay: 100,
+            disabled: true,
+            onEnd: saveLayoutFromDOM,
+        });
+    });
+
+    function setEditingLayout(on) {
+        document.body.classList.toggle("ts-editing", on);
+        $("#btn-edit-layout").toggleClass("active", on);
+        cardSortables.forEach(function (s) {
+            s.options.disabled = !on;
+        });
+    }
+
+    $("#btn-edit-layout").on("click", function () {
+        setEditingLayout(!document.body.classList.contains("ts-editing"));
+    });
+
+    function renderCardToggles() {
+        var $list = $("#card-toggle-list").empty();
+        CARDS.forEach(function (c) {
+            var $row = $('<label class="ts-check-row"><input type="checkbox"><span></span></label>');
+            $row.find("input").prop("checked", !isCardHidden(c.id)).attr("data-card", c.id);
+            $row.find("span").text(c.label);
+            if (c.note) $row.append($('<span class="ts-note-inline">').text(c.note));
+            $list.append($row);
+        });
+    }
+
+    $("#card-toggle-list").on("change", "input", function () {
+        var id = $(this).attr("data-card");
+        var i = layout.hidden.indexOf(id);
+        if (this.checked && i !== -1) layout.hidden.splice(i, 1);
+        if (!this.checked && i === -1) layout.hidden.push(id);
+        saveLayout();
+        updateCardVisibility(id);
+    });
+
+    $("#btn-layout-reset").on("click", function () {
+        layout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+        saveLayout();
+        applyLayout();
+        renderCardToggles();
+    });
+
+    // ---- Console card: command entry with arrow-key history ----
+
+    var cmdHistory = [];
+    var cmdHistoryIdx = -1; // -1 = live (unsubmitted) entry
+
+    $("#console-input").on("keydown", function (e) {
+        var $in = $(this);
+        if (e.key === "Enter") {
+            var cmd = $in.val().trim();
+            if (!cmd) return;
+            if (cmd !== cmdHistory[cmdHistory.length - 1]) cmdHistory.push(cmd);
+            cmdHistoryIdx = -1;
+            $in.val("");
+            consoleLog("> " + cmd);
+            fabmo.runSBP(cmd + "\n", function (err) {
+                if (err) consoleLog(String(err.message || err), "ts-console-err");
+            });
+        } else if (e.key === "ArrowUp") {
+            if (!cmdHistory.length) return;
+            e.preventDefault();
+            if (cmdHistoryIdx === -1) cmdHistoryIdx = cmdHistory.length;
+            if (cmdHistoryIdx > 0) cmdHistoryIdx--;
+            $in.val(cmdHistory[cmdHistoryIdx]);
+        } else if (e.key === "ArrowDown") {
+            if (cmdHistoryIdx === -1) return;
+            e.preventDefault();
+            cmdHistoryIdx++;
+            if (cmdHistoryIdx >= cmdHistory.length) {
+                cmdHistoryIdx = -1;
+                $in.val("");
+            } else {
+                $in.val(cmdHistory[cmdHistoryIdx]);
+            }
+        }
+    });
+
     // ---- App settings modal (theme picker) ----
 
     var $grid = $("#theme-grid");
@@ -1086,6 +1308,7 @@ $(document).ready(function () {
 
     $("#btn-app-settings").on("click", function () {
         applyTheme(currentTheme()); // refresh selected highlight
+        renderCardToggles();
         $("#app-settings-modal").css("display", "flex");
     });
     function closeAppSettings() {
