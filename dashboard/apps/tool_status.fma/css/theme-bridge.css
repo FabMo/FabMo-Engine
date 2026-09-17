@@ -167,13 +167,15 @@ body[class*="theme-"] .ts-tool-number.empty {
 body[class*="theme-"] .ts-postable {
     font-family: var(--t-font-mono);
 }
-body[class*="theme-"] .ts-postable th,
-body[class*="theme-"] .ts-postable td.ts-axis,
-body[class*="theme-"] .ts-locations td {
-    color: var(--t-text-dim);
+/* Console keeps its Sb4 teal in every theme; only the font follows */
+body[class*="theme-"] .ts-console,
+body[class*="theme-"] .ts-console-prompt,
+body[class*="theme-"] .ts-console-inputrow input {
+    font-family: var(--t-font-mono);
 }
-body[class*="theme-"] .ts-locations {
-    border-top-color: var(--t-border);
+body[class*="theme-"] .ts-postable th,
+body[class*="theme-"] .ts-postable td.ts-axis {
+    color: var(--t-text-dim);
 }
 body[class*="theme-"] .ts-sensors {
     border-top-color: var(--t-border);
@@ -340,8 +342,177 @@ body[class*="theme-"] .ts-theme-swatch.selected {
 }
 
 /* ════════════════════════════════════════════════════════════
+   App-local themes (not yet in the labs tokens file)
+   ════════════════════════════════════════════════════════════ */
+
+/* ── SB4 Console — the Sb4 desktop app look ──
+   Colors lifted verbatim from fabmo-sb-sb4-desktop-app css/style.css:
+   grey-on-grey page/panels with the blue-grey borders, keypad yellow
+   for macros, start-button green for actions. Lives here (not in
+   themes.css) so the labs tokens file stays wholesale-resyncable. */
+.theme-sb4 {
+    --t-font-main: 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
+    --t-font-mono: 'Consolas', 'Courier New', monospace;
+    --t-bg-primary: rgb(206, 207, 209);   /* Sb4 panel grey — cards */
+    --t-bg-secondary: rgb(151, 150, 150); /* Sb4 body grey — page */
+    --t-bg-tertiary: rgb(224, 225, 227);  /* rows, badges */
+    --t-bg-header: rgb(92, 90, 90);       /* Sb4 top bar */
+    --t-text: #333;
+    --t-text-dim: #4d4d4d;
+    --t-border: rgb(136, 171, 190);       /* Sb4 blue-grey border */
+    --t-accent: #327c7e;                  /* Sb4 teal */
+    --t-accent-text: #fff;
+    --t-input-bg: rgb(255, 250, 203);     /* Sb4 DRO/keypad yellow */
+    --t-input-border: rgb(136, 171, 190);
+    --t-hover-bg: rgba(136, 171, 190, 0.18);
+    --t-radius: 8px;
+    --t-fs-section: 12px;
+    --t-fs-label: 13px;
+    --t-fs-input: 13px;
+    --t-fs-unit: 12px;
+    --t-fs-btn: 13px;
+    --t-fs-checkbox: 13px;
+    --t-fs-slider-val: 12px;
+    --t-shadow-halo: 0 0 0 2px rgba(50, 124, 126, 0.25);
+    --t-shadow-halo-dim: none;
+    --t-shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --t-shadow-btn-hover: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --t-border-width: 1px;
+    --t-text-glow: none;
+    /* Button categories */
+    --t-btn-setting-bg: rgb(206, 207, 209);
+    --t-btn-setting-text: #4d4d4d;
+    --t-btn-setting-border: rgb(136, 171, 190);
+    --t-btn-action-bg: #008000;           /* Sb4 start green — job/save actions */
+    --t-btn-action-text: #fff;
+    --t-btn-action-border: #006400;
+    --t-btn-output-bg: rgb(143, 148, 150);
+    --t-btn-output-text: rgb(113, 233, 241);
+    --t-btn-output-border: rgb(136, 171, 190);
+    /* Viewport */
+    --t-canvas-bg: #ffffff;
+    --t-mesh-default: #327c7e;
+}
+
+/* ── Configuration — the configuration.fma look ──
+   The dashboard's Foundation build: indigo-blue #313366 buttons with
+   white text and square corners, white page, and fieldset frames whose
+   legends sit on the border line. Green from the app's update-available
+   button marks the primary action. */
+.theme-config {
+    --t-font-main: 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
+    --t-font-mono: 'Consolas', 'Courier New', monospace;
+    --t-bg-primary: #ffffff;
+    --t-bg-secondary: #ffffff;
+    --t-bg-tertiary: #f2f2f2;
+    --t-bg-header: #313366;
+    --t-text: #222;
+    --t-text-dim: #666;
+    --t-border: #ddd;
+    --t-accent: #313366;
+    --t-accent-text: #fff;
+    --t-input-bg: #fff;
+    --t-input-border: #ccc;
+    --t-hover-bg: rgba(49, 51, 102, 0.06);
+    --t-radius: 0px;
+    --t-fs-section: 13px;
+    --t-fs-label: 13px;
+    --t-fs-input: 13px;
+    --t-fs-unit: 12px;
+    --t-fs-btn: 13px;
+    --t-fs-checkbox: 13px;
+    --t-fs-slider-val: 12px;
+    --t-shadow-halo: none;
+    --t-shadow-halo-dim: none;
+    --t-shadow-btn: none;
+    --t-shadow-btn-hover: none;
+    --t-border-width: 1px;
+    --t-text-glow: none;
+    /* Button categories */
+    --t-btn-setting-bg: #313366;
+    --t-btn-setting-text: #fff;
+    --t-btn-setting-border: #272952;
+    --t-btn-action-bg: #4cbf42;
+    --t-btn-action-text: #fff;
+    --t-btn-action-border: #3da335;
+    --t-btn-output-bg: #ffffff;
+    --t-btn-output-text: #313366;
+    --t-btn-output-border: #313366;
+    /* Viewport */
+    --t-canvas-bg: #ffffff;
+    --t-mesh-default: #313366;
+}
+
+/* ════════════════════════════════════════════════════════════
    Per-theme flourishes (ported from testbed components.css)
    ════════════════════════════════════════════════════════════ */
+
+/* SB4: macro/routine buttons in the Sb4 keypad yellow (built-in routines
+   and user-added macro buttons alike), brighter homing yellow on hover */
+body.theme-sb4 .machine-cmd {
+    background: rgb(255, 250, 203);
+    color: #444;
+    border-color: rgb(136, 171, 190);
+}
+body.theme-sb4 .machine-cmd:hover:not(:disabled) {
+    background: rgba(255, 243, 150, 0.99);
+    color: #444;
+    border-color: rgb(136, 171, 190);
+}
+
+/* SB4: tool-change buttons and rack clips a step lighter than the panel */
+body.theme-sb4 #card-tools .ts-cmd:not(.ts-cmd-primary),
+body.theme-sb4 .ts-clip {
+    background: rgb(230, 231, 233);
+    color: #4d4d4d;
+}
+body.theme-sb4 #card-tools .ts-cmd:not(.ts-cmd-primary):hover:not(:disabled) {
+    background: rgb(240, 241, 243);
+    color: #4d4d4d;
+}
+body.theme-sb4 .ts-clip.current {
+    background: var(--t-accent);
+    color: var(--t-accent-text);
+}
+
+/* Configuration: fieldset frames — card titles pulled up onto the frame
+   border like a Foundation <legend>. Cards and modal settings sections
+   share the 10px top padding, so one offset centers the title on both
+   border lines; the extra pane gap keeps the overhang clear of the card
+   above. */
+body.theme-config .ts-pane {
+    gap: 18px;
+}
+body.theme-config .ts-card,
+body.theme-config .ts-settings-section {
+    overflow: visible;
+    background: #fff;
+}
+body.theme-config .ts-card > .ts-card-title:first-child,
+body.theme-config .ts-settings-heading {
+    width: fit-content;
+    position: relative;
+    gap: 8px;
+    margin-top: -20px;
+    margin-left: 2px;
+    margin-bottom: 6px;
+    padding: 0 7px;
+    background: #fff;
+    color: #333;
+    font-weight: 700;
+}
+/* White text on the indigo buttons must survive the generic hover
+   (which flips to --t-text); the dashed + Add button keeps its own look */
+body.theme-config .ts-cmd:not(.ts-cmd-add):hover:not(:disabled) {
+    color: #fff;
+    filter: brightness(1.18);
+}
+/* Rack clips as quiet white wells so the indigo current clip leads */
+body.theme-config .ts-clip {
+    background: #fff;
+    color: #333;
+    border-color: #ccc;
+}
 
 /* SB 1.0: CRT scanlines over the whole page */
 body.theme-shopbot1::after {

@@ -46,7 +46,8 @@ body {
 }
 @media (max-width: 700px) { .ts-split { grid-template-columns: 1fr; } }
 
-.ts-pane { display: flex; flex-direction: column; gap: 10px; }
+/* min-height keeps an emptied column a viable drop target for card drags */
+.ts-pane { display: flex; flex-direction: column; gap: 10px; min-height: 48px; }
 
 .ts-card {
     background: #fff;
@@ -211,14 +212,14 @@ body {
     justify-content: space-between;
     gap: 12px;
 }
-.ts-tool-display { text-align: center; min-width: 110px; }
+.ts-tool-display { text-align: center; min-width: 130px; }
 .ts-tool-label {
     font-size: 0.8em; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.05em; color: #7f8c8d;
 }
-.ts-tool-number { font-size: 2.8em; font-weight: 700; line-height: 1.1; }
+.ts-tool-number { font-size: 4.4em; font-weight: 700; line-height: 1.05; }
 .ts-tool-number.empty { color: #b2bec3; }
-.ts-tool-caption { font-size: 0.78em; color: #7f8c8d; min-height: 1.2em; }
+.ts-tool-caption { font-size: 0.95em; color: #7f8c8d; min-height: 1.2em; }
 
 .ts-postable { border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .ts-postable th {
@@ -227,9 +228,6 @@ body {
 }
 .ts-postable td { text-align: right; padding: 2px 8px; font-size: 0.95em; }
 .ts-postable td.ts-axis { font-weight: 700; text-align: left; color: #7f8c8d; }
-.ts-locations { margin-top: 6px; border-top: 1px solid #f0f2f4; }
-.ts-locations td.ts-axis { font-weight: 600; font-size: 0.82em; white-space: nowrap; }
-.ts-locations td { font-size: 0.88em; color: #7f8c8d; }
 
 .ts-sensors {
     display: flex; justify-content: center; gap: 6px 14px; flex-wrap: wrap;
@@ -267,6 +265,29 @@ body {
     justify-content: space-between;
 }
 .ts-card-title-row .ts-iconbtn { padding: 0 2px; font-size: 1.05em; }
+.ts-title-actions { display: flex; align-items: center; gap: 8px; }
+
+/* Card drag grip (⋮⋮ in each card title) — only visible in edit mode,
+   entered via the pencil button in the header */
+.ts-card-grip {
+    display: none;
+    cursor: grab;
+    color: #2980b9;
+    letter-spacing: -2px;
+    padding: 0 2px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+body.ts-editing .ts-card-grip { display: inline-block; }
+.ts-card-grip:hover { color: #1f618d; }
+.ts-card.ts-drag-chosen .ts-card-grip { cursor: grabbing; }
+
+body.ts-editing .ts-card { outline: 1px dashed #94b8d4; outline-offset: 2px; }
+#btn-edit-layout.active { color: #2980b9; }
+
+/* Card show/hide toggles in App Settings */
+.ts-card-toggles { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.ts-card-toggles .ts-note-inline { margin-left: 6px; }
 
 /* Tool settings modal */
 .ts-modal-backdrop {
@@ -417,3 +438,44 @@ body {
 }
 .ts-clip.current .ts-clip-len { color: #d6eaf8; }
 .ts-clip.disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Console card — the Sb4 teal file window (#file_txt_area colors). The
+   teal is the card's identity and survives theming; only the font swaps
+   to the theme's mono via the bridge. */
+.ts-console {
+    background: #327c7e;
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    font-weight: bold;
+    border: 1px solid #646464;
+    border-radius: 5px;
+    height: 126px;
+    overflow-y: auto;
+    padding: 5px 8px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.ts-console .ts-console-dim { color: rgba(255, 255, 255, 0.65); }
+.ts-console .ts-console-err { color: #ffd2a8; }
+.ts-console-inputrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.ts-console-prompt {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    color: #327c7e;
+}
+.ts-console-inputrow input {
+    flex: 1;
+    height: 1.9em;
+    font-size: 1em;
+    font-family: 'Courier New', Courier, monospace;
+    padding: 1px 6px;
+    border: 1px solid #d5dbdb;
+    border-radius: 4px;
+    color: #2c3e50;
+}
