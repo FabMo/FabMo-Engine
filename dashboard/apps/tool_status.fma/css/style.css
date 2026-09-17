@@ -197,10 +197,78 @@ body {
     grid-column: 1 / -1;
     justify-self: end;
     width: auto;
-    padding: 4px 10px;
-    font-size: 0.8em;
+    padding: 1px 8px;
+    font-size: 0.72em;
+    line-height: 1.3;
 }
 .ts-cmd-add:hover { background: #eef3f7; }
+/* Machine card: slim + Add column beside the (big) macro buttons */
+.ts-machine-btnrow { display: flex; align-items: stretch; gap: 8px; }
+.ts-machine-btnrow .ts-btn-grid { flex: 1; min-width: 0; }
+.ts-cmd-add-side { padding: 0 7px; font-size: 1em; }
+/* App shortcut tiles (icons come from each app's icon_url, tinted with its
+   icon_background_color — same rendering as the dashboard app menu) */
+.ts-shortcut-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+    gap: 8px;
+}
+.ts-shortcut-grid .ts-empty { grid-column: 1 / -1; align-self: center; }
+.ts-shortcut {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 9px 4px 7px;
+    border: 1px solid #e8ebee;
+    border-radius: 6px;
+    background: #fafbfc;
+    cursor: pointer;
+    text-align: center;
+}
+.ts-shortcut:hover { background: #eef3f7; }
+.ts-shortcut img {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+.ts-shortcut-label {
+    max-width: 100%;
+    font-size: 0.72em;
+    line-height: 1.15;
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ts-shortcut-add { border-style: dashed; background: #fff; color: #7f8c8d; }
+.ts-shortcut-add:hover { background: #eef3f7; }
+.ts-shortcut-add .ts-shortcut-plus {
+    width: 38px;
+    height: 38px;
+    line-height: 38px;
+    font-size: 1.7em;
+    font-weight: 600;
+}
+.ts-shortcut-add .ts-shortcut-label { color: inherit; }
+
+/* Shortcut picker rows */
+.ts-shortcut-pick-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 9px;
+    border: 1px solid #e8ebee;
+    border-radius: 5px;
+    background: #fafbfc;
+    cursor: pointer;
+}
+.ts-shortcut-pick-row:hover { background: #eef3f7; }
+.ts-shortcut-pick-row input { margin: 0; }
+.ts-shortcut-pick-row img { width: 24px; height: 24px; border-radius: 5px; object-fit: cover; }
+
 .ts-custom-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
 .ts-custom-row input { flex: 1; height: 1.9em; font-size: 0.95em; padding: 1px 6px; margin: 0; border: 1px solid #d5dbdb; border-radius: 4px; color: #2c3e50; }
 .ts-custom-row .ts-custom-macro { font-size: 0.78em; color: #95a5a6; white-space: nowrap; }
@@ -244,6 +312,16 @@ body {
 /* Buttons */
 .ts-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ts-btn-grid-single { grid-template-columns: 1fr; margin-top: 8px; }
+/* Tools card row: Measure Tool = half width, two quarter-width macro buttons */
+.ts-btn-grid-tools { grid-template-columns: 2fr 1fr 1fr; margin-top: 8px; }
+.ts-btn-grid-tools .ts-cmd {
+    min-width: 0;
+    padding-left: 4px;
+    padding-right: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .ts-cmd {
     padding: 10px 12px;
     border: 1px solid #b8c8d4;
