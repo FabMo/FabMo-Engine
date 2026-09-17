@@ -106,6 +106,11 @@ body[class*="theme-"] .ts-cmd-add {
     color: var(--t-text-dim);
     border-style: dashed;
     box-shadow: none;
+    font-size: 0.72em;
+    line-height: 1.3;
+}
+body[class*="theme-"] .ts-cmd-add-side {
+    font-size: 1em;
 }
 body[class*="theme-"] .ts-iconbtn {
     background: none;
@@ -191,6 +196,32 @@ body[class*="theme-"] .ts-led.on {
     background: #2ecc71;
     border-color: #27ae60;
     box-shadow: 0 0 6px rgba(46, 204, 113, 0.5);
+}
+
+/* ── App shortcut tiles ── */
+
+body[class*="theme-"] .ts-shortcut,
+body[class*="theme-"] .ts-shortcut-pick-row {
+    background: var(--t-bg-tertiary);
+    border-color: var(--t-border);
+    border-radius: var(--t-radius);
+    color: var(--t-text);
+}
+body[class*="theme-"] .ts-shortcut:hover,
+body[class*="theme-"] .ts-shortcut-pick-row:hover {
+    background: var(--t-hover-bg);
+    border-color: var(--t-accent);
+}
+body[class*="theme-"] .ts-shortcut-label {
+    color: var(--t-text);
+}
+body[class*="theme-"] .ts-shortcut-add {
+    background: transparent;
+    border-style: dashed;
+    color: var(--t-text-dim);
+}
+body[class*="theme-"] .ts-shortcut-add .ts-shortcut-label {
+    color: inherit;
 }
 
 /* ── Tool rack clips ── */

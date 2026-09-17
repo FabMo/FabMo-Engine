@@ -63,6 +63,17 @@
                     </div>
                     <div class="ts-console" id="console-output"></div>
                 </div>
+
+                <div class="ts-card" data-card-id="shortcuts">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Apps</span>
+                        <span class="ts-title-actions">
+                            <button class="ts-iconbtn" id="btn-shortcut-settings" title="Add or remove shortcuts"><i class="fa fa-gear"></i></button>
+                            <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                        </span>
+                    </div>
+                    <div class="ts-shortcut-grid" id="shortcut-grid"></div>
+                </div>
             </div>
 
             <!-- RIGHT: status + commands -->
@@ -102,11 +113,14 @@
                             <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
                         </span>
                     </div>
-                    <div class="ts-btn-grid" id="machine-btn-grid">
-                        <button class="ts-cmd machine-cmd" data-cmd="C3" title="Home the X and Y axes (C3)">Home XY</button>
-                        <button class="ts-cmd machine-cmd" data-cmd="C2" title="Set Z-Zero using zeroing plate (C2)">Home Z</button>
-                        <button class="ts-cmd machine-cmd" data-cmd="JH" title="Jog Home X &amp; Y; Z to safe height (JH)">Jog Home</button>
-                        <button class="ts-cmd machine-cmd" data-cmd="C79" title="Move to park location (C79)">Jog to Park</button>
+                    <div class="ts-machine-btnrow">
+                        <div class="ts-btn-grid" id="machine-btn-grid">
+                            <button class="ts-cmd machine-cmd" data-cmd="C3" title="Home the X and Y axes (C3)">Home XY</button>
+                            <button class="ts-cmd machine-cmd" data-cmd="C2" title="Set Z-Zero using zeroing plate (C2)">Home Z</button>
+                            <button class="ts-cmd machine-cmd" data-cmd="JH" title="Jog Home X &amp; Y; Z to safe height (JH)">Jog Home</button>
+                            <button class="ts-cmd machine-cmd" data-cmd="C79" title="Move to park location (C79)">Jog to Park</button>
+                        </div>
+                        <button class="ts-cmd ts-cmd-add ts-cmd-add-side" id="btn-add-macro" title="Add a macro button">+</button>
                     </div>
                 </div>
 
@@ -119,8 +133,10 @@
                         </span>
                     </div>
                     <div class="ts-rack" id="rack"></div>
-                    <div class="ts-btn-grid ts-btn-grid-single">
-                        <button class="ts-cmd" id="btn-measure" title="Measure the current tool (C72)">Measure Tool</button>
+                    <div class="ts-btn-grid ts-btn-grid-tools">
+                        <button class="ts-cmd machine-cmd" id="btn-measure" title="Measure the current tool (C72)">Measure Tool</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C73" title="Get plate offset (C73)">Plate Offset</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C74" title="Calibrate toolbar (C74)">Calibrate</button>
                     </div>
                 </div>
 
@@ -168,6 +184,23 @@
             <div class="ts-modal-footer">
                 <button class="ts-cmd" id="btn-macro-pick-cancel">Cancel</button>
                 <button class="ts-cmd ts-cmd-primary" id="btn-macro-pick-save" disabled>Add Button</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App shortcuts picker modal -->
+    <div class="ts-modal-backdrop" id="shortcut-pick-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>App Shortcuts</span>
+                <span class="ts-note-inline">saved on this display</span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-pick-list" id="shortcut-pick-list"></div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-shortcut-pick-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-shortcut-pick-save">Save</button>
             </div>
         </div>
     </div>

@@ -116,12 +116,13 @@ var CARDS = [
     { id: "jobs", label: "Jobs" },
     { id: "usb", label: "USB Drive", note: "shown when a drive is plugged in" },
     { id: "console", label: "Console" },
+    { id: "shortcuts", label: "App Shortcuts" },
     { id: "current", label: "Current Tool" },
     { id: "machine", label: "Machine" },
     { id: "tools", label: "Tools", note: "shown for rack-style ATCs" },
 ];
 
-var DEFAULT_LAYOUT = { left: ["jobs", "usb", "console"], right: ["current", "machine", "tools"], hidden: [] };
+var DEFAULT_LAYOUT = { left: ["jobs", "usb", "console", "shortcuts"], right: ["current", "machine", "tools"], hidden: [] };
 
 // Cards whose availability is machine-driven start unavailable until the
 // first status/config arrives (they carry display:none in the markup).
@@ -205,6 +206,79 @@ function applyLayout() {
 }
 
 applyLayout();
+
+// ---------------------------------------------------------------------------
+// App shortcuts card: launcher tiles for other installed dashboard apps,
+// reusing the same icons and background colors the dashboard app menu shows
+// (fabmo.getApps → icon_url / icon_background_color; fabmo.launchApp opens
+// one). The chosen set is per-browser (localStorage) like the theme and
+// layout — which shortcuts are useful depends on the display.
+
+var SHORTCUTS_KEY = "tool-status-shortcuts";
+var OWN_APP_ID = "tool_status";
+
+var shortcuts = (function () {
+    try {
+        var a = JSON.parse(localStorage.getItem(SHORTCUTS_KEY));
+        return Array.isArray(a)
+            ? a.filter(function (id) {
+                  return typeof id === "string";
+              })
+            : [];
+    } catch (e) {
+        return [];
+    }
+})();
+
+function saveShortcuts() {
+    try {
+        localStorage.setItem(SHORTCUTS_KEY, JSON.stringify(shortcuts));
+    } catch (e) {
+        /* private mode etc. — shortcuts just won't persist */
+    }
+}
+
+var appsList = null; // last fabmo.getApps result
+
+function refreshApps(callback) {
+    fabmo.getApps(function (err, apps) {
+        if (!err && Array.isArray(apps)) appsList = apps;
+        renderShortcuts();
+        callback && callback();
+    });
+}
+
+function appById(id) {
+    var apps = appsList || [];
+    for (var i = 0; i < apps.length; i++) {
+        if (apps[i].id === id) return apps[i];
+    }
+    return null;
+}
+
+function renderShortcuts() {
+    var $grid = $("#shortcut-grid").empty();
+    var shown = 0;
+    shortcuts.forEach(function (id) {
+        var app = appById(id);
+        if (!app) return; // uninstalled since it was added
+        shown++;
+        var $tile = $(
+            '<div class="ts-shortcut"><img alt=""><div class="ts-shortcut-label"></div></div>'
+        );
+        $tile.attr("data-app", app.id).attr("title", "Open " + app.name);
+        $tile.find("img").attr("src", "/" + app.icon_url).css("background-color", app.icon_background_color || "");
+        $tile.find(".ts-shortcut-label").text(app.name || app.id);
+        $grid.append($tile);
+    });
+    if (!shown) {
+        $grid.append('<div class="ts-empty">Shortcuts to apps installed on this tool</div>');
+    }
+    $grid.append(
+        '<div class="ts-shortcut ts-shortcut-add" id="btn-add-shortcut" title="Add app shortcuts">' +
+            '<span class="ts-shortcut-plus">+</span><div class="ts-shortcut-label">Add</div></div>'
+    );
+}
 
 // ---------------------------------------------------------------------------
 // Console card: an SBP command line plus the Sb4-style teal window. Typed
@@ -528,7 +602,7 @@ function renderToolRow() {
         $rack.append($clip);
     }
     $("#rack-note").text(idle ? "press a tool to load it" : "available when idle");
-    $("#btn-measure").prop("disabled", !idle);
+    $(".ts-btn-grid-tools .ts-cmd").prop("disabled", !idle);
 }
 
 // ---------------------------------------------------------------------------
@@ -569,7 +643,6 @@ function renderCustomButtons() {
             .text(b.label || "Macro " + macro);
         $grid.append($btn);
     });
-    $grid.append('<button class="ts-cmd ts-dyn ts-cmd-add" id="btn-add-macro" title="Add a macro button">+ Add</button>');
 }
 
 function renderCommands() {
@@ -756,6 +829,7 @@ function runCommand(cmd) {
 $(document).ready(function () {
     refreshConfig();
     refreshJobs();
+    refreshApps();
     fabmo.requestStatus(function (err, status) {
         if (err || !status) return;
         state.machineState = status.state;
@@ -790,11 +864,76 @@ $(document).ready(function () {
         runCommand(cmd === "C2" ? homeZCommand() : cmd);
     });
 
+    // ---- App shortcuts: launch tiles + picker modal ----
+
+    $("#shortcut-grid").on("click", ".ts-shortcut", function () {
+        var id = $(this).attr("data-app");
+        if (id) fabmo.launchApp(id);
+    });
+
+    function openShortcutPicker() {
+        var $list = $("#shortcut-pick-list").html('<div class="ts-empty">Loading apps&hellip;</div>');
+        // Re-fetch so a just-installed app shows up without reloading
+        refreshApps(function () {
+            $list.empty();
+            // Same visibility rule as the dashboard app menu, minus this app
+            var apps = (appsList || []).filter(function (a) {
+                return a.id !== OWN_APP_ID && a.icon_display !== "none";
+            });
+            if (!apps.length) {
+                $list.append('<div class="ts-empty">No other apps installed</div>');
+                return;
+            }
+            apps.forEach(function (a) {
+                var $row = $(
+                    '<label class="ts-shortcut-pick-row">' +
+                        '<input type="checkbox"><img alt=""><span class="ts-pick-name"></span>' +
+                        "</label>"
+                );
+                $row.find("input").attr("data-app", a.id).prop("checked", shortcuts.indexOf(a.id) !== -1);
+                $row.find("img").attr("src", "/" + a.icon_url).css("background-color", a.icon_background_color || "");
+                $row.find(".ts-pick-name").text(a.name || a.id);
+                $list.append($row);
+            });
+        });
+        $("#shortcut-pick-modal").css("display", "flex");
+    }
+
+    $("#btn-shortcut-settings").on("click", openShortcutPicker);
+    $("#shortcut-grid").on("click", "#btn-add-shortcut", openShortcutPicker);
+
+    function closeShortcutPicker() {
+        $("#shortcut-pick-modal").hide();
+    }
+    $("#btn-shortcut-pick-cancel").on("click", closeShortcutPicker);
+    $("#shortcut-pick-modal").on("click", function (e) {
+        if (e.target === this) closeShortcutPicker();
+    });
+
+    $("#btn-shortcut-pick-save").on("click", function () {
+        var checked = {};
+        $("#shortcut-pick-list input").each(function () {
+            if (this.checked) checked[$(this).attr("data-app")] = true;
+        });
+        // Keep the existing order for tiles that stay; append new ones
+        var next = shortcuts.filter(function (id) {
+            return checked[id];
+        });
+        $("#shortcut-pick-list input").each(function () {
+            var id = $(this).attr("data-app");
+            if (this.checked && next.indexOf(id) === -1) next.push(id);
+        });
+        shortcuts = next;
+        saveShortcuts();
+        renderShortcuts();
+        closeShortcutPicker();
+    });
+
     // ---- Add-macro-button modal ----
 
     var pickedMacro = null;
 
-    $("#machine-btn-grid").on("click", "#btn-add-macro", function () {
+    $("#btn-add-macro").on("click", function () {
         pickedMacro = null;
         $("#macro-btn-label").val("");
         $("#btn-macro-pick-save").prop("disabled", true);
@@ -968,6 +1107,11 @@ $(document).ready(function () {
     $("#btn-measure").on("click", function () {
         if (!isIdle()) return;
         runCommand("C72");
+    });
+
+    $(".ts-btn-grid-tools").on("click", "[data-cmd]", function () {
+        if (!isIdle()) return;
+        runCommand($(this).attr("data-cmd"));
     });
 
     // ---- Tool settings modal ----
