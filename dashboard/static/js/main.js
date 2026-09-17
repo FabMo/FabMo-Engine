@@ -745,6 +745,12 @@ engine.getVersion(function (err, version) {
                     $(".modalDim").hide();
                     $(".manual-drive-modal").hide();
                     keyboard.setEnabled(false);
+                    // Every keypad close ends up here (the server has left
+                    // manual mode), so this is the one spot that reliably
+                    // clears SK dialog mode no matter how the modal was
+                    // dismissed (X, ESC, click-outside, iframe blur, or a
+                    // server-side exit).
+                    resetKeypadDialogUI();
                 }
 
                 syncAuthorizeOverlay(status);
@@ -2196,6 +2202,23 @@ $(".action-button").on("click", function (evt) {
     }
 });
 
+// Restore the keypad modal from SK "dialog mode" (message shown, action
+// buttons and title hidden — see the status.info.message handler). Must run
+// on every close path; the modal DOM persists between opens, so anything
+// left here shows again the next time the keypad is opened.
+function resetKeypadDialogUI() {
+    $("#title_goto").css("visibility", "visible");
+    $("#action-1").css("visibility", "visible");
+    $("#action-2").css("visibility", "visible");
+    $("#action-3").css("visibility", "visible");
+    $("#action-4").css("visibility", "visible");
+    $("#action-5").css("visibility", "visible");
+    $(".title-container").css("display", "block");
+    $(".manual-drive-message").html("");
+    $(".manual-drive-message").hide();
+    $(".manual-drive-message").removeClass("blinking-text");
+}
+
 $(".manual-drive-exit").on("click", function (evt) {
     // FIXED: Stop all event propagation immediately
     evt.preventDefault();
@@ -2220,16 +2243,7 @@ $(".manual-drive-exit").on("click", function (evt) {
     window._exitButtonClicked = Date.now();
     
     // Remove changes for running manual from within a file
-    $("#title_goto").css("visibility", "visible");
-    $("#action-1").css("visibility", "visible");
-    $("#action-2").css("visibility", "visible");
-    $("#action-3").css("visibility", "visible");
-    $("#action-4").css("visibility", "visible");
-    $("#action-5").css("visibility", "visible");
-    $(".title-container").css("display", "block");
-    $(".manual-drive-message").html("");
-    $(".manual-drive-message").hide();
-    $(".manual-drive-message").removeClass("blinking-text");
+    resetKeypadDialogUI();
     $(".axis.at-limit").removeClass("at-limit");
     $("#soft-limit-prompt").hide();
     lastSoftLimitPromptId = null;
