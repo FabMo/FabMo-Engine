@@ -4,6 +4,12 @@
 // to pendant/actions.js. node-hid is an optional dependency — if absent, the
 // adapter logs and returns null so the engine starts fine without it.
 //
+// Hotplug: the receiver drops off the USB bus and re-enumerates (as a new
+// hidraw node) whenever the wireless handset powers on / re-pairs, so a
+// one-shot boot-time open goes permanently dead the first time that happens.
+// open() therefore returns a pendant/hotplug.js supervisor that re-scans
+// while no device is attached and tears down/re-attaches across disconnects.
+//
 // USB IDs: VID 0x10ce ("KTURT.LTD") / PID 0xeb93. The wired LHB04B-6 enumerates
 // with the same IDs as the wireless WHB04B-6 and uses the identical HID format.
 // udev rule template lives at pendant/udev/99-fabmo-pendant.rules.
@@ -15,6 +21,7 @@ var mapping = require("./mapping");
 var wheel = require("./wheel");
 var display = require("./display");
 var actions = require("../../actions");
+var hotplug = require("../../hotplug");
 
 var VENDOR_ID = 0x10ce;
 var PRODUCT_ID = 0xeb93;
@@ -117,21 +124,28 @@ function readMaxIpm(axis) {
     return DEFAULT_MAX_IPM;
 }
 
-function open(machine, ctx) {
-    ctx = ctx || {};
-    var hid;
-    try {
-        hid = require("node-hid");
-    } catch (e) {
-        log.warn("node-hid unavailable; XHC LHB04B-6 pendant disabled (" + e.message + ")");
-        return null;
-    }
+// Deduplicate attach-failure log lines: the supervisor retries every
+// hotplug.RESCAN_MS, so a persistent condition (e.g. bad udev permissions)
+// would otherwise repeat the same error forever. Log on change, reset on
+// success.
+var lastAttachError = null;
+function logAttachError(msg) {
+    if (msg === lastAttachError) return;
+    lastAttachError = msg;
+    log.error(msg);
+}
 
+// One attach attempt: find the receiver on the bus, open it, and wire up all
+// per-connection state (input handler, wheel state machine, LCD driver, tick
+// loop). Returns {close} or null if the device isn't present / won't open.
+// `onDisconnect` fires once if the device errors out mid-session; the
+// supervisor in open() uses it to resume rescanning.
+function attach(machine, ctx, hid, onDisconnect) {
     var devices;
     try {
         devices = hid.devices();
     } catch (e) {
-        log.warn("hid.devices() failed: " + e.message);
+        logAttachError("hid.devices() failed: " + e.message);
         return null;
     }
 
@@ -139,7 +153,6 @@ function open(machine, ctx) {
         return d.vendorId === VENDOR_ID && d.productId === PRODUCT_ID;
     });
     if (!match) {
-        log.info("XHC LHB04B-6 pendant not detected");
         return null;
     }
 
@@ -147,10 +160,11 @@ function open(machine, ctx) {
     try {
         device = new hid.HID(match.path);
     } catch (e) {
-        log.error("Failed to open XHC pendant at " + match.path + ": " + e.message);
+        logAttachError("Failed to open XHC pendant at " + match.path + ": " + e.message);
         return null;
     }
 
+    lastAttachError = null;
     log.info("XHC LHB04B-6 pendant connected at " + match.path);
 
     var previousButtons = [];
@@ -177,8 +191,12 @@ function open(machine, ctx) {
     });
 
     var displayHandle = display.create(machine, device, {
-        getSeed: function () { return latestSeed; },
-        getWheelMode: function () { return wheelMode; },
+        getSeed: function () {
+            return latestSeed;
+        },
+        getWheelMode: function () {
+            return wheelMode;
+        },
     });
 
     function dispatchIntents(intents) {
@@ -258,7 +276,7 @@ function open(machine, ctx) {
                     readMaxIpm(latestAxis),
                     wheelMode,
                     Date.now(),
-                    currentPos
+                    currentPos,
                 );
                 if (immediate.length && machine.status.state === "manual") {
                     dispatchIntents(immediate);
@@ -271,42 +289,80 @@ function open(machine, ctx) {
     // manual-runtime intents. The firmware velocity-jog cycle has its own
     // 500 ms watchdog, so re-issuing jgvStart every tick during a fast spin
     // is what keeps the cycle alive across the gesture.
-    var processTimer = setInterval(function () {
-        if (machine.status.state !== "manual") {
-            // Manual mode lost (or never entered) — drop in-flight motion.
-            var st = wheelSM.getState();
-            if (st.activeMode === "jgv") {
-                actions.jogStop(machine);
+    var processTimer = setInterval(
+        function () {
+            if (machine.status.state !== "manual") {
+                // Manual mode lost (or never entered) — drop in-flight motion.
+                var st = wheelSM.getState();
+                if (st.activeMode === "jgv") {
+                    actions.jogStop(machine);
+                }
+                wheelSM.reset();
+                return;
             }
-            wheelSM.reset();
-            return;
+            var posKey = latestAxis ? "pos" + latestAxis.toLowerCase() : null;
+            var currentPos = posKey ? machine.status[posKey] : null;
+            var intents = wheelSM.tick(
+                latestAxis,
+                latestFeed,
+                readMaxIpm(latestAxis),
+                Date.now(),
+                wheelMode,
+                currentPos,
+            );
+            dispatchIntents(intents);
+        },
+        Math.round(1000 / TICK_HZ),
+    );
+
+    // Idempotent teardown — runs on deliberate close AND on device error.
+    // Stops the timers first so nothing touches the dead handle again (the
+    // LCD driver would otherwise spam write failures forever), then halts
+    // any in-flight jgv cycle so a disconnect mid-spin can't leave the tool
+    // coasting until the firmware watchdog catches it.
+    var dead = false;
+    function teardown() {
+        if (dead) return;
+        dead = true;
+        clearInterval(processTimer);
+        if (displayHandle) displayHandle.close();
+        var st = wheelSM.getState();
+        if (st.activeMode === "jgv") actions.jogStop(machine);
+        wheelSM.reset();
+        try {
+            device.close();
+        } catch (e) {
+            // ignore
         }
-        var posKey = latestAxis ? "pos" + latestAxis.toLowerCase() : null;
-        var currentPos = posKey ? machine.status[posKey] : null;
-        var intents = wheelSM.tick(latestAxis, latestFeed, readMaxIpm(latestAxis), Date.now(), wheelMode, currentPos);
-        dispatchIntents(intents);
-    }, Math.round(1000 / TICK_HZ));
+    }
 
     device.on("error", function (err) {
+        if (dead) return;
         log.error("XHC pendant error: " + err.message);
+        teardown();
+        if (onDisconnect) onDisconnect();
     });
 
-    return {
+    return { close: teardown };
+}
+
+function open(machine, ctx) {
+    ctx = ctx || {};
+    var hid;
+    try {
+        hid = require("node-hid");
+    } catch (e) {
+        log.warn("node-hid unavailable; XHC LHB04B-6 pendant disabled (" + e.message + ")");
+        return null;
+    }
+
+    return hotplug.supervise({
         name: "xhc-lhb04b-6",
-        path: match.path,
-        close: function () {
-            clearInterval(processTimer);
-            if (displayHandle) displayHandle.close();
-            var st = wheelSM.getState();
-            if (st.activeMode === "jgv") actions.jogStop(machine);
-            wheelSM.reset();
-            try {
-                device.close();
-            } catch (e) {
-                // ignore
-            }
+        label: "XHC LHB04B-6 pendant",
+        attach: function (onDisconnect) {
+            return attach(machine, ctx, hid, onDisconnect);
         },
-    };
+    });
 }
 
 module.exports = {
