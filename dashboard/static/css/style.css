@@ -2920,41 +2920,74 @@ input[type='range']:focus {
 	border-radius: 50%;
   }
 
-.fa-keypad {
-	line-height: inherit;
-	text-shadow: 1px 1px 4px black;
+/* Directional arrowhead glyphs: one pentagon path per button, rotated in
+   the SVG itself; the axis label is counter-rotated so it stays upright.
+   Labels on cardinal buttons are rewritten by keypad_orientation.js when
+   the user remaps orientation. */
+/* Glyph buttons have no visible box: the pentagon itself is the button
+   face. border-color (not border: none) keeps the 2px box model so the
+   grid doesn't shift. Class+:has outranks the single-class state
+   backgrounds (drive-button-active etc.), which now recolor the glyph
+   fill below instead of the box. Rotary +A/-A/+B/-B buttons have no
+   .dir-glyph and keep their boxes. */
+.keypad-button:has(.dir-glyph) {
+	background: transparent;
+	border-color: transparent;
+}
+
+.drive-button .dir-glyph {
 	display: block;
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	margin-right: -50%;
 	transform: translate(-50%, -50%);
+	width: 130%;
+	height: 130%;
 	pointer-events: none;
 }
 
-.keypad-cell:first-child .fa-keypad{
-	transform: translate(-50%, -50%) rotate(-45deg);
+.drive-button .glyph-shape {
+	fill: #313366;
 }
 
-.keypad-cell:nth-child(3) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(45deg);
+.drive-button .glyph-label {
+	font-family: inherit;
+	font-size: 32px;
+	font-weight: 800;
+	fill: #fff;
+	stroke: #fff;
+	stroke-width: 1.25;
+	paint-order: stroke;
+	dominant-baseline: central;
 }
 
-.keypad-cell:nth-child(7) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(-135deg);
+.drive-button .glyph-stroke path {
+	stroke: #313366;
+	stroke-width: 13;
+	fill: none;
+	stroke-linecap: round;
+	stroke-linejoin: round;
 }
 
-.keypad-cell:nth-child(9) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(135deg);
+/* Jog-state feedback lives on the glyph now that the box is invisible.
+   Same palette and precedence order as the box backgrounds above. */
+.drive-button-fixed .glyph-shape { fill: #ce6402; }
+.drive-button-fixed .glyph-stroke path { stroke: #ce6402; }
+
+.drive-button-active .glyph-shape { fill: #5DAA35; }
+.drive-button-active .glyph-stroke path { stroke: #5DAA35; }
+
+.drive-button-active-transient .glyph-shape { fill: #D48B3A; }
+.drive-button-active-transient .glyph-stroke path { stroke: #D48B3A; }
+
+.drive-button.bar .dir-glyph {
+	width: 110%;
+	height: 98%;
 }
 
-.z-fa-double {
-	font-size: 16px;
-    display: block;
-    padding: 0;
-    margin: 0;
-	height: 5px;
-	pointer-events: none;
+.drive-button.bar .dir-glyph.fastz {
+	width: 92%;
+	height: 92%;
 }
 
 .manual-right-side-container {
