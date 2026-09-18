@@ -1316,6 +1316,55 @@ function getManualNudgeIncrement(move) {
     return increment_inches;
 }
 
+// Held-Ctrl state for manual moves: holding Ctrl while pressing an arrow
+// (on-screen or keyboard) runs the move at the machine's jog (rapid)
+// speed instead of the manual speed. Tracked globally because the
+// Keypad/Keyboard libs don't forward modifier state on move events.
+var ctrlHeld = false;
+$(document).on("keydown keyup pointerdown pointerup", function (evt) {
+    if (evt.ctrlKey !== undefined) {
+        ctrlHeld = evt.ctrlKey;
+    }
+});
+$(window).on("blur", function () {
+    ctrlHeld = false;
+});
+
+// Jog (rapid) speed for the move's axis — the "max speed" used when Ctrl
+// is held. Returns null if unavailable so callers can fall back.
+function getManualMaxSpeed(move) {
+    try {
+        var sbp = engine.config.opensbp;
+        switch (move.axis) {
+            case "x":
+            case "y":
+                return sbp.jogxy_speed;
+            case "z":
+            case "z_fast":
+            case "z_slow":
+                return sbp.jogz_speed;
+            case "a":
+                return sbp.joga_speed;
+            case "b":
+                return sbp.jogb_speed;
+            case "c":
+                return sbp.jogc_speed;
+        }
+    } catch (e) {
+        console.error("Error getting manual max speed:", e);
+    }
+    return null;
+}
+
+// Speed a manual move should actually run at: the axis jog speed when
+// Ctrl is held, otherwise the normal (slider/config) speed.
+function manualSpeedFor(move, normalSpeed) {
+    if (ctrlHeld) {
+        return getManualMaxSpeed(move) || normalSpeed;
+    }
+    return normalSpeed;
+}
+
 // Make the on-screen joystick indicator draggable. Active only while the
 // machine is in manual mode — drags outside that state are ignored so the
 // dot stays in sync with whatever the (real) pendant is doing.
@@ -2038,10 +2087,17 @@ function setupKeyboard() {
         nudgeTimeout: manual.press_delay != null ? manual.press_delay : 200
     });
     keyboard.on("go", function (move) {
-        if (move.axis === "z") {
-            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) / 2 || 0.1));
+        if (move.second_axis) {
+            dashboard.engine.manualStart(
+                move.axis,
+                move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1),
+                move.second_axis,
+                move.second_dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1)
+            );
+        } else if (move.axis === "z") {
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) / 2 || 0.1));
         } else if (move) {
-            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1));
         }
     });
 
@@ -2051,11 +2107,19 @@ function setupKeyboard() {
 
     keyboard.on("nudge", function (nudge) {
         fixedTimeStart = Date.now(); // for measuring keypad response latency
-        dashboard.engine.manualMoveFixed(
-            nudge.axis,
-            60 * getManualMoveSpeed(nudge),
-            nudge.dir * getManualNudgeIncrement(nudge)
-        );
+        var speed = manualSpeedFor(nudge, getManualMoveSpeed(nudge));
+        var increment = getManualNudgeIncrement(nudge);
+        if (nudge.second_axis) {
+            dashboard.engine.manualMoveFixed(
+                nudge.axis,
+                60 * speed,
+                nudge.dir * increment,
+                nudge.second_axis,
+                nudge.second_dir * increment
+            );
+        } else {
+            dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment);
+        }
     });
 
     return keyboard;
@@ -2086,16 +2150,16 @@ function setupKeypad() {
         if (move.second_axis) {
             dashboard.engine.manualStart(
                 move.axis,
-                move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1),
+                move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1),
                 move.second_axis,
-                move.second_dir * 60.0 * (getManualMoveSpeed(move) || 0.1)
+                move.second_dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1)
             );
         } else if (move.axis === "z_fast") {
-            dashboard.engine.manualStart("z", move.dir * 60.0 * engine.config.machine.manual.z_fast_speed);
+            dashboard.engine.manualStart("z", move.dir * 60.0 * manualSpeedFor(move, engine.config.machine.manual.z_fast_speed));
         } else if (move.axis === "z_slow") {
-            dashboard.engine.manualStart("z", move.dir * 60.0 * engine.config.machine.manual.z_slow_speed);
+            dashboard.engine.manualStart("z", move.dir * 60.0 * manualSpeedFor(move, engine.config.machine.manual.z_slow_speed));
         } else if (move) {
-            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1));
         }
     });
 
@@ -2105,7 +2169,7 @@ function setupKeypad() {
     });
 
     keypad.on("nudge", function (nudge) {
-        var speed = getManualMoveSpeed(nudge);
+        var speed = manualSpeedFor(nudge, getManualMoveSpeed(nudge));
         var increment = getManualNudgeIncrement(nudge);
         // var jerk = getManualMoveJerk(nudge);
         fixedTimeStart = Date.now(); // for measuring keypad response latency
@@ -2120,8 +2184,8 @@ function setupKeypad() {
         } else {
             dashboard.engine.manualMoveFixed(
                 nudge.axis,
-                60 * getManualMoveSpeed(nudge),
-                nudge.dir * getManualNudgeIncrement(nudge)
+                60 * speed,
+                nudge.dir * increment
             );
         }
     });
