@@ -124,6 +124,106 @@
                     </div>
                 </div>
 
+                <div class="ts-card" data-card-id="shoptools">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Shop Tools</span>
+                        <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                    </div>
+
+                    <!-- Tool picker: one tile per shop tool; clicking swaps
+                         the picker for that tool's mini interface below. -->
+                    <div class="ts-shoptool-grid" id="st-picker">
+                        <div class="ts-shoptool" data-tool="drill" title="Drill press">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M7 35 H33"/>
+                                <path d="M28 35 V6"/>
+                                <path d="M11 5 H30 V12 H15 Z"/>
+                                <path d="M16 12 H21 V16 H16 Z"/>
+                                <path d="M18.5 16 V23 L18.5 25"/>
+                                <path d="M10 27 H24 M24 27 L28 25"/>
+                            </svg>
+                            <div class="ts-shortcut-label">Drill Press</div>
+                        </div>
+                        <div class="ts-shoptool soon" data-tool="tablesaw" title="Table saw &mdash; coming soon">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M4 27 H36"/>
+                                <path d="M8 27 V33 M32 27 V33"/>
+                                <path d="M13 27 A8.5 8.5 0 0 1 30 27"/>
+                                <path d="M21.5 21 L25 17.5"/>
+                            </svg>
+                            <div class="ts-shortcut-label">Table Saw</div>
+                        </div>
+                        <div class="ts-shoptool soon" data-tool="planer" title="Planer &mdash; coming soon">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M9 10 H31 V30 H9 Z"/>
+                                <path d="M2 24 H9 M31 24 H38"/>
+                                <circle cx="20" cy="16" r="3.5"/>
+                                <path d="M12 24 H28"/>
+                            </svg>
+                            <div class="ts-shortcut-label">Planer</div>
+                        </div>
+                    </div>
+
+                    <!-- Drill press mini interface: envelope map (crosshair =
+                         current XY) | vertical depth slider + entries |
+                         table/material cross-section with Z-zero radios and
+                         a red actual-cut bar | big DRILL button. The SVGs
+                         are drawn by app.js (renderStEnv / renderStXsec). -->
+                    <div class="ts-st-panel" id="st-panel-drill" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title">Drill Press</span>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="st-env-svg" width="150" height="150"></svg>
+                            </div>
+                            <div class="ts-st-depthcol">
+                                <span class="ts-st-minilabel">Depth (<span class="st-units">in</span>)</span>
+                                <input type="range" id="st-drill-slider" class="ts-st-vslider" min="0" max="1.5" step="0.01" value="0">
+                                <input type="number" id="st-drill-depth" step="any" min="0">
+                            </div>
+                            <div class="ts-st-xseccol">
+                                <div class="ts-st-xsecwrap">
+                                    <span class="ts-st-minilabel ts-st-zzlabel">Z zero</span>
+                                    <div class="ts-st-radios">
+                                        <input type="radio" name="st-zzero" value="material" id="st-zz-material" title="Z zeroed on the material surface">
+                                        <input type="radio" name="st-zzero" value="table" id="st-zz-table" title="Z zeroed on the table surface">
+                                    </div>
+                                    <div class="ts-st-zzline" id="st-zzline-material"></div>
+                                    <div class="ts-st-zzline" id="st-zzline-table"></div>
+                                    <span class="ts-st-minilabel ts-st-thicklabel" id="st-thicklabel">Thick (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="st-material" step="any" min="0" title="Material thickness">
+                                    <svg id="st-xsec-svg" width="68" height="126"></svg>
+                                </div>
+                            </div>
+                            <!-- Array mode: swaps in for the depth column +
+                                 cross-section; the envelope map previews the
+                                 grid of holes from the current position. -->
+                            <div class="ts-st-arraycol" id="st-array-panel" style="display:none;">
+                                <div class="ts-st-arr-grid">
+                                    <label class="ts-st-minilabel"><span>X Count</span>
+                                        <input type="number" id="st-arr-xn" min="1" step="1">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span>Y Count</span>
+                                        <input type="number" id="st-arr-yn" min="1" step="1">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span>X Spacing (<span class="st-units">in</span>)</span>
+                                        <input type="number" id="st-arr-xs" step="any">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span>Y Spacing (<span class="st-units">in</span>)</span>
+                                        <input type="number" id="st-arr-ys" step="any">
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-drill">DRILL</button>
+                                <button class="ts-cmd ts-st-arraybtn" id="btn-st-array" title="Drill a grid of holes from the current position">Array</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="ts-card" id="card-tools" data-card-id="tools" style="display:none;">
                     <div class="ts-card-title ts-card-title-row">
                         <span>Tools <span class="ts-note-inline" id="rack-note"></span></span>

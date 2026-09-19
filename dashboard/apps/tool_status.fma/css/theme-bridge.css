@@ -224,6 +224,22 @@ body[class*="theme-"] .ts-shortcut-add .ts-shortcut-label {
     color: inherit;
 }
 
+/* ── Shop tool tiles ── */
+
+body[class*="theme-"] .ts-shoptool {
+    background: var(--t-bg-tertiary);
+    border-color: var(--t-border);
+    border-radius: var(--t-radius);
+    color: var(--t-text);
+}
+body[class*="theme-"] .ts-shoptool:hover:not(.soon) {
+    background: var(--t-hover-bg);
+    border-color: var(--t-accent);
+}
+body[class*="theme-"] .ts-shoptool.soon:hover {
+    background: var(--t-bg-tertiary);
+}
+
 /* ── Tool rack clips ── */
 
 body[class*="theme-"] .ts-clip {

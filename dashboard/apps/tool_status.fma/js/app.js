@@ -119,10 +119,11 @@ var CARDS = [
     { id: "shortcuts", label: "App Shortcuts" },
     { id: "current", label: "Current Tool" },
     { id: "machine", label: "Machine" },
+    { id: "shoptools", label: "Shop Tools" },
     { id: "tools", label: "Tools", note: "shown for rack-style ATCs" },
 ];
 
-var DEFAULT_LAYOUT = { left: ["jobs", "usb", "console", "shortcuts"], right: ["current", "machine", "tools"], hidden: [] };
+var DEFAULT_LAYOUT = { left: ["jobs", "usb", "console", "shortcuts"], right: ["current", "machine", "shoptools", "tools"], hidden: [] };
 
 // Cards whose availability is machine-driven start unavailable until the
 // first status/config arrives (they carry display:none in the markup).
@@ -278,6 +279,284 @@ function renderShortcuts() {
         '<div class="ts-shortcut ts-shortcut-add" id="btn-add-shortcut" title="Add app shortcuts">' +
             '<span class="ts-shortcut-plus">+</span><div class="ts-shortcut-label">Add</div></div>'
     );
+}
+
+// ---------------------------------------------------------------------------
+// Shop Tools card: familiar shop machines built from CNC primitives. The
+// card shows one tile per tool; clicking a tile swaps the picker for that
+// tool's mini interface inside the card frame. v1 implements the drill
+// press (spindle on → plunge to the set depth below Z zero → retract to
+// safe Z → spindle off); table saw and planer are placeholder tiles.
+// Settings are per-display (localStorage) like the other display prefs,
+// remembered with their units so an in/mm switch converts instead of
+// silently reinterpreting the number.
+
+var SHOPTOOLS_KEY = "tool-status-shoptools";
+
+function shopToolPrefs() {
+    try {
+        var p = JSON.parse(localStorage.getItem(SHOPTOOLS_KEY));
+        return p && typeof p === "object" ? p : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveShopToolPref(tool, value) {
+    var p = shopToolPrefs();
+    p[tool] = value;
+    try {
+        localStorage.setItem(SHOPTOOLS_KEY, JSON.stringify(p));
+    } catch (e) {
+        /* private mode etc. — setting just won't persist */
+    }
+}
+
+// A stored dimension entered in other units gets converted on recall.
+function inCurrentUnits(value, unit) {
+    var v = Number(value);
+    if (!isFinite(v)) return null;
+    if (unit && unit !== state.unit) {
+        v = v * (state.unit === "mm" ? 25.4 : 1 / 25.4);
+        v = Math.round(v * 10000) / 10000;
+    }
+    return v;
+}
+
+function showShopTool(tool) {
+    $("#st-picker").toggle(!tool);
+    $(".ts-st-panel").hide();
+    if (tool) $("#st-panel-" + tool).show();
+}
+
+// ---- Drill press model ----
+// depth = how deep the hole goes into the material, measured from the
+// material's top surface — regardless of where Z was zeroed. The Z-zero
+// radio tells us where Z=0 physically is so the machine target can be
+// computed: zeroed on material → MZ,-depth; zeroed on table → the
+// material top sits at Z=+thickness, so MZ,(thickness - depth).
+var stDrill = {
+    depth: 0.25,
+    thickness: 0.75,
+    zzero: "material", // "material" | "table"
+};
+
+// Array mode: DRILL produces an xn × yn grid of holes stepping +X/+Y from
+// the current position. Mode is a session toggle (Array button); the
+// numbers persist with the other drill prefs.
+var stArrayMode = false;
+var stArray = { xn: 2, yn: 2, xs: 1, ys: 1 };
+
+function stDefaults() {
+    return state.unit === "mm"
+        ? { depth: 6, thickness: 18, slack: 12, space: 25 }
+        : { depth: 0.25, thickness: 0.75, slack: 0.5, space: 1 };
+}
+
+function stCount(v) {
+    v = Math.round(Number(v));
+    return isFinite(v) && v >= 1 ? Math.min(v, 50) : 1;
+}
+
+// Cut geometry: how much of the hole lands in material vs table. Depth is
+// always from the material top, so this is independent of the Z-zero
+// location — only overshoot past the thickness reaches the table.
+function stCuts() {
+    var t = stDrill.thickness;
+    var d = stDrill.depth;
+    return { material: Math.min(d, t), table: Math.max(0, d - t), through: d >= t };
+}
+
+// Envelope map: machine envelope rectangle with its outside dimensions
+// labeled below (X) and to the right (Y), a crosshair at the current
+// position with leader lines to the X=0 and Y=0 edges, and the DRO
+// coordinates alongside. Rebuilt on every status while the panel is open
+// (it's one small SVG; churn is negligible at status rate). The rect is
+// fitted to the container's live width so the pane never clips it.
+function renderStEnv() {
+    var svg = document.getElementById("st-env-svg");
+    if (!svg) return;
+    var env = state.envelope || {};
+    var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
+    var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+    if (!(xspan > 0) || !(yspan > 0)) {
+        // No envelope configured — just leave an empty frame.
+        svg.setAttribute("width", 150);
+        svg.setAttribute("height", 110);
+        svg.innerHTML = '<rect x="1" y="1" width="148" height="108" fill="#f7f8f9" stroke="#d5dbdb"/>' +
+            '<text x="75" y="58" text-anchor="middle" font-size="10" fill="#95a5a6">no envelope</text>';
+        return;
+    }
+    // Margins reserved for the dimension labels. The rect size depends
+    // only on the envelope's aspect ratio (within fixed caps), never on
+    // the container — so the map doesn't shift when the controls beside
+    // it change between drill and array modes.
+    var MB = 13; // below the rect: X dimension
+    var MR = 13; // right of the rect: Y dimension (rotated)
+    var maxRW = 240 - MR - 2;
+    var maxRH = 150 - MB - 2;
+    var rw = maxRW;
+    var rh = (rw * yspan) / xspan;
+    if (rh > maxRH) {
+        rh = maxRH;
+        rw = (rh * xspan) / yspan;
+    }
+    rw = Math.round(rw);
+    rh = Math.round(rh);
+    var W = rw + MR + 2;
+    var H = rh + MB + 2;
+    svg.setAttribute("width", W);
+    svg.setAttribute("height", H);
+
+    // Crosshair position in machine coordinates (work pos + G55 offset),
+    // clamped into the envelope so a lost/unzeroed position still draws.
+    var mxr = (Number(state.pos.x) || 0) + state.g55.x - (Number(env.xmin) || 0);
+    var myr = (Number(state.pos.y) || 0) + state.g55.y - (Number(env.ymin) || 0);
+    var mx = Math.max(0, Math.min(xspan, mxr));
+    var my = Math.max(0, Math.min(yspan, myr));
+    var px = (mx / xspan) * rw + 1;
+    var py = 1 + rh - (my / yspan) * rh; // machine Y+ is up
+
+    // Array preview: one dot per additional hole, stepping +X/+Y from the
+    // (unclamped) current position; holes that would land outside the
+    // envelope are simply not drawn.
+    var dots = "";
+    if (stArrayMode) {
+        for (var j = 0; j < stArray.yn; j++) {
+            for (var i = 0; i < stArray.xn; i++) {
+                if (!i && !j) continue; // first hole is the crosshair itself
+                var hx = mxr + i * stArray.xs;
+                var hy = myr + j * stArray.ys;
+                if (hx < 0 || hx > xspan || hy < 0 || hy > yspan) continue;
+                dots +=
+                    '<circle cx="' + ((hx / xspan) * rw + 1) + '" cy="' + (1 + rh - (hy / yspan) * rh) +
+                    '" r="2.5" fill="#c0392b" fill-opacity="0.8"/>';
+            }
+        }
+    }
+
+    var label = fmt(state.pos.x) + ", " + fmt(state.pos.y);
+    // Label sits below-right of the crosshair (array holes step up and to
+    // the right on screen, so that corner stays clear); flip sides only
+    // when jammed against the right/bottom edges.
+    var tx = px + 6;
+    var ty = py + 13;
+    var anchor = "start";
+    if (px > rw - 60) { tx = px - 6; anchor = "end"; }
+    if (py > rh - 14) ty = py - 7;
+
+    // Outside dimensions, trimmed to at most one decimal
+    var dim = function (v) { return String(Math.round(v * 10) / 10); };
+
+    svg.innerHTML =
+        '<rect x="1" y="1" width="' + rw + '" height="' + rh + '" fill="#f4f1ea" stroke="#a8a49a"/>' +
+        dots +
+        '<line x1="1" y1="' + py + '" x2="' + px + '" y2="' + py + '" stroke="#2980b9" stroke-width="1" stroke-dasharray="3,2"/>' +
+        '<line x1="' + px + '" y1="' + (1 + rh) + '" x2="' + px + '" y2="' + py + '" stroke="#2980b9" stroke-width="1" stroke-dasharray="3,2"/>' +
+        '<line x1="' + (px - 5) + '" y1="' + py + '" x2="' + (px + 5) + '" y2="' + py + '" stroke="#c0392b" stroke-width="1.5"/>' +
+        '<line x1="' + px + '" y1="' + (py - 5) + '" x2="' + px + '" y2="' + (py + 5) + '" stroke="#c0392b" stroke-width="1.5"/>' +
+        '<circle cx="' + px + '" cy="' + py + '" r="2" fill="none" stroke="#c0392b"/>' +
+        '<text x="' + tx + '" y="' + ty + '" text-anchor="' + anchor + '" font-size="10" font-weight="600" fill="#2c3e50">' + label + "</text>" +
+        '<text x="' + (1 + rw / 2) + '" y="' + (H - 2) + '" text-anchor="middle" font-size="9" fill="#7f8c8d">' + dim(xspan) + " " + state.unit + "</text>" +
+        '<text x="' + (W - 3) + '" y="' + (1 + rh / 2) + '" text-anchor="middle" font-size="9" fill="#7f8c8d" transform="rotate(-90 ' + (W - 3) + " " + (1 + rh / 2) + ')">' + dim(yspan) + "</text>";
+}
+
+// Cross-section: table layer with the material on top, Z-zero radios lined
+// up with dashed leader lines to their surface, and a red bar showing where
+// the plunge actually cuts. Material is drawn at a height scaled per
+// thickness (clamped so extremes stay readable); the red bar uses the same
+// scale so proportions are honest.
+function renderStXsec() {
+    var svg = document.getElementById("st-xsec-svg");
+    if (!svg) return;
+    var W = 68;
+    var H = 126;
+    var LX = 14; // stack left edge (leader lines run 0..LX)
+    var LW = W - LX - 6;
+    var TABLE_H = 30;
+    var yTable = 92; // table surface
+    svg.setAttribute("width", W);
+    svg.setAttribute("height", H);
+    var t = stDrill.thickness > 0 ? stDrill.thickness : stDefaults().thickness;
+    // Floor keeps the gap between the surface lines tall enough for the
+    // thickness label + input parked between the radios (which the label
+    // now overlaps horizontally), even at 1/16" stock.
+    var matPx = Math.max(50, Math.min(64, t * (state.unit === "mm" ? 3 : 76)));
+    var scale = matPx / t;
+    var yMat = yTable - matPx; // material surface
+    var cuts = stCuts();
+    var matCutPx = Math.min(cuts.material, t) * scale;
+    var tableCutPx = Math.min(cuts.table * scale, TABLE_H - 4);
+    var cx = LX + LW / 2;
+    var barW = 10;
+
+    var zzMat = stDrill.zzero === "material";
+    var parts = [
+        // table slab with the material on top
+        '<rect x="' + LX + '" y="' + yTable + '" width="' + LW + '" height="' + TABLE_H + '" fill="#b8c2c2" stroke="#8d9a9a"/>',
+        '<rect x="' + LX + '" y="' + yMat + '" width="' + LW + '" height="' + matPx + '" fill="#d4b585" stroke="#a8834f"/>',
+    ];
+    if (stDrill.depth > 0) {
+        if (matCutPx > 0.5) {
+            parts.push('<rect x="' + (cx - barW / 2) + '" y="' + yMat + '" width="' + barW + '" height="' + matCutPx + '" fill="#c0392b"/>');
+        }
+        if (tableCutPx > 0.5) {
+            parts.push('<rect x="' + (cx - barW / 2) + '" y="' + yTable + '" width="' + barW + '" height="' + tableCutPx + '" fill="#7b241c"/>');
+        }
+    }
+    svg.innerHTML = parts.join("");
+
+    // Radios ride their leader lines (7px ≈ half a radio's height), which
+    // run from beside the radio across the gutter to the slab edge; the
+    // selected surface's line goes solid + accent.
+    $("#st-zz-material").css("top", yMat - 7 + "px").prop("checked", zzMat);
+    $("#st-zz-table").css("top", yTable - 7 + "px").prop("checked", !zzMat);
+    function zzline(id, y, selected) {
+        $(id).css({
+            top: y - (selected ? 1 : 0.5) + "px",
+            borderTop: selected ? "2px solid #2980b9" : "1px dashed #b2bec3",
+        });
+    }
+    zzline("#st-zzline-material", yMat, zzMat);
+    zzline("#st-zzline-table", yTable, !zzMat);
+
+    // Thickness label + input, centered as one block in the span between
+    // the two surface lines (the min slab height keeps this from ever
+    // touching them).
+    var $mat = $("#st-material");
+    var $tl = $("#st-thicklabel");
+    var lh = $tl.outerHeight() || 10;
+    var blockTop = Math.round((yMat + yTable) / 2 - (lh + 1 + ($mat.outerHeight() || 22)) / 2);
+    $tl.css("top", blockTop + "px");
+    $mat.css("top", blockTop + lh + 1 + "px");
+}
+
+// Depth slider bounds follow the material: a bit past through-cut is as
+// deep as ever makes sense from either Z zero.
+function stSyncInputs(fromSlider) {
+    var d = stDefaults();
+    var max = (stDrill.thickness > 0 ? stDrill.thickness : d.thickness) + d.slack;
+    var $slider = $("#st-drill-slider");
+    $slider.attr("max", max).attr("step", state.unit === "mm" ? 1 : 0.1);
+    if (!fromSlider) $slider.val(Math.min(stDrill.depth, max));
+    $("#st-drill-depth").val(stDrill.depth > 0 ? stDrill.depth : "");
+    $("#st-material").val(stDrill.thickness > 0 ? stDrill.thickness : "");
+}
+
+function stSaveDrill() {
+    saveShopToolPref("drill", {
+        depth: stDrill.depth,
+        thickness: stDrill.thickness,
+        zzero: stDrill.zzero,
+        unit: state.unit,
+        array: { xn: stArray.xn, yn: stArray.yn, xs: stArray.xs, ys: stArray.ys },
+    });
+}
+
+function renderStDrill(fromSlider) {
+    stSyncInputs(fromSlider);
+    renderStXsec();
+    renderStEnv();
 }
 
 // ---------------------------------------------------------------------------
@@ -568,6 +847,8 @@ function renderPosition() {
         $("#off-" + ax).text(fmt(state.g55[ax]));
     });
     $("#units-label").text(state.unit);
+    $(".st-units").text(state.unit);
+    if ($("#st-panel-drill").is(":visible")) renderStEnv();
 }
 
 function renderToolRow() {
@@ -759,6 +1040,7 @@ function refreshConfig(callback) {
     fabmo.getConfig(function (err, data) {
         if (err || !data) return callback && callback(err);
         state.vars = (data.opensbp && data.opensbp.variables) || {};
+        state.envelope = (data.machine && data.machine.envelope) || null;
         var d = data.driver || {};
         state.g55 = { x: Number(d.g55x) || 0, y: Number(d.g55y) || 0, z: Number(d.g55z) || 0 };
         // Per-input semantic types (machine.di<N>type) drive the sensor LEDs
@@ -1112,6 +1394,157 @@ $(document).ready(function () {
     $(".ts-btn-grid-tools").on("click", "[data-cmd]", function () {
         if (!isIdle()) return;
         runCommand($(this).attr("data-cmd"));
+    });
+
+    // ---- Shop Tools card ----
+
+    $("#st-picker").on("click", ".ts-shoptool", function () {
+        if ($(this).hasClass("soon")) return;
+        var tool = $(this).data("tool");
+        if (tool === "drill") {
+            var p = shopToolPrefs().drill || {};
+            var d = stDefaults();
+            var depth = inCurrentUnits(p.depth, p.unit);
+            var thickness = inCurrentUnits(p.thickness, p.unit);
+            stDrill.depth = depth !== null && depth > 0 ? depth : d.depth;
+            stDrill.thickness = thickness !== null && thickness > 0 ? thickness : d.thickness;
+            stDrill.zzero = p.zzero === "table" ? "table" : "material";
+            var d2 = stDefaults();
+            var arr = p.array || {};
+            stArray.xn = stCount(arr.xn || 2);
+            stArray.yn = stCount(arr.yn || 2);
+            var xs = inCurrentUnits(arr.xs, p.unit);
+            var ys = inCurrentUnits(arr.ys, p.unit);
+            stArray.xs = xs !== null && xs !== 0 ? xs : d2.space;
+            stArray.ys = ys !== null && ys !== 0 ? ys : d2.space;
+            setArrayMode(false);
+            // Show first so the envelope map can measure its real width
+            showShopTool(tool);
+            renderStDrill();
+            return;
+        }
+        showShopTool(tool);
+    });
+
+    // ---- Array mode: swap the depth/cross-section controls for the grid
+    // fields; the envelope map previews the holes.
+
+    function setArrayMode(on) {
+        stArrayMode = on;
+        $("#btn-st-array").toggleClass("active", on);
+        $(".ts-st-depthcol, .ts-st-xseccol").toggle(!on);
+        $("#st-array-panel").toggle(on);
+        if (on) {
+            $("#st-arr-xn").val(stArray.xn);
+            $("#st-arr-yn").val(stArray.yn);
+            $("#st-arr-xs").val(stArray.xs);
+            $("#st-arr-ys").val(stArray.ys);
+        }
+    }
+
+    $("#btn-st-array").on("click", function () {
+        setArrayMode(!stArrayMode);
+        renderStEnv();
+    });
+
+    $("#st-array-panel").on("change", "input", function () {
+        stArray.xn = stCount($("#st-arr-xn").val());
+        stArray.yn = stCount($("#st-arr-yn").val());
+        var xs = parseFloat($("#st-arr-xs").val());
+        var ys = parseFloat($("#st-arr-ys").val());
+        if (isFinite(xs)) stArray.xs = xs;
+        if (isFinite(ys)) stArray.ys = ys;
+        $("#st-arr-xn").val(stArray.xn);
+        $("#st-arr-yn").val(stArray.yn);
+        stSaveDrill();
+        renderStEnv();
+    });
+
+    $(".ts-st-back").on("click", function () {
+        showShopTool(null);
+    });
+
+    // Slider drags update live; the number field mirrors it. Persist on
+    // change-end rather than every drag tick.
+    $("#st-drill-slider").on("input", function () {
+        stDrill.depth = parseFloat($(this).val()) || 0;
+        renderStDrill(true);
+    });
+    $("#st-drill-slider").on("change", stSaveDrill);
+
+    $("#st-drill-depth").on("change", function () {
+        var v = parseFloat($(this).val());
+        stDrill.depth = v > 0 ? v : 0;
+        renderStDrill();
+        stSaveDrill();
+    });
+
+    $("#st-material").on("change", function () {
+        var v = parseFloat($(this).val());
+        stDrill.thickness = v > 0 ? v : 0;
+        renderStDrill();
+        stSaveDrill();
+    });
+
+    $('input[name="st-zzero"]').on("change", function () {
+        stDrill.zzero = this.value === "table" ? "table" : "material";
+        renderStDrill();
+        stSaveDrill();
+    });
+
+    $("#btn-st-drill").on("click", function () {
+        if (!isIdle()) return;
+        var depth = stDrill.depth;
+        if (!(depth > 0)) {
+            fabmo.notify("warning", "Set a drilling depth first.");
+            return;
+        }
+        // Depth is into the material from its top; where Z=0 sits decides
+        // the machine target for that same hole.
+        var zzTable = stDrill.zzero === "table";
+        if (zzTable && !(stDrill.thickness > 0)) {
+            fabmo.notify("warning", "Set the material thickness — with Z zeroed on the table it locates the material surface.");
+            return;
+        }
+        var targetZ = zzTable ? stDrill.thickness - depth : -depth;
+        targetZ = Math.round(targetZ * 10000) / 10000;
+        stSaveDrill();
+        // Retract target: the shared safe-Z; a plain fallback clearance if
+        // the machine has none set.
+        var safeZ = Number((state.vars || {}).SB_SAFE_Z);
+        if (!isFinite(safeZ) || safeZ <= 0) safeZ = state.unit === "mm" ? 25 : 1;
+        // Zeroed on the table, the material top is at +thickness — keep
+        // the same clearance above the material, not above Z zero.
+        if (zzTable) safeZ = Math.round((stDrill.thickness + safeZ) * 10000) / 10000;
+
+        var r4 = function (v) { return Math.round(v * 10000) / 10000; };
+        var lines = ["'Shop Tools: drill press", "SO,1,1", "PAUSE 2"];
+        var logMsg;
+        if (stArrayMode && stArray.xn * stArray.yn > 1) {
+            if ((stArray.xn > 1 && !stArray.xs) || (stArray.yn > 1 && !stArray.ys)) {
+                fabmo.notify("warning", "Set the array spacing first.");
+                return;
+            }
+            // Grid steps +X/+Y from the current position, row by row, with
+            // a safe-Z retract before every move between holes.
+            var bx = Number(state.pos.x) || 0;
+            var by = Number(state.pos.y) || 0;
+            for (var j = 0; j < stArray.yn; j++) {
+                for (var i = 0; i < stArray.xn; i++) {
+                    lines.push("JZ, " + safeZ);
+                    lines.push("J2, " + r4(bx + i * stArray.xs) + ", " + r4(by + j * stArray.ys));
+                    lines.push("MZ, " + targetZ);
+                }
+            }
+            logMsg = "> drill array: " + stArray.xn + "×" + stArray.yn + " holes, " + depth + " " + state.unit + " into material (Z to " + targetZ + ")";
+        } else {
+            lines.push("MZ, " + targetZ);
+            logMsg = "> drill: " + depth + " " + state.unit + " into material (Z to " + targetZ + ")";
+        }
+        lines.push("JZ, " + safeZ);
+        lines.push("SO,1,0");
+        consoleLog(logMsg);
+        runCommand(lines.join("\n"));
     });
 
     // ---- Tool settings modal ----

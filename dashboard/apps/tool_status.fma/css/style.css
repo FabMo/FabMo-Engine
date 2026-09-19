@@ -254,6 +254,160 @@ body {
 }
 .ts-shortcut-add .ts-shortcut-label { color: inherit; }
 
+/* Shop Tools card: tool tiles (same look as app shortcuts, but with inline
+   line-art SVG icons tinted by currentColor) + per-tool mini interfaces */
+.ts-shoptool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+    gap: 8px;
+}
+.ts-shoptool {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 9px 4px 7px;
+    border: 1px solid #e8ebee;
+    border-radius: 6px;
+    background: #fafbfc;
+    cursor: pointer;
+    text-align: center;
+    color: #2c3e50;
+}
+.ts-shoptool:hover { background: #eef3f7; }
+.ts-shoptool svg {
+    width: 38px;
+    height: 38px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.ts-shoptool.soon { opacity: 0.45; cursor: default; }
+.ts-shoptool.soon:hover { background: #fafbfc; }
+.ts-st-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.ts-st-head .ts-iconbtn { padding: 0 4px; }
+.ts-st-title { font-weight: 600; font-size: 0.95em; }
+
+/* Drill press panel: envelope | depth column | cross-section | DRILL */
+.ts-st-drill-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+/* The envelope map is sized purely from the machine's aspect ratio in
+   renderStEnv, and the container doesn't grow — so the map stays put and
+   the controls pack tight against it no matter which mode is showing. */
+.ts-st-env { flex: 0 0 auto; display: flex; }
+.ts-st-minilabel {
+    display: block;
+    font-size: 0.72em;
+    font-weight: 600;
+    color: #7f8c8d;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+.ts-st-depthcol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+.ts-st-depthcol input[type="number"],
+.ts-st-arr-grid input[type="number"],
+.ts-st-xseccol input[type="number"] {
+    width: 4.2em;
+    height: 1.9em;
+    font-size: 1em;
+    padding: 1px 4px;
+    margin: 0;
+    border: 1px solid #d5dbdb;
+    border-radius: 4px;
+    color: #2c3e50;
+    text-align: center;
+}
+/* Vertical slider: writing-mode is the standard mechanism in current
+   Chromium; the -webkit appearance pair covers older engines. */
+.ts-st-vslider {
+    writing-mode: vertical-lr;
+    -webkit-appearance: slider-vertical;
+    width: 22px;
+    height: 70px;
+    padding: 0;
+    margin: 0;
+}
+.ts-st-xseccol { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+/* The left gutter holds the Z-zero radios (hugging the graphic) and the
+   material-thickness input, which sits between the two surface leader
+   lines — it literally measures the gap it's parked in. Vertical
+   positions come from renderStXsec. */
+.ts-st-xsecwrap { position: relative; padding-left: 42px; }
+.ts-st-zzlabel { position: absolute; top: 1px; left: 0; margin: 0; }
+/* Thickness label hugs the top of its input; label + input are centered
+   as one block between the two surface lines by renderStXsec, and both
+   are right-anchored so the input's edge touches the slab (right offset
+   = svg width 68 - stack inset 14). */
+.ts-st-thicklabel {
+    position: absolute;
+    right: 58px;
+    margin: 0;
+    line-height: 1.15;
+}
+.ts-st-radios { position: absolute; left: 0; top: 0; }
+.ts-st-radios input[type="radio"] {
+    position: absolute;
+    left: 2px;
+    margin: 0;
+    cursor: pointer;
+}
+/* Surface leader lines: from just right of the radios across the gutter
+   to the slab's left edge (16 + 40 = 56 = wrap padding + stack inset).
+   Border style/color per selection comes from renderStXsec. */
+.ts-st-zzline {
+    position: absolute;
+    left: 16px;
+    width: 40px;
+    height: 0;
+    pointer-events: none;
+}
+.ts-st-xsecwrap > input[type="number"] {
+    position: absolute;
+    right: 58px;
+    width: 2.8em;
+    font-size: 0.85em;
+    padding: 1px 3px;
+}
+/* No spinners on the little thickness field — they'd eat digits */
+.ts-st-xsecwrap > input[type="number"]::-webkit-outer-spin-button,
+.ts-st-xsecwrap > input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.ts-st-btncol {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-self: center;
+}
+.ts-st-drillbtn {
+    width: 74px;
+    height: 74px;
+    font-size: 1.05em;
+    letter-spacing: 0.04em;
+}
+.ts-st-arraybtn { width: 74px; padding: 4px 0; font-size: 0.82em; }
+.ts-st-arraybtn.active { background: #2980b9; border-color: #2471a3; color: #fff; }
+.ts-st-arraycol { display: flex; align-items: center; min-height: 126px; }
+.ts-st-arr-grid {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 8px 12px;
+}
+.ts-st-arr-grid label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+
 /* Shortcut picker rows */
 .ts-shortcut-pick-row {
     display: flex;
