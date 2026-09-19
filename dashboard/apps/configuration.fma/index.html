@@ -1498,32 +1498,42 @@
                 </g>
 
                 <!-- machine-motion arrows around the perimeter, styled as
-                     miniature keypad buttons (rounded rect + white arrow
-                     icon) and colored to match the corresponding axis
-                     color on the keypad mockup. Click to arm; armed state
-                     gets a brighter outline. -->
+                     miniature versions of the keypad's pentagon glyphs and
+                     colored to match the corresponding keypad direction.
+                     Click to arm; armed state gets a brighter outline.
+                     Transparent rect is a forgiving hit/drop target;
+                     non-scaling-stroke keeps the JS-set stroke widths
+                     honest under the scale transform. -->
                 <g class="motion-arrow" data-axis="X+" style="cursor: pointer;">
-                  <rect class="kp-mini" x="462" y="162" width="36" height="36" rx="5"
+                  <rect x="460" y="160" width="40" height="40" fill="transparent"/>
+                  <path class="kp-mini" vector-effect="non-scaling-stroke"
+                        transform="translate(480 180) rotate(90) scale(0.44) translate(-50 -50)"
+                        d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"
                         fill="#0066cc" stroke="#003a6e" stroke-width="1.5"/>
-                  <polygon class="arrow-icon" points="474,170 494,180 474,190" fill="#fff"/>
                 </g>
 
                 <g class="motion-arrow" data-axis="X-" style="cursor: pointer;">
-                  <rect class="kp-mini" x="22" y="162" width="36" height="36" rx="5"
+                  <rect x="20" y="160" width="40" height="40" fill="transparent"/>
+                  <path class="kp-mini" vector-effect="non-scaling-stroke"
+                        transform="translate(40 180) rotate(-90) scale(0.44) translate(-50 -50)"
+                        d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"
                         fill="#e67e22" stroke="#7a3d04" stroke-width="1.5"/>
-                  <polygon class="arrow-icon" points="46,170 26,180 46,190" fill="#fff"/>
                 </g>
 
                 <g class="motion-arrow" data-axis="Y+" style="cursor: pointer;">
-                  <rect class="kp-mini" x="242" y="10" width="36" height="36" rx="5"
+                  <rect x="240" y="8" width="40" height="40" fill="transparent"/>
+                  <path class="kp-mini" vector-effect="non-scaling-stroke"
+                        transform="translate(260 28) scale(0.44) translate(-50 -50)"
+                        d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"
                         fill="#27ae60" stroke="#0d5a2c" stroke-width="1.5"/>
-                  <polygon class="arrow-icon" points="260,18 250,38 270,38" fill="#fff"/>
                 </g>
 
                 <g class="motion-arrow" data-axis="Y-" style="cursor: pointer;">
-                  <rect class="kp-mini" x="242" y="314" width="36" height="36" rx="5"
+                  <rect x="240" y="312" width="40" height="40" fill="transparent"/>
+                  <path class="kp-mini" vector-effect="non-scaling-stroke"
+                        transform="translate(260 332) rotate(180) scale(0.44) translate(-50 -50)"
+                        d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"
                         fill="#c0392b" stroke="#621509" stroke-width="1.5"/>
-                  <polygon class="arrow-icon" points="260,346 250,326 270,326" fill="#fff"/>
                 </g>
 
               </svg>
@@ -1547,6 +1557,12 @@
                        border-radius: 12px;
                        padding: 16px;
                        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);">
+                    <!-- Same boxless pentagon glyphs as the live keypad
+                         (dir-glyph rules come in via ../../css/dashboard.css).
+                         Axis labels inside the glyphs are rewritten by
+                         layout_orientation.js when the mapping changes;
+                         fill color stays direction-coded to match the
+                         machine-motion pentagons on the diagram. -->
                     <div class="layout-keypad-mock" style="
                          display: grid;
                          grid-template-columns: 64px 64px 64px;
@@ -1556,19 +1572,39 @@
                          height: 204px;">
                       <div></div>
                       <div class="kp-btn keypad-button drive-button square" data-dir="↑" style="width:64px; height:64px;">
-                        <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                        <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
+                          <g>
+                            <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
+                            <text class="glyph-label" x="50" y="62" text-anchor="middle">Y+</text>
+                          </g>
+                        </svg>
                       </div>
                       <div></div>
                       <div class="kp-btn keypad-button drive-button square" data-dir="←" style="width:64px; height:64px;">
-                        <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
+                        <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
+                          <g transform="rotate(-90 50 50)">
+                            <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
+                            <text class="glyph-label" x="50" y="62" text-anchor="middle" transform="rotate(90 50 62)">X-</text>
+                          </g>
+                        </svg>
                       </div>
                       <div></div>
                       <div class="kp-btn keypad-button drive-button square" data-dir="→" style="width:64px; height:64px;">
-                        <i class="fa fa-keypad fa-lg fa-arrow-right"></i>
+                        <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
+                          <g transform="rotate(90 50 50)">
+                            <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
+                            <text class="glyph-label" x="50" y="62" text-anchor="middle" transform="rotate(-90 50 62)">X+</text>
+                          </g>
+                        </svg>
                       </div>
                       <div></div>
                       <div class="kp-btn keypad-button drive-button square" data-dir="↓" style="width:64px; height:64px;">
-                        <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
+                        <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
+                          <g transform="rotate(180 50 50)">
+                            <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
+                            <text class="glyph-label" x="50" y="62" text-anchor="middle" transform="rotate(-180 50 62)">Y-</text>
+                          </g>
+                        </svg>
                       </div>
                       <div></div>
                     </div>
@@ -1576,28 +1612,6 @@
 
                   <div class="layout-status" style="margin-top: 12px; font-size: 13px; min-height: 1.5em; max-width: 280px;">
                     <span class="status-text" style="color: #666;">Click a machine-motion arrow on the left.</span>
-                  </div>
-                </div>
-
-                <!-- Axis labels off to the right of the yellow frame, one row
-                     per keypad direction; row spacing aligns with the
-                     buttons inside the frame. -->
-                <div class="layout-kp-labels" style="padding-top: 42px; font-size: 15px;">
-                  <div class="kp-label-row" data-dir="↑" style="height: 52px; display: flex; align-items: center;">
-                    <span class="kp-arrow" style="font-size: 20px; margin-right: 8px;">↑</span>
-                    <span class="kp-axis" data-dir="↑" style="font-weight: bold; color: #666;">—</span>
-                  </div>
-                  <div class="kp-label-row" data-dir="←" style="height: 52px; display: flex; align-items: center;">
-                    <span class="kp-arrow" style="font-size: 20px; margin-right: 8px;">←</span>
-                    <span class="kp-axis" data-dir="←" style="font-weight: bold; color: #666;">—</span>
-                  </div>
-                  <div class="kp-label-row" data-dir="→" style="height: 52px; display: flex; align-items: center;">
-                    <span class="kp-arrow" style="font-size: 20px; margin-right: 8px;">→</span>
-                    <span class="kp-axis" data-dir="→" style="font-weight: bold; color: #666;">—</span>
-                  </div>
-                  <div class="kp-label-row" data-dir="↓" style="height: 52px; display: flex; align-items: center;">
-                    <span class="kp-arrow" style="font-size: 20px; margin-right: 8px;">↓</span>
-                    <span class="kp-axis" data-dir="↓" style="font-weight: bold; color: #666;">—</span>
                   </div>
                 </div>
 
