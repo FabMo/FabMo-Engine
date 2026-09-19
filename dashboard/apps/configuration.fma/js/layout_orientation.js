@@ -91,20 +91,14 @@
     }
 
     function paintKeypadButton($btn) {
-      // Keypad button color is fixed by the keypad direction (positional).
+      // Pentagon fill color is fixed by the keypad direction (positional);
+      // inline style must be used to outrank the stylesheet's uniform
+      // .glyph-shape fill from dashboard.css. The axis label inside the
+      // glyph follows the current mapping, like the live keypad's
+      // orientation remap rewrites its labels.
       var dir = $btn.data('dir');
-      $btn.css('background-color', DIR_COLOR[dir]);
-    }
-
-    function paintLabelRow(dir) {
-      var $row = $('.kp-label-row[data-dir="' + dir + '"]');
-      var axis = dirToAxis(dir);
-      var $axisCell = $row.find('.kp-axis');
-      if (axis) {
-        $axisCell.text(axis).css('color', DIR_COLOR[dir]);
-      } else {
-        $axisCell.text('—').css('color', '#999');
-      }
+      $btn.find('.glyph-shape').css('fill', DIR_COLOR[dir]);
+      $btn.find('.glyph-label').text(dirToAxis(dir) || '');
     }
 
     function repaintAll() {
@@ -115,7 +109,6 @@
       $tab.find('.kp-btn').each(function () {
         paintKeypadButton($(this));
       });
-      ['↑', '↓', '←', '→'].forEach(paintLabelRow);
     }
 
     function setStatus(text, color) {
@@ -246,7 +239,7 @@
           pointerEvents: 'none',
           width: '44px',
           height: '44px',
-          background: '#313366',
+          background: DIR_COLOR[dir] || '#313366',
           border: '2px solid #fff',
           borderRadius: '8px',
           color: '#fff',
