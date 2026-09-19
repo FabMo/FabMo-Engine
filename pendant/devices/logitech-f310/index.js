@@ -30,6 +30,9 @@
 // whatever was previously jogging and starts the new axis. This is a v1
 // simplification — true simultaneous XY needs the manual runtime's two-axis
 // `start` form.
+//
+// Hotplug: open() returns a pendant/hotplug.js supervisor, so the gamepad can
+// be plugged in after boot and survives unplug/replug mid-session.
 
 var fs = require("fs");
 var log = require("../../../log").logger("pendant");
@@ -37,12 +40,12 @@ var config = require("../../../config");
 var evdev = require("./evdev");
 var mapping = require("./mapping");
 var actions = require("../../actions");
+var hotplug = require("../../hotplug");
 
 // Per-axis raw values from the latest events; updated on every ABS event.
 function makeAxisState() {
     return { LX: 0, LY: 0, RY: 0 };
 }
-
 
 // Processor tick rate. ~20 Hz keeps the stick-to-tool latency under ~50ms while
 // staying well under the manual driver's renew rate. The driver's startMotion
@@ -54,25 +57,44 @@ var PROCESS_HZ = 20;
 // ctx provides shared pendant state (fileBrowser, cannedCuts controller).
 function bindingsFor(BTN, ctx) {
     var byCode = {};
-    byCode[BTN.A] = function (m) { actions.authorize(m); };
-    byCode[BTN.B] = function (m) { actions.quit(m); };
-    byCode[BTN.X] = function (m) { actions.runMacro(m, 3); };
-    byCode[BTN.Y] = function (m) { actions.toggleOutput(m, 1); };
-    byCode[BTN.START] = function (m) { actions.smartStartPause(m); };
-    byCode[BTN.SELECT] = function (m) { actions.quit(m); };
+    byCode[BTN.A] = function (m) {
+        actions.authorize(m);
+    };
+    byCode[BTN.B] = function (m) {
+        actions.quit(m);
+    };
+    byCode[BTN.X] = function (m) {
+        actions.runMacro(m, 3);
+    };
+    byCode[BTN.Y] = function (m) {
+        actions.toggleOutput(m, 1);
+    };
+    byCode[BTN.START] = function (m) {
+        actions.smartStartPause(m);
+    };
+    byCode[BTN.SELECT] = function (m) {
+        actions.quit(m);
+    };
     // LB toggles manual mode (enter if idle, exit if in manual). Sticks and
     // D-pad only jog while in manual mode. RB is a held slow-mode modifier
     // (see press/release handling in handleEvent) rather than a press-action.
-    if (BTN.LB) byCode[BTN.LB] = function (m) { actions.manualToggle(m, { hideKeypad: false }); };
+    if (BTN.LB)
+        byCode[BTN.LB] = function (m) {
+            actions.manualToggle(m, { hideKeypad: false });
+        };
     // Canned-cut bindings: LSTICK enters/exits cut mode, RSTICK commits the
     // currently configured cut (reads current XY/Z, generates G-code, runs
     // it as a temp file). D-pad behavior is context-sensitive (see
     // handleEvent below); these click bindings are toggles only.
     if (BTN.LSTICK && ctx && ctx.cannedCuts) {
-        byCode[BTN.LSTICK] = function () { ctx.cannedCuts.toggle(); };
+        byCode[BTN.LSTICK] = function () {
+            ctx.cannedCuts.toggle();
+        };
     }
     if (BTN.RSTICK && ctx && ctx.cannedCuts) {
-        byCode[BTN.RSTICK] = function () { ctx.cannedCuts.commit(); };
+        byCode[BTN.RSTICK] = function () {
+            ctx.cannedCuts.commit();
+        };
     }
     return byCode;
 }
@@ -98,17 +120,31 @@ function jogSpeed(slowMode) {
     return slowMode ? base * SLOW_MODE_SCALE : base;
 }
 
-function open(machine, ctx) {
-    ctx = ctx || {};
+// Deduplicate attach-failure log lines: the supervisor retries every
+// hotplug.RESCAN_MS, so a persistent condition (e.g. bad device permissions)
+// would otherwise repeat the same message forever. Log on change, reset on
+// success.
+var lastAttachError = null;
+function logAttachError(msg) {
+    if (msg === lastAttachError) return;
+    lastAttachError = msg;
+    log.warn(msg);
+}
+
+// One attach attempt: find the gamepad's evdev node, open the event stream,
+// and wire up all per-connection state (event parser, motion tick loop).
+// Returns {close} or null if the device isn't present / won't open.
+// `onDisconnect` fires once if the stream dies mid-session; the hotplug
+// supervisor uses it to resume rescanning.
+function attach(machine, ctx, onDisconnect) {
     var devPath = evdev.findDevice(mapping.MATCHERS);
     if (!devPath) {
-        log.info("Logitech F310 not detected");
         return null;
     }
 
     var ids = evdev.getDeviceIds(devPath);
     if (!ids) {
-        log.warn("Found F310 at " + devPath + " but failed to read sysfs IDs");
+        logAttachError("Found F310 at " + devPath + " but failed to read sysfs IDs");
         return null;
     }
 
@@ -120,15 +156,16 @@ function open(machine, ctx) {
     try {
         stream = fs.createReadStream(devPath);
     } catch (e) {
-        log.error("Failed to open F310 evdev stream at " + devPath + ": " + e.message);
+        logAttachError("Failed to open F310 evdev stream at " + devPath + ": " + e.message);
         return null;
     }
 
+    lastAttachError = null;
     log.info("Logitech F310 connected (" + modeLabel + " mode) at " + devPath);
 
     var axisState = makeAxisState();
-    var lastMotion = null;     // last motion vector sent to manual runtime (null while stick is at rest)
-    var slowMode = false;      // true while RB is held — caps jog speed at SLOW_MODE_SCALE
+    var lastMotion = null; // last motion vector sent to manual runtime (null while stick is at rest)
+    var slowMode = false; // true while RB is held — caps jog speed at SLOW_MODE_SCALE
     var leftover = Buffer.alloc(0);
 
     // Compute the current target motion from the joystick state:
@@ -156,11 +193,11 @@ function open(machine, ctx) {
             var mag = Math.sqrt(defLX * defLX + defLY * defLY);
             return {
                 axis: "X",
-                speed: maxSpeed,                  // toolpath F value (positive)
+                speed: maxSpeed, // toolpath F value (positive)
                 secondAxis: "Y",
-                secondSpeed: maxSpeed,            // present so the driver sees a second axis
-                primaryRatio: defLX / mag,        // signed in [-1, +1]
-                secondaryRatio: defLY / mag,      // signed in [-1, +1]
+                secondSpeed: maxSpeed, // present so the driver sees a second axis
+                primaryRatio: defLX / mag, // signed in [-1, +1]
+                secondaryRatio: defLY / mag, // signed in [-1, +1]
             };
         }
         if (defRY !== 0) {
@@ -187,10 +224,12 @@ function open(machine, ctx) {
         var defRY = -mapping.deflection(axisState.RY);
         var state = { x: defLX, y: defLY, z: defRY };
         var EPSILON = 0.01;
-        if (lastJoystickEmit &&
+        if (
+            lastJoystickEmit &&
             Math.abs(state.x - lastJoystickEmit.x) < EPSILON &&
             Math.abs(state.y - lastJoystickEmit.y) < EPSILON &&
-            Math.abs(state.z - lastJoystickEmit.z) < EPSILON) {
+            Math.abs(state.z - lastJoystickEmit.z) < EPSILON
+        ) {
             return;
         }
         lastJoystickEmit = state;
@@ -232,7 +271,15 @@ function open(machine, ctx) {
         // silence, so a stick held steady would time out without the re-send.
         // At PROCESS_HZ=20 the bandwidth cost is trivial (~600 B/s of JSON)
         // and the firmware setter is a no-op when the velocity hasn't changed.
-        actions.jogStart(machine, motion.axis, motion.speed, motion.secondAxis, motion.secondSpeed, motion.primaryRatio, motion.secondaryRatio);
+        actions.jogStart(
+            machine,
+            motion.axis,
+            motion.speed,
+            motion.secondAxis,
+            motion.secondSpeed,
+            motion.primaryRatio,
+            motion.secondaryRatio,
+        );
         lastMotion = motion;
     }
 
@@ -282,7 +329,13 @@ function open(machine, ctx) {
                         if (ctx.cannedCuts && ctx.cannedCuts.state === "active") {
                             ctx.cannedCuts.adjustParam("depth", ev.value);
                         } else {
-                            actions.jog(machine, "X", ev.value, mapping.TUNABLES.DPAD_STEP_SIZE, mapping.TUNABLES.DPAD_SPEED);
+                            actions.jog(
+                                machine,
+                                "X",
+                                ev.value,
+                                mapping.TUNABLES.DPAD_STEP_SIZE,
+                                mapping.TUNABLES.DPAD_SPEED,
+                            );
                         }
                     }
                     break;
@@ -295,7 +348,13 @@ function open(machine, ctx) {
                             ctx.cannedCuts.adjustParam("diameter", -ev.value);
                         } else {
                             // Invert so up = +Y for jog as well.
-                            actions.jog(machine, "Y", -ev.value, mapping.TUNABLES.DPAD_STEP_SIZE, mapping.TUNABLES.DPAD_SPEED);
+                            actions.jog(
+                                machine,
+                                "Y",
+                                -ev.value,
+                                mapping.TUNABLES.DPAD_STEP_SIZE,
+                                mapping.TUNABLES.DPAD_SPEED,
+                            );
                         }
                     }
                     break;
@@ -314,30 +373,54 @@ function open(machine, ctx) {
         leftover = consumed < buf.length ? buf.slice(consumed) : Buffer.alloc(0);
     });
 
+    // Idempotent teardown — runs on deliberate close AND on stream death.
+    // Stops the tick loop first so nothing re-sends motion, then halts any
+    // in-flight jog so an unplug mid-gesture can't leave the tool coasting
+    // until the firmware watchdog catches it.
+    var dead = false;
+    function teardown() {
+        if (dead) return;
+        dead = true;
+        clearInterval(processTimer);
+        if (lastMotion) {
+            actions.jogStop(machine);
+            lastMotion = null;
+        }
+        try {
+            stream.destroy();
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    // Unplugging the gamepad surfaces as a stream error (ENODEV) and/or a
+    // close — treat either as a disconnect. `dead` guards double-fire and
+    // the close event that follows our own deliberate destroy().
+    function disconnected() {
+        if (dead) return;
+        teardown();
+        if (onDisconnect) onDisconnect();
+    }
+
     stream.on("error", function (err) {
-        log.error("F310 evdev stream error: " + err.message);
+        if (!dead) log.error("F310 evdev stream error: " + err.message);
+        disconnected();
     });
 
-    stream.on("close", function () {
-        log.info("F310 evdev stream closed");
-    });
+    stream.on("close", disconnected);
 
-    return {
+    return { close: teardown };
+}
+
+function open(machine, ctx) {
+    ctx = ctx || {};
+    return hotplug.supervise({
         name: "logitech-f310",
-        path: devPath,
-        close: function () {
-            try {
-                stream.destroy();
-            } catch (e) {
-                // ignore
-            }
-            clearInterval(processTimer);
-            if (lastMotion) {
-                actions.jogStop(machine);
-                lastMotion = null;
-            }
+        label: "Logitech F310",
+        attach: function (onDisconnect) {
+            return attach(machine, ctx, onDisconnect);
         },
-    };
+    });
 }
 
 module.exports = {
