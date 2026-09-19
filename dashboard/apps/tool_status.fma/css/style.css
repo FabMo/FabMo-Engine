@@ -408,6 +408,47 @@ body {
 }
 .ts-st-arr-grid label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
 
+/* Planer panel: params stack, angle slider + direction radios */
+.ts-stp-params { align-items: flex-start; }
+.ts-stp-params label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.ts-stp-params input[type="number"]::-webkit-outer-spin-button,
+.ts-stp-params input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.ts-stp-rastercol { display: flex; flex-direction: column; gap: 3px; }
+.ts-stp-rastercol > label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.ts-stp-anglerow { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.ts-stp-anglerow input[type="range"] { width: 64px; padding: 0; margin: 0; }
+.ts-stp-anglerow input[type="number"] {
+    width: 3.2em;
+    height: 1.9em;
+    font-size: 0.9em;
+    padding: 1px 2px;
+    margin: 0;
+    border: 1px solid #d5dbdb;
+    border-radius: 4px;
+    color: #2c3e50;
+    text-align: center;
+}
+.ts-stp-anglerow input[type="number"]::-webkit-outer-spin-button,
+.ts-stp-anglerow input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.ts-stp-rastercol .ts-stp-dir {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8em;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.ts-stp-dir input { margin: 0; }
+#stp-env-svg [data-handle] { cursor: grab; }
+
 /* Shortcut picker rows */
 .ts-shortcut-pick-row {
     display: flex;

@@ -531,6 +531,187 @@ function renderStXsec() {
     $mat.css("top", blockTop + lh + 1 + "px");
 }
 
+// ---- Planer model ----
+// A raster pocket over an area of the table. The area is picked with
+// two-handle range bars on the envelope map (machine coordinates,
+// relative to envelope min); the raster runs at `angle` degrees (0 =
+// along X, 90 = along Y), passes spaced bit × stepover%. The area
+// bounds the BIT CENTER — no diameter compensation, so the cut extends
+// a bit radius past the picked edges. Depth is below Z zero. dir
+// "2way" = serpentine at depth; "1way" = cut, lift, return, plunge.
+var stPlaner = {
+    x0: 0, x1: 0, y0: 0, y1: 0, // area, machine units from envelope min
+    bit: 1,
+    step: 40, // percent of bit
+    depth: 0.05,
+    angle: 0,
+    dir: "2way",
+    inited: false,
+};
+
+function stpDefaults() {
+    return state.unit === "mm" ? { bit: 25, depth: 1 } : { bit: 1, depth: 0.05 };
+}
+
+function stpSpans() {
+    var env = state.envelope || {};
+    var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
+    var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+    if (!(xspan > 0)) xspan = 24;
+    if (!(yspan > 0)) yspan = 18;
+    return { xspan: xspan, yspan: yspan };
+}
+
+// Map geometry shared by the renderer and the drag handler. Margins hold
+// the range bars and their three segment numbers.
+function stpGeom() {
+    var s = stpSpans();
+    // Top/right margins must exceed the handle radius (~5.5px with
+    // stroke) so a handle at the far end of its bar isn't clipped by
+    // the svg edge.
+    var ML = 32, MB = 30, MT = 7, MR = 7;
+    var maxRW = 240 - ML - MR;
+    var maxRH = 150 - MT - MB;
+    var rw = maxRW;
+    var rh = (rw * s.yspan) / s.xspan;
+    if (rh > maxRH) { rh = maxRH; rw = (rh * s.xspan) / s.yspan; }
+    return {
+        xspan: s.xspan, yspan: s.yspan,
+        ML: ML, MT: MT,
+        rw: Math.round(rw), rh: Math.round(rh),
+        W: Math.round(rw) + ML + MR, H: Math.round(rh) + MT + MB,
+    };
+}
+
+// Raster passes for the bit center, clipped to the picked area (no
+// diameter compensation). Returns segments {a:[x,y], b:[x,y],
+// type:"cut"|"step"|"air"} in machine units, ordered.
+function stpToolpath() {
+    var xa = stPlaner.x0, xb = stPlaner.x1;
+    var ya = stPlaner.y0, yb = stPlaner.y1;
+    var th = (stPlaner.angle * Math.PI) / 180;
+    var dx = Math.cos(th), dy = Math.sin(th);   // pass direction
+    var nx = -Math.sin(th), ny = Math.cos(th);  // stepover direction
+    // Perpendicular extent across the inset rect's corners
+    var cs = [xa * nx + ya * ny, xa * nx + yb * ny, xb * nx + ya * ny, xb * nx + yb * ny];
+    var cmin = Math.min.apply(null, cs), cmax = Math.max.apply(null, cs);
+    var step = stPlaner.bit * (stPlaner.step / 100);
+    var n = step > 0 ? Math.ceil((cmax - cmin) / step - 1e-9) : 1;
+    n = Math.max(1, Math.min(n, 500));
+    var passes = [];
+    for (var i = 0; i <= n; i++) {
+        var c = cmax === cmin ? cmin : cmin + ((cmax - cmin) * i) / n;
+        // Line p(t) = c·n̂ + t·d̂ clipped to the inset rect (per-axis
+        // t-intervals intersected; degenerate axes pass if in range)
+        var t0 = -Infinity, t1 = Infinity, ok = true;
+        [[dx, c * nx, xa, xb], [dy, c * ny, ya, yb]].forEach(function (ax) {
+            var d = ax[0], p = ax[1];
+            if (Math.abs(d) < 1e-9) {
+                if (p < ax[2] - 1e-6 || p > ax[3] + 1e-6) ok = false;
+            } else {
+                var ta = (ax[2] - p) / d, tb = (ax[3] - p) / d;
+                t0 = Math.max(t0, Math.min(ta, tb));
+                t1 = Math.min(t1, Math.max(ta, tb));
+            }
+        });
+        if (!ok || t0 > t1) continue;
+        passes.push([[c * nx + t0 * dx, c * ny + t0 * dy], [c * nx + t1 * dx, c * ny + t1 * dy]]);
+        if (cmax === cmin) break;
+    }
+    var segs = [];
+    var prevEnd = null;
+    passes.forEach(function (p, i) {
+        var a = p[0], b = p[1];
+        if (stPlaner.dir === "2way" && i % 2 === 1) { a = p[1]; b = p[0]; }
+        if (prevEnd) segs.push({ a: prevEnd, b: a, type: stPlaner.dir === "2way" ? "step" : "air" });
+        segs.push({ a: a, b: b, type: "cut" });
+        prevEnd = b;
+    });
+    return segs;
+}
+
+function stpFmtLen(v) {
+    return String(Math.round(v * 10) / 10);
+}
+
+// Planer envelope map: area range bars with two handles each, segment
+// length numbers, and the raster toolpath preview.
+function renderStpEnv() {
+    var svg = document.getElementById("stp-env-svg");
+    if (!svg) return;
+    var g = stpGeom();
+    svg.setAttribute("width", g.W);
+    svg.setAttribute("height", g.H);
+    var X = function (v) { return g.ML + (v / g.xspan) * g.rw; };
+    var Y = function (v) { return g.MT + g.rh - (v / g.yspan) * g.rh; };
+    var p = stPlaner;
+    var parts = [
+        '<rect x="' + g.ML + '" y="' + g.MT + '" width="' + g.rw + '" height="' + g.rh + '" fill="#f4f1ea" stroke="#a8a49a"/>',
+        '<rect x="' + X(p.x0) + '" y="' + Y(p.y1) + '" width="' + (X(p.x1) - X(p.x0)) + '" height="' + (Y(p.y0) - Y(p.y1)) + '" fill="#d4b585" fill-opacity="0.55" stroke="#a8834f"/>',
+    ];
+    // Toolpath preview: everything at depth (cuts AND stepovers) in the
+    // same solid blue; only true air moves (1-way returns) draw dashed.
+    stpToolpath().forEach(function (s) {
+        var style =
+            s.type === "air"
+                ? 'stroke="#95a5a6" stroke-width="0.75" stroke-dasharray="2,2"'
+                : 'stroke="#2980b9" stroke-width="1"';
+        parts.push('<line x1="' + X(s.a[0]) + '" y1="' + Y(s.a[1]) + '" x2="' + X(s.b[0]) + '" y2="' + Y(s.b[1]) + '" ' + style + "/>");
+    });
+    // Range bars: track, active span, grabbable handles
+    var bx = g.MT + g.rh + 9;  // X bar y
+    var by = g.ML - 9;         // Y bar x
+    function handle(cx, cy, id) {
+        return '<circle cx="' + cx + '" cy="' + cy + '" r="4.5" fill="#fff" stroke="#2980b9" stroke-width="2" data-handle="' + id + '"/>' +
+               '<circle cx="' + cx + '" cy="' + cy + '" r="10" fill="transparent" data-handle="' + id + '"/>';
+    }
+    parts.push('<line x1="' + g.ML + '" y1="' + bx + '" x2="' + (g.ML + g.rw) + '" y2="' + bx + '" stroke="#d5dbdb" stroke-width="2"/>');
+    parts.push('<line x1="' + X(p.x0) + '" y1="' + bx + '" x2="' + X(p.x1) + '" y2="' + bx + '" stroke="#2980b9" stroke-width="4"/>');
+    parts.push('<line x1="' + by + '" y1="' + g.MT + '" x2="' + by + '" y2="' + (g.MT + g.rh) + '" stroke="#d5dbdb" stroke-width="2"/>');
+    parts.push('<line x1="' + by + '" y1="' + Y(p.y1) + '" x2="' + by + '" y2="' + Y(p.y0) + '" stroke="#2980b9" stroke-width="4"/>');
+    // Segment numbers: to-start | area | to-end, centered per segment
+    function xnum(a, b, v, bold) {
+        if (b - a < 12) return "";
+        return '<text x="' + (a + b) / 2 + '" y="' + (bx + 13) + '" text-anchor="middle" font-size="8"' +
+            (bold ? ' font-weight="700" fill="#2c3e50"' : ' fill="#7f8c8d"') + ">" + stpFmtLen(v) + "</text>";
+    }
+    function ynum(yA, yB, v, bold) {
+        if (yA - yB < 12) return "";
+        var cy = (yA + yB) / 2, cx = by - 10;
+        return '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" font-size="8"' +
+            (bold ? ' font-weight="700" fill="#2c3e50"' : ' fill="#7f8c8d"') +
+            ' transform="rotate(-90 ' + cx + " " + cy + ')" dominant-baseline="central">' + stpFmtLen(v) + "</text>";
+    }
+    parts.push(xnum(g.ML, X(p.x0), p.x0));
+    parts.push(xnum(X(p.x0), X(p.x1), p.x1 - p.x0, true));
+    parts.push(xnum(X(p.x1), g.ML + g.rw, g.xspan - p.x1));
+    parts.push(ynum(g.MT + g.rh, Y(p.y0), p.y0));
+    parts.push(ynum(Y(p.y0), Y(p.y1), p.y1 - p.y0, true));
+    parts.push(ynum(Y(p.y1), g.MT, g.yspan - p.y1));
+    parts.push(handle(X(p.x0), bx, "x0"));
+    parts.push(handle(X(p.x1), bx, "x1"));
+    parts.push(handle(by, Y(p.y0), "y0"));
+    parts.push(handle(by, Y(p.y1), "y1"));
+    svg.innerHTML = parts.join("");
+}
+
+function stpSyncInputs() {
+    $("#stp-bit").val(stPlaner.bit || "");
+    $("#stp-step").val(stPlaner.step);
+    $("#stp-depth").val(stPlaner.depth || "");
+    $("#stp-angle").val(stPlaner.angle);
+    $("#stp-angle-slider").val(stPlaner.angle);
+    $('input[name="stp-dir"][value="' + stPlaner.dir + '"]').prop("checked", true);
+}
+
+function stpSave() {
+    saveShopToolPref("planer", {
+        x0: stPlaner.x0, x1: stPlaner.x1, y0: stPlaner.y0, y1: stPlaner.y1,
+        bit: stPlaner.bit, step: stPlaner.step, depth: stPlaner.depth,
+        angle: stPlaner.angle, dir: stPlaner.dir, unit: state.unit,
+    });
+}
+
 // Depth slider bounds follow the material: a bit past through-cut is as
 // deep as ever makes sense from either Z zero.
 function stSyncInputs(fromSlider) {
@@ -1423,7 +1604,140 @@ $(document).ready(function () {
             renderStDrill();
             return;
         }
+        if (tool === "planer") {
+            var pp = shopToolPrefs().planer || {};
+            var pd = stpDefaults();
+            var spans = stpSpans();
+            var num = function (v, dflt) {
+                var c = inCurrentUnits(v, pp.unit);
+                return c !== null ? c : dflt;
+            };
+            stPlaner.bit = num(pp.bit, pd.bit) || pd.bit;
+            stPlaner.depth = num(pp.depth, pd.depth) || pd.depth;
+            stPlaner.step = Number(pp.step) >= 5 && Number(pp.step) <= 100 ? Number(pp.step) : 40;
+            stPlaner.angle = Number(pp.angle) >= 0 && Number(pp.angle) <= 90 ? Number(pp.angle) : 0;
+            stPlaner.dir = pp.dir === "1way" ? "1way" : "2way";
+            stPlaner.x0 = Math.max(0, Math.min(spans.xspan, num(pp.x0, spans.xspan * 0.25)));
+            stPlaner.x1 = Math.max(stPlaner.x0, Math.min(spans.xspan, num(pp.x1, spans.xspan * 0.75)));
+            stPlaner.y0 = Math.max(0, Math.min(spans.yspan, num(pp.y0, spans.yspan * 0.25)));
+            stPlaner.y1 = Math.max(stPlaner.y0, Math.min(spans.yspan, num(pp.y1, spans.yspan * 0.75)));
+            stPlaner.inited = true;
+            showShopTool(tool);
+            stpSyncInputs();
+            renderStpEnv();
+            return;
+        }
         showShopTool(tool);
+    });
+
+    // ---- Planer: area handle dragging (pointer events so the kiosk
+    // touchscreen works; the svg is rebuilt on every move, so the move/up
+    // listeners live on the document, not the handle).
+
+    var stpDrag = null;
+
+    $("#stp-env-svg").on("pointerdown", "[data-handle]", function (e) {
+        stpDrag = $(this).attr("data-handle");
+        e.preventDefault();
+    });
+
+    $(document).on("pointermove", function (e) {
+        if (!stpDrag) return;
+        var svg = document.getElementById("stp-env-svg");
+        if (!svg) { stpDrag = null; return; }
+        var box = svg.getBoundingClientRect();
+        var g = stpGeom();
+        var p = stPlaner;
+        if (stpDrag === "x0" || stpDrag === "x1") {
+            var vx = ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
+            if (stpDrag === "x0") p.x0 = Math.max(0, Math.min(p.x1, vx));
+            else p.x1 = Math.min(g.xspan, Math.max(p.x0, vx));
+        } else {
+            var vy = ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
+            if (stpDrag === "y0") p.y0 = Math.max(0, Math.min(p.y1, vy));
+            else p.y1 = Math.min(g.yspan, Math.max(p.y0, vy));
+        }
+        renderStpEnv();
+    });
+
+    $(document).on("pointerup pointercancel", function () {
+        if (!stpDrag) return;
+        stpDrag = null;
+        stpSave();
+    });
+
+    // Planer parameter inputs
+    $("#stp-bit, #stp-step, #stp-depth").on("change", function () {
+        var bit = parseFloat($("#stp-bit").val());
+        var step = parseFloat($("#stp-step").val());
+        var depth = parseFloat($("#stp-depth").val());
+        if (bit > 0) stPlaner.bit = bit;
+        if (step >= 5 && step <= 100) stPlaner.step = step;
+        else $("#stp-step").val(stPlaner.step);
+        stPlaner.depth = depth > 0 ? depth : 0;
+        stpSave();
+        renderStpEnv();
+    });
+
+    $("#stp-angle-slider").on("input", function () {
+        stPlaner.angle = Number($(this).val()) || 0;
+        $("#stp-angle").val(stPlaner.angle);
+        renderStpEnv();
+    });
+    $("#stp-angle-slider").on("change", stpSave);
+    $("#stp-angle").on("change", function () {
+        var a = parseFloat($(this).val());
+        stPlaner.angle = isFinite(a) ? Math.max(0, Math.min(90, a)) : 0;
+        $(this).val(stPlaner.angle);
+        $("#stp-angle-slider").val(stPlaner.angle);
+        stpSave();
+        renderStpEnv();
+    });
+
+    $('input[name="stp-dir"]').on("change", function () {
+        stPlaner.dir = this.value === "1way" ? "1way" : "2way";
+        stpSave();
+        renderStpEnv();
+    });
+
+    $("#btn-st-plane").on("click", function () {
+        if (!isIdle()) return;
+        if (!(stPlaner.depth > 0)) return fabmo.notify("warning", "Set a planing depth first.");
+        if (!(stPlaner.bit > 0)) return fabmo.notify("warning", "Set the bit diameter first.");
+        if (!(stPlaner.x1 > stPlaner.x0) || !(stPlaner.y1 > stPlaner.y0)) {
+            return fabmo.notify("warning", "Drag the area handles to pick a region to plane.");
+        }
+        var segs = stpToolpath();
+        if (!segs.length) return fabmo.notify("warning", "No toolpath for that area.");
+        var safeZ = Number((state.vars || {}).SB_SAFE_Z);
+        if (!isFinite(safeZ) || safeZ <= 0) safeZ = state.unit === "mm" ? 25 : 1;
+        var env = state.envelope || {};
+        // Machine-relative area coords → work coords for the job
+        var wx = function (v) { return Math.round((v + (Number(env.xmin) || 0) - state.g55.x) * 10000) / 10000; };
+        var wy = function (v) { return Math.round((v + (Number(env.ymin) || 0) - state.g55.y) * 10000) / 10000; };
+        var lines = [
+            "'Shop Tools: planer",
+            "SO,1,1", // spindle on
+            "PAUSE 2", // spin-up
+            "JZ, " + safeZ,
+            "J2, " + wx(segs[0].a[0]) + ", " + wy(segs[0].a[1]),
+            "MZ, " + -stPlaner.depth,
+        ];
+        segs.forEach(function (s) {
+            if (s.type === "air") {
+                lines.push("JZ, " + safeZ);
+                lines.push("J2, " + wx(s.b[0]) + ", " + wy(s.b[1]));
+                lines.push("MZ, " + -stPlaner.depth);
+            } else {
+                lines.push("M2, " + wx(s.b[0]) + ", " + wy(s.b[1]));
+            }
+        });
+        lines.push("JZ, " + safeZ);
+        lines.push("SO,1,0"); // spindle off
+        var cuts = segs.filter(function (s) { return s.type === "cut"; }).length;
+        consoleLog("> plane: " + stpFmtLen(stPlaner.x1 - stPlaner.x0) + "×" + stpFmtLen(stPlaner.y1 - stPlaner.y0) +
+            " " + state.unit + ", " + cuts + " passes at " + stPlaner.angle + "°, depth " + stPlaner.depth);
+        runCommand(lines.join("\n"));
     });
 
     // ---- Array mode: swap the depth/cross-section controls for the grid
