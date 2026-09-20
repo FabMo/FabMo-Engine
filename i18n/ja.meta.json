@@ -473,27 +473,6 @@
     "errors.machine.interlock_active": {
         "en_at_translation": "Interlock input is active"
     },
-    "errors.toolbox.not_active": {
-        "en_at_translation": "Toolbox is not active"
-    },
-    "errors.toolbox.no_position": {
-        "en_at_translation": "Machine position not available"
-    },
-    "errors.toolbox.unknown_cut_type": {
-        "en_at_translation": "Unknown cut type: {cutType}"
-    },
-    "errors.toolbox.generation_failed": {
-        "en_at_translation": "Could not generate cut: {error}"
-    },
-    "errors.toolbox.tmpdir_failed": {
-        "en_at_translation": "Could not create temp directory for toolbox: {error}"
-    },
-    "errors.toolbox.tmpfile_write_failed": {
-        "en_at_translation": "Could not write toolbox temp file: {error}"
-    },
-    "errors.toolbox.run_failed": {
-        "en_at_translation": "Failed to run toolbox cut: {error}"
-    },
     "config.tabs.general": {
         "en_at_translation": "General"
     },
@@ -1882,84 +1861,6 @@
     },
     "sb4.mopad.smallest_moves_tip": {
         "en_at_translation": "Set smallest move at normal Zoom"
-    },
-    "toolbox.title": {
-        "en_at_translation": "Toolbox"
-    },
-    "toolbox.grip_label": {
-        "en_at_translation": "TOOLBOX"
-    },
-    "toolbox.grip_aria": {
-        "en_at_translation": "Toggle toolbox panel"
-    },
-    "toolbox.back_aria": {
-        "en_at_translation": "Back to toolbox"
-    },
-    "toolbox.tools.drill_press": {
-        "en_at_translation": "Drill Press"
-    },
-    "toolbox.tools.table_saw": {
-        "en_at_translation": "Table Saw"
-    },
-    "toolbox.tools.planer": {
-        "en_at_translation": "Planer"
-    },
-    "toolbox.sections.bit": {
-        "en_at_translation": "Bit"
-    },
-    "toolbox.params.cutter_dia": {
-        "en_at_translation": "Cutter dia"
-    },
-    "toolbox.params.plunge_per_pass": {
-        "en_at_translation": "Plunge/pass"
-    },
-    "toolbox.params.feedrate": {
-        "en_at_translation": "Feedrate"
-    },
-    "toolbox.params.plunge": {
-        "en_at_translation": "Plunge"
-    },
-    "toolbox.params.diameter": {
-        "en_at_translation": "Diameter"
-    },
-    "toolbox.params.depth": {
-        "en_at_translation": "Depth"
-    },
-    "toolbox.params.length": {
-        "en_at_translation": "Length"
-    },
-    "toolbox.params.width": {
-        "en_at_translation": "Width"
-    },
-    "toolbox.params.angle": {
-        "en_at_translation": "Angle"
-    },
-    "toolbox.params.grain": {
-        "en_at_translation": "Grain"
-    },
-    "toolbox.params.stepover": {
-        "en_at_translation": "Stepover"
-    },
-    "toolbox.params.height": {
-        "en_at_translation": "Height"
-    },
-    "toolbox.params.plunge_from": {
-        "en_at_translation": "Plunge from"
-    },
-    "toolbox.modes.pocket": {
-        "en_at_translation": "POCKET"
-    },
-    "toolbox.modes.profile": {
-        "en_at_translation": "PROFILE"
-    },
-    "toolbox.modes.zero": {
-        "en_at_translation": "ZERO"
-    },
-    "toolbox.modes.height": {
-        "en_at_translation": "HEIGHT"
-    },
-    "toolbox.cut": {
-        "en_at_translation": "CUT"
     },
     "job_manager.title": {
         "en_at_translation": "Job Manager"

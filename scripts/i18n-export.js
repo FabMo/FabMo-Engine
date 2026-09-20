@@ -11,7 +11,7 @@
  * Defaults: targetLang = "ja", outFile = stdout.
  *
  * CSV columns:
- *   key      — dotted path, e.g. "toolbox.drill_press"
+ *   key      — dotted path, e.g. "keypad.go_to"
  *   english  — current value from i18n/en.json
  *   <lang>   — current value from i18n/<lang>.json (or empty)
  *   status   — one of:

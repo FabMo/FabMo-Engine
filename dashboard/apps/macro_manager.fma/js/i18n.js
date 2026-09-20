@@ -9,7 +9,7 @@
  *
  * Lookup:
  *   t("keypad.go_to")             → "Go To"
- *   t("toolbox.cut_summary", {d:0.5}) → "Bored 0.500" hole"
+ *   t("previewer.soft_limit.violation", {axis:"X", …}) → "X exceeds …"
  *
  * If the key is missing in both dicts, returns the key itself so the
  * developer sees a glaring "keypad.go_to" instead of an empty span —

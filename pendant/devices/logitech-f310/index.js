@@ -21,8 +21,8 @@
 //   Back/Select        → quit
 //   LB                 → manual mode toggle
 //   RB (held)          → slow-mode modifier (0.2x jog speed)
-//   LSTICK click       → toolbox mode toggle (enter/exit)
-//   RSTICK click       → toolbox commit (execute the currently configured cut)
+//   LSTICK click       → canned-cut mode toggle (enter/exit)
+//   RSTICK click       → canned-cut commit (execute the currently configured cut)
 //   LT / RT            → unbound (reserved)
 //
 // Because the manual runtime's `stop` halts all motion, the adapter enforces
@@ -54,7 +54,7 @@ function makeAxisState() {
 var PROCESS_HZ = 20;
 
 // Returns the action handler for a given BTN code, given the active code set.
-// ctx provides shared pendant state (fileBrowser, toolbox controller).
+// ctx provides shared pendant state (fileBrowser, cannedCuts controller).
 function bindingsFor(BTN, ctx) {
     var byCode = {};
     byCode[BTN.A] = function (m) {
@@ -86,11 +86,15 @@ function bindingsFor(BTN, ctx) {
     // currently configured cut (reads current XY/Z, generates G-code, runs
     // it as a temp file). D-pad behavior is context-sensitive (see
     // handleEvent below); these click bindings are toggles only.
-    if (BTN.LSTICK && ctx && ctx.toolbox) {
-        byCode[BTN.LSTICK] = function () { ctx.toolbox.toggle(); };
+    if (BTN.LSTICK && ctx && ctx.cannedCuts) {
+        byCode[BTN.LSTICK] = function () {
+            ctx.cannedCuts.toggle();
+        };
     }
-    if (BTN.RSTICK && ctx && ctx.toolbox) {
-        byCode[BTN.RSTICK] = function () { ctx.toolbox.commit(); };
+    if (BTN.RSTICK && ctx && ctx.cannedCuts) {
+        byCode[BTN.RSTICK] = function () {
+            ctx.cannedCuts.commit();
+        };
     }
     return byCode;
 }
@@ -319,11 +323,11 @@ function attach(machine, ctx, onDisconnect) {
                     break;
                 case mapping.ABS.HAT_X:
                     if (ev.value !== 0) {
-                        // Context switch: when a toolbox is active, the
+                        // Context switch: when a canned cut is active, the
                         // D-pad adjusts the depth parameter; otherwise it
                         // does its normal X-axis fixed-step jog.
-                        if (ctx.toolbox && ctx.toolbox.state === "active") {
-                            ctx.toolbox.adjustParam("depth", ev.value);
+                        if (ctx.cannedCuts && ctx.cannedCuts.state === "active") {
+                            ctx.cannedCuts.adjustParam("depth", ev.value);
                         } else {
                             actions.jog(
                                 machine,
@@ -340,8 +344,8 @@ function attach(machine, ctx, onDisconnect) {
                         // Active cut: D-pad up/down adjusts diameter.
                         // (HAT_Y value -1 = up, +1 = down per evdev; invert
                         // so up = +diameter, down = -diameter.)
-                        if (ctx.toolbox && ctx.toolbox.state === "active") {
-                            ctx.toolbox.adjustParam("diameter", -ev.value);
+                        if (ctx.cannedCuts && ctx.cannedCuts.state === "active") {
+                            ctx.cannedCuts.adjustParam("diameter", -ev.value);
                         } else {
                             // Invert so up = +Y for jog as well.
                             actions.jog(

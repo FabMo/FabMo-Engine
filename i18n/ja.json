@@ -205,15 +205,6 @@
             "cannot_arm_from_state": "{state} 状態では、{action} のためにマシンを作動可能な状態にできません",
             "no_position": "スピンドルの座標位置が取得できません",
             "interlock_active": "インターロックインプットが作動中"
-        },
-        "toolbox": {
-            "not_active": "ツールボックスは作動していません",
-            "no_position": "スピンドルの座標位置が取得できません",
-            "unknown_cut_type": "未知のカットタイプ: {cutType}",
-            "generation_failed": "カット生成に失敗: {error}",
-            "tmpdir_failed": "ツールボックスの一時ディレクトリ作成に失敗: {error}",
-            "tmpfile_write_failed": "ツールボックス一時ファイルの書き込みに失敗: {error}",
-            "run_failed": "ツールボックスカットの実行に失敗: {error}"
         }
     },
     "config": {
@@ -754,42 +745,6 @@
             "smallest_moves_label": "最小移動量：",
             "smallest_moves_tip": "通常のズーム時の最小移動量を設定"
         }
-    },
-    "toolbox": {
-        "title": "ツールボックス",
-        "grip_label": "ツールボックス",
-        "grip_aria": "ツールボックスパネルの開閉",
-        "back_aria": "ツールボックスへ戻る",
-        "tools": {
-            "drill_press": "ボール盤",
-            "table_saw": "テーブルソー",
-            "planer": "プレーナー"
-        },
-        "sections": {
-            "bit": "ビット"
-        },
-        "params": {
-            "cutter_dia": "ビット径",
-            "plunge_per_pass": "プランジ深さ/回数",
-            "feedrate": "送り速度",
-            "plunge": "プランジ速度",
-            "diameter": "直径",
-            "depth": "深さ",
-            "length": "長さ",
-            "width": "幅",
-            "angle": "角度",
-            "grain": "木目",
-            "stepover": "ステップオーバー",
-            "height": "高さ",
-            "plunge_from": "プランジ基準"
-        },
-        "modes": {
-            "pocket": "ポケット",
-            "profile": "プロファイル",
-            "zero": "ゼロ",
-            "height": "高さ"
-        },
-        "cut": "カット"
     },
     "job_manager": {
         "title": "ジョブ管理",

@@ -3,7 +3,7 @@
  *
  * Loads every i18n/<code>.json at startup. Each file is a nested dict
  * keyed by area, e.g.:
- *   { "keypad": { "go_to": "Go To" }, "toolbox": { "cut": "CUT" } }
+ *   { "keypad": { "go_to": "Go To" }, "status": { "position": "Position" } }
  *
  * t(key, lang, vars) does dotted-path lookup with two fallbacks:
  *   1. Missing key in the target language → look up in English.

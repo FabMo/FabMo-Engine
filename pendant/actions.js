@@ -290,5 +290,4 @@ module.exports = {
     jog: jog,
     jogStart: jogStart,
     jogStop: jogStop,
-    runAfterManualExit: runAfterManualExit,
 };

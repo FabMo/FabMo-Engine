@@ -206,15 +206,6 @@
             "cannot_arm_from_state": "Cannot arm machine for {action} from the {state} state",
             "no_position": "Machine position not available",
             "interlock_active": "Interlock input is active"
-        },
-        "toolbox": {
-            "not_active": "Toolbox is not active",
-            "no_position": "Machine position not available",
-            "unknown_cut_type": "Unknown cut type: {cutType}",
-            "generation_failed": "Could not generate cut: {error}",
-            "tmpdir_failed": "Could not create temp directory for toolbox: {error}",
-            "tmpfile_write_failed": "Could not write toolbox temp file: {error}",
-            "run_failed": "Failed to run toolbox cut: {error}"
         }
     },
     "config": {
@@ -767,42 +758,6 @@
             "smallest_moves_label": "Smallest Moves: ",
             "smallest_moves_tip": "Set smallest move at normal Zoom"
         }
-    },
-    "toolbox": {
-        "title": "Toolbox",
-        "grip_label": "TOOLBOX",
-        "grip_aria": "Toggle toolbox panel",
-        "back_aria": "Back to toolbox",
-        "tools": {
-            "drill_press": "Drill Press",
-            "table_saw": "Table Saw",
-            "planer": "Planer"
-        },
-        "sections": {
-            "bit": "Bit"
-        },
-        "params": {
-            "cutter_dia": "Cutter dia",
-            "plunge_per_pass": "Plunge/pass",
-            "feedrate": "Feedrate",
-            "plunge": "Plunge",
-            "diameter": "Diameter",
-            "depth": "Depth",
-            "length": "Length",
-            "width": "Width",
-            "angle": "Angle",
-            "grain": "Grain",
-            "stepover": "Stepover",
-            "height": "Height",
-            "plunge_from": "Plunge from"
-        },
-        "modes": {
-            "pocket": "POCKET",
-            "profile": "PROFILE",
-            "zero": "ZERO",
-            "height": "HEIGHT"
-        },
-        "cut": "CUT"
     },
     "job_manager": {
         "title": "Job Manager",
