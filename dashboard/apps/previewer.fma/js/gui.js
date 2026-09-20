@@ -175,7 +175,9 @@ module.exports = function(callbacks) {
   var zoomMode = false;
   var zoomRange = null;  // {startTime, endTime}
   var holdTimer = null;
-  var HOLD_DELAY = 1500;  // ms before zoom activates
+  var HOLD_DELAY = 1500;  // ms the handle must stay still before zoom activates
+  var HOLD_STILL_TOLERANCE = 8;  // slider units (of 1000) the handle may drift and still count as "still"
+  var holdAnchorValue = null;    // slider value when the stillness timer was (re)started
   var stripesDiv = document.getElementById('timeline-stripes');
 
   // Toggle zoom class on the timeline input — CSS handles the stripe visuals
@@ -219,38 +221,57 @@ module.exports = function(callbacks) {
     }
   };
 
+  function cancelHoldTimer() {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+
+  // (Re)start the stillness clock from the handle's current position
+  function armHoldTimer() {
+    cancelHoldTimer();
+    holdAnchorValue = parseFloat(self.timeline.value);
+    holdTimer = setTimeout(function() {
+      holdTimer = null;
+      if (!callbacks.getZoomRange) return;
+      var range = callbacks.getZoomRange();
+      if (!range || range.endTime <= range.startTime) return;
+
+      // Enter zoom mode
+      zoomMode = true;
+      zoomRange = range;
+
+      // Remap slider to zoomed range
+      var currentTime = sliderToTime(parseFloat(self.timeline.value));
+      // Recalculate with new zoom range active
+      self.timeline.value = Math.max(0, Math.min(1000,
+        ((currentTime - zoomRange.startTime) / (zoomRange.endTime - zoomRange.startTime)) * 1000
+      ));
+
+      setZoomStripes(true);
+    }, HOLD_DELAY);
+  }
+
   if (self.timeline) {
     self.timeline.addEventListener('input', function() {
       self.timelineScrubbing = true;
       var time = sliderToTime(parseFloat(self.timeline.value));
       if (callbacks.scrub) callbacks.scrub(time);
+
+      // Zoom engages only when the handle is held still — any real
+      // movement while the timer is armed restarts the stillness clock
+      if (holdTimer !== null &&
+          Math.abs(parseFloat(self.timeline.value) - holdAnchorValue) > HOLD_STILL_TOLERANCE) {
+        armHoldTimer();
+      }
     });
 
     self.timeline.addEventListener('change', function() {
       self.timelineScrubbing = false;
     });
 
-    // Hold-to-zoom: mousedown starts a timer
+    // Hold-to-zoom: mousedown arms the stillness timer
     self.timeline.addEventListener('mousedown', function() {
-      clearTimeout(holdTimer);
-      holdTimer = setTimeout(function() {
-        if (!callbacks.getZoomRange) return;
-        var range = callbacks.getZoomRange();
-        if (!range || range.endTime <= range.startTime) return;
-
-        // Enter zoom mode
-        zoomMode = true;
-        zoomRange = range;
-
-        // Remap slider to zoomed range
-        var currentTime = sliderToTime(parseFloat(self.timeline.value));
-        // Recalculate with new zoom range active
-        self.timeline.value = Math.max(0, Math.min(1000,
-          ((currentTime - zoomRange.startTime) / (zoomRange.endTime - zoomRange.startTime)) * 1000
-        ));
-
-        setZoomStripes(true);
-      }, HOLD_DELAY);
+      armHoldTimer();
     });
 
     // Animate slider value smoothly from current to target
@@ -279,7 +300,7 @@ module.exports = function(callbacks) {
 
     // On release: exit zoom, slide to true position
     function exitZoom() {
-      clearTimeout(holdTimer);
+      cancelHoldTimer();
       if (!zoomMode) return;
 
       // Calculate the actual time from the zoomed slider position
@@ -297,7 +318,7 @@ module.exports = function(callbacks) {
 
     self.timeline.addEventListener('mouseup', exitZoom);
     self.timeline.addEventListener('mouseleave', function() {
-      clearTimeout(holdTimer);
+      cancelHoldTimer();
       // Don't exit zoom on mouseleave if still dragging — only cancel the hold timer
     });
   }
