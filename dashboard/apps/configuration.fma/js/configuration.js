@@ -168,7 +168,12 @@ function update() {
       // mode dropdowns. Done here (not on a timer) so initial render and any
       // external config change refresh visibility correctly.
       if (typeof syncSecondsVisibility === 'function') {
+        refreshInputOptionLabels(data.machine);
         for (var nOut = 1; nOut <= 12; nOut++) {
+          // Notify visibility syncs for every output — the notify controls
+          // are live even on the hardcoded outputs (spindles, arm motion).
+          syncNotifyVisibility(nOut, 'on');
+          syncNotifyVisibility(nOut, 'off');
           if (OUTPUT_HARDCODED[nOut]) continue;
           syncSecondsVisibility(nOut, 'on');
           syncSecondsVisibility(nOut, 'off');
@@ -459,18 +464,24 @@ $('#firmware-input').change(function(evt) {
 
 // Outputs whose behavior is hardcoded — labels are fixed and modes are not
 // user-configurable. The runtime ignores their saved policy entirely (see
-// runtime/output_policy.js HARDCODED).
+// runtime/output_policy.js HARDCODED). The notify dropdowns are still live
+// for these outputs: notification is enforced at the SO command, not by the
+// output policy, and the spindle is the primary notify use case.
 var OUTPUT_HARDCODED = { 1: "Spindle 1", 2: "Spindle 2", 4: "Arm Motion" };
 
 var ON_MODES = [
     { value: "file_start", label: window.t("config.outputs_tab.mode_file_start") },
     { value: "command", label: window.t("config.outputs_tab.mode_command") },
-    { value: "timed_after_file_end", label: window.t("config.outputs_tab.mode_timed_after_file_end") }
+    { value: "timed_after_file_end", label: window.t("config.outputs_tab.mode_timed_after_file_end") },
+    { value: "position", label: window.t("config.outputs_tab.mode_position") },
+    { value: "input", label: window.t("config.outputs_tab.mode_input") }
 ];
 var OFF_MODES = [
     { value: "file_end", label: window.t("config.outputs_tab.mode_file_end") },
     { value: "command", label: window.t("config.outputs_tab.mode_command") },
-    { value: "timed_after_file_end", label: window.t("config.outputs_tab.mode_timed_after_file_end") }
+    { value: "timed_after_file_end", label: window.t("config.outputs_tab.mode_timed_after_file_end") },
+    { value: "position", label: window.t("config.outputs_tab.mode_position") },
+    { value: "input", label: window.t("config.outputs_tab.mode_input") }
 ];
 
 function buildOutputFieldset(n) {
@@ -500,6 +511,61 @@ function buildOutputFieldset(n) {
         var lockedAttr = isLocked ? ' disabled' : '';
         var selectCls = isLocked ? '' : ' class="machine-output output-mode" data-side="' + side + '" data-output="' + n + '"';
         var secondsCls = isLocked ? '' : ' class="machine-output output-seconds"';
+        // Notify controls are never locked — notification is enforced at the
+        // SO command in the runtime, independent of the on/off mode policy.
+        var sideWord = side === 'on' ? 'ON' : 'OFF';
+        var notifyOpts = [
+            '<option value="never">Never</option>',
+            '<option value="once">Once per cut</option>',
+            '<option value="always">Always</option>'
+        ].join('');
+        // Position-trigger condition: [above/below] [axis] [value], shown only
+        // while the mode dropdown is set to Position. Value is in working
+        // coordinates (what the DRO reads), current units.
+        var positionRow = [
+            '<div id="machine-outputs-' + n + '-' + side + '_position_row"',
+              ' title="Turn this output ' + sideWord + ' when the axis crosses this position (working coordinates, current units)"',
+              ' style="display:none; margin-top:4px;">',
+              '<select id="machine-outputs-' + n + '-' + side + '_position-side" class="machine-output"',
+                ' style="display:inline-block; width:31%; margin:0 2% 0 0;">',
+                '<option value="below">Below</option>',
+                '<option value="above">Above</option>',
+              '</select>',
+              '<select id="machine-outputs-' + n + '-' + side + '_position-axis" class="machine-output"',
+                ' style="display:inline-block; width:31%; margin:0 2% 0 0;">',
+                ['x','y','z','a','b','c'].map(function (ax) {
+                    return '<option value="' + ax + '">' + ax.toUpperCase() + '</option>';
+                }).join(''),
+              '</select>',
+              '<input type="number" step="any" id="machine-outputs-' + n + '-' + side + '_position-value" class="machine-output"',
+                ' placeholder="position" style="display:inline-block; width:34%; margin:0;">',
+            '</div>'
+        ].join('');
+
+        // Input-trigger condition: [input] [goes ON/goes OFF], shown only
+        // while the mode dropdown is set to Input. Binding both sides of an
+        // output to the same input with complementary states = follow
+        // ("momentary"); one side alone = latch ("permanent").
+        var inputRow = [
+            '<div id="machine-outputs-' + n + '-' + side + '_input_row"',
+              ' title="Turn this output ' + sideWord + ' when the input changes to the selected state"',
+              ' style="display:none; margin-top:4px;">',
+              '<select id="machine-outputs-' + n + '-' + side + '_input-input" class="machine-output output-trigger-input"',
+                ' style="display:inline-block; width:55%; margin:0 2% 0 0;">',
+                (function () {
+                    var o = '';
+                    for (var inp = 1; inp <= 12; inp++) o += '<option value="' + inp + '">Input ' + inp + '</option>';
+                    return o;
+                })(),
+              '</select>',
+              '<select id="machine-outputs-' + n + '-' + side + '_input-state" class="machine-output"',
+                ' style="display:inline-block; width:43%; margin:0;">',
+                '<option value="on">goes ON</option>',
+                '<option value="off">goes OFF</option>',
+              '</select>',
+            '</div>'
+        ].join('');
+
         return [
             '<div class="large-4 columns">',
               '<div class="row collapse">',
@@ -508,6 +574,18 @@ function buildOutputFieldset(n) {
                 '</label>',
                 '<input type="number" id="machine-outputs-' + n + '-' + side + '_seconds" min="0" step="0.1"' + secondsCls + lockedAttr +
                   ' placeholder="' + window.t("config.outputs_tab.seconds_placeholder") + '" style="display:none; margin-top:4px;">',
+                positionRow,
+                inputRow,
+                '<label style="font-weight:normal; margin-top:4px;">' + window.t("config.outputs_tab.notify_for_" + side),
+                  '<select id="machine-outputs-' + n + '-notify_' + side + '"',
+                    ' class="machine-output output-notify" data-output="' + n + '" data-side="' + side + '">',
+                    notifyOpts,
+                  '</select>',
+                '</label>',
+                '<input type="text" id="machine-outputs-' + n + '-notify_' + side + '_message" class="machine-output"',
+                  ' placeholder="' + window.t("config.outputs_tab.notify_message_placeholder") + '"' +
+                  ' title="' + window.t("config.outputs_tab.notify_message_title_" + side) + '"',
+                  ' style="display:none; margin-top:4px; height:1.8em;">',
               '</div>',
             '</div>'
         ].join('');
@@ -545,6 +623,38 @@ function syncSecondsVisibility(n, side) {
     var mode = $('#machine-outputs-' + n + '-' + side + '_mode').val();
     var $secs = $('#machine-outputs-' + n + '-' + side + '_seconds');
     $secs.css('display', mode === 'timed_after_file_end' ? '' : 'none');
+    $('#machine-outputs-' + n + '-' + side + '_position_row')
+        .css('display', mode === 'position' ? '' : 'none');
+    $('#machine-outputs-' + n + '-' + side + '_input_row')
+        .css('display', mode === 'input' ? '' : 'none');
+}
+
+// Annotate the input-trigger dropdowns with each input's assigned special
+// function (stop, limit, auth button, ...) so nobody wires a dust collector
+// to their stop button by accident. Inputs stay selectable either way —
+// annotation only. Called from update() once config data is loaded.
+function refreshInputOptionLabels(machineData) {
+    if (!machineData) return;
+    var tags = {};
+    for (var i = 1; i <= 12; i++) {
+        var action = machineData['di' + i + 'ac'];
+        if (action && action !== 'none') tags[i] = action;
+    }
+    if (machineData.auth_input >= 1) tags[machineData.auth_input] = 'auth button';
+    if (machineData.quit_input >= 1) tags[machineData.quit_input] = 'quit button';
+    if (machineData.ap_input >= 1) tags[machineData.ap_input] = 'AP button';
+    $('.output-trigger-input option').each(function () {
+        var inp = Number(this.value);
+        this.text = 'Input ' + inp + (tags[inp] ? ' (' + tags[inp] + ')' : '');
+    });
+}
+
+// Show the notification-message input only while its "Notify for ON/OFF"
+// dropdown is set to something other than "never". Called on init (from
+// update()'s getConfig callback) and on every dropdown change.
+function syncNotifyVisibility(n, side) {
+    var mode = $('#machine-outputs-' + n + '-notify_' + side).val();
+    $('#machine-outputs-' + n + '-notify_' + side + '_message').css('display', mode && mode !== 'never' ? '' : 'none');
 }
 
 function setupOutputsTab() {
@@ -566,6 +676,13 @@ function setupOutputsTab() {
         var n = $(this).data('output');
         var side = $(this).data('side');
         syncSecondsVisibility(n, side);
+    });
+
+    // Show/hide notification message inputs whenever a notify checkbox changes.
+    $list.on('change', '.output-notify', function () {
+        var n = $(this).data('output');
+        var side = $(this).data('side');
+        syncNotifyVisibility(n, side);
     });
 
     // Toggle button: send SO,N,<opposite-of-current-state>. The SO command is
@@ -735,6 +852,7 @@ $(document).ready(function() {
     $('.engine-input').change( function() {
         setConfig(this.id, this.value);
     });
+
 
     $("#machine-auth_required").on('change', function() {
         if ($(this).is(':checked')) {

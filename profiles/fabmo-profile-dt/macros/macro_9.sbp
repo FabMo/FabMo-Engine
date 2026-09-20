@@ -1,11 +1,12 @@
-'!FABMO!name: Manual Tool Change - MTC
-'!FABMO!description: -for files- Calls Manual Tool Changes
+'!FABMO!name: Tool Change - MTC/ATC
+'!FABMO!description: -for files- Selects MTC or ATC 
 '!FABMO!enabled:true
-' Name: Manual Tool Change - MTC
-' Description: -for files- Calls Manual Tool Changes
+' Name: Tool Change - MTC/ATC
+' Description: -for files- Selects MTC or ATC; Handles MTC here
 ' Author: Ted Hall, Ryan Sturmer
 ' 2026/2/12 - Refactored (th)
 
+' MTC functionality:
 ' Typically called from file with C9 (e.g. produced by Vectric Post-processor); uses &tool variable to specify tool number and $sb_MTCmode to specify method (e.g., IGNORE, MTC, QUIT).
 ' See Macro 201 for setting standard variables that are read here, including $sb_MTCmode and $sb_MTC_Z_mode, which are used to specify the method for tool changing and Z pull-up method, respectively.
 ' Some of these variables are adjusted in the FabMo "Cutting Settings" app

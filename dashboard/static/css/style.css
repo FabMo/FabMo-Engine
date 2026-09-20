@@ -94,13 +94,25 @@ label {
 /* ===== PRINT OUTPUT widget — docked in the top bar ========================
    Absolutely positioned within the fixed .tab-bar; JS sets left/right so it
    fills the gap between the machine name and the mini-DRO. */
+/* Dismissed (or nothing printed yet): gone from the UI entirely. JS removes
+   the class when a PRINT line arrives. !important so it beats the inline
+   visibility/size styles the docked layout code sets. */
+.print-widget.dismissed {
+    display: none !important;
+}
 .print-widget.docked {
     position: absolute;
     top: 0;
-    height: 56px;
+    height: 56px;               /* fallback; JS matches the keypad button's box */
     display: flex;
     align-items: flex-end;      /* sit the module at the bottom of the bar */
     z-index: 1;                 /* tab-bar itself is 1005 */
+}
+/* When docked, the frame fills the widget box exactly — JS sizes/positions
+   that box to match the visible face of the keypad button to its right. */
+.print-widget.docked .print-widget-dockline {
+    height: 100%;
+    justify-content: center;
 }
 /* Hide on small screens (replaces the Foundation show-for-medium-up class,
    which forced display:inherit and broke the flex alignment). */
@@ -118,7 +130,7 @@ label {
        docked widget reads as one detachable module. */
     background-color: rgba(0, 0, 0, 0.18);
     border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 4px;
+    border-radius: 5px;         /* matches the keypad button's corner radius */
     color: #ffffff;
     font-family: "Droid_Sans_Mono", monospace;
     line-height: 1.2;              /* override .tab-bar's inherited 45px line-height */
@@ -234,7 +246,7 @@ label {
 .print-widget.docked.expanded .print-widget-stream {
     display: block;
     position: absolute;
-    top: 52px;                 /* just below the module (bar 56 - 4px gap) */
+    top: 100%;                 /* hang just below the module frame */
     right: 0;
     width: 100%;
     max-height: 50vh;
@@ -247,7 +259,7 @@ label {
 .print-widget.docked.expanded .print-widget-expand {
     transform: rotate(180deg);  /* caret flips when open */
 }
-/* Close (X) — only in the floating modal. */
+/* Close (X) — dismisses the widget entirely (docked or floating). */
 .print-widget-close {
     flex: 0 0 auto;
     margin: 0 0 0 8px;
@@ -262,7 +274,10 @@ label {
     cursor: pointer;
 }
 .print-widget-close:hover { color: #ff6b6b; }
-.print-widget.docked .print-widget-close { display: none; }
+.print-widget.docked .print-widget-close {
+    font-size: 11px;
+    margin-left: 6px;
+}
 /* ===== Floating modal (pulled off the bar) ================================= */
 .print-widget.floating {
     position: fixed;
@@ -1500,7 +1515,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .app-iframe {
 	width: 100%;
 	height: 100%;
-	border:0px;
+	border: 0px;
+	touch-action: manipulation;  /* no double-tap zoom; still forwards touches to iframe content */
 }
 
 #app_menu_container {
@@ -1514,6 +1530,147 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 /* ...existing code... */
 
 /* ========== FOOTER STYLES ========== */
+/* ========== Bounds pre-check ("Checking...") footer state ========== */
+/* Rich footer state in the same visual language as run/pause: the standard
+   footer background, a large centered title with animated dots, an
+   indeterminate pulsing bar, and a Skip/Cancel stack that mirrors the
+   Resume/Quit group's geometry. No new theme colors — the pulse animation
+   alone distinguishes "checking" from a real progress fill. */
+
+/* The normal job controls and numeric readouts make no sense mid-check */
+.footBar.bounds-checking .footer-buttons-container,
+.footBar.bounds-checking .load_container .elapsed_time,
+.footBar.bounds-checking .load_container .percent_comp,
+.footBar.bounds-checking .load_container .line_number {
+    display: none;
+}
+
+/* Title centered in the upper half — the default .currentContainer is pinned
+   left and clipped to 28% width, which can cut the message off entirely */
+.footBar.bounds-checking .currentContainer {
+    left: 50%;
+    right: auto;
+    top: 38%;
+    transform: translate(-50%, -50%);
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+}
+
+.footBar.bounds-checking .currentJobTitle {
+    text-align: center;
+    white-space: nowrap;
+    font-size: 28px;
+}
+
+/* Fixed-width dot area so the centered message doesn't shift as dots cycle */
+.footBar.bounds-checking .currentJobTitle::after {
+    content: "";
+    display: inline-block;
+    width: 2em;
+    text-align: left;
+    font-size: 34px;
+    font-weight: bold;
+    line-height: 0;
+    vertical-align: baseline;
+    animation: bounds-checking-dots 1.6s steps(1, end) infinite;
+}
+
+@keyframes bounds-checking-dots {
+    0%   { content: ""; }
+    25%  { content: "."; }
+    50%  { content: ".."; }
+    75%  { content: "..."; }
+}
+
+/* Indeterminate bar centered below the title; the theme's standard fill
+   green, but pulsing at full width instead of showing a fill percentage */
+.footBar.bounds-checking .load_container {
+    position: absolute;
+    left: 50%;
+    right: auto;
+    top: 68%;
+    transform: translate(-50%, -50%);
+    width: 38%;
+    margin: 0;
+    padding: 0;
+    float: none;
+}
+
+.footBar.bounds-checking .loading_bar .horizontal_fill {
+    width: 100% !important;
+    animation: bounds-checking-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes bounds-checking-pulse {
+    0%, 100% { opacity: 0.25; }
+    50%      { opacity: 0.75; }
+}
+
+/* Skip/Cancel stack — same footprint as the Resume/Quit group, pinned right
+   where the job buttons normally sit */
+.bounds-check-controls {
+    display: none;
+}
+
+.footBar.bounds-checking .bounds-check-controls {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 240px;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.bounds-check-controls .but {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial;
+    color: #ffffff;
+    font-size: 22px;
+    width: 100%;
+    height: 50%;
+    transition: background 0.2s;
+}
+
+.bounds-check-controls .skipCheck {
+    background: #32B433;
+    border: solid #00A600 1px;
+    border-radius: 10px 10px 0 0;
+    margin-bottom: 2px;
+}
+
+.bounds-check-controls .skipCheck:hover {
+    background: #3bcf3c;
+}
+
+.bounds-check-controls .cancelCheck {
+    background: #cc2222;
+    border: solid #a60000 1px;
+    border-radius: 0 0 10px 10px;
+}
+
+.bounds-check-controls .cancelCheck:hover {
+    background: #ff0000;
+}
+
+.bounds-check-controls .check-subtext {
+    font-size: 12px;
+    font-weight: normal;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
 .footBar {
     position: fixed;
     bottom: 0;
@@ -2368,6 +2525,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     height: 33%;
     width: 33%;
     display: inline-block;
+    /* top, not the default baseline: the joystick indicator's in-flow svg
+       gives its cell a real baseline, which hoisted the whole X row ~4px. */
+    vertical-align: top;
     box-sizing: border-box;
 }
 
@@ -2763,41 +2923,83 @@ input[type='range']:focus {
 	border-radius: 50%;
   }
 
-.fa-keypad {
-	line-height: inherit;
-	text-shadow: 1px 1px 4px black;
+/* Directional arrowhead glyphs: one pentagon path per button, rotated in
+   the SVG itself; the axis label is counter-rotated so it stays upright.
+   Labels on cardinal buttons are rewritten by keypad_orientation.js when
+   the user remaps orientation. */
+/* Glyph buttons have no visible box: the pentagon itself is the button
+   face. border-color (not border: none) keeps the 2px box model so the
+   grid doesn't shift. Class+:has outranks the single-class state
+   backgrounds (drive-button-active etc.), which now recolor the glyph
+   fill below instead of the box. Rotary +A/-A/+B/-B buttons have no
+   .dir-glyph and keep their boxes. */
+.keypad-button:has(.dir-glyph) {
+	background: transparent;
+	border-color: transparent;
+}
+
+.drive-button .dir-glyph {
 	display: block;
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	margin-right: -50%;
 	transform: translate(-50%, -50%);
+	width: 140%;
+	height: 140%;
 	pointer-events: none;
 }
 
-.keypad-cell:first-child .fa-keypad{
-	transform: translate(-50%, -50%) rotate(-45deg);
+/* Diagonals stay at their original (pre-enlargement) size; only the
+   cardinal pentagons get the oversized treatment. */
+.drive-button .dir-glyph.diag {
+	width: 100%;
+	height: 100%;
 }
 
-.keypad-cell:nth-child(3) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(45deg);
+.drive-button .glyph-shape {
+	fill: #313366;
 }
 
-.keypad-cell:nth-child(7) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(-135deg);
+.drive-button .glyph-label {
+	font-family: inherit;
+	font-size: 32px;
+	font-weight: 800;
+	fill: #fff;
+	stroke: #fff;
+	stroke-width: 1.25;
+	paint-order: stroke;
+	dominant-baseline: central;
 }
 
-.keypad-cell:nth-child(9) .fa-keypad{
-	transform: translate(-50%, -50%) rotate(135deg);
+.drive-button .glyph-stroke path {
+	stroke: #313366;
+	stroke-width: 13;
+	fill: none;
+	stroke-linecap: round;
+	stroke-linejoin: round;
 }
 
-.z-fa-double {
-	font-size: 16px;
-    display: block;
-    padding: 0;
-    margin: 0;
-	height: 5px;
-	pointer-events: none;
+/* Jog-state feedback lives on the glyph now that the box is invisible.
+   Same palette and precedence order as the box backgrounds above. */
+.drive-button-fixed .glyph-shape { fill: #ce6402; }
+.drive-button-fixed .glyph-stroke path { stroke: #ce6402; }
+
+.drive-button-active .glyph-shape { fill: #5DAA35; }
+.drive-button-active .glyph-stroke path { stroke: #5DAA35; }
+
+.drive-button-active-transient .glyph-shape { fill: #D48B3A; }
+.drive-button-active-transient .glyph-stroke path { stroke: #D48B3A; }
+
+.drive-button.bar .dir-glyph {
+	width: 110%;
+	/* Stretched so the two pentagons' bases nearly meet at the column
+	   center; tips stay just clear of the fast-Z chevrons. */
+	height: 140%;
+}
+
+.drive-button.bar .dir-glyph.fastz {
+	width: 92%;
+	height: 92%;
 }
 
 .manual-right-side-container {

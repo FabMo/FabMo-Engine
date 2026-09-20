@@ -33,6 +33,15 @@ require('./cm-fabmo-modes.js');
     // user accepts (or the code is clean). Mirrors the job-manager warning
     // pattern — warn-and-confirm, never refuse outright.
     function runWithBoundsCheck(text, runtime, proceed) {
+      // The execute menu is hidden the moment the user clicks run, and is only
+      // re-shown by a status event with state === 'idle'. On any path that
+      // declines to run, the machine never left idle, so that event never
+      // fires — every bail-out must restore the controls itself.
+      function bail() {
+        $("#execute-menu").show();
+      }
+      // The dashboard raises the footer with a "Checking..." indicator while
+      // this runs (see checkCodeBounds handler in dashboard.js).
       fabmo.checkCodeBounds(text, runtime, function (err, data) {
         if (err || !data) {
           // If the check itself fails, don't block the run — log and proceed,
@@ -40,6 +49,10 @@ require('./cm-fabmo-modes.js');
           console.warn('bounds pre-check failed:', err);
           return proceed();
         }
+        // Footer Skip button: user chose to run without waiting for the check
+        if (data.skipped) return proceed();
+        // Footer Cancel button: user chose not to run the file at all
+        if (data.canceled) return bail();
         if (data.partial) {
           // Simulator hit its line budget — likely an unbounded loop. Bounds
           // are based on whatever portion ran before the cutoff, so they may
@@ -56,7 +69,7 @@ require('./cm-fabmo-modes.js');
           okText: 'Run anyway',
           ok: function () { fabmo.hideModal(); proceed(); },
           cancelText: 'Cancel',
-          cancel: function () { fabmo.hideModal(); }
+          cancel: function () { fabmo.hideModal(); bail(); }
         });
       });
     }
@@ -87,6 +100,9 @@ require('./cm-fabmo-modes.js');
       overrideDirty = false;
       if (lang !== 'opensbp') {
         fabmo.notify('warn', window.t('editor.notify.debug_opensbp_only'));
+        // Same bail-out rule as runWithBoundsCheck: nothing ran, so no idle
+        // status event will restore the menu — do it here.
+        $("#execute-menu").show();
         return;
       }
       runWithBoundsCheck(text, 'sbp', function () {

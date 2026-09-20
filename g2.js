@@ -323,8 +323,15 @@ G2.prototype._createCycleContext = function () {
     ////## TODO: fix this kludge to get the current_runtime !
 
     if (global.CUR_RUNTIME != "[IdleRuntime]") {
+        // N1 M5 BEFORE the M0: the toolhead's spindle state only updates when a
+        // queued engage executes, so a stale "running" state can survive from a
+        // previous job (M30's spindle_stop is planner-queued and flushable).
+        // With spph enabled, M0 would pause that stale state and RESUME it —
+        // physically re-starting the spindle — when the cycle is released. M5
+        // first clears the state in-order before M0's pause check runs. It's a
+        // no-op when the spindle is already off (every normal start).
         var prependString =
-          "N1 M0\n" + "N2 G90\n" + "N3 G61\n" + "{out4:1}\n" + "{spph:true}\n" + "N6 S1000\n";
+          "N1 M5\n" + "N2 M0\n" + "N3 G90\n" + "N4 G61\n" + "{out4:1}\n" + "{spph:true}\n" + "N6 S1000\n";
 
         log.debug("=== PREPEND DEBUG ===");
         log.debug("Prepend string:", JSON.stringify(prependString));
@@ -334,7 +341,7 @@ G2.prototype._createCycleContext = function () {
         st.write(prependString);
 
         // FORCE enough lines_to_send to handle all prepend lines //** IMPORTANT */
-        this.lines_to_send = Math.max(this.lines_to_send, 6);
+        this.lines_to_send = Math.max(this.lines_to_send, 7);
         log.debug("Lines to send after adjustment:", this.lines_to_send);
     }
 

@@ -769,10 +769,10 @@ Engine.prototype.start = function (callback) {
 
             // Initialize the network module
             function setup_network(callback) {
-                var name = config.engine.get("name");
-                log.info("name is - " + name);
+                var machine_id = config.engine.get("machine_id");
+                log.info("machine_id is - " + machine_id);
                 network.createNetworkManager(
-                    name,
+                    machine_id,
                     // eslint-disable-next-line no-unused-vars
                     function (err, nm) {
                         this.networkManager = nm;
@@ -1031,7 +1031,13 @@ Engine.prototype.start = function (callback) {
                 log.info("Configuring cross-origin requests...");
                 server.use(function crossOrigin(req, res, next) {
                     res.header("Access-Control-Allow-Origin", "*");
-                    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+                    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+                    res.header("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
+                    return next();
+                });
+                // Respond to CORS preflight requests from the updater (port+1); headers already set by crossOrigin middleware
+                server.opts('/*', function(req, res, next) {
+                    res.send(200);
                     return next();
                 });
 

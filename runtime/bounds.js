@@ -122,11 +122,29 @@ function checkAgainstEnvelope(bounds, envelope, g55) {
     // ceiling is the invariant table-base top. No Z min check: low-Z in a CAM
     // file is cut depth, which depends on bit length and would noise-fire on
     // normal jobs.
+    // g55z of exactly 0 means Z has never been zeroed (a real zero always
+    // lands at a fractional offset below the top prox) — skip the Z check
+    // rather than flag every file's safe-height pullup.
     var bMaxZ = bounds.max.z;
-    if (typeof bMaxZ === "number") {
-        var offZ = (g55 && typeof g55.z === "number") ? g55.z : 0;
+    var offZ = (g55 && typeof g55.z === "number") ? g55.z : 0;
+    if (typeof bMaxZ === "number" && offZ !== 0) {
         if (bMaxZ + offZ > 0) {
             violations.push({ axis: "z", direction: "max", overage: bMaxZ + offZ });
+        }
+    }
+
+    // Zeroed or not, the file's own Z range is a hard constraint: if it spans
+    // more than the machine's total Z travel, it goes out of bounds no matter
+    // where Z is zeroed. Travel is ceiling (machine 0, per above — zmax is not
+    // meaningful for Z) down to envelope.zmin.
+    var bMinZ = bounds.min.z;
+    if (
+        typeof bMaxZ === "number" && typeof bMinZ === "number" &&
+        typeof envelope.zmin === "number"
+    ) {
+        var zTravel = -envelope.zmin;
+        if (zTravel > 0 && bMaxZ - bMinZ > zTravel) {
+            violations.push({ axis: "z", direction: "span", overage: bMaxZ - bMinZ - zTravel });
         }
     }
 

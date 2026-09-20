@@ -160,6 +160,13 @@ Job.prototype.clone = function (overrides, callback) {
                 ? overrides.repeatCount
                 : this.repeatCount,
     });
+    // Bounds are a property of the file, which the clone shares — carry them
+    // over so resubmitted/repeat/ghost jobs keep their soft-limit warning
+    // (set post-construction like analyzeJobBounds does; the constructor
+    // whitelists its fields).
+    if (this.bounds) {
+        job.bounds = this.bounds;
+    }
     job.save(callback);
 };
 

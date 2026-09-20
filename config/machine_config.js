@@ -89,9 +89,21 @@ MachineConfig.prototype.init = function (machine, callback) {
                         off_mode: "file_end",
                         on_seconds: 0,
                         off_seconds: 0,
+                        notify_on: "never",
+                        notify_off: "never",
+                        notify_on_message: "",
+                        notify_off_message: "",
+                        on_position: { axis: "z", side: "below", value: 0 },
+                        off_position: { axis: "z", side: "above", value: 0 },
+                        on_input: { input: 1, state: "on" },
+                        off_input: { input: 1, state: "off" },
                     };
                 }
             }
+            this._normalizeOutputNotify();
+            this._normalizeOutputPosition();
+            this._normalizeOutputInput();
+            this._normalizeInputTypes();
             if (typeof callback === "function") callback(err);
         }.bind(this)
     );
@@ -103,10 +115,114 @@ function round(number, units) {
     return Math.round(number * decimals) / decimals;
 }
 
+// Normalize the per-output notify fields (machine.outputs.<n>.notify_on/
+// notify_off + *_message). Called at init (older configs predate the fields
+// or hold the early boolean form) and after every update (the /config route
+// runs values through util.fixJSON, whose Number() coercion turns a cleared
+// text field — "" — into 0).
+MachineConfig.prototype._normalizeOutputNotify = function () {
+    if (!this._cache || !this._cache.outputs) return;
+    var normNotify = function (v) {
+        if (v === "once" || v === "always") return v;
+        if (v === true || v === 1) return "always";
+        return "never";
+    };
+    for (var j = 1; j <= 12; j++) {
+        var out = this._cache.outputs[String(j)];
+        if (!out) continue;
+        out.notify_on = normNotify(out.notify_on);
+        out.notify_off = normNotify(out.notify_off);
+        if (typeof out.notify_on_message !== "string") out.notify_on_message = "";
+        if (typeof out.notify_off_message !== "string") out.notify_off_message = "";
+    }
+};
+
+// Normalize/backfill the per-output position-trigger fields
+// (machine.outputs.<n>.on_position/off_position: { axis, side, value }).
+// Called at init (older configs predate the fields — and util.extend's
+// only-existing-keys rule means client updates are dropped unless the nested
+// shape exists in the cache) and after every update (fixJSON coercion).
+MachineConfig.prototype._normalizeOutputPosition = function () {
+    if (!this._cache || !this._cache.outputs) return;
+    var normPos = function (p, defSide) {
+        if (!p || typeof p !== "object") p = {};
+        var axis = String(p.axis || "z").toLowerCase();
+        if (axis.length !== 1 || "xyzabc".indexOf(axis) === -1) axis = "z";
+        var side = p.side === "above" ? "above" : "below";
+        if (p.side !== "above" && p.side !== "below") side = defSide;
+        var value = Number(p.value);
+        if (!isFinite(value)) value = 0;
+        return { axis: axis, side: side, value: value };
+    };
+    for (var j = 1; j <= 12; j++) {
+        var out = this._cache.outputs[String(j)];
+        if (!out) continue;
+        out.on_position = normPos(out.on_position, "below");
+        out.off_position = normPos(out.off_position, "above");
+    }
+};
+
+// Normalize/backfill the per-output input-trigger fields
+// (machine.outputs.<n>.on_input/off_input: { input, state }). Same rationale
+// as _normalizeOutputPosition: older configs predate the fields, and the
+// nested shape must exist in the cache for client updates to merge.
+MachineConfig.prototype._normalizeOutputInput = function () {
+    if (!this._cache || !this._cache.outputs) return;
+    var normInput = function (p, defState) {
+        if (!p || typeof p !== "object") p = {};
+        var input = Math.round(Number(p.input));
+        if (!(input >= 1 && input <= 12)) input = 1;
+        var state = p.state === "on" || p.state === "off" ? p.state : defState;
+        return { input: input, state: state };
+    };
+    for (var j = 1; j <= 12; j++) {
+        var out = this._cache.outputs[String(j)];
+        if (!out) continue;
+        out.on_input = normInput(out.on_input, "on");
+        out.off_input = normInput(out.off_input, "off");
+    }
+};
+
+// Valid values for the per-input "type" (semantic role) setting,
+// machine.di<N>type — what the switch physically is, so apps/routines can
+// find an input by role rather than hardcoded number.
+var INPUT_TYPES = {
+    none: true,
+    x_limit: true,
+    y_limit: true,
+    z_limit: true,
+    a_limit: true,
+    b_limit: true,
+    c_limit: true,
+    zzero_plate: true,
+    toolbar_present: true,
+    toolbar_up: true,
+    drawbar_open: true,
+    tool_present: true,
+};
+var INPUT_TYPE_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15];
+
+// Seed/normalize machine.di<N>type. Seeding matters because util.extend's
+// only-existing-keys rule silently drops client updates for keys absent
+// from the cache; normalization guards against fixJSON coercion.
+MachineConfig.prototype._normalizeInputTypes = function () {
+    if (!this._cache) return;
+    INPUT_TYPE_NUMBERS.forEach(
+        function (n) {
+            var key = "di" + n + "type";
+            if (!INPUT_TYPES[this._cache[key]]) this._cache[key] = "none";
+        }.bind(this)
+    );
+};
+
 MachineConfig.prototype.update = function (data, callback, force) {
     var current_units = this.get("units"); // Get BEFORE extending cache
     try {
         u.extend(this._cache, data, force);
+        this._normalizeOutputNotify();
+        this._normalizeOutputPosition();
+        this._normalizeOutputInput();
+        this._normalizeInputTypes();
     } catch (e) {
         return callback(e);
     }
@@ -126,12 +242,30 @@ MachineConfig.prototype.update = function (data, callback, force) {
 
     // Convert internal values for machine that are in length units back and forth between the two unit
     // systems if the unit systems has changed.
+    //
+    // IMPORTANT: Only convert values that were NOT explicitly supplied in `data`.  When a value is
+    // present in the incoming data alongside a units change (e.g. during a full config restore from a
+    // .fmc backup), the supplied value is already in the target unit system and must not be converted
+    // again.  Only cache values that were carried over from the old unit system (i.e. NOT in `data`)
+    // need the multiplier applied.
     if (current_units && new_units && current_units !== new_units && !isStartupSequence) {
+        // Always record the pre-update unit as last_units so that apply() →
+        // setPreferredUnits() sees a genuine mismatch and syncs G2's gun
+        // register.  Without this, a full config restore where the backup
+        // already has last_units == units (e.g. both "mm") causes
+        // setPreferredUnits to skip the G2 unit change entirely, leaving G2
+        // in the old unit while machine.json reflects the new one.
+        this._cache.last_units = current_units;
+
         var conv = new_units == "mm" ? 25.4 : 1 / 25.4;
+        var incomingEnvelope = (data && data.envelope) ? data.envelope : {};
+        var incomingManual   = (data && data.manual)   ? data.manual   : {};
 
         ["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"].forEach(
             function (key) {
-                this._cache.envelope[key] = round(this._cache.envelope[key] * conv, new_units);
+                if (!(key in incomingEnvelope)) {
+                    this._cache.envelope[key] = round(this._cache.envelope[key] * conv, new_units);
+                }
             }.bind(this)
         );
 
@@ -150,9 +284,28 @@ MachineConfig.prototype.update = function (data, callback, force) {
             "softlimit_cushion",
         ].forEach(
             function (key) {
-                this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);
+                if (!(key in incomingManual)) {
+                    this._cache.manual[key] = round(this._cache.manual[key] * conv, new_units);
+                }
             }.bind(this)
         );
+
+        // Position-trigger thresholds are lengths for the linear axes; leave
+        // rotary (a/b/c, degrees) values alone.
+        var incomingOutputs = (data && data.outputs) || {};
+        if (this._cache.outputs) {
+            for (var n = 1; n <= 12; n++) {
+                var out = this._cache.outputs[String(n)];
+                if (!out) continue;
+                ["on_position", "off_position"].forEach(function (key) {
+                    var p = out[key];
+                    if (!p || "xyz".indexOf(p.axis) === -1) return;
+                    var incoming = incomingOutputs[String(n)];
+                    if (incoming && incoming[key] && "value" in incoming[key]) return;
+                    p.value = round(Number(p.value) * conv, new_units);
+                });
+            }
+        }
     } else if (isStartupSequence) {
         log.debug("Skipping unit conversion during startup sequence");
     }

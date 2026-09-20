@@ -94,12 +94,15 @@ module.exports = function(callbacks) {
     var u = units || '';
     for (var i = 0; i < violations.length; i++) {
       var v = violations[i];
-      var line = window.t('previewer.soft_limit.violation', {
-        axis: v.axis.toUpperCase(),
-        direction: v.direction,
-        overage: v.overage.toFixed(2),
-        units: u
-      });
+      var line = window.t(
+        v.direction === 'span' ? 'previewer.soft_limit.violation_span' : 'previewer.soft_limit.violation',
+        {
+          axis: v.axis.toUpperCase(),
+          direction: v.direction,
+          overage: v.overage.toFixed(2),
+          units: u
+        }
+      );
       $('<li>').text(line).appendTo($list);
     }
     show(self.softLimitWarning, true);

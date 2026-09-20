@@ -5,6 +5,17 @@ import subprocess
 import syslog
 import time
 import json
+import re
+import fcntl
+import sys
+
+# Prevent a second instance from running (e.g. triggered by a network change event)
+_lockfile = open('/tmp/ip-reporting.lock', 'w')
+try:
+    fcntl.flock(_lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+    syslog.syslog('###=> ip-reporting.py already running, exiting duplicate.')
+    sys.exit(0)
 
 # Monitor the tool's connections every ~5s (depends on wlan rejection) -- 
 #     If we get a new -connection/interface- of a higher priority than current ( with: eth > wifi > ap )
@@ -26,8 +37,9 @@ class NetworkConfigApp:
     def __init__(self):
         self.config_value = ""
         self.name = "FabMo-# AP@:192.168.42.1"
-        self.tool_name = "FabMo-####" 
+        self.tool_name = "FabMo-####"
         self.last_name = ""
+        self.last_tool_name = ""  # tracked separately to gate Avahi updates
         self.last_ssid = ""
         self.last_ip_address_wifi = ""
         self.name_file = "/opt/fabmo/config/engine.json"
@@ -87,14 +99,33 @@ class NetworkConfigApp:
         try:
             with open(self.name_file, "r") as f:
                 data = json.load(f)
-                self.tool_name = data.get('name', 'no-name').strip()
-                if len(self.tool_name) > 12:
-                    self.tool_name = self.tool_name[:12]
+                # prefer machine_name; fall back to legacy 'name' field
+                raw = (data.get('machine_name') or data.get('name') or 'no-name').strip()
+                self.tool_name = raw[:12] if len(raw) > 12 else raw
                 return self.tool_name
         except FileNotFoundError:
             print("###=== X Trouble with reading tool_name!")
-            syslog.syslog("###=== X Trouble with reading tool_name!") 
+            syslog.syslog("###=== X Trouble with reading tool_name!")
             return "no-name"
+
+    def _sanitize_hostname(self, name):
+        h = re.sub(r'[^a-zA-Z0-9-]', '-', name)
+        h = re.sub(r'-+', '-', h).strip('-').lower()
+        return (h[:63] or 'fabmo')
+
+    def update_avahi_hostname(self, name):
+        hostname = self._sanitize_hostname(name)
+        try:
+            subprocess.run(
+                ['sudo', 'sed', '-i', f's|^host-name=.*|host-name={hostname}|', '/etc/avahi/avahi-daemon.conf'],
+                check=False
+            )
+            subprocess.run(['sudo', 'systemctl', 'restart', 'avahi-daemon'], check=False)
+            syslog.syslog(f'###=> Avahi hostname updated to {hostname}.local')
+            print(f'###=> Avahi hostname updated to {hostname}.local')
+        except Exception as e:
+            syslog.syslog(f'###=> Error updating Avahi hostname: {e}')
+            print(f'###=> Error updating Avahi hostname: {e}')
         
     def get_ip_address(self, interface='wlan0', retries=4, delay=4):
         check_cmd = f"nmcli -t -f GENERAL.STATE dev show {interface} | grep 'connected' || true"
@@ -155,8 +186,11 @@ class NetworkConfigApp:
         cmd_modify = f"nmcli con modify {ap_connection_name} 802-11-wireless.ssid {new_ssid}"
         cmd_down = f"nmcli con down {ap_connection_name}"
         cmd_up = f"nmcli con up {ap_connection_name}"
+        # Also keep hostapd.conf in sync so standalone hostapd broadcasts the same SSID
+        cmd_hostapd_ssid = f"sed -i \"s|^ssid=.*|ssid={new_ssid}|\" /etc/hostapd/hostapd.conf"
         try:
             subprocess.run(cmd_modify, shell=True, check=True)
+            subprocess.run(cmd_hostapd_ssid, shell=True, check=False)  # non-fatal
             subprocess.run(cmd_down, shell=True, check=True)
             subprocess.run(cmd_up, shell=True, check=True)
             syslog.syslog(f"###=> Changing AP Name; NewName={new_ssid}")
@@ -227,6 +261,10 @@ class NetworkConfigApp:
         if self.last_name != self.name:
             self.change_ssid(self.name)
             self.last_name = self.name
+
+        if self.tool_name != self.last_tool_name:
+            self.update_avahi_hostname(self.tool_name)
+            self.last_tool_name = self.tool_name
 
         syslog.syslog(f"###=> name={self.name} last_name={self.last_name}")
         syslog.syslog(f"      ip={self.ip_var.get()}")

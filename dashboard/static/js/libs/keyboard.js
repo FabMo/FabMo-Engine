@@ -20,6 +20,20 @@
     var KEY_DOWN = 40;
     var KEY_PGUP = 33;
     var KEY_PGDOWN = 34;
+    // SB3-style diagonal jog keys: "/" = +X+Y, "\" = +X-Y; Alt inverts
+    // both signs (Alt+"/" = -X-Y, Alt+"\" = -X+Y).
+    var KEY_SLASH = 191;
+    var KEY_NUMPAD_DIVIDE = 111;
+    var KEY_BACKSLASH = 220;
+
+    // Diagonal keypad buttons carry no keyboardArrow_* id; find them by
+    // their axis-direction class pair (e.g. ".x_pos.y_neg").
+    var diagSelector = function (axis, dir, second_axis, second_dir) {
+        return (
+            "." + axis + (dir === 1 ? "_pos" : "_neg") +
+            "." + second_axis + (second_dir === 1 ? "_pos" : "_neg")
+        );
+    };
 
     var Keyboard = function (id, options) {
         this.id = id;
@@ -144,7 +158,7 @@
     }
 
     // Get keypad icons to light when keyboard arrow keys are used; see note above
-    Keyboard.prototype.start = function (axis, direction) {
+    Keyboard.prototype.start = function (axis, direction, second_axis, second_dir) {
         // Defensive checks
         if (this.going === true) {
             console.warn("Keyboard: Already in motion, ignoring start command");
@@ -158,8 +172,13 @@
         console.log("Keyboard: Starting motion", axis, direction); 
     
         this.move = { axis: axis, dir: direction };
-        let activeArrowStr =
-            "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
+        if (second_axis) {
+            this.move.second_axis = second_axis;
+            this.move.second_dir = second_dir;
+        }
+        let activeArrowStr = second_axis
+            ? diagSelector(axis, direction, second_axis, second_dir)
+            : "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
         if ($(".fixed-switch input").is(":checked")) {
             $(activeArrowStr).addClass("drive-button-active-transient");
         } else {
@@ -210,6 +229,18 @@
         if (this.going || !this.enabled) {
             return;
         }
+        if (
+            evt.keyCode === KEY_SLASH ||
+            evt.keyCode === KEY_NUMPAD_DIVIDE ||
+            evt.keyCode === KEY_BACKSLASH
+        ) {
+            // Ours while jogging is enabled — keep the browser's quick-find
+            // and menu shortcuts out of it.
+            evt.preventDefault();
+        }
+        // Remember the modifier at press time: keyup decides nudge
+        // direction, and Alt is often released a beat before the key.
+        this.altAtPress = evt.altKey;
         var startForKey = function () {
             if (!this.going) {
                 switch (evt.keyCode) {
@@ -235,6 +266,17 @@
 
                     case KEY_PGDOWN:
                         this.start("z", -1);
+                        break;
+
+                    case KEY_SLASH:
+                    case KEY_NUMPAD_DIVIDE:
+                        if (evt.altKey) this.start("x", -1, "y", -1);
+                        else this.start("x", 1, "y", 1);
+                        break;
+
+                    case KEY_BACKSLASH:
+                        if (evt.altKey) this.start("x", -1, "y", 1);
+                        else this.start("x", 1, "y", -1);
                         break;
                 }
             }
@@ -290,6 +332,17 @@
                 case KEY_PGDOWN:
                     this.nudge("z", -1);
                     break;
+
+                case KEY_SLASH:
+                case KEY_NUMPAD_DIVIDE:
+                    if (this.altAtPress) this.nudge("x", -1, "y", -1);
+                    else this.nudge("x", 1, "y", 1);
+                    break;
+
+                case KEY_BACKSLASH:
+                    if (this.altAtPress) this.nudge("x", -1, "y", 1);
+                    else this.nudge("x", 1, "y", -1);
+                    break;
                 default:
                     return;
             }
@@ -300,16 +353,21 @@
         }
     };
 
-    Keyboard.prototype.nudge = function (axis, direction) {
+    Keyboard.prototype.nudge = function (axis, direction, second_axis, second_dir) {
         if (this.going) {
             this.going = false;
             return this.stop();
         }
         var nudge = { axis: axis, dir: direction };
+        if (second_axis) {
+            nudge.second_axis = second_axis;
+            nudge.second_dir = second_dir;
+        }
         if (this.enabled) {
             this.emit("nudge", nudge);
-            let activeArrowStr =
-                "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
+            let activeArrowStr = second_axis
+                ? diagSelector(axis, direction, second_axis, second_dir)
+                : "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
             $(activeArrowStr).addClass("drive-button-active-transient");
             setTimeout(
                 function () {

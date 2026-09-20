@@ -119,11 +119,25 @@ module.exports = function(container) {
 
       // Z ceiling is fixed at machine_z = 0 (homed top) regardless of envelope.zmax.
       // No Z min check — low Z in a CAM file is cut depth and depends on bit length.
+      // g55z of exactly 0 means Z has never been zeroed (a real zero always lands
+      // at a fractional offset) — skip the Z check rather than flag every file.
       var bMaxZ = bounds.max.z;
-      if (typeof bMaxZ === 'number') {
+      if (typeof bMaxZ === 'number' && g55.z !== 0) {
           var machineMaxZ = bMaxZ + g55.z;
           if (machineMaxZ > 0) {
               violations.push({ axis: 'z', direction: 'max', overage: machineMaxZ });
+          }
+      }
+      // Zeroed or not, the file's own Z range is a hard constraint: if it spans
+      // more than the machine's total Z travel, it goes out of bounds no matter
+      // where Z is zeroed. Travel is ceiling (machine 0 — zmax is not
+      // meaningful for Z) down to envelope.zmin.
+      var bMinZ = bounds.min.z;
+      if (typeof bMaxZ === 'number' && typeof bMinZ === 'number' &&
+          typeof env.zmin === 'number') {
+          var zTravel = -env.zmin;
+          if (zTravel > 0 && bMaxZ - bMinZ > zTravel) {
+              violations.push({ axis: 'z', direction: 'span', overage: bMaxZ - bMinZ - zTravel });
           }
       }
       if (violations.length) {
@@ -760,8 +774,10 @@ module.exports = function(container) {
     $empty.toggle(ops.length === 0);
     $header.toggle(ops.length > 0);
     $toggleAll.toggle(ops.length > 0);
-    $runSelected.toggle(ops.length > 0);
-    $submitSelected.toggle(ops.length > 0);
+    // Visibility is class-driven (CSS): shown only when ops exist AND a cut
+    // start/stop (in/out) selection is set on #preview (has-selection).
+    $runSelected.toggleClass('has-ops', ops.length > 0);
+    $submitSelected.toggleClass('has-ops', ops.length > 0);
 
     if (ops.length === 0) {
       console.log('Operations panel: no operations parsed — showing Setup-only fallback');
@@ -797,10 +813,11 @@ module.exports = function(container) {
           .append($('<option value="vbit">').text(window.t('previewer.tool.vbit')))
           .val(ti.toolType || 'flat');
 
-        var diaInput = $('<input class="op-tool-dia" type="number" min="0.01" max="3" step="any">')
+        var diaInput = $('<input class="op-tool-dia" type="number" min="0.01" step="any">')
+          .attr('max', self.isMetric() ? 76 : 3)
           .val(ti.toolDiameter || 0.25);
 
-        var diaLabel = $('<span class="op-tool-dia-label">').text('"');
+        var diaLabel = $('<span class="op-tool-dia-label">').text(self.isMetric() ? 'mm' : 'in');
 
         var angleInput = $('<input class="op-tool-angle" type="number" min="10" max="180" step="1">')
           .val(ti.vbitAngle || 90);
@@ -974,6 +991,35 @@ module.exports = function(container) {
     }
   }
 
+  function updateUnitLabels() {
+    var metric = self.isMetric();
+    if (self._diaUnitsMetric !== undefined && self._diaUnitsMetric !== metric) {
+      convertToolDiameters(metric);
+    }
+    self._diaUnitsMetric = metric;
+    $('.setup-tool-dia-label, .op-tool-dia-label').text(metric ? 'mm' : 'in');
+  }
+
+  // Convert stored tool diameters between inches and mm so the values keep
+  // describing the same physical tool when the unit labels flip, and refresh
+  // the visible fields to match.
+  function convertToolDiameters(toMetric) {
+    var factor = toMetric ? 25.4 : 1 / 25.4;
+    var convert = function(v) { return Math.round(v * factor * 10000) / 10000; };
+    if (self.defaultTool.toolDiameter) {
+      self.defaultTool.toolDiameter = convert(self.defaultTool.toolDiameter);
+    }
+    $('#ops-setup .setup-tool-dia').val(self.defaultTool.toolDiameter);
+    if (!self.operations) return;
+    for (var i = 0; i < self.operations.length; i++) {
+      var ti = self.operations[i].toolInfo;
+      if (ti && ti.toolDiameter) ti.toolDiameter = convert(ti.toolDiameter);
+      var $dia = $('#ops-list .op-entry').eq(i).find('.op-tool-dia');
+      $dia.attr('max', toMetric ? 76 : 3);
+      if (ti && ti.toolDiameter) $dia.val(ti.toolDiameter);
+    }
+  }
+
 
   self.setMetric = function (metric) {
     if (self.path && self.path.bounds) {
@@ -986,14 +1032,16 @@ module.exports = function(container) {
   // Setting from within file here
   self.setPathMetric = function (metric) {
     self.setMetric(metric);
+    updateUnitLabels();
   }
 
 
   // Initially set Units and Location to current machine values 
-  self.setUnits = function (units, status) {             
+  self.setUnits = function (units, status) {
     self.units = units;
     self.setMetric(self.isMetric());
     self.path.metric = (self.isMetric());
+    updateUnitLabels();
     if (status) {self.path.position = [status.posx, status.posy, status.posz]};
   }
 
@@ -1071,10 +1119,17 @@ module.exports = function(container) {
   // Renderer
   self.renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
   self.renderer.domElement.style.zIndex = 1;
+  // tell iOS the canvas owns all its touch input so it doesn't try to
+  // share them with the parent frame
+  self.renderer.domElement.style.touchAction = 'none';
   container.append(self.renderer.domElement);
 
   self.renderer.setClearColor(0xebebeb);
-  self.renderer.setPixelRatio(window.devicePixelRatio);
+  // Cap pixel ratio at 1 on iOS — Retina 2× doubles GPU surface area and
+  // compounds the memory pressure that causes the iOS UI-freeze bug.
+  var _rendererIsIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  self.renderer.setPixelRatio(_rendererIsIOS ? 1 : window.devicePixelRatio);
 
   self.scene = new THREE.Scene();
 
@@ -1100,7 +1155,7 @@ module.exports = function(container) {
   self.orthographicCamera.position.set(100, 100, 100);
   
   // Initialize view mode from saved preference (default to perspective)
-  var savedView = cookie.get('view-mode', 'perspective');  // Changed from 'fabmo-previewer-view'
+  var savedView = sessionStorage.getItem('preview-view-mode') || 'perspective';
   self.isOrtho = (savedView === 'ortho');
   
   // Set initial camera based on saved preference
@@ -1147,14 +1202,14 @@ module.exports = function(container) {
       },
       zoom: self.camera.zoom
     };
-    cookie.set('view-state', JSON.stringify(viewState));  // Changed from 'fabmo-previewer-view-state'
-    cookie.set('view-mode', viewState.mode);              // Changed from 'fabmo-previewer-view'
+    sessionStorage.setItem('preview-view-state', JSON.stringify(viewState));
+    sessionStorage.setItem('preview-view-mode', viewState.mode);
   };
 
   // Method to restore saved view state
   self.restoreViewState = function() {
     try {
-      var viewStateStr = cookie.get('view-state');  // Changed from 'fabmo-previewer-view-state'
+      var viewStateStr = sessionStorage.getItem('preview-view-state');
       if (!viewStateStr) return false;
       
       var viewState = JSON.parse(viewStateStr);
@@ -1188,7 +1243,6 @@ module.exports = function(container) {
       self.controls.update();
       return true;
     } catch (e) {
-      console.warn('Could not restore view state:', e);
       return false;
     }
   };
@@ -1276,8 +1330,7 @@ module.exports = function(container) {
   });
 
   // Initialize camera position BEFORE path loads
-  // This prevents the "jump" effect
-  var initialViewState = cookie.get('view-state');  // Changed from 'fabmo-previewer-view-state'
+  var initialViewState = sessionStorage.getItem('preview-view-state');
   if (initialViewState) {
     try {
       var parsed = JSON.parse(initialViewState);
@@ -2756,42 +2809,31 @@ module.exports = function(container) {
       }
     }
     
-    // 5. CRITICAL: Force WebGL context loss and dispose renderer
-    if (self.renderer) {
-      // Get the WebGL context
-      var gl = self.renderer.getContext();
-      
-      // Dispose all render targets
-      self.renderer.renderLists.dispose();
-      
-      // Clear any cached programs
-      if (self.renderer.info && self.renderer.info.programs) {
-        self.renderer.info.programs.length = 0;
-      }
-      
-      // Dispose renderer
-      self.renderer.dispose();
-      
-      // FORCE context loss (critical for memory release)
-      if (gl) {
-        var loseContext = gl.getExtension('WEBGL_lose_context');
-        if (loseContext) {
-          loseContext.loseContext();
-        }
-      }
-      
-      // Remove canvas from DOM
-      if (self.renderer.domElement && self.renderer.domElement.parentNode) {
-        self.renderer.domElement.parentNode.removeChild(self.renderer.domElement);
-      }
-      
-      self.renderer = null;
-    }
-    
-    // 6. Cleanup controls
+    // 5. Remove event listeners FIRST so iOS releases native gesture recognisers
+    // while the canvas is still in the document (iOS ignores removeEventListener
+    // on already-detached elements, leaving orphaned gesture recognisers that
+    // corrupt touch routing in the parent frame on every subsequent app load).
     if (self.controls) {
       self.controls.dispose();
       self.controls = null;
+    }
+
+    // 6. Force WebGL context loss and dispose renderer
+    if (self.renderer) {
+      var gl = self.renderer.getContext();
+      self.renderer.renderLists.dispose();
+      if (self.renderer.info && self.renderer.info.programs) {
+        self.renderer.info.programs.length = 0;
+      }
+      self.renderer.dispose();
+      if (gl) {
+        var loseContext = gl.getExtension('WEBGL_lose_context');
+        if (loseContext) loseContext.loseContext();
+      }
+      if (self.renderer.domElement && self.renderer.domElement.parentNode) {
+        self.renderer.domElement.parentNode.removeChild(self.renderer.domElement);
+      }
+      self.renderer = null;
     }
     
     // 7. Null out all references

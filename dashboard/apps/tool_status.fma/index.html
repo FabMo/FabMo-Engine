@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Status</title>
+    <link rel="stylesheet" href="../../css/font-awesome.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/theme-bridge.css">
+</head>
+<body>
+    <div class="ts-page">
+
+        <div class="ts-header">
+            <h1>Tool Status</h1>
+            <div class="ts-badges">
+                <span class="ts-badge" id="atc-type-badge">&mdash;</span>
+                <span class="ts-badge ts-state" id="machine-state">&mdash;</span>
+                <button class="ts-iconbtn" id="btn-edit-layout" title="Rearrange cards"><i class="fa fa-pencil"></i></button>
+                <button class="ts-iconbtn" id="btn-app-settings" title="App settings"><i class="fa fa-gear"></i></button>
+            </div>
+        </div>
+
+        <div class="ts-split">
+
+            <!-- LEFT: slim job manager -->
+            <div class="ts-pane" id="pane-jobs">
+                <div class="ts-card" data-card-id="jobs">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Jobs</span>
+                        <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                    </div>
+                    <div class="ts-jobs-actions">
+                        <button class="ts-cmd ts-cmd-primary" id="btn-run-next" disabled>&#9654;&nbsp; Run Next Job</button>
+                        <button class="ts-cmd" id="btn-add-job">+ Add</button>
+                        <input type="file" id="job-file-input" style="display:none;" multiple>
+                    </div>
+                    <div class="ts-job-list" id="job-queue">
+                        <div class="ts-empty">No jobs in queue</div>
+                    </div>
+                    <div class="ts-card-title ts-history-title">Recent</div>
+                    <div class="ts-job-list ts-job-history" id="job-history"></div>
+                    <button class="ts-cmd ts-cmd-block" id="btn-full-history">View Full History</button>
+                </div>
+
+                <div class="ts-card" id="card-usb" data-card-id="usb" style="display:none;">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span><i class="fa fa-usb"></i> USB Drive <span class="ts-note-inline" id="usb-crumb"></span></span>
+                        <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                    </div>
+                    <button class="ts-cmd ts-cmd-block" id="btn-usb-browse" style="margin-top:0;">Browse USB Drive&hellip;</button>
+                </div>
+
+                <div class="ts-card" data-card-id="console">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Console</span>
+                        <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                    </div>
+                    <div class="ts-console-inputrow">
+                        <span class="ts-console-prompt">&gt;</span>
+                        <input type="text" id="console-input" placeholder="SBP command&hellip; (MX,2 / JZ,1 / C3)" autocomplete="off" spellcheck="false">
+                    </div>
+                    <div class="ts-console" id="console-output"></div>
+                </div>
+
+                <div class="ts-card" data-card-id="shortcuts">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Apps</span>
+                        <span class="ts-title-actions">
+                            <button class="ts-iconbtn" id="btn-shortcut-settings" title="Add or remove shortcuts"><i class="fa fa-gear"></i></button>
+                            <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                        </span>
+                    </div>
+                    <div class="ts-shortcut-grid" id="shortcut-grid"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: status + commands -->
+            <div class="ts-pane" id="pane-controls">
+
+                <div class="ts-card" data-card-id="current">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Current Tool</span>
+                        <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                    </div>
+                    <div class="ts-current-strip">
+                        <div class="ts-tool-display">
+                            <div class="ts-tool-number" id="current-tool-number">&mdash;</div>
+                            <div class="ts-tool-caption" id="current-tool-caption"></div>
+                        </div>
+                        <div>
+                            <table class="ts-postable">
+                                <thead>
+                                    <tr><th></th><th>Position</th><th>Offset</th><th id="units-label"></th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td></td></tr>
+                                    <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td></td></tr>
+                                    <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="ts-sensors" id="sensor-row"></div>
+                </div>
+
+                <div class="ts-card" data-card-id="machine">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Machine</span>
+                        <span class="ts-title-actions">
+                            <button class="ts-iconbtn" id="btn-machine-settings" title="Routine settings"><i class="fa fa-gear"></i></button>
+                            <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                        </span>
+                    </div>
+                    <div class="ts-machine-btnrow">
+                        <div class="ts-btn-grid" id="machine-btn-grid">
+                            <button class="ts-cmd machine-cmd" data-cmd="C3" title="Home the X and Y axes (C3)">Home XY</button>
+                            <button class="ts-cmd machine-cmd" data-cmd="C2" title="Set Z-Zero using zeroing plate (C2)">Home Z</button>
+                            <button class="ts-cmd machine-cmd" data-cmd="JH" title="Jog Home X &amp; Y; Z to safe height (JH)">Jog Home</button>
+                            <button class="ts-cmd machine-cmd" data-cmd="C79" title="Move to park location (C79)">Jog to Park</button>
+                        </div>
+                        <button class="ts-cmd ts-cmd-add ts-cmd-add-side" id="btn-add-macro" title="Add a macro button">+</button>
+                    </div>
+                </div>
+
+                <div class="ts-card" data-card-id="shoptools">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Shop Tools</span>
+                        <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                    </div>
+
+                    <!-- Tool picker: one tile per shop tool; clicking swaps
+                         the picker for that tool's mini interface below. -->
+                    <div class="ts-shoptool-grid" id="st-picker">
+                        <div class="ts-shoptool" data-tool="drill" title="Drill press">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M7 35 H33"/>
+                                <path d="M28 35 V6"/>
+                                <path d="M11 5 H30 V12 H15 Z"/>
+                                <path d="M16 12 H21 V16 H16 Z"/>
+                                <path d="M18.5 16 V23 L18.5 25"/>
+                                <path d="M10 27 H24 M24 27 L28 25"/>
+                            </svg>
+                            <div class="ts-shortcut-label">Drill Press</div>
+                        </div>
+                        <div class="ts-shoptool" data-tool="tablesaw" title="Table saw">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M4 27 H36"/>
+                                <path d="M8 27 V33 M32 27 V33"/>
+                                <path d="M13 27 A8.5 8.5 0 0 1 30 27"/>
+                                <path d="M21.5 21 L25 17.5"/>
+                            </svg>
+                            <div class="ts-shortcut-label">Table Saw</div>
+                        </div>
+                        <div class="ts-shoptool" data-tool="planer" title="Planer">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M9 10 H31 V30 H9 Z"/>
+                                <path d="M2 24 H9 M31 24 H38"/>
+                                <circle cx="20" cy="16" r="3.5"/>
+                                <path d="M12 24 H28"/>
+                            </svg>
+                            <div class="ts-shortcut-label">Planer</div>
+                        </div>
+                    </div>
+
+                    <!-- Drill press mini interface: action buttons ride in
+                         the header row beside the title; below, envelope map
+                         (crosshair = current XY) | vertical depth slider +
+                         entries | table/material cross-section with Z-zero
+                         radios and a red actual-cut bar. The SVGs are drawn
+                         by app.js (renderStEnv / renderStXsec). -->
+                    <div class="ts-st-panel" id="st-panel-drill" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title">Drill Press</span>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-st-arraybtn" id="btn-st-array" title="Drill a grid of holes from the current position">Array</button>
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-drill">DRILL</button>
+                            </div>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="st-env-svg" width="150" height="150"></svg>
+                            </div>
+                            <div class="ts-st-depthcol">
+                                <span class="ts-st-minilabel">Depth (<span class="st-units">in</span>)</span>
+                                <input type="range" id="st-drill-slider" class="ts-st-vslider" min="0" max="1.5" step="0.01" value="0">
+                                <input type="number" id="st-drill-depth" step="any" min="0">
+                            </div>
+                            <div class="ts-st-xseccol">
+                                <div class="ts-st-xsecwrap">
+                                    <span class="ts-st-minilabel ts-st-zzlabel">Z zero</span>
+                                    <div class="ts-st-radios">
+                                        <input type="radio" name="st-zzero" value="material" id="st-zz-material" title="Z zeroed on the material surface">
+                                        <input type="radio" name="st-zzero" value="table" id="st-zz-table" title="Z zeroed on the table surface">
+                                    </div>
+                                    <div class="ts-st-zzline" id="st-zzline-material"></div>
+                                    <div class="ts-st-zzline" id="st-zzline-table"></div>
+                                    <span class="ts-st-minilabel ts-st-thicklabel" id="st-thicklabel">Thick (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="st-material" step="any" min="0" title="Material thickness">
+                                    <svg id="st-xsec-svg" width="68" height="126"></svg>
+                                </div>
+                            </div>
+                            <!-- Array mode: swaps in for the depth column +
+                                 cross-section; the envelope map previews the
+                                 grid of holes from the current position. -->
+                            <div class="ts-st-arraycol" id="st-array-panel" style="display:none;">
+                                <div class="ts-st-arr-grid">
+                                    <label class="ts-st-minilabel"><span>X Count</span>
+                                        <input type="number" id="st-arr-xn" min="1" step="1">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span>Y Count</span>
+                                        <input type="number" id="st-arr-yn" min="1" step="1">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span>X Spacing (<span class="st-units">in</span>)</span>
+                                        <input type="number" id="st-arr-xs" step="any">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span>Y Spacing (<span class="st-units">in</span>)</span>
+                                        <input type="number" id="st-arr-ys" step="any">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table saw mini interface: one straight through-cut.
+                         The line pivots about a draggable anchor point;
+                         boundary handles rotate it, and the angle and edge
+                         intercepts are typeable in place (the floating
+                         #sts-edit input). Drawn by renderStsEnv. -->
+                    <div class="ts-st-panel" id="st-panel-tablesaw" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title">Table Saw</span>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-sts-mode" id="sts-mode-rip" title="Rip &mdash; straight cut along Y">|</button>
+                                <button class="ts-cmd ts-sts-mode" id="sts-mode-cross" title="Crosscut &mdash; straight cut along X">&#8212;</button>
+                                <button class="ts-cmd ts-st-arraybtn" id="sts-arr-btn" title="Duplicate the cut at a spacing normal to the line">Array</button>
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-saw">CUT</button>
+                            </div>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="sts-env-svg" width="240" height="150"></svg>
+                                <input type="number" id="sts-edit" step="any">
+                            </div>
+                            <div class="ts-st-depthcol ts-stp-params">
+                                <label class="ts-st-minilabel"><span>Anchor X (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-ax" step="any">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Anchor Y (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-ay" step="any">
+                                </label>
+                            </div>
+                            <!-- Cut parameters: empty pass depth = one full
+                                 pass; empty feed = the tool's current move
+                                 speed. -->
+                            <div class="ts-st-depthcol ts-stp-params">
+                                <label class="ts-st-minilabel"><span>Total Depth (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-depth" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Pass Depth (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-pass" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Feed (<span class="st-units">in</span>/s)</span>
+                                    <input type="number" id="sts-feed" step="any" min="0">
+                                </label>
+                            </div>
+                            <!-- Revealed only for angled cuts (∠ latches on
+                                 when the line leaves 0°/90°). Intercept
+                                 labels retag live as the line's ends move
+                                 between table edges. -->
+                            <div class="ts-st-depthcol ts-stp-params" id="sts-angle-col" style="display:none;">
+                                <label class="ts-st-minilabel"><span>Angle&deg;</span>
+                                    <input type="number" id="sts-angle" step="any" min="0" max="180">
+                                </label>
+                                <label class="ts-st-minilabel"><span id="sts-i0-label">X @ bottom</span>
+                                    <input type="number" id="sts-i0" step="any">
+                                </label>
+                                <label class="ts-st-minilabel"><span id="sts-i1-label">Y @ left</span>
+                                    <input type="number" id="sts-i1" step="any">
+                                </label>
+                            </div>
+                            <!-- Array mode: duplicate the cut at a spacing
+                                 measured normal to the line (sign picks the
+                                 side). Previewed as parallel lines. -->
+                            <div class="ts-st-depthcol ts-stp-params" id="sts-array-col" style="display:none;">
+                                <label class="ts-st-minilabel"><span>Cuts</span>
+                                    <input type="number" id="sts-arr-n" min="1" step="1">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Spacing (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-arr-s" step="any">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Planer mini interface: raster pocket generator. The
+                         envelope map carries two-handle range bars (bottom =
+                         X, left = Y) picking the area; the raster toolpath
+                         previews on the map. All drawn by renderStpEnv. -->
+                    <div class="ts-st-panel" id="st-panel-planer" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title">Planer</span>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-plane">PLANE</button>
+                            </div>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="stp-env-svg" width="240" height="150"></svg>
+                            </div>
+                            <div class="ts-st-depthcol ts-stp-params">
+                                <label class="ts-st-minilabel"><span>Bit (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="stp-bit" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Stepover %</span>
+                                    <input type="number" id="stp-step" step="5" min="5" max="100">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Depth (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="stp-depth" step="any" min="0">
+                                </label>
+                            </div>
+                            <div class="ts-stp-rastercol">
+                                <label class="ts-st-minilabel"><span>Angle&deg;</span>
+                                    <div class="ts-stp-anglerow">
+                                        <input type="range" id="stp-angle-slider" min="0" max="90" step="5" value="0">
+                                        <input type="number" id="stp-angle" min="0" max="90" step="1">
+                                    </div>
+                                </label>
+                                <div class="ts-st-minilabel" style="margin-top: 8px;">Direction</div>
+                                <label class="ts-stp-dir" title="Cut back and forth, stepping over at depth"><input type="radio" name="stp-dir" value="2way" checked>
+                                    <span>2-way</span>
+                                </label>
+                                <label class="ts-stp-dir" title="Cut one way only: lift, return, plunge, cut"><input type="radio" name="stp-dir" value="1way">
+                                    <span>1-way</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ts-card" id="card-tools" data-card-id="tools" style="display:none;">
+                    <div class="ts-card-title ts-card-title-row">
+                        <span>Tools <span class="ts-note-inline" id="rack-note"></span></span>
+                        <span class="ts-title-actions">
+                            <button class="ts-iconbtn" id="btn-tool-settings" title="Tool settings"><i class="fa fa-gear"></i></button>
+                            <span class="ts-card-grip" title="Drag to move card">&#8942;&#8942;</span>
+                        </span>
+                    </div>
+                    <div class="ts-rack" id="rack"></div>
+                    <div class="ts-btn-grid ts-btn-grid-tools">
+                        <button class="ts-cmd machine-cmd" id="btn-measure" title="Measure the current tool (C72)">Measure Tool</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C73" title="Get plate offset (C73)">Plate Offset</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C74" title="Calibrate toolbar (C74)">Calibrate</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- App settings modal (appearance / theme) -->
+    <div class="ts-modal-backdrop" id="app-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>App Settings</span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Cards <span class="ts-note-inline">to rearrange, click the <i class="fa fa-pencil"></i> in the header and drag the &#8942;&#8942; grips</span></div>
+                    <div class="ts-card-toggles" id="card-toggle-list"></div>
+                    <button class="ts-cmd" id="btn-layout-reset">Reset Layout</button>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Theme <span class="ts-note-inline">saved on this display</span></div>
+                    <div class="ts-theme-grid" id="theme-grid"></div>
+                </div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd ts-cmd-primary" id="btn-app-settings-close">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add macro button modal -->
+    <div class="ts-modal-backdrop" id="macro-pick-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Add Macro Button</span>
+                <a class="ts-link" id="macro-pick-manager">open Macro Manager</a>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-pick-list" id="macro-pick-list"></div>
+                <label class="ts-label-field">Button label
+                    <input id="macro-btn-label" type="text" placeholder="select a macro above">
+                </label>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-macro-pick-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-macro-pick-save" disabled>Add Button</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App shortcuts picker modal -->
+    <div class="ts-modal-backdrop" id="shortcut-pick-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>App Shortcuts</span>
+                <span class="ts-note-inline">saved on this display</span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-pick-list" id="shortcut-pick-list"></div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-shortcut-pick-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-shortcut-pick-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full job history modal -->
+    <div class="ts-modal-backdrop" id="history-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Job History</span>
+                <span class="ts-note-inline" id="history-page-label"></span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-job-list" id="history-list"></div>
+            </div>
+            <div class="ts-modal-footer ts-modal-footer-split">
+                <div>
+                    <button class="ts-cmd" id="btn-history-prev">&larr; Newer</button>
+                    <button class="ts-cmd" id="btn-history-next">Older &rarr;</button>
+                </div>
+                <button class="ts-cmd" id="btn-history-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Machine routine settings modal -->
+    <div class="ts-modal-backdrop" id="machine-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Routine Settings</span>
+                <span class="ts-note-inline" id="machine-settings-units"></span>
+            </div>
+            <div class="ts-modal-body">
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Home XY <span class="ts-note-inline">limit switch offsets</span></div>
+                    <div class="ts-field-row">
+                        <label>X offset <input id="ms-homeoff-x" type="number" step="any"></label>
+                        <label>Y offset <input id="ms-homeoff-y" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">Pull-back distance from each proximity switch to true zero (used by Home XY / C3).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Home Z <span class="ts-note-inline">fixed Z-zero location</span></div>
+                    <label class="ts-check-row">
+                        <input id="ms-zzero-use" type="checkbox">
+                        Move to a fixed XY location before zeroing Z
+                    </label>
+                    <div class="ts-field-row">
+                        <label>X location <input id="ms-zzero-x" type="number" step="any"></label>
+                        <label>Y location <input id="ms-zzero-y" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">When enabled, the Home Z button lifts to safe-Z, jogs here (J2), then runs Z-Zero (C2).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Custom Buttons <span class="ts-note-inline">rename or remove</span></div>
+                    <div id="ms-custom-list"></div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading">Park <span class="ts-note-inline">parking location</span></div>
+                    <div class="ts-field-row">
+                        <label>X <input id="ms-park-x" type="number" step="any"></label>
+                        <label>Y <input id="ms-park-y" type="number" step="any"></label>
+                        <label>Z lift <input id="ms-park-z" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note">Jog to Park (C79) lifts to Z, then moves to X/Y.</div>
+                </div>
+
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-machine-settings-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-machine-settings-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tool settings modal -->
+    <div class="ts-modal-backdrop" id="tool-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span>Tool Settings</span>
+                <span class="ts-note-inline" id="tool-settings-units"></span>
+            </div>
+            <div class="ts-modal-body">
+                <table class="ts-settings-table">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Cutter Type</th>
+                            <th>Diameter</th>
+                            <th>Length</th>
+                            <th>Angle&deg;</th>
+                            <th>Name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tool-settings-rows"></tbody>
+                </table>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-tool-settings-cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-tool-settings-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/libs/jquery.min.js"></script>
+    <script src="../../js/libs/fabmo.js"></script>
+    <script src="js/Sortable.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

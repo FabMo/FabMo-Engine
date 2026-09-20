@@ -38,6 +38,9 @@ define(function (require) {
                 '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin allow-downloads allow-popups" allowfullscreen></iframe>';
             client_container.html(src);
             this.iframe = $(client_container.children()[0]);
+            // Disable double-tap-zoom on the iframe region without blocking touch
+            // forwarding to the iframe content (touch-action:none breaks OrbitControls).
+            this.iframe[0].style.touchAction = 'manipulation';
             if (hard_refresh) {
                 this.iframe.one(
                     "load",

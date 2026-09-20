@@ -5,11 +5,12 @@
 ' Description: Swaps tools using Automatic Tool Changer - ATC
 ' Author: Ryan Sturmer, Brendan Collins, Brian Owen, Ryan Patterson
 ' 2026/2/12 - Refactored (th)
-
+' 2026/8/25/ - initialize &CURRENT_TOOL (th)
 
 ' === Main ====================
 CN,75                                                             ' Load primary ATC variables and ck status (calls CN 70)
 &type = $ATC.type
+&CURRENT_TOOL := 0
 If &type = 7 Then GoTo IsDTATC
 If &type = 6 Then GoTo IsATC
 If &type = 5 Then GoTo IsMTC

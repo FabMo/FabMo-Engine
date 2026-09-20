@@ -393,7 +393,12 @@ function setFirstCard(job) {
     var $play = $('.play-button').first();
     $play.addClass('exceeds-limits');
     var msg = check.violations
-      .map(function (v) { return v.axis.toUpperCase() + ' ' + v.direction + ' by ' + v.overage.toFixed(2); })
+      .map(function (v) {
+        if (v.direction === 'span') {
+          return v.axis.toUpperCase() + ' range of file exceeds machine travel by ' + v.overage.toFixed(2);
+        }
+        return v.axis.toUpperCase() + ' ' + v.direction + ' by ' + v.overage.toFixed(2);
+      })
       .join(', ');
     // Real DOM badge (instead of ::after) so it can carry its own tooltip —
     // the play icon's own `title` would otherwise shadow a title set on the
@@ -410,6 +415,10 @@ function setFirstCard(job) {
 // { exceeds, violations } or null if inputs are missing.
 function evaluateSoftLimits(jobBounds, cfg) {
   if (!jobBounds || !cfg || !cfg.machine || !cfg.driver) return null;
+  // "Enforce Software Limits" unchecked → the user has opted out of envelope
+  // enforcement, so don't badge jobs against it (matches the server-side
+  // skip in routes/direct.js checkBounds).
+  if (!cfg.machine.softlimits_on) return null;
   var envelope = cfg.machine.envelope;
   if (!envelope) return null;
   var driver = cfg.driver;
@@ -433,9 +442,25 @@ function evaluateSoftLimits(jobBounds, cfg) {
       violations.push({ axis: a, direction: 'min', overage: envMin - (bMin + off) });
     }
   });
+  // g55z of exactly 0 means Z has never been zeroed (a real zero always lands
+  // at a fractional offset) — skip the Z check rather than flag every file.
   var bMaxZ = jobBounds.max && jobBounds.max.z;
-  if (typeof bMaxZ === 'number' && bMaxZ + g55.z > 0) {
+  if (typeof bMaxZ === 'number' && g55.z !== 0 && bMaxZ + g55.z > 0) {
     violations.push({ axis: 'z', direction: 'max', overage: bMaxZ + g55.z });
+  }
+  // Zeroed or not, the file's own Z range is a hard constraint: if it spans
+  // more than the machine's total Z travel, it goes out of bounds no matter
+  // where Z is zeroed. Travel is ceiling (machine 0 — zmax is not meaningful
+  // for Z) down to envelope.zmin.
+  var bMinZ = jobBounds.min && jobBounds.min.z;
+  if (
+    typeof bMaxZ === 'number' && typeof bMinZ === 'number' &&
+    typeof envelope.zmin === 'number'
+  ) {
+    var zTravel = -envelope.zmin;
+    if (zTravel > 0 && bMaxZ - bMinZ > zTravel) {
+      violations.push({ axis: 'z', direction: 'span', overage: bMaxZ - bMinZ - zTravel });
+    }
   }
   return { exceeds: violations.length > 0, violations: violations };
 }
@@ -1052,15 +1077,19 @@ function runNext() {
       } else {
         // Not running or paused - start the next job
         //console.log('JobManager: Starting next job');
-        jobLoading = true; 
-//        $('.play').addClass('loading');
-        fabmo.runNext(function(err, data) {
-          if (err) {
-            fabmo.notify('error', err);
-//            $('.play').removeClass('loading');
-            jobLoading = false;
-          }
-        });
+        var startJob = function () {
+          jobLoading = true;
+          fabmo.runNext(function(err, data) {
+            if (err) {
+              fabmo.notify('error', err);
+              jobLoading = false;
+            }
+          });
+        };
+        // Soft-limit checking happens centrally in the dashboard's runNext
+        // handler (and the server backstops /jobs/queue/run), so this just
+        // starts the job.
+        startJob();
       }
     }
   });

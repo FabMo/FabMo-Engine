@@ -64,6 +64,20 @@ define(function (require) {
         var hard_refresh = false;
         var hash = this.app_reload_index[id];
 
+        // After an iOS reload via location.replace(), args are in localStorage.
+        // Read them here to populate current_app_args (used as fallback by
+        // getAppArgs when localStorage is already consumed by a first call).
+        // Do NOT removeItem here — let the getAppArgs handler consume it.
+        try {
+            var _ls = localStorage.getItem('fabmo_launch');
+            if (_ls) {
+                var _ln = JSON.parse(_ls);
+                if (_ln && _ln.id === id) {
+                    args = _ln.args || args;
+                }
+            }
+        } catch (e) {}
+
         try {
             if (hash && hash != this.engineVersion.hash) {
                 console.info(

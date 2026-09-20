@@ -92,6 +92,13 @@ function SBPRuntime() {
     this.resumeAllowed = true;
     this.lastNoZPullup = 0;
     this.continue_callback = null;
+    // One-shot latch for output-change notification: pc of the SO command
+    // whose notify-pause has already been shown, so re-execution after
+    // resume drives the output instead of pausing again.
+    this._notifiedPC = null;
+    // "Once per cut" bookkeeping: keys ("<n>:on" / "<n>:off") that have
+    // already notified during the current top-level run.
+    this._notifiedOnce = {};
     this.vs_change = 0;
     this.absoluteMode = true;
 
@@ -665,6 +672,8 @@ SBPRuntime.prototype._resetForTopLevelRun = function () {
     this.resumeAllowed = true;
     this.end_message = undefined;
     this.quit_pending = false;
+    this._notifiedPC = null;
+    this._notifiedOnce = {};
 };
 
 // Run a file on disk.
@@ -930,6 +939,13 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
                     return true;
                 }
             }
+            // An SO command targeting an output configured with "Notify for
+            // ON/OFF" breaks the stack: the machine must come to a stop before
+            // we pause and show the notification modal (see case "cmd" in
+            // _execute).
+            if (name === "SO" && this._soNotifyPolicy(cmd.args)) {
+                return true;
+            }
             // Check if the command itself contains any expressions that break the stack
             if (cmd.args) {
                 for (i = 0; i < cmd.args.length; i++) {
@@ -1016,6 +1032,55 @@ SBPRuntime.prototype._exprBreaksStack = function (expr) {
     } else {
         return this._exprBreaksStack(expr.left) || this._exprBreaksStack(expr.right);
     }
+};
+
+// Normalize a notify_on/notify_off config value to one of the three modes.
+// Legacy boolean/numeric values (early builds of this feature) map onto
+// "always"/"never".
+function soNotifyMode(v) {
+    if (v === "once" || v === "always") return v;
+    if (v === true || v === 1) return "always";
+    return "never";
+}
+
+// Output-change notification (machine.outputs.<n>.notify_on / notify_off,
+// modes "never" | "once" | "always"): returns { message, once, key } if this
+// SO command's target output should notify for the state it's being set to,
+// else null. "once" means once per cut — suppressed if this output+direction
+// already notified during the current top-level run (see _notifiedOnce; the
+// caller records the key when the pause is actually shown). Only literal-
+// constant args participate — the stack-break decision has to be made before
+// argument evaluation, so SO with computed args skips notification. Never
+// throws; inert in simulation and when detached from a machine.
+SBPRuntime.prototype._soNotifyPolicy = function (args) {
+    if (!this.machine || this.simulation_mode) return null;
+    if (!args || args.length < 2) return null;
+    var n = Number(args[0]);
+    var state = Number(args[1]);
+    if (!isFinite(n) || !isFinite(state)) return null;
+    var outputs;
+    try {
+        outputs = config.machine.get("outputs");
+    } catch (e) {
+        return null;
+    }
+    var p = outputs && outputs[String(n)];
+    if (!p) return null;
+
+    var side = state === 1 ? "on" : state === 0 ? "off" : null;
+    if (!side) return null;
+    var mode = soNotifyMode(side === "on" ? p.notify_on : p.notify_off);
+    if (mode === "never") return null;
+
+    var key = n + ":" + side;
+    if (mode === "once" && this._notifiedOnce && this._notifiedOnce[key]) return null;
+
+    var label = p.label || "Output " + n;
+    var msg = ((side === "on" ? p.notify_on_message : p.notify_off_message) || "").trim();
+    if (!msg) {
+        msg = label + " will turn " + side.toUpperCase() + " when you resume.";
+    }
+    return { message: msg, once: mode === "once", key: key };
 };
 
 // Start the stored program running; manage changes
@@ -1914,6 +1979,35 @@ SBPRuntime.prototype._execute = function (command, callback) {
             return false;
 
         case "cmd":
+            // Output-change notification: an SO command whose target output is
+            // configured with "Notify for ON/OFF" pauses with a modal BEFORE
+            // driving the output. _breaksStack returned true for this command,
+            // so the machine is already stopped when we get here. The pc is
+            // NOT advanced: after the user resumes, this same command executes
+            // again, the latch below skips the pause, and the output changes.
+            if (command.cmd === "SO") {
+                if (this._notifiedPC === this.pc) {
+                    this._notifiedPC = null; // resumed — fall through and drive the output
+                } else {
+                    var notify = this._soNotifyPolicy(command.args);
+                    if (notify) {
+                        this._notifiedPC = this.pc;
+                        if (notify.once) {
+                            this._notifiedOnce[notify.key] = true;
+                        }
+                        var notifyModal = u.packageModalParams({
+                            message: notify.message,
+                            input: { name: null, type: null },
+                            okText: null,
+                            cancelText: null,
+                        });
+                        this.paused = true;
+                        this.machine.driver.pause_hold = true;
+                        this.machine.setState(this, "paused", notifyModal);
+                        return true;
+                    }
+                }
+            }
             var broke = this._executeCommand(command, callback);
             if (!broke) {
                 if (callback != undefined) {
@@ -2459,8 +2553,8 @@ SBPRuntime.prototype._roundNumeric = function(value) {
         return value;
     }
     
-    // If it's a string, return as-is
-    if (typeof value === 'string') {
+    // If it's a string or boolean, return as-is
+    if (typeof value === 'string' || typeof value === 'boolean') {
         return value;
     }
     

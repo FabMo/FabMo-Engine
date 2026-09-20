@@ -54,7 +54,7 @@ fail
   = name:("FAIL"i) __ message:quotedstring? {return {"type" : "fail", "message": message}}
 
 boolean
-   = "TRUE"i { return true; } / "FALSE"i { return false; }
+   = "TRUE"i !identifier_tail { return true; } / "FALSE"i !identifier_tail { return false; }
 
 pause_param_name
    = "INPUT"i / "TITLE"i / "OKTEXT"i / "OKFUNC"i / "CANCELTEXT"i / "CANCELFUNC"i / "DETAIL"i / "NOBUTTON"i / "MESSAGE"i / "TIMER"i
@@ -273,6 +273,7 @@ factor
   = "(" __ expr:expression __ ")" { return expr; }
   / function_call
   / constant
+  / boolean
   / float
   / integer
   / variable

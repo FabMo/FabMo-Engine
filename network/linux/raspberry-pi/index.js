@@ -15,8 +15,6 @@ var iwconfig = require("wireless-tools/iwconfig");
 const commands = require("./commands.js");
 
 var NETWORK_HEALTH_RETRIES = 8;
-var STATION_RECONNECT_COOLDOWN_MS = 5 * 60 * 1000;
-var STATION_UNHEALTHY_GRACE_TICKS = 2;
 
 var RaspberryPiNetworkManager = function () {
     this.mode = "unknown";
@@ -30,44 +28,78 @@ var RaspberryPiNetworkManager = function () {
         wireless: null,
         wired: null,
     };
-    this.stationReconnectAttempts = 0;
-    this.stationUnhealthyTicks = 0;
-    this.stationGiveUpUntil = 0;
-    this.expectedStationProfile = null;
 };
 util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
+// Sanitize a user-supplied name into a valid hostname label (RFC 952/1123).
+function sanitizeHostname(name) {
+    return (name || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .substring(0, 63) || "fabmo";
+}
+
+// Keep /etc/hosts in sync with the running hostname so sudo can resolve it.
+function updateHostsFile(hostname, callback) {
+    var entry = "127.0.1.1\t" + hostname;
+    // Replace existing 127.0.1.1 line, or append if absent
+    var cmd =
+        "grep -q '^127\\.0\\.1\\.1' /etc/hosts " +
+        "&& sed -i 's|^127\\.0\\.1\\.1.*|" + entry + "|' /etc/hosts " +
+        "|| echo '" + entry + "' >> /etc/hosts";
+    exec(cmd, function (err) {
+        if (err) {
+            log.warn("Could not update /etc/hosts: " + err.message);
+        }
+        callback();
+    });
+}
+
 RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
-    log.info("SETTING FabMo Serial Number from R-Pi and used for default SSID");
-    // We are putting the R-Pi serial number into the FabMo name
-    // ... this will be used as the default name for the FabMo
-    // ... and will be used (with IP) as the default SSID for the FabMo until set by the user.
-    // ... Once defined, it will subsequently be read from the config file.
+    log.info("SETTING FabMo Serial Number from R-Pi for machine_id and SSID");
+    // engine_id = RPi serial with zeros stripped; permanent hardware identifier.
+    // machine_id = "FabMo-" + first-6-chars of engine_id; permanent, never changes.
+    // machine_name = user-friendly name; defaults to machine_id; drives SSID and Avahi .local.
     exec("cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2", function (err, result) {
         if (err) {
-            var name = { name: "fabmo-?" };
-            config.engine.update(name, callback);
+            config.engine.update({ machine_id: "fabmo-unknown" }, callback);
         } else {
-            // Get Serial Number for name and clear out 0's to simplify
             log.debug("At RPI naming from SerialNum - ");
             result = result.split("0").join("").split("\n").join("").trim();
             log.debug("modifiedSerial- " + result);
 
-            // Update both values in a single call, first 6 digits for SSID name
             var trunc_result = result.length > 6 ? result.substring(0, 6) : result;
+            var machine_id = "FabMo-" + trunc_result;
             var updates = {
                 engine_id: result,
-                name: "FabMo-" + trunc_result,
+                machine_id: machine_id,
             };
+            // Default machine_name to machine_id; preserve any name the user has already set
+            if (!config.engine.get("machine_name")) {
+                updates.machine_name = machine_id;
+            }
 
             config.engine.update(updates, function (err) {
                 if (err) {
                     log.error("Failed to update engine config: " + err.message);
-                    callback(err);
-                } else {
-                    log.info("Successfully updated engine_id and name");
-                    callback(null, updates);
+                    return callback(err);
                 }
+                log.info("Updated engine_id, machine_id" + (updates.machine_name ? ", machine_name" : ""));
+                // Set hostname so Avahi advertises <machine_name>.local
+                var initial_name = updates.machine_name || config.engine.get("machine_name") || machine_id;
+                var initial_h = sanitizeHostname(initial_name);
+                exec("hostnamectl set-hostname " + initial_h, function (hostnameErr) {
+                    if (hostnameErr) {
+                        log.warn("Could not set hostname: " + hostnameErr.message);
+                        return callback(null, machine_id);
+                    }
+                    log.info("Hostname set to " + initial_h);
+                    updateHostsFile(initial_h, function () {
+                        callback(null, machine_id);
+                    });
+                });
             });
         }
     });
@@ -227,100 +259,8 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
         });
     }
 
-    this._tryStationReconnect();
 };
 
-// Find the most-recently-used wifi profile (other than the AP) that the user
-// expects to stay connected to. Returns null if the only known wifi profile
-// is wlan0_ap, or if no wifi profile has autoconnect enabled.
-RaspberryPiNetworkManager.prototype._getExpectedStationProfile = function (callback) {
-    exec("nmcli -t -f NAME,TYPE,AUTOCONNECT,TIMESTAMP connection show", (err, stdout) => {
-        if (err) return callback(err);
-        let best = null;
-        stdout
-            .split("\n")
-            .filter(Boolean)
-            .forEach((line) => {
-                const m = line.match(/^(.*):([^:]*):([^:]*):([^:]*)$/);
-                if (!m) return;
-                const name = m[1].replace(/\\:/g, ":");
-                const type = m[2];
-                const autoconnect = m[3];
-                const ts = parseInt(m[4], 10) || 0;
-                if (type !== "802-11-wireless") return;
-                if (name === "wlan0_ap") return;
-                if (autoconnect !== "yes") return;
-                if (!best || ts > best.ts) best = { name, ts };
-            });
-        callback(null, best ? best.name : null);
-    });
-};
-
-// Verify wlan0 is actually carrying the expected station profile; if not,
-// attempt up to NETWORK_HEALTH_RETRIES `nmcli con up` reconnects with a
-// cooldown after exhaustion. NM's own autoconnect-retries default is only 4
-// and stops permanently after that, so we need our own watchdog.
-RaspberryPiNetworkManager.prototype._tryStationReconnect = function () {
-    const now = Date.now();
-    if (now < this.stationGiveUpUntil) return;
-
-    this._getExpectedStationProfile((err, profile) => {
-        if (err || !profile) return;
-        this.expectedStationProfile = profile;
-
-        exec("nmcli -t -f GENERAL.STATE,GENERAL.CONNECTION,IP4.ADDRESS dev show wlan0", (err2, stdout) => {
-            if (err2) return;
-            let state = "";
-            let conn = "";
-            let ip = "";
-            stdout.split("\n").forEach((line) => {
-                if (line.startsWith("GENERAL.STATE:")) {
-                    state = line.substring("GENERAL.STATE:".length);
-                } else if (line.startsWith("GENERAL.CONNECTION:")) {
-                    conn = line.substring("GENERAL.CONNECTION:".length);
-                } else if (line.startsWith("IP4.ADDRESS")) {
-                    ip = (line.split(":")[1] || "").trim();
-                }
-            });
-            const healthy = state.indexOf("100") !== -1 && conn === profile && ip;
-
-            if (healthy) {
-                if (this.stationReconnectAttempts > 0 || this.stationUnhealthyTicks > 0) {
-                    log.info(`Wifi station "${profile}" healthy again; resetting reconnect counter.`);
-                }
-                this.stationReconnectAttempts = 0;
-                this.stationUnhealthyTicks = 0;
-                return;
-            }
-
-            this.stationUnhealthyTicks += 1;
-            if (this.stationUnhealthyTicks < STATION_UNHEALTHY_GRACE_TICKS) return;
-
-            if (this.stationReconnectAttempts >= NETWORK_HEALTH_RETRIES) {
-                log.warn(
-                    `Wifi station "${profile}" still down after ${NETWORK_HEALTH_RETRIES} reconnect attempts; backing off ${STATION_RECONNECT_COOLDOWN_MS / 1000}s.`
-                );
-                this.stationGiveUpUntil = now + STATION_RECONNECT_COOLDOWN_MS;
-                this.stationReconnectAttempts = 0;
-                this.stationUnhealthyTicks = 0;
-                return;
-            }
-
-            this.stationReconnectAttempts += 1;
-            log.warn(
-                `Wifi station "${profile}" not connected (state="${state}", conn="${conn}", ip="${ip}"). Reconnect attempt ${this.stationReconnectAttempts}/${NETWORK_HEALTH_RETRIES}.`
-            );
-            const safeProfile = profile.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-            exec(`nmcli con up "${safeProfile}"`, (err3, stdout3, stderr3) => {
-                if (err3) {
-                    log.warn(`Reconnect for "${profile}" failed: ${(stderr3 || err3.message).trim()}`);
-                } else {
-                    log.info(`Reconnect for "${profile}" issued: ${stdout3.trim()}`);
-                }
-            });
-        });
-    });
-};
 
 RaspberryPiNetworkManager.prototype.confirmIP = function (callback) {
     var wlan0Int;
@@ -607,8 +547,8 @@ RaspberryPiNetworkManager.prototype.getStatus = function (callback) {
 };
 
 // Set the network identity
-// This sets the hostname, SSID to `name` and the root password/network key to `password`
-//    identity - Object of this format {name : 'thisismyname', password : 'thisismypassword'}
+// Sets machine_name (user-friendly label) and optionally the network password.
+//    identity - Object of this format {name : 'My Tool Name', password : 'mypassword'}
 //               Identity need not contain both values - only the values specified will be changed
 //    callback - Called when identity has been changed or with error if error
 RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) {
@@ -616,15 +556,56 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
         [
             function set_name(callback) {
                 if (identity.name) {
-                    log.info("Setting network name to " + identity.name);
+                    log.info("Setting machine_name to " + identity.name);
+                }
+                callback(null);
+            }.bind(this),
+
+            function set_name_config(callback) {
+                if (identity.name) {
+                    config.engine.set("machine_name", identity.name, callback);
                 } else {
                     callback(null);
                 }
             }.bind(this),
 
-            function set_name_config(callback) {
+            // Update hostname and Avahi .local advertisement whenever machine_name changes
+            function set_hostname(callback) {
                 if (identity.name) {
-                    config.engine.set("name", identity.name, callback);
+                    var h = sanitizeHostname(identity.name);
+                    exec("hostnamectl set-hostname " + h, function (hostnameErr) {
+                        if (hostnameErr) {
+                            log.warn("Could not update hostname: " + hostnameErr.message);
+                            return callback(null);
+                        }
+                        log.info("Hostname updated to " + h);
+                        updateHostsFile(h, function () {
+                            // Avahi uses its own host-name in avahi-daemon.conf; patch it directly
+                            exec("sed -i 's|^host-name=.*|host-name=" + h + "|' /etc/avahi/avahi-daemon.conf", function (sedErr) {
+                                if (sedErr) log.warn("Could not update avahi-daemon.conf: " + sedErr.message);
+                                exec("systemctl restart avahi-daemon", function (avahiErr) {
+                                    if (avahiErr) log.warn("Could not restart avahi-daemon: " + avahiErr.message);
+                                    callback(null);
+                                });
+                            });
+                        });
+                    });
+                } else {
+                    callback(null);
+                }
+            }.bind(this),
+
+            // Update AP SSID to match the new machine_name
+            function update_ssid(callback) {
+                if (identity.name) {
+                    commands.updateSSID(identity.name, function (err, newSsid) {
+                        if (err) {
+                            log.warn("Could not update SSID: " + err.message);
+                        } else if (newSsid) {
+                            log.info("SSID updated to " + newSsid);
+                        }
+                        callback(null); // non-fatal
+                    });
                 } else {
                     callback(null);
                 }
@@ -633,9 +614,8 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
             function set_password(callback) {
                 if (identity.password) {
                     log.info("Setting network password to " + identity.password);
-                } else {
-                    callback(null);
                 }
+                callback(null);
             }.bind(this),
 
             function set_password_config(callback) {

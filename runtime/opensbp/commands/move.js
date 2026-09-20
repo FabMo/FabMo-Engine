@@ -135,17 +135,13 @@ exports.M6 = function (args) {
 var process_move = function (args) {
     this.cmd_result = 0;
     var params = {};
-    var feedrate = this.movespeed_xy * 60;
-    //	log.debug("    (process_move)movespeed_xy = " + this.movespeed_xy);
     if (args[0] === 0 || (args[0] && typeof args[0] === "number")) {
-        //args[0] === 0 ||
         params.X = args[0];
         if (params.X === this.cmd_posx) {
             this.cmd_result += 1;
         }
     }
     if (args[1] === 0 || (args[1] && typeof args[1] === "number")) {
-        //args[1] === 0 ||
         params.Y = args[1];
         if (params.Y === this.cmd_posy) {
             this.cmd_result += 1;
@@ -174,6 +170,68 @@ var process_move = function (args) {
         if (params.C === this.cmd_posc) {
             this.cmd_result += 1;
         }
+    }
+
+    // Determine which axes are actually moving so we can select the correct feedrate.
+    // In absolute mode (the default, SA command), an axis moves only if its target
+    // differs from the current commanded position. In relative mode (SR command), a
+    // displacement of 0 (or a blank, which arrives as undefined) means no motion.
+    var isMoving;
+    if (this.absoluteMode) {
+        isMoving = {
+            X: params.X !== undefined && params.X !== this.cmd_posx,
+            Y: params.Y !== undefined && params.Y !== this.cmd_posy,
+            Z: params.Z !== undefined && params.Z !== this.cmd_posz,
+            A: params.A !== undefined && params.A !== this.cmd_posa,
+            B: params.B !== undefined && params.B !== this.cmd_posb,
+            C: params.C !== undefined && params.C !== this.cmd_posc,
+        };
+    } else {
+        // Relative mode: blank (undefined) or 0 displacement means no motion
+        isMoving = {
+            X: params.X !== undefined && params.X !== 0,
+            Y: params.Y !== undefined && params.Y !== 0,
+            Z: params.Z !== undefined && params.Z !== 0,
+            A: params.A !== undefined && params.A !== 0,
+            B: params.B !== undefined && params.B !== 0,
+            C: params.C !== undefined && params.C !== 0,
+        };
+    }
+
+    // Select feedrate to send to G2 based on which axes are actually moving, in priority
+    // order: XY > Z > A > B > C.
+    //
+    // G2 implements NIST RS274NGC §2.1.2.5: F is the XYZ Euclidean path speed. Rotary
+    // axes (ABC) are excluded from the feed_time distance sum and are instead synchronized
+    // to finish with the linear segment, automatically rate-limited by their individual
+    // feedrate_max (bvm/avm/cvm) firmware setting. For pure rotary moves (no XYZ) G2
+    // falls back to treating F as degrees/min for the rotary path.
+    //
+    // This means we simply send the configured speed for the dominant linear axis and let
+    // G2 handle rotary coordination. The isMoving check correctly skips axes whose target
+    // equals their current position in absolute mode (or equals zero in relative mode), so
+    // a repeated XY position in a multi-axis sequence no longer incorrectly overrides the
+    // rotary feedrate.
+
+    var speedXY = this.movespeed_xy * 60;
+    var speedZ  = this.movespeed_z  * 60;
+    var speedA  = this.movespeed_a  * 60;
+    var speedB  = this.movespeed_b  * 60;
+    var speedC  = this.movespeed_c  * 60;
+
+    var feedrate;
+    if (isMoving.X || isMoving.Y) {
+        feedrate = speedXY;
+    } else if (isMoving.Z) {
+        feedrate = speedZ;
+    } else if (isMoving.A) {
+        feedrate = speedA;
+    } else if (isMoving.B) {
+        feedrate = speedB;
+    } else if (isMoving.C) {
+        feedrate = speedC;
+    } else {
+        feedrate = speedXY; // no-op fallback
     }
     params.F = feedrate;
 

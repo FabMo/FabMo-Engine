@@ -229,8 +229,47 @@ $(document).ready(function() {
 
 });
 
+// Show/hide a full-screen blocking overlay while the config-restore question is pending.
+// z-index 2999 sits below the modal system (3000/3001) so the question dialog appears on top.
+function _showConfigRestoreOverlay() {
+    if ($('#config-restore-overlay').length) { return; }
+    $('<div id="config-restore-overlay"><div id="config-restore-overlay-msg">Checking configuration&hellip;</div></div>')
+        .css({
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.55)',
+            zIndex: 2999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'all'
+        })
+        .find('#config-restore-overlay-msg').css({
+            color: '#eee', fontSize: '1.1em', padding: '1em 2em',
+            background: 'rgba(0,0,0,0.6)', borderRadius: '6px'
+        }).end()
+        .appendTo('body');
+}
+function _hideConfigRestoreOverlay() {
+    $('#config-restore-overlay').remove();
+}
+
 function checkForGlobalBackupRestore() {
     // console.log("DEBUG: Global dashboard backup restore check");
+
+    // Immediately check whether a backup prompt is pending so the overlay can
+    // block the UI before the user can interact.  This runs with no delay and
+    // without waiting for auth — if it succeeds and a prompt is needed the
+    // overlay goes up right away.  The full auth-gated check below handles the
+    // actual modal after the normal 3-second stabilisation delay.
+    $.ajax({
+        url: '/config/backup-restore-status',
+        method: 'GET',
+        success: function(earlyResponse) {
+            if (earlyResponse.status === 'success' &&
+                earlyResponse.data.backup_available &&
+                earlyResponse.data.should_prompt) {
+                _showConfigRestoreOverlay();
+            }
+        }
+    });
 
     // IMPORTANT: Only check for backup restore AFTER user is authenticated
     // This prevents the modal from appearing during login and stealing focus
@@ -259,9 +298,11 @@ function checkForGlobalBackupRestore() {
                         response.data.backup_available && 
                         response.data.should_prompt) {
                         // console.log("DEBUG: Global backup available and should prompt, showing modal");
+                        _showConfigRestoreOverlay();
                         showGlobalBackupRestoreModal(response.data.backup_info);
                     } else {
                         // console.log("DEBUG: No global backup available or should not prompt");
+                        _hideConfigRestoreOverlay();
                         if (response.data.backup_available && !response.data.should_prompt) {
                         // console.log("DEBUG: Backup exists but not showing modal (not from recent auto-profile)");
                         }
@@ -269,6 +310,7 @@ function checkForGlobalBackupRestore() {
                 },
                 error: function(xhr, status, error) {
                     // console.log("DEBUG: Error in global backup status check:", error);
+                    _hideConfigRestoreOverlay();
                 }
             });
         });
@@ -291,6 +333,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
         cancelText: window.t("status.backup.cancel"),
         ok: function() {
             // console.log("DEBUG: User chose to restore global backup");
+            _hideConfigRestoreOverlay();
             
             // Show progress message
             dashboard.notification('info', window.t("status.backup.restoring"));
@@ -323,6 +366,7 @@ function showGlobalBackupRestoreModal(backupInfo) {
         },
         cancel: function() {
             // console.log("DEBUG: User chose to keep current config - cleaning up markers");
+            _hideConfigRestoreOverlay();
             
             // Clean up the marker files so modal doesn't appear again
             $.ajax({
@@ -666,6 +710,9 @@ engine.getVersion(function (err, version) {
                         adjustModalHeight();
                         console.log("Status: " + status.state + "  Cmd: " + status.currentCmd);
                         if (status.stat === 5 && (status.currentCmd === "goto" || status.currentCmd === "resume")) {
+                            // Once the move is underway, drop the go-to entry state so
+                            // completion falls through to the default keypad view below
+                            in_goto_flag = false;
                             $(".manual-stop").show();
                             $(".go-to, .set-coordinates").hide();
                             keyboard.setEnabled(false);
@@ -703,6 +750,12 @@ engine.getVersion(function (err, version) {
                     $(".modalDim").hide();
                     $(".manual-drive-modal").hide();
                     keyboard.setEnabled(false);
+                    // Every keypad close ends up here (the server has left
+                    // manual mode), so this is the one spot that reliably
+                    // clears SK dialog mode no matter how the modal was
+                    // dismissed (X, ESC, click-outside, iframe blur, or a
+                    // server-side exit).
+                    resetKeypadDialogUI();
                 }
 
                 syncAuthorizeOverlay(status);
@@ -732,7 +785,12 @@ engine.getVersion(function (err, version) {
                         }
                         break;
                     default:
-                        dashboard.handlers.hideFooter();
+                        // Keep the footer up while a bounds pre-check is in
+                        // flight — the machine reports idle during the check
+                        // and would otherwise close it immediately.
+                        if (!dashboard.boundsCheckInProgress) {
+                            dashboard.handlers.hideFooter();
+                        }
                         break;
                 }
 
@@ -1260,6 +1318,55 @@ function getManualNudgeIncrement(move) {
     return increment_inches;
 }
 
+// Held-Ctrl state for manual moves: holding Ctrl while pressing an arrow
+// (on-screen or keyboard) runs the move at the machine's jog (rapid)
+// speed instead of the manual speed. Tracked globally because the
+// Keypad/Keyboard libs don't forward modifier state on move events.
+var ctrlHeld = false;
+$(document).on("keydown keyup pointerdown pointerup", function (evt) {
+    if (evt.ctrlKey !== undefined) {
+        ctrlHeld = evt.ctrlKey;
+    }
+});
+$(window).on("blur", function () {
+    ctrlHeld = false;
+});
+
+// Jog (rapid) speed for the move's axis — the "max speed" used when Ctrl
+// is held. Returns null if unavailable so callers can fall back.
+function getManualMaxSpeed(move) {
+    try {
+        var sbp = engine.config.opensbp;
+        switch (move.axis) {
+            case "x":
+            case "y":
+                return sbp.jogxy_speed;
+            case "z":
+            case "z_fast":
+            case "z_slow":
+                return sbp.jogz_speed;
+            case "a":
+                return sbp.joga_speed;
+            case "b":
+                return sbp.jogb_speed;
+            case "c":
+                return sbp.jogc_speed;
+        }
+    } catch (e) {
+        console.error("Error getting manual max speed:", e);
+    }
+    return null;
+}
+
+// Speed a manual move should actually run at: the axis jog speed when
+// Ctrl is held, otherwise the normal (slider/config) speed.
+function manualSpeedFor(move, normalSpeed) {
+    if (ctrlHeld) {
+        return getManualMaxSpeed(move) || normalSpeed;
+    }
+    return normalSpeed;
+}
+
 // Make the on-screen joystick indicator draggable. Active only while the
 // machine is in manual mode — drags outside that state are ignored so the
 // dot stays in sync with whatever the (real) pendant is doing.
@@ -1341,6 +1448,18 @@ var TOOLBOX_TOOLS = [
     },
 ];
 
+// No buttons: this is a pure readout. All interaction is on the pendant.
+// PRINT OUTPUT panel (bottom of the slide-out DRO). Persistent text lines
+// emitted by the SBP PRINT command, delivered over the data_send bus on the
+// reserved "print" channel; CLEARPRINT arrives on "print_clear". Newest line
+// is prepended at the top. The buffer is mirrored to localStorage so a page
+// reload restores it (cleared only by CLEARPRINT or the clear button).
+// PRINT OUTPUT widget. Docked in the top bar as a single latest-line readout
+// between the machine name and the mini-DRO; (Phase B) an expand control opens
+// a stream dropdown; (Phase C) it can be dragged off into a floating modal.
+// Fed by the SBP PRINT command over the data_send 'print'/'print_clear' bus.
+// Absent from the UI until a file prints something; the X dismisses it
+// completely (persisted) until the next PRINT arrives.
 function setupPrintWidget(engine) {
     var STORAGE_KEY = "fabmo_print_output";
     var MAX_LINES = 200; // hard cap on retained lines
@@ -1358,6 +1477,16 @@ function setupPrintWidget(engine) {
         if (saved) lines = JSON.parse(saved) || [];
     } catch (e) {
         lines = [];
+    }
+
+    // The widget only exists in the UI while a file has printed something and
+    // the user hasn't dismissed it. A new PRINT line always brings it back.
+    var dismissed = false;
+
+    function updateVisibility() {
+        var show = lines.length > 0 && !dismissed;
+        widget.classList.toggle("dismissed", !show);
+        if (show) layout();
     }
 
     function persist() {
@@ -1458,6 +1587,7 @@ function setupPrintWidget(engine) {
             false
         );
         renderStream();
+        updateVisibility();
         layout();
     }
 
@@ -1473,6 +1603,12 @@ function setupPrintWidget(engine) {
         lines.unshift(s);
         if (lines.length > MAX_LINES) lines.length = MAX_LINES;
         persist();
+        // A file printing output always re-summons a dismissed widget.
+        if (dismissed) {
+            dismissed = false;
+            persistState();
+        }
+        updateVisibility();
         renderStream();
         updateLatest(s, false, true); // animated scroll-in (docked)
         flash();
@@ -1521,8 +1657,27 @@ function setupPrintWidget(engine) {
         widget.style.left = "auto";
         widget.style.right = rightPx + "px";
         widget.style.width = Math.max(0, width) + "px";
-        // Sit the docked module a few pixels above the bar's bottom edge.
-        widget.style.paddingBottom = BOTTOM_GAP + "px";
+        // Match the keypad button's visible face vertically. The PNG has
+        // transparent padding: the yellow rect starts 55/256 down the image
+        // and is 171/256 of its height, so compute that box and size the
+        // widget to it (same height, same top edge, same corner treatment).
+        var visTop = null;
+        var visHeight = null;
+        if (keypadBtn && rightRect && rightAnchor === keypadBtn && rightRect.height > 0) {
+            visTop = rightRect.top + rightRect.height * (55 / 256);
+            visHeight = rightRect.height * (171 / 256);
+        }
+        if (visTop !== null && visTop >= barRect.top && visTop + visHeight <= barRect.bottom + 2) {
+            widget.style.top = Math.round(visTop - barRect.top) + "px";
+            widget.style.height = Math.round(visHeight) + "px";
+            widget.style.paddingBottom = "0px";
+        } else {
+            // Keypad missing or off the bar (small screens): fall back to
+            // bottom-aligned in the bar as before.
+            widget.style.top = "0px";
+            widget.style.height = "";
+            widget.style.paddingBottom = BOTTOM_GAP + "px";
+        }
         // Hide if there isn't enough room to be useful (small screens).
         widget.style.visibility = width < 80 ? "hidden" : "visible";
     }
@@ -1572,6 +1727,7 @@ function setupPrintWidget(engine) {
                 JSON.stringify({
                     floating: widget.classList.contains("floating"),
                     expanded: widget.classList.contains("expanded"),
+                    dismissed: dismissed,
                     x: floatPos ? floatPos.x : null,
                     y: floatPos ? floatPos.y : null,
                 })
@@ -1599,6 +1755,7 @@ function setupPrintWidget(engine) {
         widget.classList.add("floating");
         widget.style.right = "";
         widget.style.width = "";
+        widget.style.height = "";
         widget.style.paddingBottom = "";
         widget.style.visibility = "";
         document.body.appendChild(widget);
@@ -1699,9 +1856,17 @@ function setupPrintWidget(engine) {
             persistState();
         });
     }
-    // Close (X) — redock the floating modal.
+    // Close (X) — dismiss the widget from the UI entirely. It returns the
+    // next time a file prints output. A floating modal is redocked first so
+    // it reappears in the bar, not hovering mid-screen.
     if (closeBtn) {
-        closeBtn.addEventListener("click", redock);
+        closeBtn.addEventListener("click", function () {
+            if (!isDocked()) redock();
+            widget.classList.remove("expanded");
+            dismissed = true;
+            persistState();
+            updateVisibility();
+        });
     }
     // Click outside collapses the docked dropdown.
     document.addEventListener("click", function (e) {
@@ -1730,6 +1895,7 @@ function setupPrintWidget(engine) {
             st = null;
         }
         if (!st) return;
+        dismissed = !!st.dismissed;
         if (st.floating) {
             detach(st.x != null ? st.x : 80, st.y != null ? st.y : 80);
         } else if (st.expanded) {
@@ -2391,10 +2557,17 @@ function setupKeyboard() {
         nudgeTimeout: manual.press_delay != null ? manual.press_delay : 200
     });
     keyboard.on("go", function (move) {
-        if (move.axis === "z") {
-            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) / 2 || 0.1));
+        if (move.second_axis) {
+            dashboard.engine.manualStart(
+                move.axis,
+                move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1),
+                move.second_axis,
+                move.second_dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1)
+            );
+        } else if (move.axis === "z") {
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) / 2 || 0.1));
         } else if (move) {
-            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1));
         }
     });
 
@@ -2404,11 +2577,19 @@ function setupKeyboard() {
 
     keyboard.on("nudge", function (nudge) {
         fixedTimeStart = Date.now(); // for measuring keypad response latency
-        dashboard.engine.manualMoveFixed(
-            nudge.axis,
-            60 * getManualMoveSpeed(nudge),
-            nudge.dir * getManualNudgeIncrement(nudge)
-        );
+        var speed = manualSpeedFor(nudge, getManualMoveSpeed(nudge));
+        var increment = getManualNudgeIncrement(nudge);
+        if (nudge.second_axis) {
+            dashboard.engine.manualMoveFixed(
+                nudge.axis,
+                60 * speed,
+                nudge.dir * increment,
+                nudge.second_axis,
+                nudge.second_dir * increment
+            );
+        } else {
+            dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment);
+        }
     });
 
     return keyboard;
@@ -2439,16 +2620,16 @@ function setupKeypad() {
         if (move.second_axis) {
             dashboard.engine.manualStart(
                 move.axis,
-                move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1),
+                move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1),
                 move.second_axis,
-                move.second_dir * 60.0 * (getManualMoveSpeed(move) || 0.1)
+                move.second_dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1)
             );
         } else if (move.axis === "z_fast") {
-            dashboard.engine.manualStart("z", move.dir * 60.0 * engine.config.machine.manual.z_fast_speed);
+            dashboard.engine.manualStart("z", move.dir * 60.0 * manualSpeedFor(move, engine.config.machine.manual.z_fast_speed));
         } else if (move.axis === "z_slow") {
-            dashboard.engine.manualStart("z", move.dir * 60.0 * engine.config.machine.manual.z_slow_speed);
+            dashboard.engine.manualStart("z", move.dir * 60.0 * manualSpeedFor(move, engine.config.machine.manual.z_slow_speed));
         } else if (move) {
-            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+            dashboard.engine.manualStart(move.axis, move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1));
         }
     });
 
@@ -2458,7 +2639,7 @@ function setupKeypad() {
     });
 
     keypad.on("nudge", function (nudge) {
-        var speed = getManualMoveSpeed(nudge);
+        var speed = manualSpeedFor(nudge, getManualMoveSpeed(nudge));
         var increment = getManualNudgeIncrement(nudge);
         // var jerk = getManualMoveJerk(nudge);
         fixedTimeStart = Date.now(); // for measuring keypad response latency
@@ -2473,8 +2654,8 @@ function setupKeypad() {
         } else {
             dashboard.engine.manualMoveFixed(
                 nudge.axis,
-                60 * getManualMoveSpeed(nudge),
-                nudge.dir * getManualNudgeIncrement(nudge)
+                60 * speed,
+                nudge.dir * increment
             );
         }
     });
@@ -2555,6 +2736,23 @@ $(".action-button").on("click", function (evt) {
     }
 });
 
+// Restore the keypad modal from SK "dialog mode" (message shown, action
+// buttons and title hidden — see the status.info.message handler). Must run
+// on every close path; the modal DOM persists between opens, so anything
+// left here shows again the next time the keypad is opened.
+function resetKeypadDialogUI() {
+    $("#title_goto").css("visibility", "visible");
+    $("#action-1").css("visibility", "visible");
+    $("#action-2").css("visibility", "visible");
+    $("#action-3").css("visibility", "visible");
+    $("#action-4").css("visibility", "visible");
+    $("#action-5").css("visibility", "visible");
+    $(".title-container").css("display", "block");
+    $(".manual-drive-message").html("");
+    $(".manual-drive-message").hide();
+    $(".manual-drive-message").removeClass("blinking-text");
+}
+
 $(".manual-drive-exit").on("click", function (evt) {
     // FIXED: Stop all event propagation immediately
     evt.preventDefault();
@@ -2579,16 +2777,7 @@ $(".manual-drive-exit").on("click", function (evt) {
     window._exitButtonClicked = Date.now();
     
     // Remove changes for running manual from within a file
-    $("#title_goto").css("visibility", "visible");
-    $("#action-1").css("visibility", "visible");
-    $("#action-2").css("visibility", "visible");
-    $("#action-3").css("visibility", "visible");
-    $("#action-4").css("visibility", "visible");
-    $("#action-5").css("visibility", "visible");
-    $(".title-container").css("display", "block");
-    $(".manual-drive-message").html("");
-    $(".manual-drive-message").hide();
-    $(".manual-drive-message").removeClass("blinking-text");
+    resetKeypadDialogUI();
     $(".axis.at-limit").removeClass("at-limit");
     $("#soft-limit-prompt").hide();
     lastSoftLimitPromptId = null;
@@ -3283,12 +3472,13 @@ ping();
 engine.sendTime();
 
 function touchScreen() {
-    if (supportsTouch && window.innerWidth < 800) {
-        $("#app-client-container").css({
-            "-webkit-overflow-scrolling": "touch",
-            "overflow-y": "scroll",
-        });
-    }
+    // Removed: applying overflow-y:scroll + -webkit-overflow-scrolling:touch to
+    // #app-client-container on narrow touch screens created a UIScrollView whose
+    // gesture recogniser competed with the WebGL canvas's non-passive touchstart
+    // listener on iOS. The competition caused iOS to cancel pending tap recognisers
+    // for fixed-position elements (nav bar, keypad icon, DRO) — touchstart still
+    // fired (elements went :active) but click/focus was never synthesised. The
+    // container is overflow:hidden in CSS; the scroll override was fighting that.
 }
 touchScreen();
 
