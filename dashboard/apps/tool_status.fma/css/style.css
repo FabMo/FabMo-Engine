@@ -287,21 +287,31 @@ body {
 }
 .ts-shoptool.soon { opacity: 0.45; cursor: default; }
 .ts-shoptool.soon:hover { background: #fafbfc; }
-.ts-st-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.ts-st-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; position: relative; min-height: 30px; }
 .ts-st-head .ts-iconbtn { padding: 0 4px; }
 .ts-st-title { font-weight: 600; font-size: 0.95em; }
 
-/* Drill press panel: envelope | depth column | cross-section | DRILL */
+/* Drill press panel: envelope | depth column | cross-section. The action
+   buttons live in the header row (ts-st-btncol), in the whitespace right
+   of the title, so they never get pushed to a row of their own. */
 .ts-st-drill-row {
     display: flex;
     align-items: flex-start;
     gap: 6px;
     flex-wrap: wrap;
 }
-/* The envelope map is sized purely from the machine's aspect ratio in
-   renderStEnv, and the container doesn't grow — so the map stays put and
-   the controls pack tight against it no matter which mode is showing. */
-.ts-st-env { flex: 0 0 auto; display: flex; }
+/* The envelope map is sized in renderStEnv from the machine's aspect
+   ratio, capped by the width the row actually has left after the
+   fixed-width control columns (stEnvCap) — the map is the only piece
+   that gives when the card gets squeezed. */
+.ts-st-env { flex: 0 0 auto; display: flex; position: relative; }
+/* Really tight (stEnvCap flips the class): the map drops below the
+   control columns and gets the full row to itself. */
+.ts-st-stacked .ts-st-env {
+    order: 9;
+    flex-basis: 100%;
+    justify-content: center;
+}
 .ts-st-minilabel {
     display: block;
     font-size: 0.72em;
@@ -315,6 +325,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 3px;
+    flex: 0 0 auto;
 }
 .ts-st-depthcol input[type="number"],
 .ts-st-arr-grid input[type="number"],
@@ -339,7 +350,7 @@ body {
     padding: 0;
     margin: 0;
 }
-.ts-st-xseccol { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ts-st-xseccol { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 0 0 auto; }
 /* The left gutter holds the Z-zero radios (hugging the graphic) and the
    material-thickness input, which sits between the two surface leader
    lines — it literally measures the gap it's parked in. Vertical
@@ -386,27 +397,74 @@ body {
     -webkit-appearance: none;
     margin: 0;
 }
+/* Action buttons: live in the header row's whitespace, centered over the
+   control columns below them (stPlaceBtns measures and sets `left` after
+   each map render; the no-JS fallback is flush right). */
 .ts-st-btncol {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 6px;
-    align-self: center;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+/* Flex-center the labels: the inherited (Foundation) line-height sits
+   text high in a fixed-height button otherwise. */
+.ts-st-btncol .ts-cmd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
 }
 .ts-st-drillbtn {
-    width: 74px;
-    height: 74px;
-    font-size: 1.05em;
+    width: 84px;
+    height: 30px;
+    font-size: 0.95em;
     letter-spacing: 0.04em;
 }
-.ts-st-arraybtn { width: 74px; padding: 4px 0; font-size: 0.82em; }
+.ts-st-arraybtn { width: 58px; height: 30px; font-size: 0.82em; }
 .ts-st-arraybtn.active { background: #2980b9; border-color: #2471a3; color: #fff; }
-.ts-st-arraycol { display: flex; align-items: center; min-height: 126px; }
+/* min-width is set by setArrayMode to the footprint of the drill columns
+   this panel replaces, so the map and header buttons hold still. */
+.ts-st-arraycol { display: flex; align-items: center; justify-content: center; min-height: 126px; flex: 0 0 auto; }
 .ts-st-arr-grid {
     display: grid;
     grid-template-columns: auto auto;
     gap: 8px 12px;
 }
 .ts-st-arr-grid label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+
+/* Table saw panel: in-place editing on the map. The floating input is
+   parked (hidden) inside .ts-st-env and positioned by stsOpenEdit over
+   whichever value label was clicked. */
+#sts-edit {
+    display: none;
+    position: absolute;
+    width: 3.9em;
+    height: 1.7em;
+    font-size: 0.85em;
+    text-align: center;
+    padding: 1px 2px;
+    margin: 0;
+    border: 1px solid #2980b9;
+    border-radius: 3px;
+    color: #2c3e50;
+    background: #fff;
+    z-index: 3;
+}
+#sts-edit::-webkit-outer-spin-button,
+#sts-edit::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#sts-env-svg [data-edit] { cursor: pointer; }
+#sts-env-svg [data-handle] { cursor: grab; }
+/* Cut-type buttons (rip | / crosscut —) ride the header row with CUT;
+   angled mode has no button — dragging a boundary handle discovers it. */
+.ts-sts-mode { width: 28px; height: 30px; font-size: 0.95em; }
+.ts-sts-mode.active { background: #2980b9; border-color: #2471a3; color: #fff; }
 
 /* Planer panel: params stack, angle slider + direction radios */
 .ts-stp-params { align-items: flex-start; }
@@ -416,7 +474,7 @@ body {
     -webkit-appearance: none;
     margin: 0;
 }
-.ts-stp-rastercol { display: flex; flex-direction: column; gap: 3px; }
+.ts-stp-rastercol { display: flex; flex-direction: column; gap: 3px; flex: 0 0 auto; }
 .ts-stp-rastercol > label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
 .ts-stp-anglerow { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
 .ts-stp-anglerow input[type="range"] { width: 64px; padding: 0; margin: 0; }

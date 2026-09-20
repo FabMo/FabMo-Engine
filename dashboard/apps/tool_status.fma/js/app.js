@@ -367,6 +367,87 @@ function stCuts() {
     return { material: Math.min(d, t), table: Math.max(0, d - t), through: d >= t };
 }
 
+// Width available to an envelope map: whatever the row has left after
+// its fixed-width control columns (plus flex gaps), floored for
+// readability and capped at the classic full size. Below the floor the
+// panel flips to stacked mode — the map drops under the controls and
+// gets the whole row to itself. The decision depends only on the row
+// width and the (constant) control widths, so the map's own re-render
+// can't flip it back and forth.
+var ST_ENV_MIN = 130;
+var ST_ENV_MAX = 240;
+function stEnvCap(svgId) {
+    var svg = document.getElementById(svgId);
+    var envEl = svg && svg.parentNode;   // .ts-st-env
+    var row = envEl && envEl.parentNode; // .ts-st-drill-row
+    var panel = row && row.parentNode;   // .ts-st-panel
+    if (!panel) return ST_ENV_MAX;
+    var rowW = row.clientWidth;
+    if (!rowW) return ST_ENV_MAX; // panel hidden — nothing to measure
+    var used = 0;
+    Array.prototype.forEach.call(row.children, function (el) {
+        if (el === envEl || !el.offsetParent) return; // self / display:none
+        used += el.offsetWidth + 6; // column + its flex gap
+    });
+    var avail = rowW - used;
+    var stacked = avail < ST_ENV_MIN;
+    panel.classList.toggle("ts-st-stacked", stacked);
+    return Math.min(ST_ENV_MAX, Math.max(ST_ENV_MIN, stacked ? rowW : avail));
+}
+
+// Header action buttons: centered over the span of the visible control
+// columns (not the envelope map), clamped between the title and the
+// panel's right edge. Called after each map render, so mode swaps,
+// stacking, and card resizes all re-place them.
+function stPlaceBtns(panelId) {
+    var panel = document.getElementById(panelId);
+    var btns = panel && panel.querySelector(".ts-st-btncol");
+    var row = panel && panel.querySelector(".ts-st-drill-row");
+    if (!btns || !row) return;
+    var envEl = panel.querySelector(".ts-st-env");
+    var panelBox = panel.getBoundingClientRect();
+    if (!panelBox.width) return; // hidden — leave as-is
+    var lo = Infinity, hi = -Infinity;
+    Array.prototype.forEach.call(row.children, function (el) {
+        if (el === envEl || !el.offsetParent) return;
+        var b = el.getBoundingClientRect();
+        lo = Math.min(lo, b.left);
+        hi = Math.max(hi, b.right);
+    });
+    if (lo > hi) { // no control columns visible — fall back to flush right
+        btns.style.left = "";
+        btns.style.right = "";
+        return;
+    }
+    var w = btns.offsetWidth;
+    var title = panel.querySelector(".ts-st-title");
+    var minLeft = title ? title.getBoundingClientRect().right - panelBox.left + 10 : 0;
+    var left = (lo + hi) / 2 - panelBox.left - w / 2;
+    left = Math.max(minLeft, Math.min(panelBox.width - w, left));
+    btns.style.left = Math.round(left) + "px";
+    btns.style.right = "auto";
+}
+
+// Origin badge for a table map's bottom-left corner (machine 0,0): X/Y
+// axis arrows + labels, near-black with a white halo (paint-order on the
+// text/arrowheads, an underlay path on the axes) so it never sinks into
+// a toolpath or crosshair drawn beneath it. Callers pass the corner
+// point, inset a few px inside the table rect, and draw it last.
+function stOriginBadge(ox, oy) {
+    var oc = "#1a252f";
+    var axisD = "M" + ox + " " + (oy - 17) + " L" + ox + " " + oy + " L" + (ox + 17) + " " + oy;
+    var halo = 'paint-order="stroke" stroke="#fff" stroke-width="2.5" font-weight="700" fill="' + oc + '"';
+    return (
+        '<path d="' + axisD + '" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>' +
+        '<path d="' + axisD + '" fill="none" stroke="' + oc + '" stroke-width="1.75"/>' +
+        '<path d="M' + (ox + 17) + " " + oy + ' l-5.5 -3.5 v7 z" fill="' + oc + '" stroke="#fff" stroke-width="1" paint-order="stroke"/>' +
+        '<path d="M' + ox + " " + (oy - 17) + ' l-3.5 5.5 h7 z" fill="' + oc + '" stroke="#fff" stroke-width="1" paint-order="stroke"/>' +
+        '<text x="' + (ox + 21) + '" y="' + (oy + 3) + '" font-size="8" ' + halo + ">X</text>" +
+        '<text x="' + (ox - 3) + '" y="' + (oy - 21) + '" font-size="8" ' + halo + ">Y</text>" +
+        '<text x="' + (ox + 6) + '" y="' + (oy - 6) + '" font-size="8" ' + halo + ">0,0</text>"
+    );
+}
+
 // Envelope map: machine envelope rectangle with its outside dimensions
 // labeled below (X) and to the right (Y), a crosshair at the current
 // position with leader lines to the X=0 and Y=0 edges, and the DRO
@@ -385,15 +466,15 @@ function renderStEnv() {
         svg.setAttribute("height", 110);
         svg.innerHTML = '<rect x="1" y="1" width="148" height="108" fill="#f7f8f9" stroke="#d5dbdb"/>' +
             '<text x="75" y="58" text-anchor="middle" font-size="10" fill="#95a5a6">no envelope</text>';
+        stPlaceBtns("st-panel-drill");
         return;
     }
-    // Margins reserved for the dimension labels. The rect size depends
-    // only on the envelope's aspect ratio (within fixed caps), never on
-    // the container — so the map doesn't shift when the controls beside
-    // it change between drill and array modes.
+    // Margins reserved for the dimension labels. The rect is sized from
+    // the envelope's aspect ratio within the width the row can actually
+    // spare (stEnvCap) — the map contracts before anything else moves.
     var MB = 13; // below the rect: X dimension
     var MR = 13; // right of the rect: Y dimension (rotated)
-    var maxRW = 240 - MR - 2;
+    var maxRW = stEnvCap("st-env-svg") - MR - 2;
     var maxRH = 150 - MB - 2;
     var rw = maxRW;
     var rh = (rw * yspan) / xspan;
@@ -458,7 +539,9 @@ function renderStEnv() {
         '<circle cx="' + px + '" cy="' + py + '" r="2" fill="none" stroke="#c0392b"/>' +
         '<text x="' + tx + '" y="' + ty + '" text-anchor="' + anchor + '" font-size="10" font-weight="600" fill="#2c3e50">' + label + "</text>" +
         '<text x="' + (1 + rw / 2) + '" y="' + (H - 2) + '" text-anchor="middle" font-size="9" fill="#7f8c8d">' + dim(xspan) + " " + state.unit + "</text>" +
-        '<text x="' + (W - 3) + '" y="' + (1 + rh / 2) + '" text-anchor="middle" font-size="9" fill="#7f8c8d" transform="rotate(-90 ' + (W - 3) + " " + (1 + rh / 2) + ')">' + dim(yspan) + "</text>";
+        '<text x="' + (W - 3) + '" y="' + (1 + rh / 2) + '" text-anchor="middle" font-size="9" fill="#7f8c8d" transform="rotate(-90 ' + (W - 3) + " " + (1 + rh / 2) + ')">' + dim(yspan) + "</text>" +
+        stOriginBadge(5, rh - 3);
+    stPlaceBtns("st-panel-drill");
 }
 
 // Cross-section: table layer with the material on top, Z-zero radios lined
@@ -563,14 +646,16 @@ function stpSpans() {
 }
 
 // Map geometry shared by the renderer and the drag handler. Margins hold
-// the range bars and their three segment numbers.
-function stpGeom() {
+// the range bars and their three segment numbers. The table saw map
+// reuses this wholesale (same margins, same fit) — it just passes its
+// own svg id so the width cap is measured in its panel.
+function stpGeom(svgId) {
     var s = stpSpans();
     // Top/right margins must exceed the handle radius (~5.5px with
     // stroke) so a handle at the far end of its bar isn't clipped by
     // the svg edge.
     var ML = 32, MB = 30, MT = 7, MR = 7;
-    var maxRW = 240 - ML - MR;
+    var maxRW = stEnvCap(svgId || "stp-env-svg") - ML - MR;
     var maxRH = 150 - MT - MB;
     var rw = maxRW;
     var rh = (rw * s.yspan) / s.xspan;
@@ -585,8 +670,11 @@ function stpGeom() {
 
 // Raster passes for the bit center, clipped to the picked area (no
 // diameter compensation). Returns segments {a:[x,y], b:[x,y],
-// type:"cut"|"step"|"air"} in machine units, ordered.
-function stpToolpath() {
+// type:"cut"|"step"|"air"} in machine units, ordered. coarseN caps the
+// pass count for the schematic detail view — same structure (direction,
+// turnarounds, jog returns), legibly few passes. The real job NEVER
+// passes coarseN.
+function stpToolpath(coarseN) {
     var xa = stPlaner.x0, xb = stPlaner.x1;
     var ya = stPlaner.y0, yb = stPlaner.y1;
     var th = (stPlaner.angle * Math.PI) / 180;
@@ -598,6 +686,7 @@ function stpToolpath() {
     var step = stPlaner.bit * (stPlaner.step / 100);
     var n = step > 0 ? Math.ceil((cmax - cmin) / step - 1e-9) : 1;
     n = Math.max(1, Math.min(n, 500));
+    if (coarseN) n = Math.min(n, coarseN);
     var passes = [];
     for (var i = 0; i <= n; i++) {
         var c = cmax === cmin ? cmin : cmin + ((cmax - cmin) * i) / n;
@@ -634,6 +723,27 @@ function stpFmtLen(v) {
     return String(Math.round(v * 10) / 10);
 }
 
+// Angle-slider magnifier: u eases 0..1 while the slider is held so the
+// pattern zooms in smoothly and glides back out on release. The rAF loop
+// re-renders the whole map each step (it's one small SVG).
+var stpZoom = { u: 0, target: 0, raf: null };
+function stpZoomTo(target) {
+    stpZoom.target = target;
+    if (stpZoom.raf) return; // a running tween chases the new target
+    var step = function () {
+        stpZoom.raf = null;
+        var d = stpZoom.target - stpZoom.u;
+        if (Math.abs(d) < 0.02) {
+            stpZoom.u = stpZoom.target;
+        } else {
+            stpZoom.u += d * 0.22;
+            stpZoom.raf = requestAnimationFrame(step);
+        }
+        renderStpEnv();
+    };
+    stpZoom.raf = requestAnimationFrame(step);
+}
+
 // Planer envelope map: area range bars with two handles each, segment
 // length numbers, and the raster toolpath preview.
 function renderStpEnv() {
@@ -645,19 +755,75 @@ function renderStpEnv() {
     var X = function (v) { return g.ML + (v / g.xspan) * g.rw; };
     var Y = function (v) { return g.MT + g.rh - (v / g.yspan) * g.rh; };
     var p = stPlaner;
+    // Detail view (computed up front so arrow sizing below can use it):
+    // while the angle slider is held (stpZoom.u eases 0→1), the area
+    // glides to the table rect's center and scales up only as far as
+    // still FITS inside the rect — the whole pattern stays visible,
+    // because the interesting parts (turnarounds, jog returns) are at
+    // its edges. Legibility comes from the schematic toolpath below, not
+    // from magnification. Bars, handles, numbers stay put outside.
+    var acx = (X(p.x0) + X(p.x1)) / 2;
+    var acy = (Y(p.y0) + Y(p.y1)) / 2;
+    var aw = Math.max(X(p.x1) - X(p.x0), 1);
+    var ah = Math.max(Y(p.y0) - Y(p.y1), 1);
+    var K = Math.max(1, Math.min(14, 0.85 * Math.min(g.rw / aw, g.rh / ah)));
+    var u = stpZoom.u;
+    var z = 1 + u * (K - 1);
+    var tx = u * (g.ML + g.rw / 2 - K * acx);
+    var ty = u * (g.MT + g.rh / 2 - K * acy);
     var parts = [
         '<rect x="' + g.ML + '" y="' + g.MT + '" width="' + g.rw + '" height="' + g.rh + '" fill="#f4f1ea" stroke="#a8a49a"/>',
-        '<rect x="' + X(p.x0) + '" y="' + Y(p.y1) + '" width="' + (X(p.x1) - X(p.x0)) + '" height="' + (Y(p.y0) - Y(p.y1)) + '" fill="#d4b585" fill-opacity="0.55" stroke="#a8834f"/>',
     ];
-    // Toolpath preview: everything at depth (cuts AND stepovers) in the
-    // same solid blue; only true air moves (1-way returns) draw dashed.
-    stpToolpath().forEach(function (s) {
-        var style =
-            s.type === "air"
-                ? 'stroke="#95a5a6" stroke-width="0.75" stroke-dasharray="2,2"'
+    // Area rect + toolpath go in their own group so the zoom can magnify
+    // them together. non-scaling-stroke keeps lines hairline at any zoom.
+    var inner = [
+        '<rect x="' + X(p.x0) + '" y="' + Y(p.y1) + '" width="' + (X(p.x1) - X(p.x0)) + '" height="' + (Y(p.y0) - Y(p.y1)) + '" fill="#d4b585" fill-opacity="0.55" stroke="#a8834f" vector-effect="non-scaling-stroke"/>',
+    ];
+    // Direction arrowhead at a segment's midpoint. Arm length is divided
+    // by the zoom so arrows stay the same size on screen; segments too
+    // short to carry one at the current zoom just go without.
+    function stpArrow(a, b, color) {
+        var x1 = X(a[0]), y1 = Y(a[1]), x2 = X(b[0]), y2 = Y(b[1]);
+        var dx = x2 - x1, dy = y2 - y1;
+        var len = Math.sqrt(dx * dx + dy * dy);
+        if (len * z < 26) return "";
+        var ux = dx / len, uy = dy / len;
+        var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        var s = 7 / z; // barb arm, constant on screen
+        var b1x = mx - s * (ux * 0.866 - uy * 0.5), b1y = my - s * (uy * 0.866 + ux * 0.5);
+        var b2x = mx - s * (ux * 0.866 + uy * 0.5), b2y = my - s * (uy * 0.866 - ux * 0.5);
+        return '<path d="M' + b1x + " " + b1y + " L" + mx + " " + my + " L" + b2x + " " + b2y +
+            '" fill="none" stroke="' + color + '" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+    }
+    // Toolpath layer: everything at depth (cuts AND stepovers) in solid
+    // blue; true air moves (1-way jog returns) in dashed red. Midpoint
+    // arrows show travel direction on both.
+    function stpLayer(segs, alpha, withArrows) {
+        var out = ['<g opacity="' + alpha + '">'];
+        segs.forEach(function (s) {
+            var air = s.type === "air";
+            var style = air
+                ? 'stroke="#c0392b" stroke-width="0.75" stroke-dasharray="3,2"'
                 : 'stroke="#2980b9" stroke-width="1"';
-        parts.push('<line x1="' + X(s.a[0]) + '" y1="' + Y(s.a[1]) + '" x2="' + X(s.b[0]) + '" y2="' + Y(s.b[1]) + '" ' + style + "/>");
-    });
+            out.push('<line x1="' + X(s.a[0]) + '" y1="' + Y(s.a[1]) + '" x2="' + X(s.b[0]) + '" y2="' + Y(s.b[1]) + '" ' + style + ' vector-effect="non-scaling-stroke"/>');
+            if (withArrows) out.push(stpArrow(s.a, s.b, air ? "#c0392b" : "#2980b9"));
+        });
+        out.push("</g>");
+        return out.join("");
+    }
+    // At rest, the true pass count with no arrows (at that density they
+    // read as banding on the material); in the detail view, a schematic
+    // with at most 6 passes and direction arrows — same angle, direction,
+    // turnarounds, and jog returns, but coarse enough to actually read.
+    // They crossfade with the zoom tween.
+    if (u < 0.999) inner.push(stpLayer(stpToolpath(), 1 - u, false));
+    if (u > 0.001) inner.push(stpLayer(stpToolpath(6), u, true));
+    // Clip and transform must live on separate nested groups: a clip-path
+    // on the transformed group itself would be scaled along with the
+    // content, and the pattern would spill past the table rect.
+    parts.push('<clipPath id="stp-zclip"><rect x="' + g.ML + '" y="' + g.MT + '" width="' + g.rw + '" height="' + g.rh + '"/></clipPath>');
+    parts.push('<g clip-path="url(#stp-zclip)"><g transform="matrix(' + z + " 0 0 " + z + " " + tx + " " + ty + ')">' + inner.join("") + "</g></g>");
+    parts.push(stOriginBadge(g.ML + 4, g.MT + g.rh - 4));
     // Range bars: track, active span, grabbable handles
     var bx = g.MT + g.rh + 9;  // X bar y
     var by = g.ML - 9;         // Y bar x
@@ -693,6 +859,7 @@ function renderStpEnv() {
     parts.push(handle(by, Y(p.y0), "y0"));
     parts.push(handle(by, Y(p.y1), "y1"));
     svg.innerHTML = parts.join("");
+    stPlaceBtns("st-panel-planer");
 }
 
 function stpSyncInputs() {
@@ -710,6 +877,213 @@ function stpSave() {
         bit: stPlaner.bit, step: stPlaner.step, depth: stPlaner.depth,
         angle: stPlaner.angle, dir: stPlaner.dir, unit: state.unit,
     });
+}
+
+// ---- Table saw model ----
+// One straight through-cut: a line through a draggable anchor point at
+// an angle, stored 0..180° (0 = X-parallel crosscut, 90 = Y-parallel
+// rip). The anchor is the user's "pencil mark"; endpoint handles and
+// typed intercepts pivot the line about it, so the definition stays
+// stable at every angle (intercept-pair schemes degenerate near the
+// axes). Coordinates are envelope-relative like the other tools.
+// pass = 0 → the whole depth in one pass; feed = 0 → the tool's current
+// move speed (no MS emitted).
+var stSaw = { ax: 0, ay: 0, angle: 90, depth: 0, pass: 0, feed: 0 };
+
+// ∠ mode latches on when the line leaves 0°/90° (by drag or typing) and
+// reveals the angle + intercept fields; only the | and — buttons clear
+// it, so the fields don't blink away if a drag lands back on-axis.
+var stsAngleMode = false;
+
+function stsOffAxis(a) {
+    return a > 0.05 && a < 179.95 && Math.abs(a - 90) > 0.05;
+}
+
+function stsAngleFrom(dx, dy) {
+    var a = (Math.atan2(dy, dx) * 180) / Math.PI;
+    a = ((a % 180) + 180) % 180;
+    stSaw.angle = Math.round(a * 10) / 10;
+    if (stsOffAxis(stSaw.angle)) stsAngleMode = true;
+}
+
+// Which table edge a chord endpoint sits on, with the value and field
+// label to show for it (X along top/bottom, Y along left/right).
+function stsEdgeOf(ept) {
+    var s = stpSpans();
+    var tolX = s.xspan * 1e-4, tolY = s.yspan * 1e-4;
+    if (ept[1] <= tolY) return { key: "bottom", val: ept[0], label: "X @ bottom" };
+    if (ept[1] >= s.yspan - tolY) return { key: "top", val: ept[0], label: "X @ top" };
+    if (ept[0] <= tolX) return { key: "left", val: ept[1], label: "Y @ left" };
+    return { key: "right", val: ept[1], label: "Y @ right" };
+}
+
+// Pivot the line about the anchor so it passes through the given
+// boundary point — shared by the intercept fields and the on-map labels.
+function stsPivotToEdge(edge, v) {
+    var s = stpSpans();
+    var px = edge === "left" ? 0 : edge === "right" ? s.xspan : v;
+    var py = edge === "bottom" ? 0 : edge === "top" ? s.yspan : v;
+    if (Math.abs(px - stSaw.ax) > 1e-9 || Math.abs(py - stSaw.ay) > 1e-9) {
+        stsAngleFrom(px - stSaw.ax, py - stSaw.ay);
+    }
+}
+
+// Selector + revealed-column state, and the angle/intercept field
+// values. Runs on every render; fields the user is typing in are left
+// alone, and the intercept labels retag to whichever edges the line
+// currently crosses.
+function stsSyncModeUI() {
+    $("#sts-mode-rip").toggleClass("active", !stsAngleMode && Math.abs(stSaw.angle - 90) <= 0.05);
+    $("#sts-mode-cross").toggleClass("active", !stsAngleMode && !stsOffAxis(stSaw.angle) && Math.abs(stSaw.angle - 90) > 0.05);
+    $("#sts-arr-btn").toggleClass("active", stsArrayMode);
+    $("#sts-array-col").toggle(stsArrayMode);
+    if (stsArrayMode) {
+        if (!$("#sts-arr-n").is(":focus")) $("#sts-arr-n").val(stsArr.n);
+        if (!$("#sts-arr-s").is(":focus")) $("#sts-arr-s").val(stsArr.s);
+    }
+    $("#sts-angle-col").toggle(stsAngleMode);
+    if (!stsAngleMode) return;
+    var $a = $("#sts-angle");
+    if (!$a.is(":focus")) $a.val(Math.round(stSaw.angle * 10) / 10);
+    var chord = stsChord();
+    [0, 1].forEach(function (i) {
+        var $i = $("#sts-i" + i);
+        if (!chord) { $i.val("").removeData("edge"); return; }
+        var e = stsEdgeOf(chord[i]);
+        $("#sts-i" + i + "-label").text(e.label);
+        $i.data("edge", e.key);
+        if (!$i.is(":focus")) $i.val(Math.round(e.val * 100) / 100);
+    });
+}
+
+// Array mode: duplicate the cut stepped normal to the line. Session
+// toggle like the drill's; the numbers persist with the other prefs.
+// Spacing sign picks which side of the base line the copies fall on.
+var stsArrayMode = false;
+var stsArr = { n: 2, s: 1 };
+
+// Unit normal to the cut line — the direction array copies step along.
+function stsNormal() {
+    var th = (stSaw.angle * Math.PI) / 180;
+    return [-Math.sin(th), Math.cos(th)];
+}
+
+// The cut chord: the line through (ax, ay) — the anchor by default, or
+// an array-offset copy — clipped to the table, as its two boundary
+// endpoints (same parametric clip as the planer passes). Null when the
+// line misses the table entirely (offset copies can).
+function stsChord(ax, ay) {
+    if (ax === undefined) { ax = stSaw.ax; ay = stSaw.ay; }
+    var s = stpSpans();
+    var th = (stSaw.angle * Math.PI) / 180;
+    var dx = Math.cos(th), dy = Math.sin(th);
+    var t0 = -Infinity, t1 = Infinity, ok = true;
+    [[dx, ax, 0, s.xspan], [dy, ay, 0, s.yspan]].forEach(function (axis) {
+        var d = axis[0], p = axis[1];
+        if (Math.abs(d) < 1e-9) {
+            if (p < axis[2] - 1e-6 || p > axis[3] + 1e-6) ok = false;
+        } else {
+            var ta = (axis[2] - p) / d, tb = (axis[3] - p) / d;
+            t0 = Math.max(t0, Math.min(ta, tb));
+            t1 = Math.min(t1, Math.max(ta, tb));
+        }
+    });
+    if (!ok || t0 > t1) return null;
+    return [
+        [ax + t0 * dx, ay + t0 * dy],
+        [ax + t1 * dx, ay + t1 * dy],
+    ];
+}
+
+function stsSyncInputs() {
+    $("#sts-ax").val(Math.round(stSaw.ax * 1000) / 1000);
+    $("#sts-ay").val(Math.round(stSaw.ay * 1000) / 1000);
+    $("#sts-depth").val(stSaw.depth > 0 ? stSaw.depth : "");
+    $("#sts-pass").val(stSaw.pass > 0 ? stSaw.pass : "");
+    $("#sts-feed").val(stSaw.feed > 0 ? stSaw.feed : "");
+}
+
+function stsSave() {
+    saveShopToolPref("tablesaw", {
+        ax: stSaw.ax, ay: stSaw.ay, angle: stSaw.angle,
+        depth: stSaw.depth, pass: stSaw.pass, feed: stSaw.feed,
+        unit: state.unit,
+        arr: { n: stsArr.n, s: stsArr.s },
+    });
+}
+
+// Table saw map: the cut line with endpoint handles on the table
+// boundary, a draggable anchor, the angle labeled on the line, and the
+// intercept values labeled at the edges. Angle and intercepts carry
+// data-edit/data-val and are typeable in place via #sts-edit.
+function renderStsEnv() {
+    var svg = document.getElementById("sts-env-svg");
+    if (!svg) return;
+    var g = stpGeom("sts-env-svg");
+    svg.setAttribute("width", g.W);
+    svg.setAttribute("height", g.H);
+    var X = function (v) { return g.ML + (v / g.xspan) * g.rw; };
+    var Y = function (v) { return g.MT + g.rh - (v / g.yspan) * g.rh; };
+    var round2 = function (v) { return Math.round(v * 100) / 100; };
+    var halo = 'paint-order="stroke" stroke="#fff" stroke-width="2.5"';
+    var parts = [
+        '<rect x="' + g.ML + '" y="' + g.MT + '" width="' + g.rw + '" height="' + g.rh + '" fill="#f4f1ea" stroke="#a8a49a"/>',
+    ];
+    var chord = stsChord();
+    if (chord) {
+        // Array preview first, so the base line and handles draw on top.
+        // Copies that fall off the table just don't draw.
+        if (stsArrayMode) {
+            var nrm = stsNormal();
+            for (var ci = 1; ci < stsArr.n; ci++) {
+                var c = stsChord(stSaw.ax + ci * stsArr.s * nrm[0], stSaw.ay + ci * stsArr.s * nrm[1]);
+                if (!c) continue;
+                parts.push('<line x1="' + X(c[0][0]) + '" y1="' + Y(c[0][1]) + '" x2="' + X(c[1][0]) + '" y2="' + Y(c[1][1]) + '" stroke="#2980b9" stroke-width="1" opacity="0.55"/>');
+            }
+        }
+        var p0 = [X(chord[0][0]), Y(chord[0][1])];
+        var p1 = [X(chord[1][0]), Y(chord[1][1])];
+        parts.push('<line x1="' + p0[0] + '" y1="' + p0[1] + '" x2="' + p1[0] + '" y2="' + p1[1] + '" stroke="#2980b9" stroke-width="2"/>');
+        // Angle label: off the line's midpoint, perpendicular, clamped
+        // into the table rect.
+        var sdx = p1[0] - p0[0], sdy = p1[1] - p0[1];
+        var slen = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
+        var lx = (p0[0] + p1[0]) / 2 - (sdy / slen) * 13;
+        var ly = (p0[1] + p1[1]) / 2 + (sdx / slen) * 13;
+        lx = Math.max(g.ML + 14, Math.min(g.ML + g.rw - 14, lx));
+        ly = Math.max(g.MT + 10, Math.min(g.MT + g.rh - 4, ly));
+        parts.push('<text x="' + lx + '" y="' + ly + '" text-anchor="middle" font-size="9" font-weight="700" fill="#2471a3" ' + halo +
+            ' data-edit="angle" data-val="' + stSaw.angle + '">' + (Math.round(stSaw.angle * 10) / 10) + "&#176;</text>");
+        // Intercept labels + endpoint handles. Bottom/left labels sit in
+        // the (roomy) outer margins; top/right sit just inside the rect.
+        chord.forEach(function (ept, i) {
+            var px = X(ept[0]), py = Y(ept[1]);
+            var e = stsEdgeOf(ept);
+            var tx, ty, anchorAttr = 'text-anchor="middle"';
+            if (e.key === "bottom") {
+                tx = px; ty = g.MT + g.rh + 15;
+            } else if (e.key === "top") {
+                tx = px; ty = g.MT + 11;
+            } else if (e.key === "left") {
+                tx = g.ML - 4; ty = py + 3; anchorAttr = 'text-anchor="end"';
+            } else {
+                tx = g.ML + g.rw - 4; ty = py + 3; anchorAttr = 'text-anchor="end"';
+            }
+            tx = Math.max(8, Math.min(g.W - 2, tx));
+            parts.push('<text x="' + tx + '" y="' + ty + '" ' + anchorAttr + ' font-size="8" font-weight="700" fill="#2471a3" ' + halo +
+                ' data-edit="i-' + e.key + '" data-val="' + round2(e.val) + '">' + round2(e.val) + "</text>");
+            parts.push('<circle cx="' + px + '" cy="' + py + '" r="4.5" fill="#fff" stroke="#2980b9" stroke-width="2" data-handle="e' + i + '"/>');
+            parts.push('<circle cx="' + px + '" cy="' + py + '" r="10" fill="transparent" data-handle="e' + i + '"/>');
+        });
+        // Anchor: the pencil mark the cut pivots about
+        var apx = X(stSaw.ax), apy = Y(stSaw.ay);
+        parts.push('<circle cx="' + apx + '" cy="' + apy + '" r="5" fill="#e67e22" stroke="#fff" stroke-width="1.5" data-handle="anchor"/>');
+        parts.push('<circle cx="' + apx + '" cy="' + apy + '" r="11" fill="transparent" data-handle="anchor"/>');
+    }
+    parts.push(stOriginBadge(g.ML + 4, g.MT + g.rh - 4));
+    svg.innerHTML = parts.join("");
+    stsSyncModeUI();
+    stPlaceBtns("st-panel-tablesaw");
 }
 
 // Depth slider bounds follow the material: a bit past through-cut is as
@@ -1604,6 +1978,35 @@ $(document).ready(function () {
             renderStDrill();
             return;
         }
+        if (tool === "tablesaw") {
+            var ps = shopToolPrefs().tablesaw || {};
+            var sp = stpSpans();
+            var numS = function (v, dflt) {
+                var c = inCurrentUnits(v, ps.unit);
+                return c !== null ? c : dflt;
+            };
+            stSaw.ax = Math.max(0, Math.min(sp.xspan, numS(ps.ax, sp.xspan / 2)));
+            stSaw.ay = Math.max(0, Math.min(sp.yspan, numS(ps.ay, sp.yspan / 2)));
+            var an = Number(ps.angle);
+            stSaw.angle = isFinite(an) ? ((an % 180) + 180) % 180 : 90;
+            stsAngleMode = stsOffAxis(stSaw.angle);
+            var sd = numS(ps.depth, 0);
+            stSaw.depth = sd > 0 ? sd : 0;
+            var spd = numS(ps.pass, 0);
+            stSaw.pass = spd > 0 ? spd : 0;
+            var sf = numS(ps.feed, 0);
+            stSaw.feed = sf > 0 ? sf : 0;
+            var sarr = ps.arr || {};
+            stsArr.n = stCount(sarr.n || 2);
+            var ss = numS(sarr.s, null);
+            stsArr.s = ss !== null && ss !== 0 ? ss : state.unit === "mm" ? 25 : 1;
+            stsArrayMode = false;
+            // Show first so the envelope map can measure its real width
+            showShopTool(tool);
+            stsSyncInputs();
+            renderStsEnv();
+            return;
+        }
         if (tool === "planer") {
             var pp = shopToolPrefs().planer || {};
             var pd = stpDefaults();
@@ -1685,18 +2088,41 @@ $(document).ready(function () {
         renderStpEnv();
     });
     $("#stp-angle-slider").on("change", stpSave);
+    // Magnify the pattern while the slider is held so the passes are
+    // legible at any angle; glide back to true scale on release.
+    $("#stp-angle-slider").on("pointerdown", function () {
+        clearTimeout(stpPulseTimer); // a pending pulse-out must not fire mid-hold
+        stpZoomTo(1);
+    });
+    $("#stp-angle-slider").on("pointerup pointercancel blur", function () {
+        stpZoomTo(0);
+    });
+    // Typing/spinning the angle number has no held state to key the zoom
+    // off of, so pulse instead: zoom in, hold a beat, glide back out.
+    // Rapid changes keep resetting the hold so the view stays magnified.
+    var stpPulseTimer = null;
+    function stpZoomPulse() {
+        stpZoomTo(1);
+        clearTimeout(stpPulseTimer);
+        stpPulseTimer = setTimeout(function () {
+            stpZoomTo(0);
+        }, 1050);
+    }
+
     $("#stp-angle").on("change", function () {
         var a = parseFloat($(this).val());
         stPlaner.angle = isFinite(a) ? Math.max(0, Math.min(90, a)) : 0;
         $(this).val(stPlaner.angle);
         $("#stp-angle-slider").val(stPlaner.angle);
         stpSave();
+        stpZoomPulse();
         renderStpEnv();
     });
 
     $('input[name="stp-dir"]').on("change", function () {
         stPlaner.dir = this.value === "1way" ? "1way" : "2way";
         stpSave();
+        stpZoomPulse(); // the 1-way/2-way difference reads best magnified
         renderStpEnv();
     });
 
@@ -1740,12 +2166,228 @@ $(document).ready(function () {
         runCommand(lines.join("\n"));
     });
 
+    // ---- Table saw: anchor/endpoint dragging + in-place value editing
+
+    var stsDrag = null;
+
+    $("#sts-env-svg").on("pointerdown", "[data-handle]", function (e) {
+        stsDrag = $(this).attr("data-handle");
+        e.preventDefault();
+    });
+
+    $(document).on("pointermove", function (e) {
+        if (!stsDrag) return;
+        var svg = document.getElementById("sts-env-svg");
+        if (!svg) { stsDrag = null; return; }
+        var box = svg.getBoundingClientRect();
+        var g = stpGeom("sts-env-svg");
+        var vx = ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
+        var vy = ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
+        if (stsDrag === "anchor") {
+            // Anchor drag translates the line (clamped onto the table)
+            stSaw.ax = Math.max(0, Math.min(g.xspan, vx));
+            stSaw.ay = Math.max(0, Math.min(g.yspan, vy));
+            stsSyncInputs();
+        } else {
+            // Endpoint drag pivots the line about the anchor
+            var dx = vx - stSaw.ax, dy = vy - stSaw.ay;
+            if (Math.abs(dx) > 1e-9 || Math.abs(dy) > 1e-9) stsAngleFrom(dx, dy);
+        }
+        renderStsEnv();
+    });
+
+    $(document).on("pointerup pointercancel", function () {
+        if (!stsDrag) return;
+        stsDrag = null;
+        stsSave();
+    });
+
+    // In-place editing: clicking the angle or an intercept label floats
+    // #sts-edit over it; Enter/blur commits, Escape cancels. A typed
+    // intercept pivots the line about the anchor to pass through that
+    // boundary point, same as dragging the handle there.
+    var stsEditKey = null;
+
+    function stsOpenEdit(el, key, value) {
+        var $inp = $("#sts-edit");
+        var wrap = $inp.parent()[0];
+        var wb = wrap.getBoundingClientRect();
+        var eb = el.getBoundingClientRect();
+        stsEditKey = key;
+        var left = Math.max(0, Math.min(wb.width - 54, eb.left + eb.width / 2 - wb.left - 27));
+        var top = Math.max(0, Math.min(wb.height - 20, eb.top + eb.height / 2 - wb.top - 10));
+        $inp.val(value).css({ left: left + "px", top: top + "px" }).show();
+        $inp[0].focus();
+        $inp[0].select();
+    }
+
+    function stsCommitEdit() {
+        var key = stsEditKey;
+        var v = parseFloat($("#sts-edit").val());
+        stsEditKey = null;
+        $("#sts-edit").hide();
+        if (!key || !isFinite(v)) return;
+        if (key === "angle") {
+            stSaw.angle = Math.round((((v % 180) + 180) % 180) * 10) / 10;
+            if (stsOffAxis(stSaw.angle)) stsAngleMode = true;
+        } else {
+            stsPivotToEdge(key.slice(2), v);
+        }
+        stsSave();
+        renderStsEnv();
+    }
+
+    $("#sts-env-svg").on("click", "[data-edit]", function () {
+        var val = parseFloat($(this).attr("data-val"));
+        stsOpenEdit(this, $(this).attr("data-edit"), isFinite(val) ? val : 0);
+    });
+    $("#sts-edit").on("keydown", function (e) {
+        if (e.key === "Enter") $(this).blur();
+        if (e.key === "Escape") { stsEditKey = null; $(this).hide(); }
+    });
+    $("#sts-edit").on("blur", stsCommitEdit);
+
+    $("#sts-ax, #sts-ay").on("change", function () {
+        var s = stpSpans();
+        var ax = parseFloat($("#sts-ax").val());
+        var ay = parseFloat($("#sts-ay").val());
+        if (isFinite(ax)) stSaw.ax = Math.max(0, Math.min(s.xspan, ax));
+        if (isFinite(ay)) stSaw.ay = Math.max(0, Math.min(s.yspan, ay));
+        stsSyncInputs();
+        stsSave();
+        renderStsEnv();
+    });
+
+    $("#sts-depth").on("change", function () {
+        var d = parseFloat($(this).val());
+        stSaw.depth = d > 0 ? d : 0;
+        stsSave();
+    });
+    $("#sts-pass").on("change", function () {
+        var d = parseFloat($(this).val());
+        stSaw.pass = d > 0 ? d : 0;
+        stsSave();
+    });
+    $("#sts-feed").on("change", function () {
+        var f = parseFloat($(this).val());
+        stSaw.feed = f > 0 ? f : 0;
+        stsSave();
+    });
+
+    // Cut-type selector + the revealed angle/intercept fields
+    $("#sts-mode-rip").on("click", function () {
+        stsAngleMode = false;
+        stSaw.angle = 90;
+        stsSave();
+        renderStsEnv();
+    });
+    $("#sts-mode-cross").on("click", function () {
+        stsAngleMode = false;
+        stSaw.angle = 0;
+        stsSave();
+        renderStsEnv();
+    });
+    $("#sts-arr-btn").on("click", function () {
+        stsArrayMode = !stsArrayMode;
+        renderStsEnv();
+    });
+    $("#sts-arr-n, #sts-arr-s").on("change", function () {
+        stsArr.n = stCount($("#sts-arr-n").val());
+        var sp = parseFloat($("#sts-arr-s").val());
+        if (isFinite(sp) && sp !== 0) stsArr.s = sp;
+        $("#sts-arr-n").val(stsArr.n);
+        $("#sts-arr-s").val(stsArr.s);
+        stsSave();
+        renderStsEnv();
+    });
+    $("#sts-angle").on("change", function () {
+        var v = parseFloat($(this).val());
+        if (!isFinite(v)) return;
+        stSaw.angle = Math.round((((v % 180) + 180) % 180) * 10) / 10;
+        stsSave();
+        renderStsEnv();
+    });
+    $("#sts-i0, #sts-i1").on("change", function () {
+        var v = parseFloat($(this).val());
+        var edge = $(this).data("edge");
+        if (!isFinite(v) || !edge) return;
+        stsPivotToEdge(edge, v);
+        stsSave();
+        renderStsEnv();
+    });
+
+    // CUT: straight passes at depth (Z zeroed on the material surface) —
+    // one per array copy, serpentine order so travel between cuts is
+    // short. Same coordinate/spindle bookkeeping as PLANE.
+    $("#btn-st-saw").on("click", function () {
+        if (!isIdle()) return;
+        if (!(stSaw.depth > 0)) return fabmo.notify("warning", "Set a cutting depth first.");
+        var nrm = stsNormal();
+        var count = stsArrayMode ? stsArr.n : 1;
+        var cuts = [];
+        for (var i = 0; i < count; i++) {
+            var c = stsChord(stSaw.ax + i * stsArr.s * nrm[0], stSaw.ay + i * stsArr.s * nrm[1]);
+            if (c) cuts.push(c);
+        }
+        if (!cuts.length) return fabmo.notify("warning", "The cut line misses the table.");
+        var safeZ = Number((state.vars || {}).SB_SAFE_Z);
+        if (!isFinite(safeZ) || safeZ <= 0) safeZ = state.unit === "mm" ? 25 : 1;
+        var env = state.envelope || {};
+        var wx = function (v) { return Math.round((v + (Number(env.xmin) || 0) - state.g55.x) * 10000) / 10000; };
+        var wy = function (v) { return Math.round((v + (Number(env.ymin) || 0) - state.g55.y) * 10000) / 10000; };
+        // Pass schedule: step down by pass depth (or all at once), never
+        // past total depth.
+        var passD = stSaw.pass > 0 ? Math.min(stSaw.pass, stSaw.depth) : stSaw.depth;
+        var np = Math.max(1, Math.ceil(stSaw.depth / passD - 1e-9));
+        var depths = [];
+        for (var k = 1; k <= np; k++) {
+            depths.push(Math.round(Math.min(k * passD, stSaw.depth) * 10000) / 10000);
+        }
+        var lines = [
+            "'Shop Tools: table saw",
+            "SO,1,1",
+            "PAUSE 2",
+        ];
+        if (stSaw.feed > 0) lines.push("MS, " + stSaw.feed);
+        cuts.forEach(function (c, i) {
+            var a = c[0], b = c[1];
+            if (i % 2 === 1) { a = c[1]; b = c[0]; }
+            lines.push("JZ, " + safeZ);
+            lines.push("J2, " + wx(a[0]) + ", " + wy(a[1]));
+            // Multi-pass without lifting: plunge deeper at whichever end
+            // the last pass finished, cut back the other way.
+            depths.forEach(function (d, k2) {
+                lines.push("MZ, " + -d);
+                var tgt = k2 % 2 === 0 ? b : a;
+                lines.push("M2, " + wx(tgt[0]) + ", " + wy(tgt[1]));
+            });
+        });
+        lines.push("JZ, " + safeZ);
+        lines.push("SO,1,0");
+        consoleLog("> saw: " + cuts.length + " cut" + (cuts.length > 1 ? "s" : "") + " at " +
+            stpFmtLen(stSaw.angle) + "° through (" + stpFmtLen(stSaw.ax) + ", " + stpFmtLen(stSaw.ay) +
+            ")" + (cuts.length > 1 ? ", spacing " + stsArr.s : "") +
+            ", depth " + stSaw.depth + (np > 1 ? " in " + np + " passes" : "") +
+            (stSaw.feed > 0 ? ", feed " + stSaw.feed : ""));
+        runCommand(lines.join("\n"));
+    });
+
     // ---- Array mode: swap the depth/cross-section controls for the grid
     // fields; the envelope map previews the holes.
 
     function setArrayMode(on) {
         stArrayMode = on;
         $("#btn-st-array").toggleClass("active", on);
+        if (on) {
+            // Freeze the drill columns' footprint (widths + the gap
+            // between them) onto the array panel before swapping, so the
+            // map and the header buttons don't move between modes.
+            var w = 0;
+            $(".ts-st-depthcol:visible, .ts-st-xseccol:visible").each(function () {
+                w += $(this).outerWidth() + 6;
+            });
+            if (w) $("#st-array-panel").css("min-width", w - 6 + "px");
+        }
         $(".ts-st-depthcol, .ts-st-xseccol").toggle(!on);
         $("#st-array-panel").toggle(on);
         if (on) {
@@ -1777,6 +2419,18 @@ $(document).ready(function () {
     $(".ts-st-back").on("click", function () {
         showShopTool(null);
     });
+
+    // Re-fit the envelope maps when the card's width changes — e.g. the
+    // DRO expanding squeezes this card. stEnvCap contracts the map first
+    // and only stacks it below the controls when really tight.
+    var stCard = document.querySelector('.ts-card[data-card-id="shoptools"]');
+    if (stCard && window.ResizeObserver) {
+        new ResizeObserver(function () {
+            if ($("#st-panel-drill").is(":visible")) renderStEnv();
+            if ($("#st-panel-planer").is(":visible")) renderStpEnv();
+            if ($("#st-panel-tablesaw").is(":visible")) renderStsEnv();
+        }).observe(stCard);
+    }
 
     // Slider drags update live; the number field mirrors it. Persist on
     // change-end rather than every drag tick.
