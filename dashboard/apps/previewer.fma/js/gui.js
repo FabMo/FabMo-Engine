@@ -39,22 +39,8 @@ module.exports = function(callbacks) {
 
 
   function position() {
-    var size = 32;
-    var margin = 5;
-
-    // Left-side view buttons (absolutely positioned)
-    var x = margin, y = margin;
-    if (self.buttons.showX) place(self.buttons.showX, x, y);
-    if (self.buttons.showY) place(self.buttons.showY, x, y + size + margin);
-    if (self.buttons.showZ) place(self.buttons.showZ, x, y + (size + margin) * 2);
-    if (self.buttons.showOrtho) place(self.buttons.showOrtho, x, y + (size + margin) * 3);
-    if (self.buttons.showPerspective) place(self.buttons.showPerspective, x, y + (size + margin) * 3);
-    if (self.buttons.help) place(self.buttons.help, x + 25, y + (size + margin) * 4.2);
-
-    // Bottom bar buttons are positioned by flexbox — no place() needed
-
-    var helpBtn = $('#preview #button-help');
-    if (helpBtn.length) helpBtn.show();
+    // Orientation lives on the ViewCube, projection on the bottom-bar
+    // Ortho toggle, and Help inside Settings — nothing left to place.
   }
 
 
@@ -105,6 +91,9 @@ module.exports = function(callbacks) {
       );
       $('<li>').text(line).appendTo($list);
     }
+    // The warning lives at the top of the toolpath drawer now — make
+    // sure the drawer is out so it's actually seen.
+    $('#operations-panel').removeClass('collapsed');
     show(self.softLimitWarning, true);
   }
 
@@ -147,11 +136,6 @@ module.exports = function(callbacks) {
 
   // Buttons
   self.buttons = {};
-  self.buttons.showX    = get('x', callbacks.showX);
-  self.buttons.showY    = get('y', callbacks.showY);
-  self.buttons.showZ    = get('z', callbacks.showZ);
-  self.buttons.showOrtho  = get('ortho', callbacks.toggleView);
-  self.buttons.showPerspective  = get('perspective', callbacks.toggleView);
   
   // Debug: Log button elements
   console.log('Ortho button:', self.buttons.showOrtho);
@@ -166,7 +150,6 @@ module.exports = function(callbacks) {
   self.buttons.skipBack = get('skip-back', function() { if (callbacks.skipToCutStart) callbacks.skipToCutStart(); });
   self.buttons.skipFwd  = get('skip-fwd', function() { if (callbacks.skipToCutEnd) callbacks.skipToCutEnd(); });
   self.buttons.settings = get('settings', onSettings);
-  self.buttons.help     = get('help', onHelp);
 
   // Dialogs
   self.loading           = $('#preview .loading')[0];
@@ -175,6 +158,11 @@ module.exports = function(callbacks) {
   self.settings          = $('#preview .settings')[0];
   self.softLimitWarning  = $('#preview .soft-limit-warning')[0];
   $('#preview .dialog .close').click(onClose);
+  // Help moved inside Settings: swap dialogs on click
+  $('#preview .settings .open-help').click(function() {
+    show(self.settings, false);
+    show(self.help, true);
+  });
 
   $('.reset-material').click(function() {
     if (callbacks.resetMaterial) callbacks.resetMaterial();

@@ -2252,21 +2252,6 @@
     "previewer.ops.operation_n": {
         "en_at_translation": "Operation {n}"
     },
-    "previewer.view.x_title": {
-        "en_at_translation": "Change orientation to view down the X axis."
-    },
-    "previewer.view.y_title": {
-        "en_at_translation": "Change orientation to view down the Y axis."
-    },
-    "previewer.view.z_title": {
-        "en_at_translation": "Change orientation to view down the Z axis."
-    },
-    "previewer.view.ortho_title": {
-        "en_at_translation": "Toggle to Ortho (non-perspective) view."
-    },
-    "previewer.view.persp_title": {
-        "en_at_translation": "Toggle to Perspective view."
-    },
     "previewer.bottom.settings_title": {
         "en_at_translation": "Open previewer settings."
     },
@@ -2434,9 +2419,6 @@
     },
     "previewer.settings.res_extreme": {
         "en_at_translation": "Extreme (2000)"
-    },
-    "previewer.help.button_title": {
-        "en_at_translation": "Show Help"
     },
     "previewer.help.title": {
         "en_at_translation": "Preview Help"

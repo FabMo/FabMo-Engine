@@ -907,13 +907,6 @@
             "submit_selected": "選択したオペレーションを送信",
             "operation_n": "オペレーション {n}"
         },
-        "view": {
-            "x_title": "X軸方向からのビューに切り替えます",
-            "y_title": "Y軸方向からのビューに切り替えます",
-            "z_title": "Z軸方向からのビューに切り替えます",
-            "ortho_title": "正投影（平行投影）ビューに切り替えます",
-            "persp_title": "透視投影ビューに切り替えます"
-        },
         "bottom": {
             "settings_title": "プレビューの設定を開きます",
             "speed_title": "シミュレーション速度",
@@ -977,7 +970,6 @@
             "res_extreme": "最高 (2000)"
         },
         "help": {
-            "button_title": "ヘルプを表示",
             "title": "プレビューのヘルプ",
             "mouse": "マウス操作",
             "mouse_left": "左クリック",

@@ -917,6 +917,7 @@
         "ops": {
             "title": "Operations",
             "toggle_all_title": "Select All / None",
+            "drawer_title": "Show / hide the toolpath panel",
             "toggle_all": "All",
             "empty": "No operations parsed in file. Use Toolpath Details to set tool defaults, then run the full job.",
             "run_full_job": "Run Full Job",
@@ -931,11 +932,16 @@
             "operation_n": "Operation {n}"
         },
         "view": {
-            "x_title": "Change orientation to view down the X axis.",
-            "y_title": "Change orientation to view down the Y axis.",
-            "z_title": "Change orientation to view down the Z axis.",
-            "ortho_title": "Toggle to Ortho (non-perspective) view.",
-            "persp_title": "Toggle to Perspective view."
+            "two_d": "2D",
+            "three_d": "3D"
+        },
+        "viewcube": {
+            "front": "FRONT",
+            "back": "BACK",
+            "left": "LEFT",
+            "right": "RIGHT",
+            "top": "TOP",
+            "bottom": "BOTTOM"
         },
         "bottom": {
             "settings_title": "Open previewer settings.",
@@ -978,6 +984,7 @@
             "table_zzoff": "Table Offset from Z-Zero (in current machine display units)",
             "lookahead": "Live Sync Buffer Compensation (SBP: SBP commands; GCode: gcode lines)",
             "display_opts": "Display Options",
+            "show_ortho": "Orthographic (non-perspective) view",
             "show_grid": "Show Grid",
             "show_table": "Show Machine Table",
             "show_dims": "Show Dimensions",
@@ -986,6 +993,7 @@
             "show_pc": "Show Point Cloud Shape for Leveler",
             "show_pc_wire": "Show Point Cloud Wireframe",
             "reset_material": "Reset Material",
+            "open_help": "Help…",
             "sim_opts": "Simulation Options",
             "pc_opacity": "Set Point Cloud Opacity",
             "mat_opacity": "Set Material Opacity",
@@ -1000,7 +1008,6 @@
             "res_extreme": "Extreme (2000)"
         },
         "help": {
-            "button_title": "Show Help",
             "title": "Preview Help",
             "mouse": "Mouse Controls",
             "mouse_left": "Left Mouse",

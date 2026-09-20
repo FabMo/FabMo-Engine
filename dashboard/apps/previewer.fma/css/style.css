@@ -1,5 +1,28 @@
+/* ---- Config-style tokens (matches the tool_status "config" theme and
+   the configuration app): white surfaces, flat #313366 indigo accents,
+   hairline borders, square corners, 13px Helvetica. The 3D viewport
+   itself stays dark; these skin the floating chrome. Green marks
+   "go" actions that move the machine (config-app precedent). ---- */
+:root {
+  --pv-font: "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+  --pv-bg: #ffffff;
+  --pv-bg-dim: #f2f2f2;
+  --pv-text: #222;
+  --pv-text-dim: #666;
+  --pv-border: #ddd;
+  --pv-input-border: #ccc;
+  --pv-accent: #313366;
+  --pv-accent-hover: #3d3f7a;
+  --pv-accent-active: #262850;
+  --pv-accent-text: #fff;
+  --pv-go: #29af29;
+  --pv-go-hover: #239623;
+  --pv-hover: rgba(49, 51, 102, 0.06);
+}
+
 body {
   overflow: hidden;
+  font-family: var(--pv-font);
 }
 
 /* iOS Safari registers the WebGL canvas touch-hit area while the parent
@@ -138,14 +161,14 @@ body {
 }
 .ar-cal-actions button {
   border: none;
-  border-radius: 3px;
+  border-radius: 0;
   padding: 5px 12px;
   font-size: 12px;
   font-weight: bold;
   cursor: pointer;
 }
-.ar-cal-save { background: #2e7d32; color: #fff; }
-.ar-cal-save:hover { background: #1b5e20; }
+.ar-cal-save { background: var(--pv-go); color: #fff; }
+.ar-cal-save:hover { background: var(--pv-go-hover); }
 .ar-cal-cancel { background: #555; color: #fff; }
 .ar-cal-cancel:hover { background: #777; }
 
@@ -203,17 +226,17 @@ body {
 
 #preview #button-help {
     position: absolute;
-    background-color: #313366;
+    background-color: var(--pv-accent);
     float: left;
     border-radius: 50%;
     height: 20px;
     width: 20px;
-    line-height: 130%;
-    color: #eee;
+    line-height: 145%;
+    color: var(--pv-accent-text);
     text-align: center;
     font-size: 1rem;
     font-family: serif;
-    border: 2px solid #201f2b;
+    border: none;
     box-shadow: none;
 }
 
@@ -230,10 +253,10 @@ body {
 
 #preview .run-now {
   padding: 6px 8px;
-  border-radius: 8px;
-  color: #eee;
-  background-color: #035b1c;
-  border: 2px solid #024a16;
+  border-radius: 0;
+  color: #fff;
+  background-color: var(--pv-go);
+  border: none;
   font-weight: bold;
   font-size: 11px;
   box-shadow: none;
@@ -248,6 +271,158 @@ body {
   z-index: 2;
 }
 
+/* 2D/3D selector: segmented pair above the orientation cube. In 2D the
+   cube and camera-mode buttons hide — orientation is meaningless there. */
+#view-dim-toggle {
+  position: absolute;
+  top: 6px;
+  left: 12px;
+  z-index: 5;
+  display: flex;
+}
+#view-dim-toggle button {
+  width: 36px;
+  padding: 3px 0;
+  font: bold 11px var(--pv-font);
+  color: var(--pv-text-dim);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #b8b8c4;
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
+  user-select: none;
+}
+#view-dim-toggle button + button {
+  border-left: none;
+}
+#view-dim-toggle button:hover {
+  background: var(--pv-accent-hover);
+  color: var(--pv-accent-text);
+}
+#view-dim-toggle button.active {
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
+  border-color: var(--pv-accent);
+}
+#preview.mode-2d #viewcube-container,
+#preview.mode-2d #camera-mode-btns {
+  display: none;
+}
+
+/* Camera-mode buttons (AR / Top), parked in a column under the cube.
+   Cube-face styling at rest, indigo when the mode is active. */
+#camera-mode-btns {
+  position: absolute;
+  top: 172px;
+  left: 12px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#camera-mode-btns button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 64px;
+  padding: 4px 0;
+  font: bold 11px var(--pv-font);
+  color: var(--pv-text-dim);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #b8b8c4;
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
+}
+#camera-mode-btns button svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+#camera-mode-btns button:hover {
+  background: var(--pv-accent-hover);
+  color: var(--pv-accent-text);
+}
+#camera-mode-btns button.active {
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
+  border-color: var(--pv-accent);
+}
+
+/* ViewCube — CSS 3D orientation cube (ui_testbed pattern), top-left.
+   Faces/edges/corners snap the camera; dragging the cube orbits it.
+   Rotation is driven from viewer.js via matrix3d on #vc-cube. */
+#viewcube-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 170px;
+  height: 170px;
+  z-index: 4;
+  perspective: 600px;
+  pointer-events: none;
+}
+#vc-cube {
+  width: 90px;
+  height: 90px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-left: -45px;
+  margin-top: -45px;
+  transform-style: preserve-3d;
+  pointer-events: auto;
+  cursor: grab;
+}
+.vc-face {
+  position: absolute;
+  width: 66px;
+  height: 66px;
+  left: 12px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: bold 11px var(--pv-font);
+  color: var(--pv-text-dim);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #b8b8c4;
+  opacity: 0.85;
+  cursor: pointer;
+  backface-visibility: hidden;
+  user-select: none;
+  transition: background 0.12s, opacity 0.12s;
+}
+.vc-face:hover {
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
+  opacity: 0.95;
+}
+/* Chamfer: 3D edge/corner faces (generated by initViewCube) */
+.vc-edge, .vc-corner {
+  pointer-events: auto;
+  cursor: pointer;
+  backface-visibility: hidden;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #b8b8c4;
+  opacity: 0.7;
+  transition: background 0.12s, opacity 0.12s, border-color 0.12s;
+}
+.vc-edge:hover, .vc-corner:hover {
+  background: var(--pv-accent);
+  border-color: var(--pv-accent);
+  opacity: 0.9;
+}
+.vc-front  { transform: translateZ(45px); }
+.vc-back   { transform: rotateY(180deg) translateZ(45px); }
+.vc-right  { transform: rotateY(90deg) translateZ(45px); }
+.vc-left   { transform: rotateY(-90deg) translateZ(45px); }
+.vc-top    { transform: rotateX(90deg) translateZ(45px); }
+.vc-bottom { transform: rotateX(-90deg) translateZ(45px); }
+
 #preview .actions > :hover {
   opacity: 0.7;
 }
@@ -257,7 +432,7 @@ body {
 }
 
 #preview .run-now:hover {
-  background-color: #047a25;
+  background-color: var(--pv-go-hover);
 }
 
 #preview #button-pause,
@@ -287,24 +462,35 @@ body {
   align-items: center;
   padding: 0 6px 6px 6px;
   z-index: 2;
-  background: #ffda29;
-  border-top: 1px solid #d0c265;
+  background: var(--pv-bg);
+  border-top: 1px solid var(--pv-border);
 }
 
-#preview .bottom-bar img {
+/* Icon buttons (settings gear, play/pause/reset): flat indigo squares
+   with inline-SVG white glyphs, matching the rest of the bar. */
+#preview .bottom-bar .bar-icon {
   width: 30px;
   height: 30px;
   cursor: pointer;
-  margin-right: 4px;
+  margin: 0 4px 0 0;
   flex-shrink: 0;
-  border-radius: 6px;
-  padding: 3px;
-  background: transparent;
+  border-radius: 0;
+  padding: 5px;
+  background: var(--pv-accent);
   border: none;
+  box-shadow: none;
+  line-height: 0;
 }
 
-#preview .bottom-bar img:hover {
-  opacity: 0.7;
+#preview .bottom-bar .bar-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: #fff;
+  display: block;
+}
+
+#preview .bottom-bar .bar-icon:hover {
+  background: var(--pv-accent-hover);
 }
 
 #preview .bottom-bar #timeline {
@@ -329,18 +515,18 @@ body {
   border-radius: 1.25em;
   padding: 0.75em;
   box-shadow:
-    inset 0 1px 0.125em #d0c265,
-    inset 0 -1px 0.125em #969161,
-    inset 0 0 0 0.75em #ffda29;
-  background-color: #897827;
-  background-image: linear-gradient(90deg, transparent 60%, rgba(40,30,0,0.3) 60%);
+    inset 0 1px 0.125em #e2e2e8,
+    inset 0 -1px 0.125em #c6c6d0,
+    inset 0 0 0 0.75em #ffffff;
+  background-color: #c9c9d6;
+  background-image: linear-gradient(90deg, transparent 60%, rgba(49,51,102,0.28) 60%);
   background-size: 8px 100%;
   background-repeat: repeat-x;
   transition: background-size 0.5s ease-out;
 }
 
 #preview .bottom-bar #timeline.zoomed::-webkit-slider-runnable-track {
-  background-image: linear-gradient(90deg, transparent 45%, rgba(40,30,0,0.5) 45%);
+  background-image: linear-gradient(90deg, transparent 45%, rgba(49,51,102,0.45) 45%);
   background-size: 28px 100%;
 }
 
@@ -348,19 +534,19 @@ body {
   height: 2em;
   border-radius: 1.25em;
   padding: 0.75em;
-  background-color: #897827;
-  background-image: linear-gradient(90deg, transparent 60%, rgba(40,30,0,0.3) 60%);
+  background-color: #c9c9d6;
+  background-image: linear-gradient(90deg, transparent 60%, rgba(49,51,102,0.28) 60%);
   background-size: 8px 100%;
   background-repeat: repeat-x;
   transition: background-size 0.5s ease-out;
   box-shadow:
-    inset 0 1px 0.125em #272727,
-    inset 0 -1px 0.125em #272727,
-    inset 0 0 0 0.75em #ffda29;
+    inset 0 1px 0.125em #e2e2e8,
+    inset 0 -1px 0.125em #c6c6d0,
+    inset 0 0 0 0.75em #ffffff;
 }
 
 #preview .bottom-bar #timeline.zoomed::-moz-range-track {
-  background-image: linear-gradient(90deg, transparent 45%, rgba(40,30,0,0.5) 45%);
+  background-image: linear-gradient(90deg, transparent 45%, rgba(49,51,102,0.45) 45%);
   background-size: 28px 100%;
 }
 
@@ -371,10 +557,10 @@ body {
   border-radius: 50%;
   padding: 0.75em;
   margin-top: -0.75em;
-  box-shadow: 0 1px 0.125em #111, inset 0 1px 1px #4a4a7a;
+  box-shadow: 0 1px 0.125em rgba(0,0,0,0.35), inset 0 1px 1px #4a4a7a;
   background:
     radial-gradient(#3d3f7a 35%, #313366 71%) content-box,
-    linear-gradient(#444, #333) border-box;
+    linear-gradient(#e8e8ee, #cfcfd8) border-box;
   cursor: pointer;
 }
 
@@ -384,10 +570,10 @@ body {
   border-radius: 50%;
   border: none;
   padding: 0.75em;
-  box-shadow: 0 1px 0.125em #111, inset 0 1px 1px #4a4a7a;
+  box-shadow: 0 1px 0.125em rgba(0,0,0,0.35), inset 0 1px 1px #4a4a7a;
   background:
     radial-gradient(#3d3f7a 35%, #313366 71%) content-box,
-    linear-gradient(#444, #333) border-box;
+    linear-gradient(#e8e8ee, #cfcfd8) border-box;
   cursor: pointer;
 }
 
@@ -396,9 +582,9 @@ body {
   display: none;
   position: absolute;
   height: 6px;
-  background: rgba(93, 170, 53, 0.4);
-  border-left: 2px solid #5DAA35;
-  border-right: 2px solid #5DAA35;
+  background: rgba(41, 175, 41, 0.35);
+  border-left: 2px solid var(--pv-go);
+  border-right: 2px solid var(--pv-go);
   pointer-events: none;
   z-index: 0;
 }
@@ -413,7 +599,7 @@ body {
   background-image: linear-gradient(
     90deg,
     transparent 60%,
-    rgba(60, 40, 0, 0.25) 60%
+    rgba(49, 51, 102, 0.22) 60%
   );
   background-size: 8px 100%;
   background-repeat: repeat-x;
@@ -425,20 +611,20 @@ body {
   background-image: linear-gradient(
     90deg,
     transparent 50%,
-    rgba(60, 40, 0, 0.45) 50%
+    rgba(49, 51, 102, 0.4) 50%
   );
 }
 
-/* In/Out buttons — match keypad style */
+/* In/Out buttons — flat config style */
 #preview .bottom-bar .inout-btn {
   display: inline-block !important;
   visibility: visible !important;
   flex-shrink: 0;
-  padding: 4px 10px !important;
+  padding: 5px 10px !important;
   margin: 0 0 0 4px !important;
-  border: 2px solid #201f2b !important;
-  border-radius: 10px !important;
-  background: #313366 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: var(--pv-accent) !important;
   cursor: pointer;
   font-size: 12px !important;
   font-weight: bold;
@@ -452,27 +638,26 @@ body {
 }
 
 #preview .bottom-bar .inout-btn:hover {
-  background: #3d3f7a !important;
+  background: var(--pv-accent-hover) !important;
 }
 
 #preview .bottom-bar .inout-btn.active {
-  background: #035b1c !important;
-  border-color: #024a16 !important;
+  background: var(--pv-go) !important;
 }
 
 #preview .bottom-bar .clear-btn {
   padding: 4px 7px !important;
   font-size: 13px !important;
-  background: #444 !important;
-  border-color: #555 !important;
-  color: #aaa !important;
+  background: var(--pv-bg) !important;
+  border: 1px solid var(--pv-input-border) !important;
+  color: var(--pv-text-dim) !important;
   font-weight: normal;
 }
 
 #preview .bottom-bar .clear-btn:hover {
-  background: #633 !important;
-  border-color: #944 !important;
-  color: #faa !important;
+  background: #fdecea !important;
+  border-color: #c0392b !important;
+  color: #c0392b !important;
 }
 
 /* Quick settings in bottom bar */
@@ -484,12 +669,12 @@ body {
   height: 28px !important;
   padding: 2px 4px !important;
   margin: 0 2px !important;
-  border: 2px solid #201f2b !important;
-  border-radius: 8px !important;
-  background: #313366 !important;
-  color: #eee !important;
+  border: 1px solid var(--pv-input-border) !important;
+  border-radius: 0 !important;
+  background: var(--pv-bg) !important;
+  color: var(--pv-text) !important;
   font-size: 11px !important;
-  font-weight: bold;
+  font-weight: normal;
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
@@ -502,10 +687,10 @@ body {
   align-items: center;
   padding: 4px 8px;
   margin: 0 2px;
-  border: 2px solid #201f2b;
-  border-radius: 10px;
-  background: #444;
-  color: #aaa;
+  border: 1px solid var(--pv-input-border);
+  border-radius: 0;
+  background: var(--pv-bg);
+  color: var(--pv-text-dim);
   font-size: 11px;
   font-weight: bold;
   cursor: pointer;
@@ -519,14 +704,15 @@ body {
 }
 
 #preview .bottom-bar .quick-toggle.active {
-  background: #313366;
-  color: #eee;
-  border-color: #201f2b;
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
+  border-color: var(--pv-accent);
 }
 
 #preview .bottom-bar .quick-toggle:hover {
-  background: #3d3f7a;
-  color: #eee;
+  background: var(--pv-accent-hover);
+  color: var(--pv-accent-text);
+  border-color: var(--pv-accent-hover);
 }
 
 /* Step/Skip navigation buttons */
@@ -534,11 +720,11 @@ body {
   display: inline-block !important;
   visibility: visible !important;
   flex-shrink: 0;
-  padding: 4px 8px !important;
+  padding: 5px 8px !important;
   margin: 0 1px !important;
-  border: 2px solid #201f2b !important;
-  border-radius: 10px !important;
-  background: #313366 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: var(--pv-accent) !important;
   cursor: pointer;
   font-size: 13px !important;
   font-weight: bold;
@@ -553,55 +739,31 @@ body {
 }
 
 #preview .bottom-bar .nav-btn:hover {
-  background: #3d3f7a !important;
+  background: var(--pv-accent-hover) !important;
 }
 
 #preview .bottom-bar .nav-btn:active {
-  background: #262850 !important;
+  background: var(--pv-accent-active) !important;
 }
 
 #preview .bottom-bar .inout-info {
   flex-shrink: 0;
   font-size: 11px;
-  color: #333;
+  color: var(--pv-text-dim);
   margin-left: 6px;
   white-space: nowrap;
   font-weight: bold;
 }
 
-/* Show ortho button in perspective mode, perspective button in ortho mode */
-#preview.ortho-mode #button-ortho {
-  display: none;
-}
-
-#preview.ortho-mode #button-perspective {
-  display: block;
-}
-
-#preview:not(.ortho-mode) #button-ortho {
-  display: block;
-}
-
-#preview:not(.ortho-mode) #button-perspective {
-  display: none;
-}
-
+/* Soft-limit warning: banner pinned to the top of the toolpath drawer */
 #preview .soft-limit-warning {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 11;
+  flex-shrink: 0;
   background: #fff3cd;
   color: #5c4400;
-  border: 1px solid #d4a017;
-  border-radius: 4px;
-  padding: 8px 14px;
-  font-size: 13px;
-  font-family: sans-serif;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  max-width: 70%;
-  pointer-events: auto;
+  border-bottom: 1px solid #d4a017;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: var(--pv-font);
 }
 
 #preview .soft-limit-warning-title {
@@ -650,7 +812,8 @@ body {
   }
 
 #preview .dialog h2, #preview .dialog h5 {
-  color: #444;
+  color: var(--pv-text);
+  font-family: var(--pv-font);
 }
 
 #preview .dialog table {
@@ -664,15 +827,15 @@ body {
   border-top: 1px solid #ddd;
 }
 
-/* Dialog buttons — match keypad style */
+/* Dialog buttons — flat config style */
 #preview .dialog button,
 #preview .dialog .button {
-  background: #313366 !important;
-  color: #eee !important;
-  border: 2px solid #201f2b !important;
-  border-radius: 10px !important;
+  background: var(--pv-accent) !important;
+  color: var(--pv-accent-text) !important;
+  border: none !important;
+  border-radius: 0 !important;
   padding: 8px 24px !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
   font-weight: bold;
   box-shadow: none !important;
   cursor: pointer;
@@ -681,19 +844,22 @@ body {
 
 #preview .dialog button:hover,
 #preview .dialog .button:hover {
-  background: #3d3f7a !important;
+  background: var(--pv-accent-hover) !important;
 }
 
-/* Reset Material button in settings */
+/* Reset Material / Help buttons in settings — secondary (outline) style */
+#preview .dialog .open-help,
 #preview .dialog .reset-material {
-  background: #444 !important;
-  border-color: #555 !important;
+  background: var(--pv-bg) !important;
+  color: var(--pv-text-dim) !important;
+  border: 1px solid var(--pv-input-border) !important;
   font-size: 12px !important;
   padding: 6px 14px !important;
 }
 
+#preview .dialog .open-help:hover,
 #preview .dialog .reset-material:hover {
-  background: #555 !important;
+  background: var(--pv-bg-dim) !important;
 }
 
 #preview .loading {
@@ -710,16 +876,7 @@ body {
 }
 
 
-/* Working on getting control of sliders here; main overriding now ... */
 /* Sliders */
-#op-slider {
-  width: 200px;
-  height: 120px;
-  background: steelblue;
-  margin-top: 1rem;
-  opacity: 1;
-}
-
 /* Base range reset (optional) */
 input[type="range"] {
   -webkit-appearance: none;
@@ -730,15 +887,14 @@ input[type="range"] {
   outline: none;
 }
 
-/* Timeline track — dark theme */
 input[type="range"]::-webkit-slider-runnable-track {
-  background-color: #555;
+  background-color: #ccc;
   height: 6px;
-  border-radius: 3px;
+  border-radius: 0;
 }
 
 .opacity-slider::-webkit-slider-runnable-track {
-  background-color: #555 !important;
+  background-color: #ccc !important;
 }
 /* Override the dashboard's orange slider styling for previewer settings */
 #preview .settings input[type='range']::-webkit-slider-runnable-track {
@@ -761,39 +917,73 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .settings input[type='range']::-webkit-slider-thumb {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  background: #888888;
+  background: var(--pv-accent);
 }
 
 #preview .settings input[type='range']::-moz-range-thumb {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  background: #888888;
+  background: var(--pv-accent);
 }
 
 #preview .settings input[type='range']::-ms-thumb {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  background: #888888;
+  background: var(--pv-accent);
 }
 
 /* Operations panel — top right */
 #preview .operations-panel {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  background: rgba(30, 30, 50, 0.92);
-  border: 2px solid #201f2b;
-  border-radius: 10px;
-  max-height: 60vh;
+  top: 0;
+  right: 0;
+  bottom: 56px; /* clear the bottom bar */
+  background: var(--pv-bg);
+  border-left: 1px solid var(--pv-border);
+  border-radius: 0;
   width: 230px;
   z-index: 5;
   font-size: 12px;
-  color: #eee;
-  overflow: hidden;
+  font-family: var(--pv-font);
+  color: var(--pv-text);
+  overflow: visible; /* the drawer tab hangs outside the left edge */
   display: flex;
   flex-direction: column;
+  transition: transform 0.25s ease;
+}
+
+/* Collapsed: pushed into the frame edge; only the tab stays visible */
+#preview .operations-panel.collapsed {
+  transform: translateX(100%);
+}
+
+/* Drawer tab: grab handle riding the panel's left edge */
+#preview .operations-panel .ops-drawer-tab {
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  margin-top: -32px;
+  width: 20px;
+  height: 64px;
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: bold 13px var(--pv-font);
+  cursor: pointer;
+  user-select: none;
+}
+#preview .operations-panel .ops-drawer-tab:hover {
+  background: var(--pv-accent-hover);
+}
+#preview .operations-panel .ops-drawer-tab::after {
+  content: "\203A"; /* › — push the panel away */
+}
+#preview .operations-panel.collapsed .ops-drawer-tab::after {
+  content: "\2039"; /* ‹ — pull it back out */
 }
 
 #preview .operations-panel .ops-setup {
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid var(--pv-border);
   flex-shrink: 0;
 }
 
@@ -802,7 +992,8 @@ input[type="range"]::-webkit-slider-runnable-track {
   font-weight: bold;
   font-size: 11px;
   line-height: 1.3;
-  background: rgba(49, 51, 102, 0.5);
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -810,29 +1001,8 @@ input[type="range"]::-webkit-slider-runnable-track {
   user-select: none;
 }
 
-#preview .operations-panel .ops-setup-toggle {
-  font-size: 13px;
-  color: #aac;
-  width: 16px;
-  text-align: center;
-}
-
 #preview .operations-panel .ops-setup-body {
   padding: 3px 10px 4px;
-}
-
-/* Collapsing rolls up everything except the Setup header bar and the
-   run/submit buttons. !important because ops-header/list/empty visibility
-   is otherwise driven by inline styles from jQuery .toggle(). */
-#preview .operations-panel.setup-collapsed .ops-setup-body,
-#preview .operations-panel.setup-collapsed .ops-header,
-#preview .operations-panel.setup-collapsed .ops-list,
-#preview .operations-panel.setup-collapsed .ops-empty {
-  display: none !important;
-}
-
-#preview .operations-panel.setup-collapsed .ops-setup {
-  border-bottom: none;
 }
 
 #preview .operations-panel .ops-setup-row {
@@ -846,7 +1016,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 #preview .operations-panel .ops-setup-row label {
-  color: #aac;
+  color: var(--pv-text-dim);
   flex: 1;
   margin: 0;
   font-size: 11px;
@@ -854,10 +1024,10 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-setup-row input[type="number"],
 #preview .operations-panel .ops-setup-row select {
-  background: rgba(50, 50, 70, 0.9);
-  color: #ccc;
-  border: 1px solid #555;
-  border-radius: 3px;
+  background: var(--pv-bg);
+  color: var(--pv-text);
+  border: 1px solid var(--pv-input-border);
+  border-radius: 0;
   padding: 0 3px;
   margin: 0; /* Foundation's default margin-bottom skews vertical centering */
   font-size: 11px;
@@ -882,7 +1052,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-setup-row .setup-tool-dia-label,
 #preview .operations-panel .ops-setup-row .setup-tool-angle-label {
-  color: #888;
+  color: var(--pv-text-dim);
 }
 
 #preview .operations-panel .ops-setup-row .setup-vbit-wrap {
@@ -895,10 +1065,10 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-empty {
   padding: 8px 10px;
-  color: #aab;
+  color: var(--pv-text-dim);
   font-style: italic;
   font-size: 11px;
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid var(--pv-border);
 }
 
 #preview .operations-panel .ops-header {
@@ -906,8 +1076,9 @@ input[type="range"]::-webkit-slider-runnable-track {
   font-weight: bold;
   font-size: 12px;
   line-height: 1.3;
-  border-bottom: 1px solid #444;
-  background: rgba(49, 51, 102, 0.8);
+  border-bottom: 1px solid var(--pv-border);
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -916,24 +1087,25 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-toggle-all {
   font-size: 11px;
-  color: #aac;
+  color: #dde;
   cursor: pointer;
   padding: 2px 6px;
-  border: 1px solid #555;
-  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 0;
 }
 
 #preview .operations-panel .ops-toggle-all:hover {
-  background: rgba(100, 100, 150, 0.4);
-  color: #eee;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
 }
 
 #preview .operations-panel .ops-list {
   overflow-y: auto;
-  max-height: 45vh;
+  flex: 1 1 auto;
+  min-height: 0;
   /* Firefox: thin persistent scrollbar */
   scrollbar-width: thin;
-  scrollbar-color: #778 rgba(255, 255, 255, 0.08);
+  scrollbar-color: #bbb var(--pv-bg-dim);
 }
 
 /* Chromium: styling the scrollbar opts out of the auto-hiding overlay bar,
@@ -942,28 +1114,28 @@ input[type="range"]::-webkit-slider-runnable-track {
   width: 8px;
 }
 #preview .operations-panel .ops-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--pv-bg-dim);
 }
 #preview .operations-panel .ops-list::-webkit-scrollbar-thumb {
-  background: #778;
-  border-radius: 4px;
+  background: #bbb;
+  border-radius: 0;
 }
 #preview .operations-panel .ops-list::-webkit-scrollbar-thumb:hover {
-  background: #99a;
+  background: #999;
 }
 
 #preview .operations-panel .ops-list .op-entry {
   padding: 3px 10px 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid #eee;
   line-height: 1.2;
 }
 
 #preview .operations-panel .ops-list .op-entry:hover {
-  background: rgba(100, 100, 150, 0.25);
+  background: var(--pv-hover);
 }
 
 #preview .operations-panel .ops-list .op-entry.active {
-  background: rgba(93, 170, 53, 0.15);
+  background: rgba(41, 175, 41, 0.12);
 }
 
 #preview .operations-panel .ops-list .op-top-row {
@@ -978,7 +1150,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-list .op-name {
   font-weight: bold;
-  color: #fff;
+  color: var(--pv-text);
   cursor: pointer;
   flex: 1;
 }
@@ -994,10 +1166,10 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 #preview .operations-panel .ops-list .op-tool-type {
-  background: rgba(50, 50, 70, 0.9);
-  color: #ccc;
-  border: 1px solid #555;
-  border-radius: 3px;
+  background: var(--pv-bg);
+  color: var(--pv-text);
+  border: 1px solid var(--pv-input-border);
+  border-radius: 0;
   padding: 0 2px;
   margin: 0;
   font-size: 11px;
@@ -1008,10 +1180,10 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-list .op-tool-dia,
 #preview .operations-panel .ops-list .op-tool-angle {
-  background: rgba(50, 50, 70, 0.9);
-  color: #ccc;
-  border: 1px solid #555;
-  border-radius: 3px;
+  background: var(--pv-bg);
+  color: var(--pv-text);
+  border: 1px solid var(--pv-input-border);
+  border-radius: 0;
   padding: 0 3px;
   margin: 0;
   font-size: 11px;
@@ -1022,7 +1194,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-list .op-tool-dia-label,
 #preview .operations-panel .ops-list .op-tool-angle-label {
-  color: #888;
+  color: var(--pv-text-dim);
   font-size: 11px;
 }
 
@@ -1035,7 +1207,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-actions {
   padding: 6px 10px;
-  border-top: 1px solid #444;
+  border-top: 1px solid var(--pv-border);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1043,10 +1215,10 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 #preview .operations-panel .ops-actions button {
   padding: 6px 8px;
-  border: 2px solid #024a16;
-  border-radius: 8px;
-  background: #035b1c;
-  color: #eee;
+  border: none;
+  border-radius: 0;
+  background: var(--pv-go);
+  color: #fff;
   font-size: 11px;
   font-weight: bold;
   cursor: pointer;
@@ -1054,18 +1226,17 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 #preview .operations-panel .ops-actions button:hover {
-  background: #047a25;
+  background: var(--pv-go-hover);
 }
 
 #preview .operations-panel .ops-actions .submit-selected-ops,
 #preview .operations-panel .ops-actions .submit-trimmed {
-  background: #313366;
-  border-color: #201f2b;
+  background: var(--pv-accent);
 }
 
 #preview .operations-panel .ops-actions .submit-selected-ops:hover,
 #preview .operations-panel .ops-actions .submit-trimmed:hover {
-  background: #3d3f7a;
+  background: var(--pv-accent-hover);
 }
 
 /* Trim buttons only matter when an in/out selection is set. */
