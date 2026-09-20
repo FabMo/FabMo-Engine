@@ -144,7 +144,7 @@
                             </svg>
                             <div class="ts-shortcut-label">Drill Press</div>
                         </div>
-                        <div class="ts-shoptool soon" data-tool="tablesaw" title="Table saw &mdash; coming soon">
+                        <div class="ts-shoptool" data-tool="tablesaw" title="Table saw">
                             <svg viewBox="0 0 40 40" aria-hidden="true">
                                 <path d="M4 27 H36"/>
                                 <path d="M8 27 V33 M32 27 V33"/>
@@ -164,15 +164,20 @@
                         </div>
                     </div>
 
-                    <!-- Drill press mini interface: envelope map (crosshair =
-                         current XY) | vertical depth slider + entries |
-                         table/material cross-section with Z-zero radios and
-                         a red actual-cut bar | big DRILL button. The SVGs
-                         are drawn by app.js (renderStEnv / renderStXsec). -->
+                    <!-- Drill press mini interface: action buttons ride in
+                         the header row beside the title; below, envelope map
+                         (crosshair = current XY) | vertical depth slider +
+                         entries | table/material cross-section with Z-zero
+                         radios and a red actual-cut bar. The SVGs are drawn
+                         by app.js (renderStEnv / renderStXsec). -->
                     <div class="ts-st-panel" id="st-panel-drill" style="display:none;">
                         <div class="ts-st-head">
                             <button class="ts-iconbtn ts-st-back" title="Back to shop tools"><i class="fa fa-chevron-left"></i></button>
                             <span class="ts-st-title">Drill Press</span>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-st-arraybtn" id="btn-st-array" title="Drill a grid of holes from the current position">Array</button>
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-drill">DRILL</button>
+                            </div>
                         </div>
                         <div class="ts-st-drill-row">
                             <div class="ts-st-env">
@@ -216,9 +221,77 @@
                                     </label>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Table saw mini interface: one straight through-cut.
+                         The line pivots about a draggable anchor point;
+                         boundary handles rotate it, and the angle and edge
+                         intercepts are typeable in place (the floating
+                         #sts-edit input). Drawn by renderStsEnv. -->
+                    <div class="ts-st-panel" id="st-panel-tablesaw" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title">Table Saw</span>
                             <div class="ts-st-btncol">
-                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-drill">DRILL</button>
-                                <button class="ts-cmd ts-st-arraybtn" id="btn-st-array" title="Drill a grid of holes from the current position">Array</button>
+                                <button class="ts-cmd ts-sts-mode" id="sts-mode-rip" title="Rip &mdash; straight cut along Y">|</button>
+                                <button class="ts-cmd ts-sts-mode" id="sts-mode-cross" title="Crosscut &mdash; straight cut along X">&#8212;</button>
+                                <button class="ts-cmd ts-st-arraybtn" id="sts-arr-btn" title="Duplicate the cut at a spacing normal to the line">Array</button>
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-saw">CUT</button>
+                            </div>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="sts-env-svg" width="240" height="150"></svg>
+                                <input type="number" id="sts-edit" step="any">
+                            </div>
+                            <div class="ts-st-depthcol ts-stp-params">
+                                <label class="ts-st-minilabel"><span>Anchor X (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-ax" step="any">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Anchor Y (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-ay" step="any">
+                                </label>
+                            </div>
+                            <!-- Cut parameters: empty pass depth = one full
+                                 pass; empty feed = the tool's current move
+                                 speed. -->
+                            <div class="ts-st-depthcol ts-stp-params">
+                                <label class="ts-st-minilabel"><span>Total Depth (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-depth" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Pass Depth (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-pass" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Feed (<span class="st-units">in</span>/s)</span>
+                                    <input type="number" id="sts-feed" step="any" min="0">
+                                </label>
+                            </div>
+                            <!-- Revealed only for angled cuts (∠ latches on
+                                 when the line leaves 0°/90°). Intercept
+                                 labels retag live as the line's ends move
+                                 between table edges. -->
+                            <div class="ts-st-depthcol ts-stp-params" id="sts-angle-col" style="display:none;">
+                                <label class="ts-st-minilabel"><span>Angle&deg;</span>
+                                    <input type="number" id="sts-angle" step="any" min="0" max="180">
+                                </label>
+                                <label class="ts-st-minilabel"><span id="sts-i0-label">X @ bottom</span>
+                                    <input type="number" id="sts-i0" step="any">
+                                </label>
+                                <label class="ts-st-minilabel"><span id="sts-i1-label">Y @ left</span>
+                                    <input type="number" id="sts-i1" step="any">
+                                </label>
+                            </div>
+                            <!-- Array mode: duplicate the cut at a spacing
+                                 measured normal to the line (sign picks the
+                                 side). Previewed as parallel lines. -->
+                            <div class="ts-st-depthcol ts-stp-params" id="sts-array-col" style="display:none;">
+                                <label class="ts-st-minilabel"><span>Cuts</span>
+                                    <input type="number" id="sts-arr-n" min="1" step="1">
+                                </label>
+                                <label class="ts-st-minilabel"><span>Spacing (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-arr-s" step="any">
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -231,6 +304,9 @@
                         <div class="ts-st-head">
                             <button class="ts-iconbtn ts-st-back" title="Back to shop tools"><i class="fa fa-chevron-left"></i></button>
                             <span class="ts-st-title">Planer</span>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-plane">PLANE</button>
+                            </div>
                         </div>
                         <div class="ts-st-drill-row">
                             <div class="ts-st-env">
@@ -261,9 +337,6 @@
                                 <label class="ts-stp-dir" title="Cut one way only: lift, return, plunge, cut"><input type="radio" name="stp-dir" value="1way">
                                     <span>1-way</span>
                                 </label>
-                            </div>
-                            <div class="ts-st-btncol">
-                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-plane">PLANE</button>
                             </div>
                         </div>
                     </div>
