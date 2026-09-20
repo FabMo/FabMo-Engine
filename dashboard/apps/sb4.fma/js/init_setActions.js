@@ -47,7 +47,7 @@ const displayState = {
 const sbpContainer = document.getElementById('sbp-container');
 
 if (!window.Haptics)
-    alert("The haptics.js library is not loaded.");
+    alert(window.t("sb4.alert.haptics_not_loaded"));
 
 $(document).ready(function () {
     $(document).foundation({              // Start and customize foundation
@@ -104,48 +104,48 @@ $(document).ready(function () {
                 for (key in data) {
                     switch (key.substring(0, 1)) {
                         case "F":
-                            $("#menu_files").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                            $("#menu_files").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
                         case "M":
                             if (excluded_axes_str.indexOf(key.substring(1, 2)) == -1) {
-                                $("#menu_moves").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                                $("#menu_moves").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             }
                             break;
                         case "J":
                             if (excluded_axes_str.indexOf(key.substring(1, 2)) == -1) {
-                                $("#menu_jogs").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                                $("#menu_jogs").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             }
                             break;
                         case "C":
-                            $("#menu_cuts").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                            $("#menu_cuts").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
                         case "Z":
                             if (excluded_axes_str.indexOf(key.substring(1, 2)) == -1) {
-                                $("#menu_zero").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                                $("#menu_zero").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             }
                             break;
                         case "S":
-                            $("#menu_settings").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                            $("#menu_settings").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
                         case "V":
-                            $("#menu_values").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                            $("#menu_values").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
 
                         case "T":
-                            $("#menu_tools").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                            $("#menu_tools").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T
                             break;
 
                         case "D":
-                            $("#menu_design").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                            $("#menu_design").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             break;
 
                         case "H":
-                            $("#menu_help").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || "Unnamed" + '</a></li>');
+                            $("#menu_help").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
                             break;
                     }
                 }
@@ -300,8 +300,8 @@ $(document).ready(function () {
                 // If the fill-in modal is open for FP or FL, then run the command 
                 //console.log("got to ENTER key");
                 if ($('#fi-modal').hasClass('open')) {
-                    let ckFile = $('#fi_modal_title').text().substring(0,4);
-                    if (ckFile === "File" || ckFile === "Reru") {
+                    let ckFileTitle = $('#fi_modal_title').text();
+                    if (ckFileTitle === window.t("sb4.fillin.title_file_ready") || ckFileTitle === window.t("sb4.fillin.title_rerun_ready")) {
                         $('#btn_ok_run').click();
                     } else {
                         sendCmd(); // On ENTER ... SEND the command
@@ -344,7 +344,7 @@ $(document).ready(function () {
     let upDating = false;
 
     $('#file').change(function (evt) {
-        $("#cmd-input").val("... downloading file to tool ...");  // ... just a little message to show we're working
+        $("#cmd-input").val(window.t("sb4.status.downloading_file"));  // ... just a little message to show we're working
         $("#cmd-input").blur();
 
         lastLn = 0;
@@ -361,14 +361,14 @@ $(document).ready(function () {
         fileReader.readAsText(file, "UTF-8");
         curFilename = evt.target.files[0].name;
         $("#cmd-input").val("FP");
-        $('#fi_modal_title').append("File Ready to Run");
-        displayFillIn("", "File Ready to Run", curFilename);
+        $('#fi_modal_title').append(window.t("sb4.fillin.title_file_ready"));
+        displayFillIn("", window.t("sb4.fillin.title_file_ready"), curFilename);
     })
 
     $("#btn_ok_run").click(function (event) {
-        let ckFile = $('#fi_modal_title').text().substring(0,4);
+        let ckFileTitle = $('#fi_modal_title').text();
         $('#fi-modal').foundation('reveal', 'close');
-        if (ckFile === "File") {    // handle as file
+        if (ckFileTitle === window.t("sb4.fillin.title_file_ready")) {    // handle as file
             fabmo.clearJobQueue(function (err, data) {
                 if (err) {
                     fabmo.notify('error', err);
@@ -376,7 +376,7 @@ $(document).ready(function () {
                     if(window.curFilePath) { // USB file
                         fabmo.submitUSBFile(window.curFilePath, {
                             name: window.curFilename,
-                            description: '... called from Sb4'
+                            description: window.t("sb4.job.description_from_sb4")
                         }, function(err, result) {
                             window.curFilePath = undefined;
                             window.curFilename = undefined;
@@ -392,7 +392,7 @@ $(document).ready(function () {
                         fabmo.submitJob({
                             file: curFile,
                             name: curFilename,
-                            description: '... called from Sb4'
+                            description: window.t("sb4.job.description_from_sb4")
                         }, { stayHere: true }, function (err, result) {
                             if(err) {
                                 fabmo.notify('error', err);
@@ -406,10 +406,10 @@ $(document).ready(function () {
                 }
             });
 
-        } else if (ckFile === "Reru") { // Rerun last
+        } else if (ckFileTitle === window.t("sb4.fillin.title_rerun_ready")) { // Rerun last
             fabmo.getJobHistory({ start: 0, count: 1 }, function(err, jobs) {
                 if (err || !jobs.data.length) {
-                    fabmo.notify('error', 'Could not get job history');
+                    fabmo.notify('error', window.t("sb4.notify.no_job_history"));
                     return;
                 }
                 var lastJob = jobs.data[0];
@@ -432,7 +432,7 @@ $(document).ready(function () {
     function fetchPendingAndRun(callback) {
         fabmo.getJobsInQueue(function(err, jobs) {
             if (err || !jobs.pending.length) {
-                fabmo.notify('error', 'No pending jobs found');
+                fabmo.notify('error', window.t("sb4.notify.no_pending_jobs"));
                 if(callback) callback(err || new Error('No pending jobs'));
                 return;
             }
@@ -445,7 +445,7 @@ $(document).ready(function () {
                     if(callback) callback(runErr);
                 });
             }).fail(function(jqXHR, textStatus, errorThrown) {
-                fabmo.notify('error', 'Failed to fetch pending job file: ' + errorThrown);
+                fabmo.notify('error', window.t("sb4.notify.fetch_pending_failed") + ' ' + errorThrown);
                 if(callback) callback(new Error('Failed to fetch pending job file'));
             });
         });
@@ -472,7 +472,7 @@ $(document).ready(function () {
                     if(window.curFilePath) {               // If we have a filePath from USB, use submitUSBFile
                         fabmo.submitUSBFile(window.curFilePath, {
                             name: window.curFilename,
-                            description: '... called from Sb4'
+                            description: window.t("sb4.job.description_from_sb4")
                         }, function(err, result) {
                             window.curFilePath = undefined; // Clear after use
                             window.curFilename = undefined;
@@ -492,7 +492,7 @@ $(document).ready(function () {
                             file: curFile,
                             filename: curFilename,
                             name: job,
-                            description: '... called from Sb4'
+                            description: window.t("sb4.job.description_from_sb4")
                         });
                     }
                 }    

@@ -21,7 +21,7 @@ function refreshApps() {
                     '<tr class="app-install-row"><td>',
                     '<div class="app-ghost noselect"><span class="app-ghost-icon fa fa-plus"></span></div>',
                     '</td>',
-                    '<td colspan="4" class="app-install-text noselect">Click here to install an app</td>',
+                    '<td colspan="4" class="app-install-text noselect">'+window.t('config.apps_tab.click_to_install')+'</td>',
                     '</tr>'
                 ].join('');
                 $(".app-listing").prepend(html);
@@ -53,17 +53,17 @@ function refreshApps() {
                         '</td><td>',
                         val.version || '',
                         '</td><td>',
-                        val.description || 'No description.',
+                        val.description || window.t('config.apps_tab.no_description'),
                         '</td><td></td><td>' + delete_button + '</td></tr>'
                     ].join('');
                     $(".app-listing").append(html);
 
                     $('#delete_' + appid).click(function() {
                         fabmo.showModal({
-                            title : 'Delete app',
-                            message : 'Are you sure you want to delete this app?',
-                            okText : 'Yes',
-                            cancelText : 'No',
+                            title : window.t('config.apps_tab.delete_app_title'),
+                            message : window.t('config.apps_tab.delete_app_message'),
+                            okText : window.t('config.modal.yes'),
+                            cancelText : window.t('config.modal.no'),
                             ok : function() {
                                 fabmo.deleteApp(id, function(err, result) {
                                     if (err) {
@@ -129,9 +129,9 @@ function refreshApps() {
             fabmo.submitApp($('#file'), {}, function(err, data) {
                 stopBusy();
                 if (err) {
-                    fabmo.notify('error', "Could not install app:</br>" + (err.message || err));
+                    fabmo.notify('error', window.t('config.apps_tab.install_failed') + (err.message || err));
                 } else {
-                    fabmo.notify('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
+                    fabmo.notify('success', data.length + " app" + ((data.length > 1) ? 's' : '') + window.t('config.apps_tab.installed_successfully'));
                 }
                 refreshApps();
             });
@@ -157,7 +157,7 @@ function refreshApps() {
                         if (err) {
                             fabmo.notify('error', err.message || err);
                         } else {
-                            fabmo.notify('success', "App installed successfully.");
+                            fabmo.notify('success', window.t('config.apps_tab.install_ok_single'));
                         }
                         refreshApps();
                     });

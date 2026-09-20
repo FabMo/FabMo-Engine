@@ -1,0 +1,5 @@
+{
+    "name": "hello-i18n",
+    "version": "1.0.0",
+    "description": "Sample app showing the FabMo i18n convention for third-party apps. Keys live in i18n/en.json, namespaced under the app name. See doc/i18n.md."
+}

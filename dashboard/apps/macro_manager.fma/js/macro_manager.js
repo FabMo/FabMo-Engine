@@ -1,6 +1,7 @@
 require('jquery');
 var Foundation = require('../../../static/js/libs/foundation.min.js');;
 var Fabmo = require('../../../static/js/libs/fabmo.js');
+require('./i18n.js');   // installs window.t / window.i18nReady / window.i18nApply
 var fabmo = new Fabmo;
 
 var macroIndex = {};
@@ -71,7 +72,7 @@ function addMacros(macros, callback) {
             if(err) {
                 fabmo.notify('error', err.message || err);
             } else {
-                fabmo.notify('success', 'Macro "' + macro.name + '" was deleted.');
+                fabmo.notify('success', window.t('macro_manager.notify.deleted', {name: macro.name}));
             }
             refreshMacros();
         });

@@ -205,12 +205,12 @@ OptText.prototype.turn_off = function () {
 
 // ... set up individual items here
 // note: x value here is only for tooltip location, y sets both locations,
-var zoomOpt = new OptText(65, 50, 'ZOOM: ', 'Click for Reset to Full View; Ctl-Scroll to Zoom');        // Start Individual Options Here
+var zoomOpt = new OptText(65, 50, window.t("sb4.mopad.zoom_label"), window.t("sb4.mopad.zoom_tip"));        // Start Individual Options Here
 zoomOpt.text.fillColor = 'green';
-var snapOpt = new OptText(35, 70, 'SNAP', 'SNAP to intersections');
-var cycleOpt = new OptText(95, 90, 'Cycle:  X-Y  [X-Y-Z]', 'Cycle between 2 or 3 axes on click/tap/space');
+var snapOpt = new OptText(35, 70, window.t("sb4.mopad.snap_label"), window.t("sb4.mopad.snap_tip"));
+var cycleOpt = new OptText(95, 90, window.t("sb4.mopad.cycle_label"), window.t("sb4.mopad.cycle_tip"));
 cycleOpt.text.state = true;
-var smallOpt = new OptText(85, 110, 'Smallest Moves: ', 'Set smallest move at normal Zoom');
+var smallOpt = new OptText(85, 110, window.t("sb4.mopad.smallest_moves_label"), window.t("sb4.mopad.smallest_moves_tip"));
 var smallxyOpt = new OptText(35, 130, '    for XY=  [.025]  .010', '');
 var smallxyOpt = new OptText(35, 150, '    for   Z=  .010  [.005]  .001', '');
 

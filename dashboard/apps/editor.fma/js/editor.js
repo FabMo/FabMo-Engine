@@ -2,6 +2,7 @@
 require('jquery');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
+require('./i18n.js');   // installs window.t / window.i18nReady / window.i18nApply
 var fabmo = new Fabmo;
 var CodeMirror = require('./codemirror.js');
 require('./cm-addons/search.js'); // Include the search addon
@@ -80,13 +81,13 @@ require('./cm-fabmo-modes.js');
       switch(lang) {
         case "gcode":
           runWithBoundsCheck(text, 'gcode', function () {
-            fabmo.notify('info', 'Executing G-Code program.');
+            fabmo.notify('info', window.t('editor.notify.executing_gcode'));
             fabmo.runGCode(text);
           });
         break;
         case "opensbp":
           runWithBoundsCheck(text, 'sbp', function () {
-            fabmo.notify('info', 'Executing OpenSBP program.');
+            fabmo.notify('info', window.t('editor.notify.executing_opensbp'));
             fabmo.runSBP(text);
           });
         break;
@@ -98,14 +99,14 @@ require('./cm-fabmo-modes.js');
       var text = editor.getValue();
       overrideDirty = false;
       if (lang !== 'opensbp') {
-        fabmo.notify('warn', 'Debug mode (input simulation) is only available for OpenSBP files.');
+        fabmo.notify('warn', window.t('editor.notify.debug_opensbp_only'));
         // Same bail-out rule as runWithBoundsCheck: nothing ran, so no idle
         // status event will restore the menu — do it here.
         $("#execute-menu").show();
         return;
       }
       runWithBoundsCheck(text, 'sbp', function () {
-        fabmo.notify('info', 'Executing OpenSBP program in debug mode.');
+        fabmo.notify('info', window.t('editor.notify.executing_opensbp_debug'));
         fabmo.runSBPDebug(text);
       });
     }
@@ -163,7 +164,7 @@ require('./cm-fabmo-modes.js');
         if((content !== content) || (content === undefined)) {
           console.warn("No saved content in scratchpad.");
         } else {
-            $('#app-content').text("[ editor scratchpad ]");
+            $('#app-content').text(window.t('editor.content_label.scratchpad'));
             $(".exit-button").css("visibility", "hidden");
             editor.setValue(content);
             isDirty = false; // Reset the dirty flag after loading content
@@ -274,7 +275,7 @@ require('./cm-fabmo-modes.js');
 
         case "macro":
           fabmo.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
-            fabmo.notify('info', "Macro '" + source_data.name + "' saved.");
+            fabmo.notify('info', window.t('editor.notify.macro_saved', {name: source_data.name}));
             isDirty = false;
             callback();
           });
@@ -290,10 +291,10 @@ require('./cm-fabmo-modes.js');
     function promptSaveWork(callback) {
       if (isDirty && !overrideDirty) {
           fabmo.showModal({
-              title: 'Unsaved Changes',
-              message: 'You have unsaved changes. Do you want to save before next action?',
-              okText: 'Yes',
-              cancelText: 'No (click action again)',
+              title: window.t('editor.modal.unsaved_changes_title'),
+              message: window.t('editor.modal.unsaved_changes_message'),
+              okText: window.t('editor.modal.yes'),
+              cancelText: window.t('editor.modal.no_click_again'),
               ok: function() {
                   submitJob(callback); // Save the work and then call the callback
               },
@@ -738,19 +739,19 @@ require('./cm-fabmo-modes.js');
 
     ////## modified to test idea of only using a file name and showing or not the extension ... as opposed to 2 names
     function submitJob(){
-        $('#modal-title').text('Submit Job');
+        $('#modal-title').text(window.t('editor.jobsubmit.modal_title'));
         switch(lang) {
           case 'gcode':
             $('#jobsubmit-name').val(job_filename || 'editor.nc');
-            $('#jobsubmit-description').val(job_description || 'G-Code job from the editor');
+            $('#jobsubmit-description').val(job_description || window.t('editor.jobsubmit.default_description_gcode'));
             $('#jobsubmit-filename').val(job_filename); break;
           case 'opensbp':
             $('#jobsubmit-name').val(job_filename || 'editor.sbp');
-            $('#jobsubmit-description').val(job_description || 'OpenSBP job from the editor');
+            $('#jobsubmit-description').val(job_description || window.t('editor.jobsubmit.default_description_opensbp'));
             $('#jobsubmit-filename').val(job_filename || 'editor.sbp');
             break;
           default:
-            fabmo.notify('warn', 'Unknown file format in editor?!');
+            fabmo.notify('warn', window.t('editor.notify.unknown_file_format'));
             break;
         }
         $('#jobsubmit-modal').foundation('reveal', 'open');
