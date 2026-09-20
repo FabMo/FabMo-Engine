@@ -969,8 +969,46 @@ $(document).ready(function() {
 
     setApps(fabmo);
     setUsers(fabmo);
+    setupLanguageSelector(fabmo);
 
 });
+
+// Populate the language dropdown from /i18n/languages (which knows
+// what dicts ship on the machine + which is currently active) and
+// wire a change handler that writes the engine config and reloads
+// the dashboard so the new dictionary takes effect.
+function setupLanguageSelector(fabmo) {
+    $.getJSON('/i18n/languages', function (info) {
+        var $sel = $('#engine-language');
+        if (!$sel.length || !info) return;
+        $sel.empty();
+        (info.available || []).forEach(function (lang) {
+            var opt = $('<option>').attr('value', lang.code).text(lang.language);
+            if (lang.code === info.current) opt.prop('selected', true);
+            $sel.append(opt);
+        });
+    }).fail(function () {
+        // i18n route missing — leave the select empty; user can't switch.
+    });
+
+    $('#engine-language').on('change', function () {
+        var lang = this.value;
+        fabmo.setConfig({ engine: { language: lang } }, function (err) {
+            if (err) {
+                fabmo.notify('error', window.t('config.notify.language_change_failed') + err);
+                return;
+            }
+            fabmo.notify('info', window.t('config.notify.language_changed'));
+            // Reload the parent (the dashboard iframe host) so its
+            // chrome picks up the new dict. Fall back to this app's
+            // location if there's no parent (standalone testing).
+            setTimeout(function () {
+                try { window.parent.location.reload(); }
+                catch (e) { window.location.reload(); }
+            }, 600);
+        });
+    });
+}
 
 function ensureProfileDisplayCorrect() {
     fabmo.getConfig(function(err, data) {

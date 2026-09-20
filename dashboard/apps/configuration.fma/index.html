@@ -130,6 +130,25 @@
                 </select>
               </div>
             </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label><span data-i18n="config.general.language">Language</span> <span class="tooltip tooltip-left">i
+                  <span class="tooltiptext" data-i18n-html="config.general.language_tooltip">
+                    Display language for the dashboard.<br>
+                    Changing this setting reloads the page so the new<br>
+                    translations take effect.<br>
+                  </span>
+                </span>
+                </label>
+                <!-- Deliberately NOT class="engine-input": the generic
+                     engine-input binder would double-write the config;
+                     setupLanguageSelector owns this one (it also has to
+                     reload the dashboard after the write). -->
+                <select id="engine-language">
+                  <!-- options populated from /i18n/languages -->
+                </select>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
