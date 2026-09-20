@@ -991,6 +991,19 @@ function setupLanguageSelector(fabmo) {
         // i18n route missing — leave the select empty; user can't switch.
     });
 
+    // Credits / how-to-contribute modal, opened from the info button
+    // beside the selector. Backdrop click closes; the dialog body
+    // swallows clicks so text selection doesn't dismiss it.
+    $('#btn-lang-info').on('click', function () {
+        $('#lang-info-dialog').css('display', 'block');
+    });
+    $('#lang-info-close').on('click', function () {
+        $('#lang-info-dialog').hide();
+    });
+    $('#lang-info-dialog').on('click', function (e) {
+        if (e.target === this) $(this).hide();
+    });
+
     $('#engine-language').on('change', function () {
         var lang = this.value;
         fabmo.setConfig({ engine: { language: lang } }, function (err) {

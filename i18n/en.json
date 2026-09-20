@@ -236,6 +236,15 @@
             "language": "Language",
             "language_tooltip": "Display language for the dashboard.<br>Changing this setting reloads the page so the new<br>translations take effect.<br>"
         },
+        "translations": {
+            "info_title": "Translation credits & how to contribute",
+            "title": "FabMo Translations",
+            "credits_heading": "Credits",
+            "credit_ja": "Japanese translation by Jonathan Whiston of VUILD.",
+            "contribute_heading": "Add a language",
+            "contribute_body": "FabMo's interface text lives in simple dictionary files, and translations are managed as spreadsheet-friendly CSV files — no programming needed. If you would like to help translate FabMo into your language, see doc/i18n.md in the FabMo-Engine repository on GitHub (github.com/FabMo/FabMo-Engine), or open an issue there to get started.",
+            "close": "Close"
+        },
         "custom_profile": {
             "legend": "Custom Profile",
             "explanation": "A \"Profile\" is made up of your tool's Configuration settings, its Macros (Custom Cuts), and its Apps. You can save the current version of this full setup in a Custom Profile in order to restore exactly the same state later. This can save you time when you do a software upgrade or make significant changes to your tool's configuration. You can save as many Custom Profiles as you would like. Your preferred Profile (or the most recently saved) will also be be used if your setup becomes corrupted and the current backup can not be used. In this case the machine will fall back to the your Profile instead of the factory profile.",

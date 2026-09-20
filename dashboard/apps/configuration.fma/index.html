@@ -144,9 +144,12 @@
                      engine-input binder would double-write the config;
                      setupLanguageSelector owns this one (it also has to
                      reload the dashboard after the write). -->
-                <select id="engine-language">
-                  <!-- options populated from /i18n/languages -->
-                </select>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <select id="engine-language" style="flex:1; margin:0;">
+                    <!-- options populated from /i18n/languages -->
+                  </select>
+                  <a id="btn-lang-info" title="Translation credits &amp; how to contribute" data-i18n-title="config.translations.info_title" style="cursor:pointer; color:#5385e0; font-size:1.2em; line-height:1;"><i class="fa fa-info-circle"></i></a>
+                </div>
               </div>
             </div>
           </fieldset>
@@ -2619,6 +2622,22 @@
         </div>
       </section>
 
+
+<!-- Translation credits + how-to-contribute. Inline modal (same pattern
+     as save-default-dialog: the sandboxed iframe blocks window dialogs);
+     opened from the info button beside the language selector. -->
+      <div id="lang-info-dialog" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+        <div style="background:white; max-width:480px; margin:80px auto; padding:20px; border-radius:6px;">
+          <h4 style="margin-top:0;" data-i18n="config.translations.title">FabMo Translations</h4>
+          <h5 data-i18n="config.translations.credits_heading">Credits</h5>
+          <p data-i18n="config.translations.credit_ja">Japanese translation by Jonathan Whiston of VUILD.</p>
+          <h5 data-i18n="config.translations.contribute_heading">Add a language</h5>
+          <p data-i18n="config.translations.contribute_body">FabMo's interface text lives in simple dictionary files, and translations are managed as spreadsheet-friendly CSV files &mdash; no programming needed. If you would like to help translate FabMo into your language, see doc/i18n.md in the FabMo-Engine repository on GitHub (github.com/FabMo/FabMo-Engine), or open an issue there to get started.</p>
+          <div style="text-align:right;">
+            <a id="lang-info-close" class="button radius small" style="background-color:rgb(83, 133, 224); color:#fff; margin:0;" data-i18n="config.translations.close">Close</a>
+          </div>
+        </div>
+      </div>
 
 <!-- Save-as-custom-profile dialog. Inline modal because the app runs in a
      sandboxed iframe that blocks window.prompt(). -->
