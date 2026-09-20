@@ -1212,5 +1212,237 @@
             "trying_to_connect": "Trying to connect to network {name}",
             "feature_coming_soon": "Feature coming soon."
         }
+    },
+    "tool_status": {
+        "title": "Tool Status",
+        "header": {
+            "edit_layout": "Rearrange cards",
+            "app_settings": "App settings",
+            "atc_type": "ATC (type {type})"
+        },
+        "cards": {
+            "drag_title": "Drag to move card"
+        },
+        "common": {
+            "cancel": "Cancel",
+            "save": "Save",
+            "close": "Close",
+            "done": "Done",
+            "saved_on_display": "saved on this display",
+            "units_note": "dimensions in current units ({units})"
+        },
+        "states": {
+            "idle": "idle",
+            "running": "running",
+            "paused": "paused",
+            "manual": "manual",
+            "stopped": "stopped",
+            "homing": "homing",
+            "probing": "probing",
+            "armed": "armed",
+            "interlock": "interlock",
+            "not_ready": "not_ready",
+            "dead": "dead"
+        },
+        "jobs": {
+            "title": "Jobs",
+            "run_next": "Run Next Job",
+            "add": "Add",
+            "empty_queue": "No jobs in queue",
+            "empty_recent": "No recent jobs",
+            "recent": "Recent",
+            "view_full_history": "View Full History",
+            "drag_reorder_title": "Drag to reorder",
+            "preview_title": "Preview",
+            "edit_title": "View code (edit)",
+            "delete_title": "Remove from queue",
+            "rerun_title": "Add to queue again"
+        },
+        "usb": {
+            "title": "USB Drive",
+            "browse": "Browse USB Drive…"
+        },
+        "console": {
+            "title": "Console",
+            "placeholder": "SBP command… (MX,2 / JZ,1 / C3)"
+        },
+        "shortcuts": {
+            "title": "Apps",
+            "settings_title": "Add or remove shortcuts",
+            "open_app": "Open {name}",
+            "add_title": "Add app shortcuts",
+            "empty": "Shortcuts to apps installed on this tool"
+        },
+        "shortcut_pick": {
+            "title": "App Shortcuts",
+            "loading": "Loading apps…",
+            "none": "No other apps installed"
+        },
+        "current": {
+            "title": "Current Tool",
+            "position": "Position",
+            "offset": "Offset",
+            "in_spindle": "in spindle",
+            "no_tool": "no tool in spindle"
+        },
+        "machine": {
+            "title": "Machine",
+            "settings_title": "Routine settings",
+            "home_xy": "Home XY",
+            "home_xy_title": "Home the X and Y axes (C3)",
+            "home_z": "Home Z",
+            "home_z_title": "Set Z-Zero using zeroing plate (C2)",
+            "jog_home": "Jog Home",
+            "jog_home_title": "Jog Home X & Y; Z to safe height (JH)",
+            "jog_to_park": "Jog to Park",
+            "jog_to_park_title": "Move to park location (C79)",
+            "add_macro_title": "Add a macro button",
+            "run_macro_title": "Run macro {n}",
+            "macro_n": "Macro {n}"
+        },
+        "sensors": {
+            "x_limit": "X Limit",
+            "y_limit": "Y Limit",
+            "z_limit": "Z Limit",
+            "a_limit": "A Limit",
+            "b_limit": "B Limit",
+            "c_limit": "C Limit",
+            "zzero_plate": "Z Plate",
+            "toolbar_present": "Toolbar",
+            "toolbar_up": "Toolbar Up",
+            "drawbar_open": "Drawbar",
+            "tool_present": "Tool"
+        },
+        "shoptools": {
+            "title": "Shop Tools",
+            "drill": "Drill Press",
+            "tablesaw": "Table Saw",
+            "planer": "Planer",
+            "drill_tile_title": "Drill press",
+            "tablesaw_tile_title": "Table saw",
+            "planer_tile_title": "Planer",
+            "back_title": "Back to shop tools",
+            "array": "Array",
+            "drill_array_title": "Drill a grid of holes from the current position",
+            "drill_btn": "DRILL",
+            "depth": "Depth",
+            "z_zero": "Z zero",
+            "zz_material_title": "Z zeroed on the material surface",
+            "zz_table_title": "Z zeroed on the table surface",
+            "thick": "Thick",
+            "material_title": "Material thickness",
+            "x_count": "X Count",
+            "y_count": "Y Count",
+            "x_spacing": "X Spacing",
+            "y_spacing": "Y Spacing",
+            "rip_title": "Rip — straight cut along Y",
+            "cross_title": "Crosscut — straight cut along X",
+            "saw_array_title": "Duplicate the cut at a spacing normal to the line",
+            "cut_btn": "CUT",
+            "anchor_x": "Anchor X",
+            "anchor_y": "Anchor Y",
+            "total_depth": "Total Depth",
+            "pass_depth": "Pass Depth",
+            "feed": "Feed",
+            "angle": "Angle",
+            "cuts": "Cuts",
+            "spacing": "Spacing",
+            "plane_btn": "PLANE",
+            "bit": "Bit",
+            "stepover": "Stepover",
+            "direction": "Direction",
+            "dir2_title": "Cut back and forth, stepping over at depth",
+            "dir1_title": "Cut one way only: lift, return, plunge, cut",
+            "two_way": "2-way",
+            "one_way": "1-way",
+            "no_envelope": "no envelope",
+            "x_at_bottom": "X @ bottom",
+            "x_at_top": "X @ top",
+            "y_at_left": "Y @ left",
+            "y_at_right": "Y @ right"
+        },
+        "tools": {
+            "title": "Tools",
+            "settings_title": "Tool settings",
+            "measure": "Measure Tool",
+            "measure_title": "Measure the current tool (C72)",
+            "plate_offset": "Plate Offset",
+            "plate_offset_title": "Get plate offset (C73)",
+            "calibrate": "Calibrate",
+            "calibrate_title": "Calibrate toolbar (C74)",
+            "len": "len",
+            "clip": "clip",
+            "rack_idle_note": "press a tool to load it",
+            "rack_busy_note": "available when idle"
+        },
+        "app_settings": {
+            "title": "App Settings",
+            "cards": "Cards",
+            "cards_note": "to rearrange, click the <i class=\"fa fa-pencil\"></i> in the header and drag the ⋮⋮ grips",
+            "reset_layout": "Reset Layout",
+            "theme": "Theme"
+        },
+        "macro_pick": {
+            "title": "Add Macro Button",
+            "open_manager": "open Macro Manager",
+            "button_label": "Button label",
+            "label_placeholder": "select a macro above",
+            "add_button": "Add Button",
+            "loading": "Loading macros…",
+            "none": "No macros found"
+        },
+        "history": {
+            "title": "Job History",
+            "newer": "Newer",
+            "older": "Older",
+            "empty": "No jobs in history",
+            "range": "{from}–{to} of {total}",
+            "none": "no jobs"
+        },
+        "machine_settings": {
+            "title": "Routine Settings",
+            "home_xy_note": "limit switch offsets",
+            "x_offset": "X offset",
+            "y_offset": "Y offset",
+            "home_xy_help": "Pull-back distance from each proximity switch to true zero (used by Home XY / C3).",
+            "home_z_note": "fixed Z-zero location",
+            "zzero_use": "Move to a fixed XY location before zeroing Z",
+            "x_location": "X location",
+            "y_location": "Y location",
+            "home_z_help": "When enabled, the Home Z button lifts to safe-Z, jogs here (J2), then runs Z-Zero (C2).",
+            "custom_buttons": "Custom Buttons",
+            "custom_note": "rename or remove",
+            "park": "Park",
+            "park_note": "parking location",
+            "z_lift": "Z lift",
+            "park_help": "Jog to Park (C79) lifts to Z, then moves to X/Y.",
+            "no_custom": "No custom buttons — use + Add on the Machine card",
+            "remove_button_title": "Remove button"
+        },
+        "tool_settings": {
+            "title": "Tool Settings",
+            "tool": "Tool",
+            "cutter_type": "Cutter Type",
+            "diameter": "Diameter",
+            "length": "Length",
+            "name": "Name"
+        },
+        "tool_change": {
+            "title": "Tool Change",
+            "message": "Change to Tool {tool}{name}?",
+            "ok": "Change Tool"
+        },
+        "notify": {
+            "set_plane_depth": "Set a planing depth first.",
+            "set_bit_diameter": "Set the bit diameter first.",
+            "pick_plane_area": "Drag the area handles to pick a region to plane.",
+            "no_toolpath": "No toolpath for that area.",
+            "set_cut_depth": "Set a cutting depth first.",
+            "cut_misses_table": "The cut line misses the table.",
+            "set_drill_depth": "Set a drilling depth first.",
+            "set_thickness": "Set the material thickness — with Z zeroed on the table it locates the material surface.",
+            "set_array_spacing": "Set the array spacing first.",
+            "job_added": "Job added to the queue"
+        }
     }
 }

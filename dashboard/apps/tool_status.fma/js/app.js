@@ -22,6 +22,27 @@
 
 var fabmo = new FabMoDashboard();
 
+// t() with a fallback for dynamically-built keys (machine states, sensor
+// roles): a missing key comes back as the key itself — show the raw
+// value instead of "tool_status.states.weird".
+function tOr(key, fallback) {
+    var out = typeof window.t === "function" ? window.t(key) : key;
+    return out === key ? fallback : out;
+}
+
+// Most JS-built text re-renders on every status tick and self-heals once
+// the dictionary arrives; the sensor row is memoized, so kick it (and the
+// header) explicitly when translations load.
+if (window.i18nReady) {
+    window.i18nReady.then(function () {
+        try {
+            sensorLayoutKey = null;
+            renderSensors();
+            renderHeader();
+        } catch (e) { /* pre-first-status — the status handler covers it */ }
+    });
+}
+
 // $ATC.Type enum → display label.
 var ATC_TYPE_LABELS = {
     0: "Manual Tool Change",
@@ -267,16 +288,16 @@ function renderShortcuts() {
         var $tile = $(
             '<div class="ts-shortcut"><img alt=""><div class="ts-shortcut-label"></div></div>'
         );
-        $tile.attr("data-app", app.id).attr("title", "Open " + app.name);
+        $tile.attr("data-app", app.id).attr("title", window.t("tool_status.shortcuts.open_app", { name: app.name }));
         $tile.find("img").attr("src", "/" + app.icon_url).css("background-color", app.icon_background_color || "");
         $tile.find(".ts-shortcut-label").text(app.name || app.id);
         $grid.append($tile);
     });
     if (!shown) {
-        $grid.append('<div class="ts-empty">Shortcuts to apps installed on this tool</div>');
+        $grid.append($('<div class="ts-empty">').text(window.t("tool_status.shortcuts.empty")));
     }
     $grid.append(
-        '<div class="ts-shortcut ts-shortcut-add" id="btn-add-shortcut" title="Add app shortcuts">' +
+        '<div class="ts-shortcut ts-shortcut-add" id="btn-add-shortcut" title="' + window.t("tool_status.shortcuts.add_title") + '">' +
             '<span class="ts-shortcut-plus">+</span><div class="ts-shortcut-label">Add</div></div>'
     );
 }
@@ -465,7 +486,7 @@ function renderStEnv() {
         svg.setAttribute("width", 150);
         svg.setAttribute("height", 110);
         svg.innerHTML = '<rect x="1" y="1" width="148" height="108" fill="#f7f8f9" stroke="#d5dbdb"/>' +
-            '<text x="75" y="58" text-anchor="middle" font-size="10" fill="#95a5a6">no envelope</text>';
+            '<text x="75" y="58" text-anchor="middle" font-size="10" fill="#95a5a6">' + window.t("tool_status.shoptools.no_envelope") + "</text>";
         stPlaceBtns("st-panel-drill");
         return;
     }
@@ -911,10 +932,10 @@ function stsAngleFrom(dx, dy) {
 function stsEdgeOf(ept) {
     var s = stpSpans();
     var tolX = s.xspan * 1e-4, tolY = s.yspan * 1e-4;
-    if (ept[1] <= tolY) return { key: "bottom", val: ept[0], label: "X @ bottom" };
-    if (ept[1] >= s.yspan - tolY) return { key: "top", val: ept[0], label: "X @ top" };
-    if (ept[0] <= tolX) return { key: "left", val: ept[1], label: "Y @ left" };
-    return { key: "right", val: ept[1], label: "Y @ right" };
+    if (ept[1] <= tolY) return { key: "bottom", val: ept[0], label: window.t("tool_status.shoptools.x_at_bottom") };
+    if (ept[1] >= s.yspan - tolY) return { key: "top", val: ept[0], label: window.t("tool_status.shoptools.x_at_top") };
+    if (ept[0] <= tolX) return { key: "left", val: ept[1], label: window.t("tool_status.shoptools.y_at_left") };
+    return { key: "right", val: ept[1], label: window.t("tool_status.shoptools.y_at_right") };
 }
 
 // Pivot the line about the anchor so it passes through the given
@@ -1299,10 +1320,10 @@ function isIdle() {
 
 function renderHeader() {
     var type = atcType();
-    $("#atc-type-badge").text(ATC_TYPE_LABELS[type] || "ATC (type " + type + ")");
+    $("#atc-type-badge").text(ATC_TYPE_LABELS[type] || window.t("tool_status.header.atc_type", { type: type }));
     var st = state.machineState || "—";
     $("#machine-state")
-        .text(st)
+        .text(tOr("tool_status.states." + st, st))
         .attr("class", "ts-badge ts-state " + st);
 }
 
@@ -1315,11 +1336,11 @@ function renderCurrentTool() {
         var bits = [];
         var name = toolName(tool);
         if (name) bits.push(name);
-        if (h) bits.push("len " + fmt(Number(h)));
-        $("#current-tool-caption").text(bits.join(" · ") || "in spindle");
+        if (h) bits.push(window.t("tool_status.tools.len") + " " + fmt(Number(h)));
+        $("#current-tool-caption").text(bits.join(" · ") || window.t("tool_status.current.in_spindle"));
     } else {
         $num.text("—").addClass("empty");
-        $("#current-tool-caption").text(showToolRow() ? "no tool in spindle" : "");
+        $("#current-tool-caption").text(showToolRow() ? window.t("tool_status.current.no_tool") : "");
     }
 }
 
@@ -1349,15 +1370,15 @@ function sensorDefs() {
         })
         .forEach(function (n) {
             var label = INPUT_TYPE_LABELS[types[n]];
-            if (label) defs.push({ input: Number(n), label: label });
+            if (label) defs.push({ input: Number(n), key: types[n], label: label });
         });
     if (defs.length) return defs;
     // Legacy fallback: hand-set sensor-number variables
     var vars = state.vars || {};
     [
-        { input: Number(vars.TOOLBAR_SENSOR), label: "Toolbar" },
-        { input: Number(vars.TOOL_SENSOR), label: "Tool" },
-        { input: Number(vars.DRAWBAR_SENSOR), label: "Drawbar" },
+        { input: Number(vars.TOOLBAR_SENSOR), key: "toolbar_present", label: "Toolbar" },
+        { input: Number(vars.TOOL_SENSOR), key: "tool_present", label: "Tool" },
+        { input: Number(vars.DRAWBAR_SENSOR), key: "drawbar_open", label: "Drawbar" },
     ].forEach(function (d) {
         if (d.input >= 1) defs.push(d);
     });
@@ -1380,8 +1401,9 @@ function renderSensorLayout() {
                 '<span class="ts-led"></span><span class="ts-sensor-label"></span>' +
                 "</div>"
         );
-        $s.attr("title", d.label + " (input " + d.input + ")");
-        $s.find(".ts-sensor-label").text(d.label);
+        var sLabel = tOr("tool_status.sensors." + d.key, d.label);
+        $s.attr("title", sLabel + " (input " + d.input + ")");
+        $s.find(".ts-sensor-label").text(sLabel);
         $row.append($s);
     });
 }
@@ -1429,15 +1451,15 @@ function renderToolRow() {
         var clip = table[n] || {};
         var clipLoc =
             isFinite(Number(clip.X)) && Number(clip.X) !== 0
-                ? "clip " + fmt(Number(clip.X)) + ", " + fmt(Number(clip.Y))
+                ? window.t("tool_status.tools.clip") + " " + fmt(Number(clip.X)) + ", " + fmt(Number(clip.Y))
                 : "";
-        var tip = [name, h ? "len " + fmt(Number(h)) : "", clipLoc].filter(Boolean).join(" · ");
+        var tip = [name, h ? window.t("tool_status.tools.len") + " " + fmt(Number(h)) : "", clipLoc].filter(Boolean).join(" · ");
         if (tip) $clip.attr("title", tip);
         if (n === current) $clip.addClass("current");
         else if (!idle) $clip.addClass("disabled");
         $rack.append($clip);
     }
-    $("#rack-note").text(idle ? "press a tool to load it" : "available when idle");
+    $("#rack-note").text(idle ? window.t("tool_status.tools.rack_idle_note") : window.t("tool_status.tools.rack_busy_note"));
     $(".ts-btn-grid-tools .ts-cmd").prop("disabled", !idle);
 }
 
@@ -1475,8 +1497,8 @@ function renderCustomButtons() {
         if (!(macro >= 1)) return;
         var $btn = $('<button class="ts-cmd machine-cmd ts-dyn"></button>')
             .attr("data-cmd", "C" + macro)
-            .attr("title", "Run macro " + macro)
-            .text(b.label || "Macro " + macro);
+            .attr("title", window.t("tool_status.machine.run_macro_title", { n: macro }))
+            .text(b.label || window.t("tool_status.machine.macro_n", { n: macro }));
         $grid.append($btn);
     });
 }
@@ -1516,19 +1538,19 @@ function renderJobs() {
         $q.append($row);
     });
     if (!state.queue.length && !(state.running || []).length) {
-        $q.append('<div class="ts-empty">No jobs in queue</div>');
+        $q.append($('<div class="ts-empty">').text(window.t("tool_status.jobs.empty_queue")));
     } else {
         state.queue.forEach(function (job, i) {
             var $row = $(
                 '<div class="ts-job ts-job-sortable' + (i === 0 ? " next" : "") + '">' +
-                    '<span class="ts-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>' +
+                    '<span class="ts-drag-handle" title="' + window.t("tool_status.jobs.drag_reorder_title") + '">&#8942;&#8942;</span>' +
                     '<div class="ts-job-info">' +
                         '<div class="ts-job-name"></div>' +
                         '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
                     "</div>" +
-                    '<button class="ts-iconbtn ts-job-preview" title="Preview"><i class="fa fa-eye"></i></button>' +
-                    '<button class="ts-iconbtn ts-job-edit" title="View code (edit)"><i class="fa fa-code"></i></button>' +
-                    '<button class="ts-iconbtn ts-job-delete" title="Remove from queue"><i class="fa fa-trash"></i></button>' +
+                    '<button class="ts-iconbtn ts-job-preview" title="' + window.t("tool_status.jobs.preview_title") + '"><i class="fa fa-eye"></i></button>' +
+                    '<button class="ts-iconbtn ts-job-edit" title="' + window.t("tool_status.jobs.edit_title") + '"><i class="fa fa-code"></i></button>' +
+                    '<button class="ts-iconbtn ts-job-delete" title="' + window.t("tool_status.jobs.delete_title") + '"><i class="fa fa-trash"></i></button>' +
                     "</div>"
             );
             $row.attr("data-id", job._id);
@@ -1541,7 +1563,7 @@ function renderJobs() {
 
     var $h = $("#job-history").empty();
     if (!state.history.length) {
-        $h.append('<div class="ts-empty">No recent jobs</div>');
+        $h.append($('<div class="ts-empty">').text(window.t("tool_status.jobs.empty_recent")));
         return;
     }
     state.history.forEach(function (job) {
@@ -1569,7 +1591,7 @@ function historyRow(job) {
                 '<div class="ts-job-name"></div>' +
                 '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
             "</div>" +
-            '<button class="ts-iconbtn ts-job-rerun" title="Add to queue again">&#8635;</button>' +
+            '<button class="ts-iconbtn ts-job-rerun" title="' + window.t("tool_status.jobs.rerun_title") + '">&#8635;</button>' +
             "</div>"
     );
     $row.find(".ts-job-name").text(job.name || "job " + job._id);
@@ -1709,7 +1731,7 @@ $(document).ready(function () {
     });
 
     function openShortcutPicker() {
-        var $list = $("#shortcut-pick-list").html('<div class="ts-empty">Loading apps&hellip;</div>');
+        var $list = $("#shortcut-pick-list").html($('<div class="ts-empty">').text(window.t("tool_status.shortcut_pick.loading")));
         // Re-fetch so a just-installed app shows up without reloading
         refreshApps(function () {
             $list.empty();
@@ -1718,7 +1740,7 @@ $(document).ready(function () {
                 return a.id !== OWN_APP_ID && a.icon_display !== "none";
             });
             if (!apps.length) {
-                $list.append('<div class="ts-empty">No other apps installed</div>');
+                $list.append($('<div class="ts-empty">').text(window.t("tool_status.shortcut_pick.none")));
                 return;
             }
             apps.forEach(function (a) {
@@ -1774,11 +1796,11 @@ $(document).ready(function () {
         pickedMacro = null;
         $("#macro-btn-label").val("");
         $("#btn-macro-pick-save").prop("disabled", true);
-        var $list = $("#macro-pick-list").html('<div class="ts-empty">Loading macros&hellip;</div>');
+        var $list = $("#macro-pick-list").html($('<div class="ts-empty">').text(window.t("tool_status.macro_pick.loading")));
         fabmo.getMacros(function (err, macros) {
             $list.empty();
             if (err || !macros || !macros.length) {
-                $list.append('<div class="ts-empty">No macros found</div>');
+                $list.append($('<div class="ts-empty">').text(window.t("tool_status.macro_pick.none")));
                 return;
             }
             macros.forEach(function (m) {
@@ -1788,7 +1810,7 @@ $(document).ready(function () {
                         '<div class="ts-pick-desc"></div>' +
                         "</div>"
                 );
-                $row.find(".ts-pick-name").text("C" + m.index + " — " + (m.name || "Macro " + m.index));
+                $row.find(".ts-pick-name").text("C" + m.index + " — " + (m.name || window.t("tool_status.machine.macro_n", { n: m.index })));
                 $row.find(".ts-pick-desc").text(m.description || "");
                 $row.data("macro", m);
                 $list.append($row);
@@ -1801,7 +1823,7 @@ $(document).ready(function () {
         $("#macro-pick-list .ts-pick-entry").removeClass("selected");
         $(this).addClass("selected");
         pickedMacro = $(this).data("macro");
-        $("#macro-btn-label").val(pickedMacro.name || "Macro " + pickedMacro.index);
+        $("#macro-btn-label").val(pickedMacro.name || window.t("tool_status.machine.macro_n", { n: pickedMacro.index }));
         $("#btn-macro-pick-save").prop("disabled", false);
     });
 
@@ -1822,7 +1844,7 @@ $(document).ready(function () {
         var list = customButtons();
         list.push({
             macro: pickedMacro.index,
-            label: ($("#macro-btn-label").val() || "").trim() || pickedMacro.name || "Macro " + pickedMacro.index,
+            label: ($("#macro-btn-label").val() || "").trim() || pickedMacro.name || window.t("tool_status.machine.macro_n", { n: pickedMacro.index }),
         });
         saveCustomButtons(list, closeMacroPick);
     });
@@ -1845,28 +1867,28 @@ $(document).ready(function () {
         var $custom = $("#ms-custom-list").empty();
         var buttons = customButtons();
         if (!buttons.length) {
-            $custom.append('<div class="ts-empty">No custom buttons — use + Add on the Machine card</div>');
+            $custom.append($('<div class="ts-empty">').text(window.t("tool_status.machine_settings.no_custom")));
         }
         buttons.forEach(function (b) {
             var $row = $(
                 '<div class="ts-custom-row">' +
                     '<span class="ts-custom-macro">C' + Number(b.macro) + "</span>" +
                     '<input type="text">' +
-                    '<button class="ts-iconbtn ms-custom-remove" title="Remove button"><i class="fa fa-trash"></i></button>' +
+                    '<button class="ts-iconbtn ms-custom-remove" title="' + window.t("tool_status.machine_settings.remove_button_title") + '"><i class="fa fa-trash"></i></button>' +
                     "</div>"
             );
             $row.data("macro", Number(b.macro));
             $row.find("input").val(b.label || "");
             $custom.append($row);
         });
-        $("#machine-settings-units").text("dimensions in current units (" + state.unit + ")");
+        $("#machine-settings-units").text(window.t("tool_status.common.units_note", { units: state.unit }));
         $("#machine-settings-modal").css("display", "flex");
     });
 
     $("#ms-custom-list").on("click", ".ms-custom-remove", function () {
         $(this).closest(".ts-custom-row").remove();
         if (!$("#ms-custom-list .ts-custom-row").length) {
-            $("#ms-custom-list").append('<div class="ts-empty">No custom buttons — use + Add on the Machine card</div>');
+            $("#ms-custom-list").append($('<div class="ts-empty">').text(window.t("tool_status.machine_settings.no_custom")));
         }
     });
 
@@ -1910,7 +1932,7 @@ $(document).ready(function () {
             if (!(macro >= 1)) return;
             buttons.push({
                 macro: macro,
-                label: ($row.find("input").val() || "").trim() || "Macro " + macro,
+                label: ($row.find("input").val() || "").trim() || window.t("tool_status.machine.macro_n", { n: macro }),
             });
         });
         payload.TS_MACRO_BUTTONS = JSON.stringify(buttons);
@@ -1930,10 +1952,13 @@ $(document).ready(function () {
         if (tool === current || !isIdle()) return;
         var name = toolName(tool);
         fabmo.showModal({
-            title: "Tool Change",
-            message: "Change to Tool " + tool + (name ? " (" + name + ")" : "") + "?",
-            okText: "Change Tool",
-            cancelText: "Cancel",
+            title: window.t("tool_status.tool_change.title"),
+            message: window.t("tool_status.tool_change.message", {
+                tool: tool,
+                name: name ? " (" + name + ")" : "",
+            }),
+            okText: window.t("tool_status.tool_change.ok"),
+            cancelText: window.t("tool_status.common.cancel"),
             ok: function () {
                 runCommand("&Tool = " + tool + "\nC9");
             },
@@ -2128,13 +2153,13 @@ $(document).ready(function () {
 
     $("#btn-st-plane").on("click", function () {
         if (!isIdle()) return;
-        if (!(stPlaner.depth > 0)) return fabmo.notify("warning", "Set a planing depth first.");
-        if (!(stPlaner.bit > 0)) return fabmo.notify("warning", "Set the bit diameter first.");
+        if (!(stPlaner.depth > 0)) return fabmo.notify("warning", window.t("tool_status.notify.set_plane_depth"));
+        if (!(stPlaner.bit > 0)) return fabmo.notify("warning", window.t("tool_status.notify.set_bit_diameter"));
         if (!(stPlaner.x1 > stPlaner.x0) || !(stPlaner.y1 > stPlaner.y0)) {
-            return fabmo.notify("warning", "Drag the area handles to pick a region to plane.");
+            return fabmo.notify("warning", window.t("tool_status.notify.pick_plane_area"));
         }
         var segs = stpToolpath();
-        if (!segs.length) return fabmo.notify("warning", "No toolpath for that area.");
+        if (!segs.length) return fabmo.notify("warning", window.t("tool_status.notify.no_toolpath"));
         var safeZ = Number((state.vars || {}).SB_SAFE_Z);
         if (!isFinite(safeZ) || safeZ <= 0) safeZ = state.unit === "mm" ? 25 : 1;
         var env = state.envelope || {};
@@ -2321,7 +2346,7 @@ $(document).ready(function () {
     // short. Same coordinate/spindle bookkeeping as PLANE.
     $("#btn-st-saw").on("click", function () {
         if (!isIdle()) return;
-        if (!(stSaw.depth > 0)) return fabmo.notify("warning", "Set a cutting depth first.");
+        if (!(stSaw.depth > 0)) return fabmo.notify("warning", window.t("tool_status.notify.set_cut_depth"));
         var nrm = stsNormal();
         var count = stsArrayMode ? stsArr.n : 1;
         var cuts = [];
@@ -2329,7 +2354,7 @@ $(document).ready(function () {
             var c = stsChord(stSaw.ax + i * stsArr.s * nrm[0], stSaw.ay + i * stsArr.s * nrm[1]);
             if (c) cuts.push(c);
         }
-        if (!cuts.length) return fabmo.notify("warning", "The cut line misses the table.");
+        if (!cuts.length) return fabmo.notify("warning", window.t("tool_status.notify.cut_misses_table"));
         var safeZ = Number((state.vars || {}).SB_SAFE_Z);
         if (!isFinite(safeZ) || safeZ <= 0) safeZ = state.unit === "mm" ? 25 : 1;
         var env = state.envelope || {};
@@ -2464,14 +2489,14 @@ $(document).ready(function () {
         if (!isIdle()) return;
         var depth = stDrill.depth;
         if (!(depth > 0)) {
-            fabmo.notify("warning", "Set a drilling depth first.");
+            fabmo.notify("warning", window.t("tool_status.notify.set_drill_depth"));
             return;
         }
         // Depth is into the material from its top; where Z=0 sits decides
         // the machine target for that same hole.
         var zzTable = stDrill.zzero === "table";
         if (zzTable && !(stDrill.thickness > 0)) {
-            fabmo.notify("warning", "Set the material thickness — with Z zeroed on the table it locates the material surface.");
+            fabmo.notify("warning", window.t("tool_status.notify.set_thickness"));
             return;
         }
         var targetZ = zzTable ? stDrill.thickness - depth : -depth;
@@ -2490,7 +2515,7 @@ $(document).ready(function () {
         var logMsg;
         if (stArrayMode && stArray.xn * stArray.yn > 1) {
             if ((stArray.xn > 1 && !stArray.xs) || (stArray.yn > 1 && !stArray.ys)) {
-                fabmo.notify("warning", "Set the array spacing first.");
+                fabmo.notify("warning", window.t("tool_status.notify.set_array_spacing"));
                 return;
             }
             // Grid steps +X/+Y from the current position, row by row, with
@@ -2561,7 +2586,7 @@ $(document).ready(function () {
             $rows.append($tr);
             syncRow($tr);
         }
-        $("#tool-settings-units").text("dimensions in current units (" + state.unit + ")");
+        $("#tool-settings-units").text(window.t("tool_status.common.units_note", { units: state.unit }));
         $("#tool-settings-modal").css("display", "flex");
     });
 
@@ -2671,7 +2696,7 @@ $(document).ready(function () {
         var id = $(this).data("id");
         fabmo.resubmitJob(id, { stayHere: true }, function (err) {
             if (err) fabmo.notify("error", err.message || err);
-            else fabmo.notify("info", "Job added to the queue");
+            else fabmo.notify("info", window.t("tool_status.notify.job_added"));
             refreshJobs();
         });
     });
@@ -2688,12 +2713,18 @@ $(document).ready(function () {
             var total = res.total_count || 0;
             var jobs = res.data || [];
             var $list = $("#history-list").empty();
-            if (!jobs.length) $list.append('<div class="ts-empty">No jobs in history</div>');
+            if (!jobs.length) $list.append($('<div class="ts-empty">').text(window.t("tool_status.history.empty")));
             jobs.forEach(function (job) {
                 $list.append(historyRow(job));
             });
             $("#history-page-label").text(
-                total ? start + 1 + "–" + Math.min(start + jobs.length, total) + " of " + total : "no jobs"
+                total
+                    ? window.t("tool_status.history.range", {
+                          from: start + 1,
+                          to: Math.min(start + jobs.length, total),
+                          total: total,
+                      })
+                    : window.t("tool_status.history.none")
             );
             $("#btn-history-prev").prop("disabled", start <= 0);
             $("#btn-history-next").prop("disabled", start + HISTORY_PAGE >= total);
