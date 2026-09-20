@@ -1,4 +1,109 @@
 {
+    "editor.page_title": {
+        "en_at_translation": "G-Code Editor"
+    },
+    "editor.header": {
+        "en_at_translation": "Editor"
+    },
+    "editor.tooltip.scratchpad_autosave": {
+        "en_at_translation": "Edits in scratchpad are automatically saved"
+    },
+    "editor.tooltip.jobfile_macro_require_save": {
+        "en_at_translation": "Edits to Jobfile or Macro REQUIRE saving"
+    },
+    "editor.tooltip.start_searching": {
+        "en_at_translation": "&gt; Start searching"
+    },
+    "editor.tooltip.find_next": {
+        "en_at_translation": "&gt; Find next"
+    },
+    "editor.tooltip.command_reference": {
+        "en_at_translation": "Command Reference"
+    },
+    "editor.tooltip.system_variables": {
+        "en_at_translation": "System Variables"
+    },
+    "editor.menu.toggle": {
+        "en_at_translation": "Menu"
+    },
+    "editor.menu.macro_saves": {
+        "en_at_translation": "MACRO Saves"
+    },
+    "editor.menu.save_macro": {
+        "en_at_translation": "Save Macro"
+    },
+    "editor.menu.save_macro_and_close": {
+        "en_at_translation": "Save Macro and Close"
+    },
+    "editor.menu.language": {
+        "en_at_translation": "Language"
+    },
+    "editor.menu.execute_save": {
+        "en_at_translation": "Execute/Save"
+    },
+    "editor.menu.run_immediate": {
+        "en_at_translation": "Run Code Immediately (Ctrl+Enter)"
+    },
+    "editor.menu.run_debug": {
+        "en_at_translation": "Run in Debug Mode (input simulation)"
+    },
+    "editor.menu.submit_as_job": {
+        "en_at_translation": "Save and Submit as Separate New Job"
+    },
+    "editor.jobsubmit.modal_title": {
+        "en_at_translation": "Submit Job"
+    },
+    "editor.jobsubmit.job_name_label": {
+        "en_at_translation": "Job Name:"
+    },
+    "editor.jobsubmit.description_label": {
+        "en_at_translation": "Description:"
+    },
+    "editor.jobsubmit.cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "editor.jobsubmit.submit": {
+        "en_at_translation": "Submit Job"
+    },
+    "editor.jobsubmit.default_description_gcode": {
+        "en_at_translation": "G-Code job from the editor"
+    },
+    "editor.jobsubmit.default_description_opensbp": {
+        "en_at_translation": "OpenSBP job from the editor"
+    },
+    "editor.modal.unsaved_changes_title": {
+        "en_at_translation": "Unsaved Changes"
+    },
+    "editor.modal.unsaved_changes_message": {
+        "en_at_translation": "You have unsaved changes. Do you want to save before next action?"
+    },
+    "editor.modal.yes": {
+        "en_at_translation": "Yes"
+    },
+    "editor.modal.no_click_again": {
+        "en_at_translation": "No (click action again)"
+    },
+    "editor.content_label.scratchpad": {
+        "en_at_translation": "[ editor scratchpad ]"
+    },
+    "editor.notify.executing_gcode": {
+        "en_at_translation": "Executing G-Code program."
+    },
+    "editor.notify.executing_opensbp": {
+        "en_at_translation": "Executing OpenSBP program."
+    },
+    "editor.notify.debug_opensbp_only": {
+        "en_at_translation": "Debug mode (input simulation) is only available for OpenSBP files."
+    },
+    "editor.notify.executing_opensbp_debug": {
+        "en_at_translation": "Executing OpenSBP program in debug mode."
+    },
+    "editor.notify.macro_saved": {
+        "en_at_translation": "Macro '{name}' saved."
+    },
+    "editor.notify.unknown_file_format": {
+        "en_at_translation": "Unknown file format in editor?!"
+    },
     "keypad.xy_move_speed": {
         "en_at_translation": "XY Move Speed"
     },
@@ -35,6 +140,45 @@
     "keypad.joystick_tooltip": {
         "en_at_translation": "Pendant joystick direction"
     },
+    "keypad.authorize_overlay_message": {
+        "en_at_translation": "Press authorize button to enable manual controls"
+    },
+    "keypad.drag_handle_tooltip": {
+        "en_at_translation": "Drag to move keypad"
+    },
+    "keypad.message_placeholder": {
+        "en_at_translation": "This is where a message will go"
+    },
+    "keypad.title_goto_tooltip": {
+        "en_at_translation": "Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000"
+    },
+    "keypad.title_goto_prompt": {
+        "en_at_translation": "Select and change a value in order to: 'GoTo' a location or 'Set' a location"
+    },
+    "keypad.soft_limit_prompt_message": {
+        "en_at_translation": "Allow temporary soft-limit override on the"
+    },
+    "keypad.soft_limit_axis_suffix": {
+        "en_at_translation": "axis?"
+    },
+    "keypad.soft_limit_prompt_note": {
+        "en_at_translation": "Override clears when you close the keypad."
+    },
+    "keypad.soft_limit_allow": {
+        "en_at_translation": "Allow"
+    },
+    "keypad.soft_limit_cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "keypad.zero_button_tooltip": {
+        "en_at_translation": "set this axis to zero"
+    },
+    "keypad.zero_button": {
+        "en_at_translation": "zero"
+    },
+    "keypad.dro_enter_prompt": {
+        "en_at_translation": "Move the tool if necessary, then hit \"Enter"
+    },
     "status.transforms_label": {
         "en_at_translation": "Transforms"
     },
@@ -68,6 +212,222 @@
     "status.open_dro_tooltip": {
         "en_at_translation": "Click to open larger Info Display"
     },
+    "status.close_dro_tooltip": {
+        "en_at_translation": "Click to close large Display"
+    },
+    "status.error_occurred_title": {
+        "en_at_translation": "An Error Occurred!"
+    },
+    "status.close_button": {
+        "en_at_translation": "Close"
+    },
+    "status.waiting_title": {
+        "en_at_translation": "Waiting for FabMo..."
+    },
+    "status.yes": {
+        "en_at_translation": "Yes"
+    },
+    "status.no": {
+        "en_at_translation": "No"
+    },
+    "status.sim_input_label": {
+        "en_at_translation": "DEBUG — click to toggle inputs:"
+    },
+    "status.footer_line_label": {
+        "en_at_translation": "line:"
+    },
+    "status.menu.default_app": {
+        "en_at_translation": "Default App"
+    },
+    "status.menu.job_manager": {
+        "en_at_translation": "Job Manager"
+    },
+    "status.menu.editor": {
+        "en_at_translation": "Editor"
+    },
+    "status.menu.macros_title": {
+        "en_at_translation": "Custom Macros"
+    },
+    "status.menu.macros": {
+        "en_at_translation": "Macros"
+    },
+    "status.menu.apps": {
+        "en_at_translation": "Apps"
+    },
+    "status.menu.video": {
+        "en_at_translation": "Video"
+    },
+    "status.menu.configuration": {
+        "en_at_translation": "Configuration"
+    },
+    "status.menu.sign_out": {
+        "en_at_translation": "Sign Out"
+    },
+    "status.menu.expand_collapse": {
+        "en_at_translation": "Expand/Collapse"
+    },
+    "status.menu.collapse": {
+        "en_at_translation": "Collapse"
+    },
+    "status.menu.expand": {
+        "en_at_translation": "Expand"
+    },
+    "status.menu.calculator": {
+        "en_at_translation": "Calculator"
+    },
+    "status.dro_outputs_tooltip": {
+        "en_at_translation": "Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad."
+    },
+    "status.dro_outputs_label": {
+        "en_at_translation": "OUTPUTS (Toggle)"
+    },
+    "status.dro_move_speed_label": {
+        "en_at_translation": "MOVE SPEED  (Feedrate)"
+    },
+    "status.dro_move_speed_tooltip": {
+        "en_at_translation": "When a file is running, the move-speed/feedrate of the moving axis is <br> shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br> Override will decrease or increase the assigned speed in a file (down <br> to 5%, up to 200%; with 100% being the assigned speed.).<br>"
+    },
+    "status.dro_override_label": {
+        "en_at_translation": "Override %"
+    },
+    "status.dro_spindle_label": {
+        "en_at_translation": "Spindle-1"
+    },
+    "status.dro_spindle_tooltip": {
+        "en_at_translation": "Set spindle RPM. Gray/Black values indicate commanded RPM; Blue <br> values indicate Achieved RPM.<br><br> AMP value displays the spindle load expressed as current in amps."
+    },
+    "status.dro_rpm_label": {
+        "en_at_translation": "RPM"
+    },
+    "status.dro_no_vfd_placeholder": {
+        "en_at_translation": "- No VFD/USB -  "
+    },
+    "status.dro_amp_label": {
+        "en_at_translation": "AMP"
+    },
+    "status.dro_load_label": {
+        "en_at_translation": "LOAD"
+    },
+    "status.modal.title_placeholder": {
+        "en_at_translation": "Title"
+    },
+    "status.modal.invalid_value": {
+        "en_at_translation": "Please Enter a Valid Value."
+    },
+    "status.modal.cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "status.modal.okay": {
+        "en_at_translation": "Okay"
+    },
+    "status.error.job_name": {
+        "en_at_translation": "Job Name:"
+    },
+    "status.error.job_description": {
+        "en_at_translation": "Job Description:"
+    },
+    "status.error.check_log_prefix": {
+        "en_at_translation": "Check the log"
+    },
+    "status.error.check_log_link": {
+        "en_at_translation": "for more information"
+    },
+    "status.backup.found_message": {
+        "en_at_translation": "FabMo has found a configuration backup made before this update."
+    },
+    "status.backup.created_at": {
+        "en_at_translation": "Backup created:"
+    },
+    "status.backup.restore_question": {
+        "en_at_translation": "Would you like to restore your previous configuration?"
+    },
+    "status.backup.title": {
+        "en_at_translation": "Configuration Backup Available"
+    },
+    "status.backup.ok": {
+        "en_at_translation": "Use My Previous Config"
+    },
+    "status.backup.cancel": {
+        "en_at_translation": "Keep the New Config"
+    },
+    "status.backup.restoring": {
+        "en_at_translation": "Restoring backup... System will restart shortly."
+    },
+    "status.backup.restored": {
+        "en_at_translation": "Backup restored - restarting..."
+    },
+    "status.backup.restore_failed": {
+        "en_at_translation": "Failed to restore backup:"
+    },
+    "status.backup.keeping": {
+        "en_at_translation": "Keeping current configuration"
+    },
+    "status.authorize.title": {
+        "en_at_translation": "Authorization Required!"
+    },
+    "status.authorize.message": {
+        "en_at_translation": "To authorize your tool, press and hold the start button for one second."
+    },
+    "status.limit_alert.title": {
+        "en_at_translation": "Limit Hit!"
+    },
+    "status.limit_alert.message": {
+        "en_at_translation": "Limit Switch has been Hit! Quit will temporarily over-ride Limit sensor to allow backing off with Keypad."
+    },
+    "status.interlock_alert.title": {
+        "en_at_translation": "Safety Interlock Activated!"
+    },
+    "status.interlock_alert.message": {
+        "en_at_translation": "You cannot perform the specified action with the safety interlock open.  Please close the safety interlock before Resuming."
+    },
+    "status.drive_fault_alert.title": {
+        "en_at_translation": "DRIVE FAULT!"
+    },
+    "status.drive_fault_alert.message": {
+        "en_at_translation": "A stepper motor driver fault has been detected. The system must be reset before continuing. Check for mechanical issues and then Quit to return to Idle."
+    },
+    "status.lock.title": {
+        "en_at_translation": "Stop Input Activated!"
+    },
+    "status.lock.message": {
+        "en_at_translation": "Please release any Stop Input before continuing."
+    },
+    "status.logout.title": {
+        "en_at_translation": "Log Out?"
+    },
+    "status.logout.message": {
+        "en_at_translation": "Are you sure you want to sign out of this machine?"
+    },
+    "status.auth.kicked_out": {
+        "en_at_translation": "You have been kicked out from the tool."
+    },
+    "status.auth.not_authenticated": {
+        "en_at_translation": "You need to be authenticated to access this page."
+    },
+    "status.auth.login_success": {
+        "en_at_translation": "Successful Log in!"
+    },
+    "status.auth.wrong_credentials": {
+        "en_at_translation": "Wrong username or password"
+    },
+    "status.auth.kick_confirm": {
+        "en_at_translation": "do you want to kick this user out ?"
+    },
+    "status.auth.loading": {
+        "en_at_translation": "Loading..."
+    },
+    "status.auth.user_created": {
+        "en_at_translation": "User successfully created !"
+    },
+    "status.app_launch_failed_prefix": {
+        "en_at_translation": "Couldn't launch app:"
+    },
+    "status.app_launch_failed_no_list": {
+        "en_at_translation": "Apps list not available yet."
+    },
+    "status.app_launch_failed_no_app": {
+        "en_at_translation": "No such app?"
+    },
     "actions.c2_tooltip": {
         "en_at_translation": "Do Z-Zero (Macro C2)"
     },
@@ -82,6 +442,27 @@
     },
     "actions.spindle_toggle_tooltip": {
         "en_at_translation": "Toggle Spindle ON/OFF"
+    },
+    "actions.resume": {
+        "en_at_translation": "RESUME"
+    },
+    "actions.quit": {
+        "en_at_translation": "QUIT"
+    },
+    "actions.resume_button": {
+        "en_at_translation": "Resume"
+    },
+    "actions.quit_button": {
+        "en_at_translation": "Quit"
+    },
+    "actions.skip_button": {
+        "en_at_translation": "Skip"
+    },
+    "actions.pause_feedhold": {
+        "en_at_translation": "Pause / Feedhold"
+    },
+    "actions.pause_feedhold_tooltip": {
+        "en_at_translation": "When a file is running, Pause/Feedhold will execute a controlled stop <br> allowing the file to be subsequently Resumed or Fully Quit.<br><br> If an immediate Emergency Stop (E-Stop) is needed, use the physical <br> RED Button/Lever to brake and shutdown the equipment.  The tool's <br> position will be lost and your file will need to be restarted. <br> On some tools, the E-Stop may also be the main power switch.<br>"
     },
     "errors.machine.cannot_arm_from_state": {
         "en_at_translation": "Cannot arm machine for {action} from the {state} state"
@@ -131,11 +512,17 @@
     "config.tabs.outputs": {
         "en_at_translation": "Outputs"
     },
+    "config.tabs.layout": {
+        "en_at_translation": "Layout"
+    },
     "config.tabs.apps": {
         "en_at_translation": "Apps"
     },
     "config.tabs.users": {
         "en_at_translation": "Users"
+    },
+    "config.tabs.variables": {
+        "en_at_translation": "Variables"
     },
     "config.general.legend": {
         "en_at_translation": "General Settings"
@@ -175,6 +562,81 @@
     },
     "config.general.language_tooltip": {
         "en_at_translation": "Display language for the dashboard.<br>Changing this setting reloads the page so the new<br>translations take effect.<br>"
+    },
+    "config.custom_profile.legend": {
+        "en_at_translation": "My Custom Profile"
+    },
+    "config.custom_profile.explanation": {
+        "en_at_translation": "Save the current configuration as a custom profile you can restore later. The most recently saved profile is marked as your Preferred Profile &mdash; if a settings file is ever damaged and the most recent backup can't be used, the machine falls back to the Preferred Profile instead of the factory profile."
+    },
+    "config.custom_profile.save_current": {
+        "en_at_translation": "Save current settings as custom profile"
+    },
+    "config.custom_profile.restore_to": {
+        "en_at_translation": "Restore machine settings to custom profile"
+    },
+    "config.custom_profile.snapshot_label": {
+        "en_at_translation": "Snapshot:"
+    },
+    "config.custom_profile.set_preferred": {
+        "en_at_translation": "Set as Preferred"
+    },
+    "config.custom_profile.download": {
+        "en_at_translation": "Download"
+    },
+    "config.custom_profile.upload": {
+        "en_at_translation": "Upload"
+    },
+    "config.custom_profile.download_title": {
+        "en_at_translation": "Download selected custom profile"
+    },
+    "config.custom_profile.upload_title": {
+        "en_at_translation": "Upload a custom profile from a .fmsnap.zip"
+    },
+    "config.custom_profile.delete_title": {
+        "en_at_translation": "Delete selected snapshot"
+    },
+    "config.custom_profile.preferred_profile_label": {
+        "en_at_translation": "Preferred Profile:"
+    },
+    "config.custom_profile.preferred_tag": {
+        "en_at_translation": "(Preferred)"
+    },
+    "config.custom_profile.no_custom_profiles": {
+        "en_at_translation": "(no custom profiles yet)"
+    },
+    "config.custom_profile.none": {
+        "en_at_translation": "none"
+    },
+    "config.custom_profile.save_restore_profile_only": {
+        "en_at_translation": "Save/Restore Profile Only:"
+    },
+    "config.custom_profile.backup_profile": {
+        "en_at_translation": "Backup current Profile"
+    },
+    "config.custom_profile.restore_profile": {
+        "en_at_translation": "Restore saved Profile"
+    },
+    "config.custom_profile.save_restore_macros_only": {
+        "en_at_translation": "Save/Restore Macros Only:"
+    },
+    "config.custom_profile.backup_macros": {
+        "en_at_translation": "Backup current Macros"
+    },
+    "config.custom_profile.restore_macros": {
+        "en_at_translation": "Restore saved Macros"
+    },
+    "config.custom_profile.export_import_history": {
+        "en_at_translation": "Export/Import Job History:"
+    },
+    "config.custom_profile.export_history": {
+        "en_at_translation": "Export Job History"
+    },
+    "config.custom_profile.import_history": {
+        "en_at_translation": "Import Job History"
+    },
+    "config.custom_profile.history_note": {
+        "en_at_translation": "(includes cut files; may be large)"
     },
     "config.logging.legend": {
         "en_at_translation": "Logging"
@@ -275,6 +737,12 @@
     "config.axes.mode_rotary": {
         "en_at_translation": "Rotary"
     },
+    "config.axes.legend_tooltip": {
+        "en_at_translation": "This page contains default/current settings for Axis characteristics: <br><br><strong>Feedrate Maximum:</strong> The maximum allowable feedrate for this machine in a move <br>&nbsp;&nbsp;&nbsp; speed command ([M] commands in OpenSBP or G1 commands in g-code).<br><strong>Jog Velocity:</strong> The speed of Jog or rapid-traverse comands ([J]og commands <br>&nbsp;&nbsp;&nbsp;in OpenSBP; G0 command in g-code). May be greater than Feedrate Maximum.<br><strong>Maximum Jerk:</strong> \"Jerk\" is technically the 3rd derivative of position -- it is the <br>&nbsp;&nbsp;&nbsp;rate of change in acceleration/deceleration and determines how quickly your tool changes <br>&nbsp;&nbsp;&nbsp;from one speed/direction to another. A higher value here creates more aggressive motion. <br>&nbsp;&nbsp;&nbsp;[recommended settings: in inches 50 - 250; in mm 1270 - 6350 ((units/ min&sup3;) * 1,000,000)] <br>&nbsp;&nbsp;&nbsp;FabMo calculates a smooth, S-shaped speed curve that limits jerk to this setting. <br><strong>High Brake Jerk:</strong> The \"jerk\" setting creating an abrupt stop for special <br>&nbsp;&nbsp;&nbsp;situations such as homing and unprogrammed STOPS. If this value is too <br>&nbsp;&nbsp;&nbsp;high or loads heavy, position accuracy may be lost. <br><strong>Axis Mode:</strong> The movement mode for this axis. Linear axes are controlled in the <br>&nbsp;&nbsp;&nbsp;default linear unit system. Rotary axes are controlled in degrees of rotation. <br>&nbsp;&nbsp;&nbsp;Note that changing the Axis Mode will reset the default parameters for the axis. <br><br>"
+    },
+    "config.axes.axis_mode_abc_tooltip": {
+        "en_at_translation": "Axis Mode for this axis:&nbsp;&nbsp;&nbsp;<strong>Resetting mode resets Axis defaults.</strong> <br>&nbsp;&nbsp;&nbsp;Default Linear values are estimated from the Z axis. <br>&nbsp;&nbsp;&nbsp;Default Rotary values are based on DT-Indexer. <br>&nbsp;&nbsp;&nbsp;Move speeds are set to 1/2 of the Feedrate Maximum. <br>&nbsp;&nbsp;&nbsp;Please also check the Unit Value for Channel in Drivers. <br>&nbsp;&nbsp;&nbsp;Changes made to values will persist unless mode reset. <br><br>"
+    },
     "config.drivers.channel_word": {
         "en_at_translation": "Channel"
     },
@@ -295,6 +763,9 @@
     },
     "config.drivers.steps_unit": {
         "en_at_translation": "steps/unit"
+    },
+    "config.drivers.channel_tooltip": {
+        "en_at_translation": "These settings provide the lowest level assignment for <br>each motor output driver channel. The driver channel is <br>assigned an Axis name, a direction, and a Unit Value. <br>The Unit Value is the number of steps (controller pulses) <br>per unit of distance (inches, mm, or degrees). The value <br>is responsible for setting how far the tool travels per <br>requested move. If a tool is consistently travelling a <br>proportionally incorrect distance, the Unit Value is <br>likely incorrect.<br><br>For ShopBot's Desktop tools, the correct Unit Value is: <br>&nbsp;&nbsp;&nbsp;&nbsp;4000 steps/inch | 157.48031 steps/mm<br>"
     },
     "config.inputs.input_word": {
         "en_at_translation": "Input"
@@ -338,6 +809,18 @@
     "config.inputs.action_halt": {
         "en_at_translation": "Stop-Immediate*"
     },
+    "config.inputs.input_tooltip": {
+        "en_at_translation": "These settings define the functionality of each of your tools Input lines <br>"
+    },
+    "config.inputs.enabled_tooltip": {
+        "en_at_translation": "Determines whether the Input is enabled or not.<br>"
+    },
+    "config.inputs.action_tooltip": {
+        "en_at_translation": "Defines the action of the Input: <br><br>&nbsp;&nbsp;<Strong>None:</Strong> No specific action but icon will display when active. <br>&nbsp;&nbsp;<Strong>Stop:</Strong> Tool will come to a controlled Stop if Input is activated.<br>&nbsp;&nbsp;<Strong>Stop-Fast:</Strong> Tool will stop quickly using the High-Brake Jerk setting.<br>&nbsp;&nbsp;<Strong>Interlock:</Strong> Input will function as a Safety Interlock.<br>&nbsp;&nbsp;<Strong>Limit:</Strong> Input will function as a Limit switch.<br>&nbsp;&nbsp;<Strong>*Stop-Immediate:</Strong> Instantaneous stop, special use cases only. Can lose location.<br>"
+    },
+    "config.inputs.polarity_tooltip": {
+        "en_at_translation": "Voltage level for activation. <br>High = Normally low; Active when changed to High. <br>Low = Normally high; Active when changed to Low. <br>"
+    },
     "config.machine.envelope": {
         "en_at_translation": "Machine Envelope"
     },
@@ -376,6 +859,204 @@
     },
     "config.machine.c_max": {
         "en_at_translation": "C Max"
+    },
+    "config.machine.envelope_tooltip": {
+        "en_at_translation": "The minimum and maximum positions on each axis. <br>These values define the working limits of the tool <br>and are used as software limits. Mechanical stops <br>and homing sensors are usually placed slightly <br>outside these limits.<br>"
+    },
+    "config.machine.enforce_softlimits": {
+        "en_at_translation": "Enforce Software Limits"
+    },
+    "config.machine.enforce_softlimits_tooltip": {
+        "en_at_translation": "When checked, manual jogging stops at the envelope <br>boundary in work coordinates. Uncheck to allow <br>jogging past the envelope (e.g. for setup or <br>recovery). [default=unchecked] <br>"
+    },
+    "config.machine.zlift_legend": {
+        "en_at_translation": "Z-Lift"
+    },
+    "config.machine.zlift_height": {
+        "en_at_translation": "Height"
+    },
+    "config.machine.zlift_height_tooltip": {
+        "en_at_translation": "The pull-up height automatically moved to when tool is stopped or <br>paused. This height may be different than the safe traversing <br>height set within a file. <br>If your work sets the table surface as your Z-zero, make sure <br>the value set here will pull your tool above the material. <br>[default=0.5] <br>"
+    },
+    "config.machine.machining_legend": {
+        "en_at_translation": "Machining Parameters (Tool Path Tuning)"
+    },
+    "config.machine.chordal_tolerance": {
+        "en_at_translation": "Chordal Tolerance"
+    },
+    "config.machine.chordal_tolerance_tooltip": {
+        "en_at_translation": "When an arc segment is being computed from code, this is the <br>maximum deviation that a segment may take from its \"ideal\" <br>trajectory. A smaller number here means finer segments and higher <br>resolution, but possibly slower execution. [default=0.001]<br>"
+    },
+    "config.machine.junction_integration_time": {
+        "en_at_translation": "Junction Integration Time"
+    },
+    "config.machine.junction_integration_time_tooltip": {
+        "en_at_translation": "Determines how aggressively the machine takes corners. <br>Values should be between 0.5 and 2.0.  Higher values <br>mean faster and more aggressive corners. [default=1.5]<br>"
+    },
+    "config.machine.spindle_delay": {
+        "en_at_translation": "Spindle Delay"
+    },
+    "config.machine.spindle_delay_tooltip": {
+        "en_at_translation": "The amount of time allowed for the spindle to spin-up <br>before motion starts. This interval is applied when the <br>spindle starts (or restarts) to delay when the tool moves. <br>[default=2] <br>"
+    },
+    "config.machine.planning_mode": {
+        "en_at_translation": "Planning Mode Selection"
+    },
+    "config.machine.planning_mode_tooltip": {
+        "en_at_translation": "Selects the planning mode for the machine. 2D-mode <br>prioritizes maintaining constant feedrate in XY. 3D-mode <br>prioritizes maintaining constant reedrate in XYZ. 2D-mode <br>can be used to minimize dwell in linear motions for tabs <br>and and to optimize 3D raster carving. [default=3D]<br>"
+    },
+    "config.machine.planning_mode_2d": {
+        "en_at_translation": "2D planning mode"
+    },
+    "config.machine.planning_mode_3d": {
+        "en_at_translation": "3D planning mode (default)"
+    },
+    "config.machine.manual_control_legend": {
+        "en_at_translation": "Manual Control"
+    },
+    "config.machine.xy_speed": {
+        "en_at_translation": "XY Speed"
+    },
+    "config.machine.xy_speed_tooltip": {
+        "en_at_translation": "The initial XY speed used when driving the tool with <br>the Motion Keypad (yellow icon). [adjustable] <br>"
+    },
+    "config.machine.min_xy_speed": {
+        "en_at_translation": "Min XY Speed"
+    },
+    "config.machine.min_xy_speed_tooltip": {
+        "en_at_translation": "The the lowest speed for the XY speed range <br>slider for the Motion Keypad (yellow icon). [default=0.1] <br>"
+    },
+    "config.machine.max_xy_speed": {
+        "en_at_translation": "Max XY Speed"
+    },
+    "config.machine.max_xy_speed_tooltip": {
+        "en_at_translation": "The the highest speed for the XY speed range <br>slider for the Motion Keypad (yellow icon). [default=6.0] <br>"
+    },
+    "config.machine.z_speed_fast": {
+        "en_at_translation": "Z Speed Fast"
+    },
+    "config.machine.z_speed_fast_tooltip": {
+        "en_at_translation": "The \"fast\" Z speed used when driving the tool with the <br>Motion Keypad (yellow icon). [ &lt;&lt; &gt;&gt; ] <br>"
+    },
+    "config.machine.z_speed_slow": {
+        "en_at_translation": "Z Speed Slow"
+    },
+    "config.machine.z_speed_slow_tooltip": {
+        "en_at_translation": "The \"slow\" Z speed used when driving the tool with the <br>Motion Keypad (yellow icon). [ &lt; &gt; ] <br>"
+    },
+    "config.machine.xy_increment": {
+        "en_at_translation": "XY Increment"
+    },
+    "config.machine.xy_increment_tooltip": {
+        "en_at_translation": "The initial \"Fixed Distance\" move in the X or Y axis <br>for each \"tap\" when in Fixed mode. Also the smallest <br>move attainable with a quick keytap in continuous motion <br>mode. [default start = 0.05] <br>"
+    },
+    "config.machine.z_increment": {
+        "en_at_translation": "Z Increment"
+    },
+    "config.machine.z_increment_tooltip": {
+        "en_at_translation": "The initial \"Fixed Distance\" move in the Z axis for each <br>\"tap\" when in Fixed mode. Also the smallest move attainable <br>with a quick keytap in continuous motion mode. [default start = 0.005] <br>"
+    },
+    "config.machine.abc_increment": {
+        "en_at_translation": "ABC Increment"
+    },
+    "config.machine.abc_increment_tooltip": {
+        "en_at_translation": "The initial \"Fixed Distance\" move in the A, B or C axis for each <br>\"tap\" when in Fixed mode. Also the smallest move attainable with a <br>quick keytap in continuous motion mode. [default start = 1.0] <br>"
+    },
+    "config.machine.xy_max_jerk": {
+        "en_at_translation": "XY Max Jerk"
+    },
+    "config.machine.xy_max_jerk_tooltip": {
+        "en_at_translation": "XY acceleration for the Motion Keypad. [default=50] <br>"
+    },
+    "config.machine.z_max_jerk": {
+        "en_at_translation": "Z Max Jerk"
+    },
+    "config.machine.z_max_jerk_tooltip": {
+        "en_at_translation": "Z acceleration for the Motion Keypad. [default=50] <br>"
+    },
+    "config.machine.fixed_move_delay": {
+        "en_at_translation": "Fixed Move Delay"
+    },
+    "config.machine.fixed_move_delay_tooltip": {
+        "en_at_translation": "How long a button must be held before continuous motion <br>starts (in milliseconds). A quick tap shorter than this <br>triggers a fixed-distance nudge instead. Set to 0 to <br>disable tap-nudge and get instant continuous motion. <br>[default=150] <br>"
+    },
+    "config.machine.safety_legend": {
+        "en_at_translation": "Safety"
+    },
+    "config.machine.use_auth_button": {
+        "en_at_translation": "Use Authorization Button"
+    },
+    "config.machine.use_auth_button_tooltip": {
+        "en_at_translation": "If checked, the tool will require \"authorization\" before <br>executing a motion command originating from a wireless <br>or wired network.  Authorization is issued by pressing the <br>authorization button at the tool. <br>Authorization insures that only an individual present at the <br>is able to start it in motion. [default=checked] <br>"
+    },
+    "config.machine.lockout_scope": {
+        "en_at_translation": "Lockout scope"
+    },
+    "config.machine.lockout_scope_tooltip": {
+        "en_at_translation": "Which actions require the authorize button press. <br>\"Files and manual control\" gates everything (the original <br>behavior). \"File runs only\" lets the on-screen manual <br>controls and keyboard jog work without pressing authorize <br>first, while still requiring it before any file, macro, or <br>editor code is allowed to run. [default=Files and manual control]"
+    },
+    "config.machine.lockout_scope_all": {
+        "en_at_translation": "Files and manual control"
+    },
+    "config.machine.lockout_scope_file_only": {
+        "en_at_translation": "File runs only (manual controls always available)"
+    },
+    "config.machine.auth_button_input": {
+        "en_at_translation": "Authorization Button Input"
+    },
+    "config.machine.auth_button_input_tooltip": {
+        "en_at_translation": "The input line to which the authorization button is connected. <br>If the tool is configured to require authorization, this <br>input must be pressed before any motion command can be <br>executed. [default=5] <br>"
+    },
+    "config.machine.input_none": {
+        "en_at_translation": "none"
+    },
+    "config.machine.auth_timeout": {
+        "en_at_translation": "Authorization Timeout"
+    },
+    "config.machine.auth_timeout_tooltip": {
+        "en_at_translation": "The amount of time the tool remains authorized for use after <br>authorization has been issued with the authorization button. <br>Tool authorization is used to confirm that you are physically <br>present and working at the tool before executing a motion <br>command arriving over the wireless or wired network. [default=30] <br>"
+    },
+    "config.machine.seconds": {
+        "en_at_translation": "seconds"
+    },
+    "config.machine.ap_mode_legend": {
+        "en_at_translation": "AP Mode Button"
+    },
+    "config.machine.ap_button_input": {
+        "en_at_translation": "AP Mode Button Input"
+    },
+    "config.machine.ap_button_input_tooltip": {
+        "en_at_translation": "The input to which the AP mode toggle button is connected. <br>Holding down the AP mode button for the required duration <br>causes the tool to enter AP mode, in which it becomes <br>a wireless access point that can be connected to directly. <br>If AP mode is already active, holding the button turns it off.<br>See: FabMo's network manager (Wifi icon at upper left). <br>[default=No AP Mode Button] <br>"
+    },
+    "config.machine.ap_input_none": {
+        "en_at_translation": "No AP Mode Button"
+    },
+    "config.machine.ap_button_duration": {
+        "en_at_translation": "AP Mode Button Required Duration"
+    },
+    "config.machine.spindle_setup_legend": {
+        "en_at_translation": "Spindle Setup"
+    },
+    "config.machine.spindle_setup_tooltip": {
+        "en_at_translation": "Detects the USB-to-RS485 adapter, identifies the connected <br>VFD by probing known register layouts, and installs the <br>matching profile so spindle RPM control is live. <br>Run this after plugging in a new spindle controller. <br>"
+    },
+    "config.machine.rs485_adapter": {
+        "en_at_translation": "RS485 Adapter"
+    },
+    "config.machine.installed_vfd_profile": {
+        "en_at_translation": "Installed VFD Profile"
+    },
+    "config.machine.refresh_detection": {
+        "en_at_translation": "Refresh Detection"
+    },
+    "config.machine.detect_configure_spindle": {
+        "en_at_translation": "Detect & Configure Spindle"
+    },
+    "config.machine.status_label": {
+        "en_at_translation": "Status"
+    },
+    "config.machine.spindle_status_initial": {
+        "en_at_translation": "Click “Refresh Detection” to see what’s connected."
     },
     "config.outputs_tab.output_word": {
         "en_at_translation": "Output"
@@ -428,6 +1109,27 @@
     "config.apps_tab.description": {
         "en_at_translation": "Description"
     },
+    "config.apps_tab.click_to_install": {
+        "en_at_translation": "Click here to install an app"
+    },
+    "config.apps_tab.no_description": {
+        "en_at_translation": "No description."
+    },
+    "config.apps_tab.delete_app_title": {
+        "en_at_translation": "Delete app"
+    },
+    "config.apps_tab.delete_app_message": {
+        "en_at_translation": "Are you sure you want to delete this app?"
+    },
+    "config.apps_tab.install_failed": {
+        "en_at_translation": "Could not install app:</br>"
+    },
+    "config.apps_tab.installed_successfully": {
+        "en_at_translation": " installed successfully."
+    },
+    "config.apps_tab.install_ok_single": {
+        "en_at_translation": "App installed successfully."
+    },
     "config.users_tab.current_user": {
         "en_at_translation": "Current User Information"
     },
@@ -467,6 +1169,60 @@
     "config.users_tab.add_user": {
         "en_at_translation": "Add new user"
     },
+    "config.users_tab.password_changed": {
+        "en_at_translation": "password successfully changed for user "
+    },
+    "config.users_tab.passwords_no_match": {
+        "en_at_translation": "passwords don't match"
+    },
+    "config.users_tab.add_user_title": {
+        "en_at_translation": "Add User"
+    },
+    "config.users_tab.username_label": {
+        "en_at_translation": "Username :"
+    },
+    "config.users_tab.new_password_label": {
+        "en_at_translation": "New Password :"
+    },
+    "config.users_tab.confirm_password_label": {
+        "en_at_translation": "Confirm New Password:"
+    },
+    "config.users_tab.add_user_submit": {
+        "en_at_translation": "Add User"
+    },
+    "config.users_tab.user_created_prefix": {
+        "en_at_translation": "User "
+    },
+    "config.users_tab.user_created_suffix": {
+        "en_at_translation": " created !"
+    },
+    "config.users_tab.delete_user_title": {
+        "en_at_translation": "Delete user "
+    },
+    "config.users_tab.delete_user_message": {
+        "en_at_translation": "Are you sure you want to delete this user?"
+    },
+    "config.users_tab.user_deleted_prefix": {
+        "en_at_translation": "user "
+    },
+    "config.users_tab.user_deleted_suffix": {
+        "en_at_translation": " deleted !"
+    },
+    "config.users_tab.admin_granted_notify": {
+        "en_at_translation": "admin permission granted to user "
+    },
+    "config.users_tab.admin_revoked_notify": {
+        "en_at_translation": "admin permission removed for user "
+    },
+    "config.users_tab.change_password_title_prefix": {
+        "en_at_translation": "Change user "
+    },
+    "config.users_tab.change_password_title_suffix": {
+        "en_at_translation": "'s password"
+    },
+    "config.users_tab.change_password_submit": {
+        "en_at_translation": "Change Password"
+    },
     "config.backup.legend": {
         "en_at_translation": "Backup & Restore"
     },
@@ -499,6 +1255,357 @@
     },
     "config.defaults.none": {
         "en_at_translation": "none"
+    },
+    "config.defaults.name_label": {
+        "en_at_translation": "Name"
+    },
+    "config.defaults.name_hint": {
+        "en_at_translation": "(1-25 chars: letters, digits, _ or -)"
+    },
+    "config.defaults.description_label": {
+        "en_at_translation": "Description"
+    },
+    "config.defaults.optional_hint": {
+        "en_at_translation": "(optional)"
+    },
+    "config.defaults.cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "config.defaults.save": {
+        "en_at_translation": "Save"
+    },
+    "config.modal.yes": {
+        "en_at_translation": "Yes"
+    },
+    "config.modal.no": {
+        "en_at_translation": "No"
+    },
+    "config.modal.cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "config.modal.reload": {
+        "en_at_translation": "Reload"
+    },
+    "config.modal.reset": {
+        "en_at_translation": "Reset"
+    },
+    "config.modal.reload_firmware_title": {
+        "en_at_translation": "Reload G2 Firmware?"
+    },
+    "config.modal.reload_firmware_message": {
+        "en_at_translation": "This will reload the G2 firmware from the current FabMo version. The tool will restart."
+    },
+    "config.modal.change_profiles_title": {
+        "en_at_translation": "Change Profiles?"
+    },
+    "config.modal.change_profiles_message": {
+        "en_at_translation": "Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?"
+    },
+    "config.modal.reset_default_title": {
+        "en_at_translation": "Restore from custom profile?"
+    },
+    "config.modal.reset_default_message_prefix": {
+        "en_at_translation": "This will replace your current configuration and macros with \""
+    },
+    "config.modal.reset_default_message_suffix": {
+        "en_at_translation": "\". The tool will restart. A snapshot of your current settings is saved automatically first, so you can recover if needed."
+    },
+    "config.modal.restore": {
+        "en_at_translation": "Restore"
+    },
+    "config.modal.delete": {
+        "en_at_translation": "Delete"
+    },
+    "config.modal.delete_profile_title": {
+        "en_at_translation": "Delete custom profile?"
+    },
+    "config.modal.delete_profile_message_prefix": {
+        "en_at_translation": "This will permanently delete the custom profile \""
+    },
+    "config.modal.delete_profile_message_suffix": {
+        "en_at_translation": "\". Your current machine settings are not affected."
+    },
+    "config.modal.import_history_confirm": {
+        "en_at_translation": "Importing replaces your current job history and cut files. Continue?"
+    },
+    "config.notify.backup_failed": {
+        "en_at_translation": "cannot backup the config !"
+    },
+    "config.notify.invalid_file": {
+        "en_at_translation": "the file you submitted is not valid"
+    },
+    "config.notify.error_reading_file_detail": {
+        "en_at_translation": "Error reading file : "
+    },
+    "config.notify.config_loaded": {
+        "en_at_translation": "the configuration file have been successfully loaded !"
+    },
+    "config.notify.error_reading_file": {
+        "en_at_translation": "Error reading file"
+    },
+    "config.notify.macros_backup_failed": {
+        "en_at_translation": "Failed to backup macros"
+    },
+    "config.notify.macros_backup_ok": {
+        "en_at_translation": "Macros backup completed successfully!"
+    },
+    "config.notify.macros_backup_failed_detail": {
+        "en_at_translation": "Failed to backup macros: "
+    },
+    "config.notify.macros_uploading": {
+        "en_at_translation": "Uploading and restoring macros..."
+    },
+    "config.notify.macros_restored": {
+        "en_at_translation": "Macros restored successfully!"
+    },
+    "config.notify.macros_restore_failed": {
+        "en_at_translation": "Failed to restore macros"
+    },
+    "config.notify.reloading_firmware": {
+        "en_at_translation": "Reloading G2 firmware ..."
+    },
+    "config.notify.firmware_reload_failed": {
+        "en_at_translation": "Firmware reload failed: "
+    },
+    "config.notify.firmware_reload_started": {
+        "en_at_translation": "Firmware reload started — tool will restart."
+    },
+    "config.notify.profile_change_initiated": {
+        "en_at_translation": "Profile change initiated..."
+    },
+    "config.notify.profile_change_restarting": {
+        "en_at_translation": "Profile change initiated - engine restarting..."
+    },
+    "config.notify.profile_change_failed": {
+        "en_at_translation": "Profile change failed: "
+    },
+    "config.notify.language_change_failed": {
+        "en_at_translation": "Could not change language: "
+    },
+    "config.notify.language_changed": {
+        "en_at_translation": "Language changed — reloading dashboard..."
+    },
+    "config.notify.name_required": {
+        "en_at_translation": "A name is required."
+    },
+    "config.notify.name_invalid": {
+        "en_at_translation": "Name must be 1-25 characters: letters, digits, _ or -."
+    },
+    "config.notify.unknown_error": {
+        "en_at_translation": "unknown error"
+    },
+    "config.notify.mark_default_failed": {
+        "en_at_translation": "could not mark as default"
+    },
+    "config.notify.snapshot_not_default": {
+        "en_at_translation": "Snapshot saved but not marked as default: "
+    },
+    "config.notify.saved_default": {
+        "en_at_translation": "Saved as custom profile: "
+    },
+    "config.notify.save_default_failed": {
+        "en_at_translation": "Failed to save custom profile."
+    },
+    "config.notify.no_default_set": {
+        "en_at_translation": "No default is set yet. Use \"Save current settings as my default\" first."
+    },
+    "config.notify.no_custom_profile_selected": {
+        "en_at_translation": "No custom profile selected."
+    },
+    "config.notify.restoring_default_prefix": {
+        "en_at_translation": "Restoring \""
+    },
+    "config.notify.restoring_default_suffix": {
+        "en_at_translation": "\"..."
+    },
+    "config.notify.reset_failed": {
+        "en_at_translation": "Restore failed: "
+    },
+    "config.notify.check_default_failed": {
+        "en_at_translation": "Could not check for default: "
+    },
+    "config.notify.preferred_profile_set": {
+        "en_at_translation": "Preferred Profile: "
+    },
+    "config.notify.set_preferred_failed": {
+        "en_at_translation": "Could not set Preferred: "
+    },
+    "config.notify.deleted_prefix": {
+        "en_at_translation": "Deleted: "
+    },
+    "config.notify.delete_failed": {
+        "en_at_translation": "Delete failed: "
+    },
+    "config.notify.uploading_custom_profile": {
+        "en_at_translation": "Uploading custom profile..."
+    },
+    "config.notify.imported_custom_profile": {
+        "en_at_translation": "Imported custom profile: "
+    },
+    "config.notify.upload_failed": {
+        "en_at_translation": "Upload failed: "
+    },
+    "config.notify.unknown": {
+        "en_at_translation": "unknown"
+    },
+    "config.notify.preparing_history_archive": {
+        "en_at_translation": "Preparing job history archive…"
+    },
+    "config.notify.uploading_history_archive": {
+        "en_at_translation": "Uploading job history archive…"
+    },
+    "config.notify.history_imported": {
+        "en_at_translation": "Job history imported. Restart FabMo to load."
+    },
+    "config.notify.history_import_failed": {
+        "en_at_translation": "Failed to import job history"
+    },
+    "config.notify.spindle_detection_failed": {
+        "en_at_translation": "Spindle detection failed: "
+    },
+    "config.notify.spindle_detection_request_failed": {
+        "en_at_translation": "Spindle detection request failed: "
+    },
+    "config.spindle.not_detected": {
+        "en_at_translation": "Not detected"
+    },
+    "config.spindle.none": {
+        "en_at_translation": "(none)"
+    },
+    "config.spindle.detecting": {
+        "en_at_translation": "Detecting..."
+    },
+    "config.spindle.found_prefix": {
+        "en_at_translation": "Found "
+    },
+    "config.spindle.found_at": {
+        "en_at_translation": " at "
+    },
+    "config.spindle.no_tty": {
+        "en_at_translation": "no tty"
+    },
+    "config.spindle.no_adapter": {
+        "en_at_translation": "No known RS485 adapter detected on USB bus."
+    },
+    "config.spindle.error_prefix": {
+        "en_at_translation": "Error: "
+    },
+    "config.spindle.unknown": {
+        "en_at_translation": "unknown"
+    },
+    "config.spindle.request_failed": {
+        "en_at_translation": "Request failed: "
+    },
+    "config.spindle.running_pipeline": {
+        "en_at_translation": "Running detect & configure pipeline..."
+    },
+    "config.spindle.configured": {
+        "en_at_translation": "Spindle configured: "
+    },
+    "config.spindle.configured_on": {
+        "en_at_translation": " on "
+    },
+    "config.spindle.configure_failed": {
+        "en_at_translation": "Spindle configuration failed"
+    },
+    "config.spindle.configure_failed_detail": {
+        "en_at_translation": "Spindle configuration failed: "
+    },
+    "config.spindle.configure_request_failed": {
+        "en_at_translation": "Spindle configure request failed"
+    },
+    "config.spindle.reason_no_adapter": {
+        "en_at_translation": "no RS485 adapter detected"
+    },
+    "config.spindle.reason_no_bind": {
+        "en_at_translation": "RS485 adapter found but kernel driver did not bind"
+    },
+    "config.spindle.reason_no_profile": {
+        "en_at_translation": "RS485 adapter found, no matching profile for VFD"
+    },
+    "config.spindle.reason_install_failed_prefix": {
+        "en_at_translation": "profile install failed ("
+    },
+    "config.spindle.reason_connect_failed_prefix": {
+        "en_at_translation": "VFD connect failed ("
+    },
+    "config.spindle.reason_paren_suffix": {
+        "en_at_translation": ")"
+    },
+    "config.layout.legend": {
+        "en_at_translation": "Manual Control Orientation"
+    },
+    "config.layout.intro": {
+        "en_at_translation": "Pick the corner of the table where machine <strong>0,0</strong> lives, then click each <strong>machine-motion arrow</strong> to assign which keypad direction should produce that motion from where you stand."
+    },
+    "config.layout.keypad_heading": {
+        "en_at_translation": "Manual Control Keypad"
+    },
+    "config.layout.status_initial": {
+        "en_at_translation": "Click a machine-motion arrow on the left."
+    },
+    "config.layout.status_save_failed": {
+        "en_at_translation": "Saved locally, but engine config write failed."
+    },
+    "config.layout.status_assigned_prefix": {
+        "en_at_translation": " assigned to keypad "
+    },
+    "config.layout.status_assigned_suffix": {
+        "en_at_translation": " (saved)"
+    },
+    "config.layout.status_armed_prefix": {
+        "en_at_translation": "Armed: "
+    },
+    "config.layout.status_armed_suffix": {
+        "en_at_translation": " — now click or drag a keypad button."
+    },
+    "config.layout.status_click_arrow": {
+        "en_at_translation": "Click a machine-motion arrow, or drag a keypad button onto one."
+    },
+    "config.layout.status_drop_prefix": {
+        "en_at_translation": "Drop "
+    },
+    "config.layout.status_drop_suffix": {
+        "en_at_translation": " on a machine-motion arrow."
+    },
+    "config.layout.status_drop_cancelled": {
+        "en_at_translation": "Drop cancelled."
+    },
+    "config.variables.legend": {
+        "en_at_translation": "OpenSBP Persistent Variables ($)"
+    },
+    "config.variables.explanation": {
+        "en_at_translation": "Persistent variables ($-prefixed) referenced from macros and OpenSBP code. Changes save when you leave a field. Many of these drive homing, tool changes, and ATC behavior &mdash; edit with care."
+    },
+    "config.variables.filter_placeholder": {
+        "en_at_translation": "Filter by name..."
+    },
+    "config.variables.refresh": {
+        "en_at_translation": "Refresh"
+    },
+    "config.variables.loading": {
+        "en_at_translation": "Loading…"
+    },
+    "config.variables.error_prefix": {
+        "en_at_translation": "Error: "
+    },
+    "config.variables.count_suffix": {
+        "en_at_translation": " variables"
+    },
+    "config.variables.reloaded_prefix": {
+        "en_at_translation": "Reloaded · "
+    },
+    "config.variables.reloaded_suffix": {
+        "en_at_translation": " variables"
+    },
+    "config.variables.no_match": {
+        "en_at_translation": "No variables match."
+    },
+    "config.variables.save_failed_prefix": {
+        "en_at_translation": "Save failed: "
+    },
+    "config.variables.saved_prefix": {
+        "en_at_translation": "Saved $"
     },
     "sb4.menu.files": {
         "en_at_translation": "Files"
@@ -582,10 +1689,199 @@
         "en_at_translation": "Home the X and Y Axes; C3 or Macro"
     },
     "sb4.workflow.set_z_zero": {
-        "en_at_translation": "B - Set Z Zero"
+        "en_at_translation": "B - Set Z-Zero"
     },
     "sb4.workflow.set_z_zero_tooltip": {
-        "en_at_translation": "Set Z Zero; C2 or Macro2"
+        "en_at_translation": "Set Z-Zero using Zeroing Plate; C2 or Macro2"
+    },
+    "sb4.workflow.cut_part": {
+        "en_at_translation": "C - CUT PART"
+    },
+    "sb4.workflow.cut_part_tooltip": {
+        "en_at_translation": "Pick a Single Part File to Cut; FP"
+    },
+    "sb4.workflow.manage_parts": {
+        "en_at_translation": "(D) - MANAGE PARTS"
+    },
+    "sb4.workflow.manage_parts_tooltip": {
+        "en_at_translation": "Advanced: Select and Order Parts in Job Manager"
+    },
+    "sb4.macros.other_helpful": {
+        "en_at_translation": "Other Helpful Macros"
+    },
+    "sb4.macros.jh_tooltip": {
+        "en_at_translation": "Jog Home X & Y; Z to Safe Height (MH moves home at feed rate)"
+    },
+    "sb4.macros.zz_tooltip": {
+        "en_at_translation": "Zero Z axis; ZZ (ZT to fully zero all axes and offsets)"
+    },
+    "sb4.macros.park": {
+        "en_at_translation": "Park"
+    },
+    "sb4.macros.park_tooltip": {
+        "en_at_translation": "Move to Park location; C79 or Macro79"
+    },
+    "sb4.macros.spindle_warmup": {
+        "en_at_translation": "Spindle Warm Up"
+    },
+    "sb4.macros.spindle_warmup_tooltip": {
+        "en_at_translation": "Runs Spindle warm-up cycle; C5 or Macro5"
+    },
+    "sb4.macros.square_gantry": {
+        "en_at_translation": "Square Gantry"
+    },
+    "sb4.macros.square_gantry_tooltip": {
+        "en_at_translation": "Square Gantry against the end stops; C10 or Macro10"
+    },
+    "sb4.cmd.label_short": {
+        "en_at_translation": "Cmd"
+    },
+    "sb4.cmd.panel_label": {
+        "en_at_translation": "Individual Command Input"
+    },
+    "sb4.cmd.tooltip": {
+        "en_at_translation": "Run specific OpenSBP Commands. Select from menu above or type directly here."
+    },
+    "sb4.cmd.command_reference": {
+        "en_at_translation": "Command Reference"
+    },
+    "sb4.cmd.toggle_video_tooltip": {
+        "en_at_translation": "Toggle Video"
+    },
+    "sb4.cmd.input_placeholder": {
+        "en_at_translation": "2-Letter OpenSBP Command, {followed by parameters ...}"
+    },
+    "sb4.cmd.help_tooltip": {
+        "en_at_translation": "Get Command Help in OpenSBP Reference."
+    },
+    "sb4.cmd.unnamed_command": {
+        "en_at_translation": "Unnamed"
+    },
+    "sb4.logo.tooltip": {
+        "en_at_translation": "This app is ShopBot's CNC interface for setting up your tool and cutting Part Files (left panel). You can also send individual Commands in the OpenSBP language (top right panel). See HELP >"
+    },
+    "sb4.logo.tooltip_suffix": {
+        "en_at_translation": "for info on OpenSBP language."
+    },
+    "sb4.hints.shortcuts": {
+        "en_at_translation": "[ ESC backs out; 'K' opens Keypad; F11 (or right-click) exits fullscreen ]"
+    },
+    "sb4.speed.default_label": {
+        "en_at_translation": "Default:"
+    },
+    "sb4.speed.default_tooltip": {
+        "en_at_translation": "Default speeds are used for Move and Jog commands entered from <br> the Command Input box above, or from the Editor, or Files in which <br> speeds are not specified.<br>"
+    },
+    "sb4.speed.move_speed": {
+        "en_at_translation": "Move Speed"
+    },
+    "sb4.speed.jog_speed": {
+        "en_at_translation": "Jog Speed"
+    },
+    "sb4.speed.move_word": {
+        "en_at_translation": "Move"
+    },
+    "sb4.speed.speed_word": {
+        "en_at_translation": "Speed"
+    },
+    "sb4.speed.jog_word": {
+        "en_at_translation": "Jog"
+    },
+    "sb4.footer.copyright": {
+        "en_at_translation": "© Copyright ShopBot Tools 2026."
+    },
+    "sb4.beta.motion_pad_link": {
+        "en_at_translation": "beta MOtion-PAD"
+    },
+    "sb4.beta.insert_link": {
+        "en_at_translation": "beta INSERT"
+    },
+    "sb4.fillin.title_file_ready": {
+        "en_at_translation": "File Ready to Run"
+    },
+    "sb4.fillin.title_rerun_ready": {
+        "en_at_translation": "Rerun File; Ready to Run"
+    },
+    "sb4.fillin.ok_run": {
+        "en_at_translation": "OK-RUN"
+    },
+    "sb4.fillin.run_command": {
+        "en_at_translation": "Run Command"
+    },
+    "sb4.fillin.advanced": {
+        "en_at_translation": "Advanced Functions"
+    },
+    "sb4.fillin.advanced_tooltip": {
+        "en_at_translation": "handle in Job Manager; Queue, Preview, Edit, Scale, etc.."
+    },
+    "sb4.fillin.close": {
+        "en_at_translation": "Close"
+    },
+    "sb4.fillin.edit_params_info": {
+        "en_at_translation": "Editing Parameters: complete required(*) fields; over-write defaults as needed; and/or provide {optional} values."
+    },
+    "sb4.help.config_values_title": {
+        "en_at_translation": "Config Values and Persistent Variables ('esc' to close)"
+    },
+    "sb4.help.no_config_loaded": {
+        "en_at_translation": "No configuration loaded yet."
+    },
+    "sb4.insert.title": {
+        "en_at_translation": "Insert Command Into G2 Stream:"
+    },
+    "sb4.insert.placeholder": {
+        "en_at_translation": "RAW: g2 json OR g-code (& = end-line; ^ = kill; # = reset-G2)"
+    },
+    "sb4.status.running_prefix": {
+        "en_at_translation": "-------Running:"
+    },
+    "sb4.status.downloading_file": {
+        "en_at_translation": "... downloading file to tool ..."
+    },
+    "sb4.job.description_from_sb4": {
+        "en_at_translation": "... called from Sb4"
+    },
+    "sb4.notify.no_job_history": {
+        "en_at_translation": "Could not get job history"
+    },
+    "sb4.notify.no_pending_jobs": {
+        "en_at_translation": "No pending jobs found"
+    },
+    "sb4.notify.fetch_pending_failed": {
+        "en_at_translation": "Failed to fetch pending job file:"
+    },
+    "sb4.notify.no_recent_rerun": {
+        "en_at_translation": "No recent job to rerun!"
+    },
+    "sb4.notify.no_recent_edit": {
+        "en_at_translation": "No recent job to edit!"
+    },
+    "sb4.alert.haptics_not_loaded": {
+        "en_at_translation": "The haptics.js library is not loaded."
+    },
+    "sb4.mopad.zoom_label": {
+        "en_at_translation": "ZOOM: "
+    },
+    "sb4.mopad.zoom_tip": {
+        "en_at_translation": "Click for Reset to Full View; Ctl-Scroll to Zoom"
+    },
+    "sb4.mopad.snap_label": {
+        "en_at_translation": "SNAP"
+    },
+    "sb4.mopad.snap_tip": {
+        "en_at_translation": "SNAP to intersections"
+    },
+    "sb4.mopad.cycle_label": {
+        "en_at_translation": "Cycle:  X-Y  [X-Y-Z]"
+    },
+    "sb4.mopad.cycle_tip": {
+        "en_at_translation": "Cycle between 2 or 3 axes on click/tap/space"
+    },
+    "sb4.mopad.smallest_moves_label": {
+        "en_at_translation": "Smallest Moves: "
+    },
+    "sb4.mopad.smallest_moves_tip": {
+        "en_at_translation": "Set smallest move at normal Zoom"
     },
     "toolbox.title": {
         "en_at_translation": "Toolbox"
@@ -664,5 +1960,1025 @@
     },
     "toolbox.cut": {
         "en_at_translation": "CUT"
+    },
+    "job_manager.title": {
+        "en_at_translation": "Job Manager"
+    },
+    "job_manager.header": {
+        "en_at_translation": "Job Manager "
+    },
+    "job_manager.ghost_modal.title": {
+        "en_at_translation": "Ghost / Preview Run"
+    },
+    "job_manager.ghost_modal.intro": {
+        "en_at_translation": "Preview the job without cutting. The original job stays queued for a real run afterward."
+    },
+    "job_manager.ghost_modal.lift_run_file": {
+        "en_at_translation": "Lift & run file"
+    },
+    "job_manager.ghost_modal.z_offset_label": {
+        "en_at_translation": "Z offset to add (inches):"
+    },
+    "job_manager.ghost_modal.trace_rectangle": {
+        "en_at_translation": "Trace bounding rectangle"
+    },
+    "job_manager.ghost_modal.trace_help": {
+        "en_at_translation": "Drives around the perimeter of the cut at the configured jog rate without changing Z. You'll be prompted to set a safe Z before motion begins."
+    },
+    "job_manager.ghost_modal.cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "job_manager.ghost_modal.start": {
+        "en_at_translation": "Start"
+    },
+    "job_manager.repeat_modal.title": {
+        "en_at_translation": "Repeat Job"
+    },
+    "job_manager.repeat_modal.intro": {
+        "en_at_translation": "After this job finishes, requeue and run it again. Set a total run count, or leave blank to repeat until you stop it manually."
+    },
+    "job_manager.repeat_modal.count_label": {
+        "en_at_translation": "Total times to run (blank = until canceled):"
+    },
+    "job_manager.repeat_modal.count_placeholder": {
+        "en_at_translation": "blank = unlimited"
+    },
+    "job_manager.repeat_modal.cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "job_manager.repeat_modal.turn_off": {
+        "en_at_translation": "Turn Off"
+    },
+    "job_manager.repeat_modal.save": {
+        "en_at_translation": "Save"
+    },
+    "job_manager.nav.menu": {
+        "en_at_translation": "Menu "
+    },
+    "job_manager.nav.select_parts": {
+        "en_at_translation": "Select Parts ..."
+    },
+    "job_manager.nav.pending": {
+        "en_at_translation": "Pending"
+    },
+    "job_manager.nav.history": {
+        "en_at_translation": "History"
+    },
+    "job_manager.nav.transforms_label": {
+        "en_at_translation": "Transforms:"
+    },
+    "job_manager.nav.on": {
+        "en_at_translation": "on"
+    },
+    "job_manager.nav.on_caps": {
+        "en_at_translation": "ON"
+    },
+    "job_manager.nav.off": {
+        "en_at_translation": "off"
+    },
+    "job_manager.nav.off_caps": {
+        "en_at_translation": "OFF"
+    },
+    "job_manager.pending.up_next": {
+        "en_at_translation": "Next Part(s) to Cut ... drag to change order"
+    },
+    "job_manager.pending.now_running": {
+        "en_at_translation": "Now Running"
+    },
+    "job_manager.pending.no_job_pending": {
+        "en_at_translation": "No Job Pending"
+    },
+    "job_manager.pending.click_to_select": {
+        "en_at_translation": "Click to Select Parts to Cut"
+    },
+    "job_manager.pending.or": {
+        "en_at_translation": "or"
+    },
+    "job_manager.pending.drag_parts_here": {
+        "en_at_translation": "Drag Parts Here"
+    },
+    "job_manager.pending.recent": {
+        "en_at_translation": "Recent (not in queue)"
+    },
+    "job_manager.history.name": {
+        "en_at_translation": "Name"
+    },
+    "job_manager.history.run_at": {
+        "en_at_translation": "Run At"
+    },
+    "job_manager.history.duration": {
+        "en_at_translation": "Duration"
+    },
+    "job_manager.history.progress": {
+        "en_at_translation": "Progress"
+    },
+    "job_manager.history.prev": {
+        "en_at_translation": "<< Prev"
+    },
+    "job_manager.history.next": {
+        "en_at_translation": "Next >>"
+    },
+    "job_manager.history.last_run": {
+        "en_at_translation": "Last Run: "
+    },
+    "job_manager.transforms.heading": {
+        "en_at_translation": "Transforms"
+    },
+    "job_manager.transforms.heading_tooltip": {
+        "en_at_translation": "Transforms can be used to modify a job to be run. <br> When enabled, the job will be Scaled in X, Y, or Z and <br> it may be Offset, Rotated, or an X or Y Shear applied. <br> Each enabled transform will be applied. <br><br> Order of operations: Rotation, Shear, Scale, Offset. <br> The effect of transforms can be seen in the preview. <br> (*In a g-code file that contains arcs, axes must be scaled <br> equally in X and Y.) <br>"
+    },
+    "job_manager.transforms.scale": {
+        "en_at_translation": "Scale"
+    },
+    "job_manager.transforms.scale_tooltip": {
+        "en_at_translation": "Each axis may be proportionally scaled. <br> Scaling can be applied about a point in the axis; <br> the default Scale Point is 0 in each axis. <br> (*In a gcode file that contains arcs, axes must be scaled <br> equally in X and Y.) <br>"
+    },
+    "job_manager.transforms.disabled": {
+        "en_at_translation": "Disabled"
+    },
+    "job_manager.transforms.enabled": {
+        "en_at_translation": "Enabled"
+    },
+    "job_manager.transforms.scale_x": {
+        "en_at_translation": "Scale X"
+    },
+    "job_manager.transforms.scale_y": {
+        "en_at_translation": "Scale Y"
+    },
+    "job_manager.transforms.scale_z": {
+        "en_at_translation": "Scale Z"
+    },
+    "job_manager.transforms.prop": {
+        "en_at_translation": "prop"
+    },
+    "job_manager.transforms.x_scale_point": {
+        "en_at_translation": "X Scale Point"
+    },
+    "job_manager.transforms.y_scale_point": {
+        "en_at_translation": "Y Scale Point"
+    },
+    "job_manager.transforms.z_scale_point": {
+        "en_at_translation": "Z Scale Point"
+    },
+    "job_manager.transforms.offset": {
+        "en_at_translation": "Offset"
+    },
+    "job_manager.transforms.offset_tooltip": {
+        "en_at_translation": "Positions Offsets can be applied in each axis. <br>"
+    },
+    "job_manager.transforms.offset_x": {
+        "en_at_translation": "Offset X"
+    },
+    "job_manager.transforms.offset_y": {
+        "en_at_translation": "Offset Y"
+    },
+    "job_manager.transforms.offset_z": {
+        "en_at_translation": "Offset Z"
+    },
+    "job_manager.transforms.rotation": {
+        "en_at_translation": "Rotation"
+    },
+    "job_manager.transforms.rotation_tooltip": {
+        "en_at_translation": "A Job can be rotated about an X / Y point. <br>"
+    },
+    "job_manager.transforms.rotation_angle": {
+        "en_at_translation": "Rotation Angle"
+    },
+    "job_manager.transforms.degrees": {
+        "en_at_translation": "degrees"
+    },
+    "job_manager.transforms.x_rotation_point": {
+        "en_at_translation": "X Rotation Point"
+    },
+    "job_manager.transforms.y_rotation_point": {
+        "en_at_translation": "Y Rotation Point"
+    },
+    "job_manager.transforms.shear_x": {
+        "en_at_translation": "Shear X"
+    },
+    "job_manager.transforms.shear_y": {
+        "en_at_translation": "Shear Y"
+    },
+    "job_manager.transforms.shear_tooltip": {
+        "en_at_translation": "Applying a shear will slant the Job along an axis. <br>"
+    },
+    "job_manager.transforms.shear_angle_x": {
+        "en_at_translation": "Shear Angle X"
+    },
+    "job_manager.transforms.shear_angle_y": {
+        "en_at_translation": "Shear Angle Y"
+    },
+    "job_manager.transforms.leveler": {
+        "en_at_translation": "Leveler (Z Height Mapping)"
+    },
+    "job_manager.transforms.leveler_tooltip": {
+        "en_at_translation": "The Leveler, using a Z-height point cloud map, adjusts the Z height across the Job to compensate for uneven surfaces. <br>"
+    },
+    "job_manager.transforms.point_cloud_map": {
+        "en_at_translation": "Point Cloud Map (full path)"
+    },
+    "job_manager.actions.more_actions": {
+        "en_at_translation": "more actions"
+    },
+    "job_manager.actions.more_actions_caps": {
+        "en_at_translation": "More Actions"
+    },
+    "job_manager.actions.run_again": {
+        "en_at_translation": "Run Again"
+    },
+    "job_manager.actions.start_resume": {
+        "en_at_translation": "Start/Resume"
+    },
+    "job_manager.actions.preview_job": {
+        "en_at_translation": "Preview Job"
+    },
+    "job_manager.actions.repeat_job": {
+        "en_at_translation": "Repeat Job (set a count or leave blank to repeat until canceled)"
+    },
+    "job_manager.actions.ghost_run": {
+        "en_at_translation": "Ghost Run (dry-run with a Z lift)"
+    },
+    "job_manager.actions.edit_job": {
+        "en_at_translation": "Edit Job"
+    },
+    "job_manager.actions.download_job": {
+        "en_at_translation": "Download Job as CNC File"
+    },
+    "job_manager.actions.cancel_job": {
+        "en_at_translation": "Cancel Job"
+    },
+    "job_manager.actions.delete_job": {
+        "en_at_translation": "Delete Job"
+    },
+    "job_manager.actions.add_to_queue": {
+        "en_at_translation": "Add To Queue"
+    },
+    "job_manager.actions.restart_from_last_line": {
+        "en_at_translation": "Restart from Last Line"
+    },
+    "job_manager.notify.pendant_submitted": {
+        "en_at_translation": "Pendant submitted: "
+    },
+    "job_manager.notify.pendant_submit_failed": {
+        "en_at_translation": "Pendant submit failed: "
+    },
+    "job_manager.notify.unknown": {
+        "en_at_translation": "unknown"
+    },
+    "job_manager.notify.pendant_prefix": {
+        "en_at_translation": "Pendant: "
+    },
+    "job_manager.notify.exceeds_soft_limits": {
+        "en_at_translation": "Job exceeds soft limits: "
+    },
+    "job_manager.notify.could_not_load_job_info": {
+        "en_at_translation": "Could not load job info"
+    },
+    "job_manager.notify.no_line_data": {
+        "en_at_translation": "No line data available for this job"
+    },
+    "job_manager.notify.could_not_generate_restart": {
+        "en_at_translation": "Could not generate restart file"
+    },
+    "job_manager.notify.failed_submit_restart": {
+        "en_at_translation": "Failed to submit restart job: "
+    },
+    "job_manager.notify.restart_added": {
+        "en_at_translation": "Restart job added to queue"
+    },
+    "job_manager.notify.could_not_fetch_job_file": {
+        "en_at_translation": "Could not fetch job file"
+    },
+    "job_manager.notify.count_positive_integer": {
+        "en_at_translation": "Count must be a positive integer or blank"
+    },
+    "job_manager.notify.z_offset_nonzero": {
+        "en_at_translation": "Z offset must be a non-zero number"
+    },
+    "previewer.header.title": {
+        "en_at_translation": "Tool Path Preview"
+    },
+    "previewer.ok": {
+        "en_at_translation": "Ok"
+    },
+    "previewer.code_line_title": {
+        "en_at_translation": "Current File Line"
+    },
+    "previewer.ar.calibration_instruction": {
+        "en_at_translation": "Drag the corners to align with your table"
+    },
+    "previewer.ar.save": {
+        "en_at_translation": "Save"
+    },
+    "previewer.ar.cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "previewer.soft_limit.title": {
+        "en_at_translation": "File exceeds machine soft limits"
+    },
+    "previewer.soft_limit.violation": {
+        "en_at_translation": "{axis} exceeds {direction} by {overage} {units}"
+    },
+    "previewer.setup.toggle_title": {
+        "en_at_translation": "Click to collapse/expand"
+    },
+    "previewer.setup.title": {
+        "en_at_translation": "Setup"
+    },
+    "previewer.setup.material_thickness": {
+        "en_at_translation": "Material thickness"
+    },
+    "previewer.setup.z_origin": {
+        "en_at_translation": "Z origin"
+    },
+    "previewer.setup.z_material": {
+        "en_at_translation": "Material Surface"
+    },
+    "previewer.setup.z_table": {
+        "en_at_translation": "Table Surface"
+    },
+    "previewer.setup.default_tool": {
+        "en_at_translation": "Default tool"
+    },
+    "previewer.tool.flat": {
+        "en_at_translation": "Flat"
+    },
+    "previewer.tool.ball": {
+        "en_at_translation": "Ball"
+    },
+    "previewer.tool.vbit": {
+        "en_at_translation": "V-Bit"
+    },
+    "previewer.ops.title": {
+        "en_at_translation": "Operations"
+    },
+    "previewer.ops.toggle_all_title": {
+        "en_at_translation": "Select All / None"
+    },
+    "previewer.ops.toggle_all": {
+        "en_at_translation": "All"
+    },
+    "previewer.ops.empty": {
+        "en_at_translation": "No operations parsed in file. Use Setup to set tool defaults, then run the full job."
+    },
+    "previewer.ops.run_full_job": {
+        "en_at_translation": "Run Full Job"
+    },
+    "previewer.ops.run_trimmed_title": {
+        "en_at_translation": "Run only the in/out selection"
+    },
+    "previewer.ops.run_trimmed": {
+        "en_at_translation": "Run Trimmed"
+    },
+    "previewer.ops.submit_trimmed_title": {
+        "en_at_translation": "Submit the in/out selection as a new job"
+    },
+    "previewer.ops.submit_trimmed": {
+        "en_at_translation": "Submit Trimmed"
+    },
+    "previewer.ops.run_selected_title": {
+        "en_at_translation": "Run only the checked operations"
+    },
+    "previewer.ops.run_selected": {
+        "en_at_translation": "Run Selected"
+    },
+    "previewer.ops.submit_selected_title": {
+        "en_at_translation": "Submit checked operations as a new job"
+    },
+    "previewer.ops.submit_selected": {
+        "en_at_translation": "Submit Selected"
+    },
+    "previewer.ops.operation_n": {
+        "en_at_translation": "Operation {n}"
+    },
+    "previewer.view.x_title": {
+        "en_at_translation": "Change orientation to view down the X axis."
+    },
+    "previewer.view.y_title": {
+        "en_at_translation": "Change orientation to view down the Y axis."
+    },
+    "previewer.view.z_title": {
+        "en_at_translation": "Change orientation to view down the Z axis."
+    },
+    "previewer.view.ortho_title": {
+        "en_at_translation": "Toggle to Ortho (non-perspective) view."
+    },
+    "previewer.view.persp_title": {
+        "en_at_translation": "Toggle to Perspective view."
+    },
+    "previewer.bottom.settings_title": {
+        "en_at_translation": "Open previewer settings."
+    },
+    "previewer.bottom.speed_title": {
+        "en_at_translation": "Simulation Speed"
+    },
+    "previewer.bottom.toolpath_title": {
+        "en_at_translation": "Show Toolpath"
+    },
+    "previewer.bottom.path": {
+        "en_at_translation": "Path"
+    },
+    "previewer.bottom.material_title": {
+        "en_at_translation": "Show Material Simulation"
+    },
+    "previewer.bottom.material": {
+        "en_at_translation": "Material"
+    },
+    "previewer.bottom.ar_title": {
+        "en_at_translation": "Overlay preview on the live camera feed (requires calibration)"
+    },
+    "previewer.bottom.ar": {
+        "en_at_translation": "AR"
+    },
+    "previewer.bottom.top_title": {
+        "en_at_translation": "Un-warped top-down view of the live table — toolpath over the real surface to spot clamps/fixtures"
+    },
+    "previewer.bottom.top": {
+        "en_at_translation": "Top"
+    },
+    "previewer.bottom.recal_title": {
+        "en_at_translation": "Recalibrate table corners"
+    },
+    "previewer.bottom.recalibrate": {
+        "en_at_translation": "Recalibrate"
+    },
+    "previewer.bottom.play_title": {
+        "en_at_translation": "Start or continue path simulation."
+    },
+    "previewer.bottom.pause_title": {
+        "en_at_translation": "Pause path simulation."
+    },
+    "previewer.bottom.reset_title": {
+        "en_at_translation": "Restart path simulation."
+    },
+    "previewer.bottom.skip_back_title": {
+        "en_at_translation": "Skip to previous plunge (Shift+Left)"
+    },
+    "previewer.bottom.step_back_title": {
+        "en_at_translation": "Step back one line (Left arrow)"
+    },
+    "previewer.bottom.step_fwd_title": {
+        "en_at_translation": "Step forward one line (Right arrow)"
+    },
+    "previewer.bottom.skip_fwd_title": {
+        "en_at_translation": "Skip to next retract (Shift+Right)"
+    },
+    "previewer.bottom.cut_start_title": {
+        "en_at_translation": "Set Cut Start at current position (I)"
+    },
+    "previewer.bottom.cut_start": {
+        "en_at_translation": "Set Cut Start"
+    },
+    "previewer.bottom.cut_stop_title": {
+        "en_at_translation": "Set Cut Stop at current position (O)"
+    },
+    "previewer.bottom.cut_stop": {
+        "en_at_translation": "Set Cut Stop"
+    },
+    "previewer.bottom.clear_title": {
+        "en_at_translation": "Clear In/Out points"
+    },
+    "previewer.errors.title": {
+        "en_at_translation": "Errors"
+    },
+    "previewer.errors.body": {
+        "en_at_translation": "Be careful.  Errors were detected in this file.  The machine may\n            not operate as displayed here."
+    },
+    "previewer.errors.col_line": {
+        "en_at_translation": "Line"
+    },
+    "previewer.errors.col_desc": {
+        "en_at_translation": "Description"
+    },
+    "previewer.settings.title": {
+        "en_at_translation": "Settings"
+    },
+    "previewer.settings.boundary_units": {
+        "en_at_translation": "Temporarily Change File-Boundary Indicator Units "
+    },
+    "previewer.settings.units_mm": {
+        "en_at_translation": "millimeters"
+    },
+    "previewer.settings.units_in": {
+        "en_at_translation": "inches"
+    },
+    "previewer.settings.grid_step": {
+        "en_at_translation": "Grid Step (in current machine display units)"
+    },
+    "previewer.settings.table_zzoff": {
+        "en_at_translation": "Table Offset from Z-Zero (in current machine display units)"
+    },
+    "previewer.settings.lookahead": {
+        "en_at_translation": "Live Sync Buffer Compensation (SBP: SBP commands; GCode: gcode lines)"
+    },
+    "previewer.settings.display_opts": {
+        "en_at_translation": "Display Options"
+    },
+    "previewer.settings.show_grid": {
+        "en_at_translation": "Show Grid"
+    },
+    "previewer.settings.show_table": {
+        "en_at_translation": "Show Machine Table"
+    },
+    "previewer.settings.show_dims": {
+        "en_at_translation": "Show Dimensions"
+    },
+    "previewer.settings.show_axes": {
+        "en_at_translation": "Show Axes"
+    },
+    "previewer.settings.show_tool": {
+        "en_at_translation": "Show Tool (Yellow Cone)"
+    },
+    "previewer.settings.show_pc": {
+        "en_at_translation": "Show Point Cloud Shape for Leveler"
+    },
+    "previewer.settings.show_pc_wire": {
+        "en_at_translation": "Show Point Cloud Wireframe"
+    },
+    "previewer.settings.reset_material": {
+        "en_at_translation": "Reset Material"
+    },
+    "previewer.settings.sim_opts": {
+        "en_at_translation": "Simulation Options"
+    },
+    "previewer.settings.pc_opacity": {
+        "en_at_translation": "Set Point Cloud Opacity"
+    },
+    "previewer.settings.mat_opacity": {
+        "en_at_translation": "Set Material Opacity"
+    },
+    "previewer.settings.light_azimuth": {
+        "en_at_translation": "Light Azimuth (rotation around scene)"
+    },
+    "previewer.settings.light_elevation": {
+        "en_at_translation": "Light Elevation (above table)"
+    },
+    "previewer.settings.resolution": {
+        "en_at_translation": "Simulation Resolution (grid points)"
+    },
+    "previewer.settings.res_low": {
+        "en_at_translation": "Low (100 - Fast)"
+    },
+    "previewer.settings.res_med": {
+        "en_at_translation": "Medium (200)"
+    },
+    "previewer.settings.res_high": {
+        "en_at_translation": "High (400)"
+    },
+    "previewer.settings.res_vhigh": {
+        "en_at_translation": "Very High (600)"
+    },
+    "previewer.settings.res_ultra": {
+        "en_at_translation": "Ultra (1000)"
+    },
+    "previewer.settings.res_extreme": {
+        "en_at_translation": "Extreme (2000)"
+    },
+    "previewer.help.button_title": {
+        "en_at_translation": "Show Help"
+    },
+    "previewer.help.title": {
+        "en_at_translation": "Preview Help"
+    },
+    "previewer.help.mouse": {
+        "en_at_translation": "Mouse Controls"
+    },
+    "previewer.help.mouse_left": {
+        "en_at_translation": "Left Mouse"
+    },
+    "previewer.help.mouse_left_d": {
+        "en_at_translation": "Hold and drag to rotate"
+    },
+    "previewer.help.mouse_mid": {
+        "en_at_translation": "Middle Mouse"
+    },
+    "previewer.help.mouse_mid_d": {
+        "en_at_translation": "Hold and drag to zoom"
+    },
+    "previewer.help.mouse_right": {
+        "en_at_translation": "Right Mouse"
+    },
+    "previewer.help.mouse_right_d": {
+        "en_at_translation": "Hold and drag to pan"
+    },
+    "previewer.help.mouse_wheel": {
+        "en_at_translation": "Mouse Wheel"
+    },
+    "previewer.help.mouse_wheel_d": {
+        "en_at_translation": "Zoom in and out"
+    },
+    "previewer.help.keyboard": {
+        "en_at_translation": "Keyboard Shortcuts"
+    },
+    "previewer.help.key_i": {
+        "en_at_translation": "Set Cut Start at current timeline position."
+    },
+    "previewer.help.key_o": {
+        "en_at_translation": "Set Cut Stop at current timeline position."
+    },
+    "previewer.help.key_arrows": {
+        "en_at_translation": "Step backward / forward one line."
+    },
+    "previewer.help.key_shift_arrows": {
+        "en_at_translation": "Skip to the previous plunge / next retract."
+    },
+    "previewer.help.key_esc": {
+        "en_at_translation": "Close any open dialog (Settings, Help, etc.)."
+    },
+    "previewer.help.view_btns": {
+        "en_at_translation": "View Buttons"
+    },
+    "previewer.help.view_x": {
+        "en_at_translation": "Snap to view down the X axis."
+    },
+    "previewer.help.view_y": {
+        "en_at_translation": "Snap to view down the Y axis."
+    },
+    "previewer.help.view_z": {
+        "en_at_translation": "Snap to view down the Z axis (top-down)."
+    },
+    "previewer.help.view_ortho": {
+        "en_at_translation": "Switch to orthographic (non-perspective) view."
+    },
+    "previewer.help.view_persp": {
+        "en_at_translation": "Switch to perspective view."
+    },
+    "previewer.help.view_settings": {
+        "en_at_translation": "Open previewer settings."
+    },
+    "previewer.help.playback": {
+        "en_at_translation": "Playback & Timeline"
+    },
+    "previewer.help.play": {
+        "en_at_translation": "Start or continue simulation."
+    },
+    "previewer.help.pause": {
+        "en_at_translation": "Pause simulation."
+    },
+    "previewer.help.reset": {
+        "en_at_translation": "Restart simulation from the beginning."
+    },
+    "previewer.help.skip": {
+        "en_at_translation": "Skip to previous plunge / next retract."
+    },
+    "previewer.help.step": {
+        "en_at_translation": "Step back / forward one line."
+    },
+    "previewer.help.timeline": {
+        "en_at_translation": "Timeline slider"
+    },
+    "previewer.help.timeline_d": {
+        "en_at_translation": "Drag to scrub through the path."
+    },
+    "previewer.help.set_cut": {
+        "en_at_translation": "Set Cut Start / Stop"
+    },
+    "previewer.help.set_cut_d": {
+        "en_at_translation": "Mark in/out points on the timeline. Used to play, run, or submit only a trimmed range. The &times; clears them."
+    },
+    "previewer.help.path_mat": {
+        "en_at_translation": "Path / Material"
+    },
+    "previewer.help.path_mat_d": {
+        "en_at_translation": "Quick toggles to show or hide the toolpath lines and the material simulation surface."
+    },
+    "previewer.help.ops": {
+        "en_at_translation": "Operations Panel"
+    },
+    "previewer.help.ops_intro": {
+        "en_at_translation": "範囲を指定して送信"
+    },
+    "previewer.help.ops_setup": {
+        "en_at_translation": "Setup"
+    },
+    "previewer.help.ops_setup_d": {
+        "en_at_translation": "Sets the file-wide defaults: <em>Material thickness</em>, <em>Z origin</em> (Material Surface or Table Surface), and the <em>Default tool</em> (Flat / Ball / V-Bit, plus diameter and V-bit angle). Changes here re-render the material simulation."
+    },
+    "previewer.help.ops_per": {
+        "en_at_translation": "Per-operation tool"
+    },
+    "previewer.help.ops_per_d": {
+        "en_at_translation": "Each operation row has its own bit type, diameter, and (for V-bit) angle. Editing these overrides the Setup default for that operation only."
+    },
+    "previewer.help.ops_full": {
+        "en_at_translation": "Run Full Job"
+    },
+    "previewer.help.ops_full_d": {
+        "en_at_translation": "Submits the entire file as loaded."
+    },
+    "previewer.help.ops_trim": {
+        "en_at_translation": "Run Trimmed / Submit Trimmed"
+    },
+    "previewer.help.ops_trim_d": {
+        "en_at_translation": "Run or submit only the range between Cut Start and Cut Stop (set with I / O or the bottom-bar buttons)."
+    },
+    "previewer.help.ops_sel": {
+        "en_at_translation": "Run Selected / Submit Selected"
+    },
+    "previewer.help.ops_sel_d": {
+        "en_at_translation": "Run or submit only the operations whose checkboxes are ticked. The <em>All</em> link toggles every operation at once."
+    },
+    "previewer.help.ar": {
+        "en_at_translation": "AR & Top Overlays"
+    },
+    "previewer.help.ar_intro": {
+        "en_at_translation": "When a machine camera is detected and table corners have been calibrated, two extra toggles appear on the bottom bar:"
+    },
+    "previewer.help.ar_d": {
+        "en_at_translation": "Overlays the toolpath preview on the live camera feed using the calibrated camera pose, so the rendered path appears in the same perspective as the real table."
+    },
+    "previewer.help.top_d": {
+        "en_at_translation": "Un-warped top-down view of the live table. The camera image is warped to a true overhead, with the toolpath rendered over it &mdash; useful for spotting clamps or fixtures the path would collide with."
+    },
+    "previewer.help.recal": {
+        "en_at_translation": "&#x27F3; Recalibrate"
+    },
+    "previewer.help.recal_d": {
+        "en_at_translation": "Re-marks the four table corners against the live video. Drag each handle (TL, TR, BR, BL) onto the corresponding corner of the table, then Save. Calibration is stored in the machine config and shared between AR and Top modes."
+    },
+    "previewer.help.settings": {
+        "en_at_translation": "Settings"
+    },
+    "previewer.help.s_speed": {
+        "en_at_translation": "Simulation Speed"
+    },
+    "previewer.help.s_speed_d": {
+        "en_at_translation": "Playback speed relative to real time (1/16x &ndash; 16x)."
+    },
+    "previewer.help.s_bound": {
+        "en_at_translation": "Temp Change Boundary Units"
+    },
+    "previewer.help.s_bound_d": {
+        "en_at_translation": "Temporarily changes units (inches vs mm) for the file boundary indicators. A unit setting inside the file overrides the machine setting for motion, but does not change the machine&rsquo;s display units."
+    },
+    "previewer.help.s_grid": {
+        "en_at_translation": "Grid Step"
+    },
+    "previewer.help.s_grid_d": {
+        "en_at_translation": "Grid step size in the current machine units."
+    },
+    "previewer.help.s_zzoff": {
+        "en_at_translation": "Table Offset from Z-Zero"
+    },
+    "previewer.help.s_zzoff_d": {
+        "en_at_translation": "How far the table sits below the Z-zero plane. If you zero at the table, set 0. If you zero on top of 0.75&quot; stock, set &minus;0.75."
+    },
+    "previewer.help.s_look": {
+        "en_at_translation": "Live Sync Buffer Compensation"
+    },
+    "previewer.help.s_look_d": {
+        "en_at_translation": "How many planner-buffered commands to skip ahead in the preview so the on-screen position tracks the actual machine more closely (SBP: SBP commands; GCode: gcode lines)."
+    },
+    "previewer.help.s_disp": {
+        "en_at_translation": "Display checkboxes"
+    },
+    "previewer.help.s_disp_d": {
+        "en_at_translation": "Show or hide grid, machine table, dimensions, axes, tool cone, and point-cloud / wireframe overlays."
+    },
+    "previewer.help.s_reset": {
+        "en_at_translation": "Reset Material"
+    },
+    "previewer.help.s_reset_d": {
+        "en_at_translation": "Clears any cut material from the simulation surface and re-initializes a fresh stock block."
+    },
+    "previewer.help.s_pc": {
+        "en_at_translation": "Point Cloud Opacity"
+    },
+    "previewer.help.s_pc_d": {
+        "en_at_translation": "Transparency of the leveler point-cloud overlay."
+    },
+    "previewer.help.s_mat": {
+        "en_at_translation": "Material Opacity"
+    },
+    "previewer.help.s_mat_d": {
+        "en_at_translation": "Transparency of the simulated stock block."
+    },
+    "previewer.help.s_light": {
+        "en_at_translation": "Light Azimuth / Elevation"
+    },
+    "previewer.help.s_light_d": {
+        "en_at_translation": "Direction of the scene light. Adjust for better depth shading on the cut surface."
+    },
+    "previewer.help.s_res": {
+        "en_at_translation": "Simulation Resolution"
+    },
+    "previewer.help.s_res_d": {
+        "en_at_translation": "Height-map grid resolution for the material simulation. Higher is more accurate but slower to compute and re-render."
+    },
+    "previewer.loading.default": {
+        "en_at_translation": "Loading file. Please wait."
+    },
+    "previewer.loading.loaded": {
+        "en_at_translation": "Loaded {size}.  Please wait."
+    },
+    "previewer.loading.processing": {
+        "en_at_translation": "Processing Toolpath. Please Wait."
+    },
+    "previewer.inout.in": {
+        "en_at_translation": "In: {line}"
+    },
+    "previewer.inout.out": {
+        "en_at_translation": "Out: {line}"
+    },
+    "previewer.notify.machine_data_failed": {
+        "en_at_translation": "Could not load machine data!"
+    },
+    "previewer.notify.status_data_failed": {
+        "en_at_translation": "Could not load status data!"
+    },
+    "previewer.notify.webgl_disabled": {
+        "en_at_translation": "WebGL is not enabled. Impossible to preview."
+    },
+    "previewer.notify.set_inout_first": {
+        "en_at_translation": "Set In and/or Out points first"
+    },
+    "previewer.notify.extract_failed": {
+        "en_at_translation": "Could not extract selection from file"
+    },
+    "previewer.notify.no_current_job": {
+        "en_at_translation": "No current job to replace"
+    },
+    "previewer.notify.submit_trim_failed": {
+        "en_at_translation": "Failed to submit trimmed job: {error}"
+    },
+    "previewer.notify.no_ops_selected": {
+        "en_at_translation": "No operations selected"
+    },
+    "previewer.notify.build_failed": {
+        "en_at_translation": "Could not build selected operations"
+    },
+    "previewer.notify.submit_sel_failed": {
+        "en_at_translation": "Failed to submit selected operations: {error}"
+    },
+    "macro_manager.page_title": {
+        "en_at_translation": "Macro Manager"
+    },
+    "macro_manager.header": {
+        "en_at_translation": "Custom Macros"
+    },
+    "macro_manager.menu_toggle": {
+        "en_at_translation": "Menu"
+    },
+    "macro_manager.create_new": {
+        "en_at_translation": "Create new custom macro..."
+    },
+    "macro_manager.table.custom_number": {
+        "en_at_translation": "Custom #"
+    },
+    "macro_manager.table.name": {
+        "en_at_translation": "Name"
+    },
+    "macro_manager.table.description": {
+        "en_at_translation": "Description"
+    },
+    "macro_manager.notify.deleted": {
+        "en_at_translation": "Macro \"{name}\" was deleted."
+    },
+    "network_manager.page_title": {
+        "en_at_translation": "Network Manager"
+    },
+    "network_manager.header.app_header": {
+        "en_at_translation": "Wifi "
+    },
+    "network_manager.header.menu": {
+        "en_at_translation": "Menu "
+    },
+    "network_manager.header.wifi_label": {
+        "en_at_translation": "Wifi:"
+    },
+    "network_manager.header.ap_mode_label": {
+        "en_at_translation": "AP Mode:"
+    },
+    "network_manager.header.toggle_wifi_power_tooltip": {
+        "en_at_translation": "Toggle Wifi Power"
+    },
+    "network_manager.header.toggle_ap_mode_tooltip": {
+        "en_at_translation": "Toggle AP Mode Presence"
+    },
+    "network_manager.status.on": {
+        "en_at_translation": "ON"
+    },
+    "network_manager.status.off": {
+        "en_at_translation": "off"
+    },
+    "network_manager.status.on_lower": {
+        "en_at_translation": "on"
+    },
+    "network_manager.status.off_upper": {
+        "en_at_translation": "OFF"
+    },
+    "network_manager.status.enabled": {
+        "en_at_translation": "ENABLED"
+    },
+    "network_manager.status.disabled": {
+        "en_at_translation": "disabled"
+    },
+    "network_manager.status.enabled_lower": {
+        "en_at_translation": "enabled"
+    },
+    "network_manager.status.disabled_upper": {
+        "en_at_translation": "DISABLED"
+    },
+    "network_manager.wifi.networks_available_heading": {
+        "en_at_translation": "Wifi Networks Available"
+    },
+    "network_manager.wifi.networks_available_tooltip": {
+        "en_at_translation": "Wifi networks available to your tool. Click on SSID name to set up a new wifi interface to access your tool."
+    },
+    "network_manager.wifi.col_ssid_name": {
+        "en_at_translation": "SSID Name"
+    },
+    "network_manager.wifi.col_security": {
+        "en_at_translation": "Security"
+    },
+    "network_manager.wifi.col_strength": {
+        "en_at_translation": "Strength"
+    },
+    "network_manager.wifi.hidden_ssid": {
+        "en_at_translation": "<Hidden SSID>"
+    },
+    "network_manager.interfaces.heading": {
+        "en_at_translation": "Access Interfaces"
+    },
+    "network_manager.interfaces.tooltip": {
+        "en_at_translation": "Your tool is connected to each of these interfaces for access. The favored interface access is at the top of the list and is shown on the R-Pi screen (if available). (if attached). To remove an interface, click on its name."
+    },
+    "network_manager.interfaces.col_interface": {
+        "en_at_translation": "Interface"
+    },
+    "network_manager.interfaces.col_ip_address": {
+        "en_at_translation": "IP Address on Interface"
+    },
+    "network_manager.interfaces.col_interfaced_via": {
+        "en_at_translation": "Interfaced Via:"
+    },
+    "network_manager.interfaces.info_ethernet": {
+        "en_at_translation": "Ethernet: a LAN or direct PC connection"
+    },
+    "network_manager.interfaces.info_ap_active": {
+        "en_at_translation": "Access Point (AP mode) ACTIVE"
+    },
+    "network_manager.interfaces.info_wifi_network_prefix": {
+        "en_at_translation": "Wifi Network: "
+    },
+    "network_manager.interfaces.info_wifi_unknown": {
+        "en_at_translation": "Wifi: Network unknown"
+    },
+    "network_manager.dialog.passphrase_placeholder": {
+        "en_at_translation": "passphrase"
+    },
+    "network_manager.dialog.connect": {
+        "en_at_translation": "Connect"
+    },
+    "network_manager.dialog.cancel": {
+        "en_at_translation": "Cancel"
+    },
+    "network_manager.dialog.ok": {
+        "en_at_translation": "Ok"
+    },
+    "network_manager.dialog.ok_upper": {
+        "en_at_translation": "OK"
+    },
+    "network_manager.dialog.close": {
+        "en_at_translation": "Close"
+    },
+    "network_manager.dialog.enter_passphrase_for": {
+        "en_at_translation": "Enter the passphrase for:  "
+    },
+    "network_manager.dialog.connect_success_title": {
+        "en_at_translation": "Successfully connected!"
+    },
+    "network_manager.dialog.connect_success_description": {
+        "en_at_translation": "<p>Access your tool on Wifi network:<br>  &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{name} at IP:  {address}<p>"
+    },
+    "network_manager.dialog.remove_ethernet_description": {
+        "en_at_translation": "To remove a LAN or direct PC interface; disconnect the Ethernet cable from your tool. Always allow 10 seconds before reconnecting another cable."
+    },
+    "network_manager.dialog.disconnect_wifi_title": {
+        "en_at_translation": "Disconnect and forget this Wifi Interface ?"
+    },
+    "network_manager.dialog.turn_off_ap_title": {
+        "en_at_translation": "Turn Off AP (Access Point) Mode ?"
+    },
+    "network_manager.dialog.start_ap_title": {
+        "en_at_translation": "Start AP (Access Point) Mode ?"
+    },
+    "network_manager.dialog.turn_off_wifi_title": {
+        "en_at_translation": "Turn Off Wifi ?"
+    },
+    "network_manager.dialog.turn_off_wifi_warning": {
+        "en_at_translation": "<p>WARNING! This action also turns off AP Mode and IP address display. All Wifi Access will be eliminated!<br><p>"
+    },
+    "network_manager.dialog.turn_on_wifi_title": {
+        "en_at_translation": "Turn On Wifi ?"
+    },
+    "network_manager.notify.error_retrieve_network_info": {
+        "en_at_translation": "failed to retrieve network information. Network management may not be available on your tool."
+    },
+    "network_manager.notify.trying_to_connect": {
+        "en_at_translation": "Trying to connect to network {name}"
+    },
+    "network_manager.notify.feature_coming_soon": {
+        "en_at_translation": "Feature coming soon."
     }
 }
