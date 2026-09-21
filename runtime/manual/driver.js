@@ -37,6 +37,14 @@ var count = 0;
 var RENEW_SEGMENTS = 10;
 var RENEW_SEGMENTS_ROTARY = 2; // Fewer, larger segments for ABC rotary axes to provide adequate steps/segment
 var DEFAULT_MAX_NUDGES = 3;
+// Exit watchdog: g2core parked at stat:3 with an empty planner can swallow an
+// M30 that arrives through the streaming path (see the note above G2.sendM30)
+// — no stat:4 ever comes, the machining-cycle promise never resolves, and the
+// machine is stuck in the manual state. If stat:4 hasn't arrived this long
+// after exit() writes its M30, re-send the M30 directly, a bounded number of
+// times.
+var EXIT_WATCHDOG_INTERVAL = 1000;
+var EXIT_WATCHDOG_MAX_CHECKS = 5;
 
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
@@ -205,6 +213,14 @@ ManualDriver.prototype.exit = function () {
         // Check if stream exists before trying to write to it
         if (!this.stream) {
             log.warn("Stream already closed during manual exit - skipping stream writes");
+            // If the machining cycle is still parked at stat:3, the M30 from a
+            // previous exit was swallowed and the cycle never ended — re-send
+            // it directly so the cycle promise can resolve and the machine can
+            // leave the manual state.
+            if (this.driver.status.stat === this.driver.STAT_STOP) {
+                log.warn("Machining cycle still at stat:3 - re-sending M30 directly");
+                this.driver._write("M30\n");
+            }
             this._done();
             return;
         }
@@ -246,6 +262,12 @@ ManualDriver.prototype.exit = function () {
         this.driver.removeListener("status", this.status_handler);
         this.driver.removeListener("jogv_exit", this._jogv_exit_handler);
         this.exited = true;
+
+        // The M30 above is what ends the machining cycle (stat:4) and lets the
+        // machine leave the manual state — watch that it actually lands.
+        if (!this.fromFile) {
+            this._startExitWatchdog();
+        }
 
         // Give a brief moment for commands to flush
         setTimeout(() => {
@@ -1260,6 +1282,55 @@ ManualDriver.prototype._onG2Status = function (status) {
             }
             break;
     }
+};
+
+// Watch for the stat:4 that the M30 written by exit() should produce.
+// If it doesn't arrive, re-send the M30 directly (bypassing the streaming
+// path, the same way G2.sendM30 does) so the machining cycle actually ends
+// and the machine can return to idle. Bounded so a dead driver doesn't leave
+// a timer pinging forever.
+ManualDriver.prototype._startExitWatchdog = function () {
+    var driver = this.driver;
+    var checks = 0;
+    var timer = null;
+    var onStat = function (stat) {
+        if (stat === driver.STAT_END) {
+            cleanup();
+        }
+    };
+    var cleanup = function () {
+        driver.removeListener("stat", onStat);
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    };
+    var check = function () {
+        timer = null;
+        var stat = driver.status.stat;
+        if (stat === driver.STAT_END) {
+            cleanup();
+            return;
+        }
+        checks += 1;
+        if (checks > EXIT_WATCHDOG_MAX_CHECKS) {
+            log.error("Manual exit watchdog: cycle never reached stat:4 (stat=" + stat + ") - giving up");
+            cleanup();
+            return;
+        }
+        // Only nudge when the cycle is parked at stat:3 (the swallowed-M30
+        // case). In any other state (still running/holding), just keep
+        // watching.
+        if (stat === driver.STAT_STOP) {
+            log.warn(
+                "Manual exit watchdog: cycle did not end (stat=" + stat + ") - re-sending M30 (attempt " + checks + ")"
+            );
+            driver._write("M30\n");
+        }
+        timer = setTimeout(check, EXIT_WATCHDOG_INTERVAL);
+    };
+    driver.on("stat", onStat);
+    timer = setTimeout(check, EXIT_WATCHDOG_INTERVAL);
 };
 
 // Internal call that is issued when manual mode is done
