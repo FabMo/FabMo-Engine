@@ -53,6 +53,12 @@ module.exports = function (server) {
             //directory: './static'
             directory: "./dashboard/build",
             default: "index.html",
+            // The version hash in the URL only busts caches across engine
+            // UPDATES — dashboard rebuilds on the same version kept serving
+            // hour-stale bundles (static.js defaults maxAge to 3600). Match
+            // the approot apps: revalidate every load, unchanged files cost
+            // a cheap 304.
+            maxAge: 0,
         })
     );
 };
