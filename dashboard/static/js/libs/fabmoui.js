@@ -61,6 +61,13 @@ const { last } = require("underscore");
             $(".speed_read_out").hide();
             $(this).blur();
         });
+        // Drop focus as soon as an adjustment is committed (the mouseleave
+        // blur above misses releasing the mouse while still over the slider,
+        // and touch input entirely) so arrow/page keys can never step the
+        // slider — those keys belong to keyboard jogging.
+        $("#manual-move-speed").on("change", function (e) {
+            $(this).blur();
+        });
 
         $("#right-position-container").on("click", function () {
             if (!$("#right-position-container").hasClass("dropped")) {
