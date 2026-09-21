@@ -99,6 +99,18 @@ function SBPRuntime() {
     // "Once per cut" bookkeeping: keys ("<n>:on" / "<n>:off") that have
     // already notified during the current top-level run.
     this._notifiedOnce = {};
+    // Whether the spindle output (out1) was ON during the most recent
+    // running status report — a feedhold pauses it (g2core spph) and resume
+    // silently re-engages it, which the output-change notification must
+    // surface. Snapshotted while running because by the time STAT_HOLDING
+    // is handled the firmware has already dropped out1.
+    this._spindleOnWhileRunning = false;
+    // Latches: the restart warning has been shown for the current hold /
+    // SK keypad, so the next resume or exit press proceeds.
+    this._resumeNotifyShown = false;
+    this._skExitNotifyShown = false;
+    // Timer handle for the pending-gcodes deadlock guard (_armPendingGcodeNudge)
+    this._pendingNudgeTimer = null;
     this.vs_change = 0;
     this.absoluteMode = true;
 
@@ -224,6 +236,22 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                     }
                     switch (s.cmd) {
                         case "exit":
+                            // Closing an SK keypad lets the file continue, which
+                            // re-engages a spindle that was running before the SK
+                            // (firmware restart — no SO command involved). If
+                            // notify applies and the spindle is currently off,
+                            // the first EXIT press shows the warning on the
+                            // keypad; the next press actually exits.
+                            if (this._skExitNotifyShown) {
+                                this._skExitNotifyShown = false;
+                            } else {
+                                var skMsg = this._resumeRestartNotify("Press EXIT again to close the keypad.");
+                                if (skMsg && this.driver.status.out1 !== 1) {
+                                    this._skExitNotifyShown = true;
+                                    this.machine.setState(this, "manual", { message: skMsg });
+                                    break;
+                                }
+                            }
                             this.helper.fromFile = true; // flag that this is SK invoked in file; will surpress M30/stat:4
                             this.helper.exit();
                             break;
@@ -674,6 +702,9 @@ SBPRuntime.prototype._resetForTopLevelRun = function () {
     this.quit_pending = false;
     this._notifiedPC = null;
     this._notifiedOnce = {};
+    this._spindleOnWhileRunning = false;
+    this._resumeNotifyShown = false;
+    this._skExitNotifyShown = false;
 };
 
 // Run a file on disk.
@@ -810,6 +841,23 @@ SBPRuntime.prototype._onG2Status = function (status) {
         case this.driver.STAT_SHUTDOWN:
         case this.driver.STAT_PANIC:
             return this.machine.die("A G2 exception has occurred. You must reboot your tool.");
+    }
+
+    // Track the spindle output for the resume-restart notification. ON at
+    // any time arms it. OFF clears it — unless the OFF happened during a
+    // hold, which is precisely the g2core spph pause that resume will
+    // silently undo, so that one must stay armed. This also self-corrects
+    // after quits and file-driven spindle stops at stat:3, which never
+    // produce a running report.
+    if ("out1" in status) {
+        if (status.out1 === 1) {
+            this._spindleOnWhileRunning = true;
+        } else if (this.driver.status.stat !== this.driver.STAT_HOLDING && !this.inManualMode) {
+            // Not cleared during an SK keypad either: toggling out1 off from
+            // the keypad doesn't clear the g2 spindle model, so the file
+            // continuing after exit still re-engages it.
+            this._spindleOnWhileRunning = false;
+        }
     }
 
     // Update the machine of the driver status
@@ -1083,6 +1131,35 @@ SBPRuntime.prototype._soNotifyPolicy = function (args) {
     return { message: msg, once: mode === "once", key: key };
 };
 
+// The counterpart of _soNotifyPolicy for firmware-driven output changes:
+// a feedhold pauses the spindle (g2core spph → out1 off) and resume silently
+// re-engages it, and the same restart happens when a file continues after an
+// SK keypad. No SO command is involved, so the SO notify hook never sees
+// these. If out1 was ON while running and its notify_on mode is "once" or
+// "always", return the message to show, else null. Unlike the SO hook,
+// "once" is not suppressed per cut here — the restart is a distinct hazard
+// at every resume/exit. defaultSuffix is the context-specific instruction
+// appended to the default message (a custom notify_on_message is used
+// verbatim).
+SBPRuntime.prototype._resumeRestartNotify = function (defaultSuffix) {
+    if (!this.machine || this.simulation_mode) return null;
+    if (!this._spindleOnWhileRunning) return null;
+    var outputs;
+    try {
+        outputs = config.machine.get("outputs");
+    } catch (e) {
+        return null;
+    }
+    var p = outputs && outputs["1"];
+    if (!p) return null;
+    if (soNotifyMode(p.notify_on) === "never") return null;
+    var msg = (p.notify_on_message || "").trim();
+    if (!msg) {
+        msg = (p.label || "Output 1") + " will turn ON. " + defaultSuffix;
+    }
+    return msg;
+};
+
 // Start the stored program running; manage changes
 // Return the stream of g-codes that are being run, which will be *fed by the asynchronous running process*.
 // This function is called ONCE at the beginning of a program, and is not called again until the program
@@ -1247,6 +1324,9 @@ SBPRuntime.prototype._run = function () {
                 }
 
                 this.feedhold = true;
+                // A new hold gets a fresh restart-warning gate — a latch left
+                // set by a quit-during-warning must not carry over.
+                this._resumeNotifyShown = false;
 
                 // Handle feedhold during probing - distinguish between active probe and post-completion
                 if (this.probingPending && this.probingInitialized) {
@@ -1408,6 +1488,7 @@ SBPRuntime.prototype._executeNext = function () {
         // get executed (and the stat handler will call _executeNext again once the machine stops moving)
         if ((this.gcodesPending && this.driver) || (this.probingPending && this.driver)) {
             log.debug("GCodes or Probing is still pending...");
+            this._armPendingGcodeNudge();
             return;
         }
 
@@ -1467,6 +1548,7 @@ SBPRuntime.prototype._executeNext = function () {
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else if (this.gcodesPending && this.driver) {
             log.debug("Deferring because g-codes PENDING ......");
+            this._armPendingGcodeNudge();
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else {
             // G2 is stopped, execute stack breaking command now
@@ -1501,6 +1583,33 @@ SBPRuntime.prototype.prime = function () {
     if (this.driver) {
         this.driver.prime();
     }
+};
+
+// Deadlock guard for the gcodesPending defers in _executeNext. Dispatch
+// normally continues when G2 reports STAT_STOP after draining the queued
+// g-codes — but a g-code that produces no state change at all (e.g. a
+// zero-length move: G1 to the current position is discarded by g2core
+// without any status report) leaves gcodesPending set forever. While
+// pending, periodically check: if G2 still claims to be stopped, request a
+// fresh status report — its stat:3 flows through the normal STAT_STOP path
+// ("COMPLETED PENDING GCODES") and dispatch continues. While real motion is
+// running (stat 5/6) this sends nothing and just re-checks later.
+SBPRuntime.prototype._armPendingGcodeNudge = function () {
+    if (this._pendingNudgeTimer) return;
+    this._pendingNudgeTimer = setTimeout(
+        function () {
+            this._pendingNudgeTimer = null;
+            if (!this.gcodesPending || !this.driver || this.probingPending) {
+                return;
+            }
+            if (this.driver.status.stat === this.driver.STAT_STOP) {
+                log.debug("Pending g-codes but G2 reports stopped - requesting status report");
+                this.driver.command({ sr: null });
+            }
+            this._armPendingGcodeNudge();
+        }.bind(this),
+        500
+    );
 };
 
 // Pick a feedrate to use when rewriting a G0 rapid as a G38.3 under an armed
@@ -1733,6 +1842,13 @@ SBPRuntime.prototype.resetRuntimeState = function () {
     this.quit_pending = false;
     this.resumeAllowed = true;
     this.ok_to_disconnect = true;
+    this._spindleOnWhileRunning = false;
+    this._resumeNotifyShown = false;
+    this._skExitNotifyShown = false;
+    if (this._pendingNudgeTimer) {
+        clearTimeout(this._pendingNudgeTimer);
+        this._pendingNudgeTimer = null;
+    }
 
     if (this.machine) {
         this.machine.status.inFeedHold = false;
@@ -3745,6 +3861,31 @@ SBPRuntime.prototype.resume = function (input = false) {
                 return this._abort(err);
             }
         } else {
+            // Resuming from a feedhold re-engages the spindle in firmware
+            // (g2core spph), with no SO command for the notify hook to catch.
+            // If notify-ON applies, the first resume press shows the warning
+            // and stays paused; the next press falls through and resumes.
+            if (this._resumeNotifyShown) {
+                this._resumeNotifyShown = false;
+            } else {
+                var restartMsg = this._resumeRestartNotify("Press RESUME again to continue.");
+                if (restartMsg && this.driver.status.out1 !== 1) {
+                    this._resumeNotifyShown = true;
+                    this.machine.setState(this, "paused", { message: restartMsg });
+                    return;
+                }
+            }
+            // Boundary pause: the pause landed while G2 was already stopped
+            // (stat:3 between commands), so no hold was ever engaged — there
+            // is nothing driver-side to resume and no stat event will come to
+            // restart dispatch. Clear the deferred hold and restart directly.
+            if (this.pendingFeedhold) {
+                this.pendingFeedhold = false;
+                this.feedhold = false;
+                this.machine.status.inFeedHold = false;
+                this._executeNext();
+                return;
+            }
             // If we were held during an active probe, restore probing state for dashboard
             if (this.probingHeld && this.probingPending) {
                 log.info("Resuming from probe feedhold - probe input still active");
