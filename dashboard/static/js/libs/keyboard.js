@@ -26,6 +26,34 @@
     var KEY_NUMPAD_DIVIDE = 111;
     var KEY_BACKSLASH = 220;
 
+    var JOG_KEYS = [
+        KEY_UP,
+        KEY_DOWN,
+        KEY_LEFT,
+        KEY_RIGHT,
+        KEY_PGUP,
+        KEY_PGDOWN,
+        KEY_SLASH,
+        KEY_NUMPAD_DIVIDE,
+        KEY_BACKSLASH,
+    ];
+    var isJogKey = function (code) {
+        return JOG_KEYS.indexOf(code) !== -1;
+    };
+
+    // Fields where the jog keys have a legitimate editing job (cursor
+    // movement, typing "/") — leave the browser default alone there.
+    // Notably NOT input[type=range]: the speed slider must never respond
+    // to arrow keys, they belong to jogging.
+    var isTextEntry = function (el) {
+        if (!el || !el.tagName) return false;
+        var tag = el.tagName.toUpperCase();
+        if (tag === "TEXTAREA") return true;
+        if (tag !== "INPUT") return false;
+        var type = (el.type || "text").toLowerCase();
+        return type !== "range" && type !== "checkbox" && type !== "radio" && type !== "button";
+    };
+
     // Diagonal keypad buttons carry no keyboardArrow_* id; find them by
     // their axis-direction class pair (e.g. ".x_pos.y_neg").
     var diagSelector = function (axis, dir, second_axis, second_dir) {
@@ -226,17 +254,16 @@
     };
 
     Keyboard.prototype.onKeyDown = function (evt) {
+        // While keyboard jogging is enabled the jog keys belong to us — keep
+        // the browser's defaults (stepping a focused speed slider, page
+        // scroll, "/" quick-find) out of it. This runs before the
+        // going/enabled early-out so held-key auto-repeat events are
+        // swallowed too.
+        if (this.enabled && isJogKey(evt.keyCode) && !isTextEntry(evt.target)) {
+            evt.preventDefault();
+        }
         if (this.going || !this.enabled) {
             return;
-        }
-        if (
-            evt.keyCode === KEY_SLASH ||
-            evt.keyCode === KEY_NUMPAD_DIVIDE ||
-            evt.keyCode === KEY_BACKSLASH
-        ) {
-            // Ours while jogging is enabled — keep the browser's quick-find
-            // and menu shortcuts out of it.
-            evt.preventDefault();
         }
         // Remember the modifier at press time: keyup decides nudge
         // direction, and Alt is often released a beat before the key.
