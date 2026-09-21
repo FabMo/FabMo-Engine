@@ -97,7 +97,14 @@ RaspberryPiNetworkManager.prototype.set_serialnum = function (callback) {
                     }
                     log.info("Hostname set to " + initial_h);
                     updateHostsFile(initial_h, function () {
-                        callback(null, machine_id);
+                        // Also re-apply avahi-daemon.conf so the .local name survives updates
+                        exec("sed -i 's|^host-name=.*|host-name=" + initial_h + "|' /etc/avahi/avahi-daemon.conf", function (sedErr) {
+                            if (sedErr) log.warn("Could not update avahi-daemon.conf on startup: " + sedErr.message);
+                            exec("systemctl restart avahi-daemon", function (avahiErr) {
+                                if (avahiErr) log.warn("Could not restart avahi-daemon on startup: " + avahiErr.message);
+                                callback(null, machine_id);
+                            });
+                        });
                     });
                 });
             });
