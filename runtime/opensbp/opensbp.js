@@ -99,6 +99,15 @@ function SBPRuntime() {
     // "Once per cut" bookkeeping: keys ("<n>:on" / "<n>:off") that have
     // already notified during the current top-level run.
     this._notifiedOnce = {};
+    // Whether the spindle output (out1) was ON during the most recent
+    // running status report — a feedhold pauses it (g2core spph) and resume
+    // silently re-engages it, which the output-change notification must
+    // surface. Snapshotted while running because by the time STAT_HOLDING
+    // is handled the firmware has already dropped out1.
+    this._spindleOnWhileRunning = false;
+    // Latch: the resume-restart warning has been shown for the current hold,
+    // so the next resume press proceeds.
+    this._resumeNotifyShown = false;
     this.vs_change = 0;
     this.absoluteMode = true;
 
@@ -674,6 +683,8 @@ SBPRuntime.prototype._resetForTopLevelRun = function () {
     this.quit_pending = false;
     this._notifiedPC = null;
     this._notifiedOnce = {};
+    this._spindleOnWhileRunning = false;
+    this._resumeNotifyShown = false;
 };
 
 // Run a file on disk.
@@ -1083,6 +1094,31 @@ SBPRuntime.prototype._soNotifyPolicy = function (args) {
     return { message: msg, once: mode === "once", key: key };
 };
 
+// The counterpart of _soNotifyPolicy for the firmware-driven output change:
+// a feedhold pauses the spindle (g2core spph → out1 off) and resume silently
+// re-engages it. No SO command is involved, so the SO notify hook never sees
+// it. If out1 was ON while running and its notify_on mode is "always", return
+// the message to attach to the paused modal, else null. "once" is skipped —
+// the SO that originally turned the output on already notified this cut.
+SBPRuntime.prototype._resumeRestartNotify = function () {
+    if (!this.machine || this.simulation_mode) return null;
+    if (!this._spindleOnWhileRunning) return null;
+    var outputs;
+    try {
+        outputs = config.machine.get("outputs");
+    } catch (e) {
+        return null;
+    }
+    var p = outputs && outputs["1"];
+    if (!p) return null;
+    if (soNotifyMode(p.notify_on) !== "always") return null;
+    var msg = (p.notify_on_message || "").trim();
+    if (!msg) {
+        msg = (p.label || "Output 1") + " will turn ON. Press RESUME again to continue.";
+    }
+    return msg;
+};
+
 // Start the stored program running; manage changes
 // Return the stream of g-codes that are being run, which will be *fed by the asynchronous running process*.
 // This function is called ONCE at the beginning of a program, and is not called again until the program
@@ -1288,6 +1324,11 @@ SBPRuntime.prototype._run = function () {
                 break;
 
             case this.driver.STAT_RUNNING:
+                // Snapshot the spindle output while motion is underway — the
+                // resume-restart notification (STAT_HOLDING above) needs the
+                // pre-hold value, since the firmware has already dropped out1
+                // by the time the hold is reported.
+                this._spindleOnWhileRunning = this.driver.status.out1 === 1;
                 if (!this.inManualMode) {
                     if (this.machine.status.state != "running") {
                         //Do not set state to running until opensbp pause is complete
@@ -3745,6 +3786,20 @@ SBPRuntime.prototype.resume = function (input = false) {
                 return this._abort(err);
             }
         } else {
+            // Resuming from a feedhold re-engages the spindle in firmware
+            // (g2core spph), with no SO command for the notify hook to catch.
+            // If notify-ON applies, the first resume press shows the warning
+            // and stays paused; the next press falls through and resumes.
+            if (this._resumeNotifyShown) {
+                this._resumeNotifyShown = false;
+            } else {
+                var restartMsg = this._resumeRestartNotify();
+                if (restartMsg) {
+                    this._resumeNotifyShown = true;
+                    this.machine.setState(this, "paused", { message: restartMsg });
+                    return;
+                }
+            }
             // If we were held during an active probe, restore probing state for dashboard
             if (this.probingHeld && this.probingPending) {
                 log.info("Resuming from probe feedhold - probe input still active");

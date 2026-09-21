@@ -12,6 +12,10 @@ function GCodeRuntime() {
     this.ok_to_disconnect = true;
     this.completeCallback = null;
     this._file_or_stream_in_progress = false;
+    this._spindleOnWhileRunning = false;
+    // Latch: the resume-restart warning has been shown for the current hold,
+    // so the next resume press proceeds.
+    this._resumeNotifyShown = false;
 }
 
 GCodeRuntime.prototype.toString = function () {
@@ -55,6 +59,19 @@ GCodeRuntime.prototype.quit = function () {
 };
 
 GCodeRuntime.prototype.resume = function () {
+    // Resuming from a feedhold re-engages the spindle in firmware (g2core
+    // spph). If notify-ON applies, the first resume press shows the warning
+    // and stays paused; the next press falls through and resumes.
+    if (this._resumeNotifyShown) {
+        this._resumeNotifyShown = false;
+    } else {
+        var restartMsg = this._resumeRestartNotify();
+        if (restartMsg) {
+            this._resumeNotifyShown = true;
+            this.machine.setState(this, "paused", { message: restartMsg });
+            return;
+        }
+    }
     this.driver.resume();
     this.machine.status.inFeedHold = false;
 };
@@ -186,12 +203,38 @@ GCodeRuntime.prototype._handleStop = function () {
     this._idle();
 };
 
+// A feedhold pauses the spindle (g2core spph → out1 off) and resume silently
+// re-engages it. If out1 was ON while running and its notify_on mode is
+// "always", return the message to show in the paused modal, else null.
+// (Mirrors the OpenSBP runtime's _resumeRestartNotify.)
+GCodeRuntime.prototype._resumeRestartNotify = function () {
+    if (!this._spindleOnWhileRunning) return null;
+    var outputs;
+    try {
+        outputs = config.machine.get("outputs");
+    } catch (e) {
+        return null;
+    }
+    var p = outputs && outputs["1"];
+    if (!p) return null;
+    var mode = p.notify_on;
+    if (mode !== "always" && mode !== true && mode !== 1) return null;
+    var msg = (p.notify_on_message || "").trim();
+    if (!msg) {
+        msg = (p.label || "Output 1") + " will turn ON. Press RESUME again to continue.";
+    }
+    return msg;
+};
+
 GCodeRuntime.prototype._handleStateChange = function (stat) {
     switch (stat) {
         case this.driver.STAT_HOLDING:
             this._changeState("paused");
             break;
         case this.driver.STAT_RUNNING:
+            // Snapshot the spindle output while motion is underway — by the
+            // time the hold is reported the firmware has already dropped out1.
+            this._spindleOnWhileRunning = this.driver.status.out1 === 1;
             this.machine.status.inFeedHold = false;
             this._changeState("running");
             break;
