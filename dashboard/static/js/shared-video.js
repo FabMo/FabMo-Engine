@@ -9,19 +9,33 @@ window.FabMoVideo = (function () {
             console.log(`Testing camera ${cameraNum} at ${testUrl}`);
 
             const testImg = new Image();
+
+            // The camera serves an endless MJPEG stream: onload fires on the
+            // first frame but the request stays open forever, which holds the
+            // document's load event hostage (the dashboard's app-launch gear
+            // waits on the iframe load event — it would spin indefinitely).
+            // Abort the probe on every exit path so the connection closes.
+            const abort = () => {
+                testImg.onload = testImg.onerror = null;
+                testImg.src = "";
+            };
+
             const timeout = setTimeout(() => {
+                abort();
                 console.log(`Camera ${cameraNum} detection timeout`);
                 resolve(false);
             }, 500);  // 2000 works ...
 
             testImg.onload = () => {
                 clearTimeout(timeout);
+                abort();
                 console.log(`Camera ${cameraNum} detected successfully`);
                 resolve(true);
             };
 
             testImg.onerror = () => {
                 clearTimeout(timeout);
+                abort();
                 console.log(`Camera ${cameraNum} failed to load`);
                 resolve(false);
             };

@@ -39,22 +39,8 @@ module.exports = function(callbacks) {
 
 
   function position() {
-    var size = 32;
-    var margin = 5;
-
-    // Left-side view buttons (absolutely positioned)
-    var x = margin, y = margin;
-    if (self.buttons.showX) place(self.buttons.showX, x, y);
-    if (self.buttons.showY) place(self.buttons.showY, x, y + size + margin);
-    if (self.buttons.showZ) place(self.buttons.showZ, x, y + (size + margin) * 2);
-    if (self.buttons.showOrtho) place(self.buttons.showOrtho, x, y + (size + margin) * 3);
-    if (self.buttons.showPerspective) place(self.buttons.showPerspective, x, y + (size + margin) * 3);
-    if (self.buttons.help) place(self.buttons.help, x + 25, y + (size + margin) * 4.2);
-
-    // Bottom bar buttons are positioned by flexbox — no place() needed
-
-    var helpBtn = $('#preview #button-help');
-    if (helpBtn.length) helpBtn.show();
+    // Orientation lives on the ViewCube, projection on the bottom-bar
+    // Ortho toggle, and Help inside Settings — nothing left to place.
   }
 
 
@@ -105,6 +91,9 @@ module.exports = function(callbacks) {
       );
       $('<li>').text(line).appendTo($list);
     }
+    // The warning lives at the top of the toolpath drawer now — make
+    // sure the drawer is out so it's actually seen.
+    $('#operations-panel').removeClass('collapsed');
     show(self.softLimitWarning, true);
   }
 
@@ -147,11 +136,6 @@ module.exports = function(callbacks) {
 
   // Buttons
   self.buttons = {};
-  self.buttons.showX    = get('x', callbacks.showX);
-  self.buttons.showY    = get('y', callbacks.showY);
-  self.buttons.showZ    = get('z', callbacks.showZ);
-  self.buttons.showOrtho  = get('ortho', callbacks.toggleView);
-  self.buttons.showPerspective  = get('perspective', callbacks.toggleView);
   
   // Debug: Log button elements
   console.log('Ortho button:', self.buttons.showOrtho);
@@ -166,7 +150,6 @@ module.exports = function(callbacks) {
   self.buttons.skipBack = get('skip-back', function() { if (callbacks.skipToCutStart) callbacks.skipToCutStart(); });
   self.buttons.skipFwd  = get('skip-fwd', function() { if (callbacks.skipToCutEnd) callbacks.skipToCutEnd(); });
   self.buttons.settings = get('settings', onSettings);
-  self.buttons.help     = get('help', onHelp);
 
   // Dialogs
   self.loading           = $('#preview .loading')[0];
@@ -175,6 +158,11 @@ module.exports = function(callbacks) {
   self.settings          = $('#preview .settings')[0];
   self.softLimitWarning  = $('#preview .soft-limit-warning')[0];
   $('#preview .dialog .close').click(onClose);
+  // Help moved inside Settings: swap dialogs on click
+  $('#preview .settings .open-help').click(function() {
+    show(self.settings, false);
+    show(self.help, true);
+  });
 
   $('.reset-material').click(function() {
     if (callbacks.resetMaterial) callbacks.resetMaterial();
@@ -187,7 +175,9 @@ module.exports = function(callbacks) {
   var zoomMode = false;
   var zoomRange = null;  // {startTime, endTime}
   var holdTimer = null;
-  var HOLD_DELAY = 1500;  // ms before zoom activates
+  var HOLD_DELAY = 1500;  // ms the handle must stay still before zoom activates
+  var HOLD_STILL_TOLERANCE = 8;  // slider units (of 1000) the handle may drift and still count as "still"
+  var holdAnchorValue = null;    // slider value when the stillness timer was (re)started
   var stripesDiv = document.getElementById('timeline-stripes');
 
   // Toggle zoom class on the timeline input — CSS handles the stripe visuals
@@ -231,38 +221,57 @@ module.exports = function(callbacks) {
     }
   };
 
+  function cancelHoldTimer() {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+
+  // (Re)start the stillness clock from the handle's current position
+  function armHoldTimer() {
+    cancelHoldTimer();
+    holdAnchorValue = parseFloat(self.timeline.value);
+    holdTimer = setTimeout(function() {
+      holdTimer = null;
+      if (!callbacks.getZoomRange) return;
+      var range = callbacks.getZoomRange();
+      if (!range || range.endTime <= range.startTime) return;
+
+      // Enter zoom mode
+      zoomMode = true;
+      zoomRange = range;
+
+      // Remap slider to zoomed range
+      var currentTime = sliderToTime(parseFloat(self.timeline.value));
+      // Recalculate with new zoom range active
+      self.timeline.value = Math.max(0, Math.min(1000,
+        ((currentTime - zoomRange.startTime) / (zoomRange.endTime - zoomRange.startTime)) * 1000
+      ));
+
+      setZoomStripes(true);
+    }, HOLD_DELAY);
+  }
+
   if (self.timeline) {
     self.timeline.addEventListener('input', function() {
       self.timelineScrubbing = true;
       var time = sliderToTime(parseFloat(self.timeline.value));
       if (callbacks.scrub) callbacks.scrub(time);
+
+      // Zoom engages only when the handle is held still — any real
+      // movement while the timer is armed restarts the stillness clock
+      if (holdTimer !== null &&
+          Math.abs(parseFloat(self.timeline.value) - holdAnchorValue) > HOLD_STILL_TOLERANCE) {
+        armHoldTimer();
+      }
     });
 
     self.timeline.addEventListener('change', function() {
       self.timelineScrubbing = false;
     });
 
-    // Hold-to-zoom: mousedown starts a timer
+    // Hold-to-zoom: mousedown arms the stillness timer
     self.timeline.addEventListener('mousedown', function() {
-      clearTimeout(holdTimer);
-      holdTimer = setTimeout(function() {
-        if (!callbacks.getZoomRange) return;
-        var range = callbacks.getZoomRange();
-        if (!range || range.endTime <= range.startTime) return;
-
-        // Enter zoom mode
-        zoomMode = true;
-        zoomRange = range;
-
-        // Remap slider to zoomed range
-        var currentTime = sliderToTime(parseFloat(self.timeline.value));
-        // Recalculate with new zoom range active
-        self.timeline.value = Math.max(0, Math.min(1000,
-          ((currentTime - zoomRange.startTime) / (zoomRange.endTime - zoomRange.startTime)) * 1000
-        ));
-
-        setZoomStripes(true);
-      }, HOLD_DELAY);
+      armHoldTimer();
     });
 
     // Animate slider value smoothly from current to target
@@ -291,7 +300,7 @@ module.exports = function(callbacks) {
 
     // On release: exit zoom, slide to true position
     function exitZoom() {
-      clearTimeout(holdTimer);
+      cancelHoldTimer();
       if (!zoomMode) return;
 
       // Calculate the actual time from the zoomed slider position
@@ -309,7 +318,7 @@ module.exports = function(callbacks) {
 
     self.timeline.addEventListener('mouseup', exitZoom);
     self.timeline.addEventListener('mouseleave', function() {
-      clearTimeout(holdTimer);
+      cancelHoldTimer();
       // Don't exit zoom on mouseleave if still dragging — only cancel the hold timer
     });
   }

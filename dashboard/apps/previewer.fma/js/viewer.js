@@ -47,7 +47,12 @@ module.exports = function(container) {
 
 
   // Renders the screen
-  function render() {self.renderer.render(self.scene, self.camera)}
+  function render() {
+    self.renderer.render(self.scene, self.camera);
+    // Keep the ViewCube's CSS rotation in lockstep with whatever camera
+    // is active — every visual update funnels through here.
+    if (self._vcSync) self._vcSync();
+  }
 
 
   self.refresh = function() {
@@ -689,12 +694,6 @@ module.exports = function(container) {
     $toolAngle.val(self.defaultTool.vbitAngle);
     $vbitWrap.toggle(self.defaultTool.toolType === 'vbit');
 
-    $setup.find('.ops-setup-header').on('click', function() {
-      var $panel = $('#operations-panel');
-      var collapsed = $panel.toggleClass('setup-collapsed').hasClass('setup-collapsed');
-      $setup.find('.ops-setup-toggle').text(collapsed ? '+' : '−');
-    });
-
     $thickness.on('change', function() {
       var v = parseFloat($(this).val());
       if (!isNaN(v) && v > 0) {
@@ -1186,6 +1185,194 @@ module.exports = function(container) {
     }, 500); // Save 500ms after user stops moving
   });
 
+  // ── ViewCube ─────────────────────────────────────────────────────────
+  // CSS 3D orientation cube (ported from labs ui_testbed, adapted to this
+  // viewer's Z-up world and render-on-demand loop). Faces/edges/corners
+  // snap the camera about the current orbit target at the current
+  // distance; dragging the cube orbits. Rotation sync happens in render()
+  // via self._vcSync.
+  (function initViewCube() {
+    var cubeEl = document.getElementById('vc-cube');
+    if (!cubeEl) return;
+
+    // World-space snap targets, indexed by data-face. Z-up: TOP looks
+    // down -Z, FRONT is the -Y side of the table.
+    var VC_FACES = [
+      { dir: [ 1,  0,  0] },  // 0: RIGHT
+      { dir: [-1,  0,  0] },  // 1: LEFT
+      { dir: [ 0,  0,  1] },  // 2: TOP
+      { dir: [ 0,  0, -1] },  // 3: BOTTOM
+      { dir: [ 0, -1,  0] },  // 4: FRONT
+      { dir: [ 0,  1,  0] },  // 5: BACK
+    ];
+
+    // Face normals in the cube's CSS space (Y-down screen space), same
+    // indexing. Used only to build the chamfer geometry.
+    var CSS_N = [
+      [1, 0, 0], [-1, 0, 0], [0, -1, 0], [0, 1, 0], [0, 0, 1], [0, 0, -1],
+    ];
+
+    var CH = 12;  // chamfer depth px
+    var HS = 45;  // half cube size px
+
+    function v3cross(a, b) { return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+    function v3dot(a, b) { return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+    function v3norm(a) { var l = Math.sqrt(v3dot(a, a)); return l > 0 ? [a[0]/l, a[1]/l, a[2]/l] : [0, 0, 1]; }
+    function v3add(a, b) { return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]; }
+    function v3scale(a, s) { return [a[0]*s, a[1]*s, a[2]*s]; }
+
+    function makeChamfer(cls, snap, pos, xB, yB, zB, w, h, extra) {
+      var el = document.createElement('div');
+      el.className = cls;
+      el.dataset.snap = snap.join(',');
+      el.style.cssText = 'position:absolute;width:' + w + 'px;height:' + h + 'px;' +
+        'left:50%;top:50%;margin-left:' + (-w / 2) + 'px;margin-top:' + (-h / 2) + 'px;' +
+        'transform:translate3d(' + pos[0].toFixed(2) + 'px,' + pos[1].toFixed(2) + 'px,' + pos[2].toFixed(2) + 'px) ' +
+        'matrix3d(' + xB[0] + ',' + xB[1] + ',' + xB[2] + ',0,' + yB[0] + ',' + yB[1] + ',' + yB[2] + ',0,' +
+        zB[0] + ',' + zB[1] + ',' + zB[2] + ',0,0,0,0,1);' + (extra || '');
+      cubeEl.appendChild(el);
+    }
+
+    // 12 edge chamfers
+    var EDGE_PAIRS = [
+      [4,2],[4,3],[4,0],[4,1], [5,2],[5,3],[5,0],[5,1], [2,0],[2,1],[3,0],[3,1],
+    ];
+    var edgeLen = 90 - 2 * CH;
+    var edgeW = Math.round(CH * Math.SQRT2);
+    EDGE_PAIRS.forEach(function (pair) {
+      var nA = CSS_N[pair[0]], nB = CSS_N[pair[1]];
+      var zB = v3norm(v3add(nA, nB));
+      var xB = v3norm(v3cross(nA, nB));
+      var yB = v3cross(zB, xB);
+      makeChamfer('vc-edge', pair, v3scale(v3add(nA, nB), HS - CH / 2), xB, yB, zB, edgeLen, edgeW);
+    });
+
+    // 8 corner chamfers
+    var CORNER_TRIPLES = [
+      [4,2,0],[4,2,1],[4,3,0],[4,3,1], [5,2,0],[5,2,1],[5,3,0],[5,3,1],
+    ];
+    var cornerSize = Math.round(CH * 1.5);
+    CORNER_TRIPLES.forEach(function (tri) {
+      var sum = v3add(v3add(CSS_N[tri[0]], CSS_N[tri[1]]), CSS_N[tri[2]]);
+      var zB = v3norm(sum);
+      var xB = v3norm(v3cross([0, 1, 0], zB));
+      if (v3dot(xB, xB) < 0.5) xB = v3norm(v3cross([1, 0, 0], zB));
+      var yB = v3cross(zB, xB);
+      makeChamfer('vc-corner', tri, v3scale(sum, HS - CH * 0.6), xB, yB, zB, cornerSize, cornerSize,
+        'border-radius:50%;');
+    });
+
+    // Camera → cube rotation. m = R(q)^-1 maps world → camera space; the
+    // basis-change below re-labels axes for this Z-up world into the
+    // cube's CSS space (screen Y down, TOP face on CSS -Y).
+    var _vcQ = new THREE.Quaternion();
+    self._vcSync = function () {
+      _vcQ.copy(self.camera.quaternion).inverse();
+      var x = _vcQ.x, y = _vcQ.y, z = _vcQ.z, w = _vcQ.w;
+      var m00 = 1 - 2*(y*y + z*z), m01 = 2*(x*y - z*w), m02 = 2*(x*z + y*w);
+      var m10 = 2*(x*y + z*w),     m11 = 1 - 2*(x*x + z*z), m12 = 2*(y*z - x*w);
+      var m20 = 2*(x*z - y*w),     m21 = 2*(y*z + x*w),     m22 = 1 - 2*(x*x + y*y);
+      cubeEl.style.transform =
+        'matrix3d(' + m00 + ',' + (-m10) + ',' + m20 + ',0,' +
+        (-m02) + ',' + m12 + ',' + (-m22) + ',0,' +
+        (-m01) + ',' + m11 + ',' + (-m21) + ',0,0,0,0,1)';
+    };
+
+    // Snap: keep the orbit target and distance, move the camera to the
+    // picked direction with an eased flight. camera.up stays (0,0,1) —
+    // same convention as the old view-preset buttons — with an epsilon
+    // nudge so straight-down/up views aren't degenerate for lookAt.
+    var snapId = null;
+    function vcSnapTo(dir) {
+      if (self.ar && (self.ar.enabled || self.ar.overhead)) {
+        // In AR, "reorient" means "give me a normal 3D view back" —
+        // route through the existing exit path.
+        self.showZ();
+        return;
+      }
+      var d = new THREE.Vector3(dir[0], dir[1], dir[2]).normalize();
+      if (Math.abs(d.z) > 0.999) d.y = d.z > 0 ? -0.001 : 0.001;
+      d.normalize();
+      var target = self.controls.target.clone();
+      var dist = self.camera.position.distanceTo(target);
+      var endPos = d.multiplyScalar(dist).add(target);
+      var startPos = self.camera.position.clone();
+      var t0 = performance.now();
+      if (snapId) cancelAnimationFrame(snapId);
+      (function step() {
+        var t = Math.min((performance.now() - t0) / 400, 1);
+        var ease = 1 - (1 - t) * (1 - t) * (1 - t);
+        self.camera.position.lerpVectors(startPos, endPos, ease);
+        self.camera.lookAt(target);
+        render();
+        if (t < 1) {
+          snapId = requestAnimationFrame(step);
+        } else {
+          snapId = null;
+          self.controls.update();
+          self.saveViewState();
+        }
+      })();
+    }
+
+    // Click to snap / drag to orbit. The cube rebuilds nothing on move,
+    // so listeners live on the window like the viewer's own controls.
+    var drag = false, moved = false, sx, sy, lx, ly;
+
+    cubeEl.addEventListener('pointerdown', function (e) {
+      drag = true; moved = false;
+      sx = lx = e.clientX;
+      sy = ly = e.clientY;
+      e.preventDefault();
+    });
+
+    window.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      if (Math.abs(e.clientX - sx) > 3 || Math.abs(e.clientY - sy) > 3) moved = true;
+      if (moved && !(self.ar && (self.ar.enabled || self.ar.overhead))) {
+        var dx = (e.clientX - lx) * 0.008;
+        var dy = (e.clientY - ly) * 0.008;
+        // Z-up orbit: rotate the offset in a Y-up frame (the same trick
+        // OrbitControls uses internally), then rotate back.
+        var quat = new THREE.Quaternion().setFromUnitVectors(
+          self.camera.up, new THREE.Vector3(0, 1, 0));
+        var quatInv = quat.clone().inverse();
+        var offset = self.camera.position.clone().sub(self.controls.target);
+        offset.applyQuaternion(quat);
+        var sph = new THREE.Spherical().setFromVector3(offset);
+        sph.theta -= dx;
+        sph.phi -= dy;
+        sph.phi = Math.max(0.05, Math.min(Math.PI - 0.05, sph.phi));
+        offset.setFromSpherical(sph);
+        offset.applyQuaternion(quatInv);
+        self.camera.position.copy(self.controls.target).add(offset);
+        self.camera.lookAt(self.controls.target);
+        self.controls.update();
+        render();
+      }
+      lx = e.clientX; ly = e.clientY;
+    });
+
+    window.addEventListener('pointerup', function (e) {
+      if (!drag) return;
+      drag = false;
+      if (moved) { self.saveViewState(); return; }
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      if (!el) return;
+      var snapEl = el.closest('.vc-edge') || el.closest('.vc-corner');
+      if (snapEl && snapEl.dataset.snap) {
+        var dir = [0, 0, 0];
+        snapEl.dataset.snap.split(',').forEach(function (fi) {
+          dir = v3add(dir, VC_FACES[Number(fi)].dir);
+        });
+        vcSnapTo(v3norm(dir));
+        return;
+      }
+      var face = el.closest('.vc-face');
+      if (face) vcSnapTo(VC_FACES[parseInt(face.dataset.face, 10)].dir);
+    });
+  })();
+
   // Method to save current view state
   self.saveViewState = function() {
     var viewState = {
@@ -1532,6 +1719,82 @@ module.exports = function(container) {
 
   self.gui = new Gui(callbacks);
 
+  // Bottom-bar Ortho quick-toggle drives the projection swap (replaces
+  // the old floating ortho/perspective buttons). Seed it from the
+  // restored view mode; gui.js's generic checkbox sync handles the
+  // .active styling on change.
+  var $orthoToggle = $('#preview input[name="show-ortho"]');
+  $orthoToggle.prop('checked', self.isOrtho)
+      .closest('.quick-toggle').toggleClass('active', self.isOrtho);
+  $orthoToggle.on('change', function () { self.toggleView(); });
+
+  // ── 2D / 3D view mode ─────────────────────────────────────────────
+  // 2D = top-down orthographic plan view of the path on the table:
+  // rotation locked, left-drag pans, wheel zooms. The orientation cube
+  // and camera-mode buttons hide (orientation is meaningless flat).
+  self.viewMode2D = false;
+  var _saved3D = null;
+
+  function _applyDimButtons() {
+    container.find('#btn-2d').toggleClass('active', self.viewMode2D);
+    container.find('#btn-3d').toggleClass('active', !self.viewMode2D);
+  }
+
+  // Frame the loaded path in the ortho frustum (toggleOrtho's fixed
+  // zoom is tuned for 3D orbiting, not a plan fit).
+  function _fit2DZoom() {
+    if (!self.path || !self.path.bounds) return;
+    var dims = util.getDims(self.path.bounds);
+    var cam = self.orthographicCamera;
+    var fw = cam.right - cam.left;
+    var fh = cam.top - cam.bottom;
+    var zx = fw / Math.max(dims[0], 0.001);
+    var zy = fh / Math.max(dims[1], 0.001);
+    cam.zoom = Math.max(0.1, Math.min(zx, zy) * 0.85);
+    cam.updateProjectionMatrix();
+  }
+
+  self.enter2D = function () {
+    if (self.viewMode2D) return;
+    self.viewMode2D = true;
+    _saved3D = {
+      isOrtho: self.isOrtho,
+      pos: self.camera.position.clone(),
+      target: self.controls.target.clone(),
+    };
+    snapPlane('xy'); // top-down over the path (also routes out of AR)
+    if (!self.isOrtho) self.toggleOrtho();
+    _fit2DZoom();
+    self.controls.enableRotate = false;
+    self.controls.screenSpacePanning = true;
+    self.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+    self.controls.update();
+    container.addClass('mode-2d');
+    _applyDimButtons();
+    self.refresh();
+  };
+
+  self.exit2D = function () {
+    if (!self.viewMode2D) return;
+    self.viewMode2D = false;
+    self.controls.enableRotate = true;
+    self.controls.screenSpacePanning = false;
+    self.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+    container.removeClass('mode-2d');
+    if (_saved3D) {
+      if (self.isOrtho !== _saved3D.isOrtho) self.toggleOrtho();
+      self.controls.object.position.copy(_saved3D.pos);
+      self.controls.target.copy(_saved3D.target);
+      self.controls.update();
+      _saved3D = null;
+    }
+    _applyDimButtons();
+    self.refresh();
+  };
+
+  container.on('click', '#btn-2d', function () { self.enter2D(); });
+  container.on('click', '#btn-3d', function () { self.exit2D(); });
+
   // Public accessor for in/out points (used by app.js for job submission)
   self.getInOutPoints = function() {
     return self.gui.getInOut();
@@ -1836,7 +2099,7 @@ module.exports = function(container) {
       var shiftWorld = 0;
       if (self.ar && self.ar.overhead) {
           var $panel = container.find('.operations-panel');
-          if ($panel.length && $panel.is(':visible')) {
+          if ($panel.length && $panel.is(':visible') && !$panel.hasClass('collapsed')) {
               var shiftPx = $panel.outerWidth() / 2;
               shiftWorld = shiftPx * (spanX / w);
           }
@@ -2179,6 +2442,7 @@ module.exports = function(container) {
 
       container.find('#ar-recalibrate').show();
       self.ar.enabled = true;
+      _refreshOverheadToggleVisibility();
 
       if (!fromOverhead) {
           _resetARView();
@@ -2396,6 +2660,7 @@ module.exports = function(container) {
       container.find('input[name="show-ar"]').prop('checked', false);
       container.find('.ar-calibration').hide();
       container.find('#ar-recalibrate').hide();
+      _refreshOverheadToggleVisibility();
       _fadeAR({ videoTo: 0, bgTo: 0, clearTo: 1, durationMs: 250,
           onComplete: _exitARTeardown });
   };
@@ -2561,6 +2826,7 @@ module.exports = function(container) {
       }
 
       self.ar.overhead = true;
+      _refreshOverheadToggleVisibility();
       container.addClass('ar-mode overhead-mode');
       container.find('#ar-recalibrate').show();
 
@@ -2618,17 +2884,22 @@ module.exports = function(container) {
       self.ar.overhead = false;
       // Sync the toggle in case exitOverhead was called programmatically.
       container.find('input[name="show-overhead"]').prop('checked', false);
+      _refreshOverheadToggleVisibility();
       container.find('#ar-recalibrate').hide();
       _fadeAR({ videoTo: 0, bgTo: 0, clearTo: 1, durationMs: 250,
           onComplete: _exitARTeardown });
   };
 
-  // The Top toggle only makes sense once a calibration exists. Surface or
-  // hide it as calibration state changes (load, save, camera-detect).
+  // Camera-mode button states. Top is only offered from within a camera
+  // mode (AR or overhead itself) AND once a calibration exists; the AR
+  // button lights up while its mode is on.
   function _refreshOverheadToggleVisibility() {
-      var $w = container.find('#overhead-toggle-wrap');
-      if (self.ar.cameraPort && self.ar.corners) $w.show();
-      else                                       $w.hide();
+      var arOn = !!self.ar.enabled;
+      var ovOn = !!self.ar.overhead;
+      container.find('#ar-btn').toggleClass('active', arOn || ovOn);
+      container.find('#overhead-btn')
+          .toggleClass('active', ovOn)
+          .toggle(!!((arOn || ovOn) && self.ar.cameraPort && self.ar.corners));
   }
   // ---------- end Overhead --------------------------------------------------
 
@@ -2637,19 +2908,38 @@ module.exports = function(container) {
   _detectCamera(function (port) {
       self.ar.cameraPort = port;
       if (port) {
-          container.find('#ar-toggle-wrap').show();
+          container.find('#ar-btn').show();
           _refreshOverheadToggleVisibility();
       }
+  });
+
+  // Toolpath drawer: the tab (and the Toolpath Details header) slide the
+  // panel into the right frame edge instead of rolling it up. Delegated
+  // so re-renders of the panel contents can't double-bind.
+  container.on('click', '.ops-drawer-tab, .ops-setup-header', function () {
+      container.find('#operations-panel').toggleClass('collapsed');
   });
 
   // Wire UI: AR toggle, Top toggle, recalibrate, calibration click capture, cancel.
   container.on('change', 'input[name="show-ar"]', function () {
       if (this.checked) self.enterAR();
       else              self.exitAR();
+      _refreshOverheadToggleVisibility();
   });
   container.on('change', 'input[name="show-overhead"]', function () {
       if (this.checked) self.enterOverhead();
       else              self.exitOverhead();
+      _refreshOverheadToggleVisibility();
+  });
+  container.on('click', '#ar-btn', function () {
+      var cb = this.querySelector('input[name="show-ar"]');
+      cb.checked = !cb.checked;
+      $(cb).trigger('change');
+  });
+  container.on('click', '#overhead-btn', function () {
+      var cb = this.querySelector('input[name="show-overhead"]');
+      cb.checked = !cb.checked;
+      $(cb).trigger('change');
   });
   container.on('click', '#ar-recalibrate', function () {
       self.recalibrateAR();
