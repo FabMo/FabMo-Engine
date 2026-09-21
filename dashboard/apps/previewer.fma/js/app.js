@@ -20,6 +20,7 @@ THREE.__font__ = (new THREE.FontLoader()).parse(font);
 require('jquery');
 
 var Viewer = require('./viewer');
+var Arrange = require('./arrange');
 var util   = require('./util');
 var cookie = require('./cookie');
 var Fabmo  = require('../../../static/js/libs/fabmo.js');
@@ -30,6 +31,8 @@ var fabmo = new Fabmo();
 window.fabmo = fabmo;  // exposed so the AR module in viewer.js can persist calibration
 var viewer = null;  // Module-level viewer reference
 var originalFileContent = null;  // Raw SBP file content for in/out extraction
+var arrange = null;         // Arrange-mode (renest) controller
+var arrangeLoaded = false;  // analysis run for the current file
 
 var cached_Config = null;
 var cached_Status = null;
@@ -644,6 +647,49 @@ function extractGCodeSelection(fileContent, inLine, outLine, safeZ) {
   return output.join('\n');
 }
 
+// ── Arrange mode (renest part editing) ──────────────────────────────
+// SBP jobs only: the analysis reverse-engineers parts from the SBP source
+// and re-emits it with the user's moves applied, untouched lines
+// byte-identical. GCode jobs keep the button disabled.
+
+function updateArrangeButton() {
+  var ok = !!(arrange && originalFileContent && looksLikeSBP(originalFileContent));
+  $('#btn-arrange')
+    .prop('disabled', !ok)
+    .attr('title', window.t(ok ? 'previewer.arrange.button_title' : 'previewer.arrange.sbp_only'));
+}
+
+function enterArrange() {
+  if (!arrange || arrange.isActive()) return;
+  if (!arrangeLoaded) {
+    if (!originalFileContent || !looksLikeSBP(originalFileContent)) return;
+    if (!arrange.load(originalFileContent, 'job.sbp')) {
+      fabmo.notify(window.t('previewer.arrange.sr_unsupported'), 'error');
+      return;
+    }
+    arrangeLoaded = true;
+  }
+  preview.addClass('arranging');
+  $('#operations-panel').removeClass('collapsed');
+  $('#btn-arrange').addClass('active');
+  $('.submit-rearranged').prop('disabled', !arrange.isModified());
+  arrange.enter();
+}
+
+function exitArrange() {
+  if (!arrange || !arrange.isActive()) return;
+  arrange.exit();
+  preview.removeClass('arranging');
+  $('#btn-arrange').removeClass('active');
+}
+
+$('#btn-arrange').on('click', function () {
+  if (arrange && arrange.isActive()) exitArrange();
+  else enterArrange();
+});
+// switching back to a real view leaves arrange mode (edits are kept)
+$('#preview').on('click', '#btn-2d, #btn-3d', exitArrange);
+
 function nowPreviewJob() {
   fabmo.getAppArgs(function(err, args) {
     if (err) console.log(err);
@@ -747,6 +793,41 @@ function nowPreviewJob() {
     });
   });
 
+  // Submit the rearranged (Arrange mode) toolpath as a new job
+  $('.submit-rearranged').click(function() {
+    if (!arrange || !arrange.isModified()) {
+      fabmo.notify(window.t('previewer.arrange.no_changes'), 'error');
+      return;
+    }
+    var code = arrange.getExportText();
+    if (!code) return;
+
+    var currentJobID = cookie.get('job-id');
+    if (!currentJobID || currentJobID == -1) {
+      fabmo.notify(window.t('previewer.notify.no_current_job'), 'error');
+      return;
+    }
+
+    $('.submit-rearranged').css('opacity', '0.5').css('pointer-events', 'none');
+    var file = new File([code], 'rearranged.sbp', { type: 'text/plain' });
+    fabmo.deleteJob(currentJobID, function(err) {
+      if (err) console.warn('Could not delete original job:', err);
+      fabmo.submitJob(file, {}, function(err) {
+        $('.submit-rearranged').css('opacity', '').css('pointer-events', '');
+        if (err) {
+          fabmo.notify(window.t('previewer.arrange.submit_failed', {error: err}), 'error');
+        } else {
+          cleanupBeforeExit();
+          fabmo.launchApp('job-manager');
+        }
+      });
+    });
+  });
+
+  $('.reset-arrange').click(function() {
+    if (arrange) arrange.resetAll();
+  });
+
   // Run Selected Operations
   $('.run-selected-ops').click(function() {
     if (!viewer || !viewer.operations || !originalFileContent) return;
@@ -841,6 +922,21 @@ function nowPreviewJob() {
     // skips the calibration flow on subsequent sessions.
     if (viewer.loadARCalibration) viewer.loadARCalibration(cached_Config);
 
+    // Arrange-mode controller. Tolerances in the part analysis are in
+    // inches; mm machines most likely preview mm files, so scale them.
+    arrange = new Arrange({
+      container: preview[0],
+      canvas: document.getElementById('arrange-canvas'),
+      treeEl: document.getElementById('parts-list'),
+      t: window.t,
+      unitScale: (cached_Config.machine && cached_Config.machine.units === 'mm') ? 25.4 : 1,
+      onChange: function (e) {
+        $('.submit-rearranged').prop('disabled', !e.modified);
+      },
+      onRequestExit: exitArrange,
+    });
+    updateArrangeButton();
+
     // Resize
     var job_started = false;
     var prev_state = null;
@@ -896,6 +992,8 @@ function nowPreviewJob() {
         url: '/job/' + jobID + '/file',
         success: function(content) {
           originalFileContent = content;
+          arrangeLoaded = false;
+          updateArrangeButton();
           var metadata = parseFileMetadata(content);
           if (metadata) {
             viewer.setFileMetadata(metadata);

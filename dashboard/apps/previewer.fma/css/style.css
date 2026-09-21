@@ -1259,3 +1259,231 @@ input[type="range"]::-webkit-slider-runnable-track {
 #preview.has-selection .operations-panel .ops-actions .submit-selected-ops.has-ops {
   display: inline-block;
 }
+
+/* ── Arrange mode (renest part editing) ─────────────────────────────── */
+
+#arrange-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4; /* over the 3D canvas, under the view toggle (5) and drawer (5) */
+  cursor: default;
+}
+
+/* while arranging, 3D chrome and playback are out of play */
+#preview.arranging #viewcube-container,
+#preview.arranging #camera-mode-btns {
+  display: none !important;
+}
+#preview.arranging .bottom-bar {
+  opacity: 0.35;
+  pointer-events: none;
+}
+#preview.arranging .code-line {
+  display: none;
+}
+
+#btn-arrange {
+  width: auto !important;
+  padding: 3px 10px !important;
+}
+#btn-arrange:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* floating per-part toolbar */
+#part-toolbar {
+  position: absolute;
+  z-index: 6;
+  display: none;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  background: var(--pv-bg);
+  border: 1px solid var(--pv-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font: 11px var(--pv-font);
+  color: var(--pv-text);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+#part-toolbar #tb-name {
+  font-weight: bold;
+  margin-right: 4px;
+  color: var(--pv-accent);
+}
+#part-toolbar button {
+  padding: 2px 6px;
+  font: 11px var(--pv-font);
+  color: var(--pv-text);
+  background: var(--pv-bg-dim);
+  border: 1px solid var(--pv-input-border);
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
+}
+#part-toolbar button:hover {
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
+  border-color: var(--pv-accent);
+}
+
+/* status / warning / coordinate overlays on the arrange canvas */
+#arrange-status,
+#arrange-warnbar {
+  position: absolute;
+  top: 34px;
+  left: 12px;
+  z-index: 6;
+  max-width: 60%;
+  padding: 3px 8px;
+  background: var(--pv-bg);
+  border: 1px solid var(--pv-border);
+  font: 11px var(--pv-font);
+  color: var(--pv-text-dim);
+}
+#arrange-warnbar {
+  top: auto;
+  bottom: 64px;
+  color: #b03030;
+  border-color: #e0a0a0;
+}
+#arrange-status.warn {
+  color: #b03030;
+}
+#arrange-coords {
+  position: absolute;
+  right: 244px; /* clear the drawer */
+  bottom: 64px;
+  z-index: 6;
+  font: 11px var(--pv-font);
+  color: var(--pv-text-dim);
+}
+#preview:has(.operations-panel.collapsed) #arrange-coords {
+  right: 24px;
+}
+
+/* the drawer shows the parts tree instead of the operations UI */
+#preview.arranging .operations-panel .ops-setup,
+#preview.arranging .operations-panel > .ops-header,
+#preview.arranging .operations-panel #ops-list,
+#preview.arranging .operations-panel #ops-empty,
+#preview.arranging .operations-panel > .ops-actions,
+#preview.arranging .operations-panel .soft-limit-warning {
+  display: none !important;
+}
+
+/* parts tree in the drawer */
+#preview .operations-panel .parts-panel {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+#preview.arranging .operations-panel .parts-panel {
+  display: flex;
+}
+#preview .parts-panel .parts-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+#preview .parts-list .tree-node {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--pv-bg-dim);
+}
+#preview .parts-list .tree-node:hover {
+  background: var(--pv-hover);
+}
+#preview .parts-list .tree-node.selected {
+  background: var(--pv-accent);
+  color: var(--pv-accent-text);
+}
+#preview .parts-list .tree-node.selected .ninfo,
+#preview .parts-list .tree-node.selected .moved {
+  color: var(--pv-accent-text);
+  opacity: 0.8;
+}
+#preview .parts-list .tree-node.deleted .nname {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+#preview .parts-list .tree-node .swatch {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+#preview .parts-list .tree-node .nname {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#preview .parts-list .tree-node .ninfo {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--pv-text-dim);
+}
+#preview .parts-list .tree-node .moved {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--pv-accent);
+}
+#preview .parts-list .tree-node .amb {
+  flex: 0 0 auto;
+  color: #b03030;
+}
+#preview .parts-list .tree-node .restore {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--pv-accent);
+}
+#preview .parts-list .tree-section {
+  padding: 6px 8px 2px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--pv-text-dim);
+}
+
+#preview .parts-panel .arrange-actions {
+  padding: 6px 10px;
+  border-top: 1px solid var(--pv-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#preview .parts-panel .arrange-actions button {
+  padding: 6px 8px;
+  border: none;
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: none;
+}
+#preview .parts-panel .arrange-actions .submit-rearranged {
+  background: var(--pv-go);
+  color: #fff;
+}
+#preview .parts-panel .arrange-actions .submit-rearranged:hover {
+  background: var(--pv-go-hover);
+}
+#preview .parts-panel .arrange-actions .submit-rearranged:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+#preview .parts-panel .arrange-actions .reset-arrange {
+  background: var(--pv-bg-dim);
+  color: var(--pv-text);
+  border: 1px solid var(--pv-input-border);
+}
+#preview .parts-panel .arrange-actions .reset-arrange:hover {
+  background: var(--pv-hover);
+}

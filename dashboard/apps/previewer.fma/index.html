@@ -99,6 +99,18 @@
           <button class="run-selected-ops" data-i18n-title="previewer.ops.run_selected_title" title="Run only the checked operations" data-i18n="previewer.ops.run_selected">Run Selected</button>
           <button class="submit-selected-ops" data-i18n-title="previewer.ops.submit_selected_title" title="Submit checked operations as a new job" data-i18n="previewer.ops.submit_selected">Submit Selected</button>
         </div>
+
+        <!-- Arrange mode swaps the drawer contents for the parts tree -->
+        <div class="parts-panel" id="parts-panel" style="display:none;">
+          <div class="ops-header">
+            <span class="ops-header-title" data-i18n="previewer.arrange.parts_title">Parts</span>
+          </div>
+          <div class="parts-list" id="parts-list"></div>
+          <div class="arrange-actions">
+            <button class="submit-rearranged" data-i18n-title="previewer.arrange.submit_title" title="Submit the rearranged toolpath as a new job" data-i18n="previewer.arrange.submit">Submit Rearranged</button>
+            <button class="reset-arrange" data-i18n-title="previewer.arrange.reset_title" title="Undo all moves, duplicates and deletions" data-i18n="previewer.arrange.reset">Reset All</button>
+          </div>
+        </div>
       </div>
 
 
@@ -107,7 +119,27 @@
       <div id="view-dim-toggle">
         <button id="btn-2d" data-i18n="previewer.view.two_d">2D</button>
         <button id="btn-3d" class="active" data-i18n="previewer.view.three_d">3D</button>
+        <button id="btn-arrange" data-i18n="previewer.arrange.button" data-i18n-title="previewer.arrange.button_title" title="Rearrange parts on the sheet (SBP files)" disabled>Arrange</button>
       </div>
+
+      <!-- Arrange mode: 2D part-editing overlay (renest). The canvas covers
+           the 3D view while active; parts are dragged directly, the floating
+           toolbar handles rotate/duplicate/delete, and the drawer shows the
+           parts tree. -->
+      <canvas id="arrange-canvas" style="display:none;"></canvas>
+      <div id="part-toolbar" style="display:none;">
+        <span id="tb-name"></span>
+        <button id="tb-ccw90" data-i18n-title="previewer.arrange.rot_ccw90" title="Rotate 90° counter-clockwise (Shift+R)">⟲90</button>
+        <button id="tb-ccw15" data-i18n-title="previewer.arrange.rot_ccw15" title="Rotate 15° counter-clockwise">⟲15</button>
+        <button id="tb-cw15" data-i18n-title="previewer.arrange.rot_cw15" title="Rotate 15° clockwise">15⟳</button>
+        <button id="tb-cw90" data-i18n-title="previewer.arrange.rot_cw90" title="Rotate 90° clockwise (R)">90⟳</button>
+        <button id="tb-dup" data-i18n-title="previewer.arrange.dup_title" title="Duplicate this part (D, or Ctrl+C / Ctrl+V)">⧉</button>
+        <button id="tb-del" data-i18n-title="previewer.arrange.del_title" title="Delete this part — its cuts are dropped (Del). Restore it from the parts list.">🗑</button>
+        <button id="tb-reset" data-i18n-title="previewer.arrange.part_reset_title" title="Undo this part's move &amp; rotation">✕</button>
+      </div>
+      <div id="arrange-status" style="display:none;"></div>
+      <div id="arrange-warnbar" style="display:none;"></div>
+      <div id="arrange-coords" style="display:none;"></div>
 
       <!-- ViewCube (CSS 3D, from the ui_testbed): synced to the camera in
            render(); click a face/edge/corner to snap, drag to orbit. The
@@ -377,6 +409,15 @@
               <th data-i18n="previewer.help.ops_sel">Run Selected / Submit Selected</th>
               <td data-i18n-html="previewer.help.ops_sel_d">Run or submit only the operations whose checkboxes are ticked. The <em>All</em> link toggles every operation at once.</td>
             </tr>
+          </table>
+
+          <h3 data-i18n="previewer.help.arrange">Arrange Mode</h3>
+          <p data-i18n="previewer.help.arrange_intro">For SBP jobs, the Arrange button (next to 2D/3D) opens a plan view that isolates the individual parts in the toolpath. Drag a part to move it (Shift locks to an axis), use the floating toolbar to rotate, duplicate, or delete it, then Submit Rearranged to replace the job with the edited toolpath. Lines you didn't touch are carried over byte-for-byte.</p>
+          <table>
+            <tr><th>R / Shift+R</th><td data-i18n="previewer.help.arrange_rot">Rotate the selected part 90&deg; clockwise / counter-clockwise.</td></tr>
+            <tr><th>D</th><td data-i18n="previewer.help.arrange_dup">Duplicate the selected part (also Ctrl+C / Ctrl+V).</td></tr>
+            <tr><th>Del</th><td data-i18n="previewer.help.arrange_del">Delete the selected part &mdash; restore it from the parts list.</td></tr>
+            <tr><th>Esc</th><td data-i18n="previewer.help.arrange_esc">Leave Arrange mode (edits are kept until you leave the previewer).</td></tr>
           </table>
 
           <h3 data-i18n="previewer.help.ar">AR &amp; Top Overlays</h3>
