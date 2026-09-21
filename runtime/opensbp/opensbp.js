@@ -105,9 +105,10 @@ function SBPRuntime() {
     // surface. Snapshotted while running because by the time STAT_HOLDING
     // is handled the firmware has already dropped out1.
     this._spindleOnWhileRunning = false;
-    // Latch: the resume-restart warning has been shown for the current hold,
-    // so the next resume press proceeds.
+    // Latches: the restart warning has been shown for the current hold /
+    // SK keypad, so the next resume or exit press proceeds.
     this._resumeNotifyShown = false;
+    this._skExitNotifyShown = false;
     this.vs_change = 0;
     this.absoluteMode = true;
 
@@ -233,6 +234,22 @@ SBPRuntime.prototype.executeCode = function (s, callback) {
                     }
                     switch (s.cmd) {
                         case "exit":
+                            // Closing an SK keypad lets the file continue, which
+                            // re-engages a spindle that was running before the SK
+                            // (firmware restart — no SO command involved). If
+                            // notify applies and the spindle is currently off,
+                            // the first EXIT press shows the warning on the
+                            // keypad; the next press actually exits.
+                            if (this._skExitNotifyShown) {
+                                this._skExitNotifyShown = false;
+                            } else {
+                                var skMsg = this._resumeRestartNotify("Press EXIT again to close the keypad.");
+                                if (skMsg && this.driver.status.out1 !== 1) {
+                                    this._skExitNotifyShown = true;
+                                    this.machine.setState(this, "manual", { message: skMsg });
+                                    break;
+                                }
+                            }
                             this.helper.fromFile = true; // flag that this is SK invoked in file; will surpress M30/stat:4
                             this.helper.exit();
                             break;
@@ -685,6 +702,7 @@ SBPRuntime.prototype._resetForTopLevelRun = function () {
     this._notifiedOnce = {};
     this._spindleOnWhileRunning = false;
     this._resumeNotifyShown = false;
+    this._skExitNotifyShown = false;
 };
 
 // Run a file on disk.
@@ -1094,13 +1112,17 @@ SBPRuntime.prototype._soNotifyPolicy = function (args) {
     return { message: msg, once: mode === "once", key: key };
 };
 
-// The counterpart of _soNotifyPolicy for the firmware-driven output change:
+// The counterpart of _soNotifyPolicy for firmware-driven output changes:
 // a feedhold pauses the spindle (g2core spph → out1 off) and resume silently
-// re-engages it. No SO command is involved, so the SO notify hook never sees
-// it. If out1 was ON while running and its notify_on mode is "always", return
-// the message to attach to the paused modal, else null. "once" is skipped —
-// the SO that originally turned the output on already notified this cut.
-SBPRuntime.prototype._resumeRestartNotify = function () {
+// re-engages it, and the same restart happens when a file continues after an
+// SK keypad. No SO command is involved, so the SO notify hook never sees
+// these. If out1 was ON while running and its notify_on mode is "once" or
+// "always", return the message to show, else null. Unlike the SO hook,
+// "once" is not suppressed per cut here — the restart is a distinct hazard
+// at every resume/exit. defaultSuffix is the context-specific instruction
+// appended to the default message (a custom notify_on_message is used
+// verbatim).
+SBPRuntime.prototype._resumeRestartNotify = function (defaultSuffix) {
     if (!this.machine || this.simulation_mode) return null;
     if (!this._spindleOnWhileRunning) return null;
     var outputs;
@@ -1111,10 +1133,10 @@ SBPRuntime.prototype._resumeRestartNotify = function () {
     }
     var p = outputs && outputs["1"];
     if (!p) return null;
-    if (soNotifyMode(p.notify_on) !== "always") return null;
+    if (soNotifyMode(p.notify_on) === "never") return null;
     var msg = (p.notify_on_message || "").trim();
     if (!msg) {
-        msg = (p.label || "Output 1") + " will turn ON. Press RESUME again to continue.";
+        msg = (p.label || "Output 1") + " will turn ON. " + defaultSuffix;
     }
     return msg;
 };
@@ -3793,7 +3815,7 @@ SBPRuntime.prototype.resume = function (input = false) {
             if (this._resumeNotifyShown) {
                 this._resumeNotifyShown = false;
             } else {
-                var restartMsg = this._resumeRestartNotify();
+                var restartMsg = this._resumeRestartNotify("Press RESUME again to continue.");
                 if (restartMsg) {
                     this._resumeNotifyShown = true;
                     this.machine.setState(this, "paused", { message: restartMsg });

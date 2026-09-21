@@ -205,8 +205,10 @@ GCodeRuntime.prototype._handleStop = function () {
 
 // A feedhold pauses the spindle (g2core spph → out1 off) and resume silently
 // re-engages it. If out1 was ON while running and its notify_on mode is
-// "always", return the message to show in the paused modal, else null.
-// (Mirrors the OpenSBP runtime's _resumeRestartNotify.)
+// "once" or "always", return the message to show in the paused modal, else
+// null. Unlike the SO hook, "once" is not suppressed per cut here — the
+// restart is a distinct hazard at every resume. (Mirrors the OpenSBP
+// runtime's _resumeRestartNotify.)
 GCodeRuntime.prototype._resumeRestartNotify = function () {
     if (!this._spindleOnWhileRunning) return null;
     var outputs;
@@ -218,7 +220,7 @@ GCodeRuntime.prototype._resumeRestartNotify = function () {
     var p = outputs && outputs["1"];
     if (!p) return null;
     var mode = p.notify_on;
-    if (mode !== "always" && mode !== true && mode !== 1) return null;
+    if (!mode || mode === "never") return null;
     var msg = (p.notify_on_message || "").trim();
     if (!msg) {
         msg = (p.label || "Output 1") + " will turn ON. Press RESUME again to continue.";
