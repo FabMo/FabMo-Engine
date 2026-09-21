@@ -2704,6 +2704,10 @@ $(".axi").keyup(function (e) {
         $(".modal-axi:visible").each(function () {
             move[$(this).attr("id")] = parseFloat($(this).val());
         });
+        // Enter submits the goto — drop focus so the caret doesn't invite
+        // arrow-key editing: the status handler re-enables keyboard jogging
+        // once the move is underway, so arrows would edit AND jog.
+        this.blur();
         dashboard.engine.goto(move);
     }
 });
