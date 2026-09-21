@@ -841,6 +841,23 @@ SBPRuntime.prototype._onG2Status = function (status) {
             return this.machine.die("A G2 exception has occurred. You must reboot your tool.");
     }
 
+    // Track the spindle output for the resume-restart notification. ON at
+    // any time arms it. OFF clears it — unless the OFF happened during a
+    // hold, which is precisely the g2core spph pause that resume will
+    // silently undo, so that one must stay armed. This also self-corrects
+    // after quits and file-driven spindle stops at stat:3, which never
+    // produce a running report.
+    if ("out1" in status) {
+        if (status.out1 === 1) {
+            this._spindleOnWhileRunning = true;
+        } else if (this.driver.status.stat !== this.driver.STAT_HOLDING && !this.inManualMode) {
+            // Not cleared during an SK keypad either: toggling out1 off from
+            // the keypad doesn't clear the g2 spindle model, so the file
+            // continuing after exit still re-engages it.
+            this._spindleOnWhileRunning = false;
+        }
+    }
+
     // Update the machine of the driver status
     // TODO: separation of concerns dictates this should be part of an update method on the machine.
     for (var key in this.machine.status) {
@@ -1305,6 +1322,9 @@ SBPRuntime.prototype._run = function () {
                 }
 
                 this.feedhold = true;
+                // A new hold gets a fresh restart-warning gate — a latch left
+                // set by a quit-during-warning must not carry over.
+                this._resumeNotifyShown = false;
 
                 // Handle feedhold during probing - distinguish between active probe and post-completion
                 if (this.probingPending && this.probingInitialized) {
@@ -1346,11 +1366,6 @@ SBPRuntime.prototype._run = function () {
                 break;
 
             case this.driver.STAT_RUNNING:
-                // Snapshot the spindle output while motion is underway — the
-                // resume-restart notification (STAT_HOLDING above) needs the
-                // pre-hold value, since the firmware has already dropped out1
-                // by the time the hold is reported.
-                this._spindleOnWhileRunning = this.driver.status.out1 === 1;
                 if (!this.inManualMode) {
                     if (this.machine.status.state != "running") {
                         //Do not set state to running until opensbp pause is complete
@@ -1796,6 +1811,9 @@ SBPRuntime.prototype.resetRuntimeState = function () {
     this.quit_pending = false;
     this.resumeAllowed = true;
     this.ok_to_disconnect = true;
+    this._spindleOnWhileRunning = false;
+    this._resumeNotifyShown = false;
+    this._skExitNotifyShown = false;
 
     if (this.machine) {
         this.machine.status.inFeedHold = false;
@@ -3816,11 +3834,22 @@ SBPRuntime.prototype.resume = function (input = false) {
                 this._resumeNotifyShown = false;
             } else {
                 var restartMsg = this._resumeRestartNotify("Press RESUME again to continue.");
-                if (restartMsg) {
+                if (restartMsg && this.driver.status.out1 !== 1) {
                     this._resumeNotifyShown = true;
                     this.machine.setState(this, "paused", { message: restartMsg });
                     return;
                 }
+            }
+            // Boundary pause: the pause landed while G2 was already stopped
+            // (stat:3 between commands), so no hold was ever engaged — there
+            // is nothing driver-side to resume and no stat event will come to
+            // restart dispatch. Clear the deferred hold and restart directly.
+            if (this.pendingFeedhold) {
+                this.pendingFeedhold = false;
+                this.feedhold = false;
+                this.machine.status.inFeedHold = false;
+                this._executeNext();
+                return;
             }
             // If we were held during an active probe, restore probing state for dashboard
             if (this.probingHeld && this.probingPending) {

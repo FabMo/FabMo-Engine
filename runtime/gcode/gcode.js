@@ -66,7 +66,7 @@ GCodeRuntime.prototype.resume = function () {
         this._resumeNotifyShown = false;
     } else {
         var restartMsg = this._resumeRestartNotify();
-        if (restartMsg) {
+        if (restartMsg && this.driver.status.out1 !== 1) {
             this._resumeNotifyShown = true;
             this.machine.setState(this, "paused", { message: restartMsg });
             return;
@@ -97,6 +97,17 @@ GCodeRuntime.prototype._limit = function () {
 };
 
 GCodeRuntime.prototype._onDriverStatus = function (status) {
+    // Track the spindle output for the resume-restart notification. ON at
+    // any time arms it; OFF clears it unless it happened during a hold —
+    // that is the g2core spph pause that resume will silently undo.
+    if ("out1" in status) {
+        if (status.out1 === 1) {
+            this._spindleOnWhileRunning = true;
+        } else if (this.driver.status.stat !== this.driver.STAT_HOLDING) {
+            this._spindleOnWhileRunning = false;
+        }
+    }
+
     // Update the machine copy of g2 status variables
     for (var key in this.machine.status) {
         if (key in status) {
@@ -231,12 +242,11 @@ GCodeRuntime.prototype._resumeRestartNotify = function () {
 GCodeRuntime.prototype._handleStateChange = function (stat) {
     switch (stat) {
         case this.driver.STAT_HOLDING:
+            // A new hold gets a fresh restart-warning gate.
+            this._resumeNotifyShown = false;
             this._changeState("paused");
             break;
         case this.driver.STAT_RUNNING:
-            // Snapshot the spindle output while motion is underway — by the
-            // time the hold is reported the firmware has already dropped out1.
-            this._spindleOnWhileRunning = this.driver.status.out1 === 1;
             this.machine.status.inFeedHold = false;
             this._changeState("running");
             break;
