@@ -109,6 +109,8 @@ function SBPRuntime() {
     // SK keypad, so the next resume or exit press proceeds.
     this._resumeNotifyShown = false;
     this._skExitNotifyShown = false;
+    // Timer handle for the pending-gcodes deadlock guard (_armPendingGcodeNudge)
+    this._pendingNudgeTimer = null;
     this.vs_change = 0;
     this.absoluteMode = true;
 
@@ -1486,6 +1488,7 @@ SBPRuntime.prototype._executeNext = function () {
         // get executed (and the stat handler will call _executeNext again once the machine stops moving)
         if ((this.gcodesPending && this.driver) || (this.probingPending && this.driver)) {
             log.debug("GCodes or Probing is still pending...");
+            this._armPendingGcodeNudge();
             return;
         }
 
@@ -1545,6 +1548,7 @@ SBPRuntime.prototype._executeNext = function () {
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else if (this.gcodesPending && this.driver) {
             log.debug("Deferring because g-codes PENDING ......");
+            this._armPendingGcodeNudge();
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else {
             // G2 is stopped, execute stack breaking command now
@@ -1579,6 +1583,33 @@ SBPRuntime.prototype.prime = function () {
     if (this.driver) {
         this.driver.prime();
     }
+};
+
+// Deadlock guard for the gcodesPending defers in _executeNext. Dispatch
+// normally continues when G2 reports STAT_STOP after draining the queued
+// g-codes — but a g-code that produces no state change at all (e.g. a
+// zero-length move: G1 to the current position is discarded by g2core
+// without any status report) leaves gcodesPending set forever. While
+// pending, periodically check: if G2 still claims to be stopped, request a
+// fresh status report — its stat:3 flows through the normal STAT_STOP path
+// ("COMPLETED PENDING GCODES") and dispatch continues. While real motion is
+// running (stat 5/6) this sends nothing and just re-checks later.
+SBPRuntime.prototype._armPendingGcodeNudge = function () {
+    if (this._pendingNudgeTimer) return;
+    this._pendingNudgeTimer = setTimeout(
+        function () {
+            this._pendingNudgeTimer = null;
+            if (!this.gcodesPending || !this.driver || this.probingPending) {
+                return;
+            }
+            if (this.driver.status.stat === this.driver.STAT_STOP) {
+                log.debug("Pending g-codes but G2 reports stopped - requesting status report");
+                this.driver.command({ sr: null });
+            }
+            this._armPendingGcodeNudge();
+        }.bind(this),
+        500
+    );
 };
 
 // Pick a feedrate to use when rewriting a G0 rapid as a G38.3 under an armed
@@ -1814,6 +1845,10 @@ SBPRuntime.prototype.resetRuntimeState = function () {
     this._spindleOnWhileRunning = false;
     this._resumeNotifyShown = false;
     this._skExitNotifyShown = false;
+    if (this._pendingNudgeTimer) {
+        clearTimeout(this._pendingNudgeTimer);
+        this._pendingNudgeTimer = null;
+    }
 
     if (this.machine) {
         this.machine.status.inFeedHold = false;
