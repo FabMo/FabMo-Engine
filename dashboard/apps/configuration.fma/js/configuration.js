@@ -660,9 +660,18 @@ function syncNotifyVisibility(n, side) {
 function setupOutputsTab() {
     var $list = $('#outputs-list');
     if (!$list.length) return;
-    var html = '';
-    for (var n = 1; n <= 12; n++) html += buildOutputFieldset(n);
-    $list.html(html);
+    // Build the fieldsets only once the i18n dictionary has loaded:
+    // buildOutputFieldset bakes window.t() text into the markup, and before
+    // the dict arrives t() returns the raw keys — and injected markup is
+    // not covered by the data-i18n re-walker. The delegated handlers below
+    // bind to #outputs-list itself, so they're safe to attach before the
+    // children exist; update() re-applies config values after injection.
+    (window.i18nReady || Promise.resolve()).then(function () {
+        var html = '';
+        for (var n = 1; n <= 12; n++) html += buildOutputFieldset(n);
+        $list.html(html);
+        update();
+    });
 
     // Generic save: any change in a row writes back to machine.outputs.<n>.<key>.
     // setConfig already splits the id by "-" and rebuilds the nested object,
