@@ -900,7 +900,6 @@ function nowPreviewJob() {
     // pagehide is more reliable than unload on iOS Safari when the parent
     // frame removes the iframe from the DOM (unload is not guaranteed to fire).
     window.addEventListener('pagehide', cleanupBeforeExit);
-    window.addEventListener('unload', cleanupBeforeExit);
 
     // Setup grid and table
     viewer.setTable(cached_Config.machine.envelope, cached_Config.driver.g55x, cached_Config.driver.g55y, -1);
@@ -924,17 +923,22 @@ function nowPreviewJob() {
 
     // Arrange-mode controller. Tolerances in the part analysis are in
     // inches; mm machines most likely preview mm files, so scale them.
-    arrange = new Arrange({
-      container: preview[0],
-      canvas: document.getElementById('arrange-canvas'),
-      treeEl: document.getElementById('parts-list'),
-      t: window.t,
-      unitScale: (cached_Config.machine && cached_Config.machine.units === 'mm') ? 25.4 : 1,
-      onChange: function (e) {
-        $('.submit-rearranged').prop('disabled', !e.modified);
-      },
-      onRequestExit: exitArrange,
-    });
+    // Guard on the canvas: a stale approot copy of the app can serve old
+    // index.html against the new bundle — then Arrange simply stays off.
+    var arrangeCanvas = document.getElementById('arrange-canvas');
+    if (arrangeCanvas) {
+      arrange = new Arrange({
+        container: preview[0],
+        canvas: arrangeCanvas,
+        treeEl: document.getElementById('parts-list'),
+        t: window.t,
+        unitScale: (cached_Config.machine && cached_Config.machine.units === 'mm') ? 25.4 : 1,
+        onChange: function (e) {
+          $('.submit-rearranged').prop('disabled', !e.modified);
+        },
+        onRequestExit: exitArrange,
+      });
+    }
     updateArrangeButton();
 
     // Resize
