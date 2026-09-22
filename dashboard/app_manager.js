@@ -385,9 +385,7 @@ AppManager.prototype.copyApp = function (src, dest, options, callback) {
                                 return callback(err);
                             }
                             this._addApp(app_metadata);
-                            util.diskSync(function () {
-                                callback(null, app_metadata);
-                            });
+                            callback(null, app_metadata);
                         }.bind(this)
                     );
                 }
@@ -445,9 +443,7 @@ AppManager.prototype.decompressApp = function (src, dest, options, callback) {
                     return callback(err);
                 }
                 this._addApp(app_metadata);
-                util.diskSync(function () {
-                    callback(null, app_metadata);
-                });
+                callback(null, app_metadata);
             }.bind(this)
         );
     } catch (e) {
@@ -489,7 +485,10 @@ AppManager.prototype.installAppArchive = function (pathname, name, callback) {
                 if (err) {
                     return callback(err);
                 }
-                callback(err, data);
+                // Sync once after a user-installed app so it survives a crash
+                util.diskSync(function () {
+                    callback(null, data);
+                });
             }); // loadApp
         }.bind(this)
     ); // move
@@ -550,8 +549,10 @@ AppManager.prototype.loadApps = function (callback) {
             // Temporarily Filter out "selftest.fma" until further developed
             files = files.filter((file) => !file.endsWith("selftest.fma"));
 
-            async.mapSeries(
+            // Load up to 4 apps concurrently; one diskSync at the end instead of one per app
+            async.mapLimit(
                 files,
+                4,
                 function (file, callback) {
                     this.loadApp(
                         file,
@@ -567,9 +568,10 @@ AppManager.prototype.loadApps = function (callback) {
                     );
                 }.bind(this),
                 function (err, results) {
-                    // Filter out null results
                     results = results.filter((result) => result !== null);
-                    callback(err, results);
+                    util.diskSync(function () {
+                        callback(err, results);
+                    });
                 }.bind(this)
             );
         }.bind(this)
