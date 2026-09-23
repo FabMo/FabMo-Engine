@@ -128,15 +128,17 @@ class NetworkConfigApp:
             print(f'###=> Error updating Avahi hostname: {e}')
         
     def get_ip_address(self, interface='wlan0', retries=4, delay=4):
-        check_cmd = f"nmcli -t -f GENERAL.STATE dev show {interface} | grep 'connected' || true"
         for _ in range(retries):
             try:
                 # First check if the interface is connected
-                result = subprocess.check_output(check_cmd, shell=True).decode("utf-8").strip()
+                result = subprocess.check_output(
+                    ['nmcli', '-t', '-f', 'GENERAL.STATE', 'dev', 'show', interface]
+                ).decode("utf-8").strip()
                 if "connected" in result:
                     # Get the IP address
-                    cmd = f"nmcli -t -f IP4.ADDRESS dev show {interface}"
-                    ip_output = subprocess.check_output(cmd, shell=True).decode("utf-8").strip()
+                    ip_output = subprocess.check_output(
+                        ['nmcli', '-t', '-f', 'IP4.ADDRESS', 'dev', 'show', interface]
+                    ).decode("utf-8").strip()
 
                     if ip_output and ":" in ip_output:
                         ip_address = ip_output.split(":")[1].split("/")[0].strip()  # Extract IP and remove subnet mask
