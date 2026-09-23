@@ -245,21 +245,22 @@ const { last } = require("underscore");
             that.updateText($(that.units_selector), unit);
         }
 
-        // Set the degree symbol in the main app for ABC
+        // ABC unit markers: degree symbol for rotary axes, the current
+        // linear unit (in/mm) otherwise
         if (this.tool.config.driver.aam === 1) {
             $(".a-rotunits").html("o&nbsp");
         } else {
-            $(".a-rotunits").html("&nbsp");
+            $(".a-rotunits").text(unit);
         }
         if (this.tool.config.driver.bam === 1) {
             $(".b-rotunits").html("o&nbsp");
         } else {
-            $(".b-rotunits").html("&nbsp");
+            $(".b-rotunits").text(unit);
         }
         if (this.tool.config.driver.cam === 1) {
             $(".c-rotunits").html("o&nbsp");
         } else {
-            $(".c-rotunits").html("&nbsp");
+            $(".c-rotunits").text(unit);
         }
 
         // What follows is a bit of a kludge to make sure key display items keep updated
@@ -267,25 +268,12 @@ const { last } = require("underscore");
         ["x", "y", "z", "a", "b", "c"].forEach(function (axis) {
             var pos = "pos" + axis;
             if (pos in status) {
-                if (axis === "b") {
-                    $(".x_pos.y_pos").hide();
-                    $(".b_pos").show();
-                    $(".x_pos.y_neg").hide();
-                    $(".b_neg").show();
-                } else if (axis === "a") {
-                    $(".x_neg.y_pos").hide();
-                    $(".a_pos").show();
-                    $(".x_neg.y_neg").hide();
-                    $(".a_neg").show();
-                } else {
-                    $(".x_neg.y_pos").show();
-                    $(".x_neg.y_neg").show();
-                    $(".x_pos.y_pos").show();
-                    $(".a_pos").hide();
-                    $(".b_pos").hide();
-                    $(".x_pos.y_neg").show();
-                    $(".b_neg").hide();
-                    $(".a_neg").hide();
+                // A/B get their own Z-style jog columns right of the Z pad;
+                // the XY diagonals stay put regardless of extra axes
+                if (axis === "a") {
+                    $(".a-pad").show();
+                } else if (axis === "b") {
+                    $(".b-pad").show();
                 }
                 $("." + axis + "axis").show();
                 try {
@@ -299,9 +287,18 @@ const { last } = require("underscore");
                 }
                 that.updateText($("." + pos), posText);
             } else {
+                if (axis === "a") {
+                    $(".a-pad").hide();
+                } else if (axis === "b") {
+                    $(".b-pad").hide();
+                }
                 $("." + axis + "axis").hide();
             }
         });
+
+        // A/B jog pads widen the keypad cluster — let the manual modal
+        // grow horizontally to fit them (CSS keys off this class)
+        $("#keypad-modal").toggleClass("has-ab-pads", "posa" in status || "posb" in status);
 
         // Update big DRO Speed Display (Feedrate and Override)
         // momo is the G2 motion mode: 0 = G0 rapid/jog, 1 = G1 feed,

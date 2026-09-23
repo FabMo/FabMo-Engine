@@ -120,7 +120,10 @@
         "en_at_translation": "ABC Distance"
     },
     "keypad.fixed_distance": {
-        "en_at_translation": "Fixed Distance"
+        "en_at_translation": "<u>F</u>ixed Distance"
+    },
+    "keypad.shortcuts_tooltip": {
+        "en_at_translation": "Keyboard shortcuts:<br>&#8226; Arrow keys &mdash; jog X/Y &nbsp;&nbsp; PgUp/PgDn &mdash; jog Z<br>&#8226; / and \\ &mdash; XY diagonal jog (Alt reverses)<br>&#8226; Hold Ctrl &mdash; jog at full speed<br>&#8226; F or D &mdash; toggle Fixed Distance<br>&#8226; Alt+&lt; / Alt+&gt; &mdash; XY move speed down/up<br>&#8226; X Y Z A B C &mdash; type in that axis position field<br>&#8226; Esc &mdash; exit manual mode"
     },
     "keypad.stop": {
         "en_at_translation": "STOP"

@@ -73,7 +73,8 @@
       if (dirs.length === 1) {
         var labelAxis = inv[dirs[0]];
         if (labelAxis) {
-          $btn.find(".glyph-label").text(labelAxis);
+          // "X+" -> "X +" to match the spaced labels in the markup
+          $btn.find(".glyph-label").text(labelAxis.charAt(0) + " " + labelAxis.charAt(1));
         }
       }
     });
