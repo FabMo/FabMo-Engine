@@ -198,10 +198,10 @@
         "en_at_translation": "DRIVE FAULT"
     },
     "status.input_label": {
-        "en_at_translation": "In:"
+        "en_at_translation": "Inputs:"
     },
     "status.output_label": {
-        "en_at_translation": "Out:"
+        "en_at_translation": "Outputs:"
     },
     "status.connection_quality_tooltip": {
         "en_at_translation": "This PC's connection quality; Click for tool's Network Manager"
