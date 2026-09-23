@@ -210,6 +210,33 @@ table {
   max-width: none;
 }
 
+/* Below Foundation's large breakpoint the field wrappers (large-4
+   columns) fall back to width:100% and stack, and Foundation's
+   width:100% inputs stretch with them — edge-to-edge fields for
+   3-digit values. Cap each field group (label + input + unit postfix
+   move together) instead of the bare input. At 3-across large layout
+   the column is already narrower than this, so nothing changes there. */
+.tabs-content .columns > .row.collapse {
+  max-width: 20rem;
+}
+
+/* The field wrappers only carry large-* classes, so below Foundation's
+   large breakpoint (64em) they revert to width:100% and stack one per
+   row. Keep them flowing at (or near) their large-layout proportions
+   instead; float:left also overrides Foundation's "last column floats
+   right" rule. large-12 stays full-width; true phone widths (<40em)
+   still stack. */
+@media only screen and (min-width: 52em) and (max-width: 64.0625em) {
+  .tabs-content .large-3.columns { width: 25%; float: left; }
+  .tabs-content .large-4.columns { width: 33.3333%; float: left; }
+  .tabs-content .large-6.columns { width: 50%; float: left; }
+}
+@media only screen and (min-width: 40.0625em) and (max-width: 52em) {
+  .tabs-content .large-3.columns,
+  .tabs-content .large-4.columns,
+  .tabs-content .large-6.columns { width: 50%; float: left; }
+}
+
 .defaultRadio {
   margin: 18px !important;
 }
