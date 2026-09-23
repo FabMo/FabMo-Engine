@@ -349,7 +349,7 @@
                 <span class="limit-tag">LIM</span>A
                 </label>
                 <input id="A" autocomplete="off" class="posa pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
-                <span class="rotunits">o&nbsp;</span>
+                <span class="a-rotunits">o&nbsp;</span>
                 <div class="zero-button zero-a" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
             <div class="axis baxis">
@@ -357,7 +357,7 @@
                 B
                 </label>
                 <input id="B" autocomplete="off" class="posb pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
-                <span class="rotunits">o&nbsp;</span>
+                <span class="b-rotunits">o&nbsp;</span>
                 <div class="zero-button zero-b" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
             <div class="axis caxis">
@@ -365,7 +365,7 @@
                 C
                 </label>
                 <input id="C" autocomplete="off" class="posc pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
-                <span class="rotunits">o&nbsp;</span>
+                <span class="c-rotunits">o&nbsp;</span>
                 <div class="zero-button zero-c" data-i18n-title="keypad.zero_button_tooltip" title="set this axis to zero" data-i18n="keypad.zero_button">zero</div>
             </div>
 
@@ -415,16 +415,13 @@
                       </g>
                     </svg>
                   </div>
-                  <div class="rot_button a_pos keypad-button drive-button square">
-                    <span >+A</span>
-                  </div>
                 </div>
                 <div class="keypad-cell">
                   <div id="keyboardArrow_y_pos" class="y_pos keypad-button drive-button square" data-keypad-orig="↑">
                     <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
                       <g>
                         <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                        <text class="glyph-label" x="50" y="62" text-anchor="middle">Y+</text>
+                        <text class="glyph-label" x="50" y="58" text-anchor="middle">Y +</text>
                       </g>
                     </svg>
                   </div>
@@ -437,16 +434,13 @@
                       </g>
                     </svg>
                   </div>
-                  <div class="rot_button b_pos keypad-button drive-button square">
-                    <span>+B</span>
-                  </div>
                 </div>
                 <div class="keypad-cell">
                   <div id="keyboardArrow_x_neg" class="x_neg keypad-button drive-button square" data-keypad-orig="←">
                     <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
                       <g transform="rotate(-90 50 50)">
                         <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                        <text class="glyph-label" x="50" y="62" text-anchor="middle" transform="rotate(90 50 62)">X-</text>
+                        <text class="glyph-label" x="50" y="58" text-anchor="middle" transform="rotate(90 50 58)">X -</text>
                       </g>
                     </svg>
                   </div>
@@ -465,7 +459,7 @@
                     <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
                       <g transform="rotate(90 50 50)">
                         <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                        <text class="glyph-label" x="50" y="62" text-anchor="middle" transform="rotate(-90 50 62)">X+</text>
+                        <text class="glyph-label" x="50" y="58" text-anchor="middle" transform="rotate(-90 50 58)">X +</text>
                       </g>
                     </svg>
                   </div>
@@ -478,16 +472,13 @@
                       </g>
                     </svg>
                   </div>
-                  <div class="rot_button a_neg keypad-button drive-button square">
-                    <span>-A</span>
-                  </div>
                 </div>
                 <div class="keypad-cell">
                   <div id="keyboardArrow_y_neg" class="y_neg keypad-button drive-button square" data-keypad-orig="↓">
                     <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
                       <g transform="rotate(180 50 50)">
                         <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                        <text class="glyph-label" x="50" y="62" text-anchor="middle" transform="rotate(-180 50 62)">Y-</text>
+                        <text class="glyph-label" x="50" y="58" text-anchor="middle" transform="rotate(-180 50 58)">Y -</text>
                       </g>
                     </svg>
                   </div>
@@ -499,9 +490,6 @@
                         <path class="glyph-shape" d="M54.6 14.3 L75.4 38.7 Q80 44 80 51 L80 83 Q80 90 73 90 L27 90 Q20 90 20 83 L20 51 Q20 44 24.6 38.7 L45.4 14.3 Q50 9 54.6 14.3 Z"></path>
                       </g>
                     </svg>
-                  </div>
-                  <div class="rot_button b_neg keypad-button drive-button square">
-                    <span>-B</span>
                   </div>
                 </div>
               </div>
@@ -518,7 +506,7 @@
                     <svg class="dir-glyph" viewBox="0 0 100 120" aria-hidden="true">
                       <g>
                         <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 101 Q89 108 82 108 L18 108 Q11 108 11 101 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                        <text class="glyph-label" x="50" y="71" text-anchor="middle">Z+</text>
+                        <text class="glyph-label" x="50" y="67" text-anchor="middle">Z +</text>
                       </g>
                     </svg>
                   </div>
@@ -528,7 +516,7 @@
                     <svg class="dir-glyph" viewBox="0 0 100 120" aria-hidden="true">
                       <g transform="rotate(180 50 60)">
                         <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 101 Q89 108 82 108 L18 108 Q11 108 11 101 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                        <text class="glyph-label" x="50" y="71" text-anchor="middle" transform="rotate(-180 50 71)">Z-</text>
+                        <text class="glyph-label" x="50" y="67" text-anchor="middle" transform="rotate(-180 50 67)">Z -</text>
                       </g>
                     </svg>
                   </div>
@@ -541,13 +529,95 @@
                   </div>
                 </div>
               </div>
+              <div class="ab-pad a-pad">
+                <div class="keypad-bar-small top">
+                  <div class="a_pos_fast keypad-button drive-button bar">
+                    <svg class="dir-glyph fastz" viewBox="0 0 100 64" aria-hidden="true">
+                      <g class="glyph-stroke"><path d="M20 26 L50 6 L80 26 M20 58 L50 38 L80 58"></path></g>
+                    </svg>
+                  </div>
+                </div>
+                <div class="keypad-bar top">
+                  <div class="a_pos_slow keypad-button drive-button bar">
+                    <svg class="dir-glyph" viewBox="0 0 100 120" aria-hidden="true">
+                      <g>
+                        <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 101 Q89 108 82 108 L18 108 Q11 108 11 101 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
+                        <text class="glyph-label" x="50" y="67" text-anchor="middle">A +</text>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+                <div class="keypad-bar bottom">
+                  <div class="a_neg_slow keypad-button drive-button bar">
+                    <svg class="dir-glyph" viewBox="0 0 100 120" aria-hidden="true">
+                      <g transform="rotate(180 50 60)">
+                        <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 101 Q89 108 82 108 L18 108 Q11 108 11 101 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
+                        <text class="glyph-label" x="50" y="67" text-anchor="middle" transform="rotate(-180 50 67)">A -</text>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+                <div class="keypad-bar-small bottom">
+                  <div class="a_neg_fast keypad-button drive-button bar">
+                    <svg class="dir-glyph fastz" viewBox="0 0 100 64" aria-hidden="true">
+                      <g class="glyph-stroke" transform="rotate(180 50 32)"><path d="M20 26 L50 6 L80 26 M20 58 L50 38 L80 58"></path></g>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div class="ab-pad b-pad">
+                <div class="keypad-bar-small top">
+                  <div class="b_pos_fast keypad-button drive-button bar">
+                    <svg class="dir-glyph fastz" viewBox="0 0 100 64" aria-hidden="true">
+                      <g class="glyph-stroke"><path d="M20 26 L50 6 L80 26 M20 58 L50 38 L80 58"></path></g>
+                    </svg>
+                  </div>
+                </div>
+                <div class="keypad-bar top">
+                  <div class="b_pos_slow keypad-button drive-button bar">
+                    <svg class="dir-glyph" viewBox="0 0 100 120" aria-hidden="true">
+                      <g>
+                        <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 101 Q89 108 82 108 L18 108 Q11 108 11 101 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
+                        <text class="glyph-label" x="50" y="67" text-anchor="middle">B +</text>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+                <div class="keypad-bar bottom">
+                  <div class="b_neg_slow keypad-button drive-button bar">
+                    <svg class="dir-glyph" viewBox="0 0 100 120" aria-hidden="true">
+                      <g transform="rotate(180 50 60)">
+                        <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 101 Q89 108 82 108 L18 108 Q11 108 11 101 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
+                        <text class="glyph-label" x="50" y="67" text-anchor="middle" transform="rotate(-180 50 67)">B -</text>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+                <div class="keypad-bar-small bottom">
+                  <div class="b_neg_fast keypad-button drive-button bar">
+                    <svg class="dir-glyph fastz" viewBox="0 0 100 64" aria-hidden="true">
+                      <g class="glyph-stroke" transform="rotate(180 50 32)"><path d="M20 26 L50 6 L80 26 M20 58 L50 38 L80 58"></path></g>
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="switch-container">
-              <span class="fixed-label" data-i18n="keypad.fixed_distance">Fixed Distance</span>
+              <span class="fixed-label" data-i18n-html="keypad.fixed_distance"><u>F</u>ixed Distance</span>
               <label class="fixed-switch">
               <input type="checkbox">
               <span class="slider-toggle round"></span>
               </label>
+              <span class="tooltip" style="top: 0px;">i<span class="tooltiptext" style="margin-left: -220px;" data-i18n-html="keypad.shortcuts_tooltip">
+                Keyboard shortcuts:<br>
+                &#8226; Arrow keys &mdash; jog X/Y &nbsp;&nbsp; PgUp/PgDn &mdash; jog Z<br>
+                &#8226; / and \ &mdash; XY diagonal jog (Alt reverses)<br>
+                &#8226; Hold Ctrl &mdash; jog at full speed<br>
+                &#8226; F or D &mdash; toggle Fixed Distance<br>
+                &#8226; Alt+&lt; / Alt+&gt; &mdash; XY move speed down/up<br>
+                &#8226; X Y Z A B C &mdash; type in that axis position field<br>
+                &#8226; Esc &mdash; exit manual mode
+              </span></span>
             </div>
           </div>
           <div class="go-to-container">

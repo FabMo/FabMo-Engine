@@ -678,14 +678,22 @@
                     this.start("z_fast", -1);
                 } else if (e.hasClass("z_neg_slow")) {
                     this.start("z_slow", -1);
-                } else if (e.hasClass("a_pos")) {
-                    this.start("a", 1);
-                } else if (e.hasClass("a_neg")) {
-                    this.start("a", -1);
-                } else if (e.hasClass("b_pos")) {
-                    this.start("b", 1);
-                } else if (e.hasClass("b_neg")) {
-                    this.start("b", -1);
+                } else if (e.hasClass("a_pos_fast")) {
+                    this.start("a_fast", 1);
+                } else if (e.hasClass("a_pos_slow")) {
+                    this.start("a_slow", 1);
+                } else if (e.hasClass("a_neg_fast")) {
+                    this.start("a_fast", -1);
+                } else if (e.hasClass("a_neg_slow")) {
+                    this.start("a_slow", -1);
+                } else if (e.hasClass("b_pos_fast")) {
+                    this.start("b_fast", 1);
+                } else if (e.hasClass("b_pos_slow")) {
+                    this.start("b_slow", 1);
+                } else if (e.hasClass("b_neg_fast")) {
+                    this.start("b_fast", -1);
+                } else if (e.hasClass("b_neg_slow")) {
+                    this.start("b_slow", -1);
                 } else if (e.hasClass("c_pos")) {
                     this.start("c", 1);
                 } else if (e.hasClass("c_neg")) {
@@ -734,13 +742,13 @@
                 this.nudge("z", -1);
             } else if (e.hasClass("z_neg_slow")) {
                 this.nudge("z", -1);
-            } else if (e.hasClass("a_pos")) {
+            } else if (e.hasClass("a_pos_fast") || e.hasClass("a_pos_slow")) {
                 this.nudge("a", 1);
-            } else if (e.hasClass("a_neg")) {
+            } else if (e.hasClass("a_neg_fast") || e.hasClass("a_neg_slow")) {
                 this.nudge("a", -1);
-            } else if (e.hasClass("b_pos")) {
+            } else if (e.hasClass("b_pos_fast") || e.hasClass("b_pos_slow")) {
                 this.nudge("b", 1);
-            } else if (e.hasClass("b_neg")) {
+            } else if (e.hasClass("b_neg_fast") || e.hasClass("b_neg_slow")) {
                 this.nudge("b", -1);
             } else if (e.hasClass("c_pos")) {
                 this.nudge("c", 1);

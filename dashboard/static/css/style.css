@@ -2541,8 +2541,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background-color: #D48B3A;
 }
 
+/* Flex row: XY table + Z pad + optional A/B pads. The container is
+   centered inline content in #keypad, so adding a pad widens it and
+   shifts the whole cluster left rather than overflowing the right edge. */
 .pad-container{
-	display: inline-block;
+	display: inline-flex;
     margin-left: auto;
     margin-right: auto;
 }
@@ -2550,7 +2553,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .keypad-table {
 	height: 180px;
     width: 180px;
-    display: inline-block;
+    flex: 0 0 auto;
     box-sizing: border-box;
     font-size: 0px;
 }
@@ -2559,7 +2562,17 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	width: 55px;
     height: 180px;
 	padding: 2px;
-    float: right;
+    flex: 0 0 auto;
+}
+
+/* A/B jog columns, same fast/slow bar stack as the Z pad; fabmoui.js
+   shows a pad only when its axis reports a position */
+.ab-pad {
+	width: 55px;
+    height: 180px;
+	padding: 2px;
+    flex: 0 0 auto;
+    display: none;
 }
 
 
@@ -2638,11 +2651,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	height: 16.665%
 }
 
-.rot_button{
-	font-size : 40px;
-	 line-height : 65px;
-}
- 
 
 .top.button-border{
     background-color: #333333;
@@ -3063,7 +3071,7 @@ input[type='range']:focus {
 
 .go-to-container, #keypad{
 	display: block;
-	width: 90%;
+	width: 96%;
 	height: 100%;
 	margin-left: auto;
 	margin-right: auto;
@@ -3135,7 +3143,7 @@ input[type='range']:focus {
 	float: left;
     position: relative;
     width: 50%;
-    height: 100%;
+    min-height: 300px;
     display: table;
     table-layout: fixed;
     box-sizing: border-box;
@@ -3195,7 +3203,11 @@ input[type='range']:focus {
     display: inline-block;
     font-size: 23px;
     margin: 0;
-    width: 50px;
+    /* size to the label — "zero" translations (e.g. ja ゼロ) can exceed
+       a fixed 50px and would wrap */
+    width: auto;
+    min-width: 50px;
+    white-space: nowrap;
     padding: 3px 5px 3px;
     background-color: #877b56;
     border-radius: 0 4px 4px 0;
@@ -3306,14 +3318,17 @@ input[type='range']:focus {
 	user-select: none;
 	display: none;
     width: 55%;
-	height: 60%;
+	/* Grow with content (more axes = taller readout list) up to nearly
+	   the full viewport rather than clipping the bottom controls */
+	height: auto;
+	max-height: 94%;
 	min-height: 400px;
 	min-width: 370px;
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    padding: 1rem 2rem 2rem 2rem;
+    padding: 1rem 1rem 2rem 1rem;
     z-index: 3001;
     background-color: #ffda29;
     border-radius: 25px;
@@ -3329,6 +3344,13 @@ input[type='range']:focus {
 #action-5 {
     position: relative;
     z-index: 3020;
+}
+
+/* With A/B jog columns present the percentage width is too tight on
+   smaller screens — grow the window sideways (it stays centered) up to
+   nearly the viewport edge */
+.manual-drive-modal.has-ab-pads {
+    min-width: min(820px, 96vw);
 }
 
 /* Soft overlay over the manual control modal when authorize is required
@@ -3360,9 +3382,12 @@ input[type='range']:focus {
 }
 
 .manual-drive-container {
-	position: absolute;
-	width: 90%;
-	height: 300px;
+	/* In flow (not absolute) so its height reaches the modal, letting the
+	   panel grow; flow-root contains the two floated columns */
+	position: relative;
+	display: flow-root;
+	width: 100%;
+	min-height: 300px;
 }
 
 /* Speed readout positioning above slider */
@@ -3378,17 +3403,18 @@ input[type='range']:focus {
 	z-index: 10000;
 }
 
+/* Table-cell instead of absolute centering: still vertically centers a
+   short axis list, but a long one (5-6 axes) grows the container and
+   thereby the modal instead of overflowing it */
 .read-out-wrapper {
-	position: absolute;
-	top: 50%;
-    transform: translateY(-50%);
+	display: table-cell;
+	vertical-align: middle;
 }
 
 
 @media (max-width: 1120px) and (min-height: 450px)   {
 	.manual-drive-modal {
 		width: 80%;
-		height: 60%;
 	}
 }
 
@@ -3396,10 +3422,15 @@ input[type='range']:focus {
 @media (max-width: 750px) and (orientation: portrait) and (min-height: 500px) {
 /*@media (max-width: 750px  ) and (min-height: 500px)  {*/
 	.manual-drive-modal {
-		width: 90%; 
+		width: 90%;
 		height: 95%;
 		max-height: none;
 		padding-top: 0;
+	}
+
+	/* Columns stack in portrait — the widened A/B minimum doesn't apply */
+	.manual-drive-modal.has-ab-pads {
+		min-width: 370px;
 	}
 
     .manual-drive-container {
@@ -3428,9 +3459,9 @@ input[type='range']:focus {
 	}
 
 	.read-out-wrapper{
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 80%;
+		/* base style is a static table-cell now — no offset centering */
+		transform: none;
+		width: 100%;
 	}
 
 	#keypad {

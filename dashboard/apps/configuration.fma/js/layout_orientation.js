@@ -98,7 +98,9 @@
       // orientation remap rewrites its labels.
       var dir = $btn.data('dir');
       $btn.find('.glyph-shape').css('fill', DIR_COLOR[dir]);
-      $btn.find('.glyph-label').text(dirToAxis(dir) || '');
+      var labelAxis = dirToAxis(dir);
+      // "X+" -> "X +" to match the spaced labels in the markup
+      $btn.find('.glyph-label').text(labelAxis ? labelAxis.charAt(0) + ' ' + labelAxis.charAt(1) : '');
     }
 
     function repaintAll() {

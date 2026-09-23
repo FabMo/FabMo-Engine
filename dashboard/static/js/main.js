@@ -1342,8 +1342,12 @@ function getManualMaxSpeed(move) {
             case "z_slow":
                 return sbp.jogz_speed;
             case "a":
+            case "a_fast":
+            case "a_slow":
                 return sbp.joga_speed;
             case "b":
+            case "b_fast":
+            case "b_slow":
                 return sbp.jogb_speed;
             case "c":
                 return sbp.jogc_speed;
@@ -2156,6 +2160,16 @@ function setupKeypad() {
             dashboard.engine.manualStart("z", move.dir * 60.0 * manualSpeedFor(move, engine.config.machine.manual.z_fast_speed));
         } else if (move.axis === "z_slow") {
             dashboard.engine.manualStart("z", move.dir * 60.0 * manualSpeedFor(move, engine.config.machine.manual.z_slow_speed));
+        } else if (move.axis === "a_fast") {
+            // A/B have no dedicated manual speeds: fast = the axis jog
+            // (rapid) speed, slow = its normal move speed
+            dashboard.engine.manualStart("a", move.dir * 60.0 * manualSpeedFor(move, engine.config.opensbp.joga_speed));
+        } else if (move.axis === "a_slow") {
+            dashboard.engine.manualStart("a", move.dir * 60.0 * manualSpeedFor(move, engine.config.opensbp.movea_speed));
+        } else if (move.axis === "b_fast") {
+            dashboard.engine.manualStart("b", move.dir * 60.0 * manualSpeedFor(move, engine.config.opensbp.jogb_speed));
+        } else if (move.axis === "b_slow") {
+            dashboard.engine.manualStart("b", move.dir * 60.0 * manualSpeedFor(move, engine.config.opensbp.moveb_speed));
         } else if (move) {
             dashboard.engine.manualStart(move.axis, move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1));
         }
@@ -2433,8 +2447,9 @@ $(document).on("keydown", function (e) {
     } else if (e.key === "k" && e.altKey) {
         // changed to alt but still not very useful, only working outside iframe
         setUpManual();
-        // toggle "Fixed" moves
-    } else if (e.key === "f") {
+        // toggle "Fixed" moves — "d" kept as an alias for SB3 muscle
+        // memory (Fixed "D"istance)
+    } else if (e.key === "f" || e.key === "d") {
         $(".fixed-switch").trigger("click");
         // increase or decrease speed
     } else if ((e.key === "," || e.key === ".") && e.altKey) {
