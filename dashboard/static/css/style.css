@@ -480,7 +480,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 
 #icon_DROin-out {
     height: 25px;
-    opacity: 90%;
+    opacity: 60%;
 }
 
 .small-axes {
@@ -561,6 +561,17 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 .machine-pos-large span {
 	float: right;
 }
+/* Unit marker right of the position number ("in"/"mm" via .units on X/Y/Z,
+   degree kludge via .*-rotunits on A/B/C). Both spans float right, so the
+   unit comes FIRST in the DOM to land rightmost; fixed width keeps the
+   numbers column-aligned across all six axis rows. */
+.machine-pos-large .dro-unit {
+	width: 1.5rem;
+	margin-top: 3px;
+	font-size: 0.85rem;
+	text-align: right;
+	color: #d9d9d9;
+}
 
 .not-selectable {
 	-webkit-user-select: none;
@@ -621,20 +632,18 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
     font-size: 10pt;
     font-weight: bold;
 	justify-content: center;
-	color: #313131;
+	color: #262626;
 	cursor: default;
-	background-color:#777777;
+	background-color: #d3d3d3;
 	margin-left: 8px;
 	margin-right: 8px;
 	display: flex;
-}		
-.dro-addon-outputs {
-	justify-content: center;
-	display: flex;
 }
+/* Top-bar output lamps are click-to-toggle; brighten on hover so the
+   feedback works over every lamp state color */
 .toggle-out:hover {
-	background-color: rgb(105, 125, 64);
-	cursor: pointer; 
+	cursor: pointer;
+	filter: brightness(1.4);
 }
 .dro-addon-value {
 	justify-content: center;
@@ -670,6 +679,13 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 input#override {
 	width: 35%;
 	margin-left: 5px;
+}
+/* White text for the MOVE SPEED section: feedrate value, in/sec + Override %
+   labels, and the override input */
+#dro-addon-2 .sub-label,
+#fr-inp,
+input#override {
+	color: #fff;
 }
 .dro-addon-value input {
 	width:50%;
@@ -753,53 +769,83 @@ input#override {
 /**       Input / Output Display         ## DEAL WITH varied Input DEFINITIONS in Display **/
 
 .input, .output, .inoutLabel, .inOutSwitch {
-	/* width: 1rem; */
 	display: inline-block;
-	margin-right: 4px;
-	letter-spacing: -1px;
-	/* margin-right: 10px;  */
 	text-align: center;
-	/* border: 0.5px solid transparent; */
 }
 
-.input.off, .output.off {
-	color: #bbb;
+.inoutLabel, .inOutSwitch {
+	margin-right: 4px;
+	color: #d9d9d9;
+}
+
+/* Keeps the Inputs:/Outputs: label and its lamp strip together as one unit */
+.io-group {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+/* SB3-style "lamp" indicators: fixed-width rectangles sized for two digits;
+   off = dark lamp with bright numeral, on = illuminated lamp with dark numeral */
+.input, .output {
+	width: 16px;
+	height: 14px;
+	line-height: 14px;
+	font-size: 11px;
+	font-weight: bold;
+	letter-spacing: -0.5px;
+	vertical-align: middle;
+}
+
+.in1, .out1 {
+	border-radius: 3px 0 0 3px;
+}
+
+.in12, .out12 {
+	border-radius: 0 3px 3px 0;
+	margin-right: 6px;
+}
+
+.input.off {
+	background-color: #1c4a1c;
+	color: #8aff8a;
+}
+
+/* Off lamp uses the big-DRO axis background blue (.machine-pos-large) */
+.output.off {
+	background-color: #323564;
+	color: #9be8ff;
 }
 
 .input.disabled, .output.disabled {
-	color: rgb(98, 83, 83);
+	background-color: #453c3c;
+	color: #8d7c7c;
 }
 
 .input.on {
-	/* border: 0.5px solid #32B433; */
-	/* background-color: #eee; */
-	color: #bcebfe;      /*#ffe217; */
-	font-weight: bold;
+	background-color: #3ce43c;
+	color: #0c380c;
 }
 
 .input.stopOn {
-	/* border: 0.5px solid #32B433; */
-	/* background-color: #eee; */
-	color: #ff5335;
+	background-color: #ff5335;
+	color: #4a0b00;
 	font-weight: 900;
 }
 
 .input.interlockOn {
-	/* border: 0.5px solid #32B433; */
-	/* background-color: #eee; */
-	color: #ffe217;
-	font-weight: bold;
+	background-color: #ffe217;
+	color: #4a3f00;
 }
 
 .input.driverFaultOn {
-	color: #ff3333;
+	background-color: #ff3333;
+	color: #ededed;
 	font-weight: 900;
 }
 
 .input.limitOn {
-	/* border: 0.5px solid #32B433; */
-	/* background-color: #eee; */
-	color: #fca1e8;
+	background-color: #fca1e8;
+	color: #58104b;
 	font-weight: 900;
 }
 
@@ -834,10 +880,8 @@ input#override {
 }
 
 .output.on {
-	/* border: 0.5px solid #32B433; */
-	/* background-color: #eee; */
-	color: #affb1b;
-	font-weight: bold;
+	background-color: #3cdcf8;
+	color: #323564;
 }
 
 #tool-name-container {

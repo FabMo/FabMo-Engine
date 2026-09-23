@@ -141,52 +141,14 @@
             <div class="not-selectable">
               <div class="inp-alert" id="inp-stop" data-i18n="status.stop">STOP </div>
               <div class="inp-alert" id="inp-limit" data-i18n="status.limit">LIMIT </div>
-              <div class="space input"> </div>
-              <div class="inoutLabel " data-i18n="status.input_label">In:</div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="in1 input"> 1 </div>
-              <div class="in2 input"> 2 </div>
-              <div class="in3 input"> 3 </div>
-              <div class="in4 input"> 4 </div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="in5 input"> 5 </div>
-              <div class="in6 input"> 6 </div>
-              <div class="in7 input"> 7 </div>
-              <div class="in8 input"> 8 </div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="in9 input"> 9 </div>
-              <div class="in10 input"> 10 </div>
-              <div class="in11 input"> 11 </div>
-              <div class="in12 input"> 12 </div>
-              <div class="space input"> </div>
+              <div class="io-group"><div class="inoutLabel" data-i18n="status.input_label">Inputs:</div>
+              <div class="in1 input">1</div><div class="in2 input">2</div><div class="in3 input">3</div><div class="in4 input">4</div><div class="in5 input">5</div><div class="in6 input">6</div><div class="in7 input">7</div><div class="in8 input">8</div><div class="in9 input">9</div><div class="in10 input">10</div><div class="in11 input">11</div><div class="in12 input">12</div></div>
             </div>
             <div class="not-selectable">
-              <div class="space input"> </div>
               <div class="inp-alert" id="inp-interlock" data-i18n="status.interlock">INTERLOCK </div>
               <div class="inp-alert" id="inp-driverFault" data-i18n="status.drive_fault">DRIVE FAULT </div>
-              <div class="inoutLabel" data-i18n="status.output_label">Out:</div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="out1 output off"> 1 </div>
-              <div class="out2 output off"> 2 </div>
-              <div class="out3 output off"> 3 </div>
-              <div class="out4 output off"> 4 </div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="out5 output off"> 5 </div>
-              <div class="out6 output off"> 6 </div>
-              <div class="out7 output off"> 7 </div>
-              <div class="out8 output off"> 8 </div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="out9 output off"> 9 </div>
-              <div class="out10 output off"> 10 </div>
-              <div class="out11 output off"> 11 </div>
-              <div class="out12 output off"> 12 </div>
-              <div class="space input"> </div>
+              <div class="io-group" data-i18n-title="status.dro_outputs_tooltip" title="Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad."><div class="inoutLabel" data-i18n="status.output_label">Outputs:</div>
+              <div class="out1 output toggle-out off">1</div><div class="out2 output toggle-out off">2</div><div class="out3 output toggle-out off">3</div><div class="out4 output toggle-out off">4</div><div class="out5 output toggle-out off">5</div><div class="out6 output toggle-out off">6</div><div class="out7 output toggle-out off">7</div><div class="out8 output toggle-out off">8</div><div class="out9 output toggle-out off">9</div><div class="out10 output toggle-out off">10</div><div class="out11 output toggle-out off">11</div><div class="out12 output toggle-out off">12</div></div>
             </div>
           </section>
         </nav>
@@ -233,37 +195,15 @@
         <!-- ********** LARGE POSITION DRO slide-out  ********** -->
       <aside class="DRO" id="right-menu">
           <div class="dro-dropdown not-selectable">
-              <div class="xaxis machine-pos-large" ><label>X : <span class="posx">X.XXX</span></label></div>
-              <div class="yaxis machine-pos-large" ><label>Y : <span class="posy">Y.YYY</span></label></div>
-              <div class="zaxis machine-pos-large" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
-              <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
-              <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
-              <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div>
+              <div class="xaxis machine-pos-large" ><label>X : <span class="dro-unit units"></span><span class="posx">X.XXX</span></label></div>
+              <div class="yaxis machine-pos-large" ><label>Y : <span class="dro-unit units"></span><span class="posy">Y.YYY</span></label></div>
+              <div class="zaxis machine-pos-large" ><label>Z : <span class="dro-unit units"></span><span class="posz">Z.ZZZ</span></label></div>
+              <div class="aaxis machine-pos-large" ><label>A : <span class="dro-unit a-rotunits"></span><span class="posa">A.AAA</span></label></div>
+              <div class="baxis machine-pos-large" ><label>B : <span class="dro-unit b-rotunits"></span><span class="posb">B.BBB</span></label></div>
+              <div class="caxis machine-pos-large" ><label>C : <span class="dro-unit c-rotunits"></span><span class="posc">C.CCC</span></label></div>
           </div>
 
           <div class="dro-addons fabmo-status">
-              <div class="dro-addon" id="dro-addon-1">
-                  <div class="dro-addon-spacer-row"></div>
-                  <div class="dro-addon-label" data-i18n-title="status.dro_outputs_tooltip" title="Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad." data-i18n="status.dro_outputs_label"> OUTPUTS (Toggle) </div>
-                  <div class="dro-addon-outputs">
-                    <div class="out1 output toggle-out off" id="spindle-1"> 1 </div>
-                    <div class="out2 output toggle-out off"> 2 </div>
-                    <div class="out3 output toggle-out off"> 3 </div>
-                    <div class="out4 output toggle-out off"> 4 </div>
-                    <div class="space input">&nbsp</div>
-                    <div class="space input">&nbsp</div>
-                    <div class="out5 output toggle-out off"> 5 </div>
-                    <div class="out6 output toggle-out off"> 6 </div>
-                    <div class="out7 output toggle-out off"> 7 </div>
-                    <div class="out8 output toggle-out off"> 8 </div>
-                    <div class="space input">&nbsp</div>
-                    <div class="space input">&nbsp</div>
-                    <div class="out9 output toggle-out off"> 9 </div>
-                    <div class="out10 output toggle-out off"> 10 </div>
-                    <div class="out11 output toggle-out off"> 11 </div>
-                    <div class="out12 output toggle-out off"> 12 </div>
-                  </div>  
-              </div>
               <div class="dro-addon" id="dro-addon-2">
                 <div class="dro-addon-spacer-row""></div>
                 <div class="dro-addon-label"> <span data-i18n="status.dro_move_speed_label">MOVE SPEED  (Feedrate)</span>  <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 26px; top:0px">i<span class="tooltiptext" data-i18n-html="status.dro_move_speed_tooltip">

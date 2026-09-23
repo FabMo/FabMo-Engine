@@ -330,7 +330,7 @@ const { last } = require("underscore");
             }
         } else {
             var speed = 0;
-            $("#fr-inp").css("color", "black");
+            $("#fr-inp").css("color", "white");
             speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
             if (status.unit === "mm") {
                 $(".feedrate-unit").text("mm/sec");
@@ -347,7 +347,7 @@ const { last } = require("underscore");
             $("#override").removeClass("blinking-text");
             $("#override").val(100);
             cur_req_fro = 100;
-            $("#override").css("color", "gray");
+            $("#override").css("color", "#cfcfcf");
         } else {
             var cur_fro = (status.fro * 100).toFixed(0);
             // If the user isn't actively editing the field, snap its value to
@@ -371,10 +371,10 @@ const { last } = require("underscore");
                 $("#override").css("color", "yellow");
                 if (!isRapid) $("#fr-inp").css("color", "yellow");
             } else if (cur_req_fro < 100) {
-                $("#override").css("color", "blue");
-                if (!isRapid) $("#fr-inp").css("color", "blue");
+                $("#override").css("color", "#6db3ff");
+                if (!isRapid) $("#fr-inp").css("color", "#6db3ff");
             } else {
-                $("#override").css("color", "gray");
+                $("#override").css("color", "#cfcfcf");
             }
         }
 
