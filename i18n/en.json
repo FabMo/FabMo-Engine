@@ -1286,6 +1286,10 @@
             "title": "Console",
             "placeholder": "SBP command… (MX,2 / JZ,1 / C3)"
         },
+        "fillin": {
+            "hint": "empty fields are skipped",
+            "run": "Run Command"
+        },
         "shortcuts": {
             "title": "Apps",
             "settings_title": "Add or remove shortcuts",

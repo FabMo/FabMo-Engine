@@ -810,3 +810,101 @@ body.ts-editing .ts-card { outline: 1px dashed #94b8d4; outline-offset: 2px; }
     border-radius: 4px;
     color: #2c3e50;
 }
+
+/* ---- Console fill-in sheet (SB3/SB4-style parameter dialog) ----
+   Styled as the classic legal pad: pale yellow paper, brown leather
+   binding across the top, red vertical margin rule, blue line rules
+   under each field. Rules are repeated with a body[class*="theme-"]
+   prefix so they outrank the theme bridge's .ts-modal recolor and the
+   pad looks the same in every theme. */
+.ts-fillin-modal,
+body[class*="theme-"] .ts-modal.ts-fillin-modal {
+    width: min(460px, 94vw);
+    background: #fdf6d0;
+    color: #2c3e50;
+    overflow: hidden; /* clip the leather binding to the modal's corners */
+}
+/* Leather binding */
+.ts-fillin-modal .ts-modal-header,
+body[class*="theme-"] .ts-fillin-modal .ts-modal-header {
+    background: linear-gradient(#7d5334, #58371d);
+    color: #f5e9d0;
+    padding: 12px 16px 10px;
+    border-bottom: 2px dashed rgba(245, 233, 208, 0.4); /* stitching */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+}
+.ts-fillin-modal .ts-modal-header .ts-note-inline {
+    color: rgba(245, 233, 208, 0.75);
+}
+/* Paper area with the red margin rule */
+.ts-fillin-modal .ts-modal-body {
+    position: relative;
+    padding: 10px 16px 0 46px;
+}
+.ts-fillin-modal .ts-modal-body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 28px;
+    width: 3px;
+    border-left: 1px solid rgba(192, 57, 43, 0.6);
+    border-right: 1px solid rgba(192, 57, 43, 0.6);
+    pointer-events: none;
+}
+.ts-fillin-params {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0;
+    align-items: stretch;
+    margin: 0 0 10px;
+    max-height: 52vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+/* Blue line rule under each field — on both cells so it runs unbroken
+   from the red margin to the paper's edge. */
+.ts-fillin-params label {
+    display: flex;
+    align-items: center;
+    font-size: 0.88em;
+    color: #2c3e50;
+    cursor: help;
+    padding: 6px 12px 5px 0;
+    border-bottom: 1px solid #a9c6e8;
+}
+.ts-fillin-params label .ts-fillin-req { color: #c0392b; font-weight: bold; }
+.ts-fillin-cell {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #a9c6e8;
+}
+/* Entries are written ON the line: no box, transparent over the paper */
+.ts-fillin-params input {
+    width: 7em;
+    height: 1.9em;
+    font-size: 1em;
+    font-family: 'Courier New', Courier, monospace;
+    padding: 1px 4px;
+    border: none;
+    border-radius: 3px;
+    color: #1a3a8f; /* ballpoint blue */
+    background: transparent;
+    box-sizing: border-box;
+}
+.ts-fillin-params input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.55);
+}
+.ts-fillin-preview {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+    color: #327c7e;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
