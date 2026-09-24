@@ -1266,7 +1266,9 @@ function openFillin(cmd, entry) {
             .attr("id", "fillin-p" + i)
             .attr("title", tip)
             .val(p.default !== undefined && p.default !== null ? String(p.default) : "");
-        $list.append($label, $input);
+        // The input sits inside a cell so the blue line rule runs the
+        // full row width, not just under the 7em input.
+        $list.append($label, $('<div class="ts-fillin-cell"></div>').append($input));
     });
     fillinPreview();
     $("#fillin-modal").css("display", "flex");
