@@ -811,12 +811,19 @@ body.ts-editing .ts-card { outline: 1px dashed #94b8d4; outline-offset: 2px; }
     color: #2c3e50;
 }
 
-/* ---- Console fill-in sheet (SB3/SB4-style parameter dialog) ---- */
-.ts-fillin-modal { width: min(460px, 94vw); }
+/* ---- Console fill-in sheet (SB3/SB4-style parameter dialog) ----
+   Pale yellow like the classic SB3 fill-in sheets; the rule is repeated
+   with a body[class*="theme-"] prefix so it outranks the theme bridge's
+   .ts-modal recolor and stays yellow in every theme. */
+.ts-fillin-modal,
+body[class*="theme-"] .ts-modal.ts-fillin-modal {
+    width: min(460px, 94vw);
+    background: #fdf6d0;
+}
 .ts-fillin-params {
     display: grid;
-    grid-template-columns: 1fr 7em;
-    gap: 5px 10px;
+    grid-template-columns: max-content 1fr;
+    gap: 5px 12px;
     align-items: center;
     margin: 4px 0 10px;
     max-height: 52vh;
@@ -826,26 +833,27 @@ body.ts-editing .ts-card { outline: 1px dashed #94b8d4; outline-offset: 2px; }
 .ts-fillin-params label {
     font-size: 0.88em;
     color: #2c3e50;
-    text-align: right;
     cursor: help;
 }
 .ts-fillin-params label .ts-fillin-req { color: #c0392b; font-weight: bold; }
 .ts-fillin-params input {
-    width: 100%;
+    width: 7em;
+    justify-self: start;
     height: 1.9em;
     font-size: 1em;
     font-family: 'Courier New', Courier, monospace;
     padding: 1px 6px;
-    border: 1px solid #d5dbdb;
+    border: 1px solid #d8cf9e;
     border-radius: 4px;
     color: #2c3e50;
+    background: #fff;
     box-sizing: border-box;
 }
 .ts-fillin-preview {
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.9em;
     color: #327c7e;
-    background: #f4f6f6;
+    background: rgba(0, 0, 0, 0.06);
     border-radius: 4px;
     padding: 4px 8px;
     margin-bottom: 4px;
