@@ -1189,6 +1189,99 @@ function consoleTrackRun(status) {
 }
 
 // ---------------------------------------------------------------------------
+// Console fill-in sheets (SB3/SB4-style). A bare two-letter command that
+// takes parameters (VA, VC, MS, JS, ...) opens a dialog of its parameters
+// instead of running immediately — the same behavior as the SB4 console.
+// Command definitions come from assets/sb3_commands.json (SB4's annotated
+// copy of the engine's command table).
+
+var fillinCmds = null;
+$.getJSON("assets/sb3_commands.json", function (data) {
+    fillinCmds = data;
+});
+
+// Commands SB4 never opens a sheet for even though they match the pattern.
+var FILLIN_EXCLUDE = { CN: true, "C#": true };
+
+// SB4 appends SV so value/speed changes made from the console persist —
+// each console command runs like a one-line file, so the values would
+// otherwise revert when the next file runs.
+var PERSIST_WITH_SV = { VN: true, VR: true, VS: true, MS: true };
+
+function fillinEntryFor(cmd) {
+    if (!fillinCmds) return null;
+    if (!/^[A-Z][A-Z0-9#]$/.test(cmd)) return null;
+    if (FILLIN_EXCLUDE[cmd]) return null;
+    var entry = fillinCmds[cmd];
+    return entry && entry.params && entry.params.length ? entry : null;
+}
+
+// Echo + run a console command (typed directly or assembled by the sheet).
+function consoleRun(cmd) {
+    consoleLog("> " + cmd);
+    var mnemonic = cmd.substring(0, 2).toUpperCase();
+    var lines = PERSIST_WITH_SV[mnemonic] ? cmd + "\nSV\n" : cmd + "\n";
+    fabmo.runSBP(lines, function (err) {
+        if (err) consoleLog(String(err.message || err), "ts-console-err");
+    });
+}
+
+var fillinCmd = null; // command mnemonic while the sheet is open
+
+// Assemble "VA, v1, v2, ..." from the sheet fields. Interior empties are
+// kept as blank slots (OpenSBP skips them); trailing empties are dropped.
+function fillinAssemble() {
+    var vals = [];
+    $("#fillin-params input").each(function () {
+        vals.push($(this).val().trim());
+    });
+    while (vals.length && vals[vals.length - 1] === "") vals.pop();
+    return vals.length ? fillinCmd + ", " + vals.join(", ") : fillinCmd;
+}
+
+function fillinPreview() {
+    $("#fillin-preview").text(fillinAssemble());
+}
+
+function openFillin(cmd, entry) {
+    fillinCmd = cmd;
+    $("#fillin-title").text(cmd + ": " + (entry.name || ""));
+    var $list = $("#fillin-params").empty();
+    entry.params.forEach(function (p, i) {
+        // Tooltip: the description, plus the value list for choice params.
+        var tip = p.desc || "";
+        if (p.opts && p.opts.length) {
+            p.opts.forEach(function (o) {
+                tip += "\n" + o.value + " = " + o.desc;
+            });
+        } else if (p.type === "ck") {
+            tip += "\n0 = No\n1 = Yes";
+        }
+        var $label = $("<label></label>")
+            .attr("for", "fillin-p" + i)
+            .attr("title", tip)
+            .text(p.name || "");
+        if (p.disptype === "2") $label.append('<span class="ts-fillin-req">*</span>');
+        var $input = $('<input type="text" autocomplete="off" spellcheck="false">')
+            .attr("id", "fillin-p" + i)
+            .attr("title", tip)
+            .val(p.default !== undefined && p.default !== null ? String(p.default) : "");
+        $list.append($label, $input);
+    });
+    fillinPreview();
+    $("#fillin-modal").css("display", "flex");
+    setTimeout(function () {
+        $("#fillin-params input").first().focus().select();
+    }, 0);
+}
+
+function closeFillin() {
+    $("#fillin-modal").css("display", "none");
+    fillinCmd = null;
+    $("#console-input").focus();
+}
+
+// ---------------------------------------------------------------------------
 // Variable access
 
 function atcVar(name, dflt) {
@@ -2836,10 +2929,14 @@ $(document).ready(function () {
             if (cmd !== cmdHistory[cmdHistory.length - 1]) cmdHistory.push(cmd);
             cmdHistoryIdx = -1;
             $in.val("");
-            consoleLog("> " + cmd);
-            fabmo.runSBP(cmd + "\n", function (err) {
-                if (err) consoleLog(String(err.message || err), "ts-console-err");
-            });
+            // A bare two-letter command with parameters opens its fill-in
+            // sheet instead of running immediately (SB3/SB4 behavior).
+            var entry = fillinEntryFor(cmd.toUpperCase());
+            if (entry) {
+                openFillin(cmd.toUpperCase(), entry);
+            } else {
+                consoleRun(cmd);
+            }
         } else if (e.key === "ArrowUp") {
             if (!cmdHistory.length) return;
             e.preventDefault();
@@ -2857,6 +2954,28 @@ $(document).ready(function () {
                 $in.val(cmdHistory[cmdHistoryIdx]);
             }
         }
+    });
+
+    // ---- Console fill-in sheet events ----
+
+    $("#fillin-params").on("input", "input", fillinPreview);
+    $("#fillin-params").on("keydown", "input", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            $("#btn-fillin-run").click();
+        } else if (e.key === "Escape") {
+            closeFillin();
+        }
+    });
+    $("#btn-fillin-run").on("click", function () {
+        if (!fillinCmd) return;
+        var cmd = fillinAssemble();
+        closeFillin();
+        consoleRun(cmd);
+    });
+    $("#btn-fillin-cancel").on("click", closeFillin);
+    $("#fillin-modal").on("click", function (e) {
+        if (e.target === this) closeFillin();
     });
 
     // ---- App settings modal (theme picker) ----

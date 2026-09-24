@@ -526,6 +526,27 @@
         </div>
     </div>
 
+    <!-- Command fill-in sheet: opened by the Console when a bare two-letter
+         command that takes parameters is entered (VA, VC, MS, JS, ...) —
+         the SB3/SB4 fill-in behavior. Rows are built by app.js from
+         assets/sb3_commands.json. -->
+    <div class="ts-modal-backdrop" id="fillin-modal" style="display:none;">
+        <div class="ts-modal ts-fillin-modal">
+            <div class="ts-modal-header">
+                <span id="fillin-title"></span>
+                <span class="ts-note-inline" data-i18n="tool_status.fillin.hint">empty fields are skipped</span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-fillin-params" id="fillin-params"></div>
+                <div class="ts-fillin-preview"><code id="fillin-preview"></code></div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-fillin-cancel" data-i18n="tool_status.common.cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-fillin-run" data-i18n="tool_status.fillin.run">Run Command</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../../js/libs/jquery.min.js"></script>
     <script src="../../js/libs/fabmo.js"></script>
     <script src="js/i18n.js"></script>
