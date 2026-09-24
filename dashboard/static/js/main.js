@@ -2380,11 +2380,20 @@ function setupSimpleClickOutside() {
         }
     });
 
-    // For iframe clicks (detected as window blur)
+    // For iframe clicks (detected as window blur). Only a blur that
+    // lands focus on an iframe is a click into a dashboard app — the
+    // window also blurs when a tablet's on-screen keyboard is shown or
+    // hidden, or when the user switches to another application, and
+    // neither of those should close the keypad.
     window.addEventListener("blur", function () {
         if ($(modalKeyPad).is(":visible") && last_state_seen === "manual") {
-            console.log("Window blur detected - closing modal");
-            setTimeout(checkAndCloseModal, 50);
+            setTimeout(function () {
+                var ae = document.activeElement;
+                if (ae && ae.tagName === "IFRAME") {
+                    console.log("Focus moved into app iframe - closing modal");
+                    checkAndCloseModal();
+                }
+            }, 50);
         }
     });
 
