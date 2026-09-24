@@ -35,3 +35,5 @@ dashboard/build/*
 install_token
 runtime/opensbp/test.sbp
 package-lock.json
+__pycache__/
+*.pyc
