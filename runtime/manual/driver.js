@@ -811,19 +811,39 @@ ManualDriver.prototype.set = function (pos) {
 // is defined by the nudge increment relative to work zero — e.g. a 0.100"
 // nudge from 26.241" lands on 26.300", then 26.400", etc. Already on grid
 // counts as off — advance by one full increment to avoid no-ops.
+//
+// "On grid" must be judged with a real tolerance, not float epsilon:
+// offsets built from non-decimal constants (metric plate thicknesses,
+// gear-ratio steps/unit) leave work coordinates microscopically off the
+// decimal grid. A position a few millionths short of a grid line would
+// otherwise snap to a hair-thin catch-up move that formats as
+// "G1 Y0.00000" — a zero-length move the machine never executes, so the
+// reported position never changes and every subsequent tap recomputes
+// the same zero move: the button goes permanently dead.
 function snapNudgeDistance(currentPos, distance, increment) {
     if (!increment || distance === 0) return distance;
-    var EPSILON = 1e-6;
+    // Within this distance of a grid line counts as ON it (advance a
+    // full increment past it). Capped at 25% of the increment so coarse
+    // tolerances never eat a meaningful fraction of a fine step.
+    var tolerance = Math.min(1e-4, 0.25 * increment);
     var posInGrid = currentPos / increment;
     var line;
     if (distance > 0) {
         line = Math.ceil(posInGrid);
-        if (Math.abs(line - posInGrid) < EPSILON) line += 1;
+        if ((line - posInGrid) * increment < tolerance) line += 1;
     } else {
         line = Math.floor(posInGrid);
-        if (Math.abs(line - posInGrid) < EPSILON) line -= 1;
+        if ((posInGrid - line) * increment < tolerance) line -= 1;
     }
-    return line * increment - currentPos;
+    var snapped = line * increment - currentPos;
+    // Belt and braces: the emitted G-code is formatted with toFixed(5),
+    // so anything under 5e-6 becomes a zero-length move — skip to the
+    // next grid line rather than emit a dead nudge.
+    if (Math.abs(snapped) < 5e-6) {
+        line += distance > 0 ? 1 : -1;
+        snapped = line * increment - currentPos;
+    }
+    return snapped;
 }
 
 // Returns the number of nudges
@@ -945,17 +965,15 @@ ManualDriver.prototype._handleNudges = function () {
                                 axis +
                                 move.distance.toFixed(5) +
                                 " " +
-                                move.second_axis.toUpperCase +
-                                move.second_distance.toFixed(5) +
-                                " F" +
-                                move.speed.toFixed(3)
+                                second_axis +
+                                move.second_distance.toFixed(5)
                         );
                     }
                 } else {
                     if (move.speed) {
                         moves.push("G1 " + axis + move.distance.toFixed(5) + " F" + move.speed.toFixed(3));
                     } else {
-                        moves.push("G0 " + axis + move.distance.toFixed(5) + " F" + move.speed.toFixed(3));
+                        moves.push("G0 " + axis + move.distance.toFixed(5));
                     }
                 }
                 moves.forEach(
