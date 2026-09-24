@@ -1,10 +1,14 @@
-// Layout tab — manual control orientation. User can either click a
-// machine-motion arrow then a keypad button, OR drag a keypad button
-// onto a machine-motion arrow. Both paths feed the same assignment
-// logic. The assignment treats the user's intent as a coherent rotation
-// around the machine, so picking X+ = ↑ pulls X- to ↓ and rotates the Y
-// axis to fill the freed horizontal slots — matches how operators think
-// about "where I'm standing relative to the machine".
+// Layout tab — manual control orientation. Primary interaction: an
+// operator figure stands on one side of the machine diagram; turn
+// arrows walk it around the table in 90° steps and the keypad mapping
+// follows so keypad-up is always "away from the operator". Because the
+// mapping is constrained to pure rotations, the operator's side and the
+// stored mapping are one-to-one — no extra config key is needed.
+// Manual fine-tuning remains: click a machine-motion arrow then a
+// keypad button, OR drag a keypad button onto a machine-motion arrow.
+// Both paths feed the same assignment logic, which treats the user's
+// intent as a coherent rotation around the machine — so a manual
+// assignment also visibly walks the operator to the matching side.
 //
 // Persisted to engine config at machine.manual.layout_mapping. Live
 // dashboard keypad picks up changes via a localStorage ping (storage
@@ -46,6 +50,40 @@
     return (toI - fromI + 4) % 4;
   }
 
+  // Operator sides in clockwise walking order (bottom → their right is
+  // the table's right edge, and so on). Index s corresponds to rotating
+  // the default mapping by q = (4 - s) % 4 quarter-turns CCW: standing
+  // at the bottom is the default mapping, and each clockwise step of
+  // the operator rotates the keypad mapping one quarter-turn CW.
+  var SIDES = ['bottom', 'right', 'top', 'left'];
+
+  // Figure placement per side, in machine-layer coordinates (the same
+  // frame as the table art). On every side the operator stands offset
+  // from mid-edge so that the side's machine-motion pentagon sits to
+  // their RIGHT — i.e. they stand toward the origin end of the edge
+  // from their own perspective. r orients the figure to face the table
+  // (drawn facing up).
+  var SIDE_POSE = {
+    bottom: { x: 142, y: 345, r: 0 },
+    right:  { x: 482, y: 295, r: -90 },
+    top:    { x: 378, y: 25,  r: 180 },
+    left:   { x: 55,  y: 68,  r: 90 }
+  };
+
+  function mappingForSide(side) {
+    var q = (4 - SIDES.indexOf(side)) % 4;
+    var m = {};
+    Object.keys(DEFAULT_MAPPING).forEach(function (a) {
+      m[a] = rotateDir(DEFAULT_MAPPING[a], q);
+    });
+    return m;
+  }
+
+  function sideFromMapping(mapping) {
+    var q = rotationBetween(DEFAULT_MAPPING['X+'], mapping['X+']);
+    return SIDES[(4 - q) % 4];
+  }
+
   var fabmo = null;
   function getFabmo() {
     if (fabmo) return fabmo;
@@ -67,6 +105,15 @@
     var mapping = Object.assign({}, DEFAULT_MAPPING);
     var armed = null;
     var originCorner = 'bl';
+    var operatorSide = sideFromMapping(mapping);
+
+    function applyOperatorFigure() {
+      var pose = SIDE_POSE[operatorSide];
+      var $fig = $tab.find('.operator-figure');
+      if (!$fig.length || !pose) return;
+      $fig.attr('transform',
+        'translate(' + pose.x + ' ' + pose.y + ') rotate(' + pose.r + ')');
+    }
 
     function dirToAxis(dir) {
       var found = null;
@@ -178,6 +225,8 @@
         if (savedCorner && ['tl','tr','bl','br'].indexOf(savedCorner) >= 0) {
           originCorner = savedCorner;
         }
+        operatorSide = sideFromMapping(mapping);
+        applyOperatorFigure();
         applyOriginCornerVisual();
         repaintAll();
       });
@@ -194,10 +243,31 @@
         });
       }
       armed = null;
+      // A manual assignment is still a rotation, so it lands the
+      // operator on a definite side — walk the figure there too.
+      operatorSide = sideFromMapping(mapping);
+      applyOperatorFigure();
       setStatus(axis + window.t('config.layout.status_assigned_prefix') + dir + window.t('config.layout.status_assigned_suffix'), '#27ae60');
       repaintAll();
       persist();
     }
+
+    // ---- Operator path: turn arrows walk the figure around the table;
+    // the mapping follows so keypad-up always moves away from the
+    // operator.
+
+    $tab.on('click', '.turn-arrow', function (e) {
+      e.stopPropagation();
+      var step = ($(this).data('turn') === 'cw') ? 1 : -1;
+      var idx = (SIDES.indexOf(operatorSide) + step + 4) % 4;
+      operatorSide = SIDES[idx];
+      mapping = mappingForSide(operatorSide);
+      armed = null;
+      applyOperatorFigure();
+      repaintAll();
+      persist();
+      setStatus(window.t('config.layout.status_operator_moved'), '#27ae60');
+    });
 
     // ---- Click path: arm a motion arrow, then click a keypad button.
 
@@ -296,6 +366,7 @@
       document.addEventListener('mouseup', onUp);
     });
 
+    applyOperatorFigure();
     repaintAll();
     loadFromEngine();
   }
