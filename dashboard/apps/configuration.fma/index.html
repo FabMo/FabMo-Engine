@@ -1466,9 +1466,11 @@
           <fieldset>
             <legend data-i18n="config.layout.legend">Manual Control Orientation</legend>
             <p style="margin-bottom: 12px;" data-i18n-html="config.layout.intro">
-              Pick the corner of the table where machine <strong>0,0</strong> lives, then click each
-              <strong>machine-motion arrow</strong> to assign which keypad direction should produce
-              that motion from where you stand.
+              Place the <strong>operator figure</strong> where you plan to stand — the turn arrows walk
+              it around the machine in 90&deg; steps and the keypad remaps automatically so
+              <strong>up always moves the tool away from you</strong>. Prefer to fine-tune by hand?
+              Click a <strong>machine-motion arrow</strong>, then the keypad button that should drive it.
+              The corner dots set where machine <strong>0,0</strong> lives.
             </p>
 
             <div class="layout-orientation-container" style="display: flex; gap: 24px; align-items: flex-start;">
@@ -1478,8 +1480,13 @@
                    click handlers key off classnames, not specific coords.
                    Table is 3:2 horizontal:vertical; gantry is the narrow
                    vertical bar; spindle sits on the gantry. -->
-              <svg viewBox="0 0 520 360" class="machine-overhead"
-                   style="width: 520px; height: 360px; background: #f4f1ea; border: 1px solid #ccc;">
+              <svg viewBox="0 0 640 460" class="machine-overhead"
+                   style="width: 560px; height: 403px; background: #f4f1ea; border: 1px solid #ccc;">
+
+                <!-- All original machine art keeps its coordinates; the wrapper
+                     group re-centers it inside the enlarged canvas so the
+                     operator figure has room to stand outside the table. -->
+                <g class="machine-layer" transform="translate(60,50)">
 
                 <!-- machine table (360 x 240, 3:2 ratio) — MDF tan -->
                 <rect x="80" y="60" width="360" height="240" fill="#d4b585" stroke="#7a5a30" stroke-width="2" rx="4"/>
@@ -1558,6 +1565,39 @@
                         fill="#c0392b" stroke="#621509" stroke-width="1.5"/>
                 </g>
 
+                <!-- Operator figure: a top-down human standing outside the
+                     table edge, drawn facing "up" in local coordinates and
+                     positioned/rotated per side by layout_orientation.js.
+                     Straight arrows flank the figure and rotate with it:
+                     the arrow on the operator's left points left and walks
+                     them one side counterclockwise (to their left), the one
+                     on their right walks them clockwise (to their right). -->
+                <g class="operator-figure">
+                  <g class="operator-body" transform="scale(2)">
+                    <ellipse cx="0" cy="14" rx="15" ry="7" fill="#000" opacity="0.12"/>
+                    <ellipse cx="0" cy="2" rx="17" ry="10" fill="#455a64" stroke="#263238" stroke-width="1.5"/>
+                    <circle cx="0" cy="-3" r="7.5" fill="#e8b98a" stroke="#8d6e4f" stroke-width="1.2"/>
+                  </g>
+
+                  <g class="turn-arrow" data-turn="ccw" style="cursor: pointer;">
+                    <title>Walk one side around the machine (to your left)</title>
+                    <rect x="-92" y="-18" width="52" height="36" fill="transparent"/>
+                    <line class="turn-arrow-path" x1="-46" y1="0" x2="-72" y2="0"
+                          stroke="#1f3a6e" stroke-width="6" stroke-linecap="round"/>
+                    <polygon class="turn-arrow-head" points="-72,-9 -72,9 -88,0" fill="#1f3a6e"/>
+                  </g>
+
+                  <g class="turn-arrow" data-turn="cw" style="cursor: pointer;">
+                    <title>Walk one side around the machine (to your right)</title>
+                    <rect x="40" y="-18" width="52" height="36" fill="transparent"/>
+                    <line class="turn-arrow-path" x1="46" y1="0" x2="72" y2="0"
+                          stroke="#1f3a6e" stroke-width="6" stroke-linecap="round"/>
+                    <polygon class="turn-arrow-head" points="72,-9 72,9 88,0" fill="#1f3a6e"/>
+                  </g>
+                </g>
+
+                </g><!-- /.machine-layer -->
+
               </svg>
 
               <!-- Right side: faithful copy of the actual ShopBot manual
@@ -1633,7 +1673,7 @@
                   </div>
 
                   <div class="layout-status" style="margin-top: 12px; font-size: 13px; min-height: 1.5em; max-width: 280px;">
-                    <span class="status-text" style="color: #666;" data-i18n="config.layout.status_initial">Click a machine-motion arrow on the left.</span>
+                    <span class="status-text" style="color: #666;" data-i18n="config.layout.status_initial">Use the turn arrows to place yourself around the machine, or click a machine-motion arrow to assign by hand.</span>
                   </div>
                 </div>
 
