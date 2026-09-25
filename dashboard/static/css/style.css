@@ -1198,6 +1198,31 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     content: "\f1ec"; /* fa-calculator */
 }
 
+/* Accessibility-mode sidebar icon — FontAwesome glyph, calculator pattern. */
+#icon_a11y { background-image: none; position: relative; }
+#icon_a11y:before {
+    position: absolute;
+    font-family: 'FontAwesome';
+    font-size: 22px;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    content: "\f29a"; /* fa-universal-access */
+}
+/* lit while the mode is on */
+.icon_a11y.a11y-on:before { color: #ffd54a; }
+
+/* ---- Accessibility mode ----
+   App content is scaled by a zoom sheet injected into the app iframe
+   (a11y.js — works for user-installed apps because they are
+   same-origin). High contrast for apps is a filter on the FRAME
+   element here, so fixed-position layouts inside apps are untouched.
+   Dashboard-chrome coverage is PoC-level (menu labels); a full chrome
+   pass (top bar, DRO, keypad, modals) is the follow-on. */
+html.fabmo-a11y #app-iframe { filter: contrast(1.12); }
+html.fabmo-a11y .off-canvas-list li a { font-size: 1.1em; }
+html.fabmo-a11y .off-canvas-list li a span { font-size: 1.2em; }
+
 /* Calculator modal */
 .calc-modal-dim {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;

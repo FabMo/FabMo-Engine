@@ -23,6 +23,7 @@ var underscore = require("underscore");
 
 // Our libraries
 require("./libs/i18n.js");   // installs window.t / window.i18nReady
+var a11y = require("./a11y.js");
 var FabMoAPI = require("./libs/fabmoapi.js");
 var FabMoUI = require("./libs/fabmoui.js");
 var Keyboard = require("./libs/keyboard.js");
@@ -3120,6 +3121,15 @@ $(".icon_sign_out").on("click", function (e) {
         e.preventDefault();
         openCalculator();
     });
+
+    // Accessibility mode: toggle from the sidebar, restore stored state
+    // now so the chrome class and menu indicator are right from the start
+    // (the app iframe gets its injection on its own load event).
+    $(".icon_a11y").on("click", function (e) {
+        e.preventDefault();
+        a11y.toggle();
+    });
+    a11y.apply();
     $(".calc-close").on("click", closeCalculator);
     $(".calc-modal-dim").on("click", closeCalculator);
     $("#calc-button").on("click", calculate);
