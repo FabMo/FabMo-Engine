@@ -1219,9 +1219,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
    element here, so fixed-position layouts inside apps are untouched.
    Dashboard-chrome coverage is PoC-level (menu labels); a full chrome
    pass (top bar, DRO, keypad, modals) is the follow-on. */
-html.fabmo-a11y #app-iframe { filter: contrast(1.12); }
+/* contrast() pivots around mid-gray: light grays clip to white, dim
+   text goes darker, edges crispen. Values below ~1.2 are imperceptible
+   on FabMo's mostly-white UI. */
+html.fabmo-a11y #app-iframe { filter: contrast(1.35) saturate(1.15); }
 html.fabmo-a11y .off-canvas-list li a { font-size: 1.1em; }
-html.fabmo-a11y .off-canvas-list li a span { font-size: 1.2em; }
+html.fabmo-a11y .off-canvas-list li a span { font-size: 1.2em; font-weight: bold; }
 
 /* Calculator modal */
 .calc-modal-dim {
