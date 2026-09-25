@@ -1,0 +1,187 @@
+/* Profile Designer — compact, config-app-adjacent styling */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+    font: 13px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #2b2b33;
+    background: #f4f4f7;
+}
+#pd { display: flex; flex-direction: column; height: 100vh; }
+
+/* Header */
+.pd-header {
+    background: #313366;
+    color: #fff;
+    padding: 8px 12px 6px 12px;
+}
+.pd-title { font-size: 15px; font-weight: bold; margin-bottom: 6px; }
+.pd-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pd-meta input {
+    height: 26px;
+    padding: 2px 8px;
+    border: 1px solid #b8b8c4;
+    border-radius: 2px;
+    font-size: 13px;
+}
+#pd-name { width: 320px; }
+#pd-desc { flex: 1; min-width: 200px; }
+#pd-version { width: 80px; }
+#pd-save {
+    height: 26px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 2px;
+    background: #3ce43c;
+    color: #0c380c;
+    font-weight: bold;
+    cursor: pointer;
+}
+#pd-save:hover { background: #57f757; }
+.pd-status { min-height: 18px; font-size: 12px; padding-top: 4px; color: #cfd2ea; }
+.pd-status.ok { color: #8aff8a; }
+.pd-status.error { color: #ffb0a6; }
+.pd-status button {
+    margin-left: 8px;
+    height: 20px;
+    border: none;
+    border-radius: 2px;
+    background: #ffda29;
+    color: #4a3f00;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Tabs */
+.pd-tabs {
+    display: flex;
+    gap: 2px;
+    background: #26284f;
+    padding: 4px 8px 0 8px;
+}
+.pd-tab {
+    border: none;
+    border-radius: 3px 3px 0 0;
+    padding: 5px 14px;
+    background: #3d3f75;
+    color: #cfd2ea;
+    font-size: 13px;
+    cursor: pointer;
+}
+.pd-tab.active { background: #f4f4f7; color: #2b2b33; font-weight: bold; }
+.pd-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: #ffda29;
+    color: #4a3f00;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* Main split */
+.pd-main { display: flex; flex: 1; min-height: 0; }
+.pd-editor-pane { flex: 1.4; display: flex; flex-direction: column; min-width: 0; }
+.pd-preview-pane {
+    flex: 1;
+    min-width: 280px;
+    max-width: 480px;
+    border-left: 1px solid #d4d4de;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Editor */
+.pd-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-bottom: 1px solid #d4d4de;
+    background: #ececf1;
+}
+#pd-filter {
+    width: 260px;
+    height: 24px;
+    padding: 2px 8px;
+    border: 1px solid #b8b8c4;
+    border-radius: 2px;
+}
+.pd-file-changes { font-size: 12px; color: #666; }
+.pd-editor { flex: 1; overflow-y: auto; padding: 4px 0 40px 0; }
+
+.pd-group {
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #313366;
+    padding: 8px 8px 3px 8px;
+    cursor: pointer;
+    user-select: none;
+}
+.pd-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 8px;
+    min-height: 26px;
+}
+.pd-row:hover { background: #ececf3; }
+.pd-row.changed { background: #fff7dc; box-shadow: inset 3px 0 0 #ffda29; }
+.pd-key {
+    width: 220px;
+    min-width: 140px;
+    font-family: Consolas, Menlo, monospace;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pd-row input[type="text"], .pd-row input[type="number"] {
+    height: 22px;
+    padding: 1px 6px;
+    border: 1px solid #c4c4ce;
+    border-radius: 2px;
+    font-size: 12px;
+    width: 220px;
+}
+.pd-row input.pd-json { width: 340px; font-family: Consolas, Menlo, monospace; }
+.pd-row input.bad { border-color: #e03c2e; background: #ffe9e6; }
+.pd-reset {
+    border: none;
+    background: none;
+    color: #a06a00;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+.pd-reset:hover { color: #313366; }
+.hidden { display: none; }
+
+/* Apps tab */
+.pd-apps { padding-bottom: 40px; }
+.pd-app-row { cursor: pointer; gap: 10px; }
+.pd-empty { padding: 6px 10px; color: #777; font-style: italic; }
+
+/* Preview */
+.pd-preview-head {
+    padding: 6px 10px;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #313366;
+    border-bottom: 1px solid #d4d4de;
+    background: #ececf1;
+}
+#pd-change-total { font-weight: normal; text-transform: none; color: #666; margin-left: 6px; }
+.pd-preview {
+    flex: 1;
+    overflow: auto;
+    margin: 0;
+    padding: 10px;
+    font: 11px/1.5 Consolas, Menlo, monospace;
+    color: #2b2b33;
+}
