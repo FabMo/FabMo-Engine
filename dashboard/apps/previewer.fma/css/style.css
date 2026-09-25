@@ -240,32 +240,33 @@ body {
     box-shadow: none;
 }
 
-/* File name + current-line readout: stacked and centered in the band
-   right of the ViewCube (170px square, top-left) so they can never
-   overlap it; the long units-mismatch prefix wraps within the band
-   instead of colliding. */
-#preview .file-name {
+/* Current-line + file-name readouts: one row level with the top edge,
+   starting right after the 2D/3D/Arrange controls (which end ~150px in),
+   so nothing sits over the ViewCube face below. Line number keeps a
+   fixed slot next to the controls; the file name follows and ellipsizes
+   when space runs out. */
+#preview .top-readout {
   position: absolute;
-  top: 8px;
-  left: 185px;
+  top: 6px;
+  left: 170px;
   right: 12px;
-  text-align: center;
-  font: bold 120% var(--pv-font);
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
   z-index: 3;
   pointer-events: none;
+}
+#preview .code-line {
+  font-size: 150%;
+  white-space: nowrap;
+  flex: none;
+}
+#preview .file-name {
+  font: bold 120%/1.2 var(--pv-font);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-#preview .code-line {
-  position: absolute;
-  top: 32px;
-  left: 185px;
-  right: 12px;
-  text-align: center;
-  font-size: 150%;
-  z-index: 3;
-  pointer-events: none;
+  min-width: 0;
 }
 
 #preview .run-now {
@@ -1296,8 +1297,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   opacity: 0.35;
   pointer-events: none;
 }
-#preview.arranging .code-line,
-#preview.arranging .file-name {
+#preview.arranging .top-readout {
   display: none;
 }
 
