@@ -63,7 +63,7 @@
   .tooltip .tooltiptext {
     visibility: hidden;
     width: max-content;
-    max-width: 900px;
+    max-width: min(900px, calc(100vw - 24px));
     background-color: #bdbdbd;
     color: #fff;
     font-family: "Helvetica Neue",Helvetica,Roboto,Arial,sans-serif;
@@ -75,27 +75,30 @@
     padding-right: 10px;
     padding-bottom: 10px;
     border-radius: 6px;
-    /* Position the tooltip text */
+    /* Position the tooltip text: balloon's left edge just left of the
+       icon so it reads as attached to the (i). The arrow offset below
+       (left: 24px) is tied to this -29px: icon center lands 29px from
+       the balloon's left edge. */
     position: absolute;
     z-index: 20;
     overflow:visible;
     bottom: 125%;
     left: 50%;
-    margin-left: -60px;
+    margin-left: -29px;
     /* Fade in tooltip */
     transition: opacity 0.2s ease-in-out 0.2s, visibility 0.2s ease-in-out 0.2s;
     opacity: 0;
     visibility: hidden;
   }
   
-  /* Tooltip arrow */
+  /* Tooltip arrow — points at the icon center (29px from the balloon's
+     left edge, minus half the 10px arrow) */
   .tooltip .tooltiptext::after {
     content: "";
     position: absolute;
     font-size: .875rem;
     top: 100%;
-    left: 16%;
-    margin-left: -5px;
+    left: 24px;
     border-width: 5px;
     border-style: solid;
     border-color: #bdbdbd transparent transparent transparent;
@@ -107,7 +110,7 @@
     visibility: visible;
     display: inline-block;
     width: max-content;
-    max-width: 900px;
+    max-width: min(900px, calc(100vw - 24px));
     opacity: 1;
     transition: opacity 0.2s ease-in-out, visibility 0.2s;
   }
@@ -124,32 +127,38 @@
     bottom: auto; /* Remove the bottom property */
   }
 
-  /* Tooltip-left container */
+  /* Tooltip-left container: anchor the balloon's RIGHT edge just past
+     the icon so it grows leftward but always stays attached to the (i).
+     (The old hardcoded left:-425px detached the balloon from the icon —
+     entirely off-screen when the icon sat in a left-side column.) */
   .tooltip-left .tooltiptext {
-    left: -425px; /* Position left of the trigger element */
+    left: auto;
+    right: -10px;
+    margin-left: 0;
   }
-  /* Adjust the left property of the arrow for better alignment */
+  /* Arrow points at the icon center (19px from the balloon's right
+     edge, minus half the 10px arrow) */
   .tooltip-left .tooltiptext::after {
-    left: 90%;
+    left: auto;
+    right: 14px;
   }
 
-  /* Tooltip-below arrow */
+  /* Tooltip-below arrow — same horizontal anchoring as above/left, with
+     the arrow flipped to point upward at the icon */
   .tooltip-below .tooltiptext::after {
     content: "";
     position: absolute;
     z-index: 20;
     bottom: 100%; /* Position the arrow at the bottom of the tooltip when it is above the trigger */
     top: auto; /* Remove the top property */
-    left: 50%;
-    margin-left: -5px;
+    left: 24px;
     border-width: 5px;
     border-style: solid;
     border-color: transparent transparent #bdbdbd transparent; /* Flip the arrow to point upwards */
   }
-
-  /* Optional: Adjust the left property of the arrow for better alignment */
-  .tooltip-below .tooltiptext::after {
-    left: 20%; /* Adjust as needed for proper alignment */
+  .tooltip-below.tooltip-left .tooltiptext::after {
+    left: auto;
+    right: 14px;
   }
 
   /* Tool Tip Link */
