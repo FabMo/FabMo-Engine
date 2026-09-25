@@ -240,12 +240,15 @@ body {
     box-shadow: none;
 }
 
+/* Current-line readout: centered in the band right of the ViewCube
+   (170px square, top-left) so the two can never overlap; the long
+   units-mismatch prefix wraps within the band instead of colliding. */
 #preview .code-line {
   position: absolute;
-  top: 5px;
-  left: 15%;
-  width: 600px;
-  margin-left: -75px;
+  top: 8px;
+  left: 185px;
+  right: 12px;
+  text-align: center;
   font-size: 150%;
   z-index: 3;
   pointer-events: none;
