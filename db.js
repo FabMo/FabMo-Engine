@@ -500,7 +500,12 @@ Job.dequeue = function (callback) {
 
 // Remove all jobs in the queue
 Job.deletePending = function (callback) {
-    jobs.remove({ state: "pending" }, callback);
+    jobs.remove({ state: "pending" }, function (err, result) {
+        if (!err) {
+            notifyChange();
+        }
+        callback(err, result);
+    });
 };
 
 // The File class represents a fabrication file on disk
@@ -589,6 +594,7 @@ File.obliterate = function (file, callback) {
                         if (err) {
                             callback(err);
                         } else {
+                            notifyChange();
                             callback(null, "Obliterated" + file.filename);
                         }
                     });
