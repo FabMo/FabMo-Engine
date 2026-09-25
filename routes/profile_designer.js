@@ -50,6 +50,73 @@ var getDefaults = function (req, res, next) {
     res.json({ status: "success", data: { configs: configs, files: CONFIG_FILES } });
 };
 
+// GET /profile_designer/profiles
+// Saved profiles available for editing (the default profile is the
+// baseline, not an editable profile, so it is excluded).
+// eslint-disable-next-line no-unused-vars
+var getProfilesList = function (req, res, next) {
+    var dir = config.getDataDir("profiles");
+    var list = [];
+    try {
+        fs.readdirSync(dir).forEach(function (entry) {
+            if (entry === "default" || entry.charAt(0) === ".") return;
+            var pkgFile = path.join(dir, entry, "package.json");
+            if (!fs.existsSync(pkgFile)) return;
+            try {
+                var pkg = JSON.parse(fs.readFileSync(pkgFile, "utf8"));
+                list.push({
+                    dir: entry,
+                    name: pkg.name || entry,
+                    description: pkg.description || "",
+                    version: pkg.version || "",
+                });
+            } catch (e) {
+                log.warn("Unreadable profile package.json in " + entry + ": " + e.message);
+            }
+        });
+    } catch (e) {
+        return res.json({ status: "error", message: e.message });
+    }
+    res.json({ status: "success", data: { profiles: list } });
+};
+
+// GET /profile_designer/profile/:id
+// Load a saved profile for editing: its package info, config diffs,
+// bundled app archive names, and whether it carries macros.
+// eslint-disable-next-line no-unused-vars
+var getProfile = function (req, res, next) {
+    var id = path.basename(req.params.id || "");
+    var dir = path.join(config.getDataDir("profiles"), id);
+    if (!id || id === "default" || !fs.existsSync(path.join(dir, "package.json"))) {
+        return res.json({ status: "error", message: "No such profile: " + id });
+    }
+    var out = { dir: id, package: {}, configs: {}, apps: [], has_macros: false };
+    try {
+        out.package = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+        CONFIG_FILES.forEach(function (name) {
+            var f = path.join(dir, "config", name + ".json");
+            if (fs.existsSync(f)) {
+                try {
+                    out.configs[name] = JSON.parse(fs.readFileSync(f, "utf8"));
+                } catch (e) {
+                    log.warn("Unreadable " + f + ": " + e.message);
+                }
+            }
+        });
+        var appsDir = path.join(dir, "apps");
+        if (fs.existsSync(appsDir)) {
+            out.apps = fs.readdirSync(appsDir).filter(function (f) {
+                return f.charAt(0) !== ".";
+            });
+        }
+        var macrosDir = path.join(dir, "macros");
+        out.has_macros = fs.existsSync(macrosDir) && fs.readdirSync(macrosDir).length > 0;
+    } catch (e) {
+        return res.json({ status: "error", message: e.message });
+    }
+    res.json({ status: "success", data: out });
+};
+
 // GET /profile_designer/apps
 // User-installed apps eligible for inclusion in a profile. System apps
 // ship with the engine and are never packaged into profiles.
@@ -75,9 +142,13 @@ function slugify(name) {
 
 // POST /profile_designer/save
 // Body: { name, description, version, configs: {machine:{...}, ...},
-//         apps: [app ids], include_macros: bool, overwrite: bool }
+//         apps: [app ids], overwrite: bool,
+//         source_profile: <dirname being edited, if any>,
+//         keep_apps: [archive filenames from source to retain],
+//         macros_mode: "none" | "machine" | "keep" }
 // Writes <profiles dir>/fabmo-profile-<slug>/ with only the provided
-// (non-empty) config diffs.
+// (non-empty) config diffs. include_macros:true is accepted as a
+// legacy alias for macros_mode:"machine".
 // eslint-disable-next-line no-unused-vars
 var saveProfile = function (req, res, next) {
     var body = req.params || {};
@@ -90,7 +161,8 @@ var saveProfile = function (req, res, next) {
         return res.json({ status: "error", message: "Profile name must contain letters or numbers" });
     }
     var dirname = "fabmo-profile-" + slug;
-    var target = path.join(config.getDataDir("profiles"), dirname);
+    var profilesDir = config.getDataDir("profiles");
+    var target = path.join(profilesDir, dirname);
 
     if (fs.existsSync(target) && !body.overwrite) {
         return res.json({
@@ -100,7 +172,35 @@ var saveProfile = function (req, res, next) {
         });
     }
 
+    var macrosMode = body.macros_mode || (body.include_macros ? "machine" : "none");
+
     try {
+        // When editing an existing profile, archives/macros to be kept
+        // must be stashed before the target is emptied — the target may
+        // BE the source.
+        var keptArchives = {}; // filename -> Buffer
+        var keptMacros = null; // filename -> Buffer
+        var sourceDir = body.source_profile
+            ? path.join(profilesDir, path.basename(body.source_profile))
+            : null;
+        if (sourceDir && fs.existsSync(sourceDir)) {
+            (body.keep_apps || []).forEach(function (f) {
+                var src = path.join(sourceDir, "apps", path.basename(f));
+                if (fs.existsSync(src)) {
+                    keptArchives[path.basename(f)] = fs.readFileSync(src);
+                }
+            });
+            if (macrosMode === "keep") {
+                var srcMacros = path.join(sourceDir, "macros");
+                if (fs.existsSync(srcMacros)) {
+                    keptMacros = {};
+                    fs.readdirSync(srcMacros).forEach(function (f) {
+                        keptMacros[f] = fs.readFileSync(path.join(srcMacros, f));
+                    });
+                }
+            }
+        }
+
         fs.emptyDirSync(target);
 
         // package.json identifies the profile
@@ -126,6 +226,18 @@ var saveProfile = function (req, res, next) {
             }
         });
 
+        // Archives kept from the profile being edited (apps that may
+        // not be installed on this machine) are written back first;
+        // freshly-selected installed apps land second so a same-named
+        // installed copy wins.
+        var keptNames = Object.keys(keptArchives);
+        if (keptNames.length > 0) {
+            fs.ensureDirSync(path.join(target, "apps"));
+            keptNames.forEach(function (f) {
+                fs.writeFileSync(path.join(target, "apps", f), keptArchives[f]);
+            });
+        }
+
         // Selected apps — copy the installed archives in under a
         // readable filename (installed archives are UUID-named)
         var appIds = body.apps || [];
@@ -147,12 +259,17 @@ var saveProfile = function (req, res, next) {
             });
         }
 
-        // Optionally capture the machine's current macros
-        if (body.include_macros) {
+        // Macros: capture this machine's, keep the edited profile's, or none
+        if (macrosMode === "machine") {
             var macroDir = config.getDataDir("macros");
             if (fs.existsSync(macroDir)) {
                 fs.copySync(macroDir, path.join(target, "macros"));
             }
+        } else if (macrosMode === "keep" && keptMacros) {
+            fs.ensureDirSync(path.join(target, "macros"));
+            Object.keys(keptMacros).forEach(function (f) {
+                fs.writeFileSync(path.join(target, "macros", f), keptMacros[f]);
+            });
         }
 
         log.info("Profile Designer saved profile " + dirname + " to " + target);
@@ -182,5 +299,7 @@ var saveProfile = function (req, res, next) {
 module.exports = function (server) {
     server.get("/profile_designer/defaults", getDefaults);
     server.get("/profile_designer/apps", getEligibleApps);
+    server.get("/profile_designer/profiles", getProfilesList);
+    server.get("/profile_designer/profile/:id", getProfile);
     server.post("/profile_designer/save", saveProfile);
 };

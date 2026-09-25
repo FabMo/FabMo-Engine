@@ -16,13 +16,14 @@ body {
 }
 .pd-title { font-size: 15px; font-weight: bold; margin-bottom: 6px; }
 .pd-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.pd-meta input {
+.pd-meta input, .pd-meta select {
     height: 26px;
     padding: 2px 8px;
     border: 1px solid #b8b8c4;
     border-radius: 2px;
     font-size: 13px;
 }
+#pd-source { max-width: 260px; background: #fff; }
 #pd-name { width: 320px; }
 #pd-desc { flex: 1; min-width: 200px; }
 #pd-version { width: 80px; }
