@@ -118,10 +118,8 @@
             "accessibility": "Accessibility"
         },
         "a11y": {
-            "mode_off": "Accessibility: off",
-            "mode_large": "Accessibility: large text + high contrast",
-            "mode_large_cb": "Accessibility: large text + colorblind-safe",
-            "mode_cb": "Accessibility: colorblind-safe colors"
+            "on": "Accessibility mode: on",
+            "off": "Accessibility mode: off"
         },
         "dro_outputs_tooltip": "Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad.",
         "dro_outputs_label": "OUTPUTS (Toggle)",

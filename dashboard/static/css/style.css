@@ -1198,19 +1198,39 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     content: "\f1ec"; /* fa-calculator */
 }
 
-/* Accessibility-mode sidebar icon — FontAwesome glyph, calculator pattern. */
+/* Accessibility-mode icon: an "aA" text glyph — the familiar text-size
+   convention (browser readers, phone display settings), deliberately
+   neutral. Sidebar entry uses it via :before (calculator pattern). */
 #icon_a11y { background-image: none; position: relative; }
 #icon_a11y:before {
     position: absolute;
-    font-family: 'FontAwesome';
-    font-size: 22px;
+    font-weight: bold;
+    font-size: 17px;
+    letter-spacing: 0.5px;
     top: 50%;
-    left: 12px;
+    left: 10px;
     transform: translateY(-50%);
-    content: "\f29a"; /* fa-universal-access */
+    content: "aA";
 }
 /* lit while the mode is on */
 .icon_a11y.a11y-on:before { color: #ffd54a; }
+
+/* Nav-bar "aA" button — sits in the table-row left section after the
+   tool name; dim on the indigo bar until hovered or active. */
+#a11y-nav {
+    display: table-cell;
+    vertical-align: middle;
+    padding-left: 18px;
+    cursor: pointer;
+}
+#a11y-nav .a11y-glyph {
+    font-weight: bold;
+    font-size: 17px;
+    letter-spacing: 1px;
+    color: #b9bdd9;
+}
+#a11y-nav:hover .a11y-glyph { color: #fff; }
+#a11y-nav.a11y-on .a11y-glyph { color: #ffe217; }
 
 /* ---- Accessibility mode ----
    App content is scaled by a zoom sheet injected into the app iframe
@@ -1221,13 +1241,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
    pass (top bar, DRO, keypad, modals) is the follow-on. */
 /* contrast() pivots around mid-gray: light grays clip to white, dim
    text goes darker, edges crispen. Values below ~1.2 are imperceptible
-   on FabMo's mostly-white UI. In colorblind mode the saturation boost
-   is stronger — it can't fix red/green, but wider hue separation
-   genuinely helps, and it's the only generic knob for arbitrary apps
-   (system apps get native palettes as the follow-on). */
+   on FabMo's mostly-white UI. */
 html.fabmo-a11y #app-iframe { filter: contrast(1.35) saturate(1.15); }
-html.fabmo-a11y-cb #app-iframe { filter: saturate(1.6); }
-html.fabmo-a11y.fabmo-a11y-cb #app-iframe { filter: contrast(1.3) saturate(1.6); }
 html.fabmo-a11y .off-canvas-list li a { font-size: 1.1em; }
 html.fabmo-a11y .off-canvas-list li a span { font-size: 1.2em; font-weight: bold; }
 
@@ -1255,32 +1270,6 @@ html.fabmo-a11y .manual-drive-modal {
 }
 html.fabmo-a11y .manual-drive-modal.has-ab-pads {
     min-width: min(820px, 80vw);
-}
-
-/* ---- Colorblind-safe chrome (.fabmo-a11y-cb) ----
-   The top-bar lamps encode state as red vs green — the classic
-   deuteranopia trap (outputs are already blue/cyan and stay put).
-   Swap the input lamps onto the blue/orange axis: off = dark blue
-   like the outputs, on = orange, so on/off also reads by luminance. */
-html.fabmo-a11y-cb .input.off {
-    background-color: #26456b;
-    color: #9ecbff;
-}
-html.fabmo-a11y-cb .input.on {
-    background-color: #ff9d2e;
-    color: #442a00;
-}
-/* STOP: red reads as muddy brown to a deuteranope and can vanish next
-   to an orange "on" lamp — go white-on-black, unmistakable by shape
-   of luminance alone. */
-html.fabmo-a11y-cb .input.stopOn {
-    background-color: #111;
-    color: #fff;
-}
-html.fabmo-a11y-cb #inp-stop {
-    color: #fff;
-    background-color: #111;
-    padding: 0 3px;
 }
 
 /* Calculator modal */
