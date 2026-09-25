@@ -469,19 +469,22 @@ $('#firmware-input').change(function(evt) {
 // output policy, and the spindle is the primary notify use case.
 var OUTPUT_HARDCODED = { 1: "Spindle 1", 2: "Spindle 2", 4: "Arm Motion" };
 
+// Labels are stored as i18n keys and resolved in buildModeBlock, which runs
+// after i18nReady — resolving them here would bake in raw keys because this
+// module parses before the dictionary has loaded.
 var ON_MODES = [
-    { value: "file_start", label: window.t("config.outputs_tab.mode_file_start") },
-    { value: "command", label: window.t("config.outputs_tab.mode_command") },
-    { value: "timed_after_file_end", label: window.t("config.outputs_tab.mode_timed_after_file_end") },
-    { value: "position", label: window.t("config.outputs_tab.mode_position") },
-    { value: "input", label: window.t("config.outputs_tab.mode_input") }
+    { value: "file_start", labelKey: "config.outputs_tab.mode_file_start" },
+    { value: "command", labelKey: "config.outputs_tab.mode_command" },
+    { value: "timed_after_file_end", labelKey: "config.outputs_tab.mode_timed_after_file_end" },
+    { value: "position", labelKey: "config.outputs_tab.mode_position" },
+    { value: "input", labelKey: "config.outputs_tab.mode_input" }
 ];
 var OFF_MODES = [
-    { value: "file_end", label: window.t("config.outputs_tab.mode_file_end") },
-    { value: "command", label: window.t("config.outputs_tab.mode_command") },
-    { value: "timed_after_file_end", label: window.t("config.outputs_tab.mode_timed_after_file_end") },
-    { value: "position", label: window.t("config.outputs_tab.mode_position") },
-    { value: "input", label: window.t("config.outputs_tab.mode_input") }
+    { value: "file_end", labelKey: "config.outputs_tab.mode_file_end" },
+    { value: "command", labelKey: "config.outputs_tab.mode_command" },
+    { value: "timed_after_file_end", labelKey: "config.outputs_tab.mode_timed_after_file_end" },
+    { value: "position", labelKey: "config.outputs_tab.mode_position" },
+    { value: "input", labelKey: "config.outputs_tab.mode_input" }
 ];
 
 function buildOutputFieldset(n) {
@@ -506,30 +509,29 @@ function buildOutputFieldset(n) {
 
     function buildModeBlock(side, label, modes) {
         var opts = modes.map(function (m) {
-            return '<option value="' + m.value + '">' + m.label + '</option>';
+            return '<option value="' + m.value + '">' + window.t(m.labelKey) + '</option>';
         }).join('');
         var lockedAttr = isLocked ? ' disabled' : '';
         var selectCls = isLocked ? '' : ' class="machine-output output-mode" data-side="' + side + '" data-output="' + n + '"';
         var secondsCls = isLocked ? '' : ' class="machine-output output-seconds"';
         // Notify controls are never locked — notification is enforced at the
         // SO command in the runtime, independent of the on/off mode policy.
-        var sideWord = side === 'on' ? 'ON' : 'OFF';
         var notifyOpts = [
-            '<option value="never">Never</option>',
-            '<option value="once">Once per cut</option>',
-            '<option value="always">Always</option>'
+            '<option value="never">' + window.t("config.outputs_tab.notify_never") + '</option>',
+            '<option value="once">' + window.t("config.outputs_tab.notify_once") + '</option>',
+            '<option value="always">' + window.t("config.outputs_tab.notify_always") + '</option>'
         ].join('');
         // Position-trigger condition: [above/below] [axis] [value], shown only
         // while the mode dropdown is set to Position. Value is in working
         // coordinates (what the DRO reads), current units.
         var positionRow = [
             '<div id="machine-outputs-' + n + '-' + side + '_position_row"',
-              ' title="Turn this output ' + sideWord + ' when the axis crosses this position (working coordinates, current units)"',
+              ' title="' + window.t("config.outputs_tab.position_title_" + side) + '"',
               ' style="display:none; margin-top:4px;">',
               '<select id="machine-outputs-' + n + '-' + side + '_position-side" class="machine-output"',
                 ' style="display:inline-block; width:31%; margin:0 2% 0 0;">',
-                '<option value="below">Below</option>',
-                '<option value="above">Above</option>',
+                '<option value="below">' + window.t("config.outputs_tab.position_below") + '</option>',
+                '<option value="above">' + window.t("config.outputs_tab.position_above") + '</option>',
               '</select>',
               '<select id="machine-outputs-' + n + '-' + side + '_position-axis" class="machine-output"',
                 ' style="display:inline-block; width:31%; margin:0 2% 0 0;">',
@@ -538,7 +540,7 @@ function buildOutputFieldset(n) {
                 }).join(''),
               '</select>',
               '<input type="number" step="any" id="machine-outputs-' + n + '-' + side + '_position-value" class="machine-output"',
-                ' placeholder="position" style="display:inline-block; width:34%; margin:0;">',
+                ' placeholder="' + window.t("config.outputs_tab.position_placeholder") + '" style="display:inline-block; width:34%; margin:0;">',
             '</div>'
         ].join('');
 
@@ -548,20 +550,22 @@ function buildOutputFieldset(n) {
         // ("momentary"); one side alone = latch ("permanent").
         var inputRow = [
             '<div id="machine-outputs-' + n + '-' + side + '_input_row"',
-              ' title="Turn this output ' + sideWord + ' when the input changes to the selected state"',
+              ' title="' + window.t("config.outputs_tab.input_title_" + side) + '"',
               ' style="display:none; margin-top:4px;">',
               '<select id="machine-outputs-' + n + '-' + side + '_input-input" class="machine-output output-trigger-input"',
                 ' style="display:inline-block; width:55%; margin:0 2% 0 0;">',
                 (function () {
                     var o = '';
-                    for (var inp = 1; inp <= 12; inp++) o += '<option value="' + inp + '">Input ' + inp + '</option>';
+                    for (var inp = 1; inp <= 12; inp++) {
+                        o += '<option value="' + inp + '">' + window.t("config.inputs.input_word") + ' ' + inp + '</option>';
+                    }
                     return o;
                 })(),
               '</select>',
               '<select id="machine-outputs-' + n + '-' + side + '_input-state" class="machine-output"',
                 ' style="display:inline-block; width:43%; margin:0;">',
-                '<option value="on">goes ON</option>',
-                '<option value="off">goes OFF</option>',
+                '<option value="on">' + window.t("config.outputs_tab.input_goes_on") + '</option>',
+                '<option value="off">' + window.t("config.outputs_tab.input_goes_off") + '</option>',
               '</select>',
             '</div>'
         ].join('');
@@ -645,7 +649,7 @@ function refreshInputOptionLabels(machineData) {
     if (machineData.ap_input >= 1) tags[machineData.ap_input] = 'AP button';
     $('.output-trigger-input option').each(function () {
         var inp = Number(this.value);
-        this.text = 'Input ' + inp + (tags[inp] ? ' (' + tags[inp] + ')' : '');
+        this.text = window.t("config.inputs.input_word") + ' ' + inp + (tags[inp] ? ' (' + tags[inp] + ')' : '');
     });
 }
 
