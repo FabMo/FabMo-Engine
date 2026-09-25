@@ -3122,12 +3122,13 @@ $(".icon_sign_out").on("click", function (e) {
         openCalculator();
     });
 
-    // Accessibility mode: toggle from the sidebar, restore stored state
-    // now so the chrome class and menu indicator are right from the start
-    // (the app iframe gets its injection on its own load event).
+    // Accessibility modes: the sidebar button cycles off -> large ->
+    // large+colorblind -> colorblind. Restore stored state now so the
+    // chrome classes and menu indicator are right from the start (the
+    // app iframe gets its injection on its own load event).
     $(".icon_a11y").on("click", function (e) {
         e.preventDefault();
-        a11y.toggle();
+        a11y.cycle();
     });
     a11y.apply();
     $(".calc-close").on("click", closeCalculator);
