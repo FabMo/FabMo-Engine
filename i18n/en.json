@@ -449,7 +449,19 @@
             "notify_for_off": "Notify for off",
             "notify_message_placeholder": "Notification message",
             "notify_message_title_on": "Message shown when the file pauses before turning this output on",
-            "notify_message_title_off": "Message shown when the file pauses before turning this output off"
+            "notify_message_title_off": "Message shown when the file pauses before turning this output off",
+            "notify_never": "Never",
+            "notify_once": "Once per cut",
+            "notify_always": "Always",
+            "position_below": "Below",
+            "position_above": "Above",
+            "position_placeholder": "position",
+            "position_title_on": "Turn this output ON when the axis crosses this position (working coordinates, current units)",
+            "position_title_off": "Turn this output OFF when the axis crosses this position (working coordinates, current units)",
+            "input_goes_on": "goes ON",
+            "input_goes_off": "goes OFF",
+            "input_title_on": "Turn this output ON when the input changes to the selected state",
+            "input_title_off": "Turn this output OFF when the input changes to the selected state"
         },
         "apps_tab": {
             "drop_to_install": "Drag app here to install...",

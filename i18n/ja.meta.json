@@ -1076,6 +1076,63 @@
     "config.outputs_tab.mode_timed_after_file_end": {
         "en_at_translation": "Timed after file end"
     },
+    "config.outputs_tab.mode_position": {
+        "en_at_translation": "Position"
+    },
+    "config.outputs_tab.mode_input": {
+        "en_at_translation": "Input"
+    },
+    "config.outputs_tab.notify_for_on": {
+        "en_at_translation": "Notify for on"
+    },
+    "config.outputs_tab.notify_for_off": {
+        "en_at_translation": "Notify for off"
+    },
+    "config.outputs_tab.notify_message_placeholder": {
+        "en_at_translation": "Notification message"
+    },
+    "config.outputs_tab.notify_message_title_on": {
+        "en_at_translation": "Message shown when the file pauses before turning this output on"
+    },
+    "config.outputs_tab.notify_message_title_off": {
+        "en_at_translation": "Message shown when the file pauses before turning this output off"
+    },
+    "config.outputs_tab.notify_never": {
+        "en_at_translation": "Never"
+    },
+    "config.outputs_tab.notify_once": {
+        "en_at_translation": "Once per cut"
+    },
+    "config.outputs_tab.notify_always": {
+        "en_at_translation": "Always"
+    },
+    "config.outputs_tab.position_below": {
+        "en_at_translation": "Below"
+    },
+    "config.outputs_tab.position_above": {
+        "en_at_translation": "Above"
+    },
+    "config.outputs_tab.position_placeholder": {
+        "en_at_translation": "position"
+    },
+    "config.outputs_tab.position_title_on": {
+        "en_at_translation": "Turn this output ON when the axis crosses this position (working coordinates, current units)"
+    },
+    "config.outputs_tab.position_title_off": {
+        "en_at_translation": "Turn this output OFF when the axis crosses this position (working coordinates, current units)"
+    },
+    "config.outputs_tab.input_goes_on": {
+        "en_at_translation": "goes ON"
+    },
+    "config.outputs_tab.input_goes_off": {
+        "en_at_translation": "goes OFF"
+    },
+    "config.outputs_tab.input_title_on": {
+        "en_at_translation": "Turn this output ON when the input changes to the selected state"
+    },
+    "config.outputs_tab.input_title_off": {
+        "en_at_translation": "Turn this output OFF when the input changes to the selected state"
+    },
     "config.apps_tab.drop_to_install": {
         "en_at_translation": "Drag app here to install..."
     },
