@@ -988,6 +988,13 @@ function nowPreviewJob() {
     if (jobID != -1) {
       viewer.gui.showLoading();
 
+      // Show which file is being previewed in the top band
+      fabmo.getJobInfo(jobID, function(err, job) {
+        if (!err && job && job.name) {
+          $('#preview .file-name').text(job.name).attr('title', job.name);
+        }
+      });
+
       // Fetch original file first to extract VCarve/ShopBot metadata
       // (Z origin mode and material thickness), then load gcode.
       // Using 'complete' ensures gcode loads even if file fetch fails.

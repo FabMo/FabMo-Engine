@@ -904,6 +904,7 @@
         },
         "ok": "Ok",
         "code_line_title": "Current File Line",
+        "file_name_title": "Current File",
         "ar": {
             "calibration_instruction": "Drag the corners to align with your table",
             "save": "Save",
