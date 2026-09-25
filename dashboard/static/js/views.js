@@ -5,6 +5,7 @@ define(function (require) {
     var Backbone = require("backbone");
     var auth = require("./auth.js");
     var _ = require("underscore");
+    var a11y = require("./a11y.js");
     var views = {};
 
     views.Authentication = Backbone.View.extend({
@@ -41,6 +42,14 @@ define(function (require) {
             // Disable double-tap-zoom on the iframe region without blocking touch
             // forwarding to the iframe content (touch-action:none breaks OrbitControls).
             this.iframe[0].style.touchAction = 'manipulation';
+            // Accessibility overrides live in the app document and die
+            // with each navigation — re-inject on every (re)load.
+            this.iframe.on(
+                "load",
+                function () {
+                    a11y.applyToIframe(this.iframe[0]);
+                }.bind(this)
+            );
             if (hard_refresh) {
                 this.iframe.one(
                     "load",

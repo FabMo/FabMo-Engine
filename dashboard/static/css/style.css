@@ -1198,6 +1198,80 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     content: "\f1ec"; /* fa-calculator */
 }
 
+/* Accessibility-mode icon: an "aA" text glyph — the familiar text-size
+   convention (browser readers, phone display settings), deliberately
+   neutral. Sidebar entry uses it via :before (calculator pattern). */
+#icon_a11y { background-image: none; position: relative; }
+#icon_a11y:before {
+    position: absolute;
+    font-weight: bold;
+    font-size: 17px;
+    letter-spacing: 0.5px;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    content: "aA";
+}
+/* lit while the mode is on */
+.icon_a11y.a11y-on:before { color: #ffd54a; }
+
+/* Nav-bar "aA" button — sits in the table-row left section after the
+   tool name; dim on the indigo bar until hovered or active. */
+#a11y-nav {
+    display: table-cell;
+    vertical-align: middle;
+    padding-left: 18px;
+    cursor: pointer;
+}
+#a11y-nav .a11y-glyph {
+    font-weight: bold;
+    font-size: 17px;
+    letter-spacing: 1px;
+    color: #b9bdd9;
+}
+#a11y-nav:hover .a11y-glyph { color: #fff; }
+#a11y-nav.a11y-on .a11y-glyph { color: #ffe217; }
+
+/* ---- Accessibility mode ----
+   App content is scaled by a zoom sheet injected into the app iframe
+   (a11y.js — works for user-installed apps because they are
+   same-origin). High contrast for apps is a filter on the FRAME
+   element here, so fixed-position layouts inside apps are untouched.
+   Dashboard-chrome coverage is PoC-level (menu labels); a full chrome
+   pass (top bar, DRO, keypad, modals) is the follow-on. */
+/* contrast() pivots around mid-gray: light grays clip to white, dim
+   text goes darker, edges crispen. Values below ~1.2 are imperceptible
+   on FabMo's mostly-white UI. */
+html.fabmo-a11y #app-iframe { filter: contrast(1.35) saturate(1.15); }
+html.fabmo-a11y .off-canvas-list li a { font-size: 1.1em; }
+html.fabmo-a11y .off-canvas-list li a span { font-size: 1.2em; font-weight: bold; }
+
+/* Top-bar DRO: bigger axis readouts. The bar is 56px tall and the axes
+   sit on a single row, so a font bump fits without reflowing the bar. */
+html.fabmo-a11y .sm-axes label { font-size: 21px; }
+html.fabmo-a11y .machine-pos .a-rotunits,
+html.fabmo-a11y .machine-pos .b-rotunits,
+html.fabmo-a11y .machine-pos .c-rotunits { font-size: 12px; }
+
+/* Side DRO slide-out: zoom the whole panel. The inline right:-222px set
+   by events.js is interpreted in zoomed px, so the hidden offset still
+   exactly matches the scaled width; margin-top 45px zooms to 54px which
+   stays tucked under the 56px tab-bar. Push-mode app padding is scaled
+   to match in events.js. */
+html.fabmo-a11y #right-menu { zoom: 1.2; }
+
+/* Manual keypad: scale about its own center (it is already centered by
+   the translate). transform doesn't reflow, so cap max-height so the
+   scaled modal stays inside the viewport (79% * 1.18 ≈ 93%), and relax
+   the widened A/B minimum the same way (80vw * 1.18 ≈ 94vw). */
+html.fabmo-a11y .manual-drive-modal {
+    transform: translate(-50%, -50%) scale(1.18);
+    max-height: 79%;
+}
+html.fabmo-a11y .manual-drive-modal.has-ab-pads {
+    min-width: min(820px, 80vw);
+}
+
 /* Calculator modal */
 .calc-modal-dim {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
