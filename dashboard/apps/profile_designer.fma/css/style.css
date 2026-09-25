@@ -150,6 +150,21 @@ body {
 }
 .pd-row input.pd-json { width: 340px; font-family: Consolas, Menlo, monospace; }
 .pd-row input.bad { border-color: #e03c2e; background: #ffe9e6; }
+.pd-add-row { opacity: 0.55; }
+.pd-add-row:hover, .pd-add-row:focus-within { opacity: 1; }
+.pd-add-row input.pd-add-name { width: 180px; font-family: Consolas, Menlo, monospace; }
+.pd-add-row input.pd-add-value { width: 220px; }
+.pd-add-btn {
+    height: 22px;
+    padding: 0 10px;
+    border: 1px solid #c4c4ce;
+    border-radius: 2px;
+    background: #ececf1;
+    cursor: pointer;
+    font-size: 12px;
+}
+.pd-add-btn:hover { background: #313366; color: #fff; }
+
 .pd-reset {
     border: none;
     background: none;

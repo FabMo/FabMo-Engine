@@ -118,17 +118,26 @@ var getProfile = function (req, res, next) {
 };
 
 // GET /profile_designer/apps
-// User-installed apps eligible for inclusion in a profile. System apps
-// ship with the engine and are never packaged into profiles.
+// Apps eligible for inclusion in a profile. System apps ship with the
+// engine anyway — they are listed (flagged) so a profile can pin a
+// copy of one (e.g. sb4), but bundling them is normally unnecessary.
 // eslint-disable-next-line no-unused-vars
 var getEligibleApps = function (req, res, next) {
     var systemDir = path.join(__dirname, "..", "dashboard", "apps");
     var apps = (dashboard.getAppList() || [])
         .filter(function (app) {
-            return app.app_archive_path && app.app_archive_path.indexOf(systemDir) !== 0;
+            return app.app_archive_path && fs.existsSync(app.app_archive_path);
         })
         .map(function (app) {
-            return { id: app.id, name: app.name, icon_path: app.icon_path };
+            return {
+                id: app.id,
+                name: app.name,
+                icon_path: app.icon_path,
+                system: app.app_archive_path.indexOf(systemDir) === 0,
+            };
+        })
+        .sort(function (a, b) {
+            return a.system === b.system ? a.name.localeCompare(b.name) : a.system ? 1 : -1;
         });
     res.json({ status: "success", data: { apps: apps } });
 };

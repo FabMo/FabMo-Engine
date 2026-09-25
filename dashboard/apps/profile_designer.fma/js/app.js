@@ -237,6 +237,60 @@
         return input;
     }
 
+    // "+ add" affordance at the bottom of a group: create a key that
+    // does not exist in the defaults (e.g. a persistent variable like
+    // "Bit.Diameter[].uu"). The name is a LITERAL key — opensbp
+    // variables are stored flat with dots/brackets in the key itself —
+    // and the value is parsed as JSON when possible ({"X":3} makes an
+    // object), otherwise kept as a string.
+    function addRow(container, file, pathArr, depth) {
+        var row = document.createElement("div");
+        row.className = "pd-row pd-add-row";
+        row.style.paddingLeft = 8 + depth * 16 + "px";
+
+        var nameIn = document.createElement("input");
+        nameIn.type = "text";
+        nameIn.className = "pd-add-name";
+        nameIn.placeholder = "+ new key";
+        var valIn = document.createElement("input");
+        valIn.type = "text";
+        valIn.className = "pd-add-value";
+        valIn.placeholder = "value or JSON";
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "pd-add-btn";
+        btn.textContent = "Add";
+
+        function commit() {
+            var key = nameIn.value.trim();
+            if (!key) return;
+            var parent = getPath(state.edits[file], pathArr) || {};
+            if (Object.prototype.hasOwnProperty.call(parent, key)) {
+                setStatus('"' + key + '" already exists here — edit it in place instead.', "error");
+                return;
+            }
+            var raw = valIn.value.trim();
+            var value;
+            try {
+                value = JSON.parse(raw);
+            } catch (e) {
+                value = raw;
+            }
+            setPath(state.edits[file], pathArr.concat([key]), value);
+            setStatus("");
+            onEdit();
+        }
+        btn.addEventListener("click", commit);
+        valIn.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") commit();
+        });
+
+        row.appendChild(nameIn);
+        row.appendChild(valIn);
+        row.appendChild(btn);
+        container.appendChild(row);
+    }
+
     function renderRows(container, file, defObj, pathArr, depth) {
         // Union of default keys and working-copy keys: a profile being
         // edited may carry keys the defaults don't have (legacy
@@ -270,6 +324,7 @@
                 var body = document.createElement("div");
                 renderRows(body, file, defVal, childPath, depth + 1);
                 if (state.filter && body.children.length === 0) return;
+                if (!state.filter) addRow(body, file, childPath, depth + 1);
                 var collapsed = depth === 0 && !state.filter && Object.keys(defVal).length > 8;
                 if (collapsed) body.classList.add("hidden");
                 head.addEventListener("click", function () {
@@ -358,19 +413,40 @@
         head.textContent = keptNames.length > 0 ? "Add apps installed on this machine" : "Apps to include in this profile";
         wrap.appendChild(head);
 
-        if (state.apps.length === 0) {
+        var userApps = state.apps.filter(function (a) {
+            return !a.system;
+        });
+        var systemApps = state.apps.filter(function (a) {
+            return a.system;
+        });
+
+        if (userApps.length === 0) {
             var none = document.createElement("div");
             none.className = "pd-empty";
-            none.textContent = "No user-installed apps on this machine. (System apps ship with the engine and are never packaged into profiles.)";
+            none.textContent = "No user-installed apps on this machine.";
             wrap.appendChild(none);
         }
-        state.apps.forEach(function (app) {
+        userApps.forEach(function (app) {
             wrap.appendChild(
                 checkboxRow(app.name, !!state.selectedApps[app.id], function (on) {
                     state.selectedApps[app.id] = on;
                 })
             );
         });
+
+        if (systemApps.length > 0) {
+            var shead = document.createElement("div");
+            shead.className = "pd-group";
+            shead.textContent = "System apps (ship with the engine — bundle one only to pin a copy into the profile)";
+            wrap.appendChild(shead);
+            systemApps.forEach(function (app) {
+                wrap.appendChild(
+                    checkboxRow(app.name, !!state.selectedApps[app.id], function (on) {
+                        state.selectedApps[app.id] = on;
+                    })
+                );
+            });
+        }
 
         var mhead = document.createElement("div");
         mhead.className = "pd-group";
@@ -421,6 +497,7 @@
         var n = changeCount(file);
         $("#pd-file-changes").textContent = n === 0 ? "no changes" : n + " change" + (n === 1 ? "" : "s");
         renderRows(editor, file, state.defaults[file], [], 0);
+        if (!state.filter) addRow(editor, file, [], 0);
     }
 
     function renderPreview() {
