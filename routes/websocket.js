@@ -8,7 +8,7 @@ var server = null;
 
 // eslint-disable-next-line no-unused-vars
 function setupAuthentication(svr) {
-    server.io.of("/private").use(function (socket, next) {
+    var authMiddleware = function (socket, next) {
         var handshakeData = socket.request;
         // Check that the cookie header is present
         if (!handshakeData.headers.cookie) {
@@ -62,7 +62,9 @@ function setupAuthentication(svr) {
             next(new Error("Session content is undefined or passport is missing."));
             //next();
         }
-    });
+    };
+    server.io.of("/private").use(authMiddleware);
+    server.io.of("/").use(authMiddleware);
 }
 
 function setupStatusBroadcasts(server) {
