@@ -1226,6 +1226,32 @@ html.fabmo-a11y #app-iframe { filter: contrast(1.35) saturate(1.15); }
 html.fabmo-a11y .off-canvas-list li a { font-size: 1.1em; }
 html.fabmo-a11y .off-canvas-list li a span { font-size: 1.2em; font-weight: bold; }
 
+/* Top-bar DRO: bigger axis readouts. The bar is 56px tall and the axes
+   sit on a single row, so a font bump fits without reflowing the bar. */
+html.fabmo-a11y .sm-axes label { font-size: 21px; }
+html.fabmo-a11y .machine-pos .a-rotunits,
+html.fabmo-a11y .machine-pos .b-rotunits,
+html.fabmo-a11y .machine-pos .c-rotunits { font-size: 12px; }
+
+/* Side DRO slide-out: zoom the whole panel. The inline right:-222px set
+   by events.js is interpreted in zoomed px, so the hidden offset still
+   exactly matches the scaled width; margin-top 45px zooms to 54px which
+   stays tucked under the 56px tab-bar. Push-mode app padding is scaled
+   to match in events.js. */
+html.fabmo-a11y #right-menu { zoom: 1.2; }
+
+/* Manual keypad: scale about its own center (it is already centered by
+   the translate). transform doesn't reflow, so cap max-height so the
+   scaled modal stays inside the viewport (79% * 1.18 ≈ 93%), and relax
+   the widened A/B minimum the same way (80vw * 1.18 ≈ 94vw). */
+html.fabmo-a11y .manual-drive-modal {
+    transform: translate(-50%, -50%) scale(1.18);
+    max-height: 79%;
+}
+html.fabmo-a11y .manual-drive-modal.has-ab-pads {
+    min-width: min(820px, 80vw);
+}
+
 /* Calculator modal */
 .calc-modal-dim {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;

@@ -73,6 +73,18 @@ define(function (require) {
         document.documentElement.classList.toggle("fabmo-a11y", on);
         $(".icon_a11y").toggleClass("a11y-on", on);
         applyToIframe(document.getElementById("app-iframe"));
+        // The side DRO panel zooms 1.2x in this mode. If it is pinned
+        // open (push mode pads the app aside — see events.js), re-pad
+        // for the new effective panel width.
+        var $app = $("#app-client-container");
+        if (parseInt($app.css("padding-right"), 10) > 0) {
+            var scale = on ? 1.2 : 1;
+            $app.css("padding-right", Math.round(218 * scale) + "px");
+            $("#app_menu_container, #waiting_container").css(
+                "padding-right",
+                Math.round(220 * scale) + "px"
+            );
+        }
     }
 
     return {
