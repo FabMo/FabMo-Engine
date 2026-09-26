@@ -912,11 +912,11 @@ module.exports = function(container) {
 
   // Reload the path from GCode text (used for initial load and operation filtering)
   self.reloadGCode = function(gcode) {
-    // Clean up existing material before loading new path
-    if (self.material && self.material.reset) {
-      console.log('Cleaning up previous material before new load');
-      self.material.reset();
-    }
+    // No material.reset() here: pathLoaded -> computeMaterial ->
+    // material.initialize() disposes and rebuilds the stock anyway.
+    // Resetting first queued a SECOND full worker build of the old
+    // stock, and whichever build finished last left an orphan uncut
+    // mesh in the scene hiding the real cuts.
     // Clear existing path geometry
     if (self.path.clearPath) {
       self.path.clearPath();
