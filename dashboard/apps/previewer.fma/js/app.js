@@ -686,6 +686,9 @@ function exitArrange() {
   arrange.exit();
   preview.removeClass('arranging');
   $('#btn-arrange').removeClass('active');
+  // If edits were applied while arranging, reload the viewer now (a
+  // still-in-flight apply triggers this again from its own callback).
+  refreshPreviewIfStale();
 }
 
 // ── Arrange live-apply ──────────────────────────────────────────────
@@ -697,10 +700,32 @@ function exitArrange() {
 var arrangeApplyTimer = null;
 var arrangeApplying = false;
 var arrangeLastApplied = null;  // text most recently pushed to the job
+var previewStale = false;       // job content changed since the viewer last parsed it
 
 function scheduleArrangeApply() {
   clearTimeout(arrangeApplyTimer);
   arrangeApplyTimer = setTimeout(applyArrangeEdits, 600);
+}
+
+// Reload the 2D/3D viewer from the (updated) queued job. This re-parses
+// the path and reruns the material simulation — seconds of work — so it
+// must NOT happen per edit: while Arrange is active we only mark the
+// preview stale, and this runs once on the way back to a real view.
+function refreshPreviewIfStale() {
+  if (!previewStale) return;
+  if (arrange && arrange.isActive()) return;
+  var jobID = cookie.get('job-id');
+  if (!jobID || jobID == -1) return;
+  previewStale = false;
+  viewer.setOperations(parseOperations(originalFileContent));
+  $.get('/job/' + jobID + '/gcode').done(function (gcode) {
+    // The job's content genuinely changed — treat this as a fresh load.
+    // originalBounds is meant to survive operation FILTERING (a subset
+    // of the same file); keeping it here would size the material block
+    // and scene to the pre-edit geometry, so moved parts cut off-stock.
+    viewer.originalBounds = null;
+    viewer.setGCode(gcode);
+  });
 }
 
 function applyArrangeEdits() {
@@ -725,18 +750,19 @@ function applyArrangeEdits() {
       return;
     }
     arrangeLastApplied = code;
-    // Keep the rest of the app tracking the queued job's real content:
-    // in/out extraction, Run/Submit Selected, and the 2D/3D preview.
+    // Keep the rest of the app tracking the queued job's real content
+    // (in/out extraction, Run/Submit Selected). The viewer reload is
+    // deferred until Arrange exits — it reruns the material simulation.
     originalFileContent = code;
-    viewer.setOperations(parseOperations(code));
-    $.get('/job/' + jobID + '/gcode').done(function (gcode) {
-      viewer.setGCode(gcode);
-    });
-    // A change may still have arrived while this request was in flight
-    if (arrangeApplyTimer === null) {
-      var latest = arrange.isModified() ? arrange.getExportText() : pristineFileContent;
-      if (latest !== arrangeLastApplied) scheduleArrangeApply();
+    previewStale = true;
+    // A change may still have arrived while this request was in flight —
+    // keep applying until settled, and only then consider refreshing.
+    var latest = arrange.isModified() ? arrange.getExportText() : pristineFileContent;
+    if (latest !== arrangeLastApplied) {
+      scheduleArrangeApply();
+      return;
     }
+    refreshPreviewIfStale();  // no-op while Arrange is still active
   });
 }
 
