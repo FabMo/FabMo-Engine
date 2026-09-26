@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Profile Designer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="pd">
+    <header class="pd-header">
+      <div class="pd-title">Profile Designer</div>
+      <div class="pd-meta">
+        <select id="pd-source" title="Start from scratch or edit a saved profile">
+          <option value="">New profile (from defaults)</option>
+        </select>
+        <input id="pd-name" type="text" placeholder="Profile name (e.g. ShopBot PRSalpha 96x48)">
+        <input id="pd-desc" type="text" placeholder="Description">
+        <input id="pd-version" type="text" value="v0.0.1" title="Profile version">
+        <button id="pd-save" type="button">Save Profile</button>
+      </div>
+      <div id="pd-status" class="pd-status"></div>
+    </header>
+
+    <nav id="pd-tabs" class="pd-tabs"></nav>
+
+    <main class="pd-main">
+      <section class="pd-editor-pane">
+        <div class="pd-toolbar">
+          <input id="pd-filter" type="text" placeholder="Filter settings...">
+          <span id="pd-file-changes" class="pd-file-changes"></span>
+        </div>
+        <div id="pd-editor" class="pd-editor"></div>
+      </section>
+      <aside class="pd-preview-pane">
+        <div class="pd-preview-head">
+          Profile output
+          <span id="pd-change-total"></span>
+        </div>
+        <pre id="pd-preview" class="pd-preview"></pre>
+      </aside>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>
