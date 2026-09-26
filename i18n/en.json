@@ -962,13 +962,9 @@
             "button_title": "Rearrange parts on the sheet (SBP files)",
             "sbp_only": "Arrange works on SBP jobs only",
             "sr_unsupported": "This file uses relative mode (SR) — rearranging parts is not supported for relative files.",
-            "no_changes": "No changes to submit — move, rotate, duplicate or delete a part first.",
-            "submit_failed": "Failed to submit rearranged job: {error}",
             "parts_title": "Parts",
-            "submit": "Submit Rearranged",
-            "submit_title": "Submit the rearranged toolpath as a new job",
             "reset": "Reset All",
-            "reset_title": "Undo all moves, duplicates and deletions",
+            "reset_title": "Undo all moves, duplicates and deletions and restore the original job",
             "rot_ccw90": "Rotate 90° counter-clockwise (Shift+R)",
             "rot_ccw15": "Rotate 15° counter-clockwise",
             "rot_cw15": "Rotate 15° clockwise",
@@ -998,7 +994,8 @@
             "ambiguous": "Straddles multiple parts — not auto-assigned",
             "all_reset": "All moves, duplicates and deletions reset",
             "table_label": "table",
-            "off_table": "off the table"
+            "off_table": "off the table",
+            "apply_failed": "Failed to update job: {error}"
         },
         "viewcube": {
             "front": "FRONT",
@@ -1121,7 +1118,7 @@
             "ops_sel": "Run Selected / Submit Selected",
             "ops_sel_d": "Run or submit only the operations whose checkboxes are ticked. The <em>All</em> link toggles every operation at once.",
             "arrange": "Arrange Mode",
-            "arrange_intro": "For SBP jobs, the Arrange button (next to 2D/3D) opens a plan view that isolates the individual parts in the toolpath. Drag a part to move it (Shift locks to an axis), use the floating toolbar to rotate, duplicate, or delete it, then Submit Rearranged to replace the job with the edited toolpath. Lines you didn't touch are carried over byte-for-byte.",
+            "arrange_intro": "For SBP jobs, the Arrange button (next to 2D/3D) opens a plan view that isolates the individual parts in the toolpath. Drag a part to move it (Shift locks to an axis), or use the floating toolbar to rotate, duplicate, or delete it. Edits apply to the queued job automatically; Reset All restores the original. Lines you didn't touch are carried over byte-for-byte.",
             "arrange_rot": "Rotate the selected part 90° clockwise / counter-clockwise.",
             "arrange_dup": "Duplicate the selected part (also Ctrl+C / Ctrl+V).",
             "arrange_del": "Delete the selected part — restore it from the parts list.",

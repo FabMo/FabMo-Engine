@@ -31,6 +31,11 @@ var fabmo = new Fabmo();
 window.fabmo = fabmo;  // exposed so the AR module in viewer.js can persist calibration
 var viewer = null;  // Module-level viewer reference
 var originalFileContent = null;  // Raw SBP file content for in/out extraction
+                                 // (tracks the QUEUED job: updated after each
+                                 // Arrange live-apply)
+var pristineFileContent = null;  // The job text as first fetched — Arrange
+                                 // analyzes this, and Reset All reverts the
+                                 // queued job back to it
 var arrange = null;         // Arrange-mode (renest) controller
 var arrangeLoaded = false;  // analysis run for the current file
 
@@ -662,8 +667,8 @@ function updateArrangeButton() {
 function enterArrange() {
   if (!arrange || arrange.isActive()) return;
   if (!arrangeLoaded) {
-    if (!originalFileContent || !looksLikeSBP(originalFileContent)) return;
-    if (!arrange.load(originalFileContent, 'job.sbp')) {
+    if (!pristineFileContent || !looksLikeSBP(pristineFileContent)) return;
+    if (!arrange.load(pristineFileContent, 'job.sbp')) {
       fabmo.notify(window.t('previewer.arrange.sr_unsupported'), 'error');
       return;
     }
@@ -672,15 +677,67 @@ function enterArrange() {
   preview.addClass('arranging');
   $('#operations-panel').removeClass('collapsed');
   $('#btn-arrange').addClass('active');
-  $('.submit-rearranged').prop('disabled', !arrange.isModified());
   arrange.enter();
 }
 
 function exitArrange() {
   if (!arrange || !arrange.isActive()) return;
+  applyArrangeEdits();  // flush any pending live-apply before leaving
   arrange.exit();
   preview.removeClass('arranging');
   $('#btn-arrange').removeClass('active');
+}
+
+// ── Arrange live-apply ──────────────────────────────────────────────
+// Edits are applied to the queued job automatically (debounced): the
+// job's file is replaced in place via fabmo.updateJobFile, keeping its
+// queue position. The pristine text stays in memory, so Reset All
+// flows back through the same path and restores the original job.
+
+var arrangeApplyTimer = null;
+var arrangeApplying = false;
+var arrangeLastApplied = null;  // text most recently pushed to the job
+
+function scheduleArrangeApply() {
+  clearTimeout(arrangeApplyTimer);
+  arrangeApplyTimer = setTimeout(applyArrangeEdits, 600);
+}
+
+function applyArrangeEdits() {
+  clearTimeout(arrangeApplyTimer);
+  arrangeApplyTimer = null;
+  if (!arrange || !arrangeLoaded) return;
+  var code = arrange.isModified() ? arrange.getExportText() : pristineFileContent;
+  if (code == null) return;
+  if (arrangeLastApplied === null) arrangeLastApplied = pristineFileContent;
+  if (code === arrangeLastApplied) return;
+  if (arrangeApplying) { scheduleArrangeApply(); return; }  // serialize requests
+
+  var jobID = cookie.get('job-id');
+  if (!jobID || jobID == -1) return;
+
+  arrangeApplying = true;
+  fabmo.updateJobFile(jobID, code, function (err) {
+    arrangeApplying = false;
+    if (err) {
+      // Most likely the job left the pending state (started/ran).
+      fabmo.notify(window.t('previewer.arrange.apply_failed', { error: (err && err.message) || err }), 'error');
+      return;
+    }
+    arrangeLastApplied = code;
+    // Keep the rest of the app tracking the queued job's real content:
+    // in/out extraction, Run/Submit Selected, and the 2D/3D preview.
+    originalFileContent = code;
+    viewer.setOperations(parseOperations(code));
+    $.get('/job/' + jobID + '/gcode').done(function (gcode) {
+      viewer.setGCode(gcode);
+    });
+    // A change may still have arrived while this request was in flight
+    if (arrangeApplyTimer === null) {
+      var latest = arrange.isModified() ? arrange.getExportText() : pristineFileContent;
+      if (latest !== arrangeLastApplied) scheduleArrangeApply();
+    }
+  });
 }
 
 $('#btn-arrange').on('click', function () {
@@ -793,37 +850,9 @@ function nowPreviewJob() {
     });
   });
 
-  // Submit the rearranged (Arrange mode) toolpath as a new job
-  $('.submit-rearranged').click(function() {
-    if (!arrange || !arrange.isModified()) {
-      fabmo.notify(window.t('previewer.arrange.no_changes'), 'error');
-      return;
-    }
-    var code = arrange.getExportText();
-    if (!code) return;
-
-    var currentJobID = cookie.get('job-id');
-    if (!currentJobID || currentJobID == -1) {
-      fabmo.notify(window.t('previewer.notify.no_current_job'), 'error');
-      return;
-    }
-
-    $('.submit-rearranged').css('opacity', '0.5').css('pointer-events', 'none');
-    var file = new File([code], 'rearranged.sbp', { type: 'text/plain' });
-    fabmo.deleteJob(currentJobID, function(err) {
-      if (err) console.warn('Could not delete original job:', err);
-      fabmo.submitJob(file, {}, function(err) {
-        $('.submit-rearranged').css('opacity', '').css('pointer-events', '');
-        if (err) {
-          fabmo.notify(window.t('previewer.arrange.submit_failed', {error: err}), 'error');
-        } else {
-          cleanupBeforeExit();
-          fabmo.launchApp('job-manager');
-        }
-      });
-    });
-  });
-
+  // Arrange edits live-apply to the queued job (see applyArrangeEdits);
+  // Reset All undoes them locally, which flows back through the same
+  // path and restores the original job in the queue.
   $('.reset-arrange').click(function() {
     if (arrange) arrange.resetAll();
   });
@@ -941,8 +970,8 @@ function nowPreviewJob() {
           var gx = cached_Config.driver.g55x || 0, gy = cached_Config.driver.g55y || 0;
           return { x0: env.xmin - gx, y0: env.ymin - gy, x1: env.xmax - gx, y1: env.ymax - gy };
         })(),
-        onChange: function (e) {
-          $('.submit-rearranged').prop('disabled', !e.modified);
+        onChange: function () {
+          scheduleArrangeApply();
         },
         onRequestExit: exitArrange,
       });
@@ -1011,6 +1040,8 @@ function nowPreviewJob() {
         url: '/job/' + jobID + '/file',
         success: function(content) {
           originalFileContent = content;
+          pristineFileContent = content;
+          arrangeLastApplied = null;
           arrangeLoaded = false;
           updateArrangeButton();
           var metadata = parseFileMetadata(content);

@@ -113,8 +113,7 @@
           </div>
           <div class="parts-list" id="parts-list"></div>
           <div class="arrange-actions">
-            <button class="submit-rearranged" data-i18n-title="previewer.arrange.submit_title" title="Submit the rearranged toolpath as a new job" data-i18n="previewer.arrange.submit">Submit Rearranged</button>
-            <button class="reset-arrange" data-i18n-title="previewer.arrange.reset_title" title="Undo all moves, duplicates and deletions" data-i18n="previewer.arrange.reset">Reset All</button>
+            <button class="reset-arrange" data-i18n-title="previewer.arrange.reset_title" title="Undo all moves, duplicates and deletions and restore the original job" data-i18n="previewer.arrange.reset">Reset All</button>
           </div>
         </div>
       </div>
@@ -418,7 +417,7 @@
           </table>
 
           <h3 data-i18n="previewer.help.arrange">Arrange Mode</h3>
-          <p data-i18n="previewer.help.arrange_intro">For SBP jobs, the Arrange button (next to 2D/3D) opens a plan view that isolates the individual parts in the toolpath. Drag a part to move it (Shift locks to an axis), use the floating toolbar to rotate, duplicate, or delete it, then Submit Rearranged to replace the job with the edited toolpath. Lines you didn't touch are carried over byte-for-byte.</p>
+          <p data-i18n="previewer.help.arrange_intro">For SBP jobs, the Arrange button (next to 2D/3D) opens a plan view that isolates the individual parts in the toolpath. Drag a part to move it (Shift locks to an axis), or use the floating toolbar to rotate, duplicate, or delete it. Edits apply to the queued job automatically; Reset All restores the original. Lines you didn't touch are carried over byte-for-byte.</p>
           <table>
             <tr><th>R / Shift+R</th><td data-i18n="previewer.help.arrange_rot">Rotate the selected part 90&deg; clockwise / counter-clockwise.</td></tr>
             <tr><th>D</th><td data-i18n="previewer.help.arrange_dup">Duplicate the selected part (also Ctrl+C / Ctrl+V).</td></tr>
