@@ -3497,9 +3497,15 @@ input[type='range']:focus {
 /*@media (max-width: 750px  ) and (min-height: 500px)  {*/
 	.manual-drive-modal {
 		width: 90%;
-		height: 95%;
-		max-height: none;
+		/* Hug the stacked content instead of forcing 95% viewport
+		   height — a fixed height made the full-height readout table
+		   center its rows (big gap under the title) and pushed the
+		   keypad out of the overflow:hidden modal. Scroll if a tall
+		   axis list still overflows. */
+		height: auto;
+		max-height: 95%;
 		padding-top: 0;
+		overflow-y: auto;
 	}
 
 	/* Columns stack in portrait — the widened A/B minimum doesn't apply */
@@ -3507,26 +3513,23 @@ input[type='range']:focus {
 		min-width: 370px;
 	}
 
-    .manual-drive-container {
-        top: 5%; /* Reduced from 8% */
-        transform: translate(-3%, 0%);
-		scale: 80%
-    }
+	/* Stacked columns take the full width at their natural height; the
+	   percentage margins and scale transforms the side-by-side layout
+	   needed just open gaps here. */
+	.read-out-container,
+	.manual-right-side-container {
+		width: 100%;
+		height: auto;
+		min-height: 0;
+	}
 
-    .read-out-container {
-        width: 100%;
-        height: 100%;
-        margin-top: 10%;
-        scale: 90%
-    }
+	.read-out-container {
+		margin-top: 0.75rem;
+	}
 
-    .manual-right-side-container {
-        width: 100%;
-        height: 100%;
-        margin-top: 10%; /* Reduced */
-        scale: 90%
-    }
-
+	.manual-right-side-container {
+		margin-top: 1rem;
+	}
 
 	.speed_read_out {
 		top: -95px;
@@ -3539,15 +3542,14 @@ input[type='range']:focus {
 	}
 
 	#keypad {
-		scale: 135%;
-		margin-top: 3cap;
+		margin-top: 0.5rem;
 	}
 
     #title_goto {
 		visibility: visible;
-		top: -5%;
+		top: 0;
 		margin-top: 0rem;
-        margin-bottom: -0.5rem;    
+        margin-bottom: -0.5rem;
     }
 
 	.manual-stop {
