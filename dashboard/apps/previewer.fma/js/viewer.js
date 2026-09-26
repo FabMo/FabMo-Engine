@@ -1806,6 +1806,10 @@ module.exports = function(container) {
   // at ~6 px regardless of zoom; the default value is unused.
   var mouse = new THREE.Vector2();
   var hoveredMove = null;
+  // Color the hovered move had before the white glow — restored on
+  // un-hover. Can't assume green: simulated moves are magenta, and
+  // operation-highlight mode greys/greens them.
+  var hoveredMoveColor = null;
   var hoverThrottle = null;
   var mouseDownPos = null;
   var canvas = self.renderer.domElement;
@@ -1864,8 +1868,9 @@ module.exports = function(container) {
     var move = findMoveUnderMouse(event);
     if (move) {
       if (hoveredMove !== move) {
-        if (hoveredMove) hoveredMove.setColor(hoveredMove.rapid ? [1,0,0] : [0,1,0]);
+        if (hoveredMove) hoveredMove.setColor(hoveredMoveColor);
         hoveredMove = move;
+        hoveredMoveColor = move.getColor();
         move.setColor([1, 1, 1]);  // glow
         var lineNum = self.path.hasSourceLines
           ? (move.sourceLine + 1)
@@ -1875,8 +1880,9 @@ module.exports = function(container) {
         self.refresh();
       }
     } else if (hoveredMove) {
-      hoveredMove.setColor(hoveredMove.rapid ? [1,0,0] : [0,1,0]);
+      hoveredMove.setColor(hoveredMoveColor);
       hoveredMove = null;
+      hoveredMoveColor = null;
       self.refresh();
       self.path.codeLine.text('');
       canvas.style.cursor = '';
@@ -1905,6 +1911,13 @@ module.exports = function(container) {
     self.path.setMoveTime(time);
     if (self.gui) {
       self.gui.updateTimeline(time);
+    }
+    // setMoveTime recolored the path (including this move, overwriting
+    // the hover glow) — recapture the fresh color and re-glow so the
+    // eventual un-hover restores the post-scrub color.
+    if (hoveredMove === move) {
+      hoveredMoveColor = move.getColor();
+      move.setColor([1, 1, 1]);
     }
     self.refresh();
   });

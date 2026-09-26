@@ -313,14 +313,19 @@ body {
 #view-dim-toggle button + button {
   border-left: none;
 }
+/* Same hover-vs-on distinction as the quick-toggles: hovering an
+   unselected mode hints, it doesn't paint the full selected accent. */
 #view-dim-toggle button:hover {
-  background: var(--pv-accent-hover);
-  color: var(--pv-accent-text);
+  background: rgba(49, 51, 102, 0.2);
+  color: var(--pv-accent);
 }
 #view-dim-toggle button.active {
   background: var(--pv-accent);
   color: var(--pv-accent-text);
   border-color: var(--pv-accent);
+}
+#view-dim-toggle button.active:hover {
+  background: var(--pv-accent-active);
 }
 #preview.mode-2d #viewcube-container,
 #preview.mode-2d #camera-mode-btns {
@@ -721,16 +726,26 @@ body {
   display: none;
 }
 
+/* Hover must stay visually distinct from the "on" state — a hovered
+   off button painted accent reads as still-on until the cursor leaves.
+   Off + hover = subtle tint hint; on + hover = darker accent. */
+#preview .bottom-bar .quick-toggle:hover {
+  /* Strong enough to be an obvious hover cue, light enough that it
+     can't be mistaken for the solid-accent "on" state */
+  background: rgba(49, 51, 102, 0.2);
+  color: var(--pv-accent);
+  border-color: var(--pv-accent);
+}
+
 #preview .bottom-bar .quick-toggle.active {
   background: var(--pv-accent);
   color: var(--pv-accent-text);
   border-color: var(--pv-accent);
 }
 
-#preview .bottom-bar .quick-toggle:hover {
-  background: var(--pv-accent-hover);
-  color: var(--pv-accent-text);
-  border-color: var(--pv-accent-hover);
+#preview .bottom-bar .quick-toggle.active:hover {
+  background: var(--pv-accent-active);
+  border-color: var(--pv-accent-active);
 }
 
 /* Step/Skip navigation buttons */
