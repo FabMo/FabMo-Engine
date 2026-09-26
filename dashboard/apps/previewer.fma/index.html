@@ -103,8 +103,11 @@
           <button class="submit-selected-ops" data-i18n-title="previewer.ops.submit_selected_title" title="Submit checked operations as a new job" data-i18n="previewer.ops.submit_selected">Submit Selected</button>
         </div>
 
-        <!-- Arrange mode swaps the drawer contents for the parts tree -->
-        <div class="parts-panel" id="parts-panel" style="display:none;">
+        <!-- Arrange mode swaps the drawer contents for the parts tree.
+             Visibility is CSS-driven (#preview.arranging) — an inline
+             display:none here would override that rule and keep the
+             panel (and its Submit button) permanently hidden. -->
+        <div class="parts-panel" id="parts-panel">
           <div class="ops-header">
             <span class="ops-header-title" data-i18n="previewer.arrange.parts_title">Parts</span>
           </div>
