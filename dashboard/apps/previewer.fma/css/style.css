@@ -1501,17 +1501,6 @@ input[type="range"]::-webkit-slider-runnable-track {
   cursor: pointer;
   box-shadow: none;
 }
-#preview .parts-panel .arrange-actions .submit-rearranged {
-  background: var(--pv-go);
-  color: #fff;
-}
-#preview .parts-panel .arrange-actions .submit-rearranged:hover {
-  background: var(--pv-go-hover);
-}
-#preview .parts-panel .arrange-actions .submit-rearranged:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
 #preview .parts-panel .arrange-actions .reset-arrange {
   background: var(--pv-bg-dim);
   color: var(--pv-text);

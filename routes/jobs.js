@@ -581,6 +581,50 @@ var updateOrder = function (req, res, next) {
     });
 };
 
+// Replace the file behind a PENDING job with new content, keeping the
+// job's identity, name and queue position. Used by the previewer's
+// Arrange mode to live-apply part edits to the queued job. Files are
+// hash-deduplicated and can be shared between jobs, so the content is
+// staged and added as a (possibly pre-existing) File record and the job
+// is repointed — never overwritten on disk. Reverting to the original
+// content therefore repoints back to the original File record.
+// eslint-disable-next-line no-unused-vars
+var updateJobFile = function (req, res, next) {
+    var data = req.params.data;
+    if (typeof data !== "string" || !data.length) {
+        return res.json({ status: "fail", data: { job: "No file content provided" } });
+    }
+    db.Job.getById(req.params.id, function (err, job) {
+        if (err) {
+            return res.json({ status: "fail", data: { job: err } });
+        }
+        if (job.state !== "pending") {
+            return res.json({ status: "fail", data: { job: "Only pending jobs can be updated" } });
+        }
+        var staged = path.join(os.tmpdir(), util.createUniqueFilename(job.name || "job.sbp"));
+        fs.writeFile(staged, data, function (err) {
+            if (err) {
+                return res.json({ status: "fail", data: { job: err } });
+            }
+            db.File.add(job.name || "job.sbp", staged, function (err, dbfile) {
+                // On a hash hit File.add leaves the staged copy behind;
+                // on a miss writeToDisk moved it. Either way, clean up.
+                fs.unlink(staged, function () {});
+                if (err) {
+                    return res.json({ status: "fail", data: { job: err } });
+                }
+                job.file_id = dbfile._id;
+                job.save(function (err, job) {
+                    if (err) {
+                        return res.json({ status: "fail", data: { job: err } });
+                    }
+                    res.json({ status: "success", data: { job: job } });
+                });
+            });
+        });
+    });
+};
+
 // eslint-disable-next-line no-unused-vars
 var getJobFile = function (req, res, next) {
     db.Job.getFileForJobId(req.params.id, function (err, file) {
@@ -834,6 +878,7 @@ module.exports = function (server) {
     server.post("/job/:id/repeat", setJobRepeat);
     server.post("/job/:id/ghost", ghostRunJob);
     server.get("/job/:id/file", getJobFile);
+    server.post("/job/:id/file", updateJobFile);
     server.get("/job/:id/gcode", getJobGCode);
     server.post("/job/:id/check_bounds", checkJobBounds);
     server.post("/job/:id", resubmitJob);
