@@ -996,7 +996,9 @@
             "restore": "restore",
             "restore_title": "Restore this part",
             "ambiguous": "Straddles multiple parts — not auto-assigned",
-            "all_reset": "All moves, duplicates and deletions reset"
+            "all_reset": "All moves, duplicates and deletions reset",
+            "table_label": "table",
+            "off_table": "off the table"
         },
         "viewcube": {
             "front": "FRONT",

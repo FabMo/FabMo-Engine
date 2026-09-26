@@ -385,7 +385,16 @@ function analyze(lines, opts) {
     if (!f.closed) { f.kind = 'loose'; continue; }
     var closedKids = f.children.filter(function (k) { return k.closed; });
     var coverage = allBbox.area > 0 ? f.bbox.area / allBbox.area : 0;
-    if ((closedKids.length >= 2 && coverage >= 0.6) || coverage >= 0.85) {
+    // Coverage of the drawing alone can't tell a sheet from a lone part:
+    // a single profile cutout with holes in it also spans ~the whole
+    // drawing, and calling it a sheet strands the outline and breaks the
+    // part into its holes. What distinguishes a sheet is that the closed
+    // shapes nested on it fill a substantial share of its area (that's
+    // the point of nesting), while holes are a small share of a part.
+    var kidArea = 0;
+    for (var ka = 0; ka < closedKids.length; ka++) kidArea += closedKids[ka].bbox.area;
+    var kidFrac = f.bbox.area > 0 ? kidArea / f.bbox.area : 0;
+    if (closedKids.length >= 2 && coverage >= 0.6 && kidFrac >= 0.25) {
       f.kind = 'sheet-outline';
       // promote children to parts in the default view
       for (var ki = 0; ki < f.children.length; ki++)
