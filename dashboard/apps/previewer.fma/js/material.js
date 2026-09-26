@@ -73,6 +73,10 @@ module.exports = function(scene, update) {
   // Monotonic id stamped on each worker job; the main thread only accepts a
   // response whose jobId matches the most recent dispatch.
   var _workerJobId = 0;
+  // Counts initial-mesh builds only (unlike _workerJobId, which every
+  // worker job type increments) — used to discard a build superseded by
+  // a newer initialize() while its worker was still running.
+  var _buildGeneration = 0;
   function ensureWorker() {
     if (_isIOS) return null;  // large buffer transfers via Blob URL workers hang on iOS
     if (_worker) return _worker;
@@ -257,12 +261,19 @@ module.exports = function(scene, update) {
     }
 
     var thisJob = ++_workerJobId;
+    var thisBuild = ++_buildGeneration;
     var tStart = performance.now();
 
     var onMsg = function (e) {
       if (!e.data || e.data.jobId !== thisJob) return;
       if (e.data.type !== 'buildUncutDone') return;
       worker.removeEventListener('message', onMsg);
+
+      // A newer initialize() superseded this build while the worker ran.
+      // Its buffers describe the OLD stock — adding its mesh would leave
+      // an orphan uncut block in the scene, z-fighting over (and hiding)
+      // the real cut mesh. Drop the result; the newest build owns the scene.
+      if (thisBuild !== _buildGeneration) return;
 
       // Worker transferred the buffers back — rebind closure refs.
       posArr = new Float32Array(e.data.posBuf);
