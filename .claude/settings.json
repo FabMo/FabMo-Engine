@@ -1,0 +1,8 @@
+{
+  "env": {
+    "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD": "1"
+  },
+  "permissions": {
+    "additionalDirectories": ["/fabmo-updater", "/fabmo-def", "/fabmo_image_builder"]
+  }
+}
