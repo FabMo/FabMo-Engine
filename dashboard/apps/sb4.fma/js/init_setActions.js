@@ -288,7 +288,37 @@ $(document).ready(function () {
         updateSpeedsFromEngineConfig();
     });
 
-    // ** Set-Up Response to Command Entry; first key management 
+    // #cmd-input is readonly so the browser never treats keystrokes here as text entry;
+    // text entry hides the mouse pointer (hide-while-typing), and the pointer stays hidden
+    // behind the native file dialog that FP opens. Characters are applied to the value
+    // manually here; command processing still happens in the keyup handler below.
+    // Exception: a readonly field never summons the on-screen keyboard, so when the field
+    // is engaged by touch/pen (no mouse pointer to protect) make it editable again.
+    // pointerdown fires before the focus event that triggers the OSK, so the timing works.
+    $("#cmd-input").on("pointerdown", function (event) {
+        var pointerType = event.pointerType || (event.originalEvent && event.originalEvent.pointerType);
+        if (pointerType === "touch" || pointerType === "pen") {
+            $(this).removeAttr("readonly");
+        } else {
+            $(this).attr("readonly", true);
+        }
+    });
+
+    $("#cmd-input").keydown(function (event) {
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+        var val = $("#cmd-input").val();
+        if (event.key && event.key.length === 1) {
+            $("#cmd-input").val(val + event.key);
+            event.preventDefault();
+        } else if (event.which === 8 || event.which === 46) {   // backspace, delete
+            $("#cmd-input").val(val.slice(0, -1));
+            event.preventDefault();
+        }
+    });
+
+    // ** Set-Up Response to Command Entry; first key management
     $("#cmd-input").keyup(function (event) {
         var commandInputText = $("#cmd-input").val();
         switch (event.which) {
