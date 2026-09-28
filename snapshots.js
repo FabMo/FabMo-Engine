@@ -32,6 +32,15 @@ var LIVE_MACROS_DIR = "/opt/fabmo/macros";
 // The bulky cut files in /opt/fabmo/files/ are NOT captured — they
 // travel via the separate "Export Job History" archive instead.
 var LIVE_DB_DIR = "/opt/fabmo/db";
+// User-installed app archives (UUID-named .fma zips). Small, and the
+// approot re-extracts any archive it doesn't have at boot, so capturing
+// the archives is all a restore needs. System apps ship with the engine
+// and are never captured.
+var LIVE_APPS_DIR = "/opt/fabmo/apps";
+// Cut files. NOT captured in on-tool snapshots (can be hundreds of MB) —
+// they are only bundled into downloaded backups on request, and restored
+// from an uploaded backup that contains a files/ dir.
+var LIVE_FILES_DIR = "/opt/fabmo/files";
 var MAX_AUTO_PER_KIND = 5;
 
 // Snapshots marked as the user-default are mirrored here so they survive
@@ -137,6 +146,43 @@ function _create(name, opts, callback) {
                                 log.warn("snapshot: db/ copy failed (continuing): " + copyErr.message);
                             }
                             cb();
+                        });
+                    });
+                },
+                function (cb) {
+                    // Copy user-installed app archives and write an
+                    // apps.json inventory of their IDs. Best-effort like db/.
+                    if (!fs.existsSync(LIVE_APPS_DIR)) {
+                        return cb();
+                    }
+                    var appsDest = path.join(dest, "apps");
+                    fs.ensureDir(appsDest, function (eErr) {
+                        if (eErr) {
+                            return cb(eErr);
+                        }
+                        fs.copy(LIVE_APPS_DIR, appsDest, function (copyErr) {
+                            if (copyErr) {
+                                log.warn("snapshot: apps/ copy failed (continuing): " + copyErr.message);
+                                return cb();
+                            }
+                            var manifest = [];
+                            try {
+                                fs.readdirSync(LIVE_APPS_DIR).forEach(function (f) {
+                                    var ext = path.extname(f).toLowerCase();
+                                    if (ext === ".fma" || ext === ".zip") {
+                                        manifest.push({
+                                            id: path.basename(f, ext),
+                                            file: f,
+                                            size: fs.statSync(path.join(LIVE_APPS_DIR, f)).size,
+                                        });
+                                    }
+                                });
+                            } catch (e) {
+                                log.warn("snapshot: apps.json manifest failed (continuing): " + e.message);
+                            }
+                            fs.writeFile(path.join(dest, "apps.json"), JSON.stringify(manifest, null, 2), function () {
+                                cb();
+                            });
                         });
                     });
                 },
@@ -336,6 +382,14 @@ function list(callback) {
                             var info = JSON.parse(data);
                             info.name = name;
                             info.is_user_default = name === defaultName;
+                            // Content flags so the UI can offer/withhold
+                            // partial-restore options per snapshot.
+                            var dir = path.join(SNAPSHOT_DIR, name);
+                            info.has_config = fs.existsSync(path.join(dir, "config"));
+                            info.has_macros = fs.existsSync(path.join(dir, "macros"));
+                            info.has_apps = fs.existsSync(path.join(dir, "apps"));
+                            info.has_db = fs.existsSync(path.join(dir, "db"));
+                            info.has_files = fs.existsSync(path.join(dir, "files"));
                             snapshots.push(info);
                         } catch (e) {
                             log.warn("snapshot " + name + " has invalid info: " + e.message);
@@ -557,10 +611,18 @@ function clearDefault(callback) {
 // Restore a snapshot over the live config + macros. Auto-snapshots the
 // current state first so an accidental restore is itself reversible.
 // Caller is responsible for triggering an engine restart after the callback.
-function restore(name, callback) {
+//   parts - Optional {config, macros, apps, jobdb} booleans selecting what
+//           to restore. Omitted (or called as restore(name, callback))
+//           restores everything the snapshot contains.
+function restore(name, parts, callback) {
+    if (typeof parts === "function") {
+        callback = parts;
+        parts = null;
+    }
     if (typeof callback !== "function") {
         callback = function () {};
     }
+    parts = parts || { config: true, macros: true, apps: true, jobdb: true };
     if (typeof name !== "string" || name.length === 0) {
         return callback(new Error("Snapshot name required"));
     }
@@ -578,28 +640,48 @@ function restore(name, callback) {
         var snapConfigDir = path.join(dest, "config");
         var snapMacrosDir = path.join(dest, "macros");
         var snapDbDir = path.join(dest, "db");
+        var snapAppsDir = path.join(dest, "apps");
+        var snapFilesDir = path.join(dest, "files");
         async.series(
             [
                 function (cb) {
-                    if (!fs.existsSync(snapConfigDir)) {
+                    if (!parts.config || !fs.existsSync(snapConfigDir)) {
                         return cb();
                     }
                     fs.copy(snapConfigDir, LIVE_CONFIG_DIR, { overwrite: true }, cb);
                 },
                 function (cb) {
-                    if (!fs.existsSync(snapMacrosDir)) {
+                    if (!parts.macros || !fs.existsSync(snapMacrosDir)) {
                         return cb();
                     }
                     fs.copy(snapMacrosDir, LIVE_MACROS_DIR, { overwrite: true }, cb);
                 },
                 function (cb) {
+                    // Restore app archives. The boot-time app loader
+                    // extracts any archive without an approot dir, so a
+                    // copy + restart is a complete app restore. Additive
+                    // like everything else here.
+                    if (!parts.apps || !fs.existsSync(snapAppsDir)) {
+                        return cb();
+                    }
+                    fs.copy(snapAppsDir, LIVE_APPS_DIR, { overwrite: true }, cb);
+                },
+                function (cb) {
                     // Restore job history metadata if the snapshot has db/.
                     // Older snapshots (pre-history-in-snapshot) just won't
                     // have this dir and that's fine.
-                    if (!fs.existsSync(snapDbDir)) {
+                    if (!parts.jobdb || !fs.existsSync(snapDbDir)) {
                         return cb();
                     }
                     fs.copy(snapDbDir, LIVE_DB_DIR, { overwrite: true }, cb);
+                },
+                function (cb) {
+                    // Uploaded full backups can carry the cut files too.
+                    // On-tool snapshots never have files/.
+                    if (!parts.jobdb || !fs.existsSync(snapFilesDir)) {
+                        return cb();
+                    }
+                    fs.copy(snapFilesDir, LIVE_FILES_DIR, { overwrite: true }, cb);
                 },
             ],
             function (err) {

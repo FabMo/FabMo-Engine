@@ -213,187 +213,10 @@ var notifyChange = function(err,id){
 
 var configData = null;
 
-// Handle Backups
-
-$('#btn-backup').click(function(evt) {
-    fabmo.getConfig(function(err,conf){
-        if(err){
-            fabmo.notify('error',window.t('config.notify.backup_failed'));
-        }else{
-            fabmo._download(JSON.stringify(conf), 'fabmo_config_backup.fmc','text/json');
-        }
-    });
-});
-
-$('#btn-restore').click(function(evt) {
-    $('#restore_conf_file').trigger('click');
-});
-
-$("#restore_conf_file").change(function() {
-    var files = $(this).prop('files');
-    if(files.length===1){
-        var conf_file = files[0];
-        if(!conf_file)return;
-        if(conf_file.name.split('.').pop()!=='fmc'){
-            fabmo.notify('error',window.t('config.notify.invalid_file'));
-            $("#restore_conf_file").attr("value", "");
-            return;
-        }
-        var reader = new FileReader();
-        reader.readAsText(conf_file);
-        reader.onload = function(evt)
-        {
-            try{
-                conf = JSON.parse(evt.target.result);
-            }catch(ex){
-            fabmo.notify("error",window.t('config.notify.error_reading_file_detail')+ex);
-            $("#restore_conf_file").attr("value", "");
-            return;
-            }
-            fabmo.setConfig(conf,function(err){
-                if(err){
-                    fabmo.notify("error",err);
-                    $("#restore_conf_file").attr("value", "");
-                    return;
-                }
-                fabmo.notify("success",window.t('config.notify.config_loaded'));
-                $("#restore_conf_file").attr("value", "");
-            });
-        }
-        reader.onerror = function (evt) {
-            fabmo.notify("error",window.t('config.notify.error_reading_file'));
-            $("#restore_conf_file").attr("value", "");
-        }
-    }
-});
-
-// Backup Macros
-$('#btn-macros-backup').click(function () {
-  fetch('/macros/backup', {
-      method: 'GET',
-  })
-    .then((response) => {
-        if (!response.ok) {
-            throw new Error(window.t('config.notify.macros_backup_failed'));
-        }
-        return response.blob(); // Get the response as a binary Blob
-    })
-    .then((blob) => {
-        // Create a download link for the Blob
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'fabmo_macros_backup.zip'; // Set the file name
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url); // Clean up the URL
-        fabmo.notify('success', window.t('config.notify.macros_backup_ok'));
-    })
-  .catch((err) => {
-      fabmo.notify('error', window.t('config.notify.macros_backup_failed_detail') + err.message);
-  });
-});
-
-
-// Restore Macros
-$('#btn-macros-restore').click(function () {
-    $('#restore_macros_dir').trigger('click');
-});
-
-$('#restore_macros_dir').change(function() {
-  const files = $(this).prop('files');
-  if (files.length === 1) {
-    const macroFile = files[0];
-    fabmo.notify('info', window.t('config.notify.macros_uploading'));
-    const formData = new FormData();
-    formData.append('file', macroFile);
-
-    $.ajax({
-      url: '/macros/restore',
-      type: 'POST',
-      data: formData,
-      processData: false,
-      contentType: false,
-      timeout: 120000, // 2-minute timeout
-      success: function(response) {
-        fabmo.notify('success', window.t('config.notify.macros_restored'));
-      },
-      error: function(xhr, status, error) {
-        console.error('Upload error:', xhr.responseText);
-        let errorMessage = window.t('config.notify.macros_restore_failed');
-
-        try {
-          const errorObj = JSON.parse(xhr.responseText);
-          if (errorObj && errorObj.message) {
-            errorMessage += ': ' + errorObj.message;
-          }
-        } catch (e) {
-          errorMessage += ': ' + error;
-        }
-        fabmo.notify('error', errorMessage);
-      },
-      complete: function() {
-        // Reset the file input
-        $('#restore_macros_dir').val('');
-        location.reload(); // Uncomment this line to refresh the page
-      }
-    });
-  }
-});
-
-// Export Job History (.zip) — streams the server-built archive directly
-// to a download. Payload can be large (cut files included) so we don't
-// fetch().blob() the whole thing through memory if we can avoid it; a
-// simple anchor click hands the response to the browser's downloader.
-$('#btn-history-export').click(function () {
-  fabmo.notify('info', window.t('config.notify.preparing_history_archive'));
-  const link = document.createElement('a');
-  link.href = '/history/export';
-  link.download = 'fabmo_history_export.zip';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-});
-
-// Import Job History — upload a .zip produced by export. The server
-// unpacks it back into /opt/fabmo/db/ and /opt/fabmo/files/; restart
-// is required afterwards for the in-memory DB to pick up new state.
-$('#btn-history-import').click(function () {
-  if (!confirm(window.t('config.modal.import_history_confirm'))) return;
-  $('#history-import-file').trigger('click');
-});
-
-$('#history-import-file').change(function() {
-  const files = $(this).prop('files');
-  if (files.length !== 1) return;
-  const f = files[0];
-  fabmo.notify('info', window.t('config.notify.uploading_history_archive'));
-  const formData = new FormData();
-  formData.append('file', f);
-  $.ajax({
-    url: '/history/import',
-    type: 'POST',
-    data: formData,
-    processData: false,
-    contentType: false,
-    timeout: 600000, // 10-minute timeout for large archives
-    success: function(response) {
-      fabmo.notify('success', (response && response.message) || window.t('config.notify.history_imported'));
-    },
-    error: function(xhr, status, error) {
-      let msg = window.t('config.notify.history_import_failed');
-      try {
-        const obj = JSON.parse(xhr.responseText);
-        if (obj && obj.message) msg += ': ' + obj.message;
-      } catch (e) { msg += ': ' + error; }
-      fabmo.notify('error', msg);
-    },
-    complete: function() {
-      $('#history-import-file').val('');
-    }
-  });
-});
+// Backups: the granular .fmc / macros-zip / history-export buttons were
+// replaced by the two-button Settings & Backups snapshot flow (see the
+// "Settings & Backups" section further down). Their server routes remain
+// for compatibility with old saved files.
 
 // Other Config page functions
 
@@ -1062,69 +885,104 @@ function ensureProfileDisplayCorrect() {
     });
 }
 
-// "My Custom Profile": create a snapshot from the current /opt/fabmo/config +
-// macros, then mark it as the Preferred fallback the recovery chain will reach
-// for. This is the user-friendly entry into the snapshot system — it does not
-// modify any shipped profiles.
-//
-// Refreshes both the snapshot dropdown and the Preferred Profile label.
-// Filters to kind="user" so auto recovery snapshots (which rotate on their
-// own and aren't user-meaningful) don't clutter the picker.
-function refreshDefaultSnapshotName() {
+// ---------- Settings & Backups ----------
+// Two-button save/restore over the snapshot system. A snapshot captures
+// Configuration settings, Macros, installed App archives, and the job
+// history metadata; a *downloaded* backup can additionally bundle the cut
+// files themselves ("include job database"). The inline dialogs are used
+// because the sandboxed iframe blocks window.prompt()/confirm().
+
+var snapshotIndex = {}; // name -> snapshot info (incl. has_* content flags)
+var restoreUploadFile = null; // File chosen via "Upload a backup file..."
+
+function formatMB(bytes) {
+    var mb = (bytes || 0) / (1024 * 1024);
+    if (mb < 0.1) return '<0.1 MB';
+    if (mb < 100) return mb.toFixed(1) + ' MB';
+    return Math.round(mb) + ' MB';
+}
+
+// Refresh the snapshot list: populates the restore dialog's source picker
+// and the "Default settings" label. Filters to kind="user" so auto
+// recovery snapshots (which rotate on their own) don't clutter the picker.
+function refreshSnapshots(done) {
     fetch('/snapshots')
         .then(function (r) { return r.json(); })
         .then(function (resp) {
             var all = (resp && resp.status === 'success' && resp.data) ? (resp.data.snapshots || []) : [];
             var userSnaps = all.filter(function (s) { return (s.kind || 'user') === 'user'; });
             var preferred = null;
-            for (var i = 0; i < userSnaps.length; i++) {
-                if (userSnaps[i].is_user_default) { preferred = userSnaps[i]; break; }
-            }
+            snapshotIndex = {};
+            userSnaps.forEach(function (s) {
+                snapshotIndex[s.name] = s;
+                if (s.is_user_default) preferred = s;
+            });
 
-            var $sel = $('#custom-snapshot-select');
+            var $sel = $('#restore-source');
             var prev = $sel.val();
             $sel.empty();
             if (userSnaps.length === 0) {
-                $sel.append($('<option></option>').val('').text(window.t('config.custom_profile.no_custom_profiles')));
+                $sel.append($('<option></option>').val('').text(window.t('config.settings_backup.no_snapshots')));
             } else {
-                for (var j = 0; j < userSnaps.length; j++) {
-                    var s = userSnaps[j];
-                    var label = s.name + (s.is_user_default ? '  ' + window.t('config.custom_profile.preferred_tag') : '');
+                userSnaps.forEach(function (s) {
+                    var label = s.name + (s.is_user_default ? '  ' + window.t('config.settings_backup.default_tag') : '');
                     $sel.append($('<option></option>').val(s.name).text(label));
-                }
+                });
             }
-            // Preserve the user's prior selection if it still exists; otherwise
-            // fall back to the Preferred snapshot so the action buttons act on
-            // the most useful default.
-            if (prev && userSnaps.some(function (s) { return s.name === prev; })) {
+            // Keep the user's selection if it survived; otherwise default
+            // to the preferred snapshot, per the restore flow design.
+            if (prev && snapshotIndex[prev]) {
                 $sel.val(prev);
             } else if (preferred) {
                 $sel.val(preferred.name);
             }
 
-            $('#current-default-name').text(preferred ? preferred.name : window.t('config.custom_profile.none'));
+            $('#current-default-name').text(preferred ? preferred.name : window.t('config.settings_backup.none'));
+            if (done) done(userSnaps, preferred);
         })
-        .catch(function () { /* leave display alone on transient errors */ });
+        .catch(function () {
+            if (done) done([], null);
+        });
 }
 
-// The app is sandboxed and cannot use window.prompt(), so we drive an
-// inline modal in index.html (#save-default-dialog).
-$('#btn-save-default').click(function () {
-    $('#save-default-name').val('');
-    $('#save-default-description').val('');
-    $('#save-default-dialog').show();
-    setTimeout(function () { $('#save-default-name').focus(); }, 0);
+// --- Save Current Settings ---
+
+$('#btn-save-settings').click(function () {
+    $('#save-settings-name').val('');
+    $('#save-settings-description').val('');
+    $('#save-settings-default').prop('checked', true);
+    $('#save-settings-download').prop('checked', false);
+    $('#save-settings-jobdb').prop('checked', false).prop('disabled', true);
+    $('#save-settings-jobdb-size').text('');
+    $('#save-settings-dialog').show();
+    setTimeout(function () { $('#save-settings-name').focus(); }, 0);
+    // Size estimate for the "include job database" option, so the user
+    // knows what they're getting into before bundling cut files.
+    fetch('/jobdb/size')
+        .then(function (r) { return r.json(); })
+        .then(function (resp) {
+            if (resp && resp.status === 'success' && resp.data) {
+                $('#save-settings-jobdb-size').text('(~' + formatMB(resp.data.total_bytes) + ')');
+            }
+        })
+        .catch(function () {});
 });
 
-$('#save-default-cancel').click(function () {
-    $('#save-default-dialog').hide();
+$('#save-settings-download').change(function () {
+    var on = $(this).is(':checked');
+    $('#save-settings-jobdb').prop('disabled', !on);
+    if (!on) $('#save-settings-jobdb').prop('checked', false);
 });
 
-$('#save-default-confirm').click(function () {
+$('#save-settings-cancel').click(function () {
+    $('#save-settings-dialog').hide();
+});
+
+$('#save-settings-confirm').click(function () {
     // Spaces are a common natural input; auto-convert to underscores
     // rather than rejecting. Collapse runs of whitespace to a single _.
-    var name = ($('#save-default-name').val() || '').trim().replace(/\s+/g, '_');
-    var description = $('#save-default-description').val() || '';
+    var name = ($('#save-settings-name').val() || '').trim().replace(/\s+/g, '_');
+    var description = $('#save-settings-description').val() || '';
     if (!name) {
         fabmo.notify('error', window.t('config.notify.name_required'));
         return;
@@ -1133,81 +991,15 @@ $('#save-default-confirm').click(function () {
         fabmo.notify('error', window.t('config.notify.name_invalid'));
         return;
     }
-    $('#save-default-dialog').hide();
+    var makeDefault = $('#save-settings-default').is(':checked');
+    var download = $('#save-settings-download').is(':checked');
+    var includeJobdb = $('#save-settings-jobdb').is(':checked');
+    $('#save-settings-dialog').hide();
 
     fetch('/snapshots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, description: description })
-    })
-    .then(function (r) { return r.json(); })
-    .then(function (resp) {
-        if (!resp || resp.status !== 'success') {
-            var msg = resp && resp.message ? resp.message : window.t('config.notify.unknown_error');
-            throw new Error(msg);
-        }
-        return fetch('/snapshots/' + encodeURIComponent(name) + '/set-default', {
-            method: 'POST'
-        }).then(function (r) { return r.json(); });
-    })
-    .then(function (resp) {
-        if (!resp || resp.status !== 'success') {
-            var msg = resp && resp.message ? resp.message : window.t('config.notify.mark_default_failed');
-            throw new Error(window.t('config.notify.snapshot_not_default') + msg);
-        }
-        fabmo.notify('success', window.t('config.notify.saved_default') + name);
-        refreshDefaultSnapshotName();
-    })
-    .catch(function (err) {
-        fabmo.notify('error', err.message || window.t('config.notify.save_default_failed'));
-    });
-});
-
-// Restore from whatever snapshot is currently picked in the dropdown.
-// fabmo.showModal is used here (instead of window.confirm) because the app
-// runs in a sandboxed iframe that blocks confirm/prompt.
-$('#btn-reset-default').click(function () {
-    var name = $('#custom-snapshot-select').val();
-    if (!name) {
-        fabmo.notify('warning', window.t('config.notify.no_custom_profile_selected'));
-        return;
-    }
-    fabmo.showModal({
-        title: window.t('config.modal.reset_default_title'),
-        message: window.t('config.modal.reset_default_message_prefix') + name + window.t('config.modal.reset_default_message_suffix'),
-        okText: window.t('config.modal.restore'),
-        cancelText: window.t('config.modal.cancel'),
-        ok: function () {
-            fabmo.notify('info', window.t('config.notify.restoring_default_prefix') + name + window.t('config.notify.restoring_default_suffix'));
-            fetch('/snapshots/' + encodeURIComponent(name) + '/restore', {
-                method: 'POST'
-            })
-                .then(function (r) { return r.json(); })
-                .then(function (resp) {
-                    if (!resp || resp.status !== 'success') {
-                        var msg = resp && resp.message ? resp.message : window.t('config.notify.unknown_error');
-                        fabmo.notify('error', window.t('config.notify.reset_failed') + msg);
-                    }
-                    // On success the engine restarts; the page reloads on its own.
-                })
-                .catch(function (err) {
-                    fabmo.notify('error', window.t('config.notify.reset_failed') + err.message);
-                });
-        },
-        cancel: function () {}
-    });
-});
-
-// Mark the dropdown's selected snapshot as the Preferred fallback. Refresh
-// the UI so the "(Preferred)" tag and label move to the new winner.
-$('#btn-set-preferred').click(function () {
-    var name = $('#custom-snapshot-select').val();
-    if (!name) {
-        fabmo.notify('warning', window.t('config.notify.no_custom_profile_selected'));
-        return;
-    }
-    fetch('/snapshots/' + encodeURIComponent(name) + '/set-default', {
-        method: 'POST'
     })
         .then(function (r) { return r.json(); })
         .then(function (resp) {
@@ -1215,19 +1007,104 @@ $('#btn-set-preferred').click(function () {
                 var msg = resp && resp.message ? resp.message : window.t('config.notify.unknown_error');
                 throw new Error(msg);
             }
-            fabmo.notify('success', window.t('config.notify.preferred_profile_set') + name);
-            refreshDefaultSnapshotName();
+            if (!makeDefault) return null;
+            return fetch('/snapshots/' + encodeURIComponent(name) + '/set-default', { method: 'POST' })
+                .then(function (r) { return r.json(); })
+                .then(function (dResp) {
+                    if (!dResp || dResp.status !== 'success') {
+                        var msg = dResp && dResp.message ? dResp.message : window.t('config.notify.mark_default_failed');
+                        fabmo.notify('warning', window.t('config.notify.snapshot_not_default') + msg);
+                    }
+                });
+        })
+        .then(function () {
+            if (download) {
+                var url = '/snapshots/' + encodeURIComponent(name) + '/download' + (includeJobdb ? '?jobdb=1' : '');
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = name + '.fmsnap.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+            fabmo.notify('success', window.t('config.notify.settings_saved') + name);
+            refreshSnapshots();
         })
         .catch(function (err) {
-            fabmo.notify('error', window.t('config.notify.set_preferred_failed') + err.message);
+            fabmo.notify('error', err.message || window.t('config.notify.save_default_failed'));
         });
 });
 
-// Delete the dropdown's selected snapshot. Confirmation modal because the
-// action is destructive and unrecoverable. Live machine settings are not
-// touched — only the saved profile is removed.
-$('#btn-delete-snapshot').click(function () {
-    var name = $('#custom-snapshot-select').val();
+// --- Restore Settings ---
+
+// Enable/disable the part checkboxes for what the selected source actually
+// contains. Older snapshots (or uploads, whose contents we can't see until
+// they're imported) leave everything enabled. Availability flags come from
+// the /snapshots list; a missing flag (old server) counts as available.
+function updateRestoreParts() {
+    var s = restoreUploadFile ? null : snapshotIndex[$('#restore-source').val()];
+    var partAvailable = function (id, available) {
+        $(id).prop('disabled', !available).prop('checked', available);
+    };
+    partAvailable('#restore-part-config', !s || s.has_config !== false);
+    partAvailable('#restore-part-macros', !s || s.has_macros !== false);
+    partAvailable('#restore-part-apps', !s || s.has_apps !== false);
+    partAvailable('#restore-part-jobdb', !s || s.has_db !== false || s.has_files === true);
+}
+
+$('#btn-restore-settings').click(function () {
+    restoreUploadFile = null;
+    $('#restore-upload-name').text('');
+    $('#restore-upload-file').val('');
+    $('#restore-set-default').prop('checked', true);
+    refreshSnapshots(function () {
+        updateRestoreParts();
+        $('#restore-settings-dialog').show();
+    });
+});
+
+$('#restore-settings-cancel').click(function () {
+    $('#restore-settings-dialog').hide();
+});
+
+$('#restore-source').change(function () {
+    // Picking a snapshot supersedes a previously chosen upload.
+    restoreUploadFile = null;
+    $('#restore-upload-name').text('');
+    $('#restore-upload-file').val('');
+    updateRestoreParts();
+});
+
+$('#restore-upload-btn').click(function () {
+    $('#restore-upload-file').trigger('click');
+});
+
+$('#restore-upload-file').change(function () {
+    var files = $(this).prop('files');
+    if (!files || files.length !== 1) return;
+    restoreUploadFile = files[0];
+    $('#restore-upload-name').text(restoreUploadFile.name);
+    updateRestoreParts();
+});
+
+// Download / delete management for the selected snapshot, tucked into the
+// restore dialog so the two main buttons stay uncluttered.
+$('#restore-download-snapshot').click(function () {
+    var name = $('#restore-source').val();
+    if (!name) {
+        fabmo.notify('warning', window.t('config.notify.no_custom_profile_selected'));
+        return;
+    }
+    var a = document.createElement('a');
+    a.href = '/snapshots/' + encodeURIComponent(name) + '/download';
+    a.download = name + '.fmsnap.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+});
+
+$('#restore-delete-snapshot').click(function () {
+    var name = $('#restore-source').val();
     if (!name) {
         fabmo.notify('warning', window.t('config.notify.no_custom_profile_selected'));
         return;
@@ -1238,9 +1115,7 @@ $('#btn-delete-snapshot').click(function () {
         okText: window.t('config.modal.delete'),
         cancelText: window.t('config.modal.cancel'),
         ok: function () {
-            fetch('/snapshots/' + encodeURIComponent(name), {
-                method: 'DELETE'
-            })
+            fetch('/snapshots/' + encodeURIComponent(name), { method: 'DELETE' })
                 .then(function (r) { return r.json(); })
                 .then(function (resp) {
                     if (!resp || resp.status !== 'success') {
@@ -1248,7 +1123,7 @@ $('#btn-delete-snapshot').click(function () {
                         throw new Error(msg);
                     }
                     fabmo.notify('success', window.t('config.notify.deleted_prefix') + name);
-                    refreshDefaultSnapshotName();
+                    refreshSnapshots(function () { updateRestoreParts(); });
                 })
                 .catch(function (err) {
                     fabmo.notify('error', window.t('config.notify.delete_failed') + err.message);
@@ -1258,64 +1133,99 @@ $('#btn-delete-snapshot').click(function () {
     });
 });
 
-// Download the dropdown-selected snapshot as a `.fmsnap.zip`. The browser
-// drives the download via a temporary anchor — server sets
-// Content-Disposition so the filename is `<name>.fmsnap.zip`.
-$('#btn-download-snapshot').click(function () {
-    var name = $('#custom-snapshot-select').val();
-    if (!name) {
-        fabmo.notify('warning', window.t('config.notify.no_custom_profile_selected'));
+// After a restore the engine exits and systemd brings it back. Poll until
+// it answers again, then reload the whole dashboard so every view picks up
+// the restored state.
+function awaitEngineRestart() {
+    var attempts = 0;
+    // Let the engine actually go down before polling for it coming back,
+    // otherwise the first poll can hit the dying process.
+    setTimeout(function poll() {
+        attempts++;
+        $.ajax({ url: '/status', method: 'GET', timeout: 3000 })
+            .done(function () {
+                try { window.top.location.reload(); } catch (e) { window.location.reload(); }
+            })
+            .fail(function () {
+                if (attempts < 60) setTimeout(poll, 3000);
+            });
+    }, 5000);
+}
+
+$('#restore-settings-confirm').click(function () {
+    var parts = {
+        config: $('#restore-part-config').is(':checked'),
+        macros: $('#restore-part-macros').is(':checked'),
+        apps: $('#restore-part-apps').is(':checked'),
+        jobdb: $('#restore-part-jobdb').is(':checked'),
+    };
+    if (!parts.config && !parts.macros && !parts.apps && !parts.jobdb) {
+        fabmo.notify('warning', window.t('config.notify.restore_nothing_selected'));
         return;
     }
-    var url = '/snapshots/' + encodeURIComponent(name) + '/download';
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = name + '.fmsnap.zip';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-});
+    var setDefault = $('#restore-set-default').is(':checked');
 
-// Upload a previously-downloaded snapshot zip. Trigger flow mirrors the
-// macros restore: button -> hidden file input -> change -> multipart POST.
-$('#btn-upload-snapshot').click(function () {
-    $('#upload-snapshot-file').trigger('click');
-});
+    var doRestore = function (name) {
+        fabmo.notify('info', window.t('config.notify.restoring_default_prefix') + name + window.t('config.notify.restoring_default_suffix'));
+        fetch('/snapshots/' + encodeURIComponent(name) + '/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ parts: parts, set_default: setDefault })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (resp) {
+                if (!resp || resp.status !== 'success') {
+                    var msg = resp && resp.message ? resp.message : window.t('config.notify.unknown_error');
+                    fabmo.notify('error', window.t('config.notify.reset_failed') + msg);
+                    return;
+                }
+                fabmo.notify('success', window.t('config.notify.engine_restarting'));
+                awaitEngineRestart();
+            })
+            .catch(function (err) {
+                fabmo.notify('error', window.t('config.notify.reset_failed') + err.message);
+            });
+    };
 
-$('#upload-snapshot-file').change(function () {
-    var files = $(this).prop('files');
-    if (!files || files.length !== 1) return;
-    var file = files[0];
-    fabmo.notify('info', window.t('config.notify.uploading_custom_profile'));
-    var formData = new FormData();
-    formData.append('file', file);
-
-    $.ajax({
-        url: '/snapshots/upload',
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        timeout: 120000
-    }).done(function (resp) {
-        if (resp && resp.status === 'success') {
-            var importedName = (resp.data && resp.data.name) || file.name;
-            fabmo.notify('success', window.t('config.notify.imported_custom_profile') + importedName);
-            refreshDefaultSnapshotName();
-        } else {
-            fabmo.notify('error', window.t('config.notify.upload_failed') + ((resp && resp.message) || window.t('config.notify.unknown')));
+    if (restoreUploadFile) {
+        $('#restore-settings-dialog').hide();
+        fabmo.notify('info', window.t('config.notify.uploading_custom_profile'));
+        var formData = new FormData();
+        formData.append('file', restoreUploadFile);
+        $.ajax({
+            url: '/snapshots/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            timeout: 600000
+        }).done(function (resp) {
+            if (resp && resp.status === 'success' && resp.data && resp.data.name) {
+                doRestore(resp.data.name);
+            } else {
+                fabmo.notify('error', window.t('config.notify.upload_failed') + ((resp && resp.message) || window.t('config.notify.unknown')));
+            }
+        }).fail(function (xhr) {
+            var msg = window.t('config.notify.unknown_error');
+            try { msg = (JSON.parse(xhr.responseText) || {}).message || msg; } catch (e) {}
+            fabmo.notify('error', window.t('config.notify.upload_failed') + msg);
+        }).always(function () {
+            restoreUploadFile = null;
+            $('#restore-upload-file').val('');
+        });
+    } else {
+        var name = $('#restore-source').val();
+        if (!name) {
+            fabmo.notify('warning', window.t('config.notify.no_custom_profile_selected'));
+            return;
         }
-    }).fail(function (xhr) {
-        var msg = window.t('config.notify.unknown_error');
-        try { msg = (JSON.parse(xhr.responseText) || {}).message || msg; } catch (e) {}
-        fabmo.notify('error', window.t('config.notify.upload_failed') + msg);
-    }).always(function () {
-        $('#upload-snapshot-file').val('');
-    });
+        $('#restore-settings-dialog').hide();
+        doRestore(name);
+    }
 });
 
-// Populate the dropdown and Preferred label on load.
-refreshDefaultSnapshotName();
+// Populate the Default settings label on load.
+refreshSnapshots();
 
 // ---------- Spindle Setup ----------
 
