@@ -21,20 +21,20 @@ $sb_dtType               := 3        '- 2=DTmax; 3=DT3; THIS needs to be modifie
 
 
 'Switch numbers (esp. used for target parameter in Probing [P_] actions)
-$sb_proxNum.x            = 3 
-$sb_proxNum.y            = 3
-$sb_proxNum.z            = 3
-$sb_zZeroNum             = 1
-$sb_proxType             = 0
-$sb_hasZProx             = 1
+'$sb_proxNum.x            = 3 
+'$sb_proxNum.y            = 3
+'$sb_proxNum.z            = 3
+'$sb_zZeroNum             = 1
+'$sb_proxType             = 0
+'$sb_hasZProx             = 1
 
 'Switch Derived System variable number (pre-compute switch "system numbers" needed for switch reads (equals input # + 50)
-$sb_proxCk.x = $sb_proxNum.x + 50
-$sb_proxCk.y = $sb_proxNum.y + 50
-$sb_proxCk.z = $sb_proxNum.z + 50
-$sb_zZeroCk = $sb_zZeroNum + 50
+'$sb_proxCk.x = $sb_proxNum.x + 50
+'$sb_proxCk.y = $sb_proxNum.y + 50
+'$sb_proxCk.z = $sb_proxNum.z + 50
+'$sb_zZeroCk = $sb_zZeroNum + 50
 
-$sb_zPlateType           = "STD"    '- PRESS; 3D; STD ... use this eventually to select type
+'$sb_zPlateType           = "STD"    '- PRESS; 3D; STD ... use this eventually to select type
 $sb_safe_Z               = %(28)    '- Retreived from system variables
 
 
@@ -42,11 +42,11 @@ $sb_safe_Z               = %(28)    '- Retreived from system variables
 $ATC.type               := 0        '- REQUIRED: Set to 0 for standard MTC tools
 '$ToolIn                 := 0    'Don't think this var exists; REMOVE
 $sb_TOOLcurrent         := 0
-$sb_MTCmode             := "QUIT"   '- IGNORE; QUIT; MTC ... defaulting to IGNORE for moment
-$sb_MTC_XY_mode         := "FIXED"  '- FIXED; STAY where to do tool change
-$sb_MTC_Z_mode          := "FIXED"  '- MAX; FIXED method pull-up
-$sb_MTC_Zero_mode       := "MACRO"  '- MACRO; or, DRO keypad manual method to zero Z
-$sb_MTC_skip_first      := "NO"     '- NO; YES ... add to DT Util? do we really want this?
+'$sb_MTCmode             := "QUIT"   '- IGNORE; QUIT; MTC ... defaulting to IGNORE for moment
+'$sb_MTC_XY_mode         := "FIXED"  '- FIXED; STAY where to do tool change
+'$sb_MTC_Z_mode          := "FIXED"  '- MAX; FIXED method pull-up
+'$sb_MTC_Zero_mode       := "MACRO"  '- MACRO; or, DRO keypad manual method to zero Z
+'$sb_MTC_skip_first      := "NO"     '- NO; YES ... add to DT Util? do we really want this?
 
 ' UNIVERSAL UNIT VARIABLES ====================================================================================================
 ' Universal Unit (UU) variables are dual variables that hold inch and metric equivalent values for macros.
