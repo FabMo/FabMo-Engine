@@ -158,7 +158,7 @@ require('./cm-fabmo-modes.js');
 
     function loadFromBrowser() {
       if(supports_html5_storage()) {
-        var language = localStorage.fabmo_editor_language || 'gcode';
+        var language = localStorage.fabmo_editor_language || 'opensbp';
         set_language(language);
         var content = localStorage.fabmo_editor_content || '';
         if((content !== content) || (content === undefined)) {
@@ -266,6 +266,7 @@ require('./cm-fabmo-modes.js');
         case null:
           if(supports_html5_storage()) {
             localStorage.fabmo_editor_content = editor.getValue();
+            localStorage.fabmo_editor_language = lang;
             pos = editor.getCursor();
             localStorage.fabmo_editor_position = JSON.stringify(pos);
           }

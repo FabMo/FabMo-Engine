@@ -1,0 +1,11 @@
+{
+	"name": "Profile Designer",
+	"main": "./index.html",
+	"icon": "icon.png",
+	"icon_color": "#313366",
+	"version": "0.1.0",
+	"author": "ShopBot Tools",
+	"website": "http://shopbottools.com",
+	"id": "profile_designer",
+	"description": "Build machine profiles: edit the default settings, capture only the diff, pick bundled apps, and save as a new profile"
+}

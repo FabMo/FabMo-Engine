@@ -645,6 +645,19 @@ define(function (require) {
         );
 
         this._registerHandler(
+            "updateJobFile",
+            function (data, callback) {
+                this.engine.updateJobFile(data.id, data.text, function (err, result) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        callback(null, result);
+                    }
+                });
+            }.bind(this)
+        );
+
+        this._registerHandler(
             "updateOrder",
             function (data, callback) {
                 this.engine.updateOrder(data, function (err, result) {

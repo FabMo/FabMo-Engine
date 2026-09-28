@@ -1,6 +1,7 @@
 define(function(require) {
     var $ = require('jquery');
     var toastr = require('./libs/toastr.min');
+    var a11y = require('./a11y.js');
     var colapsed;
     var pinRight;
 
@@ -10,10 +11,13 @@ define(function(require) {
     /********** Layout Resize Functions **********/
 
     var openDROPush = function() {
+        // Accessibility mode zooms #right-menu 1.2x (style.css), so the
+        // pushed-aside app needs the scaled panel width cleared.
+        var scale = a11y.isEnabled() ? 1.2 : 1;
         $('#right-menu').css('right', '0');
-        $('#app-client-container').css('padding-right', '218px');
-        $('#app_menu_container').css('padding-right', '220px');
-        $('#waiting_container').css('padding-right', '220px');
+        $('#app-client-container').css('padding-right', Math.round(218 * scale) + 'px');
+        $('#app_menu_container').css('padding-right', Math.round(220 * scale) + 'px');
+        $('#waiting_container').css('padding-right', Math.round(220 * scale) + 'px');
         $('#right-position-container').addClass('dropped');
      }
      var closeDROPush = function() {

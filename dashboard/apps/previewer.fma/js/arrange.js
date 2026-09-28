@@ -26,6 +26,9 @@ function Arrange(options) {
   var treeEl = opts.treeEl || null;          // #parts-list in the drawer
   var t = opts.t || function (k, v) { return k; };
   var unitScale = opts.unitScale || 1;       // 1 = inches, 25.4 = mm file
+  // Machine table bounds in job coordinates ({x0,y0,x1,y1}, envelope
+  // minus the active work offset — same placement as the 3D table).
+  var table = opts.table || null;
 
   var state = {
     fileName: null,
@@ -268,15 +271,20 @@ function Arrange(options) {
       }
     }
 
-    // material bounds: sheet outline if present, else the file's cut extent
+    // material bounds: sheet outline if present, else the machine table.
+    // The file's own cut extent is NOT a usable fallback — for a file
+    // that is one part, the extent IS the part's original footprint, so
+    // any move at all got flagged "off the sheet". With neither a sheet
+    // nor table bounds we have nothing meaningful to check against.
     var so = state.analysis.features.find(function (f) { return f.kind === 'sheet-outline'; });
-    var mat = so ? so.bbox : state.analysis.extent;
+    var mat = so ? so.bbox : table;
+    var offMsg = so ? 'previewer.arrange.off_sheet' : 'previewer.arrange.off_table';
     var slack = 0.05 * unitScale;
-    parts.forEach(function (p) {
+    if (mat) parts.forEach(function (p) {
       var bb = bbs.get(p);
       if (bb.x0 < mat.x0 - slack || bb.x1 > mat.x1 + slack ||
           bb.y0 < mat.y0 - slack || bb.y1 > mat.y1 + slack)
-        addWarn(p, t('previewer.arrange.off_sheet'));
+        addWarn(p, t(offMsg));
     });
     updateWarnbar();
   }
@@ -304,6 +312,15 @@ function Arrange(options) {
   function fitView() {
     if (!state.analysis) return;
     var ext = state.analysis.extent;
+    // Frame the table too (when known) so its boundary is on screen and
+    // the user can see where parts sit relative to the machine.
+    if (table) {
+      ext = {
+        x0: Math.min(ext.x0, table.x0), y0: Math.min(ext.y0, table.y0),
+        x1: Math.max(ext.x1, table.x1), y1: Math.max(ext.y1, table.y1),
+      };
+      ext.w = ext.x1 - ext.x0; ext.h = ext.y1 - ext.y0;
+    }
     var pad = 60;
     var sx = (canvas.width - 2 * pad) / Math.max(ext.w, 0.1);
     var sy = (canvas.height - 2 * pad) / Math.max(ext.h, 0.1);
@@ -388,6 +405,22 @@ function Arrange(options) {
 
     var muted = cssVar('--pv-text-dim', '#666');
     var accent = cssVar('--pv-accent', '#313366');
+
+    // machine table boundary (drawn under the parts)
+    if (table) {
+      var tA = w2s(table.x0, table.y0);
+      var tB = w2s(table.x1, table.y1);
+      var tw = tB.x - tA.x, th = tB.y - tA.y;
+      ctx.fillStyle = 'rgba(49, 51, 102, 0.04)';
+      ctx.fillRect(tA.x, tA.y, tw, th);
+      ctx.strokeStyle = 'rgba(49, 51, 102, 0.45)';
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.strokeRect(tA.x, tA.y, tw, th);
+      ctx.fillStyle = muted;
+      ctx.font = 11 * dpr + 'px sans-serif';
+      ctx.fillText(t('previewer.arrange.table_label'), tA.x + 5 * dpr, tA.y - 5 * dpr);
+    }
+
     var selTop = state.selected ? topLevelOf(state.selected) : null;
 
     state.analysis.features.forEach(function (f) {

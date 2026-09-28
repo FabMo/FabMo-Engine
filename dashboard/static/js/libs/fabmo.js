@@ -803,6 +803,14 @@
     };
 
     /**
+     * Replace the file content of a pending job in place, keeping its
+     * queue position and identity. Fails if the job is no longer pending.
+     */
+    FabMoDashboard.prototype.updateJobFile = function (id, text, callback) {
+        this._call("updateJobFile", { id: id, text: text }, callback);
+    };
+
+    /**
      * Get information about a job.  This works for jobs that are pending, currently running, or in the history.
      *
      * @method getJobInfo

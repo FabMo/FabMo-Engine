@@ -23,6 +23,7 @@ var underscore = require("underscore");
 
 // Our libraries
 require("./libs/i18n.js");   // installs window.t / window.i18nReady
+var a11y = require("./a11y.js");
 var FabMoAPI = require("./libs/fabmoapi.js");
 var FabMoUI = require("./libs/fabmoui.js");
 var Keyboard = require("./libs/keyboard.js");
@@ -2127,6 +2128,36 @@ function setupKeyboard() {
     return keyboard;
 }
 
+// Tooltips on the directional drive buttons must describe the machine
+// motion the button actually produces, which the orientation remap can
+// change after the HTML is written — so they are derived from the live
+// action classes rather than authored statically in the markup.
+function refreshKeypadTooltips() {
+    $("#keypad .drive-button").each(function () {
+        var motions = [];
+        var fast = false;
+        this.className.split(/\s+/).forEach(function (c) {
+            var m = /^([xyzabc])_(pos|neg)(?:_(fast|slow))?$/.exec(c);
+            if (!m) return;
+            motions.push(m[1].toUpperCase() + (m[2] === "pos" ? "+" : "-"));
+            if (m[3] === "fast") fast = true;
+        });
+        if (!motions.length) return;
+        // Diagonal buttons collect their axes in DOM-class order (Y
+        // first); present them in conventional X-then-Y order.
+        motions.sort(function (a, b) {
+            return "XYZABC".indexOf(a.charAt(0)) - "XYZABC".indexOf(b.charAt(0));
+        });
+        var motion = motions.join(" ");
+        var text = fast ? "Move " + motion + " (fast)" : "Move " + motion;
+        var key = fast ? "keypad.move_button_fast_tooltip" : "keypad.move_button_tooltip";
+        // t() returns the key itself when no dictionary is loaded yet —
+        // keep the built-in English text in that case.
+        var translated = window.t ? window.t(key, { motion: motion }) : key;
+        this.title = translated === key ? text : translated;
+    });
+}
+
 function setupKeypad() {
     var manual = engine.config.machine ? engine.config.machine.manual : {};
     var keypad = new Keypad("#keypad", {
@@ -2137,6 +2168,12 @@ function setupKeypad() {
     // Configuration > Layout). Class-swaps the keypad buttons so the
     // physical layout matches where the operator stands.
     KeypadOrientation.apply("#keypad", manual.layout_mapping);
+    refreshKeypadTooltips();
+    // Rebuild once the translation dictionary arrives (it usually loads
+    // after setup) so non-English tooltips replace the English fallback.
+    if (window.i18nReady) {
+        window.i18nReady.then(refreshKeypadTooltips);
+    }
     // Live updates from the Configuration tab arrive via the storage
     // event — when the Layout tab saves a new mapping, it writes the
     // JSON to localStorage which fires this listener in other tabs.
@@ -2145,6 +2182,7 @@ function setupKeypad() {
         try {
             var newMapping = ev.newValue ? JSON.parse(ev.newValue) : null;
             KeypadOrientation.apply("#keypad", newMapping);
+            refreshKeypadTooltips();
         } catch (e) { /* ignore parse errors */ }
     });
     // Make sure the spindle icon is off when entering manual mode
@@ -3120,6 +3158,16 @@ $(".icon_sign_out").on("click", function (e) {
         e.preventDefault();
         openCalculator();
     });
+
+    // Accessibility mode: toggled from the nav-bar "aA" button or the
+    // sidebar entry (both carry .icon_a11y). Restore stored state now
+    // so the chrome class and button indicators are right from the
+    // start (the app iframe gets its injection on its own load event).
+    $(".icon_a11y").on("click", function (e) {
+        e.preventDefault();
+        a11y.toggle();
+    });
+    a11y.apply();
     $(".calc-close").on("click", closeCalculator);
     $(".calc-modal-dim").on("click", closeCalculator);
     $("#calc-button").on("click", calculate);

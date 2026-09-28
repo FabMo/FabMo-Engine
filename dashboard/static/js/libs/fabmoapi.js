@@ -436,6 +436,12 @@
         this._post("/job/" + id, {}, callback, callback);
     };
 
+    // Replace the file content of a pending job in place (Arrange mode
+    // live-apply). text is the full new file body.
+    FabMoAPI.prototype.updateJobFile = function (id, text, callback) {
+        this._post("/job/" + id + "/file", { data: text }, callback, callback, "job");
+    };
+
     // setJobRepeat(id, opts, cb)
     //   opts: boolean (legacy) — sets repeat on/off, leaves count untouched
     //   opts: { repeat: bool, count?: number|null } — count is total runs
