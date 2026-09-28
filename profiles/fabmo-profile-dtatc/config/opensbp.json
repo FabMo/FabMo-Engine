@@ -1,23 +1,43 @@
 {
-    "units":"in",
+    "units": "in",
     "movexy_speed": 3,
     "movez_speed": 1,
     "movea_speed": 1,
     "moveb_speed": 1,
     "movec_speed": 1,
-    "jogxy_speed" : 5,
-    "jogz_speed" : 5,
-    "joga_speed" : 5,
-    "jogb_speed" : 250,
-    "jogc_speed" : 250,
+    "jogxy_speed": 5,
+    "jogz_speed": 5,
+    "joga_speed": 5,
+    "jogb_speed": 250,
+    "jogc_speed": 250,
     "cutterDia": 0.25,
     "pocketOverlap": 50,
     "safeZpullUp": 0.5,
     "safeApullUp": 0.5,
-    "variables" : {
+    "variables": {
         "EXAMPLE_VARIABLE": 999,
-        "ATC.TYPE": 7,
-        "SB_DTTYPE": 2
+        "SB_PROXNUM": {
+            "X": 3,
+            "Y": 3,
+            "Z": 3
+        },
+        "SB_ZZERONUM": 1,
+        "SB_PROXTYPE": 0,
+        "SB_HASZPROX": 1,
+        "SB_PROXCK": {
+            "X": 53,
+            "Y": 53,
+            "Z": 53
+        },
+        "SB_ZZEROCK": 51,
+        "SB_ZPLATETYPE": "STD",
+        "SB_MTCMODE": "QUIT",
+        "SB_MTC_XY_MODE": "FIXED",
+        "SB_MTC_Z_MODE": "FIXED",
+        "SB_MTC_ZERO_MODE": "MACRO",
+        "SB_MTC_SKIP_FIRST": "NO",
+        "SB_DTTYPE": 2,
+        "ATC.TYPE": 7
     },
     "cRes": 0.01,
     "GblPropX": 1,
