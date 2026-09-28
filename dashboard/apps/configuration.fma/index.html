@@ -249,19 +249,17 @@
         <div class="row">
           <fieldset>
             <legend data-i18n="config.settings_backup.legend">Settings &amp; Backups</legend>
-            <div class="large-12 columns">
-              <p style="margin-bottom: 10px;" data-i18n-html="config.settings_backup.explanation">
-                Save the current state of this tool &mdash; its Configuration settings, Macros, installed Apps, and Job history &mdash;
-                as a named snapshot that you can restore later or download as a backup file.
-                Your default snapshot is also used to recover the tool automatically if its setup ever becomes corrupted.
-              </p>
-            </div>
-            <div class="large-12 columns">
-              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <a id="btn-save-settings" class="button radius small" title="Save a snapshot of this tool's setup" data-i18n-title="config.settings_backup.save_button_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.settings_backup.save_button">Save Current Settings</a>
-                <a id="btn-restore-settings" class="button radius small" title="Restore a saved snapshot or an uploaded backup file" data-i18n-title="config.settings_backup.restore_button_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.settings_backup.restore_button">Restore Settings</a>
-                <span style="margin-left:12px; line-height:24px; font-size:0.75em;"><span data-i18n="config.settings_backup.default_label">Default settings:</span> <span id="current-default-name" style="font-weight: bold;" data-i18n="config.settings_backup.none">none</span></span>
-              </div>
+            <p style="margin-bottom: 10px;" data-i18n-html="config.settings_backup.explanation">
+              Save the current state of this tool &mdash; its Configuration settings, Macros, installed Apps, and Job history &mdash;
+              as a named snapshot that you can restore later or download as a backup file.
+              Your default snapshot is also used to recover the tool automatically if its setup ever becomes corrupted.
+            </p>
+            <!-- Plain flex, no Foundation row/columns: the grid's floats
+                 and negative margins stack these and indent oddly. -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <a id="btn-save-settings" class="button radius small" title="Save a snapshot of this tool's setup" data-i18n-title="config.settings_backup.save_button_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.settings_backup.save_button">Save Current Settings</a>
+              <a id="btn-restore-settings" class="button radius small" title="Restore a saved snapshot or an uploaded backup file" data-i18n-title="config.settings_backup.restore_button_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.settings_backup.restore_button">Restore Settings</a>
+              <span style="margin-left:12px; line-height:24px; font-size:0.75em; white-space:nowrap;"><span data-i18n="config.settings_backup.default_label">Default settings:</span> <span id="current-default-name" style="font-weight: bold;" data-i18n="config.settings_backup.none">none</span></span>
             </div>
           </fieldset>
         </div>
