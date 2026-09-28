@@ -23,6 +23,7 @@
         this.target = null;
         this.slideOffDetected = false; // Track slide-off state
         this.nudgeExecuted = false; // Track if nudge executed for current gesture
+        this.typematicTimer = null; // Repeat timer for held fixed-mode buttons
         
         this.setOptions(options);
         this.init();
@@ -296,7 +297,8 @@
                 
                 $(element).on("touchend", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
-               
+
+                    this.clearTypematic();
                     this.nudgeExecuted = false; // Reset for next gesture
                     
                     // Only call end if we haven't already handled slide-off
@@ -316,6 +318,7 @@
                 $(element).on("mouseleave", this.onDriveMouseleave.bind(this));
                 $(element).on("touchcancel", function(evt) {
                     if (this.isExitButtonEvent(evt)) return;
+                    this.clearTypematic();
                     this.nudgeExecuted = false; // Reset for next gesture
                     if (this.going && !this.slideOffDetected) {
                         this.cleanStop();
@@ -404,6 +407,11 @@
         this.pressThreshold =
             options.pressThreshold || this.pressThreshold || 10;
         this.tapInterval = options.tapInterval || this.tapInterval || 250;
+        // Typematic repeat for fixed mode: hold a direction button past
+        // repeatDelay and fixed moves keep coming every repeatInterval.
+        // Interval 0 (or negative) disables repeating.
+        this.repeatDelay = options.nudgeRepeatDelay != null ? options.nudgeRepeatDelay : 600;
+        this.repeatInterval = options.nudgeRepeatInterval != null ? options.nudgeRepeatInterval : 250;
     };
 
     Keypad.prototype.emit = function (evt, data) {
@@ -563,7 +571,9 @@
 
     Keypad.prototype.stop = function () {
         console.log("Keypad: Stop called");
-        
+
+        this.clearTypematic();
+
         // Clear the refresh timer immediately
         if (this.interval) {
             clearTimeout(this.interval);
@@ -577,6 +587,8 @@
     // Simplified end function
     Keypad.prototype.end = function () {
         if (this.guardAgainstExitButton()) return;
+
+        this.clearTypematic();
 
         // Don't emit stop if keypad is already idle
         var wasActive = this.going || this.enabled;
@@ -602,7 +614,9 @@
 
     Keypad.prototype.cleanStop = function () {
         console.log("Keypad: Clean stop called (slide-off detected)");
-        
+
+        this.clearTypematic();
+
         // Immediately set flags to prevent re-entry
         if (!this.going) {
             return; // Already stopped
@@ -650,6 +664,8 @@
             if (!this.nudgeExecuted) {
                 this.onDriveTap(evt);  // This will set the flag
             }
+            // Keep nudging while the button stays held (typematic)
+            this.startTypematic(e);
             // Use tan styling for fixed mode (not green like continuous)
             e.addClass("drive-button-active-transient").removeClass("drive-button-inactive");
         } else {
@@ -705,6 +721,77 @@
         }
     };
 
+    // Map a drive button's direction classes to the arguments for nudge().
+    // Returns [axis, dir] / [axis, dir, second_axis, second_dir], or null
+    // for a non-direction element.
+    Keypad.prototype.nudgeMoveFor = function (e) {
+        if (e.hasClass("x_pos") && e.hasClass("y_pos")) {
+            return ["x", 1, "y", 1];
+        } else if (e.hasClass("x_neg") && e.hasClass("y_pos")) {
+            return ["x", -1, "y", 1];
+        } else if (e.hasClass("x_neg") && e.hasClass("y_neg")) {
+            return ["x", -1, "y", -1];
+        } else if (e.hasClass("x_pos") && e.hasClass("y_neg")) {
+            return ["x", 1, "y", -1];
+        } else if (e.hasClass("x_pos")) {
+            return ["x", 1];
+        } else if (e.hasClass("x_neg")) {
+            return ["x", -1];
+        } else if (e.hasClass("y_pos")) {
+            return ["y", 1];
+        } else if (e.hasClass("y_neg")) {
+            return ["y", -1];
+        } else if (e.hasClass("z_pos_fast") || e.hasClass("z_pos_slow")) {
+            return ["z", 1];
+        } else if (e.hasClass("z_neg_fast") || e.hasClass("z_neg_slow")) {
+            return ["z", -1];
+        } else if (e.hasClass("a_pos_fast") || e.hasClass("a_pos_slow")) {
+            return ["a", 1];
+        } else if (e.hasClass("a_neg_fast") || e.hasClass("a_neg_slow")) {
+            return ["a", -1];
+        } else if (e.hasClass("b_pos_fast") || e.hasClass("b_pos_slow")) {
+            return ["b", 1];
+        } else if (e.hasClass("b_neg_fast") || e.hasClass("b_neg_slow")) {
+            return ["b", -1];
+        } else if (e.hasClass("c_pos")) {
+            return ["c", 1];
+        } else if (e.hasClass("c_neg")) {
+            return ["c", -1];
+        }
+        return null;
+    };
+
+    Keypad.prototype.clearTypematic = function () {
+        if (this.typematicTimer) {
+            clearTimeout(this.typematicTimer);
+            this.typematicTimer = null;
+        }
+    };
+
+    // Typematic repeat for a held fixed-mode button: after repeatDelay,
+    // re-issue the button's nudge every repeatInterval until release.
+    // Every release/leave/cancel path funnels through end()/cleanStop()/
+    // stop(), all of which clear the timer.
+    Keypad.prototype.startTypematic = function (e) {
+        this.clearTypematic();
+        if (!(this.repeatInterval > 0)) return;
+        var move = this.nudgeMoveFor(e);
+        if (!move) return;
+        var repeat = function () {
+            // Bail if the gesture ended, the button changed, or fixed
+            // mode was switched off mid-hold.
+            if (!this.enabled || this.going || this.target !== e[0] ||
+                !e.hasClass("drive-button-fixed")) {
+                this.clearTypematic();
+                return;
+            }
+            this.nudge.apply(this, move);
+            e.addClass("drive-button-active-transient").removeClass("drive-button-inactive");
+            this.typematicTimer = setTimeout(repeat, this.repeatInterval);
+        }.bind(this);
+        this.typematicTimer = setTimeout(repeat, this.repeatDelay);
+    };
+
     Keypad.prototype.onDriveTap = function (evt) {
         if (this.guardAgainstExitButton()) return;
         var e = $(evt.target);
@@ -717,46 +804,12 @@
                 return; // Already executed by press event
             }
             this.nudgeExecuted = true;
-            
-            if (e.hasClass("x_pos") && e.hasClass("y_pos")) {
-                this.nudge("x", 1, "y", 1);
-            } else if (e.hasClass("x_neg") && e.hasClass("y_pos")) {
-                this.nudge("x", -1, "y", 1);
-            } else if (e.hasClass("x_neg") && e.hasClass("y_neg")) {
-                this.nudge("x", -1, "y", -1);
-            } else if (e.hasClass("x_pos") && e.hasClass("y_neg")) {
-                this.nudge("x", 1, "y", -1);
-            } else if (e.hasClass("x_pos")) {
-                this.nudge("x", 1);
-            } else if (e.hasClass("x_neg")) {
-                this.nudge("x", -1);
-            } else if (e.hasClass("y_pos")) {
-                this.nudge("y", 1);
-            } else if (e.hasClass("y_neg")) {
-                this.nudge("y", -1);
-            } else if (e.hasClass("z_pos_fast")) {
-                this.nudge("z", 1);
-            } else if (e.hasClass("z_pos_slow")) {
-                this.nudge("z", 1);
-            } else if (e.hasClass("z_neg_fast")) {
-                this.nudge("z", -1);
-            } else if (e.hasClass("z_neg_slow")) {
-                this.nudge("z", -1);
-            } else if (e.hasClass("a_pos_fast") || e.hasClass("a_pos_slow")) {
-                this.nudge("a", 1);
-            } else if (e.hasClass("a_neg_fast") || e.hasClass("a_neg_slow")) {
-                this.nudge("a", -1);
-            } else if (e.hasClass("b_pos_fast") || e.hasClass("b_pos_slow")) {
-                this.nudge("b", 1);
-            } else if (e.hasClass("b_neg_fast") || e.hasClass("b_neg_slow")) {
-                this.nudge("b", -1);
-            } else if (e.hasClass("c_pos")) {
-                this.nudge("c", 1);
-            } else if (e.hasClass("c_neg")) {
-                this.nudge("c", -1);
-            } else {
+
+            var move = this.nudgeMoveFor(e);
+            if (!move) {
                 return;
             }
+            this.nudge.apply(this, move);
             e.addClass("drive-button-active-transient").removeClass(
                 "drive-button-inactive"
             );
@@ -793,7 +846,8 @@
         if (this.touchStartTime || this.currentTouchElement) {
             return;
         }
-        
+
+        this.clearTypematic();
         this.nudgeExecuted = false; // Reset for next gesture
         
         // Stop continuous motion if active
