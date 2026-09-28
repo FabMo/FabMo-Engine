@@ -1,27 +1,3 @@
 {
-    "softlimits_on" : false,
-    "di1ac": "none",
-    "di2ac": "none",
-    "di3ac": "none",
-    "di4ac": "stop",
-    "di5ac": "none",
-    "di6ac": "none",
-    "di7ac": "none",
-    "di8ac": "none",
-    "di9ac": "none",
-    "di10ac": "none",
-    "di11ac": "none",
-    "di12ac": "none",
-	"default_app" : "fabmo-sb4",
-	"envelope" : {
-		"xmin" : 0,
-		"xmax" : 24,
-		"ymin" : 0,
-		"ymax" : 18,
-		"zmin" : -2,
-		"zmax" : 6
-	},
-	"manual" : {
-        "xy_speed": 3
-	}
+  "default_app": "fabmo-sb4"
 }
