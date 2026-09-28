@@ -1179,6 +1179,14 @@ $('#restore-settings-confirm').click(function () {
                     fabmo.notify('error', window.t('config.notify.reset_failed') + msg);
                     return;
                 }
+                // Apps restore reinstalls from the archives already on the
+                // tool; anything missing can't be recovered (yet) and is
+                // reported by name.
+                var missing = resp.data && resp.data.missing_apps;
+                if (missing && missing.length) {
+                    fabmo.notify('warning', window.t('config.notify.apps_missing') +
+                        missing.map(function (a) { return a.name || a.id; }).join(', '));
+                }
                 fabmo.notify('success', window.t('config.notify.engine_restarting'));
                 awaitEngineRestart();
             })

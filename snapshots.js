@@ -153,58 +153,49 @@ function _create(name, opts, callback) {
                     });
                 },
                 function (cb) {
-                    // Copy user-installed app archives and write an
-                    // apps.json inventory of their IDs. Best-effort like db/.
+                    // Record an inventory of installed apps (apps.json).
+                    // The archives themselves are NOT embedded: restore
+                    // reinstalls from the archives already on the tool,
+                    // and once apps carry a source field, connected
+                    // machines will be able to redownload missing ones.
+                    // Best-effort like db/.
                     if (!fs.existsSync(LIVE_APPS_DIR)) {
                         return cb();
                     }
-                    var appsDest = path.join(dest, "apps");
-                    fs.ensureDir(appsDest, function (eErr) {
-                        if (eErr) {
-                            return cb(eErr);
-                        }
-                        fs.copy(LIVE_APPS_DIR, appsDest, function (copyErr) {
-                            if (copyErr) {
-                                log.warn("snapshot: apps/ copy failed (continuing): " + copyErr.message);
-                                return cb();
+                    var manifest = [];
+                    try {
+                        fs.readdirSync(LIVE_APPS_DIR).forEach(function (f) {
+                            var ext = path.extname(f).toLowerCase();
+                            if (ext !== ".fma" && ext !== ".zip") {
+                                return;
                             }
-                            var manifest = [];
+                            var entry = {
+                                file: f,
+                                size: fs.statSync(path.join(LIVE_APPS_DIR, f)).size,
+                            };
+                            // The archive filename is an install-time
+                            // UUID, not a durable identity. The app's
+                            // real identity (package.json id/name/
+                            // version) is what a redownload will key on,
+                            // so record it from the extracted approot
+                            // copy when available.
                             try {
-                                fs.readdirSync(LIVE_APPS_DIR).forEach(function (f) {
-                                    var ext = path.extname(f).toLowerCase();
-                                    if (ext !== ".fma" && ext !== ".zip") {
-                                        return;
-                                    }
-                                    var entry = {
-                                        file: f,
-                                        size: fs.statSync(path.join(LIVE_APPS_DIR, f)).size,
-                                    };
-                                    // The archive filename is an install-time
-                                    // UUID, not a durable identity. The app's
-                                    // real identity (package.json id/name/
-                                    // version) is what a future "redownload
-                                    // instead of embed" restore would key on,
-                                    // so record it from the extracted approot
-                                    // copy when available.
-                                    try {
-                                        var pkg = JSON.parse(
-                                            fs.readFileSync(path.join(APPROOT_APPS_DIR, f, "package.json"), "utf8")
-                                        );
-                                        entry.id = pkg.id || pkg.name;
-                                        entry.name = pkg.name;
-                                        entry.version = pkg.version;
-                                    } catch (e) {
-                                        entry.id = path.basename(f, ext);
-                                    }
-                                    manifest.push(entry);
-                                });
+                                var pkg = JSON.parse(
+                                    fs.readFileSync(path.join(APPROOT_APPS_DIR, f, "package.json"), "utf8")
+                                );
+                                entry.id = pkg.id || pkg.name;
+                                entry.name = pkg.name;
+                                entry.version = pkg.version;
                             } catch (e) {
-                                log.warn("snapshot: apps.json manifest failed (continuing): " + e.message);
+                                entry.id = path.basename(f, ext);
                             }
-                            fs.writeFile(path.join(dest, "apps.json"), JSON.stringify(manifest, null, 2), function () {
-                                cb();
-                            });
+                            manifest.push(entry);
                         });
+                    } catch (e) {
+                        log.warn("snapshot: apps.json manifest failed (continuing): " + e.message);
+                    }
+                    fs.writeFile(path.join(dest, "apps.json"), JSON.stringify(manifest, null, 2), function () {
+                        cb();
                     });
                 },
                 function (cb) {
@@ -408,7 +399,11 @@ function list(callback) {
                             var dir = path.join(SNAPSHOT_DIR, name);
                             info.has_config = fs.existsSync(path.join(dir, "config"));
                             info.has_macros = fs.existsSync(path.join(dir, "macros"));
-                            info.has_apps = fs.existsSync(path.join(dir, "apps"));
+                            // apps: either embedded archives (uploads) or
+                            // the manifest-only inventory.
+                            info.has_apps =
+                                fs.existsSync(path.join(dir, "apps")) ||
+                                fs.existsSync(path.join(dir, "apps.json"));
                             info.has_db = fs.existsSync(path.join(dir, "db"));
                             info.has_files = fs.existsSync(path.join(dir, "files"));
                             snapshots.push(info);
@@ -663,6 +658,7 @@ function restore(name, parts, callback) {
         var snapDbDir = path.join(dest, "db");
         var snapAppsDir = path.join(dest, "apps");
         var snapFilesDir = path.join(dest, "files");
+        var missingApps = [];
         async.series(
             [
                 function (cb) {
@@ -678,14 +674,42 @@ function restore(name, parts, callback) {
                     fs.copy(snapMacrosDir, LIVE_MACROS_DIR, { overwrite: true }, cb);
                 },
                 function (cb) {
-                    // Restore app archives. The boot-time app loader
-                    // extracts any archive without an approot dir, so a
-                    // copy + restart is a complete app restore. Additive
-                    // like everything else here.
-                    if (!parts.apps || !fs.existsSync(snapAppsDir)) {
+                    if (!parts.apps) {
                         return cb();
                     }
-                    fs.copy(snapAppsDir, LIVE_APPS_DIR, { overwrite: true }, cb);
+                    // Uploaded backups (or snapshots from the brief era
+                    // that embedded archives) may carry an apps/ dir —
+                    // copy those back; the boot-time app loader extracts
+                    // any archive without an approot dir.
+                    if (fs.existsSync(snapAppsDir)) {
+                        return fs.copy(snapAppsDir, LIVE_APPS_DIR, { overwrite: true }, cb);
+                    }
+                    // Otherwise reinstall from onboard memory: the
+                    // manifest lists what was installed, and archives
+                    // still in /opt/fabmo/apps are already "installed"
+                    // as far as the boot loader is concerned. Anything
+                    // whose archive is gone can't be reinstalled until
+                    // apps carry a source to redownload from — report it.
+                    var manifestFile = path.join(dest, "apps.json");
+                    if (!fs.existsSync(manifestFile)) {
+                        return cb();
+                    }
+                    try {
+                        var manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+                        missingApps = manifest.filter(function (entry) {
+                            return entry.file && !fs.existsSync(path.join(LIVE_APPS_DIR, entry.file));
+                        });
+                        if (missingApps.length) {
+                            log.warn(
+                                "snapshot restore: " + missingApps.length +
+                                " app(s) in the manifest are no longer on the tool: " +
+                                missingApps.map(function (a) { return a.name || a.id; }).join(", ")
+                            );
+                        }
+                    } catch (e) {
+                        log.warn("snapshot restore: could not read apps.json: " + e.message);
+                    }
+                    cb();
                 },
                 function (cb) {
                     // Restore job history metadata if the snapshot has db/.
@@ -711,7 +735,7 @@ function restore(name, parts, callback) {
                     return callback(err);
                 }
                 log.info("snapshot restored: " + name);
-                callback(null, { pre_restore_snapshot: autoName });
+                callback(null, { pre_restore_snapshot: autoName, missing_apps: missingApps });
             }
         );
     });

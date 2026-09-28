@@ -582,6 +582,7 @@
             "settings_saved": "Settings saved: ",
             "restore_nothing_selected": "Nothing selected to restore.",
             "engine_restarting": "Settings restored — FabMo is restarting…",
+            "apps_missing": "Some apps could not be reinstalled (no longer on this tool): ",
             "save_default_failed": "Failed to save custom profile.",
             "no_default_set": "No default is set yet. Use \"Save current settings as my default\" first.",
             "no_custom_profile_selected": "No custom profile selected.",
