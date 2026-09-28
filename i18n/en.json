@@ -632,10 +632,9 @@
         },
         "layout": {
             "legend": "Manual Control Orientation",
-            "intro": "Place the <strong>operator figure</strong> where you plan to stand — the turn arrows walk it around the machine in 90&deg; steps and the keypad remaps automatically so <strong>up always moves the tool away from you</strong>. Prefer to fine-tune by hand? Click a <strong>machine-motion arrow</strong>, then the keypad button that should drive it. The corner dots set where machine <strong>0,0</strong> lives.",
-            "keypad_heading": "Manual Control Keypad",
-            "status_initial": "Use the turn arrows to place yourself around the machine, or click a machine-motion arrow to assign by hand.",
-            "status_operator_moved": "Keypad remapped for where you're standing (saved).",
+            "intro": "You stand below the table with your <strong>keypad</strong> — the curved arrows spin the <strong>table</strong> in front of you in 90&deg; steps, and the keypad remaps automatically so <strong>up always moves the tool away from you</strong>. Prefer to fine-tune by hand? Click a <strong>machine-motion arrow</strong>, then the keypad button that should drive it. The corner dots set where machine <strong>0,0</strong> lives.",
+            "status_initial": "Spin the table with the curved arrows, or click a machine-motion arrow to assign by hand.",
+            "status_table_rotated": "Keypad remapped for the table orientation (saved).",
             "status_save_failed": "Saved locally, but engine config write failed.",
             "status_assigned_prefix": " assigned to keypad ",
             "status_assigned_suffix": " (saved)",

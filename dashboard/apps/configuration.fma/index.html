@@ -1466,27 +1466,36 @@
           <fieldset>
             <legend data-i18n="config.layout.legend">Manual Control Orientation</legend>
             <p style="margin-bottom: 12px;" data-i18n-html="config.layout.intro">
-              Place the <strong>operator figure</strong> where you plan to stand — the turn arrows walk
-              it around the machine in 90&deg; steps and the keypad remaps automatically so
+              You stand below the table with your <strong>keypad</strong> — the curved arrows spin the
+              <strong>table</strong> in front of you in 90&deg; steps, and the keypad remaps automatically so
               <strong>up always moves the tool away from you</strong>. Prefer to fine-tune by hand?
               Click a <strong>machine-motion arrow</strong>, then the keypad button that should drive it.
               The corner dots set where machine <strong>0,0</strong> lives.
             </p>
 
-            <div class="layout-orientation-container" style="display: flex; gap: 24px; align-items: flex-start;">
+            <div class="layout-orientation-container">
 
-              <!-- Overhead view of the machine. Prototype geometry — replace
-                   with your real artwork later; the layout-orientation.js
-                   click handlers key off classnames, not specific coords.
-                   Table is 3:2 horizontal:vertical; gantry is the narrow
+              <!-- Overhead view: the machine table spins in front of a fixed
+                   operator who holds the keypad in one (very large) hand.
+                   Prototype geometry — replace with real artwork later; the
+                   layout_orientation.js handlers key off classnames, not
+                   specific coords. Table is 3:2; gantry is the narrow
                    vertical bar; spindle sits on the gantry. -->
-              <svg viewBox="0 0 640 460" class="machine-overhead"
-                   style="width: 560px; height: 403px; background: #f4f1ea; border: 1px solid #ccc;">
+              <svg viewBox="0 0 640 700" class="machine-overhead"
+                   style="width: 560px; height: 612px; background: #f4f1ea; border: 1px solid #ccc;">
 
-                <!-- All original machine art keeps its coordinates; the wrapper
-                     group re-centers it inside the enlarged canvas so the
-                     operator figure has room to stand outside the table. -->
-                <g class="machine-layer" transform="translate(60,50)">
+                <!-- Machine art keeps its original coordinates; the wrapper
+                     group centers the table at canvas (320,260) so the
+                     rotated footprint (extents swap at 90°/270°) stays clear
+                     of the canvas edges and the operator below. -->
+                <g class="machine-layer" transform="translate(60,80)">
+
+                <!-- Everything that spins: table, gantry, origin corners and
+                     the machine-motion arrows all ride the rotation, so the
+                     arrow colors keep matching the keypad button that points
+                     the same way on screen. layout_orientation.js animates
+                     this transform; pivot is the table center (260,180). -->
+                <g class="table-group" transform="rotate(0 260 180)">
 
                 <!-- machine table (360 x 240, 3:2 ratio) — MDF tan -->
                 <rect x="80" y="60" width="360" height="240" fill="#d4b585" stroke="#7a5a30" stroke-width="2" rx="4"/>
@@ -1506,7 +1515,8 @@
 
                 <!-- corner origin radio buttons. The 0,0 label is added
                      dynamically by layout_orientation.js next to the
-                     currently-selected corner. -->
+                     currently-selected corner (counter-rotated so it stays
+                     readable at any table orientation). -->
                 <g class="origin-corners">
                   <g class="origin-corner" data-corner="tl" style="cursor: pointer;">
                     <circle cx="92" cy="72" r="9" fill="#fff" stroke="#333" stroke-width="2"/>
@@ -1565,118 +1575,93 @@
                         fill="#c0392b" stroke="#621509" stroke-width="1.5"/>
                 </g>
 
-                <!-- Operator figure: a top-down human standing outside the
-                     table edge, drawn facing "up" in local coordinates and
-                     positioned/rotated per side by layout_orientation.js.
-                     Straight arrows flank the figure and rotate with it:
-                     the arrow on the operator's left points left and walks
-                     them one side counterclockwise (to their left), the one
-                     on their right walks them clockwise (to their right). -->
+                </g><!-- /.table-group -->
+
+                </g><!-- /.machine-layer -->
+
+                <!-- Turn arrows: fixed to the canvas (NOT the table), flanking
+                     the table near the operator. Each says "pull this side of
+                     the table toward you": the left arc spins the table
+                     counterclockwise, the right arc clockwise. Fat invisible
+                     strokes are the hit targets. -->
+                <g class="turn-arrow" data-turn="ccw" style="cursor: pointer;">
+                  <title>Spin the table counterclockwise (quarter turn)</title>
+                  <path d="M 105 320 A 240 240 0 0 0 160 455" fill="none" stroke="transparent" stroke-width="36"/>
+                  <path d="M 105 320 A 240 240 0 0 0 160 455" fill="none" stroke="#1f3a6e" stroke-width="6" stroke-linecap="round"/>
+                  <polygon points="16,0 -6,-11 -6,11" fill="#1f3a6e" transform="translate(160 455) rotate(66)"/>
+                </g>
+
+                <g class="turn-arrow" data-turn="cw" style="cursor: pointer;">
+                  <title>Spin the table clockwise (quarter turn)</title>
+                  <path d="M 535 320 A 240 240 0 0 1 480 455" fill="none" stroke="transparent" stroke-width="36"/>
+                  <path d="M 535 320 A 240 240 0 0 1 480 455" fill="none" stroke="#1f3a6e" stroke-width="6" stroke-linecap="round"/>
+                  <polygon points="16,0 -6,-11 -6,11" fill="#1f3a6e" transform="translate(480 455) rotate(114)"/>
+                </g>
+
+                <!-- The operator: fixed at the bottom, facing the table,
+                     with the manual-control keypad at their right. (Interim
+                     art — the held-in-a-giant-hand version is planned.) The
+                     pad IS the keypad model — the pentagon buttons carry the
+                     same .kp-btn/.glyph classes the old side pane used, so
+                     the click/drag assignment paths are unchanged. Axis
+                     labels inside the glyphs are rewritten by
+                     layout_orientation.js when the mapping changes; fill
+                     color stays direction-coded to match the machine-motion
+                     pentagons on the table. -->
                 <g class="operator-figure">
-                  <g class="operator-body" transform="scale(2)">
+
+                  <!-- top-down operator, facing the table -->
+                  <g transform="translate(170 585) scale(2)">
                     <ellipse cx="0" cy="14" rx="15" ry="7" fill="#000" opacity="0.12"/>
                     <ellipse cx="0" cy="2" rx="17" ry="10" fill="#455a64" stroke="#263238" stroke-width="1.5"/>
                     <circle cx="0" cy="-3" r="7.5" fill="#e8b98a" stroke="#8d6e4f" stroke-width="1.2"/>
                   </g>
 
-                  <g class="turn-arrow" data-turn="ccw" style="cursor: pointer;">
-                    <title>Walk one side around the machine (to your left)</title>
-                    <rect x="-92" y="-18" width="52" height="36" fill="transparent"/>
-                    <line class="turn-arrow-path" x1="-46" y1="0" x2="-72" y2="0"
-                          stroke="#1f3a6e" stroke-width="6" stroke-linecap="round"/>
-                    <polygon class="turn-arrow-head" points="-72,-9 -72,9 -88,0" fill="#1f3a6e"/>
+                  <!-- the pad, to the operator's right: ShopBot-yellow frame -->
+                  <rect x="240" y="505" width="160" height="160" rx="14"
+                        fill="#f7d447" stroke="#b89100" stroke-width="2.5"/>
+
+                  <!-- keypad buttons: same boxless pentagon glyphs as the live
+                       keypad, plus-arranged. Positions are fixed (up is up);
+                       labels follow the mapping. -->
+                  <g class="kp-btn" data-dir="↑" transform="translate(320 543)" style="cursor: pointer;">
+                    <path class="glyph-shape" vector-effect="non-scaling-stroke"
+                          transform="scale(0.42) translate(-50 -50)"
+                          d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"
+                          fill="#27ae60" stroke="#0d5a2c" stroke-width="1.5"/>
+                    <text class="glyph-label" y="6" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">Y +</text>
                   </g>
 
-                  <g class="turn-arrow" data-turn="cw" style="cursor: pointer;">
-                    <title>Walk one side around the machine (to your right)</title>
-                    <rect x="40" y="-18" width="52" height="36" fill="transparent"/>
-                    <line class="turn-arrow-path" x1="46" y1="0" x2="72" y2="0"
-                          stroke="#1f3a6e" stroke-width="6" stroke-linecap="round"/>
-                    <polygon class="turn-arrow-head" points="72,-9 72,9 88,0" fill="#1f3a6e"/>
+                  <g class="kp-btn" data-dir="←" transform="translate(278 585)" style="cursor: pointer;">
+                    <path class="glyph-shape" vector-effect="non-scaling-stroke"
+                          transform="rotate(-90) scale(0.42) translate(-50 -50)"
+                          d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"
+                          fill="#e67e22" stroke="#7a3d04" stroke-width="1.5"/>
+                    <text class="glyph-label" x="2" y="4" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">X -</text>
                   </g>
-                </g>
 
-                </g><!-- /.machine-layer -->
+                  <g class="kp-btn" data-dir="→" transform="translate(362 585)" style="cursor: pointer;">
+                    <path class="glyph-shape" vector-effect="non-scaling-stroke"
+                          transform="rotate(90) scale(0.42) translate(-50 -50)"
+                          d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"
+                          fill="#0066cc" stroke="#003a6e" stroke-width="1.5"/>
+                    <text class="glyph-label" x="-2" y="4" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">X +</text>
+                  </g>
+
+                  <g class="kp-btn" data-dir="↓" transform="translate(320 627)" style="cursor: pointer;">
+                    <path class="glyph-shape" vector-effect="non-scaling-stroke"
+                          transform="rotate(180) scale(0.42) translate(-50 -50)"
+                          d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"
+                          fill="#c0392b" stroke="#621509" stroke-width="1.5"/>
+                    <text class="glyph-label" y="2" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">Y -</text>
+                  </g>
+
+                </g><!-- /.operator-figure -->
 
               </svg>
 
-              <!-- Right side: faithful copy of the actual ShopBot manual
-                   control keypad (same .keypad-button / .keypad-table classes
-                   as the live dashboard keypad). Click a machine-motion arrow
-                   first, then click a keypad button to assign the mapping. -->
-              <div class="layout-keypad-pane" style="display: flex; gap: 20px; align-items: flex-start;">
-
-                <div class="pad-container" style="margin: 0;">
-                  <h5 style="margin: 0 0 8px 0;" data-i18n="config.layout.keypad_heading">Manual Control Keypad</h5>
-
-                  <!-- Yellow ShopBot-style frame around the keypad cluster.
-                       Tightened size + extra padding gives a square outer
-                       footprint with the buttons hugging the center. -->
-                  <div class="layout-yellow-frame" style="
-                       display: inline-block;
-                       background: #f7d447;
-                       border: 2px solid #b89100;
-                       border-radius: 12px;
-                       padding: 16px;
-                       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);">
-                    <!-- Same boxless pentagon glyphs as the live keypad
-                         (dir-glyph rules come in via ../../css/dashboard.css).
-                         Axis labels inside the glyphs are rewritten by
-                         layout_orientation.js when the mapping changes;
-                         fill color stays direction-coded to match the
-                         machine-motion pentagons on the diagram. -->
-                    <div class="layout-keypad-mock" style="
-                         display: grid;
-                         grid-template-columns: 64px 64px 64px;
-                         grid-template-rows: 64px 64px 64px;
-                         gap: 6px;
-                         width: 204px;
-                         height: 204px;">
-                      <div></div>
-                      <div class="kp-btn keypad-button drive-button square" data-dir="↑" style="width:64px; height:64px;">
-                        <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
-                          <g>
-                            <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                            <text class="glyph-label" x="50" y="58" text-anchor="middle">Y +</text>
-                          </g>
-                        </svg>
-                      </div>
-                      <div></div>
-                      <div class="kp-btn keypad-button drive-button square" data-dir="←" style="width:64px; height:64px;">
-                        <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
-                          <g transform="rotate(-90 50 50)">
-                            <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                            <text class="glyph-label" x="50" y="58" text-anchor="middle" transform="rotate(90 50 58)">X -</text>
-                          </g>
-                        </svg>
-                      </div>
-                      <div></div>
-                      <div class="kp-btn keypad-button drive-button square" data-dir="→" style="width:64px; height:64px;">
-                        <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
-                          <g transform="rotate(90 50 50)">
-                            <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                            <text class="glyph-label" x="50" y="58" text-anchor="middle" transform="rotate(-90 50 58)">X +</text>
-                          </g>
-                        </svg>
-                      </div>
-                      <div></div>
-                      <div class="kp-btn keypad-button drive-button square" data-dir="↓" style="width:64px; height:64px;">
-                        <svg class="dir-glyph" viewBox="0 0 100 100" aria-hidden="true">
-                          <g transform="rotate(180 50 50)">
-                            <path class="glyph-shape" d="M55.2 13.7 L83.8 39.3 Q89 44 89 51 L89 83 Q89 90 82 90 L18 90 Q11 90 11 83 L11 51 Q11 44 16.2 39.3 L44.8 13.7 Q50 9 55.2 13.7 Z"></path>
-                            <text class="glyph-label" x="50" y="58" text-anchor="middle" transform="rotate(-180 50 58)">Y -</text>
-                          </g>
-                        </svg>
-                      </div>
-                      <div></div>
-                    </div>
-                  </div>
-
-                  <div class="layout-status" style="margin-top: 12px; font-size: 13px; min-height: 1.5em; max-width: 280px;">
-                    <span class="status-text" style="color: #666;" data-i18n="config.layout.status_initial">Use the turn arrows to place yourself around the machine, or click a machine-motion arrow to assign by hand.</span>
-                  </div>
-                </div>
-
+              <div class="layout-status" style="margin-top: 10px; font-size: 13px; min-height: 1.5em; max-width: 560px;">
+                <span class="status-text" style="color: #666;" data-i18n="config.layout.status_initial">Spin the table with the curved arrows, or click a machine-motion arrow to assign by hand.</span>
               </div>
 
             </div>
