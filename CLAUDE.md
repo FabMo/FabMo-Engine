@@ -30,6 +30,7 @@ for the platform picture, team conventions, and safety rules. Read those first.
 | `runtime/gcode/`, `runtime/manual/`, `runtime/idle.js`, `runtime/passthrough/` | other runtimes |
 | `runtime/output_policy.js`, `output_triggers.js`, `bounds.js` | output masking, triggers, table limits |
 | `routes/` | HTTP + websocket (`websocket.js` broadcasts `status` and `change` events) |
+| `snapshots.js` | named settings restore points — see "Snapshots" below |
 | `dashboard/static/js/main.js`, `libs/fabmoui.js`, `libs/fabmoapi.js`, `libs/fabmo.js` | dashboard shell, DRO/status rendering, client API |
 | `dashboard/apps/*.fma/` | system apps (unzipped): editor, job_manager, previewer, configuration, sb4, tool_status, macro_manager, profile_designer, network_manager, video, selftest… |
 | `profiles/fabmo-profile-*/` | per-machine profiles: `config/*.json`, `macros/macro_N.sbp` |
@@ -39,12 +40,49 @@ for the platform picture, team conventions, and safety rules. Read those first.
 
 ## Profiles
 
-All of `fabmo-profile-dt`, `-dtmax`, `-dtatc`, `default` are live and shipping.
-`fabmo-profile-handibot-2` is legacy (a few discontinued Handibots), rarely
-changed. More profiles for larger tools are coming. A machine picks its
-profile from `/fabmo-def/fabmo-def.json` on first boot. A change to a macro
+All of `fabmo-profile-dt`, `-dtmax`, `-dtatc`, `default` are live and
+shipping, joined (Sept 2026) by the large gantry tools: `-prsalpha`,
+`-prsalpha-atc`, `-prs-carolina`, `-prs-carolina-atc`. The PRS profiles are
+SB3-era retrofits — note their motor polarity (`1po`–`3po`: 1) is flipped
+vs the G2 default because SB3 drove the DIR pin with the opposite
+convention. `fabmo-profile-handibot-2` is legacy (a few discontinued
+Handibots), rarely changed. A machine picks its profile from
+`/fabmo-def/fabmo-def.json` on first boot. A change to a macro
 usually needs to be made in every profile that has that macro — check with
 `grep -l` across `profiles/*/macros/` and say which profiles you changed.
+
+## Snapshots (Settings & Backups)
+
+`snapshots.js` manages named restore points in `/opt/fabmo_snapshots/<name>/`:
+`config/` (minus `instance.json`/`auth_secret`), `macros/`, `db/` (job history
+metadata — cut files in `/opt/fabmo/files` are never stored on-tool, only
+bundled into downloads), and `apps.json` — an inventory of installed apps
+(id/name/version/archive filename). App archives are NOT embedded: restoring
+Apps verifies the manifest against `/opt/fabmo/apps` (the boot loader
+re-extracts any archive missing from the approot) and reports `missing_apps`.
+A `source` field on apps is planned so connected machines can redownload
+missing ones.
+
+The default ("preferred") snapshot is recorded in three places — the
+`.default` pointer file, a full mirror in `/fabmo-def/snapshots/<name>`, and
+`snapshot_name` in `/fabmo-def/fabmo-def.json` — and is a tier in the boot
+config-recovery chain (live backup mirror → default snapshot → profile).
+
+Routes (`routes/config.js`): CRUD under `/snapshots`; restore accepts
+`{parts: {config, macros, apps, jobdb}, set_default}` and then
+`process.exit(0)` (systemd restarts the engine — blessing happens before the
+restart on purpose); `GET /snapshots/:name/download?jobdb=1` bundles the cut
+files into the `.fmsnap.zip`; `GET /jobdb/size` feeds the UI size estimate.
+Gotchas: snapshot JSON endpoints signal errors as HTTP 200 +
+`{status:"error"}` (check `resp.status`); restores are additive and never
+delete files; only machine-idle allows create/restore.
+
+UI: configuration app, General tab — two buttons ("Save Current Settings" /
+"Restore Settings") with inline dialogs (the sandboxed iframe blocks
+`prompt`/`confirm`). The old granular routes (macros backup/restore, history
+export/import) remain server-side but have no UI. After editing the app's
+`index.html`, copy it to `/opt/fabmo/approot/approot/configuration.fma/` —
+the approot only rebuilds on engine version change or debug mode.
 
 ## Status pipeline (G2 → browser) — the classic silent failure
 

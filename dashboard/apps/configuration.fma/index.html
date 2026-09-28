@@ -242,66 +242,24 @@
           </fieldset>
         </div>
 
-        <!-- CUSTOM PROFILE — lives inside the General tab so it
-             doesn't bleed onto Axes/Inputs/etc. -->
+        <!-- SETTINGS & BACKUPS — save/restore named snapshots of the
+             tool's full setup (config, macros, apps, job history).
+             Lives inside the General tab so it doesn't bleed onto
+             Axes/Inputs/etc. -->
         <div class="row">
           <fieldset>
-            <legend data-i18n="config.custom_profile.legend">Custom Profile</legend>
-            <div class="large-12 columns">
-              <p style="margin-bottom: 10px;" data-i18n-html="config.custom_profile.explanation">
-                A "Profile" is made up of your tool's Configuration settings, its Macros (Custom Cuts), and its Apps.
-                You can save the current version of this full setup in a Custom Profile in order to restore exactly the same state later.
-                This can save you time when you do a software upgrade or make significant changes to your tool's configuration.
-                You can save as many Custom Profiles as you would like. Your preferred Profile (or the most recently saved) will also be
-                be used if your setup becomes corrupted and the current backup can not be used. In this case the
-                machine will fall back to the your Profile instead of the factory profile.
-              </p>
-            </div>
-            <div class="large-12 columns" style="margin-bottom: 10px;">
-              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <a id="btn-save-default" class="button radius small" title="Save the custom profile to this FabMo tool" data-i18n-title="config.custom_profile.save_current_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.custom_profile.save_current">Save the current setup as a Custom Profile</a>
-                <a id="btn-reset-default" class="button radius small" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.custom_profile.restore_to">Restore setup from a Custom Profile on tool</a>
-              </div>
-            </div>
-            <div class="large-12 columns" style="margin-bottom: 10px;">
-              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <label style="margin:0; line-height:32px;" data-i18n="config.custom_profile.snapshot_label">Snapshot:</label>
-                <select id="custom-snapshot-select" style="width:200px; margin:0;"></select>
-                <a id="btn-set-preferred" class="button radius small secondary" style="margin:0;" data-i18n="config.custom_profile.set_preferred">Set as Preferred</a>
-                <a id="btn-download-snapshot" class="button radius small secondary" title="Download selected custom profile to user device" data-i18n="config.custom_profile.download" data-i18n-title="config.custom_profile.download_title" style="margin:0;">Download</a>
-                <a id="btn-upload-snapshot" class="button radius small secondary" title="Upload a custom profile from a .fmsnap.zip on user device" data-i18n="config.custom_profile.upload" data-i18n-title="config.custom_profile.upload_title" style="margin:0;">Upload</a>
-                <input type="file" id="upload-snapshot-file" class="hidden" accept=".zip,application/zip">
-                <span style="margin-left:12px; line-height:24px; font-size:0.75em;"><span data-i18n="config.custom_profile.preferred_profile_label">Preferred Profile:</span> <span id="current-default-name" style="font-weight: bold;" data-i18n="config.custom_profile.none">none</span></span>
-                <a id="btn-delete-snapshot" class="button radius small alert" title="Delete selected snapshot" data-i18n-title="config.custom_profile.delete_title" style="display:none; margin:0; padding:0 10px;"><i class="fa fa-trash"></i></a>
-              </div>
-            </div>
-
-            <hr style="margin: 14px 0 12px; border: 0; border-top: 1px solid #ccc;">
-
-            <div class="large-12 columns" style="margin-bottom: 8px;">
-              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <label style="margin:0; line-height:32px; min-width: 200px;" data-i18n="config.custom_profile.save_restore_profile_only">Save/Restore Configuration Settings Only:</label>
-                <a id="btn-backup" class="button radius small" title="Save to user device" data-i18n-title="config.custom_profile.save_to_device_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.custom_profile.backup_profile">Backup current Configuration Settings</a>
-                <input type="file" id="restore_conf_file" class="hidden" multiple accept=".fmc">
-                <a id="btn-restore" class="button radius small" title="Restore from a previously saved configuration on user device" data-i18n-title="config.custom_profile.restore_config_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.custom_profile.restore_profile">Restore saved Configuration Settings</a>
-              </div>
-            </div>
-            <div class="large-12 columns" style="margin-bottom: 8px;">
-              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <label style="margin:0; line-height:32px; min-width: 200px;" data-i18n="config.custom_profile.save_restore_macros_only">Save/Restore Macros Only:</label>
-                <a id="btn-macros-backup" class="button radius small" title="Save to user device" data-i18n-title="config.custom_profile.save_to_device_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.custom_profile.backup_macros">Backup current Macros</a>
-                <input type="file" id="restore_macros_dir" class="hidden" multiple accept=".zip">
-                <a id="btn-macros-restore" class="button radius small" title="Restore from a previously saved macros archive on user device" data-i18n-title="config.custom_profile.restore_macros_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.custom_profile.restore_macros">Restore saved Macros</a>
-              </div>
-            </div>
-            <div class="large-12 columns">
-              <div class="row collapse" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <label style="margin:0; line-height:32px; min-width: 200px;" data-i18n="config.custom_profile.export_import_history">Export/Import Job History:</label>
-                <a id="btn-history-export" class="button radius small" title="Save to user device" data-i18n-title="config.custom_profile.save_to_device_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.custom_profile.export_history">Export Job History</a>
-                <input type="file" id="history-import-file" class="hidden" accept=".zip,application/zip">
-                <a id="btn-history-import" class="button radius small" title="Restore from a previously saved job history archive on user device" data-i18n-title="config.custom_profile.restore_history_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.custom_profile.import_history">Import Job History</a>
-                <span style="font-size:12px; color:#888;" data-i18n="config.custom_profile.history_note">(includes cutting files; may be large)</span>
-              </div>
+            <legend data-i18n="config.settings_backup.legend">Settings &amp; Backups</legend>
+            <p style="margin-bottom: 10px;" data-i18n-html="config.settings_backup.explanation">
+              Save the current state of this tool &mdash; its Configuration settings, Macros, installed Apps, and Job history &mdash;
+              as a named snapshot that you can restore later or download as a backup file.
+              Your default snapshot is also used to recover the tool automatically if its setup ever becomes corrupted.
+            </p>
+            <!-- Plain flex, no Foundation row/columns: the grid's floats
+                 and negative margins stack these and indent oddly. -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <a id="btn-save-settings" class="button radius small" title="Save a snapshot of this tool's setup" data-i18n-title="config.settings_backup.save_button_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.settings_backup.save_button">Save Current Settings</a>
+              <a id="btn-restore-settings" class="button radius small" title="Restore a saved snapshot or an uploaded backup file" data-i18n-title="config.settings_backup.restore_button_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.settings_backup.restore_button">Restore Settings</a>
+              <span style="margin-left:12px; line-height:24px; font-size:0.75em; white-space:nowrap;"><span data-i18n="config.settings_backup.default_label">Default settings:</span> <span id="current-default-name" style="font-weight: bold;" data-i18n="config.settings_backup.none">none</span></span>
             </div>
           </fieldset>
         </div>
@@ -2679,22 +2637,65 @@
         </div>
       </div>
 
-<!-- Save-as-custom-profile dialog. Inline modal because the app runs in a
+<!-- Save Current Settings dialog. Inline modal because the app runs in a
      sandboxed iframe that blocks window.prompt(). -->
-      <div id="save-default-dialog" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
-        <div style="background:white; max-width:420px; margin:80px auto; padding:20px; border-radius:6px;">
-          <h4 style="margin-top:0;" data-i18n="config.custom_profile.save_current">Save current settings as custom profile</h4>
+      <div id="save-settings-dialog" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+        <div style="background:white; max-width:460px; margin:80px auto; padding:20px; border-radius:6px;">
+          <h4 style="margin-top:0;" data-i18n="config.settings_backup.save_title">Save Current Settings</h4>
           <div style="margin-bottom:10px;">
             <label><span data-i18n="config.defaults.name_label">Name</span> <span style="color:#999;font-weight:normal;" data-i18n="config.defaults.name_hint">(1-25 chars: letters, digits, _ or -)</span></label>
-            <input type="text" id="save-default-name" maxlength="25" autocomplete="off">
+            <input type="text" id="save-settings-name" maxlength="25" autocomplete="off">
           </div>
-          <div style="margin-bottom:14px;">
+          <div style="margin-bottom:10px;">
             <label><span data-i18n="config.defaults.description_label">Description</span> <span style="color:#999;font-weight:normal;" data-i18n="config.defaults.optional_hint">(optional)</span></label>
-            <input type="text" id="save-default-description" autocomplete="off">
+            <input type="text" id="save-settings-description" autocomplete="off">
+          </div>
+          <div style="margin-bottom:6px;">
+            <label style="font-weight:normal;"><input type="checkbox" id="save-settings-default" checked style="margin:0 6px 0 0;"><span data-i18n="config.settings_backup.make_default">Make these my default settings</span></label>
+          </div>
+          <div style="margin-bottom:2px;">
+            <label style="font-weight:normal;"><input type="checkbox" id="save-settings-download" style="margin:0 6px 0 0;"><span data-i18n="config.settings_backup.also_download">Also download as a backup file</span></label>
+          </div>
+          <div style="margin:0 0 12px 22px;">
+            <label style="font-weight:normal;" id="save-settings-jobdb-label"><input type="checkbox" id="save-settings-jobdb" disabled style="margin:0 6px 0 0;"><span data-i18n="config.settings_backup.include_jobdb">Include job database</span> <span id="save-settings-jobdb-size" style="color:#888;"></span></label>
           </div>
           <div style="text-align:right;">
-            <a id="save-default-cancel" class="button radius small secondary" style="margin-right:8px;" data-i18n="config.defaults.cancel">Cancel</a>
-            <a id="save-default-confirm" class="button radius small" style="background-color:rgb(83, 133, 224); color:#fff;" data-i18n="config.defaults.save">Save</a>
+            <a id="save-settings-cancel" class="button radius small secondary" style="margin-right:8px;" data-i18n="config.defaults.cancel">Cancel</a>
+            <a id="save-settings-confirm" class="button radius small" style="background-color:rgb(83, 133, 224); color:#fff;" data-i18n="config.defaults.save">Save</a>
+          </div>
+        </div>
+      </div>
+
+<!-- Restore Settings dialog. -->
+      <div id="restore-settings-dialog" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+        <div style="background:white; max-width:460px; margin:80px auto; padding:20px; border-radius:6px;">
+          <h4 style="margin-top:0;" data-i18n="config.settings_backup.restore_title">Restore Settings</h4>
+          <div style="margin-bottom:12px;">
+            <label data-i18n="config.settings_backup.restore_from">Restore from</label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <select id="restore-source" style="flex:1; margin:0;"></select>
+              <a id="restore-download-snapshot" class="button radius small secondary" title="Download this snapshot as a backup file" data-i18n-title="config.settings_backup.download_title" style="margin:0; padding:6px 10px;"><i class="fa fa-download"></i></a>
+              <a id="restore-delete-snapshot" class="button radius small alert" title="Delete this snapshot" data-i18n-title="config.settings_backup.delete_title" style="margin:0; padding:6px 10px;"><i class="fa fa-trash"></i></a>
+            </div>
+            <div style="margin-top:6px;">
+              <a id="restore-upload-btn" class="button radius small secondary" style="margin:0;" data-i18n="config.settings_backup.upload_button">Upload a backup file&hellip;</a>
+              <span id="restore-upload-name" style="margin-left:8px; font-size:0.85em; color:#666;"></span>
+              <input type="file" id="restore-upload-file" class="hidden" accept=".zip,application/zip">
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label data-i18n="config.settings_backup.what_to_restore">What to restore</label>
+            <label style="font-weight:normal; display:block;"><input type="checkbox" id="restore-part-config" checked style="margin:0 6px 0 0;"><span data-i18n="config.settings_backup.part_config">Configuration settings</span></label>
+            <label style="font-weight:normal; display:block;"><input type="checkbox" id="restore-part-macros" checked style="margin:0 6px 0 0;"><span data-i18n="config.settings_backup.part_macros">Macros</span></label>
+            <label style="font-weight:normal; display:block;" id="restore-part-apps-label"><input type="checkbox" id="restore-part-apps" checked style="margin:0 6px 0 0;"><span data-i18n="config.settings_backup.part_apps">Apps</span></label>
+            <label style="font-weight:normal; display:block;" id="restore-part-jobdb-label"><input type="checkbox" id="restore-part-jobdb" checked style="margin:0 6px 0 0;"><span data-i18n="config.settings_backup.part_jobdb">Job history</span></label>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="font-weight:normal;"><input type="checkbox" id="restore-set-default" checked style="margin:0 6px 0 0;"><span data-i18n="config.settings_backup.make_default">Make these my default settings</span></label>
+          </div>
+          <div style="text-align:right;">
+            <a id="restore-settings-cancel" class="button radius small secondary" style="margin-right:8px;" data-i18n="config.defaults.cancel">Cancel</a>
+            <a id="restore-settings-confirm" class="button radius small" style="background-color:rgb(41, 175, 41); color:#fff;" data-i18n="config.settings_backup.restore_go">Restore</a>
           </div>
         </div>
       </div>

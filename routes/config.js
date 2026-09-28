@@ -1112,22 +1112,48 @@ var post_snapshot = function (req, res, next) {
 };
 
 // Restore a snapshot by name. Engine restarts shortly after.
+// Optional JSON body:
+//   parts       - {config, macros, apps, jobdb} booleans (default: all)
+//   set_default - also bless this snapshot as the preferred fallback
 var post_snapshot_restore = function (req, res, next) {
     var name = req.params && req.params.name;
-    snapshots.restore(name, function (err, result) {
-        if (err) {
-            return res.json({ status: "error", message: err.message });
-        }
-        res.json({
-            status: "success",
-            data: result,
-            message: "Snapshot restored - engine will restart",
+    var parts = (req.body && req.body.parts) || null;
+    var setDefault = !!(req.body && req.body.set_default);
+
+    var doRestore = function (defaultErr) {
+        snapshots.restore(name, parts, function (err, result) {
+            if (err) {
+                return res.json({ status: "error", message: err.message });
+            }
+            result = result || {};
+            if (defaultErr) {
+                result.set_default_error = defaultErr.message;
+            }
+            res.json({
+                status: "success",
+                data: result,
+                message: "Snapshot restored - engine will restart",
+            });
+            setTimeout(function () {
+                log.info("Restarting engine after snapshot restore...");
+                process.exit(0);
+            }, 1000);
         });
-        setTimeout(function () {
-            log.info("Restarting engine after snapshot restore...");
-            process.exit(0);
-        }, 1000);
-    });
+    };
+
+    if (setDefault) {
+        // Bless first — the restart that follows restore would otherwise
+        // race the fabmo-def mirror copy. A blessing failure is reported
+        // but doesn't abort the restore.
+        snapshots.setDefault(name, function (err) {
+            if (err) {
+                log.warn("set-default before restore failed (continuing): " + err.message);
+            }
+            doRestore(err);
+        });
+    } else {
+        doRestore(null);
+    }
 };
 
 // Delete a user snapshot (auto-snapshots rotate themselves).
@@ -1189,7 +1215,52 @@ var download_snapshot = function (req, res, next) {
     });
     archive.pipe(res);
     archive.directory(dir, false);
+    // ?jobdb=1 bundles the cut files too, making the download a complete
+    // backup. They are never stored in the on-tool snapshot (too big), so
+    // they come straight from the live files dir.
+    var includeFiles = req.query && (req.query.jobdb === "1" || req.query.jobdb === "true");
+    var liveFilesDir = "/opt/fabmo/files";
+    if (includeFiles && fs.existsSync(liveFilesDir)) {
+        archive.directory(liveFilesDir, "files");
+    }
     archive.finalize();
+};
+
+// Report the on-disk size of the job database (history metadata + cut
+// files) so the client can show an estimate before offering to include it
+// in a backup download.
+var get_jobdb_size = function (req, res, next) {
+    var dirs = { db: "/opt/fabmo/db", files: "/opt/fabmo/files" };
+    var result = { db_bytes: 0, files_bytes: 0, file_count: 0 };
+    try {
+        Object.keys(dirs).forEach(function (key) {
+            var dir = dirs[key];
+            if (!fs.existsSync(dir)) {
+                return;
+            }
+            fs.readdirSync(dir).forEach(function (f) {
+                var st;
+                try {
+                    st = fs.statSync(path.join(dir, f));
+                } catch (e) {
+                    return;
+                }
+                if (!st.isFile()) {
+                    return;
+                }
+                if (key === "db") {
+                    result.db_bytes += st.size;
+                } else {
+                    result.files_bytes += st.size;
+                    result.file_count++;
+                }
+            });
+        });
+    } catch (e) {
+        return res.json({ status: "error", message: e.message });
+    }
+    result.total_bytes = result.db_bytes + result.files_bytes;
+    res.json({ status: "success", data: result });
 };
 
 // Accept an uploaded snapshot zip and register it as a user snapshot. Uses
@@ -1264,6 +1335,8 @@ module.exports = function (server) {
 
     server.get("/config/recovery-events", get_recovery_events);
     server.post("/config/recovery-events/acknowledge", post_acknowledge_recovery);
+
+    server.get("/jobdb/size", get_jobdb_size);
 
     server.get("/snapshots", get_snapshots);
     server.post("/snapshots", post_snapshot);
