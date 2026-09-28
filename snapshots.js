@@ -37,6 +37,9 @@ var LIVE_DB_DIR = "/opt/fabmo/db";
 // the archives is all a restore needs. System apps ship with the engine
 // and are never captured.
 var LIVE_APPS_DIR = "/opt/fabmo/apps";
+// Extracted copies of the installed apps (each archive's dir carries the
+// archive's filename). Used only to read package.json for the manifest.
+var APPROOT_APPS_DIR = "/opt/fabmo/approot/approot";
 // Cut files. NOT captured in on-tool snapshots (can be hundreds of MB) —
 // they are only bundled into downloaded backups on request, and restored
 // from an uploaded backup that contains a files/ dir.
@@ -169,13 +172,31 @@ function _create(name, opts, callback) {
                             try {
                                 fs.readdirSync(LIVE_APPS_DIR).forEach(function (f) {
                                     var ext = path.extname(f).toLowerCase();
-                                    if (ext === ".fma" || ext === ".zip") {
-                                        manifest.push({
-                                            id: path.basename(f, ext),
-                                            file: f,
-                                            size: fs.statSync(path.join(LIVE_APPS_DIR, f)).size,
-                                        });
+                                    if (ext !== ".fma" && ext !== ".zip") {
+                                        return;
                                     }
+                                    var entry = {
+                                        file: f,
+                                        size: fs.statSync(path.join(LIVE_APPS_DIR, f)).size,
+                                    };
+                                    // The archive filename is an install-time
+                                    // UUID, not a durable identity. The app's
+                                    // real identity (package.json id/name/
+                                    // version) is what a future "redownload
+                                    // instead of embed" restore would key on,
+                                    // so record it from the extracted approot
+                                    // copy when available.
+                                    try {
+                                        var pkg = JSON.parse(
+                                            fs.readFileSync(path.join(APPROOT_APPS_DIR, f, "package.json"), "utf8")
+                                        );
+                                        entry.id = pkg.id || pkg.name;
+                                        entry.name = pkg.name;
+                                        entry.version = pkg.version;
+                                    } catch (e) {
+                                        entry.id = path.basename(f, ext);
+                                    }
+                                    manifest.push(entry);
                                 });
                             } catch (e) {
                                 log.warn("snapshot: apps.json manifest failed (continuing): " + e.message);
