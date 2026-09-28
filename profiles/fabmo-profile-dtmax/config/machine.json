@@ -1,15 +1,7 @@
 {
-    "softlimits_on" : false,
-	"default_app" : "fabmo-sb4",
-	"envelope" : {
-		"xmin" : 0,
-		"xmax" : 36,
-		"ymin" : 0,
-		"ymax" : 24,
-		"zmin" : -2,
-		"zmax" : 6
-	},
-	"manual" : {
-        "xy_speed": 3
-	}
+  "default_app": "fabmo-sb4",
+  "envelope": {
+    "xmax": 36,
+    "ymax": 24
+  }
 }
