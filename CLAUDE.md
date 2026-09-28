@@ -40,10 +40,14 @@ for the platform picture, team conventions, and safety rules. Read those first.
 
 ## Profiles
 
-All of `fabmo-profile-dt`, `-dtmax`, `-dtatc`, `default` are live and shipping.
-`fabmo-profile-handibot-2` is legacy (a few discontinued Handibots), rarely
-changed. More profiles for larger tools are coming. A machine picks its
-profile from `/fabmo-def/fabmo-def.json` on first boot. A change to a macro
+All of `fabmo-profile-dt`, `-dtmax`, `-dtatc`, `default` are live and
+shipping, joined (Sept 2026) by the large gantry tools: `-prsalpha`,
+`-prsalpha-atc`, `-prs-carolina`, `-prs-carolina-atc`. The PRS profiles are
+SB3-era retrofits — note their motor polarity (`1po`–`3po`: 1) is flipped
+vs the G2 default because SB3 drove the DIR pin with the opposite
+convention. `fabmo-profile-handibot-2` is legacy (a few discontinued
+Handibots), rarely changed. A machine picks its profile from
+`/fabmo-def/fabmo-def.json` on first boot. A change to a macro
 usually needs to be made in every profile that has that macro — check with
 `grep -l` across `profiles/*/macros/` and say which profiles you changed.
 
