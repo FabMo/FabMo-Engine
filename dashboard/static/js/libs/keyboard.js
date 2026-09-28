@@ -13,6 +13,8 @@
     "use strict";
 
     var DEFAULT_NUDGE_TIMEOUT = 200;
+    var DEFAULT_REPEAT_DELAY = 600; // ms held before typematic fixed moves begin
+    var DEFAULT_REPEAT_INTERVAL = 250; // ms between typematic fixed moves
     var MOVE_THRESH = 50; //10; // for mouse to disrupt ?
     var KEY_RIGHT = 39;
     var KEY_LEFT = 37;
@@ -112,6 +114,11 @@
         this.refreshInterval =
             options.refreshInterval || this.refreshInterval || 50; // from 100 to make more responsive like pad
         this.nudgeTimeout = options.nudgeTimeout != null ? options.nudgeTimeout : DEFAULT_NUDGE_TIMEOUT;
+        // Typematic repeat for fixed mode: hold a jog key past repeatDelay
+        // and fixed moves keep coming every repeatInterval. Interval 0 (or
+        // negative) disables repeating — a hold then yields a single nudge.
+        this.repeatDelay = options.nudgeRepeatDelay != null ? options.nudgeRepeatDelay : DEFAULT_REPEAT_DELAY;
+        this.repeatInterval = options.nudgeRepeatInterval != null ? options.nudgeRepeatInterval : DEFAULT_REPEAT_INTERVAL;
         console.log("refreshInterval now=" + this.refreshInterval + ", nudgeTimeout=" + this.nudgeTimeout);
     };
 
@@ -170,6 +177,15 @@
             if (this.enabled === true) {
                 $(".drive-button").removeClass("drive-button-active");
                 this.emit("nudge", this.move);
+                // Typematic: while the key stays down, keep nudging. The
+                // first repeat waits repeatDelay so a deliberate
+                // hold-for-one doesn't double-fire; keyup lands in stop(),
+                // which clears this timer.
+                if (this.repeatInterval > 0) {
+                    var delay = this.fixedRepeatCount === 0 ? this.repeatDelay : this.repeatInterval;
+                    this.fixedRepeatCount++;
+                    this.interval = setTimeout(this.refresh.bind(this), delay);
+                }
             }
         } else {
             if (this.enabled === true) {
@@ -204,6 +220,7 @@
             this.move.second_axis = second_axis;
             this.move.second_dir = second_dir;
         }
+        this.fixedRepeatCount = 0;
         let activeArrowStr = second_axis
             ? diagSelector(axis, direction, second_axis, second_dir)
             : "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");

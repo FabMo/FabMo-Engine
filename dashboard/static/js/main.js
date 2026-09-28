@@ -2087,7 +2087,9 @@ function setupKeyboard() {
     var manual = engine.config.machine ? engine.config.machine.manual : {};
     var keyboard = new Keyboard(null, {
         refreshInterval: manual.refresh_interval || 50,
-        nudgeTimeout: manual.press_delay != null ? manual.press_delay : 200
+        nudgeTimeout: manual.press_delay != null ? manual.press_delay : 200,
+        nudgeRepeatDelay: manual.nudge_repeat_delay,
+        nudgeRepeatInterval: manual.nudge_repeat_interval
     });
     keyboard.on("go", function (move) {
         if (move.second_axis) {
@@ -2162,7 +2164,9 @@ function setupKeypad() {
     var manual = engine.config.machine ? engine.config.machine.manual : {};
     var keypad = new Keypad("#keypad", {
         refreshInterval: manual.refresh_interval || 50,
-        pressTime: manual.press_delay != null ? manual.press_delay : 150
+        pressTime: manual.press_delay != null ? manual.press_delay : 150,
+        nudgeRepeatDelay: manual.nudge_repeat_delay,
+        nudgeRepeatInterval: manual.nudge_repeat_interval
     });
     // Apply the user's manual-control orientation mapping (set in
     // Configuration > Layout). Class-swaps the keypad buttons so the
