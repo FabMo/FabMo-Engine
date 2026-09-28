@@ -1,0 +1,15 @@
+'!FABMO!name: USER_ADDS
+'!FABMO!description: beta: Added user variables & Macros
+'!FABMO!enabled:true
+' Name: USER_ADDS
+' Description: beta: Added user variables & Macros
+' 2026/8/15
+
+' This file is the initial test of a system to allow for a maintenance of persistent user variables,
+'     configuration changes, and custom macros. In the future, all Macros above #300 will be
+'     reserved for user-defined macros and not over-written by new FabMo updates.
+
+' The idea will be that macro 301 will be automatically read along with 201, but will only conatin user set
+'     variables or initiations. This file will not be overwritten by FabMo updates, but should be save when
+'     user profiles are created.
+' Macros above 301 will also be reserved for user-defined macros and should not be modified by FabMo updates.

@@ -1,0 +1,14 @@
+'!FABMO!name:DRAW BAR OFF
+'!FABMO!description:DRAW BAR OFF
+'!FABMO!enabled:true
+SO, 7,1
+SO, 1,0
+SO, 1,1
+SO, 1,0
+SO, 2,0
+SO, 3,0
+SO, 4,0
+SO, 5,0
+SO, 6,0
+SO, 7,0
+SO, 8,0

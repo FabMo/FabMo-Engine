@@ -1,11 +1,26 @@
 {
-    "movexy_speed": 3,
-    "movez_speed": 1,
-    "movea_speed": 1,
-    "variables" : {
-        "EXAMPLE_VARIABLE": 999
+  "variables": {
+    "EXAMPLE_VARIABLE": 999,
+    "SB_PROXNUM": {
+      "X": 3,
+      "Y": 3,
+      "Z": 3
     },
-    "cRes": 0.01,
-    "GblPropX": 1,
-    "GblPropY": 1
+    "SB_ZZERONUM": 1,
+    "SB_PROXTYPE": 0,
+    "SB_HASZPROX": 1,
+    "SB_PROXCK": {
+      "X": 53,
+      "Y": 53,
+      "Z": 53
+    },
+    "SB_ZZEROCK": 51,
+    "SB_ZPLATETYPE": "STD",
+    "SB_MTCMODE": "QUIT",
+    "SB_MTC_XY_MODE": "FIXED",
+    "SB_MTC_Z_MODE": "FIXED",
+    "SB_MTC_ZERO_MODE": "MACRO",
+    "SB_MTC_SKIP_FIRST": "NO",
+    "SB_DTTYPE": 3
+  }
 }
