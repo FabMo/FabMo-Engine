@@ -14,6 +14,7 @@
  */
 var fs = require("fs-extra");
 var path = require("path");
+var Zip = require("adm-zip");
 var config = require("../config");
 var dashboard = require("../dashboard");
 var profiles = require("../profiles");
@@ -196,7 +197,15 @@ var saveProfile = function (req, res, next) {
             (body.keep_apps || []).forEach(function (f) {
                 var src = path.join(sourceDir, "apps", path.basename(f));
                 if (fs.existsSync(src)) {
-                    keptArchives[path.basename(f)] = fs.readFileSync(src);
+                    // Older saves copied system apps in as directories;
+                    // zip those into proper archives on the way through.
+                    if (fs.statSync(src).isDirectory()) {
+                        var z = new Zip();
+                        z.addLocalFolder(src);
+                        keptArchives[path.basename(f)] = z.toBuffer();
+                    } else {
+                        keptArchives[path.basename(f)] = fs.readFileSync(src);
+                    }
                 }
             });
             if (macrosMode === "keep") {
@@ -264,7 +273,15 @@ var saveProfile = function (req, res, next) {
                 }
                 var ext = path.extname(app.app_archive_path) || ".fma";
                 var filename = (slugify(app.name) || id) + ext;
-                fs.copySync(app.app_archive_path, path.join(target, "apps", filename));
+                // System apps' archive path is their source directory —
+                // profiles carry archives, so zip it up.
+                if (fs.statSync(app.app_archive_path).isDirectory()) {
+                    var appZip = new Zip();
+                    appZip.addLocalFolder(app.app_archive_path);
+                    appZip.writeZip(path.join(target, "apps", filename));
+                } else {
+                    fs.copySync(app.app_archive_path, path.join(target, "apps", filename));
+                }
             });
         }
 
