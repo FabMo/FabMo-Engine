@@ -146,9 +146,64 @@ var deleteMacro = function (req, res, next) {
     });
 };
 
+/**
+ * @apiGroup Macros
+ * @api {get} /macros/status Get macro default-version status
+ * @apiDescription For every macro (installed or shipped with the current
+ * profile) reports how the installed copy relates to the shipped default:
+ * current / customized / update_available / diverged / new_default /
+ * ignored_default / custom.
+ */
+// eslint-disable-next-line no-unused-vars
+var getMacroStatus = function (req, res, next) {
+    res.json({
+        status: "success",
+        data: { macros: macros.getStatus() },
+    });
+};
+
+/**
+ * @apiGroup Macros
+ * @api {post} /macros/:id/install_default Install shipped default
+ * @apiDescription Replaces the macro (or installs it, if missing) with the
+ * version shipped in the current machine profile.
+ */
+// eslint-disable-next-line no-unused-vars
+var installDefaultMacro = function (req, res, next) {
+    macros.installDefault(req.params.id, function (err, info) {
+        if (err) {
+            res.json({ status: "error", message: err.message });
+        } else {
+            res.json({ status: "success", data: info });
+        }
+    });
+};
+
+/**
+ * @apiGroup Macros
+ * @api {post} /macros/:id/dismiss_default Dismiss shipped default
+ * @apiDescription Marks the current shipped default version as seen without
+ * installing it, clearing the update indicator until the default changes
+ * again.
+ */
+// eslint-disable-next-line no-unused-vars
+var dismissDefaultMacro = function (req, res, next) {
+    macros.dismissDefault(req.params.id, function (err) {
+        if (err) {
+            res.json({ status: "error", message: err.message });
+        } else {
+            res.json({ status: "success" });
+        }
+    });
+};
+
 module.exports = function (server) {
     server.get("/macros", getMacros);
+    // Register before /macros/:id so "status" is not consumed as an id
+    server.get("/macros/status", getMacroStatus);
     server.get("/macros/:id", getMacro);
+    server.post("/macros/:id/install_default", installDefaultMacro);
+    server.post("/macros/:id/dismiss_default", dismissDefaultMacro);
     server.del("/macros/:id", deleteMacro);
     server.get("/macros/:id/info", getMacroInfo);
     server.post("/macros/:id/run", runMacro);
