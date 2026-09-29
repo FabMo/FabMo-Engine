@@ -37,7 +37,7 @@ define(function(require) {
     }
      var setRightMenuBehavior = function() {
         if ($('#right-menu').css('right') === '0px') {
-            $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
+            $("#dro-tab").removeClass("dro-open");
             $("#dro-tab").attr("title", window.t("status.open_dro_tooltip"));
             localStorage.setItem('pinRight', true);
             if ($(window).width() < 900) {
@@ -46,7 +46,7 @@ define(function(require) {
                 closeDROPush();
             }
         } else {
-            $("#icon_DROin-out").attr("src", "../img/icon_DROin.png");
+            $("#dro-tab").addClass("dro-open");
             $("#dro-tab").attr("title", window.t("status.close_dro_tooltip"));
             localStorage.setItem('pinRight', false);
             if ($(window).width() < 900) {
@@ -59,14 +59,14 @@ define(function(require) {
     var rightMenuLoad = function() {
         pinRight = localStorage.getItem('pinRight');
         if ($(window).width() > 900 && pinRight == "false") {
-            $("#icon_DROin-out").attr("src", "../img/icon_DROin.png");
+            $("#dro-tab").addClass("dro-open");
             $("#dro-tab").attr("title", window.t("status.close_dro_tooltip"));
             openDROPush();
         } else if ($(window).width() < 900) {
             $('#app-client-container').css('padding-right', '0px');
             $('#app_menu_container').css('padding-right', '0px');
             $('#waiting_container').css('padding-right', '0px');
-            $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
+            $("#dro-tab").removeClass("dro-open");
             $("#dro-tab").attr("title", window.t("status.open_dro_tooltip"));
         }
     }

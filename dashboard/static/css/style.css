@@ -478,9 +478,21 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
     transition: all 0.2s;
 }
 
+/* Mini DRO icon (inline SVG in index.html); set its colour here */
 #icon_DROin-out {
     height: 25px;
-    opacity: 60%;
+    width: 25px;
+    color: #cbbd9b;
+    fill: currentColor;
+}
+
+#icon_DROin-out .dro-arrow-in,
+#dro-tab.dro-open .dro-arrow-out {
+    display: none;
+}
+
+#dro-tab.dro-open .dro-arrow-in {
+    display: inline;
 }
 
 .small-axes {
@@ -680,12 +692,17 @@ input#override {
 	width: 35%;
 	margin-left: 5px;
 }
-/* White text for the MOVE SPEED section: feedrate value, in/sec + Override %
-   labels, and the override input */
-#dro-addon-2 .sub-label,
-#fr-inp,
-input#override {
-	color: #fff;
+/* Text colour for the MOVE SPEED and Spindle sections: every row's label
+   and value. Set it here. fabmoui.js overrides a value inline only while
+   it is signalling something (live speed, override above/below 100%) and
+   clears the inline colour to fall back to this. */
+.dro-addons .dro-addon-value .sub-label,
+.dro-addons .dro-addon-value .sub-label span,
+.dro-addons .dro-addon-value input,
+.dro-addons .dro-addon-value #fr-inp,
+.dro-addons .dro-addon-value .sp-power,
+.dro-addons .dro-addon-value .sp-load-pct {
+	color: #e1dfdf;
 }
 .dro-addon-value input {
 	width:50%;
@@ -762,7 +779,6 @@ input#override {
     padding-right: 18px;
     font-size: large;
     font-weight: bold;
-    color: gray;
 }
 
 
@@ -791,7 +807,7 @@ input#override {
 	height: 14px;
 	line-height: 14px;
 	font-size: 11px;
-	font-weight: bold;
+	font-weight: 600;
 	letter-spacing: -0.5px;
 	vertical-align: middle;
 }
@@ -807,13 +823,13 @@ input#override {
 
 .input.off {
 	background-color: #1c4a1c;
-	color: #8aff8a;
+	color: #c3e379;
 }
 
 /* Off lamp uses the big-DRO axis background blue (.machine-pos-large) */
 .output.off {
 	background-color: #323564;
-	color: #9be8ff;
+	color: #c0cffb;
 }
 
 .input.disabled, .output.disabled {
@@ -822,8 +838,9 @@ input#override {
 }
 
 .input.on {
-	background-color: #3ce43c;
+	background-color: #b6ff62;
 	color: #0c380c;
+    font-weight: bold;
 }
 
 .input.stopOn {
@@ -880,8 +897,9 @@ input#override {
 }
 
 .output.on {
-	background-color: #3cdcf8;
+	background-color: #a4eefb;
 	color: #323564;
+    font-weight: bold;
 }
 
 #tool-name-container {
@@ -1198,24 +1216,33 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     content: "\f1ec"; /* fa-calculator */
 }
 
-/* Accessibility-mode icon: an "aA" text glyph — the familiar text-size
-   convention (browser readers, phone display settings), deliberately
-   neutral. Sidebar entry uses it via :before (calculator pattern). */
+/* Accessibility-mode icon: an "AA" text glyph — a small light A beside
+   a large bold A, to suggest text SIZE (not case). Sidebar entry draws
+   the small A via :before and the large A via :after. */
 #icon_a11y { background-image: none; position: relative; }
-#icon_a11y:before {
+#icon_a11y:before,
+#icon_a11y:after {
     position: absolute;
-    font-weight: bold;
-    font-size: 17px;
-    letter-spacing: 0.5px;
-    top: 50%;
-    left: 10px;
-    transform: translateY(-50%);
-    content: "aA";
+    bottom: 50%;
+    transform: translateY(50%);
+    content: "A";
+}
+#icon_a11y:before {
+    font-family: 'source_sans_proextralight';
+    font-size: 13px;
+    left: 9px;
+    margin-bottom: -2px; /* sit on the large A's baseline */
+}
+#icon_a11y:after {
+    font-family: 'source_sans_probold';
+    font-size: 21px;
+    left: 18px;
 }
 /* lit while the mode is on */
-.icon_a11y.a11y-on:before { color: #ffd54a; }
+.icon_a11y.a11y-on:before,
+.icon_a11y.a11y-on:after { color: #ffd54a; }
 
-/* Nav-bar "aA" button — sits in the table-row left section after the
+/* Nav-bar "AA" button — sits in the table-row left section after the
    tool name; dim on the indigo bar until hovered or active. */
 #a11y-nav {
     display: table-cell;
@@ -1224,10 +1251,19 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     cursor: pointer;
 }
 #a11y-nav .a11y-glyph {
-    font-weight: bold;
-    font-size: 17px;
-    letter-spacing: 1px;
     color: #b9bdd9;
+    white-space: nowrap;
+}
+#a11y-nav .a11y-small {
+    font-family: 'source_sans_proextralight';
+    font-size: 13px;
+    color: inherit;
+}
+#a11y-nav .a11y-large {
+    font-family: 'source_sans_probold';
+    font-size: 21px;
+    margin-left: 1px;
+    color: inherit;
 }
 #a11y-nav:hover .a11y-glyph { color: #fff; }
 #a11y-nav.a11y-on .a11y-glyph { color: #ffe217; }

@@ -2925,7 +2925,7 @@ function debounce(func, delay) {
 }
 $(".spindle-speed input").on("input", function () {
     const latestValue = $(this).val();
-    $(".spindle-speed input").css("color", "black");
+    $(".spindle-speed input").css("color", "");
     debouncedChangeSpindleSpeed(latestValue);
 });
 // ... get FOCUS out of SPINDLE BOX if done

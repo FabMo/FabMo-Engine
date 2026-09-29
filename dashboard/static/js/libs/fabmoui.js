@@ -75,12 +75,12 @@ const { last } = require("underscore");
                 setTimeout(function () {
                     $("#right-position-container").removeClass("dropped");
                 }, 200);
-                $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
+                $("#dro-tab").removeClass("dro-open");
                 $("#dro-tab").attr("title", "Click to open larger Info Display");
             } else {
                 $(".dro-dropdown").addClass("dropped");
                 $("#right-position-container").addClass("dropped");
-                $("#icon_DROin-out").attr("src", "../img/icon_DROin.png");
+                $("#dro-tab").addClass("dro-open");
                 $("#dro-tab").attr("title", "Click to close large Display");
             }
         });
@@ -327,7 +327,7 @@ const { last } = require("underscore");
             }
         } else {
             var speed = 0;
-            $("#fr-inp").css("color", "white");
+            $("#fr-inp").css("color", "");
             speed = this.tool.config.opensbp["movexy_speed"].toFixed(2);
             if (status.unit === "mm") {
                 $(".feedrate-unit").text("mm/sec");
@@ -344,7 +344,7 @@ const { last } = require("underscore");
             $("#override").removeClass("blinking-text");
             $("#override").val(100);
             cur_req_fro = 100;
-            $("#override").css("color", "#cfcfcf");
+            $("#override").css("color", "");
         } else {
             var cur_fro = (status.fro * 100).toFixed(0);
             // If the user isn't actively editing the field, snap its value to
@@ -371,7 +371,7 @@ const { last } = require("underscore");
                 $("#override").css("color", "#6db3ff");
                 if (!isRapid) $("#fr-inp").css("color", "#6db3ff");
             } else {
-                $("#override").css("color", "#cfcfcf");
+                $("#override").css("color", "");
             }
         }
 
@@ -392,13 +392,13 @@ const { last } = require("underscore");
             if (!spindleSpeedInput.is(":focus")) {
                 if (status.spindle.vfdAchvFreq !== 0) {
                     $(".spindle-speed input").css("color", "#42e6f5");
-                    $(".spindle-power .sp-power").css("color", "black");
-                    $(".spindle-load .sp-load-pct").css("color", "black");
+                    $(".spindle-power .sp-power").css("color", "");
+                    $(".spindle-load .sp-load-pct").css("color", "");
                     updateSpindleSpeed(status.spindle.vfdAchvFreq);
                 } else {
-                    $(".spindle-speed input").css("color", "gray");
-                    $(".spindle-power .sp-power").css("color", "gray");
-                    $(".spindle-load .sp-load-pct").css("color", "gray");
+                    $(".spindle-speed input").css("color", "");
+                    $(".spindle-power .sp-power").css("color", "");
+                    $(".spindle-load .sp-load-pct").css("color", "");
                     if (status.spindle.vfdDesgFreq < 0) {
                         updateSpindleSpeed("- disabled -  ");
                     } else {
@@ -408,8 +408,8 @@ const { last } = require("underscore");
                 var pwrDraw = status.spindle.vfdAmps;
                 var formattedDraw = (pwrDraw * 0.01).toFixed(2);
                 if (status.spindle.vfdAmps !== 0) {
-                    $(".spindle-power .sp-power").css("color", "black");
-                    $(".spindle-load .sp-load-pct").css("color", "black");
+                    $(".spindle-power .sp-power").css("color", "");
+                    $(".spindle-load .sp-load-pct").css("color", "");
                 }
                 $(".spindle-power .sp-power").text(formattedDraw);
                 $(".spindle-load .sp-load-pct").text(Math.round(status.spindle.vfdLoadPct) + "%");
@@ -435,9 +435,9 @@ const { last } = require("underscore");
             }
         } else {
             updateSpindleSpeed("- No VFD/USB -  ");
-            $(".spindle-speed input").css("color", "gray");
-            $(".spindle-power .sp-power").css("color", "gray");
-            $(".spindle-load .spindle-load-pct").css("color", "gray");
+            $(".spindle-speed input").css("color", "");
+            $(".spindle-power .sp-power").css("color", "");
+            $(".spindle-load .sp-load-pct").css("color", "");
             $(".spindle-load").hide();
             // hide display when no VFD
             $("#dro-addon-3").css("visibility", "hidden");

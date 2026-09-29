@@ -93,7 +93,9 @@
                 &nbsp;
                 &nbsp;
               </div>
-              <div id="a11y-nav" class="icon_a11y noselect" data-i18n-title="status.menu.accessibility" title="Accessibility"><span class="a11y-glyph">aA</span></div>
+              <!--I assume this was just a test for Accessibility effect?
+              <div id="a11y-nav" class="icon_a11y noselect" data-i18n-title="status.menu.accessibility" title="Accessibility"><span class="a11y-glyph"><span class="a11y-small">A</span><span class="a11y-large">A</span></span></div>
+              -->
             </div>
           </section>
 
@@ -126,7 +128,16 @@
             </div>
 
             <div class="DRO-button" id="dro-tab" data-i18n-title="status.open_dro_tooltip" title="Click to open larger Info Display">
-                <img src="../img/icon_DROout.png" id="icon_DROin-out">
+                <!-- Mini DRO icon; colour is set in style.css (#icon_DROin-out). The arrow shown follows the "dro-open" class on #dro-tab -->
+                <svg id="icon_DROin-out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M96 0h72a18 18 0 0 1 18 18v218a18 18 0 0 1-18 18H96a18 18 0 0 1-18-18V18A18 18 0 0 1 96 0z
+                    M95 17h71a5 5 0 0 1 5 5v9a5 5 0 0 1-5 5H95a5 5 0 0 1-5-5v-9a5 5 0 0 1 5-5z
+                    M95 48h71a5 5 0 0 1 5 5v9a5 5 0 0 1-5 5H95a5 5 0 0 1-5-5v-9a5 5 0 0 1 5-5z
+                    M95 79h71a5 5 0 0 1 5 5v9a5 5 0 0 1-5 5H95a5 5 0 0 1-5-5v-9a5 5 0 0 1 5-5z
+                    M95 110h71a5 5 0 0 1 5 5v9a5 5 0 0 1-5 5H95a5 5 0 0 1-5-5v-9a5 5 0 0 1 5-5z"/>
+                  <polygon class="dro-arrow-out" points="2,122 62,48 62,196"/>
+                  <polygon class="dro-arrow-in" points="254,122 196,48 196,196"/>
+                </svg>
             </div>
             
             <div  class="sm-axes not-selectable"><strong>
