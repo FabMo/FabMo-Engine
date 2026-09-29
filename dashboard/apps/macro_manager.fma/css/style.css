@@ -159,3 +159,107 @@ th {
     width: 25px;
 
 }*/
+
+/* ---- Default-version status pills + inline action rows ---- */
+
+td.status-control {
+    padding: .3em .8em .3em .5em;
+    min-width: 90px;
+    text-align: right;
+}
+th.status-col {
+    text-align: right !important;
+    padding-right: .8em;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+.status-pill.clickable { cursor: pointer; }
+.status-pill.clickable:hover { filter: brightness(0.95); }
+.status-pill.current    { background: #e4e4e4; color: #888; }
+.status-pill.customized { background: #dbe7f6; color: #1f3a6e; }
+.status-pill.update     { background: #f7d447; color: #5a4700; }
+.status-pill.diverged   { background: #f3d1c4; color: #8a3013; }
+.status-pill.new        { background: #d9efd9; color: #1c6b2c; }
+
+tr.uninstalled-default td {
+    color: #999;
+    font-style: italic;
+}
+
+tr.status-detail td {
+    background: #f7f7f2;
+    padding: .6em 1em .8em 1em;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+.status-detail-message {
+    font-size: 13px;
+    color: #444;
+    margin-bottom: .6em;
+    max-width: 48em;
+}
+.status-action-btn {
+    padding: 4px 14px;
+    margin-right: 8px;
+    border-radius: 4px;
+    border: 1px solid #999;
+    background: #fff;
+    color: #333;
+    font-size: 13px;
+    cursor: pointer;
+}
+.status-action-btn:hover { background: #f0f0f0; }
+.status-action-btn.primary {
+    background: #1f3a6e;
+    border-color: #152a50;
+    color: #fff;
+}
+.status-action-btn.primary:hover { background: #2a4c8c; }
+.status-action-btn.danger {
+    background: #c0392b;
+    border-color: #8e2b20;
+    color: #fff;
+}
+.status-action-btn.danger:hover { background: #d64535; }
+
+/* ---- Diff panel ("View changes") ---- */
+
+.macro-diff {
+    margin-top: .7em;
+}
+.macro-diff-legend {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: .3em;
+}
+.macro-diff-box {
+    margin: 0;
+    max-height: 340px;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: "Menlo", "Consolas", monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    padding: .4em 0;
+    white-space: pre;
+}
+.macro-diff-box > div {
+    padding: 0 .8em;
+}
+.diff-add { background: #e3f6e3; color: #1c6b2c; }
+.diff-del { background: #fbe3e0; color: #8a1f12; text-decoration: line-through; }
+.diff-fold {
+    color: #999;
+    font-style: italic;
+    background: #f4f4f4;
+    text-align: center;
+}

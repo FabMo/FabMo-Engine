@@ -1183,10 +1183,41 @@
         "table": {
             "custom_number": "Custom #",
             "name": "Name",
-            "description": "Description"
+            "description": "Description",
+            "status": "Status"
         },
         "notify": {
-            "deleted": "Macro \"{name}\" was deleted."
+            "deleted": "Macro \"{name}\" was deleted.",
+            "installed_default": "Macro \"{name}\" is now the shipped default version.",
+            "dismissed_default": "Keeping your version of macro {index}."
+        },
+        "status": {
+            "pill_current": "default",
+            "pill_customized": "edited",
+            "pill_update": "update available",
+            "pill_diverged": "edited · update available",
+            "pill_new": "not installed",
+            "tip_current": "Matches the default shipped with your machine profile.",
+            "detail_customized": "You've customized this macro. The default shipped with your profile hasn't changed. Reverting will discard your edits.",
+            "detail_update": "A newer default version of this macro arrived with a software update. Your copy has no edits of its own.",
+            "detail_diverged": "You've customized this macro — and a newer default version arrived with a software update. Replacing it will discard your edits.",
+            "detail_new": "This macro ships with your machine profile, but isn't installed on this tool."
+        },
+        "actions": {
+            "update": "Load new version",
+            "revert": "Revert to default",
+            "replace": "Replace with new default",
+            "install": "Install",
+            "keep": "Keep my version",
+            "ignore": "Ignore",
+            "close": "Close",
+            "view_diff": "View changes",
+            "view_macro": "View macro",
+            "hide_diff": "Hide"
+        },
+        "diff": {
+            "legend": "Green lines are in the shipped default; struck-through red lines are only in your copy.",
+            "fold": "⋯ {count} unchanged lines ⋯"
         }
     },
     "network_manager": {
