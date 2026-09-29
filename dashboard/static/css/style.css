@@ -2400,23 +2400,6 @@ html.fabmo-a11y .manual-drive-modal.has-ab-pads {
 .fabmo-status-disconnected { color: gray; }
 
 
-.manual-drive-exit {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    border-radius: 50%;
-    height: 35px;
-    width: 35px;
-    font-size: 30px;
-	padding: 0.2rem;
-    color: #313366;
-	background-color: #ffda29;
-	z-index: 1;
-    line-height: 20px;
-    text-align: center;
-    cursor: pointer;
-}
-
 .manual-drive-message {
 	font-size: 1.1rem;
 	font-weight: bold;
@@ -3552,26 +3535,39 @@ input[type='range']:focus {
         margin-bottom: -0.5rem;
     }
 
-	.manual-stop {
-		width: 80%;
-		height: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
+	/* The go-to container replaces the keypad while an axis value is
+	   being edited. The stacked mobile layout gives the right-side
+	   column height:auto, so the buttons' desktop percentage heights
+	   collapse to nothing — size them by padding and let them stack
+	   in normal flow instead. */
+	.go-to-container {
+		height: auto;
+		margin-top: 0.5rem;
 	}
 
-	.go-to {
-		height:20%;
-		width: 70%;
-		top: -2.5rem;
-		display: inline-block;
-	}
-
+	.manual-stop,
+	.go-to,
 	.set-coordinates {
-		margin-top:0;
-		height:20%;
-		width:25%;
-		top: -2.5rem;
-		display: inline-block;
+		position: static;
+		display: block;
+		width: 100%;
+		height: auto;
+		top: 0;
+		transform: none;
+		margin: 0;
+		padding: 1rem 0;
+	}
+
+	.set-coordinates,
+	.manual-stop {
+		margin-top: 0.75rem;
+	}
+
+	.go-to-container span {
+		position: static;
+		display: block;
+		width: auto;
+		transform: none;
 	}
 
 	.manual-drive-message {
@@ -3964,27 +3960,28 @@ filter: blur(2px);
     line-height: 1;
 }
 
-/* Exit button positioned on the right */
+/* Exit button in the top right corner */
 .manual-drive-exit {
     position: absolute;
-    right: -20px;
-    top: 60%;
+    right: 0;
+    top: 50%;
     transform: translateY(-50%);
+    height: 35px;
+    width: 35px;
     cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 2px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .manual-drive-exit:hover {
-    background: rgba(255,0,0,0.1);
+    background: rgba(0,0,0,0.08);
 }
 
 .manual-drive-exit .fa-times {
-    font-size: 20px;
-    color: #666;
+    font-size: 28px;
+    color: #313366;
 }
 
 .manual-drive-exit .fa-times:hover {
