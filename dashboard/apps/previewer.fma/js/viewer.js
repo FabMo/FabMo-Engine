@@ -404,7 +404,19 @@ module.exports = function(container) {
     // Material initialization is handled by computeMaterialProgressive() below
 
     // Only set up camera on first load
-    if (isFirstLoad) {
+    if (isFirstLoad && self.ar && (self.ar.enabled || self.ar.overhead)) {
+      // A content reload can arrive while AR / overhead is active (Arrange
+      // hands back the edited job with originalBounds nulled, making it a
+      // "first load"). The current pose is solved from the camera
+      // calibration, not the scene bounds — re-apply it instead of letting
+      // the first-load framing below clobber the shared camera object.
+      if (self.ar.overhead) {
+        _setTopDownCamera();
+        _applyOverheadWarp();
+      } else {
+        _applyARCamera();
+      }
+    } else if (isFirstLoad) {
       // Try to restore saved view state first
       var restored = self.restoreViewState();
 
