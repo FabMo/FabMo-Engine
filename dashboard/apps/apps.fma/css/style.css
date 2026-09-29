@@ -115,6 +115,27 @@ filter: blur(3px);
     transform: translate(-50%, -50%);
 }
 
+.downloadApp {
+    display: none;
+    position: absolute;
+    border-radius: 50%;
+    background-color: #1a6eed;
+    height: 20px;
+    width: 20px;
+    left: -10px;
+    top: -10px;
+    cursor: pointer;
+    color: #fff;
+}
+
+.downloadApp div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+}
+
 .appname{
     position: absolute;
     margin-top: 105%;

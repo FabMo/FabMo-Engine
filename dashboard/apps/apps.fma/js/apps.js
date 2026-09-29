@@ -147,7 +147,7 @@ function makeListItem (menu, obj) {
         menu.appendChild(listItem);
         var id = document.getElementById(obj.id);
         var path = obj.icon_url;
-        id.innerHTML = '<img src=/'+path+'><div class="deleteApp"><div>x</div></div><div class="appname">'+obj.name+'</div>';
+        id.innerHTML = '<img src=/'+path+'><div class="deleteApp" title="Delete app"><div>x</div></div><div class="downloadApp" title="Download app archive"><div>&#8595;</div></div><div class="appname">'+obj.name+'</div>';
         $('#'+obj.id).click(launch(obj.id));
         $('#'+obj.id).css('background-color',obj.icon_background_color);
 }
@@ -237,19 +237,26 @@ function holdfunction (e) {
    var id = e.delegateTarget.id;
    $('.filter').show();
    $( "#"+id).unbind( "click" );
-   $('.deleteApp, .filter',  "#"+id).unbind("click");
+   $('.deleteApp, .downloadApp, .filter',  "#"+id).unbind("click");
    $('.app_item:not("#'+id+'")').addClass('blur');
 
    $('.app_add').addClass('blur');
    $('#'+id+' .deleteApp').show();
+   $('#'+id+' .downloadApp').show();
    $('#'+id).css('z-index', '1001');
    $('.filter').on('click', function(){
        $('.filter').hide();
        $('#'+id+' .deleteApp').hide();
+       $('#'+id+' .downloadApp').hide();
        $('#'+id).css('z-index', '1');
        $('#'+id).click(launch(id));
        $('.app_add').removeClass('blur');
        $('.app_item').removeClass('blur');
+   });
+   $('#'+id+' .downloadApp').click(function(e){
+       e.stopPropagation();
+       fabmo.navigate('/apps/' + id + '/archive');
+       $('.filter').click();   // dismiss the hold-to-edit state
    });
    $('.deleteApp').click(function(){
        var ind = newOrder.indexOf(id);

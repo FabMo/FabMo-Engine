@@ -36,6 +36,7 @@ function refreshApps() {
                     if (val.icon_display !== 'none') {
                         delete_button = '<div class="delete-button" id="delete_' + appid + '"><img class="svg" src="images/recycling10.svg"></div>';
                     }
+                    var download_button = '<div class="download-button" id="download_' + appid + '" title="' + window.t('config.apps_tab.download_app') + '"><img class="svg" src="images/download.png"></div>';
                     if (id === defaultApp){
                         checked = 'checked';
                     }
@@ -54,9 +55,13 @@ function refreshApps() {
                         val.version || '',
                         '</td><td>',
                         val.description || window.t('config.apps_tab.no_description'),
-                        '</td><td></td><td>' + delete_button + '</td></tr>'
+                        '</td><td>' + download_button + '</td><td>' + delete_button + '</td></tr>'
                     ].join('');
                     $(".app-listing").append(html);
+
+                    $('#download_' + appid).click(function() {
+                        fabmo.navigate('/apps/' + id + '/archive');
+                    });
 
                     $('#delete_' + appid).click(function() {
                         fabmo.showModal({
