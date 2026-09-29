@@ -252,6 +252,17 @@ table {
   box-shadow: .5px .5px .5px #aaaaaa;
 }
 
+.download-button {
+  background-size: 100% 100%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  padding: .7em;
+  border: 1px solid #444444;
+  border-radius: 5px;
+  box-shadow: .5px .5px .5px #aaaaaa;
+}
+
 .changepassword-button {
   background-size: 100% 100%;
   width: 40px;

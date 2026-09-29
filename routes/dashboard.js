@@ -3,6 +3,9 @@ var dashboard = require("../dashboard");
 var util = require("../util");
 var upload = require("./util").upload;
 var static = require("../static");
+var log = require("../log").logger("routes");
+var fs = require("fs");
+var archiver = require("archiver");
 
 /**
  * @api {get} /apps List Apps
@@ -102,7 +105,7 @@ var postAppConfig = function (req, res, next) {
                 };
             }
             res.json(answer);
-        }.bind(this)
+        }.bind(this),
     );
 };
 
@@ -164,6 +167,68 @@ var listAppFiles = function (req, res, next) {
     res.json(answer);
 };
 
+/**
+ * @api {get} /apps/:id/archive Download App Archive
+ * @apiGroup Dashboard
+ * @apiDescription Download the specified app as a .fma archive.  User-installed
+ *                 apps are returned as the original uploaded archive; system
+ *                 apps (which have no stored archive) are zipped on the fly
+ *                 from their installed directory.
+ * @apiParam {String} id ID of requested app
+ */
+// eslint-disable-next-line no-unused-vars
+var getAppArchive = function (req, res, next) {
+    var app = dashboard.getAppIndex()[req.params.id];
+    if (!app) {
+        res.json({
+            status: "error",
+            message: "No such app: " + req.params.id,
+        });
+        return;
+    }
+    var filename = app.id + ".fma";
+    log.info("Downloading archive for app " + app.id);
+
+    var sendHeaders = function (size) {
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader("Content-Disposition", 'attachment; filename="' + filename + '"');
+        if (size) {
+            res.setHeader("Content-Length", size);
+        }
+    };
+
+    fs.stat(app.app_archive_path, function (err, stat) {
+        if (!err && stat.isFile()) {
+            // User-installed app: return the stored archive verbatim
+            sendHeaders(stat.size);
+            var stream = fs.createReadStream(app.app_archive_path);
+            stream.on("error", function (err) {
+                log.error("app archive download failed: " + err.message);
+                res.end();
+            });
+            stream.pipe(res);
+        } else {
+            // System app: no stored archive - zip the hosted directory.
+            // Contents go at the archive root (the layout installAppArchive
+            // expects); .config.json is this machine's runtime app config,
+            // not part of the app, so it is left out.
+            sendHeaders();
+            var archive = archiver("zip", { zlib: { level: 9 } });
+            archive.on("error", function (err) {
+                log.error("app archive zip failed: " + err.message);
+                res.end();
+            });
+            archive.pipe(res);
+            archive.glob("**/*", {
+                cwd: app.app_path,
+                dot: true,
+                ignore: [".config.json"],
+            });
+            archive.finalize();
+        }
+    });
+};
+
 var submitApp = function (req, res, next) {
     upload(req, res, next, function (err, uploads) {
         // Multiple apps can be submitted at once.  Process each of them in turn.
@@ -174,13 +239,7 @@ var submitApp = function (req, res, next) {
                 if (file && util.allowedAppFile(file.name)) {
                     dashboard.installAppArchive(file.path, file.name, callback);
                 } else if (file) {
-                    callback(
-                        new Error(
-                            "Cannot accept " +
-                                file.name +
-                                ": Incorrect file format."
-                        )
-                    );
+                    callback(new Error("Cannot accept " + file.name + ": Incorrect file format."));
                 } else {
                     callback(new Error("Bad request."));
                 }
@@ -199,7 +258,7 @@ var submitApp = function (req, res, next) {
                         data: { apps: apps },
                     },
                 });
-            }
+            },
         ); // async.map
     }); // upload
 }; // submitApp
@@ -218,6 +277,7 @@ module.exports = function (server) {
     server.post("/apps/:id/config", postAppConfig);
     server.del("/apps/:id", deleteApp);
     server.get("/apps/:id/files", listAppFiles);
+    server.get("/apps/:id/archive", getAppArchive);
     // Apps are served from stable /approot paths (no version stamp like the
     // dashboard bundle gets), and their assets aren't content-hashed, so a
     // long max-age would leave customers staring at a stale app for up to an
@@ -229,14 +289,14 @@ module.exports = function (server) {
         static({
             directory: config.getDataDir("approot"),
             maxAge: 0,
-        })
+        }),
     );
     server.get(
         "/approot*",
         static({
             directory: config.getDataDir("approot"),
             maxAge: 0,
-        })
+        }),
     );
     server.get("/updater", updater);
 };

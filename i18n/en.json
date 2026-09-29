@@ -477,7 +477,8 @@
             "delete_app_message": "Are you sure you want to delete this app?",
             "install_failed": "Could not install app:</br>",
             "installed_successfully": " installed successfully.",
-            "install_ok_single": "App installed successfully."
+            "install_ok_single": "App installed successfully.",
+            "download_app": "Download a copy of this app"
         },
         "users_tab": {
             "current_user": "Current User Information",
