@@ -5,6 +5,7 @@
 ' Description: Measure the length of ATC cutting tools
 ' Author: Brian Owen
 ' 2026/2/12 - Refactored (th)
+' 2026/9/28 - fix plate location (th)
 
 
 &u = %(25)
@@ -76,8 +77,9 @@ MANUAL_POSITION:
 
 AUTO_POSITION:
     IF %($ToolBar_Status) == 0 THEN RETURN                            ' If the toolbar is unplugged, send us back to be routed to manual tool measurement
-    JY, $atcUU[&u].zZero_Y - %(8)                                     ' For safety, do the Y move first
-    JX, $atcUU[&u].zZero_X - %(7)                                     ' Then the X move to the Z Zero plate
+    JY, $atcUU[&u].zZero_Y - %(8) - $sb_homeOffUU[&u].y               ' For safety, do the Y move first; location data is for permanent physical location, 
+                                                                      ' ... so current TableBase 0 from prox needs to be subtracted
+    JX, $atcUU[&u].zZero_X - %(7) - $sb_homeOffUU[&u].x               ' Then the X move to the Z Zero plate
     RETURN
 
 CHOOSE_TOOL:

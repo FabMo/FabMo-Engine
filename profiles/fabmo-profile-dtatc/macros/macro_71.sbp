@@ -5,7 +5,8 @@
 ' Description: - internal -
 ' Author: Brian Owen, Josh Ayers
 ' 2026/2/27 - Added handling for changing to bit 0 (bo)
-' 2026/8/25/ - initialize &CURRENT_TOOL (th)
+' 2026/8/25 - initialize &CURRENT_TOOL (th)
+' 2026/9/28 - fix homing (th)
 
 '   - Core routine for swapping out tools
 '   - Called by C1(user) and other ATC Macros 
@@ -146,13 +147,10 @@ FinishToolChangeWithNoTool:
     &TL = &th + $atcUU[&u].PlateOffset + $atcUU[&u].MaxDepth         ' Figure out Z limit to prevent cutting into table
     VL,,,,,&TL                                                       ' Update Z limits
     &AtNow = "Finished with no Tool"
-    IF $ATC.ToolIN == 0 THEN GOSUB JOG_HOME
+    IF $ATC.ToolIN == 0 THEN JH
     END
     RETURN
 
-JOG_HOME:
-    J2, &tx, &ty
-    RETURN
 ' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 STATE: ' Report State at points in ATC Sequence (call with a GOSUB STATE to debug)
     PAUSE "STATE:" + &AtNow + " ATC-Status:" + $ATC.Status + " tool:" + &tool + " ATC.Dropped:" + $ATC.Dropped + " ToolIn:" + $ATC.ToolIn + " Length:" + &th + " Drawbar:" + %($Drawbar_Sensor_Status) + " ToolSensor:" + %($Tool_Sensor_Status)
