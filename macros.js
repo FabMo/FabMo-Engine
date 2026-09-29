@@ -535,26 +535,56 @@ function _listDefaultMacros() {
     return defaults;
 }
 
-// Read just the !FABMO! header of a macro file, synchronously and without
-// the unlink-on-parse-failure behavior of _parseMacroFile (we must never
-// delete files out of a profile directory).
-function _readHeaderInfo(filename) {
+// Read a macro file synchronously into {name, description, ..., content}
+// (header fields plus header-stripped content) without the
+// unlink-on-parse-failure behavior of _parseMacroFile (we must never
+// delete files out of a profile directory). Returns null if unreadable.
+function _readMacroFileSync(filename) {
     var re = /[(']!FABMO!(\w+):([^)]*)\)?/;
     var obj = {};
     try {
         var lines = fs.readFileSync(filename).toString().split("\n");
-        for (var i = 0; i < lines.length; i++) {
+        var i = 0;
+        while (i < lines.length) {
             var groups = lines[i].match(re);
             if (!groups) {
                 break;
             }
             obj[groups[1]] = groups[2];
+            i++;
         }
+        obj.content = lines.slice(i).join("\n");
     } catch (e) {
-        /* header stays empty */
+        return null;
     }
     return obj;
 }
+
+// Read just the header fields (name, description, ...)
+function _readHeaderInfo(filename) {
+    return _readMacroFileSync(filename) || {};
+}
+
+// Get the shipped default for a macro index (null if the current profile
+// does not ship one): {index, type, name, description, content}
+var getDefault = function (idx) {
+    idx = parseInt(idx);
+    var def = _listDefaultMacros()[idx];
+    if (!def) {
+        return null;
+    }
+    var parsed = _readMacroFileSync(def.filename);
+    if (!parsed) {
+        return null;
+    }
+    return {
+        index: idx,
+        type: def.type,
+        name: parsed.name || "macro_" + idx,
+        description: parsed.description || "",
+        content: parsed.content || "",
+    };
+};
 
 // Compute the status of every macro (installed and/or shipped) vs the
 // current profile's defaults. Returns a list sorted by index:
@@ -689,3 +719,4 @@ exports.loadProfile = loadProfileMacros;
 exports.getStatus = getStatus;
 exports.installDefault = installDefault;
 exports.dismissDefault = dismissDefault;
+exports.getDefault = getDefault;

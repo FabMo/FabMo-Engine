@@ -20,12 +20,14 @@ var STATUS_UI = {
         pillClass: 'customized',
         pillKey: 'macro_manager.status.pill_customized',
         detailKey: 'macro_manager.status.detail_customized',
+        diff: true,
         actions: [{ act: 'install', labelKey: 'macro_manager.actions.revert', style: 'danger' }]
     },
     update_available: {
         pillClass: 'update',
         pillKey: 'macro_manager.status.pill_update',
         detailKey: 'macro_manager.status.detail_update',
+        diff: true,
         actions: [
             { act: 'install', labelKey: 'macro_manager.actions.update', style: 'primary' },
             { act: 'dismiss', labelKey: 'macro_manager.actions.keep' }
@@ -35,6 +37,7 @@ var STATUS_UI = {
         pillClass: 'diverged',
         pillKey: 'macro_manager.status.pill_diverged',
         detailKey: 'macro_manager.status.detail_diverged',
+        diff: true,
         actions: [
             { act: 'install', labelKey: 'macro_manager.actions.replace', style: 'danger' },
             { act: 'dismiss', labelKey: 'macro_manager.actions.keep' }
@@ -44,12 +47,114 @@ var STATUS_UI = {
         pillClass: 'new',
         pillKey: 'macro_manager.status.pill_new',
         detailKey: 'macro_manager.status.detail_new',
+        preview: true,
         actions: [
             { act: 'install', labelKey: 'macro_manager.actions.install', style: 'primary' },
             { act: 'dismiss', labelKey: 'macro_manager.actions.ignore' }
         ]
     }
 };
+
+// ---- Line diff (LCS) for the "View changes" panel ----
+
+function diffLines(a, b) {
+    var n = a.length, m = b.length;
+    var lcs = [];
+    for (var i = 0; i <= n; i++) {
+        lcs.push(new Array(m + 1).fill(0));
+    }
+    for (i = n - 1; i >= 0; i--) {
+        for (var j = m - 1; j >= 0; j--) {
+            lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+        }
+    }
+    var out = [], x = 0, y = 0;
+    while (x < n && y < m) {
+        if (a[x] === b[y]) { out.push({ type: 'ctx', text: a[x] }); x++; y++; }
+        else if (lcs[x + 1][y] >= lcs[x][y + 1]) { out.push({ type: 'del', text: a[x] }); x++; }
+        else { out.push({ type: 'add', text: b[y] }); y++; }
+    }
+    while (x < n) out.push({ type: 'del', text: a[x++] });
+    while (y < m) out.push({ type: 'add', text: b[y++] });
+    return out;
+}
+
+// Collapse long unchanged runs to CONTEXT lines on each side, replacing
+// the middle with a fold marker.
+function collapseContext(diff) {
+    var CONTEXT = 3;
+    var out = [];
+    var run = [];
+    function flushRun(isEdge) {
+        if (run.length > CONTEXT * 2 + 1) {
+            var head = isEdge === 'start' ? 0 : CONTEXT;
+            var tail = isEdge === 'end' ? 0 : CONTEXT;
+            if (head) out.push.apply(out, run.slice(0, head));
+            out.push({ type: 'fold', count: run.length - head - tail });
+            if (tail) out.push.apply(out, run.slice(run.length - tail));
+        } else {
+            out.push.apply(out, run);
+        }
+        run = [];
+    }
+    var seenChange = false;
+    diff.forEach(function (line) {
+        if (line.type === 'ctx') {
+            run.push(line);
+        } else {
+            flushRun(seenChange ? null : 'start');
+            seenChange = true;
+            out.push(line);
+        }
+    });
+    flushRun('end');
+    return out;
+}
+
+function normalizeLines(content) {
+    return (content || '').replace(/\r\n/g, '\n').replace(/\s+$/, '').split('\n');
+}
+
+function renderDiffPanel(installedContent, defaultContent) {
+    var panel = document.createElement('div');
+    panel.className = 'macro-diff';
+    var legend = document.createElement('div');
+    legend.className = 'macro-diff-legend';
+    legend.textContent = window.t('macro_manager.diff.legend');
+    panel.appendChild(legend);
+    var box = document.createElement('pre');
+    box.className = 'macro-diff-box';
+    var lines = collapseContext(diffLines(normalizeLines(installedContent), normalizeLines(defaultContent)));
+    lines.forEach(function (line) {
+        var div = document.createElement('div');
+        if (line.type === 'fold') {
+            div.className = 'diff-fold';
+            div.textContent = window.t('macro_manager.diff.fold', { count: line.count });
+        } else {
+            div.className = 'diff-' + line.type;
+            var prefix = line.type === 'add' ? '+ ' : line.type === 'del' ? '- ' : '  ';
+            div.textContent = prefix + line.text;
+        }
+        box.appendChild(div);
+    });
+    panel.appendChild(box);
+    return panel;
+}
+
+function renderPreviewPanel(defaultContent) {
+    var panel = document.createElement('div');
+    panel.className = 'macro-diff';
+    var box = document.createElement('pre');
+    box.className = 'macro-diff-box';
+    normalizeLines(defaultContent).forEach(function (text) {
+        var div = document.createElement('div');
+        div.className = 'diff-ctx';
+        div.textContent = '  ' + text;
+        box.appendChild(div);
+    });
+    panel.appendChild(box);
+    return panel;
+}
 
 function getMacroFromClick(elem) {
     var id = $(elem).closest('tr').data('macro');
@@ -102,12 +207,56 @@ function toggleDetailRow(tr, entry) {
         });
         btnRow.appendChild(btn);
     });
+
+    // "View changes" (diff vs shipped default) / "View macro" (preview of
+    // an uninstalled default). The panel loads lazily on first click and
+    // toggles thereafter.
+    if (ui.diff || ui.preview) {
+        var viewBtn = document.createElement('button');
+        viewBtn.className = 'status-action-btn';
+        var showKey = ui.diff ? 'macro_manager.actions.view_diff' : 'macro_manager.actions.view_macro';
+        viewBtn.textContent = window.t(showKey);
+        var panelHolder = document.createElement('div');
+        viewBtn.addEventListener('click', function () {
+            if (panelHolder.firstChild) {
+                var hidden = panelHolder.style.display === 'none';
+                panelHolder.style.display = hidden ? '' : 'none';
+                viewBtn.textContent = window.t(hidden ? 'macro_manager.actions.hide_diff' : showKey);
+                return;
+            }
+            $.getJSON('/macros/' + entry.index + '/default', function (resp) {
+                if (!resp || resp.status !== 'success') {
+                    fabmo.notify('error', (resp && resp.message) || 'Error');
+                    return;
+                }
+                var defContent = resp.data.macro.content;
+                if (ui.preview) {
+                    panelHolder.appendChild(renderPreviewPanel(defContent));
+                    viewBtn.textContent = window.t('macro_manager.actions.hide_diff');
+                } else {
+                    $.getJSON('/macros/' + entry.index, function (resp2) {
+                        if (!resp2 || resp2.status !== 'success') {
+                            fabmo.notify('error', (resp2 && resp2.message) || 'Error');
+                            return;
+                        }
+                        panelHolder.appendChild(renderDiffPanel(resp2.data.macro.content, defContent));
+                        viewBtn.textContent = window.t('macro_manager.actions.hide_diff');
+                    });
+                }
+            });
+        });
+        btnRow.appendChild(viewBtn);
+        td.appendChild(btnRow);
+        td.appendChild(panelHolder);
+    } else {
+        td.appendChild(btnRow);
+    }
+
     var close = document.createElement('button');
     close.className = 'status-action-btn';
     close.textContent = window.t('macro_manager.actions.close');
     close.addEventListener('click', function () { $(detail).remove(); });
     btnRow.appendChild(close);
-    td.appendChild(btnRow);
     detail.appendChild(td);
     tr.parentNode.insertBefore(detail, tr.nextSibling);
 }

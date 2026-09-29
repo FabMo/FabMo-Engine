@@ -1209,7 +1209,14 @@
             "install": "Install",
             "keep": "Keep my version",
             "ignore": "Ignore",
-            "close": "Close"
+            "close": "Close",
+            "view_diff": "View changes",
+            "view_macro": "View macro",
+            "hide_diff": "Hide"
+        },
+        "diff": {
+            "legend": "Green lines are in the shipped default; struck-through red lines are only in your copy.",
+            "fold": "⋯ {count} unchanged lines ⋯"
         }
     },
     "network_manager": {

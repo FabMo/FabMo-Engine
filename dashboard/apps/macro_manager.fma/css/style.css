@@ -228,3 +228,38 @@ tr.status-detail td {
     color: #fff;
 }
 .status-action-btn.danger:hover { background: #d64535; }
+
+/* ---- Diff panel ("View changes") ---- */
+
+.macro-diff {
+    margin-top: .7em;
+}
+.macro-diff-legend {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: .3em;
+}
+.macro-diff-box {
+    margin: 0;
+    max-height: 340px;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: "Menlo", "Consolas", monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    padding: .4em 0;
+    white-space: pre;
+}
+.macro-diff-box > div {
+    padding: 0 .8em;
+}
+.diff-add { background: #e3f6e3; color: #1c6b2c; }
+.diff-del { background: #fbe3e0; color: #8a1f12; text-decoration: line-through; }
+.diff-fold {
+    color: #999;
+    font-style: italic;
+    background: #f4f4f4;
+    text-align: center;
+}

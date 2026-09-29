@@ -164,6 +164,26 @@ var getMacroStatus = function (req, res, next) {
 
 /**
  * @apiGroup Macros
+ * @api {get} /macros/:id/default Get shipped default version
+ * @apiDescription Returns the version of the macro shipped with the current
+ * machine profile (name, description, and header-stripped content), so the
+ * client can preview or diff it against the installed copy.
+ */
+// eslint-disable-next-line no-unused-vars
+var getDefaultMacro = function (req, res, next) {
+    var macro = macros.getDefault(req.params.id);
+    if (macro) {
+        res.json({ status: "success", data: { macro: macro } });
+    } else {
+        res.json({
+            status: "error",
+            message: "No shipped default for macro " + req.params.id,
+        });
+    }
+};
+
+/**
+ * @apiGroup Macros
  * @api {post} /macros/:id/install_default Install shipped default
  * @apiDescription Replaces the macro (or installs it, if missing) with the
  * version shipped in the current machine profile.
@@ -202,6 +222,7 @@ module.exports = function (server) {
     // Register before /macros/:id so "status" is not consumed as an id
     server.get("/macros/status", getMacroStatus);
     server.get("/macros/:id", getMacro);
+    server.get("/macros/:id/default", getDefaultMacro);
     server.post("/macros/:id/install_default", installDefaultMacro);
     server.post("/macros/:id/dismiss_default", dismissDefaultMacro);
     server.del("/macros/:id", deleteMacro);
