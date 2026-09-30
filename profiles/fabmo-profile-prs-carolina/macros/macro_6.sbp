@@ -1,9 +1,0 @@
-'!FABMO!name: Start Spindle
-'!FABMO!description: Turns spindle ON in file; SBP convention for managing tools
-' Name: Start Spindle
-' Description: Turns spindle ON in files, SBP convention for managing tools [C6] used in Vectric Posts.
-' ... also called in files with Manual or Automatic Tool Changes
-' If Macro is run manually, file ends after the PAUSE and Spindle turns off automatically at that file-end.
-
-SO, 1, 1            ' Make OUTPUT #1 ACTIVE (high) [Spindle channel]
-PAUSE .1            ' ... optional additional pause for spinup, now automatic in FabMo, may be increased here
