@@ -908,3 +908,99 @@ body[class*="theme-"] .ts-fillin-modal .ts-modal-header {
     overflow-x: auto;
     white-space: nowrap;
 }
+
+/* ---- Shop Tools AR projection ----
+   Full-viewport stage: live MJPEG stretched to fill (object-fit: fill —
+   the calibration corners are stored as container fractions, previewer
+   convention, so filling keeps them aligned with the image), the active
+   tool's envelope-map SVG warped over it by a matrix3d homography, and
+   the tool's control panel docked in a rail that slides in from the
+   right. Below the modal layer (100) so confirm dialogs still win. */
+#st-ar-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: #000;
+    overflow: hidden;
+}
+#st-ar-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+#st-ar-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+#st-ar-exit {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    font-size: 1.3em;
+    color: #fff;
+    background: rgba(44, 62, 80, 0.55);
+    border-radius: 6px;
+    padding: 4px 10px;
+}
+/* Floating control palette: semitransparent, draggable by the grip
+   strip. Starts docked top-right; stArEnter restores the last dragged
+   position. max-height + scroll so tall panels never pin the exit
+   button off-screen. */
+#st-ar-float {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 290px;
+    box-sizing: border-box;
+    background: rgba(250, 250, 252, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 10px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+    padding: 4px 10px 10px;
+    max-height: calc(100% - 32px);
+    overflow-y: auto;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+#st-ar-stage.st-ar-open #st-ar-float {
+    opacity: 1;
+}
+#st-ar-grip {
+    text-align: center;
+    color: #7f8c8d;
+    letter-spacing: 3px;
+    cursor: move;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    padding: 2px 0 4px;
+}
+/* The AR projection IS the preview: park the panel's 2D map off-screen
+   (not display:none — it keeps rendering as the projection's source and
+   its geometry stays measurable). */
+#st-ar-float .ts-st-env {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+}
+/* Back-to-picker makes no sense while docked; AR button becomes the exit. */
+#st-ar-float .ts-st-back { display: none; }
+.ts-st-arbtn.st-ar-active { color: #c0392b; }
+/* Drag handles stay live on the projection: the svg itself ignores the
+   pointer, individual handles opt back in (per-element SVG hit testing
+   works through the 3D transform). */
+#st-ar-svg [data-handle] {
+    pointer-events: auto;
+    cursor: grab;
+}
+#st-env-svg [data-handle] {
+    cursor: grab;
+}

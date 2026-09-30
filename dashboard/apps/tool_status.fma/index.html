@@ -174,6 +174,7 @@
                         <div class="ts-st-head">
                             <button class="ts-iconbtn ts-st-back" title="Back to shop tools" data-i18n-title="tool_status.shoptools.back_title"><i class="fa fa-chevron-left"></i></button>
                             <span class="ts-st-title" data-i18n="tool_status.shoptools.drill">Drill Press</span>
+                            <button class="ts-iconbtn ts-st-arbtn" title="Project onto the table camera view" data-i18n-title="tool_status.shoptools.ar_title" style="display:none;"><i class="fa fa-video-camera"></i></button>
                             <div class="ts-st-btncol">
                                 <button class="ts-cmd ts-st-arraybtn" id="btn-st-array" title="Drill a grid of holes from the current position" data-i18n-title="tool_status.shoptools.drill_array_title" data-i18n="tool_status.shoptools.array">Array</button>
                                 <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-drill" data-i18n="tool_status.shoptools.drill_btn">DRILL</button>
@@ -233,6 +234,7 @@
                         <div class="ts-st-head">
                             <button class="ts-iconbtn ts-st-back" title="Back to shop tools" data-i18n-title="tool_status.shoptools.back_title"><i class="fa fa-chevron-left"></i></button>
                             <span class="ts-st-title" data-i18n="tool_status.shoptools.tablesaw">Table Saw</span>
+                            <button class="ts-iconbtn ts-st-arbtn" title="Project onto the table camera view" data-i18n-title="tool_status.shoptools.ar_title" style="display:none;"><i class="fa fa-video-camera"></i></button>
                             <div class="ts-st-btncol">
                                 <button class="ts-cmd ts-sts-mode" id="sts-mode-rip" title="Rip &mdash; straight cut along Y" data-i18n-title="tool_status.shoptools.rip_title">|</button>
                                 <button class="ts-cmd ts-sts-mode" id="sts-mode-cross" title="Crosscut &mdash; straight cut along X" data-i18n-title="tool_status.shoptools.cross_title">&#8212;</button>
@@ -304,6 +306,7 @@
                         <div class="ts-st-head">
                             <button class="ts-iconbtn ts-st-back" title="Back to shop tools" data-i18n-title="tool_status.shoptools.back_title"><i class="fa fa-chevron-left"></i></button>
                             <span class="ts-st-title" data-i18n="tool_status.shoptools.planer">Planer</span>
+                            <button class="ts-iconbtn ts-st-arbtn" title="Project onto the table camera view" data-i18n-title="tool_status.shoptools.ar_title" style="display:none;"><i class="fa fa-video-camera"></i></button>
                             <div class="ts-st-btncol">
                                 <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-plane" data-i18n="tool_status.shoptools.plane_btn">PLANE</button>
                             </div>
@@ -547,8 +550,22 @@
         </div>
     </div>
 
+    <!-- AR projection stage: the active shop tool's envelope map, warped by
+         the previewer's saved table calibration (machine.cameraCalibration)
+         onto the live camera feed. The tool's panel docks into the right
+         rail while the stage is open. -->
+    <div id="st-ar-stage" style="display:none;">
+        <img id="st-ar-video" alt=""/>
+        <svg id="st-ar-svg"></svg>
+        <button class="ts-iconbtn" id="st-ar-exit" title="Exit camera view" data-i18n-title="tool_status.shoptools.ar_exit_title"><i class="fa fa-times"></i></button>
+        <div id="st-ar-float">
+            <div id="st-ar-grip" title="Drag to move" data-i18n-title="tool_status.shoptools.ar_grip_title">&#8942;&#8942;</div>
+        </div>
+    </div>
+
     <script src="../../js/libs/jquery.min.js"></script>
     <script src="../../js/libs/fabmo.js"></script>
+    <script src="../../static/js/shared-video.js?v=3"></script>
     <script src="js/i18n.js"></script>
     <script src="js/Sortable.js"></script>
     <script src="js/app.js"></script>
