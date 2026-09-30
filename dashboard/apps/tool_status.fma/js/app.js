@@ -3314,16 +3314,20 @@ $(document).ready(function () {
     $("#console-input").on("keydown", function (e) {
         var $in = $(this);
         if (e.key === "Enter") {
-            var cmd = $in.val().trim();
+            // Commands are capitalized like SB4's command console (the
+            // input shows caps live via text-transform; this makes it real).
+            var cmd = $in.val().trim().toUpperCase();
             if (!cmd) return;
+            // First use retires the helper placeholder until reload.
+            $in.removeAttr("placeholder").removeAttr("data-i18n-placeholder");
             if (cmd !== cmdHistory[cmdHistory.length - 1]) cmdHistory.push(cmd);
             cmdHistoryIdx = -1;
             $in.val("");
             // A bare two-letter command with parameters opens its fill-in
             // sheet instead of running immediately (SB3/SB4 behavior).
-            var entry = fillinEntryFor(cmd.toUpperCase());
+            var entry = fillinEntryFor(cmd);
             if (entry) {
-                openFillin(cmd.toUpperCase(), entry);
+                openFillin(cmd, entry);
             } else {
                 consoleRun(cmd);
             }
