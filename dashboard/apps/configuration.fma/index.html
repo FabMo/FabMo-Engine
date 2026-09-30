@@ -2011,6 +2011,38 @@
           </fieldset>
 
           <fieldset>
+            <legend><span data-i18n="config.machine.features_legend">Machine Features</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="config.machine.features_tooltip">
+                Check the special equipment installed on this tool. Enabling a <br>
+                feature installs its macros (e.g. the ATC tool-change macros); <br>
+                disabling it leaves them in place. <br>
+              </span>
+            </span>
+            </legend>
+
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.feature_atc">Automatic Tool Changer (ATC)</span></label>
+                <input id="machine-features-atc" class="machine-input" type="checkbox">
+              </div>
+            </div>
+
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.feature_laser">Laser</span></label>
+                <input id="machine-features-laser" class="machine-input" type="checkbox">
+              </div>
+            </div>
+
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.feature_knife">Drag Knife</span></label>
+                <input id="machine-features-knife" class="machine-input" type="checkbox">
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
             <legend data-i18n="config.machine.zlift_legend">Z-Lift</legend>
             <div class="large-6 columns">
               <div class="row collapse">

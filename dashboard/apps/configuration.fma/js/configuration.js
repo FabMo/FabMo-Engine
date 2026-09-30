@@ -710,6 +710,12 @@ $(document).ready(function() {
         $(this).attr('value', $(this).is(':checked') ? 'true' : 'false');
     });
 
+    // Feature flags (machine.features.*) — same checkbox-to-value pattern.
+    // The server installs the feature's macros when a flag turns on.
+    $("#machine-features-atc, #machine-features-laser, #machine-features-knife").on('change', function() {
+        $(this).attr('value', $(this).is(':checked') ? 'true' : 'false');
+    });
+
     $('.machine-input').change( function() {
             setConfig(this.id, this.value);
     });

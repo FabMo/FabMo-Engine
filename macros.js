@@ -391,34 +391,47 @@ var del = function (idx, callback) {
     }
 };
 
-// Copy macros from the current profile to the macros directory.
-// Only copies macros if they do not exist.
-var loadProfileMacros = function (callback) {
+// Assemble the installed macro set at <data>/macros from the shipped
+// sources (see _getMacroSourceDirs): the common set in the default
+// profile, the feature subdirectories enabled by machine.features, and
+// any overrides the current profile ships. Copy-if-not-exists, so
+// user-edited macros always win and survive restarts and updates.
+// Feature subdirectories are flattened -- the installed directory stays
+// flat because load() does not recurse. Disabling a feature does not
+// remove its macros (they may carry user edits; restores everywhere in
+// FabMo are additive).
+var installProfileMacros = function (callback) {
     var installedMacrosDir = config.getDataDir("macros");
-    var profileMacrosDir = config.getProfileDir("macros");
-    var copyIfNotExists = function (fn, callback) {
-        var a = path.join(profileMacrosDir, fn);
-        var b = path.join(installedMacrosDir, fn);
-        fs.stat(b, function (err, stats) {
-            if (!err && stats.isFile()) {
-                log.debug("Not Copying " + a + " -> " + b + " because it already exists.");
-                callback();
-            } else {
-                log.debug("Copying " + a + " -> " + b + " because it doesnt already exist.");
-                // eslint-disable-next-line no-unused-vars
-                fs.copy(a, b, function (err, data) {
-                    callback(err);
-                });
+    var re = /^macro_([0-9]+)\.(nc|sbp)$/;
+    var claimed = {}; // basename -> true; first (highest-precedence) source wins
+    var jobs = [];
+    _getMacroSourceDirs().forEach(function (dir) {
+        var files;
+        try {
+            files = fs.readdirSync(dir);
+        } catch (e) {
+            return;
+        }
+        files.forEach(function (fn) {
+            if (!re.test(fn) || claimed[fn]) {
+                return;
             }
+            claimed[fn] = true;
+            jobs.push({ src: path.join(dir, fn), dst: path.join(installedMacrosDir, fn) });
+        });
+    });
+    var copyIfNotExists = function (job, callback) {
+        fs.stat(job.dst, function (err, stats) {
+            if (!err && stats.isFile()) {
+                return callback();
+            }
+            log.debug("Installing macro " + job.src + " -> " + job.dst);
+            fs.copy(job.src, job.dst, function (err) {
+                callback(err);
+            });
         });
     };
-
-    fs.readdir(profileMacrosDir, function (err, files) {
-        if (err) {
-            return callback(err);
-        }
-        async.map(files, copyIfNotExists, callback);
-    });
+    async.eachSeries(jobs, copyIfNotExists, callback);
 };
 
 // ---- Shipped-default (profile) macro tracking -----------------------------
@@ -476,14 +489,15 @@ function _hashFile(filename) {
     }
 }
 
-// Resolve the shipped-defaults macros directory for the current profile.
+// Resolve the current profile's own macros directory (overrides shipped
+// on top of the common set), or null if the profile does not ship one.
 // The engine config may hold either the profile's directory name or its
 // display name (from the profile's package.json), so match both, case-
 // insensitively. Prefer the engine's own ./profiles copy, which is always
 // current with the installed engine version -- the mirror under the data
 // directory is only copied when missing, so it goes stale across updates.
 // Custom (profile designer) profiles exist only under the data directory.
-function _getDefaultMacrosDir() {
+function _getProfileMacrosDir() {
     var current = config.engine.get("profile") || "default";
     var registry = require("./profiles").getProfiles();
     var profileDir = null;
@@ -510,28 +524,60 @@ function _getDefaultMacrosDir() {
     return null;
 }
 
-// List the shipped default macro files, keyed by index:
+// Ordered list of shipped-macro source directories for this machine,
+// highest precedence first:
+//   1. the current profile's own macros directory (overrides)
+//   2. profiles/default/macros/<feature>/ for each enabled machine
+//      feature flag (machine.features -- atc, laser, knife, ...)
+//   3. profiles/default/macros -- the common set shipped with every tool
+function _getMacroSourceDirs() {
+    var dirs = [];
+    var commonDir = path.join(__dirname, "profiles", "default", "macros");
+    if (!fs.existsSync(commonDir)) {
+        // Fall back to the data-directory mirror of the default profile
+        commonDir = path.join(config.getDataDir("profiles"), "default", "macros");
+    }
+    var profileDir = _getProfileMacrosDir();
+    if (profileDir && profileDir !== commonDir) {
+        dirs.push(profileDir);
+    }
+    var features = (config.machine && config.machine.get("features")) || {};
+    Object.keys(features).forEach(function (feature) {
+        if (features[feature]) {
+            var featureDir = path.join(commonDir, feature);
+            if (fs.existsSync(featureDir)) {
+                dirs.push(featureDir);
+            }
+        }
+    });
+    if (fs.existsSync(commonDir)) {
+        dirs.push(commonDir);
+    }
+    return dirs;
+}
+
+// List the shipped default macro files for this machine, keyed by index:
 // { 2 : {filename : '/fabmo/profiles/.../macro_2.sbp', type : 'sbp'}, ... }
+// Sources are consulted in precedence order; the first one to supply an
+// index wins, matching what installProfileMacros installs.
 function _listDefaultMacros() {
     var defaults = {};
-    var dir = _getDefaultMacrosDir();
-    if (!dir) {
-        return defaults;
-    }
     var re = /^macro_([0-9]+)\.(nc|sbp)$/;
-    try {
-        fs.readdirSync(dir).forEach(function (fn) {
-            var groups = fn.match(re);
-            if (groups) {
-                defaults[parseInt(groups[1])] = {
-                    filename: path.join(dir, fn),
-                    type: groups[2],
-                };
-            }
-        });
-    } catch (e) {
-        log.warn("Could not read default macros from " + dir + ": " + e.message);
-    }
+    _getMacroSourceDirs().forEach(function (dir) {
+        try {
+            fs.readdirSync(dir).forEach(function (fn) {
+                var groups = fn.match(re);
+                if (groups && !(parseInt(groups[1]) in defaults)) {
+                    defaults[parseInt(groups[1])] = {
+                        filename: path.join(dir, fn),
+                        type: groups[2],
+                    };
+                }
+            });
+        } catch (e) {
+            log.warn("Could not read default macros from " + dir + ": " + e.message);
+        }
+    });
     return defaults;
 }
 
@@ -715,7 +761,7 @@ exports.run = run;
 exports.getInfo = getInfo;
 exports.update = update;
 exports.save = save;
-exports.loadProfile = loadProfileMacros;
+exports.installProfile = installProfileMacros;
 exports.getStatus = getStatus;
 exports.installDefault = installDefault;
 exports.dismissDefault = dismissDefault;

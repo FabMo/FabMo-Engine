@@ -29,5 +29,8 @@
     "z_slow_speed": 0.25,
     "xy_jerk": 300,
     "z_jerk": 300
+  },
+  "features": {
+    "atc": true
   }
 }
