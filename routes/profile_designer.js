@@ -24,41 +24,65 @@ var log = require("../log").logger("profile_designer");
 // should present them.
 var CONFIG_FILES = ["machine", "opensbp", "g2", "engine", "instance"];
 
-function defaultConfigDir() {
-    var working = path.join(config.getDataDir("profiles"), "default", "config");
-    if (fs.existsSync(working)) {
-        return working;
-    }
-    // Fall back to the shipped copy (fresh install edge case)
-    return path.join(__dirname, "..", "profiles", "default", "config");
+// Read one of the default profile's config files as the designer's
+// baseline: the shipped (repo) copy layered UNDER the working copy at
+// /opt/fabmo/profiles/default. The working copy carries any local
+// designer edits but is only mirrored once and goes stale across
+// engine updates -- newly shipped keys (e.g. machine.features) would
+// otherwise be invisible here. Repo fills the gaps, local values win.
+function readDefaultConfig(name) {
+    var out = {};
+    [
+        path.join(__dirname, "..", "profiles", "default", "config", name + ".json"),
+        path.join(config.getDataDir("profiles"), "default", "config", name + ".json"),
+    ].forEach(function (file) {
+        try {
+            mergeInto(out, JSON.parse(fs.readFileSync(file, "utf8")));
+        } catch (e) {
+            /* missing copy is fine; both missing yields {} */
+        }
+    });
+    return out;
 }
 
 // GET /profile_designer/defaults
 // The default profile's config files — the baseline the designer diffs against.
 // eslint-disable-next-line no-unused-vars
 var getDefaults = function (req, res, next) {
-    var dir = defaultConfigDir();
     var configs = {};
     CONFIG_FILES.forEach(function (name) {
-        var file = path.join(dir, name + ".json");
-        try {
-            configs[name] = JSON.parse(fs.readFileSync(file, "utf8"));
-        } catch (e) {
-            log.warn("Could not read default config " + file + ": " + e.message);
-            configs[name] = {};
+        configs[name] = readDefaultConfig(name);
+        if (Object.keys(configs[name]).length === 0) {
+            log.warn("No readable default config for " + name);
         }
     });
     res.json({ status: "success", data: { configs: configs, files: CONFIG_FILES } });
 };
 
 // GET /profile_designer/profiles
-// Saved profiles available for editing (the default profile is the
-// baseline, not an editable profile, so it is excluded).
+// Saved profiles available for editing. The default profile — the
+// baseline the others diff against — is listed first, flagged
+// is_default: editing it updates the baseline in place.
 // eslint-disable-next-line no-unused-vars
 var getProfilesList = function (req, res, next) {
     var dir = config.getDataDir("profiles");
     var list = [];
     try {
+        var defPkgFile = path.join(dir, "default", "package.json");
+        if (fs.existsSync(defPkgFile)) {
+            try {
+                var defPkg = JSON.parse(fs.readFileSync(defPkgFile, "utf8"));
+                list.push({
+                    dir: "default",
+                    name: defPkg.name || "Default",
+                    description: defPkg.description || "",
+                    version: defPkg.version || "",
+                    is_default: true,
+                });
+            } catch (e) {
+                log.warn("Unreadable default profile package.json: " + e.message);
+            }
+        }
         fs.readdirSync(dir).forEach(function (entry) {
             if (entry === "default" || entry.charAt(0) === ".") return;
             var pkgFile = path.join(dir, entry, "package.json");
@@ -83,12 +107,14 @@ var getProfilesList = function (req, res, next) {
 
 // GET /profile_designer/profile/:id
 // Load a saved profile for editing: its package info, config diffs,
-// bundled app archive names, and whether it carries macros.
+// bundled app archive names, and whether it carries macros
+// (has_macros only drives the client's "saving will drop these"
+// notice for pre-commonization profiles — see saveProfile).
 // eslint-disable-next-line no-unused-vars
 var getProfile = function (req, res, next) {
     var id = path.basename(req.params.id || "");
     var dir = path.join(config.getDataDir("profiles"), id);
-    if (!id || id === "default" || !fs.existsSync(path.join(dir, "package.json"))) {
+    if (!id || !fs.existsSync(path.join(dir, "package.json"))) {
         return res.json({ status: "error", message: "No such profile: " + id });
     }
     var out = { dir: id, package: {}, configs: {}, apps: [], has_macros: false };
@@ -110,8 +136,10 @@ var getProfile = function (req, res, next) {
                 return f.charAt(0) !== ".";
             });
         }
+        // The default profile's macros/ IS the commonized shared set —
+        // never flagged, never touched by the designer.
         var macrosDir = path.join(dir, "macros");
-        out.has_macros = fs.existsSync(macrosDir) && fs.readdirSync(macrosDir).length > 0;
+        out.has_macros = id !== "default" && fs.existsSync(macrosDir) && fs.readdirSync(macrosDir).length > 0;
     } catch (e) {
         return res.json({ status: "error", message: e.message });
     }
@@ -150,18 +178,112 @@ function slugify(name) {
         .replace(/^-+|-+$/g, "");
 }
 
+// Recursively fold the keys of src into dst (objects merge, everything
+// else overwrites). Used when saving the default profile, whose config
+// files are full baselines rather than diffs.
+function mergeInto(dst, src) {
+    Object.keys(src).forEach(function (k) {
+        var v = src[k];
+        if (
+            v &&
+            typeof v === "object" &&
+            !Array.isArray(v) &&
+            dst[k] &&
+            typeof dst[k] === "object" &&
+            !Array.isArray(dst[k])
+        ) {
+            mergeInto(dst[k], v);
+        } else {
+            dst[k] = v;
+        }
+    });
+}
+
 // POST /profile_designer/save
 // Body: { name, description, version, configs: {machine:{...}, ...},
 //         apps: [app ids], overwrite: bool,
 //         source_profile: <dirname being edited, if any>,
-//         keep_apps: [archive filenames from source to retain],
-//         macros_mode: "none" | "machine" | "keep" }
+//         keep_apps: [archive filenames from source to retain] }
 // Writes <profiles dir>/fabmo-profile-<slug>/ with only the provided
-// (non-empty) config diffs. include_macros:true is accepted as a
-// legacy alias for macros_mode:"machine".
+// (non-empty) config diffs.
+//
+// source_profile "default" is special: the edits are folded INTO the
+// baseline in place. Default's config files are FULL configs (the
+// bottom of the config-recovery chain), so diffs are merged into the
+// existing files rather than replacing them, nothing is emptied (its
+// macros/ dir is the commonized shared set), and apps are not written.
+// Note the working copy at /opt/fabmo/profiles/default is what the
+// designer edits; shipping the change in the engine source tree
+// remains the usual manual release step.
+//
+// Designer profiles never carry macros: machines get them from the
+// commonized set (profiles/default/macros + machine.features subdirs),
+// and a profile's macros/ dir acts as an OVERRIDE that would freeze
+// every shared macro against updates. Re-saving a pre-commonization
+// profile that has a macros/ dir therefore drops it (the client warns).
+// Legacy macros_mode / include_macros body fields are accepted and
+// ignored.
+// Fold config edits into the default profile in place — see the
+// saveProfile comment for why this path merges full files and never
+// empties the directory.
+var saveDefaultProfile = function (body, res) {
+    var target = path.join(config.getDataDir("profiles"), "default");
+    if (!fs.existsSync(target)) {
+        return res.json({ status: "error", message: "No working default profile at " + target });
+    }
+    try {
+        var pkgFile = path.join(target, "package.json");
+        var pkg = {};
+        try {
+            pkg = JSON.parse(fs.readFileSync(pkgFile, "utf8"));
+        } catch (e) {
+            log.warn("Rewriting unreadable default package.json: " + e.message);
+        }
+        pkg.name = pkg.name || "Default";
+        if (body.description !== undefined) pkg.description = body.description;
+        if (body.version) pkg.version = body.version;
+        fs.writeJsonSync(pkgFile, pkg, { spaces: 2 });
+
+        var configs = body.configs || {};
+        var wroteConfig = false;
+        CONFIG_FILES.forEach(function (cname) {
+            var diff = configs[cname];
+            if (diff && typeof diff === "object" && Object.keys(diff).length > 0) {
+                // Base on repo-under-working (readDefaultConfig) rather
+                // than the working file alone, so a stale mirror gets
+                // healed with newly shipped keys as it is edited.
+                var full = readDefaultConfig(cname);
+                mergeInto(full, diff);
+                fs.ensureDirSync(path.join(target, "config"));
+                fs.writeJsonSync(path.join(target, "config", cname + ".json"), full, { spaces: 2 });
+                wroteConfig = true;
+            }
+        });
+
+        log.info("Profile Designer updated the default profile at " + target);
+        profiles.load(function (err) {
+            if (err) {
+                log.warn("Profile registry refresh failed: " + err);
+            }
+            res.json({
+                status: "success",
+                data: { profile: "default", path: target, wrote_config: wroteConfig, app_errors: [] },
+            });
+        });
+    } catch (e) {
+        log.error(e);
+        res.json({ status: "error", message: "Could not update default profile: " + e.message });
+    }
+};
+
 // eslint-disable-next-line no-unused-vars
 var saveProfile = function (req, res, next) {
     var body = req.params || {};
+
+    if (body.source_profile === "default") {
+        return saveDefaultProfile(body, res);
+    }
+
     var name = (body.name || "").trim();
     if (!name) {
         return res.json({ status: "error", message: "A profile name is required" });
@@ -182,14 +304,11 @@ var saveProfile = function (req, res, next) {
         });
     }
 
-    var macrosMode = body.macros_mode || (body.include_macros ? "machine" : "none");
-
     try {
-        // When editing an existing profile, archives/macros to be kept
-        // must be stashed before the target is emptied — the target may
-        // BE the source.
+        // When editing an existing profile, archives to be kept must be
+        // stashed before the target is emptied — the target may BE the
+        // source.
         var keptArchives = {}; // filename -> Buffer
-        var keptMacros = null; // filename -> Buffer
         var sourceDir = body.source_profile
             ? path.join(profilesDir, path.basename(body.source_profile))
             : null;
@@ -208,15 +327,6 @@ var saveProfile = function (req, res, next) {
                     }
                 }
             });
-            if (macrosMode === "keep") {
-                var srcMacros = path.join(sourceDir, "macros");
-                if (fs.existsSync(srcMacros)) {
-                    keptMacros = {};
-                    fs.readdirSync(srcMacros).forEach(function (f) {
-                        keptMacros[f] = fs.readFileSync(path.join(srcMacros, f));
-                    });
-                }
-            }
         }
 
         fs.emptyDirSync(target);
@@ -282,19 +392,6 @@ var saveProfile = function (req, res, next) {
                 } else {
                     fs.copySync(app.app_archive_path, path.join(target, "apps", filename));
                 }
-            });
-        }
-
-        // Macros: capture this machine's, keep the edited profile's, or none
-        if (macrosMode === "machine") {
-            var macroDir = config.getDataDir("macros");
-            if (fs.existsSync(macroDir)) {
-                fs.copySync(macroDir, path.join(target, "macros"));
-            }
-        } else if (macrosMode === "keep" && keptMacros) {
-            fs.ensureDirSync(path.join(target, "macros"));
-            Object.keys(keptMacros).forEach(function (f) {
-                fs.writeFileSync(path.join(target, "macros", f), keptMacros[f]);
             });
         }
 

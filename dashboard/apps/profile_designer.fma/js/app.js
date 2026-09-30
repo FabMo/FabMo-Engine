@@ -30,8 +30,11 @@
         profiles: [], // saved profiles [{dir, name, ...}]
         sourceProfile: null, // dirname of the profile being edited
         keptApps: {}, // archive filename -> true (bundled apps to retain)
+        // Profiles no longer carry macros (commonized into
+        // profiles/default/macros + machine.features subdirs); this only
+        // flags a pre-commonization profile so we can warn that saving
+        // drops its macros/ dir.
         sourceHasMacros: false,
-        macrosMode: "none", // none | machine | keep
         tab: null,
         filter: "",
     };
@@ -161,10 +164,15 @@
             });
             nav.appendChild(b);
         });
+        // The default profile takes config edits only — no bundled apps
+        // (and its macros/ is the shared set, owned by the engine).
+        if (state.sourceProfile === "default") {
+            return;
+        }
         var apps = document.createElement("button");
         apps.type = "button";
         apps.className = "pd-tab" + (state.tab === APPS_TAB ? " active" : "");
-        apps.textContent = "Apps & Macros";
+        apps.textContent = "Apps";
         var nApps =
             Object.keys(state.selectedApps).filter(function (k) {
                 return state.selectedApps[k];
@@ -172,10 +180,10 @@
             Object.keys(state.keptApps).filter(function (k) {
                 return state.keptApps[k];
             }).length;
-        if (nApps > 0 || state.macrosMode !== "none") {
+        if (nApps > 0) {
             var ab = document.createElement("span");
             ab.className = "pd-badge";
-            ab.textContent = nApps + (state.macrosMode !== "none" ? "+M" : "");
+            ab.textContent = nApps;
             apps.appendChild(ab);
         }
         apps.addEventListener("click", function () {
@@ -448,37 +456,24 @@
             });
         }
 
-        var mhead = document.createElement("div");
-        mhead.className = "pd-group";
-        mhead.textContent = "Macros";
-        wrap.appendChild(mhead);
-
-        var options = [
-            { value: "none", label: "No macros in this profile" },
-            { value: "machine", label: "Capture this machine's current macros" },
-        ];
+        // Profiles no longer carry macros — machines get the shared set
+        // from profiles/default/macros plus whatever machine.features
+        // enables. Only surface macros at all when editing an old
+        // profile that still has a macros/ dir, to warn it gets dropped.
         if (state.sourceHasMacros) {
-            options.splice(1, 0, { value: "keep", label: "Keep the profile's existing macros" });
+            var mhead = document.createElement("div");
+            mhead.className = "pd-group";
+            mhead.textContent = "Macros";
+            wrap.appendChild(mhead);
+            var note = document.createElement("div");
+            note.className = "pd-row pd-app-row";
+            note.textContent =
+                "This profile still carries its own macros from before macros were " +
+                "commonized. Saving will remove them — machines now get macros from " +
+                "the shared set, plus the sets enabled by Machine Features (ATC, etc.) " +
+                "in the Configuration app.";
+            wrap.appendChild(note);
         }
-        options.forEach(function (opt) {
-            var row = document.createElement("label");
-            row.className = "pd-row pd-app-row" + (state.macrosMode === opt.value && opt.value !== "none" ? " changed" : "");
-            var rb = document.createElement("input");
-            rb.type = "radio";
-            rb.name = "pd-macros";
-            rb.checked = state.macrosMode === opt.value;
-            rb.addEventListener("change", function () {
-                if (rb.checked) {
-                    state.macrosMode = opt.value;
-                    onEdit();
-                }
-            });
-            row.appendChild(rb);
-            var span = document.createElement("span");
-            span.textContent = opt.label;
-            row.appendChild(span);
-            wrap.appendChild(row);
-        });
 
         container.appendChild(wrap);
     }
@@ -529,8 +524,6 @@
                     })
             );
         if (appNames.length > 0) out["apps/"] = appNames;
-        if (state.macrosMode === "machine") out["macros/"] = "(copied from this machine)";
-        if (state.macrosMode === "keep") out["macros/"] = "(kept from " + state.sourceProfile + ")";
         $("#pd-preview").textContent = JSON.stringify(out, null, 2);
         $("#pd-change-total").textContent = total === 0 ? "" : "(" + total + " settings)";
     }
@@ -563,6 +556,7 @@
 
     function save(overwrite) {
         var name = $("#pd-name").value.trim();
+        var editingDefault = state.sourceProfile === "default";
         // Re-saving the profile currently being edited is the expected
         // flow — no need to ask about overwriting it.
         var editingSelf =
@@ -572,15 +566,18 @@
             description: $("#pd-desc").value.trim(),
             version: $("#pd-version").value.trim() || "v0.0.1",
             configs: {},
-            apps: Object.keys(state.selectedApps).filter(function (id) {
-                return state.selectedApps[id];
-            }),
+            apps: editingDefault
+                ? []
+                : Object.keys(state.selectedApps).filter(function (id) {
+                      return state.selectedApps[id];
+                  }),
             source_profile: state.sourceProfile,
-            keep_apps: Object.keys(state.keptApps).filter(function (f) {
-                return state.keptApps[f];
-            }),
-            macros_mode: state.macrosMode,
-            overwrite: !!overwrite || editingSelf,
+            keep_apps: editingDefault
+                ? []
+                : Object.keys(state.keptApps).filter(function (f) {
+                      return state.keptApps[f];
+                  }),
+            overwrite: !!overwrite || editingSelf || editingDefault,
         };
         if (!payload.name) {
             setStatus("Give the profile a name before saving.", "error");
@@ -603,6 +600,26 @@
             })
             .then(function (resp) {
                 if (resp.status === "success") {
+                    if (resp.data.profile === "default") {
+                        // The baseline itself changed — refetch it so the
+                        // diff pane reads clean and future profiles diff
+                        // against the new values.
+                        return fetch("/profile_designer/defaults")
+                            .then(function (r) {
+                                return r.json();
+                            })
+                            .then(function (d) {
+                                state.defaults = d.data.configs;
+                                state.edits = clone(state.defaults);
+                                setStatus(
+                                    "Default profile updated at " +
+                                        resp.data.path +
+                                        " — it is now the baseline every profile builds on.",
+                                    "ok"
+                                );
+                                renderAll();
+                            });
+                    }
                     var extra =
                         resp.data.app_errors && resp.data.app_errors.length
                             ? " (some apps could not be copied: " + resp.data.app_errors.join(", ") + ")"
@@ -610,8 +627,7 @@
                     setStatus("Saved to " + resp.data.path + extra, "ok");
                     // The editor is now editing what was just written:
                     // newly-added installed apps became bundled
-                    // archives, and captured macros belong to the
-                    // profile itself.
+                    // archives, and any legacy macros were dropped.
                     state.sourceProfile = resp.data.profile;
                     state.apps.forEach(function (a) {
                         if (state.selectedApps[a.id]) {
@@ -619,10 +635,7 @@
                         }
                     });
                     state.selectedApps = {};
-                    if (state.macrosMode !== "none") {
-                        state.sourceHasMacros = true;
-                        state.macrosMode = "keep";
-                    }
+                    state.sourceHasMacros = false;
                     refreshProfileList(resp.data.profile).then(renderAll);
                 } else if (resp.data && resp.data.exists) {
                     setStatus("Profile '" + resp.data.profile + "' already exists.", "error", [
@@ -651,7 +664,7 @@
         state.keptApps = {};
         state.selectedApps = {};
         state.sourceHasMacros = false;
-        state.macrosMode = "none";
+        $("#pd-name").disabled = false;
         $("#pd-name").value = "";
         $("#pd-desc").value = "";
         $("#pd-version").value = "v0.0.1";
@@ -687,12 +700,18 @@
                 });
                 state.selectedApps = {};
                 state.sourceHasMacros = !!p.has_macros;
-                state.macrosMode = p.has_macros ? "keep" : "none";
                 $("#pd-name").value = p.package.name || "";
                 $("#pd-desc").value = p.package.description || "";
                 $("#pd-version").value = p.package.version || "v0.0.1";
+                // The default profile keeps its identity — editing it
+                // updates the baseline in place, never a renamed copy.
+                $("#pd-name").disabled = p.dir === "default";
                 state.tab = state.files[0];
-                setStatus("Editing " + (p.package.name || p.dir) + " — saving under the same name updates it in place.");
+                setStatus(
+                    p.dir === "default"
+                        ? "Editing the DEFAULT profile — saving changes the baseline every other profile builds on."
+                        : "Editing " + (p.package.name || p.dir) + " — saving under the same name updates it in place."
+                );
                 renderAll();
             })
             .catch(function (e) {
@@ -716,7 +735,9 @@
                 state.profiles.forEach(function (p) {
                     var o = document.createElement("option");
                     o.value = p.dir;
-                    o.textContent = "Edit: " + p.name + (p.version ? " (" + p.version + ")" : "");
+                    o.textContent = p.is_default
+                        ? "Edit: " + p.name + " (baseline)"
+                        : "Edit: " + p.name + (p.version ? " (" + p.version + ")" : "");
                     sel.appendChild(o);
                 });
                 sel.value = selected || "";
