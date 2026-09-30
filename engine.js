@@ -710,10 +710,17 @@ Engine.prototype.start = function (callback) {
                 });
             },
 
-            // Load macros from disk.  See macros.js
+            // Install any shipped macros that aren't present yet (common set +
+            // feature sets enabled by machine.features + profile overrides),
+            // then load macros from disk.  See macros.js
             function load_macros(callback) {
-                log.info("Loading macros...");
-                macros.load(callback);
+                log.info("Installing/loading macros...");
+                macros.installProfile(function (err) {
+                    if (err) {
+                        log.warn("Could not install shipped macros: " + err);
+                    }
+                    macros.load(callback);
+                });
             },
 
             // Load and apply the 'instance' configuration.  This is the dynamic machine state, like the current position,
@@ -995,14 +1002,19 @@ Engine.prototype.start = function (callback) {
                                             } else {
                                                 log.info("Apps reloaded after auto-profile apply.");
                                             }
-                                            macros.load(function (macroErr) {
-                                                if (macroErr) {
-                                                    log.warn("Macro reload after auto-profile failed: " + macroErr);
-                                                } else {
-                                                    log.info("Macros reloaded after auto-profile apply.");
+                                            macros.installProfile(function (instErr) {
+                                                if (instErr) {
+                                                    log.warn("Macro install after auto-profile failed: " + instErr);
                                                 }
-                                                log.info("Auto-profile in-process reload complete - continuing startup.");
-                                                return callback(null);
+                                                macros.load(function (macroErr) {
+                                                    if (macroErr) {
+                                                        log.warn("Macro reload after auto-profile failed: " + macroErr);
+                                                    } else {
+                                                        log.info("Macros reloaded after auto-profile apply.");
+                                                    }
+                                                    log.info("Auto-profile in-process reload complete - continuing startup.");
+                                                    return callback(null);
+                                                });
                                             });
                                         });
                                     });

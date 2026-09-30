@@ -1,7 +1,0 @@
-'!FABMO!name: Spindle Warm Up
-'!FABMO!description: Turns spindle ON and runs for 2 minutes
-' Name: Spindle Warm Up
-' Description: Turns spindle ON and runs for 2 minutes
-
-SO, 1, 1            ' Make OUTPUT #1 ACTIVE (high)
-PAUSE 120           ' Pause for 2 minutes 

@@ -11,6 +11,11 @@
 	"ap_time" : 8,
     "limits_on" : true,
     "softlimits_on" : false,
+    "features" : {
+        "atc" : false,
+        "laser" : false,
+        "knife" : false
+    },
     "di1ac": "none",
     "di2ac": "none",
     "di3ac": "none",

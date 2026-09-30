@@ -12,5 +12,8 @@
 	},
 	"manual" : {
         "xy_speed": 3
+	},
+	"features" : {
+		"atc" : true
 	}
 }

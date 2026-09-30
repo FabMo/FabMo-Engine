@@ -16,6 +16,7 @@
 
 let MAX_INPUTS = 15;
 
+var fs = require("fs");
 var config = require("../config");
 var Config = require("./config").Config;
 var log = require("../log").logger("machine_config");
@@ -28,6 +29,17 @@ util.inherits(MachineConfig, Config);
 
 MachineConfig.prototype.init = function (machine, callback) {
     this.machine = machine;
+    // Capture whether the saved user config predates machine.features
+    // BEFORE the base init runs -- init merges in the defaults and saves,
+    // so afterwards the file always has the key. Used by the one-time
+    // ATC migration below. Treat a missing/corrupt user file as a fresh
+    // install (no migration; the profile's own config carries the flag).
+    var savedHadFeatures = true;
+    try {
+        savedHadFeatures = "features" in JSON.parse(fs.readFileSync(this.getConfigFile(), "utf8"));
+    } catch (e) {
+        // fresh install or unreadable file - no migration needed
+    }
     Config.prototype.init.call(
         this,
         function (err) {
@@ -47,6 +59,37 @@ MachineConfig.prototype.init = function (machine, callback) {
                     savedAt: 0,
                     calibrated: false,
                 };
+            }
+            // Seed machine feature flags (ATC, laser, drag knife). These
+            // gate which feature-specific macro sets the startup assembler
+            // (macros.js installProfileMacros) installs from
+            // profiles/default/macros/<feature>/.
+            if (this._cache && !("features" in this._cache)) {
+                this._cache.features = {
+                    atc: false,
+                    laser: false,
+                    knife: false,
+                };
+            }
+            // One-time migration for ATC machines already in the field:
+            // their saved machine.json predates machine.features, so the
+            // default (atc: false) wins even though their profile ships
+            // the ATC macro set -- the profile's own machine.json (which
+            // now carries atc: true) is only consulted on a profile
+            // re-apply, not on update. Detect "field ATC machine that
+            // hasn't seen this feature yet" as: the saved user config had
+            // no features block before this boot (captured above) AND the
+            // current profile name ends in "atc" (true of every ATC
+            // profile's display and directory name).
+            try {
+                var profileName = Config.getCurrentProfile() || "";
+                if (this._cache && !savedHadFeatures && /atc$/i.test(profileName.trim())) {
+                    log.info("ATC profile detected on first boot with machine.features - enabling features.atc");
+                    this._cache.features.atc = true;
+                    this.save(function () {});
+                }
+            } catch (e) {
+                log.warn("Could not check for ATC feature migration: " + e.message);
             }
             // Seed soft-limit safety buffer for the JGV (analog/velocity-jog)
             // path on installs predating this field. The value is an extra
@@ -215,16 +258,51 @@ MachineConfig.prototype._normalizeInputTypes = function () {
     );
 };
 
+// Normalize machine.features.* to booleans. fixJSON's Number() coercion
+// turns a posted boolean true/false into 1/0, and the config app's
+// checkbox pattern posts the strings "true"/"false".
+MachineConfig.prototype._normalizeFeatures = function () {
+    if (!this._cache || !this._cache.features) return;
+    var features = this._cache.features;
+    Object.keys(features).forEach(function (k) {
+        features[k] = features[k] === true || features[k] === 1 || features[k] === "true";
+    });
+};
+
 MachineConfig.prototype.update = function (data, callback, force) {
     var current_units = this.get("units"); // Get BEFORE extending cache
+    // Stringify BEFORE extending -- get() returns a reference into the
+    // cache, so the object itself mutates in place during extend.
+    var old_features = JSON.stringify(this.get("features") || {});
     try {
         u.extend(this._cache, data, force);
         this._normalizeOutputNotify();
         this._normalizeOutputPosition();
         this._normalizeOutputInput();
         this._normalizeInputTypes();
+        this._normalizeFeatures();
     } catch (e) {
         return callback(e);
+    }
+
+    // When a feature flag (machine.features.atc/laser/knife) changes from
+    // the dashboard, install that feature's shipped macros right away so
+    // the user doesn't need a restart. userConfigLoaded distinguishes
+    // runtime updates from the startup load sequence, where the installer
+    // runs from engine.js once everything is up. Install is additive
+    // (copy-if-not-exists); disabling a feature leaves its macros in place.
+    if (this.userConfigLoaded && JSON.stringify(this._cache.features || {}) !== old_features) {
+        var macros = require("../macros");
+        macros.installProfile(function (err) {
+            if (err) {
+                return log.warn("Feature-macro install failed: " + err);
+            }
+            macros.load(function (err) {
+                if (err) {
+                    log.warn("Macro reload after feature change failed: " + err);
+                }
+            });
+        });
     }
     var new_units = this.get("units"); // Get AFTER extending cache
 

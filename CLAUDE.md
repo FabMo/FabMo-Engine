@@ -47,9 +47,17 @@ SB3-era retrofits — note their motor polarity (`1po`–`3po`: 1) is flipped
 vs the G2 default because SB3 drove the DIR pin with the opposite
 convention. `fabmo-profile-handibot-2` is legacy (a few discontinued
 Handibots), rarely changed. A machine picks its profile from
-`/fabmo-def/fabmo-def.json` on first boot. A change to a macro
-usually needs to be made in every profile that has that macro — check with
-`grep -l` across `profiles/*/macros/` and say which profiles you changed.
+`/fabmo-def/fabmo-def.json` on first boot.
+
+Macros are commonized (Sept 2026): the shared set lives in
+`profiles/default/macros/`, feature-specific sets in subdirectories
+(`atc/`, later `laser/`, `knife/`) gated by the `machine.features`
+booleans in machine config. Profiles no longer carry their own macros
+(only `handibot-2` still does, plus any profile-specific override
+dropped in a profile's `macros/` dir, which wins over the common set).
+`macros.installProfile()` assembles the installed set at
+`/opt/fabmo/macros` on startup, copy-if-not-exists — so edit a shared
+macro in ONE place: `profiles/default/macros/`.
 
 ## Snapshots (Settings & Backups)
 

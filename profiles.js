@@ -195,6 +195,33 @@ var apply = function (profileName, callback) {
                         return callback(err);
                     }
 
+                    // Profiles no longer need to ship every directory -- macros
+                    // live in the default profile (common set + feature
+                    // subdirectories) and are assembled into the data directory
+                    // at startup by macros.installProfile(). If this profile has
+                    // no copy of the directory, leave an empty one behind: a
+                    // *missing* macros directory would trigger the backup-mirror
+                    // restore in config.createDataDirectories and resurrect the
+                    // previous profile's macros.
+                    if (!fs.existsSync(profileConfigDir)) {
+                        log.debug("Profile has no " + dir + " directory - leaving it empty");
+                        fs.ensureDir(configDir, function (err) {
+                            if (err) {
+                                return callback(err);
+                            }
+                            if (authSecretExists) {
+                                try {
+                                    fs.copySync("/opt/fabmo/tmp/auth_secret", authPath);
+                                    fs.removeSync("/opt/fabmo/tmp");
+                                } catch (e) {
+                                    log.warn(e);
+                                }
+                            }
+                            callback();
+                        });
+                        return;
+                    }
+
                     // ...and replace it with the configuration provided by the profile
                     log.debug("Copying profile configuration directory " + profileConfigDir);
                     // Use fs.copy (fs-extra) instead of ncp for more reliable recursive copy

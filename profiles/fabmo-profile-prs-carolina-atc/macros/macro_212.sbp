@@ -1,4 +1,0 @@
-'!FABMO!name:Test Draw Bar ON
-'!FABMO!description:Test Draw Bar
-'!FABMO!enabled:true
-SO, $DrawBar_OUT,1
