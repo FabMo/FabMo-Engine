@@ -360,6 +360,10 @@ var stDrill = {
     depth: 0.25,
     thickness: 0.75,
     zzero: "material", // "material" | "table"
+    // Envelope-relative machine coords of where DRILL should go; null =
+    // drill at the machine position (classic in-place behavior). Session
+    // state, deliberately not persisted.
+    target: null,
 };
 
 // Array mode: DRILL produces an xn × yn grid of holes stepping +X/+Y from
@@ -398,6 +402,9 @@ function stCuts() {
 var ST_ENV_MIN = 130;
 var ST_ENV_MAX = 240;
 function stEnvCap(svgId) {
+    // AR copy renders at a fixed boosted size — no DOM measuring, and no
+    // touching the panel's stacked class (that belongs to the rail copy).
+    if (stArRender) return ST_AR_RENDER_W;
     var svg = document.getElementById(svgId);
     var envEl = svg && svg.parentNode;   // .ts-st-env
     var row = envEl && envEl.parentNode; // .ts-st-drill-row
@@ -469,6 +476,246 @@ function stOriginBadge(ox, oy) {
     );
 }
 
+// ---- AR projection ----
+// Projects the active tool's envelope map onto the live table camera,
+// reusing the four-corner calibration the previewer saves in
+// machine.cameraCalibration (corner fractions of the video frame, TL =
+// machine (xmin, ymax) — same convention as the previewer's overhead
+// mode). The map is re-rendered at boosted size into #st-ar-svg and a
+// CSS matrix3d maps its envelope rect onto the calibrated quad. Table-
+// plane geometry — which is all these previews are — projects exactly.
+var stAr = {
+    tool: null,     // "drill" | "tablesaw" | "planer" while the stage is open
+    camPort: null,  // camera with a live stream (1 | 2), null = none found
+    cal: null,      // machine.cameraCalibration from config
+    _home: null,    // where the docked panel goes back on exit
+    _syncing: false,
+};
+var stArRender = false;      // render fns size for the AR copy when set
+var ST_AR_RENDER_W = 720;    // boosted logical size: crisp under the warp,
+var ST_AR_RENDER_H = 450;    // labels/handles proportionally small on it
+var ST_AR_SVGS = { drill: "st-env-svg", tablesaw: "sts-env-svg", planer: "stp-env-svg" };
+var ST_AR_RENDERS = { drill: renderStEnv, tablesaw: renderStsEnv, planer: renderStpEnv };
+var SVG_NS = "http://www.w3.org/2000/svg";
+
+// 4-point homography, cribbed from the previewer (viewer.js): H maps
+// src quad → dst quad via the unit square, closed form.
+function _h_squareToQuad(p) {
+    var dx1 = p[1][0] - p[2][0], dx2 = p[3][0] - p[2][0], sx = p[0][0] - p[1][0] + p[2][0] - p[3][0];
+    var dy1 = p[1][1] - p[2][1], dy2 = p[3][1] - p[2][1], sy = p[0][1] - p[1][1] + p[2][1] - p[3][1];
+    var det = dx1 * dy2 - dx2 * dy1;
+    var g = (sx * dy2 - dx2 * sy) / det;
+    var h = (dx1 * sy - sx * dy1) / det;
+    return [
+        [p[1][0] - p[0][0] + g * p[1][0], p[3][0] - p[0][0] + h * p[3][0], p[0][0]],
+        [p[1][1] - p[0][1] + g * p[1][1], p[3][1] - p[0][1] + h * p[3][1], p[0][1]],
+        [g, h, 1],
+    ];
+}
+function _h_inverse3(m) {
+    var a = m[0][0], b = m[0][1], c = m[0][2];
+    var d = m[1][0], e = m[1][1], f = m[1][2];
+    var g = m[2][0], h = m[2][1], i = m[2][2];
+    var det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
+    return [
+        [(e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det],
+        [(f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det],
+        [(d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det],
+    ];
+}
+function _h_mul3(a, b) {
+    var r = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (var i = 0; i < 3; i++)
+        for (var j = 0; j < 3; j++)
+            r[i][j] = a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j];
+    return r;
+}
+function _h_quadToQuad(src, dst) {
+    return _h_mul3(_h_squareToQuad(dst), _h_inverse3(_h_squareToQuad(src)));
+}
+function _h_toMatrix3d(H) {
+    return "matrix3d(" + [
+        H[0][0], H[1][0], 0, H[2][0],
+        H[0][1], H[1][1], 0, H[2][1],
+        0, 0, 1, 0,
+        H[0][2], H[1][2], 0, H[2][2],
+    ].map(function (n) { return n.toFixed(8); }).join(",") + ")";
+}
+
+function stArAvailable() {
+    var c = stAr.cal;
+    var env = state.envelope || {};
+    return !!(stAr.camPort &&
+        c && c.calibrated && c.corners &&
+        c.corners.tl && c.corners.tr && c.corners.br && c.corners.bl &&
+        Number(env.xmax) - (Number(env.xmin) || 0) > 0 &&
+        Number(env.ymax) - (Number(env.ymin) || 0) > 0);
+}
+
+function stArRefreshBtns() {
+    $(".ts-st-arbtn").toggle(stArAvailable());
+}
+
+// Probe for a live camera stream, preferring the one the calibration was
+// made against. Ports match the previewer: camera 1 → 3141, 2 → 3142.
+function stArDetect() {
+    if (!window.FabMoVideo) return;
+    var preferred = (stAr.cal && stAr.cal.port === 2) ? 2 : 1;
+    var other = preferred === 2 ? 1 : 2;
+    window.FabMoVideo.detectCamera(preferred).then(function (ok) {
+        if (ok) return stArSetPort(preferred);
+        return window.FabMoVideo.detectCamera(other).then(function (ok2) {
+            stArSetPort(ok2 ? other : null);
+        });
+    }).catch(function () { stArSetPort(null); });
+}
+function stArSetPort(p) {
+    stAr.camPort = p;
+    stArRefreshBtns();
+}
+
+// Re-render the active tool's map at boosted size, copy it into the AR
+// svg, then restore the rail copy. Called from the tail of every map
+// render, so drags, typed values, and status ticks all keep the
+// projection live; no-ops unless the stage is showing that map. The
+// nested renders' own tail calls are gated off by _syncing.
+function stArSync(svgId) {
+    if (!stAr.tool || stAr._syncing || ST_AR_SVGS[stAr.tool] !== svgId) return;
+    var src = document.getElementById(svgId);
+    var dst = document.getElementById("st-ar-svg");
+    if (!src || !dst) return;
+    stAr._syncing = true;
+    stArRender = true;
+    ST_AR_RENDERS[stAr.tool]();
+    dst.setAttribute("width", src.getAttribute("width"));
+    dst.setAttribute("height", src.getAttribute("height"));
+    dst.innerHTML = src.innerHTML;
+    // The map's opaque table fill would hide the very table we're
+    // projecting onto — thin it to a wash that just marks the envelope.
+    var envRect = dst.querySelector("rect");
+    if (envRect) envRect.setAttribute("fill", "rgba(244, 241, 234, 0.2)");
+    stArRender = false;
+    ST_AR_RENDERS[stAr.tool]();
+    stAr._syncing = false;
+    if (stAr.tool !== "drill") stArDrawPos(); // drill's map has its own crosshair
+    stArWarp();
+}
+
+// Map the AR svg's envelope rect (always the first <rect> the renderers
+// emit) onto the calibrated table quad.
+function stArWarp() {
+    var stage = document.getElementById("st-ar-stage");
+    var svg = document.getElementById("st-ar-svg");
+    var rect = svg && svg.querySelector("rect");
+    var c = stAr.cal && stAr.cal.corners;
+    if (!stage || !rect || !c) return;
+    var rx = +rect.getAttribute("x"), ry = +rect.getAttribute("y");
+    var rw = +rect.getAttribute("width"), rh = +rect.getAttribute("height");
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h || !rw || !rh) return;
+    var H = _h_quadToQuad(
+        [[rx, ry], [rx + rw, ry], [rx + rw, ry + rh], [rx, ry + rh]],
+        [[c.tl.x * w, c.tl.y * h], [c.tr.x * w, c.tr.y * h],
+         [c.br.x * w, c.br.y * h], [c.bl.x * w, c.bl.y * h]]
+    );
+    svg.style.transform = _h_toMatrix3d(H);
+    stAr._Hinv = _h_inverse3(H); // stage px → svg px, for handle drags
+}
+
+// Map a pointer position to envelope machine coordinates through the
+// inverse homography — how drags on the projection read the table.
+// Returns {vx, vy} (unclamped, like the flat-map math) or null.
+function stArPointToEnv(clientX, clientY) {
+    var stage = document.getElementById("st-ar-stage");
+    var svg = document.getElementById("st-ar-svg");
+    var rect = svg && svg.querySelector("rect");
+    var Hi = stAr._Hinv;
+    var env = state.envelope || {};
+    var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
+    var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+    if (!stage || !rect || !Hi || !(xspan > 0) || !(yspan > 0)) return null;
+    var sb = stage.getBoundingClientRect();
+    var sx = clientX - sb.left, sy = clientY - sb.top;
+    var x = Hi[0][0] * sx + Hi[0][1] * sy + Hi[0][2];
+    var y = Hi[1][0] * sx + Hi[1][1] * sy + Hi[1][2];
+    var w = Hi[2][0] * sx + Hi[2][1] * sy + Hi[2][2];
+    x /= w; y /= w;
+    var rx = +rect.getAttribute("x"), ry = +rect.getAttribute("y");
+    var rw = +rect.getAttribute("width"), rh = +rect.getAttribute("height");
+    return {
+        vx: ((x - rx) / rw) * xspan,
+        vy: ((ry + rh - y) / rh) * yspan,
+    };
+}
+
+// Live position crosshair for the tablesaw/planer projections (their rail
+// maps don't draw one). Injected once, then moved by transform on every
+// status tick — no re-render needed.
+function stArDrawPos() {
+    var svg = document.getElementById("st-ar-svg");
+    var rect = svg && svg.querySelector("rect");
+    var env = state.envelope || {};
+    var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
+    var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+    if (!rect || !(xspan > 0) || !(yspan > 0)) return;
+    var rx = +rect.getAttribute("x"), ry = +rect.getAttribute("y");
+    var rw = +rect.getAttribute("width"), rh = +rect.getAttribute("height");
+    var mx = Math.max(0, Math.min(xspan, (Number(state.pos.x) || 0) + state.g55.x - (Number(env.xmin) || 0)));
+    var my = Math.max(0, Math.min(yspan, (Number(state.pos.y) || 0) + state.g55.y - (Number(env.ymin) || 0)));
+    var px = rx + (mx / xspan) * rw;
+    var py = ry + rh - (my / yspan) * rh;
+    var g = svg.querySelector("#st-ar-pos");
+    if (!g) {
+        g = document.createElementNS(SVG_NS, "g");
+        g.setAttribute("id", "st-ar-pos");
+        g.innerHTML =
+            '<line x1="-7" y1="0" x2="7" y2="0" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>' +
+            '<line x1="0" y1="-7" x2="0" y2="7" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>' +
+            '<line x1="-7" y1="0" x2="7" y2="0" stroke="#c0392b" stroke-width="1.5"/>' +
+            '<line x1="0" y1="-7" x2="0" y2="7" stroke="#c0392b" stroke-width="1.5"/>' +
+            '<circle cx="0" cy="0" r="3" fill="none" stroke="#c0392b" stroke-width="1.5"/>';
+        svg.appendChild(g);
+    }
+    g.setAttribute("transform", "translate(" + px + " " + py + ")");
+}
+
+function stArEnter(tool) {
+    if (stAr.tool || !stArAvailable()) return;
+    var panel = document.getElementById("st-panel-" + tool);
+    var stage = document.getElementById("st-ar-stage");
+    if (!panel || !stage) return;
+    stAr.tool = tool;
+    stAr._home = { parent: panel.parentNode, next: panel.nextSibling };
+    var float_ = document.getElementById("st-ar-float");
+    float_.appendChild(panel);
+    if (stAr._floatPos) {
+        float_.style.left = stAr._floatPos.x + "px";
+        float_.style.top = stAr._floatPos.y + "px";
+        float_.style.right = "auto";
+    }
+    document.getElementById("st-ar-video").src =
+        "http://" + window.location.hostname + ":" + (stAr.camPort === 2 ? 3142 : 3141) + "/?t=" + Date.now();
+    $(stage).show();
+    requestAnimationFrame(function () { stage.classList.add("st-ar-open"); });
+    $(".ts-st-arbtn", panel).addClass("st-ar-active");
+    stArSync(ST_AR_SVGS[tool]); // re-renders itself, so a stale map is fine
+}
+
+function stArExit() {
+    if (!stAr.tool) return;
+    var tool = stAr.tool;
+    var stage = document.getElementById("st-ar-stage");
+    var panel = document.getElementById("st-panel-" + tool);
+    document.getElementById("st-ar-video").src = ""; // stop the MJPEG stream
+    stage.classList.remove("st-ar-open");
+    $(stage).hide();
+    if (stAr._home && panel) stAr._home.parent.insertBefore(panel, stAr._home.next);
+    stAr.tool = null;
+    stAr._home = null;
+    $(".ts-st-arbtn").removeClass("st-ar-active");
+    ST_AR_RENDERS[tool](); // re-fit the map at card size
+}
+
 // Envelope map: machine envelope rectangle with its outside dimensions
 // labeled below (X) and to the right (Y), a crosshair at the current
 // position with leader lines to the X=0 and Y=0 edges, and the DRO
@@ -496,7 +743,7 @@ function renderStEnv() {
     var MB = 13; // below the rect: X dimension
     var MR = 13; // right of the rect: Y dimension (rotated)
     var maxRW = stEnvCap("st-env-svg") - MR - 2;
-    var maxRH = 150 - MB - 2;
+    var maxRH = (stArRender ? ST_AR_RENDER_H : 150) - MB - 2;
     var rw = maxRW;
     var rh = (rw * yspan) / xspan;
     if (rh > maxRH) {
@@ -522,13 +769,16 @@ function renderStEnv() {
     // Array preview: one dot per additional hole, stepping +X/+Y from the
     // (unclamped) current position; holes that would land outside the
     // envelope are simply not drawn.
+    var tgt = stDrill.target;
+    var bxr = tgt ? tgt.x : mxr;
+    var byr = tgt ? tgt.y : myr;
     var dots = "";
     if (stArrayMode) {
         for (var j = 0; j < stArray.yn; j++) {
             for (var i = 0; i < stArray.xn; i++) {
-                if (!i && !j) continue; // first hole is the crosshair itself
-                var hx = mxr + i * stArray.xs;
-                var hy = myr + j * stArray.ys;
+                if (!i && !j) continue; // first hole is the target/crosshair itself
+                var hx = bxr + i * stArray.xs;
+                var hy = byr + j * stArray.ys;
                 if (hx < 0 || hx > xspan || hy < 0 || hy > yspan) continue;
                 dots +=
                     '<circle cx="' + ((hx / xspan) * rw + 1) + '" cy="' + (1 + rh - (hy / yspan) * rh) +
@@ -550,6 +800,29 @@ function renderStEnv() {
     // Outside dimensions, trimmed to at most one decimal
     var dim = function (v) { return String(Math.round(v * 10) / 10); };
 
+    // Drill target marker: blue circled dot where DRILL will go when a
+    // target is pinned, else an invisible grab ring riding the crosshair.
+    // Drag it off to set a target; drop it back on the crosshair to
+    // return to drill-at-position.
+    var tmark;
+    if (tgt) {
+        var tpx = (Math.max(0, Math.min(xspan, tgt.x)) / xspan) * rw + 1;
+        var tpy = 1 + rh - (Math.max(0, Math.min(yspan, tgt.y)) / yspan) * rh;
+        var tlbl = fmt(tgt.x + (Number(env.xmin) || 0) - state.g55.x) + ", " +
+                   fmt(tgt.y + (Number(env.ymin) || 0) - state.g55.y);
+        var ttx = tpx + 9;
+        var tanchor = "start";
+        if (tpx > rw - 60) { ttx = tpx - 9; tanchor = "end"; }
+        tmark =
+            '<circle cx="' + tpx + '" cy="' + tpy + '" r="7" fill="none" stroke="#fff" stroke-width="3.5"/>' +
+            '<circle cx="' + tpx + '" cy="' + tpy + '" r="7" fill="none" stroke="#2980b9" stroke-width="1.8"/>' +
+            '<circle cx="' + tpx + '" cy="' + tpy + '" r="1.8" fill="#2980b9"/>' +
+            '<text x="' + ttx + '" y="' + (tpy - 8) + '" text-anchor="' + tanchor + '" font-size="10" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="2.5" fill="#2980b9">' + tlbl + "</text>" +
+            '<circle cx="' + tpx + '" cy="' + tpy + '" r="14" fill="transparent" data-handle="target"/>';
+    } else {
+        tmark = '<circle cx="' + px + '" cy="' + py + '" r="12" fill="transparent" data-handle="target"/>';
+    }
+
     svg.innerHTML =
         '<rect x="1" y="1" width="' + rw + '" height="' + rh + '" fill="#f4f1ea" stroke="#a8a49a"/>' +
         dots +
@@ -561,8 +834,10 @@ function renderStEnv() {
         '<text x="' + tx + '" y="' + ty + '" text-anchor="' + anchor + '" font-size="10" font-weight="600" fill="#2c3e50">' + label + "</text>" +
         '<text x="' + (1 + rw / 2) + '" y="' + (H - 2) + '" text-anchor="middle" font-size="9" fill="#7f8c8d">' + dim(xspan) + " " + state.unit + "</text>" +
         '<text x="' + (W - 3) + '" y="' + (1 + rh / 2) + '" text-anchor="middle" font-size="9" fill="#7f8c8d" transform="rotate(-90 ' + (W - 3) + " " + (1 + rh / 2) + ')">' + dim(yspan) + "</text>" +
-        stOriginBadge(5, rh - 3);
+        stOriginBadge(5, rh - 3) +
+        tmark;
     stPlaceBtns("st-panel-drill");
+    stArSync("st-env-svg");
 }
 
 // Cross-section: table layer with the material on top, Z-zero radios lined
@@ -677,7 +952,7 @@ function stpGeom(svgId) {
     // the svg edge.
     var ML = 32, MB = 30, MT = 7, MR = 7;
     var maxRW = stEnvCap(svgId || "stp-env-svg") - ML - MR;
-    var maxRH = 150 - MT - MB;
+    var maxRH = (stArRender ? ST_AR_RENDER_H : 150) - MT - MB;
     var rw = maxRW;
     var rh = (rw * s.yspan) / s.xspan;
     if (rh > maxRH) { rh = maxRH; rw = (rh * s.xspan) / s.yspan; }
@@ -881,6 +1156,7 @@ function renderStpEnv() {
     parts.push(handle(by, Y(p.y1), "y1"));
     svg.innerHTML = parts.join("");
     stPlaceBtns("st-panel-planer");
+    stArSync("stp-env-svg");
 }
 
 function stpSyncInputs() {
@@ -1105,6 +1381,7 @@ function renderStsEnv() {
     svg.innerHTML = parts.join("");
     stsSyncModeUI();
     stPlaceBtns("st-panel-tablesaw");
+    stArSync("sts-env-svg");
 }
 
 // Depth slider bounds follow the material: a bit past through-cut is as
@@ -1521,6 +1798,9 @@ function renderPosition() {
     $("#units-label").text(state.unit);
     $(".st-units").text(state.unit);
     if ($("#st-panel-drill").is(":visible")) renderStEnv();
+    // Drill's AR copy refreshes via renderStEnv above; the other tools'
+    // maps are position-independent, so just move their AR crosshair.
+    if (stAr.tool && stAr.tool !== "drill") stArDrawPos();
 }
 
 function renderToolRow() {
@@ -1713,6 +1993,8 @@ function refreshConfig(callback) {
         if (err || !data) return callback && callback(err);
         state.vars = (data.opensbp && data.opensbp.variables) || {};
         state.envelope = (data.machine && data.machine.envelope) || null;
+        stAr.cal = (data.machine && data.machine.cameraCalibration) || null;
+        stArRefreshBtns();
         var d = data.driver || {};
         state.g55 = { x: Number(d.g55x) || 0, y: Number(d.g55y) || 0, z: Number(d.g55z) || 0 };
         // Per-input semantic types (machine.di<N>type) drive the sensor LEDs
@@ -2171,12 +2453,13 @@ $(document).ready(function () {
         var box = svg.getBoundingClientRect();
         var g = stpGeom();
         var p = stPlaner;
+        var ar = stAr._drag ? stArPointToEnv(e.clientX, e.clientY) : null;
         if (stpDrag === "x0" || stpDrag === "x1") {
-            var vx = ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
+            var vx = ar ? ar.vx : ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
             if (stpDrag === "x0") p.x0 = Math.max(0, Math.min(p.x1, vx));
             else p.x1 = Math.min(g.xspan, Math.max(p.x0, vx));
         } else {
-            var vy = ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
+            var vy = ar ? ar.vy : ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
             if (stpDrag === "y0") p.y0 = Math.max(0, Math.min(p.y1, vy));
             else p.y1 = Math.min(g.yspan, Math.max(p.y0, vy));
         }
@@ -2301,8 +2584,9 @@ $(document).ready(function () {
         if (!svg) { stsDrag = null; return; }
         var box = svg.getBoundingClientRect();
         var g = stpGeom("sts-env-svg");
-        var vx = ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
-        var vy = ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
+        var ar = stAr._drag ? stArPointToEnv(e.clientX, e.clientY) : null;
+        var vx = ar ? ar.vx : ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
+        var vy = ar ? ar.vy : ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
         if (stsDrag === "anchor") {
             // Anchor drag translates the line (clamped onto the table)
             stSaw.ax = Math.max(0, Math.min(g.xspan, vx));
@@ -2540,6 +2824,99 @@ $(document).ready(function () {
         showShopTool(null);
     });
 
+    // AR projection: enter from a panel's camera button, exit from the
+    // same button (now docked in the rail), the stage's X, or Escape.
+    $(".ts-st-arbtn").on("click", function () {
+        if (stAr.tool) return stArExit();
+        stArEnter($(this).closest(".ts-st-panel").attr("id").replace("st-panel-", ""));
+    });
+    $("#st-ar-exit").on("click", stArExit);
+    $(document).on("keydown", function (e) {
+        if (e.key === "Escape" && stAr.tool) stArExit();
+    });
+    $(window).on("resize", function () {
+        if (stAr.tool) stArWarp();
+    });
+    stArDetect();
+
+    // Drags on the projection reuse the flat-map drag state; the move
+    // handlers read the table through stArPointToEnv when it's an AR
+    // drag (stAr._drag). Handles keep their data-handle names in the
+    // copied svg, so the same identifiers flow through.
+    $("#st-ar-svg").on("pointerdown", "[data-handle]", function (e) {
+        if (stAr.tool === "planer") stpDrag = $(this).attr("data-handle");
+        else if (stAr.tool === "tablesaw") stsDrag = $(this).attr("data-handle");
+        else if (stAr.tool === "drill" && $(this).attr("data-handle") === "target") stdDrag = true;
+        else return;
+        stAr._drag = true;
+        e.preventDefault();
+    });
+
+    // Drill target dragging — flat map and projection share the state;
+    // coordinates come from the map box or the inverse homography.
+    var stdDrag = false;
+    $("#st-env-svg").on("pointerdown", "[data-handle=target]", function (e) {
+        stdDrag = true;
+        e.preventDefault();
+    });
+    $(document).on("pointermove", function (e) {
+        if (!stdDrag) return;
+        var env = state.envelope || {};
+        var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
+        var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+        if (!(xspan > 0) || !(yspan > 0)) return;
+        var v = stAr._drag ? stArPointToEnv(e.clientX, e.clientY) : null;
+        if (!v) {
+            var svg = document.getElementById("st-env-svg");
+            var rect = svg && svg.querySelector("rect");
+            if (!rect) return;
+            var box = svg.getBoundingClientRect();
+            var rx = +rect.getAttribute("x"), ry = +rect.getAttribute("y");
+            var rw = +rect.getAttribute("width"), rh = +rect.getAttribute("height");
+            v = {
+                vx: ((e.clientX - box.left - rx) / rw) * xspan,
+                vy: ((ry + rh - (e.clientY - box.top)) / rh) * yspan,
+            };
+        }
+        var tx = Math.max(0, Math.min(xspan, v.vx));
+        var ty = Math.max(0, Math.min(yspan, v.vy));
+        // Dropping the target back on the machine crosshair clears it —
+        // back to drill-at-position.
+        var mxr = (Number(state.pos.x) || 0) + state.g55.x - (Number(env.xmin) || 0);
+        var myr = (Number(state.pos.y) || 0) + state.g55.y - (Number(env.ymin) || 0);
+        var snap = Math.max(xspan, yspan) * 0.025;
+        stDrill.target = Math.hypot(tx - mxr, ty - myr) < snap ? null : { x: tx, y: ty };
+        renderStEnv();
+    });
+    $(document).on("pointerup pointercancel", function () {
+        stdDrag = false;
+    });
+    $(document).on("pointerup pointercancel", function () {
+        stAr._drag = false;
+    });
+
+    // The control palette drags by its grip, clamped to the stage.
+    var stArFloatDrag = null;
+    $("#st-ar-grip").on("pointerdown", function (e) {
+        var f = document.getElementById("st-ar-float");
+        stArFloatDrag = { dx: e.clientX - f.offsetLeft, dy: e.clientY - f.offsetTop };
+        e.preventDefault();
+    });
+    $(document).on("pointermove", function (e) {
+        if (!stArFloatDrag) return;
+        var stage = document.getElementById("st-ar-stage");
+        var f = document.getElementById("st-ar-float");
+        var x = Math.max(0, Math.min(stage.clientWidth - f.offsetWidth, e.clientX - stArFloatDrag.dx));
+        var y = Math.max(0, Math.min(stage.clientHeight - f.offsetHeight, e.clientY - stArFloatDrag.dy));
+        f.style.left = x + "px";
+        f.style.top = y + "px";
+        f.style.right = "auto";
+        stAr._floatPos = { x: x, y: y };
+    });
+    $(document).on("pointerup pointercancel", function () {
+        stArFloatDrag = null;
+    });
+
     // Re-fit the envelope maps when the card's width changes — e.g. the
     // DRO expanding squeezes this card. stEnvCap contracts the map first
     // and only stacks it below the controls when really tight.
@@ -2606,6 +2983,12 @@ $(document).ready(function () {
         if (zzTable) safeZ = Math.round((stDrill.thickness + safeZ) * 10000) / 10000;
 
         var r4 = function (v) { return Math.round(v * 10000) / 10000; };
+        // Pinned target (envelope-relative machine coords) → work coords
+        // for J2, same conversion the planer uses.
+        var env = state.envelope || {};
+        var tgt = stDrill.target;
+        var twx = tgt ? r4(tgt.x + (Number(env.xmin) || 0) - state.g55.x) : null;
+        var twy = tgt ? r4(tgt.y + (Number(env.ymin) || 0) - state.g55.y) : null;
         var lines = ["'Shop Tools: drill press", "SO,1,1", "PAUSE 2"];
         var logMsg;
         if (stArrayMode && stArray.xn * stArray.yn > 1) {
@@ -2615,8 +2998,8 @@ $(document).ready(function () {
             }
             // Grid steps +X/+Y from the current position, row by row, with
             // a safe-Z retract before every move between holes.
-            var bx = Number(state.pos.x) || 0;
-            var by = Number(state.pos.y) || 0;
+            var bx = tgt ? twx : Number(state.pos.x) || 0;
+            var by = tgt ? twy : Number(state.pos.y) || 0;
             for (var j = 0; j < stArray.yn; j++) {
                 for (var i = 0; i < stArray.xn; i++) {
                     lines.push("JZ, " + safeZ);
@@ -2626,8 +3009,13 @@ $(document).ready(function () {
             }
             logMsg = "> drill array: " + stArray.xn + "×" + stArray.yn + " holes, " + depth + " " + state.unit + " into material (Z to " + targetZ + ")";
         } else {
+            if (tgt) {
+                lines.push("JZ, " + safeZ);
+                lines.push("J2, " + twx + ", " + twy);
+            }
             lines.push("MZ, " + targetZ);
-            logMsg = "> drill: " + depth + " " + state.unit + " into material (Z to " + targetZ + ")";
+            logMsg = "> drill: " + depth + " " + state.unit + " into material (Z to " + targetZ + ")" +
+                (tgt ? " at " + twx + ", " + twy : "");
         }
         lines.push("JZ, " + safeZ);
         lines.push("SO,1,0");
