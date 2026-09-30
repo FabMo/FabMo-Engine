@@ -535,7 +535,7 @@ body.theme-config .ts-settings-section {
     overflow: visible;
     background: #fff;
 }
-body.theme-config .ts-card > .ts-card-title:first-child,
+body.theme-config .ts-card > .ts-card-title:first-of-type,
 body.theme-config .ts-settings-heading {
     width: fit-content;
     position: relative;

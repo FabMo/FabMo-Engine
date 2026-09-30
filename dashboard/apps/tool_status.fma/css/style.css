@@ -54,6 +54,7 @@ body {
     border: 1px solid #e1e4e8;
     border-radius: 6px;
     padding: 10px 12px;
+    position: relative; /* anchors the centered drag grip */
 }
 .ts-card-title {
     font-size: 0.8em;
@@ -598,16 +599,26 @@ body {
 .ts-card-title-row .ts-iconbtn { padding: 0 2px; font-size: 1.05em; }
 .ts-title-actions { display: flex; align-items: center; gap: 8px; }
 
-/* Card drag grip (⋮⋮ in each card title) — only visible in edit mode,
-   entered via the pencil button in the header */
+/* Card drag grip (⋮⋮) — only visible in edit mode, entered via the
+   pencil button in the header. Pinned to the card's top center and out
+   of the title row's flow, so every theme (fit-content legend titles,
+   full-width title bars, ...) shows it in the same place. */
 .ts-card-grip {
     display: none;
     cursor: grab;
     color: #2980b9;
-    letter-spacing: -2px;
-    padding: 0 2px;
     user-select: none;
     -webkit-user-select: none;
+    position: absolute;
+    left: 50%;
+    top: 3px;
+    transform: translateX(-50%);
+    z-index: 5;
+    /* 3x3 dot grid from the glyphs themselves — same recipe as the
+       dashboard's print-widget grip. */
+    font-size: 16px;
+    letter-spacing: 1px;
+    line-height: 1;
 }
 body.ts-editing .ts-card-grip { display: inline-block; }
 .ts-card-grip:hover { color: #1f618d; }
@@ -907,6 +918,15 @@ body[class*="theme-"] .ts-fillin-modal .ts-modal-header {
     margin-bottom: 4px;
     overflow-x: auto;
     white-space: nowrap;
+}
+
+/* Console input autocaps like SB4's command console (real value is
+   uppercased on Enter); the helper placeholder keeps its own case. */
+#console-input {
+    text-transform: uppercase;
+}
+#console-input::placeholder {
+    text-transform: none;
 }
 
 /* ---- Shop Tools AR projection ----

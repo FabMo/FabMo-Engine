@@ -1,5 +1,5 @@
 {
-	"name": "Tool Status",
+	"name": "FabMo Dashboard",
 	"main": "./index.html",
 	"icon": "icon.png",
 	"icon_color": "#2c3e50",

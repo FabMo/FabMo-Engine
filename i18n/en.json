@@ -1284,7 +1284,7 @@
         }
     },
     "tool_status": {
-        "title": "Tool Status",
+        "title": "FabMo Dashboard",
         "header": {
             "edit_layout": "Rearrange cards",
             "app_settings": "App settings",

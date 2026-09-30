@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="tool_status.title">Tool Status</title>
+    <title data-i18n="tool_status.title">FabMo Dashboard</title>
     <link rel="stylesheet" href="../../css/font-awesome.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/themes.css">
@@ -13,7 +13,7 @@
     <div class="ts-page">
 
         <div class="ts-header">
-            <h1 data-i18n="tool_status.title">Tool Status</h1>
+            <h1 data-i18n="tool_status.title">FabMo Dashboard</h1>
             <div class="ts-badges">
                 <span class="ts-badge" id="atc-type-badge">&mdash;</span>
                 <span class="ts-badge ts-state" id="machine-state">&mdash;</span>
@@ -27,9 +27,10 @@
             <!-- LEFT: slim job manager -->
             <div class="ts-pane" id="pane-jobs">
                 <div class="ts-card" data-card-id="jobs">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
                         <span data-i18n="tool_status.jobs.title">Jobs</span>
-                        <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;</span>
+                        
                     </div>
                     <div class="ts-jobs-actions">
                         <button class="ts-cmd ts-cmd-primary" id="btn-run-next" disabled>&#9654;&nbsp; <span data-i18n="tool_status.jobs.run_next">Run Next Job</span></button>
@@ -45,17 +46,19 @@
                 </div>
 
                 <div class="ts-card" id="card-usb" data-card-id="usb" style="display:none;">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
                         <span><i class="fa fa-usb"></i> <span data-i18n="tool_status.usb.title">USB Drive</span> <span class="ts-note-inline" id="usb-crumb"></span></span>
-                        <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;</span>
+                        
                     </div>
                     <button class="ts-cmd ts-cmd-block" id="btn-usb-browse" style="margin-top:0;" data-i18n="tool_status.usb.browse">Browse USB Drive&hellip;</button>
                 </div>
 
                 <div class="ts-card" data-card-id="console">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
                         <span data-i18n="tool_status.console.title">Console</span>
-                        <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;</span>
+                        
                     </div>
                     <div class="ts-console-inputrow">
                         <span class="ts-console-prompt">&gt;</span>
@@ -65,11 +68,12 @@
                 </div>
 
                 <div class="ts-card" data-card-id="shortcuts">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
                         <span data-i18n="tool_status.shortcuts.title">Apps</span>
                         <span class="ts-title-actions">
                             <button class="ts-iconbtn" id="btn-shortcut-settings" title="Add or remove shortcuts" data-i18n-title="tool_status.shortcuts.settings_title"><i class="fa fa-gear"></i></button>
-                            <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;</span>
+                            
                         </span>
                     </div>
                     <div class="ts-shortcut-grid" id="shortcut-grid"></div>
@@ -80,9 +84,10 @@
             <div class="ts-pane" id="pane-controls">
 
                 <div class="ts-card" data-card-id="current">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
                         <span data-i18n="tool_status.current.title">Current Tool</span>
-                        <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;</span>
+                        
                     </div>
                     <div class="ts-current-strip">
                         <div class="ts-tool-display">
@@ -106,11 +111,12 @@
                 </div>
 
                 <div class="ts-card" data-card-id="machine">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
                         <span data-i18n="tool_status.machine.title">Machine</span>
                         <span class="ts-title-actions">
                             <button class="ts-iconbtn" id="btn-machine-settings" title="Routine settings" data-i18n-title="tool_status.machine.settings_title"><i class="fa fa-gear"></i></button>
-                            <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;</span>
+                            
                         </span>
                     </div>
                     <div class="ts-machine-btnrow">
@@ -125,9 +131,10 @@
                 </div>
 
                 <div class="ts-card" data-card-id="shoptools">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
                         <span data-i18n="tool_status.shoptools.title">Shop Tools</span>
-                        <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;</span>
+                        
                     </div>
 
                     <!-- Tool picker: one tile per shop tool; clicking swaps
@@ -346,11 +353,12 @@
                 </div>
 
                 <div class="ts-card" id="card-tools" data-card-id="tools" style="display:none;">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
                         <span><span data-i18n="tool_status.tools.title">Tools</span> <span class="ts-note-inline" id="rack-note"></span></span>
                         <span class="ts-title-actions">
                             <button class="ts-iconbtn" id="btn-tool-settings" title="Tool settings" data-i18n-title="tool_status.tools.settings_title"><i class="fa fa-gear"></i></button>
-                            <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;</span>
+                            
                         </span>
                     </div>
                     <div class="ts-rack" id="rack"></div>
