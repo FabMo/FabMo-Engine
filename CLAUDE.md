@@ -13,8 +13,7 @@ for the platform picture, team conventions, and safety rules. Read those first.
   edit `dashboard/static/` and app sources, not `build/`.
 - Tests: `npm test` (jest; `test/*.test.js`). Coverage is thin — pendant
   parsing, canned cuts, opensbp variable isolation, util. There is no
-  end-to-end or motion test; those are physical. Lint: `npm run lint`,
-  format: `npm run prettier`. Husky runs on commit.
+  end-to-end or motion test; those are physical.
 - Debug: `npm run debug` (`node server.js --debug`). Logs go through `log.js`;
   G2 traffic is logged as `g2: --S-…>` (sent) / `<-S-…` (received).
 
