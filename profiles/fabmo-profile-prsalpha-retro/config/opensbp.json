@@ -1,0 +1,37 @@
+{
+  "movexy_speed": 6,
+  "movez_speed": 3,
+  "movea_speed": 3,
+  "jogxy_speed": 15,
+  "jogy_speed": 15,
+  "jogz_speed": 10,
+  "joga_speed": 10,
+  "xy_maxjerk": 100,
+  "y_maxjerk": 100,
+  "z_maxjerk": 150,
+  "a_maxjerk": 150,
+  "safeZpullUp": 1,
+  "safeApullUp": 1,
+  "variables": {
+    "SB_PROXNUM": {
+      "X": 2,
+      "Y": 3,
+      "Z": 5
+    },
+    "SB_ZZERONUM": 1,
+    "SB_PROXTYPE": 1,
+    "SB_HASZPROX": 0,
+    "SB_ZPLATETYPE": "STD",
+    "SB_PROXCK": {
+      "X": 52,
+      "Y": 53,
+      "Z": 55
+    },
+    "SB_ZZEROCK": 51,
+    "SB_MTCMODE": "QUIT",
+    "SB_MTC_XY_MODE": "FIXED",
+    "SB_MTC_Z_MODE": "FIXED",
+    "SB_MTC_ZERO_MODE": "MACRO",
+    "SB_MTC_SKIP_FIRST": "NO"
+  }
+}

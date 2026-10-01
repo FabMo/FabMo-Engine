@@ -1,0 +1,28 @@
+{
+  "di2ac": "limit",
+  "di3ac": "limit",
+  "di2type": "X Limit",
+  "di3type": "Y Limit",
+  "default_app": "fabmo-sb4",
+  "envelope": {
+    "xmin": -0.5,
+    "xmax": 96.5,
+    "ymin": -16.5,
+    "ymax": 48.5,
+    "zmax": 8.5
+  },
+  "outputs": {
+    "1": {
+      "notify_on": "always",
+      "notify_on_message": "Press the green start button on your pendant to start the spindle."
+    }
+  },
+  "manual": {
+    "xy_speed": 6,
+    "xy_max": 12,
+    "z_fast_speed": 3,
+    "z_slow_speed": 0.25,
+    "xy_jerk": 300,
+    "z_jerk": 300
+  }
+}
