@@ -40,6 +40,7 @@ var clickDisabled = false;
 var interlockBypass = false;
 var runtime = null;
 var spindle = require("./spindle1");
+var vfdProbe = require("./spindles/vfd_probe");
 
 ////## temp KLUDGES because of difficulty in figuring out a couple of quick comms between modules
 global.CUR_RUNTIME;
@@ -2112,33 +2113,69 @@ Machine.prototype.gcode = function (string) {
 };
 
 // Handle loading and updating any machine accessories such as spindleVFD, etc (this called in the start sequence)
-Machine.prototype.startAccessories = async function () {
-    try {
-        log.info("Initializing spindle system...");
+//
+// options.autoConfigureSpindle - true on a first/clean start and on the first
+//   start after an engine update. In that mode, if there is no spindle
+//   settings file in /fabmo-def, or the file is there but the VFD fails to
+//   start from it, we run the same "Detect & Configure Spindle" pipeline the
+//   operator can run from ConfigManager > Machine. If that finds nothing it
+//   removes any stale settings file. On a normal start (flag false) a missing
+//   settings file simply means "no spindle configured" and we don't touch the
+//   serial bus at all.
+//
+// Order of events (nothing here blocks engine startup; the caller doesn't
+// wait on this promise): status listener is attached first so every state
+// change below reaches clients, then bind -> load -> connect, then (auto mode
+// only) the probe. The probe can take several seconds per template; the
+// dashboard just sees the spindle as disabled until it finishes.
+Machine.prototype.startAccessories = async function (options) {
+    options = options || {};
+    var autoConfigure = !!options.autoConfigureSpindle;
 
-        // Ensure USB-RS485 adapter is bound to its kernel driver so a tty
-        // exists; updates spindle1_settings.json COM_PORT if the live path
-        // differs from what's stored.
-        await spindle.ensureAdapterBound();
+    // Attach the status listener once, before anything can emit.
+    spindle.on("statusChanged", (spindlestatus) => {
+        this.status.spindle = spindlestatus;
+        this.emit("status", this.status);
+    });
 
-        await spindle.loadVFDSettings();
-        await spindle.connectVFD();
+    log.info("Initializing spindle system..." + (autoConfigure ? " (auto-configure enabled for this start)" : ""));
 
-        // Setup spindle status listener
-        spindle.on("statusChanged", (spindlestatus) => {
-            this.status.spindle = spindlestatus;
-            this.emit("status", this.status);
-        });
+    var started = false;
+    if (spindle.hasSettings()) {
+        try {
+            // Ensure USB-RS485 adapter is bound to its kernel driver so a tty
+            // exists; updates the settings file COM_PORT if the live path
+            // differs from what's stored.
+            await spindle.ensureAdapterBound();
+            await spindle.loadVFDSettings();
+            await spindle.connectVFD();
+            started = true;
+            log.info("Spindle system ready");
+        } catch (error) {
+            // Spindle has already logged its own clean error message
+            log.debug("Spindle did not start from settings file: " + error.message);
+        }
+    } else if (!autoConfigure) {
+        spindle.setUnconfigured("no settings file at " + vfdProbe.SETTINGS_PATH);
+    }
 
-        log.info("Spindle system ready");
-    } catch (error) {
-        // Spindle has already logged its own clean error message
-        // Just ensure we have a listener for status updates
-        spindle.on("statusChanged", (spindlestatus) => {
-            this.status.spindle = spindlestatus;
-            this.emit("status", this.status);
-        });
+    if (!started && autoConfigure) {
+        log.info("Spindle not started - running Detect & Configure Spindle...");
+        try {
+            var result = await spindle.configureSpindle();
+            if (result.ok) {
+                log.info("Spindle auto-configured: " + result.template + " on " + result.ttyPath);
+            } else {
+                var failed = (result.steps || []).filter((s) => !s.ok).pop();
+                var detail = failed ? " (" + failed.name + ": " + failed.detail + ")" : "";
+                log.info("Spindle auto-configure found no working VFD" + detail);
+            }
+        } catch (error) {
+            log.warn("Spindle auto-configure failed: " + error.message);
+        }
+    }
 
+    if (!started && !autoConfigure) {
         log.debug("Continuing without spindle functionality");
     }
 };

@@ -35,7 +35,7 @@ for the platform picture, team conventions, and safety rules. Read those first.
 | `dashboard/apps/*.fma/` | system apps (unzipped): editor, job_manager, previewer, configuration, sb4, tool_status, macro_manager, profile_designer, network_manager, video, selftest… |
 | `profiles/fabmo-profile-*/` | per-machine profiles: `config/*.json`, `macros/macro_N.sbp` |
 | `firmware/` | G2core `.bin` files shipped with the engine; `BOSSA/` flashes them |
-| `pendant/`, `spindles/`, `network/` | pendant drivers, VFD/spindle drivers (Modbus), networking |
+| `pendant/`, `spindles/`, `network/` | pendant drivers, VFD/spindle drivers (Modbus), networking. `spindle1.js` + `spindles/vfd_probe.js`: the installed VFD profile is `/fabmo-def/spindle1_settings.json` (never in `/fabmo/spindles/`); templates in `spindles/spindle-VFD-data/`. Auto-detect runs on first/clean start and first start after an update; see `machine.startAccessories` |
 | `doc/`, `CONFIG_VARIABLE_FEATURE.md`, `DEPENDENCY_UPDATE_MIGRATION.md` | docs |
 
 ## Profiles

@@ -88,7 +88,6 @@ function EngineConfigFirstTime(callback) {
         case "linux":
             var ports = {
                 control_port_linux: "/dev/fabmo_g2_motion",
-                spindle_control_port: "",
             };
             config.engine.update(ports, function () {
                 callback();
@@ -100,7 +99,6 @@ function EngineConfigFirstTime(callback) {
                 if (files.length >= 1) {
                     var ports = {
                         control_port_osx: files[0],
-                        spindle_control_port: "",
                     };
                     config.engine.update(ports, function () {
                         callback();
@@ -268,6 +266,7 @@ Engine.prototype.start = function (callback) {
             function check_engine_config(callback) {
                 if (!config.engine.get("init")) {
                     log.info("Configuring the engine for the first time...");
+                    this.first_run = true; // used below to auto-configure accessories
                     EngineConfigFirstTime(function () {
                         config.engine.set("init", true);
                         callback();
@@ -275,7 +274,7 @@ Engine.prototype.start = function (callback) {
                 } else {
                     callback();
                 }
-            },
+            }.bind(this),
 
             // Load profiles.  See the profiles module for what this entails.
             function load_profiles(callback) {
@@ -461,6 +460,7 @@ Engine.prototype.start = function (callback) {
                 if (last_time_version != this_time_version) {
                     log.info("Engine version has changed - flag to clear the approot.");
                     flg_clr_approot = true;
+                    this.version_changed = true; // first start after an update: used below to auto-configure accessories
                 } else {
                     log.info("Engine version is unchanged since last run.");
                     //callback();
@@ -820,8 +820,13 @@ Engine.prototype.start = function (callback) {
             }.bind(this),
 
             // Start the accessories (spindle speed controller, etc.)
+            // Deliberately not awaited: VFD bring-up (and the probe, on a
+            // first/clean start or the first start after an update) can take
+            // several seconds and must not hold up the rest of startup.
             function add_accessories(callback) {
-                this.machine.startAccessories(callback);
+                this.machine.startAccessories({
+                    autoConfigureSpindle: !!(this.first_run || this.version_changed),
+                });
                 callback();
             }.bind(this),
 
