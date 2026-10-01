@@ -99,10 +99,16 @@
     function applyDomTranslations(root) {
         root = root || document;
         // data-i18n: replace text content (safe for plain strings).
+        // A key missing from every dict makes t() return the key itself;
+        // skip those so the English fallback text in the markup survives
+        // instead of being replaced by a raw "config.foo.bar" string.
         var els = root.querySelectorAll("[data-i18n]");
         for (var i = 0; i < els.length; i++) {
             var k = els[i].getAttribute("data-i18n");
-            if (k) els[i].textContent = t(k);
+            if (k) {
+                var v = t(k);
+                if (v !== k) els[i].textContent = v;
+            }
         }
         // data-i18n-html: replace innerHTML. Use for translated tooltips
         // / copy that embeds <br>, <strong>, etc. — translator-supplied
@@ -111,7 +117,10 @@
         var htmlEls = root.querySelectorAll("[data-i18n-html]");
         for (var hi = 0; hi < htmlEls.length; hi++) {
             var hk = htmlEls[hi].getAttribute("data-i18n-html");
-            if (hk) htmlEls[hi].innerHTML = t(hk);
+            if (hk) {
+                var hv = t(hk);
+                if (hv !== hk) htmlEls[hi].innerHTML = hv;
+            }
         }
         var attrs = [
             ["data-i18n-title",       "title"],
@@ -125,7 +134,10 @@
             var nodes = root.querySelectorAll(sel);
             for (var n = 0; n < nodes.length; n++) {
                 var key = nodes[n].getAttribute(attrs[a][0]);
-                if (key) nodes[n].setAttribute(attr, t(key));
+                if (key) {
+                    var av = t(key);
+                    if (av !== key) nodes[n].setAttribute(attr, av);
+                }
             }
         }
     }
