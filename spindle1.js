@@ -35,9 +35,33 @@ function Spin() {
 // Inherit from EventEmitter
 util.inherits(Spin, EventEmitter);
 
+// True if an installed settings file exists (/fabmo-def/spindle1_settings.json).
+// No file means no spindle/VFD has been configured for this tool.
+Spin.prototype.hasSettings = function() {
+    return vfdProbe.settingsExist();
+};
+
+// Mark the spindle as not configured: VFD control disabled, status pushed to
+// clients, but logged at info level only - this is the expected state on a
+// tool with no VFD, not an error.
+Spin.prototype.setUnconfigured = function(reason) {
+    if (this.vfdInterval) {
+        clearInterval(this.vfdInterval);
+        this.vfdInterval = null;
+    }
+    this.status.vfdEnabled = false;
+    this.status.vfdDesgFreq = -1;
+    this.status.vfdAchvFreq = 0;
+    this.status.vfdAmps = 0;
+    this.status.vfdLoadPct = null;
+    this.status.vfdRatedAmps = null;
+    log.info(`Spindle/VFD not configured: ${reason}`);
+    this.updateStatus(this.status);
+};
+
 // Load settings for a VFD
 Spin.prototype.loadVFDSettings = function() {
-    const configFile = "./spindles/spindle1_settings.json";
+    const configFile = vfdProbe.SETTINGS_PATH;
     return new Promise((resolve, reject) => {
         fs.readFile(configFile, "utf8", (err, data) => {
             if (err) {
@@ -522,7 +546,7 @@ Spin.prototype.ensureAdapterBound = async function() {
             if (cur.VFD_Settings && cur.VFD_Settings.COM_PORT !== result.ttyPath) {
                 log.info(`Updating spindle1_settings.json COM_PORT: ${cur.VFD_Settings.COM_PORT} -> ${result.ttyPath}`);
                 cur.VFD_Settings.COM_PORT = result.ttyPath;
-                fs.writeFileSync(vfdProbe.SETTINGS_PATH, JSON.stringify(cur, null, 4));
+                vfdProbe.writeSettings(cur);
             }
         } catch (e) {
             log.debug(`Could not sync COM_PORT in settings: ${e.message}`);
@@ -554,9 +578,21 @@ Spin.prototype.discover = function() {
 
 // Full pipeline: bind adapter, probe VFD, install matching template,
 // reload settings, reconnect. Returns a result summary suitable for the UI.
+//
+// If no solution is found (no adapter, no tty, or no template responds) any
+// existing settings file is removed and the spindle is marked unconfigured,
+// so a stale file can't keep describing a VFD that isn't connected. Note the
+// removal happens only on "nothing found"; a template that matched but then
+// failed to connect leaves its freshly installed file in place for the
+// operator to inspect.
 Spin.prototype.configureSpindle = async function() {
     const steps = [];
     const step = (name, ok, detail) => { steps.push({ name, ok, detail }); log.info(`configure: ${name} -> ${ok ? "ok" : "fail"}${detail ? " (" + detail + ")" : ""}`); };
+    const noSolution = (reason) => {
+        const removed = vfdProbe.removeSettings();
+        this.setUnconfigured(reason + (removed ? "; removed stale settings file" : ""));
+        return { ok: false, steps, removed_settings: removed };
+    };
 
     // Tear down current connection (if any) so the probe can open the port
     if (this.vfdInterval) { clearInterval(this.vfdInterval); this.vfdInterval = null; }
@@ -565,20 +601,20 @@ Spin.prototype.configureSpindle = async function() {
     const bind = await this.ensureAdapterBound();
     if (!bind.adapter) {
         step("detect_adapter", false, "no known RS485 adapter on USB bus");
-        return { ok: false, steps };
+        return noSolution("no RS485 adapter detected");
     }
     step("detect_adapter", true, bind.adapter.info.name);
 
     if (!bind.ttyPath) {
         step("bind_driver", false, "no tty appeared after bind");
-        return { ok: false, steps };
+        return noSolution("RS485 adapter found but no serial device appeared");
     }
     step("bind_driver", true, bind.ttyPath);
 
     const match = await vfdProbe.probeVFD(bind.ttyPath);
     if (!match) {
         step("probe_vfd", false, "no template responded");
-        return { ok: false, steps };
+        return noSolution("no known VFD responded on " + bind.ttyPath);
     }
     step("probe_vfd", true, match.name);
 

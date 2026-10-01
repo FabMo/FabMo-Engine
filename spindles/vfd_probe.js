@@ -18,7 +18,13 @@ const ModbusRTU = require("modbus-serial");
 const log = require("../log").logger("spindleProbe");
 
 const TEMPLATES_DIR = path.join(__dirname, "spindle-VFD-data");
-const SETTINGS_PATH = path.join(__dirname, "spindle1_settings.json");
+
+// The installed settings file is machine-specific, so it lives in /fabmo-def
+// (which survives engine updates and is never overwritten by them) rather
+// than in /fabmo/spindles, which is replaced wholesale on every update.
+// Absence of this file means "no spindle/VFD configured for this tool".
+const SETTINGS_DIR = "/fabmo-def";
+const SETTINGS_PATH = path.join(SETTINGS_DIR, "spindle1_settings.json");
 
 // Probe order: explicit list, most-specific first. Each entry is the basename
 // of a JSON in spindle-VFD-data/. To add a VFD: drop a template JSON, then
@@ -109,6 +115,38 @@ async function probeVFD(ttyPath) {
     return null;
 }
 
+// True if an installed settings file exists.
+function settingsExist() {
+    return fs.existsSync(SETTINGS_PATH);
+}
+
+// Write the settings file atomically (tmp + rename) so a crash mid-write
+// can't leave a half-written file that the next boot would choke on.
+function writeSettings(obj) {
+    if (!fs.existsSync(SETTINGS_DIR)) {
+        fs.mkdirSync(SETTINGS_DIR, { recursive: true });
+    }
+    const tmp = SETTINGS_PATH + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(obj, null, 4));
+    fs.renameSync(tmp, SETTINGS_PATH);
+}
+
+// Remove the installed settings file (if any). Used when Detect & Configure
+// finds no working VFD so a stale file doesn't keep describing a spindle
+// that isn't there. Returns true if a file was removed.
+function removeSettings() {
+    try {
+        fs.unlinkSync(SETTINGS_PATH);
+        log.info(`Removed spindle settings file ${SETTINGS_PATH}`);
+        return true;
+    } catch (e) {
+        if (e.code !== "ENOENT") {
+            log.warn(`Could not remove ${SETTINGS_PATH}: ${e.message}`);
+        }
+        return false;
+    }
+}
+
 // Copy a template's JSON into spindle1_settings.json, overwriting COM_PORT,
 // MB_ADDRESS, and PARITY with the values discovered during probing so the
 // settings reflect the live connection.
@@ -120,7 +158,7 @@ function installTemplate(templateName, ttyPath, address, parity) {
     // Probe-time hints aren't part of the runtime settings
     delete tpl.VFD_Settings.PROBE_ADDRESSES;
     delete tpl.VFD_Settings.PROBE_PARITIES;
-    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(tpl, null, 4));
+    writeSettings(tpl);
     log.info(`Installed template ${templateName} -> ${SETTINGS_PATH} (COM_PORT=${ttyPath}, MB_ADDRESS=${tpl.VFD_Settings.MB_ADDRESS}, PARITY=${tpl.VFD_Settings.PARITY})`);
     return tpl;
 }
@@ -132,6 +170,9 @@ module.exports = {
     tryTemplate,
     probeVFD,
     installTemplate,
+    settingsExist,
+    writeSettings,
+    removeSettings,
     SETTINGS_PATH,
     TEMPLATES_DIR,
 };
