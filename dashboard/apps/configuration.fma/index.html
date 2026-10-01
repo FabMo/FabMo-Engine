@@ -2010,7 +2010,10 @@
               </div>
           </fieldset>
 
-          <fieldset>
+          <!-- Machine Features UI hidden for now — machine.features.* flags
+               still work and remain settable via the config files; remove
+               the display:none to re-enable the checkboxes. -->
+          <fieldset style="display:none">
             <legend><span data-i18n="config.machine.features_legend">Machine Features</span> <span class="tooltip tooltip-below">i
               <span class="tooltiptext" data-i18n-html="config.machine.features_tooltip">
                 Check the special equipment installed on this tool. Enabling a <br>
