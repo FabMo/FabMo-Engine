@@ -30,6 +30,12 @@ exports.TR = function (args, callback) {
     // Set RPM RANGE
     // spindle speed / spindle RPM are currently limited HERE for command sent from OpenSBP
     //    and in machine.js from DRO; typically the VFD itself will have its own smaller spread
+    // Preview/bounds simulation runs a disconnected runtime (no this.machine);
+    // never touch the real VFD from a simulation.
+    if (!this.machine) {
+        return callback();
+    }
+
     if (new_RPM > 100 && new_RPM < 30000) {
         try {
             log.info("----> new speed: " + new_RPM);
