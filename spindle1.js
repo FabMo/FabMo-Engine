@@ -368,6 +368,11 @@ Spin.prototype.surveyRegisters = function() {
 
 
 Spin.prototype.setSpindleVFDFreq = function(data) {
+    // No VFD settings installed/loaded (vfdSettings is still {}): nothing to talk to.
+    if (!this.vfdSettings || !this.vfdSettings.Registers) {
+        log.warn("TR ignored: no VFD configured (" + vfdProbe.SETTINGS_PATH + " not loaded)");
+        return Promise.resolve(null);
+    }
     this.vfdBusy = true;
     return new Promise((resolve, reject) => {
         const unlockAndSetFrequency = () => {
@@ -385,7 +390,9 @@ Spin.prototype.setSpindleVFDFreq = function(data) {
             }
         };
 
-        unlockAndSetFrequency()
+        // Promise.resolve().then so a synchronous throw lands in .catch below
+        // instead of becoming an unhandled rejection that kills the engine.
+        Promise.resolve().then(unlockAndSetFrequency)
             .then(result => {
                 this.vfdBusy = false;
                 resolve(result);
