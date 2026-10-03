@@ -127,10 +127,13 @@ The pattern for a push is `machine.emit("change", "<topic>")` as in
 ## Apps
 
 A system app is an unzipped `.fma` directory here; add-in apps are the same
-package zipped. `sb4.fma` is dual-identity — it also exists as a standalone
-repo and both are still maintained ("still both, unfortunately"); ask before
-large Sb4 changes. Newer beta apps (tool_status, probe_logger, profile_designer,
-segment_optimizer, hello-i18n) have their source of truth here.
+package zipped. `sb4.fma` here is the single source of truth (decided Oct
+2026); the old standalone repo `fabmo-sb-sb4-desktop-app` is retired — do not
+sync to or from it. Bump the version in its `package.json` when changing it.
+To test Sb4-only edits without a webpack rebuild, copy the changed files to
+`/opt/fabmo/approot/approot/sb4.fma/` and hard-reload. Newer beta apps
+(tool_status, probe_logger, profile_designer, segment_optimizer, hello-i18n)
+also have their source of truth here.
 
 ## Do not, without an explicit ask
 
