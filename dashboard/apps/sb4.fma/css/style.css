@@ -201,6 +201,20 @@ input.cmds {
      
 }
 
+/* stand-in text caret for the readonly command line (positioned from init_setActions.js) */
+#cmd-caret {
+    display: none;
+    position: absolute;
+    width: 2px;
+    background-color: rgb(40, 40, 40);
+    pointer-events: none;
+    animation: cmd-caret-blink 1.1s steps(1) infinite;
+}
+
+@keyframes cmd-caret-blink {
+    50% { opacity: 0; }
+}
+
 #cmd-input::placeholder {
     color: rgb(168, 168, 168);
     font-weight: 600;

@@ -288,7 +288,131 @@ $(document).ready(function () {
         updateSpeedsFromEngineConfig();
     });
 
-    // ** Set-Up Response to Command Entry; first key management 
+    // #cmd-input is readonly so the browser never treats keystrokes here as text entry;
+    // text entry hides the mouse pointer (hide-while-typing), and the pointer stays hidden
+    // behind the native file dialog that FP opens. Characters are applied to the value
+    // manually here; command processing still happens in the keyup handler below.
+    // Exception: a readonly field never summons the on-screen keyboard, so when the field
+    // is engaged by touch/pen (no mouse pointer to protect) make it editable again.
+    // pointerdown fires before the focus event that triggers the OSK, so the timing works.
+    $("#cmd-input").on("pointerdown", function (event) {
+        var pointerType = event.pointerType || (event.originalEvent && event.originalEvent.pointerType);
+        if (pointerType === "touch" || pointerType === "pen") {
+            $(this).removeAttr("readonly");
+        } else {
+            $(this).attr("readonly", true);
+        }
+    });
+
+    // A readonly field shows no text caret, so draw our own (#cmd-caret, blink is in style.css).
+    // It sits at the field's (invisible but real) selection position, so clicking in the line,
+    // arrow keys, etc. still say where the next character goes.
+    var cmdInputEl = document.getElementById("cmd-input");
+    var cmdCaretEl = document.createElement("span");
+    var cmdMeasureCtx = document.createElement("canvas").getContext("2d");
+    cmdCaretEl.id = "cmd-caret";
+    cmdInputEl.parentNode.insertBefore(cmdCaretEl, cmdInputEl.nextSibling);
+
+    function updateCmdCaret() {
+        var el = cmdInputEl;
+        if (document.activeElement !== el || !el.readOnly || el.selectionStart !== el.selectionEnd) {
+            cmdCaretEl.style.display = "none";       // not in the line, native caret (touch), or a selection showing
+            return;
+        }
+        var cs = window.getComputedStyle(el);
+        var text = el.value.slice(0, el.selectionStart);
+        if (cs.textTransform === "uppercase") { text = text.toUpperCase(); }
+        cmdMeasureCtx.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+        var x = parseFloat(cs.paddingLeft) + cmdMeasureCtx.measureText(text).width - el.scrollLeft;
+        var h = Math.round(parseFloat(cs.fontSize) * 1.25);
+        if (x < 0 || x > el.clientWidth) {           // scrolled out of view on a long line
+            cmdCaretEl.style.display = "none";
+            return;
+        }
+        cmdCaretEl.style.left = (el.offsetLeft + el.clientLeft + x) + "px";
+        cmdCaretEl.style.top = (el.offsetTop + (el.offsetHeight - h) / 2) + "px";
+        cmdCaretEl.style.height = h + "px";
+        cmdCaretEl.style.display = "block";
+        cmdCaretEl.style.animation = "none";         // restart the blink so the caret is solid while typing
+        void cmdCaretEl.offsetWidth;
+        cmdCaretEl.style.animation = "";
+    }
+    $("#cmd-input").on("focus blur mouseup keyup select scroll", updateCmdCaret);
+    $(window).on("resize", updateCmdCaret);
+    // The line is filled in from many places with $("#cmd-input").val(...); catch those too
+    $.valHooks.text = {
+        set: function (elem) {
+            if (elem.id === "cmd-input") { setTimeout(updateCmdCaret, 0); }
+            // returning undefined lets jQuery set the value as usual
+        }
+    };
+
+    // Put text into the readonly line at the selection (replacing any selected text)
+    function editCmdInput(el, start, end, insert) {
+        el.value = el.value.slice(0, start) + insert + el.value.slice(end);
+        el.setSelectionRange(start + insert.length, start + insert.length);
+        updateCmdCaret();
+    }
+
+    $("#cmd-input").keydown(function (event) {
+        if (!this.readOnly) {                        // touch/pen: field is natively editable
+            return;
+        }
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+        var len = this.value.length;
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+        if (start === null || end === null) { start = end = len; }
+        if (event.key && event.key.length === 1) {
+            editCmdInput(this, start, end, event.key);
+        } else {
+            switch (event.which) {
+                case 8:           // backspace
+                    if (start === end && start > 0) { start--; }
+                    editCmdInput(this, start, end, "");
+                    break;
+                case 46:          // delete
+                    if (start === end && end < len) { end++; }
+                    editCmdInput(this, start, end, "");
+                    break;
+                case 37:          // left
+                    start = (start !== end) ? start : Math.max(0, start - 1);
+                    this.setSelectionRange(start, start);
+                    break;
+                case 39:          // right
+                    end = (start !== end) ? end : Math.min(len, end + 1);
+                    this.setSelectionRange(end, end);
+                    break;
+                case 36:          // home
+                    this.setSelectionRange(0, 0);
+                    break;
+                case 35:          // end
+                    this.setSelectionRange(len, len);
+                    break;
+                default:
+                    return;
+            }
+            updateCmdCaret();
+        }
+        event.preventDefault();
+    });
+
+    // Browser will not paste into a readonly field, so do it here
+    $("#cmd-input").on("paste", function (event) {
+        var clip = (event.originalEvent || event).clipboardData;
+        if (!this.readOnly || !clip) {
+            return;
+        }
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+        if (start === null || end === null) { start = end = this.value.length; }
+        editCmdInput(this, start, end, clip.getData("text").replace(/[\r\n]+/g, " "));
+        event.preventDefault();
+    });
+
+    // ** Set-Up Response to Command Entry; first key management
     $("#cmd-input").keyup(function (event) {
         var commandInputText = $("#cmd-input").val();
         switch (event.which) {
@@ -671,6 +795,14 @@ $(document).ready(function () {
             return false;
         }
         setSafeCmdFocus(6);
+    });
+
+    //... and this catches the case where focus went to the dashboard (e.g. clicking Quit) while the
+    //    mouse never left the app, so no mouseenter comes
+    $(document).mousemove(function (e) {
+        if (!document.hasFocus()) {
+            setSafeCmdFocus(7);
+        }
     });
 
     //** Try to restore CMD focus when there is a shift back to app
