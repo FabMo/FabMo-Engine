@@ -140,7 +140,7 @@ input#spindle-speed {
 }*/
 
 input.cmds {
-    color: rgb(113, 233, 241);
+    color: rgb(117, 126, 128);
     background-color: rgb(117, 126, 128);
     border-color: rgb(136, 171, 190);
     border-radius: 5px;
@@ -206,7 +206,7 @@ input.cmds {
     display: none;
     position: absolute;
     width: 2px;
-    background-color: rgb(40, 40, 40);
+    background-color: rgb(221, 98, 10);
     pointer-events: none;
     animation: cmd-caret-blink 1.1s steps(1) infinite;
 }

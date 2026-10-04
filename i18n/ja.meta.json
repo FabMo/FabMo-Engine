@@ -348,7 +348,7 @@
         "en_at_translation": "Configuration Backup Available"
     },
     "status.backup.ok": {
-        "en_at_translation": "Use My Previous Config"
+        "en_at_translation": "Restore My Previous Config"
     },
     "status.backup.cancel": {
         "en_at_translation": "Keep the New Config"

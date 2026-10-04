@@ -489,6 +489,12 @@ $(document).ready(function () {
         displayFillIn("", window.t("sb4.fillin.title_file_ready"), curFilename);
     })
 
+    // Pick window closed without choosing a file; clear the FP left in the command line
+    $('#file').on('cancel', function () {
+        $("#cmd-input").val("");
+        setSafeCmdFocus(8);
+    });
+
     $("#btn_ok_run").click(function (event) {
         let ckFileTitle = $('#fi_modal_title').text();
         $('#fi-modal').foundation('reveal', 'close');

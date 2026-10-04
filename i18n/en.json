@@ -151,7 +151,7 @@
             "created_at": "Backup created:",
             "restore_question": "Would you like to restore your previous configuration?",
             "title": "Configuration Backup Available",
-            "ok": "Use My Previous Config",
+            "ok": "Restore My Previous Config",
             "cancel": "Keep the New Config",
             "restoring": "Restoring backup... System will restart shortly.",
             "restored": "Backup restored - restarting...",
