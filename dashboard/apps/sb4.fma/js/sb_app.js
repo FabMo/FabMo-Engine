@@ -194,8 +194,7 @@ function getaFile(command) {
         $("#fi_cur_info").text("");
         $("#cmd-input").val(command);
         $('#file').val('');
-        $('#file').trigger('click');
-        $("#cmd-input").val(window.t("sb4.status.downloading_file"));
+        $('#file').trigger('click');        // "downloading" message is shown by the #file change handler, once a file is picked
     }
 }
 window.getaFile = getaFile;
