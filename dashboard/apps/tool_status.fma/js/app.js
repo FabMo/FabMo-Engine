@@ -2426,6 +2426,17 @@ $(document).ready(function () {
             stPlaner.x1 = Math.max(stPlaner.x0, Math.min(spans.xspan, num(pp.x1, spans.xspan * 0.75)));
             stPlaner.y0 = Math.max(0, Math.min(spans.yspan, num(pp.y0, spans.yspan * 0.25)));
             stPlaner.y1 = Math.max(stPlaner.y0, Math.min(spans.yspan, num(pp.y1, spans.yspan * 0.75)));
+            // A shrunken envelope (say X max 96 → 24) clamps both ends of a
+            // saved range onto the same spot — a zero-width area with the
+            // handles stacked. Start that axis over at the defaults.
+            if (stPlaner.x1 <= stPlaner.x0) {
+                stPlaner.x0 = spans.xspan * 0.25;
+                stPlaner.x1 = spans.xspan * 0.75;
+            }
+            if (stPlaner.y1 <= stPlaner.y0) {
+                stPlaner.y0 = spans.yspan * 0.25;
+                stPlaner.y1 = spans.yspan * 0.75;
+            }
             stPlaner.inited = true;
             showShopTool(tool);
             stpSyncInputs();
@@ -2441,8 +2452,18 @@ $(document).ready(function () {
 
     var stpDrag = null;
 
+    // When both handles of a range sit on the same spot, the max handle
+    // (drawn last, so on top) swallows every grab — and pinned at the span
+    // edge it has nowhere to go, deadlocking the pair. Defer the choice to
+    // the first move: the drag direction picks the handle that can travel.
+    function stpAmbiguate(name) {
+        if ((name === "x0" || name === "x1") && stPlaner.x0 === stPlaner.x1) return "x?";
+        if ((name === "y0" || name === "y1") && stPlaner.y0 === stPlaner.y1) return "y?";
+        return name;
+    }
+
     $("#stp-env-svg").on("pointerdown", "[data-handle]", function (e) {
-        stpDrag = $(this).attr("data-handle");
+        stpDrag = stpAmbiguate($(this).attr("data-handle"));
         e.preventDefault();
     });
 
@@ -2454,12 +2475,14 @@ $(document).ready(function () {
         var g = stpGeom();
         var p = stPlaner;
         var ar = stAr._drag ? stArPointToEnv(e.clientX, e.clientY) : null;
-        if (stpDrag === "x0" || stpDrag === "x1") {
+        if (stpDrag === "x0" || stpDrag === "x1" || stpDrag === "x?") {
             var vx = ar ? ar.vx : ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
+            if (stpDrag === "x?") stpDrag = vx < p.x0 ? "x0" : "x1";
             if (stpDrag === "x0") p.x0 = Math.max(0, Math.min(p.x1, vx));
             else p.x1 = Math.min(g.xspan, Math.max(p.x0, vx));
         } else {
             var vy = ar ? ar.vy : ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
+            if (stpDrag === "y?") stpDrag = vy < p.y0 ? "y0" : "y1";
             if (stpDrag === "y0") p.y0 = Math.max(0, Math.min(p.y1, vy));
             else p.y1 = Math.min(g.yspan, Math.max(p.y0, vy));
         }
@@ -2844,7 +2867,7 @@ $(document).ready(function () {
     // drag (stAr._drag). Handles keep their data-handle names in the
     // copied svg, so the same identifiers flow through.
     $("#st-ar-svg").on("pointerdown", "[data-handle]", function (e) {
-        if (stAr.tool === "planer") stpDrag = $(this).attr("data-handle");
+        if (stAr.tool === "planer") stpDrag = stpAmbiguate($(this).attr("data-handle"));
         else if (stAr.tool === "tablesaw") stsDrag = $(this).attr("data-handle");
         else if (stAr.tool === "drill" && $(this).attr("data-handle") === "target") stdDrag = true;
         else return;
