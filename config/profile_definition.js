@@ -86,6 +86,7 @@ ProfileDefinition.prototype.markAsApplied = function (profileName, callback) {
             applied_at: new Date().toISOString(),
             engine_version: engineVersion,
             in_progress: false, // Mark as complete
+            machine_name: self.getMachineName(),
         };
 
         fs.writeFile(self.applied_marker, JSON.stringify(marker, null, 2), function (err) {
@@ -110,6 +111,7 @@ ProfileDefinition.prototype.markAsInProgress = function (profileName, callback) 
             applied_at: new Date().toISOString(),
             engine_version: engineVersion,
             in_progress: true, // Mark as in progress
+            machine_name: self.getMachineName(),
         };
 
         fs.writeFile(self.applied_marker, JSON.stringify(marker, null, 2), function (err) {
@@ -263,7 +265,8 @@ ProfileDefinition.prototype._writePatch = function (patch, callback) {
     if (!("force_reapply" in nextAutoProfile)) {
         nextAutoProfile.force_reapply = false;
     }
-    var next = Object.assign({}, existing, { auto_profile: nextAutoProfile });
+    // Top-level keys in the patch (e.g. machine_name) are written as given.
+    var next = Object.assign({}, existing, patch, { auto_profile: nextAutoProfile });
     var dir = path.dirname(this.definition_file);
     var tmp = this.definition_file + ".tmp";
     try {
@@ -308,6 +311,53 @@ ProfileDefinition.prototype.setSnapshotName = function (snapshotName, callback) 
 // as the deeper fallback.
 ProfileDefinition.prototype.clearSnapshotName = function (callback) {
     this._writePatch({ auto_profile: { snapshot_name: null } }, callback);
+};
+
+// Read the user's machine name from fabmo-def.json. It is kept there (as
+// well as in engine.json) so that it survives updates and /opt being wiped.
+// Read directly rather than through read() - the name applies whether or
+// not auto_profile is valid/enabled. Returns "" if no name has been set.
+ProfileDefinition.prototype.getMachineName = function () {
+    try {
+        if (!this.exists()) {
+            return "";
+        }
+        var definition = JSON.parse(fs.readFileSync(this.definition_file, "utf8"));
+        return typeof definition.machine_name === "string" ? definition.machine_name.trim() : "";
+    } catch (err) {
+        log.warn("Could not read machine_name from fabmo-def.json: " + err.message);
+        return "";
+    }
+};
+
+// Record the user's machine name in fabmo-def.json; a blank name clears it
+// (the tool then goes by its machine_id). Best-effort, like the other writes.
+ProfileDefinition.prototype.setMachineName = function (name, callback) {
+    var self = this;
+    this._writePatch({ machine_name: (name || "").trim() }, function (err) {
+        self.syncMarkerMachineName();
+        callback && callback(err);
+    });
+};
+
+// Keep the machine_name recorded in the applied marker current with
+// fabmo-def.json. Only updates an existing marker - never creates one,
+// since the marker's existence means "auto-profile already applied".
+// Synchronous so it can't interleave with the other marker writers.
+ProfileDefinition.prototype.syncMarkerMachineName = function () {
+    try {
+        if (!fs.existsSync(this.applied_marker)) {
+            return;
+        }
+        var marker = JSON.parse(fs.readFileSync(this.applied_marker, "utf8"));
+        var name = this.getMachineName();
+        if (marker.machine_name !== name) {
+            marker.machine_name = name;
+            fs.writeFileSync(this.applied_marker, JSON.stringify(marker, null, 2));
+        }
+    } catch (err) {
+        log.warn("Could not update machine_name in applied marker: " + err.message);
+    }
 };
 
 module.exports = new ProfileDefinition();

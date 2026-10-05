@@ -261,6 +261,35 @@ Engine.prototype.start = function (callback) {
                 config.configureEngine(callback);
             },
 
+            // The user's machine name is also kept in /fabmo-def/fabmo-def.json so that
+            // it survives updates. A name there supersedes engine.json. This runs before
+            // the network setup, which takes hostname and SSID from engine.machine_name.
+            function apply_def_machine_name(callback) {
+                var profileDef = require("./config/profile_definition");
+                var defName = profileDef.getMachineName();
+                var name = config.engine.get("machine_name");
+                var id = config.engine.get("machine_id");
+                if (defName && defName !== name) {
+                    log.info("Restoring machine_name from fabmo-def: " + defName);
+                    profileDef.syncMarkerMachineName();
+                    return config.engine.update({ machine_name: defName }, function (err) {
+                        if (err) {
+                            log.warn("Could not restore machine_name: " + err.message);
+                        }
+                        callback();
+                    });
+                }
+                if (!defName && name && id && name !== id) {
+                    // A tool named before names were kept in fabmo-def: record it there now.
+                    log.info("Recording existing machine_name in fabmo-def: " + name);
+                    return profileDef.setMachineName(name, function () {
+                        callback(); // best-effort; failure already logged
+                    });
+                }
+                profileDef.syncMarkerMachineName();
+                callback();
+            },
+
             // Determine if we're configuring the engine for the first time ever.
             // If so, populate the engine configuration with defaults that are sensible for this platform.
             function check_engine_config(callback) {
