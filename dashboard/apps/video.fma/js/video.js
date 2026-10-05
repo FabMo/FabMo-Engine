@@ -42,6 +42,8 @@ function setupAppNavigation() {
             evt.preventDefault();
             if (calState.calibrating) {
                 exitCalibration();
+            } else if (calState.zoneMode) {
+                exitZoneMode();
             } else {
                 fabmo.launchApp(back_App);
             }
@@ -192,6 +194,11 @@ var calState = {
     loupeRAF: null,
     gridOn: true,
     pos: { x: 0, y: 0 },
+    Hinv: null,           // live-grid homography inverse: screen px → svg px
+    zones: [],            // machine.keepout.zones (machine coordinates)
+    zoneMode: false,
+    zoneTool: "rect",     // "rect" | "draw" | "erase"
+    zoneStroke: null,     // in-progress freehand points / rect corners
 };
 
 var GRID_K = 10; // SVG px per machine unit — arbitrary, the warp rescales
@@ -268,13 +275,16 @@ function buildGrid(svg, strong) {
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     var line = strong ? "rgba(41,128,185,0.9)" : "rgba(41,128,185,0.45)";
     var halo = 'paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round"';
-    var parts = [];
+    // Gridlines + border live in their own group so the Grid toggle can
+    // hide them while zones and the crosshair stay visible.
+    var parts = ['<g id="gridlines">'];
     var step = gridStep(Math.min(s.xspan, s.yspan)) * GRID_K;
     for (var x = step; x < W; x += step)
         parts.push('<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + H + '" stroke="' + line + '" stroke-width="1"/>');
     for (var y = step; y < H; y += step)
         parts.push('<line x1="0" y1="' + (H - y) + '" x2="' + W + '" y2="' + (H - y) + '" stroke="' + line + '" stroke-width="1"/>');
     parts.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="none" stroke="' + line + '" stroke-width="4"/>');
+    parts.push('</g>');
     // Origin marker + axis arrows at machine (0,0) = svg bottom-left
     var ax = 0, ay = H;
     parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + (ax + 3 * GRID_K) + '" y2="' + ay + '" stroke="#c0392b" stroke-width="3"/>');
@@ -296,6 +306,7 @@ function warpGrid(svg, corners) {
          [corners.br.x * w, corners.br.y * h], [corners.bl.x * w, corners.bl.y * h]]
     );
     svg.style.transform = h_toMatrix3d(Hm);
+    if (svg.id === "live-grid") calState.Hinv = h_inverse3(Hm);
 }
 
 function activeImg() {
@@ -307,6 +318,7 @@ function refreshARConfig(cb) {
         if (!err && data) {
             calState.env = (data.machine && data.machine.envelope) || null;
             calState.cal = (data.machine && data.machine.cameraCalibration) || null;
+            calState.zones = (data.machine && data.machine.keepout && data.machine.keepout.zones) || [];
             var d = data.driver || {};
             calState.g55.x = Number(d.g55x) || 0;
             calState.g55.y = Number(d.g55y) || 0;
@@ -326,16 +338,24 @@ function calForDisplayed() {
 function refreshLiveOverlay() {
     var live = document.getElementById("live-grid");
     var gridBtn = document.getElementById("btn-grid");
+    var zoneBtn = document.getElementById("btn-zones");
     var c = calForDisplayed();
     if (c && !calState.calibrating && buildGrid(live, false)) {
         warpGrid(live, c.corners);
-        live.style.display = calState.gridOn ? "block" : "none";
-        gridBtn.style.display = "inline-block";
+        // The svg stays up whenever calibrated: the Grid toggle only
+        // governs the gridlines group; zones and the crosshair persist.
+        live.style.display = "block";
+        var gl = live.querySelector("#gridlines");
+        if (gl) gl.style.display = (calState.gridOn || calState.zoneMode) ? "" : "none";
+        gridBtn.style.display = calState.zoneMode ? "none" : "inline-block";
         gridBtn.classList.toggle("active", calState.gridOn);
+        zoneBtn.style.display = calState.zoneMode ? "none" : "inline-block";
+        renderZones();
         updateCrosshair();
     } else {
         live.style.display = "none";
         gridBtn.style.display = "none";
+        zoneBtn.style.display = "none";
     }
 }
 
@@ -399,6 +419,7 @@ function enterCalibration() {
     document.getElementById("cal-bar").style.display = "flex";
     document.getElementById("live-grid").style.display = "none";
     document.getElementById("btn-grid").style.display = "none";
+    document.getElementById("btn-zones").style.display = "none";
     document.getElementById("btn-calibrate").style.display = "none";
     calHandles().forEach(function (el) { el.style.display = "block"; });
     redrawCalibration();
@@ -515,6 +536,7 @@ function setupCalibration() {
         calState.gridOn = !calState.gridOn;
         refreshLiveOverlay();
     };
+    setupZones();
 
     calHandles().forEach(function (el) {
         el.addEventListener("pointerdown", function (e) {
@@ -547,4 +569,219 @@ function setupCalibration() {
         calState.pos.y = Number(status.posy) || 0;
         updateCrosshair();
     });
+}
+
+// ---------------------------------------------------------------------------
+// Keep-out zones
+//
+// User-drawn regions of the table where the machine shouldn't go — clamps,
+// tall material, fixtures. Drawn on the calibrated camera view (rectangles
+// or freehand), converted through the inverse homography into MACHINE
+// coordinates, and stored in machine.keepout.zones so they survive
+// recalibration and can be consumed by job bounds checks and jog routing:
+//
+//   { id, type: "rect", x0, y0, x1, y1 }          corners in machine units
+//   { id, type: "poly", pts: [[x, y], ...] }      closed polygon
+//
+// Zones render into the warped live-grid svg, so they lie on the table in
+// the video exactly where they lie on the real table.
+
+var ZONE_MIN_AREA = 1;        // square machine units — ignore accidental dots
+var ZONE_PT_SPACING = 0.4;    // machine units between captured freehand points
+var ZONE_MAX_PTS = 300;
+
+// Screen px → machine coordinates through the live-grid inverse homography
+function screenToMachine(clientX, clientY) {
+    var Hi = calState.Hinv;
+    var s = envSpans();
+    if (!Hi || !s) return null;
+    var x = Hi[0][0] * clientX + Hi[0][1] * clientY + Hi[0][2];
+    var y = Hi[1][0] * clientX + Hi[1][1] * clientY + Hi[1][2];
+    var w = Hi[2][0] * clientX + Hi[2][1] * clientY + Hi[2][2];
+    x /= w; y /= w;
+    var e = calState.env;
+    var mx = (Number(e.xmin) || 0) + x / GRID_K;
+    var my = (Number(e.ymin) || 0) + s.yspan - y / GRID_K;
+    return {
+        x: Math.max(Number(e.xmin) || 0, Math.min(Number(e.xmax), mx)),
+        y: Math.max(Number(e.ymin) || 0, Math.min(Number(e.ymax), my)),
+    };
+}
+
+// Machine coordinates → svg px in the live grid
+function machineToSvg(mx, my) {
+    var e = calState.env, s = envSpans();
+    return {
+        x: (mx - (Number(e.xmin) || 0)) * GRID_K,
+        y: (s.yspan - (my - (Number(e.ymin) || 0))) * GRID_K,
+    };
+}
+
+function polyArea(pts) {
+    var a = 0;
+    for (var i = 0; i < pts.length; i++) {
+        var j = (i + 1) % pts.length;
+        a += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1];
+    }
+    return Math.abs(a / 2);
+}
+
+function pointInZone(z, p) {
+    if (z.type === "rect") {
+        return p.x >= Math.min(z.x0, z.x1) && p.x <= Math.max(z.x0, z.x1) &&
+               p.y >= Math.min(z.y0, z.y1) && p.y <= Math.max(z.y0, z.y1);
+    }
+    var inside = false, pts = z.pts || [];
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        if ((pts[i][1] > p.y) !== (pts[j][1] > p.y) &&
+            p.x < ((pts[j][0] - pts[i][0]) * (p.y - pts[i][1])) / (pts[j][1] - pts[i][1]) + pts[i][0])
+            inside = !inside;
+    }
+    return inside;
+}
+
+function zoneMarkup(z, cls) {
+    if (z.type === "rect") {
+        var a = machineToSvg(Math.min(z.x0, z.x1), Math.max(z.y0, z.y1));
+        var b = machineToSvg(Math.max(z.x0, z.x1), Math.min(z.y0, z.y1));
+        return '<rect class="' + cls + '" x="' + a.x + '" y="' + a.y +
+            '" width="' + (b.x - a.x) + '" height="' + (b.y - a.y) + '"/>';
+    }
+    var pts = (z.pts || []).map(function (p) {
+        var q = machineToSvg(p[0], p[1]);
+        return q.x + "," + q.y;
+    }).join(" ");
+    return '<polygon class="' + cls + '" points="' + pts + '"/>';
+}
+
+function renderZones() {
+    var live = document.getElementById("live-grid");
+    if (!live) return;
+    var g = live.querySelector("#zones");
+    if (!g) {
+        g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("id", "zones");
+        // Zones sit above gridlines but under the crosshair
+        var pos = live.querySelector("#cam-pos");
+        live.insertBefore(g, pos || null);
+    }
+    var parts = calState.zones.map(function (z) { return zoneMarkup(z, "ko-zone"); });
+    // In-progress stroke preview
+    var st = calState.zoneStroke;
+    if (st && st.type === "rect" && st.p1) {
+        parts.push(zoneMarkup({ type: "rect", x0: st.p0.x, y0: st.p0.y, x1: st.p1.x, y1: st.p1.y }, "ko-zone ko-draft"));
+    } else if (st && st.type === "poly" && st.pts.length > 1) {
+        parts.push(zoneMarkup({ type: "poly", pts: st.pts }, "ko-zone ko-draft"));
+    }
+    g.innerHTML = parts.join("");
+}
+
+function saveZones() {
+    fabmo.setConfig({ machine: { keepout: { zones: calState.zones, savedAt: Date.now() } } }, function (err) {
+        if (err) fabmo.notify("error", "Saving keep-out zones failed: " + err);
+    });
+}
+
+// ---- zone edit mode ----
+
+function setZoneTool(tool) {
+    calState.zoneTool = tool;
+    ["rect", "draw", "erase"].forEach(function (t) {
+        document.getElementById("btn-zone-" + t).classList.toggle("active", t === tool);
+    });
+    var hints = {
+        rect: "Drag a rectangle around the obstacle",
+        draw: "Draw around the obstacle freehand",
+        erase: "Tap a zone to remove it",
+    };
+    document.getElementById("zone-hint").textContent = hints[tool];
+}
+
+function enterZoneMode() {
+    if (!calForDisplayed()) return;
+    calState.zoneMode = true;
+    document.getElementById("zone-bar").style.display = "flex";
+    document.getElementById("zone-capture").style.display = "block";
+    document.getElementById("btn-calibrate").style.display = "none";
+    setZoneTool(calState.zoneTool || "rect");
+    refreshLiveOverlay();
+}
+
+function exitZoneMode() {
+    calState.zoneMode = false;
+    calState.zoneStroke = null;
+    document.getElementById("zone-bar").style.display = "none";
+    document.getElementById("zone-capture").style.display = "none";
+    document.getElementById("btn-calibrate").style.display = "inline-block";
+    refreshLiveOverlay();
+}
+
+function setupZones() {
+    var capture = document.getElementById("zone-capture");
+
+    document.getElementById("btn-zones").onclick = enterZoneMode;
+    document.getElementById("btn-zone-done").onclick = exitZoneMode;
+    ["rect", "draw", "erase"].forEach(function (t) {
+        document.getElementById("btn-zone-" + t).onclick = function () { setZoneTool(t); };
+    });
+
+    capture.addEventListener("pointerdown", function (e) {
+        if (!calState.zoneMode) return;
+        e.preventDefault();
+        capture.setPointerCapture(e.pointerId);
+        var p = screenToMachine(e.clientX, e.clientY);
+        if (!p) return;
+        if (calState.zoneTool === "erase") {
+            // Topmost (most recent) zone under the tap goes away
+            for (var i = calState.zones.length - 1; i >= 0; i--) {
+                if (pointInZone(calState.zones[i], p)) {
+                    calState.zones.splice(i, 1);
+                    saveZones();
+                    renderZones();
+                    break;
+                }
+            }
+            return;
+        }
+        calState.zoneStroke = calState.zoneTool === "rect"
+            ? { type: "rect", p0: p, p1: null }
+            : { type: "poly", pts: [[p.x, p.y]] };
+    });
+
+    capture.addEventListener("pointermove", function (e) {
+        var st = calState.zoneStroke;
+        if (!st) return;
+        var p = screenToMachine(e.clientX, e.clientY);
+        if (!p) return;
+        if (st.type === "rect") {
+            st.p1 = p;
+        } else {
+            var last = st.pts[st.pts.length - 1];
+            var d = Math.hypot(p.x - last[0], p.y - last[1]);
+            if (d >= ZONE_PT_SPACING && st.pts.length < ZONE_MAX_PTS) st.pts.push([p.x, p.y]);
+        }
+        renderZones();
+    });
+
+    var finish = function () {
+        var st = calState.zoneStroke;
+        calState.zoneStroke = null;
+        if (!st) return;
+        var zone = null;
+        if (st.type === "rect" && st.p1) {
+            var area = Math.abs(st.p1.x - st.p0.x) * Math.abs(st.p1.y - st.p0.y);
+            if (area >= ZONE_MIN_AREA) {
+                zone = { id: "z" + Date.now(), type: "rect", x0: st.p0.x, y0: st.p0.y, x1: st.p1.x, y1: st.p1.y };
+            }
+        } else if (st.type === "poly" && st.pts.length >= 3 && polyArea(st.pts) >= ZONE_MIN_AREA) {
+            zone = { id: "z" + Date.now(), type: "poly", pts: st.pts };
+        }
+        if (zone) {
+            calState.zones.push(zone);
+            saveZones();
+        }
+        renderZones();
+    };
+    capture.addEventListener("pointerup", finish);
+    capture.addEventListener("pointercancel", finish);
 }
