@@ -1,0 +1,19 @@
+{
+    "_meta": {
+        "app": "hello-i18n",
+        "language": "Deutsch",
+        "code": "de"
+    },
+    "hello-i18n": {
+        "title": "Hallo, i18n!",
+        "intro": "Dies ist eine FabMo-Beispiel-App, die die App-spezifische Übersetzungskonvention demonstriert.",
+        "buttons": {
+            "greet": "Begrüße mich",
+            "reset": "Zurücksetzen"
+        },
+        "tooltips": {
+            "greet": "Klicken Sie, um eine Begrüßung in der aktiven Sprache anzuzeigen"
+        },
+        "greeting": "Hallo, Welt!"
+    }
+}
