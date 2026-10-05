@@ -35,11 +35,16 @@ function setupAppNavigation() {
         localStorage.setItem("backapp", back_App);
     } 
 
-    // Escape key to return to previous app
+    // Escape key: cancel calibration if one is open, else return to the
+    // previous app
     document.onkeyup = function (evt) {
         if (evt.key === "Escape") {
             evt.preventDefault();
-            fabmo.launchApp(back_App);
+            if (calState.calibrating) {
+                exitCalibration();
+            } else {
+                fabmo.launchApp(back_App);
+            }
         }
     };
 }
@@ -77,15 +82,18 @@ async function setupCameras(img1, img2) {
         img1.style.display = 'block';
         img2.style.display = 'none';
         document.getElementById("cam-label").innerHTML = "camera 1";
+        calState.displayedCam = 1;
         console.log("Displaying camera 1");
     } else if (cameraStatus.camera2) {
         img1.style.display = 'none';
         img2.style.display = 'block';
         document.getElementById("cam-label").innerHTML = "camera 2";
+        calState.displayedCam = 2;
         console.log("Displaying camera 2");
     }
-    
+
     setupCameraToggle(img1, img2, cameraStatus.count);
+    setupCalibration();
 }
 
 function displayNoCamera() {
@@ -98,18 +106,22 @@ function setupCameraToggle(img1, img2, videoCount) {
     if (videoCount < 2) return;
 
     img1.onclick = function() {
-        if (camera2_on) {
+        if (camera2_on && !calState.calibrating) {
             img1.style.display = 'none';
             img2.style.display = 'block';
             document.getElementById("cam-label").innerHTML = "camera 2";
+            calState.displayedCam = 2;
+            refreshLiveOverlay();
         }
     };
-    
+
     img2.onclick = function() {
-        if (camera1_on) {
+        if (camera1_on && !calState.calibrating) {
             img1.style.display = 'block';
             img2.style.display = 'none';
             document.getElementById("cam-label").innerHTML = "camera 1";
+            calState.displayedCam = 1;
+            refreshLiveOverlay();
         }
     };
 }
@@ -156,3 +168,383 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+// ---------------------------------------------------------------------------
+// AR calibration + live overlay
+//
+// The same four-corner calibration the previewer and the FabMo Dashboard's
+// Shop Tools AR consume, available without loading a job: a machine-envelope
+// grid is warped onto the video by a 4-point homography, and the user drags
+// the corner handles (with a magnifying loupe, since a finger or cursor sits
+// exactly on the corner it is trying to hit) until the grid lies on the
+// table. Corners are stored as fractions of the video frame in
+// machine.cameraCalibration — TL = machine (xmin, ymax), the shared
+// convention. When a calibration exists for the displayed camera, a subtle
+// live grid and a real-time position crosshair can be overlaid on the feed.
+
+var calState = {
+    env: null,            // machine.envelope
+    g55: { x: 0, y: 0 },  // work offset, to place the position crosshair
+    cal: null,            // machine.cameraCalibration
+    draft: null,          // working corners during calibration
+    calibrating: false,
+    displayedCam: 1,
+    dragKey: null,
+    loupeRAF: null,
+    gridOn: true,
+    pos: { x: 0, y: 0 },
+};
+
+var GRID_K = 10; // SVG px per machine unit — arbitrary, the warp rescales
+
+// 4-point homography (same closed form as the previewer/Shop Tools AR)
+function h_squareToQuad(p) {
+    var dx1 = p[1][0] - p[2][0], dx2 = p[3][0] - p[2][0], sx = p[0][0] - p[1][0] + p[2][0] - p[3][0];
+    var dy1 = p[1][1] - p[2][1], dy2 = p[3][1] - p[2][1], sy = p[0][1] - p[1][1] + p[2][1] - p[3][1];
+    var det = dx1 * dy2 - dx2 * dy1;
+    var g = (sx * dy2 - dx2 * sy) / det;
+    var h = (dx1 * sy - sx * dy1) / det;
+    return [
+        [p[1][0] - p[0][0] + g * p[1][0], p[3][0] - p[0][0] + h * p[3][0], p[0][0]],
+        [p[1][1] - p[0][1] + g * p[1][1], p[3][1] - p[0][1] + h * p[3][1], p[0][1]],
+        [g, h, 1],
+    ];
+}
+function h_inverse3(m) {
+    var a = m[0][0], b = m[0][1], c = m[0][2];
+    var d = m[1][0], e = m[1][1], f = m[1][2];
+    var g = m[2][0], h = m[2][1], i = m[2][2];
+    var det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
+    return [
+        [(e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det],
+        [(f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det],
+        [(d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det],
+    ];
+}
+function h_mul3(a, b) {
+    var r = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (var i = 0; i < 3; i++)
+        for (var j = 0; j < 3; j++)
+            r[i][j] = a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j];
+    return r;
+}
+function h_quadToQuad(src, dst) {
+    return h_mul3(h_squareToQuad(dst), h_inverse3(h_squareToQuad(src)));
+}
+function h_toMatrix3d(H) {
+    return "matrix3d(" + [
+        H[0][0], H[1][0], 0, H[2][0],
+        H[0][1], H[1][1], 0, H[2][1],
+        0, 0, 1, 0,
+        H[0][2], H[1][2], 0, H[2][2],
+    ].map(function (n) { return n.toFixed(8); }).join(",") + ")";
+}
+
+function envSpans() {
+    var e = calState.env || {};
+    var xs = Number(e.xmax) - (Number(e.xmin) || 0);
+    var ys = Number(e.ymax) - (Number(e.ymin) || 0);
+    return (xs > 0 && ys > 0) ? { xspan: xs, yspan: ys } : null;
+}
+
+// A round gridline pitch giving a handful of cells per axis
+function gridStep(span) {
+    var steps = [1, 2, 5, 6, 10, 12, 24, 25, 50, 100, 250, 500];
+    var best = steps[0];
+    for (var i = 0; i < steps.length; i++) {
+        if (span / steps[i] >= 3) best = steps[i];
+    }
+    return best;
+}
+
+// Build the envelope grid into an svg: border, gridlines, origin marker.
+// SVG y runs down, machine y runs up, so the svg top edge is machine ymax
+// (the TL corner convention). `strong` = calibration mode styling.
+function buildGrid(svg, strong) {
+    var s = envSpans();
+    if (!s) return false;
+    var W = s.xspan * GRID_K, H = s.yspan * GRID_K;
+    svg.setAttribute("width", W);
+    svg.setAttribute("height", H);
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var line = strong ? "rgba(41,128,185,0.9)" : "rgba(41,128,185,0.45)";
+    var halo = 'paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round"';
+    var parts = [];
+    var step = gridStep(Math.min(s.xspan, s.yspan)) * GRID_K;
+    for (var x = step; x < W; x += step)
+        parts.push('<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + H + '" stroke="' + line + '" stroke-width="1"/>');
+    for (var y = step; y < H; y += step)
+        parts.push('<line x1="0" y1="' + (H - y) + '" x2="' + W + '" y2="' + (H - y) + '" stroke="' + line + '" stroke-width="1"/>');
+    parts.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="none" stroke="' + line + '" stroke-width="4"/>');
+    // Origin marker + axis arrows at machine (0,0) = svg bottom-left
+    var ax = 0, ay = H;
+    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + (ax + 3 * GRID_K) + '" y2="' + ay + '" stroke="#c0392b" stroke-width="3"/>');
+    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + ax + '" y2="' + (ay - 3 * GRID_K) + '" stroke="#27ae60" stroke-width="3"/>');
+    parts.push('<text x="' + (ax + 3.6 * GRID_K) + '" y="' + (ay - 2) + '" font-size="' + 1.8 * GRID_K + '" fill="#1a252f" ' + halo + '>X</text>');
+    parts.push('<text x="' + (ax + 2) + '" y="' + (ay - 3.6 * GRID_K) + '" font-size="' + 1.8 * GRID_K + '" fill="#1a252f" ' + halo + '>Y</text>');
+    parts.push('<text x="' + (ax + 4) + '" y="' + (ay - 4) + '" font-size="' + 1.6 * GRID_K + '" fill="#1a252f" ' + halo + '>0,0</text>');
+    svg.innerHTML = parts.join("");
+    return true;
+}
+
+function warpGrid(svg, corners) {
+    var w = window.innerWidth, h = window.innerHeight;
+    var W = +svg.getAttribute("width"), H = +svg.getAttribute("height");
+    if (!w || !h || !W || !H) return;
+    var Hm = h_quadToQuad(
+        [[0, 0], [W, 0], [W, H], [0, H]],
+        [[corners.tl.x * w, corners.tl.y * h], [corners.tr.x * w, corners.tr.y * h],
+         [corners.br.x * w, corners.br.y * h], [corners.bl.x * w, corners.bl.y * h]]
+    );
+    svg.style.transform = h_toMatrix3d(Hm);
+}
+
+function activeImg() {
+    return document.getElementById(calState.displayedCam === 2 ? "camera2" : "camera1");
+}
+
+function refreshARConfig(cb) {
+    fabmo.getConfig(function (err, data) {
+        if (!err && data) {
+            calState.env = (data.machine && data.machine.envelope) || null;
+            calState.cal = (data.machine && data.machine.cameraCalibration) || null;
+            var d = data.driver || {};
+            calState.g55.x = Number(d.g55x) || 0;
+            calState.g55.y = Number(d.g55y) || 0;
+        }
+        cb && cb();
+    });
+}
+
+// ---- live overlay (grid wash + position crosshair) ----
+
+function calForDisplayed() {
+    var c = calState.cal;
+    return (c && c.calibrated && c.corners && c.corners.tl && c.corners.tr &&
+        c.corners.br && c.corners.bl && (c.port || 1) === calState.displayedCam) ? c : null;
+}
+
+function refreshLiveOverlay() {
+    var live = document.getElementById("live-grid");
+    var gridBtn = document.getElementById("btn-grid");
+    var c = calForDisplayed();
+    if (c && !calState.calibrating && buildGrid(live, false)) {
+        warpGrid(live, c.corners);
+        live.style.display = calState.gridOn ? "block" : "none";
+        gridBtn.style.display = "inline-block";
+        gridBtn.classList.toggle("active", calState.gridOn);
+        updateCrosshair();
+    } else {
+        live.style.display = "none";
+        gridBtn.style.display = "none";
+    }
+}
+
+function updateCrosshair() {
+    var live = document.getElementById("live-grid");
+    var s = envSpans();
+    if (!s || live.style.display === "none") return;
+    var e = calState.env;
+    var mx = Math.max(0, Math.min(s.xspan, calState.pos.x + calState.g55.x - (Number(e.xmin) || 0)));
+    var my = Math.max(0, Math.min(s.yspan, calState.pos.y + calState.g55.y - (Number(e.ymin) || 0)));
+    var px = mx * GRID_K;
+    var py = (s.yspan - my) * GRID_K;
+    var g = live.querySelector("#cam-pos");
+    if (!g) {
+        g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("id", "cam-pos");
+        g.innerHTML =
+            '<line x1="-12" y1="0" x2="12" y2="0" stroke="#fff" stroke-width="6" stroke-linecap="round"/>' +
+            '<line x1="0" y1="-12" x2="0" y2="12" stroke="#fff" stroke-width="6" stroke-linecap="round"/>' +
+            '<line x1="-12" y1="0" x2="12" y2="0" stroke="#c0392b" stroke-width="2.5"/>' +
+            '<line x1="0" y1="-12" x2="0" y2="12" stroke="#c0392b" stroke-width="2.5"/>' +
+            '<circle cx="0" cy="0" r="5" fill="none" stroke="#c0392b" stroke-width="2.5"/>';
+        live.appendChild(g);
+    }
+    g.setAttribute("transform", "translate(" + px + " " + py + ")");
+}
+
+// ---- calibration mode ----
+
+function calHandles() {
+    return Array.prototype.slice.call(document.querySelectorAll(".cal-handle"));
+}
+
+function positionHandles() {
+    var w = window.innerWidth, h = window.innerHeight;
+    calHandles().forEach(function (el) {
+        var p = calState.draft[el.getAttribute("data-corner")];
+        el.style.left = (p.x * w) + "px";
+        el.style.top = (p.y * h) + "px";
+    });
+}
+
+function redrawCalibration() {
+    warpGrid(document.getElementById("cal-grid"), calState.draft);
+    positionHandles();
+}
+
+function enterCalibration() {
+    if (!envSpans()) {
+        fabmo.notify("warning", "No machine envelope configured - cannot calibrate.");
+        return;
+    }
+    var c = calForDisplayed();
+    calState.draft = c ? JSON.parse(JSON.stringify(c.corners)) : {
+        tl: { x: 0.15, y: 0.15 }, tr: { x: 0.85, y: 0.15 },
+        br: { x: 0.85, y: 0.85 }, bl: { x: 0.15, y: 0.85 },
+    };
+    calState.calibrating = true;
+    buildGrid(document.getElementById("cal-grid"), true);
+    document.getElementById("cal-grid").style.display = "block";
+    document.getElementById("cal-bar").style.display = "flex";
+    document.getElementById("live-grid").style.display = "none";
+    document.getElementById("btn-grid").style.display = "none";
+    document.getElementById("btn-calibrate").style.display = "none";
+    calHandles().forEach(function (el) { el.style.display = "block"; });
+    redrawCalibration();
+}
+
+function exitCalibration() {
+    calState.calibrating = false;
+    calState.draft = null;
+    hideLoupe();
+    document.getElementById("cal-grid").style.display = "none";
+    document.getElementById("cal-bar").style.display = "none";
+    document.getElementById("btn-calibrate").style.display = "inline-block";
+    calHandles().forEach(function (el) { el.style.display = "none"; });
+    refreshLiveOverlay();
+}
+
+function saveCalibration() {
+    calState.cal = {
+        corners: calState.draft,
+        port: calState.displayedCam,
+        savedAt: Date.now(),
+        calibrated: true,
+    };
+    fabmo.setConfig({ machine: { cameraCalibration: calState.cal } }, function (err) {
+        if (err) fabmo.notify("error", "Saving calibration failed: " + err);
+        else fabmo.notify("success", "AR calibration saved.");
+    });
+    exitCalibration();
+}
+
+// ---- loupe (ported from the previewer): a magnified live crop of the
+// MJPEG <img> rides over the held corner, since the finger/cursor sits
+// exactly on the point being aimed at. Cross-origin drawImage is fine for
+// display; only pixel readback would taint.
+
+var LOUPE_ZOOM = 3;
+var LOUPE_TOUCH_LIFT = 90;
+
+function drawLoupe(touchLift) {
+    var loupe = document.getElementById("cal-loupe");
+    var canvas = loupe.querySelector("canvas");
+    var p = calState.draft && calState.draft[calState.dragKey];
+    if (!canvas || !p) return;
+    var w = window.innerWidth, h = window.innerHeight;
+    var diamCss = loupe.clientWidth || 148;
+    var dpr = window.devicePixelRatio || 1;
+    var diamDev = Math.round(diamCss * dpr);
+    if (canvas.width !== diamDev) canvas.width = canvas.height = diamDev;
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    var img = activeImg();
+    if (img && img.naturalWidth && img.naturalHeight && w && h) {
+        // object-fit:fill → X and Y display scales differ; crop per axis
+        var cropW = (diamCss / LOUPE_ZOOM) * (img.naturalWidth / w);
+        var cropH = (diamCss / LOUPE_ZOOM) * (img.naturalHeight / h);
+        var sx = p.x * img.naturalWidth - cropW / 2;
+        var sy = p.y * img.naturalHeight - cropH / 2;
+        var vx0 = Math.max(0, sx), vy0 = Math.max(0, sy);
+        var vx1 = Math.min(img.naturalWidth, sx + cropW);
+        var vy1 = Math.min(img.naturalHeight, sy + cropH);
+        if (vx1 > vx0 && vy1 > vy0) {
+            var kx = canvas.width / cropW, ky = canvas.height / cropH;
+            try {
+                ctx.drawImage(img, vx0, vy0, vx1 - vx0, vy1 - vy0,
+                    (vx0 - sx) * kx, (vy0 - sy) * ky,
+                    (vx1 - vx0) * kx, (vy1 - vy0) * ky);
+            } catch (err) { /* stream not decodable yet — leave black */ }
+        }
+    }
+    // Crosshair at the precise anchor
+    var mid = canvas.width / 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 2 * dpr;
+    ctx.beginPath();
+    ctx.moveTo(mid - 14 * dpr, mid); ctx.lineTo(mid + 14 * dpr, mid);
+    ctx.moveTo(mid, mid - 14 * dpr); ctx.lineTo(mid, mid + 14 * dpr);
+    ctx.stroke();
+    loupe.style.left = (p.x * w) + "px";
+    loupe.style.top = (p.y * h - touchLift) + "px";
+}
+
+function showLoupe(isTouch) {
+    var lift = isTouch ? LOUPE_TOUCH_LIFT : 0;
+    document.querySelector('.cal-handle[data-corner="' + calState.dragKey + '"]').classList.add("loupe-active");
+    document.getElementById("cal-loupe").style.display = "block";
+    var tick = function () {
+        if (!calState.dragKey) return;
+        drawLoupe(lift);
+        calState.loupeRAF = requestAnimationFrame(tick);
+    };
+    drawLoupe(lift);
+    calState.loupeRAF = requestAnimationFrame(tick);
+}
+
+function hideLoupe() {
+    if (calState.loupeRAF) { cancelAnimationFrame(calState.loupeRAF); calState.loupeRAF = null; }
+    document.getElementById("cal-loupe").style.display = "none";
+    calHandles().forEach(function (el) { el.classList.remove("loupe-active"); });
+}
+
+// ---- wiring ----
+
+function setupCalibration() {
+    refreshARConfig(function () {
+        if (envSpans()) document.getElementById("btn-calibrate").style.display = "inline-block";
+        refreshLiveOverlay();
+    });
+
+    document.getElementById("btn-calibrate").onclick = enterCalibration;
+    document.getElementById("btn-cal-save").onclick = saveCalibration;
+    document.getElementById("btn-cal-cancel").onclick = exitCalibration;
+    document.getElementById("btn-grid").onclick = function () {
+        calState.gridOn = !calState.gridOn;
+        refreshLiveOverlay();
+    };
+
+    calHandles().forEach(function (el) {
+        el.addEventListener("pointerdown", function (e) {
+            if (!calState.calibrating) return;
+            e.preventDefault();
+            calState.dragKey = el.getAttribute("data-corner");
+            showLoupe(e.pointerType === "touch");
+        });
+    });
+    document.addEventListener("pointermove", function (e) {
+        if (!calState.dragKey) return;
+        var p = calState.draft[calState.dragKey];
+        p.x = Math.max(0, Math.min(1, e.clientX / window.innerWidth));
+        p.y = Math.max(0, Math.min(1, e.clientY / window.innerHeight));
+        redrawCalibration();
+    });
+    document.addEventListener("pointerup", function () {
+        if (!calState.dragKey) return;
+        calState.dragKey = null;
+        hideLoupe();
+    });
+
+    window.addEventListener("resize", function () {
+        if (calState.calibrating) redrawCalibration();
+        else refreshLiveOverlay();
+    });
+
+    fabmo.on("status", function (status) {
+        calState.pos.x = Number(status.posx) || 0;
+        calState.pos.y = Number(status.posy) || 0;
+        updateCrosshair();
+    });
+}
