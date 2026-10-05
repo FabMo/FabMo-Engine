@@ -281,7 +281,18 @@ const { last } = require("underscore");
                     if (axis === "z" && status[pos] >= 0) {
                         posText = " ";
                     }
-                    posText = posText + status[pos].toFixed(digits); // <================ LOCATION DISPLAY
+                    // Rotary degrees don't need linear precision — 2 decimals
+                    // keeps big angles (-156.12) from blowing out the DRO
+                    // width. Same condition the °-marker uses (<axis>am === 1).
+                    var axDigits = digits;
+                    if (
+                        (axis === "a" || axis === "b" || axis === "c") &&
+                        that.tool.config.driver &&
+                        that.tool.config.driver[axis + "am"] === 1
+                    ) {
+                        axDigits = 2;
+                    }
+                    posText = posText + status[pos].toFixed(axDigits); // <================ LOCATION DISPLAY
                 } catch (e) {
                     var posText = (pos + "." + pos + pos + pos).toUpperCase();
                 }

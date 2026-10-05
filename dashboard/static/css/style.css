@@ -545,6 +545,19 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	padding-right: 10px;
 }
 
+/* Top-bar DRO: long values (rotary A at -156.12) must widen the bar, not
+   push the next axis onto a second line. The fixed-width right-aligned
+   value box also stops the bar from jittering as digits change. */
+.sm-axes {
+	white-space: nowrap;
+}
+.sm-axes .posx, .sm-axes .posy, .sm-axes .posz,
+.sm-axes .posa, .sm-axes .posb, .sm-axes .posc {
+	display: inline-block;
+	min-width: 7ch;
+	text-align: right;
+}
+
 .machine-pos .a-rotunits, .machine-pos .b-rotunits, .machine-pos .c-rotunits {
     font-size: 10px;
     text-transform: lowercase;
@@ -569,9 +582,19 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	color: #fff;
 	font-size: 1.8rem;
 	font-family: 'Droid_Sans_Mono';
+	/* The value floats right; without nowrap a long value (A: -156.12)
+	   drops below the axis letter and breaks the row grid. */
+	white-space: nowrap;
 }
 .machine-pos-large span {
 	float: right;
+}
+/* Values slightly smaller than the axis letter so a full-width rotary
+   reading fits the 222px panel on one line. */
+.machine-pos-large .posx, .machine-pos-large .posy, .machine-pos-large .posz,
+.machine-pos-large .posa, .machine-pos-large .posb, .machine-pos-large .posc {
+	font-size: 1.55rem;
+	line-height: 1.6;
 }
 /* Unit marker right of the position number ("in"/"mm" via .units on X/Y/Z,
    degree kludge via .*-rotunits on A/B/C). Both spans float right, so the
