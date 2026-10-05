@@ -440,7 +440,8 @@ body {
 /* Table saw panel: in-place editing on the map. The floating input is
    parked (hidden) inside .ts-st-env and positioned by stsOpenEdit over
    whichever value label was clicked. */
-#sts-edit {
+#sts-edit,
+#stp-edit {
     display: none;
     position: absolute;
     width: 3.9em;
@@ -456,11 +457,15 @@ body {
     z-index: 3;
 }
 #sts-edit::-webkit-outer-spin-button,
-#sts-edit::-webkit-inner-spin-button {
+#sts-edit::-webkit-inner-spin-button,
+#stp-edit::-webkit-outer-spin-button,
+#stp-edit::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 #sts-env-svg [data-edit] { cursor: pointer; }
+#stp-env-svg [data-edit] { cursor: pointer; }
+#stp-env-svg [data-edit]:hover { fill: #2980b9; }
 #sts-env-svg [data-handle] { cursor: grab; }
 /* Cut-type buttons (rip | / crosscut —) ride the header row with CUT;
    angled mode has no button — dragging a boundary handle discovers it. */
