@@ -2537,13 +2537,7 @@ $(document).ready(function () {
         $inp[0].select();
     }
 
-    function stpCommitEdit() {
-        var key = stpEditKey;
-        var v = parseFloat($("#stp-edit").val());
-        stpEditKey = null;
-        stpEditCooldown = Date.now() + 400;
-        $("#stp-edit").hide();
-        if (!key || !isFinite(v)) return;
+    function stpApplyEdit(key, v) {
         var s = stpSpans();
         var p = stPlaner;
         if (key === "x0") p.x0 = Math.max(0, Math.min(p.x1, v));
@@ -2554,6 +2548,16 @@ $(document).ready(function () {
         else if (key === "y1r") p.y1 = Math.max(p.y0, Math.min(s.yspan, s.yspan - v));
         stpSave();
         renderStpEnv();
+    }
+
+    function stpCommitEdit() {
+        var key = stpEditKey;
+        var v = parseFloat($("#stp-edit").val());
+        stpEditKey = null;
+        stpEditCooldown = Date.now() + 400;
+        $("#stp-edit").hide();
+        if (!key || !isFinite(v)) return;
+        stpApplyEdit(key, v);
     }
 
     $("#stp-env-svg").on("pointerenter click", "[data-edit]", function () {
@@ -2569,6 +2573,57 @@ $(document).ready(function () {
         }
     });
     $("#stp-edit").on("blur", stpCommitEdit);
+
+    // ---- AR in-place editing ----
+    // stArSync copies the labels with their data-edit/data-val tags, so
+    // the projection is editable the same way the flat maps are: hover
+    // (or tap) floats #st-ar-edit over the warped label — its screen
+    // rect is already post-warp, so plain absolute positioning lands it
+    // right — and commits run through the same appliers as the flat
+    // inputs, routed by which tool the stage is showing. The cooldown is
+    // shared with the flat map: a commit re-renders both copies.
+    var arEditKey = null;
+
+    function arOpenEdit(el, key, value) {
+        if (Date.now() < stpEditCooldown) return;
+        var $inp = $("#st-ar-edit");
+        if (arEditKey === key && $inp.is(":visible")) return;
+        if (arEditKey) $inp.blur(); // commit whatever is already open
+        var stage = document.getElementById("st-ar-stage");
+        var sb = stage.getBoundingClientRect();
+        var eb = el.getBoundingClientRect();
+        arEditKey = key;
+        var left = Math.max(0, Math.min(sb.width - 54, eb.left + eb.width / 2 - sb.left - 27));
+        var top = Math.max(0, Math.min(sb.height - 20, eb.top + eb.height / 2 - sb.top - 10));
+        $inp.val(value).css({ left: left + "px", top: top + "px" }).show();
+        $inp[0].focus();
+        $inp[0].select();
+    }
+
+    function arCommitEdit() {
+        var key = arEditKey;
+        var v = parseFloat($("#st-ar-edit").val());
+        arEditKey = null;
+        stpEditCooldown = Date.now() + 400;
+        $("#st-ar-edit").hide();
+        if (!key || !isFinite(v)) return;
+        if (stAr.tool === "planer") stpApplyEdit(key, v);
+        else if (stAr.tool === "tablesaw") stsApplyEdit(key, v);
+    }
+
+    $("#st-ar-svg").on("pointerenter click", "[data-edit]", function () {
+        var val = parseFloat($(this).attr("data-val"));
+        arOpenEdit(this, $(this).attr("data-edit"), isFinite(val) ? val : 0);
+    });
+    $("#st-ar-edit").on("keydown", function (e) {
+        if (e.key === "Enter") $(this).blur();
+        if (e.key === "Escape") {
+            arEditKey = null;
+            stpEditCooldown = Date.now() + 400;
+            $(this).hide();
+        }
+    });
+    $("#st-ar-edit").on("blur", arCommitEdit);
 
     // Planer parameter inputs
     $("#stp-bit, #stp-step, #stp-depth").on("change", function () {
@@ -2723,12 +2778,7 @@ $(document).ready(function () {
         $inp[0].select();
     }
 
-    function stsCommitEdit() {
-        var key = stsEditKey;
-        var v = parseFloat($("#sts-edit").val());
-        stsEditKey = null;
-        $("#sts-edit").hide();
-        if (!key || !isFinite(v)) return;
+    function stsApplyEdit(key, v) {
         if (key === "angle") {
             stSaw.angle = Math.round((((v % 180) + 180) % 180) * 10) / 10;
             if (stsOffAxis(stSaw.angle)) stsAngleMode = true;
@@ -2737,6 +2787,15 @@ $(document).ready(function () {
         }
         stsSave();
         renderStsEnv();
+    }
+
+    function stsCommitEdit() {
+        var key = stsEditKey;
+        var v = parseFloat($("#sts-edit").val());
+        stsEditKey = null;
+        $("#sts-edit").hide();
+        if (!key || !isFinite(v)) return;
+        stsApplyEdit(key, v);
     }
 
     $("#sts-env-svg").on("click", "[data-edit]", function () {

@@ -441,7 +441,8 @@ body {
    parked (hidden) inside .ts-st-env and positioned by stsOpenEdit over
    whichever value label was clicked. */
 #sts-edit,
-#stp-edit {
+#stp-edit,
+#st-ar-edit {
     display: none;
     position: absolute;
     width: 3.9em;
@@ -459,9 +460,19 @@ body {
 #sts-edit::-webkit-outer-spin-button,
 #sts-edit::-webkit-inner-spin-button,
 #stp-edit::-webkit-outer-spin-button,
-#stp-edit::-webkit-inner-spin-button {
+#stp-edit::-webkit-inner-spin-button,
+#st-ar-edit::-webkit-outer-spin-button,
+#st-ar-edit::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
+}
+/* The AR input floats over the full-screen stage (its labels keep their
+   data-edit tags through the stArSync copy); labels must opt back into
+   pointer events — the AR svg disables them so the video stays grabbable. */
+#st-ar-edit { z-index: 10; }
+#st-ar-svg [data-edit] {
+    pointer-events: auto;
+    cursor: pointer;
 }
 #sts-env-svg [data-edit] { cursor: pointer; }
 #stp-env-svg [data-edit] { cursor: pointer; }
