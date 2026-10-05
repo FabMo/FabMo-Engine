@@ -107,6 +107,23 @@ describe("checkAgainstZones", function () {
         expect(r.approximate).toBe(true);
     });
 
+    test("current machine position replaces the simulator's assumed start", function () {
+        // File: single cut to (0,0). Simulated from (0,0,0) the path never
+        // moves — but started from (96,0) the first segment sweeps the
+        // whole bottom edge through the zone.
+        var zone = { id: "edge", type: "rect", x0: 46, y0: 0, x1: 58, y1: 7 };
+        var jb = {
+            min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 },
+            path: [[0, 0, 0, 0], [0, 0, 0, 1]],
+        };
+        expect(bounds.checkAgainstZones(jb, [zone], {}).enters).toBe(false);
+        var r = bounds.checkAgainstZones(jb, [zone], {}, { x: 96, y: 0, z: 0 });
+        expect(r.enters).toBe(true);
+        expect(r.cuts).toEqual(["edge"]);
+        // The stored path must not be mutated by the substitution
+        expect(jb.path[0]).toEqual([0, 0, 0, 0]);
+    });
+
     test("multiple zones each reported once", function () {
         var r = bounds.checkAgainstZones(
             job([[0, 15, 0], [50, 15, 0], [35, 13, 0]]),

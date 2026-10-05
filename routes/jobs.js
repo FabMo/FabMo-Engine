@@ -188,7 +188,15 @@ function evaluateJobBoundsAgainstZones(jobBounds) {
         y: config.driver.get("g55y") || 0,
         z: config.driver.get("g55z") || 0,
     };
-    return bounds.checkAgainstZones(jobBounds, zones, g55);
+    // The file's first segment runs from wherever the machine currently
+    // sits (status pos, work coords) — not from the simulator's assumed
+    // (0,0,0) start.
+    var startPos = null;
+    var st = machine && machine.status;
+    if (st && typeof st.posx === "number" && typeof st.posy === "number") {
+        startPos = { x: st.posx, y: st.posy, z: st.posz };
+    }
+    return bounds.checkAgainstZones(jobBounds, zones, g55, startPos);
 }
 
 var runNextJob = function (req, res, next) {

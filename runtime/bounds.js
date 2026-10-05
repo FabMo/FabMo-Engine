@@ -287,11 +287,25 @@ function segsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
     function ccw(px, py, qx, qy, rx, ry) {
         return (qx - px) * (ry - py) - (qy - py) * (rx - px);
     }
+    function onSeg(px, py, qx, qy, rx, ry) {
+        return (
+            Math.min(px, qx) <= rx && rx <= Math.max(px, qx) &&
+            Math.min(py, qy) <= ry && ry <= Math.max(py, qy)
+        );
+    }
     var d1 = ccw(cx, cy, dx, dy, ax, ay);
     var d2 = ccw(cx, cy, dx, dy, bx, by);
     var d3 = ccw(ax, ay, bx, by, cx, cy);
     var d4 = ccw(ax, ay, bx, by, dx, dy);
-    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+    if (((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0))) return true;
+    // Collinear touching counts: a path grazing a zone's boundary (e.g. a
+    // move along y=0 against a zone drawn to the table edge) is a hit, and
+    // symmetrically so regardless of travel direction.
+    if (d1 === 0 && onSeg(cx, cy, dx, dy, ax, ay)) return true;
+    if (d2 === 0 && onSeg(cx, cy, dx, dy, bx, by)) return true;
+    if (d3 === 0 && onSeg(ax, ay, bx, by, cx, cy)) return true;
+    if (d4 === 0 && onSeg(ax, ay, bx, by, dx, dy)) return true;
+    return false;
 }
 
 function zoneEdges(zone) {
@@ -333,13 +347,23 @@ function segmentHitsZone(zone, ax, ay, bx, by) {
 // detours are already in the stored path). Jobs scanned before path
 // storage existed fall back to a bounding-box overlap test
 // (approximate: true, reported under cuts conservatively).
-function checkAgainstZones(jobBounds, zones, g55) {
+function checkAgainstZones(jobBounds, zones, g55, startPos) {
     var result = { enters: false, zones: [], cuts: [], rapids: [], approximate: false };
     if (!jobBounds || !zones || !zones.length) return result;
     var offx = (g55 && typeof g55.x === "number") ? g55.x : 0;
     var offy = (g55 && typeof g55.y === "number") ? g55.y : 0;
     var offz = (g55 && typeof g55.z === "number") ? g55.z : 0;
     var path = jobBounds.path;
+    // The simulation assumes the file starts at (0,0,0), but the machine
+    // sits wherever it sits — the real first segment runs from the CURRENT
+    // position (work coords) to the file's first target. Substitute it for
+    // the assumed start so e.g. an opening M2,0,0 from across the table is
+    // checked over the ground it actually covers.
+    if (path && path.length > 1 && startPos &&
+        typeof startPos.x === "number" && typeof startPos.y === "number") {
+        path = path.slice();
+        path[0] = [startPos.x, startPos.y, typeof startPos.z === "number" ? startPos.z : path[0][2], path[0][3]];
+    }
 
     zones.forEach(function (zone) {
         if (!zone || (zone.type !== "rect" && zone.type !== "poly")) return;

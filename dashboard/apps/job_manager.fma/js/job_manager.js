@@ -389,7 +389,7 @@ function setFirstCard(job) {
   // stays correct after the user re-zeroes (VA/ZT/Z* — see location.js,
   // which fires `change`/`offsets` to retrigger this render path).
   var check = evaluateSoftLimits(job && job.bounds, configData);
-  var keepout = evaluateKeepout(job && job.bounds, configData);
+  var keepout = evaluateKeepout(job && job.bounds, configData, currentStatus);
   if ((check && check.exceeds) || (keepout && keepout.enters)) {
     var $play = $('.play-button').first();
     $play.addClass('exceeds-limits');
@@ -490,7 +490,7 @@ function evaluateSoftLimits(jobBounds, cfg) {
 // coords, drawn in the camera app) with the live g55 offset, so the badge
 // stays correct after re-zeroing. Jobs with no stored path (scanned before
 // path storage existed) fall back to a bounding-box overlap (approximate).
-function evaluateKeepout(jobBounds, cfg) {
+function evaluateKeepout(jobBounds, cfg, status) {
   if (!jobBounds || !cfg || !cfg.machine || !cfg.driver) return null;
   var zones = (cfg.machine.keepout && cfg.machine.keepout.zones) || [];
   if (!zones.length) return null;
@@ -512,9 +512,19 @@ function evaluateKeepout(jobBounds, cfg) {
   }
   function segsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
     function ccw(px, py, qx, qy, rx, ry) { return (qx - px) * (ry - py) - (qy - py) * (rx - px); }
+    function onSeg(px, py, qx, qy, rx, ry) {
+      return Math.min(px, qx) <= rx && rx <= Math.max(px, qx) &&
+             Math.min(py, qy) <= ry && ry <= Math.max(py, qy);
+    }
     var d1 = ccw(cx, cy, dx, dy, ax, ay), d2 = ccw(cx, cy, dx, dy, bx, by);
     var d3 = ccw(ax, ay, bx, by, cx, cy), d4 = ccw(ax, ay, bx, by, dx, dy);
-    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+    if (((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0))) return true;
+    // Collinear touching counts, symmetrically in both travel directions
+    if (d1 === 0 && onSeg(cx, cy, dx, dy, ax, ay)) return true;
+    if (d2 === 0 && onSeg(cx, cy, dx, dy, bx, by)) return true;
+    if (d3 === 0 && onSeg(ax, ay, bx, by, cx, cy)) return true;
+    if (d4 === 0 && onSeg(ax, ay, bx, by, dx, dy)) return true;
+    return false;
   }
   function zoneEdges(zone) {
     if (zone.type === 'rect') {
@@ -542,6 +552,14 @@ function evaluateKeepout(jobBounds, cfg) {
 
   var result = { enters: false, zones: [], approximate: false };
   var path = jobBounds.path;
+  // First segment runs from the machine's current position (work coords),
+  // not the simulator's assumed (0,0,0) start — mirror of the server check
+  if (path && path.length > 1 && status &&
+      typeof status.posx === 'number' && typeof status.posy === 'number') {
+    path = path.slice();
+    path[0] = [status.posx, status.posy,
+      typeof status.posz === 'number' ? status.posz : path[0][2], path[0][3]];
+  }
   zones.forEach(function (zone) {
     if (!zone || (zone.type !== 'rect' && zone.type !== 'poly')) return;
     var hit = false;

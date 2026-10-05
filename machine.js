@@ -1853,12 +1853,14 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
 
 // Pause the machine
 Machine.prototype.pause = function (callback) {
+    log.info("pause requested (state=" + this.status.state + ")");
     if (this.status.state === "running" || this.status.state === "probing") {
         if (this.current_runtime) {
-            log.debug("====> Handling .pause in Machine, to cur_runtime.pause()");
+            log.info("====> Handling .pause in Machine, to cur_runtime.pause()");
             this.current_runtime.pause();
             callback(null, "paused");
         } else {
+            log.warn("Not pausing: no runtime");
             callback("Not pausing because no runtime provided");
         }
     } else if (this.status.state === "paused") {
@@ -1872,6 +1874,7 @@ Machine.prototype.pause = function (callback) {
         }
         callback(null, "paused");
     } else {
+        log.warn("Not pausing: machine state is '" + this.status.state + "', not running");
         callback("Not pausing because machine is not running");
     }
 };
