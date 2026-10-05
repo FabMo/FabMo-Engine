@@ -389,22 +389,30 @@ function setFirstCard(job) {
   // stays correct after the user re-zeroes (VA/ZT/Z* — see location.js,
   // which fires `change`/`offsets` to retrigger this render path).
   var check = evaluateSoftLimits(job && job.bounds, configData);
-  if (check && check.exceeds) {
+  var keepout = evaluateKeepout(job && job.bounds, configData);
+  if ((check && check.exceeds) || (keepout && keepout.enters)) {
     var $play = $('.play-button').first();
     $play.addClass('exceeds-limits');
-    var msg = check.violations
-      .map(function (v) {
-        if (v.direction === 'span') {
-          return v.axis.toUpperCase() + ' range of file exceeds machine travel by ' + v.overage.toFixed(2);
-        }
-        return v.axis.toUpperCase() + ' ' + v.direction + ' by ' + v.overage.toFixed(2);
-      })
-      .join(', ');
+    var msgs = [];
+    if (check && check.exceeds) {
+      msgs.push(window.t('job_manager.notify.exceeds_soft_limits') + check.violations
+        .map(function (v) {
+          if (v.direction === 'span') {
+            return v.axis.toUpperCase() + ' range of file exceeds machine travel by ' + v.overage.toFixed(2);
+          }
+          return v.axis.toUpperCase() + ' ' + v.direction + ' by ' + v.overage.toFixed(2);
+        })
+        .join(', '));
+    }
+    if (keepout && keepout.enters) {
+      msgs.push('Toolpath ' + (keepout.approximate ? 'may enter' : 'enters') + ' ' +
+        keepout.zones.length + ' keep-out zone' + (keepout.zones.length === 1 ? '' : 's'));
+    }
     // Real DOM badge (instead of ::after) so it can carry its own tooltip —
     // the play icon's own `title` would otherwise shadow a title set on the
     // play button.
     var $badge = $('<span class="exceeds-limits-badge">!<span class="exceeds-limits-tooltip"></span></span>');
-    $badge.find('.exceeds-limits-tooltip').text(window.t('job_manager.notify.exceeds_soft_limits') + msg);
+    $badge.find('.exceeds-limits-tooltip').text(msgs.join('. '));
     $play.append($badge);
   }
 }
@@ -463,6 +471,100 @@ function evaluateSoftLimits(jobBounds, cfg) {
     }
   }
   return { exceeds: violations.length > 0, violations: violations };
+}
+
+// Mirror of runtime/bounds.js:checkAgainstZones — tests the job's stored
+// toolpath polyline (work coords) against machine.keepout.zones (machine
+// coords, drawn in the camera app) with the live g55 offset, so the badge
+// stays correct after re-zeroing. Jobs with no stored path (scanned before
+// path storage existed) fall back to a bounding-box overlap (approximate).
+function evaluateKeepout(jobBounds, cfg) {
+  if (!jobBounds || !cfg || !cfg.machine || !cfg.driver) return null;
+  var zones = (cfg.machine.keepout && cfg.machine.keepout.zones) || [];
+  if (!zones.length) return null;
+  var g55 = {
+    x: typeof cfg.driver.g55x === 'number' ? cfg.driver.g55x : 0,
+    y: typeof cfg.driver.g55y === 'number' ? cfg.driver.g55y : 0,
+    z: typeof cfg.driver.g55z === 'number' ? cfg.driver.g55z : 0
+  };
+
+  function pointInPoly(x, y, pts) {
+    var inside = false;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      if ((pts[i][1] > y) !== (pts[j][1] > y) &&
+          x < ((pts[j][0] - pts[i][0]) * (y - pts[i][1])) / (pts[j][1] - pts[i][1]) + pts[i][0]) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+  function segsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
+    function ccw(px, py, qx, qy, rx, ry) { return (qx - px) * (ry - py) - (qy - py) * (rx - px); }
+    var d1 = ccw(cx, cy, dx, dy, ax, ay), d2 = ccw(cx, cy, dx, dy, bx, by);
+    var d3 = ccw(ax, ay, bx, by, cx, cy), d4 = ccw(ax, ay, bx, by, dx, dy);
+    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+  }
+  function zoneEdges(zone) {
+    if (zone.type === 'rect') {
+      var x0 = Math.min(zone.x0, zone.x1), x1 = Math.max(zone.x0, zone.x1);
+      var y0 = Math.min(zone.y0, zone.y1), y1 = Math.max(zone.y0, zone.y1);
+      return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+    }
+    return zone.pts || [];
+  }
+  function pointInZone(zone, x, y) {
+    if (zone.type === 'rect') {
+      return x >= Math.min(zone.x0, zone.x1) && x <= Math.max(zone.x0, zone.x1) &&
+             y >= Math.min(zone.y0, zone.y1) && y <= Math.max(zone.y0, zone.y1);
+    }
+    return pointInPoly(x, y, zone.pts || []);
+  }
+  function segmentHitsZone(zone, ax, ay, bx, by) {
+    if (pointInZone(zone, ax, ay) || pointInZone(zone, bx, by)) return true;
+    var edges = zoneEdges(zone);
+    for (var i = 0, j = edges.length - 1; i < edges.length; j = i++) {
+      if (segsIntersect(ax, ay, bx, by, edges[j][0], edges[j][1], edges[i][0], edges[i][1])) return true;
+    }
+    return false;
+  }
+
+  var result = { enters: false, zones: [], approximate: false };
+  var path = jobBounds.path;
+  zones.forEach(function (zone) {
+    if (!zone || (zone.type !== 'rect' && zone.type !== 'poly')) return;
+    var hit = false;
+    if (path && path.length > 1) {
+      for (var i = 1; i < path.length; i++) {
+        var a = path[i - 1], b = path[i];
+        if (typeof zone.z === 'number' && g55.z !== 0 && Math.min(a[2], b[2]) + g55.z >= zone.z) continue;
+        if (segmentHitsZone(zone, a[0] + g55.x, a[1] + g55.y, b[0] + g55.x, b[1] + g55.y)) { hit = true; break; }
+      }
+    } else if (jobBounds.min && jobBounds.max) {
+      var bbox = {
+        type: 'rect',
+        x0: jobBounds.min.x + g55.x, y0: jobBounds.min.y + g55.y,
+        x1: jobBounds.max.x + g55.x, y1: jobBounds.max.y + g55.y
+      };
+      var edges = zoneEdges(zone);
+      for (var k = 0; k < edges.length && !hit; k++) {
+        if (pointInZone(bbox, edges[k][0], edges[k][1])) hit = true;
+      }
+      var bEdges = zoneEdges(bbox);
+      for (var m = 0; m < bEdges.length && !hit; m++) {
+        if (pointInZone(zone, bEdges[m][0], bEdges[m][1])) hit = true;
+      }
+      for (var p = 0, q = bEdges.length - 1; p < bEdges.length && !hit; q = p++) {
+        for (var r = 0, s = edges.length - 1; r < edges.length && !hit; s = r++) {
+          if (segsIntersect(bEdges[q][0], bEdges[q][1], bEdges[p][0], bEdges[p][1],
+                            edges[s][0], edges[s][1], edges[r][0], edges[r][1])) hit = true;
+        }
+      }
+      if (hit) result.approximate = true;
+    }
+    if (hit) result.zones.push(zone.id || zone.type);
+  });
+  result.enters = result.zones.length > 0;
+  return result;
 }
 
 

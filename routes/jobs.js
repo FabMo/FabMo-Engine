@@ -175,6 +175,22 @@ function evaluateJobBoundsAgainstEnvelope(jobBounds) {
     return bounds.checkAgainstEnvelope(jobBounds, envelope, g55);
 }
 
+function keepoutZones() {
+    var keepout = config.machine.get("keepout");
+    return (keepout && keepout.zones) || [];
+}
+
+function evaluateJobBoundsAgainstZones(jobBounds) {
+    var zones = keepoutZones();
+    if (!zones.length) return { enters: false, zones: [] };
+    var g55 = {
+        x: config.driver.get("g55x") || 0,
+        y: config.driver.get("g55y") || 0,
+        z: config.driver.get("g55z") || 0,
+    };
+    return bounds.checkAgainstZones(jobBounds, zones, g55);
+}
+
 var runNextJob = function (req, res, next) {
     var answer;
     var doRun = function () {
@@ -196,13 +212,17 @@ var runNextJob = function (req, res, next) {
             }
         });
     };
-    // Soft-limit backstop: refuse an exceeding job unless the caller passes
-    // force. The dashboard's runNext handler always sends force after its own
-    // check + user confirmation, so this only bites callers that skipped the
-    // check (raw API, unpatched apps). Fail-open on any check error — the
+    // Soft-limit + keep-out backstop: refuse a violating job unless the
+    // caller passes force. The dashboard's runNext handler always sends
+    // force after its own check + user confirmation, so this only bites
+    // callers that skipped the check (raw API, unpatched apps). The
+    // envelope check honors the softlimits_on toggle; keep-out zones are
+    // active whenever any are drawn. Fail-open on any check error — the
     // backstop must never strand a legitimate run.
     var force = !!(req.params && req.params.force);
-    if (force || !config.machine.get("softlimits_on")) {
+    var softOn = !!config.machine.get("softlimits_on");
+    var haveZones = keepoutZones().length > 0;
+    if (force || (!softOn && !haveZones)) {
         return doRun();
     }
     db.Job.getPending(function (err, pendingJobs) {
@@ -213,22 +233,38 @@ var runNextJob = function (req, res, next) {
             if (err || !jobBounds) {
                 return doRun();
             }
-            var check = evaluateJobBoundsAgainstEnvelope(jobBounds);
-            if (!check.exceeds) {
+            var check = softOn ? evaluateJobBoundsAgainstEnvelope(jobBounds) : { exceeds: false, violations: [] };
+            var keepout = haveZones ? evaluateJobBoundsAgainstZones(jobBounds) : { enters: false, zones: [] };
+            if (!check.exceeds && !keepout.enters) {
                 return doRun();
             }
-            log.warn("Refusing to run job " + pendingJobs[0]._id + " — exceeds soft limits (no force flag)");
-            res.json({
-                status: "error",
-                message:
-                    "Job exceeds soft limits: " +
+            var reasons = [];
+            if (check.exceeds) {
+                reasons.push(
+                    "exceeds soft limits: " +
                     check.violations
                         .map(function (v) {
                             return v.axis.toUpperCase() + " " + v.direction + " by " + Number(v.overage).toFixed(2);
                         })
-                        .join(", ") +
-                    ". Pass force to run anyway, or disable 'Enforce Software Limits'.",
-                data: { code: "SOFT_LIMITS", violations: check.violations, bounds: jobBounds },
+                        .join(", ")
+                );
+            }
+            if (keepout.enters) {
+                reasons.push(
+                    "toolpath enters " + keepout.zones.length + " keep-out zone" +
+                    (keepout.zones.length === 1 ? "" : "s")
+                );
+            }
+            log.warn("Refusing to run job " + pendingJobs[0]._id + " — " + reasons.join("; ") + " (no force flag)");
+            res.json({
+                status: "error",
+                message: "Job " + reasons.join("; ") + ". Pass force to run anyway.",
+                data: {
+                    code: check.exceeds ? "SOFT_LIMITS" : "KEEPOUT",
+                    violations: check.violations,
+                    keepout: keepout,
+                    bounds: jobBounds,
+                },
             });
         });
     });
@@ -250,7 +286,9 @@ var runNextJob = function (req, res, next) {
 // and legacy jobs with no stored bounds. Stored bounds respond instantly;
 // otherwise compute now and persist so the next check is instant.
 var checkJobBounds = function (req, res, next) {
-    if (!config.machine.get("softlimits_on")) {
+    var softOn = !!config.machine.get("softlimits_on");
+    var haveZones = keepoutZones().length > 0;
+    if (!softOn && !haveZones) {
         return res.json({
             status: "success",
             data: { exceeds: false, violations: [], limitsDisabled: true },
@@ -264,11 +302,15 @@ var checkJobBounds = function (req, res, next) {
             if (err) {
                 return res.json({ status: "error", message: err.message || String(err) });
             }
-            var check = evaluateJobBoundsAgainstEnvelope(jobBounds);
-            res.json({
-                status: "success",
-                data: { bounds: jobBounds, exceeds: check.exceeds, violations: check.violations },
-            });
+            var check = softOn ? evaluateJobBoundsAgainstEnvelope(jobBounds) : { exceeds: false, violations: [] };
+            var data = {
+                bounds: jobBounds,
+                exceeds: check.exceeds,
+                violations: check.violations,
+            };
+            if (!softOn) data.limitsDisabled = true;
+            if (haveZones) data.keepout = evaluateJobBoundsAgainstZones(jobBounds);
+            res.json({ status: "success", data: data });
         });
     });
 };
