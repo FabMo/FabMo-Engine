@@ -405,8 +405,20 @@ function setFirstCard(job) {
         .join(', '));
     }
     if (keepout && keepout.enters) {
-      msgs.push('Toolpath ' + (keepout.approximate ? 'may enter' : 'enters') + ' ' +
-        keepout.zones.length + ' keep-out zone' + (keepout.zones.length === 1 ? '' : 's'));
+      var nCuts = (keepout.cuts || []).length;
+      var nRapids = (keepout.rapids || []).length;
+      if (nCuts) {
+        msgs.push('Cutting moves ' + (keepout.approximate ? 'may enter' : 'enter') + ' ' +
+          nCuts + ' keep-out zone' + (nCuts === 1 ? '' : 's'));
+      }
+      if (nRapids) {
+        msgs.push('A jog crosses ' + nRapids + ' keep-out zone' + (nRapids === 1 ? '' : 's') +
+          ' and could not be rerouted');
+      }
+      if (!nCuts && !nRapids) {
+        msgs.push('Toolpath ' + (keepout.approximate ? 'may enter' : 'enters') + ' ' +
+          keepout.zones.length + ' keep-out zone' + (keepout.zones.length === 1 ? '' : 's'));
+      }
     }
     // Real DOM badge (instead of ::after) so it can carry its own tooltip —
     // the play icon's own `title` would otherwise shadow a title set on the

@@ -12,7 +12,8 @@ exports.JX = function (args) {
         if (isNaN(x)) {
             throw "Invalid JX argument: " + x;
         }
-        this.cmd_posx = x;
+        // cmd_posx is NOT pre-set here: emit_move assigns it, and the
+        // keep-out jog router needs the pre-jog position intact on entry
         this.emit_move("G0", { X: x });
     }
 };
@@ -24,7 +25,6 @@ exports.JY = function (args) {
         if (isNaN(y)) {
             throw "Invalid JY argument: " + y;
         }
-        this.cmd_posy = y;
         this.emit_move("G0", { Y: y });
     }
 };
@@ -36,7 +36,6 @@ exports.JZ = function (args) {
         if (isNaN(z)) {
             throw "Invalid JZ argument: " + z;
         }
-        this.cmd_posz = z;
         this.emit_move("G0", { Z: z });
     }
 };
@@ -48,7 +47,6 @@ exports.JA = function (args) {
         if (isNaN(a)) {
             throw "Invalid JA argument: " + a;
         }
-        this.cmd_posa = a;
         this.emit_move("G0", { A: a });
     }
 };
@@ -60,7 +58,6 @@ exports.JB = function (args) {
         if (isNaN(b)) {
             throw "Invalid JB argument: " + b;
         }
-        this.cmd_posb = b;
         this.emit_move("G0", { B: b });
     }
 };
@@ -72,7 +69,6 @@ exports.JC = function (args) {
         if (isNaN(c)) {
             throw "Invalid JC argument: " + c;
         }
-        this.cmd_posc = c;
         this.emit_move("G0", { C: c });
     }
 };
