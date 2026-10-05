@@ -557,8 +557,19 @@ RaspberryPiNetworkManager.prototype.getStatus = function (callback) {
 // Sets machine_name (user-friendly label) and optionally the network password.
 //    identity - Object of this format {name : 'My Tool Name', password : 'mypassword'}
 //               Identity need not contain both values - only the values specified will be changed
+//               A blank name ("", as opposed to no name) resets machine_name to the machine_id
 //    callback - Called when identity has been changed or with error if error
 RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) {
+    var reset_name = false;
+    if (typeof identity.name === "string") {
+        var requested_name = identity.name.trim();
+        reset_name = !requested_name;
+        // On a reset the steps below (hostname, SSID) are done with the machine_id
+        identity = {
+            name: requested_name || config.engine.get("machine_id"),
+            password: identity.password,
+        };
+    }
     async.series(
         [
             function set_name(callback) {
@@ -571,6 +582,20 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
             function set_name_config(callback) {
                 if (identity.name) {
                     config.engine.set("machine_name", identity.name, callback);
+                } else {
+                    callback(null);
+                }
+            }.bind(this),
+
+            // Record the name in fabmo-def.json so it survives updates (cleared on a reset)
+            function set_name_def(callback) {
+                if (identity.name) {
+                    require("../../../config/profile_definition").setMachineName(
+                        reset_name ? "" : identity.name,
+                        function () {
+                            callback(null); // best-effort; failure already logged
+                        }
+                    );
                 } else {
                     callback(null);
                 }
