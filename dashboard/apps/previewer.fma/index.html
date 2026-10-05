@@ -39,6 +39,14 @@
         <div class="ar-cal-handle" data-corner="tr">TR</div>
         <div class="ar-cal-handle" data-corner="br">BR</div>
         <div class="ar-cal-handle" data-corner="bl">BL</div>
+        <!-- Magnifier shown while a handle is held: zoomed crop of the live
+             video with a crosshair at the exact anchor point, so the handle
+             dot doesn't obscure the table corner being aligned. -->
+        <div id="ar-cal-loupe" class="ar-cal-loupe" style="display:none;">
+          <canvas></canvas>
+          <div class="ar-cal-loupe-cross"></div>
+          <div class="ar-cal-loupe-label"></div>
+        </div>
         <div class="ar-cal-actions">
           <span class="ar-cal-instruction" data-i18n="previewer.ar.calibration_instruction">Drag the corners to align with your table</span>
           <button class="ar-cal-save" type="button" data-i18n="previewer.ar.save">Save</button>

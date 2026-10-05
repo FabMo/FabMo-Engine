@@ -2384,11 +2384,88 @@ module.exports = function(container) {
       }
   }
 
+  // --- Calibration loupe -------------------------------------------------
+  // The 32px corner handles sit exactly on top of the table corner the user
+  // is trying to hit. While a handle is held, hide it and show a circular
+  // magnifier instead: a zoomed crop of the raw MJPEG <img> (drawn to a
+  // canvas each animation frame, so it stays live) with a crosshair at the
+  // precise anchor point. On touch the loupe rides above the finger,
+  // iOS-style; the crosshair still marks the anchor regardless.
+  var LOUPE_ZOOM = 3;        // magnification relative to the on-screen video
+  var LOUPE_TOUCH_LIFT = 90; // px the loupe sits above the anchor on touch
+  var _loupeRAF = null;
+
+  function _drawLoupe(key, touchLift) {
+      var $loupe = container.find('#ar-cal-loupe');
+      var canvas = $loupe.find('canvas')[0];
+      var p = self.ar._draftCorners && self.ar._draftCorners[key];
+      if (!canvas || !p) return;
+      var size = _previewSize();
+      var diamCss = $loupe.width() || 148;
+      var dpr = window.devicePixelRatio || 1;
+      var diamDev = Math.round(diamCss * dpr);
+      if (canvas.width !== diamDev) canvas.width = canvas.height = diamDev;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      var img = container.find('.ar-video')[0];
+      if (img && img.naturalWidth && img.naturalHeight && size.w && size.h) {
+          // The video is object-fit:fill, so X and Y display scales differ.
+          // Crop in source pixels whatever (diam/zoom) screen pixels show,
+          // per axis — the loupe then matches what's on screen, only bigger.
+          var cropW = (diamCss / LOUPE_ZOOM) * (img.naturalWidth  / size.w);
+          var cropH = (diamCss / LOUPE_ZOOM) * (img.naturalHeight / size.h);
+          var sx = p.x * img.naturalWidth  - cropW / 2;
+          var sy = p.y * img.naturalHeight - cropH / 2;
+          // Clamp the source rect to the frame by hand and map only the
+          // visible part onto the matching canvas sub-rect — browsers
+          // disagree on drawImage with out-of-bounds source rects.
+          var vx0 = Math.max(0, sx), vy0 = Math.max(0, sy);
+          var vx1 = Math.min(img.naturalWidth,  sx + cropW);
+          var vy1 = Math.min(img.naturalHeight, sy + cropH);
+          if (vx1 > vx0 && vy1 > vy0) {
+              var kx = canvas.width / cropW, ky = canvas.height / cropH;
+              try {
+                  ctx.drawImage(img, vx0, vy0, vx1 - vx0, vy1 - vy0,
+                      (vx0 - sx) * kx, (vy0 - sy) * ky,
+                      (vx1 - vx0) * kx, (vy1 - vy0) * ky);
+              } catch (err) { /* stream not decodable yet — leave black */ }
+          }
+      }
+      $loupe.css({
+          left: (p.x * size.w) + 'px',
+          top:  (p.y * size.h - touchLift) + 'px',
+      });
+  }
+
+  function _showLoupe(key, isTouch) {
+      var lift = isTouch ? LOUPE_TOUCH_LIFT : 0;
+      container.find('.ar-cal-handle[data-corner="' + key + '"]').addClass('loupe-active');
+      var $loupe = container.find('#ar-cal-loupe');
+      $loupe.find('.ar-cal-loupe-label').text(String(key).toUpperCase());
+      $loupe.show();
+      var tick = function () {
+          if (!self.ar._dragging) return;
+          _drawLoupe(key, lift);
+          _loupeRAF = requestAnimationFrame(tick);
+      };
+      _drawLoupe(key, lift);
+      _loupeRAF = requestAnimationFrame(tick);
+  }
+
+  function _hideLoupe() {
+      if (_loupeRAF) { cancelAnimationFrame(_loupeRAF); _loupeRAF = null; }
+      container.find('#ar-cal-loupe').hide();
+      container.find('.ar-cal-handle').removeClass('loupe-active');
+  }
+
   function _onHandleDown(e) {
       if (!self.ar.calibrating) return;
       e.preventDefault();
       var key = $(e.currentTarget).data('corner');
       self.ar._dragging = key;
+      _showLoupe(key, e.type === 'touchstart');
       var move = function (ev) {
           if (!self.ar._dragging) return;
           var src = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
@@ -2405,6 +2482,7 @@ module.exports = function(container) {
       };
       var up = function () {
           self.ar._dragging = null;
+          _hideLoupe();
           $(document).off('mousemove.arcal touchmove.arcal mouseup.arcal touchend.arcal');
       };
       $(document).on('mousemove.arcal touchmove.arcal', move);
@@ -2413,6 +2491,7 @@ module.exports = function(container) {
 
   function _saveCalibrationDraft() {
       if (!self.ar._draftCorners) return;
+      _hideLoupe();
       self.ar.corners = self.ar._draftCorners;
       self.ar._draftCorners = null;
       self.ar._backupCorners = null;
@@ -2426,6 +2505,7 @@ module.exports = function(container) {
   }
 
   function _cancelCalibration() {
+      _hideLoupe();
       self.ar.calibrating = false;
       self.ar._draftCorners = null;
       container.find('.ar-calibration').hide();

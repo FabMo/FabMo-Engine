@@ -144,6 +144,66 @@ body {
   touch-action: none;
 }
 .ar-cal-handle:active { cursor: grabbing; background: #ff3c3c; }
+/* While its loupe is up, the grabbed handle hides so the magnified corner
+   is unobstructed; the loupe's crosshair marks the anchor point instead. */
+.ar-cal-handle.loupe-active { visibility: hidden; }
+.ar-cal-loupe {
+  position: absolute;
+  width: 148px;
+  height: 148px;
+  margin-left: -74px;
+  margin-top: -74px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.7), inset 0 0 6px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  background: #000;
+  z-index: 23;
+  pointer-events: none; /* drag events pass through to the document handlers */
+}
+.ar-cal-loupe canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.ar-cal-loupe-cross {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.ar-cal-loupe-cross::before,
+.ar-cal-loupe-cross::after {
+  content: "";
+  position: absolute;
+  background: #ff3c3c;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.9);
+}
+.ar-cal-loupe-cross::before {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1.5px;
+  margin-top: -0.75px;
+}
+.ar-cal-loupe-cross::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1.5px;
+  margin-left: -0.75px;
+}
+.ar-cal-loupe-label {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
 .ar-cal-actions {
   position: absolute;
   bottom: 16px;
