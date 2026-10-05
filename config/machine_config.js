@@ -275,6 +275,15 @@ MachineConfig.prototype.update = function (data, callback, force) {
     // cache, so the object itself mutates in place during extend.
     var old_features = JSON.stringify(this.get("features") || {});
     try {
+        // keepout holds an ARRAY of user-drawn zones, which util.extend
+        // can't handle: it only updates keys that already exist, so new
+        // array indices (and the key itself, on installs predating the
+        // field) are silently dropped. Replace it wholesale instead.
+        if (data && Object.prototype.hasOwnProperty.call(data, "keepout")) {
+            this._cache.keepout = data.keepout;
+            data = Object.assign({}, data);
+            delete data.keepout;
+        }
         u.extend(this._cache, data, force);
         this._normalizeOutputNotify();
         this._normalizeOutputPosition();
