@@ -594,6 +594,18 @@ function stArSync(svgId) {
     // projecting onto — thin it to a wash that just marks the envelope.
     var envRect = dst.querySelector("rect");
     if (envRect) envRect.setAttribute("fill", "rgba(244, 241, 234, 0.2)");
+    // Over live video a label can land on anything — sampling the frame
+    // to adapt per-label isn't an option (the camera stream is cross-
+    // origin, so a canvas readback taints), so do what the position
+    // crosshair does: a white halo under every label, and the light
+    // grey lifted to the dark ink so it holds up on a grey table.
+    dst.querySelectorAll("text").forEach(function (t) {
+        t.setAttribute("paint-order", "stroke");
+        t.setAttribute("stroke", "#fff");
+        t.setAttribute("stroke-width", "2.5");
+        t.setAttribute("stroke-linejoin", "round");
+        if (t.getAttribute("fill") === "#7f8c8d") t.setAttribute("fill", "#2c3e50");
+    });
     stArRender = false;
     ST_AR_RENDERS[stAr.tool]();
     stAr._syncing = false;
