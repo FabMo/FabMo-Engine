@@ -13,7 +13,15 @@
 var i18n = require("../i18n");
 var config = require("../config");
 
+// Dictionaries must never outlive an engine update — a cached dict that
+// predates newly-added keys makes the UI show raw "app.some.key" strings.
+// no-cache still allows conditional revalidation but forbids silent reuse.
+function noCache(res) {
+    res.header("Cache-Control", "no-cache, no-store, must-revalidate");
+}
+
 function getLanguages(req, res, next) {
+    noCache(res);
     var current = config.engine.get("language") || "en";
     res.json({
         current: current,
@@ -23,6 +31,7 @@ function getLanguages(req, res, next) {
 }
 
 function getDict(req, res, next) {
+    noCache(res);
     var lang = req.params.lang;
     res.json(i18n.getDict(lang));
     return next();

@@ -164,7 +164,12 @@ require('./cm-fabmo-modes.js');
         if((content !== content) || (content === undefined)) {
           console.warn("No saved content in scratchpad.");
         } else {
-            $('#app-content').text(window.t('editor.content_label.scratchpad'));
+            // Wait for the dictionaries — at app startup this races the
+            // /i18n/dict fetch, and a too-early t() returns the raw key
+            // ("editor.content_label.scratchpad" in the header).
+            window.i18nReady.then(function () {
+                $('#app-content').text(window.t('editor.content_label.scratchpad'));
+            });
             $(".exit-button").css("visibility", "hidden");
             editor.setValue(content);
             isDirty = false; // Reset the dirty flag after loading content
