@@ -1132,24 +1132,28 @@ function renderStpEnv() {
     parts.push('<line x1="' + by + '" y1="' + g.MT + '" x2="' + by + '" y2="' + (g.MT + g.rh) + '" stroke="#d5dbdb" stroke-width="2"/>');
     parts.push('<line x1="' + by + '" y1="' + Y(p.y1) + '" x2="' + by + '" y2="' + Y(p.y0) + '" stroke="#2980b9" stroke-width="4"/>');
     // Segment numbers: to-start | area | to-end, centered per segment
-    function xnum(a, b, v, bold) {
+    // Segment numbers carry data-edit/data-val and are typeable in
+    // place via #stp-edit (same pattern as the table saw's labels).
+    function xnum(a, b, v, bold, key) {
         if (b - a < 12) return "";
         return '<text x="' + (a + b) / 2 + '" y="' + (bx + 13) + '" text-anchor="middle" font-size="8"' +
+            ' data-edit="' + key + '" data-val="' + Math.round(v * 1000) / 1000 + '"' +
             (bold ? ' font-weight="700" fill="#2c3e50"' : ' fill="#7f8c8d"') + ">" + stpFmtLen(v) + "</text>";
     }
-    function ynum(yA, yB, v, bold) {
+    function ynum(yA, yB, v, bold, key) {
         if (yA - yB < 12) return "";
         var cy = (yA + yB) / 2, cx = by - 10;
         return '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" font-size="8"' +
+            ' data-edit="' + key + '" data-val="' + Math.round(v * 1000) / 1000 + '"' +
             (bold ? ' font-weight="700" fill="#2c3e50"' : ' fill="#7f8c8d"') +
             ' transform="rotate(-90 ' + cx + " " + cy + ')" dominant-baseline="central">' + stpFmtLen(v) + "</text>";
     }
-    parts.push(xnum(g.ML, X(p.x0), p.x0));
-    parts.push(xnum(X(p.x0), X(p.x1), p.x1 - p.x0, true));
-    parts.push(xnum(X(p.x1), g.ML + g.rw, g.xspan - p.x1));
-    parts.push(ynum(g.MT + g.rh, Y(p.y0), p.y0));
-    parts.push(ynum(Y(p.y0), Y(p.y1), p.y1 - p.y0, true));
-    parts.push(ynum(Y(p.y1), g.MT, g.yspan - p.y1));
+    parts.push(xnum(g.ML, X(p.x0), p.x0, false, "x0"));
+    parts.push(xnum(X(p.x0), X(p.x1), p.x1 - p.x0, true, "xw"));
+    parts.push(xnum(X(p.x1), g.ML + g.rw, g.xspan - p.x1, false, "x1r"));
+    parts.push(ynum(g.MT + g.rh, Y(p.y0), p.y0, false, "y0"));
+    parts.push(ynum(Y(p.y0), Y(p.y1), p.y1 - p.y0, true, "yh"));
+    parts.push(ynum(Y(p.y1), g.MT, g.yspan - p.y1, false, "y1r"));
     parts.push(handle(X(p.x0), bx, "x0"));
     parts.push(handle(X(p.x1), bx, "x1"));
     parts.push(handle(by, Y(p.y0), "y0"));
@@ -2494,6 +2498,65 @@ $(document).ready(function () {
         stpDrag = null;
         stpSave();
     });
+
+    // In-place editing of the distance numbers around the map: hovering
+    // (or tapping) one floats #stp-edit over it, focused and selected, so
+    // it can be typed over directly. Enter/blur commits, Escape cancels.
+    // Each number moves the handle on its own side; the bold middle one
+    // moves the max handle to set the span. The cooldown stops a commit
+    // from instantly re-opening the input under a still pointer (the
+    // re-render fires a fresh pointerenter on the rebuilt label).
+    var stpEditKey = null;
+    var stpEditCooldown = 0;
+
+    function stpOpenEdit(el, key, value) {
+        if (Date.now() < stpEditCooldown) return;
+        var $inp = $("#stp-edit");
+        if (stpEditKey === key && $inp.is(":visible")) return;
+        if (stpEditKey) $inp.blur(); // commit whatever is already open
+        var wrap = $inp.parent()[0];
+        var wb = wrap.getBoundingClientRect();
+        var eb = el.getBoundingClientRect();
+        stpEditKey = key;
+        var left = Math.max(0, Math.min(wb.width - 54, eb.left + eb.width / 2 - wb.left - 27));
+        var top = Math.max(0, Math.min(wb.height - 20, eb.top + eb.height / 2 - wb.top - 10));
+        $inp.val(value).css({ left: left + "px", top: top + "px" }).show();
+        $inp[0].focus();
+        $inp[0].select();
+    }
+
+    function stpCommitEdit() {
+        var key = stpEditKey;
+        var v = parseFloat($("#stp-edit").val());
+        stpEditKey = null;
+        stpEditCooldown = Date.now() + 400;
+        $("#stp-edit").hide();
+        if (!key || !isFinite(v)) return;
+        var s = stpSpans();
+        var p = stPlaner;
+        if (key === "x0") p.x0 = Math.max(0, Math.min(p.x1, v));
+        else if (key === "xw") p.x1 = Math.min(s.xspan, p.x0 + Math.max(0, v));
+        else if (key === "x1r") p.x1 = Math.max(p.x0, Math.min(s.xspan, s.xspan - v));
+        else if (key === "y0") p.y0 = Math.max(0, Math.min(p.y1, v));
+        else if (key === "yh") p.y1 = Math.min(s.yspan, p.y0 + Math.max(0, v));
+        else if (key === "y1r") p.y1 = Math.max(p.y0, Math.min(s.yspan, s.yspan - v));
+        stpSave();
+        renderStpEnv();
+    }
+
+    $("#stp-env-svg").on("pointerenter click", "[data-edit]", function () {
+        var val = parseFloat($(this).attr("data-val"));
+        stpOpenEdit(this, $(this).attr("data-edit"), isFinite(val) ? val : 0);
+    });
+    $("#stp-edit").on("keydown", function (e) {
+        if (e.key === "Enter") $(this).blur();
+        if (e.key === "Escape") {
+            stpEditKey = null;
+            stpEditCooldown = Date.now() + 400;
+            $(this).hide();
+        }
+    });
+    $("#stp-edit").on("blur", stpCommitEdit);
 
     // Planer parameter inputs
     $("#stp-bit, #stp-step, #stp-depth").on("change", function () {
