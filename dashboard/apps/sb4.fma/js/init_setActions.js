@@ -303,6 +303,11 @@ $(document).ready(function () {
             $(this).attr("readonly", true);
         }
     });
+    // ... and back to readonly as soon as the field is left, so the many programmatic focus() calls
+    // (e.g. after tapping OK-RUN) do not pop the on-screen keyboard over the running-file controls
+    $("#cmd-input").on("blur", function () {
+        $(this).attr("readonly", true);
+    });
 
     // A readonly field shows no text caret, so draw our own (#cmd-caret, blink is in style.css).
     // It sits at the field's (invisible but real) selection position, so clicking in the line,
