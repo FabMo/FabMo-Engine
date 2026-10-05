@@ -3677,11 +3677,16 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
         if (detourMoves) {
             this._keepoutRerouting = true;
             try {
+                // Simulation runs feed the previewer (/job/:id/gcode), which
+                // colors rerouted legs differently — bracket them with marker
+                // comments. Never emitted on the live G2 stream.
+                if (this.simulation_mode) this.emit_gcode("(KO-REROUTE)");
                 detourMoves.forEach(
                     function (m) {
                         this.emit_move("G0", m);
                     }.bind(this)
                 );
+                if (this.simulation_mode) this.emit_gcode("(KO-END)");
             } finally {
                 this._keepoutRerouting = false;
             }
