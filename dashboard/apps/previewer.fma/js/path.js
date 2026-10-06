@@ -22,6 +22,7 @@ var rapid_feed = 120;
 var red     = [1, 0, 0];
 var green   = [0, 1, 0];
 var magenta = [1, 0, 1];
+var amber   = [1, 0.65, 0];  // rapids the engine rerouted around keep-out zones
 
 var infoLine = "Line: ";
 
@@ -147,7 +148,8 @@ module.exports = function(scene, callbacks) {
   self.addLine = function(start, end, rapid) {
     if (typeof self.positions == 'undefined') self.newBuffer();
 
-    var color = rapid ? red : green;
+    var rerouted = rapid && self.inReroute;
+    var color = rapid ? (rerouted ? amber : red) : green;
 
     self.addPoint(start);
     self.addPoint(end);
@@ -167,6 +169,7 @@ module.exports = function(scene, callbacks) {
     move.start = start;
     move.end = end;
     move.type = 'line';
+    move.rerouted = rerouted;
     move.startTime = self.duration;
 
     // Store source line (SBP line from N-word, or GCode line as fallback)
@@ -417,6 +420,12 @@ module.exports = function(scene, callbacks) {
 
 
   self.processLine = function (line) {
+    // Keep-out reroute markers: the engine's simulator brackets jog legs
+    // it detoured around keep-out zones so they can be colored distinctly.
+    // Detected on the raw line — parseLine strips comments.
+    if (line.indexOf('(KO-REROUTE)') !== -1) { self.inReroute = true; return; }
+    if (line.indexOf('(KO-END)') !== -1) { self.inReroute = false; return; }
+
     try {
       line = self.parseLine(line);
 

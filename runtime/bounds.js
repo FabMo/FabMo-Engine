@@ -60,7 +60,11 @@ function scanGCodeBounds(gcode) {
     var max = { x: -Infinity, y: -Infinity, z: -Infinity };
     var seen = false;
     var absolute = true; // G90
-    var path = [[0, 0, 0]];
+    // Path points carry a 4th element: 1 = cutting motion (G1/G2/G3),
+    // 0 = rapid (G0). Motion mode is modal, so lines without a G word
+    // inherit the last one seen.
+    var motion = 0;
+    var path = [[0, 0, 0, 0]];
 
     function update(x, y, z) {
         if (x < min.x) min.x = x;
@@ -79,6 +83,9 @@ function scanGCodeBounds(gcode) {
 
         if (/\bG90(?!\.)\b/.test(line)) absolute = true;
         if (/\bG91(?!\.)\b/.test(line)) absolute = false;
+
+        var mMotion = line.match(/\bG0*([0123])(?![\d.])/);
+        if (mMotion) motion = parseInt(mMotion[1], 10);
 
         // No \b — gcode often packs words together (e.g. `G0X1.5Y2.5`),
         // and \b doesn't fire between two word characters like `0` and `X`.
@@ -104,7 +111,7 @@ function scanGCodeBounds(gcode) {
         var mi = isArc ? line.match(/I(-?\d+(?:\.\d+)?)/) : null;
         var mj = isArc ? line.match(/J(-?\d+(?:\.\d+)?)/) : null;
         if (!isArc || !mi || !mj) { // R-form arcs tracked as chords
-            path.push([round3(pos.x), round3(pos.y), round3(pos.z)]);
+            path.push([round3(pos.x), round3(pos.y), round3(pos.z), motion >= 1 ? 1 : 0]);
             continue;
         }
         var clockwise = /\bG2\b/.test(line);
@@ -136,7 +143,7 @@ function scanGCodeBounds(gcode) {
         var steps = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 12)));
         for (var si = 1; si <= steps; si++) {
             var sa = a0 + (sweep * si) / steps;
-            path.push([round3(cx + r * Math.cos(sa)), round3(cy + r * Math.sin(sa)), round3(pos.z)]);
+            path.push([round3(cx + r * Math.cos(sa)), round3(cy + r * Math.sin(sa)), round3(pos.z), 1]);
         }
     }
 
@@ -280,11 +287,25 @@ function segsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
     function ccw(px, py, qx, qy, rx, ry) {
         return (qx - px) * (ry - py) - (qy - py) * (rx - px);
     }
+    function onSeg(px, py, qx, qy, rx, ry) {
+        return (
+            Math.min(px, qx) <= rx && rx <= Math.max(px, qx) &&
+            Math.min(py, qy) <= ry && ry <= Math.max(py, qy)
+        );
+    }
     var d1 = ccw(cx, cy, dx, dy, ax, ay);
     var d2 = ccw(cx, cy, dx, dy, bx, by);
     var d3 = ccw(ax, ay, bx, by, cx, cy);
     var d4 = ccw(ax, ay, bx, by, dx, dy);
-    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+    if (((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0))) return true;
+    // Collinear touching counts: a path grazing a zone's boundary (e.g. a
+    // move along y=0 against a zone drawn to the table edge) is a hit, and
+    // symmetrically so regardless of travel direction.
+    if (d1 === 0 && onSeg(cx, cy, dx, dy, ax, ay)) return true;
+    if (d2 === 0 && onSeg(cx, cy, dx, dy, bx, by)) return true;
+    if (d3 === 0 && onSeg(ax, ay, bx, by, cx, cy)) return true;
+    if (d4 === 0 && onSeg(ax, ay, bx, by, dx, dy)) return true;
+    return false;
 }
 
 function zoneEdges(zone) {
@@ -319,19 +340,35 @@ function segmentHitsZone(zone, ax, ay, bx, by) {
 
 // Test a job's stored path (work coords) against keep-out zones (machine
 // coords) using the active G55 offset. Returns
-// { enters, zones: [ids], approximate }. Jobs scanned before path storage
-// existed fall back to a bounding-box overlap test (approximate: true).
-function checkAgainstZones(jobBounds, zones, g55) {
-    var result = { enters: false, zones: [], approximate: false };
+// { enters, zones: [ids], cuts: [ids], rapids: [ids], approximate }.
+// `cuts` lists zones entered by cutting motion (G1/G2/G3 — cannot be
+// rerouted); `rapids` lists zones entered only by rapids (jogs the runtime
+// failed to reroute — routable jogs detour during simulation, so their
+// detours are already in the stored path). Jobs scanned before path
+// storage existed fall back to a bounding-box overlap test
+// (approximate: true, reported under cuts conservatively).
+function checkAgainstZones(jobBounds, zones, g55, startPos) {
+    var result = { enters: false, zones: [], cuts: [], rapids: [], approximate: false };
     if (!jobBounds || !zones || !zones.length) return result;
     var offx = (g55 && typeof g55.x === "number") ? g55.x : 0;
     var offy = (g55 && typeof g55.y === "number") ? g55.y : 0;
     var offz = (g55 && typeof g55.z === "number") ? g55.z : 0;
     var path = jobBounds.path;
+    // The simulation assumes the file starts at (0,0,0), but the machine
+    // sits wherever it sits — the real first segment runs from the CURRENT
+    // position (work coords) to the file's first target. Substitute it for
+    // the assumed start so e.g. an opening M2,0,0 from across the table is
+    // checked over the ground it actually covers.
+    if (path && path.length > 1 && startPos &&
+        typeof startPos.x === "number" && typeof startPos.y === "number") {
+        path = path.slice();
+        path[0] = [startPos.x, startPos.y, typeof startPos.z === "number" ? startPos.z : path[0][2], path[0][3]];
+    }
 
     zones.forEach(function (zone) {
         if (!zone || (zone.type !== "rect" && zone.type !== "poly")) return;
         var hit = false;
+        var hitCut = false;
         if (path && path.length > 1) {
             for (var i = 1; i < path.length; i++) {
                 var a = path[i - 1], b = path[i];
@@ -339,9 +376,17 @@ function checkAgainstZones(jobBounds, zones, g55) {
                 if (typeof zone.z === "number" && offz !== 0 && Math.min(a[2], b[2]) + offz >= zone.z) continue;
                 if (segmentHitsZone(zone, a[0] + offx, a[1] + offy, b[0] + offx, b[1] + offy)) {
                     hit = true;
-                    break;
+                    // Segment kind = its target point's motion flag; absent
+                    // (legacy 3-element points) counts as cutting. Keep
+                    // scanning until a cutting hit is found — it's the
+                    // severer verdict.
+                    if (b[3] !== 0) {
+                        hitCut = true;
+                        break;
+                    }
                 }
             }
+            if (hit) (hitCut ? result.cuts : result.rapids).push(zone.id || zone.type);
         } else if (jobBounds.min && jobBounds.max) {
             // No path stored — bounding-box overlap, conservatively
             var bbox = {
@@ -365,7 +410,10 @@ function checkAgainstZones(jobBounds, zones, g55) {
                     )) hit = true;
                 }
             }
-            if (hit) result.approximate = true;
+            if (hit) {
+                result.approximate = true;
+                result.cuts.push(zone.id || zone.type);
+            }
         }
         if (hit) result.zones.push(zone.id || zone.type);
     });
@@ -379,3 +427,7 @@ exports.checkAgainstEnvelope = checkAgainstEnvelope;
 exports.checkAgainstZones = checkAgainstZones;
 exports.computeFileBounds = computeFileBounds;
 exports.computeStringBounds = computeStringBounds;
+// Zone geometry primitives, shared with the keep-out jog router
+exports.pointInZone = pointInZone;
+exports.segmentHitsZone = segmentHitsZone;
+exports.zoneEdges = zoneEdges;

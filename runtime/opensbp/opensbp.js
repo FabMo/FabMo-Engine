@@ -26,6 +26,7 @@ var Leveler = require("./commands/leveler").Leveler;
 var u = require("../../util");
 var util = require("util");
 var config = require("../../config");
+var keepoutRouter = require("../keepout_router");
 var stream = require("stream");
 var ManualDriver = require("../manual").ManualDriver;
 
@@ -3594,10 +3595,104 @@ SBPRuntime.prototype.emit_gcode = function (s) {
     this.stream.write(gcode);
 };
 
+// Plan a keep-out detour for a jog targeting `pt` (absolute work coords).
+// Returns an array of moves to emit instead (waypoints + the original
+// target), or null when no detour is needed / rerouting is unavailable.
+// An unroutable jog throws in a live run (the operator was warned at
+// submit time); in simulation it falls through so the recorded path
+// carries the violation for the pre-run check to report.
+SBPRuntime.prototype._keepoutDetour = function (pt) {
+    var zones, env, g55, units;
+    try {
+        var keepout = config.machine.get("keepout");
+        zones = (keepout && keepout.zones) || [];
+        if (!zones.length) return null;
+        env = config.machine.get("envelope") || {};
+        units = config.machine.get("units");
+        g55 = {
+            x: config.driver.get("g55x") || 0,
+            y: config.driver.get("g55y") || 0,
+            z: config.driver.get("g55z") || 0,
+        };
+    } catch (e) {
+        return null; // config not loaded (tests, standalone tools)
+    }
+    // XY transforms would run downstream of the planned waypoints and
+    // invalidate them — stand down and let the pre-run check do the warning
+    var tr = this.transforms || {};
+    var transformed = ["rotate", "scale", "move", "shearx", "sheary", "interpolate"].some(function (k) {
+        return tr[k] && tr[k].apply;
+    });
+    if (transformed) return null;
+
+    var num = function (v) {
+        return typeof v === "number" && !isNaN(v) ? v : 0;
+    };
+    var start = { x: num(this.cmd_posx), y: num(this.cmd_posy), z: num(this.cmd_posz) };
+    var end = {
+        x: pt.X !== undefined ? pt.X : start.x,
+        y: pt.Y !== undefined ? pt.Y : start.y,
+        z: pt.Z !== undefined ? pt.Z : start.z,
+    };
+    var margin = units === "mm" ? 12 : 0.5;
+    var plan = keepoutRouter.planJog(start, end, zones, env, g55, margin);
+    if (!plan) return null;
+    if (plan.blocked) {
+        if (this.simulation_mode) return null;
+        throw new Error(
+            "Jog would enter keep-out zone" + (plan.zones.length === 1 ? " " : "s ") +
+            plan.zones.join(", ") + " and no route around was found"
+        );
+    }
+    log.info("keepout: rerouting jog around zone(s) " + plan.zones.join(", ") +
+        " via " + plan.waypoints.length + " waypoint(s)");
+    var moves = plan.waypoints.map(function (wp) {
+        var m = { X: wp.x, Y: wp.y };
+        if (pt.F !== undefined) m.F = pt.F;
+        return m;
+    });
+    // The final leg restates X and Y explicitly: the original pt may have
+    // left either implicit ("stay where you are"), but the detour moved us
+    // — an implicit axis would strand the jog at the last waypoint.
+    var final = Object.assign({}, pt);
+    final.X = end.x;
+    final.Y = end.y;
+    moves.push(final);
+    return moves;
+};
+
 // Helper function used by M_ commands that generates a movement code (G1,G0)
 // on the specified position after having applied transformations to that position
 // TODO - Gordon, provide some documentation here?
 SBPRuntime.prototype.emit_move = function (code, pt) {
+    // Keep-out jog rerouting: a jog (G0) is transport, not geometry — any
+    // path to the destination completes it — so a jog whose straight line
+    // would cross a keep-out zone is replaced by waypoints routed around.
+    // Cutting moves (G1/G2/G3) always run as written; the pre-run job
+    // check warns about those. Skipped while ON INPUT is armed (moves
+    // become probes) and on the recursive waypoint legs, which the router
+    // already validated.
+    if (code === "G0" && !this.on_input_watcher && !this._keepoutRerouting) {
+        var detourMoves = this._keepoutDetour(pt);
+        if (detourMoves) {
+            this._keepoutRerouting = true;
+            try {
+                // Simulation runs feed the previewer (/job/:id/gcode), which
+                // colors rerouted legs differently — bracket them with marker
+                // comments. Never emitted on the live G2 stream.
+                if (this.simulation_mode) this.emit_gcode("(KO-REROUTE)");
+                detourMoves.forEach(
+                    function (m) {
+                        this.emit_move("G0", m);
+                    }.bind(this)
+                );
+                if (this.simulation_mode) this.emit_gcode("(KO-END)");
+            } finally {
+                this._keepoutRerouting = false;
+            }
+            return;
+        }
+    }
     // ON INPUT armed: rewrite every move as G38.3 (probe-toward, no-fault-on-miss)
     // so the firmware monitors prbin for an edge and stops at the trip point with
     // firmware-grade latency. G0 rapids get a jog-rate F injected since G38.3

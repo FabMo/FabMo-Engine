@@ -742,11 +742,29 @@ define(function (require) {
                             parts.push("This job would move outside the machine envelope: " + msg + ".");
                         }
                         if (koEnters) {
-                            var n = result.keepout.zones.length;
-                            parts.push(
-                                "The toolpath " + (result.keepout.approximate ? "may enter" : "enters") +
-                                " " + n + " keep-out zone" + (n === 1 ? "" : "s") + " marked on the table."
-                            );
+                            var ko = result.keepout;
+                            var nCuts = (ko.cuts || []).length;
+                            var nRapids = (ko.rapids || []).length;
+                            if (nCuts) {
+                                parts.push(
+                                    "Cutting moves " + (ko.approximate ? "may enter" : "enter") + " " +
+                                    nCuts + " keep-out zone" + (nCuts === 1 ? "" : "s") +
+                                    " marked on the table — cuts run as written and cannot be rerouted."
+                                );
+                            }
+                            if (nRapids) {
+                                parts.push(
+                                    "A jog crosses " + nRapids + " keep-out zone" + (nRapids === 1 ? "" : "s") +
+                                    " and could not be rerouted around " + (nRapids === 1 ? "it" : "them") + "."
+                                );
+                            }
+                            if (!nCuts && !nRapids) {
+                                var n = ko.zones.length;
+                                parts.push(
+                                    "The toolpath " + (ko.approximate ? "may enter" : "enters") +
+                                    " " + n + " keep-out zone" + (n === 1 ? "" : "s") + " marked on the table."
+                                );
+                            }
                         }
                         self.showModal({
                             title: result.exceeds ? "Job exceeds soft limits" : "Job enters a keep-out zone",

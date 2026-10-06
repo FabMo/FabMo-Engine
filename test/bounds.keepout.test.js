@@ -8,12 +8,18 @@
 var bounds = require("../runtime/bounds");
 
 describe("scanGCodeBounds path collection", function () {
-    test("collects move endpoints", function () {
+    test("collects move endpoints tagged with motion kind", function () {
         var b = bounds.scanGCodeBounds("G0 X1 Y1\nG1 X5 Y1\nG1 X5 Y5\n");
-        expect(b.path[0]).toEqual([0, 0, 0]);
-        expect(b.path).toContainEqual([1, 1, 0]);
-        expect(b.path).toContainEqual([5, 1, 0]);
-        expect(b.path[b.path.length - 1]).toEqual([5, 5, 0]);
+        expect(b.path[0]).toEqual([0, 0, 0, 0]);
+        expect(b.path).toContainEqual([1, 1, 0, 0]); // rapid
+        expect(b.path).toContainEqual([5, 1, 0, 1]); // cut
+        expect(b.path[b.path.length - 1]).toEqual([5, 5, 0, 1]);
+    });
+
+    test("motion kind is modal — bare coordinate lines inherit it", function () {
+        var b = bounds.scanGCodeBounds("G1 X5 Y0\nX10 Y0\nG0 X20 Y0\nX30 Y0\n");
+        expect(b.path).toContainEqual([10, 0, 0, 1]);
+        expect(b.path).toContainEqual([30, 0, 0, 0]);
     });
 
     test("samples arc sweeps so the path follows the curve", function () {
@@ -32,7 +38,7 @@ describe("scanGCodeBounds path collection", function () {
         var b = bounds.scanGCodeBounds(lines.join("\n"));
         expect(b.path.length).toBeLessThanOrEqual(600);
         // Endpoints survive decimation
-        expect(b.path[0]).toEqual([0, 0, 0]);
+        expect(b.path[0]).toEqual([0, 0, 0, 0]);
         expect(b.path[b.path.length - 1][0]).toBeCloseTo(49.99, 1);
     });
 });
@@ -99,6 +105,23 @@ describe("checkAgainstZones", function () {
         var r = bounds.checkAgainstZones(legacy, [rectZone], {});
         expect(r.enters).toBe(true);
         expect(r.approximate).toBe(true);
+    });
+
+    test("current machine position replaces the simulator's assumed start", function () {
+        // File: single cut to (0,0). Simulated from (0,0,0) the path never
+        // moves — but started from (96,0) the first segment sweeps the
+        // whole bottom edge through the zone.
+        var zone = { id: "edge", type: "rect", x0: 46, y0: 0, x1: 58, y1: 7 };
+        var jb = {
+            min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 },
+            path: [[0, 0, 0, 0], [0, 0, 0, 1]],
+        };
+        expect(bounds.checkAgainstZones(jb, [zone], {}).enters).toBe(false);
+        var r = bounds.checkAgainstZones(jb, [zone], {}, { x: 96, y: 0, z: 0 });
+        expect(r.enters).toBe(true);
+        expect(r.cuts).toEqual(["edge"]);
+        // The stored path must not be mutated by the substitution
+        expect(jb.path[0]).toEqual([0, 0, 0, 0]);
     });
 
     test("multiple zones each reported once", function () {

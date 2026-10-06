@@ -188,7 +188,15 @@ function evaluateJobBoundsAgainstZones(jobBounds) {
         y: config.driver.get("g55y") || 0,
         z: config.driver.get("g55z") || 0,
     };
-    return bounds.checkAgainstZones(jobBounds, zones, g55);
+    // The file's first segment runs from wherever the machine currently
+    // sits (status pos, work coords) — not from the simulator's assumed
+    // (0,0,0) start.
+    var startPos = null;
+    var st = machine && machine.status;
+    if (st && typeof st.posx === "number" && typeof st.posy === "number") {
+        startPos = { x: st.posx, y: st.posy, z: st.posz };
+    }
+    return bounds.checkAgainstZones(jobBounds, zones, g55, startPos);
 }
 
 var runNextJob = function (req, res, next) {
@@ -250,10 +258,23 @@ var runNextJob = function (req, res, next) {
                 );
             }
             if (keepout.enters) {
-                reasons.push(
-                    "toolpath enters " + keepout.zones.length + " keep-out zone" +
-                    (keepout.zones.length === 1 ? "" : "s")
-                );
+                var nCuts = (keepout.cuts || []).length;
+                var nRapids = (keepout.rapids || []).length;
+                if (nCuts) {
+                    reasons.push("cutting moves enter " + nCuts + " keep-out zone" + (nCuts === 1 ? "" : "s"));
+                }
+                if (nRapids) {
+                    reasons.push(
+                        "a jog crosses " + nRapids + " keep-out zone" + (nRapids === 1 ? "" : "s") +
+                        " and could not be rerouted"
+                    );
+                }
+                if (!nCuts && !nRapids) {
+                    reasons.push(
+                        "toolpath enters " + keepout.zones.length + " keep-out zone" +
+                        (keepout.zones.length === 1 ? "" : "s")
+                    );
+                }
             }
             log.warn("Refusing to run job " + pendingJobs[0]._id + " — " + reasons.join("; ") + " (no force flag)");
             res.json({
