@@ -4,52 +4,129 @@
     <meta charset="utf-8">
     <title>Camera</title>
     <style>
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        html, body { 
-            height: 100vh; 
-            overflow: hidden; 
+
+        html, body {
+            height: 100vh;
+            overflow: hidden;
         }
-        
-        body { 
-            background: #000; 
-            position: fixed; 
-            width: 100vw; 
-            height: 100vh; 
+
+        body {
+            background: #000;
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
         }
-        
-        #video-viewport { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
+
+        #video-viewport {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
-        #camera1, #camera2 { 
-            width: 100%; 
-            height: 100%; 
+
+        #camera1, #camera2 {
+            width: 100%;
+            height: 100%;
             object-fit: fill; /* Use 'cover' or 'contain' to maintain aspect ratio rather than 'fill' */
         }
-        
-        #cam-label { 
-            position: absolute; 
-            top: 10px; 
-            left: 10px; 
-            color: white; 
-            z-index: 100; 
+
+        #cam-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            z-index: 100;
             font-family: sans-serif;
             background: rgba(0,0,0,0.7);
             padding: 8px 12px;
             border-radius: 4px;
             font-size: 14px;
+        }
+
+        /* AR calibration + live overlay */
+        #cam-toolbar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 110;
+            display: flex;
+            gap: 8px;
+        }
+        .cam-btn {
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 4px;
+            font-family: sans-serif;
+            font-size: 14px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .cam-btn:hover { border-color: #fff; }
+        .cam-btn.active { background: #2980b9; border-color: #2980b9; }
+        /* Warped grids: SVG coordinates map onto the table quad via matrix3d */
+        #live-grid, #cal-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+        .cal-handle {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            margin: -16px 0 0 -16px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            background: rgba(41,128,185,0.55);
+            box-shadow: 0 0 6px rgba(0,0,0,0.6);
+            z-index: 60;
+            cursor: grab;
+            touch-action: none;
+        }
+        .cal-handle.loupe-active { opacity: 0; }
+        #cal-loupe {
+            position: absolute;
+            width: 148px;
+            height: 148px;
+            margin: -74px 0 0 -74px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            overflow: hidden;
+            z-index: 70;
+            pointer-events: none;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+            display: none;
+            background: #000;
+        }
+        #cal-loupe canvas { width: 100%; height: 100%; display: block; }
+        #cal-bar {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 80;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 14px;
+            border-radius: 6px;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 14px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -58,6 +135,22 @@
         <img id="camera1" />
         <img id="camera2" />
         <div id="cam-label">Loading cameras...</div>
+        <div id="cam-toolbar">
+            <button class="cam-btn" id="btn-grid" style="display:none;">Grid</button>
+            <button class="cam-btn" id="btn-calibrate" style="display:none;">Calibrate AR</button>
+        </div>
+        <svg id="live-grid" style="display:none;"></svg>
+        <svg id="cal-grid" style="display:none;"></svg>
+        <div class="cal-handle" data-corner="tl" style="display:none;"></div>
+        <div class="cal-handle" data-corner="tr" style="display:none;"></div>
+        <div class="cal-handle" data-corner="br" style="display:none;"></div>
+        <div class="cal-handle" data-corner="bl" style="display:none;"></div>
+        <div id="cal-loupe"><canvas></canvas></div>
+        <div id="cal-bar" style="display:none;">
+            <span>Drag the corners to align the grid with your table</span>
+            <button class="cam-btn" id="btn-cal-save">Save</button>
+            <button class="cam-btn" id="btn-cal-cancel">Cancel</button>
+        </div>
     </div>
 
     <script src="../../static/js/shared-video.js?v=3"></script>
