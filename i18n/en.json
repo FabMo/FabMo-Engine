@@ -782,6 +782,7 @@
             "no_pending_jobs": "No pending jobs found",
             "fetch_pending_failed": "Failed to fetch pending job file:",
             "no_recent_rerun": "No recent job to rerun!",
+            "no_file_picked": "No file was received from the file picker. Try picking it again.",
             "no_recent_edit": "No recent job to edit!"
         },
         "alert": {
