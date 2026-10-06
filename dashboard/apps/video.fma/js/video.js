@@ -64,7 +64,11 @@ async function setupCameras(img1, img2) {
     console.log(`Detection complete: Camera1=${cameraStatus.camera1}, Camera2=${cameraStatus.camera2}, Total=${cameraStatus.count}`);
     
     if (cameraStatus.count === 0) {
+        // No camera: the flat table view still gives the full grid /
+        // zones / crosshair experience, drawn on a plain top-down map.
         displayNoCamera();
+        calState.viewMode = "table";
+        setupCalibration();
         return;
     }
     
@@ -100,7 +104,7 @@ async function setupCameras(img1, img2) {
 
 function displayNoCamera() {
     console.log("No camera feeds available");
-    document.getElementById("cam-label").innerHTML = "no camera feeds available";
+    document.getElementById("cam-label").innerHTML = "no camera &mdash; table view";
 }
 
 function setupCameraToggle(img1, img2, videoCount) {
@@ -199,6 +203,7 @@ var calState = {
     zoneMode: false,
     zoneTool: "rect",     // "rect" | "draw" | "erase"
     zoneStroke: null,     // in-progress freehand points / rect corners
+    viewMode: "camera",   // "camera" | "table" (flat top-down, no camera needed)
 };
 
 var GRID_K = 10; // SVG px per machine unit — arbitrary, the warp rescales
@@ -335,19 +340,62 @@ function calForDisplayed() {
         c.corners.br && c.corners.bl && (c.port || 1) === calState.displayedCam) ? c : null;
 }
 
+// The flat table view is the identity case of the same pipeline: instead
+// of the calibrated quad, the envelope maps onto a letterboxed rectangle
+// centered in the viewport. Everything downstream (grid, zones, drawing,
+// crosshair) is unchanged — so machines without a camera get the full
+// keep-out experience on a plain top-down map.
+function flatCorners() {
+    var s = envSpans();
+    if (!s) return null;
+    var w = window.innerWidth, h = window.innerHeight;
+    var m = 0.07;
+    var k = Math.min((w * (1 - 2 * m)) / s.xspan, (h * (1 - 2 * m)) / s.yspan);
+    var fw = s.xspan * k, fh = s.yspan * k;
+    var left = (w - fw) / 2 / w, top = (h - fh) / 2 / h;
+    var right = left + fw / w, bottom = top + fh / h;
+    return {
+        tl: { x: left, y: top }, tr: { x: right, y: top },
+        br: { x: right, y: bottom }, bl: { x: left, y: bottom },
+    };
+}
+
+function applyViewImgs() {
+    var img1 = document.getElementById("camera1");
+    var img2 = document.getElementById("camera2");
+    if (calState.viewMode === "table") {
+        img1.style.display = "none";
+        img2.style.display = "none";
+    } else {
+        img1.style.display = (calState.displayedCam === 1 && camera1_on) ? "block" : "none";
+        img2.style.display = (calState.displayedCam === 2 && camera2_on) ? "block" : "none";
+    }
+}
+
 function refreshLiveOverlay() {
     var live = document.getElementById("live-grid");
     var gridBtn = document.getElementById("btn-grid");
     var zoneBtn = document.getElementById("btn-zones");
-    var c = calForDisplayed();
-    if (c && !calState.calibrating && buildGrid(live, false)) {
-        warpGrid(live, c.corners);
-        // The svg stays up whenever calibrated: the Grid toggle only
+    var calBtn = document.getElementById("btn-calibrate");
+    var viewBtn = document.getElementById("btn-view");
+    var haveCam = camera1_on || camera2_on;
+    var tableMode = calState.viewMode === "table";
+    var corners = null;
+    if (tableMode) {
+        corners = flatCorners();
+    } else {
+        var c = calForDisplayed();
+        corners = c && c.corners;
+    }
+    applyViewImgs();
+    if (corners && !calState.calibrating && buildGrid(live, tableMode)) {
+        warpGrid(live, corners);
+        // The svg stays up whenever a view exists: the Grid toggle only
         // governs the gridlines group; zones and the crosshair persist.
         live.style.display = "block";
         var gl = live.querySelector("#gridlines");
-        if (gl) gl.style.display = (calState.gridOn || calState.zoneMode) ? "" : "none";
-        gridBtn.style.display = calState.zoneMode ? "none" : "inline-block";
+        if (gl) gl.style.display = (calState.gridOn || calState.zoneMode || tableMode) ? "" : "none";
+        gridBtn.style.display = (calState.zoneMode || tableMode) ? "none" : "inline-block";
         gridBtn.classList.toggle("active", calState.gridOn);
         zoneBtn.style.display = calState.zoneMode ? "none" : "inline-block";
         renderZones();
@@ -356,6 +404,13 @@ function refreshLiveOverlay() {
         live.style.display = "none";
         gridBtn.style.display = "none";
         zoneBtn.style.display = "none";
+    }
+    // View toggle: only meaningful when both a camera and an envelope
+    // exist; the calibrate button belongs to the camera view.
+    if (!calState.calibrating) {
+        viewBtn.style.display = (haveCam && envSpans() && !calState.zoneMode) ? "inline-block" : "none";
+        viewBtn.textContent = tableMode ? "Camera View" : "Table View";
+        calBtn.style.display = (haveCam && envSpans() && !tableMode && !calState.zoneMode) ? "inline-block" : "none";
     }
 }
 
@@ -408,6 +463,10 @@ function enterCalibration() {
         fabmo.notify("warning", "No machine envelope configured - cannot calibrate.");
         return;
     }
+    // Calibration happens against the video; leave the flat view if open
+    calState.viewMode = "camera";
+    applyViewImgs();
+    document.getElementById("btn-view").style.display = "none";
     var c = calForDisplayed();
     calState.draft = c ? JSON.parse(JSON.stringify(c.corners)) : {
         tl: { x: 0.15, y: 0.15 }, tr: { x: 0.85, y: 0.15 },
@@ -525,9 +584,15 @@ function hideLoupe() {
 
 function setupCalibration() {
     refreshARConfig(function () {
-        if (envSpans()) document.getElementById("btn-calibrate").style.display = "inline-block";
         refreshLiveOverlay();
     });
+
+    document.getElementById("btn-view").onclick = function () {
+        calState.viewMode = calState.viewMode === "table" ? "camera" : "table";
+        document.getElementById("cam-label").innerHTML =
+            calState.viewMode === "table" ? "table view" : "camera " + calState.displayedCam;
+        refreshLiveOverlay();
+    };
 
     document.getElementById("btn-calibrate").onclick = enterCalibration;
     document.getElementById("btn-cal-save").onclick = saveCalibration;
