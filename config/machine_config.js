@@ -75,8 +75,15 @@ MachineConfig.prototype.init = function (machine, callback) {
     // ATC migration below. Treat a missing/corrupt user file as a fresh
     // install (no migration; the profile's own config carries the flag).
     var savedHadFeatures = true;
+    // Envelope block of the saved user config, captured for the same
+    // reason: base init merges profile defaults for missing keys, so by
+    // the time the callback runs we can no longer tell which envelope
+    // size fields the user's file actually had. null = fresh install.
+    var savedEnvelope = null;
     try {
-        savedHadFeatures = "features" in JSON.parse(fs.readFileSync(this.getConfigFile(), "utf8"));
+        var savedCfg = JSON.parse(fs.readFileSync(this.getConfigFile(), "utf8"));
+        savedHadFeatures = "features" in savedCfg;
+        savedEnvelope = savedCfg.envelope || {};
     } catch (e) {
         // fresh install or unreadable file - no migration needed
     }
@@ -89,6 +96,42 @@ MachineConfig.prototype.init = function (machine, callback) {
             // /config would silently drop it.
             if (this._cache && this._cache.keepout) {
                 this._cache.keepout = normalizeKeepout(this._cache.keepout);
+            }
+            // Seed per-axis table sizes (envelope.xsize/ysize/zsize).
+            // min/max are soft limits and include overtravel, so max - min
+            // overstates the physical table; the table itself spans machine
+            // 0..size and the previewer/AR draw that. Sizes are display-only:
+            // they are never pushed to G2 (soft limits stay on min/max).
+            //
+            // On a fresh install the profile's sizes are already correct.
+            // On an existing install (savedEnvelope captured above) base
+            // init has just merged the PROFILE's sizes in over the user's
+            // envelope — wrong for any machine whose envelope differs from
+            // the profile. Overwrite any size the user's file didn't have
+            // with that machine's own span, so nothing changes on-screen
+            // until the true size is entered.
+            if (this._cache && this._cache.envelope) {
+                var env = this._cache.envelope;
+                var sizesChanged = false;
+                [
+                    ["xsize", "xmin", "xmax"],
+                    ["ysize", "ymin", "ymax"],
+                    ["zsize", "zmin", "zmax"],
+                ].forEach(function (axis) {
+                    var missing = savedEnvelope ? !(axis[0] in savedEnvelope) : !(axis[0] in env);
+                    if (missing) {
+                        var lo = Number(env[axis[1]]) || 0;
+                        var hi = Number(env[axis[2]]) || 0;
+                        var span = Math.max(0, hi - lo);
+                        if (env[axis[0]] !== span) {
+                            env[axis[0]] = span;
+                            sizesChanged = true;
+                        }
+                    }
+                });
+                if (sizesChanged) {
+                    this.save(function () {});
+                }
             }
             if (this._cache && !("cameraCalibration" in this._cache)) {
                 // util.extend only descends through existing keys; seed the
@@ -391,9 +434,9 @@ MachineConfig.prototype.update = function (data, callback, force) {
         var incomingEnvelope = (data && data.envelope) ? data.envelope : {};
         var incomingManual   = (data && data.manual)   ? data.manual   : {};
 
-        ["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"].forEach(
+        ["xmin", "xmax", "ymin", "ymax", "zmin", "zmax", "xsize", "ysize", "zsize"].forEach(
             function (key) {
-                if (!(key in incomingEnvelope)) {
+                if (!(key in incomingEnvelope) && key in this._cache.envelope) {
                     this._cache.envelope[key] = round(this._cache.envelope[key] * conv, new_units);
                 }
             }.bind(this)

@@ -542,14 +542,31 @@ function _h_toMatrix3d(H) {
     ].map(function (n) { return n.toFixed(8); }).join(",") + ")";
 }
 
+// The physical table rect in machine coords: 0..size when per-axis
+// envelope sizes are configured; envelope min/max (soft limits, which
+// include overtravel) remain the fallback for configs predating sizes.
+// All Shop Tools map math — rendering, drags, and the map-relative →
+// work-coord conversion in the job generators — goes through this.
+function stTableRect() {
+    var env = state.envelope || {};
+    var xsize = Number(env.xsize), ysize = Number(env.ysize);
+    var x0 = xsize > 0 ? 0 : (Number(env.xmin) || 0);
+    var y0 = ysize > 0 ? 0 : (Number(env.ymin) || 0);
+    return {
+        x0: x0,
+        y0: y0,
+        xspan: xsize > 0 ? xsize : Number(env.xmax) - x0,
+        yspan: ysize > 0 ? ysize : Number(env.ymax) - y0,
+    };
+}
+
 function stArAvailable() {
     var c = stAr.cal;
-    var env = state.envelope || {};
+    var t = stTableRect();
     return !!(stAr.camPort &&
         c && c.calibrated && c.corners &&
         c.corners.tl && c.corners.tr && c.corners.br && c.corners.bl &&
-        Number(env.xmax) - (Number(env.xmin) || 0) > 0 &&
-        Number(env.ymax) - (Number(env.ymin) || 0) > 0);
+        t.xspan > 0 && t.yspan > 0);
 }
 
 function stArRefreshBtns() {
@@ -642,9 +659,8 @@ function stArPointToEnv(clientX, clientY) {
     var svg = document.getElementById("st-ar-svg");
     var rect = svg && svg.querySelector("rect");
     var Hi = stAr._Hinv;
-    var env = state.envelope || {};
-    var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
-    var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+    var t = stTableRect();
+    var xspan = t.xspan, yspan = t.yspan;
     if (!stage || !rect || !Hi || !(xspan > 0) || !(yspan > 0)) return null;
     var sb = stage.getBoundingClientRect();
     var sx = clientX - sb.left, sy = clientY - sb.top;
@@ -666,14 +682,13 @@ function stArPointToEnv(clientX, clientY) {
 function stArDrawPos() {
     var svg = document.getElementById("st-ar-svg");
     var rect = svg && svg.querySelector("rect");
-    var env = state.envelope || {};
-    var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
-    var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+    var t = stTableRect();
+    var xspan = t.xspan, yspan = t.yspan;
     if (!rect || !(xspan > 0) || !(yspan > 0)) return;
     var rx = +rect.getAttribute("x"), ry = +rect.getAttribute("y");
     var rw = +rect.getAttribute("width"), rh = +rect.getAttribute("height");
-    var mx = Math.max(0, Math.min(xspan, (Number(state.pos.x) || 0) + state.g55.x - (Number(env.xmin) || 0)));
-    var my = Math.max(0, Math.min(yspan, (Number(state.pos.y) || 0) + state.g55.y - (Number(env.ymin) || 0)));
+    var mx = Math.max(0, Math.min(xspan, (Number(state.pos.x) || 0) + state.g55.x - t.x0));
+    var my = Math.max(0, Math.min(yspan, (Number(state.pos.y) || 0) + state.g55.y - t.y0));
     var px = rx + (mx / xspan) * rw;
     var py = ry + rh - (my / yspan) * rh;
     var g = svg.querySelector("#st-ar-pos");
@@ -737,9 +752,8 @@ function stArExit() {
 function renderStEnv() {
     var svg = document.getElementById("st-env-svg");
     if (!svg) return;
-    var env = state.envelope || {};
-    var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
-    var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+    var t = stTableRect();
+    var xspan = t.xspan, yspan = t.yspan;
     if (!(xspan > 0) || !(yspan > 0)) {
         // No envelope configured — just leave an empty frame.
         svg.setAttribute("width", 150);
@@ -771,8 +785,8 @@ function renderStEnv() {
 
     // Crosshair position in machine coordinates (work pos + G55 offset),
     // clamped into the envelope so a lost/unzeroed position still draws.
-    var mxr = (Number(state.pos.x) || 0) + state.g55.x - (Number(env.xmin) || 0);
-    var myr = (Number(state.pos.y) || 0) + state.g55.y - (Number(env.ymin) || 0);
+    var mxr = (Number(state.pos.x) || 0) + state.g55.x - t.x0;
+    var myr = (Number(state.pos.y) || 0) + state.g55.y - t.y0;
     var mx = Math.max(0, Math.min(xspan, mxr));
     var my = Math.max(0, Math.min(yspan, myr));
     var px = (mx / xspan) * rw + 1;
@@ -820,8 +834,8 @@ function renderStEnv() {
     if (tgt) {
         var tpx = (Math.max(0, Math.min(xspan, tgt.x)) / xspan) * rw + 1;
         var tpy = 1 + rh - (Math.max(0, Math.min(yspan, tgt.y)) / yspan) * rh;
-        var tlbl = fmt(tgt.x + (Number(env.xmin) || 0) - state.g55.x) + ", " +
-                   fmt(tgt.y + (Number(env.ymin) || 0) - state.g55.y);
+        var tlbl = fmt(tgt.x + t.x0 - state.g55.x) + ", " +
+                   fmt(tgt.y + t.y0 - state.g55.y);
         var ttx = tpx + 9;
         var tanchor = "start";
         if (tpx > rw - 60) { ttx = tpx - 9; tanchor = "end"; }
@@ -945,9 +959,8 @@ function stpDefaults() {
 }
 
 function stpSpans() {
-    var env = state.envelope || {};
-    var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
-    var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+    var t = stTableRect();
+    var xspan = t.xspan, yspan = t.yspan;
     if (!(xspan > 0)) xspan = 24;
     if (!(yspan > 0)) yspan = 18;
     return { xspan: xspan, yspan: yspan };
@@ -2693,10 +2706,10 @@ $(document).ready(function () {
         if (!segs.length) return fabmo.notify("warning", window.t("tool_status.notify.no_toolpath"));
         var safeZ = Number((state.vars || {}).SB_SAFE_Z);
         if (!isFinite(safeZ) || safeZ <= 0) safeZ = state.unit === "mm" ? 25 : 1;
-        var env = state.envelope || {};
-        // Machine-relative area coords → work coords for the job
-        var wx = function (v) { return Math.round((v + (Number(env.xmin) || 0) - state.g55.x) * 10000) / 10000; };
-        var wy = function (v) { return Math.round((v + (Number(env.ymin) || 0) - state.g55.y) * 10000) / 10000; };
+        var t = stTableRect();
+        // Map-relative area coords → work coords for the job
+        var wx = function (v) { return Math.round((v + t.x0 - state.g55.x) * 10000) / 10000; };
+        var wy = function (v) { return Math.round((v + t.y0 - state.g55.y) * 10000) / 10000; };
         var lines = [
             "'Shop Tools: planer",
             "SO,1,1", // spindle on
@@ -2893,9 +2906,9 @@ $(document).ready(function () {
         if (!cuts.length) return fabmo.notify("warning", window.t("tool_status.notify.cut_misses_table"));
         var safeZ = Number((state.vars || {}).SB_SAFE_Z);
         if (!isFinite(safeZ) || safeZ <= 0) safeZ = state.unit === "mm" ? 25 : 1;
-        var env = state.envelope || {};
-        var wx = function (v) { return Math.round((v + (Number(env.xmin) || 0) - state.g55.x) * 10000) / 10000; };
-        var wy = function (v) { return Math.round((v + (Number(env.ymin) || 0) - state.g55.y) * 10000) / 10000; };
+        var t = stTableRect();
+        var wx = function (v) { return Math.round((v + t.x0 - state.g55.x) * 10000) / 10000; };
+        var wy = function (v) { return Math.round((v + t.y0 - state.g55.y) * 10000) / 10000; };
         // Pass schedule: step down by pass depth (or all at once), never
         // past total depth.
         var passD = stSaw.pass > 0 ? Math.min(stSaw.pass, stSaw.depth) : stSaw.depth;
@@ -3018,9 +3031,8 @@ $(document).ready(function () {
     });
     $(document).on("pointermove", function (e) {
         if (!stdDrag) return;
-        var env = state.envelope || {};
-        var xspan = Number(env.xmax) - (Number(env.xmin) || 0);
-        var yspan = Number(env.ymax) - (Number(env.ymin) || 0);
+        var t = stTableRect();
+        var xspan = t.xspan, yspan = t.yspan;
         if (!(xspan > 0) || !(yspan > 0)) return;
         var v = stAr._drag ? stArPointToEnv(e.clientX, e.clientY) : null;
         if (!v) {
@@ -3039,8 +3051,8 @@ $(document).ready(function () {
         var ty = Math.max(0, Math.min(yspan, v.vy));
         // Dropping the target back on the machine crosshair clears it —
         // back to drill-at-position.
-        var mxr = (Number(state.pos.x) || 0) + state.g55.x - (Number(env.xmin) || 0);
-        var myr = (Number(state.pos.y) || 0) + state.g55.y - (Number(env.ymin) || 0);
+        var mxr = (Number(state.pos.x) || 0) + state.g55.x - t.x0;
+        var myr = (Number(state.pos.y) || 0) + state.g55.y - t.y0;
         var snap = Math.max(xspan, yspan) * 0.025;
         stDrill.target = Math.hypot(tx - mxr, ty - myr) < snap ? null : { x: tx, y: ty };
         renderStEnv();
@@ -3140,12 +3152,12 @@ $(document).ready(function () {
         if (zzTable) safeZ = Math.round((stDrill.thickness + safeZ) * 10000) / 10000;
 
         var r4 = function (v) { return Math.round(v * 10000) / 10000; };
-        // Pinned target (envelope-relative machine coords) → work coords
+        // Pinned target (map-relative machine coords) → work coords
         // for J2, same conversion the planer uses.
-        var env = state.envelope || {};
+        var t = stTableRect();
         var tgt = stDrill.target;
-        var twx = tgt ? r4(tgt.x + (Number(env.xmin) || 0) - state.g55.x) : null;
-        var twy = tgt ? r4(tgt.y + (Number(env.ymin) || 0) - state.g55.y) : null;
+        var twx = tgt ? r4(tgt.x + t.x0 - state.g55.x) : null;
+        var twy = tgt ? r4(tgt.y + t.y0 - state.g55.y) : null;
         var lines = ["'Shop Tools: drill press", "SO,1,1", "PAUSE 2"];
         var logMsg;
         if (stArrayMode && stArray.xn * stArray.yn > 1) {

@@ -183,7 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // the corner handles (with a magnifying loupe, since a finger or cursor sits
 // exactly on the corner it is trying to hit) until the grid lies on the
 // table. Corners are stored as fractions of the video frame in
-// machine.cameraCalibration — TL = machine (xmin, ymax), the shared
+// machine.cameraCalibration — TL = the table rectangle's top-left corner
+// (machine (0, ysize), or (xmin, ymax) when sizes are unset), the shared
 // convention. When a calibration exists for the displayed camera, a subtle
 // live grid and a real-time position crosshair can be overlaid on the feed.
 
@@ -251,11 +252,18 @@ function h_toMatrix3d(H) {
     ].map(function (n) { return n.toFixed(8); }).join(",") + ")";
 }
 
+// The grid/AR rectangle is the physical table: machine 0..size when
+// envelope.xsize/ysize are configured. Envelope min/max are soft limits and
+// include overtravel, so they overstate the table; they remain the fallback
+// for configs predating the size fields.
 function envSpans() {
     var e = calState.env || {};
-    var xs = Number(e.xmax) - (Number(e.xmin) || 0);
-    var ys = Number(e.ymax) - (Number(e.ymin) || 0);
-    return (xs > 0 && ys > 0) ? { xspan: xs, yspan: ys } : null;
+    var xsize = Number(e.xsize), ysize = Number(e.ysize);
+    var x0 = xsize > 0 ? 0 : (Number(e.xmin) || 0);
+    var y0 = ysize > 0 ? 0 : (Number(e.ymin) || 0);
+    var xs = xsize > 0 ? xsize : Number(e.xmax) - x0;
+    var ys = ysize > 0 ? ysize : Number(e.ymax) - y0;
+    return (xs > 0 && ys > 0) ? { x0: x0, y0: y0, xspan: xs, yspan: ys } : null;
 }
 
 // A round gridline pitch giving a handful of cells per axis
@@ -418,9 +426,8 @@ function updateCrosshair() {
     var live = document.getElementById("live-grid");
     var s = envSpans();
     if (!s || live.style.display === "none") return;
-    var e = calState.env;
-    var mx = Math.max(0, Math.min(s.xspan, calState.pos.x + calState.g55.x - (Number(e.xmin) || 0)));
-    var my = Math.max(0, Math.min(s.yspan, calState.pos.y + calState.g55.y - (Number(e.ymin) || 0)));
+    var mx = Math.max(0, Math.min(s.xspan, calState.pos.x + calState.g55.x - s.x0));
+    var my = Math.max(0, Math.min(s.yspan, calState.pos.y + calState.g55.y - s.y0));
     var px = mx * GRID_K;
     var py = (s.yspan - my) * GRID_K;
     var g = live.querySelector("#cam-pos");
@@ -664,21 +671,20 @@ function screenToMachine(clientX, clientY) {
     var y = Hi[1][0] * clientX + Hi[1][1] * clientY + Hi[1][2];
     var w = Hi[2][0] * clientX + Hi[2][1] * clientY + Hi[2][2];
     x /= w; y /= w;
-    var e = calState.env;
-    var mx = (Number(e.xmin) || 0) + x / GRID_K;
-    var my = (Number(e.ymin) || 0) + s.yspan - y / GRID_K;
+    var mx = s.x0 + x / GRID_K;
+    var my = s.y0 + s.yspan - y / GRID_K;
     return {
-        x: Math.max(Number(e.xmin) || 0, Math.min(Number(e.xmax), mx)),
-        y: Math.max(Number(e.ymin) || 0, Math.min(Number(e.ymax), my)),
+        x: Math.max(s.x0, Math.min(s.x0 + s.xspan, mx)),
+        y: Math.max(s.y0, Math.min(s.y0 + s.yspan, my)),
     };
 }
 
 // Machine coordinates → svg px in the live grid
 function machineToSvg(mx, my) {
-    var e = calState.env, s = envSpans();
+    var s = envSpans();
     return {
-        x: (mx - (Number(e.xmin) || 0)) * GRID_K,
-        y: (s.yspan - (my - (Number(e.ymin) || 0))) * GRID_K,
+        x: (mx - s.x0) * GRID_K,
+        y: (s.yspan - (my - s.y0)) * GRID_K,
     };
 }
 

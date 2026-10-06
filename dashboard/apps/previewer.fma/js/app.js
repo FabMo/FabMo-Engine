@@ -993,13 +993,18 @@ function nowPreviewJob() {
         treeEl: document.getElementById('parts-list'),
         t: window.t,
         unitScale: (cached_Config.machine && cached_Config.machine.units === 'mm') ? 25.4 : 1,
-        // Table bounds in job coordinates: envelope shifted by the active
-        // work offset, matching viewer.setTable's placement of the 3D table.
+        // Table bounds in job coordinates: physical table (machine 0..size,
+        // envelope min/max fallback) shifted by the active work offset,
+        // matching viewer.setTable's placement of the 3D table.
         table: (function () {
           var env = cached_Config.machine && cached_Config.machine.envelope;
           if (!env) return null;
           var gx = cached_Config.driver.g55x || 0, gy = cached_Config.driver.g55y || 0;
-          return { x0: env.xmin - gx, y0: env.ymin - gy, x1: env.xmax - gx, y1: env.ymax - gy };
+          var xs = Number(env.xsize), ys = Number(env.ysize);
+          return {
+            x0: (xs > 0 ? 0 : env.xmin) - gx, y0: (ys > 0 ? 0 : env.ymin) - gy,
+            x1: (xs > 0 ? xs : env.xmax) - gx, y1: (ys > 0 ? ys : env.ymax) - gy,
+          };
         })(),
         onChange: function () {
           scheduleArrangeApply();

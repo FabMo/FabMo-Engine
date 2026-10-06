@@ -1922,55 +1922,94 @@
             </span>
             </legend>
 
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label data-i18n="config.machine.x_min">X Min</label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-envelope-xmin" class="machine-input" />
+            <div class="row">
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-i18n="config.machine.x_min">X Min</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-xmin" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
                 </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label"></span>
+              </div>
+
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-i18n="config.machine.x_max">X Max</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-xmax" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label><span data-i18n="config.machine.x_size">X Table Size</span> <span class="tooltip">i
+                    <span class="tooltiptext" data-i18n-html="config.machine.table_size_tooltip">
+                      The physical size of the table on each axis, <br>
+                      not including overtravel. The table spans 0 to <br>
+                      this size in machine coordinates; Min/Max above <br>
+                      may extend past it to let the bit travel around <br>
+                      the edges of full-size material. Used to draw <br>
+                      the table in the Previewer and camera AR views. <br>
+                    </span>
+                    </span>
+                  </label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-xsize" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label data-i18n="config.machine.x_max">X Max</label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-envelope-xmax" class="machine-input" />
+            <div class="row">
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-i18n="config.machine.y_min">Y Min</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-ymin" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
                 </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label"></span>
+              </div>
+
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-i18n="config.machine.y_max">Y Max</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-ymax" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-i18n="config.machine.y_size">Y Table Size</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-ysize" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label data-i18n="config.machine.y_min">Y Min</label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-envelope-ymin" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label data-i18n="config.machine.y_max">Y Max</label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-envelope-ymax" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="large-6 columns">
+            <div class="row">
+              <div class="large-4 columns">
                 <div class="row collapse">
                   <label data-i18n="config.machine.z_min">Z Min</label>
                   <div class="small-9 columns">
@@ -1980,9 +2019,9 @@
                     <span class="postfix in_mm_label"></span>
                   </div>
                 </div>
-            </div>
-  
-              <div class="large-6 columns">
+              </div>
+
+              <div class="large-4 columns">
                 <div class="row collapse">
                   <label data-i18n="config.machine.z_max">Z Max</label>
                   <div class="small-9 columns">
@@ -1993,6 +2032,19 @@
                   </div>
                 </div>
               </div>
+
+              <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-i18n="config.machine.z_size">Z Travel Size</label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-zsize" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
               <div class="large-6 columns">
                 <div class="row collapse">

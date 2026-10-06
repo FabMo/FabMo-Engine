@@ -2,6 +2,8 @@
   "default_app": "fabmo-sb4",
   "envelope": {
     "xmax": 36,
-    "ymax": 24
+    "ymax": 24,
+    "xsize": 36,
+    "ysize": 24
   }
 }

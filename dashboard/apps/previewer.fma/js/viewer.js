@@ -70,10 +70,14 @@ module.exports = function(container) {
 
 
   self.setTable = function(envelope, xoff, yoff, zoff) {    // getting data for table, grid, and offset from machine 0
-      tableBounds.max.x = envelope.xmax;
-      tableBounds.min.x = envelope.xmin;
-      tableBounds.max.y = envelope.ymax;
-      tableBounds.min.y = envelope.ymin;
+      // The physical table spans machine 0..size; envelope min/max are soft
+      // limits that include overtravel. Fall back to min..max for configs
+      // predating envelope.xsize/ysize.
+      var xsize = Number(envelope.xsize), ysize = Number(envelope.ysize);
+      tableBounds.max.x = xsize > 0 ? xsize : envelope.xmax;
+      tableBounds.min.x = xsize > 0 ? 0 : envelope.xmin;
+      tableBounds.max.y = ysize > 0 ? ysize : envelope.ymax;
+      tableBounds.min.y = ysize > 0 ? 0 : envelope.ymin;
       tableBounds.loc.x = (tableBounds.max.x - tableBounds.min.x) / 2;
       tableBounds.loc.y = (tableBounds.max.y - tableBounds.min.y) / 2;
       tableBounds.offloc.x = tableBounds.loc.x - xoff;      // keeping it simple by offsetting table not scene
