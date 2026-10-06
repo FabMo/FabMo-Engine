@@ -27,6 +27,46 @@ var MachineConfig = function () {
 };
 util.inherits(MachineConfig, Config);
 
+// Client config posts arrive form-encoded, so arrays round-trip as
+// numeric-keyed objects ({"0": ..., "1": ...}). Rebuild the keepout
+// arrays — zones, each poly's pts, and each pt's [x, y] pair — so the
+// stored shape always matches what bounds.checkAgainstZones and the
+// apps expect. Applied to incoming updates and, at init, to data a
+// pre-fix engine already stored in the mangled shape.
+function normalizeKeepout(keepout) {
+    function toArray(v) {
+        if (Array.isArray(v)) return v;
+        if (v && typeof v === "object") {
+            return Object.keys(v)
+                .filter(function (k) {
+                    return /^\d+$/.test(k);
+                })
+                .sort(function (a, b) {
+                    return a - b;
+                })
+                .map(function (k) {
+                    return v[k];
+                });
+        }
+        return [];
+    }
+    if (!keepout || typeof keepout !== "object") return { zones: [] };
+    var zones = toArray(keepout.zones)
+        .filter(function (z) {
+            return z && (z.type === "rect" || z.type === "poly");
+        })
+        .map(function (z) {
+            if (z.type === "poly") {
+                z.pts = toArray(z.pts).map(function (p) {
+                    var pair = toArray(p);
+                    return [Number(pair[0]) || 0, Number(pair[1]) || 0];
+                });
+            }
+            return z;
+        });
+    return { zones: zones, savedAt: keepout.savedAt };
+}
+
 MachineConfig.prototype.init = function (machine, callback) {
     this.machine = machine;
     // Capture whether the saved user config predates machine.features
@@ -47,6 +87,9 @@ MachineConfig.prototype.init = function (machine, callback) {
             // "only-existing-keys" rule accepts client updates. For installs
             // predating this field, the cache wouldn't have it and POSTs to
             // /config would silently drop it.
+            if (this._cache && this._cache.keepout) {
+                this._cache.keepout = normalizeKeepout(this._cache.keepout);
+            }
             if (this._cache && !("cameraCalibration" in this._cache)) {
                 // util.extend only descends through existing keys; seed the
                 // full nested shape so client updates merge cleanly.
@@ -275,6 +318,15 @@ MachineConfig.prototype.update = function (data, callback, force) {
     // cache, so the object itself mutates in place during extend.
     var old_features = JSON.stringify(this.get("features") || {});
     try {
+        // keepout holds an ARRAY of user-drawn zones, which util.extend
+        // can't handle: it only updates keys that already exist, so new
+        // array indices (and the key itself, on installs predating the
+        // field) are silently dropped. Replace it wholesale instead.
+        if (data && Object.prototype.hasOwnProperty.call(data, "keepout")) {
+            this._cache.keepout = normalizeKeepout(data.keepout);
+            data = Object.assign({}, data);
+            delete data.keepout;
+        }
         u.extend(this._cache, data, force);
         this._normalizeOutputNotify();
         this._normalizeOutputPosition();
