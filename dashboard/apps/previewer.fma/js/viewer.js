@@ -92,6 +92,71 @@ module.exports = function(container) {
           g55: { x: g55x || 0, y: g55y || 0, z: g55z || 0 },
           units: units || ''
       };
+      drawKeepoutZones(); // offsets may have changed under existing zones
+  }
+
+
+  // Keep-out zones (machine.keepout.zones, machine coords, drawn in the
+  // camera app), supplied by app.js alongside the soft limits. Rendered as
+  // translucent red slabs on the table — the visible "why" behind amber
+  // (rerouted) jogs. Scene is work coords: workCoord = machineCoord - g55.
+  var keepoutZones = [];
+  var keepoutGroup = null;
+
+  self.setKeepoutZones = function (zones) {
+      keepoutZones = zones || [];
+      drawKeepoutZones();
+  }
+
+  function drawKeepoutZones() {
+      if (keepoutGroup) {
+          self.scene.remove(keepoutGroup);
+          keepoutGroup = null;
+      }
+      if (!keepoutZones.length || !softLimits) {
+          self.refresh();
+          return;
+      }
+      var g55 = softLimits.g55;
+      var defaultHeight = softLimits.units === 'mm' ? 25 : 1;
+      keepoutGroup = new THREE.Group();
+      var material = new THREE.MeshBasicMaterial({
+          color: 0xc0392b,
+          opacity: 0.3,
+          transparent: true,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+      });
+      keepoutZones.forEach(function (z) {
+          if (!z) return;
+          var h = typeof z.z === 'number' && z.z > 0 ? z.z : defaultHeight;
+          var mesh = null;
+          if (z.type === 'rect') {
+              var w = Math.abs(z.x1 - z.x0);
+              var d = Math.abs(z.y1 - z.y0);
+              if (!(w > 0) || !(d > 0)) return;
+              mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(w, d, h), material);
+              mesh.position.set(
+                  (z.x0 + z.x1) / 2 - g55.x,
+                  (z.y0 + z.y1) / 2 - g55.y,
+                  h / 2
+              );
+          } else if (z.type === 'poly' && z.pts && z.pts.length >= 3) {
+              var shape = new THREE.Shape();
+              shape.moveTo(z.pts[0][0] - g55.x, z.pts[0][1] - g55.y);
+              for (var i = 1; i < z.pts.length; i++) {
+                  shape.lineTo(z.pts[i][0] - g55.x, z.pts[i][1] - g55.y);
+              }
+              shape.closePath();
+              mesh = new THREE.Mesh(
+                  new THREE.ExtrudeBufferGeometry(shape, { depth: h, bevelEnabled: false }),
+                  material
+              );
+          }
+          if (mesh) keepoutGroup.add(mesh);
+      });
+      self.scene.add(keepoutGroup);
+      self.refresh();
   }
 
 

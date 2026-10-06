@@ -192,6 +192,23 @@ describe("emit_move integration", function () {
         expect(sim.emitted.length).toBe(1); // straight jog recorded for the pre-run check
     });
 
+    test("simulation brackets detour legs with previewer markers", function () {
+        stubConfig([RECT]);
+        var rt = captureRuntime();
+        rt.simulation_mode = true;
+        rt.emit_move("G0", { X: 96 });
+        var joined = rt.emitted.join("\n");
+        expect(joined).toMatch(/\(KO-REROUTE\)/);
+        expect(joined).toMatch(/\(KO-END\)/);
+        // Markers bracket the legs: first and last lines
+        expect(rt.emitted[0]).toMatch(/KO-REROUTE/);
+        expect(rt.emitted[rt.emitted.length - 1]).toMatch(/KO-END/);
+        // Live runs never emit markers
+        var live = captureRuntime();
+        live.emit_move("G0", { X: 96 });
+        expect(live.emitted.join("\n")).not.toMatch(/KO-/);
+    });
+
     test("no zones configured leaves jogs untouched", function () {
         stubConfig([]);
         var rt = captureRuntime();

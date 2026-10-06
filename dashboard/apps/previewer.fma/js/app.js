@@ -969,6 +969,11 @@ function nowPreviewJob() {
       cached_Config.machine.units
     );
 
+    // Keep-out zones render on the table, and rerouted (amber) jogs show why
+    viewer.setKeepoutZones(
+      (cached_Config.machine.keepout && cached_Config.machine.keepout.zones) || []
+    );
+
     // Load point cloud if leveling is enabled
     viewer.loadPointCloud(cached_Config);
 
