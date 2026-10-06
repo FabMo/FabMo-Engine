@@ -479,16 +479,19 @@ $(document).ready(function () {
         lastLn = 0;
         upDating = false;
         let file = document.getElementById("file").files[0];
+        curFile = file;                             // ... the file to submit; set now, not when the read below finishes
+        curFilename = file.name;
+        lines = [];
+        // Read a copy of the text for the running-line display. On mobile this can be slow (a cloud file
+        // the picker still has to fetch) so RUN must not wait on it; a failure here only loses that display.
         let fileReader = new FileReader();
         fileReader.onload = function (fileLoadedEvent) {
             lines = fileLoadedEvent.target.result.split('\n');
-            //for (let line = 0; line < lines.length; line++) {
-                //console.log(line + ">>>" + lines[line]);
-            //}
-            curFile = file
+        };
+        fileReader.onerror = function () {
+            console.warn("Could not read picked file for line display:", fileReader.error);
         };
         fileReader.readAsText(file, "UTF-8");
-        curFilename = evt.target.files[0].name;
         $("#cmd-input").val("FP");
         $('#fi_modal_title').append(window.t("sb4.fillin.title_file_ready"));
         displayFillIn("", window.t("sb4.fillin.title_file_ready"), curFilename);
@@ -523,20 +526,26 @@ $(document).ready(function () {
                                 });
                             }
                         });
+                    } else if (!curFile) {
+                        fabmo.notify('error', window.t("sb4.notify.no_file_picked"));
                     } else { // Local file
-                        fabmo.submitJob({
-                            file: curFile,
-                            name: curFilename,
-                            description: window.t("sb4.job.description_from_sb4")
-                        }, { stayHere: true }, function (err, result) {
-                            if(err) {
-                                fabmo.notify('error', err);
-                            } else {
-                                fetchPendingAndRun(function(runErr) {
-                                    // done
-                                });
-                            }
-                        });
+                        try {
+                            fabmo.submitJob({
+                                file: curFile,
+                                name: curFilename,
+                                description: window.t("sb4.job.description_from_sb4")
+                            }, { stayHere: true }, function (err, result) {
+                                if(err) {
+                                    fabmo.notify('error', err);
+                                } else {
+                                    fetchPendingAndRun(function(runErr) {
+                                        // done
+                                    });
+                                }
+                            });
+                        } catch (e) {
+                            fabmo.notify('error', "Could not hand the file to the dashboard: " + (e.message || e));
+                        }
                     }
                 }
             });

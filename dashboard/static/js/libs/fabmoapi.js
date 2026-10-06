@@ -1014,28 +1014,39 @@
                             requests.push(request);
                         }.bind(this);
                     } else {
-                        fd.append("file", file);
-                        var time_before_send = Date.now();
-                        var onFileUploadComplete = function (err, data) {
-                            if (err) {
-                                // Bail out here too - fail on any one file upload failure
-                                requests.forEach(function (req) {
-                                    req.abort();
-                                });
-                                return errback(err);
-                            }
-                            if (data.status === "complete") {
-                                //var transport_time = Date.now()-time_before_send;
-                                //console.log("transport time : "+transport_time+"ms ");
-                                if (key) {
-                                    callback(null, data.data[key]);
-                                } else {
-                                    callback(null, data.data);
+                        // Read the file into memory and send that copy rather than the File handle itself.
+                        // On Android, a file picked from a cloud provider (Dropbox, Drive, ...) is fetched on
+                        // demand, and Chrome refuses to stream it ("upload file changed"); an in-memory copy
+                        // uploads fine.
+                        var fr = new FileReader();
+                        fr.onerror = function () {
+                            errback(new Error("Could not read " + file.name + " for upload: " + (fr.error && fr.error.message)));
+                        };
+                        fr.onload = function () {
+                            fd.append("file", new File([fr.result], file.name, { type: file.type }));
+                            var time_before_send = Date.now();
+                            var onFileUploadComplete = function (err, data) {
+                                if (err) {
+                                    // Bail out here too - fail on any one file upload failure
+                                    requests.forEach(function (req) {
+                                        req.abort();
+                                    });
+                                    return errback(err);
                                 }
-                            }
+                                if (data.status === "complete") {
+                                    //var transport_time = Date.now()-time_before_send;
+                                    //console.log("transport time : "+transport_time+"ms ");
+                                    if (key) {
+                                        callback(null, data.data[key]);
+                                    } else {
+                                        callback(null, data.data);
+                                    }
+                                }
+                            }.bind(this);
+                            var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete, null, null, true);
+                            requests.push(request);
                         }.bind(this);
-                        var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete, null, null, true);
-                        requests.push(request);
+                        fr.readAsArrayBuffer(file);
                     }
                 }.bind(this)
             );
@@ -1120,6 +1131,11 @@
                     break;
             }
         }.bind(this);
+        // A request that never reaches the server (network failure, browser refusing to send the
+        // body) gets no onload; without this the caller would never hear back
+        xhr.onerror = function () {
+            errback(new Error("Request to " + url.split("?")[0] + " failed (network error)"));
+        };
         xhr.send(data);
         return xhr;
     };
