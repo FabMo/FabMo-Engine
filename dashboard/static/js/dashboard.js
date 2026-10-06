@@ -722,21 +722,35 @@ define(function (require) {
                     }, function (err, result) {
                         // Fail-open on check errors, matching the editor's
                         // philosophy: the check must never strand a run.
-                        if (err || !result || result.limitsDisabled) return run(true);
+                        if (err || !result) return run(true);
                         if (result.skipped) return run(true);
                         if (result.canceled) return callback(null);
-                        if (!result.exceeds) return run(true);
-                        var msg = (result.violations || [])
-                            .map(function (v) {
-                                if (v.direction === "span") {
-                                    return v.axis.toUpperCase() + " range of file exceeds machine travel by " + Number(v.overage).toFixed(2);
-                                }
-                                return v.axis.toUpperCase() + " " + v.direction + " by " + Number(v.overage).toFixed(2);
-                            })
-                            .join(", ");
+                        // limitsDisabled can coexist with a keep-out result —
+                        // zones are independent of the soft-limits toggle.
+                        var koEnters = !!(result.keepout && result.keepout.enters);
+                        if (!result.exceeds && !koEnters) return run(true);
+                        var parts = [];
+                        if (result.exceeds) {
+                            var msg = (result.violations || [])
+                                .map(function (v) {
+                                    if (v.direction === "span") {
+                                        return v.axis.toUpperCase() + " range of file exceeds machine travel by " + Number(v.overage).toFixed(2);
+                                    }
+                                    return v.axis.toUpperCase() + " " + v.direction + " by " + Number(v.overage).toFixed(2);
+                                })
+                                .join(", ");
+                            parts.push("This job would move outside the machine envelope: " + msg + ".");
+                        }
+                        if (koEnters) {
+                            var n = result.keepout.zones.length;
+                            parts.push(
+                                "The toolpath " + (result.keepout.approximate ? "may enter" : "enters") +
+                                " " + n + " keep-out zone" + (n === 1 ? "" : "s") + " marked on the table."
+                            );
+                        }
                         self.showModal({
-                            title: "Job exceeds soft limits",
-                            message: "This job would move outside the machine envelope: " + msg + ".<br>Run anyway?",
+                            title: result.exceeds ? "Job exceeds soft limits" : "Job enters a keep-out zone",
+                            message: parts.join("<br>") + "<br>Run anyway?",
                             okText: "Run anyway",
                             ok: function () {
                                 run(true);

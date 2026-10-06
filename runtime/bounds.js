@@ -15,15 +15,52 @@ var fs = require("fs");
 var path = require("path");
 var log = require("../log").logger("bounds");
 
+// Cap on the decimated toolpath polyline persisted with job bounds. The
+// path exists so keep-out zone checks can test actual geometry instead of
+// the bounding box; zones are clamp-sized, so sub-inch fidelity is plenty
+// and the job record stays small (the jobs db is loaded whole at startup).
+var PATH_MAX_POINTS = 600;
+
+// Distance-thin a polyline to at most `cap` points, doubling the tolerance
+// until it fits. Collinear interior points drop harmlessly; corners move by
+// at most the final tolerance. First and last points always survive.
+function decimatePath(path, cap) {
+    if (path.length <= cap) return path;
+    var tol = 0.05;
+    var out = path;
+    while (out.length > cap) {
+        var kept = [out[0]];
+        var last = out[0];
+        for (var i = 1; i < out.length - 1; i++) {
+            var p = out[i];
+            if (Math.hypot(p[0] - last[0], p[1] - last[1]) >= tol || Math.abs(p[2] - last[2]) >= tol) {
+                kept.push(p);
+                last = p;
+            }
+        }
+        kept.push(out[out.length - 1]);
+        out = kept;
+        tol *= 2;
+    }
+    return out;
+}
+
+function round3(v) {
+    return Math.round(v * 1000) / 1000;
+}
+
 // Walks gcode lines tracking modal absolute/relative motion and arc cardinal
-// extremes. Returns { min: {x,y,z}, max: {x,y,z} } in the file's coordinate
-// space (machine-coords are derived later via the active G55 offset).
+// extremes. Returns { min, max, path } in the file's coordinate space
+// (machine-coords are derived later via the active G55 offset). `path` is a
+// decimated [[x, y, z], ...] polyline of the moves, with arcs sampled, for
+// geometry-accurate keep-out checks.
 function scanGCodeBounds(gcode) {
     var pos = { x: 0, y: 0, z: 0 };
     var min = { x: Infinity, y: Infinity, z: Infinity };
     var max = { x: -Infinity, y: -Infinity, z: -Infinity };
     var seen = false;
     var absolute = true; // G90
+    var path = [[0, 0, 0]];
 
     function update(x, y, z) {
         if (x < min.x) min.x = x;
@@ -64,10 +101,12 @@ function scanGCodeBounds(gcode) {
         // its endpoints when the sweep crosses 0°, 90°, 180°, or 270°
         // around the arc center.
         var isArc = /\bG[23]\b/.test(line);
-        if (!isArc) continue;
-        var mi = line.match(/I(-?\d+(?:\.\d+)?)/);
-        var mj = line.match(/J(-?\d+(?:\.\d+)?)/);
-        if (!mi || !mj) continue; // R-form arcs not handled here
+        var mi = isArc ? line.match(/I(-?\d+(?:\.\d+)?)/) : null;
+        var mj = isArc ? line.match(/J(-?\d+(?:\.\d+)?)/) : null;
+        if (!isArc || !mi || !mj) { // R-form arcs tracked as chords
+            path.push([round3(pos.x), round3(pos.y), round3(pos.z)]);
+            continue;
+        }
         var clockwise = /\bG2\b/.test(line);
         var cx = prev.x + parseFloat(mi[1]);
         var cy = prev.y + parseFloat(mj[1]);
@@ -91,9 +130,17 @@ function scanGCodeBounds(gcode) {
                 }
             }
         }
+        // Sample the sweep into the path (chords alone would cut the
+        // corner of a zone the arc actually enters). ~15° steps.
+        var sweep = a1 - a0;
+        var steps = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 12)));
+        for (var si = 1; si <= steps; si++) {
+            var sa = a0 + (sweep * si) / steps;
+            path.push([round3(cx + r * Math.cos(sa)), round3(cy + r * Math.sin(sa)), round3(pos.z)]);
+        }
     }
 
-    return seen ? { min: min, max: max } : null;
+    return seen ? { min: min, max: max, path: decimatePath(path, PATH_MAX_POINTS) } : null;
 }
 
 // Compare bounds (work coords) against the soft-limit envelope (machine
@@ -205,7 +252,130 @@ function computeStringBounds(code, runtime, callback) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Keep-out zones (machine.keepout.zones, drawn in the camera app). Zones are
+// stored in MACHINE coordinates:
+//   { id, type: "rect", x0, y0, x1, y1 }
+//   { id, type: "poly", pts: [[x, y], ...] }   closed polygon
+// A zone may carry a numeric `z` (obstacle height in machine Z): moves whose
+// Z stays at or above it clear the obstacle and don't violate. Without `z`
+// the zone is treated as full-height. If Z has never been zeroed (g55z of
+// exactly 0, same convention as the envelope check) the Z gate is skipped
+// and the zone checked conservatively.
+
+function pointInPoly(x, y, pts) {
+    var inside = false;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        if (
+            pts[i][1] > y !== pts[j][1] > y &&
+            x < ((pts[j][0] - pts[i][0]) * (y - pts[i][1])) / (pts[j][1] - pts[i][1]) + pts[i][0]
+        ) {
+            inside = !inside;
+        }
+    }
+    return inside;
+}
+
+function segsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
+    function ccw(px, py, qx, qy, rx, ry) {
+        return (qx - px) * (ry - py) - (qy - py) * (rx - px);
+    }
+    var d1 = ccw(cx, cy, dx, dy, ax, ay);
+    var d2 = ccw(cx, cy, dx, dy, bx, by);
+    var d3 = ccw(ax, ay, bx, by, cx, cy);
+    var d4 = ccw(ax, ay, bx, by, dx, dy);
+    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+}
+
+function zoneEdges(zone) {
+    if (zone.type === "rect") {
+        var x0 = Math.min(zone.x0, zone.x1), x1 = Math.max(zone.x0, zone.x1);
+        var y0 = Math.min(zone.y0, zone.y1), y1 = Math.max(zone.y0, zone.y1);
+        return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+    }
+    return zone.pts || [];
+}
+
+function pointInZone(zone, x, y) {
+    if (zone.type === "rect") {
+        return (
+            x >= Math.min(zone.x0, zone.x1) && x <= Math.max(zone.x0, zone.x1) &&
+            y >= Math.min(zone.y0, zone.y1) && y <= Math.max(zone.y0, zone.y1)
+        );
+    }
+    return pointInPoly(x, y, zone.pts || []);
+}
+
+// Does the segment (ax,ay)→(bx,by) touch the zone? Endpoint inside, or
+// crossing any boundary edge.
+function segmentHitsZone(zone, ax, ay, bx, by) {
+    if (pointInZone(zone, ax, ay) || pointInZone(zone, bx, by)) return true;
+    var edges = zoneEdges(zone);
+    for (var i = 0, j = edges.length - 1; i < edges.length; j = i++) {
+        if (segsIntersect(ax, ay, bx, by, edges[j][0], edges[j][1], edges[i][0], edges[i][1])) return true;
+    }
+    return false;
+}
+
+// Test a job's stored path (work coords) against keep-out zones (machine
+// coords) using the active G55 offset. Returns
+// { enters, zones: [ids], approximate }. Jobs scanned before path storage
+// existed fall back to a bounding-box overlap test (approximate: true).
+function checkAgainstZones(jobBounds, zones, g55) {
+    var result = { enters: false, zones: [], approximate: false };
+    if (!jobBounds || !zones || !zones.length) return result;
+    var offx = (g55 && typeof g55.x === "number") ? g55.x : 0;
+    var offy = (g55 && typeof g55.y === "number") ? g55.y : 0;
+    var offz = (g55 && typeof g55.z === "number") ? g55.z : 0;
+    var path = jobBounds.path;
+
+    zones.forEach(function (zone) {
+        if (!zone || (zone.type !== "rect" && zone.type !== "poly")) return;
+        var hit = false;
+        if (path && path.length > 1) {
+            for (var i = 1; i < path.length; i++) {
+                var a = path[i - 1], b = path[i];
+                // Z gate: a move that stays above the obstacle clears it
+                if (typeof zone.z === "number" && offz !== 0 && Math.min(a[2], b[2]) + offz >= zone.z) continue;
+                if (segmentHitsZone(zone, a[0] + offx, a[1] + offy, b[0] + offx, b[1] + offy)) {
+                    hit = true;
+                    break;
+                }
+            }
+        } else if (jobBounds.min && jobBounds.max) {
+            // No path stored — bounding-box overlap, conservatively
+            var bbox = {
+                type: "rect",
+                x0: jobBounds.min.x + offx, y0: jobBounds.min.y + offy,
+                x1: jobBounds.max.x + offx, y1: jobBounds.max.y + offy,
+            };
+            var edges = zoneEdges(zone);
+            for (var k = 0; k < edges.length && !hit; k++) {
+                if (pointInZone(bbox, edges[k][0], edges[k][1])) hit = true;
+            }
+            var bEdges = zoneEdges(bbox);
+            for (var m = 0; m < bEdges.length && !hit; m++) {
+                if (pointInZone(zone, bEdges[m][0], bEdges[m][1])) hit = true;
+            }
+            for (var p = 0, q = bEdges.length - 1; p < bEdges.length && !hit; q = p++) {
+                for (var r = 0, s = edges.length - 1; r < edges.length && !hit; s = r++) {
+                    if (segsIntersect(
+                        bEdges[q][0], bEdges[q][1], bEdges[p][0], bEdges[p][1],
+                        edges[s][0], edges[s][1], edges[r][0], edges[r][1]
+                    )) hit = true;
+                }
+            }
+            if (hit) result.approximate = true;
+        }
+        if (hit) result.zones.push(zone.id || zone.type);
+    });
+
+    result.enters = result.zones.length > 0;
+    return result;
+}
+
 exports.scanGCodeBounds = scanGCodeBounds;
 exports.checkAgainstEnvelope = checkAgainstEnvelope;
+exports.checkAgainstZones = checkAgainstZones;
 exports.computeFileBounds = computeFileBounds;
 exports.computeStringBounds = computeStringBounds;
