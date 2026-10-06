@@ -86,50 +86,53 @@ exports.MC = function (args) {
     this.emit_move("G1", { C: c, F: feedrate });
 };
 
+// Emit the move only if at least one SPECIFIED axis is not already at its
+// target (same guard as jog.js emit_jog, which explains the rationale —
+// a zero-length move must never reach G2). cmd_result counts specified axes
+// already at target; params.F is always present and is not an axis.
+var emit_feed_move = function (params) {
+    var specified = ["X", "Y", "Z", "A", "B", "C"].filter(function (k) {
+        return params[k] !== undefined;
+    }).length;
+    if (specified > 0 && this.cmd_result < specified) {
+        this.emit_move("G1", params);
+    }
+};
+
 // Move 2 axes (XY). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M2 = function (args) {
     //log.debug("  X param = " + args[0] + "  Y param = " + args[1]);
     var params = process_move.bind(this)(args);
-    if (this.cmd_result < 2) {
-        this.emit_move("G1", params);
-    }
+    emit_feed_move.bind(this)(params);
 };
 
 // Move 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M3 = function (args) {
     var params = process_move.bind(this)(args);
-    if (this.cmd_result < 3) {
-        this.emit_move("G1", params);
-    }
+    emit_feed_move.bind(this)(params);
 };
 
 // Move 4 axes (XYZA). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M4 = function (args) {
     var params = process_move.bind(this)(args);
-    if (this.cmd_result < 4) {
-        this.emit_move("G1", params);
-    }
+    emit_feed_move.bind(this)(params);
 };
 
 // Move 5 axes (XYZAB). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M5 = function (args) {
     var params = process_move.bind(this)(args);
-    if (this.cmd_result < 5) {
-        this.emit_move("G1", params);
-    }
+    emit_feed_move.bind(this)(params);
 };
 
 // Move all 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M6 = function (args) {
     var params = process_move.bind(this)(args);
-    if (this.cmd_result < 6) {
-        this.emit_move("G1", params);
-    }
+    emit_feed_move.bind(this)(params);
 };
 
 var process_move = function (args) {
