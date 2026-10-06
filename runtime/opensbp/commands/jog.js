@@ -73,49 +73,53 @@ exports.JC = function (args) {
     }
 };
 
+// Emit the jog only if at least one SPECIFIED axis is not already at its
+// target. cmd_result counts specified axes already at target, so it can never
+// reach the command's full axis count when axes are omitted (e.g. J5,,,,0,0
+// specifies only A and B) — comparing against the specified count is the only
+// correct no-move test. A fully-degenerate rapid must not reach G2: a
+// zero-length G0 arriving in the cycle-start window after a PAUSE resume
+// leaves g2core wedged in stat 5 with no terminating status report.
+var emit_jog = function (params) {
+    var specified = Object.keys(params).length;
+    if (specified > 0 && this.cmd_result < specified) {
+        this.emit_move("G0", params);
+    }
+};
+
 // Jog (rapid) 2 axes (XY).This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J2 = function (args) {
     var params = process_jog.bind(this)(args);
-    if (this.cmd_result < 2) {
-        this.emit_move("G0", params);
-    }
+    emit_jog.bind(this)(params);
 };
 
 // Jog (rapid) 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J3 = function (args) {
     var params = process_jog.bind(this)(args);
-    if (this.cmd_result < 3) {
-        this.emit_move("G0", params);
-    }
+    emit_jog.bind(this)(params);
 };
 
 // Jog (rapid) 4 axes (XYZA). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J4 = function (args) {
     var params = process_jog.bind(this)(args);
-    if (this.cmd_result < 4) {
-        this.emit_move("G0", params);
-    }
+    emit_jog.bind(this)(params);
 };
 
 // Jog (rapid) 5 axes (XYZAB). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J5 = function (args) {
     var params = process_jog.bind(this)(args);
-    if (this.cmd_result < 5) {
-        this.emit_move("G0", params);
-    }
+    emit_jog.bind(this)(params);
 };
 
 // Jog (rapid) 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J6 = function (args) {
     var params = process_jog.bind(this)(args);
-    if (this.cmd_result < 6) {
-        this.emit_move("G0", params);
-    }
+    emit_jog.bind(this)(params);
 };
 
 var process_jog = function (args) {
