@@ -1346,18 +1346,6 @@ function update() {
             if (key === "transforms-level-apply") {
                 if (v===true) {ckTransform = true};
             }
-            if (ckTransform === true) {
-                $('#nav-transforms').html(
-                  '<strong>' + window.t('job_manager.nav.transforms_label') + '</strong>' +
-                  '<strong style="color: #FF4013;">&nbsp;&nbsp;' + window.t('job_manager.nav.on_caps') + '</strong>' +
-                  ' |<span style="color: lightgray; opacity: 0.5;"> ' + window.t('job_manager.nav.off') + '</span>'
-                );
-            } else {
-                $('#nav-transforms').html(
-                  window.t('job_manager.nav.transforms_label') + '&nbsp;&nbsp;' +
-                  '<span style="color: lightgray; opacity: 0.5;">' + window.t('job_manager.nav.on') + '</span>' +
-                  ' |<span style="color: lightgray;"><strong>&nbsp;' + window.t('job_manager.nav.off_caps') + '</strong></span');
-            }
 
             input = $('#' + branchname + '-' + key);
             if(input.length) {
@@ -1372,6 +1360,26 @@ function update() {
                 }
             }
           }
+      });
+
+      // Quick Display of TRANSFORM STATE in Job-manager nav bar.
+      // Rendered after the dictionaries are in — a direct t() here races
+      // the /i18n/dict fetch at app startup, and a too-early call bakes
+      // raw keys into the nav with no data-i18n spans left for the DOM
+      // walker to repair (same failure as the editor header, 4f244f37).
+      window.i18nReady.then(function () {
+            if (ckTransform === true) {
+                $('#nav-transforms').html(
+                  '<strong>' + window.t('job_manager.nav.transforms_label') + '</strong>' +
+                  '<strong style="color: #FF4013;">&nbsp;&nbsp;' + window.t('job_manager.nav.on_caps') + '</strong>' +
+                  ' |<span style="color: lightgray; opacity: 0.5;"> ' + window.t('job_manager.nav.off') + '</span>'
+                );
+            } else {
+                $('#nav-transforms').html(
+                  window.t('job_manager.nav.transforms_label') + '&nbsp;&nbsp;' +
+                  '<span style="color: lightgray; opacity: 0.5;">' + window.t('job_manager.nav.on') + '</span>' +
+                  ' |<span style="color: lightgray;"><strong>&nbsp;' + window.t('job_manager.nav.off_caps') + '</strong></span>');
+            }
       });
     }
   });
