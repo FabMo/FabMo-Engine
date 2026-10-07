@@ -211,6 +211,22 @@
                       <a id="btn-update"  class="button radius small" data-i18n="config.software.check_updates">Check for FabMo Software Updates</a>
                     </div>
                 </div>
+                <!-- Update notification: filled in by the browser-side manifest
+                     check (see "Update notification" section in configuration.js).
+                     Works even when the tool itself has no internet. -->
+                <div id="update-notice" style="display:none; margin-top:10px; padding:10px; border:1px solid #c6d8c6; border-radius:6px; background:#f4faf4;">
+                  <span id="update-notice-text" style="font-weight:bold;"></span>
+                  <div id="update-changelog" style="font-size:0.85em; white-space:pre-line; margin:6px 0; max-height:7em; overflow-y:auto;"></div>
+                  <a id="btn-install-update" class="button radius small success" style="margin-bottom:6px;"></a>
+                  <div id="update-offline-flow" style="display:none;">
+                    <p data-i18n="config.software.update_offline_explain" style="font-size:0.9em; margin-bottom:6px;">This tool has no internet connection, but your browser does. Download the update file with your browser, then drop it below.</p>
+                    <a id="btn-download-fmp" class="button radius small" data-i18n="config.software.update_download_step">1. Download the update file</a>
+                    <div id="fmp-dropzone" data-i18n="config.software.update_drop_step" style="border:2px dashed #9a9a9a; border-radius:6px; padding:16px; text-align:center; cursor:pointer; color:#666;">2. Then drop the downloaded file here (or click to choose it)</div>
+                    <input type="file" id="fmp-file-input" accept=".fmp,.fmu" style="display:none;">
+                  </div>
+                  <div id="update-progress" style="display:none; font-weight:bold; margin-top:6px;"></div>
+                </div>
+                <div id="update-uptodate" style="display:none; margin-top:6px; font-size:0.85em; color:#4a7a4a;" data-i18n="config.software.update_up_to_date">FabMo software is up to date.</div>
               </div>
               <div class="row collapse">
                 <label data-i18n="config.software.firmware_version">G2 Firmware Version (realtime motion module)</label>

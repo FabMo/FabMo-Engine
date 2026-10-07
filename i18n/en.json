@@ -300,7 +300,19 @@
             "firmware_loading": "Special Case - Firmware loading",
             "firmware_loading_tooltip": "These are firmware load functions for special use cases:<br>&nbsp;&nbsp;Either to upload a firmware file you have been provided by tech support, <br>&nbsp;&nbsp;or to reload the current firmare in cases where there is a mismatch <br>&nbsp;&nbsp;between the SD card and the Control card (e.g. SD card replacement).<br>",
             "firmware_upload": "SPECIAL |  Update G2 Firmware with a file provided by tech support",
-            "firmware_reload": "SPECIAL |  Reload G2 Firmware from current FabMo"
+            "firmware_reload": "SPECIAL |  Reload G2 Firmware from current FabMo",
+            "update_available": "Update available: {version} (installed: {current})",
+            "update_up_to_date": "FabMo software is up to date.",
+            "install_now": "Install {version} now",
+            "confirm_install": "Confirm — install {version} (the tool will restart)",
+            "update_requires_idle": "The tool must be idle to install an update.",
+            "update_downloading_tool": "Downloading the update on the tool…",
+            "update_uploading": "Sending the update to the tool… {pct}%",
+            "update_installing_restart": "Installing — the tool will restart and this page will reconnect.",
+            "update_failed": "Update failed: {message}",
+            "update_offline_explain": "This tool has no internet connection, but your browser does. Download the update file with your browser, then drop it below.",
+            "update_download_step": "1. Download the update file",
+            "update_drop_step": "2. Then drop the downloaded file here (or click to choose it)"
         },
         "axes": {
             "legend": "AXIS CONFIGURATIONS",

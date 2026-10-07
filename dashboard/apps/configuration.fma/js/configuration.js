@@ -1565,3 +1565,245 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
 
     $(document).ready(init);
 })();
+// ----- Update notification --------------------------------------------------
+// Checks for FabMo updates using the BROWSER's internet connection, so a tool
+// with no network route of its own still learns that an update exists. The
+// package manifest on gofabmo.org is CORS-open (GitHub Pages), so the page
+// can read it directly. Install goes through the engine's same-origin updater
+// proxy (/updater/*, routes/updater.js):
+//   - tool online:  the updater downloads the package itself, then applies.
+//   - tool offline: the browser downloads the .fmp (normal browser download,
+//     no CORS needed) and the user drops it on the page; we relay it to the
+//     updater's manual-update endpoint.
+(function() {
+    var MANIFEST_URL = 'https://www.gofabmo.org/manifest/packages.json';
+    var latestPkg = null;
+    var currentVersion = null;
+    var armed = false;
+    var armTimer = null;
+    var lastMachineState = null;
+
+    fabmo.on('status', function(status) {
+        if (status && status.state) { lastMachineState = status.state; }
+    });
+
+    function parseVer(v) {
+        var p = String(v || '').replace(/^v/i, '').split('.').map(function(n) {
+            return parseInt(n, 10) || 0;
+        });
+        while (p.length < 3) { p.push(0); }
+        return p;
+    }
+
+    function verCmp(a, b) {
+        var va = parseVer(a), vb = parseVer(b);
+        for (var i = 0; i < 3; i++) {
+            if (va[i] !== vb[i]) { return va[i] - vb[i]; }
+        }
+        return 0;
+    }
+
+    function progress(msg, isError) {
+        $('#update-progress')
+            .show()
+            .css('color', isError ? '#a94442' : '#31708f')
+            .text(msg);
+    }
+
+    function showNotice(pkg, newer) {
+        latestPkg = pkg;
+        $('#update-notice-text').text(window.t('config.software.update_available', {
+            version: pkg.version,
+            current: currentVersion
+        }));
+        // Aggregate the changelogs of everything newer than the installed
+        // version, newest first, so the user sees what they skipped too.
+        var lines = [];
+        for (var i = newer.length - 1; i >= 0 && lines.length < 40; i--) {
+            var cl = (newer[i].changelog || '').trim();
+            if (cl) { lines.push(newer[i].version + ':\n' + cl); }
+        }
+        $('#update-changelog').text(lines.join('\n'));
+        $('#btn-install-update').text(window.t('config.software.install_now', { version: pkg.version }));
+        $('#update-notice').show();
+    }
+
+    function checkForUpdates() {
+        fabmo.getVersion(function(err, version) {
+            if (err || !version || version.type !== 'release' || !version.number) {
+                return; // dev builds: no version to compare against
+            }
+            currentVersion = version.number;
+            // Ask the engine's updater proxy which platform we are; fall back
+            // to raspberry-pi (the only shipping platform) if it's unreachable.
+            $.getJSON('/updater/config').always(function(resp) {
+                var ucfg = (resp && resp.data && (resp.data.config || resp.data)) || {};
+                var platform = ucfg.platform || 'raspberry-pi';
+                var controller = window.AbortController ? new AbortController() : null;
+                var timer = controller ? setTimeout(function() { controller.abort(); }, 8000) : null;
+                fetch(MANIFEST_URL, controller ? { signal: controller.signal, cache: 'no-store' } : { cache: 'no-store' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(manifest) {
+                        if (timer) { clearTimeout(timer); }
+                        var pkgs = (manifest.packages || []).filter(function(p) {
+                            return p.product === 'FabMo-Engine' &&
+                                   p.os === 'linux' &&
+                                   p.platform === platform;
+                        }).sort(function(a, b) { return verCmp(a.version, b.version); });
+                        if (!pkgs.length) { return; }
+                        var newer = pkgs.filter(function(p) {
+                            return verCmp(p.version, currentVersion) > 0;
+                        });
+                        if (newer.length) {
+                            showNotice(newer[newer.length - 1], newer);
+                        } else {
+                            $('#update-uptodate').show();
+                        }
+                    })
+                    .catch(function() {
+                        // Browser has no internet either (or the fetch timed
+                        // out) — stay quiet; the old updater button remains.
+                    });
+            });
+        });
+    }
+
+    function disarm() {
+        armed = false;
+        if (armTimer) { clearTimeout(armTimer); armTimer = null; }
+        if (latestPkg) {
+            $('#btn-install-update')
+                .removeClass('alert')
+                .text(window.t('config.software.install_now', { version: latestPkg.version }));
+        }
+    }
+
+    function beginInstall() {
+        if (lastMachineState && lastMachineState !== 'idle') {
+            progress(window.t('config.software.update_requires_idle'), true);
+            return;
+        }
+        $('#btn-install-update').addClass('disabled');
+        $.getJSON('/network/online').always(function(resp) {
+            var online = !!(resp && resp.data && resp.data.online);
+            if (online) {
+                serverSideInstall();
+            } else {
+                $('#update-offline-flow').show();
+            }
+        });
+    }
+
+    function serverSideInstall() {
+        progress(window.t('config.software.update_downloading_tool'));
+        $.ajax({
+            url: '/updater/update/download',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ version: latestPkg.version }),
+            dataType: 'json',
+            timeout: 10 * 60 * 1000
+        }).done(function(resp) {
+            if (resp && resp.status === 'success') {
+                progress(window.t('config.software.update_installing_restart'));
+                $.post('/updater/update/apply').fail(function() {
+                    // The engine often restarts before this response lands —
+                    // that is the success case, not an error.
+                });
+            } else {
+                progress(window.t('config.software.update_failed', {
+                    message: (resp && resp.message) || 'unknown'
+                }), true);
+                $('#btn-install-update').removeClass('disabled');
+            }
+        }).fail(function(xhr, stat) {
+            progress(window.t('config.software.update_failed', { message: stat }), true);
+            $('#btn-install-update').removeClass('disabled');
+        });
+    }
+
+    function relayFile(file) {
+        if (!file) { return; }
+        if (!/\.(fmp|fmu)$/i.test(file.name)) {
+            progress(window.t('config.software.update_failed', { message: file.name }), true);
+            return;
+        }
+        var fd = new FormData();
+        fd.append('file', file, file.name);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/updater/update/manual');
+        xhr.upload.onprogress = function(evt) {
+            if (evt.lengthComputable) {
+                progress(window.t('config.software.update_uploading', {
+                    pct: Math.round((evt.loaded / evt.total) * 100)
+                }));
+            }
+        };
+        xhr.onload = function() {
+            var resp = {};
+            try { resp = JSON.parse(xhr.responseText); } catch (e) { /* fall through */ }
+            if (resp.status === 'success') {
+                progress(window.t('config.software.update_installing_restart'));
+            } else {
+                progress(window.t('config.software.update_failed', {
+                    message: resp.message || ('HTTP ' + xhr.status)
+                }), true);
+            }
+        };
+        xhr.onerror = function() {
+            progress(window.t('config.software.update_failed', { message: 'upload error' }), true);
+        };
+        progress(window.t('config.software.update_uploading', { pct: 0 }));
+        xhr.send(fd);
+    }
+
+    function init() {
+        $('#btn-install-update').click(function(evt) {
+            evt.preventDefault();
+            if ($(this).hasClass('disabled') || !latestPkg) { return; }
+            if (!armed) {
+                // Two-step confirm (the sandboxed iframe blocks window.confirm):
+                // first click arms, second click within 6 s proceeds.
+                armed = true;
+                $(this).addClass('alert').text(window.t('config.software.confirm_install', {
+                    version: latestPkg.version
+                }));
+                armTimer = setTimeout(disarm, 6000);
+                return;
+            }
+            disarm();
+            beginInstall();
+        });
+
+        // The browser downloads the package over ITS connection. Opened via
+        // the parent window because the sandboxed app iframe can't download.
+        $('#btn-download-fmp').click(function(evt) {
+            evt.preventDefault();
+            if (latestPkg) { fabmo.navigate(latestPkg.url, { target: '_blank' }); }
+        });
+
+        var $zone = $('#fmp-dropzone');
+        $zone.click(function() { $('#fmp-file-input').trigger('click'); });
+        $('#fmp-file-input').change(function() { relayFile(this.files[0]); });
+        $zone.on('dragover dragenter', function(evt) {
+            evt.preventDefault();
+            $zone.css('border-color', '#4a7a4a');
+        });
+        $zone.on('dragleave drop', function(evt) {
+            evt.preventDefault();
+            $zone.css('border-color', '#9a9a9a');
+        });
+        $zone.on('drop', function(evt) {
+            var dt = evt.originalEvent.dataTransfer;
+            if (dt && dt.files && dt.files.length) { relayFile(dt.files[0]); }
+        });
+
+        checkForUpdates();
+    }
+
+    // Dynamic strings here are built with direct t() calls, and the check can
+    // win the race against the dictionary fetch — gate the whole module.
+    $(document).ready(function() {
+        (window.i18nReady || Promise.resolve()).then(init);
+    });
+})();
