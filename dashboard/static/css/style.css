@@ -4207,3 +4207,60 @@ a.update-available::after {
 	top: -4px;
 	right: -4px;
 }
+
+/* ----- Software-update progress screen (see fabmoUpdateScreen in main.js) -----
+   Full-screen takeover while an update applies and the engine restarts.
+   Sits above every modal/overlay in the dashboard. */
+#update-screen {
+	position: fixed;
+	top: 0; right: 0; bottom: 0; left: 0;
+	z-index: 99999;
+	background: #313366; /* FabMo brand blue, matches the daisy cog */
+	color: #f0f0f0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+#update-screen .update-screen-box {
+	max-width: 480px;
+	padding: 24px;
+}
+#update-screen .update-screen-spinner {
+	font-size: 56px;
+	color: #fff;
+	margin-bottom: 18px;
+}
+#update-screen .update-screen-title {
+	color: #fff;
+	font-size: 1.6rem;
+	margin-bottom: 10px;
+}
+#update-screen .update-screen-stage {
+	font-size: 1.1rem;
+	font-weight: bold;
+	margin-bottom: 6px;
+}
+#update-screen .update-screen-elapsed {
+	font-size: 0.9rem;
+	color: #c5c8e8;
+	margin-bottom: 16px;
+}
+#update-screen .update-screen-notes {
+	font-size: 0.9rem;
+	color: #c5c8e8;
+	line-height: 1.5;
+}
+#update-screen .update-screen-note-power {
+	font-weight: bold;
+	color: #ffd97a;
+}
+#update-screen .update-screen-longwait {
+	margin-top: 18px;
+	padding-top: 12px;
+	border-top: 1px solid rgba(255,255,255,0.25);
+	font-size: 0.9rem;
+}
+#update-screen .update-screen-longwait .update-screen-reload {
+	margin-top: 10px;
+}

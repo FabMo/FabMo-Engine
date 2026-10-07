@@ -552,6 +552,16 @@
         this._call("hideFooter", null, callback);
     };
 
+    /**
+     * Tell the dashboard a software update is being applied: the engine is
+     * about to go down and restart. The dashboard takes over the screen with
+     * an update-progress page and reloads itself when the tool comes back.
+     * @param {Object} info - {version: "v4.2.39"} the version being installed
+     */
+    FabMoDashboard.prototype.notifyUpdateStarted = function (info, callback) {
+        this._call("notifyUpdateStarted", info || {}, callback);
+    };
+
     // Notification functions
     FabMoDashboard.prototype.notification = function (type, message, callback) {
         this._call("notification", { type: type, message: message }, callback);

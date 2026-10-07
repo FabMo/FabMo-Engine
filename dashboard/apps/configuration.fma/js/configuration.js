@@ -67,13 +67,6 @@ function update() {
         break;
     }
   });
-  fabmo.getInfo(function(err, info) {
-    if(err) {
-      console.error(err);
-    } else {
-      $('.firmware-version').text(info.firmware.version.replace("-dirty","")) 
-    }
-  });
   fabmo.getConfig(function(err, data) {
     if(err) {
       console.error(err);
@@ -220,33 +213,9 @@ var configData = null;
 
 // Other Config page functions
 
-$('#btn-flash-firm').click(function() {
-    $('#firmware-input').trigger('click');
-  });
-
-$('#btn-reload-firm').click(function() {
-    fabmo.showModal({
-      title: window.t('config.modal.reload_firmware_title'),
-      message: window.t('config.modal.reload_firmware_message'),
-      okText: window.t('config.modal.reload'),
-      cancelText: window.t('config.modal.cancel'),
-      ok: function() {
-        fabmo.notify('info', window.t('config.notify.reloading_firmware'));
-        fabmo.reloadFirmware({}, function(err, data) {
-          if (err) {
-            fabmo.notify('error', window.t('config.notify.firmware_reload_failed') + (err.message || err));
-          } else {
-            fabmo.notify('info', window.t('config.notify.firmware_reload_started'));
-          }
-        });
-      },
-      cancel: function() {}
-    });
-  });
-
-// #btn-update is wired in the "Update notification" module at the bottom of
-// this file: it re-runs the browser-side manifest check. The old behavior
-// (navigate to the updater page) lives on #btn-open-updater under Advanced.
+// G2 firmware flash/reload moved to the FabMo-Updater page (the "Advanced"
+// button, #btn-open-updater). #btn-update is wired in the "Update
+// notification" module at the bottom of this file.
 
 $('#update-input').change(function(evt) {
     var files = [];
@@ -264,25 +233,6 @@ $('#update-input').change(function(evt) {
       console.log(progress);
     });
   });
-
-// Upload a package file manually
-$('#firmware-input').change(function(evt) {
-  var files = [];
-  for(var i=0; i<evt.target.files.length; i++) {
-    files.push({file:evt.target.files[i]});
-  }
-  fabmo.submitFirmwareUpdate(files, {}, function(err, data) {
-      if(err){
-          console.log(err)
-      }else {
-          console.log(data);
-      }
-    
-  }, function(progress) {
-    console.log(progress);
-  });
-});
-
 
 // Outputs whose behavior is hardcoded — labels are fixed and modes are not
 // user-configurable. The runtime ignores their saved policy entirely (see
@@ -1240,7 +1190,10 @@ $('#restore-settings-confirm').click(function () {
 // Populate the Default settings label on load — gated so the "(none)" /
 // "(default)" strings resolve after the i18n dicts land; an early t() here
 // would bake raw keys into #current-default-name and the restore select.
-(window.i18nReady || Promise.resolve()).then(refreshSnapshots);
+// NB: wrap the call — i18nReady resolves with a value (a Promise.all array),
+// and passing refreshSnapshots directly would receive it as the `done`
+// callback and throw ("done is not a function").
+(window.i18nReady || Promise.resolve()).then(function () { refreshSnapshots(); });
 
 // ---------- Spindle Setup ----------
 
@@ -1310,7 +1263,7 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
 // Populate on load — gated: the "Not detected" / "(none)" field values are
 // written with .val() (no data-i18n-value), so a pre-dict t() sticks until
 // the user runs Configure.
-(window.i18nReady || Promise.resolve()).then(refreshSpindleDiscover);
+(window.i18nReady || Promise.resolve()).then(function () { refreshSpindleDiscover(); });
 
 // ----- Variables tab -------------------------------------------------------
 // Lists persistent OpenSBP variables ($-prefixed) with type-aware editors and
@@ -1581,9 +1534,14 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
     var armed = false;
     var armTimer = null;
     var lastMachineState = null;
-    // The single #btn-update button: 'check' = run the manifest check,
-    // 'install' = install latestPkg (set once a newer version is found).
+    // The single #btn-update button steps through a fallback cascade:
+    //   'check'       - run the browser-side manifest check
+    //   'install'     - install latestPkg from the registry (manifest found)
+    //   'install-usb' - install usbPkg found on a mounted USB drive
+    //   'upload'      - no internet anywhere, no USB package: open a file
+    //                   picker and relay the chosen .fmp to the updater
     var mode = 'check';
+    var usbPkg = null;
 
     fabmo.on('status', function(status) {
         if (status && status.state) { lastMachineState = status.state; }
@@ -1614,14 +1572,62 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
 
     function showNotice(pkg) {
         latestPkg = pkg;
+        usbPkg = null;
         mode = 'install';
         $('#update-uptodate').hide();
-        // A small "(update available)" flag next to the version number
-        // (data-i18n already filled its text), and the one button morphs:
-        // "Check for Updates" → "Install vX.X.X now".
-        $('#update-available-flag').show();
+        // A small "(update available)" flag next to the version number,
+        // and the one button morphs: "Check for Updates" → "Install vX now".
+        // (Reset the flag text — a prior USB result may have changed it.)
+        $('#update-available-flag')
+            .text(window.t('config.software.update_available_flag'))
+            .show();
         $('#btn-update').addClass('success')
             .text(window.t('config.software.install_now', { version: pkg.version }));
+    }
+
+    function showUSBNotice(pkg) {
+        usbPkg = pkg;
+        latestPkg = null;
+        mode = 'install-usb';
+        $('#update-uptodate').hide();
+        $('#update-available-flag')
+            .text(window.t('config.software.update_usb_flag'))
+            .show();
+        $('#btn-update').addClass('success')
+            .text(window.t('config.software.install_usb', { version: pkg.version }));
+    }
+
+    // Terminal state of the cascade: nothing reachable, nothing on USB.
+    // The button becomes "Upload Update Package…" (opens a file picker on
+    // the client device; the chosen file is relayed to the updater).
+    function enterUploadMode(manual, done) {
+        latestPkg = null;
+        usbPkg = null;
+        mode = 'upload';
+        $('#update-available-flag').hide();
+        $('#btn-update').removeClass('success')
+            .text(window.t('config.software.upload_package'));
+        done('config.software.update_offline_hint', false);
+    }
+
+    // Cascade step 3: neither the tool nor the browser has internet — look
+    // for a newer package on a USB drive plugged into the tool.
+    function checkUSBPackages(manual, done) {
+        $.getJSON('/updater/usb/packages').done(function(resp) {
+            var pkgs = (resp && resp.data && resp.data.packages) || [];
+            var newer = pkgs.filter(function(p) {
+                return p.product === 'fabmo-engine' && p.version &&
+                       verCmp(p.version, currentVersion) > 0;
+            }).sort(function(a, b) { return verCmp(a.version, b.version); });
+            if (newer.length) {
+                done(null);
+                showUSBNotice(newer[newer.length - 1]);
+            } else {
+                enterUploadMode(manual, done);
+            }
+        }).fail(function() {
+            enterUploadMode(manual, done);
+        });
     }
 
     // manual=true when the user clicked "Check for Updates": give feedback
@@ -1675,9 +1681,9 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
                     })
                     .catch(function() {
                         // Browser has no internet either (or the fetch timed
-                        // out). The automatic check stays quiet; a manual
-                        // check reports the failure.
-                        done('config.software.update_check_failed', true);
+                        // out) — fall through to the USB drive, and failing
+                        // that, to upload mode.
+                        checkUSBPackages(manual, done);
                     });
             });
         });
@@ -1686,11 +1692,47 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
     function disarm() {
         armed = false;
         if (armTimer) { clearTimeout(armTimer); armTimer = null; }
-        if (latestPkg) {
+        if (mode === 'install' && latestPkg) {
             $('#btn-update')
                 .removeClass('alert').addClass('success')
                 .text(window.t('config.software.install_now', { version: latestPkg.version }));
+        } else if (mode === 'install-usb' && usbPkg) {
+            $('#btn-update')
+                .removeClass('alert').addClass('success')
+                .text(window.t('config.software.install_usb', { version: usbPkg.version }));
         }
+    }
+
+    // Install a package sitting on a USB drive plugged into the tool: the
+    // engine streams it to the updater, which installs it immediately.
+    function beginUSBInstall() {
+        if (lastMachineState && lastMachineState !== 'idle') {
+            progress(window.t('config.software.update_requires_idle'), true);
+            return;
+        }
+        $('#btn-update').addClass('disabled');
+        progress(window.t('config.software.update_usb_sending'));
+        $.ajax({
+            url: '/updater/usb/install',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ path: usbPkg.path }),
+            dataType: 'json',
+            timeout: 10 * 60 * 1000
+        }).done(function(resp) {
+            if (resp && resp.status === 'success') {
+                progress(window.t('config.software.update_installing_restart'));
+                fabmo.notifyUpdateStarted({ version: usbPkg.version });
+            } else {
+                progress(window.t('config.software.update_failed', {
+                    message: (resp && resp.message) || 'unknown'
+                }), true);
+                $('#btn-update').removeClass('disabled');
+            }
+        }).fail(function(xhr, stat) {
+            progress(window.t('config.software.update_failed', { message: stat }), true);
+            $('#btn-update').removeClass('disabled');
+        });
     }
 
     function beginInstall() {
@@ -1721,6 +1763,9 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
         }).done(function(resp) {
             if (resp && resp.status === 'success') {
                 progress(window.t('config.software.update_installing_restart'));
+                // Hand the screen to the dashboard's update-progress page:
+                // the engine is about to stop and restart.
+                fabmo.notifyUpdateStarted({ version: latestPkg.version });
                 $.post('/updater/update/apply').fail(function() {
                     // The engine often restarts before this response lands —
                     // that is the success case, not an error.
@@ -1743,6 +1788,10 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
             progress(window.t('config.software.update_failed', { message: file.name }), true);
             return;
         }
+        if (lastMachineState && lastMachineState !== 'idle') {
+            progress(window.t('config.software.update_requires_idle'), true);
+            return;
+        }
         var fd = new FormData();
         fd.append('file', file, file.name);
         var xhr = new XMLHttpRequest();
@@ -1759,6 +1808,9 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
             try { resp = JSON.parse(xhr.responseText); } catch (e) { /* fall through */ }
             if (resp.status === 'success') {
                 progress(window.t('config.software.update_installing_restart'));
+                // The updater applies the relayed file immediately — hand the
+                // screen to the dashboard's update-progress page.
+                fabmo.notifyUpdateStarted({ version: latestPkg ? latestPkg.version : '' });
             } else {
                 progress(window.t('config.software.update_failed', {
                     message: resp.message || ('HTTP ' + xhr.status)
@@ -1773,9 +1825,9 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
     }
 
     function init() {
-        // The one update button: checks in 'check' mode, installs (with a
-        // two-step confirm — the sandboxed iframe blocks window.confirm) in
-        // 'install' mode.
+        // The one update button: checks in 'check' mode, opens a file picker
+        // in 'upload' mode, installs (with a two-step confirm — the sandboxed
+        // iframe blocks window.confirm) in the install modes.
         $('#btn-update').click(function(evt) {
             evt.preventDefault();
             if ($(this).hasClass('disabled')) { return; }
@@ -1783,19 +1835,38 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
                 checkForUpdates(true);
                 return;
             }
-            if (!latestPkg) { return; }
+            if (mode === 'upload') {
+                $('#fmp-file-input').trigger('click');
+                return;
+            }
+            var pkg = mode === 'install-usb' ? usbPkg : latestPkg;
+            if (!pkg) { return; }
             if (!armed) {
                 // First click arms, second click within 6 s proceeds.
                 armed = true;
                 $(this).removeClass('success').addClass('alert')
                     .text(window.t('config.software.confirm_install', {
-                        version: latestPkg.version
+                        version: pkg.version
                     }));
                 armTimer = setTimeout(disarm, 6000);
                 return;
             }
             disarm();
-            beginInstall();
+            if (mode === 'install-usb') {
+                beginUSBInstall();
+            } else {
+                beginInstall();
+            }
+        });
+
+        // A USB drive was plugged in or removed (engine-side watcher):
+        // re-run the cascade so a stick carrying an update is offered
+        // immediately — unless an install is already in motion, or we
+        // already have a registry update to offer.
+        fabmo.on('change', function(topic) {
+            if (topic !== 'usb_packages') { return; }
+            if (mode === 'install' || armed || $('#btn-update').hasClass('disabled')) { return; }
+            checkForUpdates(false);
         });
 
         $('#btn-open-updater').click(function(evt) {
