@@ -1634,10 +1634,16 @@ define(function (require) {
                 if (err) {
                     callback(err);
                 } else {
-                    var name = result.machine_name || "";
-                    name = window.t("status.machine_name_prefix") + name;
-                    $("#tool-name").text(name);
-                    document.title = name || "FabMo Dashboard";
+                    // Paint after the dictionaries are in — this runs at page
+                    // load (one round trip vs i18n's two chained fetches), and
+                    // a too-early t() bakes the raw key into the top bar and
+                    // tab title with nothing left for the walker to repair.
+                    (window.i18nReady || Promise.resolve()).then(function () {
+                        var name = result.machine_name || "";
+                        name = window.t("status.machine_name_prefix") + name;
+                        $("#tool-name").text(name);
+                        document.title = name || "FabMo Dashboard";
+                    });
                     callback(null, result);
                 }
             }.bind(this)
