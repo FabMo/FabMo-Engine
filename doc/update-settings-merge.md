@@ -1,5 +1,22 @@
 # Updates You Can Trust: Preserving Custom Settings Across Software Updates
 
+> **ADOPTED SIMPLIFICATION (2026-10-07, implemented):** rather than the full
+> three-way merge below, the implemented policy is **additive-only**: on the
+> first start after an update, NEW keys shipped by the updated profiles are
+> added to `machine.json`/`g2.json`/`opensbp.json`; every existing value is
+> left strictly alone (envelope, unit values, calibration, and persistent
+> variables are per-machine state). A newly shipped default variable arrives
+> additively; an existing variable is never overwritten. opensbp.json's
+> backup-recovery tier is never skipped. Auto-profile reapply is fully
+> non-destructive: config and macros are preserved, and apps install
+> additively by app id (profile apps the machine lacks are added; nothing
+> is removed or replaced — user-installed apps survive). Unmodified macros
+> auto-update via the base-hash tracking; the "keep new / restore old"
+> prompt is suppressed in the non-destructive path. See `profile_reconcile.js`. The trade-off
+> (accepted): a changed factory default for an *existing* key does not land
+> on machines — ship such corrections some other way if ever needed. The
+> three-way design below is retained as reference for that eventuality.
+
 **Status: proposal — for team discussion.** Companion to the updater-bundling
 proposal (packaging FabMo-Updater updates inside engine packages). Together
 they aim at one promise: *a customer can click "Install" and nothing they

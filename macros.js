@@ -413,25 +413,63 @@ var installProfileMacros = function (callback) {
             return;
         }
         files.forEach(function (fn) {
-            if (!re.test(fn) || claimed[fn]) {
+            var m = re.exec(fn);
+            if (!m || claimed[fn]) {
                 return;
             }
             claimed[fn] = true;
-            jobs.push({ src: path.join(dir, fn), dst: path.join(installedMacrosDir, fn) });
+            jobs.push({ src: path.join(dir, fn), dst: path.join(installedMacrosDir, fn), index: m[1] });
         });
     });
-    var copyIfNotExists = function (job, callback) {
+    // Policy (2026-10, see doc/update-settings-merge.md): a missing macro is
+    // installed from the shipped default; an installed macro the user has
+    // NEVER edited (its hash matches the recorded base in macros_meta.json)
+    // is auto-updated when a newer default ships — a stock macro has no
+    // customization to protect, and critical fixes must not wait for the
+    // user to notice a badge. An edited macro is never touched here; the
+    // macro manager surfaces it as customized/diverged for a manual review.
+    var meta = _readMeta();
+    var metaDirty = false;
+    var installOrUpdate = function (job, callback) {
         fs.stat(job.dst, function (err, stats) {
-            if (!err && stats.isFile()) {
+            if (err || !stats.isFile()) {
+                log.debug("Installing macro " + job.src + " -> " + job.dst);
+                return fs.copy(job.src, job.dst, function (copyErr) {
+                    if (!copyErr) {
+                        meta.macros[job.index] = { base: _hashFile(job.src) };
+                        metaDirty = true;
+                    }
+                    callback(copyErr);
+                });
+            }
+            var srcHash = _hashFile(job.src);
+            var dstHash = _hashFile(job.dst);
+            if (!srcHash || !dstHash || srcHash === dstHash) {
                 return callback();
             }
-            log.debug("Installing macro " + job.src + " -> " + job.dst);
-            fs.copy(job.src, job.dst, function (err) {
-                callback(err);
-            });
+            var base = (meta.macros[job.index] || {}).base;
+            if (base === dstHash) {
+                log.info(
+                    "Macro " + path.basename(job.dst) + " is unmodified and a newer default shipped - auto-updating"
+                );
+                return fs.copy(job.src, job.dst, function (copyErr) {
+                    if (!copyErr) {
+                        meta.macros[job.index] = { base: srcHash };
+                        metaDirty = true;
+                    }
+                    callback(copyErr);
+                });
+            }
+            // Customized (or unknown history): leave it strictly alone.
+            callback();
         });
     };
-    async.eachSeries(jobs, copyIfNotExists, callback);
+    async.eachSeries(jobs, installOrUpdate, function (err) {
+        if (metaDirty) {
+            _writeMeta(meta);
+        }
+        callback(err);
+    });
 };
 
 // ---- Shipped-default (profile) macro tracking -----------------------------

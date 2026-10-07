@@ -32,6 +32,7 @@ var ncp = require("ncp").ncp;
 var path = require("path");
 var util = require("./util");
 var snapshots = require("./snapshots");
+var AdmZip = require("adm-zip");
 
 // Directories affected by profiles
 var PROFILE_DIRS = ["config", "macros", "apps"];
@@ -130,6 +131,103 @@ var readProfileInfo = function (profileDir, callback) {
     });
 };
 
+// Read the app id from an .fma/.zip archive's package.json without
+// extracting it. Falls back to the package name; null if unreadable.
+// The id is the engine's app identity (see dashboard/app_manager.js) —
+// it is how we tell "this profile app is already installed" apart from
+// "this is new", since installed archives carry uuid filenames.
+function readArchiveAppId(file) {
+    try {
+        var zip = new AdmZip(file);
+        var best = null;
+        zip.getEntries().forEach(function (entry) {
+            if (/(^|\/)package\.json$/.test(entry.entryName)) {
+                // Prefer the shallowest package.json (the app's own).
+                if (!best || entry.entryName.length < best.entryName.length) {
+                    best = entry;
+                }
+            }
+        });
+        if (!best) {
+            return null;
+        }
+        var info = JSON.parse(zip.readAsText(best));
+        return info.id || info.name || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// Additively install the profile's apps: any profile app whose id is not
+// already installed is copied in (with the usual unique archive name);
+// nothing is ever removed or replaced. Used by the auto-profile path so a
+// reapply cannot delete user-installed or in-development apps. (Policy
+// 2026-10, see doc/update-settings-merge.md.)
+function installProfileAppsAdditive(profile, callback) {
+    var profileAppsDir = path.join(profile.dir, "apps");
+    var appsDir = config.getDataDir("apps");
+    fs.readdir(profileAppsDir, function (err, profileFiles) {
+        if (err) {
+            // Profile ships no apps directory - nothing to do.
+            return callback(null);
+        }
+        profileFiles = profileFiles.filter(function (f) {
+            return /\.(fma|zip)$/i.test(f);
+        });
+        if (!profileFiles.length) {
+            return callback(null);
+        }
+        fs.ensureDir(appsDir, function (dirErr) {
+            if (dirErr) {
+                return callback(dirErr);
+            }
+            fs.readdir(appsDir, function (listErr, installedFiles) {
+                var installedIds = {};
+                (installedFiles || [])
+                    .filter(function (f) {
+                        return /\.(fma|zip)$/i.test(f);
+                    })
+                    .forEach(function (f) {
+                        var id = readArchiveAppId(path.join(appsDir, f));
+                        if (id) {
+                            installedIds[id] = true;
+                        } else {
+                            log.warn("Installed app archive has no readable id: " + f);
+                        }
+                    });
+                async.eachSeries(
+                    profileFiles,
+                    function (f, cb) {
+                        var src = path.join(profileAppsDir, f);
+                        var id = readArchiveAppId(src);
+                        if (!id) {
+                            // Without an identity we cannot dedup across
+                            // applies - skip rather than duplicate forever.
+                            log.warn("Profile app has no readable id - not installing: " + f);
+                            return cb();
+                        }
+                        if (installedIds[id]) {
+                            log.debug("Profile app already installed (id " + id + "): " + f);
+                            return cb();
+                        }
+                        var dst = path.join(appsDir, util.createUniqueFilename(f));
+                        log.info("Installing profile app " + f + " (id " + id + ")");
+                        fs.copy(src, dst, cb);
+                    },
+                    function (copyErr) {
+                        if (copyErr) {
+                            return callback(copyErr);
+                        }
+                        util.diskSync(function () {
+                            callback(null);
+                        });
+                    }
+                );
+            });
+        });
+    });
+}
+
 // This handling of the initial profile and the shift to the selected profile is pretty convoluted and
 // ... could use some refactoring. But, for the momement is seems relaible.
 // Apply the named profile handling whether we are the default or the user selected profile that builds on default.
@@ -145,13 +243,19 @@ var apply = function (profileName, callback) {
         var profileDef = require("./config/profile_definition");
         var isAutoProfile = profileDef.isChangeInProgress() || profileDef.hasAutoProfileDefinition();
 
-        // During auto-profile setup, config files are already complete from config loading
-        // Only copy macros and apps, not config files
-        var dirsToProcess = isAutoProfile ? ["macros", "apps"] : PROFILE_DIRS;
-
+        // During auto-profile setup everything is preserved: config files
+        // are already complete from config loading (plus the additive
+        // reconcile), macros are assembled copy-if-not-exists by
+        // macros.installProfile() with base-hash auto-update for unmodified
+        // ones, and apps are installed ADDITIVELY by id — a reapply can add
+        // profile apps the machine lacks but never deletes user-installed
+        // or in-development apps. Only a true (manual) profile switch does
+        // the wholesale directory replacement below.
         if (isAutoProfile) {
-            log.info("Auto-profile application - skipping config directory (already complete)");
+            log.info("Auto-profile application - additive apps install; config and macros preserved");
+            return installProfileAppsAdditive(profile, callback);
         }
+        var dirsToProcess = PROFILE_DIRS;
 
         // Snapshot the current state before the destructive copy. If the
         // user (or we) made a mistake choosing the profile, restoring from
@@ -286,6 +390,9 @@ var apply = function (profileName, callback) {
 
 module.exports.load = load;
 module.exports.apply = apply;
+// Exposed for tests
+module.exports._installProfileAppsAdditive = installProfileAppsAdditive;
+module.exports._readArchiveAppId = readArchiveAppId;
 module.exports.getProfiles = function () {
     return profiles;
 };

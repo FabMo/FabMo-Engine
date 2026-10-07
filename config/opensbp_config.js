@@ -154,14 +154,15 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
             execute: (cb) => tryLoadFile(filename, cb)
         },
         
-        // Strategy 2: Load from backup (skip if auto-profile active)
+        // Strategy 2: Load from backup. Deliberately NOT skipped during
+        // auto-profile (unlike the other config files): opensbp.json holds
+        // persistent variables — real calibration data and machine state,
+        // never profile-scoped — so if the primary file is damaged, the
+        // user's own last-good backup must win over profile defaults.
+        // (Policy 2026-10, see doc/update-settings-merge.md.)
         {
             name: "backup",
             execute: (cb) => {
-                if (skipRecovery) {
-                    log.debug("Skipping backup (auto-profile active)");
-                    return cb(new Error("Skipping backup during auto-profile"));
-                }
                 tryLoadFile(backupFile, cb);
             }
         },
