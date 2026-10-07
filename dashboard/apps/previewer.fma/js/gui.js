@@ -76,6 +76,10 @@ module.exports = function(callbacks) {
 
   self.showSoftLimitWarning = function (violations, units) {
     if (!self.softLimitWarning) return;
+    // Safety text: build it only once the i18n dicts are in — the list
+    // items carry no data-i18n and are only rebuilt on another gcode
+    // reload, so a raw key painted at startup would stick.
+    (window.i18nReady || Promise.resolve()).then(function () {
     var $list = $(self.softLimitWarning).find('.soft-limit-warning-list').empty();
     var u = units || '';
     for (var i = 0; i < violations.length; i++) {
@@ -95,6 +99,7 @@ module.exports = function(callbacks) {
     // sure the drawer is out so it's actually seen.
     $('#operations-panel').removeClass('collapsed');
     show(self.softLimitWarning, true);
+    });
   }
 
 

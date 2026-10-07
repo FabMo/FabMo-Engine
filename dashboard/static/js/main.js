@@ -684,15 +684,29 @@ engine.getVersion(function (err, version) {
 
             setLocationDisplays();
 
+            // Status-handler modals can fire on the very first status event,
+            // before the i18n dictionaries arrive (two chained fetches) — and
+            // a machine that boots into interlock/limit/etc. sends no further
+            // status to repaint them, so a too-early t() bakes raw keys into
+            // the modal for as long as it is up. Build and show only once the
+            // dicts are live (the promise is already resolved on later calls).
+            var showModalWhenTranslated = function (build) {
+                (window.i18nReady || Promise.resolve()).then(function () {
+                    dashboard.showModal(build());
+                });
+            };
+
             // ------------------------------------------------------------ STATUS HANDLER
             dashboard.engine.on("status", function (status) {
                 fixedTimeEnd = Date.now();
                 console.log(status);
                 if (status.state == "dead") {
-                    dashboard.showModal({
-                        title: window.t("status.error_occurred_title"),
-                        message: status.info.error,
-                        noButton: true,
+                    showModalWhenTranslated(function () {
+                        return {
+                            title: window.t("status.error_occurred_title"),
+                            message: status.info.error,
+                            noButton: true,
+                        };
                     });
                     return;
                 }
@@ -1028,15 +1042,13 @@ engine.getVersion(function (err, version) {
 
                                 //Set defaults if both buttons are still null
                                 if (modalOptions.ok === null && modalOptions.cancel === null && !modalOptions.noButton) {
-                                    modalOptions.okText = modalOptions.timer ? window.t("actions.skip_button") : window.t("actions.resume_button");
+                                    modalOptions._defaultLabels = true;
                                     modalOptions.ok = resumeFunction;
-                                    modalOptions.cancelText = window.t("actions.quit_button");
                                     modalOptions.cancel = cancelFunction;
                                 }
                             } else {
                                 // No custom parameters; use default buttons
-                                modalOptions.okText = modalOptions.timer ? window.t("actions.skip_button") : window.t("actions.resume_button");
-                                modalOptions.cancelText = window.t("actions.quit_button");
+                                modalOptions._defaultLabels = true;
                                 modalOptions.ok = resumeFunction;
                                 modalOptions.cancel = cancelFunction;
                             }
@@ -1055,8 +1067,16 @@ engine.getVersion(function (err, version) {
                                 console.debug("Spinner clear before modal failed", e);
                             }
 
-                            // Show the modal
-                            dashboard.showModal(modalOptions);
+                            // Show the modal; default labels resolve inside
+                            // the gate so t() runs with the dicts loaded
+                            showModalWhenTranslated(function () {
+                                if (modalOptions._defaultLabels) {
+                                    modalOptions.okText = modalOptions.timer ? window.t("actions.skip_button") : window.t("actions.resume_button");
+                                    modalOptions.cancelText = window.t("actions.quit_button");
+                                    delete modalOptions._defaultLabels;
+                                }
+                                return modalOptions;
+                            });
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
                         }
@@ -1092,27 +1112,30 @@ engine.getVersion(function (err, version) {
 
                         }
 
+                        showModalWhenTranslated(function () {
+                            var detailHTML;
                             if (dashboard.engine.status.job) {
-                            var detailHTML =
-                                "<p>" +
-                                "<b>" + window.t("status.error.job_name") + "  </b>" +
-                                dashboard.engine.status.job.name +
-                                "<br />" +
-                                "<b>" + window.t("status.error.job_description") + "  </b>" +
-                                dashboard.engine.status.job.description +
-                                "</p>";
-                        } else {
-                            detailHTML =
-                                '<p>' + window.t("status.error.check_log_prefix") + ' <a href="/log" target="_blank"><span style="color: blue"> ' + window.t("status.error.check_log_link") + '</span>.</a></p>';
-                        }
-                        dashboard.showModal({
-                            title: window.t("status.error_occurred_title"),
-                            message: status.info.error,
-                            detail: detailHTML,
-                            cancelText: window.t("status.close_button"),
-                            cancel: function () {
-                                modalIsShown = false;
-                            },
+                                detailHTML =
+                                    "<p>" +
+                                    "<b>" + window.t("status.error.job_name") + "  </b>" +
+                                    dashboard.engine.status.job.name +
+                                    "<br />" +
+                                    "<b>" + window.t("status.error.job_description") + "  </b>" +
+                                    dashboard.engine.status.job.description +
+                                    "</p>";
+                            } else {
+                                detailHTML =
+                                    '<p>' + window.t("status.error.check_log_prefix") + ' <a href="/log" target="_blank"><span style="color: blue"> ' + window.t("status.error.check_log_link") + '</span>.</a></p>';
+                            }
+                            return {
+                                title: window.t("status.error_occurred_title"),
+                                message: status.info.error,
+                                detail: detailHTML,
+                                cancelText: window.t("status.close_button"),
+                                cancel: function () {
+                                    modalIsShown = false;
+                                },
+                            };
                         });
                         modalIsShown = true;
                         dashboard.handlers.hideFooter();
@@ -1129,98 +1152,108 @@ engine.getVersion(function (err, version) {
                     authorizeDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
-                    dashboard.showModal({
-                        title: window.t("status.authorize.title"),
-                        message: window.t("status.authorize.message"),
-                        cancelText: window.t("actions.quit_button"),
-                        cancel: function () {
-                            authorizeDialog = false;
-                            dashboard.engine.quit(function (err, result) {
-                                if (err) {
-                                    console.log("ERRROR: " + err);
-                                }
-                            });
-                        },
+                    showModalWhenTranslated(function () {
+                        return {
+                            title: window.t("status.authorize.title"),
+                            message: window.t("status.authorize.message"),
+                            cancelText: window.t("actions.quit_button"),
+                            cancel: function () {
+                                authorizeDialog = false;
+                                dashboard.engine.quit(function (err, result) {
+                                    if (err) {
+                                        console.log("ERRROR: " + err);
+                                    }
+                                });
+                            },
+                        };
                     });
                 } else if (status.state === "limit" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
-                    dashboard.showModal({
-                        title: window.t("status.limit_alert.title"),
-                        message: window.t("status.limit_alert.message"),
-                        cancelText: window.t("actions.quit_button"),
-                        cancel: function () {
-                            interlockDialog = false;
-                            dashboard.engine.quit(function (err, result) {
-                                if (err) {
-                                    console.log("ERRROR: " + err);
-                                }
-                            });
-                        },
+                    showModalWhenTranslated(function () {
+                        return {
+                            title: window.t("status.limit_alert.title"),
+                            message: window.t("status.limit_alert.message"),
+                            cancelText: window.t("actions.quit_button"),
+                            cancel: function () {
+                                interlockDialog = false;
+                                dashboard.engine.quit(function (err, result) {
+                                    if (err) {
+                                        console.log("ERRROR: " + err);
+                                    }
+                                });
+                            },
+                        };
                     });
                 } else if (status.state === "interlock" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
-                    dashboard.showModal({
-                        title: window.t("status.interlock_alert.title"),
-                        message: window.t("status.interlock_alert.message"),
-                        cancelText: window.t("actions.quit_button"),
-                        cancel: function () {
-                            interlockDialog = false;
-                            dashboard.engine.quit(function (err, result) {
-                                if (err) {
-                                    console.log("ERRROR: " + err);
-                                }
-                            });
-                        },
-                        okText: window.t("actions.resume_button"),
-                        ok: function () {
-                            dashboard.engine.resume();
-                        },
+                    showModalWhenTranslated(function () {
+                        return {
+                            title: window.t("status.interlock_alert.title"),
+                            message: window.t("status.interlock_alert.message"),
+                            cancelText: window.t("actions.quit_button"),
+                            cancel: function () {
+                                interlockDialog = false;
+                                dashboard.engine.quit(function (err, result) {
+                                    if (err) {
+                                        console.log("ERRROR: " + err);
+                                    }
+                                });
+                            },
+                            okText: window.t("actions.resume_button"),
+                            ok: function () {
+                                dashboard.engine.resume();
+                            },
+                        };
                     });
                 } else if (status.state === "driverFault" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
-                    dashboard.showModal({
-                        title: window.t("status.drive_fault_alert.title"),
-                        message: window.t("status.drive_fault_alert.message"),
-                        cancelText: window.t("actions.quit_button"),
-                        cancel: function () {
-                            interlockDialog = false;
-                            dashboard.engine.quit(function (err, result) {
-                                if (err) {
-                                    console.log("ERRROR: " + err);
-                                }
-                            });
-                        },
-                        okText: window.t("actions.resume_button"),
-                        ok: function () {
-                            dashboard.engine.resume();
-                        },
+                    showModalWhenTranslated(function () {
+                        return {
+                            title: window.t("status.drive_fault_alert.title"),
+                            message: window.t("status.drive_fault_alert.message"),
+                            cancelText: window.t("actions.quit_button"),
+                            cancel: function () {
+                                interlockDialog = false;
+                                dashboard.engine.quit(function (err, result) {
+                                    if (err) {
+                                        console.log("ERRROR: " + err);
+                                    }
+                                });
+                            },
+                            okText: window.t("actions.resume_button"),
+                            ok: function () {
+                                dashboard.engine.resume();
+                            },
+                        };
                     });
                 } else if (status.state === "lock" && status.resumeFlag === false) {
                     interlockDialog = true;
                     keypad.setEnabled(false);
                     keyboard.setEnabled(false);
-                    dashboard.showModal({
-                        title: window.t("status.lock.title"),
-                        message: window.t("status.lock.message"),
-                        cancelText: window.t("actions.quit_button"),
-                        cancel: function () {
-                            interlockDialog = false;
-                            dashboard.engine.quit(function (err, result) {
-                                if (err) {
-                                    console.log("ERRROR: " + err);
-                                }
-                            });
-                        },
-                        okText: window.t("actions.resume_button"),
-                        ok: function () {
-                            dashboard.engine.resume();
-                        },
+                    showModalWhenTranslated(function () {
+                        return {
+                            title: window.t("status.lock.title"),
+                            message: window.t("status.lock.message"),
+                            cancelText: window.t("actions.quit_button"),
+                            cancel: function () {
+                                interlockDialog = false;
+                                dashboard.engine.quit(function (err, result) {
+                                    if (err) {
+                                        console.log("ERRROR: " + err);
+                                    }
+                                });
+                            },
+                            okText: window.t("actions.resume_button"),
+                            ok: function () {
+                                dashboard.engine.resume();
+                            },
+                        };
                     });
                 }
             });

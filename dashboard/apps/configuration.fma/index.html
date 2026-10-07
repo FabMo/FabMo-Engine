@@ -259,7 +259,10 @@
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <a id="btn-save-settings" class="button radius small" title="Save a snapshot of this tool's setup" data-i18n-title="config.settings_backup.save_button_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.settings_backup.save_button">Save Current Settings</a>
               <a id="btn-restore-settings" class="button radius small" title="Restore a saved snapshot or an uploaded backup file" data-i18n-title="config.settings_backup.restore_button_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.settings_backup.restore_button">Restore Settings</a>
-              <span style="margin-left:12px; line-height:24px; font-size:0.75em; white-space:nowrap;"><span data-i18n="config.settings_backup.default_label">Default settings:</span> <span id="current-default-name" style="font-weight: bold;" data-i18n="config.settings_backup.none">none</span></span>
+              <span style="margin-left:12px; line-height:24px; font-size:0.75em; white-space:nowrap;"><span data-i18n="config.settings_backup.default_label">Default settings:</span> <!-- No data-i18n here: the content is dynamic (a snapshot name); the walker
+     would stomp a real name with the translated "none" at i18nReady.
+     refreshSnapshots() paints it, gated on i18nReady. -->
+              <span id="current-default-name" style="font-weight: bold;">none</span></span>
             </div>
           </fieldset>
         </div>

@@ -202,6 +202,22 @@ OptText.prototype.turn_off = function () {
     this.toolTip.visible = false;
     this.textTip.visible = false;
 }  //@th; can't figure out how to get the onMouseEnter into prototype; could be simpler, issues w/paperjs?
+// Re-stamp label + tooltip after the i18n dicts land: canvas text is beyond
+// the DOM walker's reach, so strings baked in before the dict fetch finishes
+// would otherwise show raw keys for the life of the page. The tooltip box is
+// rebuilt because its width is sized from the string.
+OptText.prototype.setStrings = function (label, tip) {
+    this.text.content = label;
+    this.tip = tip;
+    this.textTip.content = tip;
+    this.tooltipRect = new Rectangle(this.tipPosition, new Size((tip.length * 7), 28));
+    var wasVisible = this.toolTip.visible;
+    this.toolTip.remove();
+    this.toolTip = new Path.Rectangle(this.tooltipRect, this.cornerSize);
+    this.toolTip.fillColor = 'beige';
+    this.toolTip.visible = wasVisible;
+    this.toolTip.insertBelow(this.textTip);  // keep the tip text on top
+}
 
 // ... set up individual items here
 // note: x value here is only for tooltip location, y sets both locations,
@@ -213,6 +229,18 @@ cycleOpt.text.state = true;
 var smallOpt = new OptText(85, 110, window.t("sb4.mopad.smallest_moves_label"), window.t("sb4.mopad.smallest_moves_tip"));
 var smallxyOpt = new OptText(35, 130, '    for XY=  [.025]  .010', '');
 var smallxyOpt = new OptText(35, 150, '    for   Z=  .010  [.005]  .001', '');
+
+// This PaperScript runs at window load, racing the two chained i18n fetches;
+// restamp the translated strings once the dictionaries are in (no-op when
+// the dicts won the race).
+if (window.i18nReady) {
+    window.i18nReady.then(function () {
+        zoomOpt.setStrings(window.t("sb4.mopad.zoom_label"), window.t("sb4.mopad.zoom_tip"));
+        snapOpt.setStrings(window.t("sb4.mopad.snap_label"), window.t("sb4.mopad.snap_tip"));
+        cycleOpt.setStrings(window.t("sb4.mopad.cycle_label"), window.t("sb4.mopad.cycle_tip"));
+        smallOpt.setStrings(window.t("sb4.mopad.smallest_moves_label"), window.t("sb4.mopad.smallest_moves_tip"));
+    });
+}
 
 zoomOpt.text.onMouseEnter = function (event) {                           // ... and their tool-tips
     zoomOpt.turn_on();

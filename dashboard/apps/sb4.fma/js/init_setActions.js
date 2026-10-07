@@ -46,8 +46,13 @@ const displayState = {
 
 const sbpContainer = document.getElementById('sbp-container');
 
-if (!window.Haptics)
-    alert(window.t("sb4.alert.haptics_not_loaded"));
+if (!window.Haptics) {
+    // Runs at parse time, always before the i18n dicts arrive — defer the
+    // alert so it shows the message rather than the raw key
+    (window.i18nReady || Promise.resolve()).then(function () {
+        alert(window.t("sb4.alert.haptics_not_loaded"));
+    });
+}
 
 $(document).ready(function () {
     $(document).foundation({              // Start and customize foundation
@@ -104,48 +109,48 @@ $(document).ready(function () {
                 for (key in data) {
                     switch (key.substring(0, 1)) {
                         case "F":
-                            $("#menu_files").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                            $("#menu_files").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
                         case "M":
                             if (excluded_axes_str.indexOf(key.substring(1, 2)) == -1) {
-                                $("#menu_moves").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                                $("#menu_moves").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             }
                             break;
                         case "J":
                             if (excluded_axes_str.indexOf(key.substring(1, 2)) == -1) {
-                                $("#menu_jogs").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                                $("#menu_jogs").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             }
                             break;
                         case "C":
-                            $("#menu_cuts").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                            $("#menu_cuts").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
                         case "Z":
                             if (excluded_axes_str.indexOf(key.substring(1, 2)) == -1) {
-                                $("#menu_zero").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                                $("#menu_zero").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             }
                             break;
                         case "S":
-                            $("#menu_settings").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                            $("#menu_settings").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
                         case "V":
-                            $("#menu_values").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                            $("#menu_values").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
 
                         case "T":
-                            $("#menu_tools").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                            $("#menu_tools").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T
                             break;
 
                         case "D":
-                            $("#menu_design").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                            $("#menu_design").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             break;
 
                         case "H":
-                            $("#menu_help").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + data[key]["name"] || window.t("sb4.cmd.unnamed_command") + '</a></li>');
+                            $("#menu_help").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             break;
                     }
                 }
