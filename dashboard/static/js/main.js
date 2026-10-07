@@ -3031,7 +3031,11 @@ engine.on("disconnect", function () {
     if (!disconnected) {
         disconnected = true;
         setConnectionStrength(null);
-        showDaisy();
+        // During a software update the update screen owns the display —
+        // the generic "Waiting for FabMo" daisy would just talk over it.
+        if (!(window.fabmoUpdateScreen && window.fabmoUpdateScreen.active)) {
+            showDaisy();
+        }
     }
 });
 
@@ -3433,3 +3437,257 @@ function hideTitle() {
 
 // ========================================================================================
 setUpManual(); // occasionally not getting keypad set from apps, this helps
+
+// ----- Update-available badge -----------------------------------------------
+// Mirrors the configuration app's browser-side manifest check (see
+// dashboard/apps/configuration.fma/js/configuration.js): the BROWSER fetches
+// the public package manifest, so a tool with no internet route of its own
+// still learns an update exists. When a newer release is found, the
+// Configuration entries in both left menus get a green up-arrow badge
+// (.update-available, styled in css/style.css). Install itself lives in the
+// configuration app's Software section.
+(function () {
+    var MANIFEST_URL = "https://www.gofabmo.org/manifest/packages.json";
+
+    function parseVer(v) {
+        var p = String(v || "")
+            .replace(/^v/i, "")
+            .split(".")
+            .map(function (n) {
+                return parseInt(n, 10) || 0;
+            });
+        while (p.length < 3) {
+            p.push(0);
+        }
+        return p;
+    }
+
+    function verCmp(a, b) {
+        var va = parseVer(a),
+            vb = parseVer(b);
+        for (var i = 0; i < 3; i++) {
+            if (va[i] !== vb[i]) {
+                return va[i] - vb[i];
+            }
+        }
+        return 0;
+    }
+
+    function setBadge(found) {
+        $('a[href="#/app/config"]').toggleClass("update-available", !!found);
+    }
+
+    // Fallback when the manifest is unreachable (no internet anywhere):
+    // a newer package on a USB drive plugged into the tool also earns
+    // the badge.
+    function checkUSB(currentVersion) {
+        $.getJSON("/updater/usb/packages")
+            .done(function (resp) {
+                var pkgs = (resp && resp.data && resp.data.packages) || [];
+                var newer = pkgs.filter(function (p) {
+                    return p.product === "fabmo-engine" && p.version && verCmp(p.version, currentVersion) > 0;
+                });
+                setBadge(newer.length > 0);
+            })
+            .fail(function () {
+                setBadge(false);
+            });
+    }
+
+    var badgeCheckRunning = false;
+    function runBadgeCheck() {
+        if (badgeCheckRunning) {
+            return;
+        }
+        badgeCheckRunning = true;
+        engine.getVersion(function (err, version) {
+            if (err || !version || version.type !== "release" || !version.number) {
+                badgeCheckRunning = false;
+                return; // dev builds: nothing to compare against
+            }
+            $.getJSON("/updater/config").always(function (resp) {
+                var ucfg = (resp && resp.data && (resp.data.config || resp.data)) || {};
+                var platform = ucfg.platform || "raspberry-pi";
+                fetch(MANIFEST_URL, { cache: "no-store" })
+                    .then(function (r) {
+                        return r.json();
+                    })
+                    .then(function (manifest) {
+                        badgeCheckRunning = false;
+                        var newer = (manifest.packages || []).filter(function (p) {
+                            return (
+                                p.product === "FabMo-Engine" &&
+                                p.os === "linux" &&
+                                p.platform === platform &&
+                                verCmp(p.version, version.number) > 0
+                            );
+                        });
+                        setBadge(newer.length > 0);
+                    })
+                    .catch(function () {
+                        badgeCheckRunning = false;
+                        checkUSB(version.number);
+                    });
+            });
+        });
+    }
+
+    runBadgeCheck();
+
+    // Re-check when a USB drive is plugged in or removed (engine-side
+    // watcher emits a "usb_packages" change event).
+    engine.on("change", function (topic) {
+        if (topic === "usb_packages") {
+            runBadgeCheck();
+        }
+    });
+})();
+
+// ----- Software-update progress screen ---------------------------------------
+// When the configuration app starts applying a software update (via
+// fabmo.notifyUpdateStarted → dashboard.js "notifyUpdateStarted" handler),
+// the engine is about to stop, update, and restart — half a minute or more
+// of dead air that used to read as "something broke". This takes over the
+// whole screen with a staged progress page:
+//   installing → (engine stops answering) restarting → (answers again) reload.
+// It polls /version to track the engine through the restart and reloads the
+// dashboard when it's back, which also picks up the freshly-installed bundle.
+// The generic disconnect daisy is suppressed while this is active.
+window.fabmoUpdateScreen = (function () {
+    var POLL_MS = 2000;
+    var POLL_TIMEOUT_MS = 1500;
+    var LONG_WAIT_MS = 8 * 60 * 1000;
+    var screen = { active: false };
+    var $overlay = null;
+    var startedAt = null;
+    var sawDown = false;
+    var reloading = false;
+    var tickTimer = null;
+    var pollTimer = null;
+
+    function t(key, vars) {
+        return window.t ? window.t(key, vars) : key;
+    }
+
+    function fmtElapsed(ms) {
+        var s = Math.floor(ms / 1000);
+        var m = Math.floor(s / 60);
+        s = s % 60;
+        return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    function build(info) {
+        var version = info.version ? String(info.version) : "";
+        $overlay = $(
+            '<div id="update-screen">' +
+                '<div class="update-screen-box">' +
+                '<i class="fa fa-cog fa-spin update-screen-spinner" aria-hidden="true"></i>' +
+                '<h2 class="update-screen-title"></h2>' +
+                '<div class="update-screen-stage"></div>' +
+                '<div class="update-screen-elapsed"></div>' +
+                '<div class="update-screen-notes">' +
+                '<div class="update-screen-note-duration"></div>' +
+                '<div class="update-screen-note-power"></div>' +
+                "</div>" +
+                '<div class="update-screen-longwait" style="display:none;">' +
+                '<div class="update-screen-longwait-text"></div>' +
+                '<a class="button radius small update-screen-reload"></a>' +
+                "</div>" +
+                "</div>" +
+                "</div>"
+        );
+        $overlay.find(".update-screen-title").text(
+            version
+                ? t("status.update_screen.title_version", { version: version })
+                : t("status.update_screen.title")
+        );
+        $overlay.find(".update-screen-note-duration").text(t("status.update_screen.note_duration"));
+        $overlay.find(".update-screen-note-power").text(t("status.update_screen.note_power"));
+        $overlay.find(".update-screen-longwait-text").text(t("status.update_screen.long_wait"));
+        $overlay
+            .find(".update-screen-reload")
+            .text(t("status.update_screen.reload_now"))
+            .on("click", function (evt) {
+                evt.preventDefault();
+                doReload();
+            });
+        $("body").append($overlay);
+    }
+
+    function setStage(key) {
+        if ($overlay) {
+            $overlay.find(".update-screen-stage").text(t(key));
+        }
+    }
+
+    function doReload() {
+        if (reloading) {
+            return;
+        }
+        reloading = true;
+        setStage("status.update_screen.stage_back");
+        // A brief grace period lets the engine finish wiring up sockets, so
+        // the reloaded dashboard connects cleanly on the first try.
+        setTimeout(function () {
+            window.location.reload();
+        }, 1500);
+    }
+
+    function pollVersion() {
+        var controller = window.AbortController ? new AbortController() : null;
+        var timer = controller
+            ? setTimeout(function () {
+                  controller.abort();
+              }, POLL_TIMEOUT_MS)
+            : null;
+        fetch("/version", controller ? { signal: controller.signal, cache: "no-store" } : { cache: "no-store" })
+            .then(function (r) {
+                if (timer) {
+                    clearTimeout(timer);
+                }
+                if (!r.ok) {
+                    throw new Error("http " + r.status);
+                }
+                return r.json();
+            })
+            .then(function () {
+                if (sawDown) {
+                    doReload();
+                }
+            })
+            .catch(function () {
+                if (!sawDown) {
+                    sawDown = true;
+                    setStage("status.update_screen.stage_restarting");
+                }
+            });
+    }
+
+    function tick() {
+        if (!$overlay) {
+            return;
+        }
+        var elapsed = Date.now() - startedAt;
+        $overlay.find(".update-screen-elapsed").text(t("status.update_screen.elapsed", { time: fmtElapsed(elapsed) }));
+        if (elapsed > LONG_WAIT_MS) {
+            $overlay.find(".update-screen-longwait").show();
+        }
+    }
+
+    screen.begin = function (info) {
+        if (screen.active) {
+            return;
+        }
+        screen.active = true;
+        startedAt = Date.now();
+        sawDown = false;
+        reloading = false;
+        build(info || {});
+        setStage("status.update_screen.stage_installing");
+        tick();
+        tickTimer = setInterval(tick, 1000);
+        pollTimer = setInterval(pollVersion, POLL_MS);
+    };
+
+    return screen;
+})();

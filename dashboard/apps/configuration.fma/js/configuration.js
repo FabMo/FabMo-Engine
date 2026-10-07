@@ -67,13 +67,6 @@ function update() {
         break;
     }
   });
-  fabmo.getInfo(function(err, info) {
-    if(err) {
-      console.error(err);
-    } else {
-      $('.firmware-version').text(info.firmware.version.replace("-dirty","")) 
-    }
-  });
   fabmo.getConfig(function(err, data) {
     if(err) {
       console.error(err);
@@ -220,34 +213,9 @@ var configData = null;
 
 // Other Config page functions
 
-$('#btn-flash-firm').click(function() {
-    $('#firmware-input').trigger('click');
-  });
-
-$('#btn-reload-firm').click(function() {
-    fabmo.showModal({
-      title: window.t('config.modal.reload_firmware_title'),
-      message: window.t('config.modal.reload_firmware_message'),
-      okText: window.t('config.modal.reload'),
-      cancelText: window.t('config.modal.cancel'),
-      ok: function() {
-        fabmo.notify('info', window.t('config.notify.reloading_firmware'));
-        fabmo.reloadFirmware({}, function(err, data) {
-          if (err) {
-            fabmo.notify('error', window.t('config.notify.firmware_reload_failed') + (err.message || err));
-          } else {
-            fabmo.notify('info', window.t('config.notify.firmware_reload_started'));
-          }
-        });
-      },
-      cancel: function() {}
-    });
-  });
-
-$('#btn-update').click(function(){
-  fabmo.navigate('/updater');  // for the moment, let's just go to updater to check for updates
-  //  $('#update-input').trigger('click');
-});
+// G2 firmware flash/reload moved to the FabMo-Updater page (the "Advanced"
+// button, #btn-open-updater). #btn-update is wired in the "Update
+// notification" module at the bottom of this file.
 
 $('#update-input').change(function(evt) {
     var files = [];
@@ -265,25 +233,6 @@ $('#update-input').change(function(evt) {
       console.log(progress);
     });
   });
-
-// Upload a package file manually
-$('#firmware-input').change(function(evt) {
-  var files = [];
-  for(var i=0; i<evt.target.files.length; i++) {
-    files.push({file:evt.target.files[i]});
-  }
-  fabmo.submitFirmwareUpdate(files, {}, function(err, data) {
-      if(err){
-          console.log(err)
-      }else {
-          console.log(data);
-      }
-    
-  }, function(progress) {
-    console.log(progress);
-  });
-});
-
 
 // Outputs whose behavior is hardcoded — labels are fixed and modes are not
 // user-configurable. The runtime ignores their saved policy entirely (see
@@ -1241,7 +1190,10 @@ $('#restore-settings-confirm').click(function () {
 // Populate the Default settings label on load — gated so the "(none)" /
 // "(default)" strings resolve after the i18n dicts land; an early t() here
 // would bake raw keys into #current-default-name and the restore select.
-(window.i18nReady || Promise.resolve()).then(refreshSnapshots);
+// NB: wrap the call — i18nReady resolves with a value (a Promise.all array),
+// and passing refreshSnapshots directly would receive it as the `done`
+// callback and throw ("done is not a function").
+(window.i18nReady || Promise.resolve()).then(function () { refreshSnapshots(); });
 
 // ---------- Spindle Setup ----------
 
@@ -1311,7 +1263,7 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
 // Populate on load — gated: the "Not detected" / "(none)" field values are
 // written with .val() (no data-i18n-value), so a pre-dict t() sticks until
 // the user runs Configure.
-(window.i18nReady || Promise.resolve()).then(refreshSpindleDiscover);
+(window.i18nReady || Promise.resolve()).then(function () { refreshSpindleDiscover(); });
 
 // ----- Variables tab -------------------------------------------------------
 // Lists persistent OpenSBP variables ($-prefixed) with type-aware editors and
@@ -1564,4 +1516,393 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
     function escapeAttr(s) { return escapeHtml(s); }
 
     $(document).ready(init);
+})();
+// ----- Update notification --------------------------------------------------
+// Checks for FabMo updates using the BROWSER's internet connection, so a tool
+// with no network route of its own still learns that an update exists. The
+// package manifest on gofabmo.org is CORS-open (GitHub Pages), so the page
+// can read it directly. Install goes through the engine's same-origin updater
+// proxy (/updater/*, routes/updater.js):
+//   - tool online:  the updater downloads the package itself, then applies.
+//   - tool offline: the browser downloads the .fmp (normal browser download,
+//     no CORS needed) and the user drops it on the page; we relay it to the
+//     updater's manual-update endpoint.
+(function() {
+    var MANIFEST_URL = 'https://www.gofabmo.org/manifest/packages.json';
+    var latestPkg = null;
+    var currentVersion = null;
+    var armed = false;
+    var armTimer = null;
+    var lastMachineState = null;
+    // The single #btn-update button steps through a fallback cascade:
+    //   'check'       - run the browser-side manifest check
+    //   'install'     - install latestPkg from the registry (manifest found)
+    //   'install-usb' - install usbPkg found on a mounted USB drive
+    //   'upload'      - no internet anywhere, no USB package: open a file
+    //                   picker and relay the chosen .fmp to the updater
+    var mode = 'check';
+    var usbPkg = null;
+
+    fabmo.on('status', function(status) {
+        if (status && status.state) { lastMachineState = status.state; }
+    });
+
+    function parseVer(v) {
+        var p = String(v || '').replace(/^v/i, '').split('.').map(function(n) {
+            return parseInt(n, 10) || 0;
+        });
+        while (p.length < 3) { p.push(0); }
+        return p;
+    }
+
+    function verCmp(a, b) {
+        var va = parseVer(a), vb = parseVer(b);
+        for (var i = 0; i < 3; i++) {
+            if (va[i] !== vb[i]) { return va[i] - vb[i]; }
+        }
+        return 0;
+    }
+
+    function progress(msg, isError) {
+        $('#update-progress')
+            .show()
+            .css('color', isError ? '#a94442' : '#31708f')
+            .text(msg);
+    }
+
+    function showNotice(pkg) {
+        latestPkg = pkg;
+        usbPkg = null;
+        mode = 'install';
+        $('#update-uptodate').hide();
+        // A small "(update available)" flag next to the version number,
+        // and the one button morphs: "Check for Updates" → "Install vX now".
+        // (Reset the flag text — a prior USB result may have changed it.)
+        $('#update-available-flag')
+            .text(window.t('config.software.update_available_flag'))
+            .show();
+        $('#btn-update').addClass('success')
+            .text(window.t('config.software.install_now', { version: pkg.version }));
+    }
+
+    function showUSBNotice(pkg) {
+        usbPkg = pkg;
+        latestPkg = null;
+        mode = 'install-usb';
+        $('#update-uptodate').hide();
+        $('#update-available-flag')
+            .text(window.t('config.software.update_usb_flag'))
+            .show();
+        $('#btn-update').addClass('success')
+            .text(window.t('config.software.install_usb', { version: pkg.version }));
+    }
+
+    // Terminal state of the cascade: nothing reachable, nothing on USB.
+    // The button becomes "Upload Update Package…" (opens a file picker on
+    // the client device; the chosen file is relayed to the updater).
+    function enterUploadMode(manual, done) {
+        latestPkg = null;
+        usbPkg = null;
+        mode = 'upload';
+        $('#update-available-flag').hide();
+        $('#btn-update').removeClass('success')
+            .text(window.t('config.software.upload_package'));
+        done('config.software.update_offline_hint', false);
+    }
+
+    // Cascade step 3: neither the tool nor the browser has internet — look
+    // for a newer package on a USB drive plugged into the tool.
+    function checkUSBPackages(manual, done) {
+        $.getJSON('/updater/usb/packages').done(function(resp) {
+            var pkgs = (resp && resp.data && resp.data.packages) || [];
+            var newer = pkgs.filter(function(p) {
+                return p.product === 'fabmo-engine' && p.version &&
+                       verCmp(p.version, currentVersion) > 0;
+            }).sort(function(a, b) { return verCmp(a.version, b.version); });
+            if (newer.length) {
+                done(null);
+                showUSBNotice(newer[newer.length - 1]);
+            } else {
+                enterUploadMode(manual, done);
+            }
+        }).fail(function() {
+            enterUploadMode(manual, done);
+        });
+    }
+
+    // manual=true when the user clicked "Check for Updates": give feedback
+    // for the quiet outcomes (dev build, no internet) that the automatic
+    // on-load check deliberately swallows.
+    function checkForUpdates(manual) {
+        if (manual) {
+            $('#update-uptodate').hide();
+            $('#btn-update').addClass('disabled');
+            progress(window.t('config.software.update_checking'));
+        }
+        function done(msgKey, isError) {
+            $('#btn-update').removeClass('disabled');
+            if (msgKey) {
+                if (manual) { progress(window.t(msgKey), isError); }
+            } else {
+                $('#update-progress').hide();
+            }
+        }
+        fabmo.getVersion(function(err, version) {
+            if (err || !version || version.type !== 'release' || !version.number) {
+                return done('config.software.update_check_unavailable', true); // dev builds: no version to compare against
+            }
+            currentVersion = version.number;
+            // Ask the engine's updater proxy which platform we are; fall back
+            // to raspberry-pi (the only shipping platform) if it's unreachable.
+            $.getJSON('/updater/config').always(function(resp) {
+                var ucfg = (resp && resp.data && (resp.data.config || resp.data)) || {};
+                var platform = ucfg.platform || 'raspberry-pi';
+                var controller = window.AbortController ? new AbortController() : null;
+                var timer = controller ? setTimeout(function() { controller.abort(); }, 8000) : null;
+                fetch(MANIFEST_URL, controller ? { signal: controller.signal, cache: 'no-store' } : { cache: 'no-store' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(manifest) {
+                        if (timer) { clearTimeout(timer); }
+                        var pkgs = (manifest.packages || []).filter(function(p) {
+                            return p.product === 'FabMo-Engine' &&
+                                   p.os === 'linux' &&
+                                   p.platform === platform;
+                        }).sort(function(a, b) { return verCmp(a.version, b.version); });
+                        if (!pkgs.length) { return done('config.software.update_check_failed', true); }
+                        var newer = pkgs.filter(function(p) {
+                            return verCmp(p.version, currentVersion) > 0;
+                        });
+                        done(null);
+                        if (newer.length) {
+                            showNotice(newer[newer.length - 1]);
+                        } else {
+                            $('#update-uptodate').show();
+                        }
+                    })
+                    .catch(function() {
+                        // Browser has no internet either (or the fetch timed
+                        // out) — fall through to the USB drive, and failing
+                        // that, to upload mode.
+                        checkUSBPackages(manual, done);
+                    });
+            });
+        });
+    }
+
+    function disarm() {
+        armed = false;
+        if (armTimer) { clearTimeout(armTimer); armTimer = null; }
+        if (mode === 'install' && latestPkg) {
+            $('#btn-update')
+                .removeClass('alert').addClass('success')
+                .text(window.t('config.software.install_now', { version: latestPkg.version }));
+        } else if (mode === 'install-usb' && usbPkg) {
+            $('#btn-update')
+                .removeClass('alert').addClass('success')
+                .text(window.t('config.software.install_usb', { version: usbPkg.version }));
+        }
+    }
+
+    // Install a package sitting on a USB drive plugged into the tool: the
+    // engine streams it to the updater, which installs it immediately.
+    function beginUSBInstall() {
+        if (lastMachineState && lastMachineState !== 'idle') {
+            progress(window.t('config.software.update_requires_idle'), true);
+            return;
+        }
+        $('#btn-update').addClass('disabled');
+        progress(window.t('config.software.update_usb_sending'));
+        $.ajax({
+            url: '/updater/usb/install',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ path: usbPkg.path }),
+            dataType: 'json',
+            timeout: 10 * 60 * 1000
+        }).done(function(resp) {
+            if (resp && resp.status === 'success') {
+                progress(window.t('config.software.update_installing_restart'));
+                fabmo.notifyUpdateStarted({ version: usbPkg.version });
+            } else {
+                progress(window.t('config.software.update_failed', {
+                    message: (resp && resp.message) || 'unknown'
+                }), true);
+                $('#btn-update').removeClass('disabled');
+            }
+        }).fail(function(xhr, stat) {
+            progress(window.t('config.software.update_failed', { message: stat }), true);
+            $('#btn-update').removeClass('disabled');
+        });
+    }
+
+    function beginInstall() {
+        if (lastMachineState && lastMachineState !== 'idle') {
+            progress(window.t('config.software.update_requires_idle'), true);
+            return;
+        }
+        $('#btn-update').addClass('disabled');
+        $.getJSON('/network/online').always(function(resp) {
+            var online = !!(resp && resp.data && resp.data.online);
+            if (online) {
+                serverSideInstall();
+            } else {
+                $('#update-offline-flow').show();
+            }
+        });
+    }
+
+    function serverSideInstall() {
+        progress(window.t('config.software.update_downloading_tool'));
+        $.ajax({
+            url: '/updater/update/download',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ version: latestPkg.version }),
+            dataType: 'json',
+            timeout: 10 * 60 * 1000
+        }).done(function(resp) {
+            if (resp && resp.status === 'success') {
+                progress(window.t('config.software.update_installing_restart'));
+                // Hand the screen to the dashboard's update-progress page:
+                // the engine is about to stop and restart.
+                fabmo.notifyUpdateStarted({ version: latestPkg.version });
+                $.post('/updater/update/apply').fail(function() {
+                    // The engine often restarts before this response lands —
+                    // that is the success case, not an error.
+                });
+            } else {
+                progress(window.t('config.software.update_failed', {
+                    message: (resp && resp.message) || 'unknown'
+                }), true);
+                $('#btn-update').removeClass('disabled');
+            }
+        }).fail(function(xhr, stat) {
+            progress(window.t('config.software.update_failed', { message: stat }), true);
+            $('#btn-update').removeClass('disabled');
+        });
+    }
+
+    function relayFile(file) {
+        if (!file) { return; }
+        if (!/\.(fmp|fmu)$/i.test(file.name)) {
+            progress(window.t('config.software.update_failed', { message: file.name }), true);
+            return;
+        }
+        if (lastMachineState && lastMachineState !== 'idle') {
+            progress(window.t('config.software.update_requires_idle'), true);
+            return;
+        }
+        var fd = new FormData();
+        fd.append('file', file, file.name);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/updater/update/manual');
+        xhr.upload.onprogress = function(evt) {
+            if (evt.lengthComputable) {
+                progress(window.t('config.software.update_uploading', {
+                    pct: Math.round((evt.loaded / evt.total) * 100)
+                }));
+            }
+        };
+        xhr.onload = function() {
+            var resp = {};
+            try { resp = JSON.parse(xhr.responseText); } catch (e) { /* fall through */ }
+            if (resp.status === 'success') {
+                progress(window.t('config.software.update_installing_restart'));
+                // The updater applies the relayed file immediately — hand the
+                // screen to the dashboard's update-progress page.
+                fabmo.notifyUpdateStarted({ version: latestPkg ? latestPkg.version : '' });
+            } else {
+                progress(window.t('config.software.update_failed', {
+                    message: resp.message || ('HTTP ' + xhr.status)
+                }), true);
+            }
+        };
+        xhr.onerror = function() {
+            progress(window.t('config.software.update_failed', { message: 'upload error' }), true);
+        };
+        progress(window.t('config.software.update_uploading', { pct: 0 }));
+        xhr.send(fd);
+    }
+
+    function init() {
+        // The one update button: checks in 'check' mode, opens a file picker
+        // in 'upload' mode, installs (with a two-step confirm — the sandboxed
+        // iframe blocks window.confirm) in the install modes.
+        $('#btn-update').click(function(evt) {
+            evt.preventDefault();
+            if ($(this).hasClass('disabled')) { return; }
+            if (mode === 'check') {
+                checkForUpdates(true);
+                return;
+            }
+            if (mode === 'upload') {
+                $('#fmp-file-input').trigger('click');
+                return;
+            }
+            var pkg = mode === 'install-usb' ? usbPkg : latestPkg;
+            if (!pkg) { return; }
+            if (!armed) {
+                // First click arms, second click within 6 s proceeds.
+                armed = true;
+                $(this).removeClass('success').addClass('alert')
+                    .text(window.t('config.software.confirm_install', {
+                        version: pkg.version
+                    }));
+                armTimer = setTimeout(disarm, 6000);
+                return;
+            }
+            disarm();
+            if (mode === 'install-usb') {
+                beginUSBInstall();
+            } else {
+                beginInstall();
+            }
+        });
+
+        // A USB drive was plugged in or removed (engine-side watcher):
+        // re-run the cascade so a stick carrying an update is offered
+        // immediately — unless an install is already in motion, or we
+        // already have a registry update to offer.
+        fabmo.on('change', function(topic) {
+            if (topic !== 'usb_packages') { return; }
+            if (mode === 'install' || armed || $('#btn-update').hasClass('disabled')) { return; }
+            checkForUpdates(false);
+        });
+
+        $('#btn-open-updater').click(function(evt) {
+            evt.preventDefault();
+            fabmo.navigate('/updater');
+        });
+
+        // The browser downloads the package over ITS connection. Opened via
+        // the parent window because the sandboxed app iframe can't download.
+        $('#btn-download-fmp').click(function(evt) {
+            evt.preventDefault();
+            if (latestPkg) { fabmo.navigate(latestPkg.url, { target: '_blank' }); }
+        });
+
+        var $zone = $('#fmp-dropzone');
+        $zone.click(function() { $('#fmp-file-input').trigger('click'); });
+        $('#fmp-file-input').change(function() { relayFile(this.files[0]); });
+        $zone.on('dragover dragenter', function(evt) {
+            evt.preventDefault();
+            $zone.css('border-color', '#4a7a4a');
+        });
+        $zone.on('dragleave drop', function(evt) {
+            evt.preventDefault();
+            $zone.css('border-color', '#9a9a9a');
+        });
+        $zone.on('drop', function(evt) {
+            var dt = evt.originalEvent.dataTransfer;
+            if (dt && dt.files && dt.files.length) { relayFile(dt.files[0]); }
+        });
+
+        checkForUpdates();
+    }
+
+    // Dynamic strings here are built with direct t() calls, and the check can
+    // win the race against the dictionary fetch — gate the whole module.
+    $(document).ready(function() {
+        (window.i18nReady || Promise.resolve()).then(init);
+    });
 })();

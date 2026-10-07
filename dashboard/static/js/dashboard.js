@@ -362,6 +362,18 @@ define(function (require) {
             }.bind(this)
         );
 
+        // A software update is being applied (engine about to restart) —
+        // hand the screen to the update-progress page (see main.js).
+        this._registerHandler(
+            "notifyUpdateStarted",
+            function (data, callback) {
+                if (window.fabmoUpdateScreen) {
+                    window.fabmoUpdateScreen.begin(data || {});
+                }
+                callback(null);
+            }.bind(this)
+        );
+
         //Submit firmware
         this._registerHandler(
             "submitFirmwareUpdate",

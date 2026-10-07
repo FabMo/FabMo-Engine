@@ -69,6 +69,50 @@
 
         <div class="row">
           <fieldset>
+            <legend data-i18n="config.software.legend">Software</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label data-i18n="config.software.engine_version">FabMo-Engine Software Version</label>
+                <div class="columns">
+                    <span class="engine-version"></span>
+                    <!-- Shown by the browser-side manifest check when a newer
+                         version exists (see "Update notification" section in
+                         configuration.js). -->
+                    <span id="update-available-flag" style="display:none; color:#4a7a4a;" data-i18n="config.software.update_available_flag">(update available)</span>
+                </div>
+                <!-- ONE update button: "Check for Updates" normally, morphing
+                     into "Install vX.X.X now" when the manifest check finds
+                     an update. Works even when the tool itself has no
+                     internet. -->
+                <div>
+                    <div class="row collapse">
+                      <a id="btn-update"  class="button radius small" data-i18n="config.software.check_updates">Check for FabMo Software Updates</a>
+                    </div>
+                </div>
+                <!-- Only shows when Install is clicked while the tool is offline. -->
+                <div id="update-offline-flow" style="display:none; margin-top:10px;">
+                  <p data-i18n="config.software.update_offline_explain" style="font-size:0.9em; margin-bottom:6px;">This tool has no internet connection, but your browser does. Download the update file with your browser, then drop it below.</p>
+                  <a id="btn-download-fmp" class="button radius small" data-i18n="config.software.update_download_step">1. Download the update file</a>
+                  <div id="fmp-dropzone" data-i18n="config.software.update_drop_step" style="border:2px dashed #9a9a9a; border-radius:6px; padding:16px; text-align:center; cursor:pointer; color:#666;">2. Then drop the downloaded file here (or click to choose it)</div>
+                  <input type="file" id="fmp-file-input" accept=".fmp,.fmu" style="display:none;">
+                </div>
+                <div id="update-progress" style="display:none; font-weight:bold; margin-top:6px;"></div>
+                <div id="update-uptodate" style="display:none; margin-top:6px; font-size:0.85em; color:#4a7a4a;" data-i18n="config.software.update_up_to_date">FabMo software is up to date.</div>
+              </div>
+            </div>
+
+            <!-- Advanced operations (G2 firmware loading, updater settings,
+                 update history) all live on the FabMo-Updater page. -->
+            <div class="large-12 columns">
+              <a id="btn-open-updater" class="button secondary radius tiny"
+                 data-i18n="config.software.advanced"
+                 title="Open the FabMo Updater page (firmware tools, settings, update history)"
+                 data-i18n-title="config.software.open_updater">Advanced</a>
+            </div>
+
+          </fieldset>
+
+          <fieldset>
             <legend data-i18n="config.general.legend">General Settings</legend>
             <div class="large-4 columns" >
               <div class="row collapse">
@@ -76,7 +120,7 @@
                   <span class="tooltiptext" data-i18n-html="config.general.machine_name_tooltip">
                     The name of your tool. Displayed on the dashboard, used as the WiFi AP name,
                     and as the Avahi .local hostname (e.g. MyTool.local).<br>
-                    To change the Machine Name go to the FabMo-Updater's "Settings" panel (You can click on "Check for Updates" and then "Settings").
+                    To change the Machine Name go to the FabMo-Updater's "Settings" panel (Software section &rarr; "Advanced" button, then "Settings").
                   </span>
                 </span>
                 </label>
@@ -154,6 +198,35 @@
             </div>
           </fieldset>
 
+
+        </div>
+
+        <!-- SETTINGS & BACKUPS — save/restore named snapshots of the
+             tool's full setup (config, macros, apps, job history).
+             Lives inside the General tab so it doesn't bleed onto
+             Axes/Inputs/etc. -->
+        <div class="row">
+          <fieldset>
+            <legend data-i18n="config.settings_backup.legend">Settings &amp; Backups</legend>
+            <p style="margin-bottom: 10px;" data-i18n-html="config.settings_backup.explanation">
+              Save the current state of this tool &mdash; its Configuration settings, Macros, installed Apps, and Job history &mdash;
+              as a named snapshot that you can restore later or download as a backup file.
+              Your default snapshot is also used to recover the tool automatically if its setup ever becomes corrupted.
+            </p>
+            <!-- Plain flex, no Foundation row/columns: the grid's floats
+                 and negative margins stack these and indent oddly. -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <a id="btn-save-settings" class="button radius small" title="Save a snapshot of this tool's setup" data-i18n-title="config.settings_backup.save_button_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.settings_backup.save_button">Save Current Settings</a>
+              <a id="btn-restore-settings" class="button radius small" title="Restore a saved snapshot or an uploaded backup file" data-i18n-title="config.settings_backup.restore_button_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.settings_backup.restore_button">Restore Settings</a>
+              <span style="margin-left:12px; line-height:24px; font-size:0.75em; white-space:nowrap;"><span data-i18n="config.settings_backup.default_label">Default settings:</span> <!-- No data-i18n here: the content is dynamic (a snapshot name); the walker
+     would stomp a real name with the translated "none" at i18nReady.
+     refreshSnapshots() paints it, gated on i18nReady. -->
+              <span id="current-default-name" style="font-weight: bold;">none</span></span>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="row">
           <fieldset>
             <legend data-i18n="config.logging.legend">Logging</legend>
             <div class="large-4 columns">
@@ -195,74 +268,6 @@
                   <span class="postfix">ms</span>
                 </div>
               </div>
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend data-i18n="config.software.legend">Software</legend>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-i18n="config.software.engine_version">FabMo-Engine Software Version</label>
-                <div class="columns">
-                    <span class="engine-version"></span>
-                </div>
-                <div>
-                    <div class="row collapse">
-                      <a id="btn-update"  class="button radius small" data-i18n="config.software.check_updates">Check for FabMo Software Updates</a>
-                    </div>
-                </div>
-              </div>
-              <div class="row collapse">
-                <label data-i18n="config.software.firmware_version">G2 Firmware Version (realtime motion module)</label>
-                <div class="columns">
-                    <span class="firmware-version"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="large-12 columns">
-              <label><span data-i18n="config.software.firmware_loading">Special Case - Firmware loading</span> <span class="tooltip">i
-                <span class="tooltiptext" data-i18n-html="config.software.firmware_loading_tooltip">
-                  These are firmware load functions for special use cases:<br>
-                      &nbsp;&nbsp;Either to upload a firmware file you have been provided by tech support, <br>
-                      &nbsp;&nbsp;or to reload the current firmare in cases where there is a mismatch <br>
-                      &nbsp;&nbsp;between the SD card and the Control card (e.g. SD card replacement).<br>
-                  </span>
-                </span>
-              </label>
-              <div class="large-4 columns">
-                <div class="row collapse">
-                  <a id="btn-flash-firm"  class="button info radius tiny" data-i18n="config.software.firmware_upload">SPECIAL |  Update G2 Firmware with a file provided by tech support</a>
-                  <input style="display:none" type="file" id="firmware-input">
-                  <a id="btn-reload-firm" class="button info radius tiny" data-i18n="config.software.firmware_reload">SPECIAL |  Reload G2 Firmware from current FabMo</a>
-                </div>
-              </div>
-            </div>
-
-          </fieldset>
-        </div>
-
-        <!-- SETTINGS & BACKUPS — save/restore named snapshots of the
-             tool's full setup (config, macros, apps, job history).
-             Lives inside the General tab so it doesn't bleed onto
-             Axes/Inputs/etc. -->
-        <div class="row">
-          <fieldset>
-            <legend data-i18n="config.settings_backup.legend">Settings &amp; Backups</legend>
-            <p style="margin-bottom: 10px;" data-i18n-html="config.settings_backup.explanation">
-              Save the current state of this tool &mdash; its Configuration settings, Macros, installed Apps, and Job history &mdash;
-              as a named snapshot that you can restore later or download as a backup file.
-              Your default snapshot is also used to recover the tool automatically if its setup ever becomes corrupted.
-            </p>
-            <!-- Plain flex, no Foundation row/columns: the grid's floats
-                 and negative margins stack these and indent oddly. -->
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <a id="btn-save-settings" class="button radius small" title="Save a snapshot of this tool's setup" data-i18n-title="config.settings_backup.save_button_title" style="background-color:rgb(83, 133, 224); margin:0;" data-i18n="config.settings_backup.save_button">Save Current Settings</a>
-              <a id="btn-restore-settings" class="button radius small" title="Restore a saved snapshot or an uploaded backup file" data-i18n-title="config.settings_backup.restore_button_title" style="background-color:rgb(41, 175, 41); margin:0;" data-i18n="config.settings_backup.restore_button">Restore Settings</a>
-              <span style="margin-left:12px; line-height:24px; font-size:0.75em; white-space:nowrap;"><span data-i18n="config.settings_backup.default_label">Default settings:</span> <!-- No data-i18n here: the content is dynamic (a snapshot name); the walker
-     would stomp a real name with the translated "none" at i18nReady.
-     refreshSnapshots() paints it, gated on i18nReady. -->
-              <span id="current-default-name" style="font-weight: bold;">none</span></span>
             </div>
           </fieldset>
         </div>
@@ -1914,6 +1919,210 @@
         <div class="row">
 
           <fieldset>
+            <legend><span data-i18n="config.machine.spindle_setup_legend">Spindle Setup</span> <span class="tooltip tooltip-below">i
+              <span class="tooltiptext" data-i18n-html="config.machine.spindle_setup_tooltip">
+                Detects the USB-to-RS485 adapter, identifies the connected <br>
+                VFD by probing known register layouts, and installs the <br>
+                matching profile so spindle RPM control is live. <br>
+                Run this after plugging in a new spindle controller. <br>
+              </span>
+            </span>
+            </legend>
+
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label data-i18n="config.machine.rs485_adapter">RS485 Adapter</label>
+                <div class="small-12 columns">
+                  <input type="text" id="spindle-setup-adapter" class="machine-input" readonly />
+                </div>
+              </div>
+              <div class="row collapse">
+                <label data-i18n="config.machine.installed_vfd_profile">Installed VFD Profile</label>
+                <div class="small-12 columns">
+                  <input type="text" id="spindle-setup-profile" class="machine-input" readonly />
+                </div>
+              </div>
+            </div>
+
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label>&nbsp;</label>
+                <div class="small-12 columns">
+                  <button type="button" id="spindle-setup-configure" class="button" data-i18n="config.machine.detect_configure_spindle">Detect &amp; Configure Spindle</button>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend data-i18n="config.machine.zlift_legend">Z-Lift</legend>
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.zlift_height">Height</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.zlift_height_tooltip">
+                    The pull-up height automatically moved to when tool is stopped or <br>
+                    paused. This height may be different than the safe traversing <br>
+                    height set within a file. <br>
+                    If your work sets the table surface as your Z-zero, make sure <br>
+                    the value set here will pull your tool above the material. <br>
+                    [default=0.5] <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-safeZpullUp" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+
+            </div>
+          </fieldset>
+
+
+          <fieldset>
+            <legend data-i18n="config.machine.manual_control_legend">Manual Control</legend>
+
+            <!-- XY Speed and the XY/Z/ABC Increment inputs were removed here
+                 (2026-10): they are starting values the operator adjusts live
+                 in the Motion Keypad itself, so editing them here was
+                 redundant. The config keys still exist and are set from the
+                 keypad UI. -->
+            <div class="row">
+            <!-- XY speed range -->
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.min_xy_speed">Min XY Speed</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.min_xy_speed_tooltip">
+                    The the lowest speed for the XY speed range <br>
+                    slider for the Motion Keypad (yellow icon). [default=0.1] <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-xy_min" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix ips_mmps_label">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.max_xy_speed">Max XY Speed</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.max_xy_speed_tooltip">
+                    The the highest speed for the XY speed range <br>
+                    slider for the Motion Keypad (yellow icon). [default=6.0] <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-xy_max" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix ips_mmps_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Z speeds -->
+            <div class="large-6 columns">
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.z_speed_fast">Z Speed Fast</span> <span class="tooltip">i
+                    <span class="tooltiptext" data-i18n-html="config.machine.z_speed_fast_tooltip">
+                      The "fast" Z speed used when driving the tool with the <br>
+                      Motion Keypad (yellow icon). [ &lt;&lt; &gt;&gt; ] <br>
+                    </span>
+                  </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-z_fast_speed" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix ips_mmps_label">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.z_speed_slow">Z Speed Slow</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.z_speed_slow_tooltip">
+                    The "slow" Z speed used when driving the tool with the <br>
+                    Motion Keypad (yellow icon). [ &lt; &gt; ] <br>
+                  </span>
+                </span> 
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-z_slow_speed" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix ips_mmps_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            </div>
+
+            <!-- Rarely-adjusted motion tuning, collapsed by default. -->
+            <div class="large-6 columns">
+              <details id="manual-advanced" class="cfg-advanced">
+                <summary data-i18n="config.machine.advanced">Advanced</summary>
+                <div style="padding:8px 0 0 2px;">
+
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.xy_max_jerk">XY Max Jerk</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.xy_max_jerk_tooltip">
+                    XY acceleration for the Motion Keypad. [default=50] <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-xy_jerk" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">mm/min<sup>3</sup></span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.z_max_jerk">Z Max Jerk</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.z_max_jerk_tooltip">
+                    Z acceleration for the Motion Keypad. [default=50] <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-z_jerk" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">mm/min<sup>3</sup></span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.fixed_move_delay">Fixed Move Delay</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.fixed_move_delay_tooltip">
+                    How long a button must be held before continuous motion <br>
+                    starts (in milliseconds). A quick tap shorter than this <br>
+                    triggers a fixed-distance nudge instead. Set to 0 to <br>
+                    disable tap-nudge and get instant continuous motion. <br>
+                    [default=150] <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-press_delay" class="machine-input" min="0" max="500" step="10" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix">ms</span>
+                </div>
+              </div>
+
+                </div>
+              </details>
+
+            </div>
+          </fieldset>
+
+          <fieldset>
             <legend><span data-i18n="config.machine.envelope">Machine Envelope</span> <span class="tooltip tooltip-below">i
               <span class="tooltiptext" data-i18n-html="config.machine.envelope_tooltip">
                 The minimum and maximum positions on each axis. <br>
@@ -1926,6 +2135,9 @@
             </legend>
 
             <div class="row">
+              <div class="large-12 columns">
+                <h5 class="envelope-axis-heading" data-i18n="config.axes.x_axis">X-Axis</h5>
+              </div>
               <div class="large-4 columns">
                 <div class="row collapse">
                   <label data-i18n="config.machine.x_min">X Min</label>
@@ -1974,6 +2186,9 @@
             </div>
 
             <div class="row">
+              <div class="large-12 columns">
+                <h5 class="envelope-axis-heading" data-i18n="config.axes.y_axis">Y-Axis</h5>
+              </div>
               <div class="large-4 columns">
                 <div class="row collapse">
                   <label data-i18n="config.machine.y_min">Y Min</label>
@@ -2012,6 +2227,9 @@
             </div>
 
             <div class="row">
+              <div class="large-12 columns">
+                <h5 class="envelope-axis-heading" data-i18n="config.axes.z_axis">Z-Axis</h5>
+              </div>
               <div class="large-4 columns">
                 <div class="row collapse">
                   <label data-i18n="config.machine.z_min">Z Min</label>
@@ -2049,20 +2267,7 @@
               </div>
             </div>
 
-              <div class="large-6 columns">
-                <div class="row collapse">
-                  <label><span data-i18n="config.machine.enforce_softlimits">Enforce Software Limits</span> <span class="tooltip">i
-                    <span class="tooltiptext" data-i18n-html="config.machine.enforce_softlimits_tooltip">
-                      When checked, manual jogging stops at the envelope <br>
-                      boundary in work coordinates. Uncheck to allow <br>
-                      jogging past the envelope (e.g. for setup or <br>
-                      recovery). [default=unchecked] <br>
-                    </span>
-                    </span>
-                  </label>
-                  <input id="machine-softlimits_on" class="machine-input" type="checkbox">
-                </div>
-              </div>
+              <!-- "Enforce Software Limits" moved to the Safety fieldset. -->
           </fieldset>
 
           <!-- Machine Features UI hidden for now — machine.features.* flags
@@ -2100,31 +2305,144 @@
             </div>
           </fieldset>
 
+
           <fieldset>
-            <legend data-i18n="config.machine.zlift_legend">Z-Lift</legend>
+            <legend data-i18n="config.machine.safety_legend">Safety</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label><span data-i18n="config.machine.zlift_height">Height</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.zlift_height_tooltip">
-                    The pull-up height automatically moved to when tool is stopped or <br>
-                    paused. This height may be different than the safe traversing <br>
-                    height set within a file. <br>
-                    If your work sets the table surface as your Z-zero, make sure <br>
-                    the value set here will pull your tool above the material. <br>
-                    [default=0.5] <br>
+                <label><span data-i18n="config.machine.use_auth_button">Use Authorization Button</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.use_auth_button_tooltip">
+                    If checked, the tool will require "authorization" before <br>
+                    executing a motion command originating from a wireless <br>
+                    or wired network.  Authorization is issued by pressing the <br>
+                    authorization button at the tool. <br>
+                    Authorization insures that only an individual present at the <br>
+                    is able to start it in motion. [default=checked] <br>
                   </span>
-                </span>
+                  </span>
+                </label>
+                <input id="machine-auth_required" class="machine-input" type="checkbox" checked>
+              </div>
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.enforce_softlimits">Enforce Software Limits</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.enforce_softlimits_tooltip">
+                    When checked, manual jogging stops at the envelope <br>
+                    boundary in work coordinates. Uncheck to allow <br>
+                    jogging past the envelope (e.g. for setup or <br>
+                    recovery). [default=unchecked] <br>
+                  </span>
+                  </span>
+                </label>
+                <input id="machine-softlimits_on" class="machine-input" type="checkbox">
+              </div>
+
+              <!-- Authorization plumbing details, collapsed by default. -->
+              <details id="safety-advanced" class="cfg-advanced">
+                <summary data-i18n="config.machine.advanced">Advanced</summary>
+                <div style="padding:8px 0 0 2px;">
+
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.lockout_scope">Lockout scope</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.lockout_scope_tooltip">
+                    Which actions require the authorize button press. <br>
+                    "Files and manual control" gates everything (the original <br>
+                    behavior). "File runs only" lets the on-screen manual <br>
+                    controls and keyboard jog work without pressing authorize <br>
+                    first, while still requiring it before any file, macro, or <br>
+                    editor code is allowed to run. [default=Files and manual control]
+                  </span>
+                  </span>
+                </label>
+                <select id="machine-auth_scope" class="machine-input">
+                  <option value="all" data-i18n="config.machine.lockout_scope_all">Files and manual control</option>
+                  <option value="file_only" data-i18n="config.machine.lockout_scope_file_only">File runs only (manual controls always available)</option>
+                </select>
+              </div>
+              <div class="row collapse">
+                <label><span data-i18n="config.machine.auth_button_input">Authorization Button Input</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.auth_button_input_tooltip">
+                    The input line to which the authorization button is connected. <br>
+                    If the tool is configured to require authorization, this <br>
+                    input must be pressed before any motion command can be <br>
+                    executed. [default=5] <br>
+                  </span>
+                  </span>
+                </label>   
+                  <select id="machine-auth_input" class="machine-input">
+                    <option value="0" data-i18n="config.machine.input_none">none</option>
+                    <option value="1">Input 1</option>
+                    <option value="2">Input 2</option>
+                    <option value="3">Input 3</option>
+                    <option value="4">Input 4</option>
+                    <option value="5">Input 5</option>
+                    <option value="6">Input 6</option>
+                    <option value="7">Input 7</option>
+                    <option value="8">Input 8</option>
+                    <option value="9">Input 9</option>
+                    <option value="10">Input 10</option>
+                    <option value="11">Input 11</option>
+                    <option value="12">Input 12</option>
+                  </select>
+              </div>
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.auth_timeout">Authorization Timeout</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.auth_timeout_tooltip">
+                    The amount of time the tool remains authorized for use after <br>
+                    authorization has been issued with the authorization button. <br>
+                    Tool authorization is used to confirm that you are physically <br>
+                    present and working at the tool before executing a motion <br>
+                    command arriving over the wireless or wired network. [default=30] <br>
+                  </span>
+                  </span> 
                 </label>
                 <div class="small-9 columns">
-                  <input type="number" id="opensbp-safeZpullUp" class="opensbp-input" />
+                  <input type="number" id="machine-auth_timeout" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
+                  <span class="postfix" data-i18n="config.machine.seconds">seconds</span>
                 </div>
               </div>
 
+                </div>
+              </details>
             </div>
           </fieldset>
+
+          <!-- AP Mode Button fieldset removed 2026-10: obsolete feature.
+               The machine.ap_input / ap_time config keys still exist
+               server-side but are no longer exposed here. -->
+
+          <!-- <fieldset>
+            <legend>Quit Button</legend>
+            <div class="large-6 columns">
+              <div class="row collapse">
+                  <label>Quit Button Input <span class="tooltip">i
+                    <span class="tooltiptext">
+                      The input to which the "Quit" button is connected. <br>
+                      Holding down the quit button for the required duration <br>
+                      causes the tool to exit FabMo and return to the <br>
+                      underlying operating system. [default=No Quit Button] <br>
+                    </span>
+                    </span>
+                </label>
+                  <select id="machine-quit_input" class="machine-input">
+                    <option value="0">none</option>
+                    <option value="1">Input 1</option>
+                    <option value="2">Input 2</option>
+                    <option value="3">Input 3</option>
+                    <option value="4">Input 4</option>
+                    <option value="5">Input 5</option>
+                    <option value="6">Input 6</option>
+                    <option value="7">Input 7</option>
+                    <option value="8">Input 8</option>
+                    <option value="9">Input 9</option>
+                    <option value="10">Input 10</option>
+                    <option value="11">Input 11</option>
+                    <option value="12">Input 12</option>
+                  </select>
+              </div>
+            </div>
+          </fieldset> -->
 
           <fieldset>
             <legend data-i18n="config.machine.machining_legend">Machining Parameters (Tool Path Tuning)</legend>
@@ -2202,387 +2520,6 @@
             </div>  
           </fieldset>
 
-          <fieldset>
-            <legend data-i18n="config.machine.manual_control_legend">Manual Control</legend>
-
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.xy_speed">XY Speed</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.xy_speed_tooltip">
-                    The initial XY speed used when driving the tool with <br>
-                    the Motion Keypad (yellow icon). [adjustable] <br>
-                  </span>
-                </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_speed" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix ips_mmps_label">&nbsp;</span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.min_xy_speed">Min XY Speed</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.min_xy_speed_tooltip">
-                    The the lowest speed for the XY speed range <br>
-                    slider for the Motion Keypad (yellow icon). [default=0.1] <br>
-                  </span>
-                </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_min" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix ips_mmps_label">&nbsp;</span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.max_xy_speed">Max XY Speed</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.max_xy_speed_tooltip">
-                    The the highest speed for the XY speed range <br>
-                    slider for the Motion Keypad (yellow icon). [default=6.0] <br>
-                  </span>
-                </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_max" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix ips_mmps_label">&nbsp;</span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.z_speed_fast">Z Speed Fast</span> <span class="tooltip">i
-                    <span class="tooltiptext" data-i18n-html="config.machine.z_speed_fast_tooltip">
-                      The "fast" Z speed used when driving the tool with the <br>
-                      Motion Keypad (yellow icon). [ &lt;&lt; &gt;&gt; ] <br>
-                    </span>
-                  </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-z_fast_speed" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix ips_mmps_label">&nbsp;</span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.z_speed_slow">Z Speed Slow</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.z_speed_slow_tooltip">
-                    The "slow" Z speed used when driving the tool with the <br>
-                    Motion Keypad (yellow icon). [ &lt; &gt; ] <br>
-                  </span>
-                </span> 
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-z_slow_speed" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix ips_mmps_label">&nbsp;</span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.xy_increment">XY Increment</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.xy_increment_tooltip">
-                    The initial "Fixed Distance" move in the X or Y axis <br>
-                    for each "tap" when in Fixed mode. Also the smallest <br>
-                    move attainable with a quick keytap in continuous motion <br>
-                    mode. [default start = 0.05] <br>
-                  </span>
-                 </span>  
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_increment" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.z_increment">Z Increment</span> <span class="tooltip">i
-                    <span class="tooltiptext" data-i18n-html="config.machine.z_increment_tooltip">
-                      The initial "Fixed Distance" move in the Z axis for each <br>
-                      "tap" when in Fixed mode. Also the smallest move attainable <br>
-                      with a quick keytap in continuous motion mode. [default start = 0.005] <br>
-                    </span>
-                  </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-z_increment" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.abc_increment">ABC Increment</span> <span class="tooltip">i
-                    <span class="tooltiptext" data-i18n-html="config.machine.abc_increment_tooltip">
-                      The initial "Fixed Distance" move in the A, B or C axis for each <br>
-                      "tap" when in Fixed mode. Also the smallest move attainable with a <br>
-                      quick keytap in continuous motion mode. [default start = 1.0] <br>
-                    </span>
-                  </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-abc_increment" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">deg</span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label> <span data-i18n="config.machine.xy_max_jerk">XY Max Jerk</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.xy_max_jerk_tooltip">
-                    XY acceleration for the Motion Keypad. [default=50] <br>
-                  </span>
-                </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_jerk" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix inpm3_mmpm3_label">mm/min<sup>3</sup></span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label> <span data-i18n="config.machine.z_max_jerk">Z Max Jerk</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.z_max_jerk_tooltip">
-                    Z acceleration for the Motion Keypad. [default=50] <br>
-                  </span>
-                </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-z_jerk" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix inpm3_mmpm3_label">mm/min<sup>3</sup></span>
-                </div>
-              </div>
-
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.fixed_move_delay">Fixed Move Delay</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.fixed_move_delay_tooltip">
-                    How long a button must be held before continuous motion <br>
-                    starts (in milliseconds). A quick tap shorter than this <br>
-                    triggers a fixed-distance nudge instead. Set to 0 to <br>
-                    disable tap-nudge and get instant continuous motion. <br>
-                    [default=150] <br>
-                  </span>
-                </span>
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-manual-press_delay" class="machine-input" min="0" max="500" step="10" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">ms</span>
-                </div>
-              </div>
-
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend data-i18n="config.machine.safety_legend">Safety</legend>
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.use_auth_button">Use Authorization Button</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.use_auth_button_tooltip">
-                    If checked, the tool will require "authorization" before <br>
-                    executing a motion command originating from a wireless <br>
-                    or wired network.  Authorization is issued by pressing the <br>
-                    authorization button at the tool. <br>
-                    Authorization insures that only an individual present at the <br>
-                    is able to start it in motion. [default=checked] <br>
-                  </span>
-                  </span>
-                </label>
-                <input id="machine-auth_required" class="machine-input" type="checkbox" checked>
-              </div>
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.lockout_scope">Lockout scope</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.lockout_scope_tooltip">
-                    Which actions require the authorize button press. <br>
-                    "Files and manual control" gates everything (the original <br>
-                    behavior). "File runs only" lets the on-screen manual <br>
-                    controls and keyboard jog work without pressing authorize <br>
-                    first, while still requiring it before any file, macro, or <br>
-                    editor code is allowed to run. [default=Files and manual control]
-                  </span>
-                  </span>
-                </label>
-                <select id="machine-auth_scope" class="machine-input">
-                  <option value="all" data-i18n="config.machine.lockout_scope_all">Files and manual control</option>
-                  <option value="file_only" data-i18n="config.machine.lockout_scope_file_only">File runs only (manual controls always available)</option>
-                </select>
-              </div>
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.auth_button_input">Authorization Button Input</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.auth_button_input_tooltip">
-                    The input line to which the authorization button is connected. <br>
-                    If the tool is configured to require authorization, this <br>
-                    input must be pressed before any motion command can be <br>
-                    executed. [default=5] <br>
-                  </span>
-                  </span>
-                </label>   
-                  <select id="machine-auth_input" class="machine-input">
-                    <option value="0" data-i18n="config.machine.input_none">none</option>
-                    <option value="1">Input 1</option>
-                    <option value="2">Input 2</option>
-                    <option value="3">Input 3</option>
-                    <option value="4">Input 4</option>
-                    <option value="5">Input 5</option>
-                    <option value="6">Input 6</option>
-                    <option value="7">Input 7</option>
-                    <option value="8">Input 8</option>
-                    <option value="9">Input 9</option>
-                    <option value="10">Input 10</option>
-                    <option value="11">Input 11</option>
-                    <option value="12">Input 12</option>
-                  </select>
-              </div>
-              <div class="row collapse">
-                <label> <span data-i18n="config.machine.auth_timeout">Authorization Timeout</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.auth_timeout_tooltip">
-                    The amount of time the tool remains authorized for use after <br>
-                    authorization has been issued with the authorization button. <br>
-                    Tool authorization is used to confirm that you are physically <br>
-                    present and working at the tool before executing a motion <br>
-                    command arriving over the wireless or wired network. [default=30] <br>
-                  </span>
-                  </span> 
-                </label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-auth_timeout" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix" data-i18n="config.machine.seconds">seconds</span>
-                </div>
-              </div>
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend data-i18n="config.machine.ap_mode_legend">AP Mode Button</legend>
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label><span data-i18n="config.machine.ap_button_input">AP Mode Button Input</span> <span class="tooltip">i
-                  <span class="tooltiptext" data-i18n-html="config.machine.ap_button_input_tooltip">
-                    The input to which the AP mode toggle button is connected. <br>
-                    Holding down the AP mode button for the required duration <br>
-                    causes the tool to enter AP mode, in which it becomes <br>
-                    a wireless access point that can be connected to directly. <br>
-                    If AP mode is already active, holding the button turns it off.<br>
-                    See: FabMo's network manager (Wifi icon at upper left). <br>
-                    [default=No AP Mode Button] <br>
-                  </span>
-                  </span>    
-                </label>
-                  <select id="machine-ap_input" class="machine-input">
-                    <option value="0" data-i18n="config.machine.ap_input_none">No AP Mode Button</option>
-                    <option value="1">Input 1</option>
-                    <option value="2">Input 2</option>
-                    <option value="3">Input 3</option>
-                    <option value="4">Input 4</option>
-                    <option value="5">Input 5</option>
-                    <option value="6">Input 6</option>
-                    <option value="7">Input 7</option>
-                    <option value="8">Input 8</option>
-                    <option value="9">Input 9</option>
-                    <option value="10">Input 10</option>
-                    <option value="11">Input 11</option>
-                    <option value="12">Input 12</option>
-                  </select>
-
-              </div>
-              <div class="row collapse">
-                <label data-tip="" data-i18n="config.machine.ap_button_duration">AP Mode Button Required Duration</label>
-                <div class="small-9 columns">
-                  <input type="number" id="machine-ap_time" class="machine-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix" data-i18n="config.machine.seconds">seconds</span>
-                </div>
-              </div>
-            </div>
-          </fieldset>
-          
-          <!-- <fieldset>
-            <legend>Quit Button</legend>
-            <div class="large-6 columns">
-              <div class="row collapse">
-                  <label>Quit Button Input <span class="tooltip">i
-                    <span class="tooltiptext">
-                      The input to which the "Quit" button is connected. <br>
-                      Holding down the quit button for the required duration <br>
-                      causes the tool to exit FabMo and return to the <br>
-                      underlying operating system. [default=No Quit Button] <br>
-                    </span>
-                    </span>
-                </label>
-                  <select id="machine-quit_input" class="machine-input">
-                    <option value="0">none</option>
-                    <option value="1">Input 1</option>
-                    <option value="2">Input 2</option>
-                    <option value="3">Input 3</option>
-                    <option value="4">Input 4</option>
-                    <option value="5">Input 5</option>
-                    <option value="6">Input 6</option>
-                    <option value="7">Input 7</option>
-                    <option value="8">Input 8</option>
-                    <option value="9">Input 9</option>
-                    <option value="10">Input 10</option>
-                    <option value="11">Input 11</option>
-                    <option value="12">Input 12</option>
-                  </select>
-              </div>
-            </div>
-          </fieldset> -->
-
-          <fieldset>
-            <legend><span data-i18n="config.machine.spindle_setup_legend">Spindle Setup</span> <span class="tooltip tooltip-below">i
-              <span class="tooltiptext" data-i18n-html="config.machine.spindle_setup_tooltip">
-                Detects the USB-to-RS485 adapter, identifies the connected <br>
-                VFD by probing known register layouts, and installs the <br>
-                matching profile so spindle RPM control is live. <br>
-                Run this after plugging in a new spindle controller. <br>
-              </span>
-            </span>
-            </legend>
-
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label data-i18n="config.machine.rs485_adapter">RS485 Adapter</label>
-                <div class="small-12 columns">
-                  <input type="text" id="spindle-setup-adapter" class="machine-input" readonly />
-                </div>
-              </div>
-              <div class="row collapse">
-                <label data-i18n="config.machine.installed_vfd_profile">Installed VFD Profile</label>
-                <div class="small-12 columns">
-                  <input type="text" id="spindle-setup-profile" class="machine-input" readonly />
-                </div>
-              </div>
-            </div>
-
-            <div class="large-6 columns">
-              <div class="row collapse">
-                <label>&nbsp;</label>
-                <div class="small-12 columns">
-                  <button type="button" id="spindle-setup-configure" class="button" data-i18n="config.machine.detect_configure_spindle">Detect &amp; Configure Spindle</button>
-                </div>
-              </div>
-            </div>
-          </fieldset>
 
         </div>
       </section>
