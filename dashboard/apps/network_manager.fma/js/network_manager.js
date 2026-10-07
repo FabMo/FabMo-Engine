@@ -36,7 +36,7 @@ function refreshWifiTable(callback){
         } else {
             networks = {};
             wifi_state = false;
-            $('#wifi-mode-button').html('<strong>' + window.t("network_manager.header.wifi_label") + '</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">' + window.t("network_manager.status.on_lower") + '</span> |<strong style="color: #ffe217;">&nbsp;' + window.t("network_manager.status.off_upper") + '</strong');
+            $('#wifi-mode-button').html('<strong>' + window.t("network_manager.header.wifi_label") + '</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">' + window.t("network_manager.status.on_lower") + '</span> |<strong style="color: #ffe217;">&nbsp;' + window.t("network_manager.status.off_upper") + '</strong>');
             callback(null, {});
         }
         refreshHistoryTable();
@@ -121,20 +121,25 @@ function addHistoryEntries(history_entries, callback) {
             $('#ap-mode-button').html('<strong>' + window.t("network_manager.header.ap_mode_label") + '</strong><strong style="color: #ffe217;">&nbsp;&nbsp;&nbsp;' + window.t("network_manager.status.enabled") + '</strong> |<span style="color: lightgray; opacity: 0.5;"> ' + window.t("network_manager.status.disabled") + '</span>');
         } else {
             $('#ap-mode-button').removeClass('active');
-            $('#ap-mode-button').html('<strong>' + window.t("network_manager.header.ap_mode_label") + '</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">' + window.t("network_manager.status.enabled_lower") + '</span> |<strong style="color: #ffe217;">&nbsp;' + window.t("network_manager.status.disabled_upper") + '</strong');
+            $('#ap-mode-button').html('<strong>' + window.t("network_manager.header.ap_mode_label") + '</strong>&nbsp;&nbsp;&nbsp;<span style="color: lightgray; opacity: 0.5;">' + window.t("network_manager.status.enabled_lower") + '</span> |<strong style="color: #ffe217;">&nbsp;' + window.t("network_manager.status.disabled_upper") + '</strong>');
         }
+        var ssidText = '';
         if (interfaceText === 'wlan0') {
             $('#wifi-mode-button').addClass('active');
             if (history_entries[entry].includes(',')) {
                 ipAddressText = history_entries[entry].split(',')[0];
-                intInfoText = window.t("network_manager.interfaces.info_wifi_network_prefix") + history_entries[entry].split(',')[1];
+                ssidText = history_entries[entry].split(',')[1];
+                intInfoText = window.t("network_manager.interfaces.info_wifi_network_prefix") + ssidText;
             } else {
                 intInfoText = window.t("network_manager.interfaces.info_wifi_unknown");
             }
         }
         $row.append($('<td></td>').addClass('interface con-int noselect').html(interfaceText));
         $row.append($('<td></td>').addClass('ipaddress').html(ipAddressText).css("cursor", "default"));
-        $row.append($('<td></td>').addClass('intinfo').html(intInfoText).css("cursor", "default"));
+        // data-ssid carries the real SSID for the disconnect flow — the cell
+        // text is display-only and must never be parsed (its translated
+        // prefix made it an unreliable parse source)
+        $row.append($('<td></td>').addClass('intinfo').attr('data-ssid', ssidText).html(intInfoText).css("cursor", "default"));
         $table.append($row);
     });
 
@@ -236,13 +241,20 @@ $(document).ready(function() {
     //Foundation Init
     $(document).foundation();
 
-    // Check for new networks initially, and then every 5 seconds
-    refreshWifiTable(function(err, data) {
-        if(err){
-            fabmo.notify('error', window.t("network_manager.notify.error_retrieve_network_info"));
-            return;
-        }
-        setInterval(refreshWifiTable, 5000);
+    // Check for new networks initially, and then every 5 seconds.
+    // Gated on i18nReady: the first pass paints the wifi/AP header buttons
+    // with .html() (destroying their data-i18n spans) and appends network
+    // rows that are never revisited (hidden-SSID label, SSID cache), so a
+    // render that beats the dict fetch bakes raw keys in. The promise is
+    // already resolved for every later poll tick.
+    (window.i18nReady || Promise.resolve()).then(function () {
+        refreshWifiTable(function(err, data) {
+            if(err){
+                fabmo.notify('error', window.t("network_manager.notify.error_retrieve_network_info"));
+                return;
+            }
+            setInterval(refreshWifiTable, 5000);
+        });
     });
 
     // Action for clicking the Wifi SSID to establish a connection
@@ -313,9 +325,10 @@ $(document).ready(function() {
 
             //fabmo.showModal({message:"To remove a LAN or PC interface; disconnect the Ethernet cable from your tool. Always allow 10 seconds before reconnecting another cable."});
         } else if (name === 'wlan0') {
-            // Retrieve the SSID from the third column in the same row; pretty ugly but it works
-            var ssid = $(evt.target).closest('tr').find('td').eq(2).text();
-            ssid = ssid.replace(window.t("network_manager.interfaces.info_wifi_network_prefix"), "").trim();
+            // The SSID rides on the info cell's data-ssid attribute; the cell
+            // text is translated display copy and is not parseable
+            var $infoCell = $(evt.target).closest('tr').find('td').eq(2);
+            var ssid = ($infoCell.attr('data-ssid') || '').trim();
             confirm({
                 title : window.t("network_manager.dialog.disconnect_wifi_title"),
                 description : "",

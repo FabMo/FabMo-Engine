@@ -2,7 +2,14 @@ module.exports = function apps(fabmo) {
 setupAppManager();
 var defaultApp = '';
 
+// The listing is emptied and rebuilt with direct t() strings (install row,
+// tooltips, no-description fallback) and only repaints on an app install or
+// delete — gate the render so a startup call can't bake raw keys in.
 function refreshApps() {
+    (window.i18nReady || Promise.resolve()).then(_refreshAppsNow);
+}
+
+function _refreshAppsNow() {
     // Load the list of apps available on the tool
     fabmo.getApps(function(err, apps) {
         if (err) {

@@ -120,7 +120,17 @@ function setupDropTarget() {
  * -----------
  */
 
+// Queue, recent and history cards are built with direct t() strings
+// (tooltips, menus, the recent-card "last run" line) and nothing repaints
+// them on an idle machine, so a render that beats the /i18n/dict fetch
+// bakes raw keys in for the session (same class as 4f244f37). Gate the
+// three render entry points; the promise is already resolved on every
+// call after startup, so post-load behavior is unchanged.
 function initialLoad() {
+  (window.i18nReady || Promise.resolve()).then(_initialLoadNow);
+}
+
+function _initialLoadNow() {
   fabmo.getQueueAndHistory({start: historyStart, count: historyCount}, function(err, data) {
     if (err) { return; }
     // Update queue display from combined result
@@ -146,6 +156,12 @@ function initialLoad() {
 }
 
 function updateQueue(callback) {
+  (window.i18nReady || Promise.resolve()).then(function () {
+    _updateQueueNow(callback);
+  });
+}
+
+function _updateQueueNow(callback) {
   callback = callback || function() {};
   // Update the queue display.
   fabmo.getJobsInQueue(function(err, jobs) {
@@ -605,6 +621,12 @@ function evaluateKeepout(jobBounds, cfg, status) {
  */
 
 function updateHistory(callback) {
+  (window.i18nReady || Promise.resolve()).then(function () {
+    _updateHistoryNow(callback);
+  });
+}
+
+function _updateHistoryNow(callback) {
   fabmo.getJobHistory({
     start: historyStart,
     count: historyCount

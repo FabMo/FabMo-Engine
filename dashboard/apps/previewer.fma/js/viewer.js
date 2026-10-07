@@ -835,6 +835,12 @@ module.exports = function(container) {
   }
 
   self.setOperations = function(ops) {
+    // The ops list is built with direct t() strings (operation-name
+    // fallback, Flat/Ball/V-Bit options) and is only rebuilt by another
+    // setOperations call, so a render that beats the /i18n/dict fetch at
+    // startup bakes raw keys in. Gate the build; the promise is already
+    // resolved on every later call.
+    (window.i18nReady || Promise.resolve()).then(function () {
     ops = ops || [];
     self.operations = ops;
     initSetupSection();
@@ -975,6 +981,7 @@ module.exports = function(container) {
     });
 
     console.log('Operations panel: ' + ops.length + ' operations');
+    });
   };
 
   self.getSelectedOperationIndices = function() {

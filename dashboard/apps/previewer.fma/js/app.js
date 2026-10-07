@@ -70,7 +70,10 @@ function getMachineData(err, callback) {
         if (!err) {
           callback();
         } else {
-          fabmo.notify('error', window.t('previewer.notify.machine_data_failed'));
+          // Init-time toast: wait for the dicts so the raw key can't show
+          (window.i18nReady || Promise.resolve()).then(function () {
+            fabmo.notify('error', window.t('previewer.notify.machine_data_failed'));
+          });
         }
     });
 }
@@ -82,7 +85,10 @@ function getStartStatus(err, callback) {
         if (!err) {
           callback();
         } else {
-          fabmo.notify('error', window.t('previewer.notify.status_data_failed'));
+          // Init-time toast: wait for the dicts so the raw key can't show
+          (window.i18nReady || Promise.resolve()).then(function () {
+            fabmo.notify('error', window.t('previewer.notify.status_data_failed'));
+          });
         }
     });
 }
@@ -108,7 +114,11 @@ function cleanupBeforeExit() {
 
 $(function () {                             
   if (!util.webGLEnabled()) {
-    fabmo.notify('error', window.t('previewer.notify.webgl_disabled'));
+    // Fires at DOM-ready, well before the i18n fetches finish — wait for
+    // them so the toast shows the message, not the raw key
+    (window.i18nReady || Promise.resolve()).then(function () {
+      fabmo.notify('error', window.t('previewer.notify.webgl_disabled'));
+    });
     return;
   }
   let err = null;
@@ -659,9 +669,14 @@ function extractGCodeSelection(fileContent, inLine, outLine, safeZ) {
 
 function updateArrangeButton() {
   var ok = !!(arrange && originalFileContent && looksLikeSBP(originalFileContent));
+  // Keep data-i18n-title pointing at the state's key: the walker re-writes
+  // the title from that attribute at i18nReady, and a stale key would
+  // replace the "SBP only" explanation with the enabled-state tooltip.
+  var key = ok ? 'previewer.arrange.button_title' : 'previewer.arrange.sbp_only';
   $('#btn-arrange')
     .prop('disabled', !ok)
-    .attr('title', window.t(ok ? 'previewer.arrange.button_title' : 'previewer.arrange.sbp_only'));
+    .attr('data-i18n-title', key)
+    .attr('title', window.t(key));
 }
 
 function enterArrange() {
