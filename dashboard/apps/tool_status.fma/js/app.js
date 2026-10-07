@@ -32,14 +32,21 @@ function tOr(key, fallback) {
 
 // Most JS-built text re-renders on every status tick and self-heals once
 // the dictionary arrives; the sensor row is memoized, so kick it (and the
-// header) explicitly when translations load.
+// header) explicitly when translations load. The shortcuts card is outside
+// renderAll/the 10 s refresh entirely (repaints only on picker-save), and
+// renderJobs' empty() throws away its data-i18n fallback node — re-run
+// both here so a pre-dict first paint can't strand raw keys.
 if (window.i18nReady) {
     window.i18nReady.then(function () {
+        // Independent guards: a pre-first-status throw in one repaint
+        // must not skip the others
         try {
             sensorLayoutKey = null;
             renderSensors();
             renderHeader();
         } catch (e) { /* pre-first-status — the status handler covers it */ }
+        try { renderShortcuts(); } catch (e) { /* covered by picker-save */ }
+        try { renderJobs(); } catch (e) { /* covered by the jobs refresh */ }
     });
 }
 
