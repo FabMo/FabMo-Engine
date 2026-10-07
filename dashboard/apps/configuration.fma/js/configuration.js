@@ -1238,8 +1238,10 @@ $('#restore-settings-confirm').click(function () {
     }
 });
 
-// Populate the Default settings label on load.
-refreshSnapshots();
+// Populate the Default settings label on load — gated so the "(none)" /
+// "(default)" strings resolve after the i18n dicts land; an early t() here
+// would bake raw keys into #current-default-name and the restore select.
+(window.i18nReady || Promise.resolve()).then(refreshSnapshots);
 
 // ---------- Spindle Setup ----------
 
@@ -1306,8 +1308,10 @@ function spindleFailureReason(steps) {
 
 $('#spindle-setup-configure').on('click', runSpindleConfigure);
 
-// Populate on load
-refreshSpindleDiscover();
+// Populate on load — gated: the "Not detected" / "(none)" field values are
+// written with .val() (no data-i18n-value), so a pre-dict t() sticks until
+// the user runs Configure.
+(window.i18nReady || Promise.resolve()).then(refreshSpindleDiscover);
 
 // ----- Variables tab -------------------------------------------------------
 // Lists persistent OpenSBP variables ($-prefixed) with type-aware editors and
