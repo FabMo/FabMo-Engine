@@ -4176,3 +4176,34 @@ filter: blur(2px);
         min-width: 0;
     }
 }
+
+/* ----- Update-available badge on the Configuration sidebar entries -----
+   main.js adds .update-available to the a[href="#/app/config"] links when
+   the browser-side manifest check finds a newer FabMo release. */
+a.update-available {
+	position: relative;
+}
+a.update-available::after {
+	content: "\2191"; /* up arrow */
+	position: absolute;
+	width: 14px;
+	height: 14px;
+	line-height: 14px;
+	border-radius: 50%;
+	background: #43AC6A; /* Foundation success green */
+	color: #fff;
+	font-size: 10px;
+	font-weight: bold;
+	text-align: center;
+}
+/* Wide (text) menu: the icon sits at the left edge — badge rides its
+   top-right corner. */
+#util-menu-small a.update-available::after {
+	left: 1.5rem;
+	top: 4px;
+}
+/* Collapsed (icon-only) menu: badge in the top-right corner of the icon. */
+.left-slide-menu li a.update-available::after {
+	top: -4px;
+	right: -4px;
+}

@@ -232,7 +232,7 @@
         "general": {
             "legend": "General Settings",
             "machine_name": "Machine Name",
-            "machine_name_tooltip": "The name of your tool. Displayed on the dashboard, used as the WiFi AP name, and as the Avahi .local hostname (e.g. MyTool.local).<br>To change the Machine Name go to the FabMo-Updater's \"Settings\" panel (You can click on \"Check for Updates\" and then \"Settings\").",
+            "machine_name_tooltip": "The name of your tool. Displayed on the dashboard, used as the WiFi AP name, and as the Avahi .local hostname (e.g. MyTool.local).<br>To change the Machine Name go to the FabMo-Updater's \"Settings\" panel (Software section &rarr; Advanced &rarr; \"Open the FabMo Updater page\", then \"Settings\").",
             "machine_profile": "Machine Profile",
             "machine_profile_tooltip": "The Machine Profile sets the default values, apps and macros for your tool.<br>Changing this setting will restart FabMo and reset Configurations.<br>",
             "unit_system": "Unit System",
@@ -301,8 +301,11 @@
             "firmware_loading_tooltip": "These are firmware load functions for special use cases:<br>&nbsp;&nbsp;Either to upload a firmware file you have been provided by tech support, <br>&nbsp;&nbsp;or to reload the current firmare in cases where there is a mismatch <br>&nbsp;&nbsp;between the SD card and the Control card (e.g. SD card replacement).<br>",
             "firmware_upload": "SPECIAL |  Update G2 Firmware with a file provided by tech support",
             "firmware_reload": "SPECIAL |  Reload G2 Firmware from current FabMo",
-            "update_available": "Update available: {version} (installed: {current})",
+            "update_available_flag": "(update available)",
             "update_up_to_date": "FabMo software is up to date.",
+            "update_checking": "Checking for updates…",
+            "update_check_failed": "Could not reach the update server — check your browser's internet connection.",
+            "update_check_unavailable": "Update checking is not available on development builds.",
             "install_now": "Install {version} now",
             "confirm_install": "Confirm — install {version} (the tool will restart)",
             "update_requires_idle": "The tool must be idle to install an update.",
@@ -312,7 +315,9 @@
             "update_failed": "Update failed: {message}",
             "update_offline_explain": "This tool has no internet connection, but your browser does. Download the update file with your browser, then drop it below.",
             "update_download_step": "1. Download the update file",
-            "update_drop_step": "2. Then drop the downloaded file here (or click to choose it)"
+            "update_drop_step": "2. Then drop the downloaded file here (or click to choose it)",
+            "advanced": "Advanced",
+            "open_updater": "Open the FabMo Updater page (settings, update history)"
         },
         "axes": {
             "legend": "AXIS CONFIGURATIONS",
@@ -404,6 +409,7 @@
             "planning_mode_2d": "2D planning mode",
             "planning_mode_3d": "3D planning mode (default)",
             "manual_control_legend": "Manual Control",
+            "advanced": "Advanced",
             "xy_speed": "XY Speed",
             "xy_speed_tooltip": "The initial XY speed used when driving the tool with <br>the Motion Keypad (yellow icon). [adjustable] <br>",
             "min_xy_speed": "Min XY Speed",

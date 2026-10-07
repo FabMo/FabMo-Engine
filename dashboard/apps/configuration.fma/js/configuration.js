@@ -244,10 +244,9 @@ $('#btn-reload-firm').click(function() {
     });
   });
 
-$('#btn-update').click(function(){
-  fabmo.navigate('/updater');  // for the moment, let's just go to updater to check for updates
-  //  $('#update-input').trigger('click');
-});
+// #btn-update is wired in the "Update notification" module at the bottom of
+// this file: it re-runs the browser-side manifest check. The old behavior
+// (navigate to the updater page) lives on #btn-open-updater under Advanced.
 
 $('#update-input').change(function(evt) {
     var files = [];
@@ -1582,6 +1581,9 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
     var armed = false;
     var armTimer = null;
     var lastMachineState = null;
+    // The single #btn-update button: 'check' = run the manifest check,
+    // 'install' = install latestPkg (set once a newer version is found).
+    var mode = 'check';
 
     fabmo.on('status', function(status) {
         if (status && status.state) { lastMachineState = status.state; }
@@ -1610,28 +1612,38 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
             .text(msg);
     }
 
-    function showNotice(pkg, newer) {
+    function showNotice(pkg) {
         latestPkg = pkg;
-        $('#update-notice-text').text(window.t('config.software.update_available', {
-            version: pkg.version,
-            current: currentVersion
-        }));
-        // Aggregate the changelogs of everything newer than the installed
-        // version, newest first, so the user sees what they skipped too.
-        var lines = [];
-        for (var i = newer.length - 1; i >= 0 && lines.length < 40; i--) {
-            var cl = (newer[i].changelog || '').trim();
-            if (cl) { lines.push(newer[i].version + ':\n' + cl); }
-        }
-        $('#update-changelog').text(lines.join('\n'));
-        $('#btn-install-update').text(window.t('config.software.install_now', { version: pkg.version }));
-        $('#update-notice').show();
+        mode = 'install';
+        $('#update-uptodate').hide();
+        // A small "(update available)" flag next to the version number
+        // (data-i18n already filled its text), and the one button morphs:
+        // "Check for Updates" → "Install vX.X.X now".
+        $('#update-available-flag').show();
+        $('#btn-update').addClass('success')
+            .text(window.t('config.software.install_now', { version: pkg.version }));
     }
 
-    function checkForUpdates() {
+    // manual=true when the user clicked "Check for Updates": give feedback
+    // for the quiet outcomes (dev build, no internet) that the automatic
+    // on-load check deliberately swallows.
+    function checkForUpdates(manual) {
+        if (manual) {
+            $('#update-uptodate').hide();
+            $('#btn-update').addClass('disabled');
+            progress(window.t('config.software.update_checking'));
+        }
+        function done(msgKey, isError) {
+            $('#btn-update').removeClass('disabled');
+            if (msgKey) {
+                if (manual) { progress(window.t(msgKey), isError); }
+            } else {
+                $('#update-progress').hide();
+            }
+        }
         fabmo.getVersion(function(err, version) {
             if (err || !version || version.type !== 'release' || !version.number) {
-                return; // dev builds: no version to compare against
+                return done('config.software.update_check_unavailable', true); // dev builds: no version to compare against
             }
             currentVersion = version.number;
             // Ask the engine's updater proxy which platform we are; fall back
@@ -1650,19 +1662,22 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
                                    p.os === 'linux' &&
                                    p.platform === platform;
                         }).sort(function(a, b) { return verCmp(a.version, b.version); });
-                        if (!pkgs.length) { return; }
+                        if (!pkgs.length) { return done('config.software.update_check_failed', true); }
                         var newer = pkgs.filter(function(p) {
                             return verCmp(p.version, currentVersion) > 0;
                         });
+                        done(null);
                         if (newer.length) {
-                            showNotice(newer[newer.length - 1], newer);
+                            showNotice(newer[newer.length - 1]);
                         } else {
                             $('#update-uptodate').show();
                         }
                     })
                     .catch(function() {
                         // Browser has no internet either (or the fetch timed
-                        // out) — stay quiet; the old updater button remains.
+                        // out). The automatic check stays quiet; a manual
+                        // check reports the failure.
+                        done('config.software.update_check_failed', true);
                     });
             });
         });
@@ -1672,8 +1687,8 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
         armed = false;
         if (armTimer) { clearTimeout(armTimer); armTimer = null; }
         if (latestPkg) {
-            $('#btn-install-update')
-                .removeClass('alert')
+            $('#btn-update')
+                .removeClass('alert').addClass('success')
                 .text(window.t('config.software.install_now', { version: latestPkg.version }));
         }
     }
@@ -1683,7 +1698,7 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
             progress(window.t('config.software.update_requires_idle'), true);
             return;
         }
-        $('#btn-install-update').addClass('disabled');
+        $('#btn-update').addClass('disabled');
         $.getJSON('/network/online').always(function(resp) {
             var online = !!(resp && resp.data && resp.data.online);
             if (online) {
@@ -1714,11 +1729,11 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
                 progress(window.t('config.software.update_failed', {
                     message: (resp && resp.message) || 'unknown'
                 }), true);
-                $('#btn-install-update').removeClass('disabled');
+                $('#btn-update').removeClass('disabled');
             }
         }).fail(function(xhr, stat) {
             progress(window.t('config.software.update_failed', { message: stat }), true);
-            $('#btn-install-update').removeClass('disabled');
+            $('#btn-update').removeClass('disabled');
         });
     }
 
@@ -1758,21 +1773,34 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
     }
 
     function init() {
-        $('#btn-install-update').click(function(evt) {
+        // The one update button: checks in 'check' mode, installs (with a
+        // two-step confirm — the sandboxed iframe blocks window.confirm) in
+        // 'install' mode.
+        $('#btn-update').click(function(evt) {
             evt.preventDefault();
-            if ($(this).hasClass('disabled') || !latestPkg) { return; }
+            if ($(this).hasClass('disabled')) { return; }
+            if (mode === 'check') {
+                checkForUpdates(true);
+                return;
+            }
+            if (!latestPkg) { return; }
             if (!armed) {
-                // Two-step confirm (the sandboxed iframe blocks window.confirm):
-                // first click arms, second click within 6 s proceeds.
+                // First click arms, second click within 6 s proceeds.
                 armed = true;
-                $(this).addClass('alert').text(window.t('config.software.confirm_install', {
-                    version: latestPkg.version
-                }));
+                $(this).removeClass('success').addClass('alert')
+                    .text(window.t('config.software.confirm_install', {
+                        version: latestPkg.version
+                    }));
                 armTimer = setTimeout(disarm, 6000);
                 return;
             }
             disarm();
             beginInstall();
+        });
+
+        $('#btn-open-updater').click(function(evt) {
+            evt.preventDefault();
+            fabmo.navigate('/updater');
         });
 
         // The browser downloads the package over ITS connection. Opened via

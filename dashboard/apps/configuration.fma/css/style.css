@@ -638,3 +638,36 @@ select {
 .var-kv.dirty input { background: #fff8d6; }
 .var-kv.saved input { background: #e8f5e2; }
 .var-kv.error input { background: #fde2e2; }
+
+/* "Advanced" disclosures (Software section, Manual Control, ...): styled
+   like a Foundation <label>, with a chevron that flips when expanded. */
+details.cfg-advanced > summary {
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #4d4d4d;
+    line-height: 1.5;
+    outline: none;
+    list-style: none; /* hide the native triangle; the ::after chevron replaces it */
+}
+details.cfg-advanced > summary::-webkit-details-marker {
+    display: none;
+}
+details.cfg-advanced > summary::after {
+    content: "\25BE"; /* ▾ */
+    display: inline-block;
+    margin-left: 6px;
+    transition: transform 0.15s ease;
+}
+details.cfg-advanced[open] > summary::after {
+    transform: rotate(180deg);
+}
+
+/* Machine tab > Envelope: per-axis subheadings over the Min/Max/Size rows. */
+.envelope-axis-heading {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #4d4d4d;
+    margin: 0.5rem 0 0.25rem;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #ddd;
+}

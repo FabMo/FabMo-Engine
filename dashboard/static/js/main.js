@@ -3433,3 +3433,69 @@ function hideTitle() {
 
 // ========================================================================================
 setUpManual(); // occasionally not getting keypad set from apps, this helps
+
+// ----- Update-available badge -----------------------------------------------
+// Mirrors the configuration app's browser-side manifest check (see
+// dashboard/apps/configuration.fma/js/configuration.js): the BROWSER fetches
+// the public package manifest, so a tool with no internet route of its own
+// still learns an update exists. When a newer release is found, the
+// Configuration entries in both left menus get a green up-arrow badge
+// (.update-available, styled in css/style.css). Install itself lives in the
+// configuration app's Software section.
+(function () {
+    var MANIFEST_URL = "https://www.gofabmo.org/manifest/packages.json";
+
+    function parseVer(v) {
+        var p = String(v || "")
+            .replace(/^v/i, "")
+            .split(".")
+            .map(function (n) {
+                return parseInt(n, 10) || 0;
+            });
+        while (p.length < 3) {
+            p.push(0);
+        }
+        return p;
+    }
+
+    function verCmp(a, b) {
+        var va = parseVer(a),
+            vb = parseVer(b);
+        for (var i = 0; i < 3; i++) {
+            if (va[i] !== vb[i]) {
+                return va[i] - vb[i];
+            }
+        }
+        return 0;
+    }
+
+    engine.getVersion(function (err, version) {
+        if (err || !version || version.type !== "release" || !version.number) {
+            return; // dev builds: nothing to compare against
+        }
+        $.getJSON("/updater/config").always(function (resp) {
+            var ucfg = (resp && resp.data && (resp.data.config || resp.data)) || {};
+            var platform = ucfg.platform || "raspberry-pi";
+            fetch(MANIFEST_URL, { cache: "no-store" })
+                .then(function (r) {
+                    return r.json();
+                })
+                .then(function (manifest) {
+                    var newer = (manifest.packages || []).filter(function (p) {
+                        return (
+                            p.product === "FabMo-Engine" &&
+                            p.os === "linux" &&
+                            p.platform === platform &&
+                            verCmp(p.version, version.number) > 0
+                        );
+                    });
+                    if (newer.length) {
+                        $('a[href="#/app/config"]').addClass("update-available");
+                    }
+                })
+                .catch(function () {
+                    // Browser has no internet either — no badge.
+                });
+        });
+    });
+})();
