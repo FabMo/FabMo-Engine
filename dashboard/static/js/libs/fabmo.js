@@ -1329,21 +1329,23 @@
             window.fabmoOpenWindows = new Map();
         }
 
+        // The online probe exists only to choose between a remote URL and
+        // its local fallback. With no remote alternate there is nothing to
+        // choose, and the probe (a server-side DNS lookup) can stall for
+        // seconds on a tool with no internet or broken DNS — which made
+        // "Check for Updates" feel dead. Skip it and navigate directly.
+        if (!alternateRemoteURL) {
+            self._navigateToUrl(primaryURL, options, callback);
+            return;
+        }
+
         // Check if the tool is online
         self.isOnline(function (err, online) {
-            if (err) {
-                // Fallback to primary URL if there's an error
+            if (err || !online) {
                 self._navigateToUrl(primaryURL, options, callback);
                 return;
             }
-
-            // Debug override: Force offline mode for testing
-            const debugForceOffline = false; // Set to true to test offline behavior
-            const effectiveOnline = debugForceOffline ? false : online;
-            
-            // Determine which URL to navigate to
-            const urlToNavigate = effectiveOnline && alternateRemoteURL ? alternateRemoteURL : primaryURL;
-            self._navigateToUrl(urlToNavigate, options, callback);
+            self._navigateToUrl(alternateRemoteURL, options, callback);
         });
     };
 

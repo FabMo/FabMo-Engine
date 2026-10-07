@@ -673,15 +673,28 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (identity, callback) 
 
 // Check to see if this host is connected to the internet
 //   callback - Called back with the online state, or with error if error
+// Bounded connectivity probe. The old check resolved google.com with the
+// resolver's default retry schedule, so a tool with broken or slow DNS
+// stalled every caller (fabmo.navigate's remote/local choice, dashboards
+// polling /network/online) for many seconds — and phoned a third-party
+// domain to do it. One try against our own update host, hard-capped so a
+// wedged resolver can't hold the callback hostage. Offline is a result,
+// not an error.
 RaspberryPiNetworkManager.prototype.isOnline = function (callback) {
-    dns.resolve("google.com", (err) => {
-        if (err) {
-            console.error("No internet connection:", err);
-            callback(err, false); // Not online
-        } else {
-            console.log("Internet connection is active.");
-            callback(null, true); // Online
-        }
+    var done = false;
+    var finish = function (online) {
+        if (done) return;
+        done = true;
+        callback(null, online);
+    };
+    var guard = setTimeout(function () {
+        log.debug("Connectivity probe timed out — reporting offline");
+        finish(false);
+    }, 2500);
+    var resolver = new dns.Resolver({ timeout: 1000, tries: 1 });
+    resolver.resolve("gofabmo.org", function (err) {
+        clearTimeout(guard);
+        finish(!err);
     });
 };
 
