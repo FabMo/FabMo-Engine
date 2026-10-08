@@ -302,7 +302,10 @@
             "log_warning": "Warnings",
             "log_error": "Error",
             "status_report_interval": "Status Report Interval",
-            "status_report_interval_tooltip": "The minimum interval between tool status reports.<br>A larger number here means position and status displays <br>will not update as frequently [range 100 - 500].<br>"
+            "status_report_interval_tooltip": "The minimum interval between tool status reports.<br>A larger number here means position and status displays <br>will not update as frequently [range 100 - 500].<br>",
+            "diagnostics": "Support Diagnostics",
+            "diagnostics_tooltip": "Downloads a zip file containing the tool's recent logs, <br>motion-system communication records, and system health <br>snapshots (including any captured around a disconnect). <br>Send this file to tech support when asked. <br>",
+            "download_diagnostics": "Download Diagnostic Logs"
         },
         "software": {
             "legend": "Software",

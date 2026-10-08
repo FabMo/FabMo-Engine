@@ -538,12 +538,15 @@ G2.prototype.onSerialClose = function () {
 
     log.error("╚════════════════════════════════════════════════════════════════");
 
-    // Save log for diagnostics
+    // Save log for diagnostics, plus the system snapshot (kernel USB
+    // events, undervoltage flags) and the G2 traffic flight recording —
+    // the full picture for diagnosing field disconnects. Best-effort.
     require('./log').saveCurrentLog('g2-disconnect', function (err) {
         if (err) {
             log.error("Failed to save log on disconnect: " + err);
         }
     });
+    require('./diagnostics').saveDisconnectDiagnostics('g2-disconnect');
 
     // Intentional close (firmware update) — do nothing
     if (intendedClose) {
@@ -649,7 +652,11 @@ G2.prototype.reconnect = function () {
                     "s — falling back to process exit."
             );
             require('./log').saveCurrentLog('g2-reconnect-failed', function () {
-                process.exit(14);
+                // Capture the system state before exiting: whether the
+                // device node ever came back is the key fact here.
+                require('./diagnostics').saveDisconnectDiagnostics('g2-reconnect-failed', function () {
+                    process.exit(14);
+                });
             });
             return;
         }
