@@ -16,11 +16,15 @@
  *
  * Safety properties:
  *  - Only ever upgrades (semver compare); never downgrades or reinstalls.
- *  - Runs once per boot, several minutes after startup, and only when the
- *    machine is idle — not because the updater restart would disturb motion
- *    (it wouldn't), but to keep the tool maximally boring while cutting.
- *  - The check is cheap and runs every boot, so a failed attempt simply
- *    retries on the next one (version.json only advances on success).
+ *  - Fires as soon as the machine first reports idle after boot — in the
+ *    post-update restart that is before the user is meaningfully back in
+ *    control, so the updater is already current when they are. It still
+ *    never starts while the machine is in any non-idle state (not because
+ *    the updater restart would disturb motion — it wouldn't — but to keep
+ *    the tool maximally boring while cutting).
+ *  - A transient failure (the updater service still coming up, say)
+ *    retries a bounded number of times this boot; after that the next
+ *    boot retries naturally (version.json only advances on success).
  *  - No bundle directory, no package, or an unreachable updater all mean
  *    "do nothing", silently.
  */
@@ -33,8 +37,10 @@ var updaterRoutes = require("./routes/updater");
 
 var BUNDLE_DIR = path.join(__dirname, "bundled_updater");
 var INSTALLED_VERSION_FILE = "/fabmo-updater/version.json";
-var INITIAL_DELAY_MS = 3 * 60 * 1000; // settle time after boot
-var IDLE_RETRY_MS = 10 * 60 * 1000; // machine busy: try again later
+var INITIAL_DELAY_MS = 10 * 1000; // let services finish coming up
+var IDLE_POLL_MS = 15 * 1000; // waiting for the machine's first idle
+var FAIL_RETRY_MS = 60 * 1000; // transient failure (updater still starting?)
+var MAX_ATTEMPTS = 5;
 
 function parseVer(v) {
     var p = String(v || "")
@@ -148,29 +154,39 @@ function attemptInstall(bundle, callback) {
     });
 }
 
-// Kick off the once-per-boot background check. machine is the engine's
+// Indirection so the scheduling in start() is testable: tests swap these
+// for stubs and drive the timers.
+var impl = {
+    decide: decide,
+    attemptInstall: attemptInstall,
+};
+
+// Kick off the per-boot background check: shortly after startup, poll
+// until the machine's first idle, then install. machine is the engine's
 // machine object (used only to read the idle state); never throws.
 function start(machine) {
-    var attempted = false;
+    var attempts = 0;
     function tick() {
-        if (attempted) {
-            return;
-        }
-        var decision = decide();
+        var decision = impl.decide();
         if (!decision.install) {
             log.debug("Bundled updater check: " + decision.reason);
-            attempted = true; // nothing to do this boot
-            return;
+            return; // nothing to do this boot
         }
         var state = machine && machine.status && machine.status.state;
         if (state && state !== "idle") {
             log.debug("Bundled updater " + decision.bundle.version + " pending; machine is " + state + " - deferring.");
-            setTimeout(tick, IDLE_RETRY_MS);
+            setTimeout(tick, IDLE_POLL_MS);
             return;
         }
-        attempted = true;
-        attemptInstall(decision.bundle, function () {
-            // Errors already logged; next boot retries naturally.
+        attempts += 1;
+        impl.attemptInstall(decision.bundle, function (err) {
+            // On success we're done: decide() reports up-to-date once
+            // version.json advances. Any failure gets a few more tries
+            // this boot (the updater may still be starting); after that
+            // the next boot retries naturally.
+            if (err && attempts < MAX_ATTEMPTS) {
+                setTimeout(tick, FAIL_RETRY_MS);
+            }
         });
     }
     setTimeout(tick, INITIAL_DELAY_MS);
@@ -182,3 +198,10 @@ module.exports._decide = decide;
 module.exports._verCmp = verCmp;
 module.exports._findBundledPackage = findBundledPackage;
 module.exports._BUNDLE_DIR = BUNDLE_DIR;
+module.exports._impl = impl;
+module.exports._timing = {
+    INITIAL_DELAY_MS: INITIAL_DELAY_MS,
+    IDLE_POLL_MS: IDLE_POLL_MS,
+    FAIL_RETRY_MS: FAIL_RETRY_MS,
+    MAX_ATTEMPTS: MAX_ATTEMPTS,
+};
