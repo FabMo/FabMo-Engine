@@ -94,11 +94,12 @@ var proxyApply = function (req, res, next) {
 // Pi may be memory-constrained. The updater's /update/manual uses a
 // two-phase keyed upload protocol: a JSON metadata POST that returns a
 // key, then the multipart POST carrying key + index + the file itself.
-function relayPackageToUpdater(filePath, fileName, res, next) {
+// callback(err, responseBody) — also used outside HTTP by the background
+// bundled-updater install (updater_bundle.js).
+function relayPackage(filePath, fileName, callback) {
     fs.stat(filePath, function (statErr, stat) {
         if (statErr) {
-            relayError(res, statErr);
-            return next();
+            return callback(statErr);
         }
         got.post(updaterBase() + "/update/manual", {
             json: { meta: {}, files: [{ filename: fileName }] },
@@ -149,13 +150,23 @@ function relayPackageToUpdater(filePath, fileName, res, next) {
             })
             .then(function (r) {
                 log.info("Relayed update package " + fileName + " to the updater");
-                res.json(r.body);
-                next();
+                callback(null, r.body);
             })
             .catch(function (gotErr) {
-                relayError(res, gotErr);
-                next();
+                callback(gotErr);
             });
+    });
+}
+
+// HTTP wrapper around relayPackage for the routes below.
+function relayPackageToUpdater(filePath, fileName, res, next) {
+    relayPackage(filePath, fileName, function (err, body) {
+        if (err) {
+            relayError(res, err);
+        } else {
+            res.json(body);
+        }
+        next();
     });
 }
 
@@ -409,3 +420,9 @@ module.exports = function (server) {
     server.post("/updater/usb/install", usbInstall);
     startUSBWatcher();
 };
+
+// Non-route exports, used by updater_bundle.js (background install of the
+// updater package bundled with the engine).
+module.exports.relayPackage = relayPackage;
+module.exports.updaterBase = updaterBase;
+module.exports.parsePackageName = parsePackageName;

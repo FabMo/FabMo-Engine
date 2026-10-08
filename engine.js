@@ -1234,6 +1234,19 @@ Engine.prototype.start = function (callback) {
                     callback();
                 }, engineVersion); // Pass the version here
             }.bind(this),
+
+            // If this engine build bundles a newer FabMo-Updater package,
+            // hand it to the updater for a background self-install a few
+            // minutes after boot, when the machine is idle. Invisible to
+            // the user; see updater_bundle.js. Fire-and-forget.
+            function start_updater_bundle_check(callback) {
+                try {
+                    require("./updater_bundle").start(this.machine);
+                } catch (e) {
+                    log.warn("Could not start bundled-updater check: " + e.message);
+                }
+                callback();
+            }.bind(this),
         ],
 
         // Print some kind of sane debugging information if anything above fails
