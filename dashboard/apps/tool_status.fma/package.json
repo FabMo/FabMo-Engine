@@ -3,7 +3,7 @@
 	"main": "./index.html",
 	"icon": "icon.png",
 	"icon_color": "#2c3e50",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"author": "ShopBot Tools",
 	"website": "http://shopbottools.com",
 	"id": "tool_status",
