@@ -499,7 +499,19 @@ function _readMeta() {
         meta.macros = meta.macros || {};
         return meta;
     } catch (e) {
-        return { macros: {} };
+        // Every engine update deletes /opt/fabmo — including this file —
+        // on exactly the boot where the base hashes decide whether stock
+        // macros may auto-update. Fall back to the backup mirror's copy
+        // (macros are restored from the same mirror by
+        // createDataDirectories, so the hashes match the restored files).
+        try {
+            var backup = JSON.parse(fs.readFileSync("/opt/fabmo_backup/config/" + path.basename(_metaPath())));
+            backup.macros = backup.macros || {};
+            log.info("macros_meta.json missing - recovered base hashes from backup mirror");
+            return backup;
+        } catch (e2) {
+            return { macros: {} };
+        }
     }
 }
 

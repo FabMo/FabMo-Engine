@@ -115,6 +115,7 @@ var run = function (profileName, opts, callback) {
         opts = {};
     }
     var configDir = (opts && opts.configDir) || "/opt/fabmo/config";
+    var backupDir = (opts && opts.backupDir) || "/opt/fabmo_backup/config";
     var summary = {};
     try {
         var Config = require("./config/config").Config;
@@ -135,21 +136,31 @@ var run = function (profileName, opts, callback) {
                 shipped = overlayMerge(shipped, overlay);
             }
 
-            if (!fs.existsSync(userFile)) {
-                // Missing file: the config recovery chain rebuilds it with
-                // full profile content on load. Not our job.
-                log.debug("Reconcile: " + name + " not present - leaving to recovery chain");
-                return;
-            }
+            var restored = false;
             var user = readJSON(userFile);
             if (!user) {
-                log.warn("Reconcile: " + name + " unparseable - leaving to recovery chain");
-                return;
+                // Every engine update deletes /opt/fabmo, so on the very
+                // boot this reconcile targets, the user file is typically
+                // MISSING. Restore it from the backup mirror (the user's
+                // own last-boot config — the same source the recovery
+                // chain's backup tier would use later) and reconcile that.
+                // No backup either (true first run) → the recovery chain
+                // builds from the full profile, new keys included.
+                var backupFile = path.join(backupDir, name);
+                user = readJSON(backupFile);
+                if (!user) {
+                    log.debug("Reconcile: " + name + " not present and no backup - leaving to recovery chain");
+                    return;
+                }
+                restored = true;
+                log.info("Reconcile: restoring " + name + " from backup mirror before merge");
             }
 
             var added = additiveMerge(user, shipped, "");
-            if (added.length) {
+            if (added.length || restored) {
                 writeFileDurable(userFile, JSON.stringify(user, null, 4));
+            }
+            if (added.length) {
                 summary[name] = added;
                 log.info(
                     "Reconcile: added " + added.length + " new key(s) to " + name + ": " + added.join(", ")
