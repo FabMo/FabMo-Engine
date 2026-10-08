@@ -1284,6 +1284,16 @@ ManualDriver.prototype._onG2Status = function (status) {
             this.stop_pending = false;
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
+            // A goto is over once the cycle stops or ends (its trailing M0
+            // parks at stat:3), so the goto-context flag must die with it.
+            // It must NOT be cleared on STAT_HOLDING — a feedhold mid-goto
+            // is exactly when the flag is load-bearing (it suppresses the
+            // queue flush and drives the paused/resume-quit state). Left
+            // stale past the goto, the next bare stop (a fixed-mode tap,
+            // a slide-off, a scroll) was misread as a goto pause and popped
+            // resume/quit out of nowhere.
+            this.gotoModeHold = false;
+        // Fall through is intended here, do not add a break
         case this.driver.STAT_HOLDING:
             // Handle nudges once we've come to a stop
             if (this._handleNudges()) {
