@@ -1482,13 +1482,20 @@
             "chopsaw_tile_title": "Chop saw — cut an order of strips from a sheet",
             "chop_btn": "CUT",
             "chop_btn_title": "Cut the nested order from the sheet",
-            "order": "Order",
-            "order_title": "One line (or ;) per size: quantity, width, length — fractions like 3 1/2 work",
             "sheet_w": "Sheet W",
             "sheet_l": "Sheet L",
             "passes": "Passes",
             "chop_nested": "{placed} of {total} pieces nested",
-            "chop_missed": "{missed} don’t fit"
+            "chop_missed": "{missed} don’t fit",
+            "cut_list": "Cut List",
+            "entry_title": "Width × length × quantity — fractions like 3 1/2 work",
+            "chop_w": "W",
+            "chop_l": "L",
+            "chop_qty": "Qty",
+            "add_btn": "Add",
+            "add_btn_title": "Add to the cut list",
+            "remove_piece_title": "Remove from the cut list",
+            "piece_row": "{qty} pc · {w} × {l}"
         },
         "tools": {
             "title": "Tools",
@@ -1573,10 +1580,11 @@
             "set_array_spacing": "Set the array spacing first.",
             "job_added": "Job added to the queue",
             "hole_smaller_than_bit": "The hole diameter is smaller than the bit.",
-            "order_empty": "Enter an order first — e.g. 10 pc. 4 wide 12 long",
             "nothing_fits": "Nothing in the order fits on the sheet.",
             "set_sheet": "Set the sheet size first.",
-            "set_sheet_thickness": "Set the sheet thickness first."
+            "set_sheet_thickness": "Set the sheet thickness first.",
+            "cut_list_empty": "Add pieces to the cut list first.",
+            "bad_piece": "Enter a width and length first."
         }
     }
 }

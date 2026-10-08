@@ -483,18 +483,50 @@ body {
 .ts-sts-mode { width: 28px; height: 30px; font-size: 0.95em; }
 .ts-sts-mode.active { background: #2980b9; border-color: #2471a3; color: #fff; }
 
-/* Chop saw: order textarea + nest summary */
-.ts-st-ordercol { display: flex; flex-direction: column; gap: 3px; flex: 0 1 15em; min-width: 11em; }
-.ts-st-ordercol textarea {
-    width: 100%;
-    font-size: 0.85em;
-    font-family: inherit;
-    padding: 3px 5px;
+/* Chop saw: entry row + cut list + nest summary */
+.ts-st-ordercol { display: flex; flex-direction: column; gap: 3px; flex: 0 1 16em; min-width: 12em; }
+.ts-stcs-entry { display: flex; align-items: flex-end; gap: 3px; }
+.ts-stcs-entry label { display: flex; flex-direction: column; gap: 1px; margin: 0; }
+.ts-stcs-entry label .ts-st-minilabel { margin-bottom: 0; text-align: center; }
+.ts-stcs-entry input {
+    width: 3.4em;
+    height: 1.9em;
+    font-size: 1em;
+    padding: 1px 4px;
     margin: 0;
     border: 1px solid #d5dbdb;
     border-radius: 4px;
     color: #2c3e50;
-    resize: vertical;
+    text-align: center;
+}
+.ts-stcs-entry .ts-stcs-x { color: #7f8c8d; padding-bottom: 5px; }
+.ts-stcs-entry #stcs-add { margin: 0 0 0 2px; padding: 3px 9px; }
+.ts-stcs-list {
+    max-height: 7.5em;
+    overflow-y: auto;
+    border: 1px solid #e5e8e8;
+    border-radius: 4px;
+}
+.ts-stcs-list:empty { display: none; }
+.ts-stcs-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 1px 6px;
+    font-size: 0.85em;
+    color: #2c3e50;
+}
+.ts-stcs-row:nth-child(even) { background: #f7f9f9; }
+.ts-stcs-row .ts-stcs-del {
+    border: none;
+    background: none;
+    color: #c0392b;
+    font-size: 1.1em;
+    line-height: 1;
+    padding: 0 2px;
+    margin: 0;
+    cursor: pointer;
 }
 #stcs-summary { margin-top: 1px; }
 #stcs-summary .stcs-missed { color: #c0392b; font-weight: 700; }

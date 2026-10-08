@@ -32,36 +32,23 @@ function extractFn(name) {
     }
 }
 const lib = new Function(
-    ["stcsNum", "stcsParseOrder", "stcsNest", "stcsCutLines"]
+    ["stcsNum", "stcsNest", "stcsCutLines"]
         .map(extractFn)
-        .join("\n") + "\nreturn { num: stcsNum, parse: stcsParseOrder, nest: stcsNest, cut: stcsCutLines };"
+        .join("\n") + "\nreturn { num: stcsNum, nest: stcsNest, cut: stcsCutLines };"
 )();
 
-describe("stcsParseOrder", () => {
-    test("the order from the request parses", () => {
-        expect(lib.parse("10 pc. 4 wide 12 long; 6 pc. 3 wide 26 long")).toEqual([
-            { qty: 10, w: 4, l: 12 },
-            { qty: 6, w: 3, l: 26 },
-        ]);
+describe("stcsNum (W/L entry values)", () => {
+    test("decimals and integers", () => {
+        expect(lib.num("4")).toBe(4);
+        expect(lib.num("3.5")).toBe(3.5);
+        expect(lib.num(".5")).toBe(0.5);
     });
-
-    test("terse forms: lines, x-separators, two-number items", () => {
-        expect(lib.parse("10 4x12\n6 of 3 x 26\n4x12")).toEqual([
-            { qty: 10, w: 4, l: 12 },
-            { qty: 6, w: 3, l: 26 },
-            { qty: 1, w: 4, l: 12 },
-        ]);
+    test("fractions and mixed fractions", () => {
+        expect(lib.num("1/2")).toBe(0.5);
+        expect(lib.num("3 1/2")).toBe(3.5);
     });
-
-    test("mixed fractions count as one number", () => {
-        expect(lib.parse("8 pc 3 1/2 x 24; 2 pc 1/2 wide 10 long")).toEqual([
-            { qty: 8, w: 3.5, l: 24 },
-            { qty: 2, w: 0.5, l: 10 },
-        ]);
-    });
-
-    test("junk and empty lines are ignored", () => {
-        expect(lib.parse("cut me some strips please;;\n7\n")).toEqual([]);
+    test("junk is NaN", () => {
+        expect(lib.num("wide")).toBeNaN();
     });
 });
 
@@ -74,7 +61,7 @@ describe("stcsNest", () => {
     }
 
     test("the requested order fits a 96×48 sheet, nothing missed", () => {
-        const items = lib.parse("10 pc. 4 wide 12 long; 6 pc. 3 wide 26 long");
+        const items = [{ qty: 10, w: 4, l: 12 }, { qty: 6, w: 3, l: 26 }];
         const n = lib.nest(items, 96, 48, KERF, MARGIN);
         expect(n.total).toBe(16);
         expect(n.placed.length).toBe(16);

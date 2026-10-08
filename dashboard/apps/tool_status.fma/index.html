@@ -393,8 +393,22 @@
                                 <svg id="stcs-env-svg" width="240" height="150"></svg>
                             </div>
                             <div class="ts-st-ordercol">
-                                <span class="ts-st-minilabel"><span data-i18n="tool_status.shoptools.order">Order</span> (<span class="st-units">in</span>)</span>
-                                <textarea id="stcs-order" rows="4" spellcheck="false" placeholder="10 pc. 4 wide 12 long&#10;6 pc. 3 x 26" title="One line (or ;) per size: quantity, width, length — fractions like 3 1/2 work" data-i18n-title="tool_status.shoptools.order_title"></textarea>
+                                <span class="ts-st-minilabel"><span data-i18n="tool_status.shoptools.cut_list">Cut List</span> (<span class="st-units">in</span>)</span>
+                                <div class="ts-stcs-entry" title="Width × length × quantity — fractions like 3 1/2 work" data-i18n-title="tool_status.shoptools.entry_title">
+                                    <label><span class="ts-st-minilabel" data-i18n="tool_status.shoptools.chop_w">W</span>
+                                        <input type="text" id="stcs-w" inputmode="decimal" autocomplete="off">
+                                    </label>
+                                    <span class="ts-stcs-x">&#215;</span>
+                                    <label><span class="ts-st-minilabel" data-i18n="tool_status.shoptools.chop_l">L</span>
+                                        <input type="text" id="stcs-l" inputmode="decimal" autocomplete="off">
+                                    </label>
+                                    <span class="ts-stcs-x">&#215;</span>
+                                    <label><span class="ts-st-minilabel" data-i18n="tool_status.shoptools.chop_qty">Qty</span>
+                                        <input type="number" id="stcs-qty" min="1" step="1" value="1">
+                                    </label>
+                                    <button class="ts-cmd" id="stcs-add" title="Add to the cut list" data-i18n-title="tool_status.shoptools.add_btn_title" data-i18n="tool_status.shoptools.add_btn">Add</button>
+                                </div>
+                                <div id="stcs-list" class="ts-stcs-list"></div>
                                 <div class="ts-st-minilabel" id="stcs-summary"></div>
                             </div>
                             <div class="ts-st-depthcol ts-stp-params">

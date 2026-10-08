@@ -1311,8 +1311,8 @@ function stpSave() {
 // neighboring pieces' bit-center paths coincide on the shared edge —
 // the gap between pieces is one kerf, nothing wasted between strips.
 var stChop = {
-    order: "",
-    sheetW: 0, // 0 → unit default (48×96 / 1220×2440)
+    items: [], // cut list: [{qty, w, l}] in current units
+    sheetW: 0, // 0 → default to the table size
     sheetL: 0,
     thickness: 0,
     bit: 0,
@@ -1336,30 +1336,6 @@ function stcsNum(tok) {
     return parseFloat(tok);
 }
 
-// Parse an order like "10 pc. 4 wide 12 long; 6 pc 3x26" (lines or ;
-// separate items). Three numbers = qty, width, length; two = one piece
-// of width × length. Words between numbers are decoration. Mixed
-// fractions ("3 1/2") count as one number.
-function stcsParseOrder(text) {
-    var items = [];
-    String(text || "").split(/[;\n]+/).forEach(function (part) {
-        var toks = part.match(/\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+/g);
-        if (!toks || toks.length < 2) return;
-        var qty = 1, w, l;
-        if (toks.length >= 3) {
-            qty = Math.round(stcsNum(toks[0]));
-            w = stcsNum(toks[1]);
-            l = stcsNum(toks[2]);
-        } else {
-            w = stcsNum(toks[0]);
-            l = stcsNum(toks[1]);
-        }
-        if (qty >= 1 && w > 0 && l > 0) {
-            items.push({ qty: Math.min(qty, 200), w: w, l: l });
-        }
-    });
-    return items;
-}
 
 // Shelf-nest the order onto the sheet (sheet coords: x along length L,
 // y along width W, origin at the near corner). Pieces lie length-along-X
@@ -1415,36 +1391,56 @@ function stcsCutLines(p, r, depths, safeZ) {
     return lines;
 }
 
+// Sheet size: entered values, else the table itself (the common "full
+// sheet on the table" case), else the unit default for odd envelopes.
 function stcsSheet() {
+    var t = stTableRect();
     var d = stcsDefaults();
     return {
-        w: stChop.sheetW > 0 ? stChop.sheetW : d.sheetW,
-        l: stChop.sheetL > 0 ? stChop.sheetL : d.sheetL,
+        w: stChop.sheetW > 0 ? stChop.sheetW : t.yspan > 0 ? t.yspan : d.sheetW,
+        l: stChop.sheetL > 0 ? stChop.sheetL : t.xspan > 0 ? t.xspan : d.sheetL,
     };
 }
 
 // Re-nest from the current inputs; called on any change and before CUT.
 function stcsRecalc() {
-    var items = stcsParseOrder(stChop.order);
     var s = stcsSheet();
     var bit = stChop.bit > 0 ? stChop.bit : stcsDefaults().bit;
-    stChop._nest = stcsNest(items, s.l, s.w, bit, bit / 2);
+    stChop._nest = stcsNest(stChop.items, s.l, s.w, bit, bit / 2);
     renderStcsEnv();
+}
+
+// Rebuild the cut list rows (qty · w × l, each with a remove button).
+function renderStcsList() {
+    var $list = $("#stcs-list");
+    if (!$list.length) return;
+    $list.empty();
+    stChop.items.forEach(function (it, i) {
+        var $row = $('<div class="ts-stcs-row"></div>');
+        $row.append($("<span></span>").text(
+            window.t("tool_status.shoptools.piece_row", { qty: it.qty, w: stpFmtLen(it.w), l: stpFmtLen(it.l) })
+        ));
+        $row.append(
+            $('<button class="ts-stcs-del" title="' + window.t("tool_status.shoptools.remove_piece_title") + '">&#215;</button>')
+                .attr("data-idx", i)
+        );
+        $list.append($row);
+    });
 }
 
 function stcsSyncInputs() {
     var s = stcsSheet();
-    $("#stcs-order").val(stChop.order);
     $("#stcs-sheet-w").val(s.w);
     $("#stcs-sheet-l").val(s.l);
     $("#stcs-thick").val(stChop.thickness > 0 ? stChop.thickness : "");
     $("#stcs-bit").val(stChop.bit > 0 ? stChop.bit : "");
     $("#stcs-passes").val(stChop.passes);
+    renderStcsList();
 }
 
 function stcsSave() {
     saveShopToolPref("chopsaw", {
-        order: stChop.order,
+        items: stChop.items,
         sheetW: stChop.sheetW,
         sheetL: stChop.sheetL,
         thickness: stChop.thickness,
@@ -2790,7 +2786,15 @@ $(document).ready(function () {
                 var c = inCurrentUnits(v, pcs.unit);
                 return c !== null && c > 0 ? c : dflt;
             };
-            stChop.order = typeof pcs.order === "string" ? pcs.order : "";
+            stChop.items = [];
+            (Array.isArray(pcs.items) ? pcs.items : []).forEach(function (it) {
+                var q = Math.round(Number(it && it.qty));
+                var w = inCurrentUnits(it && it.w, pcs.unit);
+                var l = inCurrentUnits(it && it.l, pcs.unit);
+                if (q >= 1 && w > 0 && l > 0) {
+                    stChop.items.push({ qty: Math.min(q, 200), w: w, l: l });
+                }
+            });
             stChop.sheetW = numC(pcs.sheetW, 0) || 0;
             stChop.sheetL = numC(pcs.sheetL, 0) || 0;
             stChop.thickness = numC(pcs.thickness, dcs.thickness);
@@ -3076,13 +3080,37 @@ $(document).ready(function () {
         runCommand(lines.join("\n"));
     });
 
-    // ---- Chop saw: order parsing, live re-nest, and the CUT job
+    // ---- Chop saw: cut-list building, live re-nest, and the CUT job
 
-    $("#stcs-order").on("input", function () {
-        stChop.order = $(this).val();
+    function stcsAddPiece() {
+        var w = stcsNum($("#stcs-w").val());
+        var l = stcsNum($("#stcs-l").val());
+        var q = Math.round(parseFloat($("#stcs-qty").val()));
+        if (!(w > 0) || !(l > 0)) {
+            return fabmo.notify("warning", window.t("tool_status.notify.bad_piece"));
+        }
+        if (!(q >= 1)) q = 1;
+        stChop.items.push({ qty: Math.min(q, 200), w: w, l: l });
+        $("#stcs-w").val("");
+        $("#stcs-l").val("");
+        $("#stcs-qty").val(1);
+        renderStcsList();
+        stcsSave();
+        stcsRecalc();
+        $("#stcs-w").trigger("focus");
+    }
+    $("#stcs-add").on("click", stcsAddPiece);
+    $("#stcs-w, #stcs-l, #stcs-qty").on("keydown", function (e) {
+        if (e.key === "Enter") stcsAddPiece();
+    });
+
+    $("#stcs-list").on("click", ".ts-stcs-del", function () {
+        var i = Number($(this).attr("data-idx"));
+        if (isFinite(i)) stChop.items.splice(i, 1);
+        renderStcsList();
+        stcsSave();
         stcsRecalc();
     });
-    $("#stcs-order").on("change", stcsSave);
 
     $("#stcs-sheet-w, #stcs-sheet-l, #stcs-thick, #stcs-bit, #stcs-passes").on("change", function () {
         var n = function (id) { var v = parseFloat($(id).val()); return v > 0 ? v : 0; };
@@ -3099,8 +3127,8 @@ $(document).ready(function () {
 
     $("#btn-st-chop").on("click", function () {
         if (!isIdle()) return;
-        if (!stcsParseOrder(stChop.order).length) {
-            return fabmo.notify("warning", window.t("tool_status.notify.order_empty"));
+        if (!stChop.items.length) {
+            return fabmo.notify("warning", window.t("tool_status.notify.cut_list_empty"));
         }
         if (!(stChop.bit > 0)) {
             return fabmo.notify("warning", window.t("tool_status.notify.set_bit_diameter"));
