@@ -483,6 +483,22 @@ body {
 .ts-sts-mode { width: 28px; height: 30px; font-size: 0.95em; }
 .ts-sts-mode.active { background: #2980b9; border-color: #2471a3; color: #fff; }
 
+/* Chop saw: order textarea + nest summary */
+.ts-st-ordercol { display: flex; flex-direction: column; gap: 3px; flex: 0 1 15em; min-width: 11em; }
+.ts-st-ordercol textarea {
+    width: 100%;
+    font-size: 0.85em;
+    font-family: inherit;
+    padding: 3px 5px;
+    margin: 0;
+    border: 1px solid #d5dbdb;
+    border-radius: 4px;
+    color: #2c3e50;
+    resize: vertical;
+}
+#stcs-summary { margin-top: 1px; }
+#stcs-summary .stcs-missed { color: #c0392b; font-weight: 700; }
+
 /* Drill bore column: bit/hole diameters for spiral-bore holes */
 .ts-st-borecol { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
 .ts-st-borecol label { display: flex; flex-direction: column; gap: 2px; margin: 0; }

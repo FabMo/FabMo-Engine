@@ -1303,6 +1303,210 @@ function stpSave() {
     });
 }
 
+// ---- Chop saw model ----
+// Turns an order of strips into a kerf-aware nest on a sheet and cuts
+// each piece out with an outside profile pass. The sheet's near corner
+// is the current XY zero (work 0,0) and Z is zeroed on the sheet
+// surface. Pieces are separated by exactly one bit diameter, so
+// neighboring pieces' bit-center paths coincide on the shared edge —
+// the gap between pieces is one kerf, nothing wasted between strips.
+var stChop = {
+    order: "",
+    sheetW: 0, // 0 → unit default (48×96 / 1220×2440)
+    sheetL: 0,
+    thickness: 0,
+    bit: 0,
+    passes: 2,
+    inited: false,
+    _nest: null, // {placed, missed, total} — recomputed on any input change
+};
+
+function stcsDefaults() {
+    return state.unit === "mm"
+        ? { sheetW: 1220, sheetL: 2440, thickness: 18, bit: 6, breakthrough: 0.5 }
+        : { sheetW: 48, sheetL: 96, thickness: 0.75, bit: 0.25, breakthrough: 0.02 };
+}
+
+// One number token: "3", "3.5", ".5", "1/2", "3 1/2".
+function stcsNum(tok) {
+    var m = /^(\d+)\s+(\d+)\/(\d+)$/.exec(tok);
+    if (m) return +m[1] + +m[2] / +m[3];
+    m = /^(\d+)\/(\d+)$/.exec(tok);
+    if (m) return +m[1] / +m[2];
+    return parseFloat(tok);
+}
+
+// Parse an order like "10 pc. 4 wide 12 long; 6 pc 3x26" (lines or ;
+// separate items). Three numbers = qty, width, length; two = one piece
+// of width × length. Words between numbers are decoration. Mixed
+// fractions ("3 1/2") count as one number.
+function stcsParseOrder(text) {
+    var items = [];
+    String(text || "").split(/[;\n]+/).forEach(function (part) {
+        var toks = part.match(/\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+/g);
+        if (!toks || toks.length < 2) return;
+        var qty = 1, w, l;
+        if (toks.length >= 3) {
+            qty = Math.round(stcsNum(toks[0]));
+            w = stcsNum(toks[1]);
+            l = stcsNum(toks[2]);
+        } else {
+            w = stcsNum(toks[0]);
+            l = stcsNum(toks[1]);
+        }
+        if (qty >= 1 && w > 0 && l > 0) {
+            items.push({ qty: Math.min(qty, 200), w: w, l: l });
+        }
+    });
+    return items;
+}
+
+// Shelf-nest the order onto the sheet (sheet coords: x along length L,
+// y along width W, origin at the near corner). Pieces lie length-along-X
+// and are sorted widest-first so rows pack tight; a piece too long for
+// the sheet tries rotated. Gap between pieces AND between rows is one
+// kerf; margin keeps the outermost bit-center paths on the sheet.
+// Returns {placed: [{x, y, l, w, item, rot}], missed: [item indexes],
+// total}.
+function stcsNest(items, sheetL, sheetW, kerf, margin) {
+    var pieces = [];
+    items.forEach(function (it, idx) {
+        for (var i = 0; i < it.qty; i++) pieces.push({ w: it.w, l: it.l, item: idx, rot: false });
+    });
+    pieces.sort(function (a, b) { return b.w - a.w || b.l - a.l; });
+    var maxX = sheetL - margin, maxY = sheetW - margin;
+    var placed = [], missed = [];
+    var row = { x: margin, y: margin, h: 0 };
+    var EPS = 1e-9;
+    pieces.forEach(function (p) {
+        if (p.l > maxX - margin + EPS && p.w <= maxX - margin + EPS) {
+            var t = p.l; p.l = p.w; p.w = t; p.rot = true;
+        }
+        if (row.x + p.l > maxX + EPS && row.h > 0) {
+            row = { x: margin, y: row.y + row.h + kerf, h: 0 };
+        }
+        if (row.x + p.l > maxX + EPS || row.y + p.w > maxY + EPS) {
+            missed.push(p.item);
+            return;
+        }
+        placed.push({ x: row.x, y: row.y, l: p.l, w: p.w, item: p.item, rot: p.rot });
+        row.x += p.l + kerf;
+        row.h = Math.max(row.h, p.w);
+    });
+    return { placed: placed, missed: missed, total: pieces.length };
+}
+
+// SBP for one piece's outside profile, bit center offset r outside the
+// rectangle, climb direction (CW around an outside profile with a CW
+// spindle), one lap per pass depth.
+function stcsCutLines(p, r, depths, safeZ) {
+    var r4 = function (v) { return Math.round(v * 10000) / 10000; };
+    var x0 = r4(p.x - r), y0 = r4(p.y - r);
+    var x1 = r4(p.x + p.l + r), y1 = r4(p.y + p.w + r);
+    var lines = ["JZ, " + safeZ, "J2, " + x0 + ", " + y0];
+    depths.forEach(function (z) {
+        lines.push("MZ, " + z);
+        lines.push("M2, " + x0 + ", " + y1);
+        lines.push("M2, " + x1 + ", " + y1);
+        lines.push("M2, " + x1 + ", " + y0);
+        lines.push("M2, " + x0 + ", " + y0);
+    });
+    lines.push("JZ, " + safeZ);
+    return lines;
+}
+
+function stcsSheet() {
+    var d = stcsDefaults();
+    return {
+        w: stChop.sheetW > 0 ? stChop.sheetW : d.sheetW,
+        l: stChop.sheetL > 0 ? stChop.sheetL : d.sheetL,
+    };
+}
+
+// Re-nest from the current inputs; called on any change and before CUT.
+function stcsRecalc() {
+    var items = stcsParseOrder(stChop.order);
+    var s = stcsSheet();
+    var bit = stChop.bit > 0 ? stChop.bit : stcsDefaults().bit;
+    stChop._nest = stcsNest(items, s.l, s.w, bit, bit / 2);
+    renderStcsEnv();
+}
+
+function stcsSyncInputs() {
+    var s = stcsSheet();
+    $("#stcs-order").val(stChop.order);
+    $("#stcs-sheet-w").val(s.w);
+    $("#stcs-sheet-l").val(s.l);
+    $("#stcs-thick").val(stChop.thickness > 0 ? stChop.thickness : "");
+    $("#stcs-bit").val(stChop.bit > 0 ? stChop.bit : "");
+    $("#stcs-passes").val(stChop.passes);
+}
+
+function stcsSave() {
+    saveShopToolPref("chopsaw", {
+        order: stChop.order,
+        sheetW: stChop.sheetW,
+        sheetL: stChop.sheetL,
+        thickness: stChop.thickness,
+        bit: stChop.bit,
+        passes: stChop.passes,
+        unit: state.unit,
+    });
+}
+
+// Chop saw map: the table with the sheet parked at the current work
+// zero and the nested pieces drawn on it. Pieces big enough on screen
+// carry their size; the summary line below the order box reports the
+// nest result (and, in red, anything that didn't fit).
+function renderStcsEnv() {
+    var svg = document.getElementById("stcs-env-svg");
+    if (!svg) return;
+    var g = stpGeom("stcs-env-svg");
+    svg.setAttribute("width", g.W);
+    svg.setAttribute("height", g.H);
+    var X = function (v) { return g.ML + (v / g.xspan) * g.rw; };
+    var Y = function (v) { return g.MT + g.rh - (v / g.yspan) * g.rh; };
+    var t = stTableRect();
+    // Sheet near corner = work (0,0) → map coords via the work offset
+    var sx = (Number(state.g55.x) || 0) - t.x0;
+    var sy = (Number(state.g55.y) || 0) - t.y0;
+    var s = stcsSheet();
+    var parts = [
+        '<rect x="' + g.ML + '" y="' + g.MT + '" width="' + g.rw + '" height="' + g.rh + '" fill="#f4f1ea" stroke="#a8a49a"/>',
+        '<rect x="' + X(sx) + '" y="' + Y(sy + s.w) + '" width="' + (X(sx + s.l) - X(sx)) + '" height="' + (Y(sy) - Y(sy + s.w)) +
+            '" fill="#d4b585" fill-opacity="0.45" stroke="#a8834f"/>',
+    ];
+    var nest = stChop._nest;
+    if (nest) {
+        nest.placed.forEach(function (p) {
+            var px = X(sx + p.x), py = Y(sy + p.y + p.w);
+            var pw = X(sx + p.x + p.l) - X(sx + p.x);
+            var ph = Y(sy + p.y) - Y(sy + p.y + p.w);
+            parts.push('<rect x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph +
+                '" fill="#2980b9" fill-opacity="0.35" stroke="#2471a3" stroke-width="0.75"/>');
+            if (pw > 26 && ph > 9) {
+                parts.push('<text x="' + (px + pw / 2) + '" y="' + (py + ph / 2) + '" text-anchor="middle" dominant-baseline="central" font-size="7" fill="#2c3e50">' +
+                    stpFmtLen(p.rot ? p.l : p.w) + "×" + stpFmtLen(p.rot ? p.w : p.l) + "</text>");
+            }
+        });
+    }
+    parts.push(stOriginBadge(g.ML + 4, g.MT + g.rh - 4));
+    svg.innerHTML = parts.join("");
+    var $sum = $("#stcs-summary");
+    if ($sum.length) {
+        if (!nest || !nest.total) {
+            $sum.text("");
+        } else {
+            var html = window.t("tool_status.shoptools.chop_nested", { placed: nest.placed.length, total: nest.total });
+            if (nest.missed.length) {
+                html += ' · <span class="stcs-missed">' + window.t("tool_status.shoptools.chop_missed", { missed: nest.missed.length }) + "</span>";
+            }
+            $sum.html(html);
+        }
+    }
+    stPlaceBtns("st-panel-chopsaw");
+}
+
 // ---- Table saw model ----
 // One straight through-cut: a line through a draggable anchor point at
 // an angle, stored 0..180° (0 = X-parallel crosscut, 90 = Y-parallel
@@ -2579,6 +2783,26 @@ $(document).ready(function () {
             renderStpEnv();
             return;
         }
+        if (tool === "chopsaw") {
+            var pcs = shopToolPrefs().chopsaw || {};
+            var dcs = stcsDefaults();
+            var numC = function (v, dflt) {
+                var c = inCurrentUnits(v, pcs.unit);
+                return c !== null && c > 0 ? c : dflt;
+            };
+            stChop.order = typeof pcs.order === "string" ? pcs.order : "";
+            stChop.sheetW = numC(pcs.sheetW, 0) || 0;
+            stChop.sheetL = numC(pcs.sheetL, 0) || 0;
+            stChop.thickness = numC(pcs.thickness, dcs.thickness);
+            stChop.bit = numC(pcs.bit, dcs.bit);
+            var pss = Math.round(Number(pcs.passes));
+            stChop.passes = isFinite(pss) && pss >= 1 ? Math.min(pss, 10) : 2;
+            stChop.inited = true;
+            showShopTool(tool);
+            stcsSyncInputs();
+            stcsRecalc();
+            return;
+        }
         showShopTool(tool);
     });
 
@@ -2849,6 +3073,72 @@ $(document).ready(function () {
         consoleLog("> plane: " + stpFmtLen(stPlaner.x1 - stPlaner.x0) + "×" + stpFmtLen(stPlaner.y1 - stPlaner.y0) +
             " " + state.unit + ", " + cuts + " passes at " + stPlaner.angle + "°, depth " + stPlaner.depth +
             (over ? ", overcutting the table edge" : ""));
+        runCommand(lines.join("\n"));
+    });
+
+    // ---- Chop saw: order parsing, live re-nest, and the CUT job
+
+    $("#stcs-order").on("input", function () {
+        stChop.order = $(this).val();
+        stcsRecalc();
+    });
+    $("#stcs-order").on("change", stcsSave);
+
+    $("#stcs-sheet-w, #stcs-sheet-l, #stcs-thick, #stcs-bit, #stcs-passes").on("change", function () {
+        var n = function (id) { var v = parseFloat($(id).val()); return v > 0 ? v : 0; };
+        stChop.sheetW = n("#stcs-sheet-w");
+        stChop.sheetL = n("#stcs-sheet-l");
+        stChop.thickness = n("#stcs-thick");
+        stChop.bit = n("#stcs-bit");
+        var ps = Math.round(parseFloat($("#stcs-passes").val()));
+        stChop.passes = isFinite(ps) && ps >= 1 ? Math.min(ps, 10) : stChop.passes;
+        stcsSyncInputs();
+        stcsSave();
+        stcsRecalc();
+    });
+
+    $("#btn-st-chop").on("click", function () {
+        if (!isIdle()) return;
+        if (!stcsParseOrder(stChop.order).length) {
+            return fabmo.notify("warning", window.t("tool_status.notify.order_empty"));
+        }
+        if (!(stChop.bit > 0)) {
+            return fabmo.notify("warning", window.t("tool_status.notify.set_bit_diameter"));
+        }
+        if (!(stChop.thickness > 0)) {
+            return fabmo.notify("warning", window.t("tool_status.notify.set_sheet_thickness"));
+        }
+        stcsRecalc();
+        var nest = stChop._nest;
+        if (!nest.placed.length) {
+            return fabmo.notify("warning", window.t("tool_status.notify.nothing_fits"));
+        }
+        stcsSave();
+        var r4 = function (v) { return Math.round(v * 10000) / 10000; };
+        var safeZ = Number((state.vars || {}).SB_SAFE_Z);
+        if (!isFinite(safeZ) || safeZ <= 0) safeZ = state.unit === "mm" ? 25 : 1;
+        // Even pass depths through the sheet plus a small breakthrough
+        var total = stChop.thickness + stcsDefaults().breakthrough;
+        var depths = [];
+        for (var i = 1; i <= stChop.passes; i++) {
+            depths.push(r4((-total * i) / stChop.passes));
+        }
+        var r = stChop.bit / 2;
+        var lines = ["'Shop Tools: chop saw", "SO,1,1", "PAUSE 2"];
+        nest.placed.forEach(function (p) {
+            lines.push.apply(lines, stcsCutLines(p, r, depths, safeZ));
+        });
+        lines.push("JZ, " + safeZ);
+        lines.push("J2, 0, 0");
+        lines.push("SO,1,0");
+        var sheet = stcsSheet();
+        consoleLog("> chop saw: " + nest.placed.length + " pieces from a " +
+            stpFmtLen(sheet.w) + "×" + stpFmtLen(sheet.l) + " " + state.unit + " sheet, " +
+            stChop.passes + " passes to " + depths[depths.length - 1] +
+            (nest.missed.length ? " (" + nest.missed.length + " did not fit)" : ""));
+        if (nest.missed.length) {
+            fabmo.notify("warning", window.t("tool_status.shoptools.chop_missed", { missed: nest.missed.length }));
+        }
         runCommand(lines.join("\n"));
     });
 
@@ -3212,6 +3502,7 @@ $(document).ready(function () {
             if ($("#st-panel-drill").is(":visible")) renderStEnv();
             if ($("#st-panel-planer").is(":visible")) renderStpEnv();
             if ($("#st-panel-tablesaw").is(":visible")) renderStsEnv();
+            if ($("#st-panel-chopsaw").is(":visible")) renderStcsEnv();
         }).observe(stCard);
     }
 
