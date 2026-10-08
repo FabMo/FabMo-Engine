@@ -75,8 +75,25 @@ var proxyDownload = function (req, res, next) {
         });
 };
 
-// POST /updater/update/apply → updater applies whatever it has prepared
+// POST /updater/update/apply → updater applies whatever it has prepared.
+// Gate on machine-idle HERE, at apply time: the configuration app checks
+// idle when the user clicks, but the download that separates the click
+// from this call can run for minutes — long enough for a job to start
+// from a pendant or another browser, and applying stops the engine dead.
 var proxyApply = function (req, res, next) {
+    try {
+        var machine = require("../machine").machine;
+        var state = machine && machine.status && machine.status.state;
+        if (state && state !== "idle") {
+            res.json({
+                status: "error",
+                message: "Machine is " + state + " - updates can only be applied while idle.",
+            });
+            return next();
+        }
+    } catch (e) {
+        // No machine model (startup edge) - let the apply through.
+    }
     got.post(updaterBase() + "/update/apply", { responseType: "json", timeout: 10000 })
         .then(function (r) {
             res.json(r.body);

@@ -108,7 +108,13 @@
             "note_duration": "This usually takes a minute or two.",
             "note_power": "Please don't power off the tool.",
             "long_wait": "This is taking longer than expected. If nothing happens for more than ~10 minutes, power-cycle the tool and reload this page.",
-            "reload_now": "Reload now"
+            "reload_now": "Reload now",
+            "stage_downloading": "Downloading the update to the tool…",
+            "stage_uploading": "Uploading the update package…",
+            "stage_sending": "Sending the package to the tool…",
+            "stage_failed": "The update did not start.",
+            "stage_failed_message": "The update did not start: {message}",
+            "back_to_dashboard": "Back to the Dashboard"
         },
         "yes": "Yes",
         "no": "No",

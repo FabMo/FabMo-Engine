@@ -3544,20 +3544,26 @@ setUpManual(); // occasionally not getting keypad set from apps, this helps
 })();
 
 // ----- Software-update progress screen ---------------------------------------
-// When the configuration app starts applying a software update (via
-// fabmo.notifyUpdateStarted → dashboard.js "notifyUpdateStarted" handler),
-// the engine is about to stop, update, and restart — half a minute or more
-// of dead air that used to read as "something broke". This takes over the
-// whole screen with a staged progress page:
-//   installing → (engine stops answering) restarting → (answers again) reload.
-// It polls /version to track the engine through the restart and reloads the
-// dashboard when it's back, which also picks up the freshly-installed bundle.
+// The configuration app reports update progress via repeated
+// fabmo.notifyUpdateStarted calls (dashboard.js routes them here): the FIRST
+// call takes over the whole screen — importantly this now happens when the
+// user commits to the update, BEFORE the download/upload, so they can't
+// wander off and be ambushed by the restart minutes later — and subsequent
+// calls move it through stages:
+//   downloading/uploading/sending (progress bar; engine still up)
+//   → installing → (engine stops answering) restarting → (answers) reload.
+// The /version poll that detects the restart is only armed in the
+// installing stage: a transient poll timeout during a long download must
+// not read as "engine went down" and trigger a premature reload (which
+// would destroy the configuration-app iframe driving the update). A
+// 'failed' stage tears back down to the live dashboard — before the
+// install begins, nothing has changed and bailing out is safe.
 // The generic disconnect daisy is suppressed while this is active.
 window.fabmoUpdateScreen = (function () {
     var POLL_MS = 2000;
     var POLL_TIMEOUT_MS = 1500;
     var LONG_WAIT_MS = 8 * 60 * 1000;
-    var screen = { active: false };
+    var screen = { active: false, stage: null };
     var $overlay = null;
     var startedAt = null;
     var sawDown = false;
@@ -3584,6 +3590,8 @@ window.fabmoUpdateScreen = (function () {
                 '<i class="fa fa-cog fa-spin update-screen-spinner" aria-hidden="true"></i>' +
                 '<h2 class="update-screen-title"></h2>' +
                 '<div class="update-screen-stage"></div>' +
+                '<div class="update-screen-bar" style="display:none;"><div class="update-screen-bar-fill"></div></div>' +
+                '<a class="button radius small alert update-screen-dismiss" style="display:none;"></a>' +
                 '<div class="update-screen-elapsed"></div>' +
                 '<div class="update-screen-notes">' +
                 '<div class="update-screen-note-duration"></div>' +
@@ -3611,7 +3619,38 @@ window.fabmoUpdateScreen = (function () {
                 evt.preventDefault();
                 doReload();
             });
+        $overlay
+            .find(".update-screen-dismiss")
+            .text(t("status.update_screen.back_to_dashboard"))
+            .on("click", function (evt) {
+                evt.preventDefault();
+                screen.dismiss();
+            });
         $("body").append($overlay);
+    }
+
+    // Progress bar: a percentage draws a determinate fill; null shows the
+    // indeterminate sweep (download size isn't reported by the updater).
+    function setBar(pct) {
+        if (!$overlay) {
+            return;
+        }
+        var $bar = $overlay.find(".update-screen-bar");
+        var $fill = $overlay.find(".update-screen-bar-fill");
+        $bar.show();
+        if (pct === null || pct === undefined || !isFinite(pct)) {
+            $bar.addClass("indeterminate");
+            $fill.css("width", "");
+        } else {
+            $bar.removeClass("indeterminate");
+            $fill.css("width", Math.max(0, Math.min(100, pct)) + "%");
+        }
+    }
+
+    function hideBar() {
+        if ($overlay) {
+            $overlay.find(".update-screen-bar").hide().removeClass("indeterminate");
+        }
     }
 
     function setStage(key) {
@@ -3669,13 +3708,65 @@ window.fabmoUpdateScreen = (function () {
         }
         var elapsed = Date.now() - startedAt;
         $overlay.find(".update-screen-elapsed").text(t("status.update_screen.elapsed", { time: fmtElapsed(elapsed) }));
-        if (elapsed > LONG_WAIT_MS) {
+        // The manual-reload escape hatch only makes sense once the install
+        // is underway; reloading during a slow download would destroy the
+        // configuration-app iframe that drives the update.
+        if (elapsed > LONG_WAIT_MS && screen.stage === "installing") {
             $overlay.find(".update-screen-longwait").show();
+        }
+    }
+
+    // Move the screen through a stage. Transfer stages keep the engine-up
+    // assumption; "installing" arms the restart detection; "failed" offers
+    // the way back to the live dashboard.
+    function applyStage(info) {
+        var stage = (info && info.stage) || "installing";
+        screen.stage = stage;
+        switch (stage) {
+            case "downloading":
+                setStage("status.update_screen.stage_downloading");
+                setBar(info && isFinite(info.progress) ? info.progress : null);
+                break;
+            case "uploading":
+                setStage("status.update_screen.stage_uploading");
+                setBar(info && isFinite(info.progress) ? info.progress : null);
+                break;
+            case "sending":
+                setStage("status.update_screen.stage_sending");
+                setBar(null);
+                break;
+            case "failed":
+                if ($overlay) {
+                    $overlay
+                        .find(".update-screen-stage")
+                        .text(
+                            (info && info.message)
+                                ? t("status.update_screen.stage_failed_message", { message: info.message })
+                                : t("status.update_screen.stage_failed")
+                        );
+                    $overlay.find(".update-screen-spinner").removeClass("fa-cog fa-spin").addClass("fa-exclamation-triangle");
+                    $overlay.find(".update-screen-dismiss").show();
+                }
+                hideBar();
+                if (pollTimer) {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                }
+                break;
+            case "installing":
+            default:
+                setStage("status.update_screen.stage_installing");
+                hideBar();
+                if (!pollTimer) {
+                    pollTimer = setInterval(pollVersion, POLL_MS);
+                }
+                break;
         }
     }
 
     screen.begin = function (info) {
         if (screen.active) {
+            screen.update(info);
             return;
         }
         screen.active = true;
@@ -3683,10 +3774,35 @@ window.fabmoUpdateScreen = (function () {
         sawDown = false;
         reloading = false;
         build(info || {});
-        setStage("status.update_screen.stage_installing");
+        applyStage(info);
         tick();
         tickTimer = setInterval(tick, 1000);
-        pollTimer = setInterval(pollVersion, POLL_MS);
+    };
+
+    screen.update = function (info) {
+        if (!screen.active) {
+            return;
+        }
+        applyStage(info);
+    };
+
+    // Tear the overlay down and hand the live dashboard back — only valid
+    // before the install begins (nothing has changed yet).
+    screen.dismiss = function () {
+        if (tickTimer) {
+            clearInterval(tickTimer);
+            tickTimer = null;
+        }
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+        if ($overlay) {
+            $overlay.remove();
+            $overlay = null;
+        }
+        screen.active = false;
+        screen.stage = null;
     };
 
     return screen;

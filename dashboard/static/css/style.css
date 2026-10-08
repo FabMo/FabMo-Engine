@@ -4246,6 +4246,39 @@ a.update-available::after {
 	color: #c5c8e8;
 	margin-bottom: 16px;
 }
+#update-screen .update-screen-bar {
+	width: 260px;
+	max-width: 80%;
+	height: 10px;
+	margin: 0 auto 14px;
+	border-radius: 5px;
+	background: rgba(255, 255, 255, 0.18);
+	overflow: hidden;
+	position: relative;
+}
+#update-screen .update-screen-bar-fill {
+	height: 100%;
+	width: 0;
+	border-radius: 5px;
+	background: #7ecbff;
+	transition: width 0.3s ease;
+}
+/* No byte counts from the updater's own download: sweep instead */
+#update-screen .update-screen-bar.indeterminate .update-screen-bar-fill {
+	width: 40%;
+	position: absolute;
+	animation: update-bar-sweep 1.4s ease-in-out infinite;
+}
+@keyframes update-bar-sweep {
+	0% { left: -40%; }
+	100% { left: 100%; }
+}
+#update-screen .update-screen-dismiss {
+	margin-bottom: 14px;
+}
+#update-screen .update-screen-spinner.fa-exclamation-triangle {
+	color: #ffd97a;
+}
 #update-screen .update-screen-notes {
 	font-size: 0.9rem;
 	color: #c5c8e8;
