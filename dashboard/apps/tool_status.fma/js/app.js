@@ -950,9 +950,9 @@ function renderStXsec() {
 // along X, 90 = along Y), passes spaced bit × stepover%. The area
 // bounds the BIT CENTER — no diameter compensation, so the cut extends
 // a bit radius past the picked edges. The area may extend past the
-// table edges by up to stpOvercut() per side (≤ one bit radius, and
-// never beyond the machine's real overtravel) so edge-to-edge surfacing
-// actually cleans the edges. Depth is below Z zero. dir
+// table edges by up to stpOvercut() per side (one bit radius) so
+// edge-to-edge surfacing actually cleans the edges. Depth is below
+// Z zero. dir
 // "2way" = serpentine at depth; "1way" = cut, lift, return, plunge.
 var stPlaner = {
     x0: 0, x1: 0, y0: 0, y1: 0, // area, machine units from envelope min
@@ -976,40 +976,28 @@ function stpSpans() {
     return { xspan: xspan, yspan: yspan };
 }
 
-// How far past each table edge the planed area may extend ("overcut").
-// The area bounds the bit CENTER, so letting it past the edge is what
-// actually cleans the table edge (the cut already spills a radius past
-// the area). Capped at one tool radius per side, AND at the machine's
-// real overtravel there (envelope travel beyond the nominal table), so
-// the generated job always stays inside the envelope that the soft-limit
-// pre-check enforces. Zero when the envelope IS the table. Keys name the
-// handle they bound: x0/y0 = low side, x1/y1 = high side, in map coords.
+// How far past each table edge the planed area may extend ("overcut"):
+// one bit radius. The area bounds the bit CENTER, so letting it past the
+// edge is what actually cleans the table edge (the cut already spills a
+// radius past the area). Not capped to the envelope's declared
+// overtravel — big surfacing bits legitimately want more than the
+// nominal margin; if soft limits are on and the travel really isn't
+// there, the engine's bounds check reports it at run time, where the
+// user can see and decide.
 function stpOvercut() {
-    var env = state.envelope || {};
-    var t = stTableRect();
-    var r = Number(stPlaner.bit) > 0 ? stPlaner.bit / 2 : 0;
-    var cap = function (margin) {
-        return isFinite(margin) ? Math.max(0, Math.min(r, margin)) : 0;
-    };
-    return {
-        x0: cap(t.x0 - Number(env.xmin)),
-        x1: cap(Number(env.xmax) - (t.x0 + t.xspan)),
-        y0: cap(t.y0 - Number(env.ymin)),
-        y1: cap(Number(env.ymax) - (t.y0 + t.yspan)),
-    };
+    return Number(stPlaner.bit) > 0 ? stPlaner.bit / 2 : 0;
 }
 
 // Pull the area back inside the current overcut allowance. Needed when
-// the allowance shrinks under a saved area — a smaller bit (radius cap)
-// or a different machine's envelope (overtravel cap).
+// the allowance shrinks under a saved area (a smaller bit).
 function stpClampArea() {
     var s = stpSpans();
     var oc = stpOvercut();
     var p = stPlaner;
-    p.x0 = Math.max(-oc.x0, Math.min(s.xspan + oc.x1, p.x0));
-    p.x1 = Math.max(p.x0, Math.min(s.xspan + oc.x1, p.x1));
-    p.y0 = Math.max(-oc.y0, Math.min(s.yspan + oc.y1, p.y0));
-    p.y1 = Math.max(p.y0, Math.min(s.yspan + oc.y1, p.y1));
+    p.x0 = Math.max(-oc, Math.min(s.xspan + oc, p.x0));
+    p.x1 = Math.max(p.x0, Math.min(s.xspan + oc, p.x1));
+    p.y0 = Math.max(-oc, Math.min(s.yspan + oc, p.y0));
+    p.y1 = Math.max(p.y0, Math.min(s.yspan + oc, p.y1));
 }
 
 // Map geometry shared by the renderer and the drag handler. Margins hold
@@ -1192,10 +1180,9 @@ function renderStpEnv() {
     // overcutting area (and its passes) visibly overhangs the table edge
     // instead of being cropped at it.
     var oc = stpOvercut();
-    var exL = (oc.x0 / g.xspan) * g.rw, exR = (oc.x1 / g.xspan) * g.rw;
-    var exB = (oc.y0 / g.yspan) * g.rh, exT = (oc.y1 / g.yspan) * g.rh;
-    parts.push('<clipPath id="stp-zclip"><rect x="' + (g.ML - exL) + '" y="' + (g.MT - exT) +
-        '" width="' + (g.rw + exL + exR) + '" height="' + (g.rh + exB + exT) + '"/></clipPath>');
+    var exX = (oc / g.xspan) * g.rw, exY = (oc / g.yspan) * g.rh;
+    parts.push('<clipPath id="stp-zclip"><rect x="' + (g.ML - exX) + '" y="' + (g.MT - exY) +
+        '" width="' + (g.rw + 2 * exX) + '" height="' + (g.rh + 2 * exY) + '"/></clipPath>');
     parts.push('<g clip-path="url(#stp-zclip)"><g transform="matrix(' + z + " 0 0 " + z + " " + tx + " " + ty + ')">' + inner.join("") + "</g></g>");
     parts.push(stOriginBadge(g.ML + 4, g.MT + g.rh - 4));
     // Range bars: track, active span, grabbable handles
@@ -2568,13 +2555,13 @@ $(document).ready(function () {
         if (stpDrag === "x0" || stpDrag === "x1" || stpDrag === "x?") {
             var vx = ar ? ar.vx : ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
             if (stpDrag === "x?") stpDrag = vx < p.x0 ? "x0" : "x1";
-            if (stpDrag === "x0") p.x0 = Math.max(-oc.x0, Math.min(p.x1, vx));
-            else p.x1 = Math.min(g.xspan + oc.x1, Math.max(p.x0, vx));
+            if (stpDrag === "x0") p.x0 = Math.max(-oc, Math.min(p.x1, vx));
+            else p.x1 = Math.min(g.xspan + oc, Math.max(p.x0, vx));
         } else {
             var vy = ar ? ar.vy : ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
             if (stpDrag === "y?") stpDrag = vy < p.y0 ? "y0" : "y1";
-            if (stpDrag === "y0") p.y0 = Math.max(-oc.y0, Math.min(p.y1, vy));
-            else p.y1 = Math.min(g.yspan + oc.y1, Math.max(p.y0, vy));
+            if (stpDrag === "y0") p.y0 = Math.max(-oc, Math.min(p.y1, vy));
+            else p.y1 = Math.min(g.yspan + oc, Math.max(p.y0, vy));
         }
         renderStpEnv();
     });
@@ -2619,12 +2606,12 @@ $(document).ready(function () {
         // into an edge number overcuts that side by 0.25 (up to the
         // allowance). The width/height numbers can likewise run past the
         // far edge by the far side's allowance.
-        if (key === "x0") p.x0 = Math.max(-oc.x0, Math.min(p.x1, v));
-        else if (key === "xw") p.x1 = Math.min(s.xspan + oc.x1, p.x0 + Math.max(0, v));
-        else if (key === "x1r") p.x1 = Math.max(p.x0, Math.min(s.xspan + oc.x1, s.xspan - v));
-        else if (key === "y0") p.y0 = Math.max(-oc.y0, Math.min(p.y1, v));
-        else if (key === "yh") p.y1 = Math.min(s.yspan + oc.y1, p.y0 + Math.max(0, v));
-        else if (key === "y1r") p.y1 = Math.max(p.y0, Math.min(s.yspan + oc.y1, s.yspan - v));
+        if (key === "x0") p.x0 = Math.max(-oc, Math.min(p.x1, v));
+        else if (key === "xw") p.x1 = Math.min(s.xspan + oc, p.x0 + Math.max(0, v));
+        else if (key === "x1r") p.x1 = Math.max(p.x0, Math.min(s.xspan + oc, s.xspan - v));
+        else if (key === "y0") p.y0 = Math.max(-oc, Math.min(p.y1, v));
+        else if (key === "yh") p.y1 = Math.min(s.yspan + oc, p.y0 + Math.max(0, v));
+        else if (key === "y1r") p.y1 = Math.max(p.y0, Math.min(s.yspan + oc, s.yspan - v));
         stpSave();
         renderStpEnv();
     }
