@@ -263,7 +263,27 @@ G2.prototype._resetInternalState = function () {
 // Creates a cycle context, which has a pass-through stream into which data can be piped
 G2.prototype._createCycleContext = function () {
     if (this.context) {
-        throw new Error("Cannot create a new cycle context.  One already exists.");
+        // A context can be left behind when the previous cycle's ending
+        // stat:4 was never seen — classically a trailing M30 swallowed by a
+        // g2core already parked at stat:3 (the quirk sendM30 exists for).
+        // If the machine is parked, the old cycle cannot still be running:
+        // reclaim the stale context instead of refusing the new run. The
+        // old context's state promise stays armed, but it only ever sets
+        // context/_primed to the values the new cycle's own stat:4 sets
+        // anyway, so a late resolution is harmless.
+        var stat = this.status.stat;
+        var parked = stat === STAT_STOP || stat === STAT_END || stat === STAT_READY;
+        if (parked && !this.pause_flag && !this.quit_pending) {
+            log.error(
+                "Stale cycle context found at cycle start (stat=" +
+                    stat +
+                    ") - the previous cycle never reported stat:4. Reclaiming it."
+            );
+            this.context = null;
+            this._primed = false;
+        } else {
+            throw new Error("Cannot create a new cycle context.  One already exists.");
+        }
     }
     // Create and setup the pass-through stream
     var st = new stream.PassThrough();
