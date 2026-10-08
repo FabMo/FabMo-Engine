@@ -37,3 +37,7 @@ runtime/opensbp/test.sbp
 package-lock.json
 __pycache__/
 *.pyc
+
+# Bundled updater packages are placed by the release build, never committed
+bundled_updater/*.fmp
+bundled_updater/*.fmu
