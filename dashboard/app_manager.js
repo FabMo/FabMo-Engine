@@ -228,12 +228,69 @@ AppManager.prototype.rebuildAppList = function () {
     }
 };
 
+// Compare two dotted-numeric version strings ("4.0.103", "v0.2.0").
+// Returns -1/0/1, or null when either side isn't a plain dotted version
+// (callers should treat null as "can't tell" and keep legacy behavior).
+function compareAppVersions(a, b) {
+    if (typeof a !== "string" || typeof b !== "string") {
+        return null;
+    }
+    a = a.replace(/^v/i, "");
+    b = b.replace(/^v/i, "");
+    if (!/^\d+(\.\d+)*$/.test(a) || !/^\d+(\.\d+)*$/.test(b)) {
+        return null;
+    }
+    var pa = a.split(".");
+    var pb = b.split(".");
+    for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+        var x = Number(pa[i] || 0);
+        var y = Number(pb[i] || 0);
+        if (x !== y) {
+            return x < y ? -1 : 1;
+        }
+    }
+    return 0;
+}
+
 // Add the provided app object to the index
 //   app - app_info object, as described above
 AppManager.prototype._addApp = function (app) {
     if (app.info.id in this.apps_index) {
         var old_app = this.apps_index[app.info.id];
         if (old_app.app_archive_path !== app.info.app_archive_path) {
+            if (compareAppVersions(app.info.version, old_app.version) < 0) {
+                // The incoming copy is older than the one already loaded —
+                // typically a stale user install shadowing an updated system
+                // app. Keep the newer app, and delete the stale user copy so
+                // profile applies and updates stop resurrecting it.
+                log.warn(
+                    "Ignoring app '" +
+                        app.info.id +
+                        "' v" +
+                        app.info.version +
+                        " from " +
+                        app.info.app_archive_path +
+                        " - newer v" +
+                        old_app.version +
+                        " already loaded from " +
+                        old_app.app_archive_path
+                );
+                if (app.info.app_archive_path.startsWith(this.app_directory)) {
+                    fs.remove(app.info.app_archive_path, function (err) {
+                        if (err) {
+                            log.warn("failed to remove a stale app archive: " + err);
+                        }
+                    });
+                    if (app.info.app_path && app.info.app_path !== old_app.app_path) {
+                        fs.remove(app.info.app_path, function (err) {
+                            if (err) {
+                                log.warn("failed to remove a stale app directory: " + err);
+                            }
+                        });
+                    }
+                }
+                return;
+            }
             // Never delete system app source directories - only clean up user app archives in the data directory
             var isSystemApp = old_app.app_archive_path.startsWith(this.system_app_directory);
             if (!isSystemApp) {
@@ -579,3 +636,4 @@ AppManager.prototype.loadApps = function (callback) {
 };
 
 module.exports.AppManager = AppManager;
+module.exports.compareAppVersions = compareAppVersions;
