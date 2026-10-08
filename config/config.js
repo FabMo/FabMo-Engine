@@ -206,8 +206,39 @@ Config.prototype.load = function (filename, callback) {
     var definition = profileDef.read();
     var skipRecovery = profileDef.isChangeInProgress() || profileDef.hasAutoProfileDefinition();
 
+    // The backup mirror and the blessed snapshot hold the USER'S OWN config
+    // — machine state (envelope, tuning, calibration) that must survive
+    // updates. Every engine update deletes /opt/fabmo (see the package
+    // manifest's deleteFiles op), which also removes the
+    // .auto_profile_applied marker, so skipRecovery alone cannot tell
+    // "first boot after an update" apart from a genuine profile change.
+    // Only a TRUE SWITCH — the auto-profile target differing from the
+    // engine's current profile — should prefer profile defaults over the
+    // user's own data. (Policy 2026-10, see doc/update-settings-merge.md.)
+    var isProfileSwitch = false;
+    if (skipRecovery && definition && definition.auto_profile && definition.auto_profile.profile_name) {
+        try {
+            var targetDir = Config.resolveProfileDirectory(definition.auto_profile.profile_name);
+            var currentName = Config.getCurrentProfile();
+            var currentDir = currentName ? Config.resolveProfileDirectory(currentName) : null;
+            isProfileSwitch = !!(
+                currentDir &&
+                targetDir &&
+                currentDir.toLowerCase() !== targetDir.toLowerCase()
+            );
+        } catch (e) {
+            isProfileSwitch = false;
+        }
+    }
+
     if (skipRecovery) {
-        log.info("Auto-profile system active - skipping backup recovery for: " + filename);
+        log.info(
+            "Auto-profile system active for " +
+                path.basename(filename) +
+                (isProfileSwitch
+                    ? " (profile switch: user-data recovery tiers skipped)"
+                    : " (same-profile reapply: user-data recovery tiers remain active)")
+        );
     }
 
     const backupDir = "/opt/fabmo_backup/config/";
@@ -250,9 +281,9 @@ Config.prototype.load = function (filename, callback) {
     };
 
     const loadFromBackup = (next) => {
-        if (skipRecovery) {
-            log.info("Skipping backup recovery due to auto-profile in progress");
-            return next(new Error("Backup recovery skipped due to auto-profile")); // ← Return ERROR, not success
+        if (skipRecovery && isProfileSwitch) {
+            log.info("Skipping backup recovery due to profile switch in progress");
+            return next(new Error("Backup recovery skipped due to profile switch")); // ← Return ERROR, not success
         }
 
         fs.access(backupDir, fs.constants.F_OK, (err) => {
@@ -272,9 +303,9 @@ Config.prototype.load = function (filename, callback) {
     // snapshots.js is required lazily here to avoid a circular dep
     // (snapshots -> machine -> config).
     const loadFromUserSnapshot = (next) => {
-        if (skipRecovery) {
-            log.info("Skipping user-snapshot recovery due to auto-profile system");
-            return next(new Error("User-snapshot recovery skipped due to auto-profile"));
+        if (skipRecovery && isProfileSwitch) {
+            log.info("Skipping user-snapshot recovery due to profile switch in progress");
+            return next(new Error("User-snapshot recovery skipped due to profile switch"));
         }
         var snapshots;
         try {
