@@ -949,7 +949,10 @@ function renderStXsec() {
 // relative to envelope min); the raster runs at `angle` degrees (0 =
 // along X, 90 = along Y), passes spaced bit × stepover%. The area
 // bounds the BIT CENTER — no diameter compensation, so the cut extends
-// a bit radius past the picked edges. Depth is below Z zero. dir
+// a bit radius past the picked edges. The area may extend past the
+// table edges by up to stpOvercut() per side (≤ one bit radius, and
+// never beyond the machine's real overtravel) so edge-to-edge surfacing
+// actually cleans the edges. Depth is below Z zero. dir
 // "2way" = serpentine at depth; "1way" = cut, lift, return, plunge.
 var stPlaner = {
     x0: 0, x1: 0, y0: 0, y1: 0, // area, machine units from envelope min
@@ -971,6 +974,42 @@ function stpSpans() {
     if (!(xspan > 0)) xspan = 24;
     if (!(yspan > 0)) yspan = 18;
     return { xspan: xspan, yspan: yspan };
+}
+
+// How far past each table edge the planed area may extend ("overcut").
+// The area bounds the bit CENTER, so letting it past the edge is what
+// actually cleans the table edge (the cut already spills a radius past
+// the area). Capped at one tool radius per side, AND at the machine's
+// real overtravel there (envelope travel beyond the nominal table), so
+// the generated job always stays inside the envelope that the soft-limit
+// pre-check enforces. Zero when the envelope IS the table. Keys name the
+// handle they bound: x0/y0 = low side, x1/y1 = high side, in map coords.
+function stpOvercut() {
+    var env = state.envelope || {};
+    var t = stTableRect();
+    var r = Number(stPlaner.bit) > 0 ? stPlaner.bit / 2 : 0;
+    var cap = function (margin) {
+        return isFinite(margin) ? Math.max(0, Math.min(r, margin)) : 0;
+    };
+    return {
+        x0: cap(t.x0 - Number(env.xmin)),
+        x1: cap(Number(env.xmax) - (t.x0 + t.xspan)),
+        y0: cap(t.y0 - Number(env.ymin)),
+        y1: cap(Number(env.ymax) - (t.y0 + t.yspan)),
+    };
+}
+
+// Pull the area back inside the current overcut allowance. Needed when
+// the allowance shrinks under a saved area — a smaller bit (radius cap)
+// or a different machine's envelope (overtravel cap).
+function stpClampArea() {
+    var s = stpSpans();
+    var oc = stpOvercut();
+    var p = stPlaner;
+    p.x0 = Math.max(-oc.x0, Math.min(s.xspan + oc.x1, p.x0));
+    p.x1 = Math.max(p.x0, Math.min(s.xspan + oc.x1, p.x1));
+    p.y0 = Math.max(-oc.y0, Math.min(s.yspan + oc.y1, p.y0));
+    p.y1 = Math.max(p.y0, Math.min(s.yspan + oc.y1, p.y1));
 }
 
 // Map geometry shared by the renderer and the drag handler. Margins hold
@@ -1149,7 +1188,14 @@ function renderStpEnv() {
     // Clip and transform must live on separate nested groups: a clip-path
     // on the transformed group itself would be scaled along with the
     // content, and the pattern would spill past the table rect.
-    parts.push('<clipPath id="stp-zclip"><rect x="' + g.ML + '" y="' + g.MT + '" width="' + g.rw + '" height="' + g.rh + '"/></clipPath>');
+    // The clip extends past the table rect by the overcut allowance so an
+    // overcutting area (and its passes) visibly overhangs the table edge
+    // instead of being cropped at it.
+    var oc = stpOvercut();
+    var exL = (oc.x0 / g.xspan) * g.rw, exR = (oc.x1 / g.xspan) * g.rw;
+    var exB = (oc.y0 / g.yspan) * g.rh, exT = (oc.y1 / g.yspan) * g.rh;
+    parts.push('<clipPath id="stp-zclip"><rect x="' + (g.ML - exL) + '" y="' + (g.MT - exT) +
+        '" width="' + (g.rw + exL + exR) + '" height="' + (g.rh + exB + exT) + '"/></clipPath>');
     parts.push('<g clip-path="url(#stp-zclip)"><g transform="matrix(' + z + " 0 0 " + z + " " + tx + " " + ty + ')">' + inner.join("") + "</g></g>");
     parts.push(stOriginBadge(g.ML + 4, g.MT + g.rh - 4));
     // Range bars: track, active span, grabbable handles
@@ -1166,14 +1212,20 @@ function renderStpEnv() {
     // Segment numbers: to-start | area | to-end, centered per segment
     // Segment numbers carry data-edit/data-val and are typeable in
     // place via #stp-edit (same pattern as the table saw's labels).
+    // Edge-distance numbers stay visible once their handle reaches (or
+    // passes) the table edge, even though their segment has no width —
+    // they're the typing target for overcut: entering a negative edge
+    // distance pushes the area past the table by up to stpOvercut().
     function xnum(a, b, v, bold, key) {
-        if (b - a < 12) return "";
+        var atEdge = !bold && v < 0.011;
+        if (b - a < 12 && !atEdge) return "";
         return '<text x="' + (a + b) / 2 + '" y="' + (bx + 13) + '" text-anchor="middle" font-size="8"' +
             ' data-edit="' + key + '" data-val="' + Math.round(v * 1000) / 1000 + '"' +
             (bold ? ' font-weight="700" fill="#2c3e50"' : ' fill="#7f8c8d"') + ">" + stpFmtLen(v) + "</text>";
     }
     function ynum(yA, yB, v, bold, key) {
-        if (yA - yB < 12) return "";
+        var atEdge = !bold && v < 0.011;
+        if (yA - yB < 12 && !atEdge) return "";
         var cy = (yA + yB) / 2, cx = by - 10;
         return '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" font-size="8"' +
             ' data-edit="' + key + '" data-val="' + Math.round(v * 1000) / 1000 + '"' +
@@ -2458,10 +2510,11 @@ $(document).ready(function () {
             stPlaner.step = Number(pp.step) >= 5 && Number(pp.step) <= 100 ? Number(pp.step) : 40;
             stPlaner.angle = Number(pp.angle) >= 0 && Number(pp.angle) <= 90 ? Number(pp.angle) : 0;
             stPlaner.dir = pp.dir === "1way" ? "1way" : "2way";
-            stPlaner.x0 = Math.max(0, Math.min(spans.xspan, num(pp.x0, spans.xspan * 0.25)));
-            stPlaner.x1 = Math.max(stPlaner.x0, Math.min(spans.xspan, num(pp.x1, spans.xspan * 0.75)));
-            stPlaner.y0 = Math.max(0, Math.min(spans.yspan, num(pp.y0, spans.yspan * 0.25)));
-            stPlaner.y1 = Math.max(stPlaner.y0, Math.min(spans.yspan, num(pp.y1, spans.yspan * 0.75)));
+            stPlaner.x0 = num(pp.x0, spans.xspan * 0.25);
+            stPlaner.x1 = Math.max(stPlaner.x0, num(pp.x1, spans.xspan * 0.75));
+            stPlaner.y0 = num(pp.y0, spans.yspan * 0.25);
+            stPlaner.y1 = Math.max(stPlaner.y0, num(pp.y1, spans.yspan * 0.75));
+            stpClampArea(); // saved overcut re-clamped to this bit/envelope
             // A shrunken envelope (say X max 96 → 24) clamps both ends of a
             // saved range onto the same spot — a zero-width area with the
             // handles stacked. Start that axis over at the defaults.
@@ -2511,16 +2564,17 @@ $(document).ready(function () {
         var g = stpGeom();
         var p = stPlaner;
         var ar = stAr._drag ? stArPointToEnv(e.clientX, e.clientY) : null;
+        var oc = stpOvercut();
         if (stpDrag === "x0" || stpDrag === "x1" || stpDrag === "x?") {
             var vx = ar ? ar.vx : ((e.clientX - box.left - g.ML) / g.rw) * g.xspan;
             if (stpDrag === "x?") stpDrag = vx < p.x0 ? "x0" : "x1";
-            if (stpDrag === "x0") p.x0 = Math.max(0, Math.min(p.x1, vx));
-            else p.x1 = Math.min(g.xspan, Math.max(p.x0, vx));
+            if (stpDrag === "x0") p.x0 = Math.max(-oc.x0, Math.min(p.x1, vx));
+            else p.x1 = Math.min(g.xspan + oc.x1, Math.max(p.x0, vx));
         } else {
             var vy = ar ? ar.vy : ((g.MT + g.rh - (e.clientY - box.top)) / g.rh) * g.yspan;
             if (stpDrag === "y?") stpDrag = vy < p.y0 ? "y0" : "y1";
-            if (stpDrag === "y0") p.y0 = Math.max(0, Math.min(p.y1, vy));
-            else p.y1 = Math.min(g.yspan, Math.max(p.y0, vy));
+            if (stpDrag === "y0") p.y0 = Math.max(-oc.y0, Math.min(p.y1, vy));
+            else p.y1 = Math.min(g.yspan + oc.y1, Math.max(p.y0, vy));
         }
         renderStpEnv();
     });
@@ -2559,13 +2613,18 @@ $(document).ready(function () {
 
     function stpApplyEdit(key, v) {
         var s = stpSpans();
+        var oc = stpOvercut();
         var p = stPlaner;
-        if (key === "x0") p.x0 = Math.max(0, Math.min(p.x1, v));
-        else if (key === "xw") p.x1 = Math.min(s.xspan, p.x0 + Math.max(0, v));
-        else if (key === "x1r") p.x1 = Math.max(p.x0, Math.min(s.xspan, s.xspan - v));
-        else if (key === "y0") p.y0 = Math.max(0, Math.min(p.y1, v));
-        else if (key === "yh") p.y1 = Math.min(s.yspan, p.y0 + Math.max(0, v));
-        else if (key === "y1r") p.y1 = Math.max(p.y0, Math.min(s.yspan, s.yspan - v));
+        // Edge distances (x0/x1r/y0/y1r) accept negatives: typing -0.25
+        // into an edge number overcuts that side by 0.25 (up to the
+        // allowance). The width/height numbers can likewise run past the
+        // far edge by the far side's allowance.
+        if (key === "x0") p.x0 = Math.max(-oc.x0, Math.min(p.x1, v));
+        else if (key === "xw") p.x1 = Math.min(s.xspan + oc.x1, p.x0 + Math.max(0, v));
+        else if (key === "x1r") p.x1 = Math.max(p.x0, Math.min(s.xspan + oc.x1, s.xspan - v));
+        else if (key === "y0") p.y0 = Math.max(-oc.y0, Math.min(p.y1, v));
+        else if (key === "yh") p.y1 = Math.min(s.yspan + oc.y1, p.y0 + Math.max(0, v));
+        else if (key === "y1r") p.y1 = Math.max(p.y0, Math.min(s.yspan + oc.y1, s.yspan - v));
         stpSave();
         renderStpEnv();
     }
@@ -2654,6 +2713,7 @@ $(document).ready(function () {
         if (step >= 5 && step <= 100) stPlaner.step = step;
         else $("#stp-step").val(stPlaner.step);
         stPlaner.depth = depth > 0 ? depth : 0;
+        stpClampArea(); // a smaller bit shrinks the overcut allowance
         stpSave();
         renderStpEnv();
     });
@@ -2737,8 +2797,11 @@ $(document).ready(function () {
         lines.push("JZ, " + safeZ);
         lines.push("SO,1,0"); // spindle off
         var cuts = segs.filter(function (s) { return s.type === "cut"; }).length;
+        var sp = stpSpans();
+        var over = stPlaner.x0 < 0 || stPlaner.y0 < 0 || stPlaner.x1 > sp.xspan || stPlaner.y1 > sp.yspan;
         consoleLog("> plane: " + stpFmtLen(stPlaner.x1 - stPlaner.x0) + "×" + stpFmtLen(stPlaner.y1 - stPlaner.y0) +
-            " " + state.unit + ", " + cuts + " passes at " + stPlaner.angle + "°, depth " + stPlaner.depth);
+            " " + state.unit + ", " + cuts + " passes at " + stPlaner.angle + "°, depth " + stPlaner.depth +
+            (over ? ", overcutting the table edge" : ""));
         runCommand(lines.join("\n"));
     });
 
