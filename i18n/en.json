@@ -1474,7 +1474,10 @@
             "x_at_bottom": "X @ bottom",
             "x_at_top": "X @ top",
             "y_at_left": "Y @ left",
-            "y_at_right": "Y @ right"
+            "y_at_right": "Y @ right",
+            "hole": "Hole",
+            "drill_bit_title": "Bit diameter — with a larger hole diameter, DRILL bores the hole with a spiral plunge",
+            "drill_hole_title": "Hole diameter — leave empty (or equal to the bit) to plunge straight"
         },
         "tools": {
             "title": "Tools",
@@ -1557,7 +1560,8 @@
             "set_drill_depth": "Set a drilling depth first.",
             "set_thickness": "Set the material thickness — with Z zeroed on the table it locates the material surface.",
             "set_array_spacing": "Set the array spacing first.",
-            "job_added": "Job added to the queue"
+            "job_added": "Job added to the queue",
+            "hole_smaller_than_bit": "The hole diameter is smaller than the bit."
         }
     }
 }

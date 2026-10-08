@@ -483,6 +483,21 @@ body {
 .ts-sts-mode { width: 28px; height: 30px; font-size: 0.95em; }
 .ts-sts-mode.active { background: #2980b9; border-color: #2471a3; color: #fff; }
 
+/* Drill bore column: bit/hole diameters for spiral-bore holes */
+.ts-st-borecol { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+.ts-st-borecol label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.ts-st-borecol input[type="number"] {
+    width: 4.2em;
+    height: 1.9em;
+    font-size: 1em;
+    padding: 1px 4px;
+    margin: 0;
+    border: 1px solid #d5dbdb;
+    border-radius: 4px;
+    color: #2c3e50;
+    text-align: center;
+}
+
 /* Planer panel: params stack, angle slider + direction radios */
 .ts-stp-params { align-items: flex-start; }
 .ts-stp-params label { display: flex; flex-direction: column; gap: 2px; margin: 0; }

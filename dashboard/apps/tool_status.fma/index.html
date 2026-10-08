@@ -196,6 +196,18 @@
                                 <input type="range" id="st-drill-slider" class="ts-st-vslider" min="0" max="1.5" step="0.01" value="0">
                                 <input type="number" id="st-drill-depth" step="any" min="0">
                             </div>
+                            <!-- Spiral bore: with a bit diameter and a larger
+                                 hole diameter, DRILL helixes the bit around the
+                                 hole instead of plunging straight. Stays
+                                 visible in Array mode — it applies per hole. -->
+                            <div class="ts-st-borecol">
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.bit">Bit</span> &#216; (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="st-drill-bit" step="any" min="0" title="Bit diameter — with a larger hole diameter, DRILL bores the hole with a spiral plunge" data-i18n-title="tool_status.shoptools.drill_bit_title">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.hole">Hole</span> &#216; (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="st-drill-hole" step="any" min="0" title="Hole diameter — leave empty (or equal to the bit) to plunge straight" data-i18n-title="tool_status.shoptools.drill_hole_title">
+                                </label>
+                            </div>
                             <div class="ts-st-xseccol">
                                 <div class="ts-st-xsecwrap">
                                     <span class="ts-st-minilabel ts-st-zzlabel" data-i18n="tool_status.shoptools.z_zero">Z zero</span>
