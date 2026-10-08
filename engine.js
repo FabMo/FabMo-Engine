@@ -22,7 +22,7 @@ var log = logModule.logger("engine");
 //require("./log").setGlobalLevel("g2");
 
 // Rotate logs on startup to prevent accumulation (note there is also a limit in the log module; not coordinated)
-logModule.rotateLogs(10, function(err) {
+logModule.rotateLogs(30, function(err) {
     if (err) {
         log.error("Failed to rotate logs on startup: " + err);
     } else {

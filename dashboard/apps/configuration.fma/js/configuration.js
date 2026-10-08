@@ -217,6 +217,14 @@ var configData = null;
 // button, #btn-open-updater). #btn-update is wired in the "Update
 // notification" module at the bottom of this file.
 
+// Download the support diagnostic bundle (logs + G2 flight recordings +
+// system snapshots, zipped server-side by GET /log/bundle). Opened via the
+// parent window because the sandboxed app iframe can't trigger downloads.
+$('#btn-download-diagnostics').click(function(evt) {
+    evt.preventDefault();
+    fabmo.navigate('/log/bundle', { target: '_blank' });
+});
+
 $('#update-input').change(function(evt) {
     var files = [];
     for(var i=0; i<evt.target.files.length; i++) {

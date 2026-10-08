@@ -13,7 +13,12 @@ var jsesc = require('jsesc');
 var _suppress = false;
 var log_buffer = [];
 var LOG_BUFFER_SIZE = 5000;
-var PERSISTENT_LOG_COUNT = 10;
+var PERSISTENT_LOG_COUNT = 30;
+// Always-on, bounded G2 traffic recorder (see FlightRecorder below). The
+// Logger.g2 shorthand feeds it on every serial send/receive regardless of
+// the configured log level — the level filter only gates file/console
+// output — so the last few minutes of traffic are always available to the
+// disconnect diagnostics.
 var flightRecorder = null;
 var tickTime = null;
 
@@ -61,6 +66,11 @@ LOG_LEVELS = {
  * The flight replayer can be found here, and has documentation of its own:
  * https://github.com/FabMo/g2-flight-replayer
  */
+// Cap on retained flight records. Status reports flow constantly, so this
+// window covers the last several minutes of G2 traffic — enough to see what
+// led up to a disconnect — at a bounded memory cost (~a few hundred KB).
+var FLIGHT_RECORDER_MAX_RECORDS = 3000;
+
 var FlightRecorder = function() {
   this.records = []
   this.firstTime = 0
@@ -78,6 +88,12 @@ var FlightRecorder = function() {
 FlightRecorder.prototype.record = function(channel, dir, data) {
   // Get the current time
   var t = new Date().getTime();
+
+  // Ring buffer: drop the oldest record once the cap is reached, so the
+  // recorder can run always-on without growing unbounded.
+  if(this.records.length >= FLIGHT_RECORDER_MAX_RECORDS) {
+    this.records.shift();
+  }
 
   // Add the current message to the record
   this.records.push({
@@ -121,6 +137,9 @@ FlightRecorder.prototype.save = function(filename, callback) {
   fs.writeFile(filename, JSON.stringify(this.getFlightLog(), null, 2), callback);
 }
 
+// Create the always-on recorder (bounded; see record() above)
+flightRecorder = new FlightRecorder();
+
 // Set the global logging level to the provided value.  This supersedes the default log level for individual loggers.
 // lvl - can be a name such as g2,debug,etc or can be a numeric level
 function setGlobalLevel(lvl){
@@ -143,18 +162,11 @@ function setGlobalLevel(lvl){
 		else {
 			logger('log').warn('Invalid log level: ' + lvl);
 		}
-		////## Flight recorder disabled for now
-		//       - not being used (same info in normal log and debug stream)
-		//       - exclusive focus on g2 channel no longer as important as it once was
-		// if(lvl === "g2") {
-		// 	_log.info("Creating flight recorder...")
-		// 	flightRecorder = new FlightRecorder();
-		// } else {
-		// 	if(flightRecorder) {
-		// 		_log.info("Destroying flight recorder...")				
-		// 	}
-		flightRecorder = null;
-		// }
+		// NOTE (2026-10): the flight recorder is no longer tied to the "g2"
+		// log level. It runs always-on with a bounded ring buffer (see
+		// FLIGHT_RECORDER_MAX_RECORDS) so the last few minutes of G2
+		// traffic are available for the disconnect diagnostics regardless
+		// of the configured log level. See saveCurrentFlightLog below.
 	}
 }
 
@@ -501,6 +513,33 @@ var saveCurrentLog = function(source, callback) {
 };
 
 
+// Save the current flight recording (recent G2 traffic) to a timestamped
+// JSON file in the log directory, named like the saveCurrentLog files so
+// the rotation and the diagnostic bundle pick it up. Asynchronous.
+var saveCurrentFlightLog = function(source, callback) {
+	callback = callback || function() {};
+	source = source || 'emergency';
+	try {
+		if(!flightRecorder || flightRecorder.records.length === 0) {
+			return callback(null, null); // nothing recorded (e.g. never connected)
+		}
+		var dir = require('./config').getDataDir('log');
+		var filename = path.join(dir, 'fabmo-' + source + '-' + Date.now() + '-flight.json');
+		flightRecorder.save(filename, function(err) {
+			if(err) {
+				_log.error("Failed to save " + source + " flight log: " + err);
+				return callback(err);
+			}
+			_log.info(source + " flight log saved to " + filename);
+			callback(null, filename);
+		});
+	} catch(e) {
+		_log.error("Error saving " + source + " flight log: " + e);
+		callback(e);
+	}
+};
+
+exports.saveCurrentFlightLog = saveCurrentFlightLog;
 exports.getFlightLog = getFlightLog;
 exports.FlightRecorder = FlightRecorder;
 exports.suppress = suppress;

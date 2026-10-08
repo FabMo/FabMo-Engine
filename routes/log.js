@@ -82,7 +82,7 @@ var getLog = function (req, res, next) {
                     log.logger('routes').info("Log saved to " + filename);
                     
                     // Rotate logs asynchronously (keeps 10 most recent)
-                    log.rotateLogs(10, function(rotateErr) {
+                    log.rotateLogs(30, function(rotateErr) {
                         if (rotateErr) {
                             log.logger('routes').error("Error rotating logs: " + rotateErr);
                         }
@@ -127,7 +127,7 @@ var saveLog = function (req, res, next) {
                 log.logger('routes').info("User explicitly saved log to " + filename);
                 
                 // Rotate logs AFTER sending response
-                log.rotateLogs(10, function(rotateErr) {
+                log.rotateLogs(30, function(rotateErr) {
                     if (rotateErr) {
                         log.logger('routes').error("Error rotating logs: " + rotateErr);
                     }
@@ -186,9 +186,74 @@ var clearLog = function (req, res, next) {
     next();
 };
 
+/**
+ * @apiGroup Log
+ * @api {get} /log/bundle Download diagnostic bundle
+ * @apiDescription Download a zip of everything support needs to diagnose a
+ *   problem (notably G2 disconnects): every file in the log directory —
+ *   including the fabmo-g2-disconnect-* log/flight/system captures — plus
+ *   the CURRENT in-memory log buffer and a fresh system snapshot taken at
+ *   download time. The customer clicks one button in the config app and
+ *   emails the resulting file.
+ */
+var getLogBundle = function (req, res, next) {
+    var AdmZip = require("adm-zip");
+    var diagnostics = require("../diagnostics");
+    var config = require("../config");
+    var routeLog = log.logger("routes");
+
+    diagnostics.captureSystemSnapshot(function (snapErr, snapshotText) {
+        try {
+            var zip = new AdmZip();
+            var dir = config.getDataDir("log");
+            var skipped = [];
+            fs.readdirSync(dir).forEach(function (f) {
+                var full = path.join(dir, f);
+                try {
+                    if (fs.statSync(full).isFile()) {
+                        zip.addLocalFile(full);
+                    }
+                } catch (e) {
+                    skipped.push(f + " (" + e.message + ")");
+                }
+            });
+            zip.addFile("current-log.txt", Buffer.from(log.getLogBuffer() || ""));
+            zip.addFile("system-snapshot-now.txt", Buffer.from(snapshotText || "snapshot failed"));
+            if (skipped.length) {
+                zip.addFile("bundle-warnings.txt", Buffer.from("Files skipped:\n" + skipped.join("\n")));
+            }
+
+            var machineName = "fabmo";
+            try {
+                machineName = (config.engine.get("machine_name") || "fabmo")
+                    .replace(/[^a-zA-Z0-9_-]+/g, "_");
+            } catch (e) {
+                /* default stands */
+            }
+            var stamp = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 16);
+            var filename = "fabmo-diagnostics-" + machineName + "-" + stamp + ".zip";
+            var buffer = zip.toBuffer();
+            routeLog.info("Serving diagnostic bundle " + filename + " (" + buffer.length + " bytes)");
+            res.writeHead(200, {
+                "Content-Type": "application/zip",
+                "Content-Disposition": 'attachment; filename="' + filename + '"',
+                "Content-Length": buffer.length,
+            });
+            res.write(buffer);
+            res.end();
+            next();
+        } catch (e) {
+            routeLog.error("Could not build diagnostic bundle: " + e.message);
+            res.json({ status: "error", message: "Could not build diagnostic bundle: " + e.message });
+            next();
+        }
+    });
+};
+
 module.exports = function (server) {
     server.get("/log", getLog);
     server.post("/log/save", saveLog);
     server.del("/log", clearLog);
     server.get("/flight", getFlightLog);
+    server.get("/log/bundle", getLogBundle);
 };
