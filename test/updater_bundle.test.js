@@ -75,3 +75,71 @@ describe("findBundledPackage", function () {
         });
     });
 });
+
+describe("start() scheduling", function () {
+    var T = bundle._timing;
+    var origDecide, origInstall;
+    beforeEach(function () {
+        jest.useFakeTimers();
+        origDecide = bundle._impl.decide;
+        origInstall = bundle._impl.attemptInstall;
+    });
+    afterEach(function () {
+        bundle._impl.decide = origDecide;
+        bundle._impl.attemptInstall = origInstall;
+        jest.clearAllTimers();
+        jest.useRealTimers();
+    });
+
+    function machineIn(state) {
+        return { status: { state: state } };
+    }
+    var BUNDLE = { install: true, reason: "test", bundle: { version: "v9.9.9", name: "x.fmp", path: "/x" } };
+
+    test("installs right after the initial delay when the machine is idle", function () {
+        bundle._impl.decide = jest.fn().mockReturnValue(BUNDLE);
+        var installed = jest.fn(function (b, cb) { cb(null); });
+        bundle._impl.attemptInstall = installed;
+        bundle.start(machineIn("idle"));
+        jest.advanceTimersByTime(T.INITIAL_DELAY_MS - 1);
+        expect(installed).not.toHaveBeenCalled();
+        jest.advanceTimersByTime(1);
+        expect(installed).toHaveBeenCalledTimes(1);
+        // the initial delay is seconds, not minutes: before the user is back
+        expect(T.INITIAL_DELAY_MS).toBeLessThanOrEqual(30 * 1000);
+    });
+
+    test("polls for the machine's first idle, then installs once", function () {
+        bundle._impl.decide = jest.fn().mockReturnValue(BUNDLE);
+        var installed = jest.fn(function (b, cb) { cb(null); });
+        bundle._impl.attemptInstall = installed;
+        var machine = machineIn("not_ready");
+        bundle.start(machine);
+        jest.advanceTimersByTime(T.INITIAL_DELAY_MS + T.IDLE_POLL_MS * 2);
+        expect(installed).not.toHaveBeenCalled();
+        machine.status.state = "idle";
+        jest.advanceTimersByTime(T.IDLE_POLL_MS);
+        expect(installed).toHaveBeenCalledTimes(1);
+        jest.advanceTimersByTime(T.IDLE_POLL_MS * 10);
+        expect(installed).toHaveBeenCalledTimes(1);
+    });
+
+    test("a transient failure retries, bounded by MAX_ATTEMPTS", function () {
+        bundle._impl.decide = jest.fn().mockReturnValue(BUNDLE);
+        var installed = jest.fn(function (b, cb) { cb(new Error("updater unreachable")); });
+        bundle._impl.attemptInstall = installed;
+        bundle.start(machineIn("idle"));
+        jest.advanceTimersByTime(T.INITIAL_DELAY_MS + T.FAIL_RETRY_MS * (T.MAX_ATTEMPTS + 3));
+        expect(installed).toHaveBeenCalledTimes(T.MAX_ATTEMPTS);
+    });
+
+    test("nothing to install → no attempt and no lingering timers", function () {
+        bundle._impl.decide = jest.fn().mockReturnValue({ install: false, reason: "up to date", bundle: null });
+        var installed = jest.fn();
+        bundle._impl.attemptInstall = installed;
+        bundle.start(machineIn("idle"));
+        jest.advanceTimersByTime(T.INITIAL_DELAY_MS * 10);
+        expect(installed).not.toHaveBeenCalled();
+        expect(jest.getTimerCount()).toBe(0);
+    });
+});
