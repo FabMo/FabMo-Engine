@@ -483,8 +483,41 @@ body {
 .ts-sts-mode { width: 28px; height: 30px; font-size: 0.95em; }
 .ts-sts-mode.active { background: #2980b9; border-color: #2471a3; color: #fff; }
 
+/* Chop saw: map + params stacked left, cut list right */
+#st-panel-chopsaw .ts-st-drill-row {
+    display: grid;
+    grid-template-columns: auto minmax(12em, 1fr);
+    grid-template-areas:
+        "map order"
+        "params order";
+    gap: 5px 12px;
+    align-items: start;
+    justify-content: start;
+}
+#st-panel-chopsaw .ts-st-env { grid-area: map; }
+#st-panel-chopsaw .ts-st-ordercol { grid-area: order; }
+.ts-stcs-paramgrid {
+    grid-area: params;
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 4px 14px;
+    justify-content: start;
+}
+.ts-stcs-paramgrid label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.ts-stcs-paramgrid input[type="number"] {
+    width: 4.2em;
+    height: 1.9em;
+    font-size: 1em;
+    padding: 1px 4px;
+    margin: 0;
+    border: 1px solid #d5dbdb;
+    border-radius: 4px;
+    color: #2c3e50;
+    text-align: center;
+}
+
 /* Chop saw: entry row + cut list + nest summary */
-.ts-st-ordercol { display: flex; flex-direction: column; gap: 3px; flex: 0 1 16em; min-width: 12em; }
+.ts-st-ordercol { display: flex; flex-direction: column; gap: 3px; }
 .ts-stcs-entry { display: flex; align-items: flex-end; gap: 3px; }
 .ts-stcs-entry label { display: flex; flex-direction: column; gap: 1px; margin: 0; }
 .ts-stcs-entry label .ts-st-minilabel { margin-bottom: 0; text-align: center; }

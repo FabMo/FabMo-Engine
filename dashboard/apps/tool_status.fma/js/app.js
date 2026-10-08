@@ -469,6 +469,7 @@ function stEnvCap(svgId) {
     var used = 0;
     Array.prototype.forEach.call(row.children, function (el) {
         if (el === envEl || !el.offsetParent) return; // self / display:none
+        if (el.classList.contains("ts-st-below")) return; // sits under the map, not beside it
         used += el.offsetWidth + 6; // column + its flex gap
     });
     var avail = rowW - used;
@@ -492,6 +493,7 @@ function stPlaceBtns(panelId) {
     var lo = Infinity, hi = -Infinity;
     Array.prototype.forEach.call(row.children, function (el) {
         if (el === envEl || !el.offsetParent) return;
+        if (el.classList.contains("ts-st-below")) return; // under the map — not a control column
         var b = el.getBoundingClientRect();
         lo = Math.min(lo, b.left);
         hi = Math.max(hi, b.right);

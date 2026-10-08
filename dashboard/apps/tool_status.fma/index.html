@@ -385,7 +385,7 @@
                             <button class="ts-iconbtn ts-st-back" title="Back to shop tools" data-i18n-title="tool_status.shoptools.back_title"><i class="fa fa-chevron-left"></i></button>
                             <span class="ts-st-title" data-i18n="tool_status.shoptools.chopsaw">Chop Saw</span>
                             <div class="ts-st-btncol">
-                                <button class="ts-cmd ts-cmd-primary machine-cmd" id="btn-st-chop" title="Cut the nested order from the sheet" data-i18n-title="tool_status.shoptools.chop_btn_title" data-i18n="tool_status.shoptools.chop_btn">CUT</button>
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-chop" title="Cut the nested order from the sheet" data-i18n-title="tool_status.shoptools.chop_btn_title" data-i18n="tool_status.shoptools.chop_btn">CUT</button>
                             </div>
                         </div>
                         <div class="ts-st-drill-row">
@@ -411,7 +411,10 @@
                                 <div id="stcs-list" class="ts-stcs-list"></div>
                                 <div class="ts-st-minilabel" id="stcs-summary"></div>
                             </div>
-                            <div class="ts-st-depthcol ts-stp-params">
+                            <!-- Sheet/bit params sit in two columns under the
+                                 table preview; ts-st-below keeps them out of
+                                 the map-width math (stEnvCap/stPlaceBtns). -->
+                            <div class="ts-stcs-paramgrid ts-st-below">
                                 <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.sheet_w">Sheet W</span> (<span class="st-units">in</span>)</span>
                                     <input type="number" id="stcs-sheet-w" step="any" min="0">
                                 </label>
