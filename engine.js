@@ -514,6 +514,24 @@ Engine.prototype.start = function (callback) {
                 }
             }.bind(this),
 
+            // First start after an update: additively reconcile the on-tool
+            // config with what the updated profiles ship — NEW keys are
+            // added (machine.json, g2.json, opensbp.json), existing values
+            // are never touched (see profile_reconcile.js). Runs before the
+            // machine/driver/opensbp configs load so they read the result.
+            function reconcile_profile_config(callback) {
+                if (!this.version_changed) {
+                    return callback();
+                }
+                var reconcile = require("./profile_reconcile");
+                reconcile.run(config.engine.get("profile") || "default", function (err) {
+                    if (err) {
+                        log.warn("Profile config reconcile failed (continuing): " + err.message);
+                    }
+                    callback();
+                });
+            }.bind(this),
+
             function create_data_directories(callback) {
                 log.debug("Create_data_directories ...");
                 config.createDataDirectories(callback);
@@ -748,7 +766,19 @@ Engine.prototype.start = function (callback) {
                     if (err) {
                         log.warn("Could not install shipped macros: " + err);
                     }
-                    macros.load(callback);
+                    macros.load(function (loadErr) {
+                        // Self-heal the base hashes every boot (getStatus
+                        // re-records a macro's base whenever installed ==
+                        // default). Keeping bases current while a machine is
+                        // stock is what lets installProfile auto-apply the
+                        // NEXT update's defaults to unmodified macros.
+                        try {
+                            macros.getStatus();
+                        } catch (e) {
+                            log.warn("Macro status self-heal failed: " + e.message);
+                        }
+                        callback(loadErr);
+                    });
                 });
             },
 
@@ -1012,6 +1042,27 @@ Engine.prototype.start = function (callback) {
                                         });
                                     });
                                     return;
+                                }
+
+                                // The profile-match path (the normal post-update
+                                // case) no longer touches config or macros —
+                                // profiles.apply replaces only apps, and the
+                                // additive reconcile has already added any new
+                                // keys. Nothing was lost, so the "keep new /
+                                // restore old settings" prompt would be pure
+                                // confusion: remove the pre-auto-profile backup
+                                // so the dashboard never offers it. First-run
+                                // setup keeps its backup (and prompt) as a
+                                // safety net.
+                                if (this.pending_profile_change && this.pending_profile_change.isProfileMatch) {
+                                    require("./config_watcher").cleanupPreAutoProfileBackup(function (cuErr) {
+                                        if (cuErr) {
+                                            log.warn(
+                                                "Could not remove pre-auto-profile backup after non-destructive apply: " +
+                                                    cuErr.message
+                                            );
+                                        }
+                                    });
                                 }
 
                                 // Skip restart if flagged - config was already loaded correctly
