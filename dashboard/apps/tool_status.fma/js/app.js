@@ -366,6 +366,11 @@ function showShopTool(tool) {
 var stDrill = {
     depth: 0.25,
     thickness: 0.75,
+    // Spiral bore: with bit > 0 and hole > bit, DRILL helixes the bit
+    // center around a circle of radius (hole - bit)/2 instead of
+    // plunging straight. 0 = unset → classic straight plunge.
+    bit: 0,
+    hole: 0,
     zzero: "material", // "material" | "table"
     // Envelope-relative machine coords of where DRILL should go; null =
     // drill at the machine position (classic in-place behavior). Session
@@ -397,6 +402,48 @@ function stCuts() {
     var t = stDrill.thickness;
     var d = stDrill.depth;
     return { material: Math.min(d, t), table: Math.max(0, d - t), through: d >= t };
+}
+
+// Bit-center orbit radii that clear a hole of stDrill.hole with a bit of
+// stDrill.bit, inner ring first. The innermost ring's sweep must reach
+// the hole's center (orbit ≤ bit/2) or a core pillar would be left
+// standing to break loose; outward rings step ≤ bit/2 (50% stepover) and
+// the last lands exactly on (hole - bit)/2, the finished wall.
+function stSpiralRings() {
+    var rcOuter = (stDrill.hole - stDrill.bit) / 2;
+    var step = stDrill.bit / 2;
+    var rings = [];
+    for (var r = Math.min(rcOuter, step); r < rcOuter - 1e-9; r += step) {
+        rings.push(Math.round(r * 10000) / 10000);
+    }
+    rings.push(Math.round(rcOuter * 10000) / 10000);
+    return rings;
+}
+
+// SBP for one spiral-bored hole centered at (cwx, cwy) in work coords.
+// Each ring: jog to the circle's west point just above the surface, then
+// a CG option-4 helix — full circles descending plg per revolution, with
+// a bottom clean-up circle at final depth — then retract to just above
+// the surface for the hop to the next ring. CCW (climb for an inside cut
+// with a CW spindle), plunging ~half the bit diameter per revolution,
+// spread evenly so the bottom pass lands exactly on targetZ.
+function stSpiralLines(cwx, cwy, surfZ, targetZ, safeZ) {
+    var r4 = function (v) { return Math.round(v * 10000) / 10000; };
+    var clear = state.unit === "mm" ? 0.5 : 0.02;
+    var startZ = r4(surfZ + clear);
+    var reps = Math.max(1, Math.ceil((startZ - targetZ) / (stDrill.bit / 2)));
+    var plg = Math.round(((targetZ - startZ) / reps) * 1e6) / 1e6;
+    var sy = r4(cwy);
+    var lines = ["JZ, " + safeZ];
+    stSpiralRings().forEach(function (rc, i) {
+        var sx = r4(cwx - rc);
+        lines.push("J2, " + sx + ", " + sy);
+        if (i === 0) lines.push("JZ, " + startZ);
+        lines.push("CG, , " + sx + ", " + sy + ", " + rc + ", 0, , 2, " + plg + ", " + reps + ", , , 4");
+        lines.push("JZ, " + startZ);
+    });
+    lines.push("JZ, " + safeZ);
+    return lines;
 }
 
 // Width available to an envelope map: whatever the row has left after
@@ -900,7 +947,12 @@ function renderStXsec() {
     var matCutPx = Math.min(cuts.material, t) * scale;
     var tableCutPx = Math.min(cuts.table * scale, TABLE_H - 4);
     var cx = LX + LW / 2;
+    // Spiral bore reads as a wider hole: scale the bar by hole/bit,
+    // capped so it stays inside the slab.
     var barW = 10;
+    if (stDrill.bit > 0 && stDrill.hole > stDrill.bit) {
+        barW = Math.min(LW - 8, Math.round((10 * stDrill.hole) / stDrill.bit));
+    }
 
     var zzMat = stDrill.zzero === "material";
     var parts = [
@@ -1469,12 +1521,16 @@ function stSyncInputs(fromSlider) {
     if (!fromSlider) $slider.val(Math.min(stDrill.depth, max));
     $("#st-drill-depth").val(stDrill.depth > 0 ? stDrill.depth : "");
     $("#st-material").val(stDrill.thickness > 0 ? stDrill.thickness : "");
+    $("#st-drill-bit").val(stDrill.bit > 0 ? stDrill.bit : "");
+    $("#st-drill-hole").val(stDrill.hole > 0 ? stDrill.hole : "");
 }
 
 function stSaveDrill() {
     saveShopToolPref("drill", {
         depth: stDrill.depth,
         thickness: stDrill.thickness,
+        bit: stDrill.bit,
+        hole: stDrill.hole,
         zzero: stDrill.zzero,
         unit: state.unit,
         array: { xn: stArray.xn, yn: stArray.yn, xs: stArray.xs, ys: stArray.ys },
@@ -2440,6 +2496,10 @@ $(document).ready(function () {
             var thickness = inCurrentUnits(p.thickness, p.unit);
             stDrill.depth = depth !== null && depth > 0 ? depth : d.depth;
             stDrill.thickness = thickness !== null && thickness > 0 ? thickness : d.thickness;
+            var dbit = inCurrentUnits(p.bit, p.unit);
+            var dhole = inCurrentUnits(p.hole, p.unit);
+            stDrill.bit = dbit !== null && dbit > 0 ? dbit : 0;
+            stDrill.hole = dhole !== null && dhole > 0 ? dhole : 0;
             stDrill.zzero = p.zzero === "table" ? "table" : "material";
             var d2 = stDefaults();
             var arr = p.array || {};
@@ -3177,6 +3237,15 @@ $(document).ready(function () {
         stSaveDrill();
     });
 
+    $("#st-drill-bit, #st-drill-hole").on("change", function () {
+        var bit = parseFloat($("#st-drill-bit").val());
+        var hole = parseFloat($("#st-drill-hole").val());
+        stDrill.bit = bit > 0 ? bit : 0;
+        stDrill.hole = hole > 0 ? hole : 0;
+        renderStDrill();
+        stSaveDrill();
+    });
+
     $('input[name="st-zzero"]').on("change", function () {
         stDrill.zzero = this.value === "table" ? "table" : "material";
         renderStDrill();
@@ -3199,6 +3268,21 @@ $(document).ready(function () {
         }
         var targetZ = zzTable ? stDrill.thickness - depth : -depth;
         targetZ = Math.round(targetZ * 10000) / 10000;
+        // Spiral bore applies when a bit and a LARGER hole are given;
+        // equal (or no hole) keeps the classic straight plunge.
+        var spiral = false;
+        if (stDrill.hole > 0) {
+            if (!(stDrill.bit > 0)) {
+                fabmo.notify("warning", window.t("tool_status.notify.set_bit_diameter"));
+                return;
+            }
+            if (stDrill.hole < stDrill.bit - 1e-9) {
+                fabmo.notify("warning", window.t("tool_status.notify.hole_smaller_than_bit"));
+                return;
+            }
+            spiral = stDrill.hole > stDrill.bit + 1e-9;
+        }
+        var surfZ = zzTable ? stDrill.thickness : 0;
         stSaveDrill();
         // Retract target: the shared safe-Z; a plain fallback clearance if
         // the machine has none set.
@@ -3228,20 +3312,35 @@ $(document).ready(function () {
             var by = tgt ? twy : Number(state.pos.y) || 0;
             for (var j = 0; j < stArray.yn; j++) {
                 for (var i = 0; i < stArray.xn; i++) {
-                    lines.push("JZ, " + safeZ);
-                    lines.push("J2, " + r4(bx + i * stArray.xs) + ", " + r4(by + j * stArray.ys));
-                    lines.push("MZ, " + targetZ);
+                    if (spiral) {
+                        lines.push.apply(lines, stSpiralLines(bx + i * stArray.xs, by + j * stArray.ys, surfZ, targetZ, safeZ));
+                    } else {
+                        lines.push("JZ, " + safeZ);
+                        lines.push("J2, " + r4(bx + i * stArray.xs) + ", " + r4(by + j * stArray.ys));
+                        lines.push("MZ, " + targetZ);
+                    }
                 }
             }
-            logMsg = "> drill array: " + stArray.xn + "×" + stArray.yn + " holes, " + depth + " " + state.unit + " into material (Z to " + targetZ + ")";
+            logMsg = "> drill array: " + stArray.xn + "×" + stArray.yn + " holes, " + depth + " " + state.unit + " into material (Z to " + targetZ + ")" +
+                (spiral ? ", spiral bore Ø" + stDrill.hole + " with Ø" + stDrill.bit + " bit" : "");
         } else {
-            if (tgt) {
-                lines.push("JZ, " + safeZ);
-                lines.push("J2, " + twx + ", " + twy);
+            if (spiral) {
+                // The helix needs the hole's center XY even when drilling
+                // in place — the circle starts a center-offset to its west.
+                var scx = tgt ? twx : r4(Number(state.pos.x) || 0);
+                var scy = tgt ? twy : r4(Number(state.pos.y) || 0);
+                lines.push.apply(lines, stSpiralLines(scx, scy, surfZ, targetZ, safeZ));
+                lines.push("J2, " + scx + ", " + scy); // back over the hole
+            } else {
+                if (tgt) {
+                    lines.push("JZ, " + safeZ);
+                    lines.push("J2, " + twx + ", " + twy);
+                }
+                lines.push("MZ, " + targetZ);
             }
-            lines.push("MZ, " + targetZ);
             logMsg = "> drill: " + depth + " " + state.unit + " into material (Z to " + targetZ + ")" +
-                (tgt ? " at " + twx + ", " + twy : "");
+                (tgt ? " at " + twx + ", " + twy : "") +
+                (spiral ? ", spiral bore Ø" + stDrill.hole + " with Ø" + stDrill.bit + " bit" : "");
         }
         lines.push("JZ, " + safeZ);
         lines.push("SO,1,0");
