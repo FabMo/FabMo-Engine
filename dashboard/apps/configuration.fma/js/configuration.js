@@ -1720,6 +1720,9 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
         }
         $('#btn-update').addClass('disabled');
         progress(window.t('config.software.update_usb_sending'));
+        // Take the screen over NOW: wandering off mid-transfer and being
+        // ambushed by the restart was the old failure mode.
+        fabmo.notifyUpdateStarted({ version: usbPkg.version, stage: 'sending' });
         $.ajax({
             url: '/updater/usb/install',
             method: 'POST',
@@ -1730,15 +1733,16 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
         }).done(function(resp) {
             if (resp && resp.status === 'success') {
                 progress(window.t('config.software.update_installing_restart'));
-                fabmo.notifyUpdateStarted({ version: usbPkg.version });
+                fabmo.notifyUpdateStarted({ version: usbPkg.version, stage: 'installing' });
             } else {
-                progress(window.t('config.software.update_failed', {
-                    message: (resp && resp.message) || 'unknown'
-                }), true);
+                var msg = (resp && resp.message) || 'unknown';
+                progress(window.t('config.software.update_failed', { message: msg }), true);
+                fabmo.notifyUpdateStarted({ stage: 'failed', message: msg });
                 $('#btn-update').removeClass('disabled');
             }
         }).fail(function(xhr, stat) {
             progress(window.t('config.software.update_failed', { message: stat }), true);
+            fabmo.notifyUpdateStarted({ stage: 'failed', message: stat });
             $('#btn-update').removeClass('disabled');
         });
     }
@@ -1761,6 +1765,11 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
 
     function serverSideInstall() {
         progress(window.t('config.software.update_downloading_tool'));
+        // Take the screen over for the download too — it can run for
+        // minutes on shop networks, and the user must not wander off and
+        // be ambushed by the restart when it finishes. The updater doesn't
+        // report download bytes, so the screen shows its indeterminate bar.
+        fabmo.notifyUpdateStarted({ version: latestPkg.version, stage: 'downloading' });
         $.ajax({
             url: '/updater/update/download',
             method: 'POST',
@@ -1771,21 +1780,30 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
         }).done(function(resp) {
             if (resp && resp.status === 'success') {
                 progress(window.t('config.software.update_installing_restart'));
-                // Hand the screen to the dashboard's update-progress page:
-                // the engine is about to stop and restart.
-                fabmo.notifyUpdateStarted({ version: latestPkg.version });
-                $.post('/updater/update/apply').fail(function() {
+                // The engine is about to stop and restart.
+                fabmo.notifyUpdateStarted({ version: latestPkg.version, stage: 'installing' });
+                $.post('/updater/update/apply').done(function(applyResp) {
+                    // The engine gates apply on machine-idle (a job may have
+                    // started from a pendant during the download) — a
+                    // rejection comes back as 200 + {status:"error"}.
+                    if (applyResp && applyResp.status === 'error') {
+                        progress(window.t('config.software.update_failed', { message: applyResp.message }), true);
+                        fabmo.notifyUpdateStarted({ stage: 'failed', message: applyResp.message });
+                        $('#btn-update').removeClass('disabled');
+                    }
+                }).fail(function() {
                     // The engine often restarts before this response lands —
                     // that is the success case, not an error.
                 });
             } else {
-                progress(window.t('config.software.update_failed', {
-                    message: (resp && resp.message) || 'unknown'
-                }), true);
+                var msg = (resp && resp.message) || 'unknown';
+                progress(window.t('config.software.update_failed', { message: msg }), true);
+                fabmo.notifyUpdateStarted({ stage: 'failed', message: msg });
                 $('#btn-update').removeClass('disabled');
             }
         }).fail(function(xhr, stat) {
             progress(window.t('config.software.update_failed', { message: stat }), true);
+            fabmo.notifyUpdateStarted({ stage: 'failed', message: stat });
             $('#btn-update').removeClass('disabled');
         });
     }
@@ -1804,11 +1822,17 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
         fd.append('file', file, file.name);
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/updater/update/manual');
+        var lastPct = -1;
         xhr.upload.onprogress = function(evt) {
             if (evt.lengthComputable) {
-                progress(window.t('config.software.update_uploading', {
-                    pct: Math.round((evt.loaded / evt.total) * 100)
-                }));
+                var pct = Math.round((evt.loaded / evt.total) * 100);
+                progress(window.t('config.software.update_uploading', { pct: pct }));
+                // The browser has real byte counts here — drive the update
+                // screen's determinate bar, one message per whole percent.
+                if (pct !== lastPct) {
+                    lastPct = pct;
+                    fabmo.notifyUpdateStarted({ stage: 'uploading', progress: pct });
+                }
             }
         };
         xhr.onload = function() {
@@ -1816,19 +1840,21 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
             try { resp = JSON.parse(xhr.responseText); } catch (e) { /* fall through */ }
             if (resp.status === 'success') {
                 progress(window.t('config.software.update_installing_restart'));
-                // The updater applies the relayed file immediately — hand the
-                // screen to the dashboard's update-progress page.
-                fabmo.notifyUpdateStarted({ version: latestPkg ? latestPkg.version : '' });
+                // The updater applies the relayed file immediately.
+                fabmo.notifyUpdateStarted({ version: latestPkg ? latestPkg.version : '', stage: 'installing' });
             } else {
-                progress(window.t('config.software.update_failed', {
-                    message: resp.message || ('HTTP ' + xhr.status)
-                }), true);
+                var msg = resp.message || ('HTTP ' + xhr.status);
+                progress(window.t('config.software.update_failed', { message: msg }), true);
+                fabmo.notifyUpdateStarted({ stage: 'failed', message: msg });
             }
         };
         xhr.onerror = function() {
             progress(window.t('config.software.update_failed', { message: 'upload error' }), true);
+            fabmo.notifyUpdateStarted({ stage: 'failed', message: 'upload error' });
         };
         progress(window.t('config.software.update_uploading', { pct: 0 }));
+        // Take the screen over before the upload starts.
+        fabmo.notifyUpdateStarted({ version: latestPkg ? latestPkg.version : '', stage: 'uploading', progress: 0 });
         xhr.send(fd);
     }
 

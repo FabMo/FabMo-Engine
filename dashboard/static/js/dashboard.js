@@ -362,13 +362,19 @@ define(function (require) {
             }.bind(this)
         );
 
-        // A software update is being applied (engine about to restart) —
-        // hand the screen to the update-progress page (see main.js).
+        // A software update is in progress — hand the screen to the
+        // update-progress page (see main.js). The first call takes the
+        // screen over (now at download start, not just at apply); repeat
+        // calls move it through stages ({stage, progress, message}).
         this._registerHandler(
             "notifyUpdateStarted",
             function (data, callback) {
                 if (window.fabmoUpdateScreen) {
-                    window.fabmoUpdateScreen.begin(data || {});
+                    if (window.fabmoUpdateScreen.active) {
+                        window.fabmoUpdateScreen.update(data || {});
+                    } else {
+                        window.fabmoUpdateScreen.begin(data || {});
+                    }
                 }
                 callback(null);
             }.bind(this)
