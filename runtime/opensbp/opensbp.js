@@ -1512,12 +1512,19 @@ SBPRuntime.prototype._executeNext = function () {
                 this._end();
             } else {
                 if (!this.quit_pending) {
-                    // EOF send M30.
-                    this.emit_gcode("M30");
-                    // ... _end triggers exit from this runtime
-                    this._end();
                     // ... quit_pending is a local runtime flag to prevent multiple M30s etc
                     this.quit_pending = true;
+                    // EOF: end the cycle the way the gcode runtime does — write
+                    // the M30 directly (sendM30) instead of streaming it. We only
+                    // get here once gcodesPending has cleared, i.e. g2core is
+                    // parked at stat:3, and a STREAMED M30 arriving at a parked
+                    // g2core can be swallowed (the documented quirk G2.sendM30
+                    // exists for): no stat:4 ever comes, the cycle context never
+                    // tears down, and the next run dies with "@line-1: Cannot
+                    // create a new cycle context."
+                    this.driver.sendM30();
+                    // ... _end triggers exit from this runtime
+                    this._end();
                 }
             }
             return;
