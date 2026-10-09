@@ -369,9 +369,10 @@ function Machine(control_path, callback) {
                 : 5;
             this.status.info = {
                 id: this.info_id,
-                message:
-                    "Reconnecting to motion controller… If the cable was unplugged, plug it back in now. " +
-                    "Retrying for up to " + maxMin + " minutes.",
+                message: payload && payload.auto
+                    ? "Motion controller detected — reconnecting automatically…"
+                    : "Reconnecting to motion controller… If the cable was unplugged, plug it back in now. " +
+                      "Retrying for up to " + maxMin + " minutes.",
                 custom: {
                     title: "Reconnecting…",
                     noButton: true,
@@ -405,6 +406,38 @@ function Machine(control_path, callback) {
                     "Click Cancel to stop.",
                 custom: {
                     title: "Reconnecting — first attempt failed",
+                    ok: null,
+                    cancel: { text: "Cancel", func: "cancelReconnect" },
+                },
+            };
+            this.emit("status", this.status);
+        }.bind(this)
+    );
+
+    // While the retry loop runs, the driver escalates to USB-level recovery
+    // if the G2's device node stays absent (dropped off the bus). Keep the
+    // modal text in step so the user can see recovery is being attempted.
+    this.driver.on(
+        "reconnect-escalation",
+        function (payload) {
+            var action = payload && payload.action;
+            var message;
+            if (action === "usb_rebind") {
+                message =
+                    "Motion controller is not responding — resetting its USB connection and retrying…";
+            } else if (action === "usb_power_cycle") {
+                message =
+                    "Motion controller is still not responding — power-cycling its USB port and retrying…";
+            } else {
+                return;
+            }
+            log.info("G2 reconnect escalation: " + action);
+            this.info_id += 1;
+            this.status.info = {
+                id: this.info_id,
+                message: message,
+                custom: {
+                    title: "Reconnecting…",
                     ok: null,
                     cancel: { text: "Cancel", func: "cancelReconnect" },
                 },

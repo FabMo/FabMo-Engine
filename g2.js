@@ -12,6 +12,7 @@ var async = require("async");
 var util = require("util");
 var Queue = require("./util").Queue;
 var log = require("./log").logger("g2");
+var g2_recovery = require("./g2_recovery");
 var process = require("process");
 var stream = require("stream");
 //const { last } = require("underscore");
@@ -40,6 +41,14 @@ var RECONNECT_BASE_DELAY = 1000; // 1s initial retry delay
 var RECONNECT_MAX_DELAY = 30000; // 30s max retry delay
 var MAX_RECONNECT_TIME = 300000; // 5 minutes total before giving up
 var RECONNECT_READY_TIMEOUT = 5000; // 5s to wait for SYSTEM READY on each attempt
+var CONNECT_DEADLINE = 8000; // overall cap on the initial connect (ready + kill/status sequence)
+
+// Reconnect escalation: when the G2's device node has been absent this long,
+// try progressively stronger USB-level recovery (see g2_recovery.js).
+var USB_REBIND_AFTER = 15000; // host-side unbind/rebind of the port/hub
+var USB_POWER_CYCLE_AFTER = 45000; // VBUS power-cycle via uhubctl
+var DEVICE_WATCH_INTERVAL = 2000; // poll interval for device-node reappearance while disconnected
+var SOFT_RESET_CLOSE_TIMEOUT = 15000; // expect the serial close within this long of a Ctrl-X reset
 
 // Status poll constants
 var STATUS_POLL_INTERVAL = 5000; // 5s between status poll checks
@@ -206,6 +215,15 @@ function G2() {
     // Counts failed attempts within the current reconnect() loop, reset at
     // each loop start. Used to drive the "first attempt failed" UX in machine.js.
     this._reconnectAttempts = 0;
+    // Polls for the serial device node to reappear while disconnected, so a
+    // board that recovers on its own (or is reset/power-cycled) reconnects
+    // without waiting for the user to click Reconnect.
+    this._deviceWatchTimer = null;
+    // Set by softReset() so the resulting serial close is treated as the
+    // expected consequence of a deliberate board reset (auto-reconnect, no
+    // disconnect modal, no diagnostics dump).
+    this._expectReset = false;
+    this._expectResetTimer = null;
 
     // Status poll state
     this._lastDataReceived = 0;
@@ -402,9 +420,64 @@ G2.prototype._createCycleContext = function () {
 };
 
 // Actually open the serial port and configure G2 based on stored settings
-G2.prototype.connect = function (path, callback) {
+G2.prototype.connect = function (path, origCallback) {
     // Store paths for safe keeping
     this._serialPath = path;
+
+    // Guard the whole connect so it resolves exactly once. Besides the
+    // "never got SYSTEM READY" case, the board can send its banner and then
+    // stop accepting commands (a wedged G2 whose USB still enumerates and
+    // boots) — in that state the post-ready kill/status writes never drain
+    // and the connect would otherwise hang forever, blocking engine startup
+    // (HTTP/dashboard never come up). A single overall deadline converts that
+    // into a normal connect failure so startup proceeds and the user-facing
+    // reconnect path takes over. The success callback still fires immediately,
+    // so nothing about the healthy-connect timing changes.
+    var connectFinished = false;
+    var connectDeadline = null;
+    var callback = function (err, res) {
+        if (connectFinished) {
+            return;
+        }
+        connectFinished = true;
+        if (connectDeadline) {
+            clearTimeout(connectDeadline);
+            connectDeadline = null;
+        }
+        origCallback(err, res);
+    };
+    var that = this;
+    connectDeadline = setTimeout(function () {
+        if (!that.connected) {
+            log.error("G2 connect timed out waiting for SYSTEM READY");
+        } else {
+            log.error("G2 connect timed out: board sent SYSTEM READY but did not respond to commands");
+        }
+        // Release the port before failing. The port opened successfully (we
+        // may even have seen SYSTEM READY), so an orphaned open handle would
+        // keep the OS lock and make every subsequent reconnect attempt fail
+        // with "Cannot lock port". Close it, then fail — the error callback
+        // triggers the reconnect loop, which must find the port free.
+        var finishErr = function () {
+            callback(new Error("G2 connect did not complete within the deadline"));
+        };
+        if (that._serialPort) {
+            try {
+                that._serialPort.removeAllListeners();
+            } catch (e) { /* ignore */ }
+            try {
+                if (that._serialPort.isOpen) {
+                    that._serialPort.close(function () {
+                        finishErr();
+                    });
+                    return;
+                }
+            } catch (e) {
+                log.warn("Error closing port on connect timeout: " + e);
+            }
+        }
+        finishErr();
+    }, CONNECT_DEADLINE);
 
     // Open the serial port.  This used to be two ports, but now is only the one.
     log.info("Opening G2 port: " + this._serialPath);
@@ -430,6 +503,10 @@ G2.prototype.connect = function (path, callback) {
         "ready",
         function () {
             this.connected = true;
+
+            // Record which USB port/hub the G2 is on while it is healthy —
+            // needed for USB-level recovery once it drops off the bus.
+            g2_recovery.cacheTopology(this._serialPath);
 
             ////## Have tested both reset and end-file during this start-up to clear "alarm" and bad stop
             ////##    a reset works, but disconnects G2 and requires new manual fabmo start
@@ -528,6 +605,30 @@ G2.prototype.onSerialError = function (data) {
 G2.prototype.onSerialClose = function () {
     this.connected = false;
 
+    // Serial close caused by a deliberate soft reset (Ctrl-X via softReset())
+    // — the board is rebooting and will re-enumerate shortly. Skip the
+    // disconnect alarm/diagnostics and go straight to an automatic reconnect.
+    if (this._expectReset) {
+        this._expectReset = false;
+        if (this._expectResetTimer) {
+            clearTimeout(this._expectResetTimer);
+            this._expectResetTimer = null;
+        }
+        log.info("G2 serial closed following soft reset — reconnecting automatically");
+        this._disconnected = true;
+        this.stopStatusPoll();
+        if (this._serialPort) {
+            try {
+                this._serialPort.removeAllListeners();
+            } catch (e) {
+                log.warn("Error removing serial listeners after soft reset: " + e);
+            }
+        }
+        this._resetInternalState();
+        this.reconnect({ auto: true });
+        return;
+    }
+
     // === ENHANCED DIAGNOSTIC LOGGING ===
     var disconnectTime = new Date().toISOString();
     var timeSinceLastData = this._lastDataReceived ? (Date.now() - this._lastDataReceived) : 'N/A';
@@ -622,6 +723,11 @@ G2.prototype._handleDisconnect = function (reason) {
         "G2 link lost (reason=" + reason + ") — awaiting user-initiated reconnect"
     );
     this.emit("disconnect", payload);
+
+    // Watch for the device node to come back on its own (observed in the
+    // field: a latched board re-enumerating ~80s later). If it does, start
+    // reconnecting immediately instead of waiting for a user click.
+    this._startDeviceWatch();
 };
 
 // User-initiated reconnect to G2 with exponential backoff.
@@ -629,7 +735,7 @@ G2.prototype._handleDisconnect = function (reason) {
 // dialog, or from engine startup when the initial connection failed.
 // Reuses the existing G2 object in-place so all external references
 // (machine.driver, runtimes, config) remain valid.
-G2.prototype.reconnect = function () {
+G2.prototype.reconnect = function (opts) {
     if (this._reconnecting) {
         log.warn("G2 reconnect already in progress — ignoring duplicate request");
         return;
@@ -638,6 +744,11 @@ G2.prototype.reconnect = function () {
     this._reconnecting = true;
     this._reconnectAttempts = 0;
     this.stopStatusPoll();
+    this._stopDeviceWatch();
+
+    // One-shot USB-level escalation state for this reconnect() invocation —
+    // fired only while the device node is absent (see maybeEscalate below).
+    var escalation = { rebind: false, powerCycle: false };
 
     // Notify listeners (machine.js) so the dashboard can swap the disconnect
     // modal for a "Reconnecting…" modal. /reconnect returns 200 immediately;
@@ -647,15 +758,30 @@ G2.prototype.reconnect = function () {
         timestamp: new Date().toISOString(),
         maxTime: MAX_RECONNECT_TIME,
         serialPath: this._serialPath || null,
+        // true when recovery started itself (device-node reappearance or a
+        // deliberate soft reset) rather than from a user click
+        auto: !!(opts && opts.auto),
     });
 
     // _handleDisconnect normally has already cleaned up, but reconnect may also
     // be called from a clean state (engine startup) — make these idempotent.
+    // If a previous connect attempt left the port open (eg the initial
+    // connection died partway through setup), close it too — otherwise every
+    // retry fails against our own port lock ("Resource temporarily
+    // unavailable Cannot lock port").
     if (this._serialPort) {
         try {
             this._serialPort.removeAllListeners();
         } catch (e) {
             log.warn("Error removing serial listeners during reconnect: " + e);
+        }
+        try {
+            if (this._serialPort.isOpen) {
+                log.warn("Stale serial port handle still open at reconnect — closing it");
+                this._serialPort.close(function () {});
+            }
+        } catch (e) {
+            log.warn("Error closing stale serial port during reconnect: " + e);
         }
     }
     this._resetInternalState();
@@ -693,6 +819,7 @@ G2.prototype.reconnect = function () {
         fs.access(that._serialPath, fs.constants.R_OK | fs.constants.W_OK, function (err) {
             if (err) {
                 log.warn("Serial device " + that._serialPath + " not available yet: " + err.code);
+                maybeEscalate(elapsed);
                 scheduleNextRetry();
                 return;
             }
@@ -707,16 +834,35 @@ G2.prototype.reconnect = function () {
 
             var readyFired = false;
             var readyTimeout = null;
+            var probeTimer = null;
 
-            // Handler for when G2 sends "SYSTEM READY"
-            function onReady() {
+            // Succeed when the board proves it is alive — either by sending its
+            // "SYSTEM READY" banner, or by answering an active status-report
+            // probe. The probe matters because the banner is emitted once at
+            // reset and can be missed or split across reads (a fragment lands
+            // as an unparseable line and is discarded), so a board that is up
+            // and responsive would otherwise never satisfy a banner-only wait.
+            function succeed() {
+                if (readyFired) {
+                    return;
+                }
                 readyFired = true;
                 if (readyTimeout) {
                     clearTimeout(readyTimeout);
                     readyTimeout = null;
                 }
+                if (probeTimer) {
+                    clearInterval(probeTimer);
+                    probeTimer = null;
+                }
+                that.removeListener("ready", succeed);
+                that.removeListener("status", succeed);
 
                 that.connected = true;
+
+                // Re-cache the USB topology — a recovered board may have
+                // re-enumerated on a different device address.
+                g2_recovery.cacheTopology(that._serialPath);
                 that._reconnecting = false;
                 that._disconnected = false;
                 that._seen_ready = true;
@@ -738,8 +884,10 @@ G2.prototype.reconnect = function () {
                 });
             }
 
-            // Listen for the "ready" event (emitted when onMessage sees "SYSTEM READY")
-            that.once("ready", onReady);
+            // Accept either the SYSTEM READY banner or any status report that
+            // comes back from our probe below.
+            that.once("ready", succeed);
+            that.once("status", succeed);
 
             // Wire up event handlers on the new port
             newPort.on("error", function (err) {
@@ -761,18 +909,42 @@ G2.prototype.reconnect = function () {
             newPort.open(function (openErr) {
                 if (openErr) {
                     log.warn("Failed to open serial port: " + openErr);
-                    that.removeListener("ready", onReady);
+                    that.removeListener("ready", succeed);
+                    that.removeListener("status", succeed);
                     scheduleNextRetry();
                     return;
                 }
 
-                log.info("G2 port opened during reconnect — waiting for SYSTEM READY...");
+                log.info("G2 port opened during reconnect — probing for a live G2...");
 
-                // Give G2 time to send "SYSTEM READY"
+                // Actively probe for life: ask for a status report. If the
+                // board is up (banner already sent, or missed/fragmented), it
+                // answers with a status report, which satisfies succeed() via
+                // the "status" listener. Repeat a few times within the window
+                // in case the first probe races the port coming up.
+                function sendProbe() {
+                    if (readyFired) {
+                        return;
+                    }
+                    try {
+                        newPort.write('{"sr":null}\n');
+                    } catch (e) {
+                        log.warn("Reconnect probe write failed: " + e);
+                    }
+                }
+                sendProbe();
+                probeTimer = setInterval(sendProbe, 1000);
+
+                // Give G2 time to respond (banner or probe reply)
                 readyTimeout = setTimeout(function () {
                     if (!readyFired) {
-                        log.warn("No SYSTEM READY received within " + (RECONNECT_READY_TIMEOUT / 1000) + "s");
-                        that.removeListener("ready", onReady);
+                        log.warn("No response from G2 within " + (RECONNECT_READY_TIMEOUT / 1000) + "s");
+                        that.removeListener("ready", succeed);
+                        that.removeListener("status", succeed);
+                        if (probeTimer) {
+                            clearInterval(probeTimer);
+                            probeTimer = null;
+                        }
                         // Close this port attempt and retry
                         try {
                             newPort.close(function () {
@@ -785,6 +957,28 @@ G2.prototype.reconnect = function () {
                 }, RECONNECT_READY_TIMEOUT);
             });
         });
+    }
+
+    // Escalate to USB-level recovery when the device node has been gone too
+    // long for a plain retry to help (the board has dropped off the bus).
+    // Each action fires at most once per reconnect() invocation; the normal
+    // retry loop keeps polling throughout. After an action fires, the retry
+    // delay is reset so a recovered device is noticed quickly rather than
+    // after a backed-off 30s gap.
+    function maybeEscalate(elapsed) {
+        if (!escalation.rebind && elapsed >= USB_REBIND_AFTER) {
+            escalation.rebind = true;
+            log.warn("G2 device node absent for " + Math.round(elapsed / 1000) + "s — attempting USB rebind");
+            that.emit("reconnect-escalation", { action: "usb_rebind", elapsed: elapsed });
+            g2_recovery.rebindUsb(function () {});
+            delay = RECONNECT_BASE_DELAY;
+        } else if (!escalation.powerCycle && elapsed >= USB_POWER_CYCLE_AFTER) {
+            escalation.powerCycle = true;
+            log.warn("G2 device node still absent at " + Math.round(elapsed / 1000) + "s — attempting USB port power cycle");
+            that.emit("reconnect-escalation", { action: "usb_power_cycle", elapsed: elapsed });
+            g2_recovery.powerCycleVbus(function () {});
+            delay = RECONNECT_BASE_DELAY;
+        }
     }
 
     function scheduleNextRetry() {
@@ -838,7 +1032,76 @@ G2.prototype.cancelReconnect = function () {
         inCycle: !!this.context,
         serialPath: this._serialPath || null,
     });
+    // Keep watching for the device to come back — if the board recovers
+    // after the user gave up, reconnect automatically anyway.
+    this._startDeviceWatch();
     return true;
+};
+
+// Soft-reset the G2 board — the software equivalent of pressing the reset
+// button on the card. Sends CAN (Ctrl-X, 0x18), which g2core handles as a
+// full processor reset. The USB connection drops and the board re-enumerates;
+// the expected serial close is converted into an automatic reconnect (no
+// disconnect modal, no diagnostics dump). Position is lost — the machine
+// comes back through the normal post-reconnect restore path.
+G2.prototype.softReset = function (callback) {
+    callback = callback || function () {};
+    if (!this.connected || this._disconnected) {
+        return callback(new Error("G2 is not connected — soft reset requires a live serial link"));
+    }
+    if (this._expectReset) {
+        return callback(new Error("A soft reset is already in progress"));
+    }
+    log.warn("Issuing G2 soft reset (Ctrl-X)");
+    var that = this;
+    this._expectReset = true;
+    // If the board never drops the link (reset not acted on — eg firmware too
+    // wedged to process input), clear the flag so a later, unrelated
+    // disconnect is not mistaken for this reset.
+    this._expectResetTimer = setTimeout(function () {
+        if (that._expectReset) {
+            log.warn("G2 soft reset: serial link did not drop within " +
+                SOFT_RESET_CLOSE_TIMEOUT / 1000 + "s — the board may not have reset");
+            that._expectReset = false;
+            that._expectResetTimer = null;
+        }
+    }, SOFT_RESET_CLOSE_TIMEOUT);
+    this._write("\x18\n", function () {
+        callback(null);
+    });
+};
+
+// Poll for the serial device node while disconnected, and auto-reconnect the
+// moment it reappears. Covers boards that recover on their own as well as
+// recoveries forced by the USB escalation ladder or an external reset.
+G2.prototype._startDeviceWatch = function () {
+    if (this._deviceWatchTimer || !this._serialPath) {
+        return;
+    }
+    var that = this;
+    log.info("Watching for " + this._serialPath + " to reappear");
+    this._deviceWatchTimer = setInterval(function () {
+        if (!that._disconnected || that._reconnecting) {
+            that._stopDeviceWatch();
+            return;
+        }
+        fs.access(that._serialPath, fs.constants.R_OK | fs.constants.W_OK, function (err) {
+            if (err || !that._disconnected || that._reconnecting) {
+                return;
+            }
+            log.info("G2 device node reappeared — starting automatic reconnect");
+            that._stopDeviceWatch();
+            that.emit("device-returned", { serialPath: that._serialPath });
+            that.reconnect({ auto: true });
+        });
+    }, DEVICE_WATCH_INTERVAL);
+};
+
+G2.prototype._stopDeviceWatch = function () {
+    if (this._deviceWatchTimer) {
+        clearInterval(this._deviceWatchTimer);
+        this._deviceWatchTimer = null;
+    }
 };
 
 // Start periodic status poll to detect silent G2 failures.
@@ -1024,8 +1287,19 @@ G2.prototype.onData = function (data) {
                 }
                 this.onMessage(obj);
             } catch (e) {
-                this.handleExceptionReport(e);
-                throw e;
+                // A single unparseable line must not take down the engine.
+                // This happens legitimately: a board reset (or Pi restart
+                // while the board stays powered) can leave a partial line in
+                // the stream, and the first "line" seen at connect is then a
+                // JSON fragment. Log it and move on — the next complete line
+                // parses normally. (This used to rethrow, which crashed the
+                // process out of the serial event handler, or wedged the
+                // initial connect behind its own port lock.)
+                log.warn(
+                    'Discarding unparseable line from G2: "' +
+                        json_string.substring(0, 200) +
+                        '" (' + e + ")"
+                );
             } finally {
                 // if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
                 // and if we fail to parse, we still clear the line and start anew.
