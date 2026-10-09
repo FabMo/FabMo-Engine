@@ -40,6 +40,7 @@ var fs = require("fs");
 var sessions = require("client-sessions");
 var authentication = require("./authentication");
 var profiles = require("./profiles");
+var bootSplash = require("./boot_splash");
 var crypto = require("crypto");
 var moment = require("moment");
 //other util
@@ -258,6 +259,7 @@ Engine.prototype.start = function (callback) {
             // Load the engine configuration from disk.
             function load_engine_config(callback) {
                 log.info("Loading engine configuration...");
+                bootSplash.setStatus("Loading configuration…");
                 config.configureEngine(callback);
             },
 
@@ -560,6 +562,7 @@ Engine.prototype.start = function (callback) {
             // Connect to G2 and initialize machine runtimes.  See machine.js for what this entails.
             function connect(callback) {
                 log.info("Connecting to G2...");
+                bootSplash.setStatus("Connecting to motion controller…");
                 // eslint-disable-next-line no-unused-vars
                 machine.connect(function (err, machine) {
                     if (err) {
@@ -835,6 +838,7 @@ Engine.prototype.start = function (callback) {
 
             // Initialize the network module
             function setup_network(callback) {
+                bootSplash.setStatus("Starting network…");
                 var machine_id = config.engine.get("machine_id");
                 log.info("machine_id is - " + machine_id);
                 network.createNetworkManager(
@@ -1119,6 +1123,7 @@ Engine.prototype.start = function (callback) {
             // Kick off the server if all of the above went OK.
             function start_server(callback) {
                 log.info("Setting up the webserver...");
+                bootSplash.setStatus("Starting web services…");
 
                 // Initialize a server and attach it to the application
                 var server = restify.createServer({ name: "FabMo Engine" });
@@ -1259,11 +1264,46 @@ Engine.prototype.start = function (callback) {
                 // eslint says routes is unused, but removing it breaks fabmo
                 // eslint-disable-next-line no-unused-vars
                 var routes = require("./routes")(server);
-                // Kick off the server listening for connections
+
+                var serverPort = config.engine.get("server_port");
+
+                // Kick off the server listening for connections.
                 // 0.0.0.0 causes us to listen on ALL interfaces (so the engine can be seen over ethernet, wifi, etc.)
-                server.listen(config.engine.get("server_port"), "0.0.0.0", function () {
-                    log.info(server.name + " listening at " + server.url);
-                    callback(null, server);
+                // Release the boot-splash server first so this one can bind the
+                // port. The handoff has a brief window where the splash has
+                // closed but restify has not yet bound; if the OS has not freed
+                // the socket in time, retry a few times on EADDRINUSE.
+                var listenAttempts = 0;
+                var listened = false;
+                function listenWithRetry() {
+                    server.listen(serverPort, "0.0.0.0", function () {
+                        listened = true;
+                        log.info(server.name + " listening at " + server.url);
+                        callback(null, server);
+                    });
+                }
+                // Only relevant during the listen phase; once we're listening,
+                // later socket errors must not re-enter the startup callback.
+                function onListenError(err) {
+                    if (listened) {
+                        return;
+                    }
+                    if (err && err.code === "EADDRINUSE" && listenAttempts < 10) {
+                        listenAttempts++;
+                        log.warn(
+                            "Web port " + serverPort + " busy during boot-splash handoff — retry " +
+                            listenAttempts + "/10"
+                        );
+                        setTimeout(listenWithRetry, 250);
+                    } else {
+                        server.server.removeListener("error", onListenError);
+                        log.error("Web server listen error: " + (err && err.message));
+                        callback(err);
+                    }
+                }
+                server.server.on("error", onListenError);
+                bootSplash.stop(function () {
+                    listenWithRetry();
                 });
 
                 // TODO - should this be done after server.listen, or before? (or does it matter?)
@@ -1306,6 +1346,15 @@ Engine.prototype.start = function (callback) {
             if (err) {
                 log.stack();
                 log.error(err);
+                // If startup failed before the real server bound the port, the
+                // boot-splash may still be up — surface the error on it so the
+                // browser shows what happened instead of a dead page.
+                if (bootSplash.isActive()) {
+                    bootSplash.setError(
+                        "FabMo could not finish starting.",
+                        String((err && err.message) || err)
+                    );
+                }
                 typeof callback === "function" && callback(err);
             } else {
                 typeof callback === "function" && callback(null, this);
