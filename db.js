@@ -1227,3 +1227,66 @@ exports.File = File;
 exports.Job = Job;
 exports.Thumbnail = Thumbnail;
 exports.createJob = createJob;
+
+// Best-effort storage health summary for diagnostic bundles: how many file
+// records the DB holds, their claimed total size, how many files are actually
+// on disk, and — the key field — how many records point at a file that is
+// MISSING on disk. A non-zero missingCount is the dangling-reference condition
+// that makes preview/edit/run fail; surfacing it here turns a multi-step live
+// debug into a one-line read. Never throws (diagnostics must not break the
+// engine); always calls back with a summary object (no error argument).
+exports.getStorageDiagnostics = function (callback) {
+    var summary = {
+        recordCount: 0,
+        sizeSumBytes: 0,
+        filesOnDisk: null,
+        missingCount: 0,
+        missingSamples: [],
+        maxStorageBytes: maxStorage,
+        error: null,
+    };
+    try {
+        var filesDir = config.getDataDir("files");
+        try {
+            summary.filesOnDisk = fs.readdirSync(filesDir).length;
+        } catch (e) {
+            summary.filesOnDisk = null;
+        }
+        files.find().toArray(function (err, records) {
+            if (err) {
+                summary.error = err.message;
+                return callback(summary);
+            }
+            records = records || [];
+            summary.recordCount = records.length;
+            async.eachSeries(
+                records,
+                function (rec, cb) {
+                    summary.sizeSumBytes += rec.size || 0;
+                    if (!rec.path) {
+                        summary.missingCount++;
+                        if (summary.missingSamples.length < 10) {
+                            summary.missingSamples.push("(no path, id " + rec._id + ")");
+                        }
+                        return cb();
+                    }
+                    fs.access(rec.path, fs.constants.F_OK, function (accErr) {
+                        if (accErr) {
+                            summary.missingCount++;
+                            if (summary.missingSamples.length < 10) {
+                                summary.missingSamples.push(rec.path);
+                            }
+                        }
+                        cb();
+                    });
+                },
+                function () {
+                    callback(summary);
+                }
+            );
+        });
+    } catch (e) {
+        summary.error = e.message;
+        callback(summary);
+    }
+};
