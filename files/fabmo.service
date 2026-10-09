@@ -1,7 +1,7 @@
 [Unit]
 Description=FabMo Engine
-After=network-online.target
-Wants=network-online.target
+After=NetworkManager.service
+Wants=NetworkManager.service
 
 [Service]
 ExecStart=/usr/bin/node /fabmo/server.js
