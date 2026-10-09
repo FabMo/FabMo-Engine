@@ -67,7 +67,51 @@ var cancelReconnect = function (req, res, next) {
     }
 };
 
+/**
+ * @api {post} /g2/reset Soft-reset the G2 motion controller
+ * @apiGroup State
+ * @apiDescription Send a Ctrl-X soft reset to G2 — the software equivalent of
+ * pressing the reset button on the card. The board reboots and re-enumerates
+ * on USB; the engine reconnects and restores configuration automatically.
+ * Position is lost — the tool must be re-homed/re-zeroed afterwards. Only
+ * permitted when no file or manual motion is in progress.
+ * @apiSuccess {String} status `success` if the reset was issued
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
+ */
+// eslint-disable-next-line no-unused-vars
+var resetG2 = function (req, res, next) {
+    try {
+        var driver = machine && machine.driver;
+        if (!driver) {
+            return res.json({
+                status: "error",
+                message: "Driver not initialized",
+            });
+        }
+        var state = machine.status && machine.status.state;
+        var allowed = ["idle", "stopped", "not_ready", "dead"];
+        if (allowed.indexOf(state) === -1) {
+            return res.json({
+                status: "error",
+                message: "Cannot reset G2 while machine state is '" + state + "' — stop the machine first",
+            });
+        }
+        log.warn("User-initiated G2 soft reset via /g2/reset");
+        driver.softReset(function (err) {
+            if (err) {
+                return res.json({ status: "error", message: String(err.message || err) });
+            }
+            res.json({ status: "success", data: null });
+        });
+    } catch (e) {
+        log.error("Error invoking driver.softReset: " + e);
+        res.json({ status: "error", message: String(e) });
+    }
+};
+
 module.exports = function (server) {
     server.post("/reconnect", reconnect);
     server.post("/reconnect/cancel", cancelReconnect);
+    server.post("/g2/reset", resetG2);
 };
