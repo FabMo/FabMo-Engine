@@ -341,10 +341,13 @@ function Machine(control_path, callback) {
                 (payload && payload.lastStat != null
                     ? "  •  Last G2 stat: " + payload.lastStat
                     : "");
+            var gaveUp = reason === "reconnect_gave_up";
             this.status.info = {
                 id: this.info_id,
-                message:
-                    "Motion controller disconnected. Check the USB cable / power, then click Reconnect to recover.",
+                message: gaveUp
+                    ? "Could not reconnect to the motion controller. Check the USB cable and power — " +
+                      "it will reconnect automatically when the controller comes back, or click Reconnect to retry now."
+                    : "Motion controller disconnected. Check the USB cable / power, then click Reconnect to recover.",
                 custom: {
                     title: "G2 Disconnected",
                     detail: detail,

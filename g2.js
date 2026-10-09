@@ -795,15 +795,34 @@ G2.prototype.reconnect = function (opts) {
             log.error(
                 "G2 reconnection failed after " +
                     Math.round(elapsed / 1000) +
-                    "s — falling back to process exit."
+                    "s — giving up active retries, staying up and watching for the device to return."
             );
+            // Previously this did process.exit(14) and relied on systemd to
+            // restart the engine. That is unreliable: on a persistently-absent
+            // board a shutdown hook (the file watcher) can hang the exit so
+            // systemd never restarts, leaving a dead Pi with no dashboard.
+            // Instead, stop active retries but keep the engine up: restore the
+            // disconnect modal (with its Reconnect button) and arm the device
+            // watch so we auto-reconnect the moment the node reappears (board
+            // power-cycle, cable reseat). The user can also click Reconnect to
+            // start a fresh retry loop. Diagnostics are still captured.
+            that._reconnecting = false;
+            that._reconnectAttempts = 0;
+            that._disconnected = true;
             require('./log').saveCurrentLog('g2-reconnect-failed', function () {
-                // Capture the system state before exiting: whether the
-                // device node ever came back is the key fact here.
-                require('./diagnostics').saveDisconnectDiagnostics('g2-reconnect-failed', function () {
-                    process.exit(14);
-                });
+                require('./diagnostics').saveDisconnectDiagnostics('g2-reconnect-failed');
             });
+            that.emit("disconnect", {
+                reason: "reconnect_gave_up",
+                timestamp: new Date().toISOString(),
+                timeSinceLastData: that._lastDataReceived
+                    ? Date.now() - that._lastDataReceived
+                    : null,
+                lastStat: (that.status && that.status.stat) || null,
+                inCycle: !!that.context,
+                serialPath: that._serialPath || null,
+            });
+            that._startDeviceWatch();
             return;
         }
 
