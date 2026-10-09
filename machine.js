@@ -1571,6 +1571,26 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
 
+    // Guard: the file must actually exist on disk. A job whose file was removed
+    // (e.g. an update wiped /opt/fabmo/files while the job DB survived) would
+    // otherwise throw an uncaught ENOENT deep in the runtime and crash the
+    // engine — and with an auto-running queue that becomes a crash loop. Fail
+    // the job gracefully instead. This is the single chokepoint for both
+    // direct runs and queued/auto-fired jobs.
+    if (!fs.existsSync(filename)) {
+        log.error("_runFile: job file not found on disk: " + filename);
+        this.info_id += 1;
+        this.status.info = {
+            id: this.info_id,
+            message: "Job file not found on disk — it may have been removed. Please re-upload the file.",
+        };
+        this.status.job = null;
+        this.disarm();
+        this.setState(this, "idle");
+        this.emit("status", this.status);
+        return;
+    }
+
     // Interlock pre-scan. Both Machine.runFile (direct) and Machine.runNextJob
     // (queue) converge here, so this is the single chokepoint to refuse files
     // that would turn on the spindle while an interlock input is active.
