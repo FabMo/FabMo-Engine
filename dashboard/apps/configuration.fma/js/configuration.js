@@ -1578,11 +1578,47 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
             .text(msg);
     }
 
-    function showNotice(pkg) {
+    function escapeNoteHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function hideUpdateNotes() {
+        $('#update-notes-section').hide();
+        $('#update-notes').hide().empty();
+        $('#update-notes-arrow').html('&#9656;');
+    }
+
+    // Render the manifest changelogs for every version newer than the one
+    // installed (the user may be several releases behind), newest first,
+    // into the collapsed "What's new" disclosure next to the button.
+    function showUpdateNotes(pkgs) {
+        var blocks = [];
+        pkgs.slice().reverse().forEach(function(p) {
+            var text = String(p.changelog || '').trim();
+            if (!text) { return; }
+            blocks.push(
+                '<div style="margin-bottom:8px;">' +
+                '<strong>' + escapeNoteHtml(p.version) + '</strong>' +
+                '<div style="white-space:pre-wrap;">' + escapeNoteHtml(text) + '</div>' +
+                '</div>'
+            );
+        });
+        if (!blocks.length) {
+            hideUpdateNotes();
+            return;
+        }
+        $('#update-notes').html(blocks.join(''));
+        $('#update-notes-section').show();
+    }
+
+    function showNotice(pkg, newerPkgs) {
         latestPkg = pkg;
         usbPkg = null;
         mode = 'install';
         $('#update-uptodate').hide();
+        showUpdateNotes(newerPkgs || [pkg]);
         // A small "(update available)" flag next to the version number,
         // and the one button morphs: "Check for Updates" → "Install vX now".
         // (Reset the flag text — a prior USB result may have changed it.)
@@ -1598,6 +1634,7 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
         latestPkg = null;
         mode = 'install-usb';
         $('#update-uptodate').hide();
+        hideUpdateNotes(); // USB packages carry no changelog (filename only)
         $('#update-available-flag')
             .text(window.t('config.software.update_usb_flag'))
             .show();
@@ -1613,6 +1650,7 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
         usbPkg = null;
         mode = 'upload';
         $('#update-available-flag').hide();
+        hideUpdateNotes();
         $('#btn-update').removeClass('success')
             .text(window.t('config.software.upload_package'));
         done('config.software.update_offline_hint', false);
@@ -1644,6 +1682,7 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
     function checkForUpdates(manual) {
         if (manual) {
             $('#update-uptodate').hide();
+            hideUpdateNotes();
             $('#btn-update').addClass('disabled');
             progress(window.t('config.software.update_checking'));
         }
@@ -1682,7 +1721,7 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
                         });
                         done(null);
                         if (newer.length) {
-                            showNotice(newer[newer.length - 1]);
+                            showNotice(newer[newer.length - 1], newer);
                         } else {
                             $('#update-uptodate').show();
                         }
@@ -1859,6 +1898,13 @@ $('#spindle-setup-configure').on('click', runSpindleConfigure);
     }
 
     function init() {
+        $('#update-notes-toggle').click(function(evt) {
+            evt.preventDefault();
+            var open = $('#update-notes').is(':visible');
+            $('#update-notes').toggle(!open);
+            $('#update-notes-arrow').html(open ? '&#9656;' : '&#9662;');
+        });
+
         // The one update button: checks in 'check' mode, opens a file picker
         // in 'upload' mode, installs (with a two-step confirm — the sandboxed
         // iframe blocks window.confirm) in the install modes.

@@ -89,6 +89,13 @@
                       <a id="btn-update"  class="button radius small" data-i18n="config.software.check_updates">Check for FabMo Software Updates</a>
                     </div>
                 </div>
+                <!-- Expandable release notes for the pending update. Populated
+                     from the package manifest's changelog fields by the update
+                     check; only shown when an update is available. -->
+                <div id="update-notes-section" style="display:none; margin-top:6px;">
+                  <a id="update-notes-toggle" style="font-size:0.85em; cursor:pointer; color:#31708f;"><span id="update-notes-arrow">&#9656;</span> <span data-i18n="config.software.whats_new">What's new in this update</span></a>
+                  <div id="update-notes" style="display:none; margin-top:4px; padding:6px 10px; border-left:3px solid #c8c8c8; background:#f7f7f7; font-size:0.85em; line-height:1.4; max-height:220px; overflow-y:auto;"></div>
+                </div>
                 <!-- Only shows when Install is clicked while the tool is offline. -->
                 <div id="update-offline-flow" style="display:none; margin-top:10px;">
                   <p data-i18n="config.software.update_offline_explain" style="font-size:0.9em; margin-bottom:6px;">This tool has no internet connection, but your browser does. Download the update file with your browser, then drop it below.</p>
