@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FabMo is starting…</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #1f2a33;
+    color: #e8edf1;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 24px;
+  }
+  .card { width: 100%; max-width: 420px; }
+  .logo {
+    font-size: 2rem; font-weight: 700; letter-spacing: .04em;
+    margin: 0 0 4px; color: #ffffff;
+  }
+  .logo .mo { color: #f5a623; }
+  .tagline { margin: 0 0 28px; font-size: .85rem; opacity: .6; }
+  .spinner {
+    width: 48px; height: 48px; margin: 0 auto 24px;
+    border: 4px solid rgba(255,255,255,.15);
+    border-top-color: #f5a623;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .message { font-size: 1.05rem; margin: 0 0 8px; min-height: 1.3em; }
+  .detail { font-size: .8rem; opacity: .55; min-height: 1.1em; margin: 0 0 20px; }
+  .bar { height: 4px; background: rgba(255,255,255,.12); border-radius: 2px; overflow: hidden; }
+  .bar > span {
+    display: block; height: 100%; width: 35%;
+    background: #f5a623; border-radius: 2px;
+    animation: slide 1.6s ease-in-out infinite;
+  }
+  @keyframes slide {
+    0%   { margin-left: -35%; }
+    100% { margin-left: 100%; }
+  }
+  .elapsed { font-size: .72rem; opacity: .4; margin-top: 18px; }
+  .error .spinner { display: none; }
+  .error .logo .mo { color: #e74c3c; }
+  .error .bar { display: none; }
+  .error .message { color: #ff8c7a; }
+  .hint { font-size: .8rem; opacity: .6; margin-top: 14px; display: none; }
+  .error .hint { display: block; }
+</style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h1 class="logo">Fab<span class="mo">Mo</span></h1>
+    <p class="tagline">Digital fabrication platform</p>
+    <div class="spinner"></div>
+    <p class="message" id="message">Starting up…</p>
+    <p class="detail" id="detail"></p>
+    <div class="bar"><span></span></div>
+    <p class="elapsed" id="elapsed"></p>
+    <p class="hint">Check the controller's power and connections, then reload this page.</p>
+  </div>
+<script>
+(function () {
+  var messageEl = document.getElementById("message");
+  var detailEl  = document.getElementById("detail");
+  var elapsedEl = document.getElementById("elapsed");
+  var cardEl    = document.getElementById("card");
+  var reloading = false;
+
+  function reloadToDashboard() {
+    if (reloading) return;
+    reloading = true;
+    // The real engine now owns the port; reload to land on the dashboard.
+    window.location.reload();
+  }
+
+  function poll() {
+    // Read the body as text and decide from its content, not the status code.
+    // Only our own sentinel JSON keeps us on the splash. Anything else — a
+    // redirect that resolves to the dashboard HTML (200), a 404, a 503 — means
+    // the real engine now owns the port, so reload. (The engine's 404 handler
+    // serves the dashboard index as a 200, so a status-code-only check misses
+    // the handoff and polls forever.)
+    fetch("/boot-status", { cache: "no-store" })
+      .then(function (resp) { return resp.text(); })
+      .then(function (body) {
+        var data = null;
+        try { data = JSON.parse(body); } catch (e) { /* not our JSON */ }
+        if (!data || !data.fabmo_boot_splash) {
+          reloadToDashboard();
+          return;
+        }
+        if (data.state === "error") {
+          document.body.classList.add("error");
+          messageEl.textContent = data.message || "Startup failed";
+          detailEl.textContent = data.detail || "";
+        } else {
+          messageEl.textContent = data.message || "Starting up…";
+          detailEl.textContent = data.detail || "";
+        }
+        if (typeof data.elapsed === "number") {
+          elapsedEl.textContent = data.elapsed + "s";
+        }
+      })
+      .catch(function () {
+        // Connection refused — this happens in the brief handoff window while
+        // the splash server has closed and restify has not yet bound. Keep
+        // polling; the dashboard will answer shortly.
+        messageEl.textContent = "Almost ready…";
+      });
+  }
+
+  poll();
+  setInterval(poll, 1000);
+})();
+</script>
+</body>
+</html>
