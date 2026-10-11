@@ -31,6 +31,22 @@ var SNAPSHOT_COMMANDS = [
     { title: "Core voltage", cmd: "vcgencmd measure_volts core" },
     { title: "USB devices (lsusb)", cmd: "lsusb" },
     { title: "G2 device nodes", cmd: "ls -la /dev/fabmo* /dev/ttyACM* 2>&1" },
+    { title: "Disk usage", cmd: "df -h / /opt 2>/dev/null" },
+    { title: "Disk inodes", cmd: "df -ih / 2>/dev/null" },
+    { title: "Memory", cmd: "free -h 2>/dev/null" },
+    { title: "Out-of-memory / killed-process events", cmd: "(dmesg --ctime 2>/dev/null || dmesg) | grep -iE 'out of memory|killed process|oom-kill' | tail -n 15 || echo '(none)'" },
+    {
+        title: "Engine service health",
+        cmd: "systemctl status fabmo --no-pager 2>/dev/null | head -n 8; echo \"NRestarts=$(systemctl show -p NRestarts --value fabmo 2>/dev/null)\"",
+    },
+    {
+        title: "Runtime storage dirs (/opt/fabmo)",
+        cmd: "echo \"files on disk: $(ls /opt/fabmo/files 2>/dev/null | wc -l)\"; du -sh /opt/fabmo/files /opt/fabmo/db /opt/fabmo/log 2>/dev/null",
+    },
+    {
+        title: "Config JSON integrity",
+        cmd: "for f in /opt/fabmo/config/*.json; do if node -e \"JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'))\" \"$f\" 2>/dev/null; then echo \"OK   ${f##*/}\"; else echo \"BAD  ${f##*/}\"; fi; done",
+    },
     { title: "Kernel log tail (dmesg)", cmd: "dmesg --ctime 2>/dev/null | tail -n 200 || dmesg | tail -n 200" },
 ];
 
@@ -64,6 +80,69 @@ function decodeThrottled(output) {
         }
     });
     return "0x" + m[1] + " — " + meanings.join("; ");
+}
+
+// Capture engine-internal state that shell commands can't see: the current
+// machine status (state, the die/info reason, current job) and the files-DB
+// vs disk consistency summary. db/machine are required lazily to avoid a
+// circular require at module load. Best-effort — never throws; always calls
+// back with a text blob.
+function captureEngineState(callback) {
+    var lines = [];
+
+    lines.push("===== Engine / machine status =====");
+    try {
+        var machine = require("./machine").machine;
+        if (machine && machine.status) {
+            var s = machine.status;
+            lines.push("state: " + s.state);
+            if (s.info) {
+                lines.push("info: " + JSON.stringify(s.info));
+            }
+            lines.push("current job: " + (s.job ? (s.job.name || "?") + " (id " + s.job._id + ")" : "none"));
+        } else {
+            lines.push("(machine status unavailable)");
+        }
+    } catch (e) {
+        lines.push("[error] " + e.message);
+    }
+    lines.push("");
+
+    lines.push("===== Files DB vs disk consistency =====");
+    var db;
+    try {
+        db = require("./db");
+    } catch (e) {
+        db = null;
+    }
+    if (!db || typeof db.getStorageDiagnostics !== "function") {
+        lines.push("(storage diagnostics unavailable)");
+        lines.push("");
+        return callback(lines.join("\n"));
+    }
+    try {
+        db.getStorageDiagnostics(function (st) {
+            lines.push("file records in DB:      " + st.recordCount);
+            lines.push("files on disk:           " + (st.filesOnDisk === null ? "unknown" : st.filesOnDisk));
+            lines.push("sum of record sizes:     " + st.sizeSumBytes + " bytes (maxStorage " + st.maxStorageBytes + ")");
+            lines.push(
+                "records MISSING on disk: " + st.missingCount +
+                (st.missingCount ? "   <-- DANGLING: preview/edit/run of these will fail" : "")
+            );
+            (st.missingSamples || []).forEach(function (p) {
+                lines.push("   missing: " + p);
+            });
+            if (st.error) {
+                lines.push("[storage diag error] " + st.error);
+            }
+            lines.push("");
+            callback(lines.join("\n"));
+        });
+    } catch (e) {
+        lines.push("[error] " + e.message);
+        lines.push("");
+        callback(lines.join("\n"));
+    }
 }
 
 // Capture a system snapshot as a single text blob. Never fails: commands
@@ -106,7 +185,12 @@ function captureSystemSnapshot(callback) {
             });
         },
         function () {
-            callback(null, lines.join("\n"));
+            // Append engine-internal state (status + files/DB consistency),
+            // which shell commands can't see.
+            captureEngineState(function (engineText) {
+                lines.push(engineText);
+                callback(null, lines.join("\n"));
+            });
         }
     );
 }
