@@ -700,6 +700,17 @@ var getJobFile = function (req, res, next) {
             res.json(answer);
         } else {
             fs.readFile(file.path, function (err, data) {
+                // Guard a missing/unreadable file: without this, data is
+                // undefined and res.write(undefined) throws ERR_INVALID_ARG_TYPE,
+                // crashing the whole engine (seen in the field when an update
+                // wiped the files but left the job/file DB records behind).
+                if (err) {
+                    log.error("Could not read job file " + file.path + ": " + err.message);
+                    return res.json({
+                        status: "fail",
+                        data: { file: "File not found on disk" },
+                    });
+                }
                 res.header("Content-Type", "text/plain");
                 res.header("Content-Disposition", 'attachment; filename="' + file.filename + '"');
                 res.status(200);

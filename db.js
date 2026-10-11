@@ -640,30 +640,65 @@ File.clearTrash = function (callback) {
     callback(null);
 };
 
-// Retrieve the total size of all files on disk (used to determine how much to prune if we hit max file size)
-// eslint-disable-next-line no-unused-vars
+// Reconcile the files DB against what is actually on disk, and recompute the
+// running storage total used for pruning. Records whose file no longer exists
+// (e.g. an update wiped /opt/fabmo/files while the DB survived) are removed so
+// they can't poison dedup (File.add), storage pruning, or job runs — the
+// condition that otherwise crashes every preview/edit/run on the dead path.
 File.getTotalFileSize = function (callback) {
+    callback = callback || function () {};
+    totalSize = 0;
+
+    // Safety guard: if the files directory itself is missing/unreadable (e.g. a
+    // transient mount issue at boot), skip reconciliation entirely rather than
+    // treat every file as lost and prune the whole collection.
+    var filesDir = config.getDataDir("files");
+    if (!filesDir || !fs.existsSync(filesDir)) {
+        log.warn("File storage reconcile skipped: files directory not present (" + filesDir + ")");
+        return callback(null);
+    }
+
     files.find().toArray(function (err, result) {
         if (err) {
             log.warn(err);
-        } else {
-            result.forEach(function (file) {
-                if (file.size === undefined) {
-                    // eslint-disable-next-line no-unused-vars
-                    var size2b = new Promise(function (resolve, reject) {
-                        util.getSize(file.path, function (err, fileSize) {
-                            resolve(fileSize);
-                        });
-                    });
-                    size2b.then(function (val) {
-                        files.update({ _id: file._id }, { $set: { size: val } });
-                        totalSize += val;
-                    });
-                } else {
-                    totalSize += file.size;
-                }
-            });
+            return callback(err);
         }
+        var pruned = 0;
+        async.eachSeries(
+            result,
+            function (file, cb) {
+                fs.stat(file.path, function (statErr, stat) {
+                    if (statErr) {
+                        // File is gone from disk — remove the stale record.
+                        pruned++;
+                        files.remove({ _id: file._id }, function () {
+                            cb();
+                        });
+                        return;
+                    }
+                    if (file.size === undefined) {
+                        files.update({ _id: file._id }, { $set: { size: stat.size } });
+                        totalSize += stat.size;
+                    } else {
+                        totalSize += file.size;
+                    }
+                    cb();
+                });
+            },
+            function () {
+                if (pruned > 0) {
+                    log.warn(
+                        "File storage reconcile: removed " + pruned +
+                        " stale file record(s) with no file on disk"
+                    );
+                }
+                log.info(
+                    "File storage total: " + totalSize + " bytes across " +
+                    (result.length - pruned) + " file(s)"
+                );
+                callback(null);
+            }
+        );
     });
 };
 
@@ -711,56 +746,63 @@ File.add = function (friendly_filename, pathname, callback) {
 
     // Compute the hash for the file to be added
     File.hash(pathname, function (err, hash) {
+        if (err) {
+            return callback(err);
+        }
         // Check to see if the hash is already found in the database
         files.findOne({ hash: hash }, function (err, document) {
-            if (document) {
+            if (err) {
+                return callback(err);
+            }
+            // Only reuse an existing record if its file still exists on disk.
+            // After an update that wipes /opt/fabmo/files (or any lost file),
+            // the DB record survives but the file is gone — reusing it would
+            // hand back a path that can't be read and crash every subsequent
+            // preview/edit/run. In that case fall through and re-write it.
+            if (document && document.path && fs.existsSync(document.path)) {
                 log.info("Using file with hash of " + hash + " which already exists in the database.");
                 var file = document;
                 file.__proto__ = File.prototype;
-                callback(null, file);
+                return callback(null, file);
+            }
+            if (document) {
+                log.warn(
+                    "File record for hash " + hash + " exists but its file is missing on disk (" +
+                    (document.path || "?") + ") — re-writing it."
+                );
+                // Drop the stale record so we don't accumulate duplicates.
+                files.remove({ _id: document._id }, function () {});
             } else {
                 log.info("Saving a new file with a hash of " + hash + ".");
-                // Move the file
-                util.getSize(
-                    pathname,
-                    function (err, size) {
-                        if (err) {
-                            log.error(err);
-                        } else {
-                            if (size + totalSize > maxStorage) {
-                                File.clearTrash(function (err) {
-                                    if (err) {
-                                        throw err;
-                                    } else {
-                                        log.info("done with trash");
-                                        File.writeToDisk(
-                                            pathname,
-                                            full_path,
-                                            friendly_filename,
-                                            hash,
-                                            function (err, file) {
-                                                if (err) {
-                                                    throw err;
-                                                } else {
-                                                    callback(null, file);
-                                                }
-                                            }
-                                        );
-                                    }
-                                });
-                            } else {
-                                File.writeToDisk(pathname, full_path, friendly_filename, hash, function (err, file) {
-                                    if (err) {
-                                        throw err;
-                                    } else {
-                                        callback(null, file);
-                                    }
-                                });
-                            }
-                        }
-                    }.bind(this)
-                ); //check size
             }
+            // Move the file (pruning trash first if we would exceed maxStorage).
+            util.getSize(
+                pathname,
+                function (err, size) {
+                    if (err) {
+                        return callback(err);
+                    }
+                    function doWrite() {
+                        File.writeToDisk(pathname, full_path, friendly_filename, hash, function (err, file) {
+                            if (err) {
+                                return callback(err);
+                            }
+                            callback(null, file);
+                        });
+                    }
+                    if (size + totalSize > maxStorage) {
+                        File.clearTrash(function (err) {
+                            if (err) {
+                                return callback(err);
+                            }
+                            log.info("done with trash");
+                            doWrite();
+                        });
+                    } else {
+                        doWrite();
+                    }
+                }.bind(this)
+            ); //check size
         });
     });
 }; // add
