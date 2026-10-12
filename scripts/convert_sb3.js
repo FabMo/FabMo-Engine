@@ -1,3 +1,7 @@
+// HISTORICAL — not part of the build. This script generated the first
+// runtime/opensbp/sb3_commands.json from ShopBot 3's shopbotw.prm / shopbotw.cmd
+// (which are no longer in the repo). The command table is now maintained by hand
+// in runtime/opensbp/sb3_commands.json and served to apps at GET /opensbp/commands.
 var csv = require("csv"); // Requires this at 0.3.7: npm install csv@0.3.7
 var fs = require("fs");
 
