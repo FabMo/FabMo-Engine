@@ -318,6 +318,7 @@
             "engine_version": "FabMo-Engine Software Version",
             "check_updates": "Check for FabMo Software Updates",
             "update_available_flag": "(update available)",
+            "whats_new": "What's new in this update",
             "update_up_to_date": "FabMo software is up to date.",
             "update_checking": "Checking for updates…",
             "update_usb_flag": "(update available on USB drive)",
