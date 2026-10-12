@@ -27,6 +27,15 @@ require('./cm-fabmo-modes.js');
     let isMacroSaveAndCloseClick = false;
     let overrideDirty = false; // Flag to override the dirty check
     let alreadyBlurred = false; // Flag to prevent multiple blur events
+    // True while a deliberate in-app navigation (Escape/exit/side-nav/save-
+    // and-close) is under way, so the beforeunload guard doesn't also throw
+    // the browser's native "unsaved changes" prompt on top of our own flow.
+    // Re-armed shortly after, in case the navigation never actually happened.
+    let leavingInApp = false;
+    function beginLeave() {
+        leavingInApp = true;
+        setTimeout(function () { leavingInApp = false; }, 2500);
+    }
 
 
     // Run code through the soft-limit pre-check, then call `proceed` if the
@@ -595,7 +604,10 @@ require('./cm-fabmo-modes.js');
               // exit. attemptLeave saves a macro in place with save() on "Yes"
               // (promptSaveWork ran submitJob here, which opened the submit-as-
               // new-job modal instead of saving the macro). The parent drives
-              // the actual navigation, so proceed is a no-op.
+              // the actual navigation, so proceed is a no-op; beginLeave keeps
+              // the beforeunload guard from double-prompting as the parent
+              // tears the iframe down.
+              beginLeave();
               attemptLeave(function(){});
             }
           }
@@ -667,14 +679,35 @@ require('./cm-fabmo-modes.js');
             localStorage.setItem("backapp", back_App);
         } 
         $(".exit-button").on("click", function(){
-            attemptLeave(function(){ fabmo.launchApp(back_App); });
+            attemptLeave(function(){ beginLeave(); fabmo.launchApp(back_App); });
         });
         document.onkeyup = function (evt) {
             if (evt.key === "Escape") {
                 evt.preventDefault();
-                attemptLeave(function(){ fabmo.launchApp(back_App); });
+                attemptLeave(function(){ beginLeave(); fabmo.launchApp(back_App); });
             }
         };
+
+        // Tab close / refresh / whole-browser navigation. We can't show our own
+        // modal or run the async macro save during unload, so: persist the
+        // scratchpad synchronously (localStorage is safe here), and for an
+        // unsaved macro/job fall back to the browser's native "unsaved changes"
+        // confirmation so the user can cancel and save. Suppressed during a
+        // deliberate in-app leave (that path runs its own save/discard flow).
+        window.addEventListener('beforeunload', function (e) {
+            if (leavingInApp) {
+                return;
+            }
+            if (!source) {
+                save(); // scratchpad → synchronous localStorage write
+                return;
+            }
+            if (isDirty && !overrideDirty) {
+                e.preventDefault();
+                e.returnValue = ''; // triggers the native prompt (text is browser-controlled)
+                return '';
+            }
+        });
       ////##
 
       setup();
@@ -737,6 +770,7 @@ require('./cm-fabmo-modes.js');
 
     $("#macro-save-and-close").click(function(evt) {
       save(function() {
+        beginLeave();
         fabmo.launchApp('macros');
       });
       evt.preventDefault();
