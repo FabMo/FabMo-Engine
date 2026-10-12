@@ -591,12 +591,12 @@ require('./cm-fabmo-modes.js');
                 console.log("Last clicked element:", eventId);
 
             if (eventId === 'icon_def' || eventId === 'icon_folder' || eventId === 'icon_editor' || eventId === 'icon_jobs' || eventId === 'icon_settings' || eventId === 'icon_video') {
-              // Prompt and prevent running the code once if there are unsaved changes
-              if (isDirty && !overrideDirty) {
-                promptSaveWork();
-              } else {
-                overrideDirty = false;
-              }     
+              // Navigating to another app is a leave — same guard as Escape /
+              // exit. attemptLeave saves a macro in place with save() on "Yes"
+              // (promptSaveWork ran submitJob here, which opened the submit-as-
+              // new-job modal instead of saving the macro). The parent drives
+              // the actual navigation, so proceed is a no-op.
+              attemptLeave(function(){});
             }
           }
         });
