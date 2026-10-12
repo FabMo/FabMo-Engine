@@ -549,10 +549,12 @@ require('./cm-fabmo-modes.js');
         // blur fires on any focus loss — including opening the "MACRO Saves"
         // dropdown to reach the Save button — so a blur-driven prompt popped
         // constantly, including right when the user was reaching for Save.
-        // The unsaved-changes prompt now lives on the deliberate leave paths
-        // (Escape, exit button via attemptLeave; side-nav icons via the
-        // postMessage handler below). The explicit run/submit click flows are
-        // still serviced here.
+        // The unsaved-changes prompt now lives on the in-app leave paths that
+        // keep the iframe alive until the user answers: Escape and the exit
+        // button (via attemptLeave), and Save-and-Close. Left-nav navigation
+        // can't be guarded (the shell destroys the iframe synchronously — see
+        // the postMessage handler below). The explicit run/submit click flows
+        // are still serviced here.
         // SPECIAL CASES
         } else if (isRunCodeImmediatelyClick) {
             // Prompt and prevent running the code once if there are unsaved changes
@@ -599,17 +601,15 @@ require('./cm-fabmo-modes.js');
                 console.log("Clicked element outside iframe:", event.data);
                 console.log("Last clicked element:", eventId);
 
-            if (eventId === 'icon_def' || eventId === 'icon_folder' || eventId === 'icon_editor' || eventId === 'icon_jobs' || eventId === 'icon_settings' || eventId === 'icon_video') {
-              // Navigating to another app is a leave — same guard as Escape /
-              // exit. attemptLeave saves a macro in place with save() on "Yes"
-              // (promptSaveWork ran submitJob here, which opened the submit-as-
-              // new-job modal instead of saving the macro). The parent drives
-              // the actual navigation, so proceed is a no-op; beginLeave keeps
-              // the beforeunload guard from double-prompting as the parent
-              // tears the iframe down.
-              beginLeave();
-              attemptLeave(function(){});
-            }
+            // NOTE: left-nav navigation is intentionally NOT guarded here.
+            // The dashboard shell swaps apps by replacing the editor iframe
+            // synchronously on click (views.js AppClientView.render ->
+            // client_container.html()). Any dialog opened from this handler
+            // lives in a frame that is destroyed before the user can answer,
+            // so its save callback can never run — there is no reliable way
+            // to prompt or save a macro on this path from inside the app.
+            // (Escape / exit / Save-and-Close DO guard: those keep the iframe
+            // alive until the user answers, then navigate themselves.)
           }
         });
 
