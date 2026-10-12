@@ -686,6 +686,13 @@
         });
     };
 
+    // Cancel any queued (not yet executed) fixed moves. Sent when a
+    // typematic fixed-mode gesture ends so repeats that stacked up behind
+    // the executing increment don't play out after the button is released.
+    FabMoAPI.prototype.manualNudgeCancel = function () {
+        this.executeRuntimeCode("manual", { cmd: "nudge_cancel" });
+    };
+
     FabMoAPI.prototype.manualRunGCode = function (code) {
         this.executeRuntimeCode("manual", { cmd: "raw", code: code });
     };

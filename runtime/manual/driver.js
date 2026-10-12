@@ -45,6 +45,11 @@ var DEFAULT_MAX_NUDGES = 3;
 // times.
 var EXIT_WATCHDOG_INTERVAL = 1000;
 var EXIT_WATCHDOG_MAX_CHECKS = 5;
+// Queued nudges older than this are discarded instead of executed. A tap that
+// queues behind a normally-executing move drains well inside this window; one
+// that has sat longer means the queue was wedged (missed status edge, stale
+// hold) — bursting the backlog out at that point is how bits get crashed.
+var NUDGE_QUEUE_TTL = 3000;
 
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
@@ -848,6 +853,22 @@ function snapNudgeDistance(currentPos, distance, increment) {
 
 // Returns the number of nudges
 ManualDriver.prototype._handleNudges = function () {
+    // Discard nudges that have waited past NUDGE_QUEUE_TTL. A fresh backlog
+    // (taps queued behind an executing move) drains normally; an old one
+    // means the queue was wedged and the user has long since concluded the
+    // key is dead — executing it now produces motion nobody is asking for.
+    if (this.fixedQueue.length > 0) {
+        var now = Date.now();
+        var fresh = this.fixedQueue.filter(function (m) {
+            return !m.queued_at || now - m.queued_at <= NUDGE_QUEUE_TTL;
+        });
+        if (fresh.length < this.fixedQueue.length) {
+            log.warn(
+                "_handleNudges(): discarding " + (this.fixedQueue.length - fresh.length) + " stale queued nudge(s)"
+            );
+            this.fixedQueue = fresh;
+        }
+    }
     count = this.fixedQueue.length;
 
     if (this.fixedQueue.length > 0) {
@@ -1003,21 +1024,30 @@ ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, sec
         log.warn("fixedMove(): Move queue is already full!");
         return;
     }
+    var move = { axis: axis, speed: speed, distance: distance, queued_at: Date.now() };
     if (second_axis) {
-        this.fixedQueue.push({
-            axis: axis,
-            speed: speed,
-            distance: distance,
-            second_axis: second_axis,
-            second_distance: second_distance,
-        });
-    } else {
-        this.fixedQueue.push({ axis: axis, speed: speed, distance: distance });
+        move.second_axis = second_axis;
+        move.second_distance = second_distance;
     }
-    if (this.moving) {
+    this.fixedQueue.push(move);
+    // Queue (rather than execute now) while a stop/flush is in flight too:
+    // gcode written into that window is either discarded by the flush or
+    // buffered behind a feedhold. The queue drains on the stat:3 that ends
+    // the stop (or the movement watchdog).
+    if (this.moving || this.stop_pending) {
         log.warn("fixedMove(): Queueing move, due to already moving.");
     } else {
         this._handleNudges();
+    }
+};
+
+// Cancel any queued (not yet executed) nudges. Sent by the client when a
+// typematic fixed-mode gesture ends: the in-flight increment finishes, but
+// repeats that stacked up behind it must not play out after release.
+ManualDriver.prototype.cancelNudges = function () {
+    if (this.fixedQueue.length > 0) {
+        log.debug("cancelNudges(): discarding " + this.fixedQueue.length + " queued nudge(s)");
+        this.fixedQueue = [];
     }
 };
 
@@ -1263,7 +1293,9 @@ ManualDriver.prototype._onG2Status = function (status) {
     // object (this file is not strict mode), so the flag was never actually cleared.
     this.movement_timer = setTimeout(function () {
         this.moving = false;
-        if (this.fixedQueue.length > 0) {
+        // Same HOLDING guard as the status handler: never drain nudges into
+        // a held planner — they'd buffer in G2 and burst out on a resume.
+        if (this.fixedQueue.length > 0 && this.driver.status.stat !== this.driver.STAT_HOLDING) {
             this._handleNudges();
         }
     }.bind(this), 2000);
@@ -1295,8 +1327,12 @@ ManualDriver.prototype._onG2Status = function (status) {
             this.gotoModeHold = false;
         // Fall through is intended here, do not add a break
         case this.driver.STAT_HOLDING:
-            // Handle nudges once we've come to a stop
-            if (this._handleNudges()) {
+            // Handle nudges once we've come to a stop — but never while G2 is
+            // still HOLDING: gcode written during a feedhold doesn't execute,
+            // it buffers inside G2 and fires all at once on a later resume
+            // (seen in the field as queued fixed moves bursting out together).
+            // Queued nudges just wait for the stat:3 that follows the hold.
+            if (status.stat !== this.driver.STAT_HOLDING && this._handleNudges()) {
                 // Nudges got handled
             } else {
                 // extra flushes may be coming from here

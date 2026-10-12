@@ -135,6 +135,7 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
 // {cmd:"stop"} - Stop movement, but do not exit the manual mode
 // {cmd:"quit"} - Quit motion (from hold w/resume)
 // {cmd:"maint"} - Maintain motion along the current vector // 9/2023 now in server, see elsewhere
+// {cmd:"nudge_cancel"} - Discard queued fixed moves (the executing one finishes)
 // {cmd:"goto",move:{X:1,Y:2,Z:3}} - Go to x,y,z = 1,2,3
 // {cmd:"set", move:{X:1,Y:2,Z:3}} - Set current x,y,z to 1,2,3 (No movement)
 // {cmd:"output", output:out, value:val} - Set output to value, also uses raw, see driver
@@ -206,6 +207,10 @@ ManualRuntime.prototype.executeCode = function (code) {
                         this.enter();
                     }
                     this.helper.nudge(code.axis, code.speed, code.dist, code.second_axis, code.second_dist);
+                    break;
+
+                case "nudge_cancel":
+                    this.helper.cancelNudges();
                     break;
 
                 case "output":

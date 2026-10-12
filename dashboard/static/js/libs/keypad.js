@@ -16,7 +16,7 @@
         this.going = false;
         this.interval = null;
         this.enabled = false;
-        this.listeners = { go: [], stop: [], nudge: [], exit: [], enter: [] };
+        this.listeners = { go: [], stop: [], nudge: [], nudgeCancel: [], exit: [], enter: [] };
         this.pressThreshold = 50;
         this.pressTime = 150;
         this.tapInterval = 150;
@@ -24,6 +24,8 @@
         this.slideOffDetected = false; // Track slide-off state
         this.nudgeExecuted = false; // Track if nudge executed for current gesture
         this.typematicTimer = null; // Repeat timer for held fixed-mode buttons
+        this.fixedGesture = false; // True if the current/last gesture was a fixed-mode nudge
+        this.typematicFired = false; // True once a typematic repeat has fired this gesture
         
         this.setOptions(options);
         this.init();
@@ -591,23 +593,37 @@
         this.clearTypematic();
 
         // Don't emit stop if keypad is already idle
+        var wasGoing = this.going;
         var wasActive = this.going || this.enabled;
         this.going = false;
         this.enabled = false;
         this.target = null;
-        
+
         if (this.interval) {
             clearTimeout(this.interval);
             this.interval = null;
         }
-        
+
         this.elem
             .find(".drive-button")
             .removeClass("drive-button-active")
             .removeClass("drive-button-active-transient")
             .addClass("drive-button-inactive");
-        
-        if (wasActive) {
+
+        if (wasGoing) {
+            this.emit("stop", null);
+        } else if (wasActive && this.fixedGesture) {
+            // Fixed-mode gesture: never send a stop — the server answers it
+            // with a feedhold + queue flush that races the nudge's gcode,
+            // truncating the move or stranding it (and everything tapped
+            // after it) in the nudge queue. If typematic repeats fired
+            // during the hold, cancel whatever is still queued server-side
+            // so motion ends with the in-flight increment.
+            if (this.typematicFired) {
+                this.typematicFired = false;
+                this.emit("nudgeCancel", null);
+            }
+        } else if (wasActive) {
             this.emit("stop", null);
         }
     };
@@ -658,6 +674,9 @@
         
         var e = $(evt.target);
         e.focus();
+
+        this.fixedGesture = e.hasClass("drive-button-fixed");
+        this.typematicFired = false;
 
         if (e.hasClass("drive-button-fixed")) {
             // Fixed mode: Execute nudge only if not already done (prevents doublets)
@@ -785,6 +804,7 @@
                 this.clearTypematic();
                 return;
             }
+            this.typematicFired = true;
             this.nudge.apply(this, move);
             e.addClass("drive-button-active-transient").removeClass("drive-button-inactive");
             this.typematicTimer = setTimeout(repeat, this.repeatInterval);
@@ -809,6 +829,9 @@
             if (!move) {
                 return;
             }
+            // A tap-nudge is a fixed-mode gesture regardless of which event
+            // path delivered it — a later end() must not answer it with a stop.
+            this.fixedGesture = true;
             this.nudge.apply(this, move);
             e.addClass("drive-button-active-transient").removeClass(
                 "drive-button-inactive"
