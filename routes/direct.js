@@ -208,7 +208,22 @@ var evalExpr = function (req, res, next) {
     res.json({ status: "success", data: { expr: expr, value: value } });
 };
 
+/**
+ * @api {get} /opensbp/commands Get the OpenSBP command table
+ * @apiGroup OpenSBP
+ * @apiDescription Returns the command table (runtime/opensbp/sb3_commands.json): for each
+ *   two-letter command, its name and the list of parameters (name, description, type,
+ *   default, options, range, system variable). The runtime uses the parameter count to
+ *   size command arguments; Sb4 and Tool Status use the rest to build menus and
+ *   fill-in sheets. This is the single source of that table — apps must not ship a copy.
+ */
+var getCommands = function (req, res, next) {
+    res.json(require("../runtime/opensbp/sb3_commands.json"));
+    next();
+};
+
 module.exports = function (server) {
+    server.get("/opensbp/commands", getCommands);
     server.post("/code", code);
     server.post("/code/sim_input", simInput);
     server.post("/code/check_bounds", checkBounds);

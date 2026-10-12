@@ -83,9 +83,10 @@ $(document).ready(function () {
     // Just testing the positioning of this ...
     $(".spindle-display").css("visibility", "hidden");
 
-    // *** Make a quick LIst of all the commands in the JSON file to use for validations later ***
+    // *** Make a quick LIst of all the commands in the command table to use for validations later ***
+    // The table is served by the engine from runtime/opensbp/sb3_commands.json (single source; no local copy)
     $.getJSON( 
-        'assets/sb3_commands.json', 
+        '/opensbp/commands', 
         function (data) {
             for (key in data) {
                 globals.LIcmds.push(key);
@@ -100,11 +101,11 @@ $(document).ready(function () {
     window.globals.ORigin = window.location.origin;   // Returns base URL (https://example.com)
     $("#copyright").append("   [" + window.globals.ORigin + "]");
 
-    // *** Get MENUs Items from JSON file @initial load ***
+    // *** Get MENUs Items from the command table @initial load ***
     // ... note that additional line is required to capture details for fill-ins, currently for C, S, V, T
     $.getJSON(     
-        'assets/sb3_commands.json',       // Originally from 'https://raw.githubusercontent.com/FabMo/FabMo-Engine/master/runtime/opensbp/sb3_commands.json'
-        function (data) {                  // ... now using local copy with lots of mods and updates
+        '/opensbp/commands',              // engine route serving runtime/opensbp/sb3_commands.json
+        function (data) {
             getExcludedAxes(function (excluded_axes_str) {
                 for (key in data) {
                     switch (key.substring(0, 1)) {

@@ -12,10 +12,10 @@
       ]
    },
    "SC": {
-   "cmd": "SC",
-   "name":"Set Coordinate System",
-   "params":[
-   {
+      "cmd": "SC",
+      "name": "Set Coordinate System",
+      "params": [
+         {
             "name": "Coordinate System",
             "desc": "The coordinate system to set as the current coordinate system.",
             "abrev": "coord",
@@ -35,33 +35,28 @@
             "sysvar": "0",
             "type": "opt"
          }
-   ]
+      ]
    },
    "FP": {
       "cmd": "FP",
       "name": "PART FILE LOAD"
    },
-   
    "FL": {
       "cmd": "FL",
       "name": "re-load File Last run"
    },
-   
    "FE": {
       "cmd": "FE",
       "name": "last File Edit (local cache)"
    },
-   
    "FR": {
       "cmd": "FR",
       "name": "select from Files Recently run"
    },
-
    "FN": {
       "cmd": "FN",
       "name": "New blank part file"
    },
-   
    "MX": {
       "cmd": "MX",
       "name": "move X axis",
@@ -451,7 +446,7 @@
             ],
             "type": "ops"
          },
-               {
+         {
             "name": "New C location",
             "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
             "abrev": "mvC",
@@ -514,6 +509,25 @@
    "MH": {
       "cmd": "MH",
       "name": "move Home (X and Y; Z Safe Height)"
+   },
+   "MO": {
+      "cmd": "MO",
+      "name": "move speed Override (5% - 200% Change)",
+      "params": [
+         {
+            "name": "% Change",
+            "desc": "Override the current feed-rate (move speed)",
+            "abrev": "mvOvr",
+            "typeext": 0,
+            "default": "100",
+            "sysvar": 0,
+            "range": [
+               5,
+               200
+            ],
+            "type": "str"
+         }
+      ]
    },
    "MS": {
       "cmd": "MS",
@@ -2230,6 +2244,38 @@
          }
       ]
    },
+   "SP": {
+      "cmd": "SP",
+      "name": "set PWM output (0 - 1)",
+      "params": [
+         {
+            "name": "PWM Number",
+            "desc": "PWM output to set: 0 or 1 (mapped to outputs 11 and 12)",
+            "abrev": "pwm",
+            "typeext": 0,
+            "default": "0",
+            "sysvar": 0,
+            "range": [
+               0,
+               1
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Level",
+            "desc": "Duty level from 0.0 (off) to 1.0 (full)",
+            "abrev": "lvl",
+            "typeext": 0,
+            "default": "0",
+            "sysvar": 0,
+            "range": [
+               0,
+               1
+            ],
+            "type": "sng"
+         }
+      ]
+   },
    "SR": {
       "cmd": "SR",
       "name": "set to Relative mode"
@@ -2237,6 +2283,11 @@
    "ST": {
       "cmd": "ST",
       "name": "set to Table base coordinates"
+   },
+   "SV": {
+      "cmd": "SV",
+      "name": "save Values (persist current speeds and settings)",
+      "params": []
    },
    "SU": {
       "cmd": "SU",
@@ -4175,6 +4226,23 @@
             "type": "opt"
          },
          {
+            "name": "File Limit Checking",
+            "desc": "Turn ON or OFF software-based limit checking",
+            "abrev": "ON",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "1",
+            "default_desc": "ON",
+            "opts": [
+               {
+                  "value": "0",
+                  "desc": "0ff"
+               }
+            ],
+            "sysvar": 0,
+            "type": "distmb"
+         },
+         {
             "name": "Low B Limit",
             "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
             "abrev": "loB",
@@ -4196,6 +4264,19 @@
             "disptype": "1",
             "default": "500",
             "sysvar": 110,
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Number of Axes to Check",
+            "desc": "Define how many axes to check",
+            "abrev": "lmNm",
+            "typeext": 0,
+            "default": "5",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -4229,53 +4310,6 @@
                null
             ],
             "type": "int"
-         },
-         {
-            "name": "Number of Axes to Check",
-            "desc": "Define how many axes to check",
-            "abrev": "lmNm",
-            "typeext": 0,
-            "default": "5",
-            "sysvar": 113,
-            "range": [
-               null,
-               null
-            ],
-            "type": "int"
-         },
-         {
-            "name": "Limit Switches ON/OFF",
-            "desc": "Turn ON or OFF limit switches",
-            "abrev": "ON",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "1",
-            "default_desc": "ON",
-            "opts": [
-               {
-                  "value": "0",
-                  "desc": "0ff"
-               }
-            ],
-            "sysvar": "46",
-            "type": "distmb"
-         },
-         {
-            "name": "File Limit Checking",
-            "desc": "Turn ON or OFF software-based limit checking",
-            "abrev": "ON",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "1",
-            "default_desc": "ON",
-            "opts": [
-               {
-                  "value": "0",
-                  "desc": "0ff"
-               }
-            ],
-            "sysvar": "114",
-            "type": "distmb"
          }
       ]
    },
@@ -5366,7 +5400,6 @@
       "cmd": "UI",
       "name": "Install Control Box Firmware"
    },
-
    "TR": {
       "cmd": "TR",
       "name": "Tool for Spindle RPM Control",
@@ -5417,8 +5450,6 @@
          }
       ]
    },
-
-
    "DE": {
       "cmd": "DE",
       "name": "Design with Inventables' EASEL"
@@ -5431,7 +5462,6 @@
       "cmd": "DT",
       "name": "Design with Autodesk's TinkerCAD"
    },
-
    "HS": {
       "cmd": "HS",
       "name": "SAFETY !"
@@ -5444,21 +5474,20 @@
       "cmd": "HC",
       "name": "Command Reference"
    },
+   "HB": {
+      "cmd": "HB",
+      "name": "ShopBot CNC Handbook "
+   },
    "HL": {
       "cmd": "HL",
       "name": "List Configs and Variables"
    },
    "HF": {
       "cmd": "HF",
-      "name": "User Forum"
+      "name": "Talk ShopBot User Forum"
    },
    "HW": {
       "cmd": "HW",
       "name": "ShopBot Website"
-   },
-   "HA": {
-      "cmd": "HA",
-      "name": "help About"
    }
-
 }

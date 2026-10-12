@@ -1802,11 +1802,11 @@ function consoleTrackRun(status) {
 // Console fill-in sheets (SB3/SB4-style). A bare two-letter command that
 // takes parameters (VA, VC, MS, JS, ...) opens a dialog of its parameters
 // instead of running immediately — the same behavior as the SB4 console.
-// Command definitions come from assets/sb3_commands.json (SB4's annotated
-// copy of the engine's command table).
+// Command definitions come from the engine's command table
+// (runtime/opensbp/sb3_commands.json, served at /opensbp/commands).
 
 var fillinCmds = null;
-$.getJSON("assets/sb3_commands.json", function (data) {
+$.getJSON("/opensbp/commands", function (data) {
     fillinCmds = data;
 });
 
