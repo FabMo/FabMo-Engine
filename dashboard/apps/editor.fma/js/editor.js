@@ -310,9 +310,41 @@ require('./cm-fabmo-modes.js');
           });
       } else {
           if (callback) {
-            callback(); 
+            callback();
           }
       }
+    }
+
+    // Guard a deliberate attempt to LEAVE the editor (Escape, exit button).
+    // Unlike promptSaveWork (which runs submitJob), this saves the document
+    // in place — a macro is saved with save(), not submitted as a new job.
+    // Scratchpad needs no guard (it autosaves on blur). The "No (click action
+    // again)" choice sets overrideDirty so a second Escape/exit leaves without
+    // re-prompting — so an accidental Escape warns once, a deliberate one gets
+    // you out.
+    function attemptLeave(proceed) {
+      if (!source || !isDirty || overrideDirty) {
+          proceed();
+          return;
+      }
+      fabmo.showModal({
+          title: window.t('editor.modal.unsaved_changes_title'),
+          message: window.t('editor.modal.unsaved_changes_message'),
+          okText: window.t('editor.modal.yes'),
+          cancelText: window.t('editor.modal.no_click_again'),
+          ok: function() {
+              // Persist, then leave. Macros save in place; anything else
+              // (job/scratchpad) keeps the prior submit-as-job behavior.
+              if (source === 'macro') {
+                  save(proceed);
+              } else {
+                  submitJob(proceed);
+              }
+          },
+          cancel: function() {
+              overrideDirty = true; // next Escape/exit leaves without re-prompting
+          }
+      });
     }
 
     // ---- Variable hover tooltip ------------------------------------------------
@@ -504,11 +536,15 @@ require('./cm-fabmo-modes.js');
         // If Scratchpad (i.e. not a Macro or Job) always just save to browser
         if (!source) {
             save();
-        // If Macro or Job,     
-        // ... and dirty, AND outside one of the special buttons handled separately, prompt to saveWork          
-        } else if (isDirty && !isSaveAndSubmitClick && !isRunCodeImmediatelyClick && !isMacroSaveClick && !isMacroSaveAndCloseClick) {
-            promptSaveWork();
-        // SPECIAL CASES    
+        // NOTE: blur is NOT used to prompt for unsaved macro/job changes.
+        // blur fires on any focus loss — including opening the "MACRO Saves"
+        // dropdown to reach the Save button — so a blur-driven prompt popped
+        // constantly, including right when the user was reaching for Save.
+        // The unsaved-changes prompt now lives on the deliberate leave paths
+        // (Escape, exit button via attemptLeave; side-nav icons via the
+        // postMessage handler below). The explicit run/submit click flows are
+        // still serviced here.
+        // SPECIAL CASES
         } else if (isRunCodeImmediatelyClick) {
             // Prompt and prevent running the code once if there are unsaved changes
             if (isDirty) {
@@ -631,12 +667,12 @@ require('./cm-fabmo-modes.js');
             localStorage.setItem("backapp", back_App);
         } 
         $(".exit-button").on("click", function(){
-            fabmo.launchApp(back_App);
+            attemptLeave(function(){ fabmo.launchApp(back_App); });
         });
         document.onkeyup = function (evt) {
             if (evt.key === "Escape") {
                 evt.preventDefault();
-                fabmo.launchApp(back_App);
+                attemptLeave(function(){ fabmo.launchApp(back_App); });
             }
         };
       ////##
