@@ -77,9 +77,11 @@
         this.move = null;
         this.going = false;
         this.interval = null;
-        this.listeners = { go: [], stop: [], nudge: [] };
+        this.listeners = { go: [], stop: [], nudge: [], nudgeCancel: [] };
         this.setOptions(options);
         this.nudgeTimer = null;
+        this.fixedGesture = false; // True if the current/last gesture was a fixed-mode nudge
+        this.fixedRepeatCount = 0;
     };
 
     /* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
@@ -161,19 +163,38 @@
         }
     };
 
+    // End the current gesture with the right server command: continuous
+    // motion gets a stop (feedhold); a fixed-mode gesture must NOT — the
+    // server answers a stop with a feedhold + queue flush that races the
+    // nudge's gcode, truncating the move or stranding it in the nudge queue.
+    // Instead, if typematic repeats fired, cancel the queued leftovers so
+    // motion ends with the in-flight increment.
+    Keyboard.prototype._endGesture = function () {
+        if (this.fixedGesture) {
+            if (this.fixedRepeatCount > 1) {
+                this.emit("nudgeCancel", null);
+            }
+            this.fixedGesture = false;
+            this.fixedRepeatCount = 0;
+        } else {
+            this.emit("stop", null);
+        }
+    };
+
     // Keep pumping
     Keyboard.prototype.refresh = function () {
         // Defensive state checks
         if (this.enabled !== true || this.going !== true) {
             console.log("Keyboard: Stopping due to state check", {enabled: this.enabled, going: this.going});
-            this.emit("stop", null);
+            this._endGesture();
             this.going = false;  // Ensure clean state
             return;
         }
-        
+
         if ($(".fixed-switch input").is(":checked")) {
             this.nudgeTimer = 1;
             this.going = true;
+            this.fixedGesture = true;
             if (this.enabled === true) {
                 $(".drive-button").removeClass("drive-button-active");
                 this.emit("nudge", this.move);
@@ -221,6 +242,7 @@
             this.move.second_dir = second_dir;
         }
         this.fixedRepeatCount = 0;
+        this.fixedGesture = false;
         let activeArrowStr = second_axis
             ? diagSelector(axis, direction, second_axis, second_dir)
             : "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
@@ -247,8 +269,8 @@
             clearTimeout(this.nudgeTimer);
             this.nudgeTimer = null;
         }
-        
-        this.emit("stop", null);
+
+        this._endGesture();
         $(".drive-button").removeClass("drive-button-active");
         $(".drive-button").removeClass("drive-button-active-transient");
     };
@@ -408,6 +430,9 @@
             nudge.second_dir = second_dir;
         }
         if (this.enabled) {
+            // A tap-nudge is a fixed-mode gesture — a later keyup/stop path
+            // must not answer it with a feedhold-generating stop.
+            this.fixedGesture = true;
             this.emit("nudge", nudge);
             let activeArrowStr = second_axis
                 ? diagSelector(axis, direction, second_axis, second_dir)

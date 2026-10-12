@@ -2143,6 +2143,10 @@ function setupKeyboard() {
         dashboard.engine.manualStop();
     });
 
+    keyboard.on("nudgeCancel", function () {
+        dashboard.engine.manualNudgeCancel();
+    });
+
     keyboard.on("nudge", function (nudge) {
         fixedTimeStart = Date.now(); // for measuring keypad response latency
         var speed = manualSpeedFor(nudge, getManualMoveSpeed(nudge));
@@ -2253,6 +2257,10 @@ function setupKeypad() {
     keypad.on("stop", function (evt) {
         keyPressed = false;
         dashboard.engine.manualStop();
+    });
+
+    keypad.on("nudgeCancel", function () {
+        dashboard.engine.manualNudgeCancel();
     });
 
     keypad.on("nudge", function (nudge) {
