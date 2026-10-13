@@ -422,6 +422,14 @@ function refreshStatus(callback) {
     });
 }
 
+// Snapshot of the data the table was last rendered from. The focus-triggered
+// refresh (below) must not rebuild the table when nothing changed: the focus
+// event fires on the mousedown that refocuses this iframe, and replacing the
+// row mid-click means the mouseup lands on a different element, so the
+// browser never dispatches the click — the play button appears to need two
+// presses.
+var lastRenderKey = null;
+
 function refreshMacros(callback) {
     callback = callback || function() {};
     fabmo.getMacros(function(err, macros) {
@@ -430,6 +438,11 @@ function refreshMacros(callback) {
         }
         refreshStatus(function () {
             updateMacroIndex(macros);
+            var renderKey = JSON.stringify([macros, statusIndex]);
+            if (renderKey === lastRenderKey) {
+                return callback(null);
+            }
+            lastRenderKey = renderKey;
             clearMacroTable();
             addMacros(macros);
             callback(null);

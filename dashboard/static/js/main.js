@@ -43,6 +43,7 @@ var isRunning = false;
 var keyPressed = false;
 var isAuth = false;
 var lastInfoSeen = null;
+var lastOut1Seen = null;
 var lastErrorSeen = null;
 var lastSoftLimitPromptId = null;
 var consent = "";
@@ -791,7 +792,12 @@ engine.getVersion(function (err, version) {
                     case "probing":
                     case "paused":
                     case "stopped":
-                        if (modalIsShown === false) {
+                        // Gate on the modal's actual visibility, not the local
+                        // modalIsShown flag: dashboard.hideModal() and the
+                        // default modal buttons don't clear this module's copy
+                        // of the flag, which left the footer suppressed for
+                        // the whole run after any dismissed info modal.
+                        if (!$(".newModal").is(":visible")) {
                             dashboard.handlers.showFooter();
                         }
                         break;
@@ -861,6 +867,20 @@ engine.getVersion(function (err, version) {
                     $(".axis.at-limit").removeClass("at-limit");
                     lastSoftLimitPromptId = null;
                     hideSoftLimitPrompt();
+                }
+                // Keep the keypad spindle button synced to the real output
+                // state. The click handler flips the icon optimistically, but
+                // the server can refuse the start (interlock disengaged), in
+                // which case out1 never comes on.
+                if (typeof status.out1 !== "undefined" && status.out1 !== lastOut1Seen) {
+                    lastOut1Seen = status.out1;
+                    if (status.out1) {
+                        $("#action-5 img").attr("src", "../img/icon_spindle_on.png");
+                        $("#action-5").css("background-color", "orangered");
+                    } else {
+                        $("#action-5 img").attr("src", "../img/icon_spindle_off.png");
+                        $("#action-5").css("background-color", "#ce6402");
+                    }
                 }
                 if (status["info"] && status["info"]["id"] != lastInfoSeen) {
                     lastInfoSeen = status["info"]["id"];

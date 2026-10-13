@@ -1156,7 +1156,7 @@ Machine.prototype._checkInterlockEdge = function () {
             this.info_id += 1;
             this.status.info = {
                 id: this.info_id,
-                message: "Interlock triggered — clear the interlock input before resuming or starting the spindle.",
+                message: "Interlock disengaged — engage the interlock before resuming or starting the spindle.",
             };
             this.emit("status", this.status);
         }
@@ -1188,7 +1188,7 @@ Machine.prototype.isSpindleStartBlocked = function (out, val) {
     if (!(outNum === 1 || outNum === 2)) return null;
     if (!(valNum === 1 || valNum === true)) return null;
     if (!this.isInterlockInputActive()) return null;
-    return "Spindle start blocked: interlock input is active";
+    return "Spindle start blocked: the interlock is disengaged. Engage the interlock before starting the spindle.";
 };
 
 // True iff a gcode/SBP file string contains any command that would turn on
@@ -1579,14 +1579,13 @@ Machine.prototype._runFile = function (filename) {
     // direct runs and queued/auto-fired jobs.
     if (!fs.existsSync(filename)) {
         log.error("_runFile: job file not found on disk: " + filename);
-        this.info_id += 1;
-        this.status.info = {
-            id: this.info_id,
-            message: "Job file not found on disk — it may have been removed. Please re-upload the file.",
-        };
         this.status.job = null;
         this.disarm();
-        this.setState(this, "idle");
+        // Pass the message as stateinfo: setState with no stateinfo
+        // DELETES status.info, which would silently eat this warning.
+        this.setState(this, "idle", {
+            message: "Job file not found on disk — it may have been removed. Please re-upload the file.",
+        });
         this.emit("status", this.status);
         return;
     }
@@ -1600,13 +1599,13 @@ Machine.prototype._runFile = function (filename) {
         try {
             var contents = fs.readFileSync(filename, "utf8");
             if (fileContainsSpindleStart(contents)) {
-                var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running a job that turns on the spindle.";
+                var msg = "Spindle start blocked: the interlock is disengaged. Engage the interlock before running a job that turns on the spindle.";
                 log.warn("_runFile: refused -- interlock active and file contains spindle-start: " + filename);
-                this.info_id += 1;
-                this.status.info = { id: this.info_id, message: msg };
                 this.status.job = null;
                 this.disarm();
-                this.setState(this, "idle");
+                // Pass the message as stateinfo: setState with no stateinfo
+                // DELETES status.info, which was silently eating this warning.
+                this.setState(this, "idle", { message: msg });
                 this.emit("status", this.status);
                 return;
             }
@@ -2105,7 +2104,7 @@ Machine.prototype.executeRuntimeCode = function (runtimeName, code, options) {
     // code (jog buttons, output toggles) is gated at its own chokepoints.
     if (runtimeName !== "manual" && typeof code === "string" && this.isInterlockInputActive()) {
         if (fileContainsSpindleStart(code)) {
-            var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running code that turns on the spindle.";
+            var msg = "Spindle start blocked: the interlock is disengaged. Engage the interlock before running code that turns on the spindle.";
             log.warn("executeRuntimeCode: refused (" + runtimeName + ") -- interlock active and code contains spindle-start");
             this.info_id += 1;
             this.status.info = { id: this.info_id, message: msg };
@@ -2396,7 +2395,7 @@ Machine.prototype._executeRuntimeCode = function (runtimeName, code, options) {
     // _executeRuntimeCode later, bypassing the outer check.
     if (runtimeName !== "manual" && typeof code === "string" && this.isInterlockInputActive()) {
         if (fileContainsSpindleStart(code)) {
-            var msg = "Spindle start blocked: interlock input is active. Clear the interlock before running code that turns on the spindle.";
+            var msg = "Spindle start blocked: the interlock is disengaged. Engage the interlock before running code that turns on the spindle.";
             log.warn("_executeRuntimeCode: refused (" + runtimeName + ") -- interlock active and code contains spindle-start");
             this.info_id += 1;
             this.status.info = { id: this.info_id, message: msg };

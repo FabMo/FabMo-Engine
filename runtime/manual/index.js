@@ -222,7 +222,15 @@ ManualRuntime.prototype.executeCode = function (code) {
                         var blockReason = this.machine.isSpindleStartBlocked(code.out.output, code.out.value);
                         if (blockReason) {
                             log.warn("manual output blocked: " + blockReason + " (out=" + code.out.output + " val=" + code.out.value + ")");
-                            this.machine.status.info = { type: "warning", message: blockReason };
+                            // Must carry a fresh id: the dashboard only displays
+                            // status.info when info.id differs from the last one
+                            // seen, so an id-less info object is never shown.
+                            this.machine.info_id += 1;
+                            this.machine.status.info = {
+                                id: this.machine.info_id,
+                                type: "warning",
+                                message: blockReason,
+                            };
                             this.machine.emit("status", this.machine.status);
                             return;
                         }
