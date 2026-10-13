@@ -43,7 +43,6 @@ var isRunning = false;
 var keyPressed = false;
 var isAuth = false;
 var lastInfoSeen = null;
-var lastErrorSeen = null;
 var lastSoftLimitPromptId = null;
 var consent = "";
 var disconnected = false;
@@ -1083,35 +1082,8 @@ engine.getVersion(function (err, version) {
 
                         $("#keypad-modal").focus();
                     } else if (status.info["error"]) {
-                        // Check if this is a new error (not already shown)
-                        // Use status.info.id if available, otherwise create unique identifier from error message
-                        var errorId = status.info.id || JSON.stringify(status.info.error);
-                        
-                        if (errorId !== lastErrorSeen) {
-                            lastErrorSeen = errorId; // Mark this error as shown
-                            
-                            // SAVE LOG ON ERROR
-                            console.log('ERROR MODAL - saving log');
-                            fetch('/log/save', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            })
-                            .then(function(response) {
-                                return response.json();
-                            })
-                            .then(function(result) {
-                                if (result.status === 'success') {
-                                    console.log('Log auto-saved due to error modal:', result.data.filename);
-                                }
-                            })
-                            .catch(function(err) {
-                                console.error('Failed to auto-save log on error modal:', err);
-                            });
-
-                        }
-
+                        // (The log is saved by the engine when the error is raised — see
+                        //  Machine.setState — so nothing to save from here.)
                         showModalWhenTranslated(function () {
                             var detailHTML;
                             if (dashboard.engine.status.job) {
