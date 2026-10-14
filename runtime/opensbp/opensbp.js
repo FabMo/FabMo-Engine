@@ -902,34 +902,39 @@ SBPRuntime.prototype._update = function () {
 // Returns a scrubbed list of evaluated arguments to be passed to command handlers
 //   command - The two-character mnemonic for the command, as a string (eg MX,J3,etc)
 //      args - A list of the arguments that were provided with the command by the user (as strings)
+// Parameter types in sb3_commands.json whose values must evaluate to a number.
+// Option lists (opt), check boxes (ck), strings and the odd legacy types are not checked here.
+var NUMERIC_PARAM_TYPES = /^(dist|distm|distma|distmb|dista|distb|distr|distra|sng|int)$/;
+
 SBPRuntime.prototype._evaluateArguments = function (command, args) {
     // Scrub the argument list:  extend to the correct length, mark undefined values as undefined
     // Previously, the "prm" file (sb3_commands.json) was used to substitute default values for commands, but now, that is mostly done by
     // the command handlers themselves.  Still, this is a good place to throw an exception if an argument doesn't pass a sanity check.
+    //
+    // Two checks are made against the command table (runtime/opensbp/sb3_commands.json):
+    //   1. Count - a value beyond the command's last defined parameter is an error.  Empty trailing
+    //      slots ("MX, " or "M2, , ,") are fine: an omitted parameter means "not given", as in SB3.
+    //   2. Type - a value given for a numeric parameter must evaluate to a number.
+    // Both throw; _executeCommand turns the throw into a line-numbered error that ends the file.
     var scrubbed_args = [];
     if (command in sb3_commands) {
         var params = sb3_commands[command].params || [];
 
-        // This is a possibly helpful warning, but is spuriously issued in some cases where commands take no arguments (depending on whitespace, etc.)
-        // TODO - fix that
-        if (args.length > params.length) {
-            if (params.length === 0 && args.length === 1 && args[0] === "") {
-                log.debug(" -- a no-parameter command");
-            } else {
-                log.warn(
-                    "More parameters passed into " +
-                        command +
-                        " (" +
-                        args.length +
-                        ")" +
-                        "(" +
-                        params +
-                        ")" +
-                        " than are supported by the command. (" +
-                        params.length +
-                        ")"
-                );
-            }
+        // Ignore empty trailing slots (the PEG parser gives "", fastParse gives undefined)
+        var given = args.length;
+        while (given > 0 && (args[given - 1] === "" || args[given - 1] === undefined)) {
+            given--;
+        }
+        if (given > params.length) {
+            throw new Error(
+                command +
+                    " was given " +
+                    given +
+                    " value" +
+                    (given === 1 ? "" : "s") +
+                    " but takes " +
+                    (params.length === 0 ? "none" : "at most " + params.length)
+            );
         }
 
         for (var i = 0; i < params.length; i++) {
@@ -950,6 +955,22 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
     var retval = [];
     for (i = 0; i < scrubbed_args.length; i++) {
         retval.push(this._eval(scrubbed_args[i]));
+    }
+
+    // Type check (after evaluation, so variables and expressions are checked by their value)
+    if (command in sb3_commands) {
+        for (i = 0; i < retval.length; i++) {
+            var v = retval[i];
+            if (v === undefined || v === "") {
+                continue;
+            }
+            var p = sb3_commands[command].params[i];
+            if (p && NUMERIC_PARAM_TYPES.test(p.type) && (typeof v === "boolean" || isNaN(parseFloat(v)))) {
+                throw new Error(
+                    command + " parameter " + (i + 1) + " (" + p.name + ") must be a number, got " + JSON.stringify(v)
+                );
+            }
+        }
     }
     return retval;
 };

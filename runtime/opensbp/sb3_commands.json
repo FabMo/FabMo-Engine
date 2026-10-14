@@ -2082,6 +2082,44 @@
             ],
             "sysvar": "0",
             "type": "int"
+         },
+         {
+            "name": "Spiral Plunge (reserved)",
+            "desc": "Reserved for spiral plunge on the first pass; not yet supported in FabMo, leave 0 (spiral/ramped entries are done in CAM for now)",
+            "abrev": "spPl",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
+            "type": "ck"
+         },
+         {
+            "name": "X Center",
+            "desc": "X coordinate of the rectangle center (used when Start Corner is 0 = Center)",
+            "abrev": "cX",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Y Center",
+            "desc": "Y coordinate of the rectangle center (used when Start Corner is 0 = Center)",
+            "abrev": "cY",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
          }
       ]
    },

@@ -1154,6 +1154,10 @@ engine.getVersion(function (err, version) {
                                 cancelText: window.t("status.close_button"),
                                 cancel: function () {
                                     modalIsShown = false;
+                                    // Closing the error dialog must also clear status.info on the
+                                    // server (quit from idle does that), or the same error comes
+                                    // back on the next page load — as the message dialog's OK does.
+                                    dashboard.engine.quit();
                                 },
                             };
                         });

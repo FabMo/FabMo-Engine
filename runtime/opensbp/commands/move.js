@@ -23,6 +23,10 @@ exports._A = function (args, callback) {
 // Move X axis
 exports.MX = function (args) {
     var x = args[0];
+    // No value given (MX, or MX with an empty slot): nothing to do, like an omitted axis in M2-M6
+    if (x === undefined || x === "") {
+        return;
+    }
     if (isNaN(x)) {
         throw "Invalid MX argument: " + x;
     }
@@ -34,6 +38,10 @@ exports.MX = function (args) {
 // Move Y axis
 exports.MY = function (args) {
     var y = args[0];
+    // No value given (MY, or MY with an empty slot): nothing to do, like an omitted axis in M2-M6
+    if (y === undefined || y === "") {
+        return;
+    }
     if (isNaN(y)) {
         throw "Invalid MY argument: " + y;
     }
@@ -45,6 +53,10 @@ exports.MY = function (args) {
 // Move Z axis
 exports.MZ = function (args) {
     var z = args[0];
+    // No value given (MZ, or MZ with an empty slot): nothing to do, like an omitted axis in M2-M6
+    if (z === undefined || z === "") {
+        return;
+    }
     if (isNaN(z)) {
         throw "Invalid MZ argument: " + z;
     }
@@ -56,6 +68,10 @@ exports.MZ = function (args) {
 // Move A axis
 exports.MA = function (args) {
     var a = args[0];
+    // No value given (MA, or MA with an empty slot): nothing to do, like an omitted axis in M2-M6
+    if (a === undefined || a === "") {
+        return;
+    }
     if (isNaN(a)) {
         throw "Invalid MA argument: " + a;
     }
@@ -67,6 +83,10 @@ exports.MA = function (args) {
 // Move B axis
 exports.MB = function (args) {
     var b = args[0];
+    // No value given (MB, or MB with an empty slot): nothing to do, like an omitted axis in M2-M6
+    if (b === undefined || b === "") {
+        return;
+    }
     if (isNaN(b)) {
         throw "Invalid MB argument: " + b;
     }
@@ -78,6 +98,10 @@ exports.MB = function (args) {
 // Move C axis
 exports.MC = function (args) {
     var c = args[0];
+    // No value given (MC, or MC with an empty slot): nothing to do, like an omitted axis in M2-M6
+    if (c === undefined || c === "") {
+        return;
+    }
     if (isNaN(c)) {
         throw "Invalid MC argument: " + c;
     }
