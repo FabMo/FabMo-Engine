@@ -334,5 +334,10 @@ exports.MS = function (args, callback) {
     callback();
 };
 
-// Override current move speed in G2
-// Have not implemented MO, might be for some sort of override; OR M0 to turn off motors (because we can't do it consistently for all tools)
+// MO / M0 -- RESERVED, deliberately not implemented (Oct 2026).
+// In the original OpenSBP language these turned stepper motor power OFF by driving an
+// output line dedicated to driver power control. ShopBot has not consistently provided
+// that line on the controller interface board, so the commands are not implemented.
+// Do not reuse "MO" for anything else (it was briefly a feed-rate override in 2024; the
+// live override is the dashboard spinner -> /uix/fr_override -> machine.frOverride -> G2 {fro}).
+// Keep the names free so motor-power-off can be added later if the hardware supports it.

@@ -461,73 +461,9 @@
          }
       ]
    },
-   "MD": {
-      "cmd": "MD",
-      "name": "move Distance at Angle",
-      "params": [
-         {
-            "name": "Distance to Move",
-            "desc": "Distance to go at the specified angle",
-            "abrev": "mvDst",
-            "typeext": 0,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "str"
-         },
-         {
-            "name": "Angle",
-            "desc": "Direction to go in degrees, relative degrees (use R or L), clock (4:30), or compass (WSW)",
-            "abrev": "mvDir",
-            "typeext": 0,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "dist"
-         },
-         {
-            "name": "Z Move",
-            "desc": "New Z location at end or move, or Relative Z change during move (use U or D)",
-            "abrev": "mvZr",
-            "typeext": 0,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "dist"
-         }
-      ]
-   },
    "MH": {
       "cmd": "MH",
       "name": "move Home (X and Y; Z Safe Height)"
-   },
-   "MO": {
-      "cmd": "MO",
-      "name": "move speed Override (5% - 200% Change)",
-      "params": [
-         {
-            "name": "% Change",
-            "desc": "Override the current feed-rate (move speed)",
-            "abrev": "mvOvr",
-            "typeext": 0,
-            "default": "100",
-            "sysvar": 0,
-            "range": [
-               5,
-               200
-            ],
-            "type": "str"
-         }
-      ]
    },
    "MS": {
       "cmd": "MS",
