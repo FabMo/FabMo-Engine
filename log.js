@@ -513,6 +513,44 @@ var saveCurrentLog = function(source, callback) {
 };
 
 
+// Save the log buffer as fabmo-<source>-<timestamp>-log.txt, unless a save for
+// that same source happened less than minInterval ms ago. This is the entry
+// point for automatic saves (an error ending a run, an explicit save button):
+// a burst of repeated errors, several open browser tabs or a page reload must
+// not each write a file and push older, possibly useful, logs out of rotation.
+// Rotates the log directory after a successful write.
+//   callback(err, filename, throttled) - filename is the file just written, or
+//   the last file written for this source when throttled (null if none yet).
+var AUTO_SAVE_COOLDOWN = 30000;
+var lastSaveTimeBySource = {};
+var lastSaveFileBySource = {};
+var saveCurrentLogThrottled = function(source, minInterval, callback) {
+	callback = callback || function() {};
+	source = source || 'emergency';
+	if(minInterval === undefined || minInterval === null) {
+		minInterval = AUTO_SAVE_COOLDOWN;
+	}
+	var now = Date.now();
+	var last = lastSaveTimeBySource[source] || 0;
+	if(now - last < minInterval) {
+		_log.debug(source + " log save skipped (cooldown): last save " + (now - last) + "ms ago");
+		return callback(null, lastSaveFileBySource[source] || null, true);
+	}
+	lastSaveTimeBySource[source] = now;
+	saveCurrentLog(source, function(err, filename) {
+		if(err) {
+			return callback(err, null, false);
+		}
+		lastSaveFileBySource[source] = filename;
+		rotateLogs(PERSISTENT_LOG_COUNT, function(rotateErr) {
+			if(rotateErr) {
+				_log.error("Error rotating logs after " + source + " save: " + rotateErr);
+			}
+			callback(null, filename, false);
+		});
+	});
+};
+
 // Save the current flight recording (recent G2 traffic) to a timestamped
 // JSON file in the log directory, named like the saveCurrentLog files so
 // the rotation and the diagnostic bundle pick it up. Asynchronous.
@@ -545,6 +583,8 @@ exports.FlightRecorder = FlightRecorder;
 exports.suppress = suppress;
 exports.logger = logger;
 exports.saveCurrentLog = saveCurrentLog;
+exports.saveCurrentLogThrottled = saveCurrentLogThrottled;
+exports.AUTO_SAVE_COOLDOWN = AUTO_SAVE_COOLDOWN;
 exports.setGlobalLevel = setGlobalLevel;
 exports.getLogBuffer = getLogBuffer;
 exports.clearLogBuffer = clearLogBuffer;

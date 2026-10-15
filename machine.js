@@ -28,6 +28,7 @@ var fs = require("fs");
 var path = require("path");
 var db = require("./db");
 var log = require("./log").logger("machine");
+var logModule = require("./log");
 var config = require("./config");
 var updater = require("./updater");
 var outputPolicy = require("./runtime/output_policy");
@@ -1737,6 +1738,17 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
             this.status.info = stateinfo;
             this.info_id += 1;
             this.status.info.id = this.info_id;
+            // An error that will be shown to the user is worth a saved log. This is
+            // the one place every such error passes through, so it replaces the
+            // dashboard's per-browser auto-save (which fired once per tab, and
+            // again on every page reload). Throttled in the log module.
+            if (stateinfo.error) {
+                logModule.saveCurrentLogThrottled("error", null, function (err, filename, throttled) {
+                    if (!err && !throttled) {
+                        log.info("Log saved on error: " + filename);
+                    }
+                });
+            }
         } else {
             // If the info field is unspecified, we clear the one that's currently in place
             delete this.status.info;

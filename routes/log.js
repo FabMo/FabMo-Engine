@@ -103,54 +103,39 @@ var getLog = function (req, res, next) {
 /**
  * @apiGroup Log
  * @api {post} /log/save Save current log
- * @apiDescription Save the current log buffer to disk immediately
+ * @apiDescription Save the current log buffer to disk as fabmo-user-saved-<timestamp>-log.txt.
+ *   Saves are rate-limited to one per 30 seconds: a request inside the cooldown succeeds
+ *   without writing and returns the previous file with `throttled: true`.
+ *   Logs ending a run in error are saved by the engine itself (fabmo-error-*), not by clients.
  * @apiSuccess {String} status `success`
- * @apiSuccess {Object} data Object containing saved filename
+ * @apiSuccess {Object} data `filename`, `path`, and `throttled`
  */
 var saveLog = function (req, res, next) {
     log.logger('routes').info('Explicit save log request received');
-    
-    try {
-        var dir = require('../config').getDataDir('log');
-        var fn = 'fabmo-user-saved-' + Date.now() + '-log.txt';
-        var filename = path.join(dir, fn);
-        
-        fs.writeFile(filename, log.getLogBuffer(), function(err) {
-            if (err) {
-                log.logger('routes').error("Failed to save log: " + err);
-                res.json({
-                    status: 'error',
-                    message: 'Failed to save log: ' + err.message
-                });
-                next();
+    log.saveCurrentLogThrottled('user-saved', LOG_SAVE_COOLDOWN, function (err, filename, throttled) {
+        if (err) {
+            log.logger('routes').error("Failed to save log: " + err);
+            res.json({
+                status: 'error',
+                message: 'Failed to save log: ' + err.message
+            });
+        } else {
+            if (throttled) {
+                log.logger('routes').info("Save log request inside cooldown - not saved again");
             } else {
                 log.logger('routes').info("User explicitly saved log to " + filename);
-                
-                // Rotate logs AFTER sending response
-                log.rotateLogs(30, function(rotateErr) {
-                    if (rotateErr) {
-                        log.logger('routes').error("Error rotating logs: " + rotateErr);
-                    }
-                });
-                
-                res.json({
-                    status: 'success',
-                    data: {
-                        filename: fn,
-                        path: filename
-                    }
-                });
-                next();
             }
-        });
-    } catch(e) {
-        log.logger('routes').error("Error saving log: " + e);
-        res.json({
-            status: 'error',
-            message: 'Error saving log: ' + e.message
-        });
+            res.json({
+                status: 'success',
+                data: {
+                    filename: filename ? path.basename(filename) : null,
+                    path: filename,
+                    throttled: throttled
+                }
+            });
+        }
         next();
-    }
+    });
 };
 
 /**
