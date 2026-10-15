@@ -42,13 +42,13 @@ describe("argument count against the command table", () => {
         expect(() => rt._evaluateArguments("SV", [1])).toThrow(/SV was given 1 value but takes none/);
     });
 
-    test("CR accepts all 14 positions the handler reads", () => {
+    test("CR accepts its nine documented parameters and rejects a tenth", () => {
         const rt = makeRuntime();
-        const args = [2, 3, "I", 1, 4, 0.25, 2, 0, 0, 0, 3, 0, 5, 6];
-        const out = rt._evaluateArguments("CR", args);
-        expect(out.length).toBe(14);
-        expect(out[12]).toBe(5);
-        expect(out[13]).toBe(6);
+        const nine = [4, 3, "I", 1, 4, -0.25, 2, 3, 1];
+        expect(rt._evaluateArguments("CR", nine).length).toBe(9);
+        expect(() => rt._evaluateArguments("CR", nine.concat([45]))).toThrow(
+            /CR was given 10 values but takes at most 9/,
+        );
     });
 });
 

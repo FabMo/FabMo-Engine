@@ -1952,18 +1952,14 @@
             "type": "opt"
          },
          {
-            "name": "Tab, Pocket",
-            "desc": "Activate a special feature: automatic tabbing, pocketing out; select only 1",
+            "name": "Pocket",
+            "desc": "Pocket out the rectangle: 2 = outside-in, 3 = inside-out (0 or blank = cut the outline only). Tabbing is not available in FabMo.",
             "abrev": "tf",
             "typeext": 0,
             "disptype": "1",
             "default": "0",
-            "default_desc": "No feature",
+            "default_desc": "No pocket",
             "opts": [
-               {
-                  "value": "1",
-                  "desc": "Tabbing On"
-               },
                {
                   "value": "2",
                   "desc": "Pocketing (outside in)"
@@ -1987,75 +1983,6 @@
             "opts": [],
             "sysvar": "0",
             "type": "sng"
-         },
-         {
-            "name": "Rotation Angle",
-            "desc": "Orientation around Z in degrees; 0 horizontal",
-            "abrev": "Rang",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "0.00",
-            "sysvar": 0,
-            "range": [
-               "0",
-               "360"
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "Plunge Axis",
-            "desc": "Axis that will be used to Plunge",
-            "abrev": "ax",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "3",
-            "default_desc": "Z axis",
-            "opts": [
-               {
-                  "value": "4",
-                  "desc": "A axis"
-               }
-            ],
-            "sysvar": "0",
-            "type": "int"
-         },
-         {
-            "name": "Spiral Plunge (reserved)",
-            "desc": "Reserved for spiral plunge on the first pass; not yet supported in FabMo, leave 0 (spiral/ramped entries are done in CAM for now)",
-            "abrev": "spPl",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "0",
-            "default_desc": "Off",
-            "opts": [],
-            "sysvar": "0",
-            "type": "ck"
-         },
-         {
-            "name": "X Center",
-            "desc": "X coordinate of the rectangle center (used when Start Corner is 0 = Center)",
-            "abrev": "cX",
-            "typeext": 2,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               "Table limits X"
-            ],
-            "type": "dist"
-         },
-         {
-            "name": "Y Center",
-            "desc": "Y coordinate of the rectangle center (used when Start Corner is 0 = Center)",
-            "abrev": "cY",
-            "typeext": 2,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               "Table limits Y"
-            ],
-            "type": "dist"
          }
       ]
    },
