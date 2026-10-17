@@ -1,0 +1,9 @@
+# generated / device-specific working data
+calib*/
+captures/
+__pycache__/
+*.jpg
+*.png
+*.ply
+camera.json
+mount.json
