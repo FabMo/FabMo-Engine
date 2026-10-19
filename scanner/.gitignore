@@ -7,3 +7,4 @@ __pycache__/
 *.ply
 camera.json
 mount.json
+data/

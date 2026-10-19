@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>3D Scanner</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 12px;
+    font: 14px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #333; background: #f4f4f2;
+  }
+  h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .pill {
+    font-size: 12px; padding: 2px 10px; border-radius: 10px;
+    background: #ddd; color: #444; white-space: nowrap;
+  }
+  .pill.ok { background: #d9ecd9; color: #2c6e2c; }
+  .pill.busy { background: #fdeec9; color: #8a6400; }
+  .pill.err { background: #f6d3d0; color: #a33025; }
+  .cols { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+  .panel {
+    background: #fff; border: 1px solid #ddd; border-radius: 4px;
+    padding: 10px 12px; flex: 1 1 340px; min-width: 320px;
+  }
+  .panel h2 {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: #777; margin: 0 0 8px;
+  }
+  .maparea { position: relative; width: 100%; background: #222; border-radius: 3px; }
+  .maparea img { display: block; width: 100%; border-radius: 3px; }
+  .maparea canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .maparea .empty { color: #999; text-align: center; padding: 48px 8px; font-size: 13px; }
+  .btnrow { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  button {
+    font-size: 13px; padding: 6px 14px; border-radius: 3px; cursor: pointer;
+    border: 1px solid #bbb; background: #fafafa; color: #333;
+  }
+  button:hover:not(:disabled) { background: #f0f0f0; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button.primary { background: #3c6ea5; border-color: #345f8e; color: #fff; }
+  button.primary:hover:not(:disabled) { background: #345f8e; }
+  button.danger { background: #b2433a; border-color: #9c372f; color: #fff; }
+  /* compact labeled inputs */
+  .params { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; }
+  .param { display: flex; align-items: center; gap: 5px; }
+  .param label { font-size: 12px; color: #666; white-space: nowrap; }
+  .param input[type=number], .param input[type=text] {
+    width: 64px; font-size: 13px; padding: 3px 5px;
+    border: 1px solid #ccc; border-radius: 3px; background: #fff;
+  }
+  .param input.wide { width: 100px; }
+  .hint { font-size: 12px; color: #888; margin-top: 6px; }
+  .statusline { font-size: 13px; margin-top: 8px; min-height: 18px; }
+  .statusline.err { color: #a33025; }
+  .progress { height: 8px; background: #e7e7e4; border-radius: 4px; margin-top: 6px; overflow: hidden; display: none; }
+  .progress .bar { height: 100%; width: 0; background: #3c6ea5; transition: width 0.3s; }
+  .confirmbar {
+    display: none; margin: 0 0 10px; padding: 8px 12px; border-radius: 4px;
+    background: #fdeec9; border: 1px solid #e8cf87; align-items: center; gap: 12px;
+  }
+  .plansummary { font-size: 12px; color: #555; margin-top: 6px; white-space: pre-line; }
+  table.sessions { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+  table.sessions td { padding: 3px 6px; border-bottom: 1px solid #eee; }
+  details.settings { margin-top: 12px; }
+  details.settings summary { cursor: pointer; font-size: 13px; color: #666; }
+  .checkrow { display: flex; gap: 14px; margin-top: 6px; font-size: 13px; }
+  .checkrow label { display: flex; gap: 4px; align-items: center; color: #555; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>3D Scanner</h1>
+    <span class="pill" id="pill-daemon">daemon: …</span>
+    <span class="pill" id="pill-machine">machine: …</span>
+    <span class="pill" id="pill-cal">calibration: …</span>
+  </div>
+
+  <div class="confirmbar" id="confirmbar">
+    <span id="confirm-msg"></span>
+    <button class="primary" id="btn-confirm">Done — continue</button>
+  </div>
+
+  <div class="cols">
+    <div class="panel">
+      <h2>Table map</h2>
+      <div class="maparea" id="maparea">
+        <div class="empty" id="map-empty">No table map yet — capture a reference with the table empty.</div>
+        <img id="mapimg" style="display:none">
+        <canvas id="mapcanvas"></canvas>
+      </div>
+      <div class="btnrow">
+        <button id="btn-reference">Capture Reference (table empty)</button>
+        <button class="primary" id="btn-locate">Find Part</button>
+      </div>
+      <div class="statusline" id="locate-info"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Scan</h2>
+      <div class="params">
+        <span class="param"><label>X0</label><input type="number" step="0.01" id="bb-x0"></span>
+        <span class="param"><label>Y0</label><input type="number" step="0.01" id="bb-y0"></span>
+        <span class="param"><label>X1</label><input type="number" step="0.01" id="bb-x1"></span>
+        <span class="param"><label>Y1</label><input type="number" step="0.01" id="bb-y1"></span>
+        <span class="param"><label>Part height (in)</label><input type="number" step="0.1" id="s-part_zmax_in"></span>
+        <span class="param"><label>Step (mm)</label><input type="number" step="0.5" id="s-scan_step_mm"></span>
+      </div>
+      <div class="checkrow">
+        <label><input type="checkbox" id="s-use_laser"> laser</label>
+        <label><input type="checkbox" id="s-use_pan"> pan (B axis)</label>
+        <label><input type="checkbox" id="s-pan_prompt"> prompt for manual pan</label>
+      </div>
+      <div class="btnrow">
+        <button id="btn-dryrun">Dry Run (plan only)</button>
+        <button class="primary" id="btn-scan">Start Scan</button>
+        <button class="danger" id="btn-abort" style="display:none">Abort</button>
+      </div>
+      <div class="progress" id="progress"><div class="bar" id="progressbar"></div></div>
+      <div class="statusline" id="op-status"></div>
+      <div class="plansummary" id="plansummary"></div>
+
+      <h2 style="margin-top:14px">Sessions</h2>
+      <table class="sessions"><tbody id="sessions"></tbody></table>
+
+      <details class="settings">
+        <summary>Scanner settings</summary>
+        <div class="params" style="margin-top:8px">
+          <span class="param"><label>Survey region (in)</label><input type="text" class="wide" id="s-survey_region_in"></span>
+          <span class="param"><label>Survey Z</label><input type="number" step="0.25" id="s-survey_z_in"></span>
+          <span class="param"><label>Safe Z</label><input type="number" step="0.25" id="s-safe_z_in"></span>
+          <span class="param"><label>Clearance</label><input type="number" step="0.25" id="s-clearance_in"></span>
+          <span class="param"><label>Cam Z @ 0 (in)</label><input type="number" step="0.1" id="s-cam_z_at_zero_in"></span>
+          <span class="param"><label>Laser output</label><input type="number" step="1" id="s-laser_output"></span>
+          <span class="param"><label>Diff threshold</label><input type="number" step="1" id="s-diff_threshold"></span>
+          <span class="param"><label>Lane width (mm)</label><input type="number" step="5" id="s-lane_width_mm"></span>
+          <span class="param"><label>Headings (deg)</label><input type="text" class="wide" id="s-headings_deg"></span>
+        </div>
+        <div class="btnrow"><button id="btn-savesettings">Save Settings</button></div>
+      </details>
+      <div class="hint">Daemon: <span id="daemon-url"></span> — start with <code>python3 scand.py</code> in scanner-poc.</div>
+    </div>
+  </div>
+
+  <script src="js/libs/fabmo.js"></script>
+  <script src="js/scanner.js"></script>
+</body>
+</html>

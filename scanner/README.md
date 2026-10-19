@@ -1,19 +1,33 @@
-# scanner — webcam-on-gantry 3D scanning proof of concept
+# scanner-poc — webcam-on-gantry 3D scanning proof of concept
 
 Milestone 1: prove that machine-known camera poses give metric depth
 from a plain webcam. No laser, no printed mount — tape is fine.
 
-Code lives here; generated working data (calibration frames, camera.json,
-mount.json, captures, point clouds) is gitignored — the live working set
-is on the dev Pi at `/home/pi/dev/scanner-poc/`. End goal: camera + line
-laser on an indexed pan head gripping the spindle, driven as a spare G2
-rotary axis; all point clouds land in machine coordinates (no ICP).
+## Milestone 2: scan daemon + dashboard app
 
-Status (Oct 2026): intrinsics calibrated on the dev webcam (RMS 0.40 px,
-640x480 via video.fma camera-server MJPEG stream at :3142 — it owns
-/dev/video0, we read its stream). Machine-control loop verified against
-POST /code. Next: hand-eye run with camera taped to the Z carriage, then
-machine-baseline stereo on a test block.
+`scand.py` is an HTTP/JSON daemon (port 3150) that owns the camera, the
+laser output, and machine motion, and runs the scan workflow:
+
+1. **Capture Reference** — stop-and-shoot survey of the (empty) table;
+   every frame is warped onto the table plane (`table_map.py`) into a
+   metric orthophoto mosaic.
+2. **Find Part** — re-survey, diff against the reference, morphological
+   cleanup → part bounding box in machine coordinates.
+3. **Scan** — `orbit.py` plans sweeps around the bbox: for each indexed
+   pan heading (B axis), straight stop-and-shoot passes that walk the
+   vertical laser plane across the part (lanes if the part is wider
+   than one stripe), capturing laser off/on frame pairs with full pose
+   stamping into `data/scans/<session>/manifest.json`. Triangulation is
+   the next milestone and runs offline from the manifest.
+
+`scanner.fma/` is the dashboard app (thin client; polls the daemon,
+shows the table map + bbox + plan overlay, runs the workflow). Install:
+zip the directory to `scanner_app.fma` and upload through the app
+manager. Hardware toggles live in settings: `use_laser`, `use_pan`
+(B axis wired?), `pan_prompt` (manual head rotation), `laser_output`
+(M100 ({outN:…}), default out5).
+
+Run the daemon: `python3 scand.py` (data + settings in `data/`).
 
 ## One-time setup
 

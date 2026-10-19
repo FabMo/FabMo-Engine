@@ -1,0 +1,12 @@
+{
+  "name": "3D Scanner",
+  "main": "./index.html",
+  "icon": "icon.png",
+  "icon_color": "#3c3331",
+  "icon_display": "none",
+  "version": "0.1.0",
+  "author": "ShopBot",
+  "website": "http://shopbottools.com",
+  "id": "scanner",
+  "description": "Webcam + line-laser 3D scanning: locate a part on the table and orbit-scan it"
+}
