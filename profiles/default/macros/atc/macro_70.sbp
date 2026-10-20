@@ -15,6 +15,11 @@
 $sb_standard_variables_PRESENT := 0								  ' Define presence-test variable if it does not exist
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables    ' Every macros should check
 
+IF $ATC.Type = 6 THEN GOSUB PRS5_ATC
+IF $ATC.Type = 7 THEN GOSUB DT_ATC
+END
+
+DT_ATC:
 $ATC.ToolIn := 0                                    ' ATC system persistent tool loaded
 $ATC.numClips := 7
 $ATC.Status := 0
@@ -91,7 +96,137 @@ SetUniversalUnits:
 
 SU, &PRESENT_UNITS                      ' Restore original unit type after defining Universal Units    
 
-END
+RETURN
+
+PRS5_ATC:
+&Debug = 1
+&Error = 0
+$ATC.ToolIn := 0
+$ATC.numClips := 11
+$ATC.Status := 0
+$ATC.Dropped := 0
+$ATC.Type = 6
+
+$unitMultiplier = 1
+IF %(25)== 0 THEN GOTO SETUPVALUES
+$unitMultiplier = 25.4
+SETUPVALUES:
+'Initial Values
+$ATC.MaxDepth := -0.02 * $unitMultiplier
+$ATC.PlateOffset := -2 * $unitMultiplier
+$tools[0].X = 0 * $unitMultiplier
+$tools[0].Y = 0 * $unitMultiplier
+$tools[0].Z = 0 * $unitMultiplier
+$tools[0].H = -5 * $unitMultiplier
+$tools[1].X := 100.8565 * $unitMultiplier
+$tools[1].Y := 5.4255 * $unitMultiplier
+$tools[1].Z := -7.104 * $unitMultiplier
+$tools[1].H := -5 * $unitMultiplier
+$tools[2].X := 100.858 * $unitMultiplier
+$tools[2].Y := 10.0825 * $unitMultiplier
+$tools[2].Z := -7.081 * $unitMultiplier
+$tools[2].H := -5 * $unitMultiplier
+$tools[3].X := 100.783 * $unitMultiplier
+$tools[3].Y := 14.7665 * $unitMultiplier
+$tools[3].Z := -7.117 * $unitMultiplier
+$tools[3].H := -5 * $unitMultiplier
+$tools[4].X := 100.8065 * $unitMultiplier
+$tools[4].Y := 19.4365 * $unitMultiplier
+$tools[4].Z := -7.129 * $unitMultiplier
+$tools[4].H := -5 * $unitMultiplier
+$tools[5].X := 100.819 * $unitMultiplier
+$tools[5].Y := 24.111 * $unitMultiplier
+$tools[5].Z := -7.135 * $unitMultiplier
+$tools[5].H := -5 * $unitMultiplier
+$tools[6].X := 100.823 * $unitMultiplier
+$tools[6].Y := 28.7835 * $unitMultiplier
+$tools[6].Z := -7.107 * $unitMultiplier
+$tools[6].H := -5 * $unitMultiplier
+$tools[7].X := 100.8335 * $unitMultiplier
+$tools[7].Y := 33.4125 * $unitMultiplier
+$tools[7].Z := -7.09 * $unitMultiplier
+$tools[7].H := -5 * $unitMultiplier
+$tools[8].X := 100.845 * $unitMultiplier
+$tools[8].Y := 38.1025 * $unitMultiplier
+$tools[8].Z := -7.091 * $unitMultiplier
+$tools[8].H := -5 * $unitMultiplier
+$tools[9].X := 100.843 * $unitMultiplier
+$tools[9].Y := 42.7835 * $unitMultiplier
+$tools[9].Z := -7.096 * $unitMultiplier
+$tools[9].H := -5 * $unitMultiplier
+$tools[10].X := 100.857 * $unitMultiplier
+$tools[10].Y := 47.4435 * $unitMultiplier
+$tools[10].Z := -7.111 * $unitMultiplier
+$tools[10].H := -5 * $unitMultiplier
+$tools[11].X := 100.861 * $unitMultiplier
+$tools[11].Y := 52.129 * $unitMultiplier
+$tools[11].Z := -7.09 * $unitMultiplier
+$tools[11].H := -5 * $unitMultiplier
+'Motion values
+$zSlow = 0.4 * $unitMultiplier
+$zFast = 0.75 * $unitMultiplier
+$zJog = 4.0 * $unitMultiplier
+
+$xySlow = 0.4 * $unitMultiplier
+$xyFast = 2.0 * $unitMultiplier
+$xyJog = 6.0 * $unitMultiplier
+
+$smallBackOff = 0.15 * $unitMultiplier
+$bigBackOff = 2.0 * $unitMultiplier
+
+'Inputs
+$ZZero_Sensor = 1    'EXPOSE
+$X_Prox = 2			 'EXPOSE
+$Y_Prox = 3			 'EXPOSE
+$Z_Prox = 5			 'EXPOSE
+$ToolBar_Sensor = 12  'EXPOSE
+$Tool_Sensor = 7     'EXPOSE 
+$DrawBar_Sensor = 8  'EXPOSE
+
+$ZZero_Status = 51   'EXPOSE
+$X_Prox_Status = 53  'EXPOSE
+$Y_Prox_Status = 53  'EXPOSE
+$Z_Prox_Status = 53  'EXPOSE
+$ToolBar_Status = 62  'EXPOSE
+$Tool_Sensor_Status = 57  'EXPOSE
+$Drawbar_Sensor_Status = 58  'EXPOSE
+
+$X_State = 1  'EXPOSE
+$Y_State = 1  'EXPOSE
+$Z_State = 1  'EXPOSE
+
+'Outputs
+$DrawBar = 8 'EXPOSE
+$ToolBar = 3 'EXPOSE
+
+'Positions
+$manual_change_X = 0 * $unitMultiplier 'X location for manual tool changes  'EXPOSE
+$manual_change_Y = 15 * $unitMultiplier 'Y location for manual tool changes  'EXPOSE
+
+
+'Toolbar parameters
+$ATC_X_Prox_Clear = -2.0 * $unitMultiplier 
+$TOOLBAR_LENGTH = 15 * $unitMultiplier 
+$TOOL_OFFSET = 5 * $unitMultiplier        'EXPOSE
+$Transit_Height = -1 * $unitMultiplier
+$clipPullout = 0.75 * $unitMultiplier
+$ATC_clipSafe = 1.375 * $unitMultiplier
+$thClearance = 0.5 * $unitMultiplier
+$DrawbarDelay = 0.75
+
+'Calibration parameters
+$ATC_holderHeight = 2.037 * $unitMultiplier
+$ATC_holderAlignmentHeight = 0.69 * $unitMultiplier
+$holder_radius = .75 * $unitMultiplier
+$holder_wall_thickness = .25 * $unitMultiplier
+$stylus_dia = .25 * $unitMultiplier
+$ToolBar_Probe_Offset = 2 * $unitMultiplier
+$firstClipX = 101.037 * $unitMultiplier 'Location of first clip in X for calibration
+$firstClipY = -1.916 * $unitMultiplier 'Location of first clip in Y for calibration
+$firstClipZ = 0.093 * $unitMultiplier 'Location of first clip in Z for calibration
+$safe_lift = 2 * $unitMultiplier
+
+RETURN
 
 no_variables:
     CN,201

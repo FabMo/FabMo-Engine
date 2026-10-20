@@ -6,7 +6,8 @@
 ' Author: Brian Owen
 ' 2026/2/12 - Refactored (th)
 
-
+ IF $ATC.type = 6 THEN CN,675
+ IF $ATC.type = 6 THEN GOTO END_ALL 
 ' ATC STATUS CHECK FOR NORMAL ATC FUNCTIONS
 ' Main =================================================================
 CN,70                                                                           ' Load ATC Varibles (and local variables from Macro 201)
@@ -14,6 +15,7 @@ CN,70                                                                           
 
 IF $ATC.ToolIn > 0 THEN GOSUB CHECK_TOOL_IN                                     ' If we think we have a tool inserted, check to make sure
 IF $ATC.ToolIn == 0 THEN GOSUB CHECK_TOOL_OUT                                   ' If we think we hace no tool inserted, check to make sure
+END_ALL:
 END
 
 

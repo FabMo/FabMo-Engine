@@ -7,7 +7,8 @@
 ' - Determines the locations of all the tool clips, based on knowledge of the location of the first clip and the dimensions of the clip.
 ' - Also determines the location of the fixed Z zero plate for use in future tool measurements.
 ' 2026/2/09 - Refactored (th)
- 
+ IF $ATC.type = 6 THEN CN,674
+ IF $ATC.type = 6 THEN GOTO END_ALL 
 
 ' --- Initialize ------------------------------------------------------------------
 $ATC.type = 7                                                                   ' Set to ATC
@@ -106,6 +107,7 @@ FINISHED:
     $atcUU[].zZero_Y = %(2) + $atcUU[&u].zZero_YCorrection                       ' with OFFSET CORRECTION (typ. -4.125in)
     J2, 0, 0
     DIALOG "Calibration complete (M-0151)" OKTEXT="Continue ..."
+END_ALL:
 END
 
 

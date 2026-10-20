@@ -1,0 +1,143 @@
+'!FABMO!name:ATC Calibration
+'!FABMO!description:Toolbar Calibration for PRS5 ATC
+'!FABMO!enabled:true
+' ATC Calibration; records location of all the tool clips.
+' Brian Owen
+
+' Main =========================================================================
+$ATC.type = 6                                                                   ' >> Set to ATC
+SO, $ToolBar,0																	' >> Tool Bar will lower if up.
+C3																				' >> Home machine in XYZ first. 
+VN,0																			' >> Turn off limit switches
+SF,0																			' >> Turn off table limits
+JS,$xyJog,$zJog																	' >> Set Jog speeds
+PAUSE "How many positions exist on your toolbar" &count							' >> Maybe user does not want to use all 7 positions...so give them a choice.
+$ATC.numClips = &count															' >> Update ATC settings based on user selection	
+$ATC.numClips = $ATC.numClips * 1
+PAUSE "Insert an empty tool holder in the spindle (no collet or nut)... (M-0051)"
+PAUSE "...Insert an empty tool holder upside down in the #1 clip (no collet or nut)... (M-0052)"
+
+SO, $ToolBar,1 																	' >> Tool Bar will raise up.
+
+SK "Move Tool Holder Over Upside Down Tool Holder"
+
+PAUSE "Place one end of the calibration clip on the pull stud on tool holder in the spindle #1 and the other on the stud of Tool #1. Click OK when ready to proceed! (M-0055)"
+
+
+
+'Check Z Zero Input
+IF %($ZZero_Status) == 1 THEN GOSUB CONTACT_TRIGGERED_ERROR						' >> We're about to lower the empty tool holder to touch the inverted tool holder in the clip. If input 1 is already triggered then we have a problem
+&check = %(3) - %(106)															' >> Calculate max Z travel for probe move
+PZ, &check, $xySlow, $ZZero_Sensor												' >> Try to touch tool holders together
+'IF &Debug = 1 THEN PAUSE "Press OK"
+'IF %(3) <= &check THEN MZ,%(3) + $smallBackOff									' >> If we didn't make contact -- let's back off just in case the problem was a lack of electical continuity and we've crashed
+IF %(3) <= &check THEN GOSUB CONTACT_ERROR										' >> Exit on error
+
+'Set Clip Height
+&Z_clipbase = %(3) - $ATC_holderHeight											' >> If we succeeded in making contact, we record the current position for use later
+JZ, %(3) + $smallBackOff														' >> Back off to break contact
+'JY,%(2) + $ToolBar_Probe_Offset													' >> Shift over in the Y to prepare for user to insert tool holder with drill rod
+&start_X = %(1)																	' >> Record X start position
+&start_Y = %(2)																	' >> Record Y start position
+&start_Z = %(3)																	' >> Record Z start position
+&alignment_height = %(3) - $ATC_holderAlignmentHeight - $smallBackOff			' >> Calculate correct z position for plunge
+
+'IF &Debug = 1 THEN PAUSE "Press OK"
+'IF %(2) >= &check THEN MY,%(2) - $smallBackOff									' >> If we went too far without contact -- first back off in case we crashed
+'IF %(2) >= &check THEN GOSUB CONTACT_ERROR										' >> Then exit on error.
+
+JZ, %(3) + $safe_lift															' >> Safe Lift in the Z for user to insert tool holder with drill rod
+JY, %(2) + $holder_radius														' >> Safe move in the Y for user to insert tool holder with drill rod
+
+PAUSE "Insert a Drill rod into collet and tighten into spindle tool holder... (M-0056)"
+
+JY, %(2) - $holder_radius														' >> Move back in the Y for user to move the drill rod into the upside down tool holder
+
+&toolIdx = 1
+
+PAUSE "Make sure grounding clip is on drill rod and calibration clip is on bottom of the tool holder. (M-0057)"
+
+PAUSE "Use KEYPAD to move the dowel inside the hole near center and lower the stylus tip approx. 1/4in below the top edge of the holder (M-0058)"
+SK "Please center the and lower the drill rod in the middle and 1/4 in below holder edge"
+
+
+TOOL_POS_LOOP:
+
+C16
+
+'&center_X = (&center_X - $sb_homeOff_X * $unitMultiplier) / $unitMultiplier		' >> Convert variable values to inches for storage
+'&center_Y = (&center_Y - $sb_homeOff_Y * $unitMultiplier) / $unitMultiplier		' >> Convert variable values to inches for storage
+&thisZ = (&Z_clipbase + %(9)) / $unitMultiplier									' >> Convert variable values to inches for storage
+
+$tools[&toolIdx].X = %(1) - $sb_homeOff_X 										' >> Record X location of clip based on current position
+$tools[&toolIdx].Y = %(2) - $sb_homeOff_Y										' >> Record Y location of clip based on current position
+$tools[&toolIdx].Z = &thisZ														' >> Record Z location of clip (always the same)
+$tools[&toolIdx].H = -5															' >> Populate bit length
+&toolIdx = &toolIdx + 1															' >> Increment tool index
+IF &toolIdx > $ATC.numClips THEN GOTO FINISHED									' >> If we've done all the clips we planned to do -- head for the exit.
+
+PAUSE "OK, we are ready to calibrate the next holder. Please move the grounding clip to the next pull stud. (M-0059)"
+
+
+JY,%(2) + $ToolBar_Probe_Offset													' >> Shift over in the Y to prepare for user to insert tool holder with drill rod
+
+JZ, &start_Z
+
+IF %(&probe_sysvar) = 1 THEN GOTO closed_exit
+  PY, &searchDist_Y, &slowSearchSpeed_XY, &probe_input
+  IF %(2) - &start_Y >= &searchDist_Y THEN GOSUB CONTACT_TRIGGERED_ERROR
+  &topstart = %(2)
+  JY, %(2) - $holder_radius
+  
+  JZ, &start_Z + $safe_lift 
+  
+ JY, %(2) + $stylus_dia + $holder_wall_thickness + ($holder_radius * 1.5)
+ 
+ JZ, &start_Z
+ 
+ 
+
+																				' >> Set up index that will be incremented while recording values for each tool
+'TOOL_POS_LOOP:	
+
+
+GOTO TOOL_POS_LOOP																' >> Go through loop for next tool
+
+FINISHED:
+
+ JZ, %(3) + $safe_lift + $sb_zPlateOff
+ 
+ JX, %(1) - ($holder_radius * 4)
+ 
+ PAUSE "The keypad will now open. Please center the drill rod in the Center of the pressure Sensitive Z Zero Plate. This will Set the location for the Tool length Measurements"
+
+ SK "Please center the drill rod in the Center of the pressure Sensitive Z Zero Plate"
+
+
+PAUSE "This will be the center of your Pressure Sensitive Z Zero Plate"
+  
+
+CONTINUE:
+
+$ATC_zZeroX = %(1) * $unitMultiplier											' >> Store X location of fixed Z Zero plate (always the same)
+$ATC_zZeroY = %(2) * $unitMultiplier											' >> Store Y location of fixed Z Zero plate (always the same)
+SO, $ToolBar,0																	' >> Tool Bar will lower
+PAUSE "Calibration complete (M-0151)"											' >> Display success message
+PAUSE "The Spindle will now lift up and Jog Home"								' >> Display message to notify user that the machine will jog home
+JZ, %(3) + $safe_lift															' >> Safe Lift in the Z for to allow the machine to Jog Home
+J2,0,0																			' >> Jog home
+END
+
+' Error Handling ===============================================================
+CONTACT_TRIGGERED_ERROR:
+PAUSE "Your Z Zero input is already triggered, if the z zero plate on your gantry is plugged in, please unplug and press OK."
+END
+RETURN
+
+CONTACT_ERROR:
+PAUSE "Unable to make contact with tool holder, check that grounding cable is connecting pull stud to fixed z zero plate."
+END
+RETURN
+
+closed_exit:
+END

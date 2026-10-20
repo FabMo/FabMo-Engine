@@ -6,6 +6,8 @@
 ' Author: Brian Owen
 ' 2026/2/12 - Refactored (th)
 
+ IF $ATC.type = 6 THEN CN,673
+ IF $ATC.type = 6 THEN GOTO END_ALL
 
 &u = %(25)
 CN,75                                                                ' Load primary ATC variables and ck status (calls CN 70)
@@ -18,6 +20,7 @@ CN,2                                                                 ' Zero Z Ax
 $atcUU[].PlateOffset = %(9) - $toolsUU[$ATC.ToolIn][&u].h            ' Record Offset in config
 'PAUSE "tool.h- " + $toolsUU[$ATC.ToolIn][&u].h + " ATCPlateOffset- " + $atcUU[&u].PlateOffset
 PAUSE "Zeroing to bed surface (or material) now complete.", OKTEXT="Continue ..."
+END_ALL:
 END
 
 ' Subroutines ==========================================================

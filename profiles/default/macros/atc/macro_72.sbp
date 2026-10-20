@@ -6,7 +6,8 @@
 ' Author: Brian Owen
 ' 2026/2/12 - Refactored (th)
 ' 2026/9/28 - fix plate location (th)
-
+ IF $ATC.type = 6 THEN CN,672
+ IF $ATC.type = 6 THEN GOTO END_ALL 
 
 &u = %(25)
 CN,75                                                                 ' Load primary ATC variables and ck status (calls CN 70)
@@ -64,6 +65,7 @@ FINISHED:
     JZ, -1 * %(9) - $sb_homeOffUU[&u].z                               ' We're done, lift to maximum safe height
     J2, %(1) - 5                                                      ' #### FIX UNITS Move forward to clear rear limit switch
     VN,0                                                              ' ### Funtional ??? Turn limits back on
+END_ALL:
     END    
 
 
