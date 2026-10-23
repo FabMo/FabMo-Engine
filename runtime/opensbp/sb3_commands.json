@@ -5363,10 +5363,6 @@
       "cmd": "DT",
       "name": "Design with Autodesk's TinkerCAD"
    },
-   "HS": {
-      "cmd": "HS",
-      "name": "SAFETY !"
-   },
    "HQ": {
       "cmd": "HQ",
       "name": "Quick Launch for beginners"

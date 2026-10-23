@@ -239,6 +239,10 @@ function processCommandInput(command) {
             $("#cmd-input").val(command);
             $("#menu_values").click();
             break;
+        case "P":
+            $("#cmd-input").val(command);
+            $("#menu_values").click();
+            break;
         case "T":
             $("#cmd-input").val(command);
             $("#menu_tools").click();
@@ -367,6 +371,7 @@ function processCommandInput(command) {
                 }
             case "T":
             case "S":
+            case "P":
             case "V":        
                 let titleCmd = "", parameters = "";
                 titleCmd = command + ": " + cmds[command].name;

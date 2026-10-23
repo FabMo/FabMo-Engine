@@ -795,7 +795,7 @@
             "advanced": "Advanced Functions",
             "advanced_tooltip": "handle in Job Manager; Queue, Preview, Edit, Scale, etc..",
             "close": "Close",
-            "edit_params_info": "Editing Parameters: complete required(*) fields; over-write defaults as needed; and/or provide {optional} values."
+            "edit_params_info": "To Edit Parameters: complete required(*) fields; over-write defaults as needed; and/or provide {optional} values."
         },
         "help": {
             "config_values_title": "Config Values and Persistent Variables ('esc' to close)",
