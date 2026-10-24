@@ -222,8 +222,13 @@ exports.VN = function (args, callback) {
     if (args[0] !== undefined) {
         var limits_on = parseFloat(args[0]) !== 0;
         this.limits_on = limits_on;
-        // Send live to G2 (transient — restoreDriverState will reset unless SV is called)
-        this.machine.driver.command({ lim: limits_on ? 1 : 0 });
+        // G2's "lim" flag does nothing in our firmware; the real on/off is the input action
+        // (feedhold vs none) on every input assigned "limit". Transient: restoreDriverState
+        // reverts it at file end unless SV persists limits_on to machine.json.
+        if (this.machine) {
+            this.machine.limitsOverride = limits_on;
+        }
+        config.machine.applyLimitInputActions(limits_on);
     }
     // REST OF INPUT DEFINITION for OpenSBP
     callback();

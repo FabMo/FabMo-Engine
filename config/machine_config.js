@@ -16,6 +16,12 @@
 
 let MAX_INPUTS = 15;
 
+// G2 digital-input action sent for an input FabMo has assigned as "limit" while limits are
+// enabled (2 = fast-stop feedhold). While limits are disabled the same inputs get action 0
+// (none). NOTE: G2's own "lim" flag is inert in our firmware (nothing reads limit_enable),
+// so toggling di<N>ac is the real on/off mechanism for limit switches.
+const LIMIT_INPUT_ACTION = 2;
+
 var fs = require("fs");
 var config = require("../config");
 var Config = require("./config").Config;
@@ -487,6 +493,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
 
     //  Define Inputs for G2 -- Input functionality in FabMo and G2 overlap but differ in detail.
     //      For G2 use, the actions are simplified as none, stop, or fast-stop and current G2 values are set here.
+    var limitsEnabled = this._cache.limits_on ? true : false;
     for (let i = 1; i < MAX_INPUTS + 1; i++) {
         let diDef = "di" + i + "ac";
         if (diDef in this._cache) {
@@ -500,6 +507,10 @@ MachineConfig.prototype.update = function (data, callback, force) {
                     g2inpAction = 1; // G2 feedhold action (same as interlock)
                     break;
                 case "limit":
+                    // Limit inputs only get their stop action while limits are enabled;
+                    // "limit" stays recorded here in machine.json either way.
+                    g2inpAction = limitsEnabled ? LIMIT_INPUT_ACTION : 0;
+                    break;
                 case "faststop":
                     g2inpAction = 2; // G2 fast-stop action
                     break;
@@ -535,6 +546,7 @@ MachineConfig.prototype.update = function (data, callback, force) {
         this.machine.driver.command({ ztm: this._cache.envelope["zmax"] * envConv });
     }
     if ("limits_on" in this._cache) {
+        // Kept in sync for completeness only -- G2 ignores "lim" (see LIMIT_INPUT_ACTION above).
         this.machine.driver.command({ lim: this._cache.limits_on ? 1 : 0 });
     }
     // FabMo handles manual-mode soft limits; ensure G2's are off so they don't
@@ -548,6 +560,26 @@ MachineConfig.prototype.update = function (data, callback, force) {
             callback(null, data);
         }
     });
+};
+
+// Send G2 the input action for every input assigned as "limit": the stop action when
+// enabled, none when disabled. The "limit" assignment itself is always taken from this
+// config (machine.json), never read back from G2, so a transient disable can never be
+// mistaken for the real assignment.
+//   enabled - true/false; omitted = use the persisted limits_on value
+MachineConfig.prototype.applyLimitInputActions = function (enabled) {
+    if (enabled === undefined) {
+        enabled = this._cache.limits_on ? true : false;
+    }
+    if (!this.machine || !this.machine.driver) {
+        return;
+    }
+    var action = enabled ? LIMIT_INPUT_ACTION : 0;
+    for (let i = 1; i < MAX_INPUTS + 1; i++) {
+        if (this._cache["di" + i + "ac"] === "limit") {
+            this.machine.driver.command({ ["di" + i + "ac"]: action });
+        }
+    }
 };
 
 // Apply this configuration.
