@@ -211,7 +211,14 @@
         },
         "app_launch_failed_prefix": "Couldn't launch app:",
         "app_launch_failed_no_list": "Apps list not available yet.",
-        "app_launch_failed_no_app": "No such app?"
+        "app_launch_failed_no_app": "No such app?",
+        "dro_header_tooltip": "Linear distance UNITS; Tool Change Type: Manual Tool Change or <br> Automatic Tool Change (ATC); Processing Status.",
+        "dro_units_inch": "INCH",
+        "dro_units_mm": "MM",
+        "dro_tool_change_type": "[Type: {type}]",
+        "dro_tctype_manual": "Manual",
+        "dro_tctype_atc": "ATC",
+        "dro_current_tool": "[Current Tool: {n}]"
     },
     "actions": {
         "c2_tooltip": "Do Z-Zero (Macro C2)",

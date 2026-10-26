@@ -201,6 +201,43 @@ const { last } = require("underscore");
         return this.keypad_allow;
     };
 
+    // Large DRO header bar ("INCH  [Type: Manual]  idle") and the
+    // "[Current Tool: n]" on the Spindle-1 bar. Units and state come from
+    // the status report; tool-change type ($ATC.Type, 0 = manual) and the
+    // current tool ($SB_TOOLCURRENT) from the last config read.
+    FabMoUI.prototype.updateDROHeader = function (status) {
+        var cfg = this.tool.config || {};
+        var vars = (cfg.opensbp && cfg.opensbp.variables) || {};
+        // t() with an English fallback: a dictionary that predates these
+        // keys (or a language missing them) must still read as text.
+        var tr = function (key, fallback, vars) {
+            var out = typeof window.t === "function" ? window.t(key, vars) : key;
+            if (out !== key) return out;
+            return fallback.replace(/\{(\w+)\}/g, function (m, name) {
+                return vars && vars[name] !== undefined ? String(vars[name]) : m;
+            });
+        };
+        $(".dro-head-units").text(status.unit === "mm" ? tr("status.dro_units_mm", "MM") : tr("status.dro_units_inch", "INCH"));
+        var atcType = Number(vars.ATC && vars.ATC.TYPE) || 0;
+        var typeLabel = atcType ? tr("status.dro_tctype_atc", "ATC") : tr("status.dro_tctype_manual", "Manual");
+        $(".dro-head-tctype").text(tr("status.dro_tool_change_type", "[Type: {type}]", { type: typeLabel }));
+        var st = status.state || "";
+        $(".dro-head-state")
+            .text(st ? tr("tool_status.states." + st, st) : "\u2014")
+            .attr("class", "dro-head-state " + st);
+        var tool = vars.SB_TOOLCURRENT;
+        var hasTool = tool !== undefined && tool !== null && tool !== "";
+        $(".dro-head-tool").text(hasTool ? tr("status.dro_current_tool", "[Current Tool: {n}]", { n: tool }) : "");
+    };
+
+    FabMoUI.prototype.refreshDROConfig = function () {
+        var that = this;
+        that._droConfigTs = Date.now();
+        this.tool.getConfig(function (err) {
+            if (!err) that.updateDROHeader(that.tool.status || {});
+        });
+    };
+
     FabMoUI.prototype.updateText = function (control, txt) {
         var t = control.text();
         var v = control.val();
@@ -217,6 +254,10 @@ const { last } = require("underscore");
         var prev_state = that.tool.state;
         that.tool.state = status.state;
         if (prev_state !== status.state) {
+            // The large DRO header/spindle bar show config-derived values
+            // (ATC type, current tool): re-read config on every state
+            // transition (a tool change or settings edit ends in one)...
+            that.refreshDROConfig();
             if (status.state === "stopped") {
                 if (status.info) {
                     if (status.info.error) {
@@ -245,6 +286,13 @@ const { last } = require("underscore");
             that.updateText($(that.units_selector), unit);
         }
 
+        // ...and every 10 s while a file runs, since an ATC tool change
+        // mid-file does not change the state.
+        if (status.state === "running" && Date.now() - (that._droConfigTs || 0) > 10000) {
+            that.refreshDROConfig();
+        }
+        that.updateDROHeader(status);
+
         // ABC unit markers: degree symbol for rotary axes, the current
         // linear unit (in/mm) otherwise
         if (this.tool.config.driver.aam === 1) {
@@ -262,6 +310,11 @@ const { last } = require("underscore");
         } else {
             $(".c-rotunits").text(unit);
         }
+        // Large DRO: degree mark on rotary rows only (linear A/B/C get none;
+        // their unit is in the header bar)
+        ["a", "b", "c"].forEach(function (ax) {
+            $("." + ax + "axis.machine-pos-large .dro-deg").text(that.tool.config.driver[ax + "am"] === 1 ? "\u00B0" : "");
+        });
 
         // What follows is a bit of a kludge to make sure key display items keep updated
         // Keypad DRO display stuff

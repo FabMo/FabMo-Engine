@@ -571,6 +571,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 .machine-pos-large {
 	text-align: left;
 	display: block;
+	position: relative; /* anchors the rotary degree mark */
 	background-color: #323564;
 	padding: 0.25rem 0.5rem;
 	margin: 0.25em;
@@ -589,23 +590,26 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 .machine-pos-large span {
 	float: right;
 }
-/* Values slightly smaller than the axis letter so a full-width rotary
-   reading fits the 222px panel on one line. */
-.machine-pos-large .posx, .machine-pos-large .posy, .machine-pos-large .posz,
-.machine-pos-large .posa, .machine-pos-large .posb, .machine-pos-large .posc {
-	font-size: 1.55rem;
-	line-height: 1.6;
+/* No per-axis unit marks here: the units live in the header bar above
+   (#dro-header), and the numbers stay full size so they read from across
+   the shop. nowrap on the label (above) keeps a wide rotary value from
+   dropping to a second line. Rotary A/B/C rows get a small degree mark
+   tucked into the row's right padding (absolute: takes no space, so the
+   numbers stay column-aligned with X/Y/Z); fabmoui.js fills it. */
+.machine-pos-large .dro-deg {
+	float: none;
+	position: absolute;
+	right: 1px;
+	top: 7px;
+	font-size: 1.1rem;
+	line-height: 1;
+	color: #e6e6e6;
 }
-/* Unit marker right of the position number ("in"/"mm" via .units on X/Y/Z,
-   degree kludge via .*-rotunits on A/B/C). Both spans float right, so the
-   unit comes FIRST in the DOM to land rightmost; fixed width keeps the
-   numbers column-aligned across all six axis rows. */
-.machine-pos-large .dro-unit {
-	width: 1.5rem;
-	margin-top: 3px;
-	font-size: 0.85rem;
-	text-align: right;
-	color: #d9d9d9;
+/* The header bar's tip opens downward (no room above, under the top bar);
+   keep its arrow on the right-anchored balloon */
+.tooltip-left.tooltip-below .tooltiptext::after {
+	left: auto;
+	right: 14px;
 }
 
 .not-selectable {
@@ -651,6 +655,36 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 }
 
 /** Large DRO add-ons or TOOLS **/
+
+/* Header bar above the axis rows: "INCH  [Type: Manual]  idle". Same
+   grey bar as the MOVE SPEED / Spindle-1 labels; the state sits in a
+   balloon with the tool_status app's state colors. */
+#dro-addon-1 {
+	margin-bottom: 6px;
+}
+.dro-head-label {
+	gap: 10px;
+	align-items: center;
+}
+.dro-head-state {
+	display: inline-block;
+	padding: 0 8px;
+	border-radius: 9px;
+	line-height: 16px;
+	font-size: 9pt;
+	background: #dfe4ea;
+	color: #2c3e50;
+}
+.dro-head-state.idle    { background: #d4efdf; color: #1e6b3a; }
+.dro-head-state.running { background: #d6eaf8; color: #1a5276; }
+.dro-head-state.paused  { background: #fdebd0; color: #935116; }
+.dro-head-state.stopped,
+.dro-head-state.dead    { background: #fadbd8; color: #922b21; }
+/* "[Current Tool: n]" on the Spindle-1 bar */
+.dro-head-tool {
+	margin-left: 8px;
+	font-weight: normal;
+}
 
 /* Display-only text spans for feedrate and spindle-power */
 .no-select-input {
