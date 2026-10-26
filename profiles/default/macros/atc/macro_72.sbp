@@ -6,11 +6,14 @@
 ' Author: Brian Owen
 ' 2026/2/12 - Refactored (th)
 ' 2026/9/28 - fix plate location (th)
+' 2026/10/26 - fix VN,0 usage (th)
+
  IF $ATC.type = 6 THEN CN,672
  IF $ATC.type = 6 THEN GOTO END_ALL 
 
 &u = %(25)
 CN,75                                                                 ' Load primary ATC variables and ck status (calls CN 70)
+VN, 0                                                                 ' Temp turn off limit switches                
 &target_ck := 0
 &backOff_dist = $sb_oochUU[&u] * 5
 
@@ -33,7 +36,7 @@ START:
 
     MS,,$zSlowUU[&u]                                                  ' Set Z speed low so as to not damage the bit during contact probe
     SF, 0                                                             ' ### Functional ???  Deactivate software limits
-    VN, 0                                                             ' ### Functional ???Turn off limit switches
+    VN, 0                                                             ' Temp turn off limit switches
     &check = %(106) + %(3)                                            ' Determine maximum range of Z motion from system variable to set target distancefor probe
     
   'PROBE Z TOP LIMIT
@@ -64,7 +67,6 @@ START:
 FINISHED:
     JZ, -1 * %(9) - $sb_homeOffUU[&u].z                               ' We're done, lift to maximum safe height
     J2, %(1) - 5                                                      ' #### FIX UNITS Move forward to clear rear limit switch
-    VN,0                                                              ' ### Funtional ??? Turn limits back on
 END_ALL:
     END    
 

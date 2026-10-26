@@ -7,6 +7,7 @@
 ' 2026/2/27 - Added handling for changing to bit 0 (bo)
 ' 2026/8/25 - initialize &CURRENT_TOOL (th)
 ' 2026/9/28 - fix homing (th)
+' 2026/10/26 - fix VN,0 usage; turn off debug prints (th)
 
 '   - Core routine for swapping out tools
 '   - Called by C1(user) and other ATC Macros 
@@ -18,6 +19,7 @@
     &u = %(25)
     
     CN,75                                                             ' Load primary ATC variables and ck status (calls CN 70)
+    VN,0                                                              ' Temp turn off Limits
     JS, $XYJOGUU[&u], $ZJOGUU[&u]                                     ' Set Jog speed for approaches (are units right here and following ???)
     &tool := ""                                                       ' Define as something initially
     &INDEX := 0                                                       ' Need to initialize tool data
@@ -40,12 +42,12 @@
 
 ' Primary Subroutines -----------------------------------------------------------------------------------
 StashTool: '  PUT A TOOL BACK INTO ITS CLIP
-    print "b4 stash ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
+    'PRINT "b4 stash ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
     IF $ATC.ToolIN == 0 THEN RETURN                                 ' Skip this if there's no tool in the spindle.
     &AtNow = "Before Auto-Drop-Off"                                 
     &INDEX = $ATC.ToolIn                                            ' Parameter for GET_TOOL_DATA
     GOSUB GET_TOOL_DATA                                             ' Loads tool clip location and tool length
-    print "aft stash data ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
+    'PRINT "aft stash data ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
     ' BEGIN Physical STASH
         IF %(1) > &tx + $atcUU[&u].clipSafe THEN JX, &tx + $atcUU[&u].clipSafe  ' If we're behind toolbar for some reason. Move in X only to clear toolbar
         J2, &tx + $atcUU[&u].clipSafe, &ty                          ' Move to safe spot in front of intended clip
@@ -66,11 +68,11 @@ StashTool: '  PUT A TOOL BACK INTO ITS CLIP
         IF %($Tool_Sensor_Status) = 1 THEN GOSUB TOOL_NOT_EMPTY_STASH 
         $ATC.ToolIN = 0                                             ' Now there is No Tool!
         &AtNow = "After Auto-Drop-Off"
-    print "aft STASH ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
+    'PRINT "aft STASH ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
 RETURN
 
 GrabTool: '  REMOVE A TOOL FROM ITS CLIP
-    print "b4 grab ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
+    'PRINT "b4 grab ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
     'CHECK TO SEE IF spindle is truly empty, only then proceed
     IF %($Tool_Sensor_Status) = 1 THEN GOSUB TOOL_NOT_EMPTY_GRAB 
     IF $ATC.ToolIN > 0 THEN RETURN                                  ' Skip this if we already have a tool in the spindle
@@ -157,7 +159,7 @@ STATE: ' Report State at points in ATC Sequence (call with a GOSUB STATE to debu
     RETURN
 ' +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 GET_TOOL_DATA:
-print "at data ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
+    'PRINT "at data ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
 	$toolsUU[&INDEX][].x := 0
     $toolsUU[&INDEX][].y := 0
     $toolsUU[&INDEX][].z := -5
@@ -264,13 +266,13 @@ BAR_NOT_CLOSE:
   RETURN
 
 TOOL_NOT_EMPTY_STASH:
-  PRINT "Not Empty after STASH ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
+  'PRINT "Not Empty after STASH ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
   DIALOG "Spindle should be empty and it is not! Error Info in Message Box", CANCELTEXT = "Quit"
   END 
   RETURN
 
 TOOL_NOT_EMPTY_GRAB:
-  PRINT "Not Empty Before GRAB ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
+  'PRINT "Not Empty Before GRAB ", $ATC.STATUS, $ATC.TOOLIN, $SB_TOOLCURRENT, &INDEX, &tool, &CURRENT_TOOL
   DIALOG "Spindle should be empty and it is not! Error Info in Message Box", CANCELTEXT = "Quit"
   END 
   RETURN
