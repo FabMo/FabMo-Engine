@@ -175,6 +175,7 @@ $(document).ready(function () {
 
 
     function handleResize() {                                           // FabMo Resize Event Handler
+        if (!document.getElementById('cmd-panel').clientWidth) { return; }  // command card hidden: nothing to fit to
         const maxWidth = document.getElementById('cmd-panel').clientWidth * 0.95;
         if (sbpContainer.clientWidth !== maxWidth) {
             sbpContainer.style.width = `${maxWidth}px`;
@@ -191,6 +192,7 @@ $(document).ready(function () {
     const sbpContainer = document.getElementById('sbp-container');      // Sb4 File Text Area Resize Observer
     const resizeObserver = new ResizeObserver(entries => {
         for (let entry of entries) {
+            if (!document.getElementById('cmd-panel').clientWidth) { continue; }  // command card hidden
             const maxWidth = document.getElementById('cmd-panel').clientWidth * 0.95;
             if (sbpContainer.clientWidth !== maxWidth) {
                 sbpContainer.style.width = `${maxWidth}px`;
@@ -226,7 +228,7 @@ $(document).ready(function () {
     window.addEventListener('keydown', function(event) {
         var commandInputText = $("#cmd-input").val();
         console.log("FIRST EVENT in Sb4: " + event.key);
-        if (commandInputText.length < 1) {  // ... only if we have not started a line
+        if (commandInputText.length < 1 && !sb4TypingElsewhere()) {  // ... only if we have not started a line (and are not typing in a card field)
             // If the key is either the + or the - , then send the key code to the parent window
             if (event.key === "+" || event.key === "_") {  // increment or decrement spindle speed
                 if (!event.repeat) {  // Check if the key is not repeating
@@ -241,12 +243,18 @@ $(document).ready(function () {
     window.addEventListener('keyup', function(event) {
         var commandInputText = $("#cmd-input").val();
         console.log("FIRST EVENT in Sb4: " + event.key);
-        if (commandInputText.length < 1) {  // ... only if we have not started a line
+        // Universal single keys (Sb3 convention): K = Keypad, U = Calculator.
+        // They work wherever focus is, except while typing in a card field.
+        if (commandInputText.length < 1 && !sb4TypingElsewhere()) {  // ... only if we have not started a line
             if (event.key === "k" || event.key === "K") {  // toggle keypad AND get focus on it for data entry
                 event.stopPropagation();
                 event.preventDefault();
                 window.parent.postMessage({ key: event.key }, '*');
                 window.parent.focus();
+            } else if (event.key === "u" || event.key === "U") {  // Sb3's calculator key — reserved; FabMo has no calculator yet
+                event.stopPropagation();
+                event.preventDefault();
+                fabmo.notify("info", window.t("sb4.notify.calculator_unavailable"));
             } else {
                 // pass any other key events to the command input
                 console.log("GOT SOME EVENT in Sb4: " + event.key);
@@ -803,11 +811,15 @@ $(document).ready(function () {
 });
 
     //** Try to restore CMD focus when there is a shift back to app
+    //   (card layout: not from a click into another field or into a card modal — see setSafeCmdFocus)
     $(document).click(function (e) {
-        // Check if click was triggered on or within #menu_content
-        if ($(e.target).closest("#speed-panel").length > 0) {
-            return false;
-        } else if ($(e.target).closest("#insert-input").length > 0) {    //experimental to keep cursor in insert box
+        if (sb4IsTypingTarget(e.target)) {
+            return;
+        }
+        if ($(e.target).closest(".ts-modal-backdrop, .ts-modal").length > 0) {
+            return;
+        }
+        if ($(e.target).closest("#insert-input").length > 0) {    //experimental to keep cursor in insert box
             return false;
         }
         setSafeCmdFocus(5);
@@ -815,12 +827,6 @@ $(document).ready(function () {
 
     //... this only helps a little with focus
     $(document).mouseenter(function (e) {
-        // Check if click was triggered on or within #menu_content
-        if ($(e.target).closest("#speed-panel").length > 0) {
-            return false;
-        } else if ($(e.target).closest("#speed-panel").length > 0) {
-            return false;
-        }
         setSafeCmdFocus(6);
     });
 
@@ -846,59 +852,14 @@ $(document).ready(function () {
         }
     });
 
-    // ** Process Macro Box Keys
-    $("#cut_part_call").click(function () {
-        window.getaFile("FP");
-        // curFile = "";                           // ... clear out after running
-        // curFilename = "";
-        // $("#fi_cur_info").text("");
-        // $('#file').val('');
-        // $('#file').trigger('click');
-    });
-
-    $("#to_job_manager").click(function () {
-        // launch the fabmo job manager app
-        fabmo.launchApp('job-manager', {});
-    });
-
-    $("#cmd_button1").click(function () {
-        console.log('got first cmd');
-        sendCmd("JH");
-    });
-
-    $("#cmd_button2").click(function () {
-        console.log('got second cmd');
-        sendCmd("ZZ");
-    });
-
-    $("#cmd_button3").click(function () {
-        console.log('got second cmd');
-        sendCmd("C79");
-    });
-
-    $("#first_macro_button").click(function () {
-        console.log('got firstMacro');
-        sendCmd("C3");
-    });
-
-    $("#second_macro_button").click(function () {
-        console.log('got secondMacro');
-        sendCmd("C2");
-    });
-
-    $("#third_macro_button").click(function () {
-        console.log('got thirdMacro');
-        sendCmd("C5");
-    });
-
-    $("#fourth_macro_button").click(function () {
-        console.log('got fourthMacro');
-        sendCmd("C10");
-    });
-
-    $("#fifth_macro_button").click(function () {
-        console.log('got fifthMacro');
-        sendCmd("C211");
+    // ** Homed indicators on the Machine card's Home XY / Home Z buttons
+    //    (the old left-panel workflow buttons are gone; the Machine card's buttons replace them).
+    //    Bound directly on the glyphs so the click never reaches the button's own
+    //    delegated handler in cards.js (which would run C3 / C2).
+    $(".sb4-homed-ind").on("click", function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+        cycleHomedIndicator($(this).attr("data-axis"));
     });
 
     document.onmousewheel = function () { stopWheel(); } /* IE7, IE8 */  // BLOCK regular mouse wheel

@@ -1,34 +1,30 @@
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DESKTOP</title>
-    <!-- Foundation 5.5.3 -->
+    <title>Console</title>
+    <!-- Foundation 5.5.3 (JS below); its CSS is the scoped build, see css/style.css header -->
     <script src="js/lib/modernizr.js"></script>
 
-    <link rel="stylesheet" href="css/foundation.min.css"> 
-    <link rel="stylesheet" href="css/normalize.css">
-    <link rel="stylesheet" href="css/style.css">
-    
+    <link rel="stylesheet" href="../../css/font-awesome.css">
+    <link rel="stylesheet" href="css/foundation-scoped.css">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/theme-bridge.css">
     <link rel="stylesheet" href="css/tips.css">
-    <!-- Can't use standard dashboard.css because of conflicts with foundation here -->
-    <!-- <link rel="stylesheet" href="../../css/dashboard.css"> --> 
-    <!-- <link rel="stylesheet" href="css/stylejogdial.css"> -->
+    <link rel="stylesheet" href="css/style.css">
 
     <script src="js/lib/jquery.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/lib/foundation.min.js"></script>
     <script src="js/lib/foundation.dropdown.js"></script>
-<!--  <script src="js/lib/modernizr.js"></script> seems to fix mordernizr issue -->
     <script src="js/lib/fastclick.js" async></script>
     <script src="js/lib/haptics.js"></script>
-<!--    <script src="js/lib/fabmo.js"></script>  try using local copy -->
     <script src="/static/js/libs/fabmo.js"></script>
-    
-    <!--Note that paperjs is not ES6; mo_pad is run in paperscript, not javascript-->
     <script src="../../../static/js/shared-video.js?v=3"></script>
+
+    <!--Note that paperjs is not ES6; mo_pad is run in paperscript, not javascript-->
     <script src="js/lib/paper-full.min.js" defer></script>
     <script type="text/paperscript" src="js/mo_pad.js" canvas="rmanCanvas" defer></script>
 
@@ -37,15 +33,15 @@
     <script src="js/init_setActions.js"></script>
     <script src="js/motion.js" defer></script>
     <script src="js/message_g2.js" defer></script>
-
-<!--    <script src="js/video.js"></script> -->  <!-- for video streaming -->
-
-    <script> let fabmo = new FabMoDashboard(); </script>
-
+    <script src="js/video.js"></script>
 </head>
 
-<body id="sb4app" style="background-color:rgb(151, 150, 150)">
+<body id="sb4app">
+  <div class="ts-page">
 
+    <!-- Menu bar row: Sb4's menus (hidden with the command card) + layout pencil / settings gear -->
+    <div class="sb4-topline">
+      <div class="sb4-scope sb4-menu" id="sb4-menu">
   <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
     <ul class="title-area">
       <li class="name"></li>
@@ -150,221 +146,743 @@
         <li class="divider"></li>
       </ul>
     </section>
-    <!--<div class="spindle-display"> LEAVE OUT FOR MOMENT; display in DRO is good enough ... same for FabMo(?)</div>-->
-    <!--
-    <span class="spindle-display">spindle-RPM <input type="number" placeholder="0" id="spindle-speed" class="text-right" readonly></span>
-    -->
   </nav>
-
+      </div>
+      <div class="sb4-topicons">
+        <button class="ts-iconbtn" id="btn-edit-layout" title="Rearrange cards" data-i18n-title="tool_status.header.edit_layout"><i class="fa fa-pencil"></i></button>
+        <button class="ts-iconbtn" id="btn-app-settings" title="App settings" data-i18n-title="tool_status.header.app_settings"><i class="fa fa-gear"></i></button>
+      </div>
+    </div>
 
   <form style="display:none;" id="fileform">
     <input name="uploadFile" type="file" id="file" multiple accept=".sbp, .nc, .gcode, .tap">
     <button onclick="loadFileAsText()"></button>
   </form>
 
-  <!-- Grid Layout -->
-  <div class="row">
-<!--    <p> </p> -->
-    <div class="small-12 medium-12 large-12 columns">
-      <div class="row main-row small-collapse medium-collapse large-uncollapse">
+    <!-- Cards. Initial pane membership here is only a fallback: cards.js
+         applyLayout() moves each card into its pane per the saved layout
+         (DEFAULT_LAYOUT in cards.js). Card markup other than the Sb4 command
+         and speeds cards is the tool_status app's, kept verbatim. -->
+    <div class="ts-split">
 
-        <!-- LEFT SIDE  -->
-        <!-- Macro Button Panel  -->
-        <div class="small-5 medium-3 large-3 columns">
-            <div class="callout panel" id="macro-panel">
-              <!-- Buttons (actions) -->
-
-              <div class="macros">
-                <h9 class="panel-label" id="macro-panel-label"><strong data-i18n="sb4.workflow.panel_label">Standard Workflow</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
-                    <span data-i18n="sb4.workflow.tooltip">This panel accesses the steps for starting-up your tool and Cutting or Managing your Part Files.</span><br><br>
-                    <span data-i18n="sb4.workflow.tooltip_checklist_prefix">Click to download a detailed workflow</span> <span class = "tooltiplink" id="ck-list" data-i18n="sb4.workflow.checklist">Checklist</span></span></span>
-                </h9>
-                    <button type="button" class="macro-button secondary button small medium-expanded" id="first_macro_button" data-i18n-title="sb4.workflow.home_xy_tooltip" title="Home the X and Y Axes; C3 or Macro">
-                        <span data-i18n="sb4.workflow.home_xy">A - Home X & Y</span>
-                        <span class="tog-homed" id="tog-xy-homed" style="color: grey;">&#10680;</span>
-                    </button>
-                    <button type="button" class="macro-button secondary button small medium-expanded" id="second_macro_button" data-i18n-title="sb4.workflow.set_z_zero_tooltip" title="Set Z-Zero using Zeroing Plate; C2 or Macro2">
-                        <span data-i18n="sb4.workflow.set_z_zero">B - Set Z-Zero</span>
-                        <span class="tog-homed" id="tog-z-homed" style="color: grey;">&#10680;</span>
-                    </button>
-                    <button type="button" class="macro-button success button small medium-expanded" id="cut_part_call" data-i18n-title="sb4.workflow.cut_part_tooltip" title="Pick a Single Part File to Cut; FP">
-                        <strong data-i18n="sb4.workflow.cut_part">C - CUT PART</strong>
-                    </button>
-                    <button type="button" class="macro-button success button small medium-expanded" id="to_job_manager" data-i18n-title="sb4.workflow.manage_parts_tooltip" title="Advanced: Select and Order Parts in Job Manager">
-                        <span class="icon"></span>
-                        <strong data-i18n="sb4.workflow.manage_parts">(D) - MANAGE PARTS</strong>
-                    </button>
-              </div>
-
-              <div class="other-macros">
-              <!-- <label class="panel-label show-for-medium-up" title="Access other helpful macros and quick command calls; User configurable in ..."><strong>Other Helpful Macros</strong></label> -->
-              <label class="panel-label show-for-medium-up"><strong data-i18n="sb4.macros.other_helpful">Other Helpful Macros</strong></label>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button1" data-i18n-title="sb4.macros.jh_tooltip" title="Jog Home X & Y; Z to Safe Height (MH moves home at feed rate)">JH</button>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button2" data-i18n-title="sb4.macros.zz_tooltip" title="Zero Z axis; ZZ (ZT to fully zero all axes and offsets)">ZZ</button>
-              <button type="button" class="cmd-button secondary button small medium-expanded" id="cmd_button3" data-i18n-title="sb4.macros.park_tooltip" title="Move to Park location; C79 or Macro79" data-i18n="sb4.macros.park">Park</button>
-              <button type="button" class="macro-button secondary button small medium-expanded" id="third_macro_button" data-i18n-title="sb4.macros.spindle_warmup_tooltip" title="Runs Spindle warm-up cycle; C5 or Macro5" data-i18n="sb4.macros.spindle_warmup">Spindle Warm Up</button>
-              <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button" data-i18n-title="sb4.macros.square_gantry_tooltip" title="Square Gantry against the end stops; C10 or Macro10" data-i18n="sb4.macros.square_gantry">Square Gantry</button>
-              <!-- <button type="button" class="macro-button secondary button small medium-expanded" id="fourth_macro_button">Test Cut (C210)</button> -->
-              <!--<button type="button" class="macro-button secondary button small medium-expanded" id="fifth_macro_button">First Project - Bit Holder (C211)</button> -->
-              </div>
-            </div>
-        </div>  
-
-        <!-- RIGHT SIDE  -->
-        <div class="small-7 medium-9 large-9 columns">
-        
-            <!-- Command Input and File Display Panel  -->
-            <div class="callout panel" id="cmd-panel">
-                <form>
-                <div class="row">
-                    <div class="small-11  medium-11 large-11 columns">
-                    <label class="show-for-small-only"><strong data-i18n="sb4.cmd.label_short">Cmd</strong></label>
-                    <h9 class="panel-label show-for-medium-up cmds"><strong data-i18n="sb4.cmd.panel_label">Individual Command Input</strong><span class="tooltip tooltip-below">i<span class="tooltiptext">
-                        <span data-i18n="sb4.cmd.tooltip">Run specific OpenSBP Commands. Select from menu above or type directly here.</span><br><br> See: Help > <span class = "tooltiplink" id="cmd-ref" data-i18n="sb4.cmd.command_reference">Command Reference</span><br><br></span></span>
-                    </h9>
-                    <img class="right" id="vid-button" "vid-button-off" data-i18n-title="sb4.cmd.toggle_video_tooltip" title="Toggle Video" style="height:20px; width:20px; position:absolute; top:5px; right:-40px" src="./assets/icon_video.png">
-                    <form><strong>
-                        <input class="cmds" type="text" readonly autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" font-weight="bold" data-i18n-placeholder="sb4.cmd.input_placeholder" placeholder="2-Letter OpenSBP Command, {followed by parameters ...}" value="" />
-                <!--      <input class="show-for-medium-up cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" placeholder="2-Letter OpenSBP Command, {followed by parameters ...}" value="" />
-                        <input class="show-for-small-only cmds" type="text" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="cmd-input" placeholder="{2-Letters...}" value="" /> -->
-                    </strong></form>
+        <div class="ts-pane" id="pane-jobs">
+                <div class="ts-card" data-card-id="jobs">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span data-i18n="tool_status.jobs.title">Jobs</span>
+                        
                     </div>
-                    <div class="medium-1 large-1 columns">
-                        <button type="button" class="secondary button small hide-for-small-only medium-expanded" data-i18n-title="sb4.cmd.help_tooltip" title="Get Command Help in OpenSBP Reference." id="cmd-help">?--</button>
+                    <div class="ts-jobs-actions">
+                        <button class="ts-cmd ts-cmd-primary" id="btn-run-next" disabled>&#9654;&nbsp; <span data-i18n="tool_status.jobs.run_next">Run Next Job</span></button>
+                        <button class="ts-cmd" id="btn-add-job">+ <span data-i18n="tool_status.jobs.add">Add</span></button>
+                        <input type="file" id="job-file-input" style="display:none;" multiple>
+                    </div>
+                    <div class="ts-job-list" id="job-queue">
+                        <div class="ts-empty" data-i18n="tool_status.jobs.empty_queue">No jobs in queue</div>
+                    </div>
+                    <div class="ts-card-title ts-history-title" data-i18n="tool_status.jobs.recent">Recent</div>
+                    <div class="ts-job-list ts-job-history" id="job-history"></div>
+                    <button class="ts-cmd ts-cmd-block" id="btn-full-history" data-i18n="tool_status.jobs.view_full_history">View Full History</button>
+                </div>
+
+                <div class="ts-card" id="card-usb" data-card-id="usb" style="display:none;">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span><i class="fa fa-usb"></i> <span data-i18n="tool_status.usb.title">USB Drive</span> <span class="ts-note-inline" id="usb-crumb"></span></span>
+                        
+                    </div>
+                    <button class="ts-cmd ts-cmd-block" id="btn-usb-browse" style="margin-top:0;" data-i18n="tool_status.usb.browse">Browse USB Drive&hellip;</button>
+                </div>
+
+                <div class="ts-card" data-card-id="machine">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span data-i18n="sb4.workflow.card_title">My Workflow</span>
+                        <span class="ts-title-actions">
+                            <button class="ts-iconbtn" id="btn-machine-settings" title="Routine settings" data-i18n-title="tool_status.machine.settings_title"><i class="fa fa-gear"></i></button>
+                        </span>
+                    </div>
+                    <!-- Home XY / Home Z carry Sb4's homed indicators (js/tool_config.js);
+                         the translated label sits in an inner span so i18n leaves the glyph alone. -->
+                    <div class="ts-machine-btnrow">
+                        <div class="ts-btn-grid" id="machine-btn-grid">
+                            <button class="ts-cmd machine-cmd" id="btn-home-xy" data-cmd="C3" title="Home the X and Y axes (C3)" data-i18n-title="tool_status.machine.home_xy_title"><span data-i18n="tool_status.machine.home_xy">Home XY</span><span class="sb4-homed-ind" data-axis="xy" title="Homed indicator: click to cycle not homed / homed / off" data-i18n-title="sb4.machine.homed_ind_title">&#10680;</span></button>
+                            <button class="ts-cmd machine-cmd" id="btn-home-z" data-cmd="C2" title="Set Z-Zero using zeroing plate (C2)" data-i18n-title="tool_status.machine.home_z_title"><span data-i18n="tool_status.machine.home_z">Home Z</span><span class="sb4-homed-ind" data-axis="z" title="Homed indicator: click to cycle not homed / homed / off" data-i18n-title="sb4.machine.homed_ind_title">&#10680;</span></button>
+                            <button class="ts-cmd machine-cmd" data-cmd="JH" title="Jog Home X &amp; Y; Z to safe height (JH)" data-i18n-title="tool_status.machine.jog_home_title" data-i18n="tool_status.machine.jog_home">Jog Home</button>
+                            <button class="ts-cmd machine-cmd" data-cmd="C79" title="Move to park location (C79)" data-i18n-title="tool_status.machine.jog_to_park_title" data-i18n="tool_status.machine.jog_to_park">Jog to Park</button>
+                        </div>
+                        <button class="ts-cmd ts-cmd-add ts-cmd-add-side" id="btn-add-macro" title="Add a macro button" data-i18n-title="tool_status.machine.add_macro_title">+</button>
                     </div>
                 </div>
-                
-                <!-- display panel  -->
-                <div class="row">
-                    <div class="large-12 columns">
 
-
-                        <div id="sbp-container" class="video-container show-for-medium-up running" rows="6" cols="50" no-scroll no-wrap>
-                            <img src="" id="video" alt="Video"/><img src="" id="video1" alt="Video1"/> 
-
-                            <div class="content">
-                                <textarea class="show-for-medium-up running" name="textarea_filedisplay" id="file_txt_area" readonly no-scroll no-wrap style="font-family:'Courier New', Courier, monospace"></textarea>
-                            </div>
-                        </div>
-                    
-                        <!-- Load your video.js script -->
-                        <script src="js/video.js"></script>
-                    
-
+                <div class="ts-card" data-card-id="current">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span data-i18n="tool_status.current.title">Current Tool</span>
+                        
                     </div>
+                    <div class="ts-current-strip">
+                        <div class="ts-tool-display">
+                            <div class="ts-tool-number" id="current-tool-number">&mdash;</div>
+                            <div class="ts-tool-caption" id="current-tool-caption"></div>
+                        </div>
+                        <div>
+                            <table class="ts-postable">
+                                <thead>
+                                    <tr><th></th><th data-i18n="tool_status.current.position">Position</th><th data-i18n="tool_status.current.offset">Offset</th><th id="units-label"></th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="ts-axis">X</td><td id="pos-x">&mdash;</td><td id="off-x">&mdash;</td><td></td></tr>
+                                    <tr><td class="ts-axis">Y</td><td id="pos-y">&mdash;</td><td id="off-y">&mdash;</td><td></td></tr>
+                                    <tr><td class="ts-axis">Z</td><td id="pos-z">&mdash;</td><td id="off-z">&mdash;</td><td></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="ts-sensors" id="sensor-row"></div>
                 </div>
-                </form>
-            </div>
 
-            <!-- Speed and Copyright Panel  -->
-            <div class="callout panel" id="speed-panel">
-                <form>
-                <div class="row">
-                    <div class="large-12 columns">
-
-                        <div class="logo-box small-6 medium-4 large-4 columns">
-                            <span class="tooltip tooltip-logo">i<span class="tooltiptext">
-                               <span data-i18n="sb4.logo.tooltip">This app is ShopBot's CNC interface for setting up your tool and
-                               cutting Part Files (left panel). You can also send individual Commands in the OpenSBP language (top right panel). See HELP ></span>
-                               <span class = "tooltiplink" id="cmd-ref2" data-i18n="sb4.cmd.command_reference">Command Reference</span> <span data-i18n="sb4.logo.tooltip_suffix">for info on OpenSBP language.</span></span></span>
-                            <img panel-label class="top" tabindex="1" id="sb-logo" src="./assets/image6b_transparent.png">
-                            <p class="small show-for-medium-up text-left at-foot" data-i18n="sb4.hints.shortcuts">[ ESC backs out; 'K' opens Keypad; F11 (or right-click) exits fullscreen ]</p>
-                        </div> 
-
-                        <div class="move-speed-box small-11 medium-8 large-8 columns">
-                            <div class="row">
-                                <div class="large-2 medium-3 small-12 columns">
-                                    <label class="left speed-labels show-for-medium-up" style="white-space: nowrap;"><span data-i18n="sb4.speed.default_label">Default:</span>&nbsp;<span class="tooltip">i<span class="tooltiptext" data-i18n-html="sb4.speed.default_tooltip">
-                                        Default speeds are used for Move and Jog commands entered from <br>
-                                        the Command Input box above, or from the Editor, or Files in which <br>
-                                        speeds are not specified.<br></span></span>
-                                    </span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="sb4.speed.move_word">Move</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="sb4.speed.speed_word">Speed</span></label>
-                                    <label class="left speed-labels show-for-small-only" data-i18n="sb4.speed.move_speed">Move Speed</label>
-                                </div>
-                                <div class="large-9 medium-9 small-12 columns">
-                                    <div class="speed-inputs-container">
-                                        <div class="speed-input-group">
-                                            <label class="speed-axis-label">X / Y</label>
-                                            <input type="text" placeholder="0.00" id="formatted_movexy_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                        <div class="speed-input-group">
-                                            <label class="speed-axis-label">Z</label>
-                                            <input type="text" placeholder="0.00" id="formatted_movez_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                        <div class="speed-input-group" id="movea-container" style="display: none;">
-                                            <label class="speed-axis-label">A</label>
-                                            <input type="text" placeholder="0.00" id="formatted_movea_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                        <div class="speed-input-group" id="moveb-container" style="display: none;">
-                                            <label class="speed-axis-label">B</label>
-                                            <input type="text" placeholder="0.00" id="formatted_moveb_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                        <div class="speed-input-group" id="movec-container" style="display: none;">
-                                            <label class="speed-axis-label">C</label>
-                                            <input type="text" placeholder="0.00" id="formatted_movec_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="large-2 medium-3 small-12 columns">
-                                    <label class="left speed-labels show-for-medium-up"><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="sb4.speed.jog_word">Jog</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="sb4.speed.speed_word">Speed</span></label>
-                                    <label class="left speed-labels show-for-small-only" data-i18n="sb4.speed.jog_speed">Jog Speed</label>
-                                </div>
-                                <div class="large-9 medium-9 small-12 columns">
-                                    <div class="speed-inputs-container">
-                                        <div class="speed-input-group">
-                                            <label class="speed-axis-label">X / Y</label>
-                                            <input type="text" placeholder="0.00" id="formatted_jogxy_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                        <div class="speed-input-group">
-                                            <label class="speed-axis-label">Z</label>
-                                            <input type="text" placeholder="0.00" id="formatted_jogz_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                        <div class="speed-input-group" id="joga-container" style="display: none;">
-                                            <label class="speed-axis-label">A</label>
-                                            <input type="text" placeholder="0.00" id="formatted_joga_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                        <div class="speed-input-group" id="jogb-container" style="display: none;">
-                                            <label class="speed-axis-label">B</label>
-                                            <input type="text" placeholder="0.00" id="formatted_jogb_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                        <div class="speed-input-group" id="jogc-container" style="display: none;">
-                                            <label class="speed-axis-label">C</label>
-                                            <input type="text" placeholder="0.00" id="formatted_jogc_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <p class="small text-left at-foot show-for-medium-up" id="copyright"><span data-i18n="sb4.footer.copyright">© Copyright ShopBot Tools 2026.</span></p>
-                            </div>
-                        </div>
+                <div class="ts-card" data-card-id="shortcuts">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span data-i18n="tool_status.shortcuts.title">Apps</span>
+                        <span class="ts-title-actions">
+                            <button class="ts-iconbtn" id="btn-shortcut-settings" title="Add or remove shortcuts" data-i18n-title="tool_status.shortcuts.settings_title"><i class="fa fa-gear"></i></button>
+                            
+                        </span>
                     </div>
-                </div>    
-                </form>
-            </div>
-
-          </div>
+                    <div class="ts-shortcut-grid" id="shortcut-grid"></div>
+                </div>
         </div>
 
-      </div>
+        <div class="ts-pane" id="pane-controls">
+                <!-- Sb4 command panel. Markup under #cmd-panel is Foundation
+                     (scoped: css/foundation-scoped.css); the JS in js/sb_app.js,
+                     js/init_setActions.js, js/tool_config.js, js/video.js is
+                     the Sb4 code unchanged apart from the DOM anchors. -->
+                <div class="ts-card" data-card-id="command" id="card-command">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span><span data-i18n="sb4.cmd.panel_label">Individual Command Input</span><span class="tooltip tooltip-below">i<span class="tooltiptext">
+                            <span data-i18n="sb4.cmd.tooltip">Run specific OpenSBP Commands. Select from menu above or type directly here.</span><br><br> See: Help > <span class="tooltiplink" id="cmd-ref" data-i18n="sb4.cmd.command_reference">Command Reference</span><br><br></span></span></span>
+                        <span class="ts-title-actions">
+                            <img id="vid-button" class="vid-button-off" data-i18n-title="sb4.cmd.toggle_video_tooltip" title="Toggle Video" src="./assets/icon_video.png">
+                        </span>
+                    </div>
+                    <div class="sb4-scope" id="cmd-panel">
+                        <div class="sb4-cmdrow">
+                            <div class="sb4-cmdline">
+                                <input class="cmds" type="text" readonly autocomplete="off" autocorrect="off" autofill="off" spellcheck="false" id="cmd-input" data-i18n-placeholder="sb4.cmd.input_placeholder" placeholder="2-Letter OpenSBP Command, {followed by parameters ...}" value="" />
+                            </div>
+                            <button type="button" class="secondary button small" data-i18n-title="sb4.cmd.help_tooltip" title="Get Command Help in OpenSBP Reference." id="cmd-help">?--</button>
+                        </div>
+                        <div id="sbp-container" class="video-container running">
+                            <img src="" id="video" alt="Video"/><img src="" id="video1" alt="Video1"/>
+                            <div class="content">
+                                <textarea class="running" name="textarea_filedisplay" id="file_txt_area" readonly style="font-family:'Courier New', Courier, monospace"></textarea>
+                            </div>
+                        </div>
+                        <div class="sb4-beta">
+                            <a href="#" data-reveal-id="moPad" data-i18n="sb4.beta.motion_pad_link">beta MOtion-PAD</a>
+                            <a href="#" data-reveal-id="insertStream" data-i18n="sb4.beta.insert_link">beta INSERT</a>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Default speeds (was the panel under the Sb4 command window).
+                     Edits send VS + SV through js/init_setActions.js. -->
+                <div class="ts-card" data-card-id="speeds" id="speed-panel">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span><span data-i18n="sb4.speed.card_title">Default Speeds</span><span class="tooltip tooltip-below">i<span class="tooltiptext" data-i18n-html="sb4.speed.default_tooltip">
+                            Default speeds are used for Move and Jog commands entered from <br>
+                            the Command Input box above, or from the Editor, or Files in which <br>
+                            speeds are not specified.<br></span></span></span>
+                    </div>
+                    <div class="sb4-speedrow">
+                        <span class="sb4-speedname" data-i18n="sb4.speed.move_speed">Move Speed</span>
+                        <div class="speed-inputs-container">
+                            <div class="speed-input-group">
+                                <label class="speed-axis-label">X / Y</label>
+                                <input type="text" placeholder="0.00" id="formatted_movexy_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                            <div class="speed-input-group">
+                                <label class="speed-axis-label">Z</label>
+                                <input type="text" placeholder="0.00" id="formatted_movez_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                            <div class="speed-input-group" id="movea-container" style="display: none;">
+                                <label class="speed-axis-label">A</label>
+                                <input type="text" placeholder="0.00" id="formatted_movea_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                            <div class="speed-input-group" id="moveb-container" style="display: none;">
+                                <label class="speed-axis-label">B</label>
+                                <input type="text" placeholder="0.00" id="formatted_moveb_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                            <div class="speed-input-group" id="movec-container" style="display: none;">
+                                <label class="speed-axis-label">C</label>
+                                <input type="text" placeholder="0.00" id="formatted_movec_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sb4-speedrow">
+                        <span class="sb4-speedname" data-i18n="sb4.speed.jog_speed">Jog Speed</span>
+                        <div class="speed-inputs-container">
+                            <div class="speed-input-group">
+                                <label class="speed-axis-label">X / Y</label>
+                                <input type="text" placeholder="0.00" id="formatted_jogxy_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                            <div class="speed-input-group">
+                                <label class="speed-axis-label">Z</label>
+                                <input type="text" placeholder="0.00" id="formatted_jogz_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                            <div class="speed-input-group" id="joga-container" style="display: none;">
+                                <label class="speed-axis-label">A</label>
+                                <input type="text" placeholder="0.00" id="formatted_joga_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                            <div class="speed-input-group" id="jogb-container" style="display: none;">
+                                <label class="speed-axis-label">B</label>
+                                <input type="text" placeholder="0.00" id="formatted_jogb_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                            <div class="speed-input-group" id="jogc-container" style="display: none;">
+                                <label class="speed-axis-label">C</label>
+                                <input type="text" placeholder="0.00" id="formatted_jogc_speed" autocomplete="off" class="text-right opensbp_input_formattedspeeds" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ts-card" data-card-id="shoptools">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span data-i18n="tool_status.shoptools.title">Shop Tools</span>
+                        
+                    </div>
+
+                    <!-- Tool picker: one tile per shop tool; clicking swaps
+                         the picker for that tool's mini interface below. -->
+                    <div class="ts-shoptool-grid" id="st-picker">
+                        <div class="ts-shoptool" data-tool="drill" title="Drill press" data-i18n-title="tool_status.shoptools.drill_tile_title">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M7 35 H33"/>
+                                <path d="M28 35 V6"/>
+                                <path d="M11 5 H30 V12 H15 Z"/>
+                                <path d="M16 12 H21 V16 H16 Z"/>
+                                <path d="M18.5 16 V23 L18.5 25"/>
+                                <path d="M10 27 H24 M24 27 L28 25"/>
+                            </svg>
+                            <div class="ts-shortcut-label" data-i18n="tool_status.shoptools.drill">Drill Press</div>
+                        </div>
+                        <div class="ts-shoptool" data-tool="tablesaw" title="Table saw" data-i18n-title="tool_status.shoptools.tablesaw_tile_title">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M4 27 H36"/>
+                                <path d="M8 27 V33 M32 27 V33"/>
+                                <path d="M13 27 A8.5 8.5 0 0 1 30 27"/>
+                                <path d="M21.5 21 L25 17.5"/>
+                            </svg>
+                            <div class="ts-shortcut-label" data-i18n="tool_status.shoptools.tablesaw">Table Saw</div>
+                        </div>
+                        <div class="ts-shoptool" data-tool="planer" title="Planer" data-i18n-title="tool_status.shoptools.planer_tile_title">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M9 10 H31 V30 H9 Z"/>
+                                <path d="M2 24 H9 M31 24 H38"/>
+                                <circle cx="20" cy="16" r="3.5"/>
+                                <path d="M12 24 H28"/>
+                            </svg>
+                            <div class="ts-shortcut-label" data-i18n="tool_status.shoptools.planer">Planer</div>
+                        </div>
+                        <div class="ts-shoptool" data-tool="chopsaw" title="Chop saw — cut an order of strips from a sheet" data-i18n-title="tool_status.shoptools.chopsaw_tile_title">
+                            <svg viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M4 31 H36"/>
+                                <path d="M7 31 V27 H33 V31"/>
+                                <circle cx="24" cy="18" r="8"/>
+                                <path d="M24 18 L33 9"/>
+                                <path d="M31 7 L36 12"/>
+                            </svg>
+                            <div class="ts-shortcut-label" data-i18n="tool_status.shoptools.chopsaw">Chop Saw</div>
+                        </div>
+                    </div>
+
+                    <!-- Drill press mini interface: action buttons ride in
+                         the header row beside the title; below, envelope map
+                         (crosshair = current XY) | vertical depth slider +
+                         entries | table/material cross-section with Z-zero
+                         radios and a red actual-cut bar. The SVGs are drawn
+                         by app.js (renderStEnv / renderStXsec). -->
+                    <div class="ts-st-panel" id="st-panel-drill" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools" data-i18n-title="tool_status.shoptools.back_title"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title" data-i18n="tool_status.shoptools.drill">Drill Press</span>
+                            <button class="ts-iconbtn ts-st-arbtn" title="Project onto the table camera view" data-i18n-title="tool_status.shoptools.ar_title" style="display:none;"><i class="fa fa-video-camera"></i></button>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-st-arraybtn" id="btn-st-array" title="Drill a grid of holes from the current position" data-i18n-title="tool_status.shoptools.drill_array_title" data-i18n="tool_status.shoptools.array">Array</button>
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-drill" data-i18n="tool_status.shoptools.drill_btn">DRILL</button>
+                            </div>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="st-env-svg" width="150" height="150"></svg>
+                            </div>
+                            <div class="ts-st-depthcol">
+                                <span class="ts-st-minilabel"><span data-i18n="tool_status.shoptools.depth">Depth</span> (<span class="st-units">in</span>)</span>
+                                <input type="range" id="st-drill-slider" class="ts-st-vslider" min="0" max="1.5" step="0.01" value="0">
+                                <input type="number" id="st-drill-depth" step="any" min="0">
+                            </div>
+                            <!-- Spiral bore: with a bit diameter and a larger
+                                 hole diameter, DRILL helixes the bit around the
+                                 hole instead of plunging straight. Stays
+                                 visible in Array mode — it applies per hole. -->
+                            <div class="ts-st-borecol">
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.bit">Bit</span> &#216; (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="st-drill-bit" step="any" min="0" title="Bit diameter — with a larger hole diameter, DRILL bores the hole with a spiral plunge" data-i18n-title="tool_status.shoptools.drill_bit_title">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.hole">Hole</span> &#216; (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="st-drill-hole" step="any" min="0" title="Hole diameter — leave empty (or equal to the bit) to plunge straight" data-i18n-title="tool_status.shoptools.drill_hole_title">
+                                </label>
+                            </div>
+                            <div class="ts-st-xseccol">
+                                <div class="ts-st-xsecwrap">
+                                    <span class="ts-st-minilabel ts-st-zzlabel" data-i18n="tool_status.shoptools.z_zero">Z zero</span>
+                                    <div class="ts-st-radios">
+                                        <input type="radio" name="st-zzero" value="material" id="st-zz-material" title="Z zeroed on the material surface" data-i18n-title="tool_status.shoptools.zz_material_title">
+                                        <input type="radio" name="st-zzero" value="table" id="st-zz-table" title="Z zeroed on the table surface" data-i18n-title="tool_status.shoptools.zz_table_title">
+                                    </div>
+                                    <div class="ts-st-zzline" id="st-zzline-material"></div>
+                                    <div class="ts-st-zzline" id="st-zzline-table"></div>
+                                    <span class="ts-st-minilabel ts-st-thicklabel" id="st-thicklabel"><span data-i18n="tool_status.shoptools.thick">Thick</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="st-material" step="any" min="0" title="Material thickness" data-i18n-title="tool_status.shoptools.material_title">
+                                    <svg id="st-xsec-svg" width="68" height="126"></svg>
+                                </div>
+                            </div>
+                            <!-- Array mode: swaps in for the depth column +
+                                 cross-section; the envelope map previews the
+                                 grid of holes from the current position. -->
+                            <div class="ts-st-arraycol" id="st-array-panel" style="display:none;">
+                                <div class="ts-st-arr-grid">
+                                    <label class="ts-st-minilabel"><span data-i18n="tool_status.shoptools.x_count">X Count</span>
+                                        <input type="number" id="st-arr-xn" min="1" step="1">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span data-i18n="tool_status.shoptools.y_count">Y Count</span>
+                                        <input type="number" id="st-arr-yn" min="1" step="1">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.x_spacing">X Spacing</span> (<span class="st-units">in</span>)</span>
+                                        <input type="number" id="st-arr-xs" step="any">
+                                    </label>
+                                    <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.y_spacing">Y Spacing</span> (<span class="st-units">in</span>)</span>
+                                        <input type="number" id="st-arr-ys" step="any">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table saw mini interface: one straight through-cut.
+                         The line pivots about a draggable anchor point;
+                         boundary handles rotate it, and the angle and edge
+                         intercepts are typeable in place (the floating
+                         #sts-edit input). Drawn by renderStsEnv. -->
+                    <div class="ts-st-panel" id="st-panel-tablesaw" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools" data-i18n-title="tool_status.shoptools.back_title"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title" data-i18n="tool_status.shoptools.tablesaw">Table Saw</span>
+                            <button class="ts-iconbtn ts-st-arbtn" title="Project onto the table camera view" data-i18n-title="tool_status.shoptools.ar_title" style="display:none;"><i class="fa fa-video-camera"></i></button>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-sts-mode" id="sts-mode-rip" title="Rip &mdash; straight cut along Y" data-i18n-title="tool_status.shoptools.rip_title">|</button>
+                                <button class="ts-cmd ts-sts-mode" id="sts-mode-cross" title="Crosscut &mdash; straight cut along X" data-i18n-title="tool_status.shoptools.cross_title">&#8212;</button>
+                                <button class="ts-cmd ts-st-arraybtn" id="sts-arr-btn" title="Duplicate the cut at a spacing normal to the line" data-i18n-title="tool_status.shoptools.saw_array_title" data-i18n="tool_status.shoptools.array">Array</button>
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-saw" data-i18n="tool_status.shoptools.cut_btn">CUT</button>
+                            </div>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="sts-env-svg" width="240" height="150"></svg>
+                                <input type="number" id="sts-edit" step="any">
+                            </div>
+                            <div class="ts-st-depthcol ts-stp-params">
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.anchor_x">Anchor X</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-ax" step="any">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.anchor_y">Anchor Y</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-ay" step="any">
+                                </label>
+                            </div>
+                            <!-- Cut parameters: empty pass depth = one full
+                                 pass; empty feed = the tool's current move
+                                 speed. -->
+                            <div class="ts-st-depthcol ts-stp-params">
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.total_depth">Total Depth</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-depth" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.pass_depth">Pass Depth</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-pass" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.feed">Feed</span> (<span class="st-units">in</span>/s)</span>
+                                    <input type="number" id="sts-feed" step="any" min="0">
+                                </label>
+                            </div>
+                            <!-- Revealed only for angled cuts (∠ latches on
+                                 when the line leaves 0°/90°). Intercept
+                                 labels retag live as the line's ends move
+                                 between table edges. -->
+                            <div class="ts-st-depthcol ts-stp-params" id="sts-angle-col" style="display:none;">
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.angle">Angle</span>&deg;</span>
+                                    <input type="number" id="sts-angle" step="any" min="0" max="180">
+                                </label>
+                                <label class="ts-st-minilabel"><span id="sts-i0-label">X @ bottom</span>
+                                    <input type="number" id="sts-i0" step="any">
+                                </label>
+                                <label class="ts-st-minilabel"><span id="sts-i1-label">Y @ left</span>
+                                    <input type="number" id="sts-i1" step="any">
+                                </label>
+                            </div>
+                            <!-- Array mode: duplicate the cut at a spacing
+                                 measured normal to the line (sign picks the
+                                 side). Previewed as parallel lines. -->
+                            <div class="ts-st-depthcol ts-stp-params" id="sts-array-col" style="display:none;">
+                                <label class="ts-st-minilabel"><span data-i18n="tool_status.shoptools.cuts">Cuts</span>
+                                    <input type="number" id="sts-arr-n" min="1" step="1">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.spacing">Spacing</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="sts-arr-s" step="any">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Planer mini interface: raster pocket generator. The
+                         envelope map carries two-handle range bars (bottom =
+                         X, left = Y) picking the area; the raster toolpath
+                         previews on the map. All drawn by renderStpEnv. -->
+                    <div class="ts-st-panel" id="st-panel-planer" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools" data-i18n-title="tool_status.shoptools.back_title"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title" data-i18n="tool_status.shoptools.planer">Planer</span>
+                            <button class="ts-iconbtn ts-st-arbtn" title="Project onto the table camera view" data-i18n-title="tool_status.shoptools.ar_title" style="display:none;"><i class="fa fa-video-camera"></i></button>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-plane" data-i18n="tool_status.shoptools.plane_btn">PLANE</button>
+                            </div>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="stp-env-svg" width="240" height="150"></svg>
+                                <input type="number" id="stp-edit" step="any">
+                            </div>
+                            <div class="ts-st-depthcol ts-stp-params">
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.bit">Bit</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="stp-bit" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.stepover">Stepover</span> %</span>
+                                    <input type="number" id="stp-step" step="5" min="5" max="100">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.depth">Depth</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="stp-depth" step="any" min="0">
+                                </label>
+                            </div>
+                            <div class="ts-stp-rastercol">
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.angle">Angle</span>&deg;</span>
+                                    <div class="ts-stp-anglerow">
+                                        <input type="range" id="stp-angle-slider" min="0" max="90" step="5" value="0">
+                                        <input type="number" id="stp-angle" min="0" max="90" step="1">
+                                    </div>
+                                </label>
+                                <div class="ts-st-minilabel" style="margin-top: 8px;" data-i18n="tool_status.shoptools.direction">Direction</div>
+                                <label class="ts-stp-dir" title="Cut back and forth, stepping over at depth" data-i18n-title="tool_status.shoptools.dir2_title"><input type="radio" name="stp-dir" value="2way" checked>
+                                    <span data-i18n="tool_status.shoptools.two_way">2-way</span>
+                                </label>
+                                <label class="ts-stp-dir" title="Cut one way only: lift, return, plunge, cut" data-i18n-title="tool_status.shoptools.dir1_title"><input type="radio" name="stp-dir" value="1way">
+                                    <span data-i18n="tool_status.shoptools.one_way">1-way</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chop saw mini interface: turns an order of strips
+                         ("10 pc. 4 wide 12 long; 6 pc 3x26") into a
+                         kerf-aware nest on a sheet whose near corner is the
+                         current XY zero, then profile-cuts each piece out.
+                         Zero Z on the sheet surface. Map + nest drawn by
+                         app.js (renderStcsEnv). -->
+                    <div class="ts-st-panel" id="st-panel-chopsaw" style="display:none;">
+                        <div class="ts-st-head">
+                            <button class="ts-iconbtn ts-st-back" title="Back to shop tools" data-i18n-title="tool_status.shoptools.back_title"><i class="fa fa-chevron-left"></i></button>
+                            <span class="ts-st-title" data-i18n="tool_status.shoptools.chopsaw">Chop Saw</span>
+                            <div class="ts-st-btncol">
+                                <button class="ts-cmd ts-cmd-primary machine-cmd ts-st-drillbtn" id="btn-st-chop" title="Cut the nested order from the sheet" data-i18n-title="tool_status.shoptools.chop_btn_title" data-i18n="tool_status.shoptools.chop_btn">CUT</button>
+                            </div>
+                        </div>
+                        <div class="ts-st-drill-row">
+                            <div class="ts-st-env">
+                                <svg id="stcs-env-svg" width="240" height="150"></svg>
+                            </div>
+                            <div class="ts-st-ordercol">
+                                <span class="ts-st-minilabel"><span data-i18n="tool_status.shoptools.cut_list">Cut List</span> (<span class="st-units">in</span>)</span>
+                                <div class="ts-stcs-entry" title="Width × length × quantity — fractions like 3 1/2 work" data-i18n-title="tool_status.shoptools.entry_title">
+                                    <label><span class="ts-st-minilabel" data-i18n="tool_status.shoptools.chop_w">W</span>
+                                        <input type="text" id="stcs-w" inputmode="decimal" autocomplete="off">
+                                    </label>
+                                    <span class="ts-stcs-x">&#215;</span>
+                                    <label><span class="ts-st-minilabel" data-i18n="tool_status.shoptools.chop_l">L</span>
+                                        <input type="text" id="stcs-l" inputmode="decimal" autocomplete="off">
+                                    </label>
+                                    <span class="ts-stcs-x">&#215;</span>
+                                    <label><span class="ts-st-minilabel" data-i18n="tool_status.shoptools.chop_qty">Qty</span>
+                                        <input type="number" id="stcs-qty" min="1" step="1" value="1">
+                                    </label>
+                                    <button class="ts-cmd" id="stcs-add" title="Add to the cut list" data-i18n-title="tool_status.shoptools.add_btn_title" data-i18n="tool_status.shoptools.add_btn">Add</button>
+                                </div>
+                                <div id="stcs-list" class="ts-stcs-list"></div>
+                                <div class="ts-st-minilabel" id="stcs-summary"></div>
+                            </div>
+                            <!-- Sheet/bit params sit in two columns under the
+                                 table preview; ts-st-below keeps them out of
+                                 the map-width math (stEnvCap/stPlaceBtns). -->
+                            <div class="ts-stcs-paramgrid ts-st-below">
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.sheet_w">Sheet W</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="stcs-sheet-w" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.sheet_l">Sheet L</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="stcs-sheet-l" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.thick">Thick</span> (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="stcs-thick" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span><span data-i18n="tool_status.shoptools.bit">Bit</span> &#216; (<span class="st-units">in</span>)</span>
+                                    <input type="number" id="stcs-bit" step="any" min="0">
+                                </label>
+                                <label class="ts-st-minilabel"><span data-i18n="tool_status.shoptools.passes">Passes</span>
+                                    <input type="number" id="stcs-passes" step="1" min="1" max="10">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ts-card" id="card-tools" data-card-id="tools" style="display:none;">
+                    <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
+                    <div class="ts-card-title ts-card-title-row">
+                        <span><span data-i18n="tool_status.tools.title">Tools</span> <span class="ts-note-inline" id="rack-note"></span></span>
+                        <span class="ts-title-actions">
+                            <button class="ts-iconbtn" id="btn-tool-settings" title="Tool settings" data-i18n-title="tool_status.tools.settings_title"><i class="fa fa-gear"></i></button>
+                            
+                        </span>
+                    </div>
+                    <div class="ts-rack" id="rack"></div>
+                    <div class="ts-btn-grid ts-btn-grid-tools">
+                        <button class="ts-cmd machine-cmd" id="btn-measure" title="Measure the current tool (C72)" data-i18n-title="tool_status.tools.measure_title" data-i18n="tool_status.tools.measure">Measure Tool</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C73" title="Get plate offset (C73)" data-i18n-title="tool_status.tools.plate_offset_title" data-i18n="tool_status.tools.plate_offset">Plate Offset</button>
+                        <button class="ts-cmd machine-cmd" data-cmd="C74" title="Calibrate toolbar (C74)" data-i18n-title="tool_status.tools.calibrate_title" data-i18n="tool_status.tools.calibrate">Calibrate</button>
+                    </div>
+                </div>
+        </div>
     </div>
 
-    
-  <a href="#" data-reveal-id="moPad" data-i18n="sb4.beta.motion_pad_link">beta MOtion-PAD</a><br>
-  <a href="#" data-reveal-id="insertStream" data-i18n="sb4.beta.insert_link">beta INSERT</a>
+        <div class="sb4-footer">
+            <div class="sb4-footer-logo">
+                <span class="tooltip tooltip-logo">i<span class="tooltiptext">
+                    <span data-i18n="sb4.logo.tooltip">This app is ShopBot's CNC interface for setting up your tool and cutting Part Files. You can also send individual Commands in the OpenSBP language from the Individual Command Input card. See HELP ></span>
+                    <span class="tooltiplink" id="cmd-ref2" data-i18n="sb4.cmd.command_reference">Command Reference</span> <span data-i18n="sb4.logo.tooltip_suffix">for info on OpenSBP language.</span></span></span>
+                <img id="sb-logo" src="./assets/image6b_transparent.png">
+            </div>
+            <div class="sb4-footer-text">
+                <p data-i18n="sb4.hints.shortcuts">[ ESC backs out; 'K' opens Keypad; F11 (or right-click) exits fullscreen ]</p>
+                <p><span data-i18n="sb4.workflow.tooltip_checklist_prefix">Click to download a detailed workflow</span> <span class="tooltiplink" id="ck-list" data-i18n="sb4.workflow.checklist">Checklist</span></p>
+                <p id="copyright"><span data-i18n="sb4.footer.copyright">&copy; Copyright ShopBot Tools 2026.</span></p>
+            </div>
+        </div>
+  </div>
 
+    <!-- App settings modal (appearance / theme) -->
+    <div class="ts-modal-backdrop" id="app-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span data-i18n="tool_status.app_settings.title">App Settings</span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading"><span data-i18n="tool_status.app_settings.cards">Cards</span> <span class="ts-note-inline" data-i18n-html="tool_status.app_settings.cards_note">to rearrange, click the <i class="fa fa-pencil"></i> in the header and drag the &#8942;&#8942; grips</span></div>
+                    <div class="ts-note" data-i18n="sb4.app_settings.collapse_note">Click a card's title to fold it to a title bar; click again to open it.</div>
+                    <div class="ts-card-toggles" id="card-toggle-list"></div>
+                    <button class="ts-cmd" id="btn-layout-reset" data-i18n="tool_status.app_settings.reset_layout">Reset Layout</button>
+                </div>
 
- <!-- needed this setting here to prevent closing; left in later for redundancy -->
- <script>Foundation.libs.reveal.settings.close_on_background_click = false;</script>
- <script>Foundation.libs.reveal.settings.close_on_esc = true;</script>
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading"><span data-i18n="tool_status.app_settings.theme">Theme</span> <span class="ts-note-inline" data-i18n="tool_status.common.saved_on_display">saved on this display</span></div>
+                    <div class="ts-theme-grid" id="theme-grid"></div>
+                </div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd ts-cmd-primary" id="btn-app-settings-close" data-i18n="tool_status.common.done">Done</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- Add macro button modal -->
+    <div class="ts-modal-backdrop" id="macro-pick-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span data-i18n="tool_status.macro_pick.title">Add Macro Button</span>
+                <a class="ts-link" id="macro-pick-manager" data-i18n="tool_status.macro_pick.open_manager">open Macro Manager</a>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-pick-list" id="macro-pick-list"></div>
+                <label class="ts-label-field"><span data-i18n="tool_status.macro_pick.button_label">Button label</span>
+                    <input id="macro-btn-label" type="text" placeholder="select a macro above" data-i18n-placeholder="tool_status.macro_pick.label_placeholder">
+                </label>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-macro-pick-cancel" data-i18n="tool_status.common.cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-macro-pick-save" disabled data-i18n="tool_status.macro_pick.add_button">Add Button</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App shortcuts picker modal -->
+    <div class="ts-modal-backdrop" id="shortcut-pick-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span data-i18n="tool_status.shortcut_pick.title">App Shortcuts</span>
+                <span class="ts-note-inline" data-i18n="tool_status.common.saved_on_display">saved on this display</span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-pick-list" id="shortcut-pick-list"></div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-shortcut-pick-cancel" data-i18n="tool_status.common.cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-shortcut-pick-save" data-i18n="tool_status.common.save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full job history modal -->
+    <div class="ts-modal-backdrop" id="history-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span data-i18n="tool_status.history.title">Job History</span>
+                <span class="ts-note-inline" id="history-page-label"></span>
+            </div>
+            <div class="ts-modal-body">
+                <div class="ts-job-list" id="history-list"></div>
+            </div>
+            <div class="ts-modal-footer ts-modal-footer-split">
+                <div>
+                    <button class="ts-cmd" id="btn-history-prev">&larr; <span data-i18n="tool_status.history.newer">Newer</span></button>
+                    <button class="ts-cmd" id="btn-history-next"><span data-i18n="tool_status.history.older">Older</span> &rarr;</button>
+                </div>
+                <button class="ts-cmd" id="btn-history-close" data-i18n="tool_status.common.close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Machine routine settings modal -->
+    <div class="ts-modal-backdrop" id="machine-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span data-i18n="tool_status.machine_settings.title">Routine Settings</span>
+                <span class="ts-note-inline" id="machine-settings-units"></span>
+            </div>
+            <div class="ts-modal-body">
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading"><span data-i18n="tool_status.machine.home_xy">Home XY</span> <span class="ts-note-inline" data-i18n="tool_status.machine_settings.home_xy_note">limit switch offsets</span></div>
+                    <div class="ts-field-row">
+                        <label><span data-i18n="tool_status.machine_settings.x_offset">X offset</span> <input id="ms-homeoff-x" type="number" step="any"></label>
+                        <label><span data-i18n="tool_status.machine_settings.y_offset">Y offset</span> <input id="ms-homeoff-y" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note" data-i18n="tool_status.machine_settings.home_xy_help">Pull-back distance from each proximity switch to true zero (used by Home XY / C3).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading"><span data-i18n="tool_status.machine.home_z">Home Z</span> <span class="ts-note-inline" data-i18n="tool_status.machine_settings.home_z_note">fixed Z-zero location</span></div>
+                    <label class="ts-check-row">
+                        <input id="ms-zzero-use" type="checkbox">
+                        <span data-i18n="tool_status.machine_settings.zzero_use">Move to a fixed XY location before zeroing Z</span>
+                    </label>
+                    <div class="ts-field-row">
+                        <label><span data-i18n="tool_status.machine_settings.x_location">X location</span> <input id="ms-zzero-x" type="number" step="any"></label>
+                        <label><span data-i18n="tool_status.machine_settings.y_location">Y location</span> <input id="ms-zzero-y" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note" data-i18n="tool_status.machine_settings.home_z_help">When enabled, the Home Z button lifts to safe-Z, jogs here (J2), then runs Z-Zero (C2).</div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading"><span data-i18n="tool_status.machine_settings.custom_buttons">Custom Buttons</span> <span class="ts-note-inline" data-i18n="tool_status.machine_settings.custom_note">rename or remove</span></div>
+                    <div id="ms-custom-list"></div>
+                </div>
+
+                <div class="ts-settings-section">
+                    <div class="ts-settings-heading"><span data-i18n="tool_status.machine_settings.park">Park</span> <span class="ts-note-inline" data-i18n="tool_status.machine_settings.park_note">parking location</span></div>
+                    <div class="ts-field-row">
+                        <label>X <input id="ms-park-x" type="number" step="any"></label>
+                        <label>Y <input id="ms-park-y" type="number" step="any"></label>
+                        <label><span data-i18n="tool_status.machine_settings.z_lift">Z lift</span> <input id="ms-park-z" type="number" step="any"></label>
+                    </div>
+                    <div class="ts-note" data-i18n="tool_status.machine_settings.park_help">Jog to Park (C79) lifts to Z, then moves to X/Y.</div>
+                </div>
+
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-machine-settings-cancel" data-i18n="tool_status.common.cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-machine-settings-save" data-i18n="tool_status.common.save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tool settings modal -->
+    <div class="ts-modal-backdrop" id="tool-settings-modal" style="display:none;">
+        <div class="ts-modal">
+            <div class="ts-modal-header">
+                <span data-i18n="tool_status.tool_settings.title">Tool Settings</span>
+                <span class="ts-note-inline" id="tool-settings-units"></span>
+            </div>
+            <div class="ts-modal-body">
+                <table class="ts-settings-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="tool_status.tool_settings.tool">Tool</th>
+                            <th data-i18n="tool_status.tool_settings.cutter_type">Cutter Type</th>
+                            <th data-i18n="tool_status.tool_settings.diameter">Diameter</th>
+                            <th data-i18n="tool_status.tool_settings.length">Length</th>
+                            <th><span data-i18n="tool_status.shoptools.angle">Angle</span>&deg;</th>
+                            <th data-i18n="tool_status.tool_settings.name">Name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tool-settings-rows"></tbody>
+                </table>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-tool-settings-cancel" data-i18n="tool_status.common.cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-tool-settings-save" data-i18n="tool_status.common.save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AR projection stage: the active shop tool's envelope map, warped by
+         the previewer's saved table calibration (machine.cameraCalibration)
+         onto the live camera feed. The tool's panel docks into the right
+         rail while the stage is open. -->
+    <div id="st-ar-stage" style="display:none;">
+        <img id="st-ar-video" alt=""/>
+        <svg id="st-ar-svg"></svg>
+        <button class="ts-iconbtn" id="st-ar-exit" title="Exit camera view" data-i18n-title="tool_status.shoptools.ar_exit_title"><i class="fa fa-times"></i></button>
+        <div id="st-ar-float">
+            <div id="st-ar-grip" title="Drag to move" data-i18n-title="tool_status.shoptools.ar_grip_title">&#8942;&#8942;</div>
+        </div>
+        <input type="number" id="st-ar-edit" step="any">
+    </div>
+
+    <!-- Sb4's Foundation reveal modals. The wrapper gives them the scoped
+         Foundation styles and is reveal's root element (see the script
+         below); it must stay unpositioned (the modals position against the
+         document). The modals carry the scope class too: reveal re-parents
+         a modal on open and the scoped CSS must keep matching. -->
+    <div class="sb4-scope sb4-modals">
+    <!-- needed this setting here to prevent closing; left in later for redundancy -->
+    <script>Foundation.libs.reveal.settings.close_on_background_click = false;</script>
+    <script>Foundation.libs.reveal.settings.close_on_esc = true;</script>
+    <!-- reveal re-parents an open modal to its root element: keep that inside the scoped wrapper -->
+    <script>Foundation.libs.reveal.settings.root_element = ".sb4-modals";</script>
 
     <!-- Fill-In Sheet -->
-    <div id="fi-modal" class="reveal-modal" data-reveal role="dialog">
+    <div id="fi-modal" class="reveal-modal sb4-scope" data-reveal role="dialog">
       <form autocomplete="off">
         <h3 class="fi-title" id="fi_modal_title" data-i18n="sb4.fillin.title_file_ready">File Ready to Run</h3>
         <p class="fi-title" id="fi_cur_info"></p>
@@ -384,23 +902,21 @@
 
     </div>
 
-
     <!-- Provide Info Sheets in Help -->
-    <div id="helpModal" class="reveal-modal" data-reveal role="dialog">
+    <div id="helpModal" class="reveal-modal sb4-scope" data-reveal role="dialog">
         <h2 data-i18n="sb4.help.config_values_title">Config Values and Persistent Variables ('esc' to close)</h2>
         <p> <pre id="full-config" data-i18n="sb4.help.no_config_loaded">No configuration loaded yet.</pre> </p>
     </div>
 
-
     <!-- INSERT BETA -->
-    <div id="insertStream" class="reveal-modal" data-reveal role="dialog">
-        <h2 id="fi_modal_title" data-i18n="sb4.insert.title">Insert Command Into G2 Stream:</h2>
+    <div id="insertStream" class="reveal-modal sb4-scope" data-reveal role="dialog">
+        <h2 id="insert_modal_title" data-i18n="sb4.insert.title">Insert Command Into G2 Stream:</h2>
         <input class="inserts" autocomplete="off" autocorrect="off" autofill="off" spellcheck ="false" id="insert-input" font-weight="bold" data-i18n-placeholder="sb4.insert.placeholder" placeholder="RAW: g2 json OR g-code (& = end-line; ^ = kill; # = reset-G2)" value="" />
     </div>
 
     <!-- MOTION PAD BETA -->
     <div class="row">
-        <div id="moPad" class="reveal-modal-bg full" data-reveal
+        <div id="moPad" class="reveal-modal-bg full sb4-scope" data-reveal
             data-options="close_on_background_click:true;close_on_esc:true;" style="display: none" role="dialog">
 
             <div class="small-2 medium-2 large-2 columns">
@@ -427,10 +943,13 @@
 
         </div>
     </div>
+    </div>
 
+    <!-- One FabMoDashboard for the whole page: the Sb4 code (in document-ready
+         handlers) and cards.js both use this global. Created here, not in
+         <head>: the constructor appends to document.body. -->
+    <script> var fabmo = new FabMoDashboard(); </script>
+    <script src="js/Sortable.js"></script>
+    <script src="js/cards.js"></script>
 </body>
-
 </html>
-
-
-

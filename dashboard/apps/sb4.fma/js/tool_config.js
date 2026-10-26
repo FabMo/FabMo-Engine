@@ -29,8 +29,6 @@ function updateUIFromEngineConfig() {
 }
 
 
-let previousXYHomedStatus = null;
-let previousZHomedStatus = null;
 let video_button = "0"; // note that the localStorage value is a string, so we use "0", "1", or "2"
 let videoLayout = "none";
 let hasVideo = true;
@@ -93,56 +91,62 @@ function updateSpeedsFromEngineConfig() {  // ALSO update HOMING status at the s
         }
 
 
-        var xyHomedStatus = data?.opensbp?.tempVariables?.XYHOMED || null;
-        if (!xyHomedStatus || xyHomedStatus == "false") {
-            $("#first_macro_button").addClass("info");
-            $("#first_macro_button").removeClass("disabled");
-            if (previousXYHomedStatus !== "false") {
-                fabmo.setConfig({"opensbp": {"tempVariables": {"XYHOMED": "false"}}}, function(err, data) {
-                    if (err) {
-                        console.error(err);
-                    }
-                });
-                previousXYHomedStatus = "false";
-            }
-        } else {
-            $("#first_macro_button").addClass("disabled");
-            $("#first_macro_button").removeClass("info");
-            if (previousXYHomedStatus !== "true") {
-                fabmo.setConfig({"opensbp": {"tempVariables": {"XYHOMED": "true"}}}, function(err, data) {
-                    if (err) {
-                        console.error(err);
-                    }
-                });
-                previousXYHomedStatus = "true";
-            }
-        }
-
-        var zHomedStatus = data?.opensbp?.tempVariables?.ZHOMED || null;
-        if (!zHomedStatus || zHomedStatus == "false") {
-            $("#second_macro_button").addClass("info");
-            $("#second_macro_button").removeClass("disabled");
-            if (previousZHomedStatus !== "false") {
-                fabmo.setConfig({"opensbp": {"tempVariables": {"ZHOMED": "false"}}}, function(err, data) {
-                    if (err) {
-                        console.error(err);
-                    }
-                });
-                previousZHomedStatus = "false";
-            }
-        } else {
-            $("#second_macro_button").addClass("disabled");
-            $("#second_macro_button").removeClass("info");
-            if (previousZHomedStatus !== "true") {
-                fabmo.setConfig({"opensbp": {"tempVariables": {"ZHOMED": "true"}}}, function(err, data) {
-                    if (err) {
-                        console.error(err);
-                    }
-                });
-                previousZHomedStatus = "true";
-            }
-        }
+        applyHomedIndicator("xy", data?.opensbp?.tempVariables?.XYHOMED);
+        applyHomedIndicator("z", data?.opensbp?.tempVariables?.ZHOMED);
     });
+}
+
+// ---- Homed indicators (Machine card Home XY / Home Z buttons) ----
+// Homed state lives in opensbp tempVariables XYHOMED / ZHOMED ("true"/"false"),
+// set by macros 2/3/9 and absent again after an engine start; absent is read
+// and written back as "false", as Sb4 always did. Display only — nothing in
+// the engine or macros reads these except macro 99.
+// Button classes: sb4-unhomed (yellow), sb4-homed (dimmed), sb4-ind-off.
+// The ⦸ glyph cycles: not homed -> homed -> indicator off (per browser,
+// localStorage sb4-homed-ind-<axis>) -> not homed.
+var HOMED_BTN = { xy: "#btn-home-xy", z: "#btn-home-z" };
+var homedState = { xy: null, z: null };   // "true" / "false" as last seen
+
+function homedIndicatorOff(axis) {
+    try { return localStorage.getItem("sb4-homed-ind-" + axis) === "off"; } catch (e) { return false; }
+}
+
+function setHomedVar(axis, value, callback) {
+    var v = {};
+    v[axis.toUpperCase() + "HOMED"] = value;
+    fabmo.setConfig({ opensbp: { tempVariables: v } }, function (err) {
+        if (err) { console.error(err); }
+        if (callback) { callback(err); }
+    });
+}
+
+function applyHomedIndicator(axis, raw) {
+    var homed = (raw === true || raw === "true") ? "true" : "false";
+    if (homedState[axis] !== homed) {
+        if (raw === undefined || raw === null || raw === "") {
+            setHomedVar(axis, "false");                 // normalize absent -> "false"
+        }
+        homedState[axis] = homed;
+    }
+    var off = homedIndicatorOff(axis);
+    $(HOMED_BTN[axis])
+        .toggleClass("sb4-ind-off", off)
+        .toggleClass("sb4-unhomed", !off && homed === "false")
+        .toggleClass("sb4-homed", !off && homed === "true");
+}
+
+function cycleHomedIndicator(axis) {
+    if (homedIndicatorOff(axis)) {                       // off -> not homed
+        try { localStorage.removeItem("sb4-homed-ind-" + axis); } catch (e) { /* no storage */ }
+        homedState[axis] = null;
+        setHomedVar(axis, "false", updateSpeedsFromEngineConfig);
+    } else if (homedState[axis] === "true") {            // homed -> off
+        try { localStorage.setItem("sb4-homed-ind-" + axis, "off"); } catch (e) { /* no storage */ }
+        updateSpeedsFromEngineConfig();
+    } else {                                             // not homed -> homed
+        homedState[axis] = null;
+        setHomedVar(axis, "true", updateSpeedsFromEngineConfig);
+    }
 }
 
 // AXis = ["", "X", "Y", "Z", "A", "B", "C", "U", "V", "W" ]

@@ -303,7 +303,7 @@
         "en_at_translation": "OUTPUTS (Toggle)"
     },
     "status.dro_move_speed_label": {
-        "en_at_translation": "MOVE SPEED  (Feedrate)"
+        "en_at_translation": "MOVE SPEED  [Feedrate]"
     },
     "status.dro_move_speed_tooltip": {
         "en_at_translation": "When a file is running, the move-speed/feedrate of the moving axis is <br> shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br> Override will decrease or increase the assigned speed in a file (down <br> to 5%, up to 200%; with 100% being the assigned speed.).<br>"
@@ -312,7 +312,7 @@
         "en_at_translation": "Override %"
     },
     "status.dro_spindle_label": {
-        "en_at_translation": "Spindle-1"
+        "en_at_translation": "SPINDLE-1"
     },
     "status.dro_spindle_tooltip": {
         "en_at_translation": "Set spindle RPM. Gray/Black values indicate commanded RPM; Blue <br> values indicate Achieved RPM.<br><br> AMP value displays the spindle load expressed as current in amps."

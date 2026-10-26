@@ -208,19 +208,28 @@
 
         <!-- ********** LARGE POSITION DRO slide-out  ********** -->
       <aside class="DRO" id="right-menu">
+          <!-- Header bar: linear units, tool-change type, FabMo state (filled by fabmoui.js updateDROHeader) -->
+          <div class="dro-addons fabmo-status" id="dro-header">
+              <div class="dro-addon" id="dro-addon-1">
+                <div class="dro-addon-spacer-row"></div>
+                <div class="dro-addon-label dro-head-label"><span class="dro-head-units">INCH</span><span class="dro-head-tctype">[Type: Manual]</span><span class="dro-head-state">&mdash;</span><span class="tooltip tooltip-left tooltip-below tooltiptext::after" style="justify-content: right; left: 4px; top:0px">i<span class="tooltiptext" data-i18n-html="status.dro_header_tooltip">
+                  Linear distance UNITS; Tool Change Type: Manual Tool Change or <br>
+                  Automatic Tool Change (ATC); Processing Status.</span></span></div>
+              </div>
+          </div>
           <div class="dro-dropdown not-selectable">
-              <div class="xaxis machine-pos-large" ><label>X : <span class="dro-unit units"></span><span class="posx">X.XXX</span></label></div>
-              <div class="yaxis machine-pos-large" ><label>Y : <span class="dro-unit units"></span><span class="posy">Y.YYY</span></label></div>
-              <div class="zaxis machine-pos-large" ><label>Z : <span class="dro-unit units"></span><span class="posz">Z.ZZZ</span></label></div>
-              <div class="aaxis machine-pos-large" ><label>A : <span class="dro-unit a-rotunits"></span><span class="posa">A.AAA</span></label></div>
-              <div class="baxis machine-pos-large" ><label>B : <span class="dro-unit b-rotunits"></span><span class="posb">B.BBB</span></label></div>
-              <div class="caxis machine-pos-large" ><label>C : <span class="dro-unit c-rotunits"></span><span class="posc">C.CCC</span></label></div>
+              <div class="xaxis machine-pos-large" ><label>X : <span class="posx">X.XXX</span></label></div>
+              <div class="yaxis machine-pos-large" ><label>Y : <span class="posy">Y.YYY</span></label></div>
+              <div class="zaxis machine-pos-large" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
+              <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label><span class="dro-deg"></span></div>
+              <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label><span class="dro-deg"></span></div>
+              <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label><span class="dro-deg"></span></div>
           </div>
 
           <div class="dro-addons fabmo-status">
               <div class="dro-addon" id="dro-addon-2">
                 <div class="dro-addon-spacer-row""></div>
-                <div class="dro-addon-label"> <span data-i18n="status.dro_move_speed_label">MOVE SPEED  (Feedrate)</span>  <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 26px; top:0px">i<span class="tooltiptext" data-i18n-html="status.dro_move_speed_tooltip">
+                <div class="dro-addon-label"> <span data-i18n="status.dro_move_speed_label">MOVE SPEED [Feedrate]</span>  <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 26px; top:0px">i<span class="tooltiptext" data-i18n-html="status.dro_move_speed_tooltip">
                   When a file is running, the move-speed/feedrate of the moving axis is <br>
                   shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br>
                   Override will decrease or increase the assigned speed in a file (down <br>
@@ -233,7 +242,7 @@
 
               <div class="dro-addon" id="dro-addon-3">
                 <div class="dro-addon-spacer-row"></div>
-                <div class="dro-addon-label"> <span data-i18n="status.dro_spindle_label">Spindle-1</span> <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 65px; top:0px">i<span class="tooltiptext" data-i18n-html="status.dro_spindle_tooltip">
+                <div class="dro-addon-label"> <span data-i18n="status.dro_spindle_label">Spindle-1</span> <span class="dro-head-tool"></span> <span class="tooltip tooltip-left tooltiptext::after" style="justify-content: right; left: 12px; top:0px">i<span class="tooltiptext" data-i18n-html="status.dro_spindle_tooltip">
                   Set spindle RPM. White values indicate commanded RPM; Blue <br>
                   values indicate Achieved RPM.<br><br>
                   AMP value displays the spindle load expressed as current in amps.</span></span><br></div>

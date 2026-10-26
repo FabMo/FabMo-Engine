@@ -143,7 +143,7 @@
         },
         "dro_outputs_tooltip": "Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad.",
         "dro_outputs_label": "OUTPUTS (Toggle)",
-        "dro_move_speed_label": "MOVE SPEED  (Feedrate)",
+        "dro_move_speed_label": "MOVE SPEED [Feedrate]",
         "dro_move_speed_tooltip": "When a file is running, the move-speed/feedrate of the moving axis is <br> shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br> Override will decrease or increase the assigned speed in a file (down <br> to 5%, up to 200%; with 100% being the assigned speed.).<br>",
         "dro_override_label": "Override %",
         "dro_spindle_label": "Spindle-1",
@@ -211,7 +211,14 @@
         },
         "app_launch_failed_prefix": "Couldn't launch app:",
         "app_launch_failed_no_list": "Apps list not available yet.",
-        "app_launch_failed_no_app": "No such app?"
+        "app_launch_failed_no_app": "No such app?",
+        "dro_header_tooltip": "Linear distance UNITS; Tool Change Type: Manual Tool Change or <br> Automatic Tool Change (ATC); Processing Status.",
+        "dro_units_inch": "INCH",
+        "dro_units_mm": "MM",
+        "dro_tool_change_type": "[Type: {type}]",
+        "dro_tctype_manual": "Manual",
+        "dro_tctype_atc": "ATC",
+        "dro_current_tool": "[Current Tool: {n}]"
     },
     "actions": {
         "c2_tooltip": "Do Z-Zero (Macro C2)",
@@ -741,7 +748,8 @@
             "cut_part": "C - CUT PART",
             "cut_part_tooltip": "Pick a Single Part File to Cut; FP",
             "manage_parts": "(D) - MANAGE PARTS",
-            "manage_parts_tooltip": "Advanced: Select and Order Parts in Job Manager"
+            "manage_parts_tooltip": "Advanced: Select and Order Parts in Job Manager",
+            "card_title": "My Workflow"
         },
         "macros": {
             "other_helpful": "Other Helpful Macros",
@@ -765,7 +773,7 @@
             "unnamed_command": "Unnamed"
         },
         "logo": {
-            "tooltip": "This app is ShopBot's CNC interface for setting up your tool and cutting Part Files (left panel). You can also send individual Commands in the OpenSBP language (top right panel). See HELP >",
+            "tooltip": "This app is ShopBot's CNC interface for setting up your tool and cutting Part Files. You can also send individual Commands in the OpenSBP language from the Individual Command Input card. See HELP >",
             "tooltip_suffix": "for info on OpenSBP language."
         },
         "hints": {
@@ -778,7 +786,8 @@
             "jog_speed": "Jog Speed",
             "move_word": "Move",
             "speed_word": "Speed",
-            "jog_word": "Jog"
+            "jog_word": "Jog",
+            "card_title": "Default Speeds"
         },
         "footer": {
             "copyright": "© Copyright ShopBot Tools 2026."
@@ -818,7 +827,8 @@
             "fetch_pending_failed": "Failed to fetch pending job file:",
             "no_recent_rerun": "No recent job to rerun!",
             "no_file_picked": "No file was received from the file picker. Try picking it again.",
-            "no_recent_edit": "No recent job to edit!"
+            "no_recent_edit": "No recent job to edit!",
+            "calculator_unavailable": "Calculator (U) is not available yet."
         },
         "alert": {
             "haptics_not_loaded": "The haptics.js library is not loaded."
@@ -832,6 +842,12 @@
             "cycle_tip": "Cycle between 2 or 3 axes on click/tap/space",
             "smallest_moves_label": "Smallest Moves: ",
             "smallest_moves_tip": "Set smallest move at normal Zoom"
+        },
+        "machine": {
+            "homed_ind_title": "Homed indicator: click to cycle not homed / homed / off"
+        },
+        "app_settings": {
+            "collapse_note": "Click a card's title to fold it to a title bar; click again to open it."
         }
     },
     "job_manager": {
