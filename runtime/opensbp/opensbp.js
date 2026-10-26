@@ -633,13 +633,18 @@ SBPRuntime.prototype._saveDriverSettings = async function (callback) {
     try {
         await config.driver.setManyWrapper(g2_values);
 
-        // Also persist limits_on to machine config (machine.json) — the machine-level owner
+        // Also persist limits_on to machine config (machine.json) — the machine-level owner.
+        // machine.update() re-sends the limit inputs' G2 actions from the persisted value,
+        // so the VN override is now redundant: clear it so file end does not revert it.
         if (this.limits_on !== undefined) {
             await new Promise(function (resolve, reject) {
                 config.machine.update({ limits_on: this.limits_on }, function (err) {
                     if (err) { reject(err); } else { resolve(); }
                 });
             }.bind(this));
+            if (this.machine) {
+                this.machine.limitsOverride = null;
+            }
         }
 
         callback();

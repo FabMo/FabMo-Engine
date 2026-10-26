@@ -314,6 +314,12 @@ G2.prototype._createCycleContext = function () {
     st.on(
         "data",
         function (chunk) {
+            // discardStreamBacklog() drains the paused stream with read(), which
+            // re-emits the buffered chunks here: drop them.
+            if (this._discardingStream) {
+                this.lineBuffer = [];
+                return;
+            }
             // console.log("=== STREAM DATA RECEIVED ===");
             // console.log("Chunk raw:", JSON.stringify(chunk.toString()));
             // console.log("Chunk length:", chunk.toString().length);
@@ -1643,6 +1649,37 @@ G2.prototype.queueFlush = function (callback) {
     this.lines_to_send = 4;
     this.gcode_queue.clear(); // clear FabMo
     this._write("%\n"); // clear G2, though redundant in case of quitting a file
+};
+
+// Throw away g-code a runtime wrote into the cycle stream while G2 was holding.
+// CycleContext.pause() pauses that stream on every feedhold (so a paused FILE
+// resumes where it left off), which means lines written during a hold sit in
+// the stream's own buffer -- not in gcode_queue, so queueFlush() never sees
+// them -- and replay the moment the hold ends and the stream resumes. For a
+// runtime that is abandoning its pending motion (manual keypad stop after a
+// limit-switch hold) that replay is unwanted motion, so it calls this right
+// after queueFlush(). Not called from the file quit path: quit() ends the
+// stream and drops the whole context, so nothing can replay there.
+G2.prototype.discardStreamBacklog = function () {
+    if (!this.context || !this.context._stream) {
+        return 0;
+    }
+    var st = this.context._stream;
+    var dropped = 0;
+    this._discardingStream = true;
+    try {
+        var chunk;
+        while ((chunk = st.read()) !== null) {
+            dropped += String(chunk).length;
+        }
+    } finally {
+        this._discardingStream = false;
+    }
+    this.lineBuffer = [];
+    if (dropped) {
+        log.debug("Discarded " + dropped + " bytes of g-code buffered in the cycle stream during hold");
+    }
+    return dropped;
 };
 
 // Bring the system out of feedhold

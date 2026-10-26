@@ -442,6 +442,15 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         return;
     }
 
+    // G2 is in a feedhold we didn't ask for (a limit/stop input fired mid-move).
+    // The cycle stream is paused for the duration (CycleContext.pause), so a
+    // fresh-start header or segment batch written now would just sit in the
+    // stream and replay when the hold ends. Record the intent and write nothing.
+    if (this.driver.pause_flag) {
+        this.keep_moving = true;
+        return;
+    }
+
     // If already at boundary in the same direction, short-circuit: keep the
     // alive flag set and return without writing to G2.
     // Emit LIM only on the first short-circuit since the last stopMotion —
@@ -598,6 +607,12 @@ ManualDriver.prototype.stopMotion = function () {
                 this.driver._write("%\n"); // Will send flush as callback
             }.bind(this)
         );
+        // queueFlush clears gcode_queue, but segments written while G2 was
+        // already holding are parked in the paused cycle stream; drop those
+        // too or they replay as soon as the hold ends.
+        if (typeof this.driver.discardStreamBacklog === "function") {
+            this.driver.discardStreamBacklog();
+        }
     }
 };
 
@@ -609,6 +624,9 @@ ManualDriver.prototype.quitMove = function () {
             this.driver._write("%\n"); // Will send flush as callback
         }.bind(this)
     );
+    if (typeof this.driver.discardStreamBacklog === "function") {
+        this.driver.discardStreamBacklog();
+    }
     if (this.moving) {
         this.stop_pending = true;
         this.driver.quit();
@@ -1121,6 +1139,21 @@ ManualDriver.prototype._renewMoves = function (reason) {
 
             if (reason === "start") {
                 this.moving = true;
+            }
+
+            // Holding (feedhold from an input, or our own stop in flight): the
+            // cycle stream is paused, so anything written now is parked in it
+            // and replays after the hold -- the "held the keypad button past a
+            // limit hit, motion resumed on release" runaway. Queue nothing; keep
+            // the renew timer alive so a legitimate resume picks up normally.
+            if (this.driver.pause_flag) {
+                this.renew_timer = setTimeout(
+                    function () {
+                        this._renewMoves("timeout");
+                    }.bind(this),
+                    T_RENEW
+                );
+                return;
             }
 
             // Use fewer, larger segments for rotary axes (A/B/C in rotary mode) to

@@ -159,6 +159,10 @@ function Machine(control_path, callback) {
     this.action = null;
     this.interlock_action = null; // Continuing to use this as interlock/lock flag after allowing mult interlock defs
     this.overrideLimit = false;
+    // Transient limit-switch enable from OpenSBP VN,0/VN,1 while a file runs.
+    // null = follow config.machine.limits_on; true/false = VN override in effect.
+    // Cleared by restoreDriverState at file end, or by SV persisting the value.
+    this.limitsOverride = null;
     this.pauseTimer = false;
 
     // Instantiate and connect to the G2 driver using the port specified in the constructor
@@ -667,6 +671,14 @@ Machine.prototype.restoreDriverState = function (callback) {
     this._preRunUnits = null;
     this._preRunMachineConfig = null;
 
+    // Drop any VN,0/VN,1 limit override from the file and put the limit inputs'
+    // G2 actions back to what the persisted limits_on says. (G2's "lim" flag,
+    // restored below with the rest of g2.json, is inert in our firmware.)
+    if (this.limitsOverride !== null) {
+        this.limitsOverride = null;
+        config.machine.applyLimitInputActions();
+    }
+
     // First, restore the G2 driver config from disk
     this.driver.setUnits(
         savedUnits,
@@ -1072,14 +1084,16 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status) {
 //    stop        -  Stop           YES          Stop ON           1   [feedhold]
 // faststop       -  Stop-Fast      YES          Stop ON           2   [feedhold w/HiJerk]; for use in ON INP ?
 // interlock      -  Interlock      YES        Interlock ON        1   [feedhold]
-//   limit        -  Limit          YES         Limit Hit          1   [feedhold]
+//   limit        -  Limit          YES         Limit Hit          2   [feedhold w/HiJerk]; 0 (none) while limits are off
+//                                                                      (machine.limits_on, or VN,0 in a file) -- G2's "lim"
+//                                                                      flag is inert in our firmware; see machine_config.js
 //halt(hard stop) - Stop-Immediate  YES          Stop ON           3   [feedhold instant]; for use in ON INP ?
 // driverFault    -  DriverFault    YES       Drive Fault ON       1   [feedhold]; works like interlock but triggered by stepper driver fault on input 15
 
 // We check for interlock state before any action that ARMS tool for action and with any general change in state
 function checkForInterlocks(thisMachine, action) {
     let getInterlockState = "";
-    var limitsEnabled = config.machine.get("limits_on");  // read once
+    var limitsEnabled = thisMachine.getLimitsEnabled(); // read once; honors a VN override
 
     for (let pin = 1; pin < 16; pin++) {
         let checkAssignedInput = config.machine.get("di" + pin + "ac");
@@ -1125,6 +1139,15 @@ function checkForInterlocks(thisMachine, action) {
     }
     return getInterlockState;
 }
+
+// Effective limit-switch enable: the VN override while one is in effect,
+// otherwise the persisted machine.limits_on setting.
+Machine.prototype.getLimitsEnabled = function () {
+    if (this.limitsOverride !== null && this.limitsOverride !== undefined) {
+        return this.limitsOverride ? true : false;
+    }
+    return config.machine.get("limits_on") ? true : false;
+};
 
 // True iff any input currently assigned the "interlock" action is physically
 // active. Distinct from checkForInterlocks(), which returns the highest-priority
@@ -2510,7 +2533,8 @@ Machine.prototype._updateStatusFromDriver = function (status) {
     }
 
     // Propagate limitsEnabled to status so dashboard can style limit inputs correctly
-    this.status.limitsEnabled = config.machine.get("limits_on") ? true : false;
+    // (effective value: reflects a VN override while a file has one in place)
+    this.status.limitsEnabled = this.getLimitsEnabled();
 
     // Add transform warning to status
     // Check if any transforms are enabled
