@@ -143,7 +143,7 @@
         },
         "dro_outputs_tooltip": "Click to turn Outputs ON/OFF; Outputs #1 and #4 reserved for enabling the spindle in files and Keypad.",
         "dro_outputs_label": "OUTPUTS (Toggle)",
-        "dro_move_speed_label": "MOVE SPEED  (Feedrate)",
+        "dro_move_speed_label": "MOVE SPEED [Feedrate]",
         "dro_move_speed_tooltip": "When a file is running, the move-speed/feedrate of the moving axis is <br> shown. When your tool is idle, the default X/Y speed/feedrate is shown.<br><br> Override will decrease or increase the assigned speed in a file (down <br> to 5%, up to 200%; with 100% being the assigned speed.).<br>",
         "dro_override_label": "Override %",
         "dro_spindle_label": "Spindle-1",
