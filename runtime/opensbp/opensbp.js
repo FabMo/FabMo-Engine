@@ -3363,6 +3363,12 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 12: // C Table Base
             return config.driver.get("g55c");
 
+        case 22:
+            return config.opensbp.get("cutterDia");
+
+        case 23:
+            return config.opensbp.get("pocketOverlap");
+
         case 25:
             var units = config.machine.get("units");
             if (units === "in") {

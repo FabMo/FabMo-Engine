@@ -140,16 +140,17 @@ $(document).ready(function () {
                             $("#menu_values").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
                             break;
-
+                        case "P":
+                            $("#menu_probe").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
+                            cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T, F
+                            break;
                         case "T":
                             $("#menu_tools").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             cmds[key] = data[key]; // only getting descriptive details for fill-ins for C, S, V, T
                             break;
-
                         case "D":
                             $("#menu_design").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             break;
-
                         case "H":
                             $("#menu_help").append('<li class="menuDD" id="' + key + '"><a >' + key + ' - ' + (data[key]["name"] || window.t("sb4.cmd.unnamed_command")) + '</a></li>');
                             break;
