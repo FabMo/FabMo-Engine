@@ -78,10 +78,37 @@ function postSbpAction(action) {
     200);
 }
 
+// True for a text-entry element other than the Sb4 command line / INSERT box:
+// inputs, textareas, selects, contenteditable. Used by the focus rule below
+// and by the global single-key shortcuts (K, U, +, _) so typing in a card
+// field (shop tools, speeds, settings) never triggers them.
+function sb4IsTypingTarget(el) {
+    if (!el || el === document.body) { return false; }
+    if (el.id === "cmd-input" || el.id === "insert-input") { return false; }
+    var tag = (el.tagName || "").toLowerCase();
+    return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable === true;
+}
+function sb4TypingElsewhere() {
+    return sb4IsTypingTarget(document.activeElement);
+}
+
 // Try and Keep Focus in the Command Input Box; except when it should not be
+// Focus rule in the card layout: the command line takes focus back after
+// clicks on non-typing space (including card buttons), but never while the
+// user is in another field, while a card modal is open, or when the
+// command card is hidden. ESC always returns to the command line.
 function setSafeCmdFocus(site) {     // too easy to walk on Manual Keypad (not sure why?); so protect
   console.log("got safeCheck", site) // site for debugging flow
     if (globals.FAbMo_state === "manual") {
+        return;
+    }
+    if (sb4TypingElsewhere()) {
+        return;
+    }
+    if ($(".ts-modal-backdrop:visible").length) {
+        return;
+    }
+    if (!$("#cmd-input").is(":visible")) {
         return;
     }
     if (globals.FIll_In_Open === true) {    // let fill-in keep focus ;;; was problematic with ENTER

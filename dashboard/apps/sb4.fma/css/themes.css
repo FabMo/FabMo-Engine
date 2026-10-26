@@ -1,0 +1,528 @@
+/* ═══════════════════════════════════════════════════════════════
+   ShopBot Labs — Theme Tokens
+   Single source of truth for all theme variables.
+   Consumed by components.css and app bridges.
+
+   Verbatim copy of ui_testbed themes/tokens.css (labs.shopbottools.com)
+   so it stays diffable against the labs repo — resync by replacing this
+   file wholesale. App-specific styling lives in theme-bridge.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+
+/* ── ShopBot 1.0 (PLATO terminal) ── */
+.theme-shopbot1 {
+  --t-font-main: 'VT323', monospace;
+  --t-font-mono: 'VT323', monospace;
+  --t-bg-primary: #000;
+  --t-bg-secondary: #000;
+  --t-bg-tertiary: #000;
+  --t-bg-header: #000;
+  --t-text: #f09040;
+  --t-text-dim: #a05818;
+  --t-border: #502808;
+  --t-accent: #f09040;
+  --t-accent-text: #000;
+  --t-input-bg: #000;
+  --t-input-border: #a05818;
+  --t-hover-bg: rgba(240,144,64,0.07);
+  --t-radius: 0px;
+  /* Font scale */
+  --t-fs-section: 18px;
+  --t-fs-label: 18px;
+  --t-fs-input: 20px;
+  --t-fs-unit: 16px;
+  --t-fs-btn: 20px;
+  --t-fs-checkbox: 18px;
+  --t-fs-slider-val: 16px;
+  /* Effects */
+  /* Phosphor glow: 3-layer bloom cascade (ported from testbed --halo) */
+  --t-shadow-halo: 0 0 3px rgba(240,144,64,0.35),
+                   0 0 8px rgba(240,144,64,0.15),
+                   0 0 16px rgba(240,144,64,0.06);
+  --t-shadow-halo-dim: 0 0 3px rgba(240,144,64,0.18),
+                       0 0 6px rgba(240,144,64,0.06);
+  --t-shadow-btn: 4px 4px 0 #502808;
+  --t-shadow-btn-hover: 4px 4px 0 #a05818;
+  --t-border-width: 2px;
+  --t-text-glow: 0 0 4px rgba(240,144,64,0.2);
+  /* Button categories */
+  --t-btn-setting-bg: transparent;
+  --t-btn-setting-text: #a05818;
+  --t-btn-setting-border: #502808;
+  --t-btn-action-bg: #f09040;
+  --t-btn-action-text: #000;
+  --t-btn-action-border: #a05818;
+  --t-btn-output-bg: transparent;
+  --t-btn-output-text: #f09040;
+  --t-btn-output-border: #f09040;
+  /* Viewport */
+  --t-canvas-bg: #000000;
+  --t-mesh-style: themed;
+  --t-mesh-default: #f09040;
+  --t-mesh-board: transparent;
+  --t-mesh-opacity: 0.6;
+  --t-mesh-emissive: #f09040;
+  --t-mesh-emissive-intensity: 0.25;
+  --t-mesh-roughness: 0.4;
+  --t-mesh-edge-color: #f09040;
+  --t-mesh-edge-opacity: 1;
+}
+
+/* ── ShopBot Light (fully grayscale) ── */
+.theme-shopbot-light {
+  --t-font-main: 'VT323', monospace;
+  --t-font-mono: 'VT323', monospace;
+  --t-bg-primary: #fff;
+  --t-bg-secondary: #f5f5f5;
+  --t-bg-tertiary: #eaeaea;
+  --t-bg-header: #e0e0e0;
+  --t-text: #111;
+  --t-text-dim: #666;
+  --t-border: #ccc;
+  --t-accent: #333;
+  --t-accent-text: #fff;
+  --t-input-bg: #fff;
+  --t-input-border: #999;
+  --t-hover-bg: rgba(0,0,0,0.04);
+  --t-radius: 0px;
+  --t-fs-section: 20px;
+  --t-fs-label: 18px;
+  --t-fs-input: 20px;
+  --t-fs-unit: 16px;
+  --t-fs-btn: 20px;
+  --t-fs-checkbox: 18px;
+  --t-fs-slider-val: 16px;
+  /* Offset hard shadow on input/select focus (ported from testbed 2px 2px 0 #000) */
+  --t-shadow-halo: 2px 2px 0 #000;
+  --t-shadow-halo-dim: none;
+  --t-shadow-btn: 4px 4px 0 #000;
+  --t-shadow-btn-hover: 4px 4px 0 #000;
+  --t-border-width: 2px;
+  --t-text-glow: none;
+  /* Button categories */
+  --t-btn-setting-bg: #f5f5f5;
+  --t-btn-setting-text: #444;
+  --t-btn-setting-border: #aaa;
+  --t-btn-action-bg: #333;
+  --t-btn-action-text: #fff;
+  --t-btn-action-border: #222;
+  --t-btn-output-bg: #fff;
+  --t-btn-output-text: #222;
+  --t-btn-output-border: #666;
+  /* Viewport */
+  --t-canvas-bg: #ffffff;
+  --t-mesh-style: themed;
+  --t-mesh-default: #333333;
+  --t-mesh-board: #ffffff;
+  --t-mesh-opacity: 1;
+  --t-mesh-emissive: #000000;
+  --t-mesh-emissive-intensity: 0;
+  --t-mesh-roughness: 0.85;
+  --t-mesh-edge-color: #000000;
+  --t-mesh-edge-opacity: 1;
+}
+
+/* ── ShopBot Color (rainbow, bold) ── */
+.theme-shopbot-color {
+  --t-font-main: 'VT323', monospace;
+  --t-font-mono: 'VT323', monospace;
+  --t-bg-primary: #fff;
+  --t-bg-secondary: #f8f8f8;
+  --t-bg-tertiary: #f0f0f0;
+  --t-bg-header: #d05820;
+  --t-text: #222;
+  --t-text-dim: #666;
+  --t-border: #222;
+  --t-accent: #d05820;
+  --t-accent-text: #fff;
+  --t-input-bg: #fff;
+  --t-input-border: #999;
+  --t-hover-bg: #eee;
+  --t-radius: 4px;
+  --t-fs-section: 20px;
+  --t-fs-label: 18px;
+  --t-fs-input: 18px;
+  --t-fs-unit: 16px;
+  --t-fs-btn: 16px;
+  --t-fs-checkbox: 18px;
+  --t-fs-slider-val: 16px;
+  --t-shadow-halo: none;
+  --t-shadow-halo-dim: none;
+  --t-shadow-btn: none;
+  --t-shadow-btn-hover: none;
+  --t-border-width: 2px;
+  --t-text-glow: none;
+  /* Button categories */
+  --t-btn-setting-bg: #f8f8f8;
+  --t-btn-setting-text: #444;
+  --t-btn-setting-border: #ccc;
+  --t-btn-action-bg: #d05820;
+  --t-btn-action-text: #fff;
+  --t-btn-action-border: #b04818;
+  --t-btn-output-bg: #fff;
+  --t-btn-output-text: #3080d0;
+  --t-btn-output-border: #3080d0;
+  /* Rainbow section colors */
+  --t-rainbow-1: #e04040;
+  --t-rainbow-2: #e08020;
+  --t-rainbow-3: #c8a020;
+  --t-rainbow-4: #38a838;
+  --t-rainbow-5: #3080d0;
+  --t-rainbow-6: #8040c0;
+  --t-rainbow-7: #c040a0;
+  --t-rainbow-8: #e04040;
+  --t-rainbow-gradient: linear-gradient(90deg, #e04040, #e08020, #c8a020, #38a838, #3080d0, #8040c0);
+  /* Viewport */
+  --t-canvas-bg: #ffffff;
+  --t-mesh-default: #d05820;
+}
+
+/* ── Binbows XP ── */
+.theme-binbows {
+  --t-font-main: 'Tahoma', 'Segoe UI', sans-serif;
+  --t-font-mono: 'Consolas', 'Courier New', monospace;
+  --t-bg-primary: #fff;
+  --t-bg-secondary: #ECE9D8;
+  --t-bg-tertiary: #F0EDE1;
+  --t-bg-header: linear-gradient(180deg, #0054E3 0%, #0047CC 40%, #2874F0 100%);
+  --t-text: #000;
+  --t-text-dim: #555;
+  --t-border: #ACA899;
+  --t-accent: #0054E3;
+  --t-accent-text: #fff;
+  --t-input-bg: #fff;
+  --t-input-border: #7F9DB9;
+  --t-hover-bg: rgba(0,84,227,0.08);
+  --t-radius: 5px;
+  --t-fs-section: 11px;
+  --t-fs-label: 12px;
+  --t-fs-input: 13px;
+  --t-fs-unit: 11px;
+  --t-fs-btn: 12px;
+  --t-fs-checkbox: 12px;
+  --t-fs-slider-val: 11px;
+  --t-shadow-halo: none;
+  --t-shadow-halo-dim: none;
+  --t-shadow-btn: 0 1px 0 rgba(255,255,255,0.8) inset, 0 1px 2px rgba(0,0,0,0.1);
+  --t-shadow-btn-hover: 0 1px 0 rgba(255,255,255,0.8) inset, 0 1px 2px rgba(0,0,0,0.15);
+  --t-border-width: 1px;
+  --t-text-glow: none;
+  /* Button categories */
+  --t-btn-setting-bg: linear-gradient(180deg, #fff 0%, #F0EDE1 40%, #E4DFD0 100%);
+  --t-btn-setting-text: #000;
+  --t-btn-setting-border: #ACA899;
+  --t-btn-action-bg: linear-gradient(180deg, #5CB85C 0%, #4CAE4C 40%, #419641 100%);
+  --t-btn-action-text: #fff;
+  --t-btn-action-border: #3E8E3E;
+  --t-btn-output-bg: linear-gradient(180deg, #6EACF5 0%, #3C8CF5 40%, #0054E3 100%);
+  --t-btn-output-text: #fff;
+  --t-btn-output-border: #0047CC;
+  /* XP gradients */
+  --t-btn-primary-bg: linear-gradient(180deg, #5CB85C 0%, #4CAE4C 40%, #419641 100%);
+  --t-btn-secondary-bg: linear-gradient(180deg, #fff 0%, #F0EDE1 40%, #E4DFD0 100%);
+  --t-btn-active-bg: linear-gradient(180deg, #3C8CF5 0%, #0054E3 100%);
+  --t-input-shadow: inset 1px 1px 2px rgba(0,0,0,0.15);
+  /* Viewport */
+  --t-canvas-bg: #ffffff;
+  --t-mesh-default: #0054E3;
+}
+
+/* ── ShopBot Web ── */
+.theme-sbweb {
+  --t-font-main: 'museo-sans', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --t-font-mono: 'museo-sans', 'Segoe UI', sans-serif;
+  --t-bg-primary: #fff;
+  --t-bg-secondary: rgb(230,228,211);
+  --t-bg-tertiary: rgb(222,233,244);
+  --t-bg-header: rgb(23,27,96);
+  --t-text: rgb(23,27,96);
+  --t-text-dim: rgba(23,27,96,0.55);
+  --t-border: rgba(23,27,96,0.15);
+  --t-accent: rgb(165,206,66);
+  --t-accent-text: rgb(23,27,96);
+  --t-input-bg: #fff;
+  --t-input-border: rgba(23,27,96,0.25);
+  --t-hover-bg: rgba(222,233,244,0.5);
+  --t-radius: 0px;
+  --t-fs-section: 12px;
+  --t-fs-label: 13px;
+  --t-fs-input: 13px;
+  --t-fs-unit: 12px;
+  --t-fs-btn: 13px;
+  --t-fs-checkbox: 13px;
+  --t-fs-slider-val: 13px;
+  --t-shadow-halo: none;
+  --t-shadow-halo-dim: none;
+  --t-shadow-btn: none;
+  --t-shadow-btn-hover: none;
+  --t-border-width: 1px;
+  --t-text-glow: none;
+  --t-font-weight: 500;
+  --t-label-weight: 600;
+  --t-sidebar-accent: 3px solid rgb(165,206,66);
+  /* Viewport */
+  --t-canvas-bg: #ffffff;
+  --t-mesh-default: rgb(23,27,96);
+  /* Button categories */
+  --t-btn-setting-bg: rgb(230,228,211);
+  --t-btn-setting-text: rgb(23,27,96);
+  --t-btn-setting-border: rgba(23,27,96,0.2);
+  --t-btn-action-bg: rgb(165,206,66);
+  --t-btn-action-text: rgb(23,27,96);
+  --t-btn-action-border: rgb(140,180,50);
+  --t-btn-output-bg: rgb(23,27,96);
+  --t-btn-output-text: #fff;
+  --t-btn-output-border: rgb(23,27,96);
+}
+
+/* ── ShopBot 3 (Legal Pad) ── */
+.theme-shopbot3 {
+  --t-font-main: 'VT323', monospace;
+  --t-font-mono: 'VT323', monospace;
+  --t-bg-primary: #fef9c3;
+  --t-bg-secondary: #fef9c3;
+  --t-bg-tertiary: #fef3a5;
+  --t-bg-header:
+    radial-gradient(ellipse at 50% 25%, rgba(255,220,150,0.1) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='100'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8 0.6' numOctaves='4' seed='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0 0 0 0'/%3E%3C/filter%3E%3Crect width='300' height='100' filter='url(%23t)'/%3E%3C/svg%3E"),
+    linear-gradient(to bottom, #d4924a 0%, #a86820 35%, #7c4c1e 60%, #9a6430 85%, #c88438 100%);
+  --t-text: #000;
+  --t-text-dim: #444;
+  --t-border: #aecfea;
+  --t-accent: #00acc1;
+  --t-accent-text: #ffffff;
+  --t-input-bg: #fef9c3;
+  --t-input-border: #aecfea;
+  --t-hover-bg: rgba(0,172,193,0.06);
+  --t-radius: 2px;
+  --t-fs-section: 16px;
+  --t-fs-label: 16px;
+  --t-fs-input: 16px;
+  --t-fs-unit: 16px;
+  --t-fs-btn: 16px;
+  --t-fs-checkbox: 16px;
+  --t-fs-slider-val: 14px;
+  --t-shadow-halo: none;
+  --t-shadow-halo-dim: none;
+  --t-shadow-btn: none;
+  --t-shadow-btn-hover: 0 1px 3px rgba(0,0,0,0.15);
+  --t-border-width: 1px;
+  --t-text-glow: none;
+  /* Button categories */
+  --t-btn-setting-bg: #e8e8e8;
+  --t-btn-setting-text: #555;
+  --t-btn-setting-border: #ccc;
+  --t-btn-action-bg: #0ff5f5;
+  --t-btn-action-text: #000;
+  --t-btn-action-border: #0dd8d8;
+  --t-btn-output-bg: #03fc0b;
+  --t-btn-output-text: #000;
+  --t-btn-output-border: #02d809;
+  --accent-3d: #c8a87a;
+  /* Bevel effects */
+  --sb3-bevel: 1px 1px 0 rgba(255,255,255,0.6) inset, -1px -1px 0 rgba(0,0,0,0.15) inset;
+  --sb3-bevel-pressed: 1px 1px 2px rgba(0,0,0,0.3) inset;
+  /* Ruled-paper recipe — the SINGLE source of truth. The shared .sb-panel
+     rule and every app's theme-bridge.css must reference these vars, never
+     copy the constants. Paint it on the element that actually SCROLLS
+     (background-attachment: local keeps the rules moving with content),
+     and paint it exactly ONCE per sidebar — a second painter offsets the
+     line phase. Blue rule pitch 30px; red margin at 44px; content indents
+     to 54px (--sb3-margin-indent). */
+  --sb3-paper-color: #fef9c3;
+  --sb3-paper-lines:
+    linear-gradient(to right, transparent 44px, #e06060 44px, #e06060 46px, transparent 46px),
+    repeating-linear-gradient(to bottom, transparent 0px, transparent 29px, #aecfea 29px, #aecfea 30px);
+  /* Rules-only variant for sub-surfaces that sit right of the margin */
+  --sb3-paper-rules: repeating-linear-gradient(to bottom, transparent 0px, transparent 29px, #aecfea 29px, #aecfea 30px);
+  --sb3-margin-indent: 54px;
+  /* Viewport */
+  --t-canvas-bg: #66bdb3;
+  --t-mesh-default: #5a2800;
+}
+
+/* ── SBcode (Dev Dark) ── */
+.theme-devdark {
+  --t-font-main: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --t-font-mono: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --t-bg-primary: #1e1e1e;
+  --t-bg-secondary: #252526;
+  --t-bg-tertiary: #2d2d2d;
+  --t-bg-header: #252526;
+  --t-text: #d4d4d4;
+  --t-text-dim: #808080;
+  --t-border: #333;
+  --t-accent: #569cd6;
+  --t-accent-text: #1e1e1e;
+  --t-input-bg: #2d2d2d;
+  --t-input-border: #3c3c3c;
+  --t-hover-bg: rgba(255,255,255,0.04);
+  --t-radius: 3px;
+  --t-fs-section: 11px;
+  --t-fs-label: 12px;
+  --t-fs-input: 13px;
+  --t-fs-unit: 11px;
+  --t-fs-btn: 12px;
+  --t-fs-checkbox: 12px;
+  --t-fs-slider-val: 11px;
+  --t-shadow-halo: none;
+  --t-shadow-halo-dim: none;
+  --t-shadow-btn: none;
+  --t-shadow-btn-hover: none;
+  --t-border-width: 1px;
+  --t-text-glow: none;
+  /* Syntax colors */
+  --t-syntax-keyword: #569cd6;
+  --t-syntax-type: #4ec9b0;
+  --t-syntax-function: #dcdcaa;
+  --t-syntax-string: #ce9178;
+  --t-syntax-number: #b5cea8;
+  --t-syntax-comment: #6a9955;
+  --t-syntax-param: #9cdcfe;
+  --t-syntax-import: #c586c0;
+  --t-syntax-constant: #4fc1ff;
+  --t-section-1: #c586c0;
+  --t-section-2: #4ec9b0;
+  --t-section-3: #dcdcaa;
+  --t-section-4: #ce9178;
+  --t-section-5: #569cd6;
+  --t-section-6: #4fc1ff;
+  --t-section-7: #c586c0;
+  --t-section-8: #dcdcaa;
+  --t-statusbar-bg: #007acc;
+  /* Button categories */
+  --t-btn-setting-bg: #2d2d2d;
+  --t-btn-setting-text: #808080;
+  --t-btn-setting-border: #3c3c3c;
+  --t-btn-action-bg: #007acc;
+  --t-btn-action-text: #fff;
+  --t-btn-action-border: #007acc;
+  --t-btn-output-bg: transparent;
+  --t-btn-output-text: #4ec9b0;
+  --t-btn-output-border: #4ec9b0;
+  /* Viewport */
+  --t-canvas-bg: #1e1e1e;
+  --t-mesh-default: #569cd6;
+}
+
+/* ── toolpath.net (battle.net-era metal plate) ──
+   Gunmetal plates lit from the upper-left, recessed black wells for
+   content, raised beveled buttons, copper/amber accents. */
+.theme-toolpath-net {
+  --t-font-main: 'Courier New', Courier, monospace;
+  --t-font-mono: 'Courier New', Courier, monospace;
+  --t-bg-primary: #85847f;
+  --t-bg-secondary: #8c8b86;
+  --t-bg-tertiary: #74736e;
+  --t-bg-header: linear-gradient(135deg, #a8a7a0 0%, #84837c 45%, #5e5d58 100%);
+  --t-text: #f4f4f1;
+  --t-text-dim: #cdcdc8;
+  /* Field text: typed/selected values are green & bold in the dark wells,
+     independent of the white panel-chrome text above. */
+  --t-input-text: #2ee6a0;
+  --t-input-weight: 600;
+  --t-border: #55555a;
+  --t-accent: #d68a2e;
+  --t-accent-text: #16110a;
+  --t-input-bg: #17171a;
+  --t-input-border: #4a3c26;
+  --t-input-shadow: inset 2px 2px 5px rgba(0,0,0,0.75), inset -1px -1px 0 rgba(255,255,255,0.22);
+  --t-hover-bg: rgba(255,255,255,0.14);
+  --t-radius: 4px;
+  --t-fs-section: 12px;
+  --t-fs-label: 13px;
+  --t-fs-input: 13px;
+  --t-fs-unit: 12px;
+  --t-fs-btn: 13px;
+  --t-fs-checkbox: 13px;
+  --t-fs-slider-val: 12px;
+  --t-shadow-halo: inset 2px 2px 5px rgba(0,0,0,0.75), 0 0 0 1px rgba(214,138,46,0.55);
+  --t-shadow-halo-dim: 0 0 0 1px rgba(214,138,46,0.35);
+  /* Deep chiseled bevel lit by the instrument glow at the RIGHT: thick
+     warm highlight bottom-right, hard black shadow top-left, crisp inner
+     edge, shadow cast away from the light — battle.net metal key. */
+  --t-shadow-btn: inset -2px -2px 0 rgba(242,182,102,0.55), inset 2px 2px 0 rgba(0,0,0,0.72), inset 0 0 0 1px rgba(0,0,0,0.50), -1px -2px 4px rgba(0,0,0,0.55);
+  --t-shadow-btn-hover: inset -2px -2px 0 rgba(250,198,122,0.68), inset 2px 2px 0 rgba(0,0,0,0.70), inset 0 0 0 1px rgba(0,0,0,0.45), -2px -3px 6px rgba(0,0,0,0.60);
+  --t-border-width: 1px;
+  --t-text-glow: none;
+  /* Button categories — dark brown-bronze steel plates lit from BELOW
+     (the instrument glow), light tan text. Action is a brighter golden
+     bronze so it still leads. */
+  --t-btn-setting-bg: linear-gradient(0deg, #7e6a4a 0%, #574734 48%, #382c1f 100%);
+  --t-btn-setting-text: #ecdcbe;
+  --t-btn-setting-border: #231a0f;
+  --t-btn-action-bg: linear-gradient(0deg, #c2914e 0%, #8f6526 48%, #5c3d14 100%);
+  --t-btn-action-text: #2c1b08;
+  --t-btn-action-border: #3c2810;
+  --t-btn-output-bg: linear-gradient(0deg, #6b5c45 0%, #4a3d2d 48%, #2f2519 100%);
+  --t-btn-output-text: #ecdcbe;
+  --t-btn-output-border: #201910;
+  --t-btn-active-bg: linear-gradient(0deg, #d3a052 0%, #9c6c22 100%);
+  /* Viewport: instrument CRT — glowing blue/green topography on black.
+     This is the toolpath.net 3D identity for every app. */
+  --t-canvas-bg: #000000;
+  --t-mesh-default: #2ee6a0;
+  --t-mesh-style: themed;
+  --t-mesh-board: transparent;
+  --t-mesh-opacity: 0.75;
+  --t-mesh-emissive: #0a3826;
+  --t-mesh-emissive-intensity: 0.3;
+  --t-mesh-roughness: 0.35;
+  --t-mesh-edge-color: #34f0b8;
+  --t-mesh-edge-opacity: 1;
+}
+
+/* ── AI-YA! — the AI's own hand ──
+   Loom's original model-authored styling (July 2026), preserved as a
+   theme in its honor when the fleet themes came to Loom: warm cream
+   page, white cards, deep navy ink and buttons, periwinkle accents,
+   soft corners, quiet hairline borders, system type. */
+.theme-ai-ya {
+  --t-font-main: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --t-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --t-bg-primary: #ffffff;
+  --t-bg-secondary: #f7f6f2;
+  --t-bg-tertiary: #eef1fa;
+  --t-bg-header: #1b2a6b;
+  --t-text: #22263a;
+  --t-text-dim: #6a7086;
+  --t-border: #e3e1d8;
+  --t-accent: #1b2a6b;
+  --t-accent-text: #ffffff;
+  --t-input-bg: #ffffff;
+  --t-input-border: #c9c6ba;
+  --t-hover-bg: rgba(123,163,212,0.14);
+  --t-radius: 9px;
+  --t-fs-section: 12px;
+  --t-fs-label: 12px;
+  --t-fs-input: 13px;
+  --t-fs-unit: 12px;
+  --t-fs-btn: 13px;
+  --t-fs-checkbox: 13px;
+  --t-fs-slider-val: 13px;
+  --t-shadow-halo: none;
+  --t-shadow-halo-dim: none;
+  --t-shadow-btn: none;
+  --t-shadow-btn-hover: 0 1px 6px rgba(27,42,107,0.18);
+  --t-border-width: 1px;
+  --t-text-glow: none;
+  --t-font-weight: 400;
+  --t-label-weight: 500;
+  --t-sidebar-accent: 3px solid #7ba3d4;
+  /* Viewport */
+  --t-canvas-bg: #fdfdfb;
+  --t-mesh-default: #1b2a6b;
+  /* Button categories */
+  --t-btn-setting-bg: #eef1fa;
+  --t-btn-setting-text: #1b2a6b;
+  --t-btn-setting-border: #c9c6ba;
+  --t-btn-action-bg: #1b2a6b;
+  --t-btn-action-text: #ffffff;
+  --t-btn-action-border: #1b2a6b;
+  --t-btn-output-bg: #7ba3d4;
+  --t-btn-output-text: #101c4e;
+  --t-btn-output-border: #5c88bd;
+}
