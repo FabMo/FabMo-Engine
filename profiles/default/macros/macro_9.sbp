@@ -22,6 +22,7 @@ IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 IF $ATC.Type = 0 THEN GOTO select_manual_change
 IF $ATC.Type = 6 THEN CN,671
 IF $ATC.Type = 7 THEN CN,71                                                             ' Switch to ATC Tool Change Subroutine if ATC
+IF $ATC.Type = 8 THEN CN,871                                                             ' Switch to ATC Tool Change Subroutine if ATC
 GOTO end_change                                                    ' and exit ...
 
 ' === Main Program ===

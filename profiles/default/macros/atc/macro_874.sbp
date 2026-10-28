@@ -1,0 +1,160 @@
+'!FABMO!name:ATC Calibration
+'!FABMO!description:Toolbar Calibration for PRS5 1 or 3HP ATC
+'!FABMO!enabled:true
+' Name: *ATC* CALIBRATE
+' Description: Initial calibration of Tool-Clip location for ATC
+' Author: Brian Owen
+' - Determines the locations of all the tool clips, based on knowledge of the location of the first clip and the dimensions of the clip.
+' - Also determines the location of the fixed Z zero plate for use in future tool measurements.
+' 2026/2/09 - Refactored (th)
+ 
+
+' --- Initialize ------------------------------------------------------------------
+$ATC.type = 8                                                                   ' Set to ATC
+CN,75                                                                           ' ATC status check and load CN,70
+CN,3                                                                            ' Home machine in XYZ first. 
+VN,0                                                                            ' ## functional??? Turn off limit switches
+SF,0                                                                            ' ## functional??? Turn off table limits
+&u = %(25)
+&debug = 0 
+JS, $xyJogUU[&u], $zJogUU[&u]                                                   ' Set Jog speeds
+
+
+' === Main =========================================================================
+PAUSE "How many positions exist on your toolbar" &count                         ' Maybe user does not want to use all 7 positions...so give them a choice
+$ATC.numClips = &count                                                          ' Update ATC settings based on user selection														' >> Update ATC settings based on user selection	
+PAUSE "Insert an empty tool holder in the spindle (no collet or nut)... (M-0051)"
+PAUSE "...Insert an empty tool holder upside down in the #1 clip (no collet or nut)... (M-0052)"
+
+
+
+SK "Move Tool Holder Over Upside Down Tool Holder"
+
+PAUSE "Place one end of the calibration clip on the pull stud on tool holder in the spindle #1 and the other on the stud of Tool #1. Click OK when ready to proceed! (M-0055)"
+
+ &toolIdx = 1   
+ 
+'Check Z Zero Input
+    IF %($sb_zZeroCk) == 1 THEN GOSUB CONTACT_TRIGGERED_ERROR                    ' We're about to lower the empty tool holder to touch the inverted tool holder in the clip. If input 1 is already triggered then we have a problem
+    &check = %(3) - %(106)                                                       ' Calculate max Z travel for probe move
+    PZ, &check,  $xySlowUU[&u], $sb_zZeroNum                                     ' Try to touch tool holders together
+      'IF &Debug = 1 THEN PAUSE "Press OK"
+      'IF %(3) <= &check THEN MZ,%(3) + $smallBackOffUU[&u]                        ' If we didn't make contact -- let's back off just in case the problem was a lack of electical continuity and we've crashed
+    IF %(3) <= &check THEN GOSUB CONTACT_ERROR
+
+'Set Clip Height
+ &Z_clipbase = %(3) - $ATC_holderHeightUU[&u]                                 ' If we succeeded in making contact, we record the current position for use later
+    JZ, %(3) + $smallBackOffUU[&u]                                               ' Back off to break contact
+    JX, %(1) - $ToolBar_Probe_OffsetUU[&u]                                       ' Shift over in the Y to prepare for first Y probe of calibration tool holder
+    &start_X = %(1)                                                              ' Record X start position
+    &start_Y = %(2)                                                              ' Record Y start position
+    &start_Z = %(3)                                                              ' Record Z start position
+    &alignment_height = %(3) - $ATC_holderAlignmentHeightUU[&u] - $smallBackOffUU[&u]    ' Calculate correct z position for plunge
+    JZ, &alignment_height                                                        ' Move down to prepare for Y probe
+    &check = $sb_searchDistUU[&u].x                                           ' Calculate max distance for Y probe
+    
+    TOOL_POS_LOOP:   
+    
+    PX, $sb_searchDistUU[&u].x, $xySlowUU[&u], $sb_zZeroNum                   ' Probe in X to find inverted tool holder
+      'IF &Debug = 1 THEN PAUSE "Press OK"
+      'IF %(2) >= &check THEN MY,%(2) - $smallBackOffUU[&u]                        ' If we went too far without contact -- first back off in case we crashed
+    IF %(1) >= &check THEN GOSUB CONTACT_ERROR
+
+'Found Front Edge
+
+    PAUSE 0.1                                                                    ' Take a break
+    &BACKSTART = %(1)                                                            ' Record X position for use in calculating center location of tool holder
+    JX, &BACKSTART - $smallBackOffUU[&u]                                         ' Break contact between tool holders
+    JZ, %(3) + $safe_liftUU[&u]                                                  ' Lift up clear of the tool holder
+    JX, &BACKSTART + $TOOL_OFFSETUU[&u]                                          ' Move to other side of tool holder
+    JZ, &alignment_height                                                         ' Drop down to prepare for probe
+    PX, &BACKSTART, $xySlowUU[&u], $sb_zZeroNum                                  ' Probe in X to find inverted tool holder
+      'IF &Debug = 1 THEN PAUSE "Press OK"
+      'IF %(2) <= &LEFTSTART THEN MY,%(2) + $smallBackOffUU[&u]                    ' If we went too far without contact -- first back off in case we crashed
+    IF %(1) <= &BACKSTART THEN GOSUB CONTACT_ERROR
+    
+'Found Back Edge
+
+    PAUSE 0.1                                                                    ' Take a break
+    &FRONTSTART = %(1)                                                           ' Record X position for use in calculating center location of tool holder
+    
+    JX, &FRONTSTART + $smallBackOffUU[&u]                                        ' Break contact between tool holders
+    JZ, %(3) + $safe_liftUU[&u]                                                  ' Lift up clear of the tool holder
+    &CENTER_X = &BACKSTART + ((&FRONTSTART - &BACKSTART) / 2)                    ' Calculate center position in Y axis
+    
+    
+    J2, &CENTER_X, %(2) - $TOOL_OFFSETUU[&u] + ($holder_radiusUU[&u] * 2)             ' Jog in front of tool holder
+    JZ, &alignment_height                                                        ' Drop down to prepare for probe
+    &check = $sb_searchDistUU[&u].Y                                        		' Calculate max distance for X probe
+    PY, $sb_searchDistUU[&u].Y, $xySlowUU[&u], $sb_zZeroNum                     ' Probe in Y to find inverted tool holder
+      'IF &Debug = 1 THEN PAUSE "Press OK"
+      'IF %(1) >= &check THEN MX,%(1) - $smallBackOffUU[&u]                     ' If we went too far without contact -- first back off in case we crashed
+    IF %(1) >= &check THEN GOSUB CONTACT_ERROR
+
+'Found left Edge
+    PAUSE 0.1                                                                    ' Take a break
+    &Y_EDGE = %(2)                                                               ' Record Y location of tool holder
+    JY,&Y_EDGE - $smallBackOffUU[&u]                                             ' Break contact with tool holder
+    &CENTER_Y = &Y_EDGE + $holder_radiusUU[&u] * 2                               ' Calculate Y location of tool holder center
+    JZ, %(3) + $safe_liftUU[&u]                                                  ' Lift up clear of tool holder
+    JY, &CENTER_Y                                                                ' Move to center of tool holder to demonstrate that we've calculated the correct position
+
+    &center_X = &center_X - $sb_homeOffUU[&u].x                                  ' Clean offsets for storage
+    &center_Y = &center_Y - $sb_homeOffUU[&u].y
+    &thisZ = &Z_clipbase + %(9)
+
+    '--------------------------------------------
+                                                                  ' Set up index that will be incremented while recording values for each tool
+   
+          $toolsUU[&toolIdx][].x = &center_X                                     ' Record locations of clips (permanent)
+          $toolsUU[&toolIdx][].y = &center_Y 								     ' (Y location of clip increments based on tool clip offset variable)
+          $toolsUU[&toolIdx][].z = &thisZ
+          $toolsUU[&toolIdx][].h = -5                                            ' stub in a bit length
+
+    	'PAUSE "Number of ATC clips equals " + &toolIdx
+        
+	JZ, &alignment_height + $TOOL_OFFSETUU[&u] 
+    
+    &toolIdx = &toolIdx + 1															' >> Increment tool index
+IF &toolIdx > $ATC.numClips THEN GOTO FINISHED									' >> If we've done all the clips we planned to do -- head for the exit.
+
+
+	J2, &center_X + ($TOOL_OFFSETUU[&u] * 1), &start_Y			' >> Shift over in the X and Y to prepare for user to insert tool holder with drill rod
+
+ 	JZ, &alignment_height
+
+PAUSE "OK, we are ready to calibrate the next holder. Please move the grounding clip to the next pull stud. (M-0059)"
+
+
+        GOTO TOOL_POS_LOOP                                                       ' Go through loop for next tool
+    '--------------------------------------------
+
+FINISHED:
+    
+    
+    DIALOG "Tool Holder Calibration complete, Please Remove Clip from Tool Holder  (M-0151)" OKTEXT="Continue ..."
+    
+ SK "Move the spindle Over The Center of The Z Zero Puck" 
+ 
+	 $atcUU[].zZero_X = %(1)                                                      ' Store locations of fixed Z Zero plate (always the same)
+     $atcUU[].zZero_Y = %(2)							                        
+     
+ JZ, &alignment_height + $TOOL_OFFSETUU[&u] 
+
+  DIALOG "Calibration Finished, The Machine will now Jog to the Home Position  (M-0151)" OKTEXT="Continue ..."
+  
+  JH
+    
+END
+
+
+' Error Handling ===============================================================
+CONTACT_TRIGGERED_ERROR:
+    PAUSE "Your Z Zero input is already triggered, if the z zero plate on your gantry is plugged in, please unplug and press OK."
+    END
+    RETURN
+
+CONTACT_ERROR:
+    PAUSE "Unable to make contact with tool holder, check that grounding cable is connecting pull stud to fixed z zero plate."
+    END
+    RETURN

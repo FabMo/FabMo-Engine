@@ -35,6 +35,7 @@ OK:
     NOT_DT:
     GOSUB home_y
     IF $ATC.Type == 6 THEN GOTO SKIP_CENTER_Y
+    IF $ATC.Type == 8 THEN GOTO SKIP_CENTER_Y
         'Center Y
         &ymax = %machine.envelope.ymax
         MY, (&ymax / 2) - $sb_homeOffUU[&u].y

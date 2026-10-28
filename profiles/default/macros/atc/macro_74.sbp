@@ -9,6 +9,8 @@
 ' 2026/2/09 - Refactored (th)
  IF $ATC.type = 6 THEN CN,674
  IF $ATC.type = 6 THEN GOTO END_ALL 
+ IF $ATC.type = 8 THEN CN,874
+ IF $ATC.type = 8 THEN GOTO END_ALL 
 
 ' --- Initialize ------------------------------------------------------------------
 $ATC.type = 7                                                                   ' Set to ATC
