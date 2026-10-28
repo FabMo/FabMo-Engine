@@ -4330,3 +4330,88 @@ a.update-available::after {
 #update-screen .update-screen-longwait .update-screen-reload {
 	margin-top: 10px;
 }
+
+/* ===== Training Mode (coach.js) ===== */
+#coach-banner {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 10000;
+	background: repeating-linear-gradient(45deg, #b07a00, #b07a00 18px, #9a6a00 18px, #9a6a00 36px);
+	color: #fff;
+	font-weight: bold;
+	letter-spacing: 0.06em;
+	text-align: center;
+	padding: 5px 8px;
+	font-size: 0.85rem;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+#coach-banner button {
+	margin-left: 14px;
+	padding: 2px 10px;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	background: transparent;
+	color: #fff;
+	font-size: 0.8rem;
+	cursor: pointer;
+}
+#coach-banner button:hover {
+	background: rgba(255, 255, 255, 0.2);
+}
+#coach-bar {
+	position: fixed;
+	bottom: 14px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 10000;
+	width: min(620px, calc(100vw - 30px));
+	background: #2b3237;
+	color: #e8edf1;
+	border: 1px solid #b07a00;
+	border-radius: 6px;
+	padding: 10px 14px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+	font-size: 0.95rem;
+	line-height: 1.35;
+}
+#coach-bar .coach-title {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #d9a420;
+	margin-bottom: 4px;
+}
+#coach-bar .coach-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 8px;
+}
+#coach-bar .coach-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #55606a;
+	margin-right: 5px;
+}
+#coach-bar .coach-dot.active {
+	background: #d9a420;
+}
+#coach-bar .coach-dot.done {
+	background: #7a8691;
+}
+#coach-bar .coach-next {
+	padding: 4px 16px;
+	border: none;
+	border-radius: 4px;
+	background: #d9a420;
+	color: #222;
+	font-weight: bold;
+	cursor: pointer;
+}
+#coach-bar .coach-next:hover {
+	background: #e8b63a;
+}

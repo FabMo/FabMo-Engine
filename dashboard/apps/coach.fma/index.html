@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Training</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: #f4f6f8;
+            color: #2b3237;
+            padding: 24px;
+        }
+        h1 {
+            font-size: 1.3rem;
+            margin: 0 0 4px 0;
+        }
+        p.lead {
+            margin: 0 0 20px 0;
+            color: #5a646d;
+            font-size: 0.95rem;
+            max-width: 560px;
+        }
+        .lesson {
+            background: #fff;
+            border: 1px solid #d7dde2;
+            border-left: 4px solid #b07a00;
+            border-radius: 6px;
+            padding: 14px 18px;
+            max-width: 560px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .lesson h2 {
+            font-size: 1rem;
+            margin: 0 0 3px 0;
+        }
+        .lesson p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #5a646d;
+        }
+        .lesson button {
+            flex-shrink: 0;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            background: #b07a00;
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .lesson button:hover {
+            background: #d9a420;
+        }
+        #err {
+            color: #c0392b;
+            font-size: 0.85rem;
+            margin-top: 12px;
+            max-width: 560px;
+        }
+        .note {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #8a949d;
+            max-width: 560px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Training</h1>
+    <p class="lead">
+        Hands-on practice with FabMo's real controls, answered by a simulated
+        machine &mdash; your tool will not move during a lesson.
+    </p>
+
+    <div class="lesson">
+        <div>
+            <h2>Home the machine &amp; zero the Z axis</h2>
+            <p>The startup routine every job begins with, practiced in the Console app.</p>
+        </div>
+        <button id="start-home">Start</button>
+    </div>
+
+    <div id="err"></div>
+    <p class="note">
+        Lessons require the machine to be idle. You can exit a lesson at any
+        time with the Exit Training button in the banner.
+    </p>
+
+    <script src="../../js/libs/fabmo.js"></script>
+    <script>
+        var fabmo = new FabMoDashboard();
+        document.getElementById("start-home").addEventListener("click", function () {
+            document.getElementById("err").textContent = "";
+            fabmo.startTraining("home-and-zero", function (err) {
+                if (err) {
+                    document.getElementById("err").textContent =
+                        typeof err === "string" ? err : err.message || "Could not start the lesson.";
+                }
+            });
+        });
+    </script>
+</body>
+</html>

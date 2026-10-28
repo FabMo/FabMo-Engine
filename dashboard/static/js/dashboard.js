@@ -143,6 +143,10 @@ define(function (require) {
         this.router = router;
     };
 
+    Dashboard.prototype.setCoach = function (coach) {
+        this.coach = coach;
+    };
+
     // Register a handler function for the provided message type
     Dashboard.prototype._registerHandler = function (name, handler) {
         if ("message" in this.handlers) {
@@ -1514,6 +1518,19 @@ define(function (require) {
                         }
                     }.bind(this)
                 );
+            }.bind(this)
+        );
+
+        ///
+        /// TRAINING MODE
+        ///
+        this._registerHandler(
+            "startTraining",
+            function (data, callback) {
+                if (!this.coach) {
+                    return callback("Training is not available.");
+                }
+                this.coach.start((data && data.lesson) || "home-and-zero", callback);
             }.bind(this)
         );
 
