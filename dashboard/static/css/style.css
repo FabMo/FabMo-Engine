@@ -4339,7 +4339,8 @@ a.update-available::after {
 	top: 56px;
 	left: 0;
 	right: 0;
-	z-index: 1004; /* under the tab-bar (1005), over the app area */
+	z-index: 1001; /* over the app area, under the pop-out DRO (1002), the
+	                  left nav (raised to 1003 below), and the tab-bar (1005) */
 	background: repeating-linear-gradient(45deg, #b07a00, #b07a00 18px, #9a6a00 18px, #9a6a00 36px);
 	color: #fff;
 	font-weight: bold;
@@ -4353,6 +4354,11 @@ a.update-available::after {
 /* Mark the mode in the top bar itself without hiding anything in it */
 body.fabmo-training .tab-bar {
 	box-shadow: inset 0 -4px 0 #d9a420;
+}
+/* The banner slips UNDER the left nav (which has no z-index of its own —
+   raise it past the banner's 1001) and under the pop-out DRO (1002). */
+body.fabmo-training .left-off-canvas-menu {
+	z-index: 1003;
 }
 /* Push the app area down so the banner strip doesn't cover app controls
    (same pattern as the a11y-mode padding; the container transitions padding) */
