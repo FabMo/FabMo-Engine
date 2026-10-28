@@ -43,6 +43,10 @@ define(function (require) {
         this.status.job = null;
         this.status.line = null;
         this.status.nb_lines = null;
+        this.status.inFeedHold = false;
+        this.status.hold = 0;
+        this.status.resumeFlag = false;
+        this._paused = false;
         this.active = true;
         this.engine.sim = this;
         this._timer = setInterval(this._tick.bind(this), TICK_MS);
@@ -118,12 +122,35 @@ define(function (require) {
 
     SimMachine.prototype.interceptCommand = function (name) {
         if (!this.active) return false;
-        if (name === "quit" || name === "stop" || name === "pause") {
+        if (name === "pause") {
+            // Feed-hold: stop advancing but keep the queue so resume can
+            // continue. The footer shows RESUME/QUIT when state is "paused"
+            // and treats inFeedHold+hold:10 as "fully stopped" (buttons active).
+            if (this.status.state === "running") {
+                this._paused = true;
+                this._vel = { x: 0, y: 0, z: 0 };
+                this.status.inFeedHold = true;
+                this.status.hold = 10;
+                this._setState("paused");
+                this._action({ type: "command", cmd: "pause" });
+            }
+        } else if (name === "resume") {
+            if (this.status.state === "paused") {
+                this._paused = false;
+                this.status.inFeedHold = false;
+                this.status.hold = 0;
+                this._setState("running");
+                this._action({ type: "command", cmd: "resume" });
+            }
+        } else if (name === "quit" || name === "stop") {
             this._seq = [];
             this._step = null;
+            this._paused = false;
             this._vel = { x: 0, y: 0, z: 0 };
+            this.status.inFeedHold = false;
+            this.status.hold = 0;
             this._setState("idle");
-            this._action({ type: "manual", cmd: name });
+            this._action({ type: "command", cmd: name });
         }
         return true; // never forward commands while training
     };
@@ -336,6 +363,13 @@ define(function (require) {
     SimMachine.prototype._tick = function () {
         var dt = TICK_MS / 1000;
         var st = this.status;
+
+        // Feed-hold: freeze motion and the sequence, but keep both intact so
+        // resume picks up where it left off. Status keeps flowing (paused).
+        if (this._paused) {
+            this._emit();
+            return;
+        }
 
         // Continuous manual velocities (units/min), with a deadman: the
         // keypad streams 'maint' while a key is held.
