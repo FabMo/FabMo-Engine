@@ -31,42 +31,46 @@ function resize() {                                 // use the retained setting
     }
 }  
 
-function reload() {
-    let cam1Available = false;
-    let cam2Available = false;
-
-    img.onload = function() {
-        cam1Available = true;
-        checkVideoAvailability();
-        resize();
-    };
-    img.onerror = function() {
-        console.log("Camera 1 not available");
-        img.removeAttribute('src');
-        checkVideoAvailability();
-    };
-    img.src = 'http://' + location.hostname + ':3141?' + Math.random();
-
-    img1.onload = function() {
-        cam2Available = true;
-        checkVideoAvailability();
-        resize();
-    };
-    img1.onerror = function() {
-        console.log("Camera 2 not available");
-        img1.removeAttribute('src');
-        checkVideoAvailability();
-    };
-    img1.src = 'http://' + location.hostname + ':3142?' + Math.random();
-
-    function checkVideoAvailability() {
-        // Set availability based on actual camera detection
-        if (cam1Available || cam2Available) {
-            localStorage.setItem("fabmo_sb4_has_video", "true");
-        } else {
-            localStorage.setItem("fabmo_sb4_has_video", "false");
-        }
+// Run fn only once the document has finished loading. An MJPEG <img>
+// request never completes (and with a streamer up but no camera it never
+// even answers), so one opened while the document is still loading parks
+// readyState at 'interactive' forever -- and the dashboard's app-launch
+// gear waits on this iframe's load event.
+function whenLoaded(fn) {
+    if (document.readyState === 'complete') {
+        fn();
+    } else {
+        window.addEventListener('load', function onLoad() {
+            window.removeEventListener('load', onLoad);
+            fn();
+        });
     }
+}
+
+function reload() {
+    let layout = localStorage.getItem("fabmo_sb4_video_layout") || "none";
+
+    // Detection goes through shared-video's getCameraStatus(), which aborts
+    // its probes on a deadline and maintains fabmo_sb4_has_video itself.
+    let detect = (window.FabMoVideo && window.FabMoVideo.getCameraStatus)
+        ? window.FabMoVideo.getCameraStatus()
+        : Promise.resolve({ camera1: false, camera2: false });
+
+    detect.then(function (status) {
+        whenLoaded(function () {
+            if (status.camera1 && (layout === 'cam1' || layout === 'both')) {
+                img.src = 'http://' + location.hostname + ':3141?' + Math.random();
+            } else {
+                img.removeAttribute('src');
+            }
+            if (status.camera2 && (layout === 'cam2' || layout === 'both')) {
+                img1.src = 'http://' + location.hostname + ':3142?' + Math.random();
+            } else {
+                img1.removeAttribute('src');
+            }
+            resize();
+        });
+    });
 }
 
 $('#sbp-container').on('click', function () {     // move forward to next layout on click
