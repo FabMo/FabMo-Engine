@@ -90,6 +90,8 @@ define(function (require) {
         }
         $(window).off("resize.coach");
         $("body").removeClass("fabmo-training");
+        // Land back on the lesson list, not in the no-longer-simulated Console.
+        this.context.launchApp("fabmo-training", {}, function () {});
     };
 
     Coach.prototype._onAction = function (action) {
