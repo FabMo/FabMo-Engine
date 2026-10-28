@@ -10,6 +10,8 @@
 
  IF $ATC.type = 6 THEN CN,672
  IF $ATC.type = 6 THEN GOTO END_ALL 
+ IF $ATC.type = 8 THEN CN,872
+ IF $ATC.type = 8 THEN GOTO END_ALL 
 
 &u = %(25)
 CN,75                                                                 ' Load primary ATC variables and ck status (calls CN 70)
