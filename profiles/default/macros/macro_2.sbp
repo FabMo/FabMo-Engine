@@ -30,7 +30,7 @@ END
 
 ' --- Primary Subroutines ---
 first_home_z_toProx:                                                 ' Table Base Z-zero is at the top; we're confirming its location here 
-	PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z    ' PZ "probes" for a switch or contact in the Z axis
+	PZ, %(3) + %machine.envelope.zmax, $sb_searchSpeedUU[&u].z, $sb_proxNum.z    ' PZ "probes" for a switch or contact in the Z axis
     ZZ                                                               ' Reset working zero to support next move
     JZ, (-1 * $sb_homeOffUU[&u].z)                                   ' Pull back from prox to location that will be true zero
     &target_ck = $sb_homeOffUU[&u].z + $sb_oochUU[&u]	             ' New target for detecting error; just past prox
@@ -48,7 +48,7 @@ first_home_z_toProx:                                                 ' Table Bas
       RETURN                                                         ' (for ATC we leave here with offset to a local Z of 0)
 
 find_z_zero_plate:                                                   ' Now probe to MEASURE OFFSET FOR THIS CUTTER to surface of table or material
-	PZ, (-1 * $sb_searchDistUU[&u].z), $sb_searchSpeedUU[&u].zzero, $sb_zZeroNum    ' (THUS, probe to Z=0[+ plate thickness]; per position of plate)
+	PZ, (%(3) - %machine.envelope.zmax), $sb_searchSpeedUU[&u].zzero, $sb_zZeroNum    ' (THUS, probe to Z=0[+ plate thickness]; per position of plate)
     &target_ck = %(3)                                                ' Get position after probe
     JZ, (&target_ck + $sb_zPlateOffUU[&u])                           ' Back off after first contact with the Z zero plate
     &target_ck = &target_ck - $sb_oochUU[&u] 

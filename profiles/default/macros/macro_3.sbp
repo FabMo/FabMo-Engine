@@ -29,13 +29,16 @@ OK:
     Z3    ' Zeoring all axes at their current location (sets worst case homing distances)
     GOSUB backOffProx_if_needed
     IF $sb_hasZProx = 1 THEN GOSUB home_z
-
+	IF $ATC.Type > 0 THEN GOTO NOT_DT
     IF $sb_dtType == 3 THEN GOTO X_first                              ' Standard Desktop (type 3) has X on Gantry so different layout
                                                                       ' Probe the gantry axis first, then center it, then probe the dual motor axis
+    NOT_DT:
     GOSUB home_y
+    IF $ATC.Type == 6 THEN GOTO SKIP_CENTER_Y
         'Center Y
         &ymax = %machine.envelope.ymax
         MY, (&ymax / 2) - $sb_homeOffUU[&u].y
+    SKIP_CENTER_Y:
     GOSUB home_x
     GOTO finish
 
@@ -79,7 +82,7 @@ home_z:
         RETURN
 
 home_x:
-    PX, (-1 * $sb_searchDistUU[&u].x), $sb_searchSpeedUU[&u].xy, $sb_proxNum.x   ' PX "probes" for a switch or contact in the X axis 
+    PX, (-1.25 * %machine.envelope.xmax), $sb_searchSpeedUU[&u].xy, $sb_proxNum.x   ' PX "probes" for a switch or contact in the X axis 
     ZX                                                               ' Reset working zero
     JX, $sb_homePullBackUU[&u]                                       ' Pull back from prox
     &target_ck = (-1 * ($sb_homeOffUU[&u].x + $sb_oochUU[&u]))       ' New target for detecting error just past prox
@@ -93,7 +96,7 @@ home_x:
     RETURN
 
 home_y:
-    PY, (-1 * $sb_searchDistUU[&u].y), $sb_searchSpeedUU[&u].xy, $sb_proxNum.y        
+    PY, (-1.25 * %machine.envelope.ymax), $sb_searchSpeedUU[&u].xy, $sb_proxNum.y        
     ZY
     JY, $sb_homePullBackUU[&u]
     &target_ck = (-1 * ($sb_homeOffUU[&u].y + $sb_oochUU[&u]))               
