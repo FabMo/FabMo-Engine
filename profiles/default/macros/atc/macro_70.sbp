@@ -99,7 +99,7 @@ SU, &PRESENT_UNITS                      ' Restore original unit type after defin
 RETURN
 
 PRS5_ATC:
-&Debug = 1
+&Debug = 0
 &Error = 0
 $ATC.ToolIn := 0
 $ATC.numClips := 11
@@ -112,67 +112,67 @@ IF %(25)== 0 THEN GOTO SETUPVALUES
 $unitMultiplier = 25.4
 SETUPVALUES:
 'Initial Values
-$ATC.MaxDepth := -0.02 * $unitMultiplier
-$ATC.PlateOffset := -2 * $unitMultiplier
-$tools[0].X = 0 * $unitMultiplier
-$tools[0].Y = 0 * $unitMultiplier
-$tools[0].Z = 0 * $unitMultiplier
-$tools[0].H = -5 * $unitMultiplier
-$tools[1].X := 100.8565 * $unitMultiplier
-$tools[1].Y := 5.4255 * $unitMultiplier
-$tools[1].Z := -7.104 * $unitMultiplier
-$tools[1].H := -5 * $unitMultiplier
-$tools[2].X := 100.858 * $unitMultiplier
-$tools[2].Y := 10.0825 * $unitMultiplier
-$tools[2].Z := -7.081 * $unitMultiplier
-$tools[2].H := -5 * $unitMultiplier
-$tools[3].X := 100.783 * $unitMultiplier
-$tools[3].Y := 14.7665 * $unitMultiplier
-$tools[3].Z := -7.117 * $unitMultiplier
-$tools[3].H := -5 * $unitMultiplier
-$tools[4].X := 100.8065 * $unitMultiplier
-$tools[4].Y := 19.4365 * $unitMultiplier
-$tools[4].Z := -7.129 * $unitMultiplier
-$tools[4].H := -5 * $unitMultiplier
-$tools[5].X := 100.819 * $unitMultiplier
-$tools[5].Y := 24.111 * $unitMultiplier
-$tools[5].Z := -7.135 * $unitMultiplier
-$tools[5].H := -5 * $unitMultiplier
-$tools[6].X := 100.823 * $unitMultiplier
-$tools[6].Y := 28.7835 * $unitMultiplier
-$tools[6].Z := -7.107 * $unitMultiplier
-$tools[6].H := -5 * $unitMultiplier
-$tools[7].X := 100.8335 * $unitMultiplier
-$tools[7].Y := 33.4125 * $unitMultiplier
-$tools[7].Z := -7.09 * $unitMultiplier
-$tools[7].H := -5 * $unitMultiplier
-$tools[8].X := 100.845 * $unitMultiplier
-$tools[8].Y := 38.1025 * $unitMultiplier
-$tools[8].Z := -7.091 * $unitMultiplier
-$tools[8].H := -5 * $unitMultiplier
-$tools[9].X := 100.843 * $unitMultiplier
-$tools[9].Y := 42.7835 * $unitMultiplier
-$tools[9].Z := -7.096 * $unitMultiplier
-$tools[9].H := -5 * $unitMultiplier
-$tools[10].X := 100.857 * $unitMultiplier
-$tools[10].Y := 47.4435 * $unitMultiplier
-$tools[10].Z := -7.111 * $unitMultiplier
-$tools[10].H := -5 * $unitMultiplier
-$tools[11].X := 100.861 * $unitMultiplier
-$tools[11].Y := 52.129 * $unitMultiplier
-$tools[11].Z := -7.09 * $unitMultiplier
-$tools[11].H := -5 * $unitMultiplier
+$ATCUU[].MaxDepth := -0.02
+$ATCUU[].PlateOffset := -2
+$toolsUU[0][].X = 0
+$toolsUU[0][].Y = 0
+$toolsUU[0][].Z = 0
+$toolsUU[0][].H = -5
+$toolsUU[1][].X := 100.8565
+$toolsUU[1][].Y := 5.4255
+$toolsUU[1][].Z := -7.104
+$toolsUU[1][].H := -5
+$toolsUU[2][].X := 100.858
+$toolsUU[2][].Y := 10.0825
+$toolsUU[2][].Z := -7.081
+$toolsUU[2][].H := -5
+$toolsUU[3][].X := 100.783
+$toolsUU[3][].Y := 14.7665
+$toolsUU[3][].Z := -7.117
+$toolsUU[3][].H := -5
+$toolsUU[4][].X := 100.8065
+$toolsUU[4][].Y := 19.4365
+$toolsUU[4][].Z := -7.129
+$toolsUU[4][].H := -5
+$toolsUU[5][].X := 100.819
+$toolsUU[5][].Y := 24.111
+$toolsUU[5][].Z := -7.135
+$toolsUU[5][].H := -5
+$toolsUU[6][].X := 100.823
+$toolsUU[6][].Y := 28.7835
+$toolsUU[6][].Z := -7.107
+$toolsUU[6][].H := -5
+$toolsUU[7][].X := 100.8335
+$toolsUU[7][].Y := 33.4125
+$toolsUU[7][].Z := -7.09
+$toolsUU[7][].H := -5
+$toolsUU[8][].X := 100.845
+$toolsUU[8][].Y := 38.1025
+$toolsUU[8][].Z := -7.091
+$toolsUU[8][].H := -5
+$toolsUU[9][].X := 100.843
+$toolsUU[9][].Y := 42.7835
+$toolsUU[9][].Z := -7.096
+$toolsUU[9][].H := -5
+$toolsUU[10][].X := 100.857
+$toolsUU[10][].Y := 47.4435
+$toolsUU[10][].Z := -7.111
+$toolsUU[10][].H := -5
+$toolsUU[11][].X := 100.861
+$toolsUU[11][].Y := 52.129
+$toolsUU[11][].Z := -7.09
+$toolsUU[11][].H := -5
 'Motion values
-$zSlow = 0.4 * $unitMultiplier
-$zFast = 0.75 * $unitMultiplier
-$zJog = 4.0 * $unitMultiplier
+$zSlowUU[] = 0.4
+$zFastUU[] = 0.75
+$zJogUU[] = 4.0
 
-$xySlow = 0.4 * $unitMultiplier
-$xyFast = 2.0 * $unitMultiplier
-$xyJog = 6.0 * $unitMultiplier
+$xySlowUU[] = 0.4
+$xyFastUU[] = 2.0
+$xyJogUU[] = 6.0
 
-$smallBackOff = 0.15 * $unitMultiplier
-$bigBackOff = 2.0 * $unitMultiplier
+$smallBackOffUU[] = 0.15
+$bigBackOffUU[] = 2.0
 
 'Inputs
 $ZZero_Sensor = 1    'EXPOSE
@@ -200,31 +200,32 @@ $DrawBar = 8 'EXPOSE
 $ToolBar = 3 'EXPOSE
 
 'Positions
-$manual_change_X = 0 * $unitMultiplier 'X location for manual tool changes  'EXPOSE
-$manual_change_Y = 15 * $unitMultiplier 'Y location for manual tool changes  'EXPOSE
+$manual_changeUU[].x = 0 'X location for manual tool changes  'EXPOSE
+$manual_changeUU[].y = 0 'Y location for manual tool changes  'EXPOSE
 
 
 'Toolbar parameters
-$ATC_X_Prox_Clear = -2.0 * $unitMultiplier 
-$TOOLBAR_LENGTH = 15 * $unitMultiplier 
-$TOOL_OFFSET = 5 * $unitMultiplier        'EXPOSE
-$Transit_Height = -1 * $unitMultiplier
-$clipPullout = 0.75 * $unitMultiplier
-$ATC_clipSafe = 1.375 * $unitMultiplier
-$thClearance = 0.5 * $unitMultiplier
+$ATC_X_Prox_ClearUU[] = -2.0 
+$TOOLBAR_LENGTHUU[] = 15
+$TOOL_OFFSETUU[] = 5
+$Transit_HeightUU[] = -1
+$clipPulloutUU[] = 0.75
+$atcUU[].clipSafe = 1.375
+$thClearanceUU[] = 1
 $DrawbarDelay = 0.75
 
 'Calibration parameters
-$ATC_holderHeight = 2.037 * $unitMultiplier
-$ATC_holderAlignmentHeight = 0.69 * $unitMultiplier
-$holder_radius = .75 * $unitMultiplier
-$holder_wall_thickness = .25 * $unitMultiplier
-$stylus_dia = .25 * $unitMultiplier
-$ToolBar_Probe_Offset = 2 * $unitMultiplier
-$firstClipX = 101.037 * $unitMultiplier 'Location of first clip in X for calibration
-$firstClipY = -1.916 * $unitMultiplier 'Location of first clip in Y for calibration
-$firstClipZ = 0.093 * $unitMultiplier 'Location of first clip in Z for calibration
-$safe_lift = 2 * $unitMultiplier
+$ATC_holderHeightUU[] = 2.037
+$ATC_holderAlignmentHeightUU[] = 0.69
+$holder_radiusUU[] = .75
+$holder_wall_thicknessUU[] = .25
+$stylus_diaUU[] = .25
+$ToolBar_Probe_OffsetUU[] = 2
+$firstClipXUU[] = 100.5 'Location of first clip in X for calibration
+$firstClipYUU[] = 4.6 'Location of first clip in Y for calibration
+$firstClipZUU[] = 0.093 'Location of first clip in Z for calibration
+$safe_liftUU[] = 2
+$nextYUU[] = 6
 
 RETURN
 
@@ -232,4 +233,3 @@ no_variables:
     CN,201
     RETURN
 END
-

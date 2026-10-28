@@ -36,24 +36,31 @@ ASK_REMOVE:
   	RETURN
 
 HOME_Z:
-	PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z						' >> PZ "probes" for a switch or contact in the Z axis
-    ZZ																	' >> Reset working zero
-    JZ, (-1 * &homeOff_Z)												' >> Pull back from prox
-    &target_ck = &homeOff_Z + &ooch										' >> New target for detecting error just past prox
-    PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z						' >> Slowly probe for prox in final accurate check
-    IF %(3)== &target_ck THEN GOSUB fail_missed_target					' >> Look at current Z location to see if we went past the target
+    GOSUB Check_Z_Prox
+    PZ, $sb_searchDistUU[&u].z, $sb_searchSpeedUU[&u].z, $sb_proxNum.z         ' PZ "probes" for a switch or contact in the Z axis
+    ZZ                                                                         ' Reset working zero
+    JZ, (-1 * $sb_homeOffUU[&u].z)                                             ' Pull back from prox
+    &target_ck = $sb_homeOffUU[&u].z + $sb_oochUU[&u]                          ' New target for detecting error just past prox
+    PZ, &target_ck, $sb_slowSearchSpeedUU[&u].z, $sb_proxNum.z                 ' Slowly probe for prox in final accurate check
+    IF %(3)== &target_ck THEN GOSUB fail_missed_target                         ' Look at current Z location to see if we went past the target
     ZZ
-    JZ, (-1 * &homeOff_Z)
-    VA,,,0,,,,,,0,,,                                            		' >> Set 0 location and Table Base Zero
-    VA,,,-1*($tools[$ATC.ToolIn].H + $ATC.PlateOffset)					' >> Apply Offset for no tool
-    PAUSE "Z Home location has been recovered using Z Limit switch"		' >> Let user know that we've reset their Z home due to a problem. 
-	RETURN
+    JZ, (-1 * $sb_homeOffUU[&u].z)
+    VA,,,0,,,,,,0,,,                                                           ' Set 0 location and Table Base Zero
+    VA,,,-1*($toolsUU[$ATC.ToolIn][&u].h + $atcUU[&u].PlateOffset)             ' Apply Offset for no tool
+    PAUSE "Z Home location has been recovered using Z Limit switch"            ' Let user know that we've reset their Z home due to a problem. 
+    RETURN
 
 ' Error Messages =======================================================
 TOOL_NOT_REMOVED:
   	DIALOG "Tool removal failed again. Exiting file.", CANCELTEXT = "Quit" ' >> Didn't remove tool
   	END
   	RETURN
+
+Check_Z_Prox:
+    IF %($sb_proxCk.z) == 0 THEN RETURN
+    PAUSE "A Proximity Sensor is Unexpectedly Triggered! Please clear switches and try macro again.", OKTEXT="OK"
+    END
+    RETURN      
     
 fail_missed_target:
     PAUSE "Target Not Triggered! Lower Z Axis and run C3 (XYZ Homing)." ' >> Did not hit target.
