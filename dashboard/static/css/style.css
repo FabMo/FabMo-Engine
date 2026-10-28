@@ -4394,6 +4394,7 @@ body.fabmo-training #app_menu_container {
 	position: fixed;
 	bottom: 14px; /* coach.js raises this above the .footBar when it opens */
 	transition: bottom 0.3s; /* match .footBar's height transition */
+	outline: none; /* focused (tabindex -1) to pull focus out of app iframes */
 	left: 50%;
 	transform: translateX(-50%);
 	z-index: 10000;

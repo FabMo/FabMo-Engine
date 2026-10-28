@@ -73,8 +73,18 @@ define(function (require) {
         this._buildUI();
         this._showStep();
         $(window).on("resize.coach", this._reposition.bind(this));
-        // The lesson happens in the real Console app.
-        this.context.launchApp("fabmo-sb4", {}, function () {});
+        // The lesson happens in the real Console app. Launching it destroys
+        // the Training iframe (which had focus from the Start click) and the
+        // Console grabs focus as it loads -- so the first click on Begin would
+        // only pull focus back to the parent. Pull focus to the coach bar once
+        // the app has settled so that first click actually registers.
+        var self = this;
+        this.context.launchApp("fabmo-sb4", {}, function () {
+            self._focusBar();
+            setTimeout(function () {
+                self._focusBar();
+            }, 350);
+        });
         callback(null);
     };
 
@@ -136,6 +146,21 @@ define(function (require) {
         this._clearHighlights();
         if (step.highlight) this._applyHighlight(step.highlight);
         this._reposition();
+        // Keep focus in the parent so a button step's first click registers
+        // (the user's prior click was inside the Console iframe).
+        if (step.button) this._focusBar();
+    };
+
+    // Move document focus to the coach bar (out of any app iframe) without a
+    // visible ring -- #coach-bar is tabindex -1 with outline:none.
+    Coach.prototype._focusBar = function () {
+        if (this._ui && this._ui.bar[0]) {
+            try {
+                this._ui.bar[0].focus({ preventScroll: true });
+            } catch (e) {
+                this._ui.bar[0].focus();
+            }
+        }
     };
 
     // ------------------------------------------------------- highlights
@@ -299,7 +324,7 @@ define(function (require) {
                 '<button id="coach-exit">Exit Training</button></div>'
         );
         var bar = $(
-            '<div id="coach-bar">' +
+            '<div id="coach-bar" tabindex="-1">' +
                 '<div class="coach-title"></div>' +
                 '<div class="coach-text"></div>' +
                 '<div class="coach-footer"><span class="coach-dots"></span>' +
