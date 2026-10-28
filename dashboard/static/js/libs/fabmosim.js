@@ -247,26 +247,33 @@ define(function (require) {
 
     // The scripted sequences are theater: they reproduce what an operator
     // SEES during a real C3/C2 (approach, switch trip, back-off, slow
-    // re-approach), not the macros' actual logic.
+    // re-approach), not the macros' actual logic. Motion HOLDS on every
+    // switch trip (TRIP_HOLD) so a trainee has time to find the lit input.
+    var TRIP_HOLD = 1.5;
+
     SimMachine.prototype._queueHoming = function (u) {
         var s = [{ kind: "state", state: "running" }];
         s.push({ kind: "move", to: { posz: 0.8 * u }, secs: 0.8 });
         // X: seek, trip prox (in3), back off, creep in
         s.push({ kind: "move", to: { posx: -0.1 * u }, secs: 2 });
         s.push({ kind: "input", name: "in3", value: 1 });
+        s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "move", to: { posx: 0.25 * u }, secs: 0.6 });
         s.push({ kind: "input", name: "in3", value: 0 });
         s.push({ kind: "move", to: { posx: -0.02 * u }, secs: 0.8 });
         s.push({ kind: "input", name: "in3", value: 1 });
+        s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "set", fields: { posx: 0 } });
         s.push({ kind: "input", name: "in3", value: 0 });
         // Y: same dance (in2)
         s.push({ kind: "move", to: { posy: -0.1 * u }, secs: 2 });
         s.push({ kind: "input", name: "in2", value: 1 });
+        s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "move", to: { posy: 0.25 * u }, secs: 0.6 });
         s.push({ kind: "input", name: "in2", value: 0 });
         s.push({ kind: "move", to: { posy: -0.02 * u }, secs: 0.8 });
         s.push({ kind: "input", name: "in2", value: 1 });
+        s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "set", fields: { posy: 0 } });
         s.push({ kind: "input", name: "in2", value: 0 });
         s.push({ kind: "state", state: "idle" });
@@ -280,11 +287,13 @@ define(function (require) {
         s.push({ kind: "move", to: { posz: Math.min(this.status.posz || 0, 1.5 * u) - 1.5 * u }, secs: 2.5 });
         s.push({ kind: "input", name: "in1", value: 1 }); // plate contact
         s.push({ kind: "set", fields: { posz: plate } });
+        s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "move", to: { posz: plate + 0.25 * u }, secs: 0.5 });
         s.push({ kind: "input", name: "in1", value: 0 });
         s.push({ kind: "move", to: { posz: plate - 0.02 * u }, secs: 0.8 });
         s.push({ kind: "input", name: "in1", value: 1 });
         s.push({ kind: "set", fields: { posz: plate } });
+        s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "input", name: "in1", value: 0 });
         s.push({ kind: "move", to: { posz: 0.8 * u }, secs: 0.8 });
         s.push({ kind: "state", state: "idle" });
@@ -358,6 +367,9 @@ define(function (require) {
                     continue;
                 } else if (next.kind === "input") {
                     st[next.name] = next.value;
+                    // Let observers (the coach) react to the trip itself,
+                    // e.g. to flash the input light during the hold.
+                    this._action({ type: "input", name: next.name, value: next.value });
                     continue;
                 } else if (next.kind === "done") {
                     this._action({ type: "sequence", name: next.name, phase: "done" });

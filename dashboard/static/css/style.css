@@ -4462,6 +4462,29 @@ body.fabmo-training #app_menu_container {
 #coach-bar .coach-show:hover {
 	background: rgba(217, 164, 32, 0.15);
 }
+/* A simulated switch tripped (the sim holds motion for the duration):
+   pop + glow the specific input light in the top bar. */
+.input.coach-input-pop {
+	animation: coach-input-pop 1.5s ease-out;
+}
+@keyframes coach-input-pop {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(217, 164, 32, 0.95);
+	}
+	25% {
+		transform: scale(1.7);
+		box-shadow: 0 0 2px 7px rgba(217, 164, 32, 0.65);
+	}
+	80% {
+		transform: scale(1.25);
+		box-shadow: 0 0 2px 5px rgba(217, 164, 32, 0.45);
+	}
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(217, 164, 32, 0);
+	}
+}
 /* The converging spotlight frame: starts at the viewport boundary and
    settles on the highlighted control; the giant shadow dims everything
    outside the frame on the way in. */

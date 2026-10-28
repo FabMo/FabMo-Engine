@@ -94,6 +94,14 @@ define(function (require) {
 
     Coach.prototype._onAction = function (action) {
         if (!this.lesson) return;
+        // A switch tripped in the sim (motion holds on these): pop the
+        // matching input light in the top bar so the trainee's eye finds it.
+        if (action.type === "input" && action.value) {
+            var light = $("." + action.name + ".input");
+            light.removeClass("coach-input-pop");
+            if (light[0]) void light[0].offsetWidth; // restart the animation
+            light.addClass("coach-input-pop");
+        }
         var step = this.lesson.steps[this.stepIndex];
         if (step && step._watch === undefined) step._watch = compileWatch(step.watch);
         if (step && step._watch && step._watch(action)) {
@@ -250,6 +258,7 @@ define(function (require) {
         clearTimeout(this._hlTimer);
         this._curSpec = null;
         $("#coach-zoom").remove();
+        $(".coach-input-pop").removeClass("coach-input-pop");
         $(".coach-highlight").removeClass("coach-highlight");
         var iframe = document.getElementById("app-iframe");
         try {
