@@ -4332,20 +4332,44 @@ a.update-available::after {
 }
 
 /* ===== Training Mode (coach.js) ===== */
+/* The banner sits BELOW the fixed 56px .tab-bar: the top bar (mini DRO,
+   input/output status) must stay visible -- lessons highlight it. */
 #coach-banner {
 	position: fixed;
-	top: 0;
+	top: 56px;
 	left: 0;
 	right: 0;
-	z-index: 10000;
+	z-index: 1004; /* under the tab-bar (1005), over the app area */
 	background: repeating-linear-gradient(45deg, #b07a00, #b07a00 18px, #9a6a00 18px, #9a6a00 36px);
 	color: #fff;
 	font-weight: bold;
 	letter-spacing: 0.06em;
 	text-align: center;
-	padding: 5px 8px;
-	font-size: 0.85rem;
+	padding: 3px 8px;
+	font-size: 0.8rem;
+	line-height: 1.4;
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+/* Mark the mode in the top bar itself without hiding anything in it */
+body.fabmo-training .tab-bar {
+	box-shadow: inset 0 -4px 0 #d9a420;
+}
+/* Push the app area down so the banner strip doesn't cover app controls
+   (same pattern as the a11y-mode padding; the container transitions padding) */
+body.fabmo-training #app-client-container,
+body.fabmo-training #app_menu_container {
+	padding-top: 28px;
+}
+/* Dashboard-side coach-marks (the same rules are injected into app iframes) */
+.coach-highlight {
+	outline: 3px solid #d9a420 !important;
+	outline-offset: 2px;
+	border-radius: 4px;
+	animation: coach-pulse 1.2s ease-in-out infinite;
+}
+@keyframes coach-pulse {
+	0%, 100% { outline-color: #d9a420; }
+	50% { outline-color: rgba(217, 164, 32, 0.25); }
 }
 #coach-banner button {
 	margin-left: 14px;
@@ -4362,7 +4386,8 @@ a.update-available::after {
 }
 #coach-bar {
 	position: fixed;
-	bottom: 14px;
+	bottom: 14px; /* coach.js raises this above the .footBar when it opens */
+	transition: bottom 0.3s; /* match .footBar's height transition */
 	left: 50%;
 	transform: translateX(-50%);
 	z-index: 10000;

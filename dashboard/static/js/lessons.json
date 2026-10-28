@@ -1,0 +1,35 @@
+{
+    "home-and-zero": {
+        "title": "Home the machine & zero the Z axis",
+        "steps": [
+            {
+                "text": "<b>Welcome to Training Mode.</b> The machine will <b>not</b> move — every control is live, but a simulated tool answers instead of the real one. We'll practice the startup routine every job begins with: homing, then zeroing the Z axis.",
+                "button": "Begin"
+            },
+            {
+                "text": "First, the machine needs to find its fixed home position. In the Console's <b>Machine</b> card, press the highlighted <b>Home&nbsp;XY</b> button.",
+                "watch": { "type": "code", "pattern": "(^|\\b)(C#?,?\\s*3|MH)\\b" },
+                "highlight": { "app": "#btn-home-xy" }
+            },
+            {
+                "text": "Watch the position readout in the top bar: the tool drives toward each proximity switch, backs off, and creeps back in slowly for an exact reading — first X, then Y. The <b>Inputs</b> lights show each switch tripping.",
+                "watch": { "type": "sequence", "name": "home" },
+                "highlight": { "dashboard": ".sm-axes, .io-group" }
+            },
+            {
+                "text": "The DRO now reads <b>X 0.00&nbsp;&nbsp;Y 0.00</b> — the machine knows where it is. Next: the Z axis is zeroed to the <b>top of your material</b> using the metal touch plate. On a real machine you'd rest the plate under the bit now. Press the highlighted <b>Home&nbsp;Z</b> button.",
+                "watch": { "type": "code", "pattern": "(^|\\b)C#?,?\\s*2\\b" },
+                "highlight": { "app": "#btn-home-z" }
+            },
+            {
+                "text": "The bit finds the plate twice — a fast touch, then a slow one for accuracy. Watch input 1 light up at each touch; Z is set from the plate's known thickness before retracting to a safe height.",
+                "watch": { "type": "sequence", "name": "zeroz" },
+                "highlight": { "dashboard": ".sm-axes, .io-group" }
+            },
+            {
+                "text": "<b>That's the whole startup routine.</b> Home XY once per session, zero the Z whenever the bit or material changes. This is exactly what you'll do on the real machine — the only difference is that it moves.",
+                "button": "Finish"
+            }
+        ]
+    }
+}
