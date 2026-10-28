@@ -117,6 +117,7 @@ define(function (require) {
         var step = steps[this.stepIndex];
         this._ui.text.html(step.text);
         this._ui.next.toggle(!!step.button).text(step.button || "");
+        this._ui.show.toggle(!!step.highlight);
         var dots = "";
         for (var i = 0; i < steps.length; i++) {
             dots += '<span class="coach-dot' + (i === this.stepIndex ? " active" : i < this.stepIndex ? " done" : "") + '"></span>';
@@ -130,22 +131,99 @@ define(function (require) {
     // ------------------------------------------------------- highlights
 
     Coach.prototype._applyHighlight = function (spec) {
+        this._curSpec = spec;
+        var self = this;
         if (spec.dashboard) {
             $(spec.dashboard).addClass("coach-highlight");
         }
         if (spec.app) {
             // The app may still be loading (or get relaunched) while this
-            // step is active: retry until the elements exist.
+            // step is active: retry until the elements exist, then play the
+            // zoom-in frame (its union rect includes any dashboard targets).
             var tries = 0;
-            var self = this;
             var attempt = function () {
                 if (!self.lesson) return;
-                if (!self._highlightInApp(spec.app) && tries++ < 20) {
+                if (self._highlightInApp(spec.app)) {
+                    self._playZoom();
+                } else if (tries++ < 20) {
                     self._hlTimer = setTimeout(attempt, 400);
+                } else if (spec.dashboard) {
+                    self._playZoom(); // app target never appeared; show what we have
                 }
             };
             attempt();
+        } else {
+            this._playZoom();
         }
+    };
+
+    // Fixed-viewport rects for every current highlight target; app-iframe
+    // elements are translated through the iframe's own offset.
+    Coach.prototype._targetRects = function () {
+        var spec = this._curSpec || {};
+        var rects = [];
+        if (spec.dashboard) {
+            $(spec.dashboard).each(function () {
+                var r = this.getBoundingClientRect();
+                if (r.width || r.height) rects.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+            });
+        }
+        if (spec.app) {
+            var iframe = document.getElementById("app-iframe");
+            try {
+                var doc = iframe && iframe.contentDocument;
+                if (doc) {
+                    var ir = iframe.getBoundingClientRect();
+                    var els = doc.querySelectorAll(spec.app);
+                    for (var i = 0; i < els.length; i++) {
+                        var r = els[i].getBoundingClientRect();
+                        if (r.width || r.height) {
+                            rects.push({
+                                left: r.left + ir.left,
+                                top: r.top + ir.top,
+                                right: r.right + ir.left,
+                                bottom: r.bottom + ir.top,
+                            });
+                        }
+                    }
+                }
+            } catch (e) {
+                /* cross-origin app */
+            }
+        }
+        return rects;
+    };
+
+    // A frame sweeps in from the screen boundary and settles on the
+    // target(s); the shadow outside it dims everything else on the way in.
+    Coach.prototype._playZoom = function () {
+        var rects = this._targetRects();
+        if (!rects.length) return;
+        var u = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+        rects.forEach(function (r) {
+            u.left = Math.min(u.left, r.left);
+            u.top = Math.min(u.top, r.top);
+            u.right = Math.max(u.right, r.right);
+            u.bottom = Math.max(u.bottom, r.bottom);
+        });
+        var pad = 6;
+        $("#coach-zoom").remove();
+        var box = $('<div id="coach-zoom"></div>').appendTo("body");
+        box.css({ left: 0, top: 0, width: window.innerWidth + "px", height: window.innerHeight + "px" });
+        box[0].getBoundingClientRect(); // commit the start frame before transitioning
+        box.addClass("coach-zoom-run");
+        box.css({
+            left: u.left - pad + "px",
+            top: u.top - pad + "px",
+            width: u.right - u.left + 2 * pad + "px",
+            height: u.bottom - u.top + 2 * pad + "px",
+        });
+        setTimeout(function () {
+            box.addClass("coach-zoom-done");
+        }, 750);
+        setTimeout(function () {
+            box.remove();
+        }, 1300);
     };
 
     Coach.prototype._highlightInApp = function (selector) {
@@ -170,6 +248,8 @@ define(function (require) {
 
     Coach.prototype._clearHighlights = function () {
         clearTimeout(this._hlTimer);
+        this._curSpec = null;
+        $("#coach-zoom").remove();
         $(".coach-highlight").removeClass("coach-highlight");
         var iframe = document.getElementById("app-iframe");
         try {
@@ -212,19 +292,23 @@ define(function (require) {
                 '<div class="coach-title"></div>' +
                 '<div class="coach-text"></div>' +
                 '<div class="coach-footer"><span class="coach-dots"></span>' +
-                '<button class="coach-next"></button></div>' +
+                '<span class="coach-btns">' +
+                '<button class="coach-show">&#8982; Highlight</button>' +
+                '<button class="coach-next"></button></span></div>' +
                 "</div>"
         );
         $("body").append(banner).append(bar);
         bar.find(".coach-title").text(this.lesson.title);
         banner.find("#coach-exit").on("click", this.exit.bind(this));
         var next = bar.find(".coach-next").on("click", this._advance.bind(this));
+        var show = bar.find(".coach-show").on("click", this._playZoom.bind(this));
         this._ui = {
             banner: banner,
             bar: bar,
             text: bar.find(".coach-text"),
             dots: bar.find(".coach-dots"),
             next: next,
+            show: show,
         };
     };
 

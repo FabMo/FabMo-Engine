@@ -4440,3 +4440,37 @@ body.fabmo-training #app_menu_container {
 #coach-bar .coach-next:hover {
 	background: #e8b63a;
 }
+#coach-bar .coach-btns {
+	display: flex;
+	gap: 8px;
+}
+#coach-bar .coach-show {
+	padding: 4px 12px;
+	border: 1px solid #d9a420;
+	border-radius: 4px;
+	background: transparent;
+	color: #d9a420;
+	font-size: 0.85rem;
+	cursor: pointer;
+}
+#coach-bar .coach-show:hover {
+	background: rgba(217, 164, 32, 0.15);
+}
+/* The converging spotlight frame: starts at the viewport boundary and
+   settles on the highlighted control; the giant shadow dims everything
+   outside the frame on the way in. */
+#coach-zoom {
+	position: fixed;
+	z-index: 10001;
+	pointer-events: none;
+	border: 3px solid #d9a420;
+	border-radius: 6px;
+	box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.3);
+}
+#coach-zoom.coach-zoom-run {
+	transition: all 0.65s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+#coach-zoom.coach-zoom-done {
+	transition: opacity 0.45s;
+	opacity: 0;
+}
