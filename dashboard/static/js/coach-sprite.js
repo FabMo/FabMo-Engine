@@ -1,10 +1,11 @@
 /*
  * coach-sprite.js is the Training Mode coach character: a little ShopBot
  * with a face, drawn to Brian's sketch (PRS profile): blue Y/Z carriage
- * behind a silver spindle, orange rail strip on the gray beam, drag chain
- * rolling along the beam top, yellow table edge over the open lower frame,
- * and the vacuum manifold between — five ball valves whose red handles
- * spin lazily while he idles or thinks.
+ * behind a silver spindle riding the light rail lines of the gray beam,
+ * leveler feet under the legs, yellow table edge over the open lower
+ * frame, and the vacuum manifold between — five ball valves whose red
+ * handles spin lazily while he idles or thinks. He hops — chunky,
+ * low-framerate — when he loads in at the start of a lesson.
  *
  * His goggle eyes look around the screen (and at whatever the lesson
  * points at), and while an instruction prints the carriage zips across
@@ -33,7 +34,6 @@ define(function () {
         RED_D = "#c01010",
         YEL = "#fad34d",
         YEL_D = "#d8b23a",
-        ORA = "#ffa800",
         STEEL = "#c8c8c8",
         GOLD = "#d9a420";
 
@@ -82,15 +82,31 @@ define(function () {
         this.celebrateT = 0;
         this.confetti = [];
 
+        // load-in hop: timeline index into HOP_FRAMES, advanced on a slow
+        // beat so it reads as chunky low-framerate animation
+        this.hopT = -1;
+
         this._raf = null;
         this._last = 0;
         this._destroyed = false;
     }
 
+    // whole-sprite y offsets, one per beat: crouch, leap, land, small bounce
+    var HOP_FRAMES = [1, 1, -5, -9, -10, -9, -5, 0, 1, -3, 0];
+    var HOP_BEAT = 0.09; // seconds per frame
+
+    CoachSprite.prototype.hop = function () {
+        this.hopT = 0;
+    };
+
     CoachSprite.prototype.attach = function (parent) {
         parent.appendChild(this.el);
         this._last = 0;
         var self = this;
+        // he hops when he loads in (lesson start builds a fresh sprite)
+        setTimeout(function () {
+            self.hop();
+        }, 350);
         var loop = function (ts) {
             if (self._destroyed) return;
             if (!self._last) self._last = ts;
@@ -177,6 +193,11 @@ define(function () {
         else this.carX += d > 0 ? maxStep : -maxStep;
         if (this.peck > 0) this.peck--;
 
+        if (this.hopT >= 0) {
+            this.hopT += dt;
+            if (this.hopT >= HOP_FRAMES.length * HOP_BEAT) this.hopT = -1;
+        }
+
         // valve spinning: pending steps advance the handle every beat
         for (var vi = 0; vi < this.valves.length; vi++) {
             var v = this.valves[vi];
@@ -257,17 +278,18 @@ define(function () {
         var ctx = this._ctx;
         var happy = this.celebrateT > 0;
         ctx.clearRect(0, 0, W, H);
+        // the load-in hop lifts the whole machine by a stepped offset
+        var hop = this.hopT >= 0 ? HOP_FRAMES[Math.min(HOP_FRAMES.length - 1, Math.floor(this.hopT / HOP_BEAT))] : 0;
         function R(x, y, w, h, c) {
             ctx.fillStyle = c;
-            ctx.fillRect(x, y, w, h);
+            ctx.fillRect(x, y + hop, w, h);
         }
         function P(x, y, c) {
             R(x, y, 1, 1, c);
         }
 
-        // --- beam: orange rail strip, gray extrusion w/ ribs, blue caps ---
-        R(3, 12, 54, 1, ORA);
-        R(3, 13, 54, 7, GRAY);
+        // --- beam: gray extrusion, light rails the carriage rides, blue caps ---
+        R(3, 12, 54, 8, GRAY);
         R(3, 14, 54, 1, LIGHT);
         R(3, 18, 54, 1, LIGHT);
         R(0, 12, 3, 8, BLUE);
@@ -290,8 +312,12 @@ define(function () {
         R(50, 32, 1, 10, LIGHT);
         R(2, 42, 56, 3, BLUE);
         R(2, 42, 56, 1, BLUE_HI);
-        R(2, 45, 3, 2, BLUE_D);
-        R(55, 45, 3, 2, BLUE_D);
+        // leveler feet: screw stem under each leg, wider pad on the floor
+        [2, 55].forEach(function (lx) {
+            P(lx + 1, 45, STEEL);
+            R(lx - 1, 46, 5, 1, BLUE_D);
+            R(lx - 1, 47, 5, 1, INK);
+        });
         for (var vi = 0; vi < this.valves.length; vi++) {
             var v = this.valves[vi];
             R(v.x, 33, 4, 9, WHITE);
@@ -311,25 +337,6 @@ define(function () {
         }
 
         var cx = Math.round(this.carX);
-
-        // --- drag chain: flat run on the beam, rolling C-loop at the
-        //     carriage. Painted before the eyes so it passes behind them.
-        var lx = Math.max(8, cx - 3);
-        for (var dx1 = 4; dx1 <= lx - 4; dx1++) P(dx1, 11, BLACK);
-        for (var dx2 = lx; dx2 <= cx + 2; dx2++) P(dx2, 1, BLACK);
-        P(lx - 4, 10, BLACK);
-        P(lx - 5, 9, BLACK);
-        P(lx - 5, 8, BLACK);
-        P(lx - 6, 7, BLACK);
-        P(lx - 6, 6, BLACK);
-        P(lx - 5, 5, BLACK);
-        P(lx - 5, 4, BLACK);
-        P(lx - 4, 3, BLACK);
-        P(lx - 3, 3, BLACK);
-        P(lx - 2, 2, BLACK);
-        P(lx - 1, 1, BLACK);
-        P(cx + 2, 2, BLACK);
-        P(cx + 2, 3, BLACK);
 
         // --- face: goggle eyes perched on the beam ---
         var self = this;
