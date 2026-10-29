@@ -4332,6 +4332,14 @@ a.update-available::after {
 }
 
 /* ===== Training Mode (coach.js) ===== */
+/* Pixel font for the game-style coach dialog (bundled: tools run offline).
+   Press Start 2P, OFL-licensed, latin subset. */
+@font-face {
+	font-family: "Press Start 2P";
+	font-style: normal;
+	font-weight: 400;
+	src: url("../fonts/press-start-2p-latin.woff2") format("woff2");
+}
 /* The banner sits BELOW the fixed 56px .tab-bar: the top bar (mini DRO,
    input/output status) must stay visible -- lessons highlight it. */
 #coach-banner {
@@ -4390,6 +4398,8 @@ body.fabmo-training #app_menu_container {
 #coach-banner button:hover {
 	background: rgba(255, 255, 255, 0.2);
 }
+/* The coach dialog: a game text box. Dark navy plate, white double border,
+   the pixel ShopBot character on the left typing the text out. */
 #coach-bar {
 	position: fixed;
 	bottom: 14px; /* coach.js raises this above the .footBar when it opens */
@@ -4398,22 +4408,46 @@ body.fabmo-training #app_menu_container {
 	left: 50%;
 	transform: translateX(-50%);
 	z-index: 10000;
-	width: min(620px, calc(100vw - 30px));
-	background: #2b3237;
+	width: min(720px, calc(100vw - 30px));
+	display: flex;
+	align-items: flex-end;
+	gap: 14px;
+	background: #101424;
 	color: #e8edf1;
-	border: 1px solid #b07a00;
-	border-radius: 6px;
-	padding: 10px 14px;
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-	font-size: 0.95rem;
-	line-height: 1.35;
+	border: 3px solid #f0f2f6;
+	border-radius: 4px;
+	box-shadow: 0 0 0 3px #101424, 0 6px 20px rgba(0, 0, 0, 0.55);
+	padding: 12px 16px 10px 12px;
+	font-family: "Press Start 2P", monospace;
+	image-rendering: pixelated;
+}
+#coach-bar .coach-sprite-box {
+	flex: none;
+	line-height: 0;
+}
+#coach-bar .coach-sprite-box canvas {
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}
+#coach-bar .coach-content {
+	flex: 1;
+	min-width: 0;
 }
 #coach-bar .coach-title {
-	font-size: 0.75rem;
-	text-transform: uppercase;
+	font-size: 8px;
 	letter-spacing: 0.08em;
+	text-transform: uppercase;
 	color: #d9a420;
-	margin-bottom: 4px;
+	margin-bottom: 8px;
+}
+#coach-bar .coach-text {
+	font-size: 10px;
+	line-height: 2;
+	min-height: 60px; /* three lines: the box doesn't grow as text prints */
+}
+#coach-bar .coach-text b {
+	color: #d9a420;
+	font-weight: normal; /* the pixel font has one weight; gold does the work */
 }
 #coach-bar .coach-footer {
 	display: flex;
@@ -4423,45 +4457,84 @@ body.fabmo-training #app_menu_container {
 }
 #coach-bar .coach-dot {
 	display: inline-block;
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	background: #55606a;
+	width: 6px;
+	height: 6px; /* square: it's a pixel */
+	background: #39445a;
 	margin-right: 5px;
 }
 #coach-bar .coach-dot.active {
 	background: #d9a420;
 }
 #coach-bar .coach-dot.done {
-	background: #7a8691;
+	background: #8a94a8;
 }
 #coach-bar .coach-next {
-	padding: 4px 16px;
-	border: none;
-	border-radius: 4px;
+	padding: 7px 14px 6px;
+	border: 2px solid #101424;
+	box-shadow: 0 0 0 2px #d9a420;
+	border-radius: 2px;
 	background: #d9a420;
-	color: #222;
-	font-weight: bold;
+	color: #101424;
+	font-family: "Press Start 2P", monospace;
+	font-size: 9px;
 	cursor: pointer;
 }
 #coach-bar .coach-next:hover {
 	background: #e8b63a;
+	box-shadow: 0 0 0 2px #e8b63a;
+}
+/* blinking "press the button" caret, classic dialog-box style */
+#coach-bar.coach-waiting .coach-next::after {
+	content: " \25BC";
+	animation: coach-caret 0.9s steps(1) infinite;
+}
+@keyframes coach-caret {
+	50% { opacity: 0; }
 }
 #coach-bar .coach-btns {
 	display: flex;
-	gap: 8px;
+	gap: 10px;
 }
 #coach-bar .coach-show {
-	padding: 4px 12px;
-	border: 1px solid #d9a420;
-	border-radius: 4px;
+	padding: 6px 10px 5px;
+	border: 2px solid #d9a420;
+	border-radius: 2px;
 	background: transparent;
 	color: #d9a420;
-	font-size: 0.85rem;
+	font-family: "Press Start 2P", monospace;
+	font-size: 8px;
 	cursor: pointer;
 }
 #coach-bar .coach-show:hover {
 	background: rgba(217, 164, 32, 0.15);
+}
+/* The sim-machine stage: lesson-controlled isometric view of the simulated
+   tool (coach-machine.js). Same game-plate styling; drag it by its header. */
+#coach-stage {
+	position: fixed;
+	top: 110px;
+	right: 18px;
+	z-index: 9999; /* under the coach bar and the zoom frame */
+	background: #101424;
+	border: 3px solid #f0f2f6;
+	border-radius: 4px;
+	box-shadow: 0 0 0 3px #101424, 0 6px 20px rgba(0, 0, 0, 0.55);
+	line-height: 0;
+}
+#coach-stage .coach-stage-head {
+	font-family: "Press Start 2P", monospace;
+	font-size: 8px;
+	line-height: 1;
+	color: #d9a420;
+	padding: 7px 10px 6px;
+	border-bottom: 2px solid #39445a;
+	cursor: move;
+	user-select: none;
+}
+#coach-stage canvas {
+	display: block;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
 }
 /* A simulated switch tripped (the sim holds motion for the duration):
    pop + glow the specific input light in the top bar. */

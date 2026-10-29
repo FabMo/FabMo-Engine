@@ -7,12 +7,13 @@
                 "button": "Begin"
             },
             {
-                "text": "First, the machine needs to find its fixed home position. In the Console's <b>Machine</b> card, press the highlighted <b>Home&nbsp;XY</b> button.",
+                "text": "First, the machine needs to find its fixed home position. I've put a <b>model of the simulated machine</b> on screen so you can watch it move. In the Console's <b>Machine</b> card, press the highlighted <b>Home&nbsp;XY</b> button.",
                 "watch": { "type": "code", "pattern": "(^|\\b)(C#?,?\\s*3|MH)\\b" },
-                "highlight": { "app": "#btn-home-xy" }
+                "highlight": { "app": "#btn-home-xy" },
+                "stage": true
             },
             {
-                "text": "Watch the position readout in the top bar: the tool drives toward each proximity switch, backs off, and creeps back in slowly for an exact reading — first X, then Y. The <b>Inputs</b> lights show each switch tripping.",
+                "text": "Watch the tool drive toward each proximity switch, back off, and creep back in slowly for an exact reading — first X, then Y. The <b>Inputs</b> lights in the top bar show each switch tripping.",
                 "watch": { "type": "sequence", "name": "home" },
                 "highlight": { "dashboard": ".sm-axes, .io-group" }
             },
@@ -28,6 +29,48 @@
             },
             {
                 "text": "<b>That's the whole startup routine.</b> Home XY once per session, zero the Z whenever the bit or material changes. This is exactly what you'll do on the real machine — the only difference is that it moves.",
+                "button": "Finish"
+            }
+        ]
+    },
+    "drive-the-machine": {
+        "title": "Drive the machine with the keypad",
+        "steps": [
+            {
+                "text": "<b>Time to take the wheel.</b> The keypad moves the machine by hand — it's how you position the bit before a cut. That little machine on screen is your simulated tool: it will follow everything you do.",
+                "button": "Begin",
+                "stage": true
+            },
+            {
+                "text": "Open the motion keypad: press the highlighted <b>keypad</b> button in the top bar.",
+                "watch": { "type": "manual", "cmd": "enter" },
+                "highlight": { "dashboard": "#man-start" }
+            },
+            {
+                "text": "These arrows jog the machine. <b>Press and hold</b> an arrow (your keyboard's arrow keys work too) and watch the tool glide over the table. The position readout follows along — let go and it stops instantly.",
+                "watch": { "type": "any", "of": [{ "type": "manual", "cmd": "start" }, { "type": "manual", "cmd": "fixed" }] },
+                "highlight": { "dashboard": "#keypad .drive-button.square" }
+            },
+            {
+                "text": "Now the fun part. Jog <b>Z down</b> with the highlighted button until the Z readout goes <b>below zero</b> — below zero is inside the material, and the simulated bit will start carving the sheet.",
+                "watch": { "type": "position", "axis": "z", "below": -0.02 },
+                "highlight": { "dashboard": "#keypad .z_neg_slow, #keypad .z_neg_fast" }
+            },
+            {
+                "text": "<b>You're cutting!</b> Steer with the XY arrows and draw something — the trench follows the bit. This is exactly what happens when a job runs: Z plunges into the material, then X and Y draw the toolpath.",
+                "watch": { "type": "any", "of": [{ "type": "manual", "cmd": "start" }, { "type": "manual", "cmd": "fixed" }] }
+            },
+            {
+                "text": "On a real machine you'd never drag the bit sideways out of a cut without thinking — but you <b>always</b> retract before traveling. Jog <b>Z up</b> until the readout is back above zero.",
+                "watch": { "type": "position", "axis": "z", "above": 0.05 },
+                "highlight": { "dashboard": "#keypad .z_pos_slow, #keypad .z_pos_fast" }
+            },
+            {
+                "text": "Close the keypad (press <b>Esc</b>, or click anywhere outside it) and the machine returns to idle.",
+                "watch": { "type": "manual", "cmd": "exit" }
+            },
+            {
+                "text": "<b>That's hand-driving.</b> Jog to position, plunge only on purpose, retract before you travel. Next time you stand at the real machine, the keypad will feel like an old friend.",
                 "button": "Finish"
             }
         ]

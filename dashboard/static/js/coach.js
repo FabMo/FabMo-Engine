@@ -1,18 +1,28 @@
 /*
  * coach.js is the Training Mode lesson runner. It owns the simulated
  * machine (fabmosim behind FabMoAPI's transports), the TRAINING banner, and
- * the step-by-step instruction bar. Lessons live in lessons.json as
+ * the step-by-step instruction dialog. Lessons live in lessons.json as
  * declarative steps; they advance by observing what the user's clicks send
  * through the API bridge -- the coached apps are the real, unmodified
  * dashboard apps. Steps can highlight elements in the dashboard chrome or
  * inside the current app's iframe (same-origin injection, like a11y).
+ *
+ * The instructions are delivered game-style: a pixel ShopBot character
+ * (coach-sprite.js) whose router carriage types each line out, and an
+ * optional isometric view of the simulated machine (coach-machine.js) that
+ * lessons can bring on stage so the trainee sees their moves play out.
  */
 define(function (require) {
     "use strict";
 
     var $ = require("jquery");
     var SimMachine = require("./libs/fabmosim.js");
+    var CoachSprite = require("./coach-sprite.js");
+    var CoachMachine = require("./coach-machine.js");
     var LESSONS = require("./lessons.json");
+
+    var TYPE_MS = 22; // ms per typed character
+    var TYPE_LINE = 44; // virtual carriage line length, characters
 
     // Injected into app iframes for app-side highlights; dashboard-side
     // highlights use the same rules from style.css.
@@ -24,6 +34,14 @@ define(function (require) {
     // watch specs from lessons.json -> predicate over sim actions
     function compileWatch(spec) {
         if (!spec) return null;
+        if (spec.type === "any") {
+            var preds = (spec.of || []).map(compileWatch);
+            return function (a) {
+                return preds.some(function (p) {
+                    return p && p(a);
+                });
+            };
+        }
         if (spec.type === "code") {
             var re = new RegExp(spec.pattern, "i");
             return function (a) {
@@ -36,8 +54,19 @@ define(function (require) {
             };
         }
         if (spec.type === "manual") {
+            // Optional axis/dir narrow a keypad watch to e.g. "jog Z down":
+            // start carries speed, fixed carries dist, on axis or second_axis.
             return function (a) {
-                return a.type === "manual" && a.cmd === spec.cmd;
+                if (a.type !== "manual" || a.cmd !== spec.cmd) return false;
+                if (!spec.axis) return true;
+                var c = a.code || {};
+                var v;
+                if ((c.axis || "").toLowerCase() === spec.axis) v = c.speed !== undefined ? c.speed : c.dist;
+                else if ((c.second_axis || "").toLowerCase() === spec.axis) v = c.second_speed !== undefined ? c.second_speed : c.second_dist;
+                else return false;
+                if (spec.dir === "neg") return v < 0;
+                if (spec.dir === "pos") return v > 0;
+                return true;
             };
         }
         return function () {
@@ -45,19 +74,39 @@ define(function (require) {
         };
     }
 
+    // "position" watches advance on the status stream instead of on actions:
+    // {type:"position", axis:"z", below:0} / {above:0}.
+    function checkPositionWatch(spec, status) {
+        if (!spec || spec.type !== "position") return false;
+        var v = status["pos" + spec.axis];
+        if (v === undefined || v === null) return false;
+        if (spec.below !== undefined) return v < spec.below;
+        if (spec.above !== undefined) return v > spec.above;
+        return false;
+    }
+
     function Coach(engine, context) {
         this.engine = engine;
         this.context = context;
         this.sim = new SimMachine(engine);
         this.sim.onAction(this._onAction.bind(this));
+        this.machine = new CoachMachine(engine);
+        this.sprite = null; // built with the UI, destroyed with it
         this.lesson = null;
         this.stepIndex = 0;
         this._ui = null;
         this._hlTimer = null;
+        this._typeTimer = null;
         // Registered once; inert outside a lesson (FabMoAPI has no off()).
         var self = this;
-        this.engine.on("status", function () {
-            if (self.lesson) self._reposition();
+        this.engine.on("status", function (status) {
+            if (!self.lesson) return;
+            self._reposition();
+            var step = self.lesson.steps[self.stepIndex];
+            if (step && status && checkPositionWatch(step.watch, status)) {
+                self.stepIndex++;
+                self._showStep();
+            }
         });
     }
 
@@ -73,13 +122,13 @@ define(function (require) {
         this._buildUI();
         this._showStep();
         $(window).on("resize.coach", this._reposition.bind(this));
-        // The lesson happens in the real Console app. Launching it destroys
-        // the Training iframe (which had focus from the Start click) and the
-        // Console grabs focus as it loads -- so the first click on Begin would
-        // only pull focus back to the parent. Pull focus to the coach bar once
+        // The lesson happens in a real app. Launching it destroys the
+        // Training iframe (which had focus from the Start click) and the app
+        // grabs focus as it loads -- so the first click on Begin would only
+        // pull focus back to the parent. Pull focus to the coach bar once
         // the app has settled so that first click actually registers.
         var self = this;
-        this.context.launchApp("fabmo-sb4", {}, function () {
+        this.context.launchApp(lesson.app || "fabmo-sb4", {}, function () {
             self._focusBar();
             setTimeout(function () {
                 self._focusBar();
@@ -91,16 +140,20 @@ define(function (require) {
     Coach.prototype.exit = function () {
         if (!this.lesson) return;
         this.lesson = null;
+        clearInterval(this._typeTimer);
         this._clearHighlights();
+        this.machine.hide();
         this.sim.exit();
         if (this._ui) {
+            if (this.sprite) this.sprite.destroy();
+            this.sprite = null;
             this._ui.banner.remove();
             this._ui.bar.remove();
             this._ui = null;
         }
         $(window).off("resize.coach");
         $("body").removeClass("fabmo-training");
-        // Land back on the lesson list, not in the no-longer-simulated Console.
+        // Land back on the lesson list, not in the no-longer-simulated app.
         this.context.launchApp("fabmo-training", {}, function () {});
     };
 
@@ -123,6 +176,12 @@ define(function (require) {
     };
 
     Coach.prototype._advance = function () {
+        // While text is printing, the button fast-forwards; once printed, it
+        // advances the lesson (classic dialog-box behavior).
+        if (this._typeTimer) {
+            this._finishTyping();
+            return;
+        }
         this.stepIndex++;
         this._showStep();
     };
@@ -135,20 +194,96 @@ define(function (require) {
             return;
         }
         var step = steps[this.stepIndex];
-        this._ui.text.html(step.text);
-        this._ui.next.toggle(!!step.button).text(step.button || "");
-        this._ui.show.toggle(!!step.highlight);
+        var last = this.stepIndex === steps.length - 1;
         var dots = "";
         for (var i = 0; i < steps.length; i++) {
             dots += '<span class="coach-dot' + (i === this.stepIndex ? " active" : i < this.stepIndex ? " done" : "") + '"></span>';
         }
         this._ui.dots.html(dots);
         this._clearHighlights();
-        if (step.highlight) this._applyHighlight(step.highlight);
+        // Lessons bring the sim-machine stage on and off per step; leaving
+        // the flag out keeps whatever state the previous step set.
+        if (step.stage !== undefined) {
+            if (step.stage) this.machine.show(typeof step.stage === "object" ? step.stage : {});
+            else this.machine.hide();
+        }
+        // Buttons and highlights wait until the line has finished printing.
+        this._ui.next.hide();
+        this._ui.show.hide();
+        this._ui.bar.removeClass("coach-waiting");
+        var self = this;
+        this._typeText(step.text, function () {
+            self._ui.next.toggle(!!step.button).text(step.button || "");
+            self._ui.show.toggle(!!step.highlight);
+            if (step.button) {
+                self._ui.bar.addClass("coach-waiting");
+                self._focusBar();
+            }
+            if (step.highlight) self._applyHighlight(step.highlight);
+            if (last && self.sprite) self.sprite.celebrate();
+        });
         this._reposition();
-        // Keep focus in the parent so a button step's first click registers
-        // (the user's prior click was inside the Console iframe).
         if (step.button) this._focusBar();
+    };
+
+    // --------------------------------------------------------- typewriter
+
+    // Print the step's HTML character by character, preserving markup: the
+    // full HTML is set, then every text node is emptied and refilled one
+    // character at a time. The sprite's carriage tracks the virtual column.
+    Coach.prototype._typeText = function (html, done) {
+        clearInterval(this._typeTimer);
+        this._typeTimer = null;
+        var el = this._ui.text[0];
+        this._ui.text.html(html);
+        var nodes = [];
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+        var n;
+        while ((n = walker.nextNode())) nodes.push({ node: n, full: n.nodeValue });
+        nodes.forEach(function (t) {
+            t.node.nodeValue = "";
+        });
+        this._typeState = { nodes: nodes, i: 0, pos: 0, col: 0, done: done };
+        if (!nodes.length) return done();
+        if (this.sprite) this.sprite.startTyping();
+        var self = this;
+        this._typeTimer = setInterval(function () {
+            self._typeTick();
+        }, TYPE_MS);
+    };
+
+    Coach.prototype._typeTick = function () {
+        var st = this._typeState;
+        var cur = st.nodes[st.i];
+        if (!cur) return this._finishTyping();
+        var ch = cur.full.charAt(st.pos);
+        cur.node.nodeValue += ch;
+        st.pos++;
+        if (st.pos >= cur.full.length) {
+            st.i++;
+            st.pos = 0;
+        }
+        if (/\s/.test(ch) && st.col > TYPE_LINE - 8) {
+            st.col = 0; // wrap at a space near the margin: carriage return
+            if (this.sprite) this.sprite.typeChar(0, true);
+        } else {
+            st.col++;
+            if (this.sprite) this.sprite.typeChar(Math.min(1, st.col / TYPE_LINE), false);
+        }
+        if (st.i >= st.nodes.length) this._finishTyping();
+    };
+
+    Coach.prototype._finishTyping = function () {
+        clearInterval(this._typeTimer);
+        this._typeTimer = null;
+        var st = this._typeState;
+        if (!st) return;
+        this._typeState = null;
+        st.nodes.forEach(function (t) {
+            t.node.nodeValue = t.full;
+        });
+        if (this.sprite) this.sprite.endTyping();
+        if (st.done) st.done();
     };
 
     // Move document focus to the coach bar (out of any app iframe) without a
@@ -179,14 +314,54 @@ define(function (require) {
             var attempt = function () {
                 if (!self.lesson) return;
                 if (self._highlightInApp(spec.app)) {
-                    self._playZoom();
+                    self._revealAndZoom();
                 } else if (tries++ < 20) {
                     self._hlTimer = setTimeout(attempt, 400);
                 } else if (spec.dashboard) {
-                    self._playZoom(); // app target never appeared; show what we have
+                    self._revealAndZoom(); // app target never appeared; show what we have
                 }
             };
             attempt();
+        } else {
+            this._revealAndZoom();
+        }
+    };
+
+    // Gracefully bring an off-screen target into view before spotlighting
+    // it: smooth-scroll the first highlighted element (app iframes are
+    // same-origin, so scrollIntoView inside them works), then play the zoom
+    // once the scroll has settled.
+    Coach.prototype._revealAndZoom = function () {
+        var spec = this._curSpec || {};
+        var scrolled = false;
+        var reveal = function (el, vh) {
+            var r = el.getBoundingClientRect();
+            if (r.top >= 0 && r.bottom <= vh) return false;
+            try {
+                el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+            } catch (e) {
+                el.scrollIntoView();
+            }
+            return true;
+        };
+        try {
+            if (spec.app) {
+                var iframe = document.getElementById("app-iframe");
+                var doc = iframe && iframe.contentDocument;
+                var target = doc && doc.querySelector(spec.app);
+                if (target) scrolled = reveal(target, iframe.contentWindow.innerHeight);
+            }
+            if (spec.dashboard && $(spec.dashboard)[0]) {
+                scrolled = reveal($(spec.dashboard)[0], window.innerHeight) || scrolled;
+            }
+        } catch (e) {
+            /* cross-origin app: zoom to whatever is visible */
+        }
+        var self = this;
+        if (scrolled) {
+            setTimeout(function () {
+                self._playZoom();
+            }, 480);
         } else {
             this._playZoom();
         }
@@ -231,6 +406,7 @@ define(function (require) {
 
     // A frame sweeps in from the screen boundary and settles on the
     // target(s); the shadow outside it dims everything else on the way in.
+    // The coach's eyes follow it to the target.
     Coach.prototype._playZoom = function () {
         var rects = this._targetRects();
         if (!rects.length) return;
@@ -253,6 +429,7 @@ define(function (require) {
             width: u.right - u.left + 2 * pad + "px",
             height: u.bottom - u.top + 2 * pad + "px",
         });
+        if (this.sprite) this.sprite.lookAt((u.left + u.right) / 2, (u.top + u.bottom) / 2);
         setTimeout(function () {
             box.addClass("coach-zoom-done");
         }, 750);
@@ -325,19 +502,28 @@ define(function (require) {
         );
         var bar = $(
             '<div id="coach-bar" tabindex="-1">' +
+                '<div class="coach-sprite-box"></div>' +
+                '<div class="coach-content">' +
                 '<div class="coach-title"></div>' +
                 '<div class="coach-text"></div>' +
                 '<div class="coach-footer"><span class="coach-dots"></span>' +
                 '<span class="coach-btns">' +
                 '<button class="coach-show">&#8982; Highlight</button>' +
                 '<button class="coach-next"></button></span></div>' +
-                "</div>"
+                "</div></div>"
         );
         $("body").append(banner).append(bar);
         bar.find(".coach-title").text(this.lesson.title);
         banner.find("#coach-exit").on("click", this.exit.bind(this));
         var next = bar.find(".coach-next").on("click", this._advance.bind(this));
-        var show = bar.find(".coach-show").on("click", this._playZoom.bind(this));
+        var show = bar.find(".coach-show").on("click", this._revealAndZoom.bind(this));
+        // Clicking the dialog text fast-forwards the typewriter.
+        var self = this;
+        bar.find(".coach-content").on("mousedown", function () {
+            if (self._typeTimer) self._finishTyping();
+        });
+        this.sprite = new CoachSprite();
+        this.sprite.attach(bar.find(".coach-sprite-box")[0]);
         this._ui = {
             banner: banner,
             bar: bar,

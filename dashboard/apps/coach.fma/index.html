@@ -23,6 +23,7 @@
             max-width: 560px;
         }
         .lesson {
+            margin-bottom: 12px;
             background: #fff;
             border: 1px solid #d7dde2;
             border-left: 4px solid #b07a00;
@@ -78,13 +79,7 @@
         machine &mdash; your tool will not move during a lesson.
     </p>
 
-    <div class="lesson">
-        <div>
-            <h2>Home the machine &amp; zero the Z axis</h2>
-            <p>The startup routine every job begins with, practiced in the Console app.</p>
-        </div>
-        <button id="start-home">Start</button>
-    </div>
+    <div id="lessons"></div>
 
     <div id="err"></div>
     <p class="note">
@@ -95,14 +90,44 @@
     <script src="../../js/libs/fabmo.js"></script>
     <script>
         var fabmo = new FabMoDashboard();
-        document.getElementById("start-home").addEventListener("click", function () {
-            document.getElementById("err").textContent = "";
-            fabmo.startTraining("home-and-zero", function (err) {
-                if (err) {
-                    document.getElementById("err").textContent =
-                        typeof err === "string" ? err : err.message || "Could not start the lesson.";
-                }
+        // Keep ids in sync with dashboard/static/js/lessons.json
+        var LESSONS = [
+            {
+                id: "home-and-zero",
+                title: "Home the machine & zero the Z axis",
+                blurb: "The startup routine every job begins with, practiced in the Console app.",
+            },
+            {
+                id: "drive-the-machine",
+                title: "Drive the machine with the keypad",
+                blurb: "Jog by hand, plunge below zero, and carve the simulated sheet while you watch.",
+            },
+        ];
+        var list = document.getElementById("lessons");
+        LESSONS.forEach(function (lesson) {
+            var card = document.createElement("div");
+            card.className = "lesson";
+            var info = document.createElement("div");
+            var h = document.createElement("h2");
+            h.textContent = lesson.title;
+            var p = document.createElement("p");
+            p.textContent = lesson.blurb;
+            info.appendChild(h);
+            info.appendChild(p);
+            var btn = document.createElement("button");
+            btn.textContent = "Start";
+            btn.addEventListener("click", function () {
+                document.getElementById("err").textContent = "";
+                fabmo.startTraining(lesson.id, function (err) {
+                    if (err) {
+                        document.getElementById("err").textContent =
+                            typeof err === "string" ? err : err.message || "Could not start the lesson.";
+                    }
+                });
             });
+            card.appendChild(info);
+            card.appendChild(btn);
+            list.appendChild(card);
         });
     </script>
 </body>
