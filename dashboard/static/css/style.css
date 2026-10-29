@@ -4377,7 +4377,14 @@ body.fabmo-training {
 body.fabmo-training #app-client-container,
 body.fabmo-training #app_menu_container {
 	padding-top: 28px;
-	margin-left: var(--coach-rail-w);
+	margin-right: var(--coach-rail-w);
+}
+/* The rail replaces the right-side slide-out DRO during a lesson: hide the
+   panel and its top-bar toggle (the mini DRO in the tab bar stays — lessons
+   point at it). */
+body.fabmo-training #right-menu,
+body.fabmo-training #dro-tab {
+	display: none !important;
 }
 /* Dashboard-side coach-marks (the same rules are injected into app iframes) */
 .coach-highlight {
@@ -4403,20 +4410,20 @@ body.fabmo-training #app_menu_container {
 #coach-banner button:hover {
 	background: rgba(255, 255, 255, 0.2);
 }
-/* The coach rail: a docked left column holding the dialog on top and the
-   sim-machine stage below. The app area shifts right to sit beside it.
-   Sits under the banner (1001), the pop-out DRO (1002), and the left nav
-   (1003), so all of those still open over it. */
+/* The coach rail: a docked right column holding the dialog on top and the
+   sim-machine stage below; it replaces the slide-out DRO for the duration
+   of the lesson, and the app area shifts left to sit beside it. Sits under
+   the banner (1001) and the left nav (1003), so those still open over it. */
 #coach-rail {
 	position: fixed;
 	top: 80px; /* 56px tab-bar + the TRAINING banner strip */
-	left: 0;
+	right: 0;
 	bottom: 0; /* coach.js raises this when the .footBar opens */
 	transition: bottom 0.3s; /* match .footBar's height transition */
 	width: var(--coach-rail-w, clamp(280px, 32vw, 400px));
 	z-index: 1000;
 	background: #0c1020;
-	border-right: 2px solid #2c3854;
+	border-left: 2px solid #2c3854;
 	padding: 12px;
 	box-sizing: border-box;
 	display: flex;
