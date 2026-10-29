@@ -127,7 +127,16 @@ define(function () {
         this.visible = true;
         this.carved = {};
         if (!this.el) this._build();
-        document.body.appendChild(this.el);
+        // Docked (options.parent, e.g. the coach rail): static child of the
+        // parent, full width, no dragging. Otherwise a floating panel.
+        this._docked = !!options.parent;
+        this.el.classList.toggle("docked", this._docked);
+        if (this._docked) {
+            this.el.style.left = "";
+            this.el.style.top = "";
+            this.el.style.right = "";
+        }
+        (options.parent || document.body).appendChild(this.el);
         var status = this.engine.status || {};
         this._onStatus(status);
         this.draw.x = this.target.x;
@@ -173,9 +182,11 @@ define(function () {
         this._img = this._ctx.createImageData(W, H);
         this._buf = new Uint32Array(this._img.data.buffer);
 
-        // drag by the header
+        // drag by the header (floating mode only)
+        var self2 = this;
         var drag = null;
         head.addEventListener("mousedown", function (e) {
+            if (self2._docked) return;
             var r = el.getBoundingClientRect();
             drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
             e.preventDefault();

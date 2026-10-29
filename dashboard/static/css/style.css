@@ -4368,11 +4368,16 @@ body.fabmo-training .tab-bar {
 body.fabmo-training .left-off-canvas-menu {
 	z-index: 1003;
 }
-/* Push the app area down so the banner strip doesn't cover app controls
-   (same pattern as the a11y-mode padding; the container transitions padding) */
+/* Push the app area down past the banner, and right past the coach rail,
+   so lesson chrome never covers the controls it's teaching. (Padding-top
+   follows the a11y-mode pattern; the container transitions padding.) */
+body.fabmo-training {
+	--coach-rail-w: clamp(280px, 32vw, 400px);
+}
 body.fabmo-training #app-client-container,
 body.fabmo-training #app_menu_container {
 	padding-top: 28px;
+	margin-left: var(--coach-rail-w);
 }
 /* Dashboard-side coach-marks (the same rules are injected into app iframes) */
 .coach-highlight {
@@ -4398,31 +4403,49 @@ body.fabmo-training #app_menu_container {
 #coach-banner button:hover {
 	background: rgba(255, 255, 255, 0.2);
 }
-/* The coach dialog: a game text box. Dark navy plate, white double border,
-   the pixel ShopBot character on the left typing the text out. */
-#coach-bar {
+/* The coach rail: a docked left column holding the dialog on top and the
+   sim-machine stage below. The app area shifts right to sit beside it.
+   Sits under the banner (1001), the pop-out DRO (1002), and the left nav
+   (1003), so all of those still open over it. */
+#coach-rail {
 	position: fixed;
-	bottom: 14px; /* coach.js raises this above the .footBar when it opens */
+	top: 80px; /* 56px tab-bar + the TRAINING banner strip */
+	left: 0;
+	bottom: 0; /* coach.js raises this when the .footBar opens */
 	transition: bottom 0.3s; /* match .footBar's height transition */
-	outline: none; /* focused (tabindex -1) to pull focus out of app iframes */
-	left: 50%;
-	transform: translateX(-50%);
-	z-index: 10000;
-	width: min(720px, calc(100vw - 30px));
+	width: var(--coach-rail-w, clamp(280px, 32vw, 400px));
+	z-index: 1000;
+	background: #0c1020;
+	border-right: 2px solid #2c3854;
+	padding: 12px;
+	box-sizing: border-box;
 	display: flex;
-	align-items: flex-end;
-	gap: 14px;
+	flex-direction: column;
+	gap: 12px;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+#coach-rail .coach-stage-slot {
+	line-height: 0;
+}
+/* The coach dialog: a game text box. Dark navy plate, white double border,
+   the pixel ShopBot character up top typing the text out below him. */
+#coach-bar {
+	outline: none; /* focused (tabindex -1) to pull focus out of app iframes */
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 	background: #101424;
 	color: #e8edf1;
 	border: 3px solid #f0f2f6;
 	border-radius: 4px;
-	box-shadow: 0 0 0 3px #101424, 0 6px 20px rgba(0, 0, 0, 0.55);
-	padding: 12px 16px 10px 12px;
+	box-shadow: 0 0 0 3px #101424;
+	padding: 12px 14px 10px;
 	font-family: "Press Start 2P", monospace;
 	image-rendering: pixelated;
 }
 #coach-bar .coach-sprite-box {
-	flex: none;
+	align-self: center;
 	line-height: 0;
 }
 #coach-bar .coach-sprite-box canvas {
@@ -4453,6 +4476,8 @@ body.fabmo-training #app_menu_container {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	flex-wrap: wrap; /* the rail is narrow; let the buttons drop a line */
+	gap: 6px;
 	margin-top: 8px;
 }
 #coach-bar .coach-dot {
@@ -4535,6 +4560,20 @@ body.fabmo-training #app_menu_container {
 	display: block;
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
+}
+/* Docked in the coach rail: a static block that fills the rail width. */
+#coach-stage.docked {
+	position: static;
+	width: 100%;
+	box-sizing: border-box;
+	box-shadow: 0 0 0 3px #101424;
+}
+#coach-stage.docked .coach-stage-head {
+	cursor: default;
+}
+#coach-stage.docked canvas {
+	width: 100% !important; /* overrides the inline floating-mode size */
+	height: auto !important;
 }
 /* A simulated switch tripped (the sim holds motion for the duration):
    pop + glow the specific input light in the top bar. */

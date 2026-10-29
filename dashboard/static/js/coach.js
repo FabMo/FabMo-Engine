@@ -148,7 +148,7 @@ define(function (require) {
             if (this.sprite) this.sprite.destroy();
             this.sprite = null;
             this._ui.banner.remove();
-            this._ui.bar.remove();
+            this._ui.rail.remove();
             this._ui = null;
         }
         $(window).off("resize.coach");
@@ -204,8 +204,13 @@ define(function (require) {
         // Lessons bring the sim-machine stage on and off per step; leaving
         // the flag out keeps whatever state the previous step set.
         if (step.stage !== undefined) {
-            if (step.stage) this.machine.show(typeof step.stage === "object" ? step.stage : {});
-            else this.machine.hide();
+            if (step.stage) {
+                var opts = typeof step.stage === "object" ? step.stage : {};
+                opts.parent = this._ui.stageSlot[0]; // dock into the rail
+                this.machine.show(opts);
+            } else {
+                this.machine.hide();
+            }
         }
         // Buttons and highlights wait until the line has finished printing.
         this._ui.next.hide();
@@ -478,7 +483,7 @@ define(function (require) {
 
     // ----------------------------------------------------------- layout
 
-    // Keep the instruction card above the run-control footer (.footBar
+    // Keep the rail's bottom clear of the run-control footer (.footBar
     // animates its height between 0 and open over 0.3s -- re-measure after
     // the transition settles too).
     Coach.prototype._reposition = function () {
@@ -487,19 +492,23 @@ define(function (require) {
         var set = function () {
             if (!self._ui) return;
             var foot = $(".footBar").height() || 0;
-            self._ui.bar.css("bottom", foot + 14 + "px");
+            self._ui.rail.css("bottom", foot + "px");
         };
         set();
         clearTimeout(this._footTimer);
         this._footTimer = setTimeout(set, 400);
     };
 
+    // The lesson chrome is a docked left rail -- dialog on top, sim-machine
+    // stage below -- and the app area shifts right to sit beside it, so the
+    // coach never covers the controls it's teaching.
     Coach.prototype._buildUI = function () {
         $("body").addClass("fabmo-training");
         var banner = $(
             '<div id="coach-banner"><span class="coach-banner-text">TRAINING MODE &mdash; the machine will not move</span>' +
                 '<button id="coach-exit">Exit Training</button></div>'
         );
+        var rail = $('<div id="coach-rail"></div>');
         var bar = $(
             '<div id="coach-bar" tabindex="-1">' +
                 '<div class="coach-sprite-box"></div>' +
@@ -512,7 +521,9 @@ define(function (require) {
                 '<button class="coach-next"></button></span></div>' +
                 "</div></div>"
         );
-        $("body").append(banner).append(bar);
+        var stageSlot = $('<div class="coach-stage-slot"></div>');
+        rail.append(bar).append(stageSlot);
+        $("body").append(banner).append(rail);
         bar.find(".coach-title").text(this.lesson.title);
         banner.find("#coach-exit").on("click", this.exit.bind(this));
         var next = bar.find(".coach-next").on("click", this._advance.bind(this));
@@ -526,6 +537,8 @@ define(function (require) {
         this.sprite.attach(bar.find(".coach-sprite-box")[0]);
         this._ui = {
             banner: banner,
+            rail: rail,
+            stageSlot: stageSlot,
             bar: bar,
             text: bar.find(".coach-text"),
             dots: bar.find(".coach-dots"),
