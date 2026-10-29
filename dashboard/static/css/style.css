@@ -4429,16 +4429,20 @@ body.fabmo-training #dro-tab {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	overflow-y: auto;
-	overflow-x: hidden;
+	overflow: hidden; /* the text pane scrolls internally; nothing else moves */
 }
+/* The stage is stationary: pinned to the rail bottom, never pushed by the
+   dialog growing. The dialog absorbs all height changes via text scroll. */
 #coach-rail .coach-stage-slot {
+	flex: none;
 	line-height: 0;
 }
 /* The coach dialog: a game text box. Dark navy plate, white double border,
    the pixel ShopBot character up top typing the text out below him. */
 #coach-bar {
 	outline: none; /* focused (tabindex -1) to pull focus out of app iframes */
+	flex: 1 1 auto; /* take the rail height the stage doesn't use... */
+	min-height: 0; /* ...and let the text pane inside actually shrink */
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -4473,7 +4477,12 @@ body.fabmo-training #dro-tab {
 #coach-bar .coach-text {
 	font-size: 10px;
 	line-height: 2;
-	min-height: 60px; /* three lines: the box doesn't grow as text prints */
+	flex: 1 1 auto;
+	min-height: 40px; /* two lines always visible */
+	overflow-y: auto; /* long steps scroll here instead of moving the rail */
+	scrollbar-width: thin;
+	scrollbar-color: #39445a #101424;
+	padding-right: 4px;
 }
 #coach-bar .coach-text b {
 	color: #d9a420;

@@ -241,6 +241,7 @@ define(function (require) {
         this._typeTimer = null;
         var el = this._ui.text[0];
         this._ui.text.html(html);
+        el.scrollTop = 0; // fresh step starts at the top of the pane
         var nodes = [];
         var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
         var n;
@@ -264,6 +265,9 @@ define(function (require) {
         var ch = cur.full.charAt(st.pos);
         cur.node.nodeValue += ch;
         st.pos++;
+        // the pane is fixed-height: follow the print head as it fills
+        var pane = this._ui.text[0];
+        if (pane.scrollHeight > pane.clientHeight) pane.scrollTop = pane.scrollHeight;
         if (st.pos >= cur.full.length) {
             st.i++;
             st.pos = 0;
@@ -287,6 +291,8 @@ define(function (require) {
         st.nodes.forEach(function (t) {
             t.node.nodeValue = t.full;
         });
+        var pane = this._ui && this._ui.text[0];
+        if (pane && pane.scrollHeight > pane.clientHeight) pane.scrollTop = pane.scrollHeight;
         if (this.sprite) this.sprite.endTyping();
         if (st.done) st.done();
     };
