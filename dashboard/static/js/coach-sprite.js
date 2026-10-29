@@ -1,46 +1,54 @@
 /*
  * coach-sprite.js is the Training Mode coach character: a little ShopBot
- * gantry machine with a face. Its eyes look around the screen (and at
- * whatever the lesson is pointing at), and while an instruction prints the
- * router carriage zips back and forth across the gantry like a typewriter
- * head, pecking each character onto the sheet on its table. Pixel-art
- * rendering in the style of the labs Ball Mill game: low-res canvas,
- * integer-upscaled with image-rendering: pixelated.
+ * with a face, drawn to Brian's sketch (PRS profile): blue Y/Z carriage
+ * behind a silver spindle, orange rail strip on the gray beam, drag chain
+ * rolling along the beam top, yellow table edge over the open lower frame,
+ * and the vacuum manifold between — five ball valves whose red handles
+ * spin lazily while he idles or thinks.
+ *
+ * His goggle eyes look around the screen (and at whatever the lesson
+ * points at), and while an instruction prints the carriage zips across
+ * the gantry like a typewriter head, pecking each character onto the
+ * table edge. Pixel-art rendering in the style of the labs Ball Mill
+ * game: low-res canvas, integer-upscaled with image-rendering: pixelated.
  */
 define(function () {
     "use strict";
 
-    var W = 72,
+    var W = 60,
         H = 48,
         SCALE = 2;
 
-    // Palette (ball mill aluminum/steel + ShopBot blue)
-    var AL = "#c2c6ca",
-        AL_D = "#8e9298",
-        AL_HI = "#eaeef2",
-        OUT = "#3a3e44",
-        SEAM = "#6a6e74",
-        BLUE = "#22407a",
-        BLUE_HI = "#3a5e9e",
-        BLUE_D = "#16294e",
-        WOOD = "#c89b63",
-        WOOD_D = "#b2854f",
-        SHEET = "#e8d5b0",
-        SHEET_D = "#d4bd92",
+    // Palette sampled from Brian's "ShopBot Tutorial Character.png"
+    var BLUE = "#0d2aa6",
+        BLUE_HI = "#2a48c8",
+        BLUE_D = "#081d70",
+        GRAY = "#b8b8b8",
+        LIGHT = "#e3e3e3",
+        DARK = "#6a6a6a",
+        BLACK = "#000000",
         WHITE = "#ffffff",
         INK = "#10141c",
-        STEEL = "#a8b0bc",
-        NUT = "#26262c",
+        RED = "#ff2020",
+        RED_D = "#c01010",
+        YEL = "#fad34d",
+        YEL_D = "#d8b23a",
+        ORA = "#ffa800",
+        STEEL = "#c8c8c8",
         GOLD = "#d9a420";
 
-    var CONFETTI = [GOLD, BLUE_HI, WHITE, "#e8b63a", "#7a9ad0"];
+    var CONFETTI = [GOLD, BLUE_HI, WHITE, RED, "#7a9ad0"];
 
-    // Carriage geometry: left edge travel range and fixed sizes
+    // Carriage geometry: left-edge travel range, fixed sizes
     var CAR_W = 11,
-        CAR_MIN = 12,
-        CAR_MAX = 49;
-    var SHEET_X0 = 12,
-        SHEET_X1 = 59;
+        CAR_MIN = 5,
+        CAR_MAX = 44;
+    var TABLE_X0 = 7,
+        TABLE_X1 = 53; // where typing marks may print (yellow table edge)
+    var EYES = [11, 41]; // goggle left edges
+
+    // Valve handles cycle vertical -> mid -> horizontal -> mid -> ...
+    var VALVE_SEQ = [0, 1, 2, 1];
 
     function CoachSprite() {
         this.el = document.createElement("canvas");
@@ -51,14 +59,20 @@ define(function () {
         this.el.style.height = H * SCALE + "px";
         this._ctx = this.el.getContext("2d");
 
-        this.carX = (CAR_MIN + CAR_MAX) / 2; // carriage left edge (float)
+        this.carX = 24; // carriage left edge (float)
         this.carTarget = this.carX;
         this.carSpeed = 40; // px/s (idle drift)
         this.peck = 0; // frames of bit-peck remaining
-        this.marks = []; // printed "text" pixel x positions on the sheet
+        this.marks = []; // printed "text" pixel x positions on the table
         this.typing = false;
 
-        this.pupil = { x: 0, y: 0 }; // current pupil offset (-2..2, -2..2)
+        // five manifold valves: seq index + pending spin steps
+        this.valves = [];
+        for (var i = 0; i < 5; i++) {
+            this.valves.push({ x: 8 + i * 8, hy: [36, 35, 37, 36, 35][i], seq: [0, 2, 0, 1, 0][i], spin: 0, t: 0 });
+        }
+
+        this.pupil = { x: 0, y: 0 }; // current pupil offset (-2..2, -2..3)
         this.pupilTarget = { x: 0, y: 0 };
         this.lookHold = 0; // seconds an explicit lookAt stays in charge
         this.blink = 0; // seconds of blink remaining
@@ -105,20 +119,20 @@ define(function () {
     };
 
     // One character printed. frac 0..1 is the position along the current
-    // line; newline means carriage-return (zip home, fresh sheet row).
+    // line; newline means carriage-return (zip home, the line is wiped).
     CoachSprite.prototype.typeChar = function (frac, newline) {
         if (newline) {
             this.carTarget = CAR_MIN;
             this.carSpeed = 400;
-            this.marks = []; // the sheet feeds up a line
+            this.marks = []; // the work feeds up a line
             return;
         }
         this.carTarget = CAR_MIN + frac * (CAR_MAX - CAR_MIN);
         this.carSpeed = 120;
         this.peck = 2;
         // print where the bit actually is right now
-        var bx = Math.round(this.carX + CAR_W / 2);
-        if (bx >= SHEET_X0 + 1 && bx <= SHEET_X1 - 1) this.marks.push(bx);
+        var bx = Math.round(this.carX + 3);
+        if (bx >= TABLE_X0 && bx <= TABLE_X1) this.marks.push(bx);
     };
 
     CoachSprite.prototype.endTyping = function () {
@@ -133,7 +147,7 @@ define(function () {
         var cx = r.left + r.width / 2,
             cy = r.top + r.height / 2;
         this.pupilTarget.x = Math.max(-2, Math.min(2, Math.round((vx - cx) / (window.innerWidth / 5))));
-        this.pupilTarget.y = Math.max(-2, Math.min(2, Math.round((vy - cy) / (window.innerHeight / 4))));
+        this.pupilTarget.y = Math.max(-2, Math.min(3, Math.round((vy - cy) / (window.innerHeight / 4))));
         this.lookHold = 4.5;
     };
 
@@ -142,13 +156,17 @@ define(function () {
         this.confetti = [];
         for (var i = 0; i < 22; i++) {
             this.confetti.push({
-                x: 4 + Math.random() * (W - 8),
+                x: 2 + Math.random() * (W - 4),
                 y: -2 - Math.random() * 14,
                 vy: 14 + Math.random() * 22,
                 vx: (Math.random() - 0.5) * 8,
                 c: CONFETTI[(Math.random() * CONFETTI.length) | 0],
             });
         }
+        // every valve spins at once
+        this.valves.forEach(function (v) {
+            v.spin = 8 + ((Math.random() * 4) | 0);
+        });
     };
 
     CoachSprite.prototype._step = function (dt) {
@@ -158,6 +176,20 @@ define(function () {
         if (Math.abs(d) <= maxStep) this.carX = this.carTarget;
         else this.carX += d > 0 ? maxStep : -maxStep;
         if (this.peck > 0) this.peck--;
+
+        // valve spinning: pending steps advance the handle every beat
+        for (var vi = 0; vi < this.valves.length; vi++) {
+            var v = this.valves[vi];
+            if (v.spin > 0) {
+                v.t += dt;
+                var beat = this.celebrateT > 0 ? 0.07 : 0.12;
+                if (v.t >= beat) {
+                    v.t = 0;
+                    v.seq = (v.seq + 1) % VALVE_SEQ.length;
+                    v.spin--;
+                }
+            }
+        }
 
         // celebrate: zip end to end, rain confetti
         if (this.celebrateT > 0) {
@@ -169,12 +201,12 @@ define(function () {
                 var f = this.confetti[i];
                 f.y += f.vy * dt;
                 f.x += f.vx * dt;
-                if (f.y > 44) this.confetti.splice(i, 1);
+                if (f.y > 45) this.confetti.splice(i, 1);
             }
             if (this.celebrateT <= 0) {
                 this.confetti = [];
                 this.carSpeed = 40;
-                this.carTarget = (CAR_MIN + CAR_MAX) / 2;
+                this.carTarget = 24;
             }
         }
 
@@ -187,9 +219,9 @@ define(function () {
         }
         if (this.typing) {
             // watch the carriage work
-            var bitX = this.carX + CAR_W / 2;
-            this.pupilTarget.x = Math.max(-2, Math.min(2, Math.round((bitX - W / 2) / 12)));
-            this.pupilTarget.y = 2;
+            var bitX = this.carX + 3;
+            this.pupilTarget.x = Math.max(-2, Math.min(2, Math.round((bitX - W / 2) / 10)));
+            this.pupilTarget.y = 3;
         } else if (this.lookHold > 0) {
             this.lookHold -= dt;
         } else {
@@ -198,10 +230,17 @@ define(function () {
                 this.pupilTarget.x = [-2, -1, 0, 0, 1, 2][(Math.random() * 6) | 0];
                 this.pupilTarget.y = [-1, 0, 0, 1][(Math.random() * 4) | 0];
                 this._nextWander = 1.4 + Math.random() * 2.4;
-                // the occasional idle carriage drift keeps him alive
-                if (this.celebrateT <= 0 && Math.random() < 0.3) {
-                    this.carTarget = CAR_MIN + Math.random() * (CAR_MAX - CAR_MIN);
-                    this.carSpeed = 30;
+                if (this.celebrateT <= 0) {
+                    // idle life: sometimes drift the carriage, sometimes
+                    // lazily spin one of the manifold valves (Brian's note:
+                    // the red knobs turn while he's thinking)
+                    if (Math.random() < 0.3) {
+                        this.carTarget = CAR_MIN + Math.random() * (CAR_MAX - CAR_MIN);
+                        this.carSpeed = 30;
+                    } else if (Math.random() < 0.45) {
+                        var pick = this.valves[(Math.random() * this.valves.length) | 0];
+                        if (pick.spin <= 0) pick.spin = 2 + ((Math.random() * 5) | 0);
+                    }
                 }
             }
         }
@@ -222,75 +261,117 @@ define(function () {
             ctx.fillStyle = c;
             ctx.fillRect(x, y, w, h);
         }
+        function P(x, y, c) {
+            R(x, y, 1, 1, c);
+        }
 
-        // --- end plates (ShopBot blue uprights, down to the feet) ---
-        [3, 61].forEach(function (x) {
-            R(x, 5, 8, 39, BLUE);
-            R(x, 5, 2, 39, BLUE_HI); // lit left edge
-            R(x + 7, 5, 1, 39, BLUE_D);
-            R(x - 1, 44, 10, 2, OUT); // foot
-        });
+        // --- beam: orange rail strip, gray extrusion w/ ribs, blue caps ---
+        R(3, 12, 54, 1, ORA);
+        R(3, 13, 54, 7, GRAY);
+        R(3, 14, 54, 1, LIGHT);
+        R(3, 18, 54, 1, LIGHT);
+        R(0, 12, 3, 8, BLUE);
+        R(0, 12, 1, 8, BLUE_HI);
+        R(57, 12, 3, 8, BLUE);
+        R(59, 12, 1, 8, BLUE_D);
 
-        // --- table + sheet of material ---
-        R(1, 36, 70, 4, WOOD);
-        R(1, 36, 70, 1, WOOD_D);
-        R(1, 40, 70, 1, OUT);
-        R(SHEET_X0, 32, SHEET_X1 - SHEET_X0, 4, SHEET);
-        R(SHEET_X0, 35, SHEET_X1 - SHEET_X0, 1, SHEET_D);
-        R(SHEET_X0, 32, 1, 4, SHEET_D);
-        // printed "text" marks
-        for (var i = 0; i < this.marks.length; i++) R(this.marks[i], 33, 1, 1, INK);
+        // --- table: yellow edge over the blue cross support ---
+        R(5, 26, 50, 2, YEL);
+        R(5, 27, 50, 1, YEL_D);
+        R(2, 28, 56, 4, BLUE);
+        R(2, 28, 56, 1, BLUE_HI);
+        // printed "text" marks on the table edge
+        for (var mi = 0; mi < this.marks.length; mi++) P(this.marks[mi], 26, INK);
 
-        // --- gantry beam across the top ---
-        R(2, 5, 68, 12, AL);
-        R(2, 5, 68, 1, AL_HI);
-        R(2, 16, 68, 1, AL_D);
-        R(2, 4, 68, 1, OUT);
-        R(2, 17, 68, 1, OUT);
-        R(2, 11, 68, 1, SEAM); // extrusion groove
+        // --- lower frame: legs, gray panel, cross support, manifold ---
+        R(2, 32, 3, 10, BLUE);
+        R(55, 32, 3, 10, BLUE);
+        R(50, 32, 4, 10, GRAY);
+        R(50, 32, 1, 10, LIGHT);
+        R(2, 42, 56, 3, BLUE);
+        R(2, 42, 56, 1, BLUE_HI);
+        R(2, 45, 3, 2, BLUE_D);
+        R(55, 45, 3, 2, BLUE_D);
+        for (var vi = 0; vi < this.valves.length; vi++) {
+            var v = this.valves[vi];
+            R(v.x, 33, 4, 9, WHITE);
+            P(v.x, 33, LIGHT);
+            P(v.x + 3, 41, LIGHT);
+            var st = VALVE_SEQ[v.seq];
+            if (st === 0) {
+                R(v.x + 1, v.hy - 3, 2, 8, RED);
+                R(v.x, v.hy, 4, 2, RED_D);
+            } else if (st === 1) {
+                R(v.x + 1, v.hy - 1, 2, 4, RED);
+                R(v.x, v.hy, 4, 2, RED);
+            } else {
+                R(v.x - 2, v.hy, 8, 2, RED);
+                R(v.x + 1, v.hy - 1, 2, 4, RED_D);
+            }
+        }
 
-        // --- face: two goggle eyes on the beam ---
+        var cx = Math.round(this.carX);
+
+        // --- drag chain: flat run on the beam, rolling C-loop at the
+        //     carriage. Painted before the eyes so it passes behind them.
+        var lx = Math.max(8, cx - 3);
+        for (var dx1 = 4; dx1 <= lx - 4; dx1++) P(dx1, 11, BLACK);
+        for (var dx2 = lx; dx2 <= cx + 2; dx2++) P(dx2, 1, BLACK);
+        P(lx - 4, 10, BLACK);
+        P(lx - 5, 9, BLACK);
+        P(lx - 5, 8, BLACK);
+        P(lx - 6, 7, BLACK);
+        P(lx - 6, 6, BLACK);
+        P(lx - 5, 5, BLACK);
+        P(lx - 5, 4, BLACK);
+        P(lx - 4, 3, BLACK);
+        P(lx - 3, 3, BLACK);
+        P(lx - 2, 2, BLACK);
+        P(lx - 1, 1, BLACK);
+        P(cx + 2, 2, BLACK);
+        P(cx + 2, 3, BLACK);
+
+        // --- face: goggle eyes perched on the beam ---
         var self = this;
-        [21, 43].forEach(function (ex) {
-            R(ex, 5, 8, 10, INK); // outline
-            R(ex + 1, 6, 6, 8, WHITE);
+        EYES.forEach(function (ex) {
+            R(ex, 6, 8, 10, INK);
+            R(ex + 1, 7, 6, 8, WHITE);
             if (self.blink > 0) {
-                R(ex + 1, 6, 6, 8, AL);
-                R(ex + 1, 9, 6, 1, INK); // closed lid
+                R(ex + 1, 7, 6, 8, GRAY);
+                R(ex + 1, 10, 6, 1, INK); // closed lid
             } else if (happy) {
                 // ∪-arc happy eyes
-                R(ex + 1, 6, 6, 8, AL);
-                R(ex + 1, 8, 1, 2, INK);
-                R(ex + 6, 8, 1, 2, INK);
-                R(ex + 2, 10, 4, 1, INK);
+                R(ex + 1, 7, 6, 8, GRAY);
+                R(ex + 1, 9, 1, 2, INK);
+                R(ex + 6, 9, 1, 2, INK);
+                R(ex + 2, 11, 4, 1, INK);
             } else {
                 var px = ex + 3 + self.pupil.x;
-                var py = 9 + self.pupil.y;
+                var py = 10 + self.pupil.y;
                 px = Math.max(ex + 1, Math.min(ex + 5, px));
-                py = Math.max(7, Math.min(12, py));
+                py = Math.max(8, Math.min(13, py));
                 R(px, py, 2, 2, INK);
             }
+            // floating brow (raised when celebrating)
+            R(ex, happy ? 2 : 3, 8, 1, DARK);
         });
-        // brows (raised when celebrating)
-        R(21, happy ? 1 : 2, 8, 1, OUT);
-        R(43, happy ? 1 : 2, 8, 1, OUT);
 
-        // --- router carriage riding the beam ---
-        var cx = Math.round(this.carX);
-        var dip = this.peck > 0 ? 1 : 0;
-        R(cx, 13 + dip, CAR_W, 9, AL);
-        R(cx, 13 + dip, CAR_W, 1, AL_HI);
-        R(cx, 21 + dip, CAR_W, 1, OUT);
-        R(cx, 13 + dip, 1, 9, OUT);
-        R(cx + CAR_W - 1, 13 + dip, 1, 9, OUT);
-        R(cx + 2, 15 + dip, CAR_W - 4, 2, BLUE); // blue badge stripe
-        // spindle: hub, collet nut, bit
-        var sx = cx + Math.floor(CAR_W / 2) - 2;
-        R(sx, 22 + dip, 5, 3, NUT);
-        R(sx + 1, 25 + dip, 3, 1, OUT);
-        var peckDrop = this.peck > 0 ? 2 : 0;
-        R(sx + 1, 26 + dip, 2, 4 + peckDrop, STEEL);
-        R(sx + 1, 26 + dip, 1, 4 + peckDrop, AL_HI);
+        // --- Y/Z carriage in front of everything: blue tower + spindle ---
+        var dip = this.peck > 0 ? 2 : 0;
+        R(cx, 8, CAR_W, 2, BLUE); // cap above the beam
+        R(cx, 8, CAR_W, 1, BLUE_HI);
+        R(cx, 10, 1, 10, BLUE); // thin blue left cheek
+        R(cx + 7, 10, 4, 10, BLUE); // wide blue right side
+        R(cx + 10, 10, 1, 10, BLUE_D);
+        R(cx + 1, 10, 6, 12 + dip, STEEL); // spindle front
+        R(cx + 1, 10, 1, 12 + dip, LIGHT);
+        R(cx + 6, 10, 1, 12 + dip, GRAY);
+        R(cx + 2, 11, 4, 2, BLACK); // motor louvres
+        R(cx + 1, 20, 1, 2, BLUE); // blue hips below the beam
+        R(cx + 6, 20, 1, 2, BLUE);
+        R(cx + 2, 22 + dip, 4, 2, BLACK); // collet nut
+        R(cx + 3, 24 + dip, 2, 2, GRAY); // bit
+        P(cx + 3, 24 + dip, LIGHT);
 
         // --- confetti over everything ---
         for (var k = 0; k < this.confetti.length; k++) {
