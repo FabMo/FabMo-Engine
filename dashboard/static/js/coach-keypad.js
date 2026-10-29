@@ -21,6 +21,7 @@ define(function (require) {
         this.visible = false;
         this._entered = false; // sent manualEnter, owes a manualExit
         this._beat = null;
+        this._exitTimer = null;
     }
 
     CoachKeypad.prototype.attach = function (parent) {
@@ -80,6 +81,8 @@ define(function (require) {
         this.visible = false;
         if (this.el) this.el.style.display = "none";
         this._release();
+        clearTimeout(this._exitTimer); // exit NOW, not on a timer that could
+        this._exitTimer = null; //        fire after the sim shim is gone
         if (this._entered) {
             this.engine.manualExit();
             this._entered = false;
@@ -93,6 +96,8 @@ define(function (require) {
     };
 
     CoachKeypad.prototype._press = function (axis, dir) {
+        clearTimeout(this._exitTimer);
+        this._exitTimer = null;
         if (!this._entered) {
             this.engine.manualEnter({ hideKeypad: true });
             this._entered = true;
@@ -111,6 +116,17 @@ define(function (require) {
         clearInterval(this._beat);
         this._beat = null;
         this.engine.manualStop();
+        // Drop back to idle after a short lull, like stepping away from the
+        // real keypad -- the dashboard re-shows its keypad button (lessons
+        // point at it), and the DRO stops reading "manual" between jogs.
+        var self = this;
+        this._exitTimer = setTimeout(function () {
+            self._exitTimer = null;
+            if (self._entered) {
+                self.engine.manualExit();
+                self._entered = false;
+            }
+        }, 1200);
     };
 
     return CoachKeypad;

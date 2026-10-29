@@ -62,7 +62,7 @@
             },
             {
                 "text": "<b>That's hand-driving:</b> jog to position, plunge only on purpose, retract before you travel. On the real dashboard these same arrows live behind the highlighted <b>keypad button</b> in the top bar — it will feel like an old friend.",
-                "highlight": { "dashboard": "#man-start" },
+                "highlight": { "dashboard": "#man-start img" },
                 "button": "Finish"
             }
         ]

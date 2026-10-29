@@ -93,7 +93,10 @@ define(function (require) {
     SimMachine.prototype.interceptGet = function (url, errback, callback) {
         if (!this.active) return false;
         if (url === "/status") {
-            (callback || errback)(null, clone(this.status));
+            // Some callers poll getStatus() with no callback at all (e.g.
+            // main.js on idle) -- consume the read without one, or the throw
+            // unwinds through the synchronous status emit that triggered it.
+            (callback || errback || function () {})(null, clone(this.status));
             return true;
         }
         return false; // all other reads pass through to the engine

@@ -4468,6 +4468,11 @@ body.fabmo-training #dro-tab {
 #coach-bar .coach-content {
 	flex: 1;
 	min-width: 0;
+	/* a flex column, so .coach-text's flex/scroll rules actually bind and a
+	   long step scrolls instead of pushing the footer out over the stage */
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
 }
 #coach-bar .coach-title {
 	font-size: 8px;
