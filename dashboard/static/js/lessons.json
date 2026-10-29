@@ -37,40 +37,32 @@
         "title": "Drive the machine with the keypad",
         "steps": [
             {
-                "text": "<b>Time to take the wheel.</b> The keypad moves the machine by hand — it's how you position the bit before a cut. That little machine on screen is your simulated tool: it will follow everything you do.",
+                "text": "<b>Time to take the wheel.</b> Driving the machine by hand is how you position the bit before every cut. That's your simulated tool on stage, and beside it a <b>practice keypad</b> — the same direction arrows you'll find on the real motion keypad.",
                 "button": "Begin",
-                "stage": true
+                "stage": { "mode": "arena", "keypad": true }
             },
             {
-                "text": "Open the motion keypad: press the highlighted <b>keypad</b> button in the top bar.",
-                "watch": { "type": "manual", "cmd": "enter" },
-                "highlight": { "dashboard": "#man-start" }
+                "text": "The arrows jog the machine. <b>Press and hold</b> one of the XY arrows and watch the tool glide over the table. The position readout in the top bar follows along — let go and it stops instantly.",
+                "watch": { "type": "any", "of": [{ "type": "manual", "cmd": "start", "axis": "x" }, { "type": "manual", "cmd": "start", "axis": "y" }] },
+                "highlight": { "dashboard": "#coach-keypad .ck-dpad" }
             },
             {
-                "text": "These arrows jog the machine. <b>Press and hold</b> an arrow (your keyboard's arrow keys work too) and watch the tool glide over the table. The position readout follows along — let go and it stops instantly.",
-                "watch": { "type": "any", "of": [{ "type": "manual", "cmd": "start" }, { "type": "manual", "cmd": "fixed" }] },
-                "highlight": { "dashboard": "#keypad .drive-button.square" }
-            },
-            {
-                "text": "Now the fun part. Jog <b>Z down</b> with the highlighted button until the Z readout goes <b>below zero</b> — below zero is inside the material, and the simulated bit will start carving the sheet.",
+                "text": "Now the fun part. Hold <b>Z down</b> until the Z readout goes <b>below zero</b> — below zero is inside the material, and the simulated bit will start carving the sheet.",
                 "watch": { "type": "position", "axis": "z", "below": -0.02 },
-                "highlight": { "dashboard": "#keypad .z_neg_slow, #keypad .z_neg_fast" }
+                "highlight": { "dashboard": "#coach-keypad .ck-z-neg" }
             },
             {
                 "text": "<b>You're cutting!</b> Steer with the XY arrows and draw something — the trench follows the bit. This is exactly what happens when a job runs: Z plunges into the material, then X and Y draw the toolpath.",
-                "watch": { "type": "any", "of": [{ "type": "manual", "cmd": "start" }, { "type": "manual", "cmd": "fixed" }] }
+                "watch": { "type": "any", "of": [{ "type": "manual", "cmd": "start", "axis": "x" }, { "type": "manual", "cmd": "start", "axis": "y" }] }
             },
             {
-                "text": "On a real machine you'd never drag the bit sideways out of a cut without thinking — but you <b>always</b> retract before traveling. Jog <b>Z up</b> until the readout is back above zero.",
+                "text": "On a real machine you'd never drag the bit sideways out of a cut without thinking — you <b>always</b> retract before traveling. Hold <b>Z up</b> until the readout is back above zero.",
                 "watch": { "type": "position", "axis": "z", "above": 0.05 },
-                "highlight": { "dashboard": "#keypad .z_pos_slow, #keypad .z_pos_fast" }
+                "highlight": { "dashboard": "#coach-keypad .ck-z-pos" }
             },
             {
-                "text": "Close the keypad (press <b>Esc</b>, or click anywhere outside it) and the machine returns to idle.",
-                "watch": { "type": "manual", "cmd": "exit" }
-            },
-            {
-                "text": "<b>That's hand-driving.</b> Jog to position, plunge only on purpose, retract before you travel. Next time you stand at the real machine, the keypad will feel like an old friend.",
+                "text": "<b>That's hand-driving:</b> jog to position, plunge only on purpose, retract before you travel. On the real dashboard these same arrows live behind the highlighted <b>keypad button</b> in the top bar — it will feel like an old friend.",
+                "highlight": { "dashboard": "#man-start" },
                 "button": "Finish"
             }
         ]

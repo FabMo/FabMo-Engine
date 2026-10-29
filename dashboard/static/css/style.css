@@ -4372,7 +4372,9 @@ body.fabmo-training .left-off-canvas-menu {
    so lesson chrome never covers the controls it's teaching. (Padding-top
    follows the a11y-mode pattern; the container transitions padding.) */
 body.fabmo-training {
-	--coach-rail-w: clamp(280px, 32vw, 400px);
+	/* exactly the pop-out DRO's width (.right-off-canvas-menu), so the rail
+	   covers no more of the app than the DRO it replaces */
+	--coach-rail-w: 15.625rem;
 }
 body.fabmo-training #app-client-container,
 body.fabmo-training #app_menu_container {
@@ -4420,7 +4422,7 @@ body.fabmo-training #dro-tab {
 	right: 0;
 	bottom: 0; /* coach.js raises this when the .footBar opens */
 	transition: bottom 0.3s; /* match .footBar's height transition */
-	width: var(--coach-rail-w, clamp(280px, 32vw, 400px));
+	width: var(--coach-rail-w, 15.625rem);
 	z-index: 1000;
 	background: #0c1020;
 	border-left: 2px solid #2c3854;
@@ -4590,6 +4592,116 @@ body.fabmo-training #dro-tab {
 #coach-stage.docked canvas {
 	width: 100% !important; /* overrides the inline floating-mode size */
 	height: auto !important;
+}
+/* The arena: a takeover surface for steps that don't need the app
+   underneath -- watching a file run, or driving with the practice keypad.
+   It fills the app area between the left nav (coach.js tracks the nav's
+   live width), the coach rail, the banner, and the foot bar. */
+#coach-arena {
+	display: none;
+	position: fixed;
+	top: 80px; /* 56px tab-bar + the TRAINING banner strip */
+	left: 46px; /* the collapsed nav; coach.js keeps this current */
+	right: var(--coach-rail-w, 15.625rem);
+	bottom: 0; /* coach.js raises this when the .footBar opens */
+	transition: bottom 0.3s;
+	z-index: 999; /* under the rail (1000) and everything above it */
+	background: #0c1020;
+	align-items: center;
+	justify-content: center;
+	gap: 24px;
+	padding: 18px;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+#coach-arena.visible {
+	display: flex;
+}
+#coach-arena .coach-arena-slot {
+	flex: none;
+	line-height: 0;
+}
+/* In the arena the plate sits at its natural size; coach.js sets the canvas
+   to the largest integer pixel scale that fits (CoachMachine.fitTo). */
+#coach-stage.arena {
+	position: static;
+	box-shadow: 0 0 0 3px #101424;
+}
+#coach-stage.arena .coach-stage-head {
+	cursor: default;
+}
+/* The practice keypad: just the direction arrows, same game-plate styling.
+   It drives the sim through the real manual-runtime commands, so the real
+   motion keypad feels familiar afterward. */
+#coach-keypad {
+	flex: none;
+	background: #101424;
+	border: 3px solid #f0f2f6;
+	border-radius: 4px;
+	box-shadow: 0 0 0 3px #101424;
+	font-family: "Press Start 2P", monospace;
+}
+#coach-keypad .coach-keypad-head {
+	font-size: 8px;
+	line-height: 1;
+	color: #d9a420;
+	padding: 7px 10px 6px;
+	border-bottom: 2px solid #39445a;
+	user-select: none;
+}
+#coach-keypad .ck-pads {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 16px;
+}
+#coach-keypad .ck-dpad {
+	display: grid;
+	grid-template-columns: repeat(3, 52px);
+	grid-template-rows: repeat(3, 52px);
+	gap: 4px;
+}
+#coach-keypad .ck-dpad .ck-y-pos { grid-area: 1 / 2; }
+#coach-keypad .ck-dpad .ck-x-neg { grid-area: 2 / 1; }
+#coach-keypad .ck-dpad .ck-mid { grid-area: 2 / 2; }
+#coach-keypad .ck-dpad .ck-x-pos { grid-area: 2 / 3; }
+#coach-keypad .ck-dpad .ck-y-neg { grid-area: 3 / 2; }
+#coach-keypad .ck-zpad {
+	display: grid;
+	grid-template-columns: 52px;
+	grid-template-rows: 52px 24px 52px;
+	gap: 4px;
+}
+#coach-keypad .ck-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	background: #182038;
+	color: #d9a420;
+	border: 2px solid #39445a;
+	border-radius: 4px;
+	font-family: inherit;
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+	user-select: none;
+	touch-action: none; /* press-and-hold jogs; no scroll/zoom gestures */
+}
+#coach-keypad .ck-btn:hover {
+	border-color: #d9a420;
+}
+#coach-keypad .ck-btn.ck-active {
+	background: #d9a420;
+	color: #101424;
+}
+#coach-keypad .ck-mid {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 8px;
+	color: #8a94a8;
+	user-select: none;
 }
 /* A simulated switch tripped (the sim holds motion for the duration):
    pop + glow the specific input light in the top bar. */

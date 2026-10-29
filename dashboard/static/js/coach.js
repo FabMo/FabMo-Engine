@@ -19,10 +19,11 @@ define(function (require) {
     var SimMachine = require("./libs/fabmosim.js");
     var CoachSprite = require("./coach-sprite.js");
     var CoachMachine = require("./coach-machine.js");
+    var CoachKeypad = require("./coach-keypad.js");
     var LESSONS = require("./lessons.json");
 
     var TYPE_MS = 22; // ms per typed character
-    var TYPE_LINE = 44; // virtual carriage line length, characters
+    var TYPE_LINE = 30; // virtual carriage line length, chars (~the DRO-width rail)
 
     // Injected into app iframes for app-side highlights; dashboard-side
     // highlights use the same rules from style.css.
@@ -143,12 +144,17 @@ define(function (require) {
         clearInterval(this._typeTimer);
         this._clearHighlights();
         this.machine.hide();
+        // Destroy the keypad while the sim shim is still installed: its
+        // parting manualStop/manualExit must go to the sim, not the engine.
+        if (this._keypad) this._keypad.destroy();
+        this._keypad = null;
         this.sim.exit();
         if (this._ui) {
             if (this.sprite) this.sprite.destroy();
             this.sprite = null;
             this._ui.banner.remove();
             this._ui.rail.remove();
+            this._ui.arena.remove();
             this._ui = null;
         }
         $(window).off("resize.coach");
@@ -202,14 +208,29 @@ define(function (require) {
         this._ui.dots.html(dots);
         this._clearHighlights();
         // Lessons bring the sim-machine stage on and off per step; leaving
-        // the flag out keeps whatever state the previous step set.
+        // the flag out keeps whatever state the previous step set. The stage
+        // has two homes: docked small in the rail (stage: true) for steps
+        // that need the app visible, or taking over the whole app area
+        // ({"mode": "arena"}) -- optionally with the practice keypad beside
+        // it ({"mode": "arena", "keypad": true}) for driving lessons.
         if (step.stage !== undefined) {
             if (step.stage) {
-                var opts = typeof step.stage === "object" ? step.stage : {};
-                opts.parent = this._ui.stageSlot[0]; // dock into the rail
-                this.machine.show(opts);
+                var spec = typeof step.stage === "object" ? step.stage : {};
+                var arena = spec.mode === "arena";
+                this._ui.arena.toggleClass("visible", arena);
+                if (arena && spec.keypad) this._keypad.show();
+                else this._keypad.hide();
+                this.machine.show({
+                    sizeX: spec.sizeX,
+                    sizeY: spec.sizeY,
+                    arena: arena,
+                    parent: arena ? this._ui.arenaSlot[0] : this._ui.stageSlot[0],
+                });
+                if (arena) this._fitArena();
             } else {
                 this.machine.hide();
+                this._keypad.hide();
+                this._ui.arena.removeClass("visible");
             }
         }
         // Buttons and highlights wait until the line has finished printing.
@@ -489,9 +510,11 @@ define(function (require) {
 
     // ----------------------------------------------------------- layout
 
-    // Keep the rail's bottom clear of the run-control footer (.footBar
-    // animates its height between 0 and open over 0.3s -- re-measure after
-    // the transition settles too).
+    // Keep the rail's and arena's bottom clear of the run-control footer
+    // (.footBar animates its height between 0 and open over 0.3s --
+    // re-measure after the transition settles too), and hug the arena's left
+    // edge to the left nav (collapsed or expanded; on phone widths the nav
+    // is translated off-canvas, so clamp at 0).
     Coach.prototype._reposition = function () {
         if (!this._ui) return;
         var self = this;
@@ -499,15 +522,36 @@ define(function (require) {
             if (!self._ui) return;
             var foot = $(".footBar").height() || 0;
             self._ui.rail.css("bottom", foot + "px");
+            var nav = document.getElementById("left-menu");
+            var left = nav ? Math.max(0, nav.getBoundingClientRect().right) : 0;
+            self._ui.arena.css({ bottom: foot + "px", left: left + "px" });
+            self._fitArena();
         };
         set();
         clearTimeout(this._footTimer);
         this._footTimer = setTimeout(set, 400);
     };
 
-    // The lesson chrome is a docked left rail -- dialog on top, sim-machine
-    // stage below -- and the app area shifts right to sit beside it, so the
-    // coach never covers the controls it's teaching.
+    // Size the arena stage's canvas to the largest integer pixel multiple
+    // that fits beside the keypad (integer scales keep the pixel art crisp).
+    Coach.prototype._fitArena = function () {
+        if (!this._ui || !this._ui.arena.hasClass("visible")) return;
+        var arena = this._ui.arena[0];
+        var cs = window.getComputedStyle(arena);
+        var availW = arena.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        var availH = arena.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        if (this._keypad && this._keypad.visible) {
+            availW -= this._keypad.el.offsetWidth + parseFloat(cs.columnGap || 24);
+        }
+        this.machine.fitTo(availW, availH);
+    };
+
+    // The lesson chrome is a docked right rail -- the dialog, with a slot
+    // for the small sim-machine stage below -- sized to match the pop-out
+    // DRO, and the app area shifts left to sit beside it, so the coach never
+    // covers the controls it's teaching. The arena is a separate takeover
+    // surface spanning the app area for steps that don't need the app:
+    // watching a file run, or driving the sim with the practice keypad.
     Coach.prototype._buildUI = function () {
         $("body").addClass("fabmo-training");
         var banner = $(
@@ -529,7 +573,12 @@ define(function (require) {
         );
         var stageSlot = $('<div class="coach-stage-slot"></div>');
         rail.append(bar).append(stageSlot);
-        $("body").append(banner).append(rail);
+        var arena = $('<div id="coach-arena"></div>');
+        var arenaSlot = $('<div class="coach-arena-slot"></div>');
+        arena.append(arenaSlot);
+        this._keypad = new CoachKeypad(this.engine);
+        this._keypad.attach(arena[0]);
+        $("body").append(banner).append(rail).append(arena);
         bar.find(".coach-title").text(this.lesson.title);
         banner.find("#coach-exit").on("click", this.exit.bind(this));
         var next = bar.find(".coach-next").on("click", this._advance.bind(this));
@@ -545,6 +594,8 @@ define(function (require) {
             banner: banner,
             rail: rail,
             stageSlot: stageSlot,
+            arena: arena,
+            arenaSlot: arenaSlot,
             bar: bar,
             text: bar.find(".coach-text"),
             dots: bar.find(".coach-dots"),

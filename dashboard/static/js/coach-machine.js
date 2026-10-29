@@ -123,20 +123,30 @@ define(function () {
             this.TH = Math.max(4, Math.round((this.TW * this.sizeY) / this.sizeX));
             this.tileIn = this.sizeX / this.TW;
         }
-        if (this.visible) return;
-        this.visible = true;
-        this.carved = {};
         if (!this.el) this._build();
-        // Docked (options.parent, e.g. the coach rail): static child of the
-        // parent, full width, no dragging. Otherwise a floating panel.
+        // Docked (options.parent): a static child of the coach rail (small,
+        // full rail width) or of the arena (options.arena -- canvas sized by
+        // fitTo). Otherwise a floating, draggable panel. Mode and parent are
+        // reapplied even when already visible, so a lesson can move the stage
+        // between homes mid-run without losing its carving.
         this._docked = !!options.parent;
-        this.el.classList.toggle("docked", this._docked);
+        this.el.classList.toggle("docked", this._docked && !options.arena);
+        this.el.classList.toggle("arena", !!options.arena);
         if (this._docked) {
             this.el.style.left = "";
             this.el.style.top = "";
             this.el.style.right = "";
         }
-        (options.parent || document.body).appendChild(this.el);
+        if (!options.arena) {
+            // undo any arena fitTo sizing (rail mode overrides via CSS anyway)
+            this._cv.style.width = W * SCALE + "px";
+            this._cv.style.height = H * SCALE + "px";
+        }
+        var parent = options.parent || document.body;
+        if (this.el.parentNode !== parent) parent.appendChild(this.el);
+        if (this.visible) return;
+        this.visible = true;
+        this.carved = {};
         var status = this.engine.status || {};
         this._onStatus(status);
         this.draw.x = this.target.x;
@@ -154,6 +164,21 @@ define(function () {
             self._raf = requestAnimationFrame(loop);
         };
         this._raf = requestAnimationFrame(loop);
+    };
+
+    // Arena mode: size the canvas to the largest integer multiple of the
+    // framebuffer that fits the given box (minus the plate's header and
+    // border/shadow ring). Integer scales keep the pixel art crisp.
+    CoachMachine.prototype.fitTo = function (availW, availH) {
+        if (!this.el || !this._cv) return;
+        var head = this.el.firstChild ? this.el.firstChild.offsetHeight : 0;
+        var frame = 12; // 3px border + 3px shadow ring, both sides
+        var s = Math.max(1, Math.floor(Math.min((availW - frame) / W, (availH - head - frame) / H)));
+        var w = W * s + "px";
+        if (this._cv.style.width !== w) {
+            this._cv.style.width = w;
+            this._cv.style.height = H * s + "px";
+        }
     };
 
     CoachMachine.prototype.hide = function () {
