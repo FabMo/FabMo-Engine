@@ -459,6 +459,20 @@
     };
 
     /**
+     * Start a Training Mode lesson. The dashboard switches the API bridge to
+     * a simulated machine (the real tool will not move), opens the Console
+     * app, and coaches the user step by step.
+     *
+     * @method startTraining
+     * @param {String} lesson Lesson id (e.g. "home-and-zero")
+     * @param {function} callback
+     * @param {Error} callback.err Error object if the lesson could not start
+     */
+    FabMoDashboard.prototype.startTraining = function (lesson, callback) {
+        this._call("startTraining", { lesson: lesson }, callback);
+    };
+
+    /**
      * Show the DRO (Digital ReadOut) in the dashboard if it is not already shown.
      *
      * @method showDRO

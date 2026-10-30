@@ -1,0 +1,74 @@
+{
+    "home-and-zero": {
+        "title": "Home the machine & zero the Z axis",
+        "steps": [
+            {
+                "text": "<b>Welcome to Training Mode.</b> The machine will <b>not</b> move — every control is live, but a simulated tool answers instead of the real one. We'll practice the startup routine every job begins with: homing, then zeroing the Z axis.",
+                "button": "Begin"
+            },
+            {
+                "text": "First, the machine needs to find its fixed home position. In the Console's <b>Machine</b> card, press the highlighted <b>Home&nbsp;XY</b> button — a <b>model of the simulated machine</b> will pop up so you can watch what happens.",
+                "watch": { "type": "code", "pattern": "(^|\\b)(C#?,?\\s*3|MH)\\b" },
+                "highlight": { "app": "#btn-home-xy" }
+            },
+            {
+                "text": "Watch the tool drive toward each proximity switch, back off, and creep back in slowly for an exact reading — first Y, then X. The <b>Inputs</b> lights in the top bar show each switch tripping.",
+                "watch": { "type": "sequence", "name": "home" },
+                "highlight": { "dashboard": "#right-position-container" },
+                "stage": true
+            },
+            {
+                "text": "The DRO now reads <b>X 0.00&nbsp;&nbsp;Y 0.00</b> — the machine knows where it is. Next: zeroing the Z axis, with two tools you'll find hanging on the real machine: the <b>Z-zero plate</b> — a flat aluminum plate with a wire on one end — and its <b>grounding clip</b>. Press the highlighted <b>Home&nbsp;Z</b> button to see how they're used.",
+                "watch": { "type": "code", "pattern": "(^|\\b)C#?,?\\s*2\\b" },
+                "highlight": { "app": "#btn-home-z" },
+                "stage": false
+            },
+            {
+                "text": "<b>This setup is YOUR job on a real machine:</b> lay the plate flat under the bit, then snap the copper clip onto the bit — when the bit touches the plate it completes a circuit, and that's input 1. Watch it play out, then the bit finds the plate twice: a fast touch, and a slow one for accuracy. Z is set from the plate's known thickness.",
+                "watch": { "type": "sequence", "name": "zeroz" },
+                "highlight": { "dashboard": "#right-position-container" },
+                "stage": true
+            },
+            {
+                "text": "<b>That's the whole startup routine.</b> Home XY once per session; zero the Z whenever the bit or material changes — and always <b>unclip and stow the plate</b> before you cut. This is exactly what you'll do on the real machine — the only difference is that it moves.",
+                "button": "Finish",
+                "stage": false
+            }
+        ]
+    },
+    "drive-the-machine": {
+        "title": "Drive the machine with the keypad",
+        "steps": [
+            {
+                "text": "<b>Time to take the wheel.</b> Driving the machine by hand is how you position the bit before every cut. That's your simulated tool on stage, and beside it a <b>practice keypad</b> — the same direction arrows you'll find on the real motion keypad.",
+                "button": "Begin",
+                "stage": { "keypad": true }
+            },
+            {
+                "text": "The arrows jog the machine. <b>Press and hold</b> one of the XY arrows and watch the tool glide over the table. The position readout in the top bar follows along — let go and it stops instantly.",
+                "watch": { "type": "any", "of": [{ "type": "manual", "cmd": "start", "axis": "x" }, { "type": "manual", "cmd": "start", "axis": "y" }] },
+                "highlight": { "dashboard": "#coach-keypad .keypad-table" }
+            },
+            {
+                "text": "Now the fun part. Hold <b>Z down</b> until the Z readout goes <b>below zero</b> — below zero is inside the material, and the simulated bit will start carving the sheet.",
+                "watch": { "type": "position", "axis": "z", "below": -0.02 },
+                "highlight": { "dashboard": "#coach-keypad .z_neg_slow, #coach-keypad .z_neg_fast" }
+            },
+            {
+                "text": "<b>You're cutting — now follow the path!</b> I've painted a loop of <b>blue squares</b> on the sheet, starting where your bit is. Drive along it and <b>clear every square</b> — they carve away as you hit them. Either direction works. This is exactly what a job does: X and Y draw the toolpath.",
+                "watch": { "type": "trace" },
+                "pattern": { "w": 6, "h": 4 }
+            },
+            {
+                "text": "<b>Path cleared — nice driving!</b> One last habit: on a real machine you'd never drag the bit sideways out of a cut without thinking — you <b>always</b> retract before traveling. Hold <b>Z up</b> until the readout is back above zero.",
+                "watch": { "type": "position", "axis": "z", "above": 0.05 },
+                "highlight": { "dashboard": "#coach-keypad .z_pos_slow, #coach-keypad .z_pos_fast" }
+            },
+            {
+                "text": "<b>That's hand-driving:</b> jog to position, plunge only on purpose, retract before you travel. On the real dashboard these same arrows live behind the highlighted <b>keypad button</b> in the top bar — it will feel like an old friend.",
+                "highlight": { "dashboard": "#man-start img" },
+                "button": "Finish"
+            }
+        ]
+    }
+}

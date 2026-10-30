@@ -100,6 +100,9 @@
             this.socket.on(
                 "status",
                 function (status) {
+                    // Training Mode: the live tool keeps reporting, but the
+                    // dashboard must only see the simulated machine.
+                    if (this.sim && this.sim.active) return;
                     this._setStatus(status);
                     this.emit("status", status);
                 }.bind(this)
@@ -108,6 +111,7 @@
             this.socket.on(
                 "change",
                 function (topic) {
+                    if (this.sim && this.sim.active) return;
                     this.emit("change", topic);
                 }.bind(this)
             );
@@ -623,6 +627,8 @@
     };
 
     FabMoAPI.prototype.executeRuntimeCode = function (runtime, code, callback) {
+        // Training Mode: manual-runtime commands drive the simulated machine.
+        if (this.sim && this.sim.interceptRuntimeCode(runtime, code)) return;
         this.socket.emit("code", { rt: runtime, data: code });
     };
 
@@ -770,6 +776,11 @@
     FabMoAPI.prototype.submitJobs = FabMoAPI.prototype.submitJob;
 
     FabMoAPI.prototype.command = function (name, args, callback) {
+        // Training Mode: quit/stop/pause act on the sim; nothing is forwarded.
+        if (this.sim && this.sim.interceptCommand(name, args)) {
+            if (callback) callback(null);
+            return;
+        }
         this.socket.emit("cmd", { name: name, args: args || {}, count: this.commandCounter }, callback);
         this.commandCounter += 1;
     };
@@ -916,6 +927,9 @@
     };
 
     FabMoAPI.prototype._get = function (url, errback, callback, key) {
+        // Training Mode: the simulated machine answers /status (and only
+        // reads it chooses to); everything else passes through.
+        if (this.sim && this.sim.interceptGet(url, errback, callback, key)) return;
         var url = this._url(url);
         var callback = callback || function () {};
         var errback = errback || function () {};
@@ -945,6 +959,8 @@
     };
 
     FabMoAPI.prototype._postUpload = function (url, data, metadata, errback, callback, key, options) {
+        // Training Mode: uploads (jobs, apps, firmware) are refused.
+        if (this.sim && this.sim.interceptPost(url, data, errback, callback)) return;
         //var url = this._url(url);
         var callback = callback || function () {};
         var errback = errback || function () {};
@@ -1062,6 +1078,9 @@
     };
 
     FabMoAPI.prototype._post = function (url, data, errback, callback, key, redirect, doProgress) {
+        // Training Mode: /code and macro runs are simulated, every other
+        // write is refused -- nothing may reach the engine.
+        if (this.sim && this.sim.interceptPost(url, data, errback, callback)) return;
         if (!redirect) {
             var url = this._url(url);
         }
@@ -1176,6 +1195,8 @@
     };
 
     FabMoAPI.prototype._del = function (url, data, errback, callback, key) {
+        // Training Mode: deletes are writes -- refuse them all.
+        if (this.sim && this.sim.interceptPost(url, data, errback, callback)) return;
         var url = this._url(url);
         var callback = callback || function () {};
         var errback = errback || function () {};

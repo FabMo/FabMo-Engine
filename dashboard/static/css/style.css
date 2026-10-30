@@ -4330,3 +4330,365 @@ a.update-available::after {
 #update-screen .update-screen-longwait .update-screen-reload {
 	margin-top: 10px;
 }
+
+/* ===== Training Mode (coach.js) ===== */
+/* Pixel font for the game-style coach dialog (bundled: tools run offline).
+   Press Start 2P, OFL-licensed, latin subset. */
+@font-face {
+	font-family: "Press Start 2P";
+	font-style: normal;
+	font-weight: 400;
+	src: url("../fonts/press-start-2p-latin.woff2") format("woff2");
+}
+/* The banner sits BELOW the fixed 56px .tab-bar: the top bar (mini DRO,
+   input/output status) must stay visible -- lessons highlight it. */
+#coach-banner {
+	position: fixed;
+	top: 56px;
+	left: 0;
+	right: 0;
+	z-index: 1001; /* over the app area, under the pop-out DRO (1002), the
+	                  left nav (raised to 1003 below), and the tab-bar (1005) */
+	background: repeating-linear-gradient(45deg, #b07a00, #b07a00 18px, #9a6a00 18px, #9a6a00 36px);
+	color: #fff;
+	font-weight: bold;
+	letter-spacing: 0.06em;
+	text-align: center;
+	padding: 3px 8px;
+	font-size: 0.8rem;
+	line-height: 1.4;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+/* Mark the mode in the top bar itself without hiding anything in it */
+body.fabmo-training .tab-bar {
+	box-shadow: inset 0 -4px 0 #d9a420;
+}
+/* The banner slips UNDER the left nav (which has no z-index of its own —
+   raise it past the banner's 1001) and under the pop-out DRO (1002). */
+body.fabmo-training .left-off-canvas-menu {
+	z-index: 1003;
+}
+/* Push the app area down past the banner, and right past the coach rail,
+   so lesson chrome never covers the controls it's teaching. (Padding-top
+   follows the a11y-mode pattern; the container transitions padding.) */
+body.fabmo-training {
+	/* exactly the pop-out DRO's width (.right-off-canvas-menu), so the rail
+	   covers no more of the app than the DRO it replaces */
+	--coach-rail-w: 15.625rem;
+}
+body.fabmo-training #app-client-container,
+body.fabmo-training #app_menu_container {
+	padding-top: 28px;
+	margin-right: var(--coach-rail-w);
+}
+/* The rail replaces the right-side slide-out DRO during a lesson: hide the
+   panel and its top-bar toggle (the mini DRO in the tab bar stays — lessons
+   point at it). */
+body.fabmo-training #right-menu,
+body.fabmo-training #dro-tab {
+	display: none !important;
+}
+/* Dashboard-side coach-marks (the same rules are injected into app iframes) */
+.coach-highlight {
+	outline: 3px solid #d9a420 !important;
+	outline-offset: 2px;
+	border-radius: 4px;
+	animation: coach-pulse 1.2s ease-in-out infinite;
+}
+@keyframes coach-pulse {
+	0%, 100% { outline-color: #d9a420; }
+	50% { outline-color: rgba(217, 164, 32, 0.25); }
+}
+#coach-banner button {
+	margin-left: 14px;
+	padding: 2px 10px;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	background: transparent;
+	color: #fff;
+	font-size: 0.8rem;
+	cursor: pointer;
+}
+#coach-banner button:hover {
+	background: rgba(255, 255, 255, 0.2);
+}
+/* The coach rail: a docked right column holding the dialog; it replaces
+   the slide-out DRO for the duration of the lesson, and the app area
+   shifts left to sit beside it. Sits under the banner (1001) and the left
+   nav (1003), so those still open over it. */
+#coach-rail {
+	position: fixed;
+	top: 80px; /* 56px tab-bar + the TRAINING banner strip */
+	right: 0;
+	bottom: 0; /* coach.js raises this when the .footBar opens */
+	transition: bottom 0.3s; /* match .footBar's height transition */
+	width: var(--coach-rail-w, 15.625rem);
+	z-index: 1000;
+	background: #0c1020;
+	border-left: 2px solid #2c3854;
+	padding: 12px;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	overflow: hidden; /* the text pane scrolls internally; nothing else moves */
+}
+/* The coach dialog: a game text box. Dark navy plate, white double border,
+   the pixel ShopBot character up top typing the text out below him. */
+#coach-bar {
+	outline: none; /* focused (tabindex -1) to pull focus out of app iframes */
+	flex: 1 1 auto; /* fill the rail... */
+	min-height: 0; /* ...and let the text pane inside actually shrink */
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	background: #101424;
+	color: #e8edf1;
+	border: 3px solid #f0f2f6;
+	border-radius: 4px;
+	box-shadow: 0 0 0 3px #101424;
+	padding: 12px 14px 10px;
+	font-family: "Press Start 2P", monospace;
+	image-rendering: pixelated;
+}
+#coach-bar .coach-sprite-box {
+	align-self: center;
+	line-height: 0;
+}
+#coach-bar .coach-sprite-box canvas {
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}
+#coach-bar .coach-content {
+	flex: 1;
+	min-width: 0;
+	/* a flex column, so .coach-text's flex/scroll rules actually bind and a
+	   long step scrolls instead of pushing the footer out over the stage */
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+#coach-bar .coach-title {
+	font-size: 8px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #d9a420;
+	margin-bottom: 8px;
+}
+#coach-bar .coach-text {
+	font-size: 10px;
+	line-height: 2;
+	flex: 1 1 auto;
+	min-height: 40px; /* two lines always visible */
+	overflow-y: auto; /* long steps scroll here instead of moving the rail */
+	scrollbar-width: thin;
+	scrollbar-color: #39445a #101424;
+	padding-right: 4px;
+}
+#coach-bar .coach-text b {
+	color: #d9a420;
+	font-weight: normal; /* the pixel font has one weight; gold does the work */
+}
+#coach-bar .coach-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap; /* the rail is narrow; let the buttons drop a line */
+	gap: 6px;
+	margin-top: 8px;
+}
+#coach-bar .coach-dot {
+	display: inline-block;
+	width: 6px;
+	height: 6px; /* square: it's a pixel */
+	background: #39445a;
+	margin-right: 5px;
+}
+#coach-bar .coach-dot.active {
+	background: #d9a420;
+}
+#coach-bar .coach-dot.done {
+	background: #8a94a8;
+}
+#coach-bar .coach-next {
+	padding: 7px 14px 6px;
+	border: 2px solid #101424;
+	box-shadow: 0 0 0 2px #d9a420;
+	border-radius: 2px;
+	background: #d9a420;
+	color: #101424;
+	font-family: "Press Start 2P", monospace;
+	font-size: 9px;
+	cursor: pointer;
+}
+#coach-bar .coach-next:hover {
+	background: #e8b63a;
+	box-shadow: 0 0 0 2px #e8b63a;
+}
+/* blinking "press the button" caret, classic dialog-box style */
+#coach-bar.coach-waiting .coach-next::after {
+	content: " \25BC";
+	animation: coach-caret 0.9s steps(1) infinite;
+}
+@keyframes coach-caret {
+	50% { opacity: 0; }
+}
+#coach-bar .coach-btns {
+	display: flex;
+	gap: 10px;
+}
+#coach-bar .coach-show {
+	padding: 6px 10px 5px;
+	border: 2px solid #d9a420;
+	border-radius: 2px;
+	background: transparent;
+	color: #d9a420;
+	font-family: "Press Start 2P", monospace;
+	font-size: 8px;
+	cursor: pointer;
+}
+#coach-bar .coach-show:hover {
+	background: rgba(217, 164, 32, 0.15);
+}
+/* The sim-machine stage: lesson-controlled isometric view of the simulated
+   tool (coach-machine.js). Same game-plate styling; drag it by its header. */
+#coach-stage {
+	position: fixed;
+	top: 110px;
+	right: 18px;
+	z-index: 9999; /* under the coach bar and the zoom frame */
+	background: #101424;
+	border: 3px solid #f0f2f6;
+	border-radius: 4px;
+	box-shadow: 0 0 0 3px #101424, 0 6px 20px rgba(0, 0, 0, 0.55);
+	line-height: 0;
+}
+#coach-stage .coach-stage-head {
+	font-family: "Press Start 2P", monospace;
+	font-size: 8px;
+	line-height: 1;
+	color: #d9a420;
+	padding: 7px 10px 6px;
+	border-bottom: 2px solid #39445a;
+	cursor: move;
+	user-select: none;
+}
+#coach-stage canvas {
+	display: block;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}
+/* The arena: a takeover surface for steps that don't need the app
+   underneath -- watching a file run, or driving with the practice keypad.
+   It fills the app area between the left nav (coach.js tracks the nav's
+   live width), the coach rail, the banner, and the foot bar. */
+#coach-arena {
+	display: none;
+	position: fixed;
+	top: 80px; /* 56px tab-bar + the TRAINING banner strip */
+	left: 46px; /* the collapsed nav; coach.js keeps this current */
+	right: var(--coach-rail-w, 15.625rem);
+	bottom: 0; /* coach.js raises this when the .footBar opens */
+	transition: bottom 0.3s;
+	z-index: 999; /* under the rail (1000) and everything above it */
+	background: #0c1020;
+	align-items: center;
+	justify-content: center;
+	gap: 24px;
+	padding: 18px;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+#coach-arena.visible {
+	display: flex;
+}
+#coach-arena .coach-arena-slot {
+	flex: none;
+	line-height: 0;
+}
+/* In the arena the plate sits at its natural size; coach.js sets the canvas
+   to the largest integer pixel scale that fits (CoachMachine.fitTo). */
+#coach-stage.arena {
+	position: static;
+	box-shadow: 0 0 0 3px #101424;
+}
+#coach-stage.arena .coach-stage-head {
+	cursor: default;
+}
+#coach-stage.arena canvas {
+	/* ride the footBar's open/close (0.3s) instead of snapping sizes */
+	transition: width 0.3s, height 0.3s;
+}
+/* The practice keypad: the REAL motion keypad's direction pad -- same
+   markup classes and arrow glyphs, so the class-scoped keypad rules above
+   (.keypad-table, .drive-button, .dir-glyph, ...) style it identically --
+   wrapped in a coach game plate. Only the arrows: no readout, speeds, or
+   command buttons. */
+#coach-keypad {
+	flex: none;
+	background: #101424;
+	border: 3px solid #f0f2f6;
+	border-radius: 4px;
+	box-shadow: 0 0 0 3px #101424;
+	font-family: "Press Start 2P", monospace;
+}
+#coach-keypad .coach-keypad-head {
+	font-size: 8px;
+	line-height: 1;
+	color: #d9a420;
+	padding: 7px 10px 6px;
+	border-bottom: 2px solid #39445a;
+	user-select: none;
+}
+#coach-keypad .pad-container {
+	display: flex; /* the shared rule is inline-flex; fill the plate */
+	padding: 12px;
+	/* the plate is pixel-font; the arrows must label themselves in the
+	   dashboard's own face (.glyph-label is font-family: inherit) */
+	font-family: "source_sans_proregular", sans-serif;
+	background: #ffda29; /* the real keypad modal's yellow */
+}
+#coach-keypad .drive-button {
+	touch-action: none; /* press-and-hold jogs; no scroll/zoom gestures */
+}
+/* A simulated switch tripped (the sim holds motion for the duration):
+   pop + glow the specific input light in the top bar. */
+.input.coach-input-pop {
+	animation: coach-input-pop 1.5s ease-out;
+}
+@keyframes coach-input-pop {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(217, 164, 32, 0.95);
+	}
+	25% {
+		transform: scale(1.7);
+		box-shadow: 0 0 2px 7px rgba(217, 164, 32, 0.65);
+	}
+	80% {
+		transform: scale(1.25);
+		box-shadow: 0 0 2px 5px rgba(217, 164, 32, 0.45);
+	}
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(217, 164, 32, 0);
+	}
+}
+/* The converging spotlight frame: starts at the viewport boundary and
+   settles on the highlighted control; the giant shadow dims everything
+   outside the frame on the way in. */
+#coach-zoom {
+	position: fixed;
+	z-index: 10001;
+	pointer-events: none;
+	border: 3px solid #d9a420;
+	border-radius: 6px;
+	box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.3);
+}
+#coach-zoom.coach-zoom-run {
+	transition: all 0.65s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+#coach-zoom.coach-zoom-done {
+	transition: opacity 0.45s;
+	opacity: 0;
+}
