@@ -54,6 +54,7 @@ define(function () {
     // the Z-zero plate and its grounding clip (zeroz theater)
     var PLATE = { top: hex("#d8dee4"), hi: hex("#eef2f6"), side: hex("#9aa2aa"), side2: hex("#7c848c"), wire: hex("#202228") };
     var CLIP = { cu: hex("#c87a3a"), cuHi: hex("#e09a56"), grip: hex("#16181e"), gripHi: hex("#343842") };
+    var PAT = { line: hex("#2456e8"), dot: hex("#5b86ff") }; // practice-path chalk line
     var TOOL = {
         bit: [hex("#242a34"), hex("#6c7480"), hex("#a8b0bc"), hex("#d8dee6"), hex("#c0c6d0")],
         flute: hex("#3a4250"),
@@ -121,7 +122,8 @@ define(function () {
         this.clipD = 0;
         this.moving = false;
         this.spin = 0;
-        this.carved = {}; // "i,j" -> true
+        this.carved = {}; // "i,j" -> true (cells CENTERED on the tile grid)
+        this.pattern = null; // practice-path polyline, machine inches
 
         // Registered once, inert while hidden (FabMoAPI has no off()).
         var self = this;
@@ -180,6 +182,12 @@ define(function () {
             self._raf = requestAnimationFrame(loop);
         };
         this._raf = requestAnimationFrame(loop);
+    };
+
+    // The keypad lesson draws a practice path on the sheet: a closed
+    // polyline in machine inches, rendered as a dashed chalk line.
+    CoachMachine.prototype.setPattern = function (pts) {
+        this.pattern = pts && pts.length ? pts : null;
     };
 
     // Arena mode: size the canvas to the largest half-integer multiple of
@@ -272,13 +280,16 @@ define(function () {
         this.moving = moved || Math.abs(this.target.z - this.draw.z) > 0.001;
         if (this.running || this.moving) this.spin += dt * 22;
 
-        // below Z zero: carve every stock tile the bit passes over
+        // below Z zero: carve every stock cell the bit passes over. Cells
+        // are CENTERED on the tile grid (nearest-center, not floor), so the
+        // trench stays centered under the bit instead of hanging off one
+        // side of a gridline.
         if (this.draw.z < -0.02) {
             var steps = Math.max(1, Math.ceil((Math.abs(this.draw.x - px) + Math.abs(this.draw.y - py)) / (this.tileIn / 4)));
             for (var s = 0; s <= steps; s++) {
-                var ix = Math.floor((px + ((this.draw.x - px) * s) / steps) / this.tileIn);
-                var iy = Math.floor((py + ((this.draw.y - py) * s) / steps) / this.tileIn);
-                if (ix >= 0 && iy >= 0 && ix < this.TW && iy < this.TH) this.carved[ix + "," + iy] = true;
+                var ix = Math.round((px + ((this.draw.x - px) * s) / steps) / this.tileIn);
+                var iy = Math.round((py + ((this.draw.y - py) * s) / steps) / this.tileIn);
+                if (ix >= 0 && iy >= 0 && ix <= this.TW && iy <= this.TH) this.carved[ix + "," + iy] = true;
             }
         }
     };
@@ -340,7 +351,7 @@ define(function () {
         var SLAB_BOT = -0.75;
         var self = this;
         function topZ(i, j) {
-            if (i < 0 || j < 0 || i >= TW || j >= TH) return SLAB_BOT;
+            if (i < 0 || j < 0 || i > TW || j > TH) return SLAB_BOT;
             return self.carved[i + "," + j] ? CARVE_Z : 0;
         }
 
@@ -348,23 +359,41 @@ define(function () {
         for (var si = -1; si <= TW; si++)
             for (var sj = -1; sj <= TH; sj++) tileTop(si, sj, SLAB_BOT, SPOIL[(si + sj) & 1]);
 
-        // slab tiles, back to front: both axes climb away from the viewer,
-        // so high i+j is far -- paint it first, near tiles last
-        for (var sum = TW - 1 + TH - 1; sum >= 0; sum--) {
+        // Slab cells, back to front (both axes climb away from the viewer,
+        // so high i+j is far -- paint it first). The cell grid is offset
+        // HALF a tile: cell centers, not corners, sit on the machine's tile
+        // grid, so the bit rides checker centerlines and carves a centered
+        // trench. Edge cells clamp to the slab boundary (half-width).
+        var loX = function (i) {
+            return Math.max(0, i - 0.5);
+        };
+        var hiX = function (i) {
+            return Math.min(TW, i + 0.5);
+        };
+        var loY = function (j) {
+            return Math.max(0, j - 0.5);
+        };
+        var hiY = function (j) {
+            return Math.min(TH, j + 0.5);
+        };
+        for (var sum = TW + TH; sum >= 0; sum--) {
             for (var i = 0; i <= sum; i++) {
                 var j = sum - i;
-                if (i >= TW || j >= TH) continue;
+                if (i > TW || j > TH) continue;
                 var z = topZ(i, j);
                 var carvedHere = z < 0;
-                tileTop(i, j, z, carvedHere ? CUT[(i + j) & 1] : STOCK[(i + j) & 1]);
+                fillPoly(
+                    [proj(loX(i), loY(j), z), proj(hiX(i), loY(j), z), proj(hiX(i), hiY(j), z), proj(loX(i), hiY(j), z)],
+                    carvedHere ? CUT[(i + j) & 1] : STOCK[(i + j) & 1]
+                );
                 // near walls: the -x and -y faces (both face the viewer)
                 var zx = topZ(i - 1, j);
                 if (zx < z) {
-                    fillPoly([proj(i, j, z), proj(i, j + 1, z), proj(i, j + 1, zx), proj(i, j, zx)], carvedHere ? CUT_WALL : STOCK_WALL);
+                    fillPoly([proj(loX(i), loY(j), z), proj(loX(i), hiY(j), z), proj(loX(i), hiY(j), zx), proj(loX(i), loY(j), zx)], carvedHere ? CUT_WALL : STOCK_WALL);
                 }
                 var zy = topZ(i, j - 1);
                 if (zy < z) {
-                    fillPoly([proj(i, j, z), proj(i + 1, j, z), proj(i + 1, j, zy), proj(i, j, zy)], carvedHere ? CUT_WALL : shade(STOCK_WALL, 0.8));
+                    fillPoly([proj(loX(i), loY(j), z), proj(hiX(i), loY(j), z), proj(hiX(i), loY(j), zy), proj(loX(i), loY(j), zy)], carvedHere ? CUT_WALL : shade(STOCK_WALL, 0.8));
                 }
             }
         }
@@ -389,6 +418,29 @@ define(function () {
         }
         glyph(GLYPH_X, Math.round(og[0]) + 15, Math.round(og[1]) - 2);
         glyph(GLYPH_Y, Math.round(og[0]) - 14, Math.round(og[1]) - 9);
+
+        // ---- the practice path: a dashed chalk-line loop the keypad
+        // lesson asks the trainee to trace, with dots at the corners ----
+        if (this.pattern && this.pattern.length > 1) {
+            var tI = this.tileIn;
+            var dashIdx = 0;
+            for (var pi = 0; pi < this.pattern.length - 1; pi++) {
+                var pa = this.pattern[pi],
+                    pb = this.pattern[pi + 1];
+                var segN = Math.max(1, Math.round((Math.abs(pb[0] - pa[0]) + Math.abs(pb[1] - pa[1])) / 0.12));
+                for (var ps = 0; ps < segN; ps++) {
+                    if (dashIdx++ % 7 < 4) {
+                        var sp = proj((pa[0] + ((pb[0] - pa[0]) * ps) / segN) / tI, (pa[1] + ((pb[1] - pa[1]) * ps) / segN) / tI, 0.05);
+                        pset(Math.round(sp[0]), Math.round(sp[1]), PAT.line);
+                    }
+                }
+            }
+            for (var pc = 0; pc < this.pattern.length - 1; pc++) {
+                var cp = proj(this.pattern[pc][0] / tI, this.pattern[pc][1] / tI, 0.05);
+                for (var cdx = -1; cdx <= 0; cdx++)
+                    for (var cdy = -1; cdy <= 0; cdy++) pset(Math.round(cp[0]) + cdx, Math.round(cp[1]) + cdy, PAT.dot);
+            }
+        }
 
         // ---- the Z-zero plate: slides in under the bit during the zeroz
         // theater. Flat aluminum bar, ~2x10 inches, with a 30-degree bend
@@ -423,7 +475,7 @@ define(function () {
         // ---- the spindle, straight from the Ball Mill ----
         var tx = this.draw.x / this.tileIn,
             ty = this.draw.y / this.tileIn;
-        var groundZ = topZ(Math.floor(tx), Math.floor(ty));
+        var groundZ = topZ(Math.round(tx), Math.round(ty)); // nearest-center cell grid
         var g = proj(tx, ty, groundZ);
         // shadow ellipse on whatever is below
         for (var dy = -2; dy <= 2; dy++) {

@@ -104,7 +104,13 @@ define(function (require) {
             if (!self.lesson) return;
             self._reposition();
             var step = self.lesson.steps[self.stepIndex];
-            if (step && status && checkPositionWatch(step.watch, status)) {
+            if (!step || !status) return;
+            if (step.watch && step.watch.type === "trace") {
+                if (self._checkTrace(status)) {
+                    self.stepIndex++;
+                    self._showStep();
+                }
+            } else if (checkPositionWatch(step.watch, status)) {
                 self.stepIndex++;
                 self._showStep();
             }
@@ -144,6 +150,8 @@ define(function (require) {
         clearInterval(this._typeTimer);
         this._clearHighlights();
         this.machine.hide();
+        this.machine.setPattern(null);
+        this._traceLeft = null;
         // Destroy the keypad while the sim shim is still installed: its
         // parting manualStop/manualExit must go to the sim, not the engine.
         if (this._keypad) this._keypad.destroy();
@@ -207,6 +215,16 @@ define(function (require) {
         }
         this._ui.dots.html(dots);
         this._clearHighlights();
+        // A pattern step chalks the practice path onto the sheet, anchored
+        // where the bit is when the step comes up; other steps erase it.
+        if (step.pattern) {
+            var pat = this._buildPattern(step.pattern);
+            this.machine.setPattern(pat.loop);
+            this._traceLeft = pat.targets;
+        } else {
+            this.machine.setPattern(null);
+            this._traceLeft = null;
+        }
         // Lessons bring the sim-machine stage on and off per step; leaving
         // the flag out keeps whatever state the previous step set. The stage
         // is hidden until a step calls for it, then takes over the app area
@@ -249,6 +267,59 @@ define(function (require) {
         });
         this._reposition();
         if (step.button) this._focusBar();
+    };
+
+    // Build the practice path for a "pattern" step: a w x h rectangle in
+    // machine inches, anchored at the bit's current position (snapped to
+    // the tile-center grid, flipped/clamped so it fits on the sheet). The
+    // loop is what gets drawn; the targets -- corners plus edge midpoints
+    // -- are what a "trace" watch requires the bit to visit while cutting.
+    Coach.prototype._buildPattern = function (spec) {
+        var m = this.machine;
+        var s = this.engine.status || {};
+        var u = s.unit === "mm" ? 1 / 25.4 : 1;
+        var t = m.tileIn;
+        var w = spec.w || 6,
+            h = spec.h || 4;
+        var ax = Math.round(((s.posx || 0) * u) / t) * t;
+        var ay = Math.round(((s.posy || 0) * u) / t) * t;
+        var x0 = ax + w > m.sizeX ? ax - w : ax; // prefer extending +X
+        x0 = Math.max(0, Math.min(m.sizeX - w, x0));
+        var y0 = ay + h > m.sizeY ? ay - h : ay;
+        y0 = Math.max(0, Math.min(m.sizeY - h, y0));
+        var x1 = x0 + w,
+            y1 = y0 + h;
+        var loop = [
+            [x0, y0],
+            [x1, y0],
+            [x1, y1],
+            [x0, y1],
+            [x0, y0],
+        ];
+        var targets = [];
+        for (var i = 0; i < 4; i++) {
+            targets.push([loop[i][0], loop[i][1]]);
+            targets.push([(loop[i][0] + loop[i + 1][0]) / 2, (loop[i][1] + loop[i + 1][1]) / 2]);
+        }
+        return { loop: loop, targets: targets };
+    };
+
+    // A "trace" watch completes when every target on the practice path has
+    // been visited with the bit below zero -- order-free, so either way
+    // around the loop counts.
+    Coach.prototype._checkTrace = function (status) {
+        if (!this._traceLeft || !this._traceLeft.length) return false;
+        var u = status.unit === "mm" ? 1 / 25.4 : 1;
+        var px = (status.posx || 0) * u,
+            py = (status.posy || 0) * u,
+            pz = (status.posz || 0) * u;
+        if (pz > -0.01) return false;
+        for (var i = this._traceLeft.length - 1; i >= 0; i--) {
+            if (Math.abs(px - this._traceLeft[i][0]) < 0.7 && Math.abs(py - this._traceLeft[i][1]) < 0.7) {
+                this._traceLeft.splice(i, 1);
+            }
+        }
+        return this._traceLeft.length === 0;
     };
 
     // --------------------------------------------------------- typewriter
