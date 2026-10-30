@@ -7,29 +7,32 @@
                 "button": "Begin"
             },
             {
-                "text": "First, the machine needs to find its fixed home position. I've put a <b>model of the simulated machine</b> on screen so you can watch it move. In the Console's <b>Machine</b> card, press the highlighted <b>Home&nbsp;XY</b> button.",
+                "text": "First, the machine needs to find its fixed home position. In the Console's <b>Machine</b> card, press the highlighted <b>Home&nbsp;XY</b> button — a <b>model of the simulated machine</b> will pop up so you can watch what happens.",
                 "watch": { "type": "code", "pattern": "(^|\\b)(C#?,?\\s*3|MH)\\b" },
-                "highlight": { "app": "#btn-home-xy" },
-                "stage": true
+                "highlight": { "app": "#btn-home-xy" }
             },
             {
                 "text": "Watch the tool drive toward each proximity switch, back off, and creep back in slowly for an exact reading — first X, then Y. The <b>Inputs</b> lights in the top bar show each switch tripping.",
                 "watch": { "type": "sequence", "name": "home" },
-                "highlight": { "dashboard": ".sm-axes, .io-group" }
+                "highlight": { "dashboard": ".sm-axes, .io-group" },
+                "stage": true
             },
             {
                 "text": "The DRO now reads <b>X 0.00&nbsp;&nbsp;Y 0.00</b> — the machine knows where it is. Next: the Z axis is zeroed to the <b>top of your material</b> using the metal touch plate. On a real machine you'd rest the plate under the bit now. Press the highlighted <b>Home&nbsp;Z</b> button.",
                 "watch": { "type": "code", "pattern": "(^|\\b)C#?,?\\s*2\\b" },
-                "highlight": { "app": "#btn-home-z" }
+                "highlight": { "app": "#btn-home-z" },
+                "stage": false
             },
             {
                 "text": "The bit finds the plate twice — a fast touch, then a slow one for accuracy. Watch input 1 light up at each touch; Z is set from the plate's known thickness before retracting to a safe height.",
                 "watch": { "type": "sequence", "name": "zeroz" },
-                "highlight": { "dashboard": ".sm-axes, .io-group" }
+                "highlight": { "dashboard": ".sm-axes, .io-group" },
+                "stage": true
             },
             {
                 "text": "<b>That's the whole startup routine.</b> Home XY once per session, zero the Z whenever the bit or material changes. This is exactly what you'll do on the real machine — the only difference is that it moves.",
-                "button": "Finish"
+                "button": "Finish",
+                "stage": false
             }
         ]
     },
@@ -39,7 +42,7 @@
             {
                 "text": "<b>Time to take the wheel.</b> Driving the machine by hand is how you position the bit before every cut. That's your simulated tool on stage, and beside it a <b>practice keypad</b> — the same direction arrows you'll find on the real motion keypad.",
                 "button": "Begin",
-                "stage": { "mode": "arena", "keypad": true }
+                "stage": { "keypad": true }
             },
             {
                 "text": "The arrows jog the machine. <b>Press and hold</b> one of the XY arrows and watch the tool glide over the table. The position readout in the top bar follows along — let go and it stops instantly.",

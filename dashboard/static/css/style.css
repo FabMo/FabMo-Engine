@@ -4412,10 +4412,10 @@ body.fabmo-training #dro-tab {
 #coach-banner button:hover {
 	background: rgba(255, 255, 255, 0.2);
 }
-/* The coach rail: a docked right column holding the dialog on top and the
-   sim-machine stage below; it replaces the slide-out DRO for the duration
-   of the lesson, and the app area shifts left to sit beside it. Sits under
-   the banner (1001) and the left nav (1003), so those still open over it. */
+/* The coach rail: a docked right column holding the dialog; it replaces
+   the slide-out DRO for the duration of the lesson, and the app area
+   shifts left to sit beside it. Sits under the banner (1001) and the left
+   nav (1003), so those still open over it. */
 #coach-rail {
 	position: fixed;
 	top: 80px; /* 56px tab-bar + the TRAINING banner strip */
@@ -4433,17 +4433,11 @@ body.fabmo-training #dro-tab {
 	gap: 12px;
 	overflow: hidden; /* the text pane scrolls internally; nothing else moves */
 }
-/* The stage is stationary: pinned to the rail bottom, never pushed by the
-   dialog growing. The dialog absorbs all height changes via text scroll. */
-#coach-rail .coach-stage-slot {
-	flex: none;
-	line-height: 0;
-}
 /* The coach dialog: a game text box. Dark navy plate, white double border,
    the pixel ShopBot character up top typing the text out below him. */
 #coach-bar {
 	outline: none; /* focused (tabindex -1) to pull focus out of app iframes */
-	flex: 1 1 auto; /* take the rail height the stage doesn't use... */
+	flex: 1 1 auto; /* fill the rail... */
 	min-height: 0; /* ...and let the text pane inside actually shrink */
 	display: flex;
 	flex-direction: column;
@@ -4583,20 +4577,6 @@ body.fabmo-training #dro-tab {
 	display: block;
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
-}
-/* Docked in the coach rail: a static block that fills the rail width. */
-#coach-stage.docked {
-	position: static;
-	width: 100%;
-	box-sizing: border-box;
-	box-shadow: 0 0 0 3px #101424;
-}
-#coach-stage.docked .coach-stage-head {
-	cursor: default;
-}
-#coach-stage.docked canvas {
-	width: 100% !important; /* overrides the inline floating-mode size */
-	height: auto !important;
 }
 /* The arena: a takeover surface for steps that don't need the app
    underneath -- watching a file run, or driving with the practice keypad.

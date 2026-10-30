@@ -209,24 +209,23 @@ define(function (require) {
         this._clearHighlights();
         // Lessons bring the sim-machine stage on and off per step; leaving
         // the flag out keeps whatever state the previous step set. The stage
-        // has two homes: docked small in the rail (stage: true) for steps
-        // that need the app visible, or taking over the whole app area
-        // ({"mode": "arena"}) -- optionally with the practice keypad beside
-        // it ({"mode": "arena", "keypad": true}) for driving lessons.
+        // is hidden until a step calls for it, then takes over the app area
+        // (the arena): stage: true while the trainee watches the machine
+        // move, {"keypad": true} to add the practice keypad beside it for
+        // driving lessons. Steps that need the app clickable leave it off.
         if (step.stage !== undefined) {
             if (step.stage) {
                 var spec = typeof step.stage === "object" ? step.stage : {};
-                var arena = spec.mode === "arena";
-                this._ui.arena.toggleClass("visible", arena);
-                if (arena && spec.keypad) this._keypad.show();
+                this._ui.arena.addClass("visible");
+                if (spec.keypad) this._keypad.show();
                 else this._keypad.hide();
                 this.machine.show({
                     sizeX: spec.sizeX,
                     sizeY: spec.sizeY,
-                    arena: arena,
-                    parent: arena ? this._ui.arenaSlot[0] : this._ui.stageSlot[0],
+                    arena: true,
+                    parent: this._ui.arenaSlot[0],
                 });
-                if (arena) this._fitArena();
+                this._fitArena();
             } else {
                 this.machine.hide();
                 this._keypad.hide();
@@ -546,12 +545,12 @@ define(function (require) {
         this.machine.fitTo(availW, availH);
     };
 
-    // The lesson chrome is a docked right rail -- the dialog, with a slot
-    // for the small sim-machine stage below -- sized to match the pop-out
-    // DRO, and the app area shifts left to sit beside it, so the coach never
-    // covers the controls it's teaching. The arena is a separate takeover
-    // surface spanning the app area for steps that don't need the app:
-    // watching a file run, or driving the sim with the practice keypad.
+    // The lesson chrome is a docked right rail holding the dialog, sized to
+    // match the pop-out DRO, and the app area shifts left to sit beside it,
+    // so the coach never covers the controls it's teaching. The sim-machine
+    // stage lives in the arena -- a takeover surface spanning the app area
+    // that steps show only while there's something to watch: the machine
+    // homing, a file running, or driving the sim with the practice keypad.
     Coach.prototype._buildUI = function () {
         $("body").addClass("fabmo-training");
         var banner = $(
@@ -571,8 +570,7 @@ define(function (require) {
                 '<button class="coach-next"></button></span></div>' +
                 "</div></div>"
         );
-        var stageSlot = $('<div class="coach-stage-slot"></div>');
-        rail.append(bar).append(stageSlot);
+        rail.append(bar);
         var arena = $('<div id="coach-arena"></div>');
         var arenaSlot = $('<div class="coach-arena-slot"></div>');
         arena.append(arenaSlot);
@@ -593,7 +591,6 @@ define(function (require) {
         this._ui = {
             banner: banner,
             rail: rail,
-            stageSlot: stageSlot,
             arena: arena,
             arenaSlot: arenaSlot,
             bar: bar,

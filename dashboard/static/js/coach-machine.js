@@ -124,21 +124,18 @@ define(function () {
             this.tileIn = this.sizeX / this.TW;
         }
         if (!this.el) this._build();
-        // Docked (options.parent): a static child of the coach rail (small,
-        // full rail width) or of the arena (options.arena -- canvas sized by
-        // fitTo). Otherwise a floating, draggable panel. Mode and parent are
-        // reapplied even when already visible, so a lesson can move the stage
-        // between homes mid-run without losing its carving.
+        // Docked in the arena (options.parent): a static panel whose canvas
+        // fitTo sizes. Otherwise a floating, draggable panel. The parent is
+        // reapplied even when already visible, so a lesson can re-home the
+        // stage mid-run without losing its carving.
         this._docked = !!options.parent;
-        this.el.classList.toggle("docked", this._docked && !options.arena);
-        this.el.classList.toggle("arena", !!options.arena);
+        this.el.classList.toggle("arena", this._docked);
         if (this._docked) {
             this.el.style.left = "";
             this.el.style.top = "";
             this.el.style.right = "";
-        }
-        if (!options.arena) {
-            // undo any arena fitTo sizing (rail mode overrides via CSS anyway)
+        } else {
+            // undo any arena fitTo sizing
             this._cv.style.width = W * SCALE + "px";
             this._cv.style.height = H * SCALE + "px";
         }
@@ -166,18 +163,21 @@ define(function () {
         this._raf = requestAnimationFrame(loop);
     };
 
-    // Arena mode: size the canvas to the largest integer multiple of the
-    // framebuffer that fits the given box (minus the plate's header and
-    // border/shadow ring). Integer scales keep the pixel art crisp.
+    // Arena mode: size the canvas to the largest half-integer multiple of
+    // the framebuffer that fits the given box (minus the plate's header and
+    // border/shadow ring). Whole scales keep the pixel art perfectly crisp;
+    // the half steps are a worthwhile trade when the run footer is eating
+    // the arena's height and the next whole scale down would look tiny.
     CoachMachine.prototype.fitTo = function (availW, availH) {
         if (!this.el || !this._cv) return;
         var head = this.el.firstChild ? this.el.firstChild.offsetHeight : 0;
         var frame = 12; // 3px border + 3px shadow ring, both sides
-        var s = Math.max(1, Math.floor(Math.min((availW - frame) / W, (availH - head - frame) / H)));
-        var w = W * s + "px";
+        var s = Math.floor(Math.min((availW - frame) / W, (availH - head - frame) / H) * 2) / 2;
+        s = Math.max(1, s);
+        var w = Math.round(W * s) + "px";
         if (this._cv.style.width !== w) {
             this._cv.style.width = w;
-            this._cv.style.height = H * s + "px";
+            this._cv.style.height = Math.round(H * s) + "px";
         }
     };
 
