@@ -66,10 +66,18 @@ define(function () {
         this.marks = []; // printed "text" pixel x positions on the table
         this.typing = false;
 
-        // five manifold valves: seq index + pending spin steps
+        // five manifold valves: seq index + pending spin steps, each on its
+        // own twiddle clock (staggered so they don't fire in unison)
         this.valves = [];
         for (var i = 0; i < 5; i++) {
-            this.valves.push({ x: 8 + i * 8, hy: [36, 35, 37, 36, 35][i], seq: [0, 2, 0, 1, 0][i], spin: 0, t: 0 });
+            this.valves.push({
+                x: 8 + i * 8,
+                hy: [36, 35, 37, 36, 35][i],
+                seq: [0, 2, 0, 1, 0][i],
+                spin: 0,
+                t: 0,
+                next: 0.5 + i * 0.4 + Math.random() * 1.5,
+            });
         }
 
         this.pupil = { x: 0, y: 0 }; // current pupil offset (-2..2, -2..3)
@@ -198,9 +206,20 @@ define(function () {
             if (this.hopT >= HOP_FRAMES.length * HOP_BEAT) this.hopT = -1;
         }
 
-        // valve spinning: pending steps advance the handle every beat
+        // manifold life: he fiddles with the vacuum constantly, even
+        // mid-sentence -- each valve twiddles on its own clock, and the
+        // fiddling sometimes travels to the next knob down the line
         for (var vi = 0; vi < this.valves.length; vi++) {
             var v = this.valves[vi];
+            v.next -= dt;
+            if (v.next <= 0) {
+                if (v.spin <= 0) v.spin = 2 + ((Math.random() * 6) | 0);
+                v.next = 0.9 + Math.random() * 2.6;
+                if (Math.random() < 0.3) {
+                    var nb = this.valves[(vi + 1) % this.valves.length];
+                    nb.next = Math.min(nb.next, 0.2);
+                }
+            }
             if (v.spin > 0) {
                 v.t += dt;
                 var beat = this.celebrateT > 0 ? 0.07 : 0.12;
@@ -251,17 +270,11 @@ define(function () {
                 this.pupilTarget.x = [-2, -1, 0, 0, 1, 2][(Math.random() * 6) | 0];
                 this.pupilTarget.y = [-1, 0, 0, 1][(Math.random() * 4) | 0];
                 this._nextWander = 1.4 + Math.random() * 2.4;
-                if (this.celebrateT <= 0) {
-                    // idle life: sometimes drift the carriage, sometimes
-                    // lazily spin one of the manifold valves (Brian's note:
-                    // the red knobs turn while he's thinking)
-                    if (Math.random() < 0.3) {
-                        this.carTarget = CAR_MIN + Math.random() * (CAR_MAX - CAR_MIN);
-                        this.carSpeed = 30;
-                    } else if (Math.random() < 0.45) {
-                        var pick = this.valves[(Math.random() * this.valves.length) | 0];
-                        if (pick.spin <= 0) pick.spin = 2 + ((Math.random() * 5) | 0);
-                    }
+                if (this.celebrateT <= 0 && Math.random() < 0.3) {
+                    // idle life: sometimes drift the carriage (the valve
+                    // twiddling runs on its own clocks above)
+                    this.carTarget = CAR_MIN + Math.random() * (CAR_MAX - CAR_MIN);
+                    this.carSpeed = 30;
                 }
             }
         }
