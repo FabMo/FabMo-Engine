@@ -149,6 +149,20 @@ ManualRuntime.prototype.executeCode = function (code) {
     }
     log.info("MANUAL CODE!!");
     log.info(JSON.stringify(code));
+    // A motion command is proof of a live client — this is the ONLY place
+    // the disconnect deadman flag clears (connects don't clear it; see
+    // routes/websocket.js). The driving client streams these every ~50ms,
+    // so an unrelated socket's disconnect can starve motion for at most one
+    // renew tick; a vanished client leaves the flag set and motion stops.
+    switch (code.cmd) {
+        case "start":
+        case "fixed":
+        case "goto":
+        case "resume":
+        case "maint":
+            global.CLIENT_DISCONNECTED = false;
+            break;
+    }
     switch (code.cmd) {
         case "enter":
             this.enter(code.mode, code.hideKeypad || false);

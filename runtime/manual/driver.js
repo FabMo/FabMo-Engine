@@ -879,6 +879,14 @@ function snapNudgeDistance(currentPos, distance, increment) {
 
 // Returns the number of nudges
 ManualDriver.prototype._handleNudges = function () {
+    // Pure fixed-mode never runs the continuous renewal loop, so its
+    // disconnect check can't help here — without this, a vanished client's
+    // typematic backlog keeps stepping the machine for up to NUDGE_QUEUE_TTL.
+    if (global.CLIENT_DISCONNECTED && this.fixedQueue.length > 0) {
+        log.warn("_handleNudges(): client disconnected - discarding " + this.fixedQueue.length + " queued nudge(s)");
+        this.fixedQueue = [];
+        return 0;
+    }
     // Discard nudges that have waited past NUDGE_QUEUE_TTL. A fresh backlog
     // (taps queued behind an executing move) drains normally; an old one
     // means the queue was wedged and the user has long since concluded the
@@ -1161,7 +1169,14 @@ ManualDriver.prototype._renewMoves = function (reason) {
     if (this.mode === "normal") {
         if (this.keep_moving && (this.moving || reason === "start")) {
             if (global.CLIENT_DISCONNECTED) {
+                // The driving client is gone (window closed, crashed, link
+                // dropped). Don't just starve the renewal — stop decisively:
+                // feedhold+flush kills the queued segments, and the nudge
+                // backlog must not play out with nobody at the keyboard.
+                log.warn("_renewMoves(): client disconnected during motion - stopping");
                 this.keep_moving = false;
+                this.cancelNudges();
+                this.stopMotion();
                 return;
             }
 
