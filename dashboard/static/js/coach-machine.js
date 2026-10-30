@@ -15,13 +15,14 @@ define(function () {
     var W = 256,
         H = 160,
         SCALE = 2;
-    // Trimetric table axes, screen px per tile: +X runs long and shallow so
-    // the table reads WIDE, +Y recedes shorter and steeper. The squashed
-    // height keeps the stage usable when the run footer eats the arena.
+    // Trimetric table axes, screen px per tile. The origin corner faces the
+    // viewer: +X climbs up-right, long and shallow (the table reads WIDE),
+    // +Y climbs up-left, shorter and steeper. The squashed height keeps the
+    // stage usable when the run footer eats the arena.
     var XX = 14,
-        XY = 4; // screen step per tile of machine +X
+        XY = 4; // machine +X: right 14, up 4
     var YX = -7,
-        YY = 6; // screen step per tile of receding +Y (drawn via v = TH - y)
+        YY = 6; // machine +Y: left 7, up 6
     var ZS = 9; // px per inch of Z
     var BR = 4; // bit tip radius
     var BW = 20; // spindle body half-width
@@ -273,14 +274,13 @@ define(function () {
         var TW = this.TW,
             TH = this.TH;
 
-        // projection: machine (0,0) is the slab's left corner; +X runs along
-        // the front edge toward the viewer's right, +Y recedes up-right.
+        // projection: machine (0,0) is the slab corner NEAREST the viewer,
+        // parked at the bottom of the frame; +X climbs up-right, +Y up-left.
         // Center the slab's screen extent: px spans [TH*YX, TW*XX] around ox.
         var ox = Math.round((W - (TW * XX - TH * YX)) / 2 - TH * YX);
-        var oy = Math.round((H - (TW * XY + TH * YY)) / 2) + 14;
+        var oy = H - 18; // room below for the slab wall + spoilboard ring
         function proj(x, y, z) {
-            var v = TH - y;
-            return [ox + x * XX + v * YX, oy + x * XY + v * YY - z * ZS];
+            return [ox + x * XX + y * YX, oy - x * XY - y * YY - z * ZS];
         }
         function pset(x, y, c) {
             if (x >= 0 && y >= 0 && x < W && y < H) buf[y * W + x] = c;
@@ -331,18 +331,19 @@ define(function () {
         for (var si = -1; si <= TW; si++)
             for (var sj = -1; sj <= TH; sj++) tileTop(si, sj, SLAB_BOT, SPOIL[(si + sj) & 1]);
 
-        // slab tiles, back to front (screen order: high x+(TH-y) last)
-        for (var sum = 0; sum <= TW - 1 + TH - 1; sum++) {
+        // slab tiles, back to front: both axes climb away from the viewer,
+        // so high i+j is far -- paint it first, near tiles last
+        for (var sum = TW - 1 + TH - 1; sum >= 0; sum--) {
             for (var i = 0; i <= sum; i++) {
-                var j = TH - 1 - (sum - i); // j descending with sum
-                if (i >= TW || j < 0 || j >= TH) continue;
+                var j = sum - i;
+                if (i >= TW || j >= TH) continue;
                 var z = topZ(i, j);
                 var carvedHere = z < 0;
                 tileTop(i, j, z, carvedHere ? CUT[(i + j) & 1] : STOCK[(i + j) & 1]);
-                // front walls: +x face and -y face (both face the viewer)
-                var zx = topZ(i + 1, j);
+                // near walls: the -x and -y faces (both face the viewer)
+                var zx = topZ(i - 1, j);
                 if (zx < z) {
-                    fillPoly([proj(i + 1, j, z), proj(i + 1, j + 1, z), proj(i + 1, j + 1, zx), proj(i + 1, j, zx)], carvedHere ? CUT_WALL : STOCK_WALL);
+                    fillPoly([proj(i, j, z), proj(i, j + 1, z), proj(i, j + 1, zx), proj(i, j, zx)], carvedHere ? CUT_WALL : STOCK_WALL);
                 }
                 var zy = topZ(i, j - 1);
                 if (zy < z) {

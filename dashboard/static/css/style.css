@@ -4643,9 +4643,10 @@ body.fabmo-training #dro-tab {
 #coach-keypad .pad-container {
 	display: flex; /* the shared rule is inline-flex; fill the plate */
 	padding: 12px;
-	/* the plate is pixel-font; the pad inside must label its arrows in the
+	/* the plate is pixel-font; the arrows must label themselves in the
 	   dashboard's own face (.glyph-label is font-family: inherit) */
-	font-family: "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+	font-family: "source_sans_proregular", sans-serif;
+	background: #ffda29; /* the real keypad modal's yellow */
 }
 #coach-keypad .drive-button {
 	touch-action: none; /* press-and-hold jogs; no scroll/zoom gestures */
