@@ -107,6 +107,10 @@ define(function (require) {
             if (!step || !status) return;
             if (step.watch && step.watch.type === "trace") {
                 if (self._checkTrace()) {
+                    // the whole path is cleared: a moment of glory --
+                    // confetti on the stage AND from the coach
+                    self.machine.celebrate();
+                    if (self.sprite) self.sprite.celebrate();
                     self.stepIndex++;
                     self._showStep();
                 }

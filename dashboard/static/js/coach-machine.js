@@ -55,6 +55,7 @@ define(function () {
     var PLATE = { top: hex("#d8dee4"), hi: hex("#eef2f6"), side: hex("#9aa2aa"), side2: hex("#7c848c"), wire: hex("#202228") };
     var CLIP = { cu: hex("#c87a3a"), cuHi: hex("#e09a56"), grip: hex("#16181e"), gripHi: hex("#343842") };
     var PAT = [hex("#3e6ce2"), hex("#3560cf")]; // practice-path painted cells (checkered blues)
+    var CONFETTI = [hex("#d9a420"), hex("#2a48c8"), hex("#ffffff"), hex("#ff2020"), hex("#7a9ad0")];
     var TOOL = {
         bit: [hex("#242a34"), hex("#6c7480"), hex("#a8b0bc"), hex("#d8dee6"), hex("#c0c6d0")],
         flute: hex("#3a4250"),
@@ -122,6 +123,8 @@ define(function () {
         this.clipD = 0;
         this.moving = false;
         this.spin = 0;
+        this.celebrateT = 0;
+        this.confetti = [];
         this.carved = {}; // "i,j" -> true (cells CENTERED on the tile grid)
         this.pattern = null; // practice-path cells, "i,j" -> true
 
@@ -184,6 +187,22 @@ define(function () {
             self._raf = requestAnimationFrame(loop);
         };
         this._raf = requestAnimationFrame(loop);
+    };
+
+    // A confetti burst over the stage with a victory rev of the spindle
+    // (the keypad lesson fires this when the practice path is cleared).
+    CoachMachine.prototype.celebrate = function () {
+        this.celebrateT = 2.6;
+        this.confetti = [];
+        for (var i = 0; i < 44; i++) {
+            this.confetti.push({
+                x: 4 + Math.random() * (W - 8),
+                y: -4 - Math.random() * 40,
+                vy: 28 + Math.random() * 46,
+                vx: (Math.random() - 0.5) * 16,
+                c: CONFETTI[(Math.random() * CONFETTI.length) | 0],
+            });
+        }
     };
 
     // The keypad lesson paints a path of colored cells on the sheet
@@ -306,6 +325,19 @@ define(function () {
         var moved = Math.abs(this.draw.x - px) + Math.abs(this.draw.y - py) > 0.0005;
         this.moving = moved || Math.abs(this.target.z - this.draw.z) > 0.001;
         if (this.running || this.moving) this.spin += dt * 22;
+
+        // celebration: confetti rains over the stage, the spindle revs
+        if (this.celebrateT > 0) {
+            this.celebrateT -= dt;
+            this.spin += dt * 40;
+            for (var ci = this.confetti.length - 1; ci >= 0; ci--) {
+                var f = this.confetti[ci];
+                f.y += f.vy * dt;
+                f.x += f.vx * dt;
+                if (f.y > H) this.confetti.splice(ci, 1);
+            }
+            if (this.celebrateT <= 0) this.confetti = [];
+        }
 
         // (carving happens in _onStatus, off the authoritative positions)
     };
@@ -596,6 +628,13 @@ define(function () {
             }
             // clip wire drops toward the plate's bend end
             for (var cw = 1; cw <= 7; cw++) pset(cx + BR + 8 + co + Math.round(cw * 0.7), jawY + 2 + cw, PLATE.wire);
+        }
+
+        // ---- confetti over everything ----
+        for (var cf = 0; cf < this.confetti.length; cf++) {
+            var fc = this.confetti[cf];
+            pset(Math.round(fc.x), Math.round(fc.y), fc.c);
+            pset(Math.round(fc.x), Math.round(fc.y) + 1, fc.c);
         }
 
         this._ctx.putImageData(this._img, 0, 0);

@@ -60,7 +60,7 @@
                 "pattern": { "w": 6, "h": 4 }
             },
             {
-                "text": "On a real machine you'd never drag the bit sideways out of a cut without thinking — you <b>always</b> retract before traveling. Hold <b>Z up</b> until the readout is back above zero.",
+                "text": "<b>Path cleared — nice driving!</b> One last habit: on a real machine you'd never drag the bit sideways out of a cut without thinking — you <b>always</b> retract before traveling. Hold <b>Z up</b> until the readout is back above zero.",
                 "watch": { "type": "position", "axis": "z", "above": 0.05 },
                 "highlight": { "dashboard": "#coach-keypad .z_pos_slow, #coach-keypad .z_pos_fast" }
             },
