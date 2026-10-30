@@ -12,11 +12,16 @@
 define(function () {
     "use strict";
 
-    var W = 224,
-        H = 172,
+    var W = 256,
+        H = 160,
         SCALE = 2;
-    var HW = 10,
-        HH = 5; // half tile width/height in px
+    // Trimetric table axes, screen px per tile: +X runs long and shallow so
+    // the table reads WIDE, +Y recedes shorter and steeper. The squashed
+    // height keeps the stage usable when the run footer eats the arena.
+    var XX = 14,
+        XY = 4; // screen step per tile of machine +X
+    var YX = -7,
+        YY = 6; // screen step per tile of receding +Y (drawn via v = TH - y)
     var ZS = 9; // px per inch of Z
     var BR = 4; // bit tip radius
     var BW = 20; // spindle body half-width
@@ -270,10 +275,12 @@ define(function () {
 
         // projection: machine (0,0) is the slab's left corner; +X runs along
         // the front edge toward the viewer's right, +Y recedes up-right.
-        var ox = Math.round(W / 2 - ((TW - TH) * HW) / 2);
-        var oy = Math.round((H - (TW + TH) * HH) / 2) + 14;
+        // Center the slab's screen extent: px spans [TH*YX, TW*XX] around ox.
+        var ox = Math.round((W - (TW * XX - TH * YX)) / 2 - TH * YX);
+        var oy = Math.round((H - (TW * XY + TH * YY)) / 2) + 14;
         function proj(x, y, z) {
-            return [ox + (x - (TH - y)) * HW, oy + (x + (TH - y)) * HH - z * ZS];
+            var v = TH - y;
+            return [ox + x * XX + v * YX, oy + x * XY + v * YY - z * ZS];
         }
         function pset(x, y, c) {
             if (x >= 0 && y >= 0 && x < W && y < H) buf[y * W + x] = c;

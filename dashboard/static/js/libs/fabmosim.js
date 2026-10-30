@@ -47,6 +47,7 @@ define(function (require) {
         this.status.hold = 0;
         this.status.resumeFlag = false;
         this._paused = false;
+        this._lastTick = 0;
         this.active = true;
         this.engine.sim = this;
         this._timer = setInterval(this._tick.bind(this), TICK_MS);
@@ -366,6 +367,16 @@ define(function (require) {
     SimMachine.prototype._tick = function () {
         var dt = TICK_MS / 1000;
         var st = this.status;
+        // A main-thread stall (the Pi under paint load) suspends the
+        // keypad's maint heartbeats along with everything else. The deadman
+        // is there to catch a client that stopped STREAMING, not a tab that
+        // stopped RUNNING -- credit stalled time back so a held jog
+        // survives a long frame.
+        var now = Date.now();
+        if (this._lastTick && now - this._lastTick > 2 * TICK_MS) {
+            this._maintDeadline += now - this._lastTick - TICK_MS;
+        }
+        this._lastTick = now;
 
         // Feed-hold: freeze motion and the sequence, but keep both intact so
         // resume picks up where it left off. Status keeps flowing (paused).

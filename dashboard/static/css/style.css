@@ -4615,9 +4615,15 @@ body.fabmo-training #dro-tab {
 #coach-stage.arena .coach-stage-head {
 	cursor: default;
 }
-/* The practice keypad: just the direction arrows, same game-plate styling.
-   It drives the sim through the real manual-runtime commands, so the real
-   motion keypad feels familiar afterward. */
+#coach-stage.arena canvas {
+	/* ride the footBar's open/close (0.3s) instead of snapping sizes */
+	transition: width 0.3s, height 0.3s;
+}
+/* The practice keypad: the REAL motion keypad's direction pad -- same
+   markup classes and arrow glyphs, so the class-scoped keypad rules above
+   (.keypad-table, .drive-button, .dir-glyph, ...) style it identically --
+   wrapped in a coach game plate. Only the arrows: no readout, speeds, or
+   command buttons. */
 #coach-keypad {
 	flex: none;
 	background: #101424;
@@ -4634,59 +4640,15 @@ body.fabmo-training #dro-tab {
 	border-bottom: 2px solid #39445a;
 	user-select: none;
 }
-#coach-keypad .ck-pads {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	padding: 16px;
+#coach-keypad .pad-container {
+	display: flex; /* the shared rule is inline-flex; fill the plate */
+	padding: 12px;
+	/* the plate is pixel-font; the pad inside must label its arrows in the
+	   dashboard's own face (.glyph-label is font-family: inherit) */
+	font-family: "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
 }
-#coach-keypad .ck-dpad {
-	display: grid;
-	grid-template-columns: repeat(3, 52px);
-	grid-template-rows: repeat(3, 52px);
-	gap: 4px;
-}
-#coach-keypad .ck-dpad .ck-y-pos { grid-area: 1 / 2; }
-#coach-keypad .ck-dpad .ck-x-neg { grid-area: 2 / 1; }
-#coach-keypad .ck-dpad .ck-mid { grid-area: 2 / 2; }
-#coach-keypad .ck-dpad .ck-x-pos { grid-area: 2 / 3; }
-#coach-keypad .ck-dpad .ck-y-neg { grid-area: 3 / 2; }
-#coach-keypad .ck-zpad {
-	display: grid;
-	grid-template-columns: 52px;
-	grid-template-rows: 52px 24px 52px;
-	gap: 4px;
-}
-#coach-keypad .ck-btn {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0;
-	background: #182038;
-	color: #d9a420;
-	border: 2px solid #39445a;
-	border-radius: 4px;
-	font-family: inherit;
-	font-size: 16px;
-	line-height: 1;
-	cursor: pointer;
-	user-select: none;
+#coach-keypad .drive-button {
 	touch-action: none; /* press-and-hold jogs; no scroll/zoom gestures */
-}
-#coach-keypad .ck-btn:hover {
-	border-color: #d9a420;
-}
-#coach-keypad .ck-btn.ck-active {
-	background: #d9a420;
-	color: #101424;
-}
-#coach-keypad .ck-mid {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 8px;
-	color: #8a94a8;
-	user-select: none;
 }
 /* A simulated switch tripped (the sim holds motion for the duration):
    pop + glow the specific input light in the top bar. */

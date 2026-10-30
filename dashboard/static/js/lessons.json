@@ -47,12 +47,12 @@
             {
                 "text": "The arrows jog the machine. <b>Press and hold</b> one of the XY arrows and watch the tool glide over the table. The position readout in the top bar follows along — let go and it stops instantly.",
                 "watch": { "type": "any", "of": [{ "type": "manual", "cmd": "start", "axis": "x" }, { "type": "manual", "cmd": "start", "axis": "y" }] },
-                "highlight": { "dashboard": "#coach-keypad .ck-dpad" }
+                "highlight": { "dashboard": "#coach-keypad .keypad-table" }
             },
             {
                 "text": "Now the fun part. Hold <b>Z down</b> until the Z readout goes <b>below zero</b> — below zero is inside the material, and the simulated bit will start carving the sheet.",
                 "watch": { "type": "position", "axis": "z", "below": -0.02 },
-                "highlight": { "dashboard": "#coach-keypad .ck-z-neg" }
+                "highlight": { "dashboard": "#coach-keypad .z_neg_slow, #coach-keypad .z_neg_fast" }
             },
             {
                 "text": "<b>You're cutting!</b> Steer with the XY arrows and draw something — the trench follows the bit. This is exactly what happens when a job runs: Z plunges into the material, then X and Y draw the toolpath.",
@@ -61,7 +61,7 @@
             {
                 "text": "On a real machine you'd never drag the bit sideways out of a cut without thinking — you <b>always</b> retract before traveling. Hold <b>Z up</b> until the readout is back above zero.",
                 "watch": { "type": "position", "axis": "z", "above": 0.05 },
-                "highlight": { "dashboard": "#coach-keypad .ck-z-pos" }
+                "highlight": { "dashboard": "#coach-keypad .z_pos_slow, #coach-keypad .z_pos_fast" }
             },
             {
                 "text": "<b>That's hand-driving:</b> jog to position, plunge only on purpose, retract before you travel. On the real dashboard these same arrows live behind the highlighted <b>keypad button</b> in the top bar — it will feel like an old friend.",
