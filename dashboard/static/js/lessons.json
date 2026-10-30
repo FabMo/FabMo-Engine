@@ -18,19 +18,19 @@
                 "stage": true
             },
             {
-                "text": "The DRO now reads <b>X 0.00&nbsp;&nbsp;Y 0.00</b> — the machine knows where it is. Next: the Z axis is zeroed to the <b>top of your material</b> using the metal touch plate. On a real machine you'd rest the plate under the bit now. Press the highlighted <b>Home&nbsp;Z</b> button.",
+                "text": "The DRO now reads <b>X 0.00&nbsp;&nbsp;Y 0.00</b> — the machine knows where it is. Next: zeroing the Z axis, with two tools you'll find hanging on the real machine: the <b>Z-zero plate</b> — a flat aluminum plate with a wire on one end — and its <b>grounding clip</b>. Press the highlighted <b>Home&nbsp;Z</b> button to see how they're used.",
                 "watch": { "type": "code", "pattern": "(^|\\b)C#?,?\\s*2\\b" },
                 "highlight": { "app": "#btn-home-z" },
                 "stage": false
             },
             {
-                "text": "The bit finds the plate twice — a fast touch, then a slow one for accuracy. Watch input 1 light up at each touch; Z is set from the plate's known thickness before retracting to a safe height.",
+                "text": "<b>This setup is YOUR job on a real machine:</b> lay the plate flat under the bit, then snap the copper clip onto the bit — when the bit touches the plate it completes a circuit, and that's input 1. Watch it play out, then the bit finds the plate twice: a fast touch, and a slow one for accuracy. Z is set from the plate's known thickness.",
                 "watch": { "type": "sequence", "name": "zeroz" },
                 "highlight": { "dashboard": "#right-position-container" },
                 "stage": true
             },
             {
-                "text": "<b>That's the whole startup routine.</b> Home XY once per session, zero the Z whenever the bit or material changes. This is exactly what you'll do on the real machine — the only difference is that it moves.",
+                "text": "<b>That's the whole startup routine.</b> Home XY once per session; zero the Z whenever the bit or material changes — and always <b>unclip and stow the plate</b> before you cut. This is exactly what you'll do on the real machine — the only difference is that it moves.",
                 "button": "Finish",
                 "stage": false
             }

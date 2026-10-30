@@ -259,6 +259,8 @@ define(function (require) {
     Coach.prototype._typeText = function (html, done) {
         clearInterval(this._typeTimer);
         this._typeTimer = null;
+        // sim sequences (homing, zeroz theater) wait for the narration
+        this.sim.gateSequences(true);
         var el = this._ui.text[0];
         this._ui.text.html(html);
         el.scrollTop = 0; // fresh step starts at the top of the pane
@@ -270,7 +272,10 @@ define(function (require) {
             t.node.nodeValue = "";
         });
         this._typeState = { nodes: nodes, i: 0, pos: 0, col: 0, done: done };
-        if (!nodes.length) return done();
+        if (!nodes.length) {
+            this.sim.gateSequences(false);
+            return done();
+        }
         if (this.sprite) this.sprite.startTyping();
         var self = this;
         this._typeTimer = setInterval(function () {
@@ -314,6 +319,7 @@ define(function (require) {
         var pane = this._ui && this._ui.text[0];
         if (pane && pane.scrollHeight > pane.clientHeight) pane.scrollTop = pane.scrollHeight;
         if (this.sprite) this.sprite.endTyping();
+        this.sim.gateSequences(false); // narration done; the theater may move
         if (st.done) st.done();
     };
 

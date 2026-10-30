@@ -48,6 +48,12 @@ define(function () {
     var CUT_WALL = hex("#6a4a1e");
     var SPOIL = [hex("#5a4228"), hex("#50391f")]; // spoilboard under the stock
     var ORIGIN = hex("#e02020"); // XY origin marker at machine (0,0)
+    // tiny 3x5 axis labels for the origin marker
+    var GLYPH_X = ["X.X", "X.X", ".X.", "X.X", "X.X"];
+    var GLYPH_Y = ["X.X", "X.X", ".X.", ".X.", ".X."];
+    // the Z-zero plate and its grounding clip (zeroz theater)
+    var PLATE = { top: hex("#d8dee4"), hi: hex("#eef2f6"), side: hex("#9aa2aa"), side2: hex("#7c848c"), wire: hex("#202228") };
+    var CLIP = { cu: hex("#c87a3a"), cuHi: hex("#e09a56"), grip: hex("#16181e"), gripHi: hex("#343842") };
     var TOOL = {
         bit: [hex("#242a34"), hex("#6c7480"), hex("#a8b0bc"), hex("#d8dee6"), hex("#c0c6d0")],
         flute: hex("#3a4250"),
@@ -109,6 +115,10 @@ define(function () {
 
         this.target = { x: 0, y: 0, z: 0.8 };
         this.draw = { x: 0, y: 0, z: 0.8 };
+        this.plateT = 0; // Z-zero plate / grounding clip props (0..1),
+        this.plateD = 0; //   target from status, draw value chases
+        this.clipT = 0;
+        this.clipD = 0;
         this.moving = false;
         this.spin = 0;
         this.carved = {}; // "i,j" -> true
@@ -156,6 +166,8 @@ define(function () {
         this.draw.x = this.target.x;
         this.draw.y = this.target.y;
         this.draw.z = this.target.z;
+        this.plateD = this.plateT;
+        this.clipD = this.clipT;
         var self = this;
         this._last = 0;
         var loop = function (ts) {
@@ -241,6 +253,8 @@ define(function () {
         this.target.x = (status.posx || 0) * u;
         this.target.y = (status.posy || 0) * u;
         this.target.z = status.posz === undefined ? 0.8 : status.posz * u;
+        this.plateT = status.zplate || 0;
+        this.clipT = status.zclip || 0;
         this.running = status.state === "running" || status.state === "manual";
     };
 
@@ -252,6 +266,8 @@ define(function () {
         this.draw.x += (this.target.x - this.draw.x) * k;
         this.draw.y += (this.target.y - this.draw.y) * k;
         this.draw.z += (this.target.z - this.draw.z) * k;
+        this.plateD += (this.plateT - this.plateD) * k;
+        this.clipD += (this.clipT - this.clipD) * k;
         var moved = Math.abs(this.draw.x - px) + Math.abs(this.draw.y - py) > 0.0005;
         this.moving = moved || Math.abs(this.target.z - this.draw.z) > 0.001;
         if (this.running || this.moving) this.spin += dt * 22;
@@ -366,6 +382,43 @@ define(function () {
         }
         for (var mdx = -1; mdx <= 0; mdx++)
             for (var mdy = -1; mdy <= 0; mdy++) pset(Math.round(og[0]) + mdx, Math.round(og[1]) + mdy, ORIGIN);
+        // axis letters beside their rays
+        function glyph(rows, gx, gy) {
+            for (var gr = 0; gr < rows.length; gr++)
+                for (var gc = 0; gc < 3; gc++) if (rows[gr][gc] === "X") pset(gx + gc, gy + gr, ORIGIN);
+        }
+        glyph(GLYPH_X, Math.round(og[0]) + 15, Math.round(og[1]) - 2);
+        glyph(GLYPH_Y, Math.round(og[0]) - 14, Math.round(og[1]) - 9);
+
+        // ---- the Z-zero plate: slides in under the bit during the zeroz
+        // theater. Flat aluminum bar, ~2x10 inches, with a 30-degree bend
+        // at the far end where the wire connects. ----
+        if (this.plateD > 0.01) {
+            var ti2 = this.tileIn;
+            var bitTx = this.draw.x / ti2,
+                bitTy = this.draw.y / ti2;
+            var slide = ((1 - this.plateD) * 14) / ti2; // rolls in from +X
+            var plx0 = bitTx - 2 / ti2 + slide,
+                plx1 = bitTx + 8 / ti2 + slide;
+            var ply0 = bitTy - 1 / ti2,
+                ply1 = bitTy + 1 / ti2;
+            var plz = 0.45; // drawn surface height; the bit stops just above
+            fillPoly([proj(plx0, ply0, plz), proj(plx1, ply0, plz), proj(plx1, ply1, plz), proj(plx0, ply1, plz)], PLATE.top);
+            fillPoly([proj(plx0, ply0, plz), proj(plx0, ply1, plz), proj(plx0, ply1, 0), proj(plx0, ply0, 0)], PLATE.side);
+            fillPoly([proj(plx0, ply0, plz), proj(plx1, ply0, plz), proj(plx1, ply0, 0), proj(plx0, ply0, 0)], PLATE.side2);
+            // the 30-degree bend tab, wire post on top
+            fillPoly(
+                [proj(plx1, ply0, plz), proj(plx1, ply1, plz), proj(plx1 + 0.9 / ti2, ply1, plz + 0.55), proj(plx1 + 0.9 / ti2, ply0, plz + 0.55)],
+                PLATE.hi
+            );
+            var plyMid = (ply0 + ply1) / 2;
+            var wA = proj(plx1 + 0.9 / ti2, plyMid, plz + 0.55);
+            for (var wt = 0; wt <= 22; wt++) {
+                var wP = proj(plx1 + (0.9 + wt * 0.2) / ti2, plyMid, (plz + 0.55) * Math.max(0, 1 - wt / 13));
+                pset(Math.round(wP[0]), Math.round(wP[1]), PLATE.wire);
+            }
+            pset(Math.round(wA[0]), Math.round(wA[1]) - 1, PLATE.wire);
+        }
 
         // ---- the spindle, straight from the Ball Mill ----
         var tx = this.draw.x / this.tileIn,
@@ -477,6 +530,27 @@ define(function () {
         for (var oyR = -1; oyR <= bodyBot - Math.round(BW * SRs); oyR++) pset(cx + BW, oyR, TOOL.alOut);
         for (var vk = 0; vk < 3; vk++)
             for (var vx = 5; vx <= 16; vx++) pset(cx + vx, bodyBot - Math.round(vx * SRs) - 24 - vk * 4, TOOL.alSeam);
+
+        // ---- the grounding clip: copper jaw with black handles, slides in
+        // from the right and grips the bit (drawn over the spindle). ----
+        if (this.clipD > 0.01) {
+            var co = Math.round((1 - this.clipD) * 22); // slide-in offset
+            var jawY = cy - 4;
+            for (var jx = -BR - 2; jx <= BR + 1; jx++) {
+                pset(cx + jx + co, jawY, CLIP.cuHi);
+                pset(cx + jx + co, jawY + 1, CLIP.cu);
+            }
+            pset(cx - BR - 2 + co, jawY - 1, CLIP.cu); // front jaw tooth
+            pset(cx - BR - 2 + co, jawY + 2, CLIP.cu);
+            for (var hx = 2; hx <= 8; hx++) {
+                pset(cx + BR + hx + co, jawY - 1, CLIP.grip);
+                pset(cx + BR + hx + co, jawY, CLIP.gripHi); // seam between the two handles
+                pset(cx + BR + hx + co, jawY + 1, CLIP.grip);
+                pset(cx + BR + hx + co, jawY + 2, CLIP.grip);
+            }
+            // clip wire drops toward the plate's bend end
+            for (var cw = 1; cw <= 7; cw++) pset(cx + BR + 8 + co + Math.round(cw * 0.7), jawY + 2 + cw, PLATE.wire);
+        }
 
         this._ctx.putImageData(this._img, 0, 0);
     };

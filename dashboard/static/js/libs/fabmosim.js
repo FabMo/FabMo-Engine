@@ -48,6 +48,9 @@ define(function (require) {
         this.status.resumeFlag = false;
         this._paused = false;
         this._lastTick = 0;
+        this._gate = false;
+        this.status.zplate = 0; // Z-zero plate theater props (0..1), drawn
+        this.status.zclip = 0; //  by the coach stage renderer
         this.active = true;
         this.engine.sim = this;
         this._timer = setInterval(this._tick.bind(this), TICK_MS);
@@ -312,21 +315,39 @@ define(function (require) {
         this._enqueue(s);
     };
 
+    // Hold queued sequence steps at the next boundary (the coach raises
+    // this while instruction text is printing, drops it when done).
+    SimMachine.prototype.gateSequences = function (on) {
+        this._gate = !!on;
+    };
+
     SimMachine.prototype._queueZeroZ = function (u) {
         var plate = 0.472 * u; // typical ShopBot plate thickness, close enough for theater
         var s = [{ kind: "state", state: "running" }];
-        s.push({ kind: "move", to: { posz: Math.min(this.status.posz || 0, 1.5 * u) - 1.5 * u }, secs: 2.5 });
+        // Setup ritual, the part the OPERATOR does on a real machine: slide
+        // clear of the corner, the plate slips under the bit, the grounding
+        // clip grabs the bit. zplate/zclip (0..1) drive the stage renderer.
+        s.push({ kind: "move", to: { posz: Math.max(this.status.posz || 0, 1.0 * u) }, secs: 0.6 });
+        s.push({ kind: "move", to: { posx: 6 * u, posy: 4 * u }, secs: 1.6 });
+        s.push({ kind: "move", to: { zplate: 1 }, secs: 1.4 });
+        s.push({ kind: "pause", secs: 0.4 });
+        s.push({ kind: "move", to: { zclip: 1 }, secs: 0.8 });
+        s.push({ kind: "pause", secs: 0.5 });
+        // the measurement: fast find, back off, slow press for accuracy
+        s.push({ kind: "move", to: { posz: plate }, secs: 2.0 });
         s.push({ kind: "input", name: "in1", value: 1 }); // plate contact
-        s.push({ kind: "set", fields: { posz: plate } });
         s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "move", to: { posz: plate + 0.25 * u }, secs: 0.5 });
         s.push({ kind: "input", name: "in1", value: 0 });
-        s.push({ kind: "move", to: { posz: plate - 0.02 * u }, secs: 0.8 });
+        s.push({ kind: "move", to: { posz: plate - 0.01 * u }, secs: 0.8 });
         s.push({ kind: "input", name: "in1", value: 1 });
         s.push({ kind: "set", fields: { posz: plate } });
         s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "input", name: "in1", value: 0 });
-        s.push({ kind: "move", to: { posz: 0.8 * u }, secs: 0.8 });
+        s.push({ kind: "move", to: { posz: 1.0 * u }, secs: 0.8 });
+        // teardown, also the operator's job: unclip, stow the plate
+        s.push({ kind: "move", to: { zclip: 0 }, secs: 0.6 });
+        s.push({ kind: "move", to: { zplate: 0 }, secs: 1.2 });
         s.push({ kind: "state", state: "idle" });
         s.push({ kind: "done", name: "zeroz" });
         this._enqueue(s);
@@ -397,9 +418,13 @@ define(function (require) {
             }
         }
 
-        // Scripted sequence steps
+        // Scripted sequence steps. The coach raises the gate while its
+        // instruction text is printing, so the theater never runs ahead of
+        // the narration: queued steps wait at the next boundary (an
+        // in-flight move or pause finishes first; jogging is unaffected).
         while (this._seq.length || this._step) {
             if (!this._step) {
+                if (this._gate) break;
                 var next = this._seq.shift();
                 if (next.kind === "move") {
                     var from = {};
