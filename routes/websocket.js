@@ -115,7 +115,12 @@ var onPublicConnect = function (socket) {
     var client_address = util.getClientAddress(socket.client.request);
     log.info("Anonymous client at " + client_address + " connected.");
     //    socket.emit("status", machine.status.clientDisconnected);
-    global.CLIENT_DISCONNECTED = false;
+    // Deliberately NOT clearing CLIENT_DISCONNECTED here: a connect proves
+    // nothing about the client that was driving. Clearing on connect opened
+    // a runaway race — jogging client dies, any other socket reconnects
+    // within the 300ms renew window, flag flips back and (keep_moving never
+    // decays) the motion renewal runs forever. The flag now clears only when
+    // a live client issues a motion command (manual runtime executeCode).
 
     socket.on("disconnect", function () {
         log.debug("Client disconnected");

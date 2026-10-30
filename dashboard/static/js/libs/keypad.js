@@ -354,6 +354,10 @@
                 if (document.hidden) this.forceStop();
             }.bind(this)
         );
+        // Window/tab closing (alt+F4, ctrl+W): fire the stop while the
+        // socket can still flush it. The server's disconnect deadman is the
+        // backstop if this send doesn't make it out.
+        window.addEventListener("pagehide", this.forceStop.bind(this));
     };
 
     // Unconditional gesture end for focus-loss and exit paths. Unlike end(),
