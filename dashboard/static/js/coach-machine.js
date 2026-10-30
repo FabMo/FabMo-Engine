@@ -47,6 +47,7 @@ define(function () {
     var CUT = [hex("#a06a30"), hex("#935f29")]; // carved trench floor
     var CUT_WALL = hex("#6a4a1e");
     var SPOIL = [hex("#5a4228"), hex("#50391f")]; // spoilboard under the stock
+    var ORIGIN = hex("#e02020"); // XY origin marker at machine (0,0)
     var TOOL = {
         bit: [hex("#242a34"), hex("#6c7480"), hex("#a8b0bc"), hex("#d8dee6"), hex("#c0c6d0")],
         flute: hex("#3a4250"),
@@ -352,6 +353,20 @@ define(function () {
             }
         }
 
+        // XY origin marker: a red corner dot at machine (0,0) with short
+        // rays up the +X and +Y table edges, anchoring the DRO numbers to a
+        // physical corner. Rides the tile top, so it drops if (0,0) carves.
+        var oz = topZ(0, 0);
+        var og = proj(0, 0, oz);
+        for (var mk = 1; mk <= 14; mk++) {
+            var mX = proj(mk / 16, 0, oz);
+            pset(Math.round(mX[0]), Math.round(mX[1]), ORIGIN);
+            var mY = proj(0, mk / 16, oz);
+            pset(Math.round(mY[0]), Math.round(mY[1]), ORIGIN);
+        }
+        for (var mdx = -1; mdx <= 0; mdx++)
+            for (var mdy = -1; mdy <= 0; mdy++) pset(Math.round(og[0]) + mdx, Math.round(og[1]) + mdy, ORIGIN);
+
         // ---- the spindle, straight from the Ball Mill ----
         var tx = this.draw.x / this.tileIn,
             ty = this.draw.y / this.tileIn;
@@ -438,28 +453,30 @@ define(function () {
         }
         cyl(cx, shaftTop, nutTop, 5, TOOL.shaft, false);
         cyl(cx, hubTop - 11, shaftTop, 12, TOOL.hub, false);
-        // aluminum body: two faces meeting at a front edge, off the top
-        fillPoly([[cx + 0.5, bodyBot + 0.5], [cx - BW + 0.5, bodyBot - BW / 2 + 0.5], [cx - BW + 0.5, -2], [cx + 0.5, -2]], TOOL.alL);
-        fillPoly([[cx + 0.5, bodyBot + 0.5], [cx + BW + 0.5, bodyBot - BW / 2 + 0.5], [cx + BW + 0.5, -2], [cx + 0.5, -2]], TOOL.alR);
+        // aluminum body: two faces meeting at a front edge, off the top.
+        // Face bottom slopes follow the table's trimetric axes -- the left
+        // face recedes along +Y, the right face along +X -- so the spindle
+        // sits in the same projection as the slab under it.
+        var SLs = YY / -YX; // left-face slope, px up per px left
+        var SRs = XY / XX; // right-face slope, px up per px right
+        fillPoly([[cx + 0.5, bodyBot + 0.5], [cx - BW + 0.5, bodyBot - BW * SLs + 0.5], [cx - BW + 0.5, -2], [cx + 0.5, -2]], TOOL.alL);
+        fillPoly([[cx + 0.5, bodyBot + 0.5], [cx + BW + 0.5, bodyBot - BW * SRs + 0.5], [cx + BW + 0.5, -2], [cx + 0.5, -2]], TOOL.alR);
         for (var ey3 = -1; ey3 <= bodyBot; ey3++) pset(cx, ey3, TOOL.alEdge);
         for (var bx = 0; bx <= BW; bx++) {
-            var bdy = Math.round(bx / 2);
-            pset(cx - bx, bodyBot - bdy, TOOL.alOut);
-            pset(cx + bx, bodyBot - bdy, TOOL.alOut);
-            pset(cx + bx, bodyBot - bdy - 13, TOOL.alSeam);
+            pset(cx - bx, bodyBot - Math.round(bx * SLs), TOOL.alOut);
+            pset(cx + bx, bodyBot - Math.round(bx * SRs), TOOL.alOut);
+            pset(cx + bx, bodyBot - Math.round(bx * SRs) - 13, TOOL.alSeam);
         }
         // the maker's mark, left face (vertical, sheared to follow the face)
         for (var li = 0; li < LOGO_PX.length; li++) {
             var lu = 20 - LOGO_PX[li][1];
-            var ly = bodyBot - Math.round(lu / 2) - 3 - LOGO_PX[li][0];
+            var ly = bodyBot - Math.round(lu * SLs) - 3 - LOGO_PX[li][0];
             pset(cx - lu, ly, LOGO_INK);
         }
-        for (var oy2 = -1; oy2 <= bodyBot - BW / 2; oy2++) {
-            pset(cx - BW, oy2, TOOL.alOut);
-            pset(cx + BW, oy2, TOOL.alOut);
-        }
+        for (var oyL = -1; oyL <= bodyBot - Math.round(BW * SLs); oyL++) pset(cx - BW, oyL, TOOL.alOut);
+        for (var oyR = -1; oyR <= bodyBot - Math.round(BW * SRs); oyR++) pset(cx + BW, oyR, TOOL.alOut);
         for (var vk = 0; vk < 3; vk++)
-            for (var vx = 5; vx <= 16; vx++) pset(cx + vx, bodyBot - Math.round(vx / 2) - 24 - vk * 4, TOOL.alSeam);
+            for (var vx = 5; vx <= 16; vx++) pset(cx + vx, bodyBot - Math.round(vx * SRs) - 24 - vk * 4, TOOL.alSeam);
 
         this._ctx.putImageData(this._img, 0, 0);
     };

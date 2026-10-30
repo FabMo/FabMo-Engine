@@ -14,7 +14,7 @@
             {
                 "text": "Watch the tool drive toward each proximity switch, back off, and creep back in slowly for an exact reading — first Y, then X. The <b>Inputs</b> lights in the top bar show each switch tripping.",
                 "watch": { "type": "sequence", "name": "home" },
-                "highlight": { "dashboard": ".sm-axes, .io-group" },
+                "highlight": { "dashboard": "#right-position-container" },
                 "stage": true
             },
             {
@@ -26,7 +26,7 @@
             {
                 "text": "The bit finds the plate twice — a fast touch, then a slow one for accuracy. Watch input 1 light up at each touch; Z is set from the plate's known thickness before retracting to a safe height.",
                 "watch": { "type": "sequence", "name": "zeroz" },
-                "highlight": { "dashboard": ".sm-axes, .io-group" },
+                "highlight": { "dashboard": "#right-position-container" },
                 "stage": true
             },
             {
