@@ -214,8 +214,8 @@ define(function () {
             v.next -= dt;
             if (v.next <= 0) {
                 if (v.spin <= 0) v.spin = 2 + ((Math.random() * 6) | 0);
-                v.next = 0.9 + Math.random() * 2.6;
-                if (Math.random() < 0.3) {
+                v.next = 2.2 + Math.random() * 5.8;
+                if (Math.random() < 0.25) {
                     var nb = this.valves[(vi + 1) % this.valves.length];
                     nb.next = Math.min(nb.next, 0.2);
                 }
