@@ -159,6 +159,15 @@ ManualRuntime.prototype.executeCode = function (code) {
                 log.warn("Can't accept command '" + code.cmd + "' - not entered.");
                 return;
             }
+            // Once an exit is underway (or the cycle stream is already gone),
+            // only "exit" may pass — it carries its own stuck-cycle recovery.
+            // A wedged client (lost keyup in a backgrounded tab) keeps
+            // streaming start/fixed commands into this window; honoring them
+            // re-primes motion or writes to a dead stream.
+            if (code.cmd !== "exit" && (this.helper.exiting || this.helper.exited || !this.helper.stream)) {
+                log.warn("Can't accept command '" + code.cmd + "' - manual mode is exiting.");
+                return;
+            }
             switch (code.cmd) {
                 case "exit":
                     log.debug("---- MANUAL DRIVE EXIT ----");
@@ -202,9 +211,6 @@ ManualRuntime.prototype.executeCode = function (code) {
                 case "fixed":
                     if (code.dist == null) {
                         break;
-                    }
-                    if (!this.helper) {
-                        this.enter();
                     }
                     this.helper.nudge(code.axis, code.speed, code.dist, code.second_axis, code.second_dist);
                     break;

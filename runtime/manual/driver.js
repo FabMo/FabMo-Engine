@@ -299,6 +299,14 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     // Internally we collapse these into the same state: currentDirection and
     // second_currentDirection always hold the signed *ratio* (±1 in the legacy
     // case). _renewMoves multiplies by these ratios when emitting segments.
+    // Ignore motion requests once an exit is underway or the cycle stream is
+    // gone. A wedged client (lost keyup in a backgrounded tab) keeps streaming
+    // start keep-alives into this window — honoring one re-primes motion
+    // against a pending exit or writes to a dead stream (engine crash).
+    if (!this.stream || this.exiting || this.exited || this.exit_pending) {
+        log.warn("startMotion(): ignored - manual mode is exiting");
+        return;
+    }
     var hasRatios = primary_ratio !== undefined;
     var dir = hasRatios ? primary_ratio : (speed < 0 ? -1.0 : 1.0);
     var second_dir = hasRatios ? (secondary_ratio || 0) : (second_speed < 0 ? -1.0 : 1.0);
@@ -1038,6 +1046,13 @@ ManualDriver.prototype._handleNudges = function () {
 //       second_axis - The second axis to move
 //   second_distance - The second axis speed
 ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, second_distance) {
+    // Same exit gate as startMotion: a typematic loop in a backgrounded tab
+    // keeps firing nudges after the user is gone — never queue against an
+    // exiting cycle.
+    if (!this.stream || this.exiting || this.exited || this.exit_pending) {
+        log.warn("nudge(): ignored - manual mode is exiting");
+        return;
+    }
     if (this.fixedQueue.length >= this.maxNudges) {
         log.warn("fixedMove(): Move queue is already full!");
         return;
@@ -1130,6 +1145,19 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
 // reason - The reason this functon is being called (used for -debug- purposes)
 // eslint-disable-next-line no-unused-vars
 ManualDriver.prototype._renewMoves = function (reason) {
+    // The renew timer can outlive the cycle: exit()/_done() close the stream
+    // but the pending timeout still fires. Writing here from the timer
+    // context was an UNCAUGHT TypeError that killed the engine — bail before
+    // touching the stream.
+    if (!this.stream) {
+        if (this.renew_timer) {
+            clearTimeout(this.renew_timer);
+            this.renew_timer = null;
+        }
+        this.moving = false;
+        this.keep_moving = false;
+        return;
+    }
     if (this.mode === "normal") {
         if (this.keep_moving && (this.moving || reason === "start")) {
             if (global.CLIENT_DISCONNECTED) {
@@ -1433,6 +1461,13 @@ ManualDriver.prototype._startExitWatchdog = function () {
 // Internal call that is issued when manual mode is done
 // Resolves the promise created by the enter() function and resets internal state
 ManualDriver.prototype._done = function () {
+    // Kill the renew timer and any queued nudges with the stream — anything
+    // left would fire into the next cycle (or a null stream).
+    if (this.renew_timer) {
+        clearTimeout(this.renew_timer);
+        this.renew_timer = null;
+    }
+    this.fixedQueue = [];
     this.moving = false;
     this.keep_moving = false;
     this.stream = null;

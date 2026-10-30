@@ -109,6 +109,25 @@
             $(document).on("keydown", this.onKeyDown.bind(this));
             $(document).on("keyup", this.onKeyUp.bind(this));
         }
+
+        // A keyup is never delivered to a blurred window (alt-tab, OS dialog,
+        // focus into an iframe) — without this, a held jog key leaves the
+        // typematic/refresh loop firing forever from a backgrounded tab.
+        // Losing the window or tab is a hard gesture end.
+        $(window).on("blur", this._onFocusLost.bind(this));
+        document.addEventListener(
+            "visibilitychange",
+            function () {
+                if (document.hidden) this._onFocusLost();
+            }.bind(this)
+        );
+    };
+
+    Keyboard.prototype._onFocusLost = function () {
+        if (this.going || this.interval) {
+            console.warn("Keyboard: window lost focus mid-gesture - forcing stop");
+            this.stop();
+        }
     };
 
     Keyboard.prototype.setOptions = function (options) {
@@ -191,10 +210,11 @@
             return;
         }
 
-        if ($(".fixed-switch input").is(":checked")) {
+        // Branch on the mode captured at gesture start (see start()) — never
+        // re-read the checkbox here.
+        if (this.fixedGesture) {
             this.nudgeTimer = 1;
             this.going = true;
-            this.fixedGesture = true;
             if (this.enabled === true) {
                 $(".drive-button").removeClass("drive-button-active");
                 this.emit("nudge", this.move);
@@ -242,11 +262,16 @@
             this.move.second_dir = second_dir;
         }
         this.fixedRepeatCount = 0;
-        this.fixedGesture = false;
+        // Capture the mode ONCE at gesture start. refresh() must not re-read
+        // the checkbox mid-hold: toggling Fixed during a gesture (the "d"/"f"
+        // hotkey, or clicking the switch) would morph a continuous gesture
+        // into a fixed one, so its release sends nudgeCancel instead of the
+        // stop the motion needs — a permanent runaway.
+        this.fixedGesture = $(".fixed-switch input").is(":checked");
         let activeArrowStr = second_axis
             ? diagSelector(axis, direction, second_axis, second_dir)
             : "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
-        if ($(".fixed-switch input").is(":checked")) {
+        if (this.fixedGesture) {
             $(activeArrowStr).addClass("drive-button-active-transient");
         } else {
             $(activeArrowStr).addClass("drive-button-active");
@@ -365,9 +390,15 @@
     };
 
     Keyboard.prototype.onKeyUp = function (evt) {
-        if (evt.keyCode < 27) {
+        // Only a jog-key release may end or alter a gesture. The old guard
+        // (keyCode >= 27) let any letter key fall through: a stray "d"/"f"
+        // release consumed the nudge timer or landed in the stop branch —
+        // clearing the button style and feedholding — and then the still-held
+        // jog key's auto-repeat restarted motion, so the move never visibly
+        // stopped but the server churned through stop/start cycles.
+        if (!isJogKey(evt.keyCode)) {
             return;
-        } // prevents un-needed kills to shift and ctl release
+        }
         if (this.nudgeTimer) {
             clearTimeout(this.nudgeTimer);
             this.nudgeTimer = null;
