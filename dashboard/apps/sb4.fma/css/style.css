@@ -621,3 +621,19 @@ body[class*="theme-"] #insert-input {
     border-color: rgb(136, 171, 190);
     border-radius: 5px;
 }
+
+/* ============================================== SCROLLBARS */
+/* Hide scrollbars app-wide; content still scrolls (mouse wheel, arrow
+   keys, finger drag). On a shop tool the bars just eat width — overflow
+   is discoverable by feel. !important outranks the themed scrollbar
+   styling in theme-bridge.css. */
+* {
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* legacy Edge */
+}
+*::-webkit-scrollbar {
+    /* Chromium/WebKit */
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}

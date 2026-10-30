@@ -4,7 +4,7 @@
   "icon": "icon.png",
   "icon_color": "#dfe6ee",
   "author": "Ted Hall",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "website": "http://www.shopbottools.com",
   "description": "ShopBot Console: Sb4 command interface with workflow, jobs, shop-tool and status cards",
   "id": "fabmo-sb4",
