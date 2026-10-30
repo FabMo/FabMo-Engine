@@ -200,6 +200,20 @@ define(function (require) {
             this._finishTyping();
             return;
         }
+        // Continue: release the theater parked behind the narration gate.
+        // Only a step with its OWN button also advances the lesson — for a
+        // watch step the click just starts the motion and the watch carries
+        // the lesson forward.
+        if (this._gateHold) {
+            this._gateHold = false;
+            this.sim.gateSequences(false);
+            var cur = this.lesson && this.lesson.steps[this.stepIndex];
+            if (!(cur && cur.button)) {
+                this._ui.next.hide();
+                this._ui.bar.removeClass("coach-waiting");
+                return;
+            }
+        }
         this.stepIndex++;
         this._showStep();
     };
@@ -213,6 +227,7 @@ define(function (require) {
         }
         var step = steps[this.stepIndex];
         var last = this.stepIndex === steps.length - 1;
+        this._gateHold = false; // fresh step: no Continue pending
         var dots = "";
         for (var i = 0; i < steps.length; i++) {
             dots += '<span class="coach-dot' + (i === this.stepIndex ? " active" : i < this.stepIndex ? " done" : "") + '"></span>';
@@ -265,6 +280,12 @@ define(function (require) {
             if (step.button) {
                 self._ui.bar.addClass("coach-waiting");
                 self._focusBar();
+            } else if (self._gateHold) {
+                // Theater steps are waiting behind the gate: surface the
+                // button as Continue so reading finishes before motion.
+                self._ui.next.show().text("Continue");
+                self._ui.bar.addClass("coach-waiting");
+                self._focusBar();
             }
             if (step.highlight) self._applyHighlight(step.highlight);
             if (last && self.sprite) self.sprite.celebrate();
@@ -285,8 +306,10 @@ define(function (require) {
         var t = m.tileIn;
         var wC = Math.max(2, Math.round((spec.w || 6) / t));
         var hC = Math.max(2, Math.round((spec.h || 4) / t));
-        var i0 = Math.round(((s.posx || 0) * u) / t);
-        var j0 = Math.round(((s.posy || 0) * u) / t);
+        // Through the stage's axis warp: the ring must anchor to the same
+        // sheet-space cell the renderer puts the bit in.
+        var i0 = Math.round(m.mapX((s.posx || 0) * u) / t);
+        var j0 = Math.round(m.mapY((s.posy || 0) * u) / t);
         // Prefer extending +X/+Y from the bit; flip, then clamp to the cell
         // grid (0..TW/TH -- edge half-cells allowed, so the ring can truly
         // start AT the bit instead of shifting off it near an edge).
@@ -385,7 +408,15 @@ define(function (require) {
         var pane = this._ui && this._ui.text[0];
         if (pane && pane.scrollHeight > pane.clientHeight) pane.scrollTop = pane.scrollHeight;
         if (this.sprite) this.sprite.endTyping();
-        this.sim.gateSequences(false); // narration done; the theater may move
+        // Narration done. If theater steps (homing, the Z ritual) are parked
+        // behind the gate, DON'T release it yet — the done callback shows a
+        // Continue button instead, so the trainee finishes reading before
+        // anything on the stage starts moving.
+        if (this.sim.hasGatedSequence && this.sim.hasGatedSequence()) {
+            this._gateHold = true;
+        } else {
+            this.sim.gateSequences(false);
+        }
         if (st.done) st.done();
     };
 
@@ -592,10 +623,17 @@ define(function (require) {
         var set = function () {
             if (!self._ui) return;
             var foot = $(".footBar").height() || 0;
-            self._ui.rail.css("bottom", foot + "px");
+            // The banner wraps to two lines on narrow screens; the CSS top
+            // (80px) assumes one. Track its real bottom edge so the rail and
+            // arena always clear it.
+            var top = 80;
+            if (self._ui.banner && self._ui.banner[0]) {
+                top = Math.max(top, Math.round(self._ui.banner[0].getBoundingClientRect().bottom));
+            }
+            self._ui.rail.css({ bottom: foot + "px", top: top + "px" });
             var nav = document.getElementById("left-menu");
             var left = nav ? Math.max(0, nav.getBoundingClientRect().right) : 0;
-            self._ui.arena.css({ bottom: foot + "px", left: left + "px" });
+            self._ui.arena.css({ bottom: foot + "px", left: left + "px", top: top + "px" });
             self._fitArena();
         };
         set();

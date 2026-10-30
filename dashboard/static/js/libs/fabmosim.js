@@ -15,6 +15,35 @@ define(function (require) {
         return JSON.parse(JSON.stringify(obj));
     }
 
+    // The sim's practice sheet, in inches: a 24"-long-side table with the
+    // REAL machine's proportions, so a PRS trainee sees a long table and a
+    // Desktop trainee a squarer one, while lesson geometry (2"-tile practice
+    // ring, Z-plate at (6,4)) stays valid. coach-machine.js computes the
+    // SAME function from the same config, so the stage and the sim always
+    // agree on the sheet. Falls back to 24x18 when config is unavailable.
+    function sheetSize(engine) {
+        var sx = 24,
+            sy = 18;
+        try {
+            var m = engine && engine.config && engine.config.machine;
+            var env = m && m.envelope;
+            var xs = env && (env.xsize || env.xmax);
+            var ys = env && (env.ysize || env.ymax);
+            if (xs > 0 && ys > 0) {
+                if (xs >= ys) {
+                    sy = Math.max(6, Math.round((24 * ys) / xs));
+                } else {
+                    // portrait tables (e.g. Handibot): long side is Y
+                    sx = Math.max(6, Math.round((24 * xs) / ys));
+                    sy = 24;
+                }
+            }
+        } catch (e) {
+            /* fall through to the default sheet */
+        }
+        return { x: sx, y: sy };
+    }
+
     function SimMachine(engine) {
         this.engine = engine;
         this.status = null;
@@ -37,7 +66,30 @@ define(function (require) {
             return new Error("Training Mode requires an idle machine.");
         }
         this.status = clone(st);
-        // A fresh trainee should see a believable un-homed position.
+        // A fresh trainee should see a believable un-homed position. The
+        // clone above inherits the REAL machine's DRO position, which could
+        // sit anywhere (or beyond the envelope after a wild zero) — the
+        // stage spindle used to start offscreen and fly in during homing.
+        // Park the sim head near the envelope's far corner instead: the
+        // stage's logarithmic axis warp maps the whole envelope onto the
+        // sheet, so this draws just inside the far edge and homing visibly
+        // crosses the whole table. Units: envelope is in config units,
+        // status stream in status units.
+        var pu = st.unit === "mm" ? 25.4 : 1;
+        var park = sheetSize(this.engine); // fallback: the 24" sheet itself
+        try {
+            var mc = this.engine && this.engine.config && this.engine.config.machine;
+            var env = mc && mc.envelope;
+            var uc = mc && mc.units === "mm" ? 1 / 25.4 : 1;
+            var xs = env && (env.xsize || env.xmax) * uc;
+            var ys = env && (env.ysize || env.ymax) * uc;
+            if (xs > 0 && ys > 0) park = { x: xs, y: ys };
+        } catch (e) {
+            /* keep the sheet fallback */
+        }
+        this.status.posx = Math.round(park.x * 0.8) * pu;
+        this.status.posy = Math.round(park.y * 0.72) * pu;
+        this.status.posz = 1.25 * pu;
         this.status.state = "idle";
         this.status.info = undefined;
         this.status.job = null;
@@ -319,6 +371,13 @@ define(function (require) {
     // this while instruction text is printing, drops it when done).
     SimMachine.prototype.gateSequences = function (on) {
         this._gate = !!on;
+    };
+
+    // True while sequence steps are parked behind the narration gate and
+    // nothing is mid-flight — the coach turns this into a Continue button,
+    // so the trainee finishes reading before the theater moves.
+    SimMachine.prototype.hasGatedSequence = function () {
+        return !!(this.active && this._gate && this._seq.length > 0 && !this._step);
     };
 
     SimMachine.prototype._queueZeroZ = function (u) {

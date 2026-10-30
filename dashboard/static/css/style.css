@@ -4332,14 +4332,11 @@ a.update-available::after {
 }
 
 /* ===== Training Mode (coach.js) ===== */
-/* Pixel font for the game-style coach dialog (bundled: tools run offline).
-   Press Start 2P, OFL-licensed, latin subset. */
-@font-face {
-	font-family: "Press Start 2P";
-	font-style: normal;
-	font-weight: 400;
-	src: url("../fonts/press-start-2p-latin.woff2") format("woff2");
-}
+/* Styled to the Console (sb4) card idiom — light page gray, white cards
+   with hairline borders, #2980b9 primary buttons — so training chrome
+   reads as regular FabMo UI. The pixel sprite and the dark stage canvas
+   are the only deliberately game-y survivors. Face: source_sans leads the
+   stack because the Helvetica fallback renders bold on the Pi. */
 /* The banner sits BELOW the fixed 56px .tab-bar: the top bar (mini DRO,
    input/output status) must stay visible -- lessons highlight it. */
 #coach-banner {
@@ -4424,8 +4421,9 @@ body.fabmo-training #dro-tab {
 	transition: bottom 0.3s; /* match .footBar's height transition */
 	width: var(--coach-rail-w, 15.625rem);
 	z-index: 1000;
-	background: #0c1020;
-	border-left: 2px solid #2c3854;
+	/* a light take on the SB4 console backdrop teal (#327c7e) */
+	background: #d6e8e8;
+	border-left: 1px solid #b2cfcf;
 	padding: 12px;
 	box-sizing: border-box;
 	display: flex;
@@ -4433,8 +4431,8 @@ body.fabmo-training #dro-tab {
 	gap: 12px;
 	overflow: hidden; /* the text pane scrolls internally; nothing else moves */
 }
-/* The coach dialog: a game text box. Dark navy plate, white double border,
-   the pixel ShopBot character up top typing the text out below him. */
+/* The coach dialog: a Console-style card — the pixel ShopBot character up
+   top, the lesson text typing out below him. */
 #coach-bar {
 	outline: none; /* focused (tabindex -1) to pull focus out of app iframes */
 	flex: 1 1 auto; /* fill the rail... */
@@ -4442,18 +4440,18 @@ body.fabmo-training #dro-tab {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	background: #101424;
-	color: #e8edf1;
-	border: 3px solid #f0f2f6;
-	border-radius: 4px;
-	box-shadow: 0 0 0 3px #101424;
+	background: #fff;
+	color: #2c3e50;
+	border: 1px solid #e1e4e8;
+	border-radius: 6px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	padding: 12px 14px 10px;
-	font-family: "Press Start 2P", monospace;
-	image-rendering: pixelated;
+	font-family: "source_sans_proregular", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 #coach-bar .coach-sprite-box {
 	align-self: center;
 	line-height: 0;
+	margin-top: 10px; /* air between the character and the card top */
 }
 #coach-bar .coach-sprite-box canvas {
 	image-rendering: pixelated;
@@ -4469,25 +4467,29 @@ body.fabmo-training #dro-tab {
 	min-height: 0;
 }
 #coach-bar .coach-title {
-	font-size: 8px;
-	letter-spacing: 0.08em;
+	font-size: 0.72rem;
+	font-family: 'source_sans_probold', "Helvetica Neue", Helvetica, Arial, sans-serif;
+	letter-spacing: 0.05em;
 	text-transform: uppercase;
-	color: #d9a420;
+	color: #7f8c8d; /* the Console's muted card-title gray */
 	margin-bottom: 8px;
 }
 #coach-bar .coach-text {
-	font-size: 10px;
-	line-height: 2;
+	font-size: 1rem;
+	line-height: 1.55;
 	flex: 1 1 auto;
 	min-height: 40px; /* two lines always visible */
 	overflow-y: auto; /* long steps scroll here instead of moving the rail */
 	scrollbar-width: thin;
-	scrollbar-color: #39445a #101424;
+	scrollbar-color: #b8c8d4 #fff;
 	padding-right: 4px;
 }
 #coach-bar .coach-text b {
-	color: #d9a420;
-	font-weight: normal; /* the pixel font has one weight; gold does the work */
+	color: #2980b9; /* the Console's primary blue */
+	/* bold here is a FAMILY in this dashboard (regular is single-weight;
+	   a weight would synthesize) */
+	font-family: 'source_sans_probold', "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-weight: normal;
 }
 #coach-bar .coach-footer {
 	display: flex;
@@ -4499,31 +4501,31 @@ body.fabmo-training #dro-tab {
 }
 #coach-bar .coach-dot {
 	display: inline-block;
-	width: 6px;
-	height: 6px; /* square: it's a pixel */
-	background: #39445a;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: #dfe4ea;
 	margin-right: 5px;
 }
 #coach-bar .coach-dot.active {
-	background: #d9a420;
+	background: #2980b9;
 }
 #coach-bar .coach-dot.done {
-	background: #8a94a8;
+	background: #b8c8d4;
 }
+/* Next/continue: the Console's primary command button (.ts-cmd-primary) */
 #coach-bar .coach-next {
-	padding: 7px 14px 6px;
-	border: 2px solid #101424;
-	box-shadow: 0 0 0 2px #d9a420;
-	border-radius: 2px;
-	background: #d9a420;
-	color: #101424;
-	font-family: "Press Start 2P", monospace;
-	font-size: 9px;
+	padding: 7px 14px;
+	border: 1px solid #2471a3;
+	border-radius: 5px;
+	background: #2980b9;
+	color: #fff;
+	font-family: 'source_sans_probold', "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 0.85rem;
 	cursor: pointer;
 }
 #coach-bar .coach-next:hover {
-	background: #e8b63a;
-	box-shadow: 0 0 0 2px #e8b63a;
+	background: #2471a3;
 }
 /* blinking "press the button" caret, classic dialog-box style */
 #coach-bar.coach-waiting .coach-next::after {
@@ -4537,39 +4539,46 @@ body.fabmo-training #dro-tab {
 	display: flex;
 	gap: 10px;
 }
+/* Secondary buttons: the Console's standard command button (.ts-cmd) */
 #coach-bar .coach-show {
-	padding: 6px 10px 5px;
-	border: 2px solid #d9a420;
-	border-radius: 2px;
-	background: transparent;
-	color: #d9a420;
-	font-family: "Press Start 2P", monospace;
-	font-size: 8px;
+	padding: 6px 10px;
+	border: 1px solid #b8c8d4;
+	border-radius: 5px;
+	background: #eef3f7;
+	color: #2c3e50;
+	font-family: 'source_sans_probold', "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 0.78rem;
 	cursor: pointer;
 }
 #coach-bar .coach-show:hover {
-	background: rgba(217, 164, 32, 0.15);
+	background: #dfeaf2;
 }
 /* The sim-machine stage: lesson-controlled isometric view of the simulated
-   tool (coach-machine.js). Same game-plate styling; drag it by its header. */
+   tool (coach-machine.js). A Console-style card framing the dark canvas
+   viewport (the scene's palette is tuned for #101424 — the dark stays
+   inside the canvas, like the previewer's viewport in a light app).
+   Drag it by its header. */
 #coach-stage {
 	position: fixed;
 	top: 110px;
 	right: 18px;
 	z-index: 9999; /* under the coach bar and the zoom frame */
-	background: #101424;
-	border: 3px solid #f0f2f6;
-	border-radius: 4px;
-	box-shadow: 0 0 0 3px #101424, 0 6px 20px rgba(0, 0, 0, 0.55);
+	background: #fff;
+	border: 1px solid #e1e4e8;
+	border-radius: 6px;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 	line-height: 0;
+	overflow: hidden; /* the square canvas corners stay inside the radius */
 }
 #coach-stage .coach-stage-head {
-	font-family: "Press Start 2P", monospace;
-	font-size: 8px;
+	font-family: 'source_sans_probold', "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 0.72rem;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 	line-height: 1;
-	color: #d9a420;
+	color: #7f8c8d;
 	padding: 7px 10px 6px;
-	border-bottom: 2px solid #39445a;
+	border-bottom: 1px solid #e1e4e8;
 	cursor: move;
 	user-select: none;
 }
@@ -4591,11 +4600,13 @@ body.fabmo-training #dro-tab {
 	bottom: 0; /* coach.js raises this when the .footBar opens */
 	transition: bottom 0.3s;
 	z-index: 999; /* under the rail (1000) and everything above it */
-	background: #0c1020;
+	background: #d6e8e8; /* light SB4-console teal, matching the rail */
 	align-items: center;
 	justify-content: center;
-	gap: 24px;
-	padding: 18px;
+	/* tight chrome: with the footBar open the arena is short — padding and
+	   gap come straight out of the stage's fitTo budget */
+	gap: 14px;
+	padding: 10px;
 	box-sizing: border-box;
 	overflow: hidden;
 }
@@ -4610,7 +4621,7 @@ body.fabmo-training #dro-tab {
    to the largest integer pixel scale that fits (CoachMachine.fitTo). */
 #coach-stage.arena {
 	position: static;
-	box-shadow: 0 0 0 3px #101424;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* resting card, not floating */
 }
 #coach-stage.arena .coach-stage-head {
 	cursor: default;
@@ -4622,30 +4633,31 @@ body.fabmo-training #dro-tab {
 /* The practice keypad: the REAL motion keypad's direction pad -- same
    markup classes and arrow glyphs, so the class-scoped keypad rules above
    (.keypad-table, .drive-button, .dir-glyph, ...) style it identically --
-   wrapped in a coach game plate. Only the arrows: no readout, speeds, or
+   wrapped in a Console-style card. Only the arrows: no readout, speeds, or
    command buttons. */
 #coach-keypad {
 	flex: none;
-	background: #101424;
-	border: 3px solid #f0f2f6;
-	border-radius: 4px;
-	box-shadow: 0 0 0 3px #101424;
-	font-family: "Press Start 2P", monospace;
+	background: #fff;
+	border: 1px solid #e1e4e8;
+	border-radius: 6px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	overflow: hidden; /* the yellow pad's corners stay inside the radius */
+	font-family: "source_sans_proregular", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 #coach-keypad .coach-keypad-head {
-	font-size: 8px;
+	font-size: 0.72rem;
+	font-family: 'source_sans_probold', "Helvetica Neue", Helvetica, Arial, sans-serif;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 	line-height: 1;
-	color: #d9a420;
+	color: #7f8c8d;
 	padding: 7px 10px 6px;
-	border-bottom: 2px solid #39445a;
+	border-bottom: 1px solid #e1e4e8;
 	user-select: none;
 }
 #coach-keypad .pad-container {
 	display: flex; /* the shared rule is inline-flex; fill the plate */
 	padding: 12px;
-	/* the plate is pixel-font; the arrows must label themselves in the
-	   dashboard's own face (.glyph-label is font-family: inherit) */
-	font-family: "source_sans_proregular", sans-serif;
 	background: #ffda29; /* the real keypad modal's yellow */
 }
 #coach-keypad .drive-button {

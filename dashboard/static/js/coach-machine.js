@@ -97,14 +97,83 @@ define(function () {
         return Math.round(Math.sqrt(Math.max(0, hw * hw - x * x)) / 2);
     };
 
+    // The practice sheet: 24" long side, the REAL machine's proportions.
+    // MUST match fabmosim.js sheetSize() — the sim parks its entry position
+    // on this sheet, so the two computing the same function from the same
+    // config is what keeps the spindle on-table.
+    function sheetSize(engine) {
+        var sx = 24,
+            sy = 18;
+        try {
+            var m = engine && engine.config && engine.config.machine;
+            var env = m && m.envelope;
+            var xs = env && (env.xsize || env.xmax);
+            var ys = env && (env.ysize || env.ymax);
+            if (xs > 0 && ys > 0) {
+                if (xs >= ys) {
+                    sy = Math.max(6, Math.round((24 * ys) / xs));
+                } else {
+                    sx = Math.max(6, Math.round((24 * xs) / ys));
+                    sy = 24;
+                }
+            }
+        } catch (e) {
+            /* fall through to the default sheet */
+        }
+        return { x: sx, y: sy };
+    }
+
+    // The real machine's envelope, in inches (null when config is missing).
+    function envSizes(engine) {
+        try {
+            var m = engine && engine.config && engine.config.machine;
+            var env = m && m.envelope;
+            var uc = m && m.units === "mm" ? 1 / 25.4 : 1;
+            var xs = env && (env.xsize || env.xmax) * uc;
+            var ys = env && (env.ysize || env.ymax) * uc;
+            if (xs > 0 && ys > 0) return { x: xs, y: ys };
+        } catch (e) {
+            /* fall through */
+        }
+        return null;
+    }
+
+    // Per-axis logarithmic position warp: real inches -> sheet inches.
+    // The curve is solved so the slope AT THE ORIGIN is exactly 1 — the
+    // near field draws at life size, so homing backoffs, nudges and the
+    // practice ring read the same on a 96" tool as on a small one — and
+    // compression grows logarithmically toward the far corner so the whole
+    // envelope still fits the sheet. Solving k/ln(1+k) = env/sheet gives
+    // that unit slope; an envelope that already fits the sheet solves to
+    // k→0, i.e. plain linear — small machines are untouched.
+    function makeWarp(envIn, sheetIn) {
+        var r = envIn / sheetIn;
+        if (!(r > 1.02)) {
+            var lin = sheetIn / envIn;
+            return function (p) {
+                return p * lin;
+            };
+        }
+        var k = 2 * r; // fixed-point iteration on k = r·ln(1+k)
+        for (var i = 0; i < 20; i++) k = r * Math.log(1 + k);
+        var den = Math.log(1 + k);
+        return function (p) {
+            var s = p < 0 ? -1 : 1;
+            return (s * sheetIn * Math.log(1 + (k * Math.abs(p)) / envIn)) / den;
+        };
+    }
+
     function CoachMachine(engine, options) {
         options = options || {};
         this.engine = engine;
-        this.sizeX = options.sizeX || 24; // table envelope, inches
-        this.sizeY = options.sizeY || 18;
+        var sheet = sheetSize(engine);
+        this.sizeX = options.sizeX || sheet.x; // table envelope, inches
+        this.sizeY = options.sizeY || sheet.y;
         this.TW = 12;
         this.TH = Math.max(4, Math.round((this.TW * this.sizeY) / this.sizeX));
         this.tileIn = this.sizeX / this.TW;
+        this._setWarp();
+        this._setDims();
 
         this.visible = false;
         this.el = null;
@@ -142,9 +211,17 @@ define(function () {
         if (options.sizeX) {
             this.sizeX = options.sizeX;
             this.sizeY = options.sizeY || this.sizeY;
-            this.TH = Math.max(4, Math.round((this.TW * this.sizeY) / this.sizeX));
-            this.tileIn = this.sizeX / this.TW;
+        } else {
+            // Re-derive the sheet here: the constructor runs at dashboard
+            // startup, possibly before engine.config has loaded.
+            var sheet = sheetSize(this.engine);
+            this.sizeX = sheet.x;
+            this.sizeY = sheet.y;
         }
+        this.TH = Math.max(4, Math.round((this.TW * this.sizeY) / this.sizeX));
+        this.tileIn = this.sizeX / this.TW;
+        this._setWarp();
+        this._setDims();
         if (!this.el) this._build();
         // Docked in the arena (options.parent): a static panel whose canvas
         // fitTo sizes. Otherwise a floating, draggable panel. The parent is
@@ -226,7 +303,7 @@ define(function () {
     CoachMachine.prototype.fitTo = function (availW, availH) {
         if (!this.el || !this._cv) return;
         var head = this.el.firstChild ? this.el.firstChild.offsetHeight : 0;
-        var frame = 12; // 3px border + 3px shadow ring, both sides
+        var frame = 4; // 1px card border both sides, plus a breath
         var s = Math.floor(Math.min((availW - frame) / W, (availH - head - frame) / H) * 2) / 2;
         s = Math.max(1, s);
         var w = Math.round(W * s) + "px";
@@ -284,10 +361,44 @@ define(function () {
 
     // ------------------------------------------------------------- status
 
+    CoachMachine.prototype._setWarp = function () {
+        var env = envSizes(this.engine) || { x: this.sizeX, y: this.sizeY };
+        this._mapX = makeWarp(env.x, this.sizeX);
+        this._mapY = makeWarp(env.y, this.sizeY);
+    };
+
+    // Canvas height follows the table's projected height, so a long thin
+    // sheet (PRS aspect, TH 6) doesn't pay for the sky a squarer one (TH 9)
+    // needs: slab projection + 18px bottom rim + 40px spindle/confetti
+    // headroom (TH 9 solves to the original 160, so square sheets are
+    // pixel-identical to before).
+    CoachMachine.prototype._setDims = function () {
+        var want = this.TW * XY + this.TH * YY + 58;
+        if (H === want) return;
+        H = want;
+        if (this._cv) {
+            this._cv.height = H;
+            this._img = this._ctx.createImageData(W, H);
+            this._buf = new Uint32Array(this._img.data.buffer);
+        }
+    };
+
+    // Real inches -> sheet inches (the warped space all drawing, carving
+    // and the practice-ring anchor live in). Z stays linear.
+    CoachMachine.prototype.mapX = function (xIn) {
+        return this._mapX(xIn);
+    };
+    CoachMachine.prototype.mapY = function (yIn) {
+        return this._mapY(yIn);
+    };
+
     CoachMachine.prototype._onStatus = function (status) {
         var u = status.unit === "mm" ? 1 / 25.4 : 1;
-        var nx = (status.posx || 0) * u;
-        var ny = (status.posy || 0) * u;
+        // Warp into sheet space here, at the single inch->sheet chokepoint:
+        // everything downstream (carve path, chase target, renderer) then
+        // simply lives in warped coordinates.
+        var nx = this._mapX((status.posx || 0) * u);
+        var ny = this._mapY((status.posy || 0) * u);
         var nz = status.posz === undefined ? 0.8 : status.posz * u;
         // Carve on the authoritative status stream: the sim advances a
         // fixed dt per tick so these positions never jump, while the
@@ -324,7 +435,12 @@ define(function () {
         this.clipD += (this.clipT - this.clipD) * k;
         var moved = Math.abs(this.draw.x - px) + Math.abs(this.draw.y - py) > 0.0005;
         this.moving = moved || Math.abs(this.target.z - this.draw.z) > 0.001;
-        if (this.running || this.moving) this.spin += dt * 22;
+        // The flutes spin ONLY with the bit down at the material — a live
+        // bit during homing or the Z-plate ritual would destroy the plate
+        // and clip, and the theater must model the right habit. Carving
+        // starts at z < -0.02; spinning up just above the surface (0.05")
+        // has the flutes already turning as the bit meets the stock.
+        if ((this.running || this.moving) && this.draw.z < 0.05) this.spin += dt * 22;
 
         // celebration: confetti rains over the stage, the spindle revs
         if (this.celebrateT > 0) {

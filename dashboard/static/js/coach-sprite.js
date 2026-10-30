@@ -18,7 +18,7 @@ define(function () {
 
     var W = 60,
         H = 48,
-        SCALE = 2;
+        SCALE = 3; // 180px wide: fills the coach rail's content width
 
     // Palette sampled from Brian's "ShopBot Tutorial Character.png"
     var BLUE = "#0d2aa6",
@@ -305,10 +305,11 @@ define(function () {
         R(3, 12, 54, 8, GRAY);
         R(3, 14, 54, 1, LIGHT);
         R(3, 18, 54, 1, LIGHT);
-        R(0, 12, 3, 8, BLUE);
-        R(0, 12, 1, 8, BLUE_HI);
-        R(57, 12, 3, 8, BLUE);
-        R(59, 12, 1, 8, BLUE_D);
+        // end plates run from the beam down onto the table's cross support
+        R(0, 12, 3, 16, BLUE);
+        R(0, 12, 1, 16, BLUE_HI);
+        R(57, 12, 3, 16, BLUE);
+        R(59, 12, 1, 16, BLUE_D);
 
         // --- table: yellow edge over the blue cross support ---
         R(5, 26, 50, 2, YEL);
