@@ -762,6 +762,15 @@ engine.getVersion(function (err, version) {
                     $(".modalDim").hide();
                     $(".manual-drive-modal").hide();
                     keyboard.setEnabled(false);
+                    // Kill any live client-side gesture loops (typematic,
+                    // refresh keep-alive) — the server has left manual mode,
+                    // so anything still ticking here is orphaned.
+                    if (typeof keypad !== "undefined" && keypad && keypad.forceStop) {
+                        keypad.forceStop();
+                    }
+                    if (keyboard && (keyboard.going || keyboard.interval)) {
+                        keyboard.stop();
+                    }
                     // Every keypad close ends up here (the server has left
                     // manual mode), so this is the one spot that reliably
                     // clears SK dialog mode no matter how the modal was
@@ -2537,9 +2546,21 @@ $(document).on("keydown", function (e) {
         // changed to alt but still not very useful, only working outside iframe
         setUpManual();
         // toggle "Fixed" moves — "d" kept as an alias for SB3 muscle
-        // memory (Fixed "D"istance)
+        // memory (Fixed "D"istance). Only while the keypad is up, nothing is
+        // being typed, and no jog gesture is live: flipping the mode
+        // mid-gesture used to morph a continuous move into a "fixed" one,
+        // whose release path never sends the stop (stuck move).
     } else if (e.key === "f" || e.key === "d") {
-        $(".fixed-switch").trigger("click");
+        var typing =
+            document.activeElement &&
+            (document.activeElement.tagName === "INPUT" ||
+                document.activeElement.tagName === "TEXTAREA");
+        var gestureLive =
+            (typeof keyboard !== "undefined" && keyboard && (keyboard.going || keyboard.interval)) ||
+            (typeof keypad !== "undefined" && keypad && (keypad.going || keypad.target));
+        if ($(".manual-drive-modal").is(":visible") && !typing && !gestureLive) {
+            $(".fixed-switch").trigger("click");
+        }
         // increase or decrease speed
     } else if ((e.key === "," || e.key === ".") && e.altKey) {
         // this is the alt+< and alt+> for speed up/dn
