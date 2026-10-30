@@ -12,7 +12,7 @@
                 "highlight": { "app": "#btn-home-xy" }
             },
             {
-                "text": "Watch the tool drive toward each proximity switch, back off, and creep back in slowly for an exact reading — first X, then Y. The <b>Inputs</b> lights in the top bar show each switch tripping.",
+                "text": "Watch the tool drive toward each proximity switch, back off, and creep back in slowly for an exact reading — first Y, then X. The <b>Inputs</b> lights in the top bar show each switch tripping.",
                 "watch": { "type": "sequence", "name": "home" },
                 "highlight": { "dashboard": ".sm-axes, .io-group" },
                 "stage": true

@@ -285,27 +285,27 @@ define(function (require) {
     SimMachine.prototype._queueHoming = function (u) {
         var s = [{ kind: "state", state: "running" }];
         s.push({ kind: "move", to: { posz: 0.8 * u }, secs: 0.8 });
-        // X: seek, trip prox (in3), back off, creep in
-        s.push({ kind: "move", to: { posx: -0.1 * u }, secs: 2 });
-        s.push({ kind: "input", name: "in3", value: 1 });
-        s.push({ kind: "pause", secs: TRIP_HOLD });
-        s.push({ kind: "move", to: { posx: 0.25 * u }, secs: 0.6 });
-        s.push({ kind: "input", name: "in3", value: 0 });
-        s.push({ kind: "move", to: { posx: -0.02 * u }, secs: 0.8 });
-        s.push({ kind: "input", name: "in3", value: 1 });
-        s.push({ kind: "pause", secs: TRIP_HOLD });
-        s.push({ kind: "set", fields: { posx: 0 } });
-        s.push({ kind: "input", name: "in3", value: 0 });
-        // Y: same dance (in2)
+        // Y homes FIRST on a ShopBot: seek, trip prox (in3), back off, creep in
         s.push({ kind: "move", to: { posy: -0.1 * u }, secs: 2 });
-        s.push({ kind: "input", name: "in2", value: 1 });
+        s.push({ kind: "input", name: "in3", value: 1 });
         s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "move", to: { posy: 0.25 * u }, secs: 0.6 });
-        s.push({ kind: "input", name: "in2", value: 0 });
+        s.push({ kind: "input", name: "in3", value: 0 });
         s.push({ kind: "move", to: { posy: -0.02 * u }, secs: 0.8 });
-        s.push({ kind: "input", name: "in2", value: 1 });
+        s.push({ kind: "input", name: "in3", value: 1 });
         s.push({ kind: "pause", secs: TRIP_HOLD });
         s.push({ kind: "set", fields: { posy: 0 } });
+        s.push({ kind: "input", name: "in3", value: 0 });
+        // then X: same dance (in2)
+        s.push({ kind: "move", to: { posx: -0.1 * u }, secs: 2 });
+        s.push({ kind: "input", name: "in2", value: 1 });
+        s.push({ kind: "pause", secs: TRIP_HOLD });
+        s.push({ kind: "move", to: { posx: 0.25 * u }, secs: 0.6 });
+        s.push({ kind: "input", name: "in2", value: 0 });
+        s.push({ kind: "move", to: { posx: -0.02 * u }, secs: 0.8 });
+        s.push({ kind: "input", name: "in2", value: 1 });
+        s.push({ kind: "pause", secs: TRIP_HOLD });
+        s.push({ kind: "set", fields: { posx: 0 } });
         s.push({ kind: "input", name: "in2", value: 0 });
         s.push({ kind: "state", state: "idle" });
         s.push({ kind: "done", name: "home" });
