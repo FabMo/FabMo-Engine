@@ -106,7 +106,7 @@ define(function (require) {
             var step = self.lesson.steps[self.stepIndex];
             if (!step || !status) return;
             if (step.watch && step.watch.type === "trace") {
-                if (self._checkTrace(status)) {
+                if (self._checkTrace()) {
                     self.stepIndex++;
                     self._showStep();
                 }
@@ -215,12 +215,12 @@ define(function (require) {
         }
         this._ui.dots.html(dots);
         this._clearHighlights();
-        // A pattern step chalks the practice path onto the sheet, anchored
+        // A pattern step paints the practice path onto the sheet, anchored
         // where the bit is when the step comes up; other steps erase it.
         if (step.pattern) {
-            var pat = this._buildPattern(step.pattern);
-            this.machine.setPattern(pat.loop);
-            this._traceLeft = pat.targets;
+            var cells = this._buildPattern(step.pattern);
+            this.machine.setPattern(cells);
+            this._traceLeft = cells.slice();
         } else {
             this.machine.setPattern(null);
             this._traceLeft = null;
@@ -269,56 +269,47 @@ define(function (require) {
         if (step.button) this._focusBar();
     };
 
-    // Build the practice path for a "pattern" step: a w x h rectangle in
-    // machine inches, anchored at the bit's current position (snapped to
-    // the tile-center grid, flipped/clamped so it fits on the sheet). The
-    // loop is what gets drawn; the targets -- corners plus edge midpoints
-    // -- are what a "trace" watch requires the bit to visit while cutting.
+    // Build the practice path for a "pattern" step: the perimeter cells of
+    // a w x h (inches) rectangle on the stock's cell grid, anchored at the
+    // bit's current cell and flipped/clamped so the whole ring sits on
+    // full-size cells. The machine paints these cells; carving one clears
+    // it, so the path erases square by square as the trainee drives it.
     Coach.prototype._buildPattern = function (spec) {
         var m = this.machine;
         var s = this.engine.status || {};
         var u = s.unit === "mm" ? 1 / 25.4 : 1;
         var t = m.tileIn;
-        var w = spec.w || 6,
-            h = spec.h || 4;
-        var ax = Math.round(((s.posx || 0) * u) / t) * t;
-        var ay = Math.round(((s.posy || 0) * u) / t) * t;
-        var x0 = ax + w > m.sizeX ? ax - w : ax; // prefer extending +X
-        x0 = Math.max(0, Math.min(m.sizeX - w, x0));
-        var y0 = ay + h > m.sizeY ? ay - h : ay;
-        y0 = Math.max(0, Math.min(m.sizeY - h, y0));
-        var x1 = x0 + w,
-            y1 = y0 + h;
-        var loop = [
-            [x0, y0],
-            [x1, y0],
-            [x1, y1],
-            [x0, y1],
-            [x0, y0],
-        ];
-        var targets = [];
-        for (var i = 0; i < 4; i++) {
-            targets.push([loop[i][0], loop[i][1]]);
-            targets.push([(loop[i][0] + loop[i + 1][0]) / 2, (loop[i][1] + loop[i + 1][1]) / 2]);
+        var wC = Math.max(2, Math.round((spec.w || 6) / t));
+        var hC = Math.max(2, Math.round((spec.h || 4) / t));
+        var i0 = Math.round(((s.posx || 0) * u) / t);
+        var j0 = Math.round(((s.posy || 0) * u) / t);
+        // Prefer extending +X/+Y from the bit; flip, then clamp to the cell
+        // grid (0..TW/TH -- edge half-cells allowed, so the ring can truly
+        // start AT the bit instead of shifting off it near an edge).
+        if (i0 + wC > m.TW) i0 -= wC;
+        i0 = Math.max(0, Math.min(m.TW - wC, i0));
+        if (j0 + hC > m.TH) j0 -= hC;
+        j0 = Math.max(0, Math.min(m.TH - hC, j0));
+        var cells = [];
+        for (var i = i0; i <= i0 + wC; i++) {
+            cells.push(i + "," + j0);
+            cells.push(i + "," + (j0 + hC));
         }
-        return { loop: loop, targets: targets };
+        for (var j = j0 + 1; j < j0 + hC; j++) {
+            cells.push(i0 + "," + j);
+            cells.push(i0 + wC + "," + j);
+        }
+        return cells;
     };
 
-    // A "trace" watch completes when every target on the practice path has
-    // been visited with the bit below zero -- order-free, so either way
-    // around the loop counts.
-    Coach.prototype._checkTrace = function (status) {
-        if (!this._traceLeft || !this._traceLeft.length) return false;
-        var u = status.unit === "mm" ? 1 / 25.4 : 1;
-        var px = (status.posx || 0) * u,
-            py = (status.posy || 0) * u,
-            pz = (status.posz || 0) * u;
-        if (pz > -0.01) return false;
-        for (var i = this._traceLeft.length - 1; i >= 0; i--) {
-            if (Math.abs(px - this._traceLeft[i][0]) < 0.7 && Math.abs(py - this._traceLeft[i][1]) < 0.7) {
-                this._traceLeft.splice(i, 1);
-            }
-        }
+    // A "trace" watch completes when every painted path cell has been
+    // carved away -- the squares disappearing ARE the progress meter.
+    Coach.prototype._checkTrace = function () {
+        if (!this._traceLeft) return false;
+        var carved = this.machine.carved;
+        this._traceLeft = this._traceLeft.filter(function (c) {
+            return !carved[c];
+        });
         return this._traceLeft.length === 0;
     };
 

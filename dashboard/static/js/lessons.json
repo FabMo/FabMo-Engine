@@ -55,7 +55,7 @@
                 "highlight": { "dashboard": "#coach-keypad .z_neg_slow, #coach-keypad .z_neg_fast" }
             },
             {
-                "text": "<b>You're cutting — now follow the path!</b> I've chalked a dashed loop on the sheet, starting where your bit is. Steer the trench along it, through <b>every corner</b>, all the way around. Either direction works. This is exactly what a job does: X and Y draw the toolpath.",
+                "text": "<b>You're cutting — now follow the path!</b> I've painted a loop of <b>blue squares</b> on the sheet, starting where your bit is. Drive along it and <b>clear every square</b> — they carve away as you hit them. Either direction works. This is exactly what a job does: X and Y draw the toolpath.",
                 "watch": { "type": "trace" },
                 "pattern": { "w": 6, "h": 4 }
             },

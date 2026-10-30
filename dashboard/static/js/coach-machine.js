@@ -54,7 +54,7 @@ define(function () {
     // the Z-zero plate and its grounding clip (zeroz theater)
     var PLATE = { top: hex("#d8dee4"), hi: hex("#eef2f6"), side: hex("#9aa2aa"), side2: hex("#7c848c"), wire: hex("#202228") };
     var CLIP = { cu: hex("#c87a3a"), cuHi: hex("#e09a56"), grip: hex("#16181e"), gripHi: hex("#343842") };
-    var PAT = { line: hex("#2456e8"), dot: hex("#5b86ff") }; // practice-path chalk line
+    var PAT = [hex("#3e6ce2"), hex("#3560cf")]; // practice-path painted cells (checkered blues)
     var TOOL = {
         bit: [hex("#242a34"), hex("#6c7480"), hex("#a8b0bc"), hex("#d8dee6"), hex("#c0c6d0")],
         flute: hex("#3a4250"),
@@ -123,7 +123,7 @@ define(function () {
         this.moving = false;
         this.spin = 0;
         this.carved = {}; // "i,j" -> true (cells CENTERED on the tile grid)
-        this.pattern = null; // practice-path polyline, machine inches
+        this.pattern = null; // practice-path cells, "i,j" -> true
 
         // Registered once, inert while hidden (FabMoAPI has no off()).
         var self = this;
@@ -163,6 +163,8 @@ define(function () {
         if (this.visible) return;
         this.visible = true;
         this.carved = {};
+        this._cx = undefined; // no carve segment across a fresh show
+        this._cy = undefined;
         var status = this.engine.status || {};
         this._onStatus(status);
         this.draw.x = this.target.x;
@@ -184,10 +186,17 @@ define(function () {
         this._raf = requestAnimationFrame(loop);
     };
 
-    // The keypad lesson draws a practice path on the sheet: a closed
-    // polyline in machine inches, rendered as a dashed chalk line.
-    CoachMachine.prototype.setPattern = function (pts) {
-        this.pattern = pts && pts.length ? pts : null;
+    // The keypad lesson paints a path of colored cells on the sheet
+    // (array of "i,j" cell keys). Carving a painted cell clears it -- the
+    // trench replaces the tint, so progress is visible square by square.
+    CoachMachine.prototype.setPattern = function (cells) {
+        if (!cells || !cells.length) {
+            this.pattern = null;
+            return;
+        }
+        var map = {};
+        for (var i = 0; i < cells.length; i++) map[cells[i]] = true;
+        this.pattern = map;
     };
 
     // Arena mode: size the canvas to the largest half-integer multiple of
@@ -258,9 +267,27 @@ define(function () {
 
     CoachMachine.prototype._onStatus = function (status) {
         var u = status.unit === "mm" ? 1 / 25.4 : 1;
-        this.target.x = (status.posx || 0) * u;
-        this.target.y = (status.posy || 0) * u;
-        this.target.z = status.posz === undefined ? 0.8 : status.posz * u;
+        var nx = (status.posx || 0) * u;
+        var ny = (status.posy || 0) * u;
+        var nz = status.posz === undefined ? 0.8 : status.posz * u;
+        // Carve on the authoritative status stream: the sim advances a
+        // fixed dt per tick so these positions never jump, while the
+        // cosmetic draw position can teleport diagonally when a
+        // main-thread stall starves the RAF loop -- carving from draw
+        // missed whole path edges under load.
+        if (this._cx !== undefined && nz < -0.02) {
+            var steps = Math.max(1, Math.ceil((Math.abs(nx - this._cx) + Math.abs(ny - this._cy)) / (this.tileIn / 4)));
+            for (var s = 0; s <= steps; s++) {
+                var ix = Math.round((this._cx + ((nx - this._cx) * s) / steps) / this.tileIn);
+                var iy = Math.round((this._cy + ((ny - this._cy) * s) / steps) / this.tileIn);
+                if (ix >= 0 && iy >= 0 && ix <= this.TW && iy <= this.TH) this.carved[ix + "," + iy] = true;
+            }
+        }
+        this._cx = nx;
+        this._cy = ny;
+        this.target.x = nx;
+        this.target.y = ny;
+        this.target.z = nz;
         this.plateT = status.zplate || 0;
         this.clipT = status.zclip || 0;
         this.running = status.state === "running" || status.state === "manual";
@@ -280,18 +307,7 @@ define(function () {
         this.moving = moved || Math.abs(this.target.z - this.draw.z) > 0.001;
         if (this.running || this.moving) this.spin += dt * 22;
 
-        // below Z zero: carve every stock cell the bit passes over. Cells
-        // are CENTERED on the tile grid (nearest-center, not floor), so the
-        // trench stays centered under the bit instead of hanging off one
-        // side of a gridline.
-        if (this.draw.z < -0.02) {
-            var steps = Math.max(1, Math.ceil((Math.abs(this.draw.x - px) + Math.abs(this.draw.y - py)) / (this.tileIn / 4)));
-            for (var s = 0; s <= steps; s++) {
-                var ix = Math.round((px + ((this.draw.x - px) * s) / steps) / this.tileIn);
-                var iy = Math.round((py + ((this.draw.y - py) * s) / steps) / this.tileIn);
-                if (ix >= 0 && iy >= 0 && ix <= this.TW && iy <= this.TH) this.carved[ix + "," + iy] = true;
-            }
-        }
+        // (carving happens in _onStatus, off the authoritative positions)
     };
 
     // ------------------------------------------------------------ drawing
@@ -382,9 +398,10 @@ define(function () {
                 if (i > TW || j > TH) continue;
                 var z = topZ(i, j);
                 var carvedHere = z < 0;
+                var patHere = !carvedHere && self.pattern && self.pattern[i + "," + j];
                 fillPoly(
                     [proj(loX(i), loY(j), z), proj(hiX(i), loY(j), z), proj(hiX(i), hiY(j), z), proj(loX(i), hiY(j), z)],
-                    carvedHere ? CUT[(i + j) & 1] : STOCK[(i + j) & 1]
+                    carvedHere ? CUT[(i + j) & 1] : patHere ? PAT[(i + j) & 1] : STOCK[(i + j) & 1]
                 );
                 // near walls: the -x and -y faces (both face the viewer)
                 var zx = topZ(i - 1, j);
@@ -418,29 +435,6 @@ define(function () {
         }
         glyph(GLYPH_X, Math.round(og[0]) + 15, Math.round(og[1]) - 2);
         glyph(GLYPH_Y, Math.round(og[0]) - 14, Math.round(og[1]) - 9);
-
-        // ---- the practice path: a dashed chalk-line loop the keypad
-        // lesson asks the trainee to trace, with dots at the corners ----
-        if (this.pattern && this.pattern.length > 1) {
-            var tI = this.tileIn;
-            var dashIdx = 0;
-            for (var pi = 0; pi < this.pattern.length - 1; pi++) {
-                var pa = this.pattern[pi],
-                    pb = this.pattern[pi + 1];
-                var segN = Math.max(1, Math.round((Math.abs(pb[0] - pa[0]) + Math.abs(pb[1] - pa[1])) / 0.12));
-                for (var ps = 0; ps < segN; ps++) {
-                    if (dashIdx++ % 7 < 4) {
-                        var sp = proj((pa[0] + ((pb[0] - pa[0]) * ps) / segN) / tI, (pa[1] + ((pb[1] - pa[1]) * ps) / segN) / tI, 0.05);
-                        pset(Math.round(sp[0]), Math.round(sp[1]), PAT.line);
-                    }
-                }
-            }
-            for (var pc = 0; pc < this.pattern.length - 1; pc++) {
-                var cp = proj(this.pattern[pc][0] / tI, this.pattern[pc][1] / tI, 0.05);
-                for (var cdx = -1; cdx <= 0; cdx++)
-                    for (var cdy = -1; cdy <= 0; cdy++) pset(Math.round(cp[0]) + cdx, Math.round(cp[1]) + cdy, PAT.dot);
-            }
-        }
 
         // ---- the Z-zero plate: slides in under the bit during the zeroz
         // theater. Flat aluminum bar, ~2x10 inches, with a 30-degree bend
