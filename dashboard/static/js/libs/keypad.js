@@ -267,6 +267,11 @@
                     if (this.isExitButtonEvent(evt)) return;
                     if (this.going) {
                         this.cleanStop();
+                    } else if (this.target) {
+                        // A fixed-mode hold that slid into a pan: end it too,
+                        // or the typematic keeps nudging with no release
+                        // event coming to this element.
+                        this.forceStop();
                     }
                 }.bind(this));
                 
@@ -336,6 +341,55 @@
 
         // Bind scroll handler once (outside the .each loop) to avoid duplicate stop commands
         $(document).on("scroll", this.end.bind(this));
+
+        // A pressup/touchend is never delivered to a blurred window (alt-tab,
+        // OS dialog) — a held button would leave the typematic/refresh loop
+        // firing forever from a backgrounded tab. Losing the window or tab is
+        // a hard gesture end; forceStop (not end) because the
+        // guardAgainstExitButton swallow must not apply to focus loss.
+        $(window).on("blur", this.forceStop.bind(this));
+        document.addEventListener(
+            "visibilitychange",
+            function () {
+                if (document.hidden) this.forceStop();
+            }.bind(this)
+        );
+    };
+
+    // Unconditional gesture end for focus-loss and exit paths. Unlike end(),
+    // never swallowed by guardAgainstExitButton() and emits nothing when no
+    // gesture is live (window blur happens constantly in normal use).
+    Keypad.prototype.forceStop = function () {
+        var wasGoing = this.going;
+        var wasFixed = this.fixedGesture;
+        var hadRepeats = this.typematicFired;
+
+        this.clearTypematic();
+        this.going = false;
+        this.enabled = false;
+        this.target = null;
+        this.nudgeExecuted = false;
+        this.typematicFired = false;
+        this.fixedGesture = false;
+
+        if (this.interval) {
+            clearTimeout(this.interval);
+            this.interval = null;
+        }
+
+        this.elem
+            .find(".drive-button")
+            .removeClass("drive-button-active")
+            .removeClass("drive-button-active-transient")
+            .addClass("drive-button-inactive");
+
+        if (wasGoing) {
+            this.emit("stop", null);
+        } else if (wasFixed && hadRepeats) {
+            // Fixed-mode gesture: no stop (the feedhold+flush races the
+            // nudge gcode) — just discard the server-side queue backlog.
+            this.emit("nudgeCancel", null);
+        }
     };
 
     Keypad.prototype.isExitButtonEvent = function(evt) {
@@ -870,13 +924,17 @@
             return;
         }
 
-        this.clearTypematic();
-        this.nudgeExecuted = false; // Reset for next gesture
-        
-        // Stop continuous motion if active
-        if (this.going) {
-            console.log("Keypad: Mouse left button - clean stopping");
-            this.cleanStop();
+        // End whatever gesture is live — continuous (going) or a fixed-mode
+        // typematic hold (target set). The old path only handled continuous:
+        // sliding off a button mid-typematic left the transient style, the
+        // gesture state, and the server-side nudge backlog all alive (stuck
+        // style / stuck move). Hover without a press takes the else branch.
+        if (this.going || this.target) {
+            console.log("Keypad: Mouse left button mid-gesture - forcing stop");
+            this.forceStop();
+        } else {
+            this.clearTypematic();
+            this.nudgeExecuted = false; // Reset for next gesture
         }
     };
 
