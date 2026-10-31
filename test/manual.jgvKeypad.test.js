@@ -150,6 +150,36 @@ describe("keypad jog over the firmware velocity-jog cycle", () => {
         expect(drv.jogVelocity).toHaveBeenCalledWith({ z: -60 });
     });
 
+    test("manual enter pins the firmware watchdog ($jvto) when the cycle exists", () => {
+        var drv = makeG2(true);
+        var st = { write: jest.fn() };
+        var md = new ManualDriver(drv, st);
+        md.enter();
+        var wrote = st.write.mock.calls.map(function (c) {
+            return c[0];
+        });
+        expect(
+            wrote.some(function (line) {
+                return line.indexOf("{jvto:500}") !== -1;
+            })
+        ).toBe(true);
+    });
+
+    test("manual enter writes no jvto on firmware without the cycle", () => {
+        var drv = makeG2(false);
+        var st = { write: jest.fn() };
+        var md = new ManualDriver(drv, st);
+        md.enter();
+        var wrote = st.write.mock.calls.map(function (c) {
+            return c[0];
+        });
+        expect(
+            wrote.some(function (line) {
+                return line.indexOf("jvto") !== -1;
+            })
+        ).toBe(false);
+    });
+
     test("keypad-close during a jgv jog exits once the ramp-down completes", () => {
         var drv = makeG2(true);
         var st = { write: jest.fn() };

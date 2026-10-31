@@ -51,6 +51,11 @@ var EXIT_WATCHDOG_MAX_CHECKS = 5;
 // hold) — bursting the backlog out at that point is how bits get crashed.
 var NUDGE_QUEUE_TTL = 3000;
 
+// Firmware velocity-jog watchdog ($jvto), pinned at every manual enter when
+// the cycle exists. Clients heartbeat at ~50ms, so 500ms of host silence is
+// decisively "nobody is driving". Mirrors the firmware default on purpose.
+var JGV_WATCHDOG_MS = 500;
+
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
 // streaming commands to it, as is done when in "pendant" mode or similar
@@ -188,6 +193,13 @@ ManualDriver.prototype.enter = function () {
             this.stream.write("{bjm:" + jerkB + "}\n");
             this.stream.write("{cjm:" + jerkC + "}\n");
             this.stream.write("{spph:false}\n"); // turn off spph so G2 feedhold doesn't turn off spindle
+            // Pin the velocity-jog watchdog explicitly rather than trusting
+            // whatever the board was last left with — it is the deadman for
+            // every jgv jog this session. Only when the capability probe
+            // confirmed the cycle exists (an unknown key would error).
+            if (this.driver.jgv_supported === true) {
+                this.stream.write("{jvto:" + JGV_WATCHDOG_MS + "}\n");
+            }
             // Send "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
             this.driver.prime();
