@@ -83,68 +83,117 @@
     }
 
     // ---- pure model --------------------------------------------------------
+    // Velocity estimation windows. The dashboard "status" stream is NOT a
+    // clean 10 Hz position feed: the machine emits status for plenty of
+    // non-position reasons, so back-to-back samples with identical positions
+    // a few ms apart are normal. Pairwise velocity over adjacent samples
+    // reads those as "stopped" and the tone stutters. Instead, velocity is
+    // measured across a sliding window - chatter inside the window cannot
+    // zero it - and an axis only goes silent after staying below threshold
+    // for OFF_HOLD_MS, so a missed or late report cannot cut the tone.
+    var V_WINDOW_MS = 350; // velocity baseline: newest vs oldest within this
+    var MIN_SPAN_MS = 50; // need at least this much baseline to say anything
+    var OFF_HOLD_MS = 250; // sustain through dropouts before going silent
 
     function MotionAudioModel(options) {
         options = options || {};
         this.stepsPerUnit = options.stepsPerUnit || {};
-        this.last = null; // { t, pos: {x,y,z} }
+        this.samples = []; // [{t, pos:{x,y,z}}], pruned to the window
+        this.offSince = {}; // axis -> t of first below-threshold reading
+        this.lastFreq = {}; // axis -> last audible frequency (for sustain)
     }
 
     MotionAudioModel.prototype.setStepsPerUnit = function (spu) {
         this.stepsPerUnit = spu || {};
     };
 
+    MotionAudioModel.prototype.reset = function () {
+        this.samples = [];
+        this.offSince = {};
+        this.lastFreq = {};
+    };
+
     // Feed one status sample. Returns per-axis oscillator targets:
     //   { x: {freq, on}, y: {...}, z: {...} }
-    // or null when this sample can't produce a velocity (first sample, stale
-    // gap, teleport) — callers should mute on null.
+    // null means hard-mute NOW (invalid positions, coordinate teleport);
+    // undefined means "nothing to say yet, change nothing" (warming up,
+    // duplicate tick). Callers must also mute on their own clock when
+    // updates stop arriving - the model only speaks when fed.
     MotionAudioModel.prototype.update = function (status, tMs) {
         var pos = {};
         for (var i = 0; i < AXES.length; i++) {
             var v = status["pos" + AXES[i]];
-            if (typeof v !== "number" || isNaN(v)) return this._rebase(null);
+            if (typeof v !== "number" || isNaN(v)) {
+                this.reset();
+                return null;
+            }
             pos[AXES[i]] = v;
         }
 
-        var last = this.last;
-        this.last = { t: tMs, pos: pos };
-        if (!last) return null;
-
-        var dt = (tMs - last.t) / 1000;
-        if (dt <= 0.005 || dt > 0.5) {
-            // Duplicate burst or a stale gap (page hidden, hold, disconnect)
-            // — velocity over this interval is meaningless.
-            return null;
+        var newest = this.samples.length ? this.samples[this.samples.length - 1] : null;
+        if (newest && tMs - newest.t <= 2) {
+            return undefined; // same tick; nothing new
         }
 
         // status.unit: 0 = inches (G20), 1 = mm (G21); tolerate string forms.
         var metric = status.unit === 1 || status.unit === "mm";
         var teleportLimit = metric ? TELEPORT_MM_PER_S : TELEPORT_IN_PER_S;
 
+        if (newest) {
+            var adt = (tMs - newest.t) / 1000;
+            if (adt > 0.5) {
+                // Stale gap (hidden tab, hold, disconnect): restart the window.
+                this.reset();
+            } else {
+                // Teleport check against the adjacent sample: zeroing an axis
+                // or an offset change jumps work coordinates instantly - mute
+                // and restart the window rather than chirp.
+                for (i = 0; i < AXES.length; i++) {
+                    if (Math.abs(pos[AXES[i]] - newest.pos[AXES[i]]) / adt > teleportLimit) {
+                        this.reset();
+                        this.samples.push({ t: tMs, pos: pos });
+                        return null;
+                    }
+                }
+            }
+        }
+
+        this.samples.push({ t: tMs, pos: pos });
+        while (this.samples.length && tMs - this.samples[0].t > V_WINDOW_MS) {
+            this.samples.shift();
+        }
+
+        var oldest = this.samples[0];
+        var span = (tMs - oldest.t) / 1000;
+        if (span * 1000 < MIN_SPAN_MS) {
+            return undefined; // warming up - hold whatever is sounding
+        }
+
         var out = {};
         for (i = 0; i < AXES.length; i++) {
             var axis = AXES[i];
-            var speed = Math.abs(pos[axis] - last.pos[axis]) / dt; // units/s
-            if (speed > teleportLimit) {
-                // Coordinate jump — rebase so the next sample is clean.
-                this.last = { t: tMs, pos: pos };
-                return null;
-            }
+            var speed = Math.abs(pos[axis] - oldest.pos[axis]) / span; // units/s
             var spu = this.stepsPerUnit[axis] || DEFAULT_STEPS_PER_UNIT;
             var freq = (speed * spu) / PITCH_DIVISOR;
-            if (freq < FREQ_MIN) {
-                out[axis] = { freq: 0, on: false };
+            if (freq >= FREQ_MIN) {
+                this.offSince[axis] = null;
+                this.lastFreq[axis] = Math.min(freq, FREQ_MAX);
+                out[axis] = { freq: this.lastFreq[axis], on: true };
+            } else if (this.offSince[axis] == null && this.lastFreq[axis]) {
+                // First below-threshold reading after sound: sustain the
+                // last pitch through the hold window instead of cutting out.
+                this.offSince[axis] = tMs;
+                out[axis] = { freq: this.lastFreq[axis], on: true };
+            } else if (this.offSince[axis] != null && tMs - this.offSince[axis] < OFF_HOLD_MS) {
+                out[axis] = { freq: this.lastFreq[axis] || 0, on: !!this.lastFreq[axis] };
             } else {
-                out[axis] = { freq: Math.min(freq, FREQ_MAX), on: true };
+                this.lastFreq[axis] = 0;
+                out[axis] = { freq: 0, on: false };
             }
         }
         return out;
     };
 
-    MotionAudioModel.prototype._rebase = function (v) {
-        this.last = null;
-        return v;
-    };
 
     // ---- WebAudio glue -----------------------------------------------------
 
@@ -158,6 +207,7 @@
         this.ctx = null;
         this.voices = null; // axis -> {osc, gain}
         this.master = null;
+        this.silenceTimer = null;
     }
 
     MotionAudio.prototype.setEnabled = function (enabled) {
@@ -170,7 +220,11 @@
             this._ensureContext();
         } else {
             this._muteAll();
-            this.model.last = null;
+            this.model.reset();
+            if (this.silenceTimer) {
+                clearTimeout(this.silenceTimer);
+                this.silenceTimer = null;
+            }
         }
     };
 
@@ -182,9 +236,19 @@
     // Hook this to the engine "status" event stream.
     MotionAudio.prototype.onStatus = function (status) {
         if (!this.enabled || !this.ctx || !status) return;
+
+        // The model sustains tone through sparse/duplicate reports, so it can
+        // never silence itself if reports stop entirely (machine idle, G2
+        // gone). This is the tone's own deadman: no status for 700ms -> mute.
+        if (this.silenceTimer) clearTimeout(this.silenceTimer);
+        this.silenceTimer = setTimeout(this._muteAll.bind(this), 700);
+
         var targets = this.model.update(status, (typeof performance !== "undefined" ? performance.now() : Date.now()));
-        if (!targets) {
-            this._muteAll();
+        if (targets === undefined) {
+            return; // warming up / duplicate tick - change nothing
+        }
+        if (targets === null) {
+            this._muteAll(); // invalid positions or coordinate teleport
             return;
         }
         var now = this.ctx.currentTime;
