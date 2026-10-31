@@ -138,6 +138,12 @@ function ManualDriver(drv, st, mode) {
             this.keep_moving   = false;
             this.stop_pending  = false;
             this.analogMode    = false;
+            // A keypad-close during a jgv jog pends the exit on the ramp-down
+            // (exit() defers while isMoving). The cycle just finished — run
+            // the exit now rather than waiting on a stat report to notice.
+            if (this.exit_pending) {
+                this.exit();
+            }
         }
     }.bind(this);
     this.driver.on("jogv_exit", this._jogv_exit_handler);
@@ -316,6 +322,26 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         log.warn("startMotion(): ignored - manual mode is exiting");
         return;
     }
+
+    // Keypad/keyboard route to the firmware velocity-jog cycle. The dashboard
+    // sends the legacy signed-speed form (no ratios); when the firmware has
+    // CYCLE_JGV, translate it into the analog vector form right here so the
+    // keypad gets everything the pendant stick already has: jerk-limited
+    // ramps, mid-flight direction changes with no feedhold/flush dance, and
+    // the firmware's own host-silence watchdog as the final deadman. `speed`
+    // is the toolpath feedrate in both forms, so only the unit-vector
+    // components need synthesizing (legacy two-axis means equal per-axis
+    // speeds, i.e. a 45-degree diagonal).
+    if (primary_ratio === undefined && this._useJGVForKeypad()) {
+        if (second_axis) {
+            primary_ratio = (speed < 0 ? -1 : 1) * Math.SQRT1_2;
+            secondary_ratio = (second_speed < 0 ? -1 : 1) * Math.SQRT1_2;
+        } else {
+            primary_ratio = speed < 0 ? -1 : 1;
+            secondary_ratio = 0;
+        }
+    }
+
     var hasRatios = primary_ratio !== undefined;
     var dir = hasRatios ? primary_ratio : (speed < 0 ? -1.0 : 1.0);
     var second_dir = hasRatios ? (secondary_ratio || 0) : (second_speed < 0 ? -1.0 : 1.0);
@@ -386,11 +412,15 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         // push hard into +X, the stick still moves on Y. Skipped when
         // softlimits_on is false or the user has overridden that axis.
         if (config.machine._cache.softlimits_on) {
-            var jerk = (config.machine._cache.manual &&
-                config.machine._cache.manual.xy_jerk) || 75;
-            var buffer = (config.machine._cache.manual &&
-                config.machine._cache.manual.softlimit_cushion) || 0;
-            var k = jerk * 0.18;
+            var manualCfg = config.machine._cache.manual || {};
+            var jerkXYCap = manualCfg.xy_jerk || 75;
+            // Z stops on its own (usually lower) jerk profile — capping its
+            // approach speed with the XY jerk would overstate how fast Z can
+            // shed speed and let it ride too hot into the Z limit. Now that
+            // the keypad (not just the XY-dominant pendant stick) rides this
+            // path, the cap must be per-axis.
+            var jerkZCap = manualCfg.z_jerk || jerkXYCap;
+            var buffer = manualCfg.softlimit_cushion || 0;
             // Multi-axis JGV has more per-cycle timing jitter than single-
             // axis, so multi-axis gets a slightly larger reservation.
             var activeAxes = 0;
@@ -423,6 +453,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
                 }
                 var lookahead = (speed / 60) * LOOKAHEAD_S;
                 var effectiveMargin = Math.max(margin - buffer - lookahead, 0);
+                var k = (axisKey === "z" ? jerkZCap : jerkXYCap) * 0.18;
                 var vSafeIpm = 60 * Math.cbrt(effectiveMargin * effectiveMargin * k);
                 // Floor at creep so the tool keeps inching toward the limit
                 // instead of parking 0.5–1" short when the cap collapses.
@@ -434,6 +465,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         }
 
         this.driver.jogVelocity(vec);
+        // Remembered so maintainMotion (cmd:"maint") can refresh the
+        // firmware's host-silence watchdog for clients that heartbeat with
+        // maint instead of re-sending start.
+        this._lastJGVVec = vec;
 
         // Track minimal state. analogMode is set here AND stays set through
         // any subsequent stopMotion; only the jogv_exit handler clears it,
@@ -589,6 +624,14 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
 ManualDriver.prototype.maintainMotion = function () {
     if (this.moving) {
         this.keep_moving = true;
+        // In analog (jgv) mode the deadman is the firmware's host-silence
+        // watchdog, which only actual jgv messages feed — re-send the last
+        // vector so a client heartbeating with cmd:"maint" (instead of
+        // re-sending start) doesn't get auto-stopped mid-jog. The firmware
+        // setter is a no-op when the velocity hasn't changed.
+        if (this.analogMode && this._lastJGVVec) {
+            this.driver.jogVelocity(this._lastJGVVec);
+        }
     }
 };
 
@@ -1163,6 +1206,16 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
 // This function is called periodically until a == stop is requested ==,
 // or the users intent to continue moving evaporates ////##??.
 // The idea behind this function is that it is called at an interval that outpaces the
+// True when continuous keypad jogging should ride the firmware velocity-jog
+// cycle instead of legacy G1 segment streaming. Requires the capability probe
+// (machine._probeJGVSupport, cached on the driver) to have confirmed CYCLE_JGV;
+// machine.manual.jgv_keypad = false is the field escape hatch back to legacy.
+ManualDriver.prototype._useJGVForKeypad = function () {
+    if (this.driver.jgv_supported !== true) return false;
+    var manual = config.machine._cache.manual;
+    return !(manual && manual.jgv_keypad === false);
+};
+
 // Motion lease switch. Default ON; machine.manual.motion_lease = false is the
 // field escape hatch if a client with a legitimate slower command cadence
 // turns up. The analog (jgv) path has its own lease — the firmware watchdog.
