@@ -80,6 +80,8 @@
         this.listeners = { go: [], stop: [], nudge: [], nudgeCancel: [] };
         this.setOptions(options);
         this.nudgeTimer = null;
+        this.nudgeTimerKey = null; // keyCode that owns the pending tap window
+        this.downJogKeys = {}; // jog keys currently held (keyCode -> true)
         this.fixedGesture = false; // True if the current/last gesture was a fixed-mode nudge
         this.fixedRepeatCount = 0;
     };
@@ -128,6 +130,14 @@
     };
 
     Keyboard.prototype._onFocusLost = function () {
+        // Keyups are lost to a blurred window — the held-key tracking must
+        // reset with the gesture, and a pending tap-start must die too.
+        this.downJogKeys = {};
+        if (this.nudgeTimer && this.nudgeTimer !== 1) {
+            clearTimeout(this.nudgeTimer);
+            this.nudgeTimer = null;
+            this.nudgeTimerKey = null;
+        }
         if (this.going || this.interval) {
             console.warn("Keyboard: window lost focus mid-gesture - forcing stop");
             this.stop();
@@ -330,6 +340,11 @@
         if (this.enabled && isJogKey(evt.keyCode) && !isTextEntry(evt.target)) {
             evt.preventDefault();
         }
+        // Track physically-held jog keys regardless of the early-outs below —
+        // onKeyUp uses this to enforce "no jog key down, no live gesture".
+        if (isJogKey(evt.keyCode)) {
+            this.downJogKeys[evt.keyCode] = true;
+        }
         if (this.going || !this.enabled) {
             return;
         }
@@ -382,7 +397,33 @@
             this.nudgeTimer = null;
             startForKey();
         } else {
-            this.nudgeTimer = setTimeout(startForKey, this.nudgeTimeout);
+            if (this.nudgeTimer && this.nudgeTimer !== 1) {
+                if (evt.keyCode === this.nudgeTimerKey) {
+                    // Auto-repeat of the key that owns the tap window —
+                    // keep the original timer, or a held key would never
+                    // graduate to continuous motion.
+                    return;
+                }
+                // Rollover: a second jog key pressed inside the first key's
+                // tap window. The overwrite used to ORPHAN the first timer —
+                // it fired after both keys were released, started continuous
+                // motion with no keyup left to stop it, and the machine ran
+                // away (rapid Z up/down tapping in the field). The window
+                // belongs to the newest key; the older press dies silently.
+                clearTimeout(this.nudgeTimer);
+            }
+            this.nudgeTimerKey = evt.keyCode;
+            this.nudgeTimer = setTimeout(
+                function () {
+                    // The fired handle must not stay truthy — onKeyUp routes
+                    // on it, and a stale handle sent held-key releases down
+                    // the nudge path instead of the stop path.
+                    this.nudgeTimer = null;
+                    this.nudgeTimerKey = null;
+                    startForKey();
+                }.bind(this),
+                this.nudgeTimeout
+            );
         }
     };
 
@@ -403,9 +444,35 @@
         if (!isJogKey(evt.keyCode)) {
             return;
         }
+        delete this.downJogKeys[evt.keyCode];
+        this._handleJogKeyUp(evt);
+        // Safety net: with no jog key physically down, no pending start and
+        // no continuous gesture may survive this event. This is the invariant
+        // the rollover runaway violated; enforce it on every jog-key release.
+        if (Object.keys(this.downJogKeys).length === 0) {
+            if (this.nudgeTimer && this.nudgeTimer !== 1) {
+                clearTimeout(this.nudgeTimer);
+                this.nudgeTimer = null;
+                this.nudgeTimerKey = null;
+            }
+            if (this.going || this.interval) {
+                console.warn("Keyboard: all jog keys up with gesture still live - forcing stop");
+                this.stop();
+            }
+        }
+    };
+
+    Keyboard.prototype._handleJogKeyUp = function (evt) {
         if (this.nudgeTimer) {
+            // A pending tap window belongs to one specific key (rollover may
+            // have cancelled an older key's window). The release of any OTHER
+            // key must not consume it — let the owner's keyup decide.
+            if (this.nudgeTimer !== 1 && evt.keyCode !== this.nudgeTimerKey) {
+                return;
+            }
             clearTimeout(this.nudgeTimer);
             this.nudgeTimer = null;
+            this.nudgeTimerKey = null;
             if (!this.enabled) {
                 return;
             }
