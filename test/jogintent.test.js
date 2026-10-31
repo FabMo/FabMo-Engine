@@ -227,6 +227,53 @@ describe("JogIntent", () => {
         expect(h.intent.isActive()).toBe(false);
     });
 
+    test("keypad semantics: tapWindow 0 starts continuous motion on press", () => {
+        var h = harness({ tapWindow: 0 });
+        h.intent.press("btn", MOVE_DN);
+        expect(names(h.events)).toContain("go"); // immediately, no tap window
+        jest.advanceTimersByTime(200);
+        h.intent.release("btn");
+        expect(serverMoving(h.events)).toBe(false);
+        expect(h.intent.isActive()).toBe(false);
+    });
+
+    test("keypad semantics: per-press fixed override beats getFixedMode", () => {
+        var h = harness({ tapWindow: 0 });
+        h.fixed.on = false; // global switch says continuous...
+        h.intent.press("fixedBtn", MOVE_DN, true); // ...but this button is fixed
+        expect(names(h.events)).toEqual(["nudge"]);
+        h.intent.release("fixedBtn");
+        expect(names(h.events)).not.toContain("go");
+        expect(h.intent.isActive()).toBe(false);
+    });
+
+    test("keypad semantics: one-shot tap (press+release) is a single nudge", () => {
+        var h = harness({ tapWindow: 0 });
+        h.intent.press("btn", MOVE_DN, true);
+        h.intent.release("btn");
+        jest.advanceTimersByTime(2000);
+        expect(names(h.events)).toEqual(["nudge"]);
+        expect(h.intent.isActive()).toBe(false);
+    });
+
+    test("fixed mode: a fresh press during a hold steps and owns the gesture", () => {
+        var h = harness();
+        h.fixed.on = true;
+        h.intent.press("up", MOVE_UP);
+        jest.advanceTimersByTime(700); // one typematic repeat fired
+        h.intent.press("dn", MOVE_DN); // closes up's hold (cancels backlog), steps down
+        expect(names(h.events)).toContain("nudgeCancel");
+        var nudges = h.events.filter(function (ev) {
+            return ev.e === "nudge";
+        });
+        expect(nudges[nudges.length - 1].d).toBe(MOVE_DN);
+        h.intent.release("up");
+        h.intent.release("dn");
+        jest.advanceTimersByTime(2000);
+        expect(h.intent.isActive()).toBe(false);
+        expect(serverMoving(h.events)).toBe(false);
+    });
+
     test("a broken listener cannot wedge the state machine", () => {
         var h = harness();
         h.intent.on("go", function () {

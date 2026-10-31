@@ -103,7 +103,11 @@
 
     // A source went down. `move` is captured now (including any modifier
     // state the adapter folded in) and reused for the whole gesture.
-    JogIntent.prototype.press = function (id, move) {
+    //
+    // fixedOverride: pass a boolean when the SOURCE determines the mode (the
+    // on-screen keypad has distinct fixed/continuous buttons); omit it to
+    // sample getFixedMode() (the keyboard's global Fixed switch).
+    JogIntent.prototype.press = function (id, move, fixedOverride) {
         var fresh = !this.down[id];
         this.down[id] = true;
         if (!fresh) {
@@ -131,7 +135,10 @@
         }
         this.owner = id;
         this.move = move;
-        var fixed = !!(this.getFixedMode && this.getFixedMode());
+        var fixed =
+            typeof fixedOverride === "boolean"
+                ? fixedOverride
+                : !!(this.getFixedMode && this.getFixedMode());
         if (fixed) {
             // Fixed mode: step immediately on press (matches the on-screen
             // keypad feel), typematic while held.
@@ -141,6 +148,12 @@
             if (this.repeatInterval > 0) {
                 this.repeatTimer = setTimeout(this._repeat.bind(this), this.repeatDelay);
             }
+        } else if (this.tapWindow <= 0) {
+            // No tap window: the host classifies tap-vs-hold itself (the
+            // on-screen keypad's Hammer recognizers) and a press means
+            // continuous motion NOW.
+            this.state = CONTINUOUS;
+            this._beat();
         } else {
             this.state = PENDING;
             this.tapTimer = setTimeout(this._tapExpired.bind(this), this.tapWindow);
