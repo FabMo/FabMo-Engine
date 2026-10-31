@@ -75,8 +75,17 @@ function ManualDriver(drv, st, mode) {
     // True while the tool is known to be in motion
     this.moving = false;
 
-    // True while the user intends (as far as we know) for the tool to continue moving
+    // True while the user intends (as far as we know) for the tool to continue moving.
+    // Under the motion lease (see _renewMoves) this is a consumable: each renewal
+    // tick spends it, and the client's keep-alive stream (startMotion ~every 50ms,
+    // or cmd:"maint") must re-assert it. Absence of intent means stop.
     this.keep_moving = false;
+
+    // Renewal ticks that found no keep-alive since the previous tick. One grace
+    // window (total tolerance 2 x T_RENEW against a 50ms client cadence) absorbs
+    // GC pauses and a loaded Pi before the lease concludes the client is gone
+    // and stops motion.
+    this.lease_misses = 0;
 
     // Set to true to exit the manual state once the current operation is completed
     this.exit_pending = false;
@@ -541,6 +550,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         }
 
         this.renewDistance = speed * (T_RENEW / 60000) * (this.analogMode ? ANALOG_SAFETY_FACTOR : this.safetyFactor);
+        // This restart is itself a client command, i.e. a keep-alive: re-assert
+        // the lease so the _renewMoves below doesn't see a consumed keep_moving
+        // and misread the axis change as a lease miss.
+        this.keep_moving = true;
         this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n");
         this._renewMoves("axis_change");
         return;
@@ -1150,6 +1163,23 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
 // This function is called periodically until a == stop is requested ==,
 // or the users intent to continue moving evaporates ////##??.
 // The idea behind this function is that it is called at an interval that outpaces the
+// Motion lease switch. Default ON; machine.manual.motion_lease = false is the
+// field escape hatch if a client with a legitimate slower command cadence
+// turns up. The analog (jgv) path has its own lease — the firmware watchdog.
+ManualDriver.prototype._leaseEnabled = function () {
+    var manual = config.machine._cache.manual;
+    return !(manual && manual.motion_lease === false);
+};
+
+ManualDriver.prototype._scheduleRenew = function () {
+    this.renew_timer = setTimeout(
+        function () {
+            this._renewMoves("timeout");
+        }.bind(this),
+        T_RENEW
+    );
+};
+
 // reason - The reason this functon is being called (used for -debug- purposes)
 // eslint-disable-next-line no-unused-vars
 ManualDriver.prototype._renewMoves = function (reason) {
@@ -1182,6 +1212,17 @@ ManualDriver.prototype._renewMoves = function (reason) {
 
             if (reason === "start") {
                 this.moving = true;
+            }
+
+            // Motion lease: consume the keep-alive. Every renewal tick spends
+            // keep_moving; the client's ~50ms command stream (startMotion /
+            // maintainMotion) must re-assert it before the next tick or the
+            // miss path below stops motion. This inverts the failure mode:
+            // a client that silently dies (without even a socket disconnect)
+            // can no longer leave the renewal self-sustaining.
+            this.lease_misses = 0;
+            if (this._leaseEnabled()) {
+                this.keep_moving = false;
             }
 
             // Holding (feedhold from an input, or our own stop in flight): the
@@ -1330,6 +1371,32 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 T_RENEW
             );
         } else {
+            // Lease miss: motion is live but no keep-alive re-asserted
+            // keep_moving since the last tick consumed it.
+            if (this.moving && reason === "timeout" && this._leaseEnabled()) {
+                if (this.driver.pause_flag) {
+                    // Input feedhold: nothing is executing, so there is no
+                    // runaway to stop — and feedhold+flush here would fight
+                    // the hold/resume logic. Keep waiting; the lease re-arms
+                    // when the client re-asserts.
+                    this._scheduleRenew();
+                    return;
+                }
+                if (this.lease_misses < 1) {
+                    // Grace window: don't queue new motion, but let the
+                    // already-queued batch (safetyFactor x T_RENEW of travel)
+                    // carry through one more tick before concluding the
+                    // client is gone. Absorbs GC pauses on a loaded Pi.
+                    this.lease_misses++;
+                    this._scheduleRenew();
+                    return;
+                }
+                log.warn("_renewMoves(): motion lease expired (no client keep-alive) - stopping");
+                this.keep_moving = false;
+                this.cancelNudges();
+                this.stopMotion();
+                return;
+            }
             if (this.moving && !this.keep_moving) {
                 this.stopMotion();
             }

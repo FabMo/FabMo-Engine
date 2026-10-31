@@ -137,13 +137,19 @@ describe("ManualDriver while G2 is holding", () => {
         st.write.mockClear();
 
         drv.pause_flag = true; // limit input fired: G2 holding, stream paused
+        // The user is still holding the key, so the client's ~50ms command
+        // stream keeps arriving through the hold. (Under the motion lease,
+        // keep_moving is consumed each tick and must be re-asserted — a hold
+        // with NO client traffic is covered by the lease tests instead.)
+        md.startMotion("X", 60);
         jest.advanceTimersByTime(300);
+        md.startMotion("X", 60);
         jest.advanceTimersByTime(300);
         expect(st.write).not.toHaveBeenCalled();
-        expect(md.keep_moving).toBe(true);
         expect(md.renew_timer).not.toBeNull(); // loop stays armed
 
         drv.pause_flag = false; // hold ended with motion still requested
+        md.startMotion("X", 60);
         jest.advanceTimersByTime(300);
         expect(st.write).toHaveBeenCalled();
     });
