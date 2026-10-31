@@ -1488,6 +1488,9 @@ ManualDriver.prototype._renewMoves = function (reason) {
 
 // Status handler
 ManualDriver.prototype._onG2Status = function (status) {
+    // Captured before the STAT_STOP case clears it — the flush decision
+    // below needs to know whether this report concludes a stop we initiated.
+    var hadStopPending = this.stop_pending;
     if (this.movement_timer) {
         clearTimeout(this.movement_timer);
     }
@@ -1543,9 +1546,16 @@ ManualDriver.prototype._onG2Status = function (status) {
             if (status.stat !== this.driver.STAT_HOLDING && this._handleNudges()) {
                 // Nudges got handled
             } else {
-                // extra flushes may be coming from here
                 this.stop_pending = false;
-                if (!this.driver.pause_hold && this.driver.status.hold === 0) {
+                // Flush ONLY when this stat concludes a stop we initiated (a
+                // feedhold was in flight and may have parked gcode). This
+                // used to run unconditionally — a raw "%" after EVERY
+                // completed move — and raced the next fixed-mode tap's G1 on
+                // its way into G2: a tap landing right at the end of a move
+                // could be flushed with the hold debris and silently lost
+                // ("missed key press"). A plain move completion has nothing
+                // to flush; write nothing.
+                if (hadStopPending && !this.driver.pause_hold && this.driver.status.hold === 0) {
                     this.driver._write("%\n"); // flush feed-hold and get stat
                 }
                 if (this.exit_pending) {
