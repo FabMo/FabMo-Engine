@@ -1,18 +1,22 @@
 /*
  * MotionAudioModel — the pure math behind the "hear the machine" dev tool
- * (libs/motionaudio.js): per-axis velocity over a sliding window of the
- * ~10 Hz position stream, scaled by steps-per-unit (through a /10 pitch
- * prescaler) into the tone a bench speaker on the G2 step pin would make.
+ * (libs/motionaudio.js): per-axis velocity from position-DISTINCT report
+ * pairs, scaled by steps-per-unit (through a /10 pitch prescaler) into the
+ * tone a bench speaker on the G2 step pin would make.
  *
- * The windowed estimator + off-hold exist because the dashboard status
- * stream is NOT a clean position feed: status emits happen for plenty of
- * non-position reasons, so identical-position samples milliseconds apart are
- * normal. The first implementation measured velocity between adjacent
- * samples and the tone stuttered in and out continuously (field report,
- * Oct 31) — the regression tests here replay that stream shape.
+ * The evidence-based estimator exists because the dashboard status stream is
+ * NOT a clean position feed: status emits happen for plenty of non-position
+ * reasons, carrying positions identical to the last report milliseconds
+ * later. Round 1 (pairwise velocity) read those as "stopped" and stuttered;
+ * round 2 (sliding window + off-hold) fixed the stutter but let the tone
+ * linger ~600ms past a real stop. Round 3 classifies instead of smoothing:
+ * only distinct pairs produce pitch, an unchanged report within STILL_MS of
+ * movement evidence is chatter (say nothing), and an unchanged report after
+ * STILL_MS is proof of a stop (mute NOW). Both field-reported failure shapes
+ * are replayed as regression tests below.
  *
  * Contract: update() returns per-axis targets; `undefined` = say nothing
- * (warming up / duplicate tick), `null` = hard-mute (bad data, teleport).
+ * (warm-up / chatter), `null` = hard-mute (bad data, teleport).
  */
 
 /* eslint-env jest */
@@ -36,19 +40,16 @@ function feed(m, seq) {
 }
 
 describe("MotionAudioModel", () => {
-    test("warming up: early samples say nothing rather than muting", () => {
+    test("warming up: the first sample says nothing", () => {
         var m = new MotionAudioModel({ stepsPerUnit: { z: 4000 } });
         expect(m.update(status(0, 0, 0), 1000)).toBeUndefined();
-        expect(m.update(status(0, 0, -0.005), 1030)).toBeUndefined(); // span < 50ms
     });
 
     test("steady Z motion maps to the step rate through the /10 prescaler", () => {
         var m = new MotionAudioModel({ stepsPerUnit: { z: 4000 } });
         m.update(status(0, 0, 0), 1000);
-        m.update(status(0, 0, -0.05), 1100);
-        // window: 0 -> -0.10 over 200ms = 0.5 units/s; 4000 steps/unit
-        // = 2 kHz raw, heard through /10 -> 200 Hz
-        var t = m.update(status(0, 0, -0.1), 1200);
+        // 0.05 units / 100ms = 0.5 units/s; 4000 steps/unit = 2 kHz raw -> 200 Hz at /10
+        var t = m.update(status(0, 0, -0.05), 1100);
         expect(t.z.on).toBe(true);
         expect(t.z.freq).toBeCloseTo(200, 0);
         expect(t.x.on).toBe(false);
@@ -59,8 +60,8 @@ describe("MotionAudioModel", () => {
         // Real stream shape: 10Hz position reports with non-position status
         // emits (identical positions) interleaved a few ms after each one.
         var m = new MotionAudioModel({ stepsPerUnit: { z: 4000 } });
-        var seq = [];
         var z = 0;
+        var seq = [];
         for (var t = 1000; t <= 2000; t += 100) {
             z -= 0.05;
             seq.push([t, status(0, 0, z)]);
@@ -68,58 +69,47 @@ describe("MotionAudioModel", () => {
             seq.push([t + 40, status(0, 0, z)]); // more chatter
         }
         var outs = feed(m, seq);
-        // After warm-up, EVERY emitted target keeps Z sounding — no dropouts.
+        // Every spoken target after warm-up keeps Z sounding - chatter is
+        // silent (undefined), never an off.
         var settled = outs.filter(function (o) {
-            return o[0] >= 1200;
+            return o[0] >= 1100;
         });
-        expect(settled.length).toBeGreaterThan(10);
+        expect(settled.length).toBeGreaterThan(8);
         settled.forEach(function (o) {
             expect(o[1].z.on).toBe(true);
             expect(o[1].z.freq).toBeGreaterThan(150);
         });
     });
 
-    test("a single dropped report does not cut the tone (off-hold sustain)", () => {
+    test("REGRESSION: a stop is silent on the first report that proves it", () => {
+        // Field report round 2: the tone lingered ~600ms past key release.
+        // Now: motion reports, then an unchanged report >= STILL_MS after the
+        // last movement evidence must mute IMMEDIATELY.
         var m = new MotionAudioModel({ stepsPerUnit: { z: 4000 } });
         m.update(status(0, 0, 0), 1000);
         m.update(status(0, 0, -0.05), 1100);
-        m.update(status(0, 0, -0.1), 1200);
-        // Next report is late (gap 300ms) and the window has gone quiet-ish;
-        // the tone must hold rather than blink off and back on.
-        var t = m.update(status(0, 0, -0.25), 1500);
-        expect(t.z.on).toBe(true);
+        m.update(status(0, 0, -0.1), 1200); // last movement evidence
+        // stat-change emit lands 160ms later with the same position: proof of stop
+        var t = m.update(status(0, 0, -0.1), 1360);
+        expect(t).not.toBeUndefined();
+        expect(t.z.on).toBe(false);
+        expect(t.z.freq).toBe(0);
     });
 
-    test("a real stop goes silent after the hold window", () => {
+    test("an unchanged report right after a moving one is chatter, not a stop", () => {
         var m = new MotionAudioModel({ stepsPerUnit: { z: 4000 } });
-        var seq = [
-            [1000, status(0, 0, 0)],
-            [1100, status(0, 0, -0.05)],
-            [1200, status(0, 0, -0.1)],
-            // stopped: position frozen from here on
-            [1300, status(0, 0, -0.1)],
-            [1400, status(0, 0, -0.1)],
-            [1500, status(0, 0, -0.1)],
-            [1600, status(0, 0, -0.1)],
-            [1700, status(0, 0, -0.1)],
-            [1800, status(0, 0, -0.1)],
-            [1900, status(0, 0, -0.1)],
-        ];
-        var outs = feed(m, seq);
-        var last = outs[outs.length - 1][1];
-        expect(last.z.on).toBe(false);
-        expect(last.z.freq).toBe(0);
+        m.update(status(0, 0, 0), 1000);
+        m.update(status(0, 0, -0.05), 1100);
+        expect(m.update(status(0, 0, -0.05), 1120)).toBeUndefined(); // 20ms later: chatter
     });
 
     test("direction doesn't matter, only speed (step pulses have no sign)", () => {
         var up = new MotionAudioModel({ stepsPerUnit: { z: 4000 } });
         up.update(status(0, 0, 0), 1000);
-        up.update(status(0, 0, 0.05), 1100);
-        var tu = up.update(status(0, 0, 0.1), 1200);
+        var tu = up.update(status(0, 0, 0.05), 1100);
         var dn = new MotionAudioModel({ stepsPerUnit: { z: 4000 } });
         dn.update(status(0, 0, 0), 1000);
-        dn.update(status(0, 0, -0.05), 1100);
-        var td = dn.update(status(0, 0, -0.1), 1200);
+        var td = dn.update(status(0, 0, -0.05), 1100);
         expect(tu.z.freq).toBeCloseTo(td.z.freq, 3);
     });
 
@@ -133,13 +123,12 @@ describe("MotionAudioModel", () => {
     test("a coordinate jump (zeroing an axis) hard-mutes instead of chirping", () => {
         var m = new MotionAudioModel({ stepsPerUnit: { x: 4000 } });
         m.update(status(30, 0, 0), 1000);
-        m.update(status(30, 0, 0), 1100);
         // "Zero X" -> posx teleports 30 units in one 100ms sample
-        expect(m.update(status(0, 0, 0), 1200)).toBeNull();
-        // the window restarts from the new baseline
-        m.update(status(0.05, 0, 0), 1300);
-        var t = m.update(status(0.1, 0, 0), 1400);
+        expect(m.update(status(0, 0, 0), 1100)).toBeNull();
+        // the next distinct pair measures from the new baseline
+        var t = m.update(status(0.05, 0, 0), 1200);
         expect(t.x.on).toBe(true);
+        expect(t.x.freq).toBeCloseTo(200, 0);
     });
 
     test("metric machines: a fast mm-mode rapid is motion, not a teleport", () => {
@@ -148,19 +137,16 @@ describe("MotionAudioModel", () => {
             return { posx: x, posy: 0, posz: 0, unit: 1 };
         };
         m.update(mm(0), 1000);
-        m.update(mm(25.4), 1100); // 254 mm/s (10 in/s rapid)
-        var t = m.update(mm(50.8), 1200);
+        var t = m.update(mm(25.4), 1100); // 254 mm/s (10 in/s rapid)
         expect(t).not.toBeNull();
         expect(t.x.on).toBe(true);
     });
 
-    test("a stale gap (hidden tab, hold) restarts the window cleanly", () => {
+    test("a stale gap (hidden tab, hold) rebases instead of guessing", () => {
         var m = new MotionAudioModel({ stepsPerUnit: { x: 4000 } });
         m.update(status(0, 0, 0), 1000);
-        m.update(status(0.05, 0, 0), 1100);
-        expect(m.update(status(0.5, 0, 0), 5000)).toBeUndefined(); // 3.9s gap: rebase
-        m.update(status(0.55, 0, 0), 5100);
-        var t = m.update(status(0.6, 0, 0), 5200);
+        expect(m.update(status(0.5, 0, 0), 5000)).toBeUndefined(); // 4s gap: rebase
+        var t = m.update(status(0.55, 0, 0), 5100);
         expect(t.x.on).toBe(true);
     });
 

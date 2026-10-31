@@ -83,24 +83,31 @@
     }
 
     // ---- pure model --------------------------------------------------------
-    // Velocity estimation windows. The dashboard "status" stream is NOT a
-    // clean 10 Hz position feed: the machine emits status for plenty of
-    // non-position reasons, so back-to-back samples with identical positions
-    // a few ms apart are normal. Pairwise velocity over adjacent samples
-    // reads those as "stopped" and the tone stutters. Instead, velocity is
-    // measured across a sliding window - chatter inside the window cannot
-    // zero it - and an axis only goes silent after staying below threshold
-    // for OFF_HOLD_MS, so a missed or late report cannot cut the tone.
-    var V_WINDOW_MS = 350; // velocity baseline: newest vs oldest within this
-    var MIN_SPAN_MS = 50; // need at least this much baseline to say anything
-    var OFF_HOLD_MS = 250; // sustain through dropouts before going silent
+    // Evidence-based velocity, built for the real status stream rather than
+    // an idealized one. Two facts about that stream:
+    //
+    //   1. G2 only sends a status report when something CHANGED, so during
+    //      motion the position-distinct reports arrive at the SR cadence
+    //      (~100ms) - a position-distinct pair is direct evidence of motion
+    //      and its delta/dt is the true average velocity.
+    //   2. The machine also emits status for non-position reasons (state,
+    //      stat, outputs...), and those carry positions identical to the
+    //      last report, milliseconds later. They are NOT evidence of a stop
+    //      - unless enough time has passed that a moving machine would have
+    //      produced a distinct report by now. Then they are exactly that.
+    //
+    // So: velocity comes only from position-distinct pairs; an unchanged
+    // report lands as "still moving, say nothing" inside STILL_MS of the
+    // last movement evidence, and as a hard stop after it. No smoothing
+    // windows, no sustain hold - the tone dies one report after the motion
+    // does, because that report is proof.
+    var STILL_MS = 150; // > SR interval (100ms): a moving machine must have reported by now
 
     function MotionAudioModel(options) {
         options = options || {};
         this.stepsPerUnit = options.stepsPerUnit || {};
-        this.samples = []; // [{t, pos:{x,y,z}}], pruned to the window
-        this.offSince = {}; // axis -> t of first below-threshold reading
-        this.lastFreq = {}; // axis -> last audible frequency (for sustain)
+        this.prev = null; // last position-DISTINCT sample {t, pos}
+        this.lastMovedAt = null; // t of the last movement evidence
     }
 
     MotionAudioModel.prototype.setStepsPerUnit = function (spu) {
@@ -108,17 +115,16 @@
     };
 
     MotionAudioModel.prototype.reset = function () {
-        this.samples = [];
-        this.offSince = {};
-        this.lastFreq = {};
+        this.prev = null;
+        this.lastMovedAt = null;
     };
 
     // Feed one status sample. Returns per-axis oscillator targets:
     //   { x: {freq, on}, y: {...}, z: {...} }
-    // null means hard-mute NOW (invalid positions, coordinate teleport);
-    // undefined means "nothing to say yet, change nothing" (warming up,
-    // duplicate tick). Callers must also mute on their own clock when
-    // updates stop arriving - the model only speaks when fed.
+    // null means hard-mute NOW (invalid positions, coordinate teleport, or
+    // positive evidence of a stop); undefined means "say nothing, change
+    // nothing" (first sample, or an unchanged report too soon to mean stop).
+    // Callers must also mute on their own clock when reports stop arriving.
     MotionAudioModel.prototype.update = function (status, tMs) {
         var pos = {};
         for (var i = 0; i < AXES.length; i++) {
@@ -130,70 +136,77 @@
             pos[AXES[i]] = v;
         }
 
-        var newest = this.samples.length ? this.samples[this.samples.length - 1] : null;
-        if (newest && tMs - newest.t <= 2) {
-            return undefined; // same tick; nothing new
+        if (!this.prev) {
+            this.prev = { t: tMs, pos: pos };
+            this.lastMovedAt = null;
+            return undefined;
+        }
+
+        var dt = (tMs - this.prev.t) / 1000;
+        if (dt <= 0) {
+            return undefined; // same tick / clock oddity
+        }
+
+        var changed = false;
+        for (i = 0; i < AXES.length; i++) {
+            if (pos[AXES[i]] !== this.prev.pos[AXES[i]]) {
+                changed = true;
+                break;
+            }
+        }
+
+        if (!changed) {
+            // Identical positions. Chatter if recent; proof of stop if a
+            // moving machine would have produced a distinct report by now.
+            var sinceMoved = this.lastMovedAt == null ? Infinity : tMs - this.lastMovedAt;
+            if (sinceMoved >= STILL_MS) {
+                return this._allOff();
+            }
+            return undefined;
+        }
+
+        if (dt > 0.5) {
+            // Stale gap (hidden tab, hold, disconnect): the delta spans
+            // unknown history - rebase rather than guess a velocity.
+            this.prev = { t: tMs, pos: pos };
+            this.lastMovedAt = null;
+            return undefined;
         }
 
         // status.unit: 0 = inches (G20), 1 = mm (G21); tolerate string forms.
         var metric = status.unit === 1 || status.unit === "mm";
         var teleportLimit = metric ? TELEPORT_MM_PER_S : TELEPORT_IN_PER_S;
 
-        if (newest) {
-            var adt = (tMs - newest.t) / 1000;
-            if (adt > 0.5) {
-                // Stale gap (hidden tab, hold, disconnect): restart the window.
-                this.reset();
-            } else {
-                // Teleport check against the adjacent sample: zeroing an axis
-                // or an offset change jumps work coordinates instantly - mute
-                // and restart the window rather than chirp.
-                for (i = 0; i < AXES.length; i++) {
-                    if (Math.abs(pos[AXES[i]] - newest.pos[AXES[i]]) / adt > teleportLimit) {
-                        this.reset();
-                        this.samples.push({ t: tMs, pos: pos });
-                        return null;
-                    }
-                }
-            }
-        }
-
-        this.samples.push({ t: tMs, pos: pos });
-        while (this.samples.length && tMs - this.samples[0].t > V_WINDOW_MS) {
-            this.samples.shift();
-        }
-
-        var oldest = this.samples[0];
-        var span = (tMs - oldest.t) / 1000;
-        if (span * 1000 < MIN_SPAN_MS) {
-            return undefined; // warming up - hold whatever is sounding
-        }
-
         var out = {};
         for (i = 0; i < AXES.length; i++) {
             var axis = AXES[i];
-            var speed = Math.abs(pos[axis] - oldest.pos[axis]) / span; // units/s
+            var speed = Math.abs(pos[axis] - this.prev.pos[axis]) / dt; // units/s
+            if (speed > teleportLimit) {
+                // Coordinate jump (zeroing, offset change) - mute and rebase.
+                this.reset();
+                this.prev = { t: tMs, pos: pos };
+                return null;
+            }
             var spu = this.stepsPerUnit[axis] || DEFAULT_STEPS_PER_UNIT;
             var freq = (speed * spu) / PITCH_DIVISOR;
             if (freq >= FREQ_MIN) {
-                this.offSince[axis] = null;
-                this.lastFreq[axis] = Math.min(freq, FREQ_MAX);
-                out[axis] = { freq: this.lastFreq[axis], on: true };
-            } else if (this.offSince[axis] == null && this.lastFreq[axis]) {
-                // First below-threshold reading after sound: sustain the
-                // last pitch through the hold window instead of cutting out.
-                this.offSince[axis] = tMs;
-                out[axis] = { freq: this.lastFreq[axis], on: true };
-            } else if (this.offSince[axis] != null && tMs - this.offSince[axis] < OFF_HOLD_MS) {
-                out[axis] = { freq: this.lastFreq[axis] || 0, on: !!this.lastFreq[axis] };
+                out[axis] = { freq: Math.min(freq, FREQ_MAX), on: true };
             } else {
-                this.lastFreq[axis] = 0;
                 out[axis] = { freq: 0, on: false };
             }
         }
+        this.prev = { t: tMs, pos: pos };
+        this.lastMovedAt = tMs;
         return out;
     };
 
+    MotionAudioModel.prototype._allOff = function () {
+        var out = {};
+        for (var i = 0; i < AXES.length; i++) {
+            out[AXES[i]] = { freq: 0, on: false };
+        }
+        return out;
+    };
 
     // ---- WebAudio glue -----------------------------------------------------
 
@@ -237,11 +250,12 @@
     MotionAudio.prototype.onStatus = function (status) {
         if (!this.enabled || !this.ctx || !status) return;
 
-        // The model sustains tone through sparse/duplicate reports, so it can
-        // never silence itself if reports stop entirely (machine idle, G2
-        // gone). This is the tone's own deadman: no status for 700ms -> mute.
+        // The model can only speak when fed; if reports stop entirely after
+        // the last moving one (machine idle, G2 gone), nothing would ever
+        // mute. This is the tone's own deadman: no status for 400ms -> mute.
+        // (During motion, position reports arrive every ~100ms.)
         if (this.silenceTimer) clearTimeout(this.silenceTimer);
-        this.silenceTimer = setTimeout(this._muteAll.bind(this), 700);
+        this.silenceTimer = setTimeout(this._muteAll.bind(this), 400);
 
         var targets = this.model.update(status, (typeof performance !== "undefined" ? performance.now() : Date.now()));
         if (targets === undefined) {
