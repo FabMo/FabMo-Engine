@@ -35,8 +35,14 @@
 
     var AXES = ["x", "y", "z"];
 
-    // Audible band for a step rate. Below MIN we call it stopped (20 steps/s
-    // is slower than any real jog); above MAX we just pin the pitch.
+    // Raw step rates are musically hostile — a 4000 steps/inch machine at
+    // 1.5 in/s is a 6 kHz shriek. Listen through a /10 prescaler instead:
+    // proportions (ramps, ratios between axes) are unchanged, but jogs land
+    // in the comfortable few-hundred-Hz band.
+    var PITCH_DIVISOR = 10;
+
+    // Audible band for the (divided) pitch. Below MIN we call it stopped;
+    // above MAX we just pin the pitch.
     var FREQ_MIN = 20;
     var FREQ_MAX = 6000;
 
@@ -125,7 +131,7 @@
                 return null;
             }
             var spu = this.stepsPerUnit[axis] || DEFAULT_STEPS_PER_UNIT;
-            var freq = speed * spu;
+            var freq = (speed * spu) / PITCH_DIVISOR;
             if (freq < FREQ_MIN) {
                 out[axis] = { freq: 0, on: false };
             } else {

@@ -21,13 +21,14 @@ describe("MotionAudioModel", () => {
         expect(m.update(status(0, 0, 0), 1000)).toBeNull();
     });
 
-    test("steady Z motion maps to the step rate of a bench speaker", () => {
+    test("steady Z motion maps to the step rate through the /10 prescaler", () => {
         var m = new MotionAudioModel({ stepsPerUnit: { z: 4000 } });
         m.update(status(0, 0, 0), 1000);
-        // 0.05 units in 100 ms = 0.5 units/s; at 4000 steps/unit -> 2 kHz
+        // 0.05 units in 100 ms = 0.5 units/s; 4000 steps/unit = 2 kHz raw,
+        // heard an octave-plus down at /10 -> 200 Hz
         var t = m.update(status(0, 0, -0.05), 1100);
         expect(t.z.on).toBe(true);
-        expect(t.z.freq).toBeCloseTo(2000, 0);
+        expect(t.z.freq).toBeCloseTo(200, 0);
         expect(t.x.on).toBe(false);
         expect(t.y.on).toBe(false);
     });
@@ -44,7 +45,7 @@ describe("MotionAudioModel", () => {
     test("stopped axes are silent, frequency pins at the audible ceiling", () => {
         var m = new MotionAudioModel({ stepsPerUnit: { x: 4000 } });
         m.update(status(0, 0, 0), 1000);
-        var t = m.update(status(2, 0, 0), 1100); // 20 units/s * 4000 = 80 kHz -> pinned
+        var t = m.update(status(2, 0, 0), 1100); // 20 u/s * 4000 / 10 = 8 kHz -> pinned
         expect(t.x.freq).toBe(6000);
         expect(t.y.on).toBe(false);
         expect(t.z.on).toBe(false);
