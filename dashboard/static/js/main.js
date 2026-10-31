@@ -29,11 +29,26 @@ var FabMoUI = require("./libs/fabmoui.js");
 var Keyboard = require("./libs/keyboard.js");
 var Keypad = require("./libs/keypad.js");
 var KeypadOrientation = require("./libs/keypad_orientation.js");
+var MotionAudioLib = require("./libs/motionaudio.js");
 
 var keypad, keyboard;
 
 // API object defines our connection to the tool.
 var engine = new FabMoAPI(); // Not sure that "engine" was the name we wanted to use here
+
+// Motion audio: synthesizes the bench-speaker-on-a-step-pin trick from the
+// position stream, so motion is audible on a board with no motors attached.
+// Off on every page load (browsers require a user gesture to start audio);
+// toggled by the speaker button in the keypad modal, but once on it sounds
+// for ANY motion (files too), not just manual mode.
+var motionAudio = new MotionAudioLib.MotionAudio({
+    getDriverConfig: function () {
+        return engine.config && engine.config.driver;
+    },
+});
+engine.on("status", function (status) {
+    motionAudio.onStatus(status);
+});
 
 var modalIsShown = false;
 var daisyIsShown = false;
@@ -2383,6 +2398,17 @@ function resetKeypadDialogUI() {
     $(".manual-drive-message").hide();
     $(".manual-drive-message").removeClass("blinking-text");
 }
+
+$(".manual-drive-audio").on("click", function (evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    var on = motionAudio.toggle();
+    $(this)
+        .toggleClass("motion-audio-on", on)
+        .find("i")
+        .toggleClass("fa-volume-up", on)
+        .toggleClass("fa-volume-off", !on);
+});
 
 $(".manual-drive-exit").on("click", function (evt) {
     // FIXED: Stop all event propagation immediately
