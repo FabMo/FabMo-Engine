@@ -86,6 +86,11 @@ function ManualDriver(drv, st, mode) {
     // or cmd:"maint") must re-assert it. Absence of intent means stop.
     this.keep_moving = false;
 
+    // Planned-position chain for snap-to-grid: axis -> position after all
+    // COMMANDED nudges. Dead-reckoned, not sampled - see _snapBase. Cleared
+    // whenever any other motion source touches the machine.
+    this._snapPlanned = {};
+
     // Renewal ticks that found no keep-alive since the previous tick. One grace
     // window (total tolerance 2 x T_RENEW against a 50ms client cadence) absorbs
     // GC pauses and a loaded Pi before the lease concludes the client is gone
@@ -334,6 +339,9 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         log.warn("startMotion(): ignored - manual mode is exiting");
         return;
     }
+
+    // Continuous motion moves the machine off the nudge pipeline's plan.
+    this._invalidateSnapPlanned();
 
     // Keypad/keyboard route to the firmware velocity-jog cycle. The dashboard
     // sends the legacy signed-speed form (no ratios); when the firmware has
@@ -649,6 +657,7 @@ ManualDriver.prototype.maintainMotion = function () {
 
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
+    this._invalidateSnapPlanned();
     // Analog (firmware velocity-jog cycle) path: emit jogStop and let the
     // firmware cycle ramp down on its own decel. Don't set stop_pending —
     // the cycle accepts mid-flight velocity updates, so if the user
@@ -694,6 +703,7 @@ ManualDriver.prototype.stopMotion = function () {
 
 // Stop all movement (also? TODO: What's this all about?)
 ManualDriver.prototype.quitMove = function () {
+    this._invalidateSnapPlanned();
     this.keep_moving = false;
     this.driver.queueFlush(
         function () {
@@ -713,6 +723,7 @@ ManualDriver.prototype.quitMove = function () {
 };
 
 ManualDriver.prototype.resumeMove = function () {
+    this._invalidateSnapPlanned();
     this.driver.manual_hold = false;
     this.keep_moving = true;
     this.stop_pending = false;
@@ -756,6 +767,7 @@ ManualDriver.prototype.runGCode = function (code) {
 //   pos - Position vector as an object, eg: {"X":10, "Y":5, "F":60} Speed is optionally added
 // The speed will be vectored based on the current speed setting on the slider; but limited to axis maximums
 ManualDriver.prototype.goto = function (pos) {
+    this._invalidateSnapPlanned();
     // We may want to consider whether GOTOs are moves or jogs; for now, they're moves w/speed set by slider (safer)
     var hasZABC = false;
     var of_ZABC = "";
@@ -821,6 +833,7 @@ ManualDriver.prototype.output = function (out, val) {
 // TODO: Is it possible that timing could produce an inaccurate position update here???
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function (pos) {
+    this._invalidateSnapPlanned();
     var toSet = {};
     var unitConv;
     if (this.driver.status.unit === "in") {
@@ -906,43 +919,72 @@ ManualDriver.prototype.set = function (pos) {
 // and executed at the end of the current move.  This is the function that dequeues and executes them.
 // Nudges are made fixed and individual by G61.1.
 // TODO: Like start above, nudges should be arbritrary vectors rather than axis, second_axis
-// Snap a nudge to the next grid line in its direction of motion. The grid
-// is defined by the nudge increment relative to work zero — e.g. a 0.100"
-// nudge from 26.241" lands on 26.300", then 26.400", etc. Already on grid
-// counts as off — advance by one full increment to avoid no-ops.
+// Snap base: the position the next nudge measures from. Dead-reckoned from
+// commanded moves while the nudge pipeline is the only motion source; live
+// status (SR-throttled, ~100ms stale, stalest right after a move ends) is
+// used only to seed the chain, after _invalidateSnapPlanned, or as a belt
+// when the plan disagrees with reality by more than everything that could
+// legitimately still be in flight.
+ManualDriver.prototype._snapBase = function (axisLower, increment) {
+    var live = this.driver.status["pos" + axisLower];
+    var planned = this._snapPlanned[axisLower];
+    if (planned === undefined) {
+        return live;
+    }
+    if (live !== undefined && live !== null && Math.abs(planned - live) > (this.maxNudges + 2) * increment) {
+        return live;
+    }
+    return planned;
+};
+
+// Any motion source other than the nudge pipeline (continuous jog, goto,
+// coordinate set, hold resume/quit) makes the planned chain stale.
+ManualDriver.prototype._invalidateSnapPlanned = function () {
+    for (var k in this._snapPlanned) {
+        if (Object.prototype.hasOwnProperty.call(this._snapPlanned, k)) {
+            this._snapPlanned = {};
+            return;
+        }
+    }
+};
+
+// --- Snap-to-grid ---------------------------------------------------------
+// Fixed-mode nudges walk the coordinate grid: multiples of the nudge
+// increment relative to work zero, so taps land on round positions (a 0.100"
+// nudge from 26.241" lands on 26.300", then 26.400", ...). Hard-learned
+// rules, each paid for with a field bug:
 //
-// "On grid" must be judged with a real tolerance, not float epsilon:
-// offsets built from non-decimal constants (metric plate thicknesses,
-// gear-ratio steps/unit) leave work coordinates microscopically off the
-// decimal grid. A position a few millionths short of a grid line would
-// otherwise snap to a hair-thin catch-up move that formats as
-// "G1 Y0.00000" — a zero-length move the machine never executes, so the
-// reported position never changes and every subsequent tap recomputes
-// the same zero move: the button goes permanently dead.
-function snapNudgeDistance(currentPos, distance, increment) {
-    if (!increment || distance === 0) return distance;
-    // Within this distance of a grid line counts as ON it (advance a
-    // full increment past it). Capped at 25% of the increment so coarse
-    // tolerances never eat a meaningful fraction of a fine step.
-    var tolerance = Math.min(1e-4, 0.25 * increment);
-    var posInGrid = currentPos / increment;
-    var line;
-    if (distance > 0) {
-        line = Math.ceil(posInGrid);
-        if ((line - posInGrid) * increment < tolerance) line += 1;
-    } else {
-        line = Math.floor(posInGrid);
-        if ((posInGrid - line) * increment < tolerance) line -= 1;
+//  * All grid math runs on INTEGER line indices. Positions are floats, and
+//    offsets built from non-decimal constants (metric plate thicknesses,
+//    gear-ratio steps/unit) leave work coordinates microscopically off the
+//    decimal grid - comparing float distances produced hair-thin catch-up
+//    moves that formatted as "G1 Y0.00000" and a permanently dead button.
+//    Floats appear only at the very ends of the computation.
+//  * A position within SNAP_ON_LINE_EPS of a line IS on that line, and a
+//    tap advances one full line past it. The epsilon is two wire quanta
+//    (gcode distances are formatted toFixed(5)), so a snapped move can
+//    never round to zero on the wire.
+//  * The snapped move never exceeds increment + epsilon and always moves in
+//    the commanded direction.
+//  * The BASE the snap measures from is PLANNED, not sampled - see
+//    _snapBase. Measuring from live status (SR-throttled, stalest right
+//    after a move ends - exactly when the next tap arrives) re-snapped
+//    back-to-back taps to the same line: partial, zero, and double-partial
+//    steps.
+var SNAP_ON_LINE_EPS = 2e-5;
+// Below this, a distance formats to "0.00000" on the wire - a null move G2
+// never executes (and some firmware mishandles). Never write one.
+var WIRE_MIN_MOVE = 1e-5;
+
+function snapNudgeDistance(basePos, distance, increment) {
+    if (!increment || !distance) return distance;
+    var dir = distance > 0 ? 1 : -1;
+    var posInGrid = basePos / increment;
+    var line = dir > 0 ? Math.ceil(posInGrid) : Math.floor(posInGrid);
+    if (Math.abs(line - posInGrid) * increment < SNAP_ON_LINE_EPS) {
+        line += dir; // on the line (within dust): step one full line
     }
-    var snapped = line * increment - currentPos;
-    // Belt and braces: the emitted G-code is formatted with toFixed(5),
-    // so anything under 5e-6 becomes a zero-length move — skip to the
-    // next grid line rather than emit a dead nudge.
-    if (Math.abs(snapped) < 5e-6) {
-        line += distance > 0 ? 1 : -1;
-        snapped = line * increment - currentPos;
-    }
-    return snapped;
+    return line * increment - basePos;
 }
 
 // Returns the number of nudges
@@ -974,50 +1016,42 @@ ManualDriver.prototype._handleNudges = function () {
     count = this.fixedQueue.length;
 
     if (this.fixedQueue.length > 0) {
-        // Fixed-distance nudges snap to the unit grid for X/Y/Z only.
-        // snapPos tracks the commanded target per axis across the batch so
-        // that multiple stacked nudges in one pass snap relative to each
-        // other instead of all reading the same (stale) live position.
-        var snapPos = {};
         while (this.fixedQueue.length > 0) {
             var move = this.fixedQueue.shift();
             var axis = move.axis.toUpperCase();
 
-            // Snap-to-grid: re-aim each fixed-distance nudge at the next grid
-            // line — a multiple of the nudge increment relative to work zero —
-            // in the direction of motion (e.g. 0.100" nudge from 32.141" lands
-            // on 32.200", then 32.300"). The snapped move is always <= the
-            // increment, so the user is never surprised by a larger step.
+            // Snap-to-grid (see the rules above snapNudgeDistance). The base
+            // comes from the planned-position chain, not live status, so
+            // back-to-back taps walk consecutive grid lines regardless of
+            // report latency. A client that pre-snaps (the XHC wheel sends
+            // snap:false with its own computed distance) skips the re-snap
+            // but still advances the planned chain.
             //
-            // Restricted to X/Y/Z: rotary/ABC axes have a step resolution that
-            // doesn't divide the unit grid (e.g. 33.333 steps/deg), so snapping
-            // there fights firmware quantization and yields erratic, oscillating
-            // bumps. A/B/C step by the raw increment as specified. Primary and
-            // second axes are gated independently so a mixed linear/rotary
-            // two-axis nudge handles each correctly. Runs before the soft-limit
-            // clip so the boundary check still applies to the snapped move.
+            // Restricted to X/Y/Z: rotary/ABC axes have a step resolution
+            // that doesn't divide the unit grid (e.g. 33.333 steps/deg), so
+            // snapping there fights firmware quantization. A/B/C step by the
+            // raw increment as specified. Runs before the soft-limit clip so
+            // the boundary check applies to the snapped move; the planned
+            // chain advances AFTER the clip, by what was actually commanded.
+            var axisLower = move.axis.toLowerCase();
+            var snapBase = null;
             if ("XYZ".indexOf(axis) >= 0) {
-                var axisLower = axis.toLowerCase();
                 var increment = Math.abs(move.distance);
-                var basePos = (snapPos[axisLower] !== undefined)
-                    ? snapPos[axisLower]
-                    : this.driver.status["pos" + axisLower];
-                if (basePos !== undefined && basePos !== null && increment > 0) {
-                    move.distance = snapNudgeDistance(basePos, move.distance, increment);
-                    snapPos[axisLower] = basePos + move.distance;
+                snapBase = this._snapBase(axisLower, increment);
+                if (move.snap !== false && snapBase !== undefined && snapBase !== null && increment > 0) {
+                    move.distance = snapNudgeDistance(snapBase, move.distance, increment);
                 }
             }
+            var secondLower = null;
+            var secondSnapBase = null;
             if (move.second_axis && move.second_distance) {
                 var secondAxis = move.second_axis.toUpperCase();
                 if ("XYZ".indexOf(secondAxis) >= 0) {
-                    var secondLower = secondAxis.toLowerCase();
+                    secondLower = secondAxis.toLowerCase();
                     var secondInc = Math.abs(move.second_distance);
-                    var secondBase = (snapPos[secondLower] !== undefined)
-                        ? snapPos[secondLower]
-                        : this.driver.status["pos" + secondLower];
-                    if (secondBase !== undefined && secondBase !== null && secondInc > 0) {
-                        move.second_distance = snapNudgeDistance(secondBase, move.second_distance, secondInc);
-                        snapPos[secondLower] = secondBase + move.second_distance;
+                    secondSnapBase = this._snapBase(secondLower, secondInc);
+                    if (move.snap !== false && secondSnapBase !== undefined && secondSnapBase !== null && secondInc > 0) {
+                        move.second_distance = snapNudgeDistance(secondSnapBase, move.second_distance, secondInc);
                     }
                 }
             }
@@ -1062,6 +1096,28 @@ ManualDriver.prototype._handleNudges = function () {
                     this._limPushCount = {};
                     this.emit("softLimitClear");
                 }
+            }
+
+            // Dead-move floor: anything under the wire quantum formats as a
+            // zero-length move G2 never executes (and some firmware
+            // mishandles null moves). Clip can legitimately shrink a move
+            // this far at a boundary - skip it entirely, write nothing.
+            var largest = Math.abs(move.distance);
+            if (move.second_axis && move.second_distance) {
+                largest = Math.max(largest, Math.abs(move.second_distance));
+            }
+            if (largest < WIRE_MIN_MOVE) {
+                log.debug("_handleNudges(): dropping sub-wire-quantum move (" + largest + ")");
+                continue;
+            }
+
+            // Advance the planned-position chain by what is actually being
+            // commanded (post-snap, post-clip) - the base for the next tap.
+            if (snapBase !== undefined && snapBase !== null) {
+                this._snapPlanned[axisLower] = snapBase + move.distance;
+            }
+            if (secondLower && secondSnapBase !== undefined && secondSnapBase !== null) {
+                this._snapPlanned[secondLower] = secondSnapBase + move.second_distance;
             }
 
             this.moving = true;
@@ -1137,6 +1193,11 @@ ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, sec
     if (second_axis) {
         move.second_axis = second_axis;
         move.second_distance = second_distance;
+    }
+    if (opts && opts.snap === false) {
+        // The client pre-snapped (the XHC wheel computes its own grid
+        // targets) - execute its distance verbatim.
+        move.snap = false;
     }
     if (opts && opts.typematic) {
         // A typematic repeat means "keep stepping at a comfortable pace",
@@ -1651,3 +1712,7 @@ ManualDriver.prototype._done = function () {
 };
 
 module.exports = ManualDriver;
+// Exported for the snap property tests only - not part of the driver API.
+module.exports._snapNudgeDistance = snapNudgeDistance;
+module.exports._SNAP_ON_LINE_EPS = SNAP_ON_LINE_EPS;
+module.exports._WIRE_MIN_MOVE = WIRE_MIN_MOVE;
