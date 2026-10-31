@@ -53,6 +53,11 @@
     var KEY_NUMPAD_DIVIDE = 111;
     var KEY_BACKSLASH = 220;
 
+    // See _pendingReleases: a keyup only counts if no keydown for the same
+    // key follows within this window (synthesized auto-repeat pairs arrive
+    // <10ms apart; real human re-taps are 60ms+).
+    var RELEASE_DEBOUNCE_MS = 30;
+
     var JOG_KEYS = [
         KEY_UP,
         KEY_DOWN,
@@ -136,6 +141,17 @@
         }
         this.enabled = false;
 
+        // Deferred keyups, keyed by keyCode. Some input paths (X11, VNC,
+        // remote desktops) deliver key auto-repeat as synthesized
+        // keyup+keydown PAIRS instead of repeated keydowns — without this, a
+        // held jog key looks like a fresh tap every ~100ms: fixed mode fires
+        // a nudge per "tap" at the OS repeat rate and the real typematic
+        // never engages (seen in the field as an uneven tick stream of
+        // unflagged nudges). A keyup only takes effect if no keydown for the
+        // same key lands inside the debounce window; synthetic pairs are
+        // <10ms apart, the fastest human re-tap is 60ms+.
+        this._pendingReleases = {};
+
         this.intent = new JogIntent({
             getFixedMode: function () {
                 return $(".fixed-switch input").is(":checked");
@@ -183,6 +199,7 @@
         if (this.intent.isActive()) {
             console.warn("Keyboard: window lost focus mid-gesture - forcing stop");
         }
+        this._clearPendingReleases();
         this.intent.cancelAll();
         this._styleClear();
     };
@@ -219,6 +236,7 @@
         if (!enabled) {
             // Disabling mid-gesture must end the gesture properly (emitting
             // the stop/cancel the server needs), not just drop local state.
+            this._clearPendingReleases();
             this.intent.cancelAll();
             this._styleClear();
         }
@@ -226,6 +244,7 @@
 
     // Hard stop, for the host (modal close paths in main.js).
     Keyboard.prototype.stop = function () {
+        this._clearPendingReleases();
         this.intent.cancelAll();
         this._styleClear();
     };
@@ -252,6 +271,14 @@
         if (!this.enabled || !isJogKey(evt.keyCode)) {
             return;
         }
+        // A keydown arriving while this key's release is still deferred is
+        // the second half of a synthesized auto-repeat pair: the key never
+        // really came up. Swallow the pair — the hold continues.
+        if (this._pendingReleases[evt.keyCode]) {
+            clearTimeout(this._pendingReleases[evt.keyCode]);
+            delete this._pendingReleases[evt.keyCode];
+            return;
+        }
         var move = moveForKey(evt.keyCode, evt.altKey);
         if (move) {
             this.intent.press(evt.keyCode, move);
@@ -264,9 +291,32 @@
         if (!isJogKey(evt.keyCode)) {
             return;
         }
+        if (this._pendingReleases[evt.keyCode]) {
+            return; // already deferred
+        }
+        // Defer briefly: if a keydown for this key lands inside the window,
+        // this keyup was half of a synthesized auto-repeat pair and must not
+        // end the gesture. A real release just processes ~30ms late, which
+        // is invisible next to the motion pipeline's own latency.
         // Releases are processed even when disabled, so a key held across a
         // disable can't leave stale pressed-state behind.
-        this.intent.release(evt.keyCode);
+        var id = evt.keyCode;
+        this._pendingReleases[id] = setTimeout(
+            function () {
+                delete this._pendingReleases[id];
+                this.intent.release(id);
+            }.bind(this),
+            RELEASE_DEBOUNCE_MS
+        );
+    };
+
+    // Flush: clear deferred keyups without processing them. Used by the
+    // hard-cancel paths, which end every gesture via cancelAll anyway.
+    Keyboard.prototype._clearPendingReleases = function () {
+        for (var id in this._pendingReleases) {
+            clearTimeout(this._pendingReleases[id]);
+        }
+        this._pendingReleases = {};
     };
 
     // ---- styling ---------------------------------------------------------
