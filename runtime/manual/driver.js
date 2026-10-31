@@ -1121,7 +1121,7 @@ ManualDriver.prototype._handleNudges = function () {
 //          distance - The length of the nudge
 //       second_axis - The second axis to move
 //   second_distance - The second axis speed
-ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, second_distance) {
+ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, second_distance, opts) {
     // Same exit gate as startMotion: a typematic loop in a backgrounded tab
     // keeps firing nudges after the user is gone — never queue against an
     // exiting cycle.
@@ -1137,6 +1137,19 @@ ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, sec
     if (second_axis) {
         move.second_axis = second_axis;
         move.second_distance = second_distance;
+    }
+    if (opts && opts.typematic) {
+        // A typematic repeat means "keep stepping at a comfortable pace",
+        // not a counted user action. When moves run slower than the repeat
+        // timer the repeats pile up, and the end-of-move drain executes the
+        // whole backlog in one pass — seen on the DRO as irregular double
+        // steps. Coalesce: a new repeat replaces any repeat still waiting,
+        // so a held key steps once per completed move, never in bursts.
+        // Deliberate (unflagged) taps are never dropped.
+        move.typematic = true;
+        this.fixedQueue = this.fixedQueue.filter(function (m) {
+            return !m.typematic;
+        });
     }
     this.fixedQueue.push(move);
     // Queue (rather than execute now) while a stop/flush is in flight too:

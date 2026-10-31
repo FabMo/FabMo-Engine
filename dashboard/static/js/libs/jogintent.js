@@ -242,7 +242,17 @@
             return;
         }
         this.repeatCount++;
-        this.emit("nudge", this.move);
+        // Repeats are marked so the server can keep them from stacking: a
+        // repeat is "keep stepping at a comfortable pace", not a counted
+        // user action — if moves run slower than the repeat timer, queued
+        // repeats must coalesce instead of bursting out as double-steps.
+        // Deliberate taps are NOT marked; every one of those executes.
+        var move = { axis: this.move.axis, dir: this.move.dir, typematic: true };
+        if (this.move.second_axis) {
+            move.second_axis = this.move.second_axis;
+            move.second_dir = this.move.second_dir;
+        }
+        this.emit("nudge", move);
         if (this.repeatInterval > 0) {
             this.repeatTimer = setTimeout(this._repeat.bind(this), this.repeatInterval);
         }

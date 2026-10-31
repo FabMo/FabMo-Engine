@@ -171,6 +171,22 @@ describe("JogIntent", () => {
         expect(h.intent.isActive()).toBe(false);
     });
 
+    test("fixed mode: repeats are flagged typematic, the press step is not", () => {
+        var h = harness();
+        h.fixed.on = true;
+        h.intent.press("a", MOVE_DN);
+        jest.advanceTimersByTime(650); // past repeatDelay: one repeat fired
+        var nudges = h.events.filter(function (ev) {
+            return ev.e === "nudge";
+        });
+        expect(nudges).toHaveLength(2);
+        expect(nudges[0].d.typematic).toBeFalsy(); // the deliberate press
+        expect(nudges[1].d.typematic).toBe(true); // the repeat
+        expect(nudges[1].d.axis).toBe("z");
+        expect(nudges[1].d.dir).toBe(-1);
+        h.intent.release("a");
+    });
+
     test("fixed mode: a plain tap sends no backlog cancel", () => {
         var h = harness();
         h.fixed.on = true;

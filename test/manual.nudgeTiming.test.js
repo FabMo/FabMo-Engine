@@ -145,6 +145,66 @@ describe("fixed-mode nudge timing", () => {
         expect(md.stop_pending).toBe(false);
     });
 
+    test("REGRESSION: typematic repeats coalesce - a held key never bursts double-steps", () => {
+        var drv = makeG2();
+        var st = { write: jest.fn() };
+        var md = new ManualDriver(drv, st);
+
+        md.nudge("Z", 60, -0.1, null, null, { typematic: true }); // first repeat executes
+        stat(drv, drv.STAT_RUNNING);
+        st.write.mockClear();
+
+        // The move is slower than the repeat timer: three repeats arrive
+        // while it still runs. They must coalesce to ONE queued step.
+        md.nudge("Z", 60, -0.1, null, null, { typematic: true });
+        md.nudge("Z", 60, -0.1, null, null, { typematic: true });
+        md.nudge("Z", 60, -0.1, null, null, { typematic: true });
+        expect(md.fixedQueue.length).toBe(1);
+
+        stat(drv, drv.STAT_STOP); // end of move: exactly one step drains
+        var g1s = st.write.mock.calls.filter(function (c) {
+            return String(c[0]).indexOf("G1") !== -1;
+        });
+        expect(g1s).toHaveLength(1);
+        expect(md.fixedQueue.length).toBe(0);
+    });
+
+    test("deliberate taps are counted actions - they all queue and all execute", () => {
+        var drv = makeG2();
+        var st = { write: jest.fn() };
+        var md = new ManualDriver(drv, st);
+
+        md.nudge("Z", 60, -0.1);
+        stat(drv, drv.STAT_RUNNING);
+        st.write.mockClear();
+
+        md.nudge("Z", 60, -0.1); // three real taps mid-move
+        md.nudge("Z", 60, -0.1);
+        md.nudge("Z", 60, -0.1);
+        expect(md.fixedQueue.length).toBe(3);
+
+        stat(drv, drv.STAT_STOP);
+        var g1s = st.write.mock.calls.filter(function (c) {
+            return String(c[0]).indexOf("G1") !== -1;
+        });
+        expect(g1s).toHaveLength(3); // every counted tap executes
+    });
+
+    test("a repeat coalesces only with repeats - queued real taps survive it", () => {
+        var drv = makeG2();
+        var st = { write: jest.fn() };
+        var md = new ManualDriver(drv, st);
+
+        md.nudge("Z", 60, -0.1);
+        stat(drv, drv.STAT_RUNNING);
+        md.nudge("Z", 60, -0.1); // real tap queued
+        md.nudge("Z", 60, -0.1, null, null, { typematic: true });
+        md.nudge("Z", 60, -0.1, null, null, { typematic: true }); // replaces prior repeat only
+        expect(md.fixedQueue.length).toBe(2);
+        expect(md.fixedQueue[0].typematic).toBeFalsy();
+        expect(md.fixedQueue[1].typematic).toBe(true);
+    });
+
     test("watchdog backstop: a LOST end-of-move report still drains queued taps", () => {
         var drv = makeG2();
         var st = { write: jest.fn() };

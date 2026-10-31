@@ -2163,10 +2163,13 @@ function setupKeyboard() {
                 60 * speed,
                 nudge.dir * increment,
                 nudge.second_axis,
-                nudge.second_dir * increment
+                nudge.second_dir * increment,
+                { typematic: !!nudge.typematic }
             );
         } else {
-            dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment);
+            dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment, null, null, {
+                typematic: !!nudge.typematic,
+            });
         }
     });
 
@@ -2280,14 +2283,13 @@ function setupKeypad() {
                 60 * speed,
                 nudge.dir * increment,
                 nudge.second_axis,
-                nudge.second_dir * increment
+                nudge.second_dir * increment,
+                { typematic: !!nudge.typematic }
             );
         } else {
-            dashboard.engine.manualMoveFixed(
-                nudge.axis,
-                60 * speed,
-                nudge.dir * increment
-            );
+            dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment, null, null, {
+                typematic: !!nudge.typematic,
+            });
         }
     });
 
