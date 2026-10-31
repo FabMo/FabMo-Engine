@@ -4080,35 +4080,6 @@ filter: blur(2px);
     color: #d00;
 }
 
-/* Motion-audio toggle (hear commanded motion; see libs/motionaudio.js) —
-   mirrors the exit button, parked on the left end of the drag bar. */
-.manual-drive-audio {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 35px;
-    width: 35px;
-    cursor: pointer;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.manual-drive-audio:hover {
-    background: rgba(0,0,0,0.08);
-}
-
-.manual-drive-audio i {
-    font-size: 20px;
-    color: #9093b0;
-}
-
-.manual-drive-audio.motion-audio-on i {
-    color: #313366;
-}
-
 /* Content header area for your existing elements */
 .modal-content-header {
     position: relative;

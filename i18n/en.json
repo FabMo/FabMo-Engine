@@ -70,7 +70,6 @@
         "move_button_fast_tooltip": "Move {motion} (fast)",
         "authorize_overlay_message": "Press authorize button to enable manual controls",
         "drag_handle_tooltip": "Drag to move keypad",
-        "motion_audio_tooltip": "Motion audio: hear commanded motion (pitch = step rate) - test without motors attached",
         "message_placeholder": "This is where a message will go",
         "title_goto_tooltip": "Click in box to enter axis location to send tool, or to set a new value for the current location. Zero button sets the current axis position to 0.000",
         "title_goto_prompt": "Select and change a value in order to: 'GoTo' a location or 'Set' a location",
