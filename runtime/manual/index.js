@@ -226,7 +226,10 @@ ManualRuntime.prototype.executeCode = function (code) {
                     if (code.dist == null) {
                         break;
                     }
-                    this.helper.nudge(code.axis, code.speed, code.dist, code.second_axis, code.second_dist);
+                    this.helper.nudge(code.axis, code.speed, code.dist, code.second_axis, code.second_dist, {
+                        typematic: !!code.typematic,
+                        snap: code.snap === false ? false : undefined,
+                    });
                     break;
 
                 case "nudge_cancel":

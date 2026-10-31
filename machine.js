@@ -220,6 +220,10 @@ function Machine(control_path, callback) {
                 this.status.state = "idle";
             }
 
+            // Learn whether this firmware has the velocity-jog cycle (CYCLE_JGV)
+            // so the manual driver can route keypad jogging through it.
+            this._probeJGVSupport();
+
             // The machine only has one "active" runtime at a time.  When it's not doing anything else
             // the active runtime is the IdleRuntime (setRuntime(null) sets the IdleRuntime)
             this.setRuntime(
@@ -459,6 +463,8 @@ function Machine(control_path, callback) {
         "reconnected",
         function () {
             log.info("G2 driver reconnected — restoring configuration");
+            // Firmware can change between connects (BOSSA flash) — re-probe.
+            this._probeJGVSupport();
             this._restoreAfterReconnect(function (err) {
                 if (err) {
                     log.error("Failed to restore after reconnect: " + err);
@@ -469,6 +475,26 @@ function Machine(control_path, callback) {
     );
 }
 util.inherits(Machine, events.EventEmitter);
+
+// Ask the firmware for the velocity-jog watchdog setting ($jvto). A valid
+// response means CYCLE_JGV exists and the manual driver may route continuous
+// keypad jogging through it; an error or timeout means legacy G1 segment
+// streaming only. The result is cached on the driver object so the manual
+// runtime (which gets a fresh ManualDriver per keypad session) can read it
+// without re-probing.
+Machine.prototype._probeJGVSupport = function () {
+    this.driver.get(
+        "jvto",
+        function (err, value) {
+            this.driver.jgv_supported = !err && value !== undefined && value !== null;
+            log.info(
+                this.driver.jgv_supported
+                    ? "Firmware velocity-jog cycle detected (jvto=" + value + ") - keypad jog can use JGV"
+                    : "Firmware has no velocity-jog cycle - keypad jog will use legacy G1 streaming"
+            );
+        }.bind(this)
+    );
+};
 
 // Given the status report provided and the specified input, perform the AP Mode Collapse behavior if necessary
 // The AP mode collapse is a network failsafe.  In the case that a tool gets "lost" on a network, it can be

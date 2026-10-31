@@ -1,5 +1,33 @@
 /* eslint-disable no-undef */
 /* eslint-disable no-unused-vars */
+
+/*
+ * On-screen keypad jog adapter.
+ *
+ * Like keyboard.js, this module used to own a full private gesture
+ * implementation (going/target/typematic/refresh-loop, ~21 state fields) —
+ * the second of two diverging copies whose edge-case differences kept
+ * becoming runaway bugs. All gesture state now lives in ONE place,
+ * libs/jogintent.js; this file only:
+ *
+ *   - binds the pointer plumbing per drive button (Hammer tap/press/pan +
+ *     raw touch events for slide-off detection) and maps each button's
+ *     direction classes to a move
+ *   - guards against the exit/goto/zero controls that share the modal
+ *   - paints button styling, driven by what was actually commanded
+ *   - forwards scroll / window blur / visibility / pagehide as hard ends
+ *
+ * Tap-vs-hold is classified by the Hammer recognizers here (unlike the
+ * keyboard, which uses JogIntent's tap window), so the intent machine runs
+ * with tapWindow 0: a press IS continuous motion, a tap is delivered as a
+ * one-shot fixed gesture. Mode is per-BUTTON (.drive-button-fixed), passed
+ * as the per-press override.
+ *
+ * The outward surface main.js uses is unchanged: "go"/"stop"/"nudge"/
+ * "nudgeCancel"/"exit"/"enter" events, `going`, `target`, `forceStop()`,
+ * `setEnabled()`.
+ */
+
 (function (root, factory) {
     /* CommonJS */
     if (typeof module == "object" && module.exports) module.exports = factory();
@@ -8,210 +36,66 @@
 })(this, function (Hammer) {
     "use strict";
 
+    var JogIntent;
+    if (typeof module == "object" && module.exports) {
+        JogIntent = require("./jogintent");
+    } else if (typeof window !== "undefined") {
+        JogIntent = window.JogIntent;
+    }
+
+    var idCounter = 0;
+
     var Keypad = function (id, options) {
         this.id = id;
         this.elem = $(id);
-        //this.elem.attr('tabindex', 0) // For keyboard
-        this.move = null;
-        this.going = false;
-        this.interval = null;
-        this.enabled = false;
         this.listeners = { go: [], stop: [], nudge: [], nudgeCancel: [], exit: [], enter: [] };
         this.pressThreshold = 50;
         this.pressTime = 150;
         this.tapInterval = 150;
-        this.target = null;
-        this.slideOffDetected = false; // Track slide-off state
-        this.nudgeExecuted = false; // Track if nudge executed for current gesture
-        this.typematicTimer = null; // Repeat timer for held fixed-mode buttons
-        this.fixedGesture = false; // True if the current/last gesture was a fixed-mode nudge
-        this.typematicFired = false; // True once a typematic repeat has fired this gesture
-        
+        this.enabled = false;
+        this.target = null; // DOM element of the live gesture (main.js reads this)
+        this.targetId = null; // its JogIntent source id
+        this.touchStartTime = null;
+        this.currentTouchElement = null;
+        this.slideOffDetected = false;
+        this.nudgeExecuted = false; // dedupe between Hammer press and tap for one gesture
+
+        // The one gesture state machine. tapWindow 0: Hammer already decided
+        // tap vs hold by the time we call press().
+        this.intent = new JogIntent({ tapWindow: 0 });
         this.setOptions(options);
+
+        // Gesture events come from the intent machine; re-emit them on this
+        // object so main.js wiring is unchanged. Styling for gesture END is
+        // driven here too, so the buttons can never stay lit after a stop.
+        this.intent.on(
+            "go",
+            function (move) {
+                this.emit("go", move);
+            }.bind(this)
+        );
+        this.intent.on(
+            "stop",
+            function () {
+                this._styleClear();
+                this.emit("stop", null);
+            }.bind(this)
+        );
+        this.intent.on(
+            "nudge",
+            function (move) {
+                this.emit("nudge", move);
+            }.bind(this)
+        );
+        this.intent.on(
+            "nudgeCancel",
+            function () {
+                this.emit("nudgeCancel", null);
+            }.bind(this)
+        );
+
         this.init();
     };
-
-
-    /* Potentially useful for future Keypad debugging !
-    function mobileDebug(message) {
-        // Create or get existing debug console
-        let debugConsole = document.getElementById('mobile-debug-console');
-        
-        if (!debugConsole) {
-            // Create the debug console container
-            debugConsole = document.createElement('div');
-            debugConsole.id = 'mobile-debug-console';
-            debugConsole.style.cssText = `
-                position: fixed; 
-                top: 10px; 
-                right: 10px; 
-                width: 280px; 
-                max-height: 400px;
-                background: rgba(0, 0, 0, 0.9); 
-                color: #00ff00; 
-                padding: 10px; 
-                z-index: 10000; 
-                font-family: monospace;
-                font-size: 11px; 
-                border: 2px solid #333;
-                border-radius: 5px;
-                overflow-y: auto;
-                overflow-x: hidden;
-                word-wrap: break-word;
-            `;
-            
-            // Create header with close button and clear button
-            const header = document.createElement('div');
-            header.style.cssText = `
-                background: #333; 
-                margin: -10px -10px 10px -10px; 
-                padding: 5px 10px; 
-                border-radius: 3px 3px 0 0;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            `;
-            
-            const title = document.createElement('span');
-            title.textContent = 'Mobile Debug Log';
-            title.style.fontWeight = 'bold';
-            
-            const buttons = document.createElement('div');
-            
-            // Clear button
-            const clearBtn = document.createElement('button');
-            clearBtn.textContent = 'Clear';
-            clearBtn.style.cssText = `
-                background: #666; 
-                color: white; 
-                border: none; 
-                padding: 2px 6px; 
-                margin-right: 5px;
-                border-radius: 3px;
-                font-size: 10px;
-                cursor: pointer;
-            `;
-            clearBtn.onclick = function() {
-                const logContent = debugConsole.querySelector('#debug-log-content');
-                logContent.innerHTML = '';
-            };
-            
-            // Close button
-            const closeBtn = document.createElement('button');
-            closeBtn.textContent = '×';
-            closeBtn.style.cssText = `
-                background: #ff4444; 
-                color: white; 
-                border: none; 
-                padding: 2px 8px; 
-                border-radius: 3px;
-                font-weight: bold;
-                cursor: pointer;
-            `;
-            closeBtn.onclick = function() {
-                document.body.removeChild(debugConsole);
-            };
-            
-            buttons.appendChild(clearBtn);
-            buttons.appendChild(closeBtn);
-            header.appendChild(title);
-            header.appendChild(buttons);
-            
-            // Create scrollable content area
-            const logContent = document.createElement('div');
-            logContent.id = 'debug-log-content';
-            logContent.style.cssText = `
-                max-height: 350px;
-                overflow-y: auto;
-                line-height: 1.3;
-            `;
-            
-            debugConsole.appendChild(header);
-            debugConsole.appendChild(logContent);
-            document.body.appendChild(debugConsole);
-            
-            // Make it draggable
-            let isDragging = false;
-            let startX, startY, startLeft, startTop;
-            
-            header.addEventListener('mousedown', function(e) {
-                if (e.target === clearBtn || e.target === closeBtn) return;
-                isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                const rect = debugConsole.getBoundingClientRect();
-                startLeft = rect.left;
-                startTop = rect.top;
-                
-                function handleMouseMove(e) {
-                    if (!isDragging) return;
-                    const deltaX = e.clientX - startX;
-                    const deltaY = e.clientY - startY;
-                    debugConsole.style.left = (startLeft + deltaX) + 'px';
-                    debugConsole.style.top = (startTop + deltaY) + 'px';
-                    debugConsole.style.right = 'auto';
-                }
-                
-                function handleMouseUp() {
-                    isDragging = false;
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
-                }
-                
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-            });
-            
-            // Touch support for dragging
-            header.addEventListener('touchstart', function(e) {
-                if (e.target === clearBtn || e.target === closeBtn) return;
-                const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousedown', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
-                header.dispatchEvent(mouseEvent);
-            });
-        }
-        
-        // Add the new message
-        const logContent = debugConsole.querySelector('#debug-log-content');
-        const timestamp = new Date().toLocaleTimeString() + '.' + String(Date.now()).slice(-3);
-        
-        const logEntry = document.createElement('div');
-        logEntry.style.cssText = `
-            margin-bottom: 2px; 
-            padding: 2px 0; 
-            border-bottom: 1px solid #333;
-        `;
-        
-        const timeSpan = document.createElement('span');
-        timeSpan.style.color = '#cdcdcd';
-        timeSpan.textContent = timestamp + ': ';
-        
-        const messageSpan = document.createElement('span');
-        messageSpan.textContent = message;
-        */
-        /*
-        logEntry.appendChild(timeSpan);
-        logEntry.appendChild(messageSpan);
-        logContent.appendChild(logEntry);
-        
-        // Auto-scroll to bottom
-        logContent.scrollTop = logContent.scrollHeight;
-        
-        // Limit to last 100 entries to prevent memory issues
-        const entries = logContent.children;
-        if (entries.length > 100) {
-            logContent.removeChild(entries[0]);
-        }
-    }*/
-
-    // Simplified mobile debug that does nothing in production
-        function mobileDebug(message) {
-        // No-op in production - uncomment the full function above for debugging
-    }    
-
 
     Keypad.prototype.init = function () {
         var e = this.elem;
@@ -221,118 +105,132 @@
         drive_buttons.each(
             function (index, element) {
                 var hammer = new Hammer.Manager(element);
-                
+
                 hammer.add(
                     new Hammer.Tap({
                         time: 300,
                         interval: this.tapInterval,
                         threshold: 20,
-                        taps: 1
+                        taps: 1,
                     })
                 );
-                
+
                 hammer.add(
                     new Hammer.Press({
                         time: Math.max(1, this.pressTime),
                         threshold: this.pressThreshold,
                     })
                 );
-                
+
                 hammer.add(new Hammer.Pan({ threshold: this.pressThreshold }));
 
-                hammer.on("tap", function(evt) {
-                    // FIXED: More thorough exit button detection
-                    if (this.isExitButtonEvent(evt)) return;
-                    // When press_delay is 0, tap also starts continuous motion
-                    if (this.pressTime === 0) {
+                hammer.on(
+                    "tap",
+                    function (evt) {
+                        if (this.isExitButtonEvent(evt)) return;
+                        // When press_delay is 0, tap also starts continuous motion
+                        if (this.pressTime === 0) {
+                            this.onDrivePress(evt);
+                        } else {
+                            this.onDriveTap(evt);
+                        }
+                    }.bind(this)
+                );
+
+                hammer.on(
+                    "press",
+                    function (evt) {
+                        if (this.isExitButtonEvent(evt)) return;
                         this.onDrivePress(evt);
-                    } else {
-                        this.onDriveTap(evt);
-                    }
-                }.bind(this));
-                
-                hammer.on("press", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    this.onDrivePress(evt);
-                }.bind(this));
-                
-                hammer.on("pressup", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    this.nudgeExecuted = false; // Reset for next gesture
-                    this.end();
-                }.bind(this));
-                
-                // FIXED: Only end once when pan starts, don't trigger repeatedly
-                hammer.on("panstart", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    if (this.going) {
-                        this.cleanStop();
-                    } else if (this.target) {
-                        // A fixed-mode hold that slid into a pan: end it too,
-                        // or the typematic keeps nudging with no release
-                        // event coming to this element.
-                        this.forceStop();
-                    }
-                }.bind(this));
-                
-                $(element).on("touchstart", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    
-                    this.touchStartTime = Date.now();
-                    this.currentTouchElement = element;
-                }.bind(this));
-                
-                $(element).on("touchmove", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    if (!this.touchStartTime) return;
-                    
-                    var touch = evt.originalEvent.touches[0];
-                    if (touch) {
-                        var elementRect = element.getBoundingClientRect();
-                        var isInside = (
-                            touch.clientX >= elementRect.left &&
-                            touch.clientX <= elementRect.right &&
-                            touch.clientY >= elementRect.top &&
-                            touch.clientY <= elementRect.bottom
-                        );
-                        
-                        if (!isInside) {
+                    }.bind(this)
+                );
+
+                hammer.on(
+                    "pressup",
+                    function (evt) {
+                        if (this.isExitButtonEvent(evt)) return;
+                        this.nudgeExecuted = false; // Reset for next gesture
+                        this.end();
+                    }.bind(this)
+                );
+
+                hammer.on(
+                    "panstart",
+                    function (evt) {
+                        if (this.isExitButtonEvent(evt)) return;
+                        // A press that slid into a pan: no release event is
+                        // coming to this element, so end the gesture here —
+                        // continuous or fixed hold alike.
+                        if (this.going || this.target) {
+                            this.forceStop();
+                        }
+                    }.bind(this)
+                );
+
+                $(element).on(
+                    "touchstart",
+                    function (evt) {
+                        if (this.isExitButtonEvent(evt)) return;
+                        this.touchStartTime = Date.now();
+                        this.currentTouchElement = element;
+                    }.bind(this)
+                );
+
+                $(element).on(
+                    "touchmove",
+                    function (evt) {
+                        if (this.isExitButtonEvent(evt)) return;
+                        if (!this.touchStartTime) return;
+
+                        var touch = evt.originalEvent.touches[0];
+                        if (touch) {
+                            var elementRect = element.getBoundingClientRect();
+                            var isInside =
+                                touch.clientX >= elementRect.left &&
+                                touch.clientX <= elementRect.right &&
+                                touch.clientY >= elementRect.top &&
+                                touch.clientY <= elementRect.bottom;
+
+                            if (!isInside) {
+                                this.end();
+                            }
+                        }
+                    }.bind(this)
+                );
+
+                $(element).on(
+                    "touchend",
+                    function (evt) {
+                        if (this.isExitButtonEvent(evt)) return;
+                        this.nudgeExecuted = false; // Reset for next gesture
+
+                        // Only call end if we haven't already handled slide-off
+                        if ((this.going || this.target) && !this.slideOffDetected) {
                             this.end();
                         }
-                    }
-                }.bind(this));
-                
-                $(element).on("touchend", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
 
-                    this.clearTypematic();
-                    this.nudgeExecuted = false; // Reset for next gesture
-                    
-                    // Only call end if we haven't already handled slide-off
-                    if (this.going && !this.slideOffDetected) {
-                        this.end();
-                    }
-
-                setTimeout(() => {
-                    this.touchStartTime = null;
-                    this.currentTouchElement = null;
-                    this.slideOffDetected = false;
-                }, 50);
-                    
-                }.bind(this));
+                        setTimeout(() => {
+                            this.touchStartTime = null;
+                            this.currentTouchElement = null;
+                            this.slideOffDetected = false;
+                        }, 50);
+                    }.bind(this)
+                );
 
                 $(element).on("blur", this.end.bind(this));
                 $(element).on("mouseleave", this.onDriveMouseleave.bind(this));
-                $(element).on("touchcancel", function(evt) {
-                    if (this.isExitButtonEvent(evt)) return;
-                    this.clearTypematic();
-                    this.nudgeExecuted = false; // Reset for next gesture
-                    if (this.going && !this.slideOffDetected) {
-                        this.cleanStop();
-                    }
-                    this.slideOffDetected = false;
-                }.bind(this));
-                
+                $(element).on(
+                    "touchcancel",
+                    function (evt) {
+                        if (this.isExitButtonEvent(evt)) return;
+                        this.nudgeExecuted = false; // Reset for next gesture
+                        if ((this.going || this.target) && !this.slideOffDetected) {
+                            this.forceStop();
+                        }
+                        this.slideOffDetected = false;
+                    }.bind(this)
+                );
+
                 element.addEventListener("contextmenu", function (evt) {
                     evt.preventDefault();
                 });
@@ -343,10 +241,10 @@
         $(document).on("scroll", this.end.bind(this));
 
         // A pressup/touchend is never delivered to a blurred window (alt-tab,
-        // OS dialog) — a held button would leave the typematic/refresh loop
-        // firing forever from a backgrounded tab. Losing the window or tab is
-        // a hard gesture end; forceStop (not end) because the
-        // guardAgainstExitButton swallow must not apply to focus loss.
+        // OS dialog) — a held button would leave the gesture loops firing
+        // forever from a backgrounded tab. Losing the window or tab is a hard
+        // gesture end; forceStop (not end) because the guardAgainstExitButton
+        // swallow must not apply to focus loss.
         $(window).on("blur", this.forceStop.bind(this));
         document.addEventListener(
             "visibilitychange",
@@ -355,123 +253,115 @@
             }.bind(this)
         );
         // Window/tab closing (alt+F4, ctrl+W): fire the stop while the
-        // socket can still flush it. The server's disconnect deadman is the
+        // socket can still flush it. The server's motion lease is the
         // backstop if this send doesn't make it out.
         window.addEventListener("pagehide", this.forceStop.bind(this));
     };
 
     // Unconditional gesture end for focus-loss and exit paths. Unlike end(),
     // never swallowed by guardAgainstExitButton() and emits nothing when no
-    // gesture is live (window blur happens constantly in normal use).
+    // gesture is live (window blur happens constantly in normal use). The
+    // intent machine emits the stop (continuous) or nudgeCancel (fixed hold
+    // with repeats) the live gesture needs.
     Keypad.prototype.forceStop = function () {
-        var wasGoing = this.going;
-        var wasFixed = this.fixedGesture;
-        var hadRepeats = this.typematicFired;
-
-        this.clearTypematic();
-        this.going = false;
-        this.enabled = false;
         this.target = null;
+        this.targetId = null;
+        this.enabled = false;
         this.nudgeExecuted = false;
-        this.typematicFired = false;
-        this.fixedGesture = false;
+        this.intent.cancelAll();
+        this._styleClear();
+    };
 
-        if (this.interval) {
-            clearTimeout(this.interval);
-            this.interval = null;
-        }
-
-        this.elem
-            .find(".drive-button")
-            .removeClass("drive-button-active")
-            .removeClass("drive-button-active-transient")
-            .addClass("drive-button-inactive");
-
-        if (wasGoing) {
+    // Legacy hard-stop entry point (main.js exit/quit paths). Contract: ends
+    // any live gesture AND always emits one "stop" — the callers use it as
+    // "make sure the server is not moving", even from idle.
+    Keypad.prototype.stop = function () {
+        var wasContinuous = this.intent.isContinuous();
+        this.forceStop();
+        if (!wasContinuous) {
             this.emit("stop", null);
-        } else if (wasFixed && hadRepeats) {
-            // Fixed-mode gesture: no stop (the feedhold+flush races the
-            // nudge gcode) — just discard the server-side queue backlog.
-            this.emit("nudgeCancel", null);
         }
     };
 
-    Keypad.prototype.isExitButtonEvent = function(evt) {
+    Keypad.prototype.isExitButtonEvent = function (evt) {
         if (!evt || !evt.target) return false;
-        
+
         var target = evt.target;
         var $target = $(target);
-        
+
         // Check multiple ways buttons/controls might be identified
         return (
             // Direct exit button
-            $target.hasClass('manual-drive-exit') ||
-            $target.closest('.manual-drive-exit').length > 0 ||
-            target.id === 'manual-drive-exit' ||
-            
+            $target.hasClass("manual-drive-exit") ||
+            $target.closest(".manual-drive-exit").length > 0 ||
+            target.id === "manual-drive-exit" ||
             // Action buttons (C2, C3, JH, etc.)
-            $target.hasClass('action-button') ||
-            $target.closest('.action-button').length > 0 ||
-            target.id === 'action-1' ||
-            target.id === 'action-2' ||
-            target.id === 'action-3' ||
-            target.id === 'action-4' ||
-            target.id === 'action-5' ||
-            
+            $target.hasClass("action-button") ||
+            $target.closest(".action-button").length > 0 ||
+            target.id === "action-1" ||
+            target.id === "action-2" ||
+            target.id === "action-3" ||
+            target.id === "action-4" ||
+            target.id === "action-5" ||
             // Go To, Set Coordinates, Manual Stop buttons
-            $target.hasClass('go-to') ||
-            $target.closest('.go-to').length > 0 ||
-            $target.hasClass('set-coordinates') ||
-            $target.closest('.set-coordinates').length > 0 ||
-            $target.hasClass('manual-stop') ||
-            $target.closest('.manual-stop').length > 0 ||
-            
+            $target.hasClass("go-to") ||
+            $target.closest(".go-to").length > 0 ||
+            $target.hasClass("set-coordinates") ||
+            $target.closest(".set-coordinates").length > 0 ||
+            $target.hasClass("manual-stop") ||
+            $target.closest(".manual-stop").length > 0 ||
             // Zero buttons
-            $target.hasClass('zero-button') ||
-            $target.closest('.zero-button').length > 0 ||
-            target.className && target.className.includes('zero-') ||
-            
+            $target.hasClass("zero-button") ||
+            $target.closest(".zero-button").length > 0 ||
+            (target.className && target.className.includes("zero-")) ||
             // Speed slider and fixed distance controls
-            target.id === 'manual-move-speed' ||
-            $target.hasClass('slider') ||
-            $target.closest('.slidecontainer').length > 0 ||
-            $target.hasClass('fixed-switch') ||
-            $target.closest('.fixed-switch').length > 0 ||
-            $target.hasClass('fixed-step-value') ||
-            $target.closest('.fixed-input-container').length > 0 ||
-            
+            target.id === "manual-move-speed" ||
+            $target.hasClass("slider") ||
+            $target.closest(".slidecontainer").length > 0 ||
+            $target.hasClass("fixed-switch") ||
+            $target.closest(".fixed-switch").length > 0 ||
+            $target.hasClass("fixed-step-value") ||
+            $target.closest(".fixed-input-container").length > 0 ||
             // Axis input boxes that trigger goto
-            $target.hasClass('axi') ||
-            $target.hasClass('modal-axi') ||
-            target.id === 'X' || target.id === 'Y' || target.id === 'Z' ||
-            target.id === 'A' || target.id === 'B' || target.id === 'C' ||
-            
+            $target.hasClass("axi") ||
+            $target.hasClass("modal-axi") ||
+            target.id === "X" ||
+            target.id === "Y" ||
+            target.id === "Z" ||
+            target.id === "A" ||
+            target.id === "B" ||
+            target.id === "C" ||
             // Any button or input in the go-to container
-            $target.closest('.go-to-container').length > 0 ||
-            $target.closest('.read-out-container').length > 0 ||
-            
+            $target.closest(".go-to-container").length > 0 ||
+            $target.closest(".read-out-container").length > 0 ||
             // General exit-related text detection
-            (target.textContent && target.textContent.toLowerCase().includes('exit')) ||
-            (target.textContent && target.textContent.toLowerCase().includes('goto')) ||
-            (target.textContent && target.textContent.toLowerCase().includes('zero')) ||
-            (target.alt && target.alt.toLowerCase().includes('exit')) ||
-            (target.title && target.title.toLowerCase().includes('exit'))
+            (target.textContent && target.textContent.toLowerCase().includes("exit")) ||
+            (target.textContent && target.textContent.toLowerCase().includes("goto")) ||
+            (target.textContent && target.textContent.toLowerCase().includes("zero")) ||
+            (target.alt && target.alt.toLowerCase().includes("exit")) ||
+            (target.title && target.title.toLowerCase().includes("exit"))
         );
     };
 
     Keypad.prototype.setOptions = function (options) {
         options = options || {};
-        this.refreshInterval =
-            options.refreshInterval || this.refreshInterval || 50;
+        this.refreshInterval = options.refreshInterval || this.refreshInterval || 50;
         this.pressTime = options.pressTime || this.pressTime || 250;
-        this.pressThreshold =
-            options.pressThreshold || this.pressThreshold || 10;
+        this.pressThreshold = options.pressThreshold || this.pressThreshold || 10;
         this.tapInterval = options.tapInterval || this.tapInterval || 250;
         // Typematic repeat for fixed mode: hold a direction button past
         // repeatDelay and fixed moves keep coming every repeatInterval.
         // Interval 0 (or negative) disables repeating.
         this.repeatDelay = options.nudgeRepeatDelay != null ? options.nudgeRepeatDelay : 600;
         this.repeatInterval = options.nudgeRepeatInterval != null ? options.nudgeRepeatInterval : 250;
+        if (this.intent) {
+            this.intent.setOptions({
+                tapWindow: 0,
+                refreshInterval: this.refreshInterval,
+                repeatDelay: this.repeatDelay,
+                repeatInterval: this.repeatInterval,
+            });
+        }
     };
 
     Keypad.prototype.emit = function (evt, data) {
@@ -493,30 +383,25 @@
         }
     };
 
-    /* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
-     length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
-     will trigger longer moves assuming "fixed" button off. */
-    /* Beginning 9/2023 the maintenance of motion is handled by the server to prevent punctuation of smooth motion from
-     network. This may have been the original intent. Run-on motion is prevented in case of client disconnect. It may be
-     that we also need some keydown checking in the client to prevent stuck keys. */
-
-    Keypad.prototype.guardAgainstExitButton = function() {
+    Keypad.prototype.guardAgainstExitButton = function () {
         // Check for any recent button clicks that should disable keypad events
         const now = Date.now();
         const timeout = 500; // ms
-        
-        if ((window._exitButtonClicked && (now - window._exitButtonClicked) < timeout) ||
-            (window._actionButtonClicked && (now - window._actionButtonClicked) < timeout) ||
-            (window._gotoButtonClicked && (now - window._gotoButtonClicked) < timeout) ||
-            (window._setButtonClicked && (now - window._setButtonClicked) < timeout) ||
-            (window._zeroButtonClicked && (now - window._zeroButtonClicked) < timeout)) {
+
+        if (
+            (window._exitButtonClicked && now - window._exitButtonClicked < timeout) ||
+            (window._actionButtonClicked && now - window._actionButtonClicked < timeout) ||
+            (window._gotoButtonClicked && now - window._gotoButtonClicked < timeout) ||
+            (window._setButtonClicked && now - window._setButtonClicked < timeout) ||
+            (window._zeroButtonClicked && now - window._zeroButtonClicked < timeout)
+        ) {
             console.log("Ignoring keypad event - control button recently clicked");
             return true;
         }
         return false;
     };
 
-     Keypad.prototype.setEnabled = function (enabled) {
+    Keypad.prototype.setEnabled = function (enabled) {
         this.enabled = enabled;
         if (!enabled) {
             this.elem
@@ -530,383 +415,8 @@
         this.emit("enter", null);
     };
 
-    Keypad.prototype.refresh = function () {
-        if (!this.enabled || !this.going) {
-            if (this.interval) {
-                clearTimeout(this.interval);
-                this.interval = null;
-            }
-            
-            if (this.going) {
-                this.emit("stop", null);
-                this.going = false;
-            }
-            return;
-        }
-        
-        this.emit("go", this.move);
-        
-        this.interval = setTimeout(
-            this.refresh.bind(this),
-            this.refreshInterval || 50
-        );
-    };
-
-    Keypad.prototype.start = function (
-        axis,
-        direction,
-        second_axis,
-        second_direction
-    ) {
-        // Always clear any existing refresh timers first
-        if (this.interval) {
-            clearTimeout(this.interval);
-            this.interval = null;
-        }
-        
-        // Always ensure clean state before starting
-        if (this.going) {
-            this.stop();
-        }
-        
-        // Force enable if we're trying to start
-        if (!this.enabled) {
-            this.setEnabled(true);
-        }
-        
-        if (second_axis) {
-            this.move = {
-                axis: axis,
-                dir: direction,
-                second_axis: second_axis,
-                second_dir: second_direction,
-            };
-        } else {
-            this.move = { axis: axis, dir: direction };
-        }
-        this.going = true;
-
-        // Start the continuous motion loop
-        this.emit("go", this.move);
-        
-        // Clear any existing timer before setting new one
-        if (this.interval) {
-            clearTimeout(this.interval);
-            this.interval = null;
-        }
-        
-        // Start refresh loop
-        this.interval = setTimeout(() => {
-            this.refresh();
-        }, this.refreshInterval || 50);
-    };
-
-    Keypad.prototype.nudge = function (
-        axis,
-        direction,
-        second_axis,
-        second_direction
-    ) {
-        if (this.going) {
-            console.warn("Keypad: Already in motion, ignoring nudge command");
-            mobileDebug("Nudge blocked - already moving");
-            return;
-        }
-
-        mobileDebug("Nudge: " + axis + " " + direction);
-
-        if (second_axis) {
-            var nudge = {
-                axis: axis,
-                dir: direction,
-                second_axis: second_axis,
-                second_dir: second_direction,
-            };
-        } else {
-            nudge = { axis: axis, dir: direction };
-        }
-
-        this.emit("nudge", nudge);
-    };
-
-    Keypad.prototype.stop = function () {
-        console.log("Keypad: Stop called");
-
-        this.clearTypematic();
-
-        // Clear the refresh timer immediately
-        if (this.interval) {
-            clearTimeout(this.interval);
-            this.interval = null;
-        }
-        
-        this.going = false;
-        this.emit("stop", null);
-    };
-
-    // Simplified end function
-    Keypad.prototype.end = function () {
-        if (this.guardAgainstExitButton()) return;
-
-        this.clearTypematic();
-
-        // Don't emit stop if keypad is already idle
-        var wasGoing = this.going;
-        var wasActive = this.going || this.enabled;
-        this.going = false;
-        this.enabled = false;
-        this.target = null;
-
-        if (this.interval) {
-            clearTimeout(this.interval);
-            this.interval = null;
-        }
-
-        this.elem
-            .find(".drive-button")
-            .removeClass("drive-button-active")
-            .removeClass("drive-button-active-transient")
-            .addClass("drive-button-inactive");
-
-        if (wasGoing) {
-            this.emit("stop", null);
-        } else if (wasActive && this.fixedGesture) {
-            // Fixed-mode gesture: never send a stop — the server answers it
-            // with a feedhold + queue flush that races the nudge's gcode,
-            // truncating the move or stranding it (and everything tapped
-            // after it) in the nudge queue. If typematic repeats fired
-            // during the hold, cancel whatever is still queued server-side
-            // so motion ends with the in-flight increment.
-            if (this.typematicFired) {
-                this.typematicFired = false;
-                this.emit("nudgeCancel", null);
-            }
-        } else if (wasActive) {
-            this.emit("stop", null);
-        }
-    };
-
-    Keypad.prototype.cleanStop = function () {
-        console.log("Keypad: Clean stop called (slide-off detected)");
-
-        this.clearTypematic();
-
-        // Immediately set flags to prevent re-entry
-        if (!this.going) {
-            return; // Already stopped
-        }
-        
-        this.going = false;
-        this.enabled = false;
-        
-        // Clear the refresh timer
-        if (this.interval) {
-            clearTimeout(this.interval);
-            this.interval = null;
-        }
-        
-        // Update UI
-        this.elem
-            .find(".drive-button")
-            .removeClass("drive-button-active")
-            .removeClass("drive-button-active-transient")
-            .addClass("drive-button-inactive");
-        
-        // Emit stop ONCE
-        this.emit("stop", null);
-    };    
-
-    Keypad.prototype.onDrivePress = function (evt) {
-        if (this.guardAgainstExitButton()) return;
-        
-        // Stop any ongoing motion
-        if (this.going) {
-            this.stop();
-        }
-        
-        // Ensure going flag is false for fixed mode (defensive)
-        this.going = false;
-        
-        this.target = evt.target;
-        this.setEnabled(true);
-        
-        var e = $(evt.target);
-        e.focus();
-
-        this.fixedGesture = e.hasClass("drive-button-fixed");
-        this.typematicFired = false;
-
-        if (e.hasClass("drive-button-fixed")) {
-            // Fixed mode: Execute nudge only if not already done (prevents doublets)
-            if (!this.nudgeExecuted) {
-                this.onDriveTap(evt);  // This will set the flag
-            }
-            // Keep nudging while the button stays held (typematic)
-            this.startTypematic(e);
-            // Use tan styling for fixed mode (not green like continuous)
-            e.addClass("drive-button-active-transient").removeClass("drive-button-inactive");
-        } else {
-            if (!this.going) {
-                if (e.hasClass("x_pos") && e.hasClass("y_pos")) {
-                    this.start("x", 1, "y", 1);
-                } else if (e.hasClass("x_neg") && e.hasClass("y_pos")) {
-                    this.start("x", -1, "y", 1);
-                } else if (e.hasClass("x_neg") && e.hasClass("y_neg")) {
-                    this.start("x", -1, "y", -1);
-                } else if (e.hasClass("x_pos") && e.hasClass("y_neg")) {
-                    this.start("x", 1, "y", -1);
-                } else if (e.hasClass("x_pos")) {
-                    this.start("x", 1);
-                } else if (e.hasClass("x_neg")) {
-                    this.start("x", -1);
-                } else if (e.hasClass("y_pos")) {
-                    this.start("y", 1);
-                } else if (e.hasClass("y_neg")) {
-                    this.start("y", -1);
-                } else if (e.hasClass("z_pos_fast")) {
-                    this.start("z_fast", 1);
-                } else if (e.hasClass("z_pos_slow")) {
-                    this.start("z_slow", 1);
-                } else if (e.hasClass("z_neg_fast")) {
-                    this.start("z_fast", -1);
-                } else if (e.hasClass("z_neg_slow")) {
-                    this.start("z_slow", -1);
-                } else if (e.hasClass("a_pos_fast")) {
-                    this.start("a_fast", 1);
-                } else if (e.hasClass("a_pos_slow")) {
-                    this.start("a_slow", 1);
-                } else if (e.hasClass("a_neg_fast")) {
-                    this.start("a_fast", -1);
-                } else if (e.hasClass("a_neg_slow")) {
-                    this.start("a_slow", -1);
-                } else if (e.hasClass("b_pos_fast")) {
-                    this.start("b_fast", 1);
-                } else if (e.hasClass("b_pos_slow")) {
-                    this.start("b_slow", 1);
-                } else if (e.hasClass("b_neg_fast")) {
-                    this.start("b_fast", -1);
-                } else if (e.hasClass("b_neg_slow")) {
-                    this.start("b_slow", -1);
-                } else if (e.hasClass("c_pos")) {
-                    this.start("c", 1);
-                } else if (e.hasClass("c_neg")) {
-                    this.start("c", -1);
-                    return;
-                }
-                e.addClass("drive-button-active").removeClass("drive-button-inactive");
-            }
-        }
-    };
-
-    // Map a drive button's direction classes to the arguments for nudge().
-    // Returns [axis, dir] / [axis, dir, second_axis, second_dir], or null
-    // for a non-direction element.
-    Keypad.prototype.nudgeMoveFor = function (e) {
-        if (e.hasClass("x_pos") && e.hasClass("y_pos")) {
-            return ["x", 1, "y", 1];
-        } else if (e.hasClass("x_neg") && e.hasClass("y_pos")) {
-            return ["x", -1, "y", 1];
-        } else if (e.hasClass("x_neg") && e.hasClass("y_neg")) {
-            return ["x", -1, "y", -1];
-        } else if (e.hasClass("x_pos") && e.hasClass("y_neg")) {
-            return ["x", 1, "y", -1];
-        } else if (e.hasClass("x_pos")) {
-            return ["x", 1];
-        } else if (e.hasClass("x_neg")) {
-            return ["x", -1];
-        } else if (e.hasClass("y_pos")) {
-            return ["y", 1];
-        } else if (e.hasClass("y_neg")) {
-            return ["y", -1];
-        } else if (e.hasClass("z_pos_fast") || e.hasClass("z_pos_slow")) {
-            return ["z", 1];
-        } else if (e.hasClass("z_neg_fast") || e.hasClass("z_neg_slow")) {
-            return ["z", -1];
-        } else if (e.hasClass("a_pos_fast") || e.hasClass("a_pos_slow")) {
-            return ["a", 1];
-        } else if (e.hasClass("a_neg_fast") || e.hasClass("a_neg_slow")) {
-            return ["a", -1];
-        } else if (e.hasClass("b_pos_fast") || e.hasClass("b_pos_slow")) {
-            return ["b", 1];
-        } else if (e.hasClass("b_neg_fast") || e.hasClass("b_neg_slow")) {
-            return ["b", -1];
-        } else if (e.hasClass("c_pos")) {
-            return ["c", 1];
-        } else if (e.hasClass("c_neg")) {
-            return ["c", -1];
-        }
-        return null;
-    };
-
-    Keypad.prototype.clearTypematic = function () {
-        if (this.typematicTimer) {
-            clearTimeout(this.typematicTimer);
-            this.typematicTimer = null;
-        }
-    };
-
-    // Typematic repeat for a held fixed-mode button: after repeatDelay,
-    // re-issue the button's nudge every repeatInterval until release.
-    // Every release/leave/cancel path funnels through end()/cleanStop()/
-    // stop(), all of which clear the timer.
-    Keypad.prototype.startTypematic = function (e) {
-        this.clearTypematic();
-        if (!(this.repeatInterval > 0)) return;
-        var move = this.nudgeMoveFor(e);
-        if (!move) return;
-        var repeat = function () {
-            // Bail if the gesture ended, the button changed, or fixed
-            // mode was switched off mid-hold.
-            if (!this.enabled || this.going || this.target !== e[0] ||
-                !e.hasClass("drive-button-fixed")) {
-                this.clearTypematic();
-                return;
-            }
-            this.typematicFired = true;
-            this.nudge.apply(this, move);
-            e.addClass("drive-button-active-transient").removeClass("drive-button-inactive");
-            this.typematicTimer = setTimeout(repeat, this.repeatInterval);
-        }.bind(this);
-        this.typematicTimer = setTimeout(repeat, this.repeatDelay);
-    };
-
-    Keypad.prototype.onDriveTap = function (evt) {
-        if (this.guardAgainstExitButton()) return;
-        var e = $(evt.target);
-
-        if (this.going) {
-            this.end();
-        } else {
-            // For fixed-distance buttons, only execute nudge once per gesture
-            if (this.nudgeExecuted) {
-                return; // Already executed by press event
-            }
-            this.nudgeExecuted = true;
-
-            var move = this.nudgeMoveFor(e);
-            if (!move) {
-                return;
-            }
-            // A tap-nudge is a fixed-mode gesture regardless of which event
-            // path delivered it — a later end() must not answer it with a stop.
-            this.fixedGesture = true;
-            this.nudge.apply(this, move);
-            e.addClass("drive-button-active-transient").removeClass(
-                "drive-button-inactive"
-            );
-            setTimeout(
-                function () {
-                    if (!this.going) {
-                        e.removeClass("drive-button-active-transient").addClass(
-                            "drive-button-inactive"
-                        );
-                    }
-                    // Reset flag for next gesture (important for quick taps that don't trigger pressup)
-                    this.nudgeExecuted = false;
-                }.bind(this),
-                200
-            );
-        }
+    Keypad.prototype.exit = function () {
+        this.emit("exit", null);
     };
 
     Keypad.prototype.onExitTap = function (evt) {
@@ -917,30 +427,242 @@
         this.enter();
     };
 
-    Keypad.prototype.onDriveMouseleave = function (evt) {
-        // Don't process mouseleave for exit button
-        if ($(evt.target).closest('.manual-drive-exit').length > 0) {
+    // A press means a gesture starts NOW: continuous motion for a plain
+    // drive button, step + typematic for a fixed-mode one.
+    Keypad.prototype.onDrivePress = function (evt) {
+        if (this.guardAgainstExitButton()) return;
+        var e = $(evt.target);
+
+        // A press landing while another gesture is live (second finger,
+        // button-to-button roll) switches to the new button: end the old
+        // gesture properly first.
+        if (this.intent.isActive()) {
+            this.intent.cancelAll();
+            this._styleClear();
+        }
+
+        var fixed = e.hasClass("drive-button-fixed");
+        var move = fixed ? this.nudgeMoveFor(e) : this.startMoveFor(e);
+        if (!move) return;
+
+        this.target = evt.target;
+        this.targetId = this._idFor(evt.target);
+        this.setEnabled(true);
+
+        if (fixed) {
+            // Dedupe against the Hammer "tap" that can also fire for a short
+            // hold — the press already stepped.
+            this.nudgeExecuted = true;
+            e.addClass("drive-button-active-transient").removeClass("drive-button-inactive");
+        } else {
+            e.addClass("drive-button-active").removeClass("drive-button-inactive");
+        }
+
+        this.intent.press(this.targetId, move, fixed);
+    };
+
+    // A completed quick tap (Hammer classified it): one fixed step, on any
+    // drive button — tapping a continuous button nudges, same as it always
+    // has. If a gesture is somehow still live, the tap acts as its release.
+    Keypad.prototype.onDriveTap = function (evt) {
+        if (this.guardAgainstExitButton()) return;
+        var e = $(evt.target);
+
+        if (this.intent.isActive()) {
+            this.end();
             return;
         }
-        
+        if (this.nudgeExecuted) {
+            return; // Already executed by press event
+        }
+        this.nudgeExecuted = true;
+
+        var move = this.nudgeMoveFor(e);
+        if (!move) {
+            return;
+        }
+        var id = this._idFor(evt.target);
+        this.intent.press(id, move, true); // one-shot fixed gesture
+        this.intent.release(id);
+
+        e.addClass("drive-button-active-transient").removeClass("drive-button-inactive");
+        setTimeout(
+            function () {
+                if (!this.going) {
+                    e.removeClass("drive-button-active-transient").addClass("drive-button-inactive");
+                }
+                // Reset flag for next gesture (important for quick taps that don't trigger pressup)
+                this.nudgeExecuted = false;
+            }.bind(this),
+            200
+        );
+    };
+
+    // Normal release path (pressup / touchend / slide-off). Swallowed when a
+    // control button was just clicked — forceStop covers the paths that must
+    // never be swallowed.
+    Keypad.prototype.end = function () {
+        if (this.guardAgainstExitButton()) return;
+
+        var id = this.targetId;
+        this.target = null;
+        this.targetId = null;
+        this.enabled = false;
+
+        if (id != null) {
+            // Releasing the owning source ends the gesture with the right
+            // server command (stop for continuous, nudgeCancel for a fixed
+            // hold whose repeats queued a backlog).
+            this.intent.release(id);
+        } else {
+            this.intent.cancelAll();
+        }
+        this._styleClear();
+    };
+
+    Keypad.prototype.onDriveMouseleave = function (evt) {
+        // Don't process mouseleave for exit button
+        if ($(evt.target).closest(".manual-drive-exit").length > 0) {
+            return;
+        }
+
         // Don't process mouseleave during active touch interactions
         if (this.touchStartTime || this.currentTouchElement) {
             return;
         }
 
-        // End whatever gesture is live — continuous (going) or a fixed-mode
-        // typematic hold (target set). The old path only handled continuous:
-        // sliding off a button mid-typematic left the transient style, the
-        // gesture state, and the server-side nudge backlog all alive (stuck
-        // style / stuck move). Hover without a press takes the else branch.
+        // End whatever gesture is live — continuous or a fixed-mode hold.
+        // Sliding off a button mid-gesture means no release event is coming
+        // to this element.
         if (this.going || this.target) {
             console.log("Keypad: Mouse left button mid-gesture - forcing stop");
             this.forceStop();
         } else {
-            this.clearTypematic();
             this.nudgeExecuted = false; // Reset for next gesture
         }
     };
+
+    // Map a drive button's classes to the CONTINUOUS move vocabulary main.js
+    // expects on "go": the axis field carries the speed variant (z_fast,
+    // a_slow, ...) for the split-speed button columns.
+    Keypad.prototype.startMoveFor = function (e) {
+        if (e.hasClass("x_pos") && e.hasClass("y_pos")) {
+            return { axis: "x", dir: 1, second_axis: "y", second_dir: 1 };
+        } else if (e.hasClass("x_neg") && e.hasClass("y_pos")) {
+            return { axis: "x", dir: -1, second_axis: "y", second_dir: 1 };
+        } else if (e.hasClass("x_neg") && e.hasClass("y_neg")) {
+            return { axis: "x", dir: -1, second_axis: "y", second_dir: -1 };
+        } else if (e.hasClass("x_pos") && e.hasClass("y_neg")) {
+            return { axis: "x", dir: 1, second_axis: "y", second_dir: -1 };
+        } else if (e.hasClass("x_pos")) {
+            return { axis: "x", dir: 1 };
+        } else if (e.hasClass("x_neg")) {
+            return { axis: "x", dir: -1 };
+        } else if (e.hasClass("y_pos")) {
+            return { axis: "y", dir: 1 };
+        } else if (e.hasClass("y_neg")) {
+            return { axis: "y", dir: -1 };
+        } else if (e.hasClass("z_pos_fast")) {
+            return { axis: "z_fast", dir: 1 };
+        } else if (e.hasClass("z_pos_slow")) {
+            return { axis: "z_slow", dir: 1 };
+        } else if (e.hasClass("z_neg_fast")) {
+            return { axis: "z_fast", dir: -1 };
+        } else if (e.hasClass("z_neg_slow")) {
+            return { axis: "z_slow", dir: -1 };
+        } else if (e.hasClass("a_pos_fast")) {
+            return { axis: "a_fast", dir: 1 };
+        } else if (e.hasClass("a_pos_slow")) {
+            return { axis: "a_slow", dir: 1 };
+        } else if (e.hasClass("a_neg_fast")) {
+            return { axis: "a_fast", dir: -1 };
+        } else if (e.hasClass("a_neg_slow")) {
+            return { axis: "a_slow", dir: -1 };
+        } else if (e.hasClass("b_pos_fast")) {
+            return { axis: "b_fast", dir: 1 };
+        } else if (e.hasClass("b_pos_slow")) {
+            return { axis: "b_slow", dir: 1 };
+        } else if (e.hasClass("b_neg_fast")) {
+            return { axis: "b_fast", dir: -1 };
+        } else if (e.hasClass("b_neg_slow")) {
+            return { axis: "b_slow", dir: -1 };
+        } else if (e.hasClass("c_pos")) {
+            return { axis: "c", dir: 1 };
+        } else if (e.hasClass("c_neg")) {
+            return { axis: "c", dir: -1 };
+        }
+        return null;
+    };
+
+    // Map a drive button's direction classes to the NUDGE move vocabulary
+    // (plain axis letters — fixed moves don't have speed variants).
+    Keypad.prototype.nudgeMoveFor = function (e) {
+        if (e.hasClass("x_pos") && e.hasClass("y_pos")) {
+            return { axis: "x", dir: 1, second_axis: "y", second_dir: 1 };
+        } else if (e.hasClass("x_neg") && e.hasClass("y_pos")) {
+            return { axis: "x", dir: -1, second_axis: "y", second_dir: 1 };
+        } else if (e.hasClass("x_neg") && e.hasClass("y_neg")) {
+            return { axis: "x", dir: -1, second_axis: "y", second_dir: -1 };
+        } else if (e.hasClass("x_pos") && e.hasClass("y_neg")) {
+            return { axis: "x", dir: 1, second_axis: "y", second_dir: -1 };
+        } else if (e.hasClass("x_pos")) {
+            return { axis: "x", dir: 1 };
+        } else if (e.hasClass("x_neg")) {
+            return { axis: "x", dir: -1 };
+        } else if (e.hasClass("y_pos")) {
+            return { axis: "y", dir: 1 };
+        } else if (e.hasClass("y_neg")) {
+            return { axis: "y", dir: -1 };
+        } else if (e.hasClass("z_pos_fast") || e.hasClass("z_pos_slow")) {
+            return { axis: "z", dir: 1 };
+        } else if (e.hasClass("z_neg_fast") || e.hasClass("z_neg_slow")) {
+            return { axis: "z", dir: -1 };
+        } else if (e.hasClass("a_pos_fast") || e.hasClass("a_pos_slow")) {
+            return { axis: "a", dir: 1 };
+        } else if (e.hasClass("a_neg_fast") || e.hasClass("a_neg_slow")) {
+            return { axis: "a", dir: -1 };
+        } else if (e.hasClass("b_pos_fast") || e.hasClass("b_pos_slow")) {
+            return { axis: "b", dir: 1 };
+        } else if (e.hasClass("b_neg_fast") || e.hasClass("b_neg_slow")) {
+            return { axis: "b", dir: -1 };
+        } else if (e.hasClass("c_pos")) {
+            return { axis: "c", dir: 1 };
+        } else if (e.hasClass("c_neg")) {
+            return { axis: "c", dir: -1 };
+        }
+        return null;
+    };
+
+    Keypad.prototype._styleClear = function () {
+        this.elem
+            .find(".drive-button")
+            .removeClass("drive-button-active")
+            .removeClass("drive-button-active-transient")
+            .addClass("drive-button-inactive");
+    };
+
+    Keypad.prototype._idFor = function (element) {
+        if (element.id) return element.id;
+        if (!element.__kpid) {
+            idCounter += 1;
+            element.__kpid = "kpbtn" + idCounter;
+        }
+        return element.__kpid;
+    };
+
+    // ---- host compatibility ---------------------------------------------
+    // main.js reads keypad.going (and keypad.target) to ask "is a gesture
+    // live"; mirror the intent machine's state.
+    Object.defineProperty(Keypad.prototype, "going", {
+        get: function () {
+            return this.intent ? this.intent.isContinuous() : false;
+        },
+    });
+    Object.defineProperty(Keypad.prototype, "interval", {
+        get: function () {
+            return this.intent ? this.intent.heartbeat : null;
+        },
+    });
 
     return Keypad;
 });

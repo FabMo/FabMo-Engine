@@ -181,6 +181,66 @@ describe("keyboard jog rollover runaway", () => {
         expect(serverMoving(events)).toBe(false);
     });
 
+    test("REGRESSION: synthesized auto-repeat pairs read as ONE hold, not a tap stream", () => {
+        // X11/VNC-style input delivers key auto-repeat as keyup+keydown
+        // PAIRS ~2ms apart at the repeat rate (~110ms). Without debouncing,
+        // fixed mode fired an unflagged nudge per pair at the OS repeat rate
+        // and the real typematic never engaged (field report: uneven DRO
+        // ticks, all typematic:false, ~110ms apart).
+        const { kb, events } = makeKeyboard({ checked: true });
+        const nudges = [];
+        kb.on("nudge", (m) => nudges.push(m));
+
+        keydown(kb, PGDN); // real press: one deliberate step
+        for (let t = 0; t < 10; t++) {
+            jest.advanceTimersByTime(110);
+            keyup(kb, PGDN); // synthetic pair
+            jest.advanceTimersByTime(2);
+            keydown(kb, PGDN);
+        }
+        // ~1.1s held: the press nudge plus TYPEMATIC repeats only — no
+        // unflagged tap stream.
+        const unflagged = nudges.filter((m) => !m.typematic);
+        const repeats = nudges.filter((m) => m.typematic);
+        expect(unflagged).toHaveLength(1);
+        expect(repeats.length).toBeGreaterThanOrEqual(2); // 600ms delay + 250ms interval
+
+        keyup(kb, PGDN); // real release
+        jest.advanceTimersByTime(3000);
+        expect(kb.going).toBe(false);
+        expect(serverMoving(events)).toBe(false);
+    });
+
+    test("synthesized pairs during a continuous hold don't churn stop/start", () => {
+        const { kb, events } = makeKeyboard({ checked: false });
+        keydown(kb, PGDN);
+        jest.advanceTimersByTime(300); // continuous motion running
+        for (let t = 0; t < 5; t++) {
+            keyup(kb, PGDN);
+            jest.advanceTimersByTime(2);
+            keydown(kb, PGDN);
+            jest.advanceTimersByTime(110);
+        }
+        expect(events.filter((e) => e === "stop")).toHaveLength(0); // never interrupted
+        keyup(kb, PGDN);
+        jest.advanceTimersByTime(1000);
+        expect(serverMoving(events)).toBe(false);
+        expect(events.filter((e) => e === "stop")).toHaveLength(1);
+    });
+
+    test("real rapid taps (gaps past the debounce window) still step once each", () => {
+        const { kb, events } = makeKeyboard({ checked: true });
+        for (let i = 0; i < 4; i++) {
+            keydown(kb, PGDN);
+            jest.advanceTimersByTime(70);
+            keyup(kb, PGDN);
+            jest.advanceTimersByTime(80); // 80ms gap: a human re-tap, not a pair
+        }
+        jest.advanceTimersByTime(1000);
+        expect(events.filter((e) => e === "nudge")).toHaveLength(4);
+        expect(serverMoving(events)).toBe(false);
+    });
+
     test("fixed mode: rollover taps only nudge, never start continuous motion", () => {
         const { kb, events } = makeKeyboard({ checked: true });
         keydown(kb, PGUP);
