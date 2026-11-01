@@ -681,7 +681,7 @@
         this.executeRuntimeCode("manual", { cmd: "softLimitOverride", axis: axis });
     };
 
-    FabMoAPI.prototype.manualMoveFixed = function (axis, speed, distance, second_axis, second_distance) {
+    FabMoAPI.prototype.manualMoveFixed = function (axis, speed, distance, second_axis, second_distance, options) {
         this.executeRuntimeCode("manual", {
             cmd: "fixed",
             axis: axis,
@@ -689,6 +689,9 @@
             dist: distance,
             second_axis: second_axis,
             second_dist: second_distance,
+            // Typematic repeats coalesce in the server queue instead of
+            // stacking; deliberate taps (no flag) all execute.
+            typematic: !!(options && options.typematic),
         });
     };
 

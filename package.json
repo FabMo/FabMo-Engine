@@ -38,6 +38,7 @@
 		"prettier": "^3.4.2",
 		"process": "^0.11.10",
 		"restify": "^11.1.0",
+		"restify-errors": "^8.1.0",
 		"serialport": "^13.0.0",
 		"socket.io": "^4.8.1",
 		"socket.io-client": "^4.8.1",
@@ -51,8 +52,8 @@
 		"xml2js": "^0.6.2"
 	},
 	"optionalDependencies": {
-		"udev": "0.6.0",
-		"node-hid": "^3.1.0"
+		"node-hid": "^3.1.0",
+		"udev": "0.6.0"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.26.9",
@@ -98,6 +99,7 @@
 		"install-and-dev": "npm install && npm run dev",
 		"build": "webpack --mode=development && npm run copybuiltfiles",
 		"copybuiltfiles": "sh build_scripts/copy_built_files.sh",
+		"test:manual": "jest test/manual. test/jogintent test/keyboard.rolloverRunaway --silent",
 		"debugserver": "node server.js --debug",
 		"build:dev": "npx webpack --mode=development",
 		"build:prod": "npx webpack --mode=development",

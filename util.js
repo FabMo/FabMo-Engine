@@ -15,7 +15,11 @@ var exec = require("child_process").exec;
 var stream = require("stream");
 var util = require("util");
 var mime = require("mime");
-var errors = require("restify");
+// Error classes come from restify-errors: restify >= 7 no longer re-exports
+// them (these were silently undefined), and requiring the full restify server
+// pulls in spdy/http-deceiver, which crashes on Node >= 22 (and under jest)
+// via the removed process.binding('http_parser').
+var errors = require("restify-errors");
 
 // These are consulted by various upload functions
 const ALLOWED_APP_EXTENSIONS = [".zip", ".fma"];

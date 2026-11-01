@@ -51,6 +51,11 @@ var EXIT_WATCHDOG_MAX_CHECKS = 5;
 // hold) — bursting the backlog out at that point is how bits get crashed.
 var NUDGE_QUEUE_TTL = 3000;
 
+// Firmware velocity-jog watchdog ($jvto), pinned at every manual enter when
+// the cycle exists. Clients heartbeat at ~50ms, so 500ms of host silence is
+// decisively "nobody is driving". Mirrors the firmware default on purpose.
+var JGV_WATCHDOG_MS = 500;
+
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
 // streaming commands to it, as is done when in "pendant" mode or similar
@@ -75,8 +80,22 @@ function ManualDriver(drv, st, mode) {
     // True while the tool is known to be in motion
     this.moving = false;
 
-    // True while the user intends (as far as we know) for the tool to continue moving
+    // True while the user intends (as far as we know) for the tool to continue moving.
+    // Under the motion lease (see _renewMoves) this is a consumable: each renewal
+    // tick spends it, and the client's keep-alive stream (startMotion ~every 50ms,
+    // or cmd:"maint") must re-assert it. Absence of intent means stop.
     this.keep_moving = false;
+
+    // Planned-position chain for snap-to-grid: axis -> position after all
+    // COMMANDED nudges. Dead-reckoned, not sampled - see _snapBase. Cleared
+    // whenever any other motion source touches the machine.
+    this._snapPlanned = {};
+
+    // Renewal ticks that found no keep-alive since the previous tick. One grace
+    // window (total tolerance 2 x T_RENEW against a 50ms client cadence) absorbs
+    // GC pauses and a loaded Pi before the lease concludes the client is gone
+    // and stops motion.
+    this.lease_misses = 0;
 
     // Set to true to exit the manual state once the current operation is completed
     this.exit_pending = false;
@@ -129,6 +148,12 @@ function ManualDriver(drv, st, mode) {
             this.keep_moving   = false;
             this.stop_pending  = false;
             this.analogMode    = false;
+            // A keypad-close during a jgv jog pends the exit on the ramp-down
+            // (exit() defers while isMoving). The cycle just finished — run
+            // the exit now rather than waiting on a stat report to notice.
+            if (this.exit_pending) {
+                this.exit();
+            }
         }
     }.bind(this);
     this.driver.on("jogv_exit", this._jogv_exit_handler);
@@ -173,6 +198,13 @@ ManualDriver.prototype.enter = function () {
             this.stream.write("{bjm:" + jerkB + "}\n");
             this.stream.write("{cjm:" + jerkC + "}\n");
             this.stream.write("{spph:false}\n"); // turn off spph so G2 feedhold doesn't turn off spindle
+            // Pin the velocity-jog watchdog explicitly rather than trusting
+            // whatever the board was last left with — it is the deadman for
+            // every jgv jog this session. Only when the capability probe
+            // confirmed the cycle exists (an unknown key would error).
+            if (this.driver.jgv_supported === true) {
+                this.stream.write("{jvto:" + JGV_WATCHDOG_MS + "}\n");
+            }
             // Send "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
             this.driver.prime();
@@ -307,6 +339,29 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         log.warn("startMotion(): ignored - manual mode is exiting");
         return;
     }
+
+    // Continuous motion moves the machine off the nudge pipeline's plan.
+    this._invalidateSnapPlanned();
+
+    // Keypad/keyboard route to the firmware velocity-jog cycle. The dashboard
+    // sends the legacy signed-speed form (no ratios); when the firmware has
+    // CYCLE_JGV, translate it into the analog vector form right here so the
+    // keypad gets everything the pendant stick already has: jerk-limited
+    // ramps, mid-flight direction changes with no feedhold/flush dance, and
+    // the firmware's own host-silence watchdog as the final deadman. `speed`
+    // is the toolpath feedrate in both forms, so only the unit-vector
+    // components need synthesizing (legacy two-axis means equal per-axis
+    // speeds, i.e. a 45-degree diagonal).
+    if (primary_ratio === undefined && this._useJGVForKeypad()) {
+        if (second_axis) {
+            primary_ratio = (speed < 0 ? -1 : 1) * Math.SQRT1_2;
+            secondary_ratio = (second_speed < 0 ? -1 : 1) * Math.SQRT1_2;
+        } else {
+            primary_ratio = speed < 0 ? -1 : 1;
+            secondary_ratio = 0;
+        }
+    }
+
     var hasRatios = primary_ratio !== undefined;
     var dir = hasRatios ? primary_ratio : (speed < 0 ? -1.0 : 1.0);
     var second_dir = hasRatios ? (secondary_ratio || 0) : (second_speed < 0 ? -1.0 : 1.0);
@@ -377,11 +432,15 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         // push hard into +X, the stick still moves on Y. Skipped when
         // softlimits_on is false or the user has overridden that axis.
         if (config.machine._cache.softlimits_on) {
-            var jerk = (config.machine._cache.manual &&
-                config.machine._cache.manual.xy_jerk) || 75;
-            var buffer = (config.machine._cache.manual &&
-                config.machine._cache.manual.softlimit_cushion) || 0;
-            var k = jerk * 0.18;
+            var manualCfg = config.machine._cache.manual || {};
+            var jerkXYCap = manualCfg.xy_jerk || 75;
+            // Z stops on its own (usually lower) jerk profile — capping its
+            // approach speed with the XY jerk would overstate how fast Z can
+            // shed speed and let it ride too hot into the Z limit. Now that
+            // the keypad (not just the XY-dominant pendant stick) rides this
+            // path, the cap must be per-axis.
+            var jerkZCap = manualCfg.z_jerk || jerkXYCap;
+            var buffer = manualCfg.softlimit_cushion || 0;
             // Multi-axis JGV has more per-cycle timing jitter than single-
             // axis, so multi-axis gets a slightly larger reservation.
             var activeAxes = 0;
@@ -414,6 +473,7 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
                 }
                 var lookahead = (speed / 60) * LOOKAHEAD_S;
                 var effectiveMargin = Math.max(margin - buffer - lookahead, 0);
+                var k = (axisKey === "z" ? jerkZCap : jerkXYCap) * 0.18;
                 var vSafeIpm = 60 * Math.cbrt(effectiveMargin * effectiveMargin * k);
                 // Floor at creep so the tool keeps inching toward the limit
                 // instead of parking 0.5–1" short when the cap collapses.
@@ -425,6 +485,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         }
 
         this.driver.jogVelocity(vec);
+        // Remembered so maintainMotion (cmd:"maint") can refresh the
+        // firmware's host-silence watchdog for clients that heartbeat with
+        // maint instead of re-sending start.
+        this._lastJGVVec = vec;
 
         // Track minimal state. analogMode is set here AND stays set through
         // any subsequent stopMotion; only the jogv_exit handler clears it,
@@ -541,6 +605,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
         }
 
         this.renewDistance = speed * (T_RENEW / 60000) * (this.analogMode ? ANALOG_SAFETY_FACTOR : this.safetyFactor);
+        // This restart is itself a client command, i.e. a keep-alive: re-assert
+        // the lease so the _renewMoves below doesn't see a consumed keep_moving
+        // and misread the axis change as a lease miss.
+        this.keep_moving = true;
         this.stream.write("G91 F" + this.currentSpeed.toFixed(3) + "\n");
         this._renewMoves("axis_change");
         return;
@@ -576,11 +644,20 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
 ManualDriver.prototype.maintainMotion = function () {
     if (this.moving) {
         this.keep_moving = true;
+        // In analog (jgv) mode the deadman is the firmware's host-silence
+        // watchdog, which only actual jgv messages feed — re-send the last
+        // vector so a client heartbeating with cmd:"maint" (instead of
+        // re-sending start) doesn't get auto-stopped mid-jog. The firmware
+        // setter is a no-op when the velocity hasn't changed.
+        if (this.analogMode && this._lastJGVVec) {
+            this.driver.jogVelocity(this._lastJGVVec);
+        }
     }
 };
 
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
+    this._invalidateSnapPlanned();
     // Analog (firmware velocity-jog cycle) path: emit jogStop and let the
     // firmware cycle ramp down on its own decel. Don't set stop_pending —
     // the cycle accepts mid-flight velocity updates, so if the user
@@ -626,6 +703,7 @@ ManualDriver.prototype.stopMotion = function () {
 
 // Stop all movement (also? TODO: What's this all about?)
 ManualDriver.prototype.quitMove = function () {
+    this._invalidateSnapPlanned();
     this.keep_moving = false;
     this.driver.queueFlush(
         function () {
@@ -645,6 +723,7 @@ ManualDriver.prototype.quitMove = function () {
 };
 
 ManualDriver.prototype.resumeMove = function () {
+    this._invalidateSnapPlanned();
     this.driver.manual_hold = false;
     this.keep_moving = true;
     this.stop_pending = false;
@@ -688,6 +767,7 @@ ManualDriver.prototype.runGCode = function (code) {
 //   pos - Position vector as an object, eg: {"X":10, "Y":5, "F":60} Speed is optionally added
 // The speed will be vectored based on the current speed setting on the slider; but limited to axis maximums
 ManualDriver.prototype.goto = function (pos) {
+    this._invalidateSnapPlanned();
     // We may want to consider whether GOTOs are moves or jogs; for now, they're moves w/speed set by slider (safer)
     var hasZABC = false;
     var of_ZABC = "";
@@ -753,6 +833,7 @@ ManualDriver.prototype.output = function (out, val) {
 // TODO: Is it possible that timing could produce an inaccurate position update here???
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function (pos) {
+    this._invalidateSnapPlanned();
     var toSet = {};
     var unitConv;
     if (this.driver.status.unit === "in") {
@@ -838,43 +919,72 @@ ManualDriver.prototype.set = function (pos) {
 // and executed at the end of the current move.  This is the function that dequeues and executes them.
 // Nudges are made fixed and individual by G61.1.
 // TODO: Like start above, nudges should be arbritrary vectors rather than axis, second_axis
-// Snap a nudge to the next grid line in its direction of motion. The grid
-// is defined by the nudge increment relative to work zero — e.g. a 0.100"
-// nudge from 26.241" lands on 26.300", then 26.400", etc. Already on grid
-// counts as off — advance by one full increment to avoid no-ops.
+// Snap base: the position the next nudge measures from. Dead-reckoned from
+// commanded moves while the nudge pipeline is the only motion source; live
+// status (SR-throttled, ~100ms stale, stalest right after a move ends) is
+// used only to seed the chain, after _invalidateSnapPlanned, or as a belt
+// when the plan disagrees with reality by more than everything that could
+// legitimately still be in flight.
+ManualDriver.prototype._snapBase = function (axisLower, increment) {
+    var live = this.driver.status["pos" + axisLower];
+    var planned = this._snapPlanned[axisLower];
+    if (planned === undefined) {
+        return live;
+    }
+    if (live !== undefined && live !== null && Math.abs(planned - live) > (this.maxNudges + 2) * increment) {
+        return live;
+    }
+    return planned;
+};
+
+// Any motion source other than the nudge pipeline (continuous jog, goto,
+// coordinate set, hold resume/quit) makes the planned chain stale.
+ManualDriver.prototype._invalidateSnapPlanned = function () {
+    for (var k in this._snapPlanned) {
+        if (Object.prototype.hasOwnProperty.call(this._snapPlanned, k)) {
+            this._snapPlanned = {};
+            return;
+        }
+    }
+};
+
+// --- Snap-to-grid ---------------------------------------------------------
+// Fixed-mode nudges walk the coordinate grid: multiples of the nudge
+// increment relative to work zero, so taps land on round positions (a 0.100"
+// nudge from 26.241" lands on 26.300", then 26.400", ...). Hard-learned
+// rules, each paid for with a field bug:
 //
-// "On grid" must be judged with a real tolerance, not float epsilon:
-// offsets built from non-decimal constants (metric plate thicknesses,
-// gear-ratio steps/unit) leave work coordinates microscopically off the
-// decimal grid. A position a few millionths short of a grid line would
-// otherwise snap to a hair-thin catch-up move that formats as
-// "G1 Y0.00000" — a zero-length move the machine never executes, so the
-// reported position never changes and every subsequent tap recomputes
-// the same zero move: the button goes permanently dead.
-function snapNudgeDistance(currentPos, distance, increment) {
-    if (!increment || distance === 0) return distance;
-    // Within this distance of a grid line counts as ON it (advance a
-    // full increment past it). Capped at 25% of the increment so coarse
-    // tolerances never eat a meaningful fraction of a fine step.
-    var tolerance = Math.min(1e-4, 0.25 * increment);
-    var posInGrid = currentPos / increment;
-    var line;
-    if (distance > 0) {
-        line = Math.ceil(posInGrid);
-        if ((line - posInGrid) * increment < tolerance) line += 1;
-    } else {
-        line = Math.floor(posInGrid);
-        if ((posInGrid - line) * increment < tolerance) line -= 1;
+//  * All grid math runs on INTEGER line indices. Positions are floats, and
+//    offsets built from non-decimal constants (metric plate thicknesses,
+//    gear-ratio steps/unit) leave work coordinates microscopically off the
+//    decimal grid - comparing float distances produced hair-thin catch-up
+//    moves that formatted as "G1 Y0.00000" and a permanently dead button.
+//    Floats appear only at the very ends of the computation.
+//  * A position within SNAP_ON_LINE_EPS of a line IS on that line, and a
+//    tap advances one full line past it. The epsilon is two wire quanta
+//    (gcode distances are formatted toFixed(5)), so a snapped move can
+//    never round to zero on the wire.
+//  * The snapped move never exceeds increment + epsilon and always moves in
+//    the commanded direction.
+//  * The BASE the snap measures from is PLANNED, not sampled - see
+//    _snapBase. Measuring from live status (SR-throttled, stalest right
+//    after a move ends - exactly when the next tap arrives) re-snapped
+//    back-to-back taps to the same line: partial, zero, and double-partial
+//    steps.
+var SNAP_ON_LINE_EPS = 2e-5;
+// Below this, a distance formats to "0.00000" on the wire - a null move G2
+// never executes (and some firmware mishandles). Never write one.
+var WIRE_MIN_MOVE = 1e-5;
+
+function snapNudgeDistance(basePos, distance, increment) {
+    if (!increment || !distance) return distance;
+    var dir = distance > 0 ? 1 : -1;
+    var posInGrid = basePos / increment;
+    var line = dir > 0 ? Math.ceil(posInGrid) : Math.floor(posInGrid);
+    if (Math.abs(line - posInGrid) * increment < SNAP_ON_LINE_EPS) {
+        line += dir; // on the line (within dust): step one full line
     }
-    var snapped = line * increment - currentPos;
-    // Belt and braces: the emitted G-code is formatted with toFixed(5),
-    // so anything under 5e-6 becomes a zero-length move — skip to the
-    // next grid line rather than emit a dead nudge.
-    if (Math.abs(snapped) < 5e-6) {
-        line += distance > 0 ? 1 : -1;
-        snapped = line * increment - currentPos;
-    }
-    return snapped;
+    return line * increment - basePos;
 }
 
 // Returns the number of nudges
@@ -906,50 +1016,42 @@ ManualDriver.prototype._handleNudges = function () {
     count = this.fixedQueue.length;
 
     if (this.fixedQueue.length > 0) {
-        // Fixed-distance nudges snap to the unit grid for X/Y/Z only.
-        // snapPos tracks the commanded target per axis across the batch so
-        // that multiple stacked nudges in one pass snap relative to each
-        // other instead of all reading the same (stale) live position.
-        var snapPos = {};
         while (this.fixedQueue.length > 0) {
             var move = this.fixedQueue.shift();
             var axis = move.axis.toUpperCase();
 
-            // Snap-to-grid: re-aim each fixed-distance nudge at the next grid
-            // line — a multiple of the nudge increment relative to work zero —
-            // in the direction of motion (e.g. 0.100" nudge from 32.141" lands
-            // on 32.200", then 32.300"). The snapped move is always <= the
-            // increment, so the user is never surprised by a larger step.
+            // Snap-to-grid (see the rules above snapNudgeDistance). The base
+            // comes from the planned-position chain, not live status, so
+            // back-to-back taps walk consecutive grid lines regardless of
+            // report latency. A client that pre-snaps (the XHC wheel sends
+            // snap:false with its own computed distance) skips the re-snap
+            // but still advances the planned chain.
             //
-            // Restricted to X/Y/Z: rotary/ABC axes have a step resolution that
-            // doesn't divide the unit grid (e.g. 33.333 steps/deg), so snapping
-            // there fights firmware quantization and yields erratic, oscillating
-            // bumps. A/B/C step by the raw increment as specified. Primary and
-            // second axes are gated independently so a mixed linear/rotary
-            // two-axis nudge handles each correctly. Runs before the soft-limit
-            // clip so the boundary check still applies to the snapped move.
+            // Restricted to X/Y/Z: rotary/ABC axes have a step resolution
+            // that doesn't divide the unit grid (e.g. 33.333 steps/deg), so
+            // snapping there fights firmware quantization. A/B/C step by the
+            // raw increment as specified. Runs before the soft-limit clip so
+            // the boundary check applies to the snapped move; the planned
+            // chain advances AFTER the clip, by what was actually commanded.
+            var axisLower = move.axis.toLowerCase();
+            var snapBase = null;
             if ("XYZ".indexOf(axis) >= 0) {
-                var axisLower = axis.toLowerCase();
                 var increment = Math.abs(move.distance);
-                var basePos = (snapPos[axisLower] !== undefined)
-                    ? snapPos[axisLower]
-                    : this.driver.status["pos" + axisLower];
-                if (basePos !== undefined && basePos !== null && increment > 0) {
-                    move.distance = snapNudgeDistance(basePos, move.distance, increment);
-                    snapPos[axisLower] = basePos + move.distance;
+                snapBase = this._snapBase(axisLower, increment);
+                if (move.snap !== false && snapBase !== undefined && snapBase !== null && increment > 0) {
+                    move.distance = snapNudgeDistance(snapBase, move.distance, increment);
                 }
             }
+            var secondLower = null;
+            var secondSnapBase = null;
             if (move.second_axis && move.second_distance) {
                 var secondAxis = move.second_axis.toUpperCase();
                 if ("XYZ".indexOf(secondAxis) >= 0) {
-                    var secondLower = secondAxis.toLowerCase();
+                    secondLower = secondAxis.toLowerCase();
                     var secondInc = Math.abs(move.second_distance);
-                    var secondBase = (snapPos[secondLower] !== undefined)
-                        ? snapPos[secondLower]
-                        : this.driver.status["pos" + secondLower];
-                    if (secondBase !== undefined && secondBase !== null && secondInc > 0) {
-                        move.second_distance = snapNudgeDistance(secondBase, move.second_distance, secondInc);
-                        snapPos[secondLower] = secondBase + move.second_distance;
+                    secondSnapBase = this._snapBase(secondLower, secondInc);
+                    if (move.snap !== false && secondSnapBase !== undefined && secondSnapBase !== null && secondInc > 0) {
+                        move.second_distance = snapNudgeDistance(secondSnapBase, move.second_distance, secondInc);
                     }
                 }
             }
@@ -994,6 +1096,28 @@ ManualDriver.prototype._handleNudges = function () {
                     this._limPushCount = {};
                     this.emit("softLimitClear");
                 }
+            }
+
+            // Dead-move floor: anything under the wire quantum formats as a
+            // zero-length move G2 never executes (and some firmware
+            // mishandles null moves). Clip can legitimately shrink a move
+            // this far at a boundary - skip it entirely, write nothing.
+            var largest = Math.abs(move.distance);
+            if (move.second_axis && move.second_distance) {
+                largest = Math.max(largest, Math.abs(move.second_distance));
+            }
+            if (largest < WIRE_MIN_MOVE) {
+                log.debug("_handleNudges(): dropping sub-wire-quantum move (" + largest + ")");
+                continue;
+            }
+
+            // Advance the planned-position chain by what is actually being
+            // commanded (post-snap, post-clip) - the base for the next tap.
+            if (snapBase !== undefined && snapBase !== null) {
+                this._snapPlanned[axisLower] = snapBase + move.distance;
+            }
+            if (secondLower && secondSnapBase !== undefined && secondSnapBase !== null) {
+                this._snapPlanned[secondLower] = secondSnapBase + move.second_distance;
             }
 
             this.moving = true;
@@ -1053,7 +1177,7 @@ ManualDriver.prototype._handleNudges = function () {
 //          distance - The length of the nudge
 //       second_axis - The second axis to move
 //   second_distance - The second axis speed
-ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, second_distance) {
+ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, second_distance, opts) {
     // Same exit gate as startMotion: a typematic loop in a backgrounded tab
     // keeps firing nudges after the user is gone — never queue against an
     // exiting cycle.
@@ -1069,6 +1193,24 @@ ManualDriver.prototype.nudge = function (axis, speed, distance, second_axis, sec
     if (second_axis) {
         move.second_axis = second_axis;
         move.second_distance = second_distance;
+    }
+    if (opts && opts.snap === false) {
+        // The client pre-snapped (the XHC wheel computes its own grid
+        // targets) - execute its distance verbatim.
+        move.snap = false;
+    }
+    if (opts && opts.typematic) {
+        // A typematic repeat means "keep stepping at a comfortable pace",
+        // not a counted user action. When moves run slower than the repeat
+        // timer the repeats pile up, and the end-of-move drain executes the
+        // whole backlog in one pass — seen on the DRO as irregular double
+        // steps. Coalesce: a new repeat replaces any repeat still waiting,
+        // so a held key steps once per completed move, never in bursts.
+        // Deliberate (unflagged) taps are never dropped.
+        move.typematic = true;
+        this.fixedQueue = this.fixedQueue.filter(function (m) {
+            return !m.typematic;
+        });
     }
     this.fixedQueue.push(move);
     // Queue (rather than execute now) while a stop/flush is in flight too:
@@ -1150,6 +1292,33 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
 // This function is called periodically until a == stop is requested ==,
 // or the users intent to continue moving evaporates ////##??.
 // The idea behind this function is that it is called at an interval that outpaces the
+// True when continuous keypad jogging should ride the firmware velocity-jog
+// cycle instead of legacy G1 segment streaming. Requires the capability probe
+// (machine._probeJGVSupport, cached on the driver) to have confirmed CYCLE_JGV;
+// machine.manual.jgv_keypad = false is the field escape hatch back to legacy.
+ManualDriver.prototype._useJGVForKeypad = function () {
+    if (this.driver.jgv_supported !== true) return false;
+    var manual = config.machine._cache.manual;
+    return !(manual && manual.jgv_keypad === false);
+};
+
+// Motion lease switch. Default ON; machine.manual.motion_lease = false is the
+// field escape hatch if a client with a legitimate slower command cadence
+// turns up. The analog (jgv) path has its own lease — the firmware watchdog.
+ManualDriver.prototype._leaseEnabled = function () {
+    var manual = config.machine._cache.manual;
+    return !(manual && manual.motion_lease === false);
+};
+
+ManualDriver.prototype._scheduleRenew = function () {
+    this.renew_timer = setTimeout(
+        function () {
+            this._renewMoves("timeout");
+        }.bind(this),
+        T_RENEW
+    );
+};
+
 // reason - The reason this functon is being called (used for -debug- purposes)
 // eslint-disable-next-line no-unused-vars
 ManualDriver.prototype._renewMoves = function (reason) {
@@ -1182,6 +1351,17 @@ ManualDriver.prototype._renewMoves = function (reason) {
 
             if (reason === "start") {
                 this.moving = true;
+            }
+
+            // Motion lease: consume the keep-alive. Every renewal tick spends
+            // keep_moving; the client's ~50ms command stream (startMotion /
+            // maintainMotion) must re-assert it before the next tick or the
+            // miss path below stops motion. This inverts the failure mode:
+            // a client that silently dies (without even a socket disconnect)
+            // can no longer leave the renewal self-sustaining.
+            this.lease_misses = 0;
+            if (this._leaseEnabled()) {
+                this.keep_moving = false;
             }
 
             // Holding (feedhold from an input, or our own stop in flight): the
@@ -1330,6 +1510,32 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 T_RENEW
             );
         } else {
+            // Lease miss: motion is live but no keep-alive re-asserted
+            // keep_moving since the last tick consumed it.
+            if (this.moving && reason === "timeout" && this._leaseEnabled()) {
+                if (this.driver.pause_flag) {
+                    // Input feedhold: nothing is executing, so there is no
+                    // runaway to stop — and feedhold+flush here would fight
+                    // the hold/resume logic. Keep waiting; the lease re-arms
+                    // when the client re-asserts.
+                    this._scheduleRenew();
+                    return;
+                }
+                if (this.lease_misses < 1) {
+                    // Grace window: don't queue new motion, but let the
+                    // already-queued batch (safetyFactor x T_RENEW of travel)
+                    // carry through one more tick before concluding the
+                    // client is gone. Absorbs GC pauses on a loaded Pi.
+                    this.lease_misses++;
+                    this._scheduleRenew();
+                    return;
+                }
+                log.warn("_renewMoves(): motion lease expired (no client keep-alive) - stopping");
+                this.keep_moving = false;
+                this.cancelNudges();
+                this.stopMotion();
+                return;
+            }
             if (this.moving && !this.keep_moving) {
                 this.stopMotion();
             }
@@ -1356,6 +1562,9 @@ ManualDriver.prototype._renewMoves = function (reason) {
 
 // Status handler
 ManualDriver.prototype._onG2Status = function (status) {
+    // Captured before the STAT_STOP case clears it — the flush decision
+    // below needs to know whether this report concludes a stop we initiated.
+    var hadStopPending = this.stop_pending;
     if (this.movement_timer) {
         clearTimeout(this.movement_timer);
     }
@@ -1411,9 +1620,16 @@ ManualDriver.prototype._onG2Status = function (status) {
             if (status.stat !== this.driver.STAT_HOLDING && this._handleNudges()) {
                 // Nudges got handled
             } else {
-                // extra flushes may be coming from here
                 this.stop_pending = false;
-                if (!this.driver.pause_hold && this.driver.status.hold === 0) {
+                // Flush ONLY when this stat concludes a stop we initiated (a
+                // feedhold was in flight and may have parked gcode). This
+                // used to run unconditionally — a raw "%" after EVERY
+                // completed move — and raced the next fixed-mode tap's G1 on
+                // its way into G2: a tap landing right at the end of a move
+                // could be flushed with the hold debris and silently lost
+                // ("missed key press"). A plain move completion has nothing
+                // to flush; write nothing.
+                if (hadStopPending && !this.driver.pause_hold && this.driver.status.hold === 0) {
                     this.driver._write("%\n"); // flush feed-hold and get stat
                 }
                 if (this.exit_pending) {
@@ -1496,3 +1712,7 @@ ManualDriver.prototype._done = function () {
 };
 
 module.exports = ManualDriver;
+// Exported for the snap property tests only - not part of the driver API.
+module.exports._snapNudgeDistance = snapNudgeDistance;
+module.exports._SNAP_ON_LINE_EPS = SNAP_ON_LINE_EPS;
+module.exports._WIRE_MIN_MOVE = WIRE_MIN_MOVE;

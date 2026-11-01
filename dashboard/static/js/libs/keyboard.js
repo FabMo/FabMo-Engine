@@ -3,6 +3,28 @@
 /* pretty-ignore */
 // All turned off for this module
 
+/*
+ * Device-keyboard jog adapter.
+ *
+ * This module used to own a full gesture implementation (tap windows,
+ * typematic, rollover, ~18 state fields) in parallel with keypad.js's copy —
+ * and every divergence between them became a runaway bug (lost keyups, the
+ * rollover-orphaned timer, blur). All gesture logic now lives in ONE place,
+ * libs/jogintent.js; this file only:
+ *
+ *   - maps key events to press/release on the shared state machine
+ *     (keyCode -> axis/direction, Alt-modified diagonals captured at press)
+ *   - keeps the jog keys away from browser defaults while jogging is enabled
+ *   - paints the on-screen arrow styling
+ *   - forwards window blur/visibility/pagehide as hard gesture ends
+ *
+ * The outward surface is unchanged: main.js still constructs it the same way
+ * and listens for "go" / "stop" / "nudge" / "nudgeCancel"; `going`,
+ * `interval`, `stop()` and `setEnabled()` behave as before (with one fix:
+ * setEnabled(false) mid-gesture now emits the stop the server needs instead
+ * of silently dropping the client-side state).
+ */
+
 (function (root, factory) {
     /* CommonJS */
     if (typeof module == "object" && module.exports) module.exports = factory();
@@ -12,10 +34,13 @@
 })(this, function () {
     "use strict";
 
-    var DEFAULT_NUDGE_TIMEOUT = 200;
-    var DEFAULT_REPEAT_DELAY = 600; // ms held before typematic fixed moves begin
-    var DEFAULT_REPEAT_INTERVAL = 250; // ms between typematic fixed moves
-    var MOVE_THRESH = 50; //10; // for mouse to disrupt ?
+    var JogIntent;
+    if (typeof module == "object" && module.exports) {
+        JogIntent = require("./jogintent");
+    } else if (typeof window !== "undefined") {
+        JogIntent = window.JogIntent;
+    }
+
     var KEY_RIGHT = 39;
     var KEY_LEFT = 37;
     var KEY_UP = 38;
@@ -27,6 +52,11 @@
     var KEY_SLASH = 191;
     var KEY_NUMPAD_DIVIDE = 111;
     var KEY_BACKSLASH = 220;
+
+    // See _pendingReleases: a keyup only counts if no keydown for the same
+    // key follows within this window (synthesized auto-repeat pairs arrive
+    // <10ms apart; real human re-taps are 60ms+).
+    var RELEASE_DEBOUNCE_MS = 30;
 
     var JOG_KEYS = [
         KEY_UP,
@@ -65,45 +95,85 @@
         );
     };
 
+    // Map a key press to the move it commands. Alt is captured here, at
+    // press time, and baked into the move for the gesture's whole life —
+    // releasing Alt a beat early must not flip a tap-nudge's direction.
+    var moveForKey = function (keyCode, altKey) {
+        switch (keyCode) {
+            case KEY_UP:
+                return { axis: "y", dir: 1 };
+            case KEY_DOWN:
+                return { axis: "y", dir: -1 };
+            case KEY_LEFT:
+                return { axis: "x", dir: -1 };
+            case KEY_RIGHT:
+                return { axis: "x", dir: 1 };
+            case KEY_PGUP:
+                return { axis: "z", dir: 1 };
+            case KEY_PGDOWN:
+                return { axis: "z", dir: -1 };
+            case KEY_SLASH:
+            case KEY_NUMPAD_DIVIDE:
+                return altKey
+                    ? { axis: "x", dir: -1, second_axis: "y", second_dir: -1 }
+                    : { axis: "x", dir: 1, second_axis: "y", second_dir: 1 };
+            case KEY_BACKSLASH:
+                return altKey
+                    ? { axis: "x", dir: -1, second_axis: "y", second_dir: 1 }
+                    : { axis: "x", dir: 1, second_axis: "y", second_dir: -1 };
+            default:
+                return null;
+        }
+    };
+
+    var selectorFor = function (move) {
+        if (!move) return null;
+        return move.second_axis
+            ? diagSelector(move.axis, move.dir, move.second_axis, move.second_dir)
+            : "#keyboardArrow_" + move.axis + (move.dir === 1 ? "_pos" : "_neg");
+    };
+
     var Keyboard = function (id, options) {
         this.id = id;
         this.elem = this.id ? $(id) : null;
         if (this.elem) {
             this.elem.attr("tabindex", 0);
         }
-        this.moves = 0;
-        this.init();
         this.enabled = false;
-        this.move = null;
-        this.going = false;
-        this.interval = null;
-        this.listeners = { go: [], stop: [], nudge: [], nudgeCancel: [] };
+
+        // Deferred keyups, keyed by keyCode. Some input paths (X11, VNC,
+        // remote desktops) deliver key auto-repeat as synthesized
+        // keyup+keydown PAIRS instead of repeated keydowns — without this, a
+        // held jog key looks like a fresh tap every ~100ms: fixed mode fires
+        // a nudge per "tap" at the OS repeat rate and the real typematic
+        // never engages (seen in the field as an uneven tick stream of
+        // unflagged nudges). A keyup only takes effect if no keydown for the
+        // same key lands inside the debounce window; synthetic pairs are
+        // <10ms apart, the fastest human re-tap is 60ms+.
+        this._pendingReleases = {};
+
+        this.intent = new JogIntent({
+            getFixedMode: function () {
+                return $(".fixed-switch input").is(":checked");
+            },
+        });
         this.setOptions(options);
-        this.nudgeTimer = null;
-        this.fixedGesture = false; // True if the current/last gesture was a fixed-mode nudge
-        this.fixedRepeatCount = 0;
+
+        // Styling follows the intent machine's events so it can never
+        // disagree with what was actually commanded.
+        this.intent.on("go", this._styleContinuous.bind(this));
+        this.intent.on("stop", this._styleClear.bind(this));
+        this.intent.on("nudge", this._styleTransient.bind(this));
+
+        this.init();
     };
-
-    /* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
-     length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
-     will trigger longer moves assuming "fixed" button off. Stop triggers a g2 feedhold, from 2023 */
-
-    /* Further: th 3/3/23 Per the note above, keyboard.js seems intended to micmick keypad.js in how the visuals on the keypad work.
-    But, setEnabled did not appear to be setting any visuals for keyboard arrow keys when they were pressed in 
-    modal-keypad (classes are mislabled but action never gets to the call in anycase). I could not figure how "elem", the key
-    to the designed functionality, was ever supposed to be handled for the keyboard case (vs the keypad case). I also went back
-    a bit in time and did not find evidence that this system ever worked to set a visual indicators that an axis button was
-    being pushed from the device keyboard arrows. I have kludged the handling of key display for now. */
 
     Keyboard.prototype.init = function () {
         if (this.elem) {
             this.elem.on("click", this.onClick.bind(this));
-            this.elem.on("focus", this.onFocus.bind(this));
-            this.elem.on("mouseenter", this.onMouseEnter.bind(this));
             this.elem.on("blur", this.onBlur.bind(this));
-            this.elem.on("mousemove", this.onMouseMove.bind(this));
-            this.elem.on("keydown", this.onKeyDown.bind(this));
             this.elem.on("mouseleave", this.onMouseLeave.bind(this));
+            this.elem.on("keydown", this.onKeyDown.bind(this));
             this.elem.on("keyup", this.onKeyUp.bind(this));
         } else {
             $(document).on("keydown", this.onKeyDown.bind(this));
@@ -111,9 +181,10 @@
         }
 
         // A keyup is never delivered to a blurred window (alt-tab, OS dialog,
-        // focus into an iframe) — without this, a held jog key leaves the
-        // typematic/refresh loop firing forever from a backgrounded tab.
-        // Losing the window or tab is a hard gesture end.
+        // focus into an iframe) and none are coming after a tab close —
+        // losing the window is a hard gesture end, delivered while the
+        // socket can still flush the stop. The server motion lease (and the
+        // firmware jgv watchdog) backstop this if the send doesn't make it.
         $(window).on("blur", this._onFocusLost.bind(this));
         document.addEventListener(
             "visibilitychange",
@@ -121,370 +192,174 @@
                 if (document.hidden) this._onFocusLost();
             }.bind(this)
         );
-        // Window/tab closing (alt+F4, ctrl+W): fire the stop while the
-        // socket can still flush it. The server's disconnect deadman is the
-        // backstop if this send doesn't make it out.
         window.addEventListener("pagehide", this._onFocusLost.bind(this));
     };
 
     Keyboard.prototype._onFocusLost = function () {
-        if (this.going || this.interval) {
+        if (this.intent.isActive()) {
             console.warn("Keyboard: window lost focus mid-gesture - forcing stop");
-            this.stop();
         }
+        this._clearPendingReleases();
+        this.intent.cancelAll();
+        this._styleClear();
     };
 
     Keyboard.prototype.setOptions = function (options) {
         options = options || {};
-        this.refreshInterval =
-            options.refreshInterval || this.refreshInterval || 50; // from 100 to make more responsive like pad
-        this.nudgeTimeout = options.nudgeTimeout != null ? options.nudgeTimeout : DEFAULT_NUDGE_TIMEOUT;
-        // Typematic repeat for fixed mode: hold a jog key past repeatDelay
-        // and fixed moves keep coming every repeatInterval. Interval 0 (or
-        // negative) disables repeating — a hold then yields a single nudge.
-        this.repeatDelay = options.nudgeRepeatDelay != null ? options.nudgeRepeatDelay : DEFAULT_REPEAT_DELAY;
-        this.repeatInterval = options.nudgeRepeatInterval != null ? options.nudgeRepeatInterval : DEFAULT_REPEAT_INTERVAL;
-        console.log("refreshInterval now=" + this.refreshInterval + ", nudgeTimeout=" + this.nudgeTimeout);
+        this.intent.setOptions({
+            refreshInterval: options.refreshInterval,
+            tapWindow: options.nudgeTimeout,
+            repeatDelay: options.nudgeRepeatDelay,
+            repeatInterval: options.nudgeRepeatInterval,
+            getFixedMode: this.intent.getFixedMode,
+        });
     };
 
-    Keyboard.prototype.emit = function (evt, data) {
-        if (evt in this.listeners) {
-            var listeners = this.listeners[evt];
-            for (var i = 0; i < listeners.length; i++) {
-                try {
-                    listeners[i](data);
-                } catch (e) {
-                    console.error("Error calling listener: " + e);
-                }
-            }
-        }
-    };
-
+    // Gesture events come from the intent machine; proxy subscriptions.
     Keyboard.prototype.on = function (evt, func) {
-        if (evt in this.listeners) {
-            this.listeners[evt].push(func);
-        }
+        this.intent.on(evt, func);
     };
 
     Keyboard.prototype.setEnabled = function (enabled) {
         this.enabled = enabled;
-        if (enabled) {
-            this.moves = MOVE_THRESH;
-            if (this.elem) {
+        if (this.elem) {
+            if (enabled) {
                 this.elem
                     .removeClass("keyboard-button-inactive")
                     .addClass("keyboard-button-active");
-            }
-        } else {
-            this.going = false;
-            this.moves = 0;
-            if (this.elem) {
+            } else {
                 this.elem
                     .removeClass("keyboard-button-active")
                     .addClass("keyboard-button-inactive");
             }
         }
-    };
-
-    // End the current gesture with the right server command: continuous
-    // motion gets a stop (feedhold); a fixed-mode gesture must NOT — the
-    // server answers a stop with a feedhold + queue flush that races the
-    // nudge's gcode, truncating the move or stranding it in the nudge queue.
-    // Instead, if typematic repeats fired, cancel the queued leftovers so
-    // motion ends with the in-flight increment.
-    Keyboard.prototype._endGesture = function () {
-        if (this.fixedGesture) {
-            if (this.fixedRepeatCount > 1) {
-                this.emit("nudgeCancel", null);
-            }
-            this.fixedGesture = false;
-            this.fixedRepeatCount = 0;
-        } else {
-            this.emit("stop", null);
+        if (!enabled) {
+            // Disabling mid-gesture must end the gesture properly (emitting
+            // the stop/cancel the server needs), not just drop local state.
+            this._clearPendingReleases();
+            this.intent.cancelAll();
+            this._styleClear();
         }
     };
 
-    // Keep pumping
-    Keyboard.prototype.refresh = function () {
-        // Defensive state checks
-        if (this.enabled !== true || this.going !== true) {
-            console.log("Keyboard: Stopping due to state check", {enabled: this.enabled, going: this.going});
-            this._endGesture();
-            this.going = false;  // Ensure clean state
-            return;
-        }
-
-        // Branch on the mode captured at gesture start (see start()) — never
-        // re-read the checkbox here.
-        if (this.fixedGesture) {
-            this.nudgeTimer = 1;
-            this.going = true;
-            if (this.enabled === true) {
-                $(".drive-button").removeClass("drive-button-active");
-                this.emit("nudge", this.move);
-                // Typematic: while the key stays down, keep nudging. The
-                // first repeat waits repeatDelay so a deliberate
-                // hold-for-one doesn't double-fire; keyup lands in stop(),
-                // which clears this timer.
-                if (this.repeatInterval > 0) {
-                    var delay = this.fixedRepeatCount === 0 ? this.repeatDelay : this.repeatInterval;
-                    this.fixedRepeatCount++;
-                    this.interval = setTimeout(this.refresh.bind(this), delay);
-                }
-            }
-        } else {
-            if (this.enabled === true) {
-                this.emit("go", this.move);
-            }
-            // Safety timeout limit
-            if (this.going === true && this.enabled === true) {
-                this.interval = setTimeout(this.refresh.bind(this), this.refreshInterval);
-            } else {
-                console.warn("Keyboard: Motion terminated due to state change");
-                this.emit("stop", null);
-            }
-        }
-    }
-
-    // Get keypad icons to light when keyboard arrow keys are used; see note above
-    Keyboard.prototype.start = function (axis, direction, second_axis, second_dir) {
-        // Defensive checks
-        if (this.going === true) {
-            console.warn("Keyboard: Already in motion, ignoring start command");
-            return;
-        }
-        if (this.enabled !== true) {
-            console.warn("Keyboard: Not enabled, ignoring start command");
-            return;
-        }
-    
-        console.log("Keyboard: Starting motion", axis, direction); 
-    
-        this.move = { axis: axis, dir: direction };
-        if (second_axis) {
-            this.move.second_axis = second_axis;
-            this.move.second_dir = second_dir;
-        }
-        this.fixedRepeatCount = 0;
-        // Capture the mode ONCE at gesture start. refresh() must not re-read
-        // the checkbox mid-hold: toggling Fixed during a gesture (the "d"/"f"
-        // hotkey, or clicking the switch) would morph a continuous gesture
-        // into a fixed one, so its release sends nudgeCancel instead of the
-        // stop the motion needs — a permanent runaway.
-        this.fixedGesture = $(".fixed-switch input").is(":checked");
-        let activeArrowStr = second_axis
-            ? diagSelector(axis, direction, second_axis, second_dir)
-            : "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
-        if (this.fixedGesture) {
-            $(activeArrowStr).addClass("drive-button-active-transient");
-        } else {
-            $(activeArrowStr).addClass("drive-button-active");
-        }
-        this.going = true;
-        this.refresh();
-    };
-
+    // Hard stop, for the host (modal close paths in main.js).
     Keyboard.prototype.stop = function () {
-        console.log("Keyboard: Stop called"); 
-        
-        this.going = false;
-        
-        if (this.interval) {
-            clearTimeout(this.interval);
-            this.interval = null;
-        }
-        
-        if (this.nudgeTimer && this.nudgeTimer !== 1) {
-            clearTimeout(this.nudgeTimer);
-            this.nudgeTimer = null;
-        }
-
-        this._endGesture();
-        $(".drive-button").removeClass("drive-button-active");
-        $(".drive-button").removeClass("drive-button-active-transient");
+        this._clearPendingReleases();
+        this.intent.cancelAll();
+        this._styleClear();
     };
 
     Keyboard.prototype.onClick = function (evt) {
         this.setEnabled(!this.enabled);
     };
 
-    Keyboard.prototype.onFocus = function (evt) {};
-    Keyboard.prototype.onMouseEnter = function (evt) {};
-
     Keyboard.prototype.onBlur = function (evt) {
         this.setEnabled(false);
     };
 
-    Keyboard.prototype.onMouseMove = function (evt) {
-        if (this.moves-- <= 0) {
-            this.setEnabled(false);
-        }
+    Keyboard.prototype.onMouseLeave = function (evt) {
+        this.setEnabled(false);
     };
 
     Keyboard.prototype.onKeyDown = function (evt) {
         // While keyboard jogging is enabled the jog keys belong to us — keep
         // the browser's defaults (stepping a focused speed slider, page
-        // scroll, "/" quick-find) out of it. This runs before the
-        // going/enabled early-out so held-key auto-repeat events are
-        // swallowed too.
+        // scroll, "/" quick-find) out of it, auto-repeat events included.
         if (this.enabled && isJogKey(evt.keyCode) && !isTextEntry(evt.target)) {
             evt.preventDefault();
         }
-        if (this.going || !this.enabled) {
+        if (!this.enabled || !isJogKey(evt.keyCode)) {
             return;
         }
-        // Remember the modifier at press time: keyup decides nudge
-        // direction, and Alt is often released a beat before the key.
-        this.altAtPress = evt.altKey;
-        var startForKey = function () {
-            if (!this.going) {
-                switch (evt.keyCode) {
-                    case KEY_UP:
-                        this.start("y", 1);
-                        break;
-
-                    case KEY_DOWN:
-                        this.start("y", -1);
-                        break;
-
-                    case KEY_LEFT:
-                        this.start("x", -1);
-                        break;
-
-                    case KEY_RIGHT:
-                        this.start("x", 1);
-                        break;
-
-                    case KEY_PGUP:
-                        this.start("z", 1);
-                        break;
-
-                    case KEY_PGDOWN:
-                        this.start("z", -1);
-                        break;
-
-                    case KEY_SLASH:
-                    case KEY_NUMPAD_DIVIDE:
-                        if (evt.altKey) this.start("x", -1, "y", -1);
-                        else this.start("x", 1, "y", 1);
-                        break;
-
-                    case KEY_BACKSLASH:
-                        if (evt.altKey) this.start("x", -1, "y", 1);
-                        else this.start("x", 1, "y", -1);
-                        break;
-                }
-            }
-        }.bind(this);
-
-        if (this.nudgeTimeout === 0) {
-            // No delay — start continuous motion immediately
-            this.nudgeTimer = null;
-            startForKey();
-        } else {
-            this.nudgeTimer = setTimeout(startForKey, this.nudgeTimeout);
+        // A keydown arriving while this key's release is still deferred is
+        // the second half of a synthesized auto-repeat pair: the key never
+        // really came up. Swallow the pair — the hold continues.
+        if (this._pendingReleases[evt.keyCode]) {
+            clearTimeout(this._pendingReleases[evt.keyCode]);
+            delete this._pendingReleases[evt.keyCode];
+            return;
         }
-    };
-
-    Keyboard.prototype.onMouseLeave = function (evt) {
-        this.setEnabled(false);
-        if (this.going) {
-            this.stop();
+        var move = moveForKey(evt.keyCode, evt.altKey);
+        if (move) {
+            this.intent.press(evt.keyCode, move);
         }
     };
 
     Keyboard.prototype.onKeyUp = function (evt) {
-        // Only a jog-key release may end or alter a gesture. The old guard
-        // (keyCode >= 27) let any letter key fall through: a stray "d"/"f"
-        // release consumed the nudge timer or landed in the stop branch —
-        // clearing the button style and feedholding — and then the still-held
-        // jog key's auto-repeat restarted motion, so the move never visibly
-        // stopped but the server churned through stop/start cycles.
+        // Only jog keys may end or alter a gesture — a stray letter-key
+        // release must never feedhold or consume gesture timing.
         if (!isJogKey(evt.keyCode)) {
             return;
         }
-        if (this.nudgeTimer) {
-            clearTimeout(this.nudgeTimer);
-            this.nudgeTimer = null;
-            if (!this.enabled) {
-                return;
-            }
-            switch (evt.keyCode) {
-                case KEY_UP:
-                    this.nudge("y", 1);
-                    break;
+        if (this._pendingReleases[evt.keyCode]) {
+            return; // already deferred
+        }
+        // Defer briefly: if a keydown for this key lands inside the window,
+        // this keyup was half of a synthesized auto-repeat pair and must not
+        // end the gesture. A real release just processes ~30ms late, which
+        // is invisible next to the motion pipeline's own latency.
+        // Releases are processed even when disabled, so a key held across a
+        // disable can't leave stale pressed-state behind.
+        var id = evt.keyCode;
+        this._pendingReleases[id] = setTimeout(
+            function () {
+                delete this._pendingReleases[id];
+                this.intent.release(id);
+            }.bind(this),
+            RELEASE_DEBOUNCE_MS
+        );
+    };
 
-                case KEY_DOWN:
-                    this.nudge("y", -1);
-                    break;
+    // Flush: clear deferred keyups without processing them. Used by the
+    // hard-cancel paths, which end every gesture via cancelAll anyway.
+    Keyboard.prototype._clearPendingReleases = function () {
+        for (var id in this._pendingReleases) {
+            clearTimeout(this._pendingReleases[id]);
+        }
+        this._pendingReleases = {};
+    };
 
-                case KEY_LEFT:
-                    this.nudge("x", -1);
-                    break;
+    // ---- styling ---------------------------------------------------------
 
-                case KEY_RIGHT:
-                    this.nudge("x", 1);
-                    break;
-
-                case KEY_PGUP:
-                    this.nudge("z", 1);
-                    break;
-
-                case KEY_PGDOWN:
-                    this.nudge("z", -1);
-                    break;
-
-                case KEY_SLASH:
-                case KEY_NUMPAD_DIVIDE:
-                    if (this.altAtPress) this.nudge("x", -1, "y", -1);
-                    else this.nudge("x", 1, "y", 1);
-                    break;
-
-                case KEY_BACKSLASH:
-                    if (this.altAtPress) this.nudge("x", -1, "y", 1);
-                    else this.nudge("x", 1, "y", -1);
-                    break;
-                default:
-                    return;
-            }
-        } else {
-            if (this.going || this.enabled) {
-                this.stop();
-            }
+    Keyboard.prototype._styleContinuous = function (move) {
+        var sel = selectorFor(move);
+        if (sel) {
+            $(sel).addClass("drive-button-active");
         }
     };
 
-    Keyboard.prototype.nudge = function (axis, direction, second_axis, second_dir) {
-        if (this.going) {
-            this.going = false;
-            return this.stop();
-        }
-        var nudge = { axis: axis, dir: direction };
-        if (second_axis) {
-            nudge.second_axis = second_axis;
-            nudge.second_dir = second_dir;
-        }
-        if (this.enabled) {
-            // A tap-nudge is a fixed-mode gesture — a later keyup/stop path
-            // must not answer it with a feedhold-generating stop.
-            this.fixedGesture = true;
-            this.emit("nudge", nudge);
-            let activeArrowStr = second_axis
-                ? diagSelector(axis, direction, second_axis, second_dir)
-                : "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
-            $(activeArrowStr).addClass("drive-button-active-transient");
-            setTimeout(
-                function () {
-                    if (!this.going) {
-                        $(activeArrowStr).removeClass(
-                            "drive-button-active-transient"
-                        );
-                    }
-                }.bind(this),
-                200
-            );
-        }
+    Keyboard.prototype._styleTransient = function (move) {
+        var sel = selectorFor(move);
+        if (!sel) return;
+        $(sel).addClass("drive-button-active-transient");
+        setTimeout(
+            function () {
+                if (!this.intent.isContinuous()) {
+                    $(sel).removeClass("drive-button-active-transient");
+                }
+            }.bind(this),
+            200
+        );
     };
+
+    Keyboard.prototype._styleClear = function () {
+        $(".drive-button").removeClass("drive-button-active");
+        $(".drive-button").removeClass("drive-button-active-transient");
+    };
+
+    // ---- host compatibility ---------------------------------------------
+    // main.js reads `keyboard.going || keyboard.interval` to ask "is a
+    // gesture live"; mirror the intent machine's state.
+    Object.defineProperty(Keyboard.prototype, "going", {
+        get: function () {
+            return this.intent ? this.intent.isContinuous() : false;
+        },
+    });
+    Object.defineProperty(Keyboard.prototype, "interval", {
+        get: function () {
+            return this.intent ? this.intent.heartbeat : null;
+        },
+    });
 
     return Keyboard;
 });
