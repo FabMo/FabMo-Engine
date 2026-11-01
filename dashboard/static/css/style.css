@@ -4380,6 +4380,15 @@ body.fabmo-training #app_menu_container {
 	   shrink them — the app just overflowed UNDER the rail (hiding e.g.
 	   the previewer's top-right exit X). Narrow the box itself. */
 	width: calc(100% - var(--coach-rail-w));
+	/* The rail REPLACES the docked DRO: on wide screens events.js pushes
+	   the app aside with an inline padding-right (218px) for the pinned
+	   DRO panel. The panel is hidden during a lesson but the inline
+	   padding survives, leaving a DRO-sized void beside the rail — zero
+	   it while training; it comes back when the class drops. */
+	padding-right: 0 !important;
+}
+body.fabmo-training #waiting_container {
+	padding-right: 0 !important;
 }
 /* The rail replaces the right-side slide-out DRO during a lesson: hide the
    panel and its top-bar toggle (the mini DRO in the tab bar stays — lessons
