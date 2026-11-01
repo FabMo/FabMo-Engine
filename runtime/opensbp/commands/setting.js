@@ -52,6 +52,11 @@ exports.SR = function (args, callback) {
 
 // Set (restore) table (machine) base coordinates by zeroing G55s
 exports.ST = function (args, callback) {
+    if (!this.machine) {
+        // Headless simulation: zeroing machine base offsets is a live-tool
+        // operation with no meaning for a preview; skip it.
+        return callback();
+    }
     this.machine.driver.get(
         "mpo",
         async function (err, MPO) {

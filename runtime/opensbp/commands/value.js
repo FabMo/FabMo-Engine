@@ -235,41 +235,46 @@ exports.VN = function (args, callback) {
 };
 
 exports.VR = function (args, callback) {
+    // Headless simulation (gcode preview, bounds check) has no machine:
+    // track the values but skip the live driver writes.
+    var driver = this.machine && this.machine.driver;
     // XY Move Ramp Speed
     if (args[0] !== undefined) {
         this.maxjerk_xy = args[0];
-        this.machine.driver.command({ xjm: this.maxjerk_xy });
-        this.machine.driver.command({ yjm: this.maxjerk_xy });
+        if (driver) {
+            driver.command({ xjm: this.maxjerk_xy });
+            driver.command({ yjm: this.maxjerk_xy });
+        }
     }
     // Z Move Ramp Speed = args[0];
     if (args[1] !== undefined) {
         this.maxjerk_z = args[1];
-        this.machine.driver.command({ zjm: this.maxjerk_z });
+        if (driver) driver.command({ zjm: this.maxjerk_z });
     }
     // A Move Ramp Speed
     if (args[2] !== undefined) {
         this.maxjerk_a = args[2];
-        this.machine.driver.command({ ajm: this.maxjerk_a });
+        if (driver) driver.command({ ajm: this.maxjerk_a });
     }
     // B Move Ramp Speed
     if (args[3] !== undefined) {
         this.maxjerk_b = args[3];
-        this.machine.driver.command({ bjm: this.maxjerk_b });
+        if (driver) driver.command({ bjm: this.maxjerk_b });
     }
     // C Move Ramp Speed
     if (args[4] !== undefined) {
         this.maxjerk_c = args[4];
-        this.machine.driver.command({ cjm: this.maxjerk_c });
+        if (driver) driver.command({ cjm: this.maxjerk_c });
     }
     // [JT] Junction Integration Time
     if (args[5] !== undefined) {
         this.jt = args[5];
-        this.machine.driver.command({ jt: this.jt });
+        if (driver) driver.command({ jt: this.jt });
     }
     // [CT] Chordal Tolerance
     if (args[6] !== undefined) {
         this.chordalTol = args[6];
-        this.machine.driver.command({ ct: this.chordalTol });
+        if (driver) driver.command({ ct: this.chordalTol });
     }
     callback();
 };
