@@ -70,5 +70,51 @@
                 "button": "Finish"
             }
         ]
+    },
+    "load-preview-cut": {
+        "title": "Load, preview & cut a file",
+        "app": "job-manager",
+        "steps": [
+            {
+                "text": "<b>Time to cut something.</b> Real work arrives as a <b>cut file</b> — your design software saves one, and the machine runs it. The routine is always the same three beats: <b>load</b> the file, <b>preview</b> it, <b>cut</b> it. This is the <b>Job Manager</b>, where all three happen.",
+                "button": "Begin",
+                "stage": false
+            },
+            {
+                "text": "Normally you'd <b>drag your file anywhere onto this window</b> to load it. I've gone ahead and loaded a practice file for you — <b>Training practice cut</b> just appeared in your queue, highlighted below. Loaded files simply wait in the queue; nothing moves until you run one.",
+                "do": "loadPracticeJob",
+                "highlight": { "app": ".job_item[data-id=\"{jobId}\"]" },
+                "button": "Next"
+            },
+            {
+                "text": "<b>Rule one: never cut a file you haven't looked at.</b> The preview shows exactly where the tool will go before anything moves. Click the highlighted <b>eye button</b> on the job at the top of the queue.",
+                "highlight": { "app": ".preview" },
+                "watch": { "type": "app", "id": "previewer" }
+            },
+            {
+                "text": "<b>This is the toolpath</b> — every move the machine will make, drawn to scale on the table. <b>Drag to spin it</b>, scroll to zoom. Check two things on every job: it sits <b>where you expect on the table</b>, and the <b>depths</b> look right.",
+                "button": "Next"
+            },
+            {
+                "text": "Looks good — let's go cut it. Press the highlighted <b>X</b> to close the preview and head back to the Job Manager.",
+                "highlight": { "app": ".exit-button" },
+                "watch": { "type": "app", "id": "job-manager" }
+            },
+            {
+                "text": "<b>The big play button runs the job at the top of the queue.</b> On a real machine this is the moment of truth — bit tight, material clamped, dust collector on, Z zeroed. Here the simulator will take it. <b>Press play.</b>",
+                "highlight": { "app": "#run-next" },
+                "watch": { "type": "job" }
+            },
+            {
+                "text": "<b>Rolling!</b> Watch the tool trace the same path you previewed — around the rectangle twice, deeper the second pass. The <b>footer</b> at the bottom tracks progress through the file, and the position readout follows along. On a real cut, this is where you stand: watching, within reach of <b>pause</b>.",
+                "watch": { "type": "sequence", "name": "job" },
+                "stage": true
+            },
+            {
+                "text": "<b>Cut complete — and that's the whole cycle: load, preview, cut.</b> It's the same three beats whether the file is this practice rectangle or a cabinet's worth of parts. I'll clear the practice file out of your queue on the way out.",
+                "button": "Finish",
+                "stage": false
+            }
+        ]
     }
 }

@@ -54,6 +54,8 @@ define(function (require) {
         this._maintDeadline = 0;
         this._actionHandlers = [];
         this._seqName = null;
+        this._practice = null; // {name, text}: the coach's practice cut file
+        this._allowed = {}; // urls the coach has opened for real writes
         this.active = false;
     }
 
@@ -116,6 +118,7 @@ define(function (require) {
         this._timer = null;
         this._seq = [];
         this._step = null;
+        this._allowed = {}; // open write windows don't outlive the session
         this.active = false;
         this.engine.sim = null;
         // Pull a real status so the dashboard snaps back to the live machine.
@@ -125,6 +128,24 @@ define(function (require) {
         } catch (e) {
             /* socket refresh above is the primary path */
         }
+    };
+
+    // The coach's lesson file is a REAL pending job (the Previewer fetches
+    // its gcode straight from the engine, outside this shim's reach), but
+    // its RUN is ours: register the program here and /jobs/queue/run plays
+    // it on the sim instead of reaching the engine.
+    SimMachine.prototype.setPracticeJob = function (name, text) {
+        this._practice = name && text ? { name: name, text: text } : null;
+    };
+
+    // Open (or close) ONE named url through the default-deny wall -- the
+    // coach brackets its own practice-job submission and cleanup with this.
+    // A window, not a one-shot: a job upload is two-phase (metadata post +
+    // file post, each re-checked here), so the coach closes it explicitly
+    // when its request completes. Everything else stays denied throughout.
+    SimMachine.prototype.allowWrite = function (url, on) {
+        if (on) this._allowed[url] = true;
+        else delete this._allowed[url];
     };
 
     // Coach (or anything else) can observe what the user did and what the
@@ -162,7 +183,22 @@ define(function (require) {
         if (!this.active) return false;
         callback = callback || function () {};
         errback = errback || function () {};
+        if (this._allowed[url]) {
+            return false; // the coach's own request: let it reach the engine
+        }
         var m;
+        if (url === "/jobs/queue/run") {
+            // "Run" on the practice job: play the file on the sim. Without a
+            // registered practice program the run is refused like any write.
+            if (this._practice) {
+                this._queueJobRun(this._practice);
+                callback(null, {});
+            } else {
+                this._action({ type: "blocked", url: url });
+                errback(new Error("Not available in Training Mode"));
+            }
+            return true;
+        }
         if (url === "/code") {
             this._handleCode(data && data.cmd ? String(data.cmd) : "");
             callback(null, {});
@@ -208,6 +244,12 @@ define(function (require) {
             this._vel = { x: 0, y: 0, z: 0 };
             this.status.inFeedHold = false;
             this.status.hold = 0;
+            if (this.status.job) {
+                // a quit mid-"cut": close out the simulated job's status
+                this.status.job = null;
+                this.status.line = null;
+                this.status.nb_lines = null;
+            }
             this._setState("idle");
             this._action({ type: "command", cmd: name });
         }
@@ -410,6 +452,78 @@ define(function (require) {
         s.push({ kind: "state", state: "idle" });
         s.push({ kind: "done", name: "zeroz" });
         this._enqueue(s);
+    };
+
+    // Play a cut file end to end: every line advances status.line (the run
+    // footer's progress), recognized moves animate at believable cutting/jog
+    // speeds, and job/name/started_at make the dashboard treat it as a real
+    // run. Same SBP dialect as _handleCode, plus MS/JS speed settings.
+    SimMachine.prototype._queueJobRun = function (job) {
+        var u = this.status.unit === "mm" ? 25.4 : 1;
+        var lines = job.text.split(/\r?\n/);
+        var ms = { xy: 1.5, z: 0.5 }; // cutting speeds, in/sec
+        var js = { xy: 6, z: 4 }; // jog speeds, in/sec
+        var pos = {
+            x: (this.status.posx || 0) / u,
+            y: (this.status.posy || 0) / u,
+            z: (this.status.posz || 0) / u,
+        };
+        var s = [
+            {
+                kind: "set",
+                fields: {
+                    job: { name: job.name, started_at: Date.now() },
+                    nb_lines: lines.length,
+                    line: 0,
+                },
+            },
+            { kind: "state", state: "running" },
+        ];
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            s.push({ kind: "set", fields: { line: i + 1 } });
+            if (!line || line.charAt(0) === "'") continue;
+            var parts = line.split(",");
+            var cmd = parts[0].trim().toUpperCase().replace("#", "");
+            var a = parts.slice(1).map(function (t) {
+                var v = parseFloat(t);
+                return isNaN(v) ? undefined : v;
+            });
+            if (cmd === "MS") {
+                if (a[0]) ms.xy = a[0];
+                if (a[1]) ms.z = a[1];
+                continue;
+            }
+            if (cmd === "JS") {
+                if (a[0]) js.xy = a[0];
+                if (a[1]) js.z = a[1];
+                continue;
+            }
+            var to = null;
+            if (cmd === "M2" || cmd === "J2") to = { x: a[0], y: a[1] };
+            else if (cmd === "M3" || cmd === "J3") to = { x: a[0], y: a[1], z: a[2] };
+            else if (cmd === "MX" || cmd === "JX") to = { x: a[0] };
+            else if (cmd === "MY" || cmd === "JY") to = { y: a[0] };
+            else if (cmd === "MZ" || cmd === "JZ") to = { z: a[0] };
+            if (!to) continue;
+            var nx = to.x !== undefined ? to.x : pos.x;
+            var ny = to.y !== undefined ? to.y : pos.y;
+            var nz = to.z !== undefined ? to.z : pos.z;
+            var d = Math.sqrt(Math.pow(nx - pos.x, 2) + Math.pow(ny - pos.y, 2) + Math.pow(nz - pos.z, 2));
+            var sp = cmd.charAt(0) === "J" ? js : ms;
+            var v = to.x === undefined && to.y === undefined && to.z !== undefined ? sp.z : sp.xy;
+            var fields = {};
+            if (to.x !== undefined) fields.posx = nx * u;
+            if (to.y !== undefined) fields.posy = ny * u;
+            if (to.z !== undefined) fields.posz = nz * u;
+            s.push({ kind: "move", to: fields, secs: Math.max(0.2, d / v) });
+            pos = { x: nx, y: ny, z: nz };
+        }
+        s.push({ kind: "set", fields: { job: null, line: null, nb_lines: null } });
+        s.push({ kind: "state", state: "idle" });
+        s.push({ kind: "done", name: "job" });
+        this._enqueue(s);
+        this._action({ type: "job", phase: "start", name: job.name });
     };
 
     // --------------------------------------------------------- animation

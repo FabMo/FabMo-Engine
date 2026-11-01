@@ -25,6 +25,37 @@ define(function (require) {
     var TYPE_MS = 22; // ms per typed character
     var TYPE_LINE = 30; // virtual carriage line length, chars (~the DRO-width rail)
 
+    // The load/preview/cut lesson's practice file. It is submitted as a REAL
+    // pending job -- Job Manager lists it and the Previewer compiles and
+    // renders it like any user file -- but its run is consumed by the sim
+    // (fabmosim plays this same text), so nothing ever moves. Geometry stays
+    // near the origin, where the stage's axis warp is ~identity, and inside
+    // every machine's envelope.
+    // No MS/JS lines: speed-setting commands crash the engine's HEADLESS
+    // gcode simulation (machine is null during a preview compile), which
+    // would blank the Previewer. The sim supplies its own speeds instead.
+    var PRACTICE_JOB_NAME = "Training practice cut";
+    var PRACTICE_SBP = [
+        "'FabMo Training Mode: practice cut",
+        "'Profiles a 10 x 6 inch rectangle in two passes.",
+        "JZ, 0.75",
+        "J2, 2, 2",
+        "MZ, -0.125",
+        "M2, 12, 2",
+        "M2, 12, 8",
+        "M2, 2, 8",
+        "M2, 2, 2",
+        "'Second pass: full depth",
+        "MZ, -0.25",
+        "M2, 12, 2",
+        "M2, 12, 8",
+        "M2, 2, 8",
+        "M2, 2, 2",
+        "'Retract and park",
+        "JZ, 0.75",
+        "J2, 0, 0",
+    ].join("\n");
+
     // Injected into app iframes for app-side highlights; dashboard-side
     // highlights use the same rules from style.css.
     var HIGHLIGHT_CSS =
@@ -52,6 +83,18 @@ define(function (require) {
         if (spec.type === "sequence") {
             return function (a) {
                 return a.type === "sequence" && a.name === spec.name;
+            };
+        }
+        if (spec.type === "job") {
+            // the trainee pressed run and the sim took the job
+            return function (a) {
+                return a.type === "job";
+            };
+        }
+        if (spec.type === "command") {
+            // footer controls routed through the sim: pause / resume / quit
+            return function (a) {
+                return a.type === "command" && a.cmd === spec.cmd;
             };
         }
         if (spec.type === "manual") {
@@ -98,6 +141,8 @@ define(function (require) {
         this._ui = null;
         this._hlTimer = null;
         this._typeTimer = null;
+        this._practiceJobId = null; // the lesson's real queued job, if any
+        this._practiceLoading = false;
         // Registered once; inert outside a lesson (FabMoAPI has no off()).
         var self = this;
         this.engine.on("status", function (status) {
@@ -111,6 +156,15 @@ define(function (require) {
                     // confetti on the stage AND from the coach
                     self.machine.celebrate();
                     if (self.sprite) self.sprite.celebrate();
+                    self.stepIndex++;
+                    self._showStep();
+                }
+            } else if (step.watch && step.watch.type === "app") {
+                // "app" watches advance when the trainee navigates to an app
+                // (e.g. opening the Previewer from the Job Manager).
+                var want = step.watch.id;
+                var cur = self.context.current_app_id;
+                if (Array.isArray(want) ? want.indexOf(cur) !== -1 : cur === want) {
                     self.stepIndex++;
                     self._showStep();
                 }
@@ -161,6 +215,14 @@ define(function (require) {
         if (this._keypad) this._keypad.destroy();
         this._keypad = null;
         this.sim.exit();
+        this.sim.setPracticeJob(null);
+        // The practice job was real (so the Previewer could render it):
+        // remove it now that the shim is down and deletes flow normally.
+        if (this._practiceJobId) {
+            this.engine.deleteJob(this._practiceJobId, function () {});
+            this._practiceJobId = null;
+        }
+        this._practiceLoading = false;
         if (this._ui) {
             if (this.sprite) this.sprite.destroy();
             this.sprite = null;
@@ -228,6 +290,7 @@ define(function (require) {
         var step = steps[this.stepIndex];
         var last = this.stepIndex === steps.length - 1;
         this._gateHold = false; // fresh step: no Continue pending
+        if (step.do === "loadPracticeJob") this._loadPracticeJob();
         var dots = "";
         for (var i = 0; i < steps.length; i++) {
             dots += '<span class="coach-dot' + (i === this.stepIndex ? " active" : i < this.stepIndex ? " done" : "") + '"></span>';
@@ -292,6 +355,67 @@ define(function (require) {
         });
         this._reposition();
         if (step.button) this._focusBar();
+    };
+
+    // Load the lesson's cut file into the REAL job queue (the Previewer
+    // reads job gcode straight from the engine, so a simulated queue can't
+    // feed it). The sim's default-deny opens for exactly these requests via
+    // allowOnce; the run itself stays simulated (setPracticeJob), and the
+    // job is removed again when the lesson ends. Stale copies from an
+    // abandoned lesson are cleared first so the queue never accumulates.
+    Coach.prototype._loadPracticeJob = function () {
+        if (this._practiceJobId || this._practiceLoading) return;
+        this._practiceLoading = true;
+        var self = this;
+        var engine = this.engine;
+        this.sim.setPracticeJob(PRACTICE_JOB_NAME, PRACTICE_SBP);
+        engine.getJobsInQueue(function (err, jobs) {
+            var stale = ((jobs && jobs.pending) || []).filter(function (j) {
+                return j.name === PRACTICE_JOB_NAME;
+            });
+            var submit = function () {
+                var file = new File([PRACTICE_SBP], "training-practice-cut.sbp", { type: "text/plain" });
+                self.sim.allowWrite("/job", true);
+                engine.submitJob(
+                    [
+                        {
+                            file: file,
+                            filename: "training-practice-cut.sbp",
+                            name: PRACTICE_JOB_NAME,
+                            description: "Added by Training Mode; removed when the lesson ends.",
+                        },
+                    ],
+                    {},
+                    function () {
+                        self.sim.allowWrite("/job", false);
+                        // The submit response doesn't reliably carry the job
+                        // document: re-read the queue and find ours by name.
+                        engine.getJobsInQueue(function (err, jobs) {
+                            var mine = ((jobs && jobs.pending) || []).filter(function (j) {
+                                return j.name === PRACTICE_JOB_NAME;
+                            });
+                            if (mine.length) self._practiceJobId = mine[mine.length - 1]._id;
+                            self._practiceLoading = false;
+                            // The sim gates the server's socket 'change'
+                            // events; nudge the Job Manager locally so the
+                            // new row appears in its queue list.
+                            engine.emit("change", "jobs");
+                        });
+                    }
+                );
+            };
+            var next = function () {
+                if (!stale.length) return submit();
+                var j = stale.shift();
+                var url = "/job/" + j._id;
+                self.sim.allowWrite(url, true);
+                engine.deleteJob(j._id, function () {
+                    self.sim.allowWrite(url, false);
+                    next();
+                });
+            };
+            next();
+        });
     };
 
     // Build the practice path for a "pattern" step: the perimeter cells of
@@ -434,11 +558,20 @@ define(function (require) {
 
     // ------------------------------------------------------- highlights
 
+    // Lesson selectors may target the practice job's own row: "{jobId}"
+    // resolves to the submitted job's id. Resolved at every query (not once)
+    // so the highlight retry loop picks the id up as soon as the submission
+    // completes.
+    Coach.prototype._sel = function (selector) {
+        if (!selector) return selector;
+        return selector.replace(/\{jobId\}/g, String(this._practiceJobId || "__coach_no_job__"));
+    };
+
     Coach.prototype._applyHighlight = function (spec) {
         this._curSpec = spec;
         var self = this;
         if (spec.dashboard) {
-            $(spec.dashboard).addClass("coach-highlight");
+            $(this._sel(spec.dashboard)).addClass("coach-highlight");
         }
         if (spec.app) {
             // The app may still be loading (or get relaunched) while this
@@ -482,11 +615,11 @@ define(function (require) {
             if (spec.app) {
                 var iframe = document.getElementById("app-iframe");
                 var doc = iframe && iframe.contentDocument;
-                var target = doc && doc.querySelector(spec.app);
+                var target = doc && doc.querySelector(this._sel(spec.app));
                 if (target) scrolled = reveal(target, iframe.contentWindow.innerHeight);
             }
-            if (spec.dashboard && $(spec.dashboard)[0]) {
-                scrolled = reveal($(spec.dashboard)[0], window.innerHeight) || scrolled;
+            if (spec.dashboard && $(this._sel(spec.dashboard))[0]) {
+                scrolled = reveal($(this._sel(spec.dashboard))[0], window.innerHeight) || scrolled;
             }
         } catch (e) {
             /* cross-origin app: zoom to whatever is visible */
@@ -507,7 +640,7 @@ define(function (require) {
         var spec = this._curSpec || {};
         var rects = [];
         if (spec.dashboard) {
-            $(spec.dashboard).each(function () {
+            $(this._sel(spec.dashboard)).each(function () {
                 var r = this.getBoundingClientRect();
                 if (r.width || r.height) rects.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
             });
@@ -518,7 +651,7 @@ define(function (require) {
                 var doc = iframe && iframe.contentDocument;
                 if (doc) {
                     var ir = iframe.getBoundingClientRect();
-                    var els = doc.querySelectorAll(spec.app);
+                    var els = doc.querySelectorAll(this._sel(spec.app));
                     for (var i = 0; i < els.length; i++) {
                         var r = els[i].getBoundingClientRect();
                         if (r.width || r.height) {
@@ -583,7 +716,7 @@ define(function (require) {
                 style.textContent = HIGHLIGHT_CSS;
                 (doc.head || doc.documentElement).appendChild(style);
             }
-            var els = doc.querySelectorAll(selector);
+            var els = doc.querySelectorAll(this._sel(selector));
             if (!els.length) return false;
             for (var i = 0; i < els.length; i++) els[i].classList.add("coach-highlight");
             return true;
