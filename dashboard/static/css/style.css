@@ -4376,7 +4376,10 @@ body.fabmo-training {
 body.fabmo-training #app-client-container,
 body.fabmo-training #app_menu_container {
 	padding-top: 28px;
-	margin-right: var(--coach-rail-w);
+	/* These carry an explicit 100% width, so a margin-right would not
+	   shrink them — the app just overflowed UNDER the rail (hiding e.g.
+	   the previewer's top-right exit X). Narrow the box itself. */
+	width: calc(100% - var(--coach-rail-w));
 }
 /* The rail replaces the right-side slide-out DRO during a lesson: hide the
    panel and its top-bar toggle (the mini DRO in the tab bar stays — lessons
