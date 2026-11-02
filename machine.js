@@ -33,6 +33,7 @@ var config = require("./config");
 var updater = require("./updater");
 var outputPolicy = require("./runtime/output_policy");
 var outputTriggers = require("./runtime/output_triggers");
+var flags = require("./flags");
 var u = require("./util");
 var async = require("async");
 var canQuit = false;
@@ -149,6 +150,10 @@ function Machine(control_path, callback) {
         lastState: null,
         clientDisconnected: false,
         softLimit: null,
+        // Active condition flags (flags.js) — {NAME: {label, message, action, ...}}.
+        // Must be declared here or _updateStatusFromDriver-adjacent copies and
+        // client consumers never see it.
+        flags: {},
     };
 
     this.fireButtonDebounce = false;
@@ -293,6 +298,9 @@ function Machine(control_path, callback) {
             // operator sees it during the firmware-feedhold pause rather than
             // waiting until they click Resume to discover the lockout.
             this._checkInterlockEdge();
+
+            // Latch any condition flags bound to input edges (flags.js).
+            flags.checkInputs(stat);
 
             var auth_input = "in" + config.machine.get("auth_input");
             var quit_input = "in" + config.machine.get("quit_input");
@@ -1638,6 +1646,43 @@ Machine.prototype._runFile = function (filename) {
         });
         this.emit("status", this.status);
         return;
+    }
+
+    // Condition-flag gate (flags.js). A latched flag with action "block_runs"
+    // refuses job/file runs at this chokepoint. Macros (files in the macros
+    // data dir) are exempt so the recovery procedure — typically a homing
+    // macro that ends in SF,"NAME",0 — can always run. Manual/keypad motion
+    // never passes through here and stays available too.
+    var blockingFlag = flags.getBlockingFlag();
+    if (blockingFlag) {
+        var isMacro = false;
+        try {
+            var macroDir = path.resolve(config.getDataDir("macros"));
+            isMacro = path.resolve(filename).indexOf(macroDir + path.sep) === 0;
+        } catch (e) {
+            isMacro = false;
+        }
+        if (!isMacro) {
+            var flagMsg =
+                "Run blocked — " +
+                blockingFlag.label +
+                ": " +
+                (blockingFlag.message || "Clear the condition flag before running files.");
+            log.warn("_runFile: refused -- flag " + blockingFlag.name + " is set: " + filename);
+            // Queued jobs were already marked "running" by dequeue(); fail
+            // them properly so they don't sit stranded in that state until
+            // the next engine restart's cleanup pass.
+            if (this.status.job && typeof this.status.job.fail === "function") {
+                this.status.job.fail(function () {});
+            }
+            this.status.job = null;
+            this.disarm();
+            // Pass the message as stateinfo: setState with no stateinfo
+            // DELETES status.info, which would silently eat this warning.
+            this.setState(this, "idle", { message: flagMsg });
+            this.emit("status", this.status);
+            return;
+        }
     }
 
     // Interlock pre-scan. Both Machine.runFile (direct) and Machine.runNextJob

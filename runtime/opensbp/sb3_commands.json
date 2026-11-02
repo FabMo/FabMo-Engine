@@ -2080,16 +2080,28 @@
    },
    "SF": {
       "cmd": "SF",
-      "name": "set File limit checking",
+      "name": "set Flag (machine condition flag)",
       "params": [
          {
-            "name": "File Limit Checking",
-            "desc": "Sets up software limit checking during file reading",
-            "abrev": "lim",
+            "name": "Flag Name",
+            "desc": "Name of a condition flag defined in the machine configuration",
+            "abrev": "flag",
             "typeext": 0,
             "disptype": "1",
-            "default": "0",
-            "default_desc": "Off",
+            "default": "",
+            "default_desc": "",
+            "opts": [],
+            "sysvar": "0",
+            "type": "str"
+         },
+         {
+            "name": "Value",
+            "desc": "1 to set the flag (default), 0 to clear it",
+            "abrev": "val",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "1",
+            "default_desc": "Set",
             "opts": [],
             "sysvar": "0",
             "type": "str"

@@ -780,6 +780,7 @@ engine.getVersion(function (err, version) {
                 }
 
                 syncAuthorizeOverlay(status);
+                updateFlagBanner(status);
 
                 if (
                     (status.state != "armed" && last_state_seen === "armed") ||
@@ -3427,6 +3428,55 @@ function syncAuthorizeOverlay(status) {
     } else {
         $overlay.hide();
     }
+}
+
+// Persistent banner for active machine condition flags (status.flags —
+// see flags.js server-side). Toast-style stack in the top-right corner:
+// amber for "warn" flags, red for "block_runs" flags. Driven entirely by
+// status reports, so it appears/disappears on its own as flags latch and
+// clear; dismissing is deliberately not offered — clearing the condition
+// (typically by running the recovery macro) is what removes it.
+function updateFlagBanner(status) {
+    var active = (status && status.flags) || {};
+    var names = Object.keys(active);
+    var $banner = $("#flag-banner");
+    if (names.length === 0) {
+        $banner.hide();
+        return;
+    }
+    if ($banner.length === 0) {
+        $banner = $('<div id="flag-banner"></div>').css({
+            position: "fixed",
+            top: "48px",
+            right: "8px",
+            "z-index": 10000,
+            "max-width": "340px",
+        });
+        $("body").append($banner);
+    }
+    $banner.empty();
+    names.forEach(function (name) {
+        var f = active[name] || {};
+        var blocking = f.action === "block_runs";
+        var $item = $("<div></div>").css({
+            background: blocking ? "#c0392b" : "#e67e22",
+            color: "#fff",
+            padding: "8px 12px",
+            "margin-bottom": "6px",
+            "border-radius": "4px",
+            "box-shadow": "0 2px 6px rgba(0,0,0,0.35)",
+            font: "13px/1.4 sans-serif",
+        });
+        $("<div></div>")
+            .css({ "font-weight": "bold" })
+            .text((f.label || name) + (blocking ? " — runs blocked" : ""))
+            .appendTo($item);
+        if (f.message) {
+            $("<div></div>").text(f.message).appendTo($item);
+        }
+        $banner.append($item);
+    });
+    $banner.show();
 }
 
 function showSoftLimitPrompt(axis) {

@@ -95,5 +95,6 @@
 		"refresh_interval" : 50,
 		"max_nudges" : 3,
 		"softlimit_cushion" : 0
-	}
+	},
+	"flags" : {}
 }

@@ -806,6 +806,19 @@ Engine.prototype.start = function (callback) {
                 config.instance.apply(callback);
             }.bind(this),
 
+            // Initialize condition flags (flags.js): restore persisted flag
+            // state and latch any set_on_startup flags. Runs after the
+            // instance config so persisted state is available; tolerates a
+            // disconnected motion system (flags still latch and display).
+            function initialize_flags(callback) {
+                try {
+                    require("./flags").initialize(this.machine);
+                } catch (e) {
+                    log.warn("Could not initialize condition flags: " + e);
+                }
+                callback(null);
+            }.bind(this),
+
             // The secret key is used for authentication.  It is persistent, stored with other config files.
             function generate_auth_key(callback) {
                 log.info("Configuring secret key...");
