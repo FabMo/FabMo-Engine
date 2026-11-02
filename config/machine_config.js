@@ -33,6 +33,39 @@ var MachineConfig = function () {
 };
 util.inherits(MachineConfig, Config);
 
+// Normalize condition-flag definitions (machine.flags — see flags.js).
+// Flag names are user-chosen keys; each definition is reduced to the known
+// fields with sane types so a malformed POST can't poison the flag system.
+function normalizeFlags(flagsIn) {
+    var out = {};
+    if (!flagsIn || typeof flagsIn !== "object") {
+        return out;
+    }
+    Object.keys(flagsIn).forEach(function (name) {
+        var d = flagsIn[name];
+        if (!d || typeof d !== "object") {
+            return;
+        }
+        var cleanName = String(name).trim();
+        if (!cleanName) {
+            return;
+        }
+        var def = {
+            label: d.label !== undefined ? String(d.label) : cleanName,
+            message: d.message !== undefined ? String(d.message) : "",
+            action: d.action === "block_runs" ? "block_runs" : "warn",
+            set_on_startup: d.set_on_startup === true || d.set_on_startup === 1 || d.set_on_startup === "true",
+        };
+        var input = parseInt(d.input, 10);
+        if (!isNaN(input) && input >= 1 && input <= MAX_INPUTS) {
+            def.input = input;
+            def.edge = d.edge === "off" ? "off" : "on";
+        }
+        out[cleanName] = def;
+    });
+    return out;
+}
+
 // Client config posts arrive form-encoded, so arrays round-trip as
 // numeric-keyed objects ({"0": ..., "1": ...}). Rebuild the keepout
 // arrays — zones, each poly's pts, and each pt's [x, y] pair — so the
@@ -375,6 +408,14 @@ MachineConfig.prototype.update = function (data, callback, force) {
             this._cache.keepout = normalizeKeepout(data.keepout);
             data = Object.assign({}, data);
             delete data.keepout;
+        }
+        // flags holds user-named condition-flag definitions. Like keepout,
+        // util.extend only updates keys that already exist, so a newly
+        // defined flag name would be silently dropped. Replace wholesale.
+        if (data && Object.prototype.hasOwnProperty.call(data, "flags")) {
+            this._cache.flags = normalizeFlags(data.flags);
+            data = Object.assign({}, data);
+            delete data.flags;
         }
         u.extend(this._cache, data, force);
         this._normalizeOutputNotify();
