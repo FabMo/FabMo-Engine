@@ -476,7 +476,7 @@ function Machine(control_path, callback) {
 }
 util.inherits(Machine, events.EventEmitter);
 
-// Ask the firmware for the velocity-jog watchdog setting ($jvto). A valid
+// Ask the firmware for the velocity-jog watchdog setting ($jgvto). A valid
 // response means CYCLE_JGV exists and the manual driver may route continuous
 // keypad jogging through it; an error or timeout means legacy G1 segment
 // streaming only. The result is cached on the driver object so the manual
@@ -484,12 +484,12 @@ util.inherits(Machine, events.EventEmitter);
 // without re-probing.
 Machine.prototype._probeJGVSupport = function () {
     this.driver.get(
-        "jvto",
+        "jgvto",
         function (err, value) {
             this.driver.jgv_supported = !err && value !== undefined && value !== null;
             log.info(
                 this.driver.jgv_supported
-                    ? "Firmware velocity-jog cycle detected (jvto=" + value + ") - keypad jog can use JGV"
+                    ? "Firmware velocity-jog cycle detected (jgvto=" + value + ") - keypad jog can use JGV"
                     : "Firmware has no velocity-jog cycle - keypad jog will use legacy G1 streaming"
             );
         }.bind(this)
