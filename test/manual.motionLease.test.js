@@ -10,7 +10,7 @@
  * motion stops. Absence of intent = stop.
  *
  * The analog (jgv) path is not covered here — its lease is the firmware
- * watchdog ($jvto).
+ * watchdog ($jgvto).
  */
 "use strict";
 
