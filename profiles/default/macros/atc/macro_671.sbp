@@ -46,9 +46,9 @@ StashTool: '  PUT A TOOL BACK INTO ITS CLIP
     	JY,&ty - $TOOL_OFFSETUU[&u]/2
     	JX, &tx + $atcUU[&u].clipSafe                              ' >> Move to safe spot in front of intended clip
     	JY, &ty
-        'ToolbarLoop1:
+        ToolbarLoop1:
     Pause 0.1
-   'IF %(62) == 0 THEN GOTO ToolbarLoop1
+   IF %(62) == 0 THEN GOTO ToolbarLoop1
         JZ, &tz                                                     ' >> Jog to Z height for intended clip 
     	JX, &tx + $atcUU[&u].clipSafe / 4                                 ' >> Move partway in ...
     	SO, $DrawBar_Out, 1                                             ' >> Open toolholder chuck

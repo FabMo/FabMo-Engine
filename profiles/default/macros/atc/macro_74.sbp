@@ -105,8 +105,8 @@ PAUSE "Place one end of the calibration clip on the pull stud on tool holder #1 
     '--------------------------------------------
 
 FINISHED:
-    $atcUU[].zZero_X = %(1)                                                      ' Store locations of fixed Z Zero plate (always the same)
-    $atcUU[].zZero_Y = %(2) + $atcUU[&u].zZero_YCorrection                       ' with OFFSET CORRECTION (typ. -4.125in)
+	$atcUU[].zZero_X = %(1)	+ $sb_homeOffUU[&u].x + %(7)							' >> Store X location of fixed Z Zero plate (always the same)
+    $atcUU[].zZero_Y = %(2)	+ $sb_homeOffUU[&u].y  + $atcUU[&u].zZero_YCorrection                       ' with OFFSET CORRECTION (typ. -4.125in)
     J2, 0, 0
     DIALOG "Calibration complete (M-0151)" OKTEXT="Continue ..."
 END_ALL:
