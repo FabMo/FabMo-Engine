@@ -257,9 +257,45 @@ ManualDriver.prototype.exit = function () {
             if (this.driver.status.stat === this.driver.STAT_STOP) {
                 log.warn("Machining cycle still at stat:3 - re-sending M30 directly");
                 this.driver._write("M30\n");
+            } else if (this.driver.status.stat === this.driver.STAT_HOLDING) {
+                // An input-forced hold is pinning the cycle (any M30 from a
+                // previous exit is parked behind it). End the hold: the flush
+                // parks the cycle at stat:3, and the watchdog restarted here
+                // re-sends the M30 there.
+                log.warn("Machining cycle holding during manual exit - flushing the hold");
+                if (typeof this.driver.discardStreamBacklog === "function") {
+                    this.driver.discardStreamBacklog();
+                }
+                this.driver._write("%\n");
+                this._startExitWatchdog();
             }
             this._done();
             return;
+        }
+
+        // An input-forced feedhold (a stop/limit input tripped while the
+        // keypad was up) pauses the cycle stream: every line written below —
+        // the M30 included — would just buffer there and the cycle would never
+        // end, leaving the machine stuck in the manual state. End the hold
+        // first: discard any motion parked in the stream, then flush. The
+        // flush parks the cycle at stat:3, the stream resumes, and the exit
+        // lines flow. Holds from our own stop dance (stop_pending) resolve
+        // themselves — their flush is already in flight — and a pending quit
+        // (\x04) supersedes all of this.
+        if (
+            !this.stop_pending &&
+            !this.driver.quit_pending &&
+            (this.driver.pause_flag || this.driver.status.stat === this.driver.STAT_HOLDING)
+        ) {
+            log.warn("Manual exit requested while G2 is holding - flushing the hold so the exit can land");
+            if (typeof this.driver.discardStreamBacklog === "function") {
+                this.driver.discardStreamBacklog();
+            }
+            this.driver.queueFlush(
+                function () {
+                    this.driver._write("%\n"); // Will send flush as callback
+                }.bind(this)
+            );
         }
 
         switch (this.mode) {
@@ -1682,6 +1718,17 @@ ManualDriver.prototype._startExitWatchdog = function () {
                 "Manual exit watchdog: cycle did not end (stat=" + stat + ") - re-sending M30 (attempt " + checks + ")"
             );
             driver._write("M30\n");
+        } else if (stat === driver.STAT_HOLDING) {
+            // An input-forced hold is pinning the cycle — and the parked M30
+            // with it; a directly-written M30 wouldn't execute either. Flush
+            // the hold (discarding any motion parked in the stream so it
+            // can't replay) — the cycle parks at stat:3 and the next check
+            // re-sends the M30 there.
+            log.warn("Manual exit watchdog: cycle is holding (input feedhold?) - flushing the hold (attempt " + checks + ")");
+            if (typeof driver.discardStreamBacklog === "function") {
+                driver.discardStreamBacklog();
+            }
+            driver._write("%\n");
         }
         timer = setTimeout(check, EXIT_WATCHDOG_INTERVAL);
     };
