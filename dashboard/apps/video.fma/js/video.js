@@ -964,11 +964,22 @@ function setupZones() {
 // spans the whole Y travel, so each frame hides only a band of X around the
 // machine's position — park at three well-spread X stations and every point
 // of the table is visible in at least one frame. Frames are inverse-warped
-// through the saved AR calibration into machine space and composited: each
-// output pixel comes from the frame whose station is farthest away in X
-// (most confidently un-occluded). The result backs the flat Table View, so
-// keep-out zones get drawn over the actual clamps and the crosshair rides
-// over the actual material.
+// through the saved AR calibration into machine space and composited. The
+// result backs the flat Table View, so keep-out zones get drawn over the
+// actual clamps and the crosshair rides over the actual material.
+//
+// Perspective: from an oblique camera the occluded region is not the
+// gantry's plan footprint but its shadow cast from the camera's eye onto
+// the table plane — it trails toward the far side of the table and widens
+// with distance, easily past any fixed band. So the band is only a
+// DISQUALIFIER, never the trusted occlusion edge. Safety comes from two
+// model-free rules: (1) each pixel's reference is the frame whose station
+// is farthest away in X — a shadow only reaches a third of the table from
+// its beam if the camera sits at gantry height, where it can't see the
+// table at all; (2) other candidate frames are blended in only where they
+// AGREE with that reference, so a frame polluted by a long perspective
+// shadow (or the dust hose straying outside the band) disagrees and is
+// rejected pixel-by-pixel, with no camera model needed.
 //
 // The scan jogs X only — Y and Z stay where the user left them — as a plain
 // G-code job (G0 + G4 dwells), so the normal Stop machinery applies. Frames
@@ -1290,49 +1301,63 @@ function projectPx(H, x, y) {
 }
 
 // Webcams auto-expose, so frames of the same table differ in brightness and
-// would seam where the composite switches source. Estimate a per-channel
-// gain for each frame from pixels every frame sees, pulling all frames to
-// the common mean.
+// would seam where the composite switches source. Gains are estimated from
+// PAIRED per-pixel ratios: at each sampled pixel the cross-frame median is
+// the consensus value, and each frame's gain is the median over pixels of
+// consensus/value. Occluded pixels (gantry or its perspective shadow, at
+// any camera angle) produce outlier ratios in well under half of any one
+// frame's samples, so the medians ignore them — where unpaired statistics
+// fail outright, because each frame hides a DIFFERENT part of the table.
 function plateGains(sc, H, t, k, pw, ph) {
     var n = sc.frames.length;
-    var gains = [], sums = [], counts = 0;
+    var gains = [], samples = [];
     for (var i = 0; i < n; i++) {
         gains.push([1, 1, 1]);
-        sums.push([0, 0, 0]);
+        samples.push([[], [], []]);
     }
     if (n < 2) return gains;
     var w0 = sc.frames[0].data.width, h0 = sc.frames[0].data.height;
     var step = Math.max(2, Math.floor(pw / 220));
     for (var py = 0; py < ph; py += step) {
         for (var px = 0; px < pw; px += step) {
-            var mx = t.x0 + (px + 0.5) / k;
-            var seenByAll = true;
-            for (var f = 0; f < n; f++) {
-                if (Math.abs(mx - sc.frames[f].station) <= sc.band) { seenByAll = false; break; }
-            }
-            if (!seenByAll) continue;
             var p = projectPx(H, px + 0.5, py + 0.5);
             var sx = Math.round(p[0]), sy = Math.round(p[1]);
             if (sx < 0 || sy < 0 || sx >= w0 || sy >= h0) continue;
             var idx = (sy * w0 + sx) * 4;
             for (var f2 = 0; f2 < n; f2++) {
                 var d = sc.frames[f2].data.data;
-                sums[f2][0] += d[idx];
-                sums[f2][1] += d[idx + 1];
-                sums[f2][2] += d[idx + 2];
+                samples[f2][0].push(d[idx]);
+                samples[f2][1].push(d[idx + 1]);
+                samples[f2][2].push(d[idx + 2]);
             }
-            counts++;
         }
     }
-    if (counts < 50) return gains;
+    var m = samples[0][0].length;
+    if (m < 50) return gains;
+    var byValue = function (a, b) { return a - b; };
+    // Each frame's exposure relative to frame 0 is the median of per-pixel
+    // paired ratios v0/vf. A pixel occluded in frame 0 gives a near-zero
+    // outlier, one occluded in frame f a huge one — both sides stay well
+    // under half the samples, so the median sits in the clean middle. Then
+    // normalize so the mean gain is 1: output brightness = mean exposure.
     for (var ch = 0; ch < 3; ch++) {
-        var total = 0;
-        for (var g = 0; g < n; g++) total += sums[g][ch];
-        var mean = total / n;
-        for (var g2 = 0; g2 < n; g2++) {
-            if (sums[g2][ch] > 0) {
-                gains[g2][ch] = Math.max(0.7, Math.min(1.4, mean / sums[g2][ch]));
+        var rel = [1];
+        for (var f = 1; f < n; f++) {
+            var ratios = [];
+            for (var s = 0; s < m; s++) {
+                var a = samples[0][ch][s], b = samples[f][ch][s];
+                if (a < 4 && b < 4) continue; // both too dark to carry info
+                ratios.push((a + 1) / (b + 1));
             }
+            if (ratios.length < 50) { rel.push(1); continue; }
+            ratios.sort(byValue);
+            rel.push(ratios[ratios.length >> 1]);
+        }
+        var mean = 0;
+        for (var f2 = 0; f2 < n; f2++) mean += rel[f2];
+        mean /= n;
+        for (var f3 = 0; f3 < n; f3++) {
+            gains[f3][ch] = Math.max(0.7, Math.min(1.4, rel[f3] / mean));
         }
     }
     return gains;
@@ -1373,12 +1398,27 @@ function compositePlate(sc) {
     var od = out.data;
     var gains = plateGains(sc, H, t, k, pw, ph);
     var n = sc.frames.length;
+    // Gain-corrected bilinear sample; the corner indices are shared by all
+    // frames because the camera never moved (one homography for the scan).
+    var sampleRGB = function (fd, i00, i10, i01, i11, fx, fy, gain, rgb) {
+        for (var ch = 0; ch < 3; ch++) {
+            var v = fd[i00 + ch] * (1 - fx) * (1 - fy) +
+                    fd[i10 + ch] * fx * (1 - fy) +
+                    fd[i01 + ch] * (1 - fx) * fy +
+                    fd[i11 + ch] * fx * fy;
+            v *= gain[ch];
+            rgb[ch] = v > 255 ? 255 : v;
+        }
+    };
+    var AGREE = 90; // summed |ΔRGB| under which two frames see the same thing
+    var ref = [0, 0, 0], cand = [0, 0, 0], acc = [0, 0, 0];
     for (var py = 0; py < ph; py++) {
         for (var px = 0; px < pw; px++) {
             var mx = t.x0 + (px + 0.5) / k;
-            // The gantry beam spans all of Y, so a frame is valid wherever
-            // the pixel lies outside the X band around its station; prefer
-            // the frame whose station is farthest (most margin).
+            // The gantry beam spans all of Y, so the X band around each
+            // frame's station disqualifies it. The REFERENCE is the frame
+            // whose station is farthest — the only frame that stays clean
+            // under perspective (see the header comment).
             var best = -1, bestD = 0;
             for (var f = 0; f < n; f++) {
                 var dist = Math.abs(mx - sc.frames[f].station);
@@ -1390,19 +1430,36 @@ function compositePlate(sc) {
             if (sx < 0 || sy < 0 || sx > nw - 1.001 || sy > nh - 1.001) continue;
             var x0 = Math.floor(sx), y0 = Math.floor(sy);
             var fx = sx - x0, fy = sy - y0;
-            var fd = sc.frames[best].data.data;
-            var gain = gains[best];
             var i00 = (y0 * nw + x0) * 4;
             var i10 = i00 + 4, i01 = i00 + nw * 4, i11 = i00 + nw * 4 + 4;
-            var oi = (py * pw + px) * 4;
-            for (var ch = 0; ch < 3; ch++) {
-                var v = fd[i00 + ch] * (1 - fx) * (1 - fy) +
-                        fd[i10 + ch] * fx * (1 - fy) +
-                        fd[i01 + ch] * (1 - fx) * fy +
-                        fd[i11 + ch] * fx * fy;
-                v *= gain[ch];
-                od[oi + ch] = v > 255 ? 255 : v;
+            sampleRGB(sc.frames[best].data.data, i00, i10, i01, i11, fx, fy, gains[best], ref);
+            // Blend in the other candidates ONLY where they agree with the
+            // reference — a perspective gantry shadow or a strayed dust
+            // hose makes a frame disagree and it is rejected per-pixel.
+            // Weight = margin beyond the band, so blends fade continuously
+            // and station handoffs don't seam.
+            var wRef = bestD - sc.band;
+            acc[0] = ref[0] * wRef;
+            acc[1] = ref[1] * wRef;
+            acc[2] = ref[2] * wRef;
+            var wsum = wRef;
+            for (var f2 = 0; f2 < n; f2++) {
+                if (f2 === best) continue;
+                var dist2 = Math.abs(mx - sc.frames[f2].station);
+                if (dist2 <= sc.band) continue;
+                sampleRGB(sc.frames[f2].data.data, i00, i10, i01, i11, fx, fy, gains[f2], cand);
+                if (Math.abs(cand[0] - ref[0]) + Math.abs(cand[1] - ref[1]) +
+                    Math.abs(cand[2] - ref[2]) > AGREE) continue;
+                var w2 = dist2 - sc.band;
+                acc[0] += cand[0] * w2;
+                acc[1] += cand[1] * w2;
+                acc[2] += cand[2] * w2;
+                wsum += w2;
             }
+            var oi = (py * pw + px) * 4;
+            od[oi] = acc[0] / wsum;
+            od[oi + 1] = acc[1] / wsum;
+            od[oi + 2] = acc[2] / wsum;
             od[oi + 3] = 255;
         }
     }
