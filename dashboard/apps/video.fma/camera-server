@@ -477,6 +477,9 @@ class VideoHandler(web.RequestHandler):
                         self.boundary)
         self.set_header('Expires', 'Tue, 01 Jan 1980 1:00:00 GMT')
         self.set_header('Pragma', 'no-cache')
+        # The dashboard reads pixels back from this stream (table photo
+        # stitching); without CORS the canvas would be tainted.
+        self.set_header('Access-Control-Allow-Origin', '*')
 
         if self.camera is None: self.write_img('offline')
         else: self.camera.add_client(self)

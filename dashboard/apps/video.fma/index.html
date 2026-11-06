@@ -111,7 +111,14 @@
             background: #000;
         }
         #cal-loupe canvas { width: 100%; height: 100%; display: block; }
-        #cal-bar, #zone-bar {
+        /* Stitched gantry-free photo of the table, shown under the grid in
+           table view. Positioned to the table rect by script. */
+        #plate-view {
+            position: absolute;
+            z-index: 40;
+            display: none;
+        }
+        #cal-bar, #zone-bar, #scan-bar {
             position: absolute;
             bottom: 14px;
             left: 50%;
@@ -127,6 +134,10 @@
             font-family: sans-serif;
             font-size: 14px;
             white-space: nowrap;
+        }
+        #scan-bar {
+            max-width: min(560px, 92vw);
+            white-space: normal;
         }
 
         /* Keep-out zones: red wash on the warped grid; the capture layer
@@ -155,10 +166,12 @@
     <div id="video-viewport">
         <img id="camera1" />
         <img id="camera2" />
+        <img id="plate-view" />
         <div id="cam-label">Loading cameras...</div>
         <div id="cam-toolbar">
             <button class="cam-btn" id="btn-grid" style="display:none;">Grid</button>
             <button class="cam-btn" id="btn-zones" style="display:none;">Keep-Out</button>
+            <button class="cam-btn" id="btn-scan" style="display:none;">Scan Table</button>
             <button class="cam-btn" id="btn-view" style="display:none;">Table View</button>
             <button class="cam-btn" id="btn-calibrate" style="display:none;">Calibrate AR</button>
         </div>
@@ -175,6 +188,12 @@
             <button class="cam-btn" id="btn-cal-cancel">Cancel</button>
         </div>
         <div id="zone-capture"></div>
+        <div id="scan-bar" style="display:none;">
+            <span id="scan-msg"></span>
+            <button class="cam-btn" id="btn-scan-start">Start</button>
+            <button class="cam-btn" id="btn-scan-stop" style="display:none;">Stop</button>
+            <button class="cam-btn" id="btn-scan-cancel">Cancel</button>
+        </div>
         <div id="zone-bar" style="display:none;">
             <span id="zone-hint">Drag a rectangle around the obstacle</span>
             <button class="cam-btn" id="btn-zone-rect">Rectangle</button>

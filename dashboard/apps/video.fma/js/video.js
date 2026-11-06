@@ -40,10 +40,17 @@ function setupAppNavigation() {
     document.onkeyup = function (evt) {
         if (evt.key === "Escape") {
             evt.preventDefault();
+            if (scanState) {
+                // Motion may be in progress — Escape must not silently
+                // leave the app; the Stop button is the way out.
+                return;
+            }
             if (calState.calibrating) {
                 exitCalibration();
             } else if (calState.zoneMode) {
                 exitZoneMode();
+            } else if (document.getElementById("scan-bar").style.display !== "none") {
+                closeScanBar();
             } else {
                 fabmo.launchApp(back_App);
             }
@@ -205,6 +212,9 @@ var calState = {
     zoneTool: "rect",     // "rect" | "draw" | "erase"
     zoneStroke: null,     // in-progress freehand points / rect corners
     viewMode: "camera",   // "camera" | "table" (flat top-down, no camera needed)
+    units: "in",          // machine.units — only used to head the scan job
+    mstate: "idle",       // last machine state seen on the status channel
+    plate: null,          // stored table photo record (see PLATE below)
 };
 
 var GRID_K = 10; // SVG px per machine unit — arbitrary, the warp rescales
@@ -389,6 +399,7 @@ function refreshARConfig(cb) {
         if (!err && data) {
             calState.env = (data.machine && data.machine.envelope) || null;
             calState.cal = (data.machine && data.machine.cameraCalibration) || null;
+            calState.units = (data.machine && data.machine.units) || "in";
             calState.zones = (data.machine && data.machine.keepout && data.machine.keepout.zones) || [];
             var d = data.driver || {};
             calState.g55.x = Number(d.g55x) || 0;
@@ -484,6 +495,17 @@ function refreshLiveOverlay() {
         viewBtn.style.display = (haveCam && envSpans() && !calState.zoneMode) ? "inline-block" : "none";
         viewBtn.textContent = tableMode ? "Camera View" : "Table View";
         calBtn.style.display = (haveCam && envSpans() && !tableMode && !calState.zoneMode) ? "inline-block" : "none";
+        var scanBarOpen = document.getElementById("scan-bar").style.display !== "none";
+        document.getElementById("btn-scan").style.display =
+            (haveCam && envSpans() && calAnyCamera() && !calState.zoneMode && !scanBarOpen)
+                ? "inline-block" : "none";
+    }
+    positionPlate();
+    // Only rewrite the label when a photo is actually shown — the no-camera
+    // path owns its own label text ("no camera — table view").
+    if (tableMode && !calState.zoneMode && calState.plate && plateMatchesTable()) {
+        document.getElementById("cam-label").innerHTML =
+            "table view &mdash; photo " + plateAge();
     }
 }
 
@@ -551,7 +573,9 @@ function enterCalibration() {
     document.getElementById("live-grid").style.display = "none";
     document.getElementById("btn-grid").style.display = "none";
     document.getElementById("btn-zones").style.display = "none";
+    document.getElementById("btn-scan").style.display = "none";
     document.getElementById("btn-calibrate").style.display = "none";
+    document.getElementById("plate-view").style.display = "none";
     calHandles().forEach(function (el) { el.style.display = "block"; });
     redrawCalibration();
 }
@@ -655,9 +679,17 @@ function hideLoupe() {
 // ---- wiring ----
 
 function setupCalibration() {
+    loadPlate();
     refreshARConfig(function () {
         refreshLiveOverlay();
     });
+
+    document.getElementById("btn-scan").onclick = openScanBar;
+    document.getElementById("btn-scan-start").onclick = startScan;
+    document.getElementById("btn-scan-cancel").onclick = closeScanBar;
+    document.getElementById("btn-scan-stop").onclick = function () {
+        fabmo.stop();
+    };
 
     document.getElementById("btn-view").onclick = function () {
         calState.viewMode = calState.viewMode === "table" ? "camera" : "table";
@@ -704,7 +736,9 @@ function setupCalibration() {
     fabmo.on("status", function (status) {
         calState.pos.x = Number(status.posx) || 0;
         calState.pos.y = Number(status.posy) || 0;
+        if (status.state) calState.mstate = status.state;
         updateCrosshair();
+        plateOnStatus(status);
     });
 }
 
@@ -920,4 +954,531 @@ function setupZones() {
     };
     capture.addEventListener("pointerup", finish);
     capture.addEventListener("pointercancel", finish);
+}
+
+// ---------------------------------------------------------------------------
+// Table photo ("clean plate")
+//
+// A gantry-free, top-down photo of the table, stitched from camera frames
+// taken with the machine parked at a few known X positions. The gantry beam
+// spans the whole Y travel, so each frame hides only a band of X around the
+// machine's position — park at three well-spread X stations and every point
+// of the table is visible in at least one frame. Frames are inverse-warped
+// through the saved AR calibration into machine space and composited. The
+// result backs the flat Table View, so keep-out zones get drawn over the
+// actual clamps and the crosshair rides over the actual material.
+//
+// Perspective: from an oblique camera the occluded region is not the
+// gantry's plan footprint but its shadow cast from the camera's eye onto
+// the table plane — it trails toward the far side of the table and widens
+// with distance, easily past any fixed band. So the band is only a
+// DISQUALIFIER, never the trusted occlusion edge. Safety comes from two
+// model-free rules: (1) each pixel's reference is the frame whose station
+// is farthest away in X — a shadow only reaches a third of the table from
+// its beam if the camera sits at gantry height, where it can't see the
+// table at all; (2) other candidate frames are blended in only where they
+// AGREE with that reference, so a frame polluted by a long perspective
+// shadow (or the dust hose straying outside the band) disagrees and is
+// rejected pixel-by-pixel, with no camera model needed.
+//
+// The scan jogs X only — Y and Z stay where the user left them — as a plain
+// G-code job (G0 + G4 dwells), so the normal Stop machinery applies. Frames
+// are grabbed off a second, CORS-enabled stream client while position
+// reports hold still inside a dwell; pixel readback is proven BEFORE any
+// motion starts. The photo persists in this browser's localStorage.
+
+var PLATE = {
+    stations: [0.12, 0.5, 0.88], // fractions of table X span to park at
+    band: 0.18,                  // gantry occlusion half-width (fraction of X span)
+    maxPx: 1400,                 // longest plate edge, pixels
+    dwell: 3,                    // seconds of G4 dwell at each station
+    jpegQ: 0.85,
+    storageKey: "fabmo_table_photo",
+};
+
+var scanState = null; // active scan, or null
+
+function plateStreamURL(port) {
+    return "http://" + location.hostname + ":" + (port === 2 ? 3142 : 3141) +
+        "/?" + Math.random();
+}
+
+// Any saved calibration, regardless of which camera is currently displayed —
+// the scan captures from the calibrated camera's own stream.
+function calAnyCamera() {
+    var c = calState.cal;
+    return (c && c.calibrated && c.corners && c.corners.tl && c.corners.tr &&
+        c.corners.br && c.corners.bl) ? c : null;
+}
+
+function loadPlate() {
+    try {
+        var rec = JSON.parse(localStorage.getItem(PLATE.storageKey));
+        if (rec && rec.dataUrl && rec.table) {
+            calState.plate = rec;
+            document.getElementById("plate-view").src = rec.dataUrl;
+        }
+    } catch (e) {
+        calState.plate = null;
+    }
+}
+
+// Only show a stored photo that covers the table currently configured
+function plateMatchesTable() {
+    var s = envSpans();
+    var p = calState.plate;
+    if (!s || !p || !p.table) return false;
+    var t = s.table, q = p.table;
+    var tol = Math.max(t.x1 - t.x0, t.y1 - t.y0) * 0.01;
+    return Math.abs(t.x0 - q.x0) < tol && Math.abs(t.y0 - q.y0) < tol &&
+        Math.abs(t.x1 - q.x1) < tol && Math.abs(t.y1 - q.y1) < tol;
+}
+
+function plateAge() {
+    var m = Math.round((Date.now() - calState.plate.savedAt) / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return m + " min ago";
+    var h = Math.round(m / 60);
+    if (h < 48) return h + " hr ago";
+    return Math.round(h / 24) + " days ago";
+}
+
+// Lay the photo onto the table rect of the flat view (the plate is already
+// top-down machine space, so this is a plain scale, no homography).
+function positionPlate() {
+    var img = document.getElementById("plate-view");
+    if (calState.viewMode !== "table" || calState.calibrating ||
+        !calState.plate || !plateMatchesTable()) {
+        img.style.display = "none";
+        return;
+    }
+    var corners = flatCorners();
+    if (!corners) {
+        img.style.display = "none";
+        return;
+    }
+    var w = window.innerWidth, h = window.innerHeight;
+    img.style.left = (corners.tl.x * w) + "px";
+    img.style.top = (corners.tl.y * h) + "px";
+    img.style.width = ((corners.tr.x - corners.tl.x) * w) + "px";
+    img.style.height = ((corners.bl.y - corners.tl.y) * h) + "px";
+    img.style.display = "block";
+}
+
+function setScanMsg(msg) {
+    document.getElementById("scan-msg").textContent = msg;
+}
+
+function openScanBar() {
+    if (calState.mstate !== "idle") {
+        fabmo.notify("warning", "The machine must be idle to scan the table.");
+        return;
+    }
+    document.getElementById("scan-bar").style.display = "flex";
+    document.getElementById("btn-scan-start").style.display = "inline-block";
+    document.getElementById("btn-scan-stop").style.display = "none";
+    document.getElementById("btn-scan-cancel").style.display = "inline-block";
+    document.getElementById("btn-scan").style.display = "none";
+    setScanMsg("The machine will jog across X (Y and Z stay put) and " +
+        "photograph the table between moves. Raise the bit clear of clamps " +
+        "and material first.");
+}
+
+function closeScanBar() {
+    if (scanState && scanState.img) scanState.img.src = "";
+    scanState = null;
+    document.getElementById("scan-bar").style.display = "none";
+    refreshLiveOverlay();
+}
+
+function failScan(msg) {
+    // A mid-scan failure leaves the jog job running — bring it to a stop
+    // ("stopped" here is a G4 dwell in progress, see plateOnStatus)
+    if (scanState && scanState.sawRunning &&
+        (calState.mstate === "running" || calState.mstate === "stopped")) {
+        fabmo.stop();
+    }
+    if (msg) fabmo.notify("error", msg);
+    closeScanBar();
+}
+
+function startScan() {
+    if (scanState) return; // double-click guard
+    refreshARConfig(function () {
+        if (scanState) return;
+        var cal = calAnyCamera();
+        var s = envSpans();
+        if (!cal || !s) {
+            failScan("Scanning needs a saved AR calibration.");
+            return;
+        }
+        var t = s.table;
+        var xspan = t.x1 - t.x0;
+        var stations = PLATE.stations.map(function (f) { return t.x0 + f * xspan; });
+        // Start from the end nearest the current position
+        var curX = calState.pos.x + calState.g55.x;
+        if (Math.abs(curX - stations[stations.length - 1]) < Math.abs(curX - stations[0])) {
+            stations.reverse();
+        }
+        var sc = scanState = {
+            cal: JSON.parse(JSON.stringify(cal)),
+            stations: stations,
+            eps: Math.max(0.05, xspan * 0.002),
+            band: PLATE.band * xspan,
+            frames: [],
+            stable: 0,
+            lastX: null,
+            started: false,
+            sawRunning: false,
+            img: new Image(),
+        };
+        document.getElementById("btn-scan-start").style.display = "none";
+        document.getElementById("btn-scan-cancel").style.display = "none";
+        document.getElementById("btn-scan-stop").style.display = "inline-block";
+        setScanMsg("Connecting to camera…");
+        // A separate CORS-enabled stream client: the display <img>s stay
+        // non-CORS so the live view can never break against an older
+        // camera server that doesn't send the CORS header.
+        var port = sc.cal.port || 1;
+        var timer = setTimeout(function () {
+            if (scanState === sc && !sc.started) {
+                failScan("The camera stream did not respond — is the camera server running?");
+            }
+        }, 8000);
+        sc.img.crossOrigin = "anonymous";
+        sc.img.onerror = function () {
+            clearTimeout(timer);
+            if (scanState === sc && !sc.started) {
+                failScan("The camera server refused a capture connection. " +
+                    "Restart the camera service (camera-server-" + port + ") and retry.");
+            }
+        };
+        sc.img.onload = function () {
+            if (scanState !== sc || sc.started) return;
+            clearTimeout(timer);
+            // Prove pixel readback works BEFORE any motion starts
+            try {
+                var cv = document.createElement("canvas");
+                cv.width = cv.height = 2;
+                var cx = cv.getContext("2d");
+                cx.drawImage(sc.img, 0, 0, 2, 2);
+                cx.getImageData(0, 0, 1, 1);
+            } catch (e) {
+                failScan("The camera stream does not allow image capture — " +
+                    "restart the camera service (camera-server-" + port + ") after updating.");
+                return;
+            }
+            sc.started = true;
+            runScanJob(sc);
+        };
+        sc.img.src = plateStreamURL(port);
+    });
+}
+
+function runScanJob(sc) {
+    // G4 dwells rather than SBP PAUSE: no dashboard modal, and the position
+    // stream keeps flowing while the machine holds still — which is exactly
+    // the capture signal. G20/G21 reasserts the machine's configured units.
+    var lines = ["( FabMo camera table scan )",
+        calState.units === "mm" ? "G21" : "G20",
+        "G4 P0.5"];
+    sc.stations.forEach(function (mx) {
+        lines.push("G0 X" + (mx - calState.g55.x).toFixed(4));
+        lines.push("G4 P" + PLATE.dwell);
+    });
+    setScanMsg("Scanning 1/" + sc.stations.length + "… (Z does not move)");
+    fabmo.runGCode(lines.join("\n"), function (err) {
+        if (err && scanState === sc) {
+            failScan("Could not start the scan: " + (err.message || JSON.stringify(err)));
+        }
+    });
+    // If the job never reaches "running", don't sit here forever
+    setTimeout(function () {
+        if (scanState === sc && !sc.sawRunning) {
+            failScan("The scan job never started.");
+        }
+    }, 20000);
+}
+
+// Ride the status reports: inside a dwell at a station the position holds
+// still — two consecutive on-target reports mean the frame is clean to grab.
+// Bench-measured state sequence for a G0+G4 job on the immediate gcode
+// runtime: "running" through moves, "stopped" for the whole of each G4
+// dwell, "idle" after the job — so "stopped" means dwelling, NOT aborted,
+// and capture keys off position stillness alone.
+function plateOnStatus(status) {
+    var sc = scanState;
+    if (!sc || !sc.started) return;
+    var state = status.state;
+    var mx = (Number(status.posx) || 0) + calState.g55.x;
+    // Until the job is actually underway, ignore idle reports — the machine
+    // may already be sitting at the first station. The scan only starts
+    // from idle, so running/stopped both imply the job is active.
+    if (state === "running" || state === "stopped") sc.sawRunning = true;
+    if (!sc.sawRunning) return;
+    if (state === "paused") {
+        // Feedhold — someone wants the machine still; don't keep scanning
+        failScan("Scan interrupted.");
+        return;
+    }
+    var target = sc.stations[sc.frames.length];
+    if (target !== undefined && state !== "idle") {
+        if (Math.abs(mx - target) <= sc.eps &&
+            sc.lastX !== null && Math.abs(mx - sc.lastX) <= sc.eps * 0.5) {
+            sc.stable++;
+            if (sc.stable >= 2) grabScanFrame(sc, target);
+        } else {
+            sc.stable = 0;
+        }
+        sc.lastX = mx;
+    }
+    if (state === "idle") {
+        // Job over. The last dwell can end before two stable reports arrive
+        // — if we came to rest on target, grab the final frame now. A scan
+        // the user stopped early lands here too, with frames missing; the
+        // composite merges what it got over the previous photo.
+        if (target !== undefined && Math.abs(mx - target) <= sc.eps) {
+            grabScanFrame(sc, target);
+        }
+        finishScan(sc);
+    }
+}
+
+function grabScanFrame(sc, target) {
+    var img = sc.img;
+    if (!img.naturalWidth) return; // no frame decoded yet — try next report
+    var cv = document.createElement("canvas");
+    cv.width = img.naturalWidth;
+    cv.height = img.naturalHeight;
+    var ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+    var data;
+    try {
+        data = ctx.getImageData(0, 0, cv.width, cv.height);
+    } catch (e) {
+        failScan("The browser blocked camera capture mid-scan.");
+        return;
+    }
+    sc.frames.push({ station: target, data: data });
+    sc.stable = 0;
+    if (sc.frames.length < sc.stations.length) {
+        setScanMsg("Scanning " + (sc.frames.length + 1) + "/" + sc.stations.length + "…");
+    }
+}
+
+function finishScan(sc) {
+    scanState = null;
+    sc.img.src = "";
+    if (!sc.frames.length) {
+        failScan("The scan ended before any pictures were taken.");
+        return;
+    }
+    if (sc.frames.length < sc.stations.length) {
+        fabmo.notify("warning", "Scan ended early — building the photo from " +
+            sc.frames.length + " of " + sc.stations.length + " views.");
+    }
+    setScanMsg("Building table photo…");
+    // Let the message paint before the heavy loop
+    setTimeout(function () {
+        try {
+            compositePlate(sc);
+            fabmo.notify("success", "Table photo updated.");
+        } catch (e) {
+            console.error(e);
+            fabmo.notify("error", "Building the table photo failed: " + e.message);
+        }
+        document.getElementById("scan-bar").style.display = "none";
+        refreshLiveOverlay();
+    }, 50);
+}
+
+function projectPx(H, x, y) {
+    var w = H[2][0] * x + H[2][1] * y + H[2][2];
+    return [
+        (H[0][0] * x + H[0][1] * y + H[0][2]) / w,
+        (H[1][0] * x + H[1][1] * y + H[1][2]) / w,
+    ];
+}
+
+// Webcams auto-expose, so frames of the same table differ in brightness and
+// would seam where the composite switches source. Gains are estimated from
+// PAIRED per-pixel ratios: at each sampled pixel the cross-frame median is
+// the consensus value, and each frame's gain is the median over pixels of
+// consensus/value. Occluded pixels (gantry or its perspective shadow, at
+// any camera angle) produce outlier ratios in well under half of any one
+// frame's samples, so the medians ignore them — where unpaired statistics
+// fail outright, because each frame hides a DIFFERENT part of the table.
+function plateGains(sc, H, t, k, pw, ph) {
+    var n = sc.frames.length;
+    var gains = [], samples = [];
+    for (var i = 0; i < n; i++) {
+        gains.push([1, 1, 1]);
+        samples.push([[], [], []]);
+    }
+    if (n < 2) return gains;
+    var w0 = sc.frames[0].data.width, h0 = sc.frames[0].data.height;
+    var step = Math.max(2, Math.floor(pw / 220));
+    for (var py = 0; py < ph; py += step) {
+        for (var px = 0; px < pw; px += step) {
+            var p = projectPx(H, px + 0.5, py + 0.5);
+            var sx = Math.round(p[0]), sy = Math.round(p[1]);
+            if (sx < 0 || sy < 0 || sx >= w0 || sy >= h0) continue;
+            var idx = (sy * w0 + sx) * 4;
+            for (var f2 = 0; f2 < n; f2++) {
+                var d = sc.frames[f2].data.data;
+                samples[f2][0].push(d[idx]);
+                samples[f2][1].push(d[idx + 1]);
+                samples[f2][2].push(d[idx + 2]);
+            }
+        }
+    }
+    var m = samples[0][0].length;
+    if (m < 50) return gains;
+    var byValue = function (a, b) { return a - b; };
+    // Each frame's exposure relative to frame 0 is the median of per-pixel
+    // paired ratios v0/vf. A pixel occluded in frame 0 gives a near-zero
+    // outlier, one occluded in frame f a huge one — both sides stay well
+    // under half the samples, so the median sits in the clean middle. Then
+    // normalize so the mean gain is 1: output brightness = mean exposure.
+    for (var ch = 0; ch < 3; ch++) {
+        var rel = [1];
+        for (var f = 1; f < n; f++) {
+            var ratios = [];
+            for (var s = 0; s < m; s++) {
+                var a = samples[0][ch][s], b = samples[f][ch][s];
+                if (a < 4 && b < 4) continue; // both too dark to carry info
+                ratios.push((a + 1) / (b + 1));
+            }
+            if (ratios.length < 50) { rel.push(1); continue; }
+            ratios.sort(byValue);
+            rel.push(ratios[ratios.length >> 1]);
+        }
+        var mean = 0;
+        for (var f2 = 0; f2 < n; f2++) mean += rel[f2];
+        mean /= n;
+        for (var f3 = 0; f3 < n; f3++) {
+            gains[f3][ch] = Math.max(0.7, Math.min(1.4, rel[f3] / mean));
+        }
+    }
+    return gains;
+}
+
+function compositePlate(sc) {
+    var s = envSpans();
+    if (!s) throw new Error("no machine envelope");
+    var t = s.table;
+    var xspan = t.x1 - t.x0, yspan = t.y1 - t.y0;
+    var k = PLATE.maxPx / Math.max(xspan, yspan);
+    var pw = Math.max(16, Math.round(xspan * k));
+    var ph = Math.max(16, Math.round(yspan * k));
+    var c = sc.cal.corners;
+    var nw = sc.frames[0].data.width, nh = sc.frames[0].data.height;
+    // Plate px (row 0 = machine ymax, the shared TL convention) → camera
+    // frame px, via the saved table-corner calibration. One homography
+    // serves every frame — the camera never moved.
+    var H = h_quadToQuad(
+        [[0, 0], [pw, 0], [pw, ph], [0, ph]],
+        [[c.tl.x * nw, c.tl.y * nh], [c.tr.x * nw, c.tr.y * nh],
+         [c.br.x * nw, c.br.y * nh], [c.bl.x * nw, c.bl.y * nh]]
+    );
+    var cv = document.createElement("canvas");
+    cv.width = pw;
+    cv.height = ph;
+    var ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "#30353a";
+    ctx.fillRect(0, 0, pw, ph);
+    // Start from the previous photo when it covers the same table, so a
+    // partial scan refreshes what it saw and keeps the rest.
+    var prev = document.getElementById("plate-view");
+    if (calState.plate && plateMatchesTable() &&
+        prev.naturalWidth === pw && prev.naturalHeight === ph) {
+        ctx.drawImage(prev, 0, 0);
+    }
+    var out = ctx.getImageData(0, 0, pw, ph);
+    var od = out.data;
+    var gains = plateGains(sc, H, t, k, pw, ph);
+    var n = sc.frames.length;
+    // Gain-corrected bilinear sample; the corner indices are shared by all
+    // frames because the camera never moved (one homography for the scan).
+    var sampleRGB = function (fd, i00, i10, i01, i11, fx, fy, gain, rgb) {
+        for (var ch = 0; ch < 3; ch++) {
+            var v = fd[i00 + ch] * (1 - fx) * (1 - fy) +
+                    fd[i10 + ch] * fx * (1 - fy) +
+                    fd[i01 + ch] * (1 - fx) * fy +
+                    fd[i11 + ch] * fx * fy;
+            v *= gain[ch];
+            rgb[ch] = v > 255 ? 255 : v;
+        }
+    };
+    var AGREE = 90; // summed |ΔRGB| under which two frames see the same thing
+    var ref = [0, 0, 0], cand = [0, 0, 0], acc = [0, 0, 0];
+    for (var py = 0; py < ph; py++) {
+        for (var px = 0; px < pw; px++) {
+            var mx = t.x0 + (px + 0.5) / k;
+            // The gantry beam spans all of Y, so the X band around each
+            // frame's station disqualifies it. The REFERENCE is the frame
+            // whose station is farthest — the only frame that stays clean
+            // under perspective (see the header comment).
+            var best = -1, bestD = 0;
+            for (var f = 0; f < n; f++) {
+                var dist = Math.abs(mx - sc.frames[f].station);
+                if (dist > sc.band && dist > bestD) { bestD = dist; best = f; }
+            }
+            if (best < 0) continue;
+            var p = projectPx(H, px + 0.5, py + 0.5);
+            var sx = p[0], sy = p[1];
+            if (sx < 0 || sy < 0 || sx > nw - 1.001 || sy > nh - 1.001) continue;
+            var x0 = Math.floor(sx), y0 = Math.floor(sy);
+            var fx = sx - x0, fy = sy - y0;
+            var i00 = (y0 * nw + x0) * 4;
+            var i10 = i00 + 4, i01 = i00 + nw * 4, i11 = i00 + nw * 4 + 4;
+            sampleRGB(sc.frames[best].data.data, i00, i10, i01, i11, fx, fy, gains[best], ref);
+            // Blend in the other candidates ONLY where they agree with the
+            // reference — a perspective gantry shadow or a strayed dust
+            // hose makes a frame disagree and it is rejected per-pixel.
+            // Weight = margin beyond the band, so blends fade continuously
+            // and station handoffs don't seam.
+            var wRef = bestD - sc.band;
+            acc[0] = ref[0] * wRef;
+            acc[1] = ref[1] * wRef;
+            acc[2] = ref[2] * wRef;
+            var wsum = wRef;
+            for (var f2 = 0; f2 < n; f2++) {
+                if (f2 === best) continue;
+                var dist2 = Math.abs(mx - sc.frames[f2].station);
+                if (dist2 <= sc.band) continue;
+                sampleRGB(sc.frames[f2].data.data, i00, i10, i01, i11, fx, fy, gains[f2], cand);
+                if (Math.abs(cand[0] - ref[0]) + Math.abs(cand[1] - ref[1]) +
+                    Math.abs(cand[2] - ref[2]) > AGREE) continue;
+                var w2 = dist2 - sc.band;
+                acc[0] += cand[0] * w2;
+                acc[1] += cand[1] * w2;
+                acc[2] += cand[2] * w2;
+                wsum += w2;
+            }
+            var oi = (py * pw + px) * 4;
+            od[oi] = acc[0] / wsum;
+            od[oi + 1] = acc[1] / wsum;
+            od[oi + 2] = acc[2] / wsum;
+            od[oi + 3] = 255;
+        }
+    }
+    ctx.putImageData(out, 0, 0);
+    var rec = {
+        dataUrl: cv.toDataURL("image/jpeg", PLATE.jpegQ),
+        savedAt: Date.now(),
+        table: { x0: t.x0, y0: t.y0, x1: t.x1, y1: t.y1 },
+        pw: pw,
+        ph: ph,
+    };
+    try {
+        localStorage.setItem(PLATE.storageKey, JSON.stringify(rec));
+    } catch (e) {
+        fabmo.notify("warning", "The table photo could not be saved and will be lost on reload.");
+    }
+    calState.plate = rec;
+    document.getElementById("plate-view").src = rec.dataUrl;
+    // Reveal the result
+    calState.viewMode = "table";
+    document.getElementById("cam-label").innerHTML = "table view";
 }
