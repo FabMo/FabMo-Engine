@@ -1230,6 +1230,22 @@ module.exports = function(container) {
         }
       }
       t = moves[best].timeNearest(position);
+
+      // Off-path motion: the entry jog (the preview's path starts at
+      // 0,0,0, but the real tool rapids in from wherever it was parked)
+      // or a keypad reposition during a feedhold. There is nothing on
+      // the path to project onto, so track reality: park the path state
+      // where it is and put the cone on the reported position. As the
+      // tool converges on the path the distance drops under the
+      // tolerance and tracking snaps back on seamlessly. The tolerance
+      // leaves room for small real deviations (e.g. Z leveling).
+      var offPathTol = self.isMetric() ? 6 : 0.25;
+      if (bestDist > offPathTol) {
+        self.path.pause();
+        self.tool.setPosition(position);
+        self.refresh();
+        return;
+      }
     } else {
       t = moves[best].getStartTime();
     }
