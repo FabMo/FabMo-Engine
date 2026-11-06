@@ -235,3 +235,52 @@ describe("checkAgainstZones cut/rapid split", function () {
         expect(r.rapids).toEqual(["B"]);
     });
 });
+
+describe("zones in negative machine space (travel beyond the table)", function () {
+    // Machines that home off a limit switch and offset (e.g. 12" past a
+    // rotary indexer) have real travel in negative machine coordinates.
+    // Zones drawn out there must detour jogs and flag paths exactly like
+    // on-table zones, and detours must respect the soft-limit envelope.
+    var NEG_ENV = { xmin: -13, xmax: 96, ymin: 0, ymax: 48, zmin: -2, zmax: 8 };
+    var INDEXER = { id: "indexer", type: "rect", x0: -12, y0: 10, x1: -2, y1: 30 };
+
+    function withinEnv(p) {
+        return p.x >= NEG_ENV.xmin - 1e-9 && p.x <= NEG_ENV.xmax + 1e-9 &&
+               p.y >= NEG_ENV.ymin - 1e-9 && p.y <= NEG_ENV.ymax + 1e-9;
+    }
+
+    test("jog into negative space detours around the indexer, inside the envelope", function () {
+        var start = { x: 5, y: 5, z: 1 }, end = { x: -9, y: 40, z: 1 };
+        var r = router.planJog(start, end, [INDEXER], NEG_ENV, G55, 0.5);
+        expect(r).not.toBeNull();
+        expect(r.blocked).toBeUndefined();
+        expect(r.zones).toEqual(["indexer"]);
+        var pts = [start].concat(r.waypoints).concat([end]);
+        expect(pathClearOf(pts, [INDEXER])).toBe(true);
+        r.waypoints.forEach(function (p) { expect(withinEnv(p)).toBe(true); });
+    });
+
+    test("endpoint inside the negative-space zone is blocked", function () {
+        var r = router.planJog({ x: 5, y: 20, z: 1 }, { x: -9, y: 20, z: 1 }, [INDEXER], NEG_ENV, G55, 0.5);
+        expect(r.blocked).toBe(true);
+        expect(r.zones).toEqual(["indexer"]);
+    });
+
+    test("on-table jog clear of the negative-space zone runs straight", function () {
+        var r = router.planJog({ x: 5, y: 20, z: 1 }, { x: 90, y: 20, z: 1 }, [INDEXER], NEG_ENV, G55, 0.5);
+        expect(r).toBeNull();
+    });
+
+    test("checkAgainstZones flags a path entering the negative-space zone", function () {
+        var jobBounds = {
+            min: { x: -10, y: 20, z: 0 }, max: { x: 50, y: 20, z: 0 },
+            path: [
+                [50, 20, 0, 0],
+                [-10, 20, 0, 1],  // cut running out past the table into the indexer
+            ],
+        };
+        var r = bounds.checkAgainstZones(jobBounds, [INDEXER], {});
+        expect(r.enters).toBe(true);
+        expect(r.cuts).toEqual(["indexer"]);
+    });
+});

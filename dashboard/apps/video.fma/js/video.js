@@ -252,18 +252,44 @@ function h_toMatrix3d(H) {
     ].map(function (n) { return n.toFixed(8); }).join(",") + ")";
 }
 
-// The grid/AR rectangle is the physical table: machine 0..size when
-// envelope.xsize/ysize are configured. Envelope min/max are soft limits and
-// include overtravel, so they overstate the table; they remain the fallback
-// for configs predating the size fields.
+// The world extent the grid/zones cover. The TABLE is machine 0..size when
+// envelope.xsize/ysize are configured; the world extends beyond it to the
+// soft-limit envelope when travel exists outside the table (e.g. homing off
+// a limit switch and offsetting past a rotary indexer puts real travel in
+// negative machine space — keep-out zones must be drawable there). The
+// returned `table` sub-rect is the calibration anchor: saved camera
+// calibrations map the TABLE corners, never the world corners, so widening
+// the world cannot shift existing calibrations. Envelope min/max remain the
+// whole story for configs predating the size fields (table == world there).
 function envSpans() {
     var e = calState.env || {};
     var xsize = Number(e.xsize), ysize = Number(e.ysize);
-    var x0 = xsize > 0 ? 0 : (Number(e.xmin) || 0);
-    var y0 = ysize > 0 ? 0 : (Number(e.ymin) || 0);
-    var xs = xsize > 0 ? xsize : Number(e.xmax) - x0;
-    var ys = ysize > 0 ? ysize : Number(e.ymax) - y0;
-    return (xs > 0 && ys > 0) ? { x0: x0, y0: y0, xspan: xs, yspan: ys } : null;
+    if (!(xsize > 0 && ysize > 0)) {
+        var x0f = Number(e.xmin) || 0, y0f = Number(e.ymin) || 0;
+        var xsf = Number(e.xmax) - x0f, ysf = Number(e.ymax) - y0f;
+        if (!(xsf > 0 && ysf > 0)) return null;
+        return { x0: x0f, y0: y0f, xspan: xsf, yspan: ysf,
+                 table: { x0: x0f, y0: y0f, x1: x0f + xsf, y1: y0f + ysf } };
+    }
+    var xmin = Number(e.xmin), ymin = Number(e.ymin);
+    var xmax = Number(e.xmax), ymax = Number(e.ymax);
+    var x0 = Math.min(0, isFinite(xmin) ? xmin : 0);
+    var y0 = Math.min(0, isFinite(ymin) ? ymin : 0);
+    var x1 = Math.max(xsize, isFinite(xmax) ? xmax : xsize);
+    var y1 = Math.max(ysize, isFinite(ymax) ? ymax : ysize);
+    return { x0: x0, y0: y0, xspan: x1 - x0, yspan: y1 - y0,
+             table: { x0: 0, y0: 0, x1: xsize, y1: ysize } };
+}
+
+// The table rect in grid-svg pixels (svg y runs down from machine ymax).
+function tableSvgRect(s) {
+    var t = s.table;
+    return {
+        l: (t.x0 - s.x0) * GRID_K,
+        r: (t.x1 - s.x0) * GRID_K,
+        t: (s.y0 + s.yspan - t.y1) * GRID_K,
+        b: (s.y0 + s.yspan - t.y0) * GRID_K,
+    };
 }
 
 // A round gridline pitch giving a handful of cells per axis
@@ -291,15 +317,40 @@ function buildGrid(svg, strong) {
     // Gridlines + border live in their own group so the Grid toggle can
     // hide them while zones and the crosshair stay visible.
     var parts = ['<g id="gridlines">'];
-    var step = gridStep(Math.min(s.xspan, s.yspan)) * GRID_K;
-    for (var x = step; x < W; x += step)
-        parts.push('<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + H + '" stroke="' + line + '" stroke-width="1"/>');
-    for (var y = step; y < H; y += step)
-        parts.push('<line x1="0" y1="' + (H - y) + '" x2="' + W + '" y2="' + (H - y) + '" stroke="' + line + '" stroke-width="1"/>');
-    parts.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="none" stroke="' + line + '" stroke-width="4"/>');
+    var tr = tableSvgRect(s);
+    // Shade the travel area outside the table (fill-rule evenodd: world
+    // rect minus table rect) so the off-table region reads as "not table"
+    // while staying fully drawable for keep-out zones.
+    if (tr.l > 0 || tr.t > 0 || tr.r < W || tr.b < H) {
+        parts.push('<path fill="rgba(100,110,120,0.22)" fill-rule="evenodd" d="' +
+            'M0 0H' + W + 'V' + H + 'H0Z ' +
+            'M' + tr.l + ' ' + tr.t + 'H' + tr.r + 'V' + tr.b + 'H' + tr.l + 'Z"/>');
+    }
+    // Gridlines land on machine-coordinate multiples of the step (the world
+    // may start at a negative machine coordinate, so svg 0 is not machine 0).
+    var stepM = gridStep(Math.min(s.xspan, s.yspan));
+    for (var gx = Math.ceil(s.x0 / stepM) * stepM; gx <= s.x0 + s.xspan; gx += stepM) {
+        var xpx = (gx - s.x0) * GRID_K;
+        if (xpx <= 0 || xpx >= W) continue;
+        parts.push('<line x1="' + xpx + '" y1="0" x2="' + xpx + '" y2="' + H + '" stroke="' + line + '" stroke-width="1"/>');
+    }
+    for (var gy = Math.ceil(s.y0 / stepM) * stepM; gy <= s.y0 + s.yspan; gy += stepM) {
+        var ypx = (s.y0 + s.yspan - gy) * GRID_K;
+        if (ypx <= 0 || ypx >= H) continue;
+        parts.push('<line x1="0" y1="' + ypx + '" x2="' + W + '" y2="' + ypx + '" stroke="' + line + '" stroke-width="1"/>');
+    }
+    // Table border strong; world (soft-limit travel) border dashed when it
+    // extends beyond the table.
+    parts.push('<rect x="' + tr.l + '" y="' + tr.t + '" width="' + (tr.r - tr.l) +
+        '" height="' + (tr.b - tr.t) + '" fill="none" stroke="' + line + '" stroke-width="4"/>');
+    if (tr.l > 0 || tr.t > 0 || tr.r < W || tr.b < H) {
+        parts.push('<rect x="0" y="0" width="' + W + '" height="' + H +
+            '" fill="none" stroke="' + line + '" stroke-width="2" stroke-dasharray="8 6"/>');
+    }
     parts.push('</g>');
-    // Origin marker + axis arrows at machine (0,0) = svg bottom-left
-    var ax = 0, ay = H;
+    // Origin marker + axis arrows at machine (0,0) — offset from the svg
+    // bottom-left when the world extends into negative machine space.
+    var ax = (0 - s.x0) * GRID_K, ay = (s.y0 + s.yspan) * GRID_K;
     parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + (ax + 3 * GRID_K) + '" y2="' + ay + '" stroke="#c0392b" stroke-width="3"/>');
     parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + ax + '" y2="' + (ay - 3 * GRID_K) + '" stroke="#27ae60" stroke-width="3"/>');
     parts.push('<text x="' + (ax + 3.6 * GRID_K) + '" y="' + (ay - 2) + '" font-size="' + 1.8 * GRID_K + '" fill="#1a252f" ' + halo + '>X</text>');
@@ -312,9 +363,16 @@ function buildGrid(svg, strong) {
 function warpGrid(svg, corners) {
     var w = window.innerWidth, h = window.innerHeight;
     var W = +svg.getAttribute("width"), H = +svg.getAttribute("height");
-    if (!w || !h || !W || !H) return;
+    var s = envSpans();
+    if (!w || !h || !W || !H || !s) return;
+    // The calibrated quad marks the TABLE corners, so the homography maps
+    // the table sub-rect of the svg onto it; any world area beyond the
+    // table (negative travel etc.) lands outside the quad by extrapolation
+    // — exactly where it belongs in the camera view. When table == world
+    // this is the full [0,0,W,H] rect, same as always.
+    var tr = tableSvgRect(s);
     var Hm = h_quadToQuad(
-        [[0, 0], [W, 0], [W, H], [0, H]],
+        [[tr.l, tr.t], [tr.r, tr.t], [tr.r, tr.b], [tr.l, tr.b]],
         [[corners.tl.x * w, corners.tl.y * h], [corners.tr.x * w, corners.tr.y * h],
          [corners.br.x * w, corners.br.y * h], [corners.bl.x * w, corners.bl.y * h]]
     );
@@ -358,10 +416,17 @@ function flatCorners() {
     if (!s) return null;
     var w = window.innerWidth, h = window.innerHeight;
     var m = 0.07;
+    // Fit the WORLD extent on screen, then return the TABLE sub-rect's
+    // corners — warpGrid anchors the homography to the table, so the world
+    // margin around it lands on screen implicitly.
     var k = Math.min((w * (1 - 2 * m)) / s.xspan, (h * (1 - 2 * m)) / s.yspan);
     var fw = s.xspan * k, fh = s.yspan * k;
-    var left = (w - fw) / 2 / w, top = (h - fh) / 2 / h;
-    var right = left + fw / w, bottom = top + fh / h;
+    var worldLeft = (w - fw) / 2, worldTop = (h - fh) / 2;
+    var t = s.table;
+    var left   = (worldLeft + (t.x0 - s.x0) * k) / w;
+    var right  = (worldLeft + (t.x1 - s.x0) * k) / w;
+    var top    = (worldTop + (s.y0 + s.yspan - t.y1) * k) / h;
+    var bottom = (worldTop + (s.y0 + s.yspan - t.y0) * k) / h;
     return {
         tl: { x: left, y: top }, tr: { x: right, y: top },
         br: { x: right, y: bottom }, bl: { x: left, y: bottom },
