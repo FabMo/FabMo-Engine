@@ -921,6 +921,15 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
     //      slots ("MX, " or "M2, , ,") are fine: an omitted parameter means "not given", as in SB3.
     //   2. Type - a value given for a numeric parameter must evaluate to a number.
     // Both throw; _executeCommand turns the throw into a line-numbered error that ends the file.
+    //
+    // The parser rewrites '#' in a mnemonic to '_POUND' so command handlers
+    // can be plain identifiers (C# -> C_POUND, see sbp_parser.pegjs), but
+    // the command table keeps the SB3 spelling. Translate back for table
+    // lookups - otherwise C#,90 found no table entry, its argument list
+    // was scrubbed to [], and the macro call failed with "Macro not found".
+    if (typeof command === "string" && !(command in sb3_commands) && command.indexOf("_POUND") !== -1) {
+        command = command.replace("_POUND", "#");
+    }
     var scrubbed_args = [];
     if (command in sb3_commands) {
         var params = sb3_commands[command].params || [];
