@@ -214,8 +214,9 @@ $TOOL_OFFSETUU[] = 5
 $Transit_HeightUU[] = -1
 $clipPulloutUU[] = 0.75
 $atcUU[].clipSafe = 1.375
-$thClearanceUU[] = 1
+$thClearanceUU[] = 0.5
 $DrawbarDelay = 0.75
+$DrawBar_Out = 8
 
 'Calibration parameters
 $ATC_holderHeightUU[] = 2.037

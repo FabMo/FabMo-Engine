@@ -104,8 +104,8 @@ PAUSE "This will be the center of your Pressure Sensitive Z Zero Plate"
 
 CONTINUE:
 
-$atcUU[].zZero_X = %(1)									' >> Store X location of fixed Z Zero plate (always the same)
-$atcUU[].zZero_Y = %(2)											' >> Store Y location of fixed Z Zero plate (always the same)
+$atcUU[].zZero_X = %(1)	+ $sb_homeOffUU[&u].x + %(7)							' >> Store X location of fixed Z Zero plate (always the same)
+$atcUU[].zZero_Y = %(2) + $sb_homeOffUU[&u].y + %(8)							' >> Store Y location of fixed Z Zero plate (always the same)
 SO, $ToolBar,0																	' >> Tool Bar will lower
 PAUSE "Calibration complete (M-0151)"											' >> Display success message
 PAUSE "The Spindle will now lift up and Jog Home"								' >> Display message to notify user that the machine will jog home

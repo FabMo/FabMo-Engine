@@ -136,8 +136,8 @@ FINISHED:
     
  SK "Move the spindle Over The Center of The Z Zero Puck" 
  
-	 $atcUU[].zZero_X = %(1)                                                      ' Store locations of fixed Z Zero plate (always the same)
-     $atcUU[].zZero_Y = %(2)							                        
+$atcUU[].zZero_X = %(1)	+ $sb_homeOffUU[&u].x + %(7)							' >> Store X location of fixed Z Zero plate (always the same)
+$atcUU[].zZero_Y = %(2) + $sb_homeOffUU[&u].y + %(8)						                        
      
  JZ, &alignment_height + $TOOL_OFFSETUU[&u] 
 
