@@ -1258,6 +1258,27 @@ module.exports = function(container) {
     self.path.setMoveTime(t);
   }
 
+  // Follow the physical tool outside of job tracking (manual keypad /
+  // pendant jogs): move only the cone, leaving path/progress state alone.
+  // Coalesced to one render per animation frame, like the live updates.
+  var trackPos = null;
+  var trackRAF = null;
+  self.trackPosition = function (position) {
+    if (!position || typeof position[0] !== 'number') return;
+    trackPos = position;
+    if (trackRAF === null) {
+      trackRAF = window.requestAnimationFrame(function () {
+        trackRAF = null;
+        var p = trackPos;
+        trackPos = null;
+        if (p) {
+          self.tool.setPosition(p);
+          self.refresh();
+        }
+      });
+    }
+  }
+
   // Called when G2 finishes streaming (state leaves 'running' while job exists).
   // Animates the remaining moves in the planner buffer before any modal appears.
   self.finishLive = function() {
