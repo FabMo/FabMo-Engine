@@ -195,14 +195,19 @@ exports.JH = function (args) {
 //   back to the persistent values in G2.json
 exports.JS = function (args, callback) {
     var speed_change = 0.0;
+    // Headless simulation (gcode preview, bounds check) has no machine:
+    // track the speed change but skip the live driver writes.
+    var driver = this.machine && this.machine.driver;
 
     if (args[0] !== undefined) {
         speed_change = args[0];
         if (isNaN(speed_change)) {
             throw "Invalid JS-XY argument: " + speed_change;
         }
-        this.machine.driver.command({ xvm: 60 * speed_change });
-        this.machine.driver.command({ yvm: 60 * speed_change });
+        if (driver) {
+            driver.command({ xvm: 60 * speed_change });
+            driver.command({ yvm: 60 * speed_change });
+        }
         this.jogspeed_xy = speed_change;
     }
     if (args[1] !== undefined) {
@@ -210,7 +215,7 @@ exports.JS = function (args, callback) {
         if (isNaN(speed_change)) {
             throw "Invalid JS-Z argument: " + speed_change;
         }
-        this.machine.driver.command({ zvm: 60 * speed_change });
+        if (driver) driver.command({ zvm: 60 * speed_change });
         this.jogspeed_z = speed_change;
     }
     if (args[2] !== undefined) {
@@ -218,7 +223,7 @@ exports.JS = function (args, callback) {
         if (isNaN(speed_change)) {
             throw "Invalid JS-A argument: " + speed_change;
         }
-        this.machine.driver.command({ avm: 60 * speed_change });
+        if (driver) driver.command({ avm: 60 * speed_change });
         this.jogspeed_a = speed_change;
     }
     if (args[3] !== undefined) {
@@ -226,7 +231,7 @@ exports.JS = function (args, callback) {
         if (isNaN(speed_change)) {
             throw "Invalid JS-B argument: " + speed_change;
         }
-        this.machine.driver.command({ bvm: 60 * speed_change });
+        if (driver) driver.command({ bvm: 60 * speed_change });
         this.jogspeed_b = speed_change;
     }
     if (args[4] !== undefined) {
@@ -234,7 +239,7 @@ exports.JS = function (args, callback) {
         if (isNaN(speed_change)) {
             throw "Invalid JS-C argument: " + speed_change;
         }
-        this.machine.driver.command({ cvm: 60 * speed_change });
+        if (driver) driver.command({ cvm: 60 * speed_change });
         this.jogspeed_c = speed_change;
     }
     // We have created the objects containing both the values to set on the G2 driver as well as for shopbot
