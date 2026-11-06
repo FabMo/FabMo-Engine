@@ -15,6 +15,16 @@
 $sb_standard_variables_PRESENT := 0								  ' Define presence-test variable if it does not exist
 IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables    ' Every macros should check
 
+&PRESENT_UNITS = %(25)                  ' Save the UNIT TYPE that this macro is DEFINED IN
+IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC  ' We need to define the UNIT type that this table data is provided in
+    SetINCH:
+        SU, "in"                        ' FORCE CURRENT UNIT to INCH to read values below
+        GOTO SetUniversalUnits
+    SetMETRIC:
+        SU, "mm"                        ' FORCE CURRENT UNIT to MM to read values below
+        GOTO SetUniversalUnits
+SetUniversalUnits:
+
 IF $ATC.Type = 6 THEN GOSUB PRS5_ATC
 IF $ATC.Type = 7 THEN GOSUB DT_ATC
 IF $ATC.Type = 8 THEN GOSUB PRS_CATC
@@ -40,16 +50,8 @@ $DrawbarDelay = 0.75
 
 
 ' UNIVERSAL UNIT VARIABLES =========================================================================================================
-&PRESENT_UNITS = %(25)                  ' Save the UNIT TYPE that this macro is DEFINED IN
-IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC  ' We need to define the UNIT type that this table data is provided in
-    SetINCH:
-        SU, "in"                        ' FORCE CURRENT UNIT to INCH to read values below
-        GOTO SetUniversalUnits
-    SetMETRIC:
-        SU, "mm"                        ' FORCE CURRENT UNIT to MM to read values below
-        GOTO SetUniversalUnits
 
-SetUniversalUnits:
+
     $atcUU[].MaxDepth := -0.02
     $atcUU[].PlateOffset := -2
     $atcUU[].zZero_X := 1
@@ -256,17 +258,6 @@ $DrawBar_OUT = 8                                    ' Output number to control D
 $DrawbarDelay = 0.75
 
 
-' UNIVERSAL UNIT VARIABLES =========================================================================================================
-&PRESENT_UNITS = %(25)                  ' Save the UNIT TYPE that this macro is DEFINED IN
-IF $sb_varTableUNITS == "MM" THEN GOTO SetMETRIC  ' We need to define the UNIT type that this table data is provided in
-    SetINCH:
-        SU, "in"                        ' FORCE CURRENT UNIT to INCH to read values below
-        GOTO SetUniversalUnits
-    SetMETRIC:
-        SU, "mm"                        ' FORCE CURRENT UNIT to MM to read values below
-        GOTO SetUniversalUnits
-
-SetUniversalUnits:
     $atcUU[].MaxDepth := -0.02
     $atcUU[].PlateOffset := -2
     $atcUU[].zZero_X := 1
