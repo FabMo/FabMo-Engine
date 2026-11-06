@@ -798,9 +798,12 @@ function nowPreviewJob() {
     else jobID = cookie.get('job-id');
 
     // Run now button
+    // Job _ids are numbers, but the job arg arrives as a number or a string
+    // depending on the launcher (dataset.jobid vs jQuery .data()), and the
+    // cookie fallback is always a string - compare as strings on both sides.
     fabmo.getJobsInQueue(function(err, jobs) {
       if (jobs && jobs.pending.length &&
-          jobs.pending[0]._id.toString() === jobID)
+          String(jobs.pending[0]._id) === String(jobID))
         $('.run-now').show();
     });
 
