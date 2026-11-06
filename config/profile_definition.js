@@ -313,6 +313,14 @@ ProfileDefinition.prototype.clearSnapshotName = function (callback) {
     this._writePatch({ auto_profile: { snapshot_name: null } }, callback);
 };
 
+// Clear the force_reapply flag. While it is set, hasAutoProfileDefinition()
+// stays true even after the applied marker is written, so a manual profile
+// change would be treated as an auto-profile application (additive apps
+// only, no config copy) and silently reverted on restart.
+ProfileDefinition.prototype.clearForceReapply = function (callback) {
+    this._writePatch({ auto_profile: { force_reapply: false } }, callback);
+};
+
 // Read the user's machine name from fabmo-def.json. It is kept there (as
 // well as in engine.json) so that it survives updates and /opt being wiped.
 // Read directly rather than through read() - the name applies whether or

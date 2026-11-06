@@ -766,29 +766,68 @@ var post_manual_profile_change = function (req, res, next) {
     log.info("Manual profile change requested: " + targetProfile);
 
     var profileDef = require("../config/profile_definition");
+    var ConfigClass = require("../config/config").Config;
+    var targetDirName = ConfigClass.resolveProfileDirectory(targetProfile);
 
-    // If auto-profile is active, disable it permanently
-    if (profileDef.hasAutoProfileDefinition()) {
-        log.info("Disabling auto-profile system due to manual profile change");
-
-        var currentDefinition = profileDef.read();
-        if (currentDefinition && currentDefinition.auto_profile.profile_name) {
-            profileDef.markAsApplied(currentDefinition.auto_profile.profile_name, function (err) {
-                if (err) {
-                    log.warn("Could not disable auto-profile: " + err.message);
-                }
-
-                log.info("Auto-profile disabled - proceeding with manual profile change");
-                applyManualProfileChange(targetProfile, res, next);
+    // profiles.apply() takes the additive auto-profile path (apps only, no
+    // config copy - so the engine restarts back on the old profile) whenever
+    // a change is marked in progress or an unapplied auto-profile definition
+    // exists. Clear that state before applying, and if it can't be cleared,
+    // fail loudly rather than let the change silently revert.
+    neutralizeAutoProfileState(profileDef, targetDirName, function (neutErr) {
+        if (profileDef.isChangeInProgress() || profileDef.hasAutoProfileDefinition()) {
+            log.error(
+                "Auto-profile state could not be cleared - aborting manual profile change" +
+                    (neutErr ? ": " + neutErr.message : ""),
+            );
+            return res.json({
+                status: "error",
+                message:
+                    "Could not disable auto-profile (is " +
+                    profileDef.applied_marker +
+                    " writable?) - profile change aborted because it would be reverted on restart",
             });
-        } else {
-            applyManualProfileChange(targetProfile, res, next);
         }
-    } else {
-        // No auto-profile active, proceed normally
         applyManualProfileChange(targetProfile, res, next);
-    }
+    });
 };
+
+// Clear any auto-profile state that would hijack a manual profile change:
+// a stale in_progress marker left by a crashed auto-profile run, a marker
+// lost to an /opt wipe while fabmo-def.json is still active, or a
+// force_reapply flag in fabmo-def.json. Writes a completed applied marker
+// for the target profile, matching the profile_name that
+// applyManualProfileChange is about to record in fabmo-def.json. No-op if
+// nothing needs clearing.
+function neutralizeAutoProfileState(profileDef, targetDirName, callback) {
+    if (!profileDef.isChangeInProgress() && !profileDef.hasAutoProfileDefinition()) {
+        return callback(null);
+    }
+    log.info("Auto-profile state is active - disabling it for manual profile change");
+
+    var definition = profileDef.read(true);
+    var mustClearForce = !!(definition && definition.auto_profile && definition.auto_profile.force_reapply);
+
+    function writeMarker(forceErr) {
+        profileDef.markAsApplied(targetDirName, function (markErr) {
+            if (markErr) {
+                log.warn("Could not write applied marker: " + markErr.message);
+            }
+            callback(forceErr || markErr || null);
+        });
+    }
+
+    if (mustClearForce) {
+        profileDef.clearForceReapply(function (err) {
+            if (err) {
+                log.warn("Could not clear force_reapply: " + err.message);
+            }
+            writeMarker(err);
+        });
+    } else {
+        writeMarker(null);
+    }
+}
 
 // Helper function for manual profile changes
 //
