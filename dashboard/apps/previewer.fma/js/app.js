@@ -1051,7 +1051,11 @@ function nowPreviewJob() {
       var isLive = job_started || status.state === 'running';
       if (isLive)
         viewer.updateStatus(status.line, [status.posx, status.posy, status.posz]);
-      
+      else if (status.state === 'manual')
+        // Keypad / pendant jogging with no job running: follow the
+        // physical tool (path and progress state are left alone).
+        viewer.trackPosition([status.posx, status.posy, status.posz]);
+
       // When state leaves 'running' while the job still exists (e.g. end-of-file PAUSE),
       // immediately start animating the remaining buffered moves.
       // This fires BEFORE any modal dialog appears, so the preview stays in sync.
