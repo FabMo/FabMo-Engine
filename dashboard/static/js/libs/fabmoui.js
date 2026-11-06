@@ -220,7 +220,7 @@ const { last } = require("underscore");
         $(".dro-head-units").text(status.unit === "mm" ? tr("status.dro_units_mm", "MM") : tr("status.dro_units_inch", "INCH"));
         var atcType = Number(vars.ATC && vars.ATC.TYPE) || 0;
         var typeLabel = atcType ? tr("status.dro_tctype_atc", "ATC") : tr("status.dro_tctype_manual", "Manual");
-        $(".dro-head-tctype").text(tr("status.dro_tool_change_type", "[Type: {type}]", { type: typeLabel }));
+        $(".dro-head-tctype").text(tr("status.dro_tool_change_type", "[{type}]", { type: typeLabel }));
         var st = status.state || "";
         $(".dro-head-state")
             .text(st ? tr("tool_status.states." + st, st) : "\u2014")

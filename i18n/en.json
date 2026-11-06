@@ -215,7 +215,7 @@
         "dro_header_tooltip": "Linear distance UNITS; Tool Change Type: Manual Tool Change or <br> Automatic Tool Change (ATC); Processing Status.",
         "dro_units_inch": "INCH",
         "dro_units_mm": "MM",
-        "dro_tool_change_type": "[Type: {type}]",
+        "dro_tool_change_type": "[{type}]",
         "dro_tctype_manual": "Manual",
         "dro_tctype_atc": "ATC",
         "dro_current_tool": "[Current Tool: {n}]"
