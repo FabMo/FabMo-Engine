@@ -39,6 +39,13 @@
         <div class="ar-cal-handle" data-corner="tr">TR</div>
         <div class="ar-cal-handle" data-corner="br">BR</div>
         <div class="ar-cal-handle" data-corner="bl">BL</div>
+        <!-- Edge-midpoint handles: drag onto the actual (barrel-bowed) table
+             edge. Until touched they track the projective midpoint of their
+             corner pair, which is a no-op relative to the 4-corner warp. -->
+        <div class="ar-cal-handle edge" data-corner="tm"></div>
+        <div class="ar-cal-handle edge" data-corner="rm"></div>
+        <div class="ar-cal-handle edge" data-corner="bm"></div>
+        <div class="ar-cal-handle edge" data-corner="lm"></div>
         <!-- Magnifier shown while a handle is held: zoomed crop of the live
              video with a crosshair at the exact anchor point, so the handle
              dot doesn't obscure the table corner being aligned. -->

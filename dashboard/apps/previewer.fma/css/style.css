@@ -144,6 +144,19 @@ body {
   touch-action: none;
 }
 .ar-cal-handle:active { cursor: grabbing; background: #ff3c3c; }
+/* Edge-midpoint handles (barrel-distortion correction): smaller diamonds so
+   the corners stay visually primary. */
+.ar-cal-handle.edge {
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  border-radius: 4px;
+  transform: rotate(45deg);
+  background: rgba(255, 150, 40, 0.9);
+  border-width: 2px;
+}
+.ar-cal-handle.edge:active { background: #ff9628; }
 /* While its loupe is up, the grabbed handle hides so the magnified corner
    is unobstructed; the loupe's crosshair marks the anchor point instead. */
 .ar-cal-handle.loupe-active { visibility: hidden; }

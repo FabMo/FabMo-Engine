@@ -2047,8 +2047,15 @@ module.exports = function(container) {
       calibrating: false,
       cameraPort: null,
       corners: null,           // persisted {tl, tr, br, bl} as {x,y} fractions [0..1]
+      edges: null,             // persisted barrel-correction midpoints: subset of
+                               // {tm, rm, bm, lm} as {x,y} fractions — only the
+                               // handles the user actually moved are stored;
+                               // absent keys mean "projective default" (no bow)
       _draftCorners: null,     // working copy during drag-to-calibrate
+      _draftEdges: null,       // working edge midpoints during calibration
+      _edgeTouched: null,      // {tm:bool,...} - which edges the user has moved
       _backupCorners: null,    // pre-calibration snapshot for Cancel
+      _backupEdges: null,
       _dragging: null,
       _savedView: null,
       // 2D zoom/pan applied as CSS transform on top of the AR composite
@@ -2103,6 +2110,55 @@ module.exports = function(container) {
           0,       0,       1, 0,
           H[0][2], H[1][2], 0, H[2][2],
       ].map(function (n) { return n.toFixed(8); }).join(',') + ')';
+  }
+
+  // Apply a 3x3 homography to a 2D point.
+  function _h_apply(H, p) {
+      var w = H[2][0] * p[0] + H[2][1] * p[1] + H[2][2];
+      return [(H[0][0] * p[0] + H[0][1] * p[1] + H[0][2]) / w,
+              (H[1][0] * p[0] + H[1][1] * p[1] + H[1][2]) / w];
+  }
+
+  // ---- Barrel-distortion edge handles ------------------------------------
+  //
+  // A single 4-corner homography keeps straight lines straight, but lens
+  // (barrel) distortion bows the table's edges in the raw video — so the
+  // overlay aligns at the corners and drifts at mid-edge. The edge-midpoint
+  // handles (tm/rm/bm/lm) let the user mark where each table edge's midpoint
+  // ACTUALLY appears. Until touched they track the projective midpoint
+  // (below), which carries zero correction; once dragged, the warp switches
+  // to four piecewise homography patches over the 3x3 lattice of corners,
+  // edge midpoints and a Coons-interpolated center.
+
+  var EDGE_KEYS = ['tm', 'rm', 'bm', 'lm'];
+  // Edge key → [cornerA, cornerB] index into TL,TR,BR,BL order.
+  var EDGE_PAIRS = { tm: [0, 1], rm: [1, 2], bm: [2, 3], lm: [3, 0] };
+
+  // Where the midpoints of the table edges land in the raw video if the lens
+  // had no distortion: map the canvas-space envelope edge midpoints back
+  // through the inverse of the 4-corner homography. Returns fractions, or
+  // null if the canvas has no size yet. Framing-independent (the same dst
+  // frame builds the homography and the midpoints, so it cancels).
+  function _projectiveEdgeDefaults(corners) {
+      var size = _previewSize();
+      if (!size.w || !size.h) return null;
+      var src = [
+          [corners.tl.x * size.w, corners.tl.y * size.h],
+          [corners.tr.x * size.w, corners.tr.y * size.h],
+          [corners.br.x * size.w, corners.br.y * size.h],
+          [corners.bl.x * size.w, corners.bl.y * size.h],
+      ];
+      var dst = _envelopeCornersInCanvasPx();
+      var Hinv = _h_quadToQuad(dst, src);  // canvas → video px
+      var out = {};
+      EDGE_KEYS.forEach(function (k) {
+          var pair = EDGE_PAIRS[k];
+          var mid = [(dst[pair[0]][0] + dst[pair[1]][0]) / 2,
+                     (dst[pair[0]][1] + dst[pair[1]][1]) / 2];
+          var v = _h_apply(Hinv, mid);
+          out[k] = { x: v[0] / size.w, y: v[1] / size.h };
+      });
+      return out;
   }
 
   // Return the canvas pixel positions of the 4 grid corners by projecting
@@ -2388,6 +2444,9 @@ module.exports = function(container) {
       window.fabmo.setConfig({
           machine: { cameraCalibration: {
               corners: self.ar.corners,
+              // Barrel-correction edge midpoints; only user-placed handles
+              // are stored (null = straight edges, pre-existing behavior).
+              edges: self.ar.edges || null,
               port: self.ar.cameraPort || 0,
               savedAt: Date.now(),
               calibrated: true,
@@ -2401,15 +2460,31 @@ module.exports = function(container) {
       var cal = config && config.machine && config.machine.cameraCalibration;
       if (cal && cal.calibrated && cal.corners && cal.corners.tl && cal.corners.tr && cal.corners.br && cal.corners.bl) {
           self.ar.corners = cal.corners;
+          self.ar.edges = cal.edges || null;
           if (cal.port) self.ar.cameraPort = cal.port;
           if (typeof _refreshOverheadToggleVisibility === 'function') _refreshOverheadToggleVisibility();
       }
   }
   self.loadARCalibration = _loadCalibration;
 
+  // Keep untouched edge handles glued to their projective (no-bow) default
+  // as the corners move; touched ones stay where the user put them.
+  function _refreshUntouchedEdgeDefaults() {
+      if (!self.ar._draftCorners) return;
+      var defaults = _projectiveEdgeDefaults(self.ar._draftCorners);
+      if (!defaults) return;
+      if (!self.ar._draftEdges) self.ar._draftEdges = {};
+      EDGE_KEYS.forEach(function (k) {
+          if (!self.ar._edgeTouched || !self.ar._edgeTouched[k]) {
+              self.ar._draftEdges[k] = defaults[k];
+          }
+      });
+  }
+
   function _renderCalHandles() {
       if (!self.ar._draftCorners) return;
       var size = _previewSize();
+      _refreshUntouchedEdgeDefaults();
       ['tl', 'tr', 'br', 'bl'].forEach(function (k) {
           var p = self.ar._draftCorners[k];
           container.find('.ar-cal-handle[data-corner="' + k + '"]').css({
@@ -2417,8 +2492,19 @@ module.exports = function(container) {
               top:  (p.y * size.h) + 'px',
           });
       });
+      EDGE_KEYS.forEach(function (k) {
+          var p = self.ar._draftEdges && self.ar._draftEdges[k];
+          if (!p) return;
+          container.find('.ar-cal-handle[data-corner="' + k + '"]').css({
+              left: (p.x * size.w) + 'px',
+              top:  (p.y * size.h) + 'px',
+          });
+      });
       var c = self.ar._draftCorners;
-      var pts = [c.tl, c.tr, c.br, c.bl].map(function (p) { return p.x + ',' + p.y; }).join(' ');
+      var e = self.ar._draftEdges || {};
+      // 8-gon through corners and edge midpoints shows the bow directly.
+      var ring = [c.tl, e.tm, c.tr, e.rm, c.br, e.bm, c.bl, e.lm];
+      var pts = ring.filter(Boolean).map(function (p) { return p.x + ',' + p.y; }).join(' ');
       container.find('.ar-cal-quad').attr('points', pts);
   }
 
@@ -2428,6 +2514,14 @@ module.exports = function(container) {
       // when calibrating=true, so the canvas/video render at 1:1.
       _resetARView();
       self.ar._backupCorners = self.ar.corners ? JSON.parse(JSON.stringify(self.ar.corners)) : null;
+      self.ar._backupEdges = self.ar.edges ? JSON.parse(JSON.stringify(self.ar.edges)) : null;
+      // Saved edges are exactly the touched ones; untouched keys re-derive
+      // from the corners in _renderCalHandles.
+      self.ar._draftEdges = self.ar.edges ? JSON.parse(JSON.stringify(self.ar.edges)) : {};
+      self.ar._edgeTouched = {};
+      EDGE_KEYS.forEach(function (k) {
+          self.ar._edgeTouched[k] = !!(self.ar.edges && self.ar.edges[k]);
+      });
       if (self.ar.corners) {
           self.ar._draftCorners = JSON.parse(JSON.stringify(self.ar.corners));
       } else {
@@ -2454,6 +2548,7 @@ module.exports = function(container) {
       // 3D scene stays in top-down ortho with no canvas transform; live
       // homography preview is suppressed (would re-warp the raw video).
       if (self.ar.overhead) {
+          _ensureVideoPatches(false);
           container.find('.ar-video').css('transform', '');
       } else {
           _applyHomography();
@@ -2474,7 +2569,8 @@ module.exports = function(container) {
   function _drawLoupe(key, touchLift) {
       var $loupe = container.find('#ar-cal-loupe');
       var canvas = $loupe.find('canvas')[0];
-      var p = self.ar._draftCorners && self.ar._draftCorners[key];
+      var p = (self.ar._draftCorners && self.ar._draftCorners[key]) ||
+              (self.ar._draftEdges && self.ar._draftEdges[key]);
       if (!canvas || !p) return;
       var size = _previewSize();
       var diamCss = $loupe.width() || 148;
@@ -2550,7 +2646,14 @@ module.exports = function(container) {
           var y = (src.clientY - rect.top)  / rect.height;
           x = Math.max(0, Math.min(1, x));
           y = Math.max(0, Math.min(1, y));
-          self.ar._draftCorners[self.ar._dragging] = { x: x, y: y };
+          var dragKey = self.ar._dragging;
+          if (EDGE_KEYS.indexOf(dragKey) !== -1) {
+              if (!self.ar._draftEdges) self.ar._draftEdges = {};
+              self.ar._draftEdges[dragKey] = { x: x, y: y };
+              self.ar._edgeTouched[dragKey] = true;
+          } else {
+              self.ar._draftCorners[dragKey] = { x: x, y: y };
+          }
           _renderCalHandles();
           // In overhead recalibration the video must stay un-warped so the
           // user can mark actual table corners on the raw feed.
@@ -2569,8 +2672,22 @@ module.exports = function(container) {
       if (!self.ar._draftCorners) return;
       _hideLoupe();
       self.ar.corners = self.ar._draftCorners;
+      // Keep only the edges the user actually placed; untouched ones stay
+      // derived so they keep tracking the corners on future recalibrations.
+      var touched = {};
+      var any = false;
+      EDGE_KEYS.forEach(function (k) {
+          if (self.ar._edgeTouched && self.ar._edgeTouched[k] && self.ar._draftEdges && self.ar._draftEdges[k]) {
+              touched[k] = self.ar._draftEdges[k];
+              any = true;
+          }
+      });
+      self.ar.edges = any ? touched : null;
       self.ar._draftCorners = null;
+      self.ar._draftEdges = null;
+      self.ar._edgeTouched = null;
       self.ar._backupCorners = null;
+      self.ar._backupEdges = null;
       self.ar.calibrating = false;
       container.find('.ar-calibration').hide();
       _saveCalibration();
@@ -2584,10 +2701,14 @@ module.exports = function(container) {
       _hideLoupe();
       self.ar.calibrating = false;
       self.ar._draftCorners = null;
+      self.ar._draftEdges = null;
+      self.ar._edgeTouched = null;
       container.find('.ar-calibration').hide();
       if (self.ar._backupCorners) {
           self.ar.corners = self.ar._backupCorners;
+          self.ar.edges = self.ar._backupEdges;
           self.ar._backupCorners = null;
+          self.ar._backupEdges = null;
           if (self.ar.overhead) _applyOverheadWarp();
           else                  _applyHomography();
       } else {
@@ -2851,6 +2972,7 @@ module.exports = function(container) {
   function _exitARTeardown() {
       container.removeClass('ar-mode overhead-mode');
       _clearHomography();
+      _ensureVideoPatches(false);
       container.find('.ar-video').hide().attr('src', '').css({ transform: '', opacity: '' });
       container.find('.ar-video-bg').hide().attr('src', '').css('opacity', '');
       self.renderer.setClearColor(0xebebeb, 1);
@@ -2929,6 +3051,7 @@ module.exports = function(container) {
       // so wipe all transforms (including any overhead warp + zoom/pan)
       // and let CSS-driven defaults apply.
       if (self.ar.calibrating) {
+          _ensureVideoPatches(false);
           if (canvas) canvas.style.transform = '';
           $video.css({ 'transform-origin': '', transform: '' });
           $cal.css({ 'transform-origin': '', transform: '' });
@@ -2950,6 +3073,38 @@ module.exports = function(container) {
       // Compose with the overhead matrix3d homography when applicable.
       // Order: matrix3d (warps the raw camera frame onto the envelope),
       // then scale (zoom), then translate (pan) — read right-to-left.
+      //
+      // With barrel-correction edges placed, the single homography becomes
+      // four piecewise homography patches over the 3x3 lattice (corners,
+      // edge midpoints, Coons center): each patch is a clone of the video
+      // element clipped to its source sub-quad and warped by its own
+      // matrix3d. Pure CSS - no per-frame drawing.
+      if (self.ar.overhead && self.ar.corners && self.ar.edges) {
+          var lat = _overheadLattice();
+          if (lat) {
+              var els = _ensureVideoPatches(true);
+              // Patch sub-quads in TL,TR,BR,BL order over the lattice.
+              var S = lat.src, D = lat.dst;
+              var quads = [
+                  [[S.c[0], S.e.tm, S.ctr, S.e.lm], [D.c[0], D.e.tm, D.ctr, D.e.lm]],
+                  [[S.e.tm, S.c[1], S.e.rm, S.ctr], [D.e.tm, D.c[1], D.e.rm, D.ctr]],
+                  [[S.ctr, S.e.rm, S.c[2], S.e.bm], [D.ctr, D.e.rm, D.c[2], D.e.bm]],
+                  [[S.e.lm, S.ctr, S.e.bm, S.c[3]], [D.e.lm, D.ctr, D.e.bm, D.c[3]]],
+              ];
+              for (var qi = 0; qi < 4 && qi < els.length; qi++) {
+                  var sq = quads[qi][0], dq = quads[qi][1];
+                  var m3d = _h_toMatrix3d(_h_quadToQuad(sq, dq));
+                  els[qi].css({
+                      'transform-origin': '0 0',
+                      'transform': view ? (view + ' ' + m3d) : m3d,
+                      'clip-path': _clipPolygon(sq),
+                  });
+              }
+              return;
+          }
+      }
+
+      _ensureVideoPatches(false);
       var warp = '';
       if (self.ar.overhead && self.ar.corners) {
           var size = _previewSize();
@@ -2969,6 +3124,90 @@ module.exports = function(container) {
           'transform-origin': '0 0',
           'transform': (view && warp) ? (view + ' ' + warp) : (view || warp || '')
       });
+  }
+
+  // The 3x3 overhead warp lattice in pixels: video-space (src) and
+  // canvas-space (dst) corners, edge midpoints, and center. Canvas-side
+  // midpoints are exact (ortho projection is affine); video-side edges are
+  // the user's handles (or the projective default) and the video-side
+  // center is the projective center shifted by a Coons blend of the edge
+  // corrections (corner corrections are zero by construction).
+  function _overheadLattice() {
+      var size = _previewSize();
+      if (!size.w || !size.h) return null;
+      var c = self.ar.corners;
+      var src = [
+          [c.tl.x * size.w, c.tl.y * size.h],
+          [c.tr.x * size.w, c.tr.y * size.h],
+          [c.br.x * size.w, c.br.y * size.h],
+          [c.bl.x * size.w, c.bl.y * size.h],
+      ];
+      var dst = _envelopeCornersInCanvasPx();
+      var dstE = {}, dstCtr = [0, 0];
+      EDGE_KEYS.forEach(function (k) {
+          var pair = EDGE_PAIRS[k];
+          dstE[k] = [(dst[pair[0]][0] + dst[pair[1]][0]) / 2,
+                     (dst[pair[0]][1] + dst[pair[1]][1]) / 2];
+      });
+      for (var i = 0; i < 4; i++) {
+          dstCtr[0] += dst[i][0] / 4;
+          dstCtr[1] += dst[i][1] / 4;
+      }
+      var defaults = _projectiveEdgeDefaults(c);
+      if (!defaults) return null;
+      var srcE = {}, dSum = [0, 0];
+      EDGE_KEYS.forEach(function (k) {
+          var e = (self.ar.edges && self.ar.edges[k]) || defaults[k];
+          srcE[k] = [e.x * size.w, e.y * size.h];
+          dSum[0] += srcE[k][0] - defaults[k].x * size.w;
+          dSum[1] += srcE[k][1] - defaults[k].y * size.h;
+      });
+      var Hinv = _h_quadToQuad(dst, src);
+      var ctr0 = _h_apply(Hinv, dstCtr);
+      var srcCtr = [ctr0[0] + dSum[0] / 2, ctr0[1] + dSum[1] / 2];
+      return {
+          src: { c: src, e: srcE, ctr: srcCtr },
+          dst: { c: dst, e: dstE, ctr: dstCtr },
+      };
+  }
+
+  // clip-path polygon for a source sub-quad, inflated ~1.5px from its
+  // centroid so adjacent patches overlap slightly instead of showing a
+  // hairline seam (the overlapping content is identical video, so the
+  // overlap itself is invisible).
+  function _clipPolygon(quad) {
+      var cx = 0, cy = 0;
+      for (var i = 0; i < 4; i++) { cx += quad[i][0] / 4; cy += quad[i][1] / 4; }
+      var pts = quad.map(function (p) {
+          var dx = p[0] - cx, dy = p[1] - cy;
+          var len = Math.sqrt(dx * dx + dy * dy) || 1;
+          return (p[0] + dx / len * 1.5).toFixed(2) + 'px ' +
+                 (p[1] + dy / len * 1.5).toFixed(2) + 'px';
+      });
+      return 'polygon(' + pts.join(',') + ')';
+  }
+
+  // Create (or tear down) the three extra video elements used as warp
+  // patches. Returns the four patch elements in quadrant order, the
+  // original .ar-video serving as patch 0. Clones share the MJPEG src -
+  // on-tool that's localhost, and mjpg-streamer encodes each frame once
+  // regardless of client count.
+  function _ensureVideoPatches(active) {
+      var $v = container.find('.ar-video').first();
+      if (!active) {
+          container.find('.ar-video-patch').remove();
+          $v.css('clip-path', '');
+          return [$v];
+      }
+      while (container.find('.ar-video-patch').length < 3) {
+          $v.clone(false)
+            .removeAttr('id')
+            .addClass('ar-video-patch')
+            .insertAfter(container.find('.ar-video').last());
+      }
+      var els = [$v];
+      container.find('.ar-video-patch').each(function () { els.push($(this)); });
+      return els;
   }
 
   // Reset view to identity. Called on entry/exit and at calibration start.
