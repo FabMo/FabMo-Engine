@@ -1133,62 +1133,124 @@ module.exports = function(container) {
   }
 
 
+  // ── Live cut tracking ────────────────────────────────────────────────
+  //
+  // status.line is the N-number most recently ACCEPTED BY THE G2 PLANNER,
+  // which runs ahead of the tool by however many moves fit in the planner
+  // buffer — a depth that varies constantly with move length and curvature.
+  // The reported position, by contrast, is the tool's actual location. So:
+  // the position is the ground truth, and the line is only useful as an
+  // upper bound ("the tool cannot be past this move yet").
+  //
+  // Three rules keep the display smooth and honest:
+  //  1. Coalesce: status reports are folded to at most one visual update
+  //     per animation frame (there is no continuous render loop — every
+  //     update renders synchronously, and processing each report during a
+  //     fast cut backlogs the socket queue until the preview replays stale
+  //     history).
+  //  2. Anchor to position: pick the move nearest the reported position
+  //     within the window [last live move .. planner-line move] instead of
+  //     subtracting a fixed "lookahead" constant from the planner line.
+  //  3. Monotonic: within a run the displayed progress never steps
+  //     backwards — a projection that lands slightly behind freezes the
+  //     cone briefly instead of visibly running in reverse.
+  var liveStatus = null;   // newest unprocessed {line, position}
+  var liveRAF = null;      // pending coalescing frame, if any
+  var liveMoveIdx = 0;     // last live move index (monotonic lower bound)
+  var liveTime = 0;        // last displayed path time (monotonic)
+
+  function resetLiveTracking() {
+    liveStatus = null;
+    if (liveRAF !== null) {
+      window.cancelAnimationFrame(liveRAF);
+      liveRAF = null;
+    }
+    liveMoveIdx = 0;
+    liveTime = 0;
+  }
+
   self.updateStatus = function(line, position) {
-    // TODO this is a problem as the line number being reported is a relatively arbitrary
-    // ... gcode N number, not the actual line number in the file
-    // ... and the previewer lines are just an array of lines that are previewer executable
-    // ... which does not include a number of sbp type lines
-    // SO ... as a very crude first approximation, we just look for the gcode start and go from there
-    // DO THAT BY Extracting the line number from the first element of the gcode array
-  
-  
     if (!self.path || !self.path.loaded || !self.path.gcode || !self.path.gcode.length) return;
     if (!self.nLineMap || !line) return;
+    liveStatus = { line: line, position: position };
+    if (liveRAF === null) {
+      liveRAF = window.requestAnimationFrame(function () {
+        liveRAF = null;
+        var s = liveStatus;
+        liveStatus = null;
+        if (s) applyLiveStatus(s.line, s.position);
+      });
+    }
+  }
 
-    // Subtract the planner buffer compensation (in N-numbers).
-    // For GCode files: 1 N-number = 1 gcode line, so comp=20 means "show 20 lines behind planner"
-    // For SBP files:   1 N-number = 1 SBP command, so comp=5 means "5 commands behind planner"
-    var comp = parseInt(cookie.get('planner-lookahead', 5));
-    var targetN = line - comp;
+  function applyLiveStatus(line, position) {
+    if (!self.path || !self.path.loaded || !self.path.moves.length) return;
+    var moves = self.path.moves;
 
-    // Backward search: find the largest N <= targetN that has a mapped move.
-    // Handles gaps from preamble lines (no motion), non-motion commands, etc.
-    var moveIdx;
+    // Upper bound: backward search for the largest mapped N <= the planner
+    // line. Handles gaps from preamble lines, non-motion commands, etc.
+    var upperIdx;
     var limit = 200;
-    for (var n = targetN; n >= 0 && limit-- > 0; n--) {
+    for (var n = line; n >= 0 && limit-- > 0; n--) {
       if (n in self.nLineMap) {
-        moveIdx = self.nLineMap[n];
+        upperIdx = self.nLineMap[n];
         break;
       }
     }
+    if (upperIdx === undefined) upperIdx = 0;
+    if (upperIdx >= moves.length) upperIdx = moves.length - 1;
+    if (upperIdx < liveMoveIdx) upperIdx = liveMoveIdx;
 
-    if (moveIdx === undefined) moveIdx = 0;
-    if (moveIdx >= self.path.moves.length) moveIdx = self.path.moves.length - 1;
-
-    // setMoveLinePosition handles the fine positioning within the move using
-    // the reported hardware coordinates — pins the preview icon to actual position
-    var moveLine = self.path.moves[moveIdx].getLine();
-    self.path.setMoveLinePosition(moveLine, position);
-
-    // Show both GCode and (when this is an SBP-derived run) SBP source line.
-    if (self.path.setCurrentLine) {
-      var liveMove = self.path.moves[moveIdx];
-      self.path.setCurrentLine(
-        liveMove.getLine(),
-        self.isSBP ? liveMove.sourceLine : undefined
-      );
+    // Anchor: the move nearest the reported position inside the window.
+    // The window is normally just the planner depth (tens of moves); cap
+    // the scan so opening the previewer mid-job doesn't walk the whole
+    // file (the first update then snaps into the right neighborhood).
+    var first = liveMoveIdx;
+    if (upperIdx - first > 500) first = upperIdx - 500;
+    var best = upperIdx;
+    var bestDist;
+    var t;
+    if (position && typeof position[0] === 'number') {
+      for (var i = first; i <= upperIdx; i++) {
+        var d = moves[i].distanceTo(position);
+        if (bestDist === undefined || d < bestDist) {
+          best = i;
+          bestDist = d;
+        }
+      }
+      t = moves[best].timeNearest(position);
+    } else {
+      t = moves[best].getStartTime();
     }
+    if (t < liveTime) t = liveTime;
+
+    liveMoveIdx = best;
+    liveTime = t;
+
+    self.path.pause();
+    self.path.setMoveTime(t);
   }
-  
+
   // Called when G2 finishes streaming (state leaves 'running' while job exists).
   // Animates the remaining moves in the planner buffer before any modal appears.
   self.finishLive = function() {
+    // Drop any coalesced status still pending — applying it after play()
+    // starts would pause() the finishing animation.
+    liveStatus = null;
+    if (liveRAF !== null) {
+      window.cancelAnimationFrame(liveRAF);
+      liveRAF = null;
+    }
     self.path.play();
   }
 
-  self.jobStarted = function () {container.addClass('live')}
+  self.jobStarted = function () {
+    resetLiveTracking();
+    container.addClass('live');
+  }
 
   self.jobEnded = function () {
+    resetLiveTracking();
     // If finishLive() animation is still running, let it finish naturally.
     // If not (e.g. direct-to-idle with no pause), jump to end instantly.
     if (typeof self.path.animationFrame === 'undefined') {
@@ -2012,11 +2074,6 @@ module.exports = function(container) {
 
   // Units
   util.connectSetting('units', self.units, self.setUnits);
-
-  // Planner lookahead compensation
-  util.connectSetting('planner-lookahead', parseInt(cookie.get('planner-lookahead', 5)), function(v) {
-      cookie.set('planner-lookahead', v);
-  });
 
   // Add method to load point cloud from config
   self.loadPointCloud = function(config) {
