@@ -501,9 +501,11 @@ function refreshLiveOverlay() {
                 ? "inline-block" : "none";
     }
     positionPlate();
-    if (tableMode && !calState.zoneMode) {
-        document.getElementById("cam-label").innerHTML = "table view" +
-            (calState.plate && plateMatchesTable() ? " &mdash; photo " + plateAge() : "");
+    // Only rewrite the label when a photo is actually shown — the no-camera
+    // path owns its own label text ("no camera — table view").
+    if (tableMode && !calState.zoneMode && calState.plate && plateMatchesTable()) {
+        document.getElementById("cam-label").innerHTML =
+            "table view &mdash; photo " + plateAge();
     }
 }
 
@@ -1080,7 +1082,9 @@ function closeScanBar() {
 
 function failScan(msg) {
     // A mid-scan failure leaves the jog job running — bring it to a stop
-    if (scanState && scanState.sawRunning && calState.mstate === "running") {
+    // ("stopped" here is a G4 dwell in progress, see plateOnStatus)
+    if (scanState && scanState.sawRunning &&
+        (calState.mstate === "running" || calState.mstate === "stopped")) {
         fabmo.stop();
     }
     if (msg) fabmo.notify("error", msg);
@@ -1088,7 +1092,9 @@ function failScan(msg) {
 }
 
 function startScan() {
+    if (scanState) return; // double-click guard
     refreshARConfig(function () {
+        if (scanState) return;
         var cal = calAnyCamera();
         var s = envSpans();
         if (!cal || !s) {
@@ -1159,9 +1165,9 @@ function startScan() {
 }
 
 function runScanJob(sc) {
-    // G4 dwells rather than SBP PAUSE: no dashboard modal, machine state
-    // stays "running" while the position holds still — which is exactly the
-    // capture signal. G20/G21 reasserts the machine's own configured units.
+    // G4 dwells rather than SBP PAUSE: no dashboard modal, and the position
+    // stream keeps flowing while the machine holds still — which is exactly
+    // the capture signal. G20/G21 reasserts the machine's configured units.
     var lines = ["( FabMo camera table scan )",
         calState.units === "mm" ? "G21" : "G20",
         "G4 P0.5"];
@@ -1185,17 +1191,27 @@ function runScanJob(sc) {
 
 // Ride the status reports: inside a dwell at a station the position holds
 // still — two consecutive on-target reports mean the frame is clean to grab.
+// Bench-measured state sequence for a G0+G4 job on the immediate gcode
+// runtime: "running" through moves, "stopped" for the whole of each G4
+// dwell, "idle" after the job — so "stopped" means dwelling, NOT aborted,
+// and capture keys off position stillness alone.
 function plateOnStatus(status) {
     var sc = scanState;
     if (!sc || !sc.started) return;
     var state = status.state;
     var mx = (Number(status.posx) || 0) + calState.g55.x;
-    var target = sc.stations[sc.frames.length];
-    if (state === "running") sc.sawRunning = true;
     // Until the job is actually underway, ignore idle reports — the machine
-    // may already be sitting at the first station.
+    // may already be sitting at the first station. The scan only starts
+    // from idle, so running/stopped both imply the job is active.
+    if (state === "running" || state === "stopped") sc.sawRunning = true;
     if (!sc.sawRunning) return;
-    if (target !== undefined && state === "running") {
+    if (state === "paused") {
+        // Feedhold — someone wants the machine still; don't keep scanning
+        failScan("Scan interrupted.");
+        return;
+    }
+    var target = sc.stations[sc.frames.length];
+    if (target !== undefined && state !== "idle") {
         if (Math.abs(mx - target) <= sc.eps &&
             sc.lastX !== null && Math.abs(mx - sc.lastX) <= sc.eps * 0.5) {
             sc.stable++;
@@ -1207,13 +1223,13 @@ function plateOnStatus(status) {
     }
     if (state === "idle") {
         // Job over. The last dwell can end before two stable reports arrive
-        // — if we came to rest on target, grab the final frame now.
+        // — if we came to rest on target, grab the final frame now. A scan
+        // the user stopped early lands here too, with frames missing; the
+        // composite merges what it got over the previous photo.
         if (target !== undefined && Math.abs(mx - target) <= sc.eps) {
             grabScanFrame(sc, target);
         }
         finishScan(sc);
-    } else if (state === "stopped" || state === "paused") {
-        failScan("Scan interrupted.");
     }
 }
 
