@@ -1462,7 +1462,22 @@ module.exports = function(container) {
   })();
 
   // Method to save current view state
+  // A camera pose is only worth keeping (or restoring) if every number is
+  // finite and the camera isn't sitting on its own orbit target — at radius
+  // ~0 OrbitControls scales every rotate/pan/zoom to nothing and the view
+  // is frozen. NaN poses additionally stringify to null, so one bad save
+  // used to freeze every later previewer load in the tab.
+  function viewPoseUsable(pos, target) {
+    var vals = [pos.x, pos.y, pos.z, target.x, target.y, target.z];
+    for (var i = 0; i < vals.length; i++) {
+      if (typeof vals[i] !== 'number' || !isFinite(vals[i])) return false;
+    }
+    var dx = pos.x - target.x, dy = pos.y - target.y, dz = pos.z - target.z;
+    return (dx * dx + dy * dy + dz * dz) > 1e-12;
+  }
+
   self.saveViewState = function() {
+    if (!viewPoseUsable(self.camera.position, self.controls.target)) return;
     var viewState = {
       mode: self.isOrtho ? 'ortho' : 'perspective',
       position: {
@@ -1488,12 +1503,21 @@ module.exports = function(container) {
       if (!viewStateStr) return false;
       
       var viewState = JSON.parse(viewStateStr);
-      
+
       // Make sure we're using the right camera before restoring
       if (viewState.mode !== (self.isOrtho ? 'ortho' : 'perspective')) {
         return false;
       }
-      
+
+      // Refuse a degenerate saved pose (older builds could persist a
+      // NaN-poisoned camera as nulls) — drop it and let the caller fall
+      // back to default framing instead of restoring a frozen view.
+      if (!viewState.position || !viewState.target ||
+          !viewPoseUsable(viewState.position, viewState.target)) {
+        sessionStorage.removeItem('preview-view-state');
+        return false;
+      }
+
       if (viewState.position) {
         self.camera.position.set(
           viewState.position.x,

@@ -491,6 +491,30 @@ module.exports = function(scene, callbacks) {
   }
 
 
+  // Guarantee usable bounds even when the file produced no motion at all
+  // (bounds stay {min:{}, max:{}} — every axis undefined) or only a single
+  // point (zero extent). Undefined axes turn the viewer's center/zoom math
+  // into NaN, and zero extent computes a camera placed exactly at its own
+  // orbit target (radius 0) — either way OrbitControls goes completely
+  // dead: rotate, pan and zoom all collapse and the view is frozen.
+  function normalizeBounds() {
+    var axes = ['x', 'y', 'z'];
+    var extent = 0;
+    for (var i = 0; i < 3; i++) {
+      var a = axes[i];
+      if (!isFinite(self.bounds.min[a])) self.bounds.min[a] = 0;
+      if (!isFinite(self.bounds.max[a])) self.bounds.max[a] = 0;
+      extent = Math.max(extent, self.bounds.max[a] - self.bounds.min[a]);
+    }
+    if (!extent) {
+      for (var i = 0; i < 3; i++) {
+        var a = axes[i];
+        self.bounds.min[a] -= 1;
+        self.bounds.max[a] += 1;
+      }
+    }
+  }
+
   self.process = function (done) {
     for (var i = 0; i < 1000 && !self.done; i++) {
       if (self.gcode.length <= self.lines) break;
@@ -506,6 +530,7 @@ module.exports = function(scene, callbacks) {
     else {
       if (!self.commands) self.addError('error', 'No commands.');
       self.flushBuffer();
+      normalizeBounds();
       self.loaded = true;
       console.log('Path distance:', self.distance.toFixed(2),
                   'duration:', self.duration.toFixed(2) + 's');
@@ -519,6 +544,7 @@ module.exports = function(scene, callbacks) {
 
     if (typeof gcode !== 'string' || gcode  === '') {
       self.addError('error', 'No commands; or, Vectric file with mis-matched Units.');
+      normalizeBounds();
       done();
       return;
     }
@@ -853,7 +879,9 @@ module.exports = function(scene, callbacks) {
   self.reset = function () {
     self.pause();
 
-    for (var i = 0; i <= self.lastMove; i++)
+    // lastMove is 0 even when the file produced no moves at all - guard so
+    // an empty path doesn't throw here and abort the viewer's load flow.
+    for (var i = 0; i <= self.lastMove && i < self.moves.length; i++)
       self.moves[i].setDone(false);
 
     self.setMoveTime(0);
