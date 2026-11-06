@@ -1199,14 +1199,25 @@ module.exports = function(container) {
     }
     if (upperIdx === undefined) upperIdx = 0;
     if (upperIdx >= moves.length) upperIdx = moves.length - 1;
+
+    // nLineMap points at the FIRST move of the mapped line, but arcs are
+    // linearized into hundreds of little moves that all share one gcode
+    // line - extend the bound through the whole same-line run, or progress
+    // along an arc falls outside the window and the cone pins to the arc's
+    // first segment until the next line arrives.
+    var upperLine = moves[upperIdx].getLine();
+    while (upperIdx + 1 < moves.length && moves[upperIdx + 1].getLine() === upperLine)
+      upperIdx++;
+
     if (upperIdx < liveMoveIdx) upperIdx = liveMoveIdx;
 
     // Anchor: the move nearest the reported position inside the window.
-    // The window is normally just the planner depth (tens of moves); cap
-    // the scan so opening the previewer mid-job doesn't walk the whole
-    // file (the first update then snaps into the right neighborhood).
+    // The window is normally the planner depth (tens of moves) plus the
+    // current line's segment run; cap the scan so opening the previewer
+    // mid-job doesn't walk the whole file (the first update then snaps
+    // into the right neighborhood).
     var first = liveMoveIdx;
-    if (upperIdx - first > 500) first = upperIdx - 500;
+    if (upperIdx - first > 2000) first = upperIdx - 2000;
     var best = upperIdx;
     var bestDist;
     var t;
