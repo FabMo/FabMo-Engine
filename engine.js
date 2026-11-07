@@ -1250,6 +1250,10 @@ Engine.prototype.start = function (callback) {
                 );
                 server.use(authentication.passport.initialize());
                 server.use(authentication.passport.session());
+                // Operator accounts: refuse settings-changing routes (see
+                // operatorGate in authentication.js). Must sit after
+                // passport.session() so req.user is populated.
+                server.use(authentication.operatorGate);
 
                 // gzipping is a typical way to speed up network operations
                 // We enable it on the server, so that supporting clients can use it

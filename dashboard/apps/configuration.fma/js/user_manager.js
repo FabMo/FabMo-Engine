@@ -3,6 +3,26 @@ module.exports = function users(fabmo) {
 setupUserManager();
 var current_user=null;
 
+// admin: full access + user management. user: full dashboard (legacy
+// non-admin). operator: Console app + manual keypad only — the engine
+// refuses settings-changing routes for operator sessions.
+var ROLES = ['admin', 'user', 'operator'];
+
+function roleOf(u){
+  return (u && ROLES.indexOf(u.role) !== -1) ? u.role : (u && u.isAdmin ? 'admin' : 'user');
+}
+
+function roleLabel(role){
+  return window.t('config.users_tab.role_' + role);
+}
+
+function roleSelectHtml(id, selected, disabled){
+  var opts = ROLES.map(function(r){
+    return '<option value="' + r + '"' + (r === selected ? ' selected' : '') + '>' + roleLabel(r) + '</option>';
+  }).join('');
+  return '<select id="' + id + '" class="user-role-select"' + (disabled ? ' disabled' : '') + '>' + opts + '</select>';
+}
+
 function setupUserManager() {
   fabmo.getCurrentUser(function(err,user){
     if(err)fabmo.notify('error',err);
@@ -68,6 +88,10 @@ function createAdminPanel(){
                 '<input id="adduser-passwordConfirmation" type="password" name="adduser-passwordConfirmation" value="" />',
             '</div>',
             '<div class="row">',
+                '<label for="adduser-role">'+window.t('config.users_tab.role_label')+'</label>',
+                roleSelectHtml('adduser-role', 'user', false),
+            '</div>',
+            '<div class="row">',
                  '<div class="right">',
                      '<button id="adduser-cancel" class="button radius alert">'+window.t('config.modal.cancel')+'</button>',
                      '<button id="adduser-submit" class="button radius success">'+window.t('config.users_tab.add_user_submit')+'</button>',
@@ -84,11 +108,13 @@ function createAdminPanel(){
       username = $('#adduser-username').val();
       password = $('#adduser-password').val();
       password_confirm = $('#adduser-passwordConfirmation').val();
+      var role = $('#adduser-role').val();
       if(password===password_confirm){
         user_info= {
           user:{
             username:username,
-            password:password
+            password:password,
+            role:role
           }
         };
         fabmo.addUser(user_info, function(err,user) {
@@ -127,7 +153,7 @@ function createAdminPanel(){
 function refreshCurrentUserView(current_user){
   $("#user-username").val(current_user.username);
   $("#user-_id").val(current_user._id);
-  $("#user-isAdmin").prop( "checked",current_user.isAdmin);
+  $("#user-role").val(roleLabel(roleOf(current_user)));
   $("#user-created_at").val(moment(current_user.created_at).fromNow());
 }
 
@@ -139,28 +165,42 @@ function refreshUsersListView(users){
 
       userid = "user_"+user.username;
 
+      // cannot edit other admin profiles (except if you're the super "admin" account)
+      var editable = (current_user.username==="admin" || (!user.isAdmin));
       var delete_button = '';
       var changepassword_button = '';
-      var grantadmin_button = '';
-      var revokeadmin_button = '';
-      if(current_user.username==="admin" || (!user.isAdmin)){ // cannot edit other admin profiles (except if your the super "admin" account)
+      if(editable){
         delete_button = '<div class="delete-button" id="delete_' + userid + '"><img class="svg" src="images/recycling10.svg"></div>';
         changepassword_button = '<div class="changepassword-button" id="changepassword_' + userid + '"><img class="svg" src="images/changepassword.svg"></div>';
-        grantadmin_button =  '<div class="grantadmin-button" id="grantadmin_' + userid + '"><img class="svg" src="images/grantadmin.svg"></div>';
-        revokeadmin_button =  '<div class="revokeadmin-button" id="revokeadmin_' + userid + '"><img class="svg" src="images/revokeadmin.svg"></div>';
       }
 
       html = [
         '<tr>',
           '<td>'+user.username+'</td>', // username
-          '<td><input type="checkbox" '+(user.isAdmin?'checked':'')+' disabled /></td>', // isAdmin
+          '<td>'+roleSelectHtml('role_' + userid, roleOf(user), !editable)+'</td>', // role
           '<td>'+moment(user.created_at).fromNow()+'</td>', // created_at
           '<td>'+changepassword_button+'</td>', // change_password_button
-          '<td>'+(user.isAdmin?revokeadmin_button:grantadmin_button)+'</td>', // grant/revoke admin button
           '<td>'+delete_button+'</td>', // delete button
         '</tr>',
       ].join('');
       $(".user-listing").append(html);
+
+      $('#role_' + userid).on('change',function() { // role select listener
+        var newRole = $(this).val();
+        fabmo.modifyUser({
+          user :{
+            username: user.username,
+            role: newRole
+          }
+        }, function(err) {
+          if (err) {
+            fabmo.notify('error', err);
+          }else{
+            fabmo.notify('success', window.t('config.users_tab.role_changed_notify') + user.username + ': ' + roleLabel(newRole));
+          }
+          createAdminPanel();
+        });
+      });
 
       $('#delete_' + userid).on('click',function() { //delete button listener
         fabmo.showModal({
@@ -180,40 +220,6 @@ function refreshUsersListView(users){
           },
           cancel : function() {}
         })
-      });
-
-      $('#grantadmin_' + userid).on('click',function() { //grantadmin button listener
-        user_info = {
-          user :{
-            username:user.username,
-            isAdmin:true
-          }
-        };
-        fabmo.modifyUser(user_info, function(err) {
-        if (err) {
-          fabmo.notify('error', err);
-        }else{
-          fabmo.notify('success',window.t('config.users_tab.admin_granted_notify')+user.username)
-        }
-        createAdminPanel();
-        });
-      });
-
-      $('#revokeadmin_' + userid).on('click',function() { //revokeadmin button listener
-        user_info = {
-          user :{
-            username: user.username,
-            isAdmin:false
-          }
-        };
-        fabmo.modifyUser(user_info, function(err) {
-        if (err) {
-          fabmo.notify('error', err);
-        }else{
-          fabmo.notify('success',window.t('config.users_tab.admin_revoked_notify')+user.username)
-        }
-        createAdminPanel();
-        });
       });
 
       $('#changepassword_' + userid).on('click',function() { //change user password

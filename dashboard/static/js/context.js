@@ -61,6 +61,21 @@ define(function (require) {
     };
 
     ApplicationContext.prototype.launchApp = function (id, args, callback) {
+        // Operator accounts live in the Console app. Every launch path funnels
+        // through here — sidebar links, hash navigation, and launchApp calls
+        // from inside app iframes — so redirecting at this one chokepoint
+        // covers them all. The server refuses settings-changing routes for
+        // operator sessions regardless.
+        if (window.fabmoUserRole === "operator" && id !== "fabmo-sb4") {
+            if (this.apps && this.apps.get("fabmo-sb4")) {
+                id = "fabmo-sb4";
+                args = {};
+            } else {
+                return callback(
+                    "Operator accounts can only use the Console app."
+                );
+            }
+        }
         var hard_refresh = false;
         var hash = this.app_reload_index[id];
 
