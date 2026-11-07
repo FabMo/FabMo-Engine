@@ -25,11 +25,12 @@ function setupAppNavigation() {
     let current_App = localStorage.getItem("currentapp");
     
     if (this_App != current_App) {
+        // Return to the app we came from (e.g. the previewer's "Calibrate
+        // in Camera App" round-trip), falling back to the default app.
         back_App = current_App;
-        if (back_App === null || back_App === "") { 
+        if (back_App === null || back_App === "") {
             back_App = default_App;
         }
-        back_App = default_App;
         current_App = this_App;
         localStorage.setItem("currentapp", current_App);
         localStorage.setItem("backapp", back_App);
@@ -200,6 +201,8 @@ var calState = {
     g55: { x: 0, y: 0 },  // work offset, to place the position crosshair
     cal: null,            // machine.cameraCalibration
     draft: null,          // working corners during calibration
+    draftEdges: null,     // working barrel-correction edge midpoints
+    edgeTouched: null,    // which edge handles the user has actually placed
     calibrating: false,
     displayedCam: 1,
     dragKey: null,
@@ -538,10 +541,67 @@ function calHandles() {
     return Array.prototype.slice.call(document.querySelectorAll(".cal-handle"));
 }
 
+// ---- barrel-correction edge midpoints ----
+// A single 4-corner homography keeps straight lines straight, but lens
+// (barrel) distortion bows the table's edges in the raw video. The diamond
+// mid-edge handles let the user mark where each edge's midpoint ACTUALLY
+// appears; consumers (the previewer's AR warp) switch to piecewise patches
+// when any are set. Untouched handles track the projective (no-bow)
+// midpoints and are not stored. Same convention and storage as the
+// previewer used before calibration was consolidated here.
+
+var EDGE_KEYS = ["tm", "rm", "bm", "lm"];
+
+// Where each table edge's midpoint lands if the lens had no distortion:
+// the projective midpoints of the corner quad, via the unit-square
+// homography (framing cancels, so fractions in = fractions out).
+function edgeDefaults(c) {
+    var H = h_squareToQuad([[c.tl.x, c.tl.y], [c.tr.x, c.tr.y],
+                            [c.br.x, c.br.y], [c.bl.x, c.bl.y]]);
+    var mids = { tm: [0.5, 0], rm: [1, 0.5], bm: [0.5, 1], lm: [0, 0.5] };
+    var out = {};
+    EDGE_KEYS.forEach(function (k) {
+        var p = mids[k];
+        var w = H[2][0] * p[0] + H[2][1] * p[1] + H[2][2];
+        out[k] = {
+            x: (H[0][0] * p[0] + H[0][1] * p[1] + H[0][2]) / w,
+            y: (H[1][0] * p[0] + H[1][1] * p[1] + H[1][2]) / w,
+        };
+    });
+    return out;
+}
+
+// Untouched edge handles stay glued to their projective default as the
+// corners move; touched ones stay where the user put them.
+function refreshUntouchedEdges() {
+    if (!calState.draft) return;
+    var defaults = edgeDefaults(calState.draft);
+    if (!calState.draftEdges) calState.draftEdges = {};
+    EDGE_KEYS.forEach(function (k) {
+        if (!calState.edgeTouched || !calState.edgeTouched[k]) {
+            calState.draftEdges[k] = defaults[k];
+        }
+    });
+}
+
+// Screen-space 8-gon through corners and edge midpoints — shows the bow
+// directly over the video while calibrating.
+function drawCalRing() {
+    var c = calState.draft, e = calState.draftEdges || {};
+    if (!c) return;
+    var pts = [c.tl, e.tm, c.tr, e.rm, c.br, e.bm, c.bl, e.lm];
+    document.getElementById("cal-ring").querySelector("polygon").setAttribute(
+        "points",
+        pts.filter(Boolean).map(function (p) { return p.x + "," + p.y; }).join(" ")
+    );
+}
+
 function positionHandles() {
     var w = window.innerWidth, h = window.innerHeight;
     calHandles().forEach(function (el) {
-        var p = calState.draft[el.getAttribute("data-corner")];
+        var key = el.getAttribute("data-corner");
+        var p = calState.draft[key] || (calState.draftEdges && calState.draftEdges[key]);
+        if (!p) return;
         el.style.left = (p.x * w) + "px";
         el.style.top = (p.y * h) + "px";
     });
@@ -549,7 +609,9 @@ function positionHandles() {
 
 function redrawCalibration() {
     warpGrid(document.getElementById("cal-grid"), calState.draft);
+    refreshUntouchedEdges();
     positionHandles();
+    drawCalRing();
 }
 
 function enterCalibration() {
@@ -566,9 +628,17 @@ function enterCalibration() {
         tl: { x: 0.15, y: 0.15 }, tr: { x: 0.85, y: 0.15 },
         br: { x: 0.85, y: 0.85 }, bl: { x: 0.15, y: 0.85 },
     };
+    // Saved edges are exactly the touched ones; untouched keys re-derive
+    // from the corners in refreshUntouchedEdges.
+    calState.draftEdges = (c && c.edges) ? JSON.parse(JSON.stringify(c.edges)) : {};
+    calState.edgeTouched = {};
+    EDGE_KEYS.forEach(function (k) {
+        calState.edgeTouched[k] = !!(c && c.edges && c.edges[k]);
+    });
     calState.calibrating = true;
     buildGrid(document.getElementById("cal-grid"), true);
     document.getElementById("cal-grid").style.display = "block";
+    document.getElementById("cal-ring").style.display = "block";
     document.getElementById("cal-bar").style.display = "flex";
     document.getElementById("live-grid").style.display = "none";
     document.getElementById("btn-grid").style.display = "none";
@@ -583,8 +653,11 @@ function enterCalibration() {
 function exitCalibration() {
     calState.calibrating = false;
     calState.draft = null;
+    calState.draftEdges = null;
+    calState.edgeTouched = null;
     hideLoupe();
     document.getElementById("cal-grid").style.display = "none";
+    document.getElementById("cal-ring").style.display = "none";
     document.getElementById("cal-bar").style.display = "none";
     document.getElementById("btn-calibrate").style.display = "inline-block";
     calHandles().forEach(function (el) { el.style.display = "none"; });
@@ -592,8 +665,21 @@ function exitCalibration() {
 }
 
 function saveCalibration() {
+    // Keep only the edge midpoints the user actually placed; untouched ones
+    // stay derived so they keep tracking the corners on recalibration. The
+    // explicit null matters: config updates merge, and a stale bow from an
+    // old calibration must not survive under new corners.
+    var touched = {}, any = false;
+    EDGE_KEYS.forEach(function (k) {
+        if (calState.edgeTouched && calState.edgeTouched[k] &&
+            calState.draftEdges && calState.draftEdges[k]) {
+            touched[k] = calState.draftEdges[k];
+            any = true;
+        }
+    });
     calState.cal = {
         corners: calState.draft,
+        edges: any ? touched : null,
         port: calState.displayedCam,
         savedAt: Date.now(),
         calibrated: true,
@@ -616,7 +702,8 @@ var LOUPE_TOUCH_LIFT = 90;
 function drawLoupe(touchLift) {
     var loupe = document.getElementById("cal-loupe");
     var canvas = loupe.querySelector("canvas");
-    var p = calState.draft && calState.draft[calState.dragKey];
+    var p = (calState.draft && calState.draft[calState.dragKey]) ||
+            (calState.draftEdges && calState.draftEdges[calState.dragKey]);
     if (!canvas || !p) return;
     var w = window.innerWidth, h = window.innerHeight;
     var diamCss = loupe.clientWidth || 148;
@@ -717,9 +804,17 @@ function setupCalibration() {
     });
     document.addEventListener("pointermove", function (e) {
         if (!calState.dragKey) return;
-        var p = calState.draft[calState.dragKey];
-        p.x = Math.max(0, Math.min(1, e.clientX / window.innerWidth));
-        p.y = Math.max(0, Math.min(1, e.clientY / window.innerHeight));
+        var x = Math.max(0, Math.min(1, e.clientX / window.innerWidth));
+        var y = Math.max(0, Math.min(1, e.clientY / window.innerHeight));
+        if (EDGE_KEYS.indexOf(calState.dragKey) !== -1) {
+            if (!calState.draftEdges) calState.draftEdges = {};
+            calState.draftEdges[calState.dragKey] = { x: x, y: y };
+            calState.edgeTouched[calState.dragKey] = true;
+        } else {
+            var p = calState.draft[calState.dragKey];
+            p.x = x;
+            p.y = y;
+        }
         redrawCalibration();
     });
     document.addEventListener("pointerup", function () {

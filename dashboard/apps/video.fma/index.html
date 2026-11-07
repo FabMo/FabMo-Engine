@@ -95,6 +95,34 @@
             cursor: grab;
             touch-action: none;
         }
+        /* Edge-midpoint (barrel correction) handles: smaller diamonds. They
+           mark where each table edge's midpoint actually appears when lens
+           distortion bows the edges; untouched they track the projective
+           (no-bow) midpoints. */
+        .cal-handle.edge {
+            width: 22px;
+            height: 22px;
+            margin: -11px 0 0 -11px;
+            border-radius: 4px;
+            transform: rotate(45deg);
+            background: rgba(243,156,18,0.6);
+        }
+        /* Screen-space ring through corners + edge midpoints: shows the bow
+           directly over the video during calibration. */
+        #cal-ring {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 58;
+            pointer-events: none;
+        }
+        #cal-ring polygon {
+            fill: rgba(255,60,60,0.08);
+            stroke: #ff3c3c;
+            stroke-width: 0.003;
+            stroke-linejoin: round;
+        }
         .cal-handle.loupe-active { opacity: 0; }
         #cal-loupe {
             position: absolute;
@@ -135,7 +163,7 @@
             font-size: 14px;
             white-space: nowrap;
         }
-        #scan-bar {
+        #scan-bar, #cal-bar {
             max-width: min(560px, 92vw);
             white-space: normal;
         }
@@ -177,13 +205,18 @@
         </div>
         <svg id="live-grid" style="display:none;"></svg>
         <svg id="cal-grid" style="display:none;"></svg>
+        <svg id="cal-ring" viewBox="0 0 1 1" preserveAspectRatio="none" style="display:none;"><polygon points=""/></svg>
         <div class="cal-handle" data-corner="tl" style="display:none;"></div>
         <div class="cal-handle" data-corner="tr" style="display:none;"></div>
         <div class="cal-handle" data-corner="br" style="display:none;"></div>
         <div class="cal-handle" data-corner="bl" style="display:none;"></div>
+        <div class="cal-handle edge" data-corner="tm" style="display:none;"></div>
+        <div class="cal-handle edge" data-corner="rm" style="display:none;"></div>
+        <div class="cal-handle edge" data-corner="bm" style="display:none;"></div>
+        <div class="cal-handle edge" data-corner="lm" style="display:none;"></div>
         <div id="cal-loupe"><canvas></canvas></div>
         <div id="cal-bar" style="display:none;">
-            <span>Drag the corners to align the grid with your table</span>
+            <span>Drag the corners onto the table corners &mdash; if the table edges look bowed, drag the diamond handles onto the middle of each edge</span>
             <button class="cam-btn" id="btn-cal-save">Save</button>
             <button class="cam-btn" id="btn-cal-cancel">Cancel</button>
         </div>
