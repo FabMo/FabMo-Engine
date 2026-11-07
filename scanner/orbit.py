@@ -115,8 +115,7 @@ class OrbitRunner:
     def _laser(self, on):
         if not self.s["use_laser"]:
             return
-        self.fabmo.run_gcode("M100 ({out%d:%d})" % (
-            self.s["laser_output"], 1 if on else 0))
+        self.fabmo.set_output(self.s["laser_output"], 1 if on else 0)  # verified
 
     def _pan(self, deg):
         if self.s["use_pan"]:

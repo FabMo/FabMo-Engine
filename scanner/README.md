@@ -87,3 +87,28 @@ loose (it trades off against distance; fx/fy wandered ±2-5%). What worked:
 - All moves in capture_grid are relative to the start point, same Z.
 - `fabmo_client.py` / `camera.py` are the reusable building blocks for
   the eventual laser-line scanner app.
+
+## Laser-plane calibration
+
+The line must run ACROSS the camera's cant: with the camera tilted about
+machine X (looking toward +Y), the line runs along machine X —
+horizontal in the image. A line along Y puts the laser sheet through the
+camera centre (edge-on, no triangulation; first PRS mount, Nov 2026).
+
+1. Lay the chessboard flat so the stripe crosses it (the whole board need
+   not be in view — a 9x5/9x4 sub-grid fixes the board plane just as well).
+2. `python3 laser_plane.py capture laserboard` — laser off/on pairs at Z
+   offsets 0..-0.6 in (down only; laser forced off, Z restored at the end).
+3. `python3 laser_plane.py fitboard captures/laserboard` → `laser.json`.
+   Each laser-off frame locates the board, so stripe pixels become exact
+   3D points; the plane is a direct mm fit. Good: RMS ~0.1 mm, per-shot
+   mean offsets ~0.01 mm.
+
+A table-only fit (`laser_plane.py fit`) can't work alone: over a usable
+Z range the stripe position vs Z is almost linear, which fixes the
+plane's direction and the offset/height ratio but not the absolute
+distance. Kept as a diagnostic.
+
+`fabmo_client.goto()` verifies every move and re-sends a dropped one;
+`set_output()` verifies output changes. A /code run sent right after
+another can be accepted and silently never executed.

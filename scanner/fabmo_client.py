@@ -72,17 +72,49 @@ def run_gcode(cmd):
     raise RuntimeError("timed out waiting for idle")
 
 
-def goto(x=None, y=None, z=None, feed=None):
-    """Absolute move in work coordinates. Only supplied axes move."""
+POS_TOL = 0.002   # inches
+
+
+def goto(x=None, y=None, z=None, feed=None, retries=2):
+    """Absolute move in work coordinates. Only supplied axes move.
+
+    Verifies the position afterwards and re-sends the move if the machine
+    didn't get there: a /code run sent immediately after another one can
+    be accepted by the engine yet never execute (seen 2026-11-07: an
+    M100 output command followed at once by a G0 Z move — the Z move was
+    silently dropped). Raises if the target still isn't reached.
+    """
+    target = {"posx": x, "posy": y, "posz": z}
     words = []
     for axis, val in (("X", x), ("Y", y), ("Z", z)):
         if val is not None:
             words.append("%s%.4f" % (axis, val))
     if not words:
         return status()
-    if feed:
-        return run_gcode("G90 G1 F%g %s" % (feed, " ".join(words)))
-    return run_gcode("G90 G0 " + " ".join(words))
+    cmd = ("G90 G1 F%g %s" % (feed, " ".join(words))) if feed \
+        else ("G90 G0 " + " ".join(words))
+    for attempt in range(retries + 1):
+        s = run_gcode(cmd)
+        off = {k: s[k] - v for k, v in target.items()
+               if v is not None and abs(s[k] - v) > POS_TOL}
+        if not off:
+            return s
+        time.sleep(0.3)
+    raise RuntimeError("move %r did not reach target after %d tries (error %s)" % (
+        cmd, retries + 1, off))
+
+
+def set_output(n, value, retries=2):
+    """Set digital output n (M100 ({outN:v})) and verify it in the status."""
+    for attempt in range(retries + 1):
+        s = run_gcode("M100 ({out%d:%d})" % (n, value))
+        if s.get("out%d" % n) == value:
+            return s
+        time.sleep(0.3)
+        s = status()
+        if s.get("out%d" % n) == value:
+            return s
+    raise RuntimeError("out%d did not change to %d" % (n, value))
 
 
 if __name__ == "__main__":
