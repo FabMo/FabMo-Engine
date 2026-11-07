@@ -8,7 +8,21 @@ var LocalStrategy = require("passport-local").Strategy;
 var config = require("./config");
 var machine = require("./machine");
 var events = require("events");
+var userConfig = require("./config/user_config");
 var eventEmitter = new events.EventEmitter();
+
+// Build the canonical user object handed around the system from a stored
+// record. role normalizes from isAdmin for records predating the field.
+function publicUser(username, data) {
+    var role = userConfig.normalizeRole(data);
+    return {
+        username: username,
+        password: data.password,
+        isAdmin: role === "admin",
+        role: role,
+        created_at: data.created_at,
+    };
+}
 
 // FabMo is a single-user system, and this variable keeps track of the current one.
 var currentUser = null;
@@ -66,12 +80,7 @@ exports.configure = function () {
                     });
                 }
 
-                var user = {
-                    username: username,
-                    password: data.password,
-                    isAdmin: data.isAdmin,
-                    created_at: data.created_at,
-                };
+                var user = publicUser(username, data);
                 // success ! the usert that did the request is registered in the database.
 
                 // check if the user can take the control of the tool.
@@ -156,21 +165,39 @@ exports.configure = function () {
     );
 };
 
-var addUser = function (username, password, callback) {
-    config.user.add(username, password, function (err, user) {
-        if (err) {
-            callback(err);
-            return;
-        } else {
-            user = {
-                username: username,
-                password: user.password,
-                isAdmin: user.isAdmin,
-                created_at: user.created_at,
-            };
-            user.password = undefined; // remove password from user object.
-            callback(null, user);
+var addUser = function (username, password, callback, role) {
+    if (role !== undefined && userConfig.ROLES.indexOf(role) === -1) {
+        callback("Unknown role: " + role);
+        return;
+    }
+    config.user.add(
+        username,
+        password,
+        function (err, user) {
+            if (err) {
+                callback(err);
+                return;
+            } else {
+                user = publicUser(username, (user && user[username]) || {});
+                user.password = undefined; // remove password from user object.
+                callback(null, user);
+            }
+        },
+        role
+    );
+};
+
+// True when `username` is the only admin account — the one you must never
+// demote or delete, or nobody can manage the tool anymore.
+var isLastAdmin = function (username, callback) {
+    config.user.getAll(function (data) {
+        var admins = [];
+        for (var key in data) {
+            if (userConfig.normalizeRole(data[key]) === "admin") {
+                admins.push(key);
+            }
         }
+        callback(admins.length === 1 && admins[0] === username);
     });
 };
 
@@ -178,12 +205,8 @@ var getUsers = function (callback) {
     var users = [];
     config.user.getAll(function (data) {
         for (var key in data) {
-            var user = {
-                username: key,
-                password: undefined,
-                isAdmin: data[key].isAdmin,
-                created_at: data[key].created_at,
-            };
+            var user = publicUser(key, data[key]);
+            user.password = undefined;
             users.push(user);
         }
         callback(null, users);
@@ -197,12 +220,8 @@ var getUser = function (username, callback) {
     }
     config.user.findOne(username, function (err, data) {
         if (data) {
-            var user = {
-                username: username,
-                password: undefined,
-                isAdmin: data.isAdmin,
-                created_at: data.created_at,
-            }; // remove password from user object.
+            var user = publicUser(username, data);
+            user.password = undefined; // remove password from user object.
             callback(null, user);
         } else {
             callback(err);
@@ -211,13 +230,28 @@ var getUser = function (username, callback) {
 };
 
 var modifyUser = function (username, user_fields, callback) {
+    // Refuse to demote the only admin — there'd be nobody left to manage users
+    var demotes =
+        user_fields &&
+        (("role" in user_fields && user_fields.role !== "admin") ||
+            ("isAdmin" in user_fields && !user_fields.isAdmin));
+    if (demotes) {
+        return isLastAdmin(username, function (last) {
+            if (last) {
+                return callback(
+                    "Cannot change the role of the only admin account.",
+                    null
+                );
+            }
+            applyModifyUser(username, user_fields, callback);
+        });
+    }
+    applyModifyUser(username, user_fields, callback);
+};
+
+var applyModifyUser = function (username, user_fields, callback) {
     config.user.findOne(username, function (err, data) {
-        var user = {
-            username: username,
-            password: data.password,
-            isAdmin: data.isAdmin,
-            created_at: data.created_at,
-        };
+        var user = data ? publicUser(username, data) : null;
         if (err) {
             callback(err);
             return;
@@ -249,10 +283,30 @@ var modifyUser = function (username, user_fields, callback) {
                         }
                         user["password"] = password;
                         break;
+                    case "role":
+                        if (userConfig.ROLES.indexOf(user_fields.role) === -1) {
+                            callback("Unknown role: " + user_fields.role, null);
+                            return;
+                        }
+                        user.role = user_fields.role;
+                        break;
                     default:
                         user[field] = user_fields[field];
                         break;
                 }
+            }
+            // role and the legacy isAdmin flag travel together: an explicit
+            // role wins; a bare isAdmin change (the old grant/revoke path)
+            // maps onto the role.
+            if ("role" in user_fields) {
+                user.isAdmin = user.role === "admin";
+            } else if ("isAdmin" in user_fields) {
+                user.isAdmin = !!user_fields.isAdmin;
+                user.role = user.isAdmin
+                    ? "admin"
+                    : user.role === "admin"
+                      ? "user"
+                      : user.role;
             }
             var newData = {};
             newData[username] = {};
@@ -275,11 +329,65 @@ var modifyUser = function (username, user_fields, callback) {
 };
 
 var deleteUser = function (username, callback) {
-    config.user.delete(username, function (err, data) {
-        if (err) callback(err);
-        else {
-            callback(null, data);
+    isLastAdmin(username, function (last) {
+        if (last) {
+            return callback("Cannot delete the only admin account.");
         }
+        config.user.delete(username, function (err, data) {
+            if (err) callback(err);
+            else {
+                callback(null, data);
+            }
+        });
+    });
+};
+
+// ---------------------------------------------------------------------------
+// Operator gate
+//
+// Operator accounts exist so a shop can hand the machine to someone who may
+// CUT but not CONFIGURE: they get the Console app and the manual keypad and
+// nothing else. The dashboard hides the rest of the UI, but this middleware
+// is the enforcement: for a session logged in as an operator, every
+// state-mutating HTTP route is refused except the short allowlist below.
+// (The manual keypad and console commands ride the session-authenticated
+// socket.io channel — machine motion, pause/quit/resume — which is exactly
+// the capability an operator is supposed to have, so sockets need no gate.)
+//
+// Requests with no session at all are passed through untouched — FabMo's
+// API has never required authentication for direct HTTP access, and closing
+// that is a separate project. This gate is about what a logged-in operator
+// can reach from the dashboard.
+
+var OPERATOR_ALLOWED = [
+    /^\/authentication\//, // login/logout/self password (role changes are admin-gated in the route)
+    /^\/code(\/check_bounds)?$/, // console command execution + bounds preflight
+    /^\/eval$/, // SBP expression evaluation (read-only)
+    /^\/(quit|pause|resume)$/, // safety — never block stopping the machine
+    /^\/macros\/\d+\/run$/, // running admin-curated macros (editing them is blocked)
+    /^\/uix\/fr_override$/, // feed-rate override knob
+    /^\/acc\/spindle_speed$/, // spindle RPM (configuring the VFD is blocked)
+];
+
+var operatorGate = function (req, res, next) {
+    var user = req.user;
+    if (!user || userConfig.normalizeRole(user) !== "operator") {
+        return next();
+    }
+    var method = req.method;
+    if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+        return next();
+    }
+    var path = req.getPath ? req.getPath() : req.path();
+    for (var i = 0; i < OPERATOR_ALLOWED.length; i++) {
+        if (OPERATOR_ALLOWED[i].test(path)) {
+            return next();
+        }
+    }
+    res.send(403, {
+        status: "error",
+        message:
+            "This account is operator-only: running the machine is allowed, changing its setup is not.",
     });
 };
 
@@ -292,13 +400,7 @@ passport.deserializeUser(function (username, done) {
         if (err) {
             done(null, false, { message: "User does not exist" });
         } else {
-            var user = {
-                username: username,
-                password: data.password,
-                isAdmin: data.isAdmin,
-                created_at: data.created_at,
-            };
-            done(err, user);
+            done(err, publicUser(username, data));
         }
     });
 });
@@ -310,19 +412,15 @@ exports.getUsers = getUsers;
 exports.getUser = getUser;
 exports.modifyUser = modifyUser;
 exports.deleteUser = deleteUser;
+exports.operatorGate = operatorGate;
+exports.ROLES = userConfig.ROLES;
 
 exports.passport = passport;
 
 exports.getUserById = function (username, cb) {
     config.user.findOne(username, function (err, data) {
         if (data) {
-            var user = {
-                username: username,
-                password: data.password,
-                isAdmin: data.isAdmin,
-                created_at: data.created_at,
-            };
-            cb(null, user);
+            cb(null, publicUser(username, data));
         } else {
             cb("no user");
         }

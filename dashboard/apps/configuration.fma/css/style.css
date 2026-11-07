@@ -671,3 +671,17 @@ details.cfg-advanced[open] > summary::after {
     padding-bottom: 2px;
     border-bottom: 1px solid #ddd;
 }
+
+/* Users tab: give the per-row role select room so the option text
+   ("Operator") isn't clipped, and space the management table rows. */
+#usermanager-table .user-role-select {
+    min-width: 7rem;
+    height: auto;
+    margin: 0;
+    padding: 0.2rem 0.3rem;
+}
+#usermanager-table td,
+#usermanager-table th {
+    padding: 0.4rem 0.6rem;
+    vertical-align: middle;
+}

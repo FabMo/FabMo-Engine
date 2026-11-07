@@ -54,7 +54,8 @@ var addUser = function (req, res, next) {
                         res.send(200, { status: "success", data: user });
                         return;
                     }
-                }
+                },
+                req.params.user.role
             );
         }
     } else {
@@ -164,6 +165,21 @@ var modifyUser = function (req, res, next) {
                 message: "no user object provided",
             });
             return;
+        }
+        // Non-admins may change only their own password — never a role or
+        // the admin flag (that would be self-service privilege escalation).
+        if (!currentUser.isAdmin) {
+            var fields = Object.keys(req.params.user);
+            for (var i = 0; i < fields.length; i++) {
+                if (fields[i] !== "password") {
+                    res.send(200, {
+                        status: "error",
+                        message:
+                            "you may only change your own password; roles are managed by an admin",
+                    });
+                    return;
+                }
+            }
         }
         authentication.modifyUser(
             req.params.id,
