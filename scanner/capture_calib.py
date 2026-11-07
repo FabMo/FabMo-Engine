@@ -17,6 +17,7 @@ import numpy as np
 import camera
 
 PATTERN = (9, 6)      # inner corners
+DETECT_SCALE = 0.5    # detection-only downscale (see loop)
 N_FRAMES = int(sys.argv[1]) if len(sys.argv) > 1 else 20
 
 def mean_disp(a, b):
@@ -39,8 +40,16 @@ print("collecting %d views: move the board, HOLD STILL ~1s, repeat" % N_FRAMES, 
 while good < N_FRAMES:
     frame = camera.grab(cap)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Detect on a half-size copy: at 1080p a failed search (hand in view,
+    # board half out of frame) can take seconds to minutes on a Pi, which
+    # stalls the loop. Corners are only used here for the still/fresh
+    # tests; calibrate_intrinsics.py re-detects + subpixel-refines at full
+    # resolution from the saved frame.
     found, corners = cv2.findChessboardCorners(
-        gray, PATTERN, cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_FAST_CHECK)
+        cv2.resize(gray, None, fx=DETECT_SCALE, fy=DETECT_SCALE), PATTERN,
+        cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_FAST_CHECK)
+    if found:
+        corners = corners / DETECT_SCALE     # back to full-res pixels
     if not found:
         print("  (no board in view)", flush=True)
         prev = None

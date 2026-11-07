@@ -56,6 +56,30 @@ Run the daemon: `python3 scand.py` (data + settings in `data/`).
    `python3 stereo_depth.py captures/block` → `depth.png`, `cloud.ply`.
 8. Measure the block top vs table in the cloud; compare to calipers.
 
+## Calibrating a head-mounted camera (PRS Alpha, Nov 2026)
+
+With the camera fixed in a canted head (30° here) the board can only lie
+roughly flat under it, so handheld views alone leave the focal length
+loose (it trades off against distance; fx/fy wandered ±2-5%). What worked:
+
+1. Lock the video mode and focus at the scanning standoff first (camera.py
+   keeps the current focus value; set it with v4l2-ctl).
+2. Size the board to about half the view: `python3 make_target.py 12`
+   → print the PDF at Actual Size. Measure the WHOLE board both ways
+   (10 squares long, 7 short) — a single-square caliper read was 1.7% off.
+3. `python3 capture_calib.py 30` with the board flat, pushed into every
+   image corner, plus some propped views (far edge raised so it faces
+   the camera — stays in focus, unlike lifting the near edge). Then
+   `python3 calibrate_intrinsics.py <sq>` → provisional `camera.json`.
+4. Machine grid with Z steps, board centered on the grid:
+   `python3 capture_grid.py handeye --nx 3 --ny 3 --step 0.3 --zs 0,-0.3,-0.6`
+   `python3 hand_eye.py captures/handeye` → initial `mount.json`.
+5. `python3 refine_calib.py <long>x<short> captures/handeye --scale-from-machine`
+   jointly refines intrinsics + mount using the known machine moves as
+   the length reference (verify the machine's steps-per-unit with a tape
+   first). Good result: machine-grid RMS close to the handheld RMS.
+   Its per-shot-PnP "motion scale" lines are a noisy diagnostic only.
+
 ## Notes
 
 - Machine moves go through `POST /code` (gcode runtime, idle only).

@@ -6,9 +6,13 @@ start point when done. Writes images + manifest.json into a new
 captures/<name>/ directory.
 
 Usage:
-  python3 capture_grid.py <name> [--nx 3] [--ny 3] [--step 1.0]
+  python3 capture_grid.py <name> [--nx 3] [--ny 3] [--step 1.0] [--zs 0,-0.3]
 
---step is in machine units (inches). Z never moves.
+--step is in machine units (inches). --zs is a comma list of Z offsets
+(inches, relative to the start Z, must be <= 0 — the start height is
+assumed to be at/near the top of travel); the full XY grid is repeated at
+each. Default 0: Z never moves. Known Z steps over a flat target pin down
+the focal length, which flat-on-table board views alone cannot.
 """
 
 import argparse
@@ -26,7 +30,11 @@ ap.add_argument("name")
 ap.add_argument("--nx", type=int, default=3)
 ap.add_argument("--ny", type=int, default=3)
 ap.add_argument("--step", type=float, default=1.0, help="grid pitch, inches")
+ap.add_argument("--zs", default="0", help="comma list of Z offsets <= 0, inches")
 args = ap.parse_args()
+zs = [float(v) for v in args.zs.split(",")]
+if any(z > 0 for z in zs):
+    ap.error("--zs offsets must be <= 0 (down from the start height)")
 
 outdir = os.path.join("captures", args.name)
 os.makedirs(outdir, exist_ok=True)
@@ -39,23 +47,27 @@ print("origin (work coords): %s" % origin)
 
 shots = []
 n = 0
-for iy in range(args.ny):
-    # serpentine path so the machine doesn't recross the whole grid
-    xs = range(args.nx) if iy % 2 == 0 else range(args.nx - 1, -1, -1)
-    for ix in xs:
-        x = origin["x"] + ix * args.step
-        y = origin["y"] + iy * args.step
-        fabmo.goto(x=x, y=y)
-        time.sleep(0.4)                       # vibration settle
-        p = fabmo.pose()                      # stamp the pose we actually reached
-        frame = camera.grab(cap)
-        fname = "img_%03d.jpg" % n
-        cv2.imwrite(os.path.join(outdir, fname), frame)
-        shots.append({"file": fname, "pose": p})
-        print("  [%d/%d] %s  @ x=%.4f y=%.4f" % (
-            n + 1, args.nx * args.ny, fname, p["x"], p["y"]))
-        n += 1
+total = args.nx * args.ny * len(zs)
+for zo in zs:
+    fabmo.goto(z=origin["z"] + zo)
+    for iy in range(args.ny):
+        # serpentine path so the machine doesn't recross the whole grid
+        xs = range(args.nx) if iy % 2 == 0 else range(args.nx - 1, -1, -1)
+        for ix in xs:
+            x = origin["x"] + ix * args.step
+            y = origin["y"] + iy * args.step
+            fabmo.goto(x=x, y=y)
+            time.sleep(0.4)                   # vibration settle
+            p = fabmo.pose()                  # stamp the pose we actually reached
+            frame = camera.grab(cap)
+            fname = "img_%03d.jpg" % n
+            cv2.imwrite(os.path.join(outdir, fname), frame)
+            shots.append({"file": fname, "pose": p})
+            print("  [%d/%d] %s  @ x=%.4f y=%.4f z=%.4f" % (
+                n + 1, total, fname, p["x"], p["y"], p["z"]), flush=True)
+            n += 1
 
+fabmo.goto(z=origin["z"])                     # up first, then home XY
 fabmo.goto(x=origin["x"], y=origin["y"])
 with open(os.path.join(outdir, "manifest.json"), "w") as fh:
     json.dump({"units": "inches", "origin": origin, "shots": shots}, fh, indent=2)

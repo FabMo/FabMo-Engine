@@ -31,9 +31,14 @@ def status():
 
 
 def pose():
-    """Current work position as a dict (x, y, z, a)."""
+    """Current work position as a dict (x, y, z, a, b).
+
+    Rotary axes are only in the status report when the machine has them
+    enabled (e.g. no posa on a PRS without an A axis) — missing ones are None.
+    """
     s = status()
-    return {"x": s["posx"], "y": s["posy"], "z": s["posz"], "a": s["posa"]}
+    return {"x": s["posx"], "y": s["posy"], "z": s["posz"],
+            "a": s.get("posa"), "b": s.get("posb")}
 
 
 def run_gcode(cmd):
