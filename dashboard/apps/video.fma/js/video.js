@@ -220,7 +220,14 @@ var calState = {
     plate: null,          // stored table photo record (see PLATE below)
 };
 
-var GRID_K = 10; // SVG px per machine unit — arbitrary, the warp rescales
+// SVG px per machine unit. The browser rasterizes the svg at its layout
+// size BEFORE applying the matrix3d warp, so this sets the real on-screen
+// resolution: computed per-envelope so the raster's long edge lands near
+// screen size regardless of units. (A fixed K left inch machines blurry —
+// a 960px raster stretched across the screen — and gave mm machines absurd
+// 24k-px rasters the GPU downsampled into mush.)
+var GRID_RASTER = 1800; // target long-edge pixels of the grid raster
+var GRID_K = 10;        // set from the envelope in envSpans()
 
 // 4-point homography (same closed form as the previewer/Shop Tools AR)
 function h_squareToQuad(p) {
@@ -281,6 +288,7 @@ function envSpans() {
         var x0f = Number(e.xmin) || 0, y0f = Number(e.ymin) || 0;
         var xsf = Number(e.xmax) - x0f, ysf = Number(e.ymax) - y0f;
         if (!(xsf > 0 && ysf > 0)) return null;
+        GRID_K = GRID_RASTER / Math.max(xsf, ysf);
         return { x0: x0f, y0: y0f, xspan: xsf, yspan: ysf,
                  table: { x0: x0f, y0: y0f, x1: x0f + xsf, y1: y0f + ysf } };
     }
@@ -290,6 +298,7 @@ function envSpans() {
     var y0 = Math.min(0, isFinite(ymin) ? ymin : 0);
     var x1 = Math.max(xsize, isFinite(xmax) ? xmax : xsize);
     var y1 = Math.max(ysize, isFinite(ymax) ? ymax : ysize);
+    GRID_K = GRID_RASTER / Math.max(x1 - x0, y1 - y0);
     return { x0: x0, y0: y0, xspan: x1 - x0, yspan: y1 - y0,
              table: { x0: 0, y0: 0, x1: xsize, y1: ysize } };
 }
@@ -326,7 +335,8 @@ function buildGrid(svg, strong) {
     svg.setAttribute("height", H);
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     var line = strong ? "rgba(41,128,185,0.9)" : "rgba(41,128,185,0.45)";
-    var halo = 'paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round"';
+    var halo = 'paint-order="stroke" stroke="#fff" stroke-width="5" stroke-linejoin="round"' +
+        ' font-family="sans-serif" font-weight="700"';
     // Gridlines + border live in their own group so the Grid toggle can
     // hide them while zones and the crosshair stay visible.
     var parts = ['<g id="gridlines">'];
@@ -345,30 +355,35 @@ function buildGrid(svg, strong) {
     for (var gx = Math.ceil(s.x0 / stepM) * stepM; gx <= s.x0 + s.xspan; gx += stepM) {
         var xpx = (gx - s.x0) * GRID_K;
         if (xpx <= 0 || xpx >= W) continue;
-        parts.push('<line x1="' + xpx + '" y1="0" x2="' + xpx + '" y2="' + H + '" stroke="' + line + '" stroke-width="1"/>');
+        parts.push('<line x1="' + xpx + '" y1="0" x2="' + xpx + '" y2="' + H + '" stroke="' + line + '" stroke-width="2"/>');
     }
     for (var gy = Math.ceil(s.y0 / stepM) * stepM; gy <= s.y0 + s.yspan; gy += stepM) {
         var ypx = (s.y0 + s.yspan - gy) * GRID_K;
         if (ypx <= 0 || ypx >= H) continue;
-        parts.push('<line x1="0" y1="' + ypx + '" x2="' + W + '" y2="' + ypx + '" stroke="' + line + '" stroke-width="1"/>');
+        parts.push('<line x1="0" y1="' + ypx + '" x2="' + W + '" y2="' + ypx + '" stroke="' + line + '" stroke-width="2"/>');
     }
     // Table border strong; world (soft-limit travel) border dashed when it
     // extends beyond the table.
     parts.push('<rect x="' + tr.l + '" y="' + tr.t + '" width="' + (tr.r - tr.l) +
-        '" height="' + (tr.b - tr.t) + '" fill="none" stroke="' + line + '" stroke-width="4"/>');
+        '" height="' + (tr.b - tr.t) + '" fill="none" stroke="' + line + '" stroke-width="7"/>');
     if (tr.l > 0 || tr.t > 0 || tr.r < W || tr.b < H) {
         parts.push('<rect x="0" y="0" width="' + W + '" height="' + H +
-            '" fill="none" stroke="' + line + '" stroke-width="2" stroke-dasharray="8 6"/>');
+            '" fill="none" stroke="' + line + '" stroke-width="3" stroke-dasharray="16 12"/>');
     }
     parts.push('</g>');
     // Origin marker + axis arrows at machine (0,0) — offset from the svg
-    // bottom-left when the world extends into negative machine space.
+    // bottom-left when the world extends into negative machine space. Sized
+    // in raster px (GRID_K is adaptive, so raster px ≈ constant on screen);
+    // machine-unit sizing made these microscopic on mm machines.
     var ax = (0 - s.x0) * GRID_K, ay = (s.y0 + s.yspan) * GRID_K;
-    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + (ax + 3 * GRID_K) + '" y2="' + ay + '" stroke="#c0392b" stroke-width="3"/>');
-    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + ax + '" y2="' + (ay - 3 * GRID_K) + '" stroke="#27ae60" stroke-width="3"/>');
-    parts.push('<text x="' + (ax + 3.6 * GRID_K) + '" y="' + (ay - 2) + '" font-size="' + 1.8 * GRID_K + '" fill="#1a252f" ' + halo + '>X</text>');
-    parts.push('<text x="' + (ax + 2) + '" y="' + (ay - 3.6 * GRID_K) + '" font-size="' + 1.8 * GRID_K + '" fill="#1a252f" ' + halo + '>Y</text>');
-    parts.push('<text x="' + (ax + 4) + '" y="' + (ay - 4) + '" font-size="' + 1.6 * GRID_K + '" fill="#1a252f" ' + halo + '>0,0</text>');
+    var AL = 60, AH = 16; // arrow shaft length / head length, raster px
+    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + (ax + AL) + '" y2="' + ay + '" stroke="#c0392b" stroke-width="5"/>');
+    parts.push('<polygon points="' + (ax + AL + AH) + ',' + ay + ' ' + (ax + AL) + ',' + (ay - 8) + ' ' + (ax + AL) + ',' + (ay + 8) + '" fill="#c0392b"/>');
+    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + ax + '" y2="' + (ay - AL) + '" stroke="#27ae60" stroke-width="5"/>');
+    parts.push('<polygon points="' + ax + ',' + (ay - AL - AH) + ' ' + (ax - 8) + ',' + (ay - AL) + ' ' + (ax + 8) + ',' + (ay - AL) + '" fill="#27ae60"/>');
+    parts.push('<text x="' + (ax + AL + AH + 10) + '" y="' + (ay - 10) + '" font-size="34" fill="#1a252f" ' + halo + '>X</text>');
+    parts.push('<text x="' + (ax + 14) + '" y="' + (ay - AL - AH - 10) + '" font-size="34" fill="#1a252f" ' + halo + '>Y</text>');
+    parts.push('<text x="' + (ax + 16) + '" y="' + (ay - 16) + '" font-size="26" fill="#1a252f" ' + halo + '>0,0</text>');
     svg.innerHTML = parts.join("");
     return true;
 }
@@ -525,11 +540,11 @@ function updateCrosshair() {
         g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute("id", "cam-pos");
         g.innerHTML =
-            '<line x1="-12" y1="0" x2="12" y2="0" stroke="#fff" stroke-width="6" stroke-linecap="round"/>' +
-            '<line x1="0" y1="-12" x2="0" y2="12" stroke="#fff" stroke-width="6" stroke-linecap="round"/>' +
-            '<line x1="-12" y1="0" x2="12" y2="0" stroke="#c0392b" stroke-width="2.5"/>' +
-            '<line x1="0" y1="-12" x2="0" y2="12" stroke="#c0392b" stroke-width="2.5"/>' +
-            '<circle cx="0" cy="0" r="5" fill="none" stroke="#c0392b" stroke-width="2.5"/>';
+            '<line x1="-20" y1="0" x2="20" y2="0" stroke="#fff" stroke-width="9" stroke-linecap="round"/>' +
+            '<line x1="0" y1="-20" x2="0" y2="20" stroke="#fff" stroke-width="9" stroke-linecap="round"/>' +
+            '<line x1="-20" y1="0" x2="20" y2="0" stroke="#c0392b" stroke-width="4"/>' +
+            '<line x1="0" y1="-20" x2="0" y2="20" stroke="#c0392b" stroke-width="4"/>' +
+            '<circle cx="0" cy="0" r="8" fill="none" stroke="#c0392b" stroke-width="4"/>';
         live.appendChild(g);
     }
     g.setAttribute("transform", "translate(" + px + " " + py + ")");
