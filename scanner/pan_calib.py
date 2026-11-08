@@ -46,11 +46,26 @@ def load_json(name):
         return json.load(fh)
 
 
-def board_points(cam):
-    L, S = cam.get("square_size_mm_long_short", [cam["square_size_mm"]] * 2)
+def board_points(cam, square=None):
+    """9x6 inner-corner grid, mm. square = (long, short) measured square size
+    of the board actually used; default = the intrinsics board in camera.json."""
+    L, S = square or cam.get("square_size_mm_long_short", [cam["square_size_mm"]] * 2)
     objp = np.zeros((PATTERN[0] * PATTERN[1], 3))
     objp[:, :2] = np.mgrid[0:PATTERN[0], 0:PATTERN[1]].T.reshape(-1, 2) * [L, S]
     return objp
+
+
+def parse_square(txt):
+    """'7.80x7.78' (long x short, mm per square, from measuring the whole
+    board) or '7.8' -> (L, S); None -> camera.json's intrinsics board."""
+    if not txt:
+        return None
+    v = [float(t) for t in txt.lower().split("x")]
+    return (v[0], v[-1])
+
+
+def objp_sq(square, cam):
+    return square or tuple(cam.get("square_size_mm_long_short", [cam["square_size_mm"]] * 2))
 
 
 def detect(img):
@@ -97,7 +112,11 @@ def capture(args):
     cam = load_json("camera.json")
     K, D = np.array(cam["camera_matrix"]), np.array(cam["dist_coeffs"])
     R_mc0 = np.array(load_json("mount.json")["R_machine_to_camera"])
-    objp = board_points(cam)
+    square = parse_square(args.square)
+    objp = board_points(cam, square)
+    zs = [float(v) for v in args.zs.split(",")]
+    if zs[0] != 0 or any(z > 0 for z in zs):
+        raise SystemExit("--zs must start with 0 and go down (e.g. 0,-0.4)")
     outdir = os.path.join(HERE, "captures", args.name)
     os.makedirs(outdir, exist_ok=True)
 
@@ -111,16 +130,26 @@ def capture(args):
     plan = [0] + angles + ["home"] + [-a for a in angles] + ["home"]
     skip_side = None      # +1 / -1 once the board is lost on that side
 
+    def move_b(b, x=None, y=None):
+        """Reach heading b always moving +B for the final approach, so the
+        drive's backlash (~3.4 deg on this head) is taken up the same way
+        every time: from above, first drop 5 deg below the target."""
+        cur = fabmo.status()["posb"]
+        if b < cur - 0.05:
+            fabmo.goto(b=max(-fabmo.B_LIMIT, b - 5.0))
+        fabmo.goto(x=x, y=y, b=b)
+
     cap = camera.open_camera()
     time.sleep(1.0)
     shots, ref_c, R_bm, X_target = [], None, None, None
+    heading = -1
     pos = {"x": origin["x"], "y": origin["y"]}
     track = []        # (x, y) of the re-centred shots on the current side, for prediction
     try:
         for k, step in enumerate(plan):
             if step == "home":                       # back to the start view
                 skip_side = None
-                fabmo.goto(x=origin["x"], y=origin["y"], b=0.0)
+                move_b(0.0, x=origin["x"], y=origin["y"])
                 pos = {"x": origin["x"], "y": origin["y"]}
                 ref_c = np.array(shots[0]["corners_ref"])
                 track = [(origin["x"], origin["y"])]
@@ -134,10 +163,10 @@ def capture(args):
                 nx = round(track[-1][0] + (track[-1][0] - track[-2][0]), 4)
                 ny = round(track[-1][1] + (track[-1][1] - track[-2][1]), 4)
                 fabmo.check_envelope([(nx, ny)])
-                fabmo.goto(x=nx, y=ny, b=float(step))
+                move_b(float(step), x=nx, y=ny)
                 pos = {"x": nx, "y": ny}
             else:
-                fabmo.goto(b=float(step))
+                move_b(float(step))
             for attempt in range(4):                 # detect, re-centre, repeat
                 time.sleep(0.4)
                 img = camera.grab(cap, flush=8)
@@ -173,20 +202,39 @@ def capture(args):
                     raise RuntimeError("board not found at the start pose")
                 skip_side = np.sign(step)
                 continue
+            heading += 1
             p = fabmo.pose()
-            f = "b_%02d.jpg" % len(shots)
-            cv2.imwrite(os.path.join(outdir, f), img)
-            shots.append({"file": f, "pose": p, "b_cmd": step, "corners_ref": c.tolist()})
             ref_c = c
             track.append((p["x"], p["y"]))
-            print("  B %+4d  X%.3f Y%.3f  (%d re-centring moves)"
-                  % (step, p["x"], p["y"], attempt), flush=True)
+            for zo in zs:            # same heading (head not turned) at each height
+                if zo != 0:
+                    fabmo.goto(z=origin["z"] + zo)
+                    time.sleep(0.4)
+                    img = camera.grab(cap, flush=8)
+                    cz = detect(img)
+                    if cz is None:
+                        print("  B %+4d  Z%+.2f: board not found, skipped" % (step, zo))
+                        continue
+                    cz = orient_like(cz, ref_c)
+                else:
+                    cz = c
+                pz = fabmo.pose()
+                f = "b_%02d.jpg" % len(shots)
+                cv2.imwrite(os.path.join(outdir, f), img)
+                shots.append({"file": f, "pose": pz, "b_cmd": step, "heading": heading,
+                              "z_off": zo, "corners_ref": cz.tolist()})
+            if any(zo != 0 for zo in zs):
+                fabmo.goto(z=origin["z"])
+            print("  B %+4d  X%.3f Y%.3f  (%d re-centring moves, %d heights)"
+                  % (step, p["x"], p["y"], attempt, len(zs)), flush=True)
     finally:
         try:
-            fabmo.goto(x=origin["x"], y=origin["y"], b=0.0 if abs(b0) < 1 else b0)
+            fabmo.goto(z=origin["z"])
+            move_b(0.0, x=origin["x"], y=origin["y"])
         finally:
             with open(os.path.join(outdir, "manifest.json"), "w") as fh:
-                json.dump({"origin": origin, "shots": shots,
+                json.dump({"origin": origin, "shots": shots, "square_mm": list(objp_sq(square, cam)),
+                           "zs": zs, "approach": "+B (5 deg run-up from above)",
                            "created": time.strftime("%Y-%m-%d %H:%M:%S")}, fh, indent=1)
     print("wrote %s (%d shots); head back at X%.3f Y%.3f B0"
           % (outdir, len(shots), origin["x"], origin["y"]))
@@ -229,10 +277,10 @@ def unpack(x):
 def fit(args):
     cam = load_json("camera.json")
     K, D = np.array(cam["camera_matrix"]), np.array(cam["dist_coeffs"])
-    objp = board_points(cam)
     with open(os.path.join(args.capdir, "manifest.json")) as fh:
         man = json.load(fh)
-    obs, theta, gm = [], [], []
+    objp = board_points(cam, tuple(man["square_mm"]) if man.get("square_mm") else None)
+    obs, theta, gm, hd = [], [], [], []
     ref = None
     sh = sorted(man["shots"], key=lambda s: s["pose"]["b"])     # monotonic B for orient_like
     for s in sh:
@@ -244,6 +292,7 @@ def fit(args):
         obs.append(c)
         theta.append(s["pose"]["b"])
         gm.append([s["pose"][k] for k in "xyz"])
+        hd.append(s.get("heading", len(hd)))         # shots of one heading share the angle
     b_ref = man["origin"]["b"]
     theta = np.radians(np.array(theta) - b_ref)
     gm = (np.array(gm) - np.array([man["origin"][k] for k in "xyz"])) * IN_TO_MM
@@ -255,17 +304,47 @@ def fit(args):
     # backlash and a few % scale error), so every shot's angle is a free
     # parameter, measured from the board; the B ~ 0 shot is the reference.
     i0 = int(np.argmin(np.abs(theta)))
-    free = np.array([i for i in range(n) if i != i0], int)
+    hd = np.unique(np.array(hd), return_inverse=True)[1]        # 0..H-1
+    H = hd.max() + 1
+    h0 = hd[i0]
+    # With R_mc0 held at mount.json, the reference heading's angle is free
+    # too: B has ~3.4 deg backlash, so "B = 0" today needn't be the head
+    # angle mount.json was calibrated at. Angles are then relative to that.
+    free_h = np.array([h for h in range(H) if h != h0 or not args.free_mount], int)
+    th_h = np.array([theta[hd == h].mean() for h in range(H)])   # reported, per heading
 
     def thetas(x):
-        t = theta.copy()
-        t[free] += x[13:]
-        return t
+        t = th_h.copy()
+        t[free_h] += x[13:13 + len(free_h)]
+        return t[hd]
+
+    NI = 13 + len(free_h)                                # start of intrinsics block (optional)
+
+    NA = NI + (9 if args.refine_intrinsics else 0)       # optional aspect / fy block
+
+    def board(x):
+        if not args.free_aspect:
+            return objp
+        return objp * np.array([1.0, x[NA], 1.0])        # short-side squares scaled
+
+    def kmat(x, Kx):
+        if not args.free_fy:
+            return Kx
+        Kx = Kx.copy()
+        Kx[1, 1] *= x[NA + (1 if args.free_aspect else 0)]
+        return Kx
+
+    def intr(x):
+        if not args.refine_intrinsics:
+            return kmat(x, K), D
+        q = x[NI:NI + 9]
+        return (kmat(x, np.array([[q[0], 0, q[2]], [0, q[1], q[3]], [0, 0, 1.0]])), q[4:9])
 
     def residuals(x):
         a, v, R_bm, T, R_mc0 = unpack(x)
         th = thetas(x)
-        Xm = objp @ R_bm.T + T                           # board corners, machine frame
+        K, D = intr(x)
+        Xm = board(x) @ R_bm.T + T                       # board corners, machine frame
         out = []
         for i in range(n):
             Ra = rot(a, th[i])
@@ -305,7 +384,7 @@ def fit(args):
     print("  direct: axis %s (%.2f deg from vertical), camera circle radius %.2f mm"
           % (np.round(a0, 4).tolist(), np.degrees(np.arccos(a0[2])), rad))
     AXIS0[0] = np.array([0, 0, 1.0])
-    x = np.zeros(13 + len(free))
+    x = np.zeros(13 + len(free_h))
     w = np.cross([0, 0, 1.0], a0)
     if np.linalg.norm(w) > 1e-12:
         w = w / np.linalg.norm(w) * np.arccos(np.clip(a0[2], -1, 1))
@@ -316,7 +395,13 @@ def fit(args):
     x[4:7] = cv2.Rodrigues(R_bm0)[0].ravel()
     x[7:10] = -centre                                     # board origin, pivot frame
     x[10:13] = cv2.Rodrigues(R_mc0)[0].ravel()
-    x[13:] = th0[free] - theta[free]
+    x[13:NI] = np.array([th0[hd == h].mean() for h in free_h]) - th_h[free_h]
+    if args.refine_intrinsics:
+        x = np.r_[x, K[0, 0], K[1, 1], K[0, 2], K[1, 2], np.ravel(D)[:5]]
+    if args.free_aspect:
+        x = np.r_[x, 1.0]
+    if args.free_fy:
+        x = np.r_[x, 1.0]
     R_MC0_FIXED[0] = None if args.free_mount else R_mc0
     keep = np.ones(len(x), bool)
     if not args.free_mount:
@@ -337,6 +422,19 @@ def fit(args):
     per_shot = np.sqrt((r.reshape(n, -1, 2) ** 2).sum(2).mean(1))
     a, v, R_bm, T, R_mc0f = unpack(x)
     th_fit = thetas(x)
+    if args.free_aspect:
+        print("board short-side scale %.5f -> squares %.4f x %.4f mm (manifest %.4f x %.4f)"
+              % (x[NA], objp[1, 0] if False else np.ptp(objp[:, 0]) / (PATTERN[0] - 1),
+                 np.ptp(objp[:, 1]) / (PATTERN[1] - 1) * x[NA],
+                 np.ptp(objp[:, 0]) / (PATTERN[0] - 1), np.ptp(objp[:, 1]) / (PATTERN[1] - 1)))
+    if args.free_fy:
+        print("fy scale %.5f -> fy %.1f (fx %.1f)" % (x[NA + (1 if args.free_aspect else 0)],
+              K[1, 1] * x[NA + (1 if args.free_aspect else 0)], K[0, 0]))
+    if args.refine_intrinsics:
+        Kf, Df = intr(x)
+        print("intrinsics: fx %.1f fy %.1f cx %.1f cy %.1f (camera.json %.1f %.1f %.1f %.1f); "
+              "dist %s" % (Kf[0, 0], Kf[1, 1], Kf[0, 2], Kf[1, 2], K[0, 0], K[1, 1], K[0, 2],
+                           K[1, 2], np.round(Df, 4).tolist()))
     b_rep = np.degrees(theta)                            # reported B - b_ref
     order = np.argsort(b_rep)
     print("   B reported   actual turn   difference")
@@ -408,12 +506,19 @@ if __name__ == "__main__":
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("capture")
     c.add_argument("name")
+    c.add_argument("--square", help="measured square size LONGxSHORT mm (default: camera.json board)")
+    c.add_argument("--zs", default="0", help="Z offsets per heading, e.g. 0,-0.4")
     c.add_argument("--step", type=int, default=10)
     c.add_argument("--max", type=int, default=90)
     c.set_defaults(fn=capture)
     f = sub.add_parser("fit")
     f.add_argument("capdir")
     f.add_argument("--no-write", action="store_true")
+    f.add_argument("--refine-intrinsics", action="store_true",
+                   help="also refine fx fy cx cy + distortion (diagnostic; not written)")
+    f.add_argument("--free-aspect", action="store_true",
+                   help="fit the board's short/long square ratio")
+    f.add_argument("--free-fy", action="store_true", help="fit fy/fx")
     f.add_argument("--free-mount", action="store_true",
                    help="also fit the B~0 camera orientation (poorly conditioned)")
     f.set_defaults(fn=fit)
