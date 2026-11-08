@@ -6,6 +6,7 @@ v4l2-ctl before capturing.
 """
 
 import glob
+import os
 import subprocess
 import time
 
@@ -16,7 +17,28 @@ HEIGHT = 1080
 
 
 def find_device():
-    """Return the first /dev/video* node that reports video capture."""
+    """Return the webcam's capture node (/dev/videoN).
+
+    Reads /sys/class/video4linux: a USB device's node with index 0 is its
+    video-capture node (index 1 is metadata). No v4l2-ctl calls — those
+    sometimes took longer than their timeout right after the camera had
+    been streaming, and the camera then looked absent (2026-11-08).
+    """
+    for sysdir in sorted(glob.glob("/sys/class/video4linux/video*"),
+                         key=lambda p: int(p.rsplit("video", 1)[1])):
+        try:
+            real = os.path.realpath(os.path.join(sysdir, "device"))
+            with open(os.path.join(sysdir, "index")) as fh:
+                idx = int(fh.read().strip() or 0)
+        except (OSError, ValueError):
+            continue
+        if "/usb" in real and idx == 0:
+            return "/dev/" + os.path.basename(sysdir)
+    return _find_device_v4l2()
+
+
+def _find_device_v4l2():
+    """Fallback: the first /dev/video* node that reports video capture."""
     for dev in sorted(glob.glob("/dev/video*")):
         try:
             out = subprocess.run(
@@ -77,7 +99,14 @@ def open_camera(dev=None):
     if dev is None:
         raise RuntimeError("no webcam found (is it plugged in?)")
     lock_controls(dev)
-    cap = cv2.VideoCapture(dev, cv2.CAP_V4L2)
+    # The EMEET is sometimes still "busy" for a moment after another
+    # process closed it (or after a replug) — retry before falling back.
+    for attempt in range(4):
+        cap = cv2.VideoCapture(dev, cv2.CAP_V4L2)
+        if cap.isOpened():
+            break
+        cap.release()
+        time.sleep(1.0)
     if cap.isOpened():
         cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, WIDTH)

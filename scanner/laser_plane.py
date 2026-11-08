@@ -134,6 +134,11 @@ def board_pose(img, K, D, cam, patterns=((9, 6), (9, 5), (9, 4), (8, 4))):
 
 def fit_board(args):
     K, D, Rmc, cam = load_cal()
+    if args.square:
+        # board other than the intrinsics one (e.g. the 8 mm pan board):
+        # its measured squares set the scale of the whole plane fit
+        v = [float(t) for t in args.square.lower().split("x")]
+        cam = dict(cam, square_size_mm_long_short=[v[0], v[-1]])
     with open(os.path.join(args.capdir, "manifest.json")) as fh:
         man = json.load(fh)
     allX, per = [], []
@@ -145,8 +150,9 @@ def fit_board(args):
             print("  shot %d: board not found — skipped" % i)
             continue
         Rb, tb, cc, perr, (L, S), pat = bp
-        pts, ori = stripe.extract(off, on, return_orientation=True)
+        pts, ori = stripe.extract(off, on, return_orientation=True, signal=args.signal)
         pts = stripe.clean(pts, orientation=ori)
+        pts = stripe.drop_weak_runs(pts, orientation=ori)
         # keep stripe points on the printed board: within 1.5 squares of the
         # detected inner-corner grid (covers the outer squares, and rows
         # beyond a partial-grid detection), in board coordinates
@@ -374,5 +380,9 @@ if __name__ == "__main__":
     fb = sub.add_parser("fitboard")
     fb.add_argument("capdir")
     fb.add_argument("--no-write", action="store_true")
+    fb.add_argument("--square", help="measured square size LONGxSHORT mm of the board used "
+                                     "(default: camera.json's intrinsics board)")
+    fb.add_argument("--signal", default="rg", choices=("r", "rg"),
+                    help="stripe signal; rg copes with red clipping on white paper")
     a = ap.parse_args()
     {"capture": capture, "fit": fit, "fitboard": fit_board}[a.cmd](a)
