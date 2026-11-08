@@ -387,11 +387,35 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
             fabmo.start_gcode(prog)
             started = True
             missed = []
-            for i, t in enumerate(targets):
-                # --- laser-off window at stop i
+
+            def miss(k, window, why):
+                missed.append({"stop": k, "window": window, "why": why})
+                log("  stop %d: missed (%s: %s) — skipped" % (k, window, why))
+                if len(missed) > max(2, n // 10):
+                    raise RuntimeError("missed %d frame windows — timing too tight "
+                                       "(see scand log)" % len(missed))
+
+            # A single slow /status reply (~1 s) can hide a whole 0.6 s laser
+            # window; the machine keeps going regardless. So never wait for a
+            # stop the machine has already passed: look a few stops ahead,
+            # resync to where it actually is, and record the skipped ones
+            # (2026-11-08: waiting for a passed stop aborted a sweep).
+            LOOK = 10
+            i = 0
+            while i < n:
+                # stop 0 is waited for exactly: before the job moves, the head
+                # sits at its start position, which can coincide with a later
+                # stop (start -0.5 in: stop 5 = the start position)
+                ahead = range(i, min(n, i + LOOK)) if i > 0 else range(0, 1)
                 ta = time.time()
-                wait_for(lambda s: at(s, t) and s.get(out) == 0,
-                         "stop %d (X%.4f Y%.4f)" % (i, t["x"], t["y"]), 30.0)
+                s = wait_for(lambda s: s.get(out) == 0 and any(at(s, targets[j]) for j in ahead),
+                             "stop %d (X%.4f Y%.4f)" % (i, targets[i]["x"], targets[i]["y"]), 30.0)
+                j = next(j for j in ahead if at(s, targets[j]))
+                for k in range(i, j):
+                    miss(k, "passed", "machine already at stop %d" % j)
+                i = j
+                t = targets[i]
+                # --- laser-off window at stop i
                 tb = time.time()
                 time.sleep(0.2)                     # settle + camera latency
                 off = lf.read()
@@ -399,30 +423,24 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 s = fabmo.status()
                 td = time.time()
                 if not (at(s, t) and s.get(out) == 0):
-                    why = "%s out %s" % (where(s), s.get(out))
-                    log("  stop %d: missed laser-off window (%s; detect %.2fs after "
-                        "previous, verify %.2fs after detect)" % (i, why, tb - ta, td - tb))
-                    missed.append({"stop": i, "window": "off", "why": why})
-                    if len(missed) > max(2, n // 10):
-                        raise RuntimeError("missed %d frame windows — timing too tight "
-                                           "(see scand log)" % len(missed))
-                    continue                        # skip this stop; next target
+                    miss(i, "off", "%s out %s; verify %.2fs after detect"
+                         % (where(s), s.get(out), td - tb))
+                    i += 1
+                    continue
                 pose = {"x": s["posx"], "y": s["posy"], "z": s["posz"],
                         "a": s.get("posa"), "b": s.get("posb")}
-                # --- laser-on window
+                # --- laser-on window: wait for it, or for the head to leave
                 try:
-                    wait_for(lambda s: at(s, t) and s.get(out) == 1,
-                             "laser on at stop %d" % i, 5.0)
+                    s = wait_for(lambda s: (at(s, t) and s.get(out) == 1) or not at(s, t),
+                                 "laser on at stop %d" % i, 5.0)
                 except RuntimeError as e:
-                    # never saw this stop's laser-on window (2026-11-08: one
-                    # stop in 70; cause unknown) — skip the stop like a
-                    # missed photo instead of abandoning the scan
-                    s = fabmo.status()
-                    log("  stop %d: %s (now %s out %s) — skipped" % (i, e, where(s), s.get(out)))
-                    missed.append({"stop": i, "window": "on-wait", "why": str(e)})
-                    if len(missed) > max(2, n // 10):
-                        raise RuntimeError("missed %d frame windows — timing too tight "
-                                           "(see scand log)" % len(missed))
+                    miss(i, "on-wait", str(e))
+                    i += 1
+                    continue
+                if not (at(s, t) and s.get(out) == 1):
+                    miss(i, "on-wait", "head left the stop before laser-on was seen (%s)"
+                         % where(s))
+                    i += 1
                     continue
                 te = time.time()
                 time.sleep(0.15)
@@ -430,13 +448,9 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 s = fabmo.status()
                 tf = time.time()
                 if not (at(s, t) and s.get(out) == 1):
-                    why = "%s out %s" % (where(s), s.get(out))
-                    log("  stop %d: missed laser-on window (%s; verify %.2fs after "
-                        "detect)" % (i, why, tf - te))
-                    missed.append({"stop": i, "window": "on", "why": why})
-                    if len(missed) > max(2, n // 10):
-                        raise RuntimeError("missed %d frame windows — timing too tight "
-                                           "(see scand log)" % len(missed))
+                    miss(i, "on", "%s out %s; verify %.2fs after detect"
+                         % (where(s), s.get(out), tf - te))
+                    i += 1
                     continue
                 rec = {"pose": pose, "row": t["row"],
                        "img_off": "off_%03d.jpg" % i, "img_on": "on_%03d.jpg" % i,
@@ -452,6 +466,7 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                     log("  [%d/%d] row %d X%.4f Y%.4f B%.2f  %.0fs" % (
                         i + 1, n, t["row"], pose["x"], pose["y"], pose.get("b") or 0,
                         time.time() - t0))
+                i += 1
             fabmo.wait_idle(timeout=60.0)             # program returns to origin
             man["complete"] = True
             man["missed"] = missed
