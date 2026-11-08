@@ -286,6 +286,67 @@ def job_continuous(body, s, axis, start, end, session, outdir):
     return result
 
 
+def job_fillgaps(body):
+    """Rescan the sweep positions where a finished single-axis scan has
+    holes on the part (gaps.py), stop-and-go, and merge into the scan."""
+    import gaps
+    s = scan_settings.load()
+    session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(body.get("session", "")))
+    capdir = os.path.join(orbit.SCANS_DIR, session)
+    if not session or not os.path.isfile(os.path.join(capdir, "scan.json")):
+        raise RuntimeError("no processed scan %r" % session)
+    with open(os.path.join(capdir, "manifest.json")) as fh:
+        man = json.load(fh)
+    if man.get("kind") == "multi" or int(man.get("rows", 1) or 1) > 1:
+        raise RuntimeError("gap filling works on single-heading, single-row scans")
+    set_state(phase="finding gaps in " + session, progress={"done": 0, "total": 0})
+    g, _, _ = gaps._grid(capdir)
+    holes_before = int(gaps.hole_mask(g).sum())
+    ranges, _ = gaps.find_gap_ranges(capdir)
+    if not ranges:
+        return {"message": "%s: no gaps worth rescanning (%d small holes)" % (session, holes_before)}
+    step = float(body.get("step") or 0.04)
+    stops, info = gaps.patch_targets(capdir, ranges, step)
+    # the patch must be shot at the scan's own height and heading
+    cur = fabmo.pose()
+    ref = man["shots"][0]["pose"]
+    if abs((cur.get("b") or 0) - (ref.get("b") or 0)) > 0.2:
+        raise RuntimeError("B is %.2f, the scan was made at B %.2f — turn back first"
+                           % (cur.get("b") or 0, ref.get("b") or 0))
+    if abs(cur["z"] - ref["z"]) > 0.001:
+        fabmo.goto(z=ref["z"])
+    n_p = len([p for p in man.get("patches", [])])
+    pdir = "patch_%d" % (n_p + 1)
+    set_state(phase="rescanning %d gap ranges (%d stops)" % (len(ranges), len(stops)),
+              progress={"done": 0, "total": len(stops)})
+    with _cap_lock:
+        if _cap[0] is None:
+            _cap[0] = camera.open_camera()
+            time.sleep(0.5)
+        sweep.run_capture_job(fabmo, _cap[0], os.path.join(capdir, pdir), "y", 0, 1, step,
+                              int(s["laser_output"]), progress_cb, ABORT,
+                              targets=lambda origin: stops,
+                              extra_manifest={"kind": "patch", "ranges_mm": ranges,
+                                              "for_session": session})
+    man.setdefault("patches", []).append(pdir)
+    with open(os.path.join(capdir, "manifest.json"), "w") as fh:
+        json.dump(man, fh)
+    set_state(phase="re-processing " + session, progress={"done": 0, "total": 0})
+    stats = sweep.process_dir(capdir, progress=progress_cb)
+    g2, _, _ = gaps._grid(capdir)
+    holes_after = int(gaps.hole_mask(g2).sum())
+    stats["gapfill"] = {"holes_before": holes_before, "holes_after": holes_after,
+                        "ranges_mm": ranges, "stops": len(stops)}
+    with open(os.path.join(capdir, "scan.json"), "w") as fh:
+        json.dump(stats, fh, indent=2)
+    result = {"session": session, "stats": stats,
+              "message": "%s: rescanned %d gap ranges (%d stops) — fillable holes %d -> %d "
+                         "(the rest are likely laser shadows: need another heading)"
+                         % (session, len(ranges), len(stops), holes_before, holes_after)}
+    set_state(last_sweep=result)
+    return result
+
+
 def job_process(body):
     session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(body.get("session", "")))
     outdir = os.path.join(orbit.SCANS_DIR, session)
@@ -300,7 +361,7 @@ def job_process(body):
 
 
 JOBS = {"reference": job_reference, "locate": job_locate, "scan": job_scan,
-        "sweep": job_sweep, "process": job_process}
+        "sweep": job_sweep, "process": job_process, "fillgaps": job_fillgaps}
 # jobs that never move the machine may start while it is busy elsewhere
 NO_MOTION = {"process"}
 
@@ -508,7 +569,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, p)
             except Exception as e:
                 return self._send(400, {"error": str(e)})
-        if path in ("/reference", "/locate", "/scan", "/sweep", "/process"):
+        if path in ("/reference", "/locate", "/scan", "/sweep", "/process", "/fillgaps"):
             ok, err = start_job(path[1:], body)
             if ok:
                 return self._send(202, {"started": path[1:]})

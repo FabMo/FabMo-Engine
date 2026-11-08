@@ -765,6 +765,28 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
             progress(i + 1, len(shots))
     if reused:
         log("reused %d of %d shots triangulated during the scan" % (reused, len(shots)))
+    # gap-fill patches (gaps.py): stop-and-go shots at absolute machine poses,
+    # placed relative to this scan's first shot like its own shots
+    next_id = max((int(x.max()) for x in shot_ids if len(x)), default=-1) + 1
+    for pdir in man.get("patches", []):
+        pd = os.path.join(capdir, pdir)
+        try:
+            with open(os.path.join(pd, "manifest.json")) as fh:
+                pm = json.load(fh)
+        except (IOError, ValueError):
+            log("patch %s: no manifest, skipped" % pdir)
+            continue
+        n_before = len(allP)
+        for ps in pm.get("shots", []):
+            off = cv2.imread(os.path.join(pd, ps["img_off"]))
+            on = cv2.imread(os.path.join(pd, ps["img_on"]))
+            if off is None or on is None:
+                continue
+            dp = (np.array([ps["pose"][a] for a in AXES]) - p0) * IN_TO_MM
+            allP.append(triangulate_shot(off, on, cal, dp, signal))
+            shot_ids.append(np.full(len(allP[-1]), next_id))
+            next_id += 1
+        log("patch %s: %d shots merged" % (pdir, len(allP) - n_before))
     P = np.vstack(allP)
     sid = np.concatenate(shot_ids)
     rows_n = int(man.get("rows", 1) or 1)

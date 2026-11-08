@@ -408,6 +408,10 @@ function renderSessions() {
                 '<a href="' + art + 'cloud.ply" download title="Raw point cloud (mm)">PLY</a>' : "") +
             (s.kind === "sweep" || s.stats ?
                 '<button class="small" data-act="process">Re-process</button>' : "") +
+            ((s.kind === "sweep" || s.kind === "continuous") && s.stats && !s.stats.registration ?
+                '<button class="small" data-act="fillgaps" title="Rescan (stop-and-go) the sweep ' +
+                'positions where the part has holes, and merge them in. The machine moves.">' +
+                'Fill gaps</button>' : "") +
             "</div>";
         row.querySelector(".nm").textContent = s.session;
         row.querySelector(".meta").textContent = sessionMeta(s);
@@ -416,6 +420,23 @@ function renderSessions() {
             if (e.target.dataset && e.target.dataset.act === "process") {
                 e.stopPropagation();
                 startOp("/process", { session: s.session }, "Re-processing " + s.session);
+                return;
+            }
+            if (e.target.dataset && e.target.dataset.act === "fillgaps") {
+                e.stopPropagation();
+                var btn = e.target;
+                if (btn.dataset.armed !== "1") {      // two-step: confirm() is blocked in the dashboard
+                    btn.dataset.armed = "1";
+                    btn.textContent = "Machine will move — confirm";
+                    btn.className = "small danger";
+                    setTimeout(function () {
+                        btn.dataset.armed = "";
+                        btn.textContent = "Fill gaps";
+                        btn.className = "small";
+                    }, 6000);
+                    return;
+                }
+                startOp("/fillgaps", { session: s.session }, "Filling gaps in " + s.session);
                 return;
             }
             selectSession(s);
@@ -661,7 +682,7 @@ function poll() {
         if (prevBusy && !busy) {   // an operation just finished
             mapShown = null;       // force image reload (cache-bust)
             var done = st.last_sweep && st.last_sweep.session;
-            if (done && (prevOp === "sweep" || prevOp === "process")) {
+            if (done && (prevOp === "sweep" || prevOp === "process" || prevOp === "fillgaps")) {
                 selected = null;   // reload even if it was already shown
                 refreshSessions(done);
             } else {
