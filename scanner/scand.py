@@ -167,13 +167,16 @@ def job_sweep(body):
     try:
         axis = str(body.get("axis", "y")).lower()
         start, end, step = (float(body[k]) for k in ("start", "end", "step"))
+        rows = int(body.get("rows", 1) or 1)
+        row_spacing = float(body.get("row_spacing", 0) or 0)
+        row_start = float(body.get("row_start", 0) or 0)
     except (KeyError, TypeError, ValueError):
-        raise RuntimeError("sweep needs numeric start, end, step")
+        raise RuntimeError("sweep needs numeric start, end, step (rows, row_spacing optional)")
     session = _session_name(body, "sweep")
     outdir = os.path.join(orbit.SCANS_DIR, session)
     if os.path.exists(outdir):
         raise RuntimeError("session %s already exists" % session)
-    n = int(round((end - start) / step)) + 1 if step > 0 else 0
+    n = (int(round((end - start) / step)) + 1) * max(1, rows) if step > 0 else 0
     # Calibration is only valid at the calibrated resolution. If the video
     # app's camera server holds /dev/video0, camera.open_camera() falls back
     # to its MJPEG stream, which may be a different size — refuse that.
@@ -191,7 +194,8 @@ def job_sweep(body):
             "camera gives %dx%d, calibration is %dx%d — the video app's camera "
             "server probably holds the camera (sudo systemctl stop camera-server-2)"
             % (frame.shape[1], frame.shape[0], want_w, want_h))
-    set_state(phase="sweeping %s (%d stops)" % (axis.upper(), n),
+    set_state(phase="sweeping %s (%d stops%s)" % (
+        axis.upper(), n, ", %d rows" % rows if rows > 1 else ""),
               progress={"done": 0, "total": n})
 
     def on_live(live):
@@ -203,7 +207,8 @@ def job_sweep(body):
             time.sleep(0.5)
         man = sweep.run_capture_job(fabmo, _cap[0], outdir, axis, start, end, step,
                                     int(s["laser_output"]), progress_cb, ABORT,
-                                    on_live=on_live)
+                                    on_live=on_live, rows=rows, row_spacing=row_spacing,
+                                    row_start=row_start)
     if not man["complete"]:
         return {"message": "sweep stopped early", "session": session}
     set_state(phase="triangulating", progress={"done": 0, "total": len(man["shots"])})

@@ -199,9 +199,41 @@ class Live:
         return {"shots_done": done, "total": self.total, "n_points": n}
 
 
+def plan_stops(origin, axis, start, end, step, rows=1, row_spacing=0.0, row_start=0.0):
+    """Stops for a (multi-row) sweep, machine inches, absolute.
+
+    Each row steps `axis` from origin+start to origin+end; rows are offset
+    along the OTHER axis (along the laser line) by row_start + k*row_spacing
+    from the origin. Every row runs in the same direction (consistent
+    approach — no backlash difference between rows).
+    -> list of {"x", "y", "row"}
+    """
+    ax = axis.lower()
+    if ax not in ("x", "y"):
+        raise ValueError("axis must be x or y")
+    if step <= 0 or end <= start:
+        raise ValueError("need step > 0 and end > start")
+    rows = int(rows)
+    if rows < 1 or rows > 20:
+        raise ValueError("rows must be 1..20")
+    if rows > 1 and row_spacing <= 0:
+        raise ValueError("row spacing must be > 0 for more than one row")
+    other = "x" if ax == "y" else "y"
+    n = int(round((end - start) / step)) + 1
+    stops = []
+    for r in range(rows):
+        o = round(origin[other] + row_start + r * row_spacing, 4)
+        for i in range(n):
+            stops.append({ax: round(origin[ax] + start + step * i, 4), other: o, "row": r})
+    if len(stops) > 3000:
+        raise ValueError("%d stops is too many" % len(stops))
+    return stops
+
+
 def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                     progress=None, abort=None, log=print, live=None,
-                    dwell_off=0.8, dwell_on=0.6, on_live=None):
+                    dwell_off=0.8, dwell_on=0.6, on_live=None,
+                    rows=1, row_spacing=0.0, row_start=0.0):
     """Like run_capture(), but the whole sweep runs as ONE gcode program
     (moves, dwells, laser on/off), so the machine stays 'running' for the
     whole scan — the dashboard's job bar stays up and its Stop/Pause work
@@ -210,6 +242,9 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     report interval) and checks after each grab that the machine was still
     in the same window.
 
+    rows / row_spacing / row_start: several parallel sweeps offset along the
+    other axis (inches) — see plan_stops(); all rows run in the same job and
+    land in one manifest (poses carry X and Y, so they merge directly).
     cap: an open cv2.VideoCapture (drained by camera.LatestFrame here).
     On error/abort/Stop the job is stopped and the laser switched off; the
     head is NOT moved back (it stays where it stopped).
@@ -218,33 +253,27 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     import camera
 
     ax = axis.lower()
-    if ax not in ("x", "y"):
-        raise ValueError("axis must be x or y")
-    if step <= 0 or end <= start:
-        raise ValueError("need step > 0 and end > start")
-    n = int(round((end - start) / step)) + 1
-    if n > 2000:
-        raise ValueError("%d stops is too many" % n)
-    os.makedirs(outdir, exist_ok=True)
-
     s0 = fabmo.status()
     if s0["state"] != "idle":
         raise RuntimeError("machine is %s (must be idle)" % s0["state"])
     origin = fabmo.pose()
-    targets = [round(origin[ax] + start + step * i, 4) for i in range(n)]
-    A, key = ax.upper(), "pos" + ax
+    targets = plan_stops(origin, ax, start, end, step, rows, row_spacing, row_start)
+    n = len(targets)
+    os.makedirs(outdir, exist_ok=True)
     out = "out%d" % laser_out
     lines = ["G90", "M100 ({%s:0})" % out]
     for t in targets:
-        lines += ["G0 %s%.4f" % (A, t), "G4 P%.2f" % dwell_off,
+        lines += ["G0 X%.4f Y%.4f" % (t["x"], t["y"]), "G4 P%.2f" % dwell_off,
                   "M100 ({%s:1})" % out, "G4 P%.2f" % dwell_on, "M100 ({%s:0})" % out]
-    lines += ["G0 %s%.4f" % (A, origin[ax]), "M100 ({%s:0})" % out]
+    lines += ["G0 X%.4f Y%.4f" % (origin["x"], origin["y"]), "M100 ({%s:0})" % out]
     prog = "\n".join(lines) + "\n"
 
-    log("origin %s; %d stops along %s from %+.3f to %+.3f in; laser out%d; "
-        "single job (%d lines)" % (origin, n, ax, start, end, laser_out, len(lines)))
+    log("origin %s; %d stops (%d row%s) along %s from %+.3f to %+.3f in; laser out%d; "
+        "single job (%d lines)" % (origin, n, rows, "" if rows == 1 else "s", ax, start,
+                                    end, laser_out, len(lines)))
     man = {"kind": "sweep", "mode": "job", "units": "inches", "origin": origin,
            "axis": ax, "start": start, "end": end, "step": step,
+           "rows": rows, "row_spacing": row_spacing, "row_start": row_start,
            "laser_output": laser_out, "dwell_off": dwell_off, "dwell_on": dwell_on,
            "created": time.strftime("%Y-%m-%d %H:%M:%S"), "complete": False,
            "shots": []}
@@ -259,7 +288,10 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     stopped_by = None
 
     def at(s, t):
-        return abs(s[key] - t) <= TOL
+        return abs(s["posx"] - t["x"]) <= TOL and abs(s["posy"] - t["y"]) <= TOL
+
+    def where(s):
+        return "X%.4f Y%.4f" % (s["posx"], s["posy"])
 
     def wait_for(cond, what, timeout):
         """Poll status until cond(s); raise if the job ends or abort."""
@@ -287,7 +319,7 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 # --- laser-off window at stop i
                 ta = time.time()
                 wait_for(lambda s: at(s, t) and s.get(out) == 0,
-                         "stop %d (%s=%.4f)" % (i, A, t), 15.0)
+                         "stop %d (X%.4f Y%.4f)" % (i, t["x"], t["y"]), 30.0)
                 tb = time.time()
                 time.sleep(0.2)                     # settle + camera latency
                 off = lf.read()
@@ -295,7 +327,7 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 s = fabmo.status()
                 td = time.time()
                 if not (at(s, t) and s.get(out) == 0):
-                    why = "pos %.4f out %s" % (s[key], s.get(out))
+                    why = "%s out %s" % (where(s), s.get(out))
                     log("  stop %d: missed laser-off window (%s; detect %.2fs after "
                         "previous, verify %.2fs after detect)" % (i, why, tb - ta, td - tb))
                     missed.append({"stop": i, "window": "off", "why": why})
@@ -314,7 +346,7 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 s = fabmo.status()
                 tf = time.time()
                 if not (at(s, t) and s.get(out) == 1):
-                    why = "pos %.4f out %s" % (s[key], s.get(out))
+                    why = "%s out %s" % (where(s), s.get(out))
                     log("  stop %d: missed laser-on window (%s; verify %.2fs after "
                         "detect)" % (i, why, tf - te))
                     missed.append({"stop": i, "window": "on", "why": why})
@@ -322,7 +354,8 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                         raise RuntimeError("missed %d frame windows — timing too tight "
                                            "(see scand log)" % len(missed))
                     continue
-                rec = {"pose": pose, "img_off": "off_%03d.jpg" % i, "img_on": "on_%03d.jpg" % i,
+                rec = {"pose": pose, "row": t["row"],
+                       "img_off": "off_%03d.jpg" % i, "img_on": "on_%03d.jpg" % i,
                        "timing": {"off_detect_to_verify": round(td - tb, 3),
                                   "off_grab": round(tc - tb, 3),
                                   "on_detect_to_verify": round(tf - te, 3),
@@ -332,7 +365,8 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 if progress:
                     progress(i + 1, n)
                 if i % 10 == 0 or i == n - 1:
-                    log("  [%d/%d] %s=%.4f  %.0fs" % (i + 1, n, ax, pose[ax], time.time() - t0))
+                    log("  [%d/%d] row %d X%.4f Y%.4f  %.0fs" % (
+                        i + 1, n, t["row"], pose["x"], pose["y"], time.time() - t0))
             fabmo.wait_idle(timeout=60.0)             # program returns to origin
             man["complete"] = True
             man["missed"] = missed
@@ -534,6 +568,26 @@ def process_dir(capdir, signal="rg", log=print, progress=None):
             progress(i + 1, len(shots))
     P = np.vstack(allP)
     sid = np.concatenate(shot_ids)
+    rows_n = int(man.get("rows", 1) or 1)
+    if rows_n > 1 and len(P):
+        # Multi-row: rows overlap along the laser line. Keep each point only
+        # if it is nearest to its OWN row's stripe centre, so overlaps are
+        # split down the middle instead of stacking two slightly different
+        # surfaces (calibration residuals make overlapping rows disagree by
+        # up to ~1 mm at the frame edges).
+        other = 0 if man.get("axis", "y") == "y" else 1        # row offset axis: 0 = X, 1 = Y
+        row_of_shot = np.array([s.get("row", 0) for s in shots])
+        cam = np.array([(s["pose"][AXES[other]] - p0[other]) * IN_TO_MM for s in shots])
+        prow = row_of_shot[sid]
+        c0 = np.median(P[:, other] - cam[sid])        # stripe centre vs camera position
+        centres = np.array([np.median(cam[row_of_shot == r]) if (row_of_shot == r).any()
+                            else np.nan for r in range(rows_n)]) + c0
+        d = np.abs(P[:, other][:, None] - centres[None, :])
+        d[:, np.isnan(centres)] = np.inf
+        keep = np.argmin(d, axis=1) == prow
+        log("multi-row: %d rows, kept %d of %d points nearest their own row"
+            % (rows_n, keep.sum(), len(P)))
+        P, sid = P[keep], sid[keep]
     n_raw = len(P)
     step_mm = abs(float(man.get("step", 0.1))) * IN_TO_MM
     keep = drop_unsupported(P, sid, step_mm)

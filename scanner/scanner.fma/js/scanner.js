@@ -223,6 +223,9 @@ function sweepParams() {
         start: parseFloat($("sw-start").value),
         end: parseFloat($("sw-end").value),
         step: parseFloat($("sw-step").value),
+        rows: parseInt($("sw-rows").value, 10) || 1,
+        row_spacing: parseFloat($("sw-rowsp").value) || 0,
+        row_start: parseFloat($("sw-row0").value) || 0,
     };
     var name = $("sw-name").value.trim();
     if (name) { p.session = name; }
@@ -235,16 +238,28 @@ function sweepEstimate() {
         $("sw-estimate").textContent = "Set From < To and a positive step (inches).";
         return null;
     }
-    var n = Math.round((p.end - p.start) / p.step) + 1;
-    var t = n * SEC_PER_STOP;
-    $("sw-estimate").textContent = "Moves " + p.axis.toUpperCase() + " from " +
-        (p.start >= 0 ? "+" : "") + p.start + " to " + (p.end >= 0 ? "+" : "") + p.end +
-        " in relative to the current position: " + n + " stops, ~" +
-        (t < 90 ? Math.round(t) + " s" : (t / 60).toFixed(1) + " min") +
+    if (p.rows < 1 || p.rows > 20 || (p.rows > 1 && p.row_spacing <= 0)) {
+        $("sw-estimate").textContent = "Rows 1–20, with a positive row spacing for more than one.";
+        return null;
+    }
+    var n = (Math.round((p.end - p.start) / p.step) + 1) * p.rows;
+    var t = n * SEC_PER_STOP + (p.rows - 1) * 4;
+    var A = p.axis.toUpperCase(), O = p.axis === "y" ? "X" : "Y";
+    var sg = function (v) { return (v >= 0 ? "+" : "") + v; };
+    var txt = "Moves " + A + " from " + sg(p.start) + " to " + sg(p.end) + " in";
+    if (p.rows > 1) {
+        var last = p.row_start + (p.rows - 1) * p.row_spacing;
+        txt += ", " + p.rows + " rows at " + O + " " + sg(p.row_start) + " … " + sg(+last.toFixed(3)) +
+            " in";
+    } else if (p.row_start) {
+        txt += " at " + O + " " + sg(p.row_start) + " in";
+    }
+    $("sw-estimate").textContent = txt + ", relative to the current position: " + n +
+        " stops, ~" + (t < 90 ? Math.round(t) + " s" : (t / 60).toFixed(1) + " min") +
         ". Head returns to its start; laser is switched off at the end.";
     return p;
 }
-["sw-axis", "sw-start", "sw-end", "sw-step"].forEach(function (id) {
+["sw-axis", "sw-start", "sw-end", "sw-step", "sw-rows", "sw-rowsp", "sw-row0"].forEach(function (id) {
     $(id).oninput = sweepEstimate;
 });
 sweepEstimate();
@@ -263,10 +278,10 @@ $("btn-sweep").onclick = function () {
     if (!p) { return; }
     var n = Math.round((p.end - p.start) / p.step) + 1;
     pendingSweep = p;
-    $("sw-confirm-msg").textContent = "Start a " + n + "-stop sweep along " +
-        p.axis.toUpperCase() + "? The machine will move " + p.axis.toUpperCase() +
-        " from " + p.start + " to " + p.end + " in relative to where it is now. " +
-        "Make sure the head clears the part and keep hands clear.";
+    $("sw-confirm-msg").textContent = "Start this " + (p.rows > 1 ? p.rows + "-row " : "") +
+        "sweep? " + $("sw-estimate").textContent.split(", relative")[0] +
+        ", relative to where the head is now. " +
+        "Make sure the head clears the part over the whole area and keep hands clear.";
     $("sw-confirm").style.display = "block";
 };
 $("sw-confirm-go").onclick = function () {
@@ -275,7 +290,7 @@ $("sw-confirm-go").onclick = function () {
     if (p) { startOp("/sweep", p, "Sweep"); }
 };
 $("sw-confirm-cancel").onclick = hideSweepConfirm;
-["sw-axis", "sw-start", "sw-end", "sw-step", "sw-name"].forEach(function (id) {
+["sw-axis", "sw-start", "sw-end", "sw-step", "sw-name", "sw-rows", "sw-rowsp", "sw-row0"].forEach(function (id) {
     $(id).addEventListener("input", hideSweepConfirm);   // parameters changed: re-confirm
 });
 
