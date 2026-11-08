@@ -112,3 +112,28 @@ distance. Kept as a diagnostic.
 `fabmo_client.goto()` verifies every move and re-sends a dropped one;
 `set_output()` verifies output changes. A /code run sent right after
 another can be accepted and silently never executed.
+
+## Line sweeps (first real scans, Nov 2026)
+
+`sweep.py` steps one axis and captures a laser off/on pair per stop, then
+triangulates every stripe pixel into machine axes (mm, relative to the
+camera at the first shot) and levels heights to the table:
+
+    python3 sweep.py capture block2 --axis y --start -0.5 --end 8.0 --step 0.1
+    python3 sweep.py process captures/block2   # points.npy, cloud.ply, heightmap.png
+
+Moving +Y walks the line away from the camera across the part. Results
+at Z 5.22 / focus 470 (0.1 in steps):
+
+| part | true height | scanned | top plane rms |
+|---|---|---|---|
+| pine 2x4 offcut (uneven) | ~37.7 mm | 37.59 mm | 0.23 mm |
+| black plastic block | 28.08 mm | 27.79 mm | 0.13 mm |
+
+Heights read ~1% low, and the table shows a -0.55° tilt in X with tops
+another ~+0.2° — residual laser-plane / mount error. Calibrating the
+plane over a larger depth range should help.
+
+Pale wood clips the red channel over a wide band around the stripe; the
+line still shows as a sharp green dip, so `sweep.py` extracts with
+`stripe.extract(..., signal="rg")` (red change minus green change).

@@ -44,7 +44,7 @@ def _extract_vertical(d, min_signal, snr, half_window):
 
 
 def extract(img_off, img_on, min_signal=12.0, snr=5.0, half_window=12,
-            orientation="auto", return_orientation=False):
+            orientation="auto", return_orientation=False, signal="r"):
     """Stripe points as an (N, 3) array of [row, col_subpixel_or_row_subpixel,
     signal] in image coordinates — for a vertical stripe the column is
     sub-pixel, for a horizontal one the row is.
@@ -52,8 +52,20 @@ def extract(img_off, img_on, min_signal=12.0, snr=5.0, half_window=12,
     orientation : "vertical", "horizontal" or "auto"
     min_signal  : minimum peak height (red levels, 0-255 scale)
     snr         : minimum peak height in units of the line's robust noise
+    signal      : "r"  — red difference (on - off)
+                  "rg" — red difference minus green difference. Use on bright
+                  surfaces (pale wood): there the red channel clips at 255
+                  over a band ~40 px wide around the stripe, leaving a flat
+                  plateau, while the camera's colour processing still shows
+                  the line as a sharp dip in green (seen on pine, Nov 2026).
     """
-    d = img_on[..., 2].astype(np.float32) - img_off[..., 2].astype(np.float32)
+    on = img_on.astype(np.float32)
+    off = img_off.astype(np.float32)
+    d = on[..., 2] - off[..., 2]
+    if signal == "rg":
+        d = d - (on[..., 1] - off[..., 1])
+    elif signal != "r":
+        raise ValueError("signal must be 'r' or 'rg'")
     res = {}
     if orientation in ("vertical", "auto"):
         res["vertical"] = _extract_vertical(d, min_signal, snr, half_window)
