@@ -264,9 +264,11 @@ def job_continuous(body, s, axis, start, end, session, outdir):
             _cap[0] = None
         cap = continuous.open_raw()
         try:
+            def on_live(live):
+                LIVE.update(session=session, live=live)
             man = continuous.run_continuous(
                 fabmo, cap, outdir, axis, start, end, speed, int(s["laser_output"]),
-                float(s["continuous_latency_ms"]), progress_cb, ABORT)
+                float(s["continuous_latency_ms"]), progress_cb, ABORT, on_live=on_live)
         finally:
             cap.release()
     if not man["complete"]:

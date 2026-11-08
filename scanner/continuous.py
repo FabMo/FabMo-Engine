@@ -109,7 +109,8 @@ def open_raw(dev=None, fps=60):
 
 
 def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
-                   latency_ms=0.0, progress=None, abort=None, log=print, reverse=False):
+                   latency_ms=0.0, progress=None, abort=None, log=print, reverse=False,
+                   on_live=None):
     """Laser-on constant-feed sweep of `axis` from origin+start to
     origin+end (inches). Returns the manifest. Laser off and the job
     stopped on error/abort; the head returns to the start only on success."""
@@ -153,6 +154,13 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
     fr = _FrameLog(cap, outdir)
     st.start()
     fr.start()
+    live = None
+    if on_live is not None:
+        live = LiveCont(outdir, fr.frames, st.rows, ax, origin[ax] + start,
+                        origin[ax] + start, origin[ax] + end, latency_ms,
+                        est_lines=(end - start) / speed_ips * 6.5)
+        live.start()
+        on_live(live)
     t0 = time.time()
     started = False
     try:
@@ -189,6 +197,8 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
         log("continuous: aborted")
         raise
     finally:
+        if live is not None:
+            live.finish()
         fr.record.clear()
         fr.stop.set()
         st.stop.set()
@@ -222,6 +232,114 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
 
 class _Abort(Exception):
     pass
+
+
+class LiveCont(threading.Thread):
+    """Live preview during a continuous sweep: every `period` s take the
+    NEWEST recorded frame, place it with a running fit of the laser-on
+    position reports, and find its line in a small worker pool (separate
+    processes, so the frame and status loggers aren't starved). Offers the
+    same snapshot()/info() as sweep.Live, so scand's /live/points and the
+    app's live view work unchanged. Heights are provisional (relative to
+    the first lines' median, normally table); the final processing
+    replaces the preview."""
+
+    def __init__(self, outdir, frames, status_rows, ax, ref_pos, lo, hi, latency_ms,
+                 workers=2, period=0.15, min_gap_in=0.015, est_lines=None):
+        threading.Thread.__init__(self, daemon=True)
+        from multiprocessing import Pool
+        self.outdir, self.frames, self.rows = outdir, frames, status_rows
+        self.ax, self.ref, self.lo, self.hi = ax, ref_pos, lo, hi
+        self.lat = latency_ms / 1000.0
+        self.period, self.min_gap = period, min_gap_in
+        self.pool = Pool(workers)
+        self.workers = workers
+        self.stop_ev = threading.Event()
+        self.lock = threading.Lock()
+        self.shots = []              # float32 (N, 3), provisional heights
+        self.z_ref = None
+        self._early = []
+        self.pending = 0
+        # ~6.5 preview lines/s with 2 workers on the Pi
+        self.total = max(1, int(est_lines or (hi - lo) / 0.03))
+        self.last_pos = None
+        self.k = 1 + AXES.index(ax)
+
+    def _fit(self):
+        R = [(r[0], r[self.k]) for r in list(self.rows) if len(r) > 4 and r[4] == 1]
+        if len(R) < 4:
+            return None
+        R = np.array(R, float)
+        R = R[np.r_[True, np.diff(R[:, 1]) != 0]]
+        R = R[(R[:, 1] > self.lo - 0.1) & (R[:, 1] < self.hi + 0.1)]
+        if len(R) < 3 or np.ptp(R[:, 0]) < 0.2:
+            return None
+        A = np.c_[R[:, 0], np.ones(len(R))]
+        (v, c), *_ = np.linalg.lstsq(A, R[:, 1], rcond=None)
+        return v, c
+
+    def run(self):
+        while not self.stop_ev.is_set():
+            time.sleep(self.period)
+            if self.pending >= self.workers * 2 or not self.frames:
+                continue
+            fit = self._fit()
+            if fit is None:
+                continue
+            ts, f = self.frames[-1]
+            p = fit[0] * (ts + self.lat) + fit[1]
+            if not (self.lo <= p <= self.hi):
+                continue
+            if self.last_pos is not None and abs(p - self.last_pos) < self.min_gap:
+                continue
+            self.last_pos = p
+            dp = np.zeros(3)
+            dp[AXES.index(self.ax)] = (p - self.ref) * IN_TO_MM
+            self.pending += 1
+            try:
+                self.pool.apply_async(_tri, ((0, os.path.join(self.outdir, f), None, dp, None),),
+                                      callback=self._done, error_callback=self._err)
+            except ValueError:            # pool closed
+                return
+
+    def _err(self, e):
+        self.pending -= 1
+
+    def _done(self, res):
+        self.pending -= 1
+        P = res[1][:, :3].astype(np.float32)
+        with self.lock:
+            if self.z_ref is None:
+                if len(P):
+                    self._early.append(P[:, 2])
+                if len(self._early) >= 3:
+                    self.z_ref = float(np.median(np.concatenate(self._early)))
+                    for s in self.shots:
+                        s[:, 2] -= self.z_ref
+            if self.z_ref is not None:
+                P = P.copy()
+                P[:, 2] -= self.z_ref
+            self.shots.append(P)
+
+    def finish(self):
+        self.stop_ev.set()
+        self.join(timeout=2)
+        self.pool.terminate()
+
+    def snapshot(self, from_shot=0):
+        with self.lock:
+            done = len(self.shots)
+            if self.z_ref is None:
+                return np.zeros((0, 3), np.float32), 0
+            parts = self.shots[from_shot:done]
+        P = np.vstack(parts) if parts else np.zeros((0, 3), np.float32)
+        return P, done
+
+    def info(self):
+        with self.lock:
+            done = len(self.shots) if self.z_ref is not None else 0
+            n = sum(len(s) for s in self.shots[:done])
+        return {"shots_done": done, "total": self.total, "n_points": n}
 
 
 def _assign_poses(man, ax, a0, a1, latency_ms, log=print):
