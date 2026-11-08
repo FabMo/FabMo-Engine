@@ -98,6 +98,11 @@
     background: #fdeec9; border: 1px solid #e8cf87; align-items: center; gap: 12px;
   }
 
+  /* inline confirm (the dashboard's sandboxed iframe blocks confirm()/alert()) */
+  .inlineconfirm { display: none; margin-top: 10px; padding: 8px 10px; border-radius: 4px;
+                   background: #fdeec9; border: 1px solid #e8cf87; font-size: 13px; }
+  .inlineconfirm .btnrow { margin-top: 8px; }
+
   /* sessions */
   .slist { margin-top: 2px; }
   .srow { padding: 6px 6px; border-bottom: 1px solid #eee; cursor: pointer; border-radius: 3px; }
@@ -156,6 +161,13 @@
         <div class="btnrow">
           <button class="primary" id="btn-sweep">Start Sweep</button>
           <button class="danger" id="btn-abort" style="display:none">Abort</button>
+        </div>
+        <div class="inlineconfirm" id="sw-confirm">
+          <div id="sw-confirm-msg"></div>
+          <div class="btnrow">
+            <button class="danger" id="sw-confirm-go">Move the machine</button>
+            <button id="sw-confirm-cancel">Cancel</button>
+          </div>
         </div>
         <div class="progress" id="progress"><div class="bar" id="progressbar"></div></div>
         <div class="statusline" id="op-status"></div>

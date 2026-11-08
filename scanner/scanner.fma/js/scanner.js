@@ -11,9 +11,14 @@ try {
     fabmo = null;
 }
 if (!fabmo) {
+    // standalone page: show messages in the status line (no alert())
     fabmo = { notify: function (level, msg) {
-        if (level === "error" || level === "warning") { window.alert(msg); }
-        else { console.log(msg); }
+        console.log(level + ": " + msg);
+        var el = document.getElementById("op-status");
+        if (el && (level === "error" || level === "warning")) {
+            el.textContent = msg;
+            el.className = "statusline err";
+        }
     } };
 }
 var BASE = STANDALONE ? location.origin : "http://" + location.hostname + ":3150";
@@ -244,16 +249,35 @@ function sweepEstimate() {
 });
 sweepEstimate();
 
+// Inline confirmation: window.confirm() is silently ignored (returns false)
+// inside the dashboard's sandboxed app iframe.
+var pendingSweep = null;
+
+function hideSweepConfirm() {
+    pendingSweep = null;
+    $("sw-confirm").style.display = "none";
+}
+
 $("btn-sweep").onclick = function () {
     var p = sweepEstimate();
     if (!p) { return; }
     var n = Math.round((p.end - p.start) / p.step) + 1;
-    if (!window.confirm("Start a " + n + "-stop sweep along " + p.axis.toUpperCase() +
-            "?\n\nThe machine will move. Make sure the head clears the part.")) {
-        return;
-    }
-    startOp("/sweep", p, "Sweep");
+    pendingSweep = p;
+    $("sw-confirm-msg").textContent = "Start a " + n + "-stop sweep along " +
+        p.axis.toUpperCase() + "? The machine will move " + p.axis.toUpperCase() +
+        " from " + p.start + " to " + p.end + " in relative to where it is now. " +
+        "Make sure the head clears the part and keep hands clear.";
+    $("sw-confirm").style.display = "block";
 };
+$("sw-confirm-go").onclick = function () {
+    var p = pendingSweep;
+    hideSweepConfirm();
+    if (p) { startOp("/sweep", p, "Sweep"); }
+};
+$("sw-confirm-cancel").onclick = hideSweepConfirm;
+["sw-axis", "sw-start", "sw-end", "sw-step", "sw-name"].forEach(function (id) {
+    $(id).addEventListener("input", hideSweepConfirm);   // parameters changed: re-confirm
+});
 
 // ---------------------------------------------------------------- sessions
 
@@ -464,7 +488,7 @@ function poll() {
             st.have_mount_cal ? "cal: hand-eye" : "cal: nominal mount",
             st.have_mount_cal ? "ok" : "busy");
 
-        ["btn-reference", "btn-locate", "btn-scan", "btn-dryrun", "btn-sweep"].forEach(function (id) {
+        ["btn-reference", "btn-locate", "btn-scan", "btn-dryrun", "btn-sweep", "sw-confirm-go"].forEach(function (id) {
             $(id).disabled = busy;
         });
         $("btn-abort").style.display = busy ? "" : "none";
@@ -513,7 +537,7 @@ function poll() {
         refreshMap(st.have_reference, st.last_locate);
     }).catch(function () {
         setPill("pill-daemon", "daemon: unreachable", "err");
-        ["btn-reference", "btn-locate", "btn-scan", "btn-dryrun", "btn-sweep"].forEach(function (id) {
+        ["btn-reference", "btn-locate", "btn-scan", "btn-dryrun", "btn-sweep", "sw-confirm-go"].forEach(function (id) {
             $(id).disabled = true;
         });
     });
