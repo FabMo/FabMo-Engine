@@ -712,7 +712,23 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
         pan_model = panmod.Pan()
     allP, shot_ids = [], []
     reused = 0
-    for i, s in enumerate(shots):
+    if man.get("kind") == "continuous":
+        # laser-on frames only (continuous.py); decimate to ~line_step_in
+        import continuous
+        sp = np.array([s["pose"][man["axis"]] for s in shots])
+        frame_step = float(np.median(np.abs(np.diff(sp)))) if len(sp) > 1 else 0.01
+        want = float(man.get("line_step_in", 0.02))
+        every = max(1, int(round(want / max(frame_step, 1e-6))))
+        Ps, used = continuous.triangulate_frames(capdir, shots, every, progress)
+        allP = Ps
+        shot_ids = [np.full(len(P_), i) for P_, i in zip(Ps, used)]
+        man["step"] = frame_step * every          # for the neighbour-support filter
+        log("continuous: %d frames, every %d used (line step %.4f in)"
+            % (len(shots), every, frame_step * every))
+        shots_iter = []
+    else:
+        shots_iter = shots
+    for i, s in enumerate(shots_iter):
         pre = (precomputed or {}).get(s["img_off"])
         if pre is not None and signal == "rg" and np.allclose(pre[0], p0):
             allP.append(pre[1])

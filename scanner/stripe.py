@@ -178,3 +178,46 @@ def drop_weak_runs(pts, orientation="vertical", min_run=15, max_gap=2, max_jump=
     starts = np.r_[0, np.cumsum(n)[:-1]]
     med = np.array([np.median(pts[order[s:s + k], 2]) for s, k in zip(starts, n)])
     return pts[(n[lab] >= min_run) & (med[lab] >= rel_signal * ref)]
+
+
+# ------------------------------------------------------- laser-on frame only
+def extract_on_only(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
+                    max_blue=0.15):
+    """Horizontal stripe from a single laser-ON frame (continuous scans:
+    no laser-off reference). Redness (R - G) high-passed across the line
+    (minus a win x win median background) leaves thin red features; each
+    found piece must then look like laser in colour too — red up, blue flat
+    in the same high-pass (scene edges and print show in every channel).
+    Returns [row, col, signal] like extract(). On the black-block scan this
+    matched the off/on method to ~0.003 mm on 85-99% of the points; it is
+    weaker against clutter (one elbow-scan test: 51 spike points left vs 0).
+    """
+    f = img_on.astype(np.float32)
+    hp = []
+    for k in range(3):
+        c = img_on[..., k]
+        hp.append(f[..., k] - cv2.medianBlur(c, win).astype(np.float32))
+    hB, hG, hR = hp
+    d = hR - hG
+    t = _extract_vertical(np.ascontiguousarray(d.T), min_signal, snr, half_window)
+    pts = t[:, [1, 0, 2]]
+    pts = clean(pts, orientation="horizontal")
+    if len(pts) < 3:
+        return pts
+    al, ac = 1, 0
+    pts = pts[np.argsort(pts[:, al])]
+    r = np.clip(np.round(pts[:, 0]).astype(int), 0, img_on.shape[0] - 1)
+    c = np.clip(np.round(pts[:, 1]).astype(int), 0, img_on.shape[1] - 1)
+    R = cv2.blur(hR, (5, 5))[r, c]
+    B = cv2.blur(hB, (5, 5))[r, c]
+    lab = _runs(pts, al, ac, 2, 3.0)
+    n = np.bincount(lab)
+    order = np.argsort(lab, kind="stable")
+    starts = np.r_[0, np.cumsum(n)[:-1]]
+    ok = np.zeros(len(n), bool)
+    for k, (s0, m) in enumerate(zip(starts, n)):
+        idx = order[s0:s0 + m]
+        mr, mb = np.median(R[idx]), np.median(B[idx])
+        ok[k] = mr > 0 and abs(mb) <= max_blue * mr
+    pts = pts[ok[lab]]
+    return drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)

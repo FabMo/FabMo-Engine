@@ -45,6 +45,11 @@ DEFAULTS = {
     "table_below_cam_mm": 141.98,
     "table_ref_z_in": 5.21988,
 
+    # --- continuous (laser-on, constant feed) sweeps ---
+    "continuous_speed_ips": 0.3,     # head speed during the sweep
+    "continuous_line_step_in": 0.04,  # process a frame every this many inches (~1 mm)
+    "continuous_latency_ms": 0.0,     # frame-time vs position-report offset (calibrate)
+
     # --- camera (set on every open; the device forgets them on replug) ---
     "camera_focus": 470,        # focus_absolute the calibration (camera.json) was made at
     "camera_brightness": 90,    # post-AE brightness: headroom for the laser in red

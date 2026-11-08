@@ -178,6 +178,9 @@ def job_sweep(body):
     outdir = os.path.join(orbit.SCANS_DIR, session)
     if os.path.exists(outdir):
         raise RuntimeError("session %s already exists" % session)
+    mode = str(body.get("mode", "stops"))
+    if mode == "continuous":
+        return job_continuous(body, s, axis, start, end, session, outdir)
     multi = len(headings) > 1 or any(abs(h) > 0.05 for h in headings)
     if multi:
         import pan as panmod
@@ -247,6 +250,37 @@ def job_sweep(body):
     if top:
         msg += ", top %.2f mm above table" % top["height_mm"]
     result["message"] = msg
+    return result
+
+
+def job_continuous(body, s, axis, start, end, session, outdir):
+    import continuous
+    speed = float(body.get("speed") or s["continuous_speed_ips"])
+    set_state(phase="continuous sweep %s at %.2f in/s" % (axis.upper(), speed),
+              progress={"done": 0, "total": 100})
+    with _cap_lock:              # raw-JPEG capture needs its own handle
+        if _cap[0] is not None:
+            _cap[0].release()
+            _cap[0] = None
+        cap = continuous.open_raw()
+        try:
+            man = continuous.run_continuous(
+                fabmo, cap, outdir, axis, start, end, speed, int(s["laser_output"]),
+                float(s["continuous_latency_ms"]), progress_cb, ABORT)
+        finally:
+            cap.release()
+    if not man["complete"]:
+        return {"message": "sweep stopped early", "session": session}
+    man["line_step_in"] = float(body.get("line_step") or s["continuous_line_step_in"])
+    with open(os.path.join(outdir, "manifest.json"), "w") as fh:
+        json.dump(man, fh)
+    set_state(phase="triangulating", progress={"done": 0, "total": 0})
+    stats = sweep.process_dir(outdir, progress=progress_cb)
+    result = {"session": session, "stats": stats,
+              "message": "continuous sweep %s: %d points%s" % (
+                  session, stats["n_points"],
+                  ", top %.2f mm above table" % stats["top"]["height_mm"] if stats.get("top") else "")}
+    set_state(last_sweep=result)
     return result
 
 
