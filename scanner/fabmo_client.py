@@ -120,7 +120,11 @@ def wait_idle(timeout=30.0):
 POS_TOL = 0.002   # inches
 
 
-def goto(x=None, y=None, z=None, feed=None, retries=2):
+B_TOL = 0.1       # degrees: B reports whole motor steps (5.55 steps/deg = 0.18 deg/step)
+B_LIMIT = 95.0    # degrees each way: camera/laser cables on the PRS head (user, 2026-11-08)
+
+
+def goto(x=None, y=None, z=None, feed=None, retries=2, b=None):
     """Absolute move in work coordinates. Only supplied axes move.
 
     Verifies the position afterwards and re-sends the move if the machine
@@ -129,9 +133,11 @@ def goto(x=None, y=None, z=None, feed=None, retries=2):
     M100 output command followed at once by a G0 Z move — the Z move was
     silently dropped). Raises if the target still isn't reached.
     """
-    target = {"posx": x, "posy": y, "posz": z}
+    if b is not None and abs(b) > B_LIMIT:
+        raise RuntimeError("B %.2f outside the allowed +-%.0f deg" % (b, B_LIMIT))
+    target = {"posx": x, "posy": y, "posz": z, "posb": b}
     words = []
-    for axis, val in (("X", x), ("Y", y), ("Z", z)):
+    for axis, val in (("X", x), ("Y", y), ("Z", z), ("B", b)):
         if val is not None:
             words.append("%s%.4f" % (axis, val))
     if not words:
@@ -141,7 +147,7 @@ def goto(x=None, y=None, z=None, feed=None, retries=2):
     for attempt in range(retries + 1):
         s = run_gcode(cmd)
         off = {k: s[k] - v for k, v in target.items()
-               if v is not None and abs(s[k] - v) > POS_TOL}
+               if v is not None and abs(s[k] - v) > (B_TOL if k == "posb" else POS_TOL)}
         if not off:
             return s
         time.sleep(0.3)
