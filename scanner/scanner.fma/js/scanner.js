@@ -215,7 +215,7 @@ $("btn-confirm").onclick = function () { api("POST", "/confirm"); };
 
 // ---------------------------------------------------------------- sweep
 
-var SEC_PER_STOP = 1.6;   // measured: 86 stops in 135 s
+var SEC_PER_STOP = 1.7;   // single-job sweep, 0.8 s + 0.6 s dwells (measured 1.8 s at 0.9 + 0.7)
 
 function sweepParams() {
     var p = {
@@ -450,6 +450,44 @@ function showPicks(picks) {
     $("v-pick-clear").onclick = function () { viewer.clearPicks(); };
 }
 
+// ---------------------------------------------------------------- live sweep
+
+var live = { session: null, from: 0, busy: false };
+
+function pollLive(st) {
+    var L = st.live;
+    if (!(st.state === "busy" && st.op === "sweep" && L && L.session)) { return; }
+    if (live.busy) { return; }                     // previous fetch still running
+    if (L.session !== live.session) {              // a new sweep started
+        live = { session: L.session, from: 0, busy: false };
+        if (!viewer) { viewer = new ScanViewer($("viewer"), { onPick: showPicks }); }
+        viewer.startLive(Math.max(50000, L.total * 4000));
+        selected = null;
+        renderSessions();
+        $("v-empty").style.display = "none";
+        $("v-title").textContent = L.session + " (scanning…)";
+        $("v-legend").style.display = "none";
+    }
+    if (L.shots_done <= live.from) { return; }
+    live.busy = true;
+    fetch(BASE + "/live/points?from=" + live.from).then(function (r) {
+        if (!r.ok) { throw new Error("HTTP " + r.status); }
+        var done = parseInt(r.headers.get("X-Shots-Done"), 10);
+        return r.arrayBuffer().then(function (b) { return [new Float32Array(b), done]; });
+    }).then(function (res) {
+        if (live.session !== L.session || !viewer || !viewer.live) { return; }
+        viewer.appendLive(res[0]);
+        if (!isNaN(res[1])) { live.from = res[1]; }
+        $("v-info").innerHTML = "<b>Scanning</b> · " + live.from + " / " + L.total +
+            " lines · " + viewer.live.n.toLocaleString() + " points<br>" +
+            "heights provisional until the scan finishes";
+        $("v-info").style.display = "block";
+        showLegend();
+    }).catch(function () { /* next poll retries */ }).then(function () {
+        live.busy = false;
+    });
+}
+
 Array.prototype.forEach.call($("v-mode").querySelectorAll("button"), function (b) {
     b.onclick = function () {
         Array.prototype.forEach.call($("v-mode").querySelectorAll("button"), function (x) {
@@ -534,6 +572,7 @@ function poll() {
         }
         prevBusy = busy;
         prevOp = busy ? st.op : prevOp;
+        pollLive(st);
         refreshMap(st.have_reference, st.last_locate);
     }).catch(function () {
         setPill("pill-daemon", "daemon: unreachable", "err");

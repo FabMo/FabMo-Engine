@@ -91,6 +91,58 @@ def grab(cap, flush=4):
     return frame
 
 
+class LatestFrame:
+    """Keeps a capture drained on a background thread (grab() only — no
+    decode), so read() returns a frame captured within the last frame
+    interval instead of a stale buffered one. Use while the machine runs a
+    timed program and frames must be taken inside short windows.
+
+        with LatestFrame(cap) as lf:
+            frame = lf.read()
+    """
+
+    def __init__(self, cap):
+        import threading
+        self.cap = cap
+        self.lock = threading.Lock()
+        self.stop = threading.Event()
+        self.grabbed = 0
+        self.thread = threading.Thread(target=self._run, daemon=True)
+
+    def _run(self):
+        while not self.stop.is_set():
+            with self.lock:
+                ok = self.cap.grab()
+            if ok:
+                self.grabbed += 1
+            else:
+                time.sleep(0.01)
+
+    def __enter__(self):
+        self.thread.start()
+        deadline = time.time() + 3.0               # wait for frames to flow
+        while self.grabbed < 3 and time.time() < deadline:
+            time.sleep(0.02)
+        return self
+
+    def __exit__(self, *exc):
+        self.stop.set()
+        self.thread.join(timeout=2.0)
+
+    def read(self):
+        """Decode the most recently grabbed frame. Waits for one new grab
+        first, so the frame was exposed after this call started."""
+        n0 = self.grabbed
+        deadline = time.time() + 1.0
+        while self.grabbed <= n0 and time.time() < deadline:
+            time.sleep(0.003)
+        with self.lock:
+            ok, frame = self.cap.retrieve()
+        if not ok:
+            raise RuntimeError("frame retrieve failed")
+        return frame
+
+
 if __name__ == "__main__":
     cap = open_camera()
     time.sleep(0.5)

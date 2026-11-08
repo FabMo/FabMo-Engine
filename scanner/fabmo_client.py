@@ -72,6 +72,29 @@ def run_gcode(cmd):
     raise RuntimeError("timed out waiting for idle")
 
 
+def start_gcode(cmd):
+    """Start a gcode program and return immediately (machine must be idle).
+    The caller follows it through status()."""
+    resp = _post("/code", {"cmd": cmd, "runtime": "g"})
+    if resp.get("status") != "success":
+        raise RuntimeError("engine rejected code: %s" % resp.get("message"))
+
+
+def quit():
+    """Stop the running job (same as the dashboard's Stop)."""
+    _post("/quit", {})
+
+
+def wait_idle(timeout=30.0):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        s = status()
+        if s["state"] == "idle":
+            return s
+        time.sleep(0.1)
+    raise RuntimeError("timed out waiting for idle")
+
+
 POS_TOL = 0.002   # inches
 
 

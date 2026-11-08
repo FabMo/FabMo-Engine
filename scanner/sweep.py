@@ -117,6 +117,267 @@ def run_capture(fabmo, grab, outdir, axis, start, end, step, laser_out,
     return man
 
 
+class Live:
+    """Triangulates shots on a worker thread as they arrive (and writes
+    their images), so a viewer can show the scan building up.
+
+    Heights are provisional: relative to z_ref, the median height of the
+    first shots' points (normally the bare table in front of the part).
+    The final process_dir() re-levels to a fitted table plane.
+    """
+
+    def __init__(self, outdir, total, signal="rg"):
+        import queue
+        import threading
+        self.outdir = outdir
+        self.total = total
+        self.signal = signal
+        self.cal = load_cal()
+        self.q = queue.Queue()
+        self.lock = threading.Lock()
+        self.shots = []          # per-shot float32 (N, 3), provisional heights
+        self.z_ref = None
+        self._raw = []           # raw z of early shots, for z_ref
+        self.p0 = None
+        self.errors = 0
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def add(self, idx, pose, off, on, rec):
+        self.q.put((idx, pose, off, on, rec))
+
+    def _run(self):
+        while True:
+            item = self.q.get()
+            if item is None:
+                return
+            idx, pose, off, on, rec = item
+            try:
+                cv2.imwrite(os.path.join(self.outdir, rec["img_off"]), off)
+                cv2.imwrite(os.path.join(self.outdir, rec["img_on"]), on)
+                if self.p0 is None:
+                    self.p0 = np.array([pose[a] for a in AXES])
+                dp = (np.array([pose[a] for a in AXES]) - self.p0) * IN_TO_MM
+                P = triangulate_shot(off, on, self.cal, dp, self.signal)[:, :3]
+                if self.z_ref is None:
+                    if len(P):
+                        self._raw.append(P[:, 2])
+                    if len(self._raw) >= 3 or idx >= 5:
+                        allz = np.concatenate(self._raw) if self._raw else np.zeros(1)
+                        self.z_ref = float(np.median(allz))
+                        with self.lock:        # re-reference what's already in
+                            for s in self.shots:
+                                s[:, 2] -= self.z_ref
+                if self.z_ref is not None:
+                    P = P.copy()
+                    P[:, 2] -= self.z_ref
+                with self.lock:
+                    self.shots.append(P.astype(np.float32))
+            except Exception:
+                self.errors += 1
+                with self.lock:
+                    self.shots.append(np.zeros((0, 3), np.float32))
+
+    def finish(self, timeout=60.0):
+        self.q.put(None)
+        self.thread.join(timeout=timeout)
+
+    def snapshot(self, from_shot=0):
+        """(points float32 (N,3) for shots >= from_shot, shots_done)."""
+        with self.lock:
+            done = len(self.shots)
+            if self.z_ref is None:          # don't hand out unreferenced heights yet
+                return np.zeros((0, 3), np.float32), 0
+            parts = self.shots[from_shot:done]
+        P = np.vstack(parts) if parts else np.zeros((0, 3), np.float32)
+        return P, done
+
+    def info(self):
+        with self.lock:
+            done = len(self.shots) if self.z_ref is not None else 0
+            n = sum(len(s) for s in self.shots[:done])
+        return {"shots_done": done, "total": self.total, "n_points": n}
+
+
+def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
+                    progress=None, abort=None, log=print, live=None,
+                    dwell_off=0.8, dwell_on=0.6, on_live=None):
+    """Like run_capture(), but the whole sweep runs as ONE gcode program
+    (moves, dwells, laser on/off), so the machine stays 'running' for the
+    whole scan — the dashboard's job bar stays up and its Stop/Pause work
+    on the scan. Frames are taken inside the dwells: the daemon follows
+    the program through the status report (position + laser output, 100 ms
+    report interval) and checks after each grab that the machine was still
+    in the same window.
+
+    cap: an open cv2.VideoCapture (drained by camera.LatestFrame here).
+    On error/abort/Stop the job is stopped and the laser switched off; the
+    head is NOT moved back (it stays where it stopped).
+    on_live(live): called once with the Live object (for the daemon).
+    """
+    import camera
+
+    ax = axis.lower()
+    if ax not in ("x", "y"):
+        raise ValueError("axis must be x or y")
+    if step <= 0 or end <= start:
+        raise ValueError("need step > 0 and end > start")
+    n = int(round((end - start) / step)) + 1
+    if n > 2000:
+        raise ValueError("%d stops is too many" % n)
+    os.makedirs(outdir, exist_ok=True)
+
+    s0 = fabmo.status()
+    if s0["state"] != "idle":
+        raise RuntimeError("machine is %s (must be idle)" % s0["state"])
+    origin = fabmo.pose()
+    targets = [round(origin[ax] + start + step * i, 4) for i in range(n)]
+    A, key = ax.upper(), "pos" + ax
+    out = "out%d" % laser_out
+    lines = ["G90", "M100 ({%s:0})" % out]
+    for t in targets:
+        lines += ["G0 %s%.4f" % (A, t), "G4 P%.2f" % dwell_off,
+                  "M100 ({%s:1})" % out, "G4 P%.2f" % dwell_on, "M100 ({%s:0})" % out]
+    lines += ["G0 %s%.4f" % (A, origin[ax]), "M100 ({%s:0})" % out]
+    prog = "\n".join(lines) + "\n"
+
+    log("origin %s; %d stops along %s from %+.3f to %+.3f in; laser out%d; "
+        "single job (%d lines)" % (origin, n, ax, start, end, laser_out, len(lines)))
+    man = {"kind": "sweep", "mode": "job", "units": "inches", "origin": origin,
+           "axis": ax, "start": start, "end": end, "step": step,
+           "laser_output": laser_out, "dwell_off": dwell_off, "dwell_on": dwell_on,
+           "created": time.strftime("%Y-%m-%d %H:%M:%S"), "complete": False,
+           "shots": []}
+    if live is None:
+        live = Live(outdir, n)
+    if on_live:
+        on_live(live)
+
+    TOL = 0.003
+    t0 = time.time()
+    started = False
+    stopped_by = None
+
+    def at(s, t):
+        return abs(s[key] - t) <= TOL
+
+    def wait_for(cond, what, timeout):
+        """Poll status until cond(s); raise if the job ends or abort."""
+        deadline = time.time() + timeout
+        while True:
+            s = fabmo.status()
+            if cond(s):
+                return s
+            if s["state"] in ("idle", "stopped", "dead") and time.time() - t0 > 1.0:
+                raise _JobEnded(s["state"])
+            if abort is not None and abort.is_set():
+                raise Aborted()
+            if s["state"] == "paused":               # paused from the dashboard:
+                deadline = time.time() + timeout      # don't time out meanwhile
+            if time.time() > deadline:
+                raise RuntimeError("timed out waiting for %s" % what)
+            time.sleep(0.03)
+
+    try:
+        with camera.LatestFrame(cap) as lf:
+            fabmo.start_gcode(prog)
+            started = True
+            missed = []
+            for i, t in enumerate(targets):
+                # --- laser-off window at stop i
+                ta = time.time()
+                wait_for(lambda s: at(s, t) and s.get(out) == 0,
+                         "stop %d (%s=%.4f)" % (i, A, t), 15.0)
+                tb = time.time()
+                time.sleep(0.2)                     # settle + camera latency
+                off = lf.read()
+                tc = time.time()
+                s = fabmo.status()
+                td = time.time()
+                if not (at(s, t) and s.get(out) == 0):
+                    why = "pos %.4f out %s" % (s[key], s.get(out))
+                    log("  stop %d: missed laser-off window (%s; detect %.2fs after "
+                        "previous, verify %.2fs after detect)" % (i, why, tb - ta, td - tb))
+                    missed.append({"stop": i, "window": "off", "why": why})
+                    if len(missed) > max(2, n // 10):
+                        raise RuntimeError("missed %d frame windows — timing too tight "
+                                           "(see scand log)" % len(missed))
+                    continue                        # skip this stop; next target
+                pose = {"x": s["posx"], "y": s["posy"], "z": s["posz"],
+                        "a": s.get("posa"), "b": s.get("posb")}
+                # --- laser-on window
+                wait_for(lambda s: at(s, t) and s.get(out) == 1,
+                         "laser on at stop %d" % i, 5.0)
+                te = time.time()
+                time.sleep(0.15)
+                on = lf.read()
+                s = fabmo.status()
+                tf = time.time()
+                if not (at(s, t) and s.get(out) == 1):
+                    why = "pos %.4f out %s" % (s[key], s.get(out))
+                    log("  stop %d: missed laser-on window (%s; verify %.2fs after "
+                        "detect)" % (i, why, tf - te))
+                    missed.append({"stop": i, "window": "on", "why": why})
+                    if len(missed) > max(2, n // 10):
+                        raise RuntimeError("missed %d frame windows — timing too tight "
+                                           "(see scand log)" % len(missed))
+                    continue
+                rec = {"pose": pose, "img_off": "off_%03d.jpg" % i, "img_on": "on_%03d.jpg" % i,
+                       "timing": {"off_detect_to_verify": round(td - tb, 3),
+                                  "off_grab": round(tc - tb, 3),
+                                  "on_detect_to_verify": round(tf - te, 3),
+                                  "stop_cycle": round(tf - ta, 3)}}
+                man["shots"].append(rec)
+                live.add(i, pose, off, on, rec)
+                if progress:
+                    progress(i + 1, n)
+                if i % 10 == 0 or i == n - 1:
+                    log("  [%d/%d] %s=%.4f  %.0fs" % (i + 1, n, ax, pose[ax], time.time() - t0))
+            fabmo.wait_idle(timeout=60.0)             # program returns to origin
+            man["complete"] = True
+            man["missed"] = missed
+    except _JobEnded as e:
+        stopped_by = "machine went %s (stopped from the dashboard?)" % e.state
+        log("sweep: " + stopped_by)
+        raise Aborted()
+    finally:
+        try:
+            if started and not man["complete"]:
+                # A /quit during a running gcode job can leave the engine
+                # reporting 'running' after motion has ended (seen 2026-11-08,
+                # quit sent during a G4 dwell); a second quit clears it —
+                # the same as pressing Stop again in the dashboard.
+                for attempt in range(3):
+                    if fabmo.status()["state"] == "idle":
+                        break
+                    fabmo.quit()
+                    try:
+                        fabmo.wait_idle(timeout=5.0)
+                        break
+                    except RuntimeError:
+                        log("sweep: engine still not idle after stop #%d" % (attempt + 1))
+                fabmo.wait_idle(timeout=10.0)
+        finally:
+            try:
+                fabmo.set_output(laser_out, 0)
+            finally:
+                live.finish()
+                man["duration_s"] = round(time.time() - t0, 1)
+                if stopped_by:
+                    man["stopped"] = stopped_by
+                with open(os.path.join(outdir, "manifest.json"), "w") as fh:
+                    json.dump(man, fh, indent=2)
+    log("wrote %s/manifest.json (%d shots, %.0f s)"
+        % (outdir, len(man["shots"]), man["duration_s"]))
+    return man
+
+
+class _JobEnded(Exception):
+    def __init__(self, state):
+        Exception.__init__(self, state)
+        self.state = state
+
+
 def capture(args):
     import camera
     import fabmo_client as fabmo
@@ -124,10 +385,15 @@ def capture(args):
 
     cap = camera.open_camera()
     time.sleep(1.0)
-    run_capture(fabmo, lambda: camera.grab(cap, flush=8),
-                os.path.join("captures", args.name), args.axis, args.start,
-                args.end, args.step, int(scan_settings.load()["laser_output"]),
-                log=lambda s: print(s, flush=True))
+    outdir = os.path.join("captures", args.name)
+    laser = int(scan_settings.load()["laser_output"])
+    log = lambda s: print(s, flush=True)
+    if args.mode == "job":
+        run_capture_job(fabmo, cap, outdir, args.axis, args.start, args.end,
+                        args.step, laser, log=log)
+    else:
+        run_capture(fabmo, lambda: camera.grab(cap, flush=8), outdir, args.axis,
+                    args.start, args.end, args.step, laser, log=log)
 
 
 # ------------------------------------------------------------ triangulate
@@ -358,6 +624,9 @@ if __name__ == "__main__":
     c.add_argument("--start", type=float, default=-0.5)
     c.add_argument("--end", type=float, default=5.5)
     c.add_argument("--step", type=float, default=0.1)
+    c.add_argument("--mode", default="job", choices=("job", "steps"),
+                   help="job: one gcode program for the whole sweep (default); "
+                        "steps: one /code call per move/output (older)")
     c.set_defaults(fn=capture)
     p = sub.add_parser("process")
     p.add_argument("capdir")

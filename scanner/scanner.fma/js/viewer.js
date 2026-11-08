@@ -106,6 +106,7 @@ var ScanViewer = (function () {
 
     /* data: {points: Float32Array, surface: Float32Array|null, meta: scan.json} */
     ScanViewer.prototype.load = function (data) {
+        this.live = null;
         this.data = data;
         this.picks = [];
         var p = data.points, n = p.length / 3, zs = new Float32Array(n);
@@ -240,7 +241,7 @@ var ScanViewer = (function () {
         if (!hits.length) { return; }
         var p = hits[0].point.clone();
         if (hits[0].object.isPoints && hits[0].index !== undefined) {
-            var a = this.data.points, k = hits[0].index;
+            var a = this.live ? this.live.pos : this.data.points, k = hits[0].index;
             p.set(a[3 * k], a[3 * k + 1], a[3 * k + 2]);
         }
         if (this.picks.length >= 2) { this.picks = []; }
@@ -259,6 +260,7 @@ var ScanViewer = (function () {
 
     ScanViewer.prototype.setMode = function (mode) {
         this.mode = mode;
+        if (this.live) { return; }          // live view is always points; applies on load()
         this._build();
     };
 
@@ -289,6 +291,71 @@ var ScanViewer = (function () {
         this.camera.far = d * 20;
         this.camera.updateProjectionMatrix();
         this.controls.update();
+    };
+
+    // ------------------------------------------------------------ live
+    // A growing point cloud while a sweep runs. Heights are provisional
+    // (relative to the first shots' table level). load() replaces it with
+    // the processed scan when the sweep finishes.
+
+    ScanViewer.prototype.startLive = function (capacity) {
+        this._clear(this.group);
+        this._clear(this.helpers);
+        this.picks = [];
+        if (this.opts.onPick) { this.opts.onPick([]); }
+        var pos = new Float32Array(capacity * 3), col = new Float32Array(capacity * 3);
+        var g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+        g.setDrawRange(0, 0);
+        var m = new THREE.PointsMaterial({ size: this.pointSize, sizeAttenuation: false,
+            vertexColors: THREE.VertexColors });
+        this.live = { geom: g, pos: pos, col: col, n: 0, cap: capacity, fitted: 0,
+            min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] };
+        this.zRange = [0, 10];
+        this.data = { points: null, surface: null, live: true,
+            meta: { bounds_mm: { min: [0, 0, 0], max: [1, 1, 1] } } };
+        this.group.add(new THREE.Points(g, m));
+        var self = this;
+        if (!this._liveHook) {        // user takes the camera: stop auto-fitting
+            this._liveHook = true;
+            this.controls.addEventListener("start", function () {
+                if (self.live) { self.live.userMoved = true; }
+            });
+        }
+    };
+
+    ScanViewer.prototype.appendLive = function (pts) {
+        var L = this.live;
+        if (!L || !pts.length) { return; }
+        var k = Math.min(pts.length / 3, L.cap - L.n), i, j, a, recolor = false;
+        L.pos.set(pts.subarray(0, k * 3), L.n * 3);
+        for (i = 0; i < k; i++) {
+            for (j = 0; j < 3; j++) {
+                a = pts[3 * i + j];
+                if (a < L.min[j]) { L.min[j] = a; }
+                if (a > L.max[j]) { L.max[j] = a; }
+            }
+        }
+        // colour range follows the tallest thing seen so far
+        var top = Math.max(10, L.max[2]);
+        if (top > this.zRange[1] * 1.05) { this.zRange = [Math.min(0, L.min[2]), top]; recolor = true; }
+        var from = recolor ? 0 : L.n;
+        L.n += k;
+        this._colors(L.pos.subarray(from * 3, L.n * 3), L.n - from, L.col.subarray(from * 3, L.n * 3));
+        var pa = L.geom.attributes.position, ca = L.geom.attributes.color;
+        pa.needsUpdate = true;
+        ca.needsUpdate = true;
+        L.geom.setDrawRange(0, L.n);
+        L.geom.computeBoundingSphere();
+        this.data.meta.bounds_mm = { min: L.min.slice(), max: L.max.slice() };
+        // auto-fit while the cloud grows, until the user moves the camera
+        if (!L.userMoved && (L.fitted === 0 || L.n > L.fitted * 1.6)) {
+            L.fitted = L.n;
+            this._clear(this.helpers);
+            this._grid();
+            this.view("iso");
+        }
     };
 
     ScanViewer.prototype.legend = function () {

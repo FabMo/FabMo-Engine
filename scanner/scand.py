@@ -57,6 +57,7 @@ STATE = {
     "last_sweep": None,
 }
 ABORT = threading.Event()
+LIVE = {"session": None, "live": None}     # the sweep being captured (sweep.Live)
 CONFIRM = threading.Event()
 LAST_PLAN = {"plan": None}
 
@@ -190,8 +191,17 @@ def job_sweep(body):
             % (frame.shape[1], frame.shape[0], want_w, want_h))
     set_state(phase="sweeping %s (%d stops)" % (axis.upper(), n),
               progress={"done": 0, "total": n})
-    man = sweep.run_capture(fabmo, lambda: camgrab(8), outdir, axis, start, end, step,
-                            int(s["laser_output"]), progress_cb, ABORT)
+
+    def on_live(live):
+        LIVE.update(session=session, live=live)
+
+    with _cap_lock:              # the sweep owns the camera until it's done
+        if _cap[0] is None:
+            _cap[0] = camera.open_camera()
+            time.sleep(0.5)
+        man = sweep.run_capture_job(fabmo, _cap[0], outdir, axis, start, end, step,
+                                    int(s["laser_output"]), progress_cb, ABORT,
+                                    on_live=on_live)
     if not man["complete"]:
         return {"message": "sweep stopped early", "session": session}
     set_state(phase="triangulating", progress={"done": 0, "total": len(man["shots"])})
@@ -270,10 +280,14 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass  # quiet; errors surface via API
 
-    def _send(self, code, payload, ctype="application/json"):
+    def _send(self, code, payload, ctype="application/json", extra=None):
         body = json.dumps(payload).encode() if ctype == "application/json" else payload
         self.send_response(code)
         self.send_header("Content-Type", ctype)
+        for k, v in (extra or {}).items():
+            self.send_header(k, v)
+        if extra:
+            self.send_header("Access-Control-Expose-Headers", ", ".join(extra))
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
@@ -304,11 +318,29 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 st["machine"] = {"state": "unreachable", "error": str(e)}
             st["have_reference"] = table_map.have_reference()
+            if LIVE["live"] is not None:
+                st["live"] = dict(LIVE["live"].info(), session=LIVE["session"])
             st["have_mount_cal"] = os.path.exists(
                 os.path.join(os.path.dirname(os.path.abspath(__file__)), "mount.json"))
             return self._send(200, st)
         if path == "/settings":
             return self._send(200, scan_settings.load())
+        if path == "/live/points":
+            # binary float32 x,y,z (mm, provisional heights) for shots >= from;
+            # X-Shots-Done tells the client where to continue
+            live = LIVE["live"]
+            try:
+                frm = int(dict(kv.split("=", 1) for kv in self.path.split("?", 1)[1]
+                               .split("&") if "=" in kv).get("from", 0)) \
+                    if "?" in self.path else 0
+            except ValueError:
+                frm = 0
+            if live is None:
+                return self._send(404, {"error": "no live sweep"})
+            P, done = live.snapshot(frm)
+            return self._send(200, P.astype("<f4").tobytes(), "application/octet-stream",
+                              extra={"X-Shots-Done": str(done),
+                                     "X-Live-Session": LIVE["session"] or ""})
         if path == "/plan":
             return self._send(200, LAST_PLAN["plan"] or {})
         if path == "/sessions":
