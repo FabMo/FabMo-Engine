@@ -171,6 +171,23 @@ def job_sweep(body):
     if os.path.exists(outdir):
         raise RuntimeError("session %s already exists" % session)
     n = int(round((end - start) / step)) + 1 if step > 0 else 0
+    # Calibration is only valid at the calibrated resolution. If the video
+    # app's camera server holds /dev/video0, camera.open_camera() falls back
+    # to its MJPEG stream, which may be a different size — refuse that.
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "camera.json")) as fh:
+        want_w, want_h = json.load(fh)["image_size"]
+    frame = camgrab()
+    if (frame.shape[1], frame.shape[0]) != (want_w, want_h):
+        with _cap_lock:                     # let a later attempt reopen the device
+            try:
+                _cap[0].release()
+            except Exception:
+                pass
+            _cap[0] = None
+        raise RuntimeError(
+            "camera gives %dx%d, calibration is %dx%d — the video app's camera "
+            "server probably holds the camera (sudo systemctl stop camera-server-2)"
+            % (frame.shape[1], frame.shape[0], want_w, want_h))
     set_state(phase="sweeping %s (%d stops)" % (axis.upper(), n),
               progress={"done": 0, "total": n})
     man = sweep.run_capture(fabmo, lambda: camgrab(8), outdir, axis, start, end, step,

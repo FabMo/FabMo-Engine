@@ -27,7 +27,19 @@ manager. Hardware toggles live in settings: `use_laser`, `use_pan`
 (B axis wired?), `pan_prompt` (manual head rotation), `laser_output`
 (M100 ({outN:…}), default out5).
 
-Run the daemon: `python3 scand.py` (data + settings in `data/`).
+Run the daemon: `python3 scand.py` (data + settings in `data/`), or as a
+service (paths in the unit assume the checkout at
+/home/pi/dev/fabmo-scanner):
+
+    sudo cp scand.service /etc/systemd/system/
+    sudo systemctl daemon-reload && sudo systemctl enable --now scand
+    journalctl -u scand -f
+
+The video app's camera server (`camera-server-2` on the PRS Pi) holds the
+camera at boot; stop it before sweeping
+(`sudo systemctl stop camera-server-2`). A sweep refuses to start if the
+frames aren't the calibrated size (scand would otherwise fall back to the
+camera server's stream).
 
 ## One-time setup
 
