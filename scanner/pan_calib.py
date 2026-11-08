@@ -183,8 +183,11 @@ def capture(args):
                 Xc = R @ ctr + t                      # board centre, camera frame
                 if R_bm is None:                      # first shot: reference
                     R_bm = R_mc0.T @ R               # board -> machine (B ~ 0)
-                    X_target = Xc
-                    break
+                    # aim the board centre at the optical axis (image centre),
+                    # same distance: a board rotated in the image then has
+                    # room on every side (starting off-centre, the 8 mm board
+                    # was clipped at +-40 deg)
+                    X_target = np.array([0.0, 0.0, np.linalg.norm(Xc)])
                 R_mc = R @ R_bm.T                    # machine -> camera now
                 d = (R_mc.T @ Xc - R_mc.T @ X_target)[:2] / IN_TO_MM   # inches
                 if np.hypot(*d) < 0.04:
