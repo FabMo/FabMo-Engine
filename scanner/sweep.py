@@ -411,6 +411,7 @@ def triangulate_shot(off, on, cal, dpose_mm, signal="rg"):
     """-> (N, 4) [x, y, z, signal], mm, machine axes."""
     pts = stripe.extract(off, on, orientation="horizontal", signal=signal)
     pts = stripe.clean(pts, orientation="horizontal")
+    pts = stripe.drop_weak_runs(pts, orientation="horizontal")
     if len(pts) == 0:
         return np.zeros((0, 4))
     u = cv2.undistortPoints(pts[:, [1, 0]].reshape(-1, 1, 2).astype(np.float64),

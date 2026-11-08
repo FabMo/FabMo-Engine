@@ -101,3 +101,32 @@ def clean(pts, max_jump=3.0, max_line_dev=None, orientation="vertical"):
             keep &= dev <= 5 * max_line_dev
         pts = pts[keep]
     return pts
+
+
+def drop_weak_runs(pts, orientation="vertical", min_run=15, max_gap=2, max_jump=3.0,
+                   rel_signal=0.2):
+    """Keep only stripe pieces that look like laser line: continuous runs of
+    at least min_run lines (gaps <= max_gap lines, steps <= max_jump px)
+    whose median signal is at least rel_signal x the shot's strong-line
+    level (90th percentile of signal).
+
+    Removes false stripe points from clutter outside the table: things whose
+    colour shifts a little between the laser-off and laser-on frames (camera
+    auto-exposure) show up as short, faint fragments, and because they sit
+    in the same image region in every shot, neighbouring shots 'confirm'
+    them (seen as 100 mm spikes on a PVC-fitting scan, Nov 2026). Real line
+    on glossy parts breaks into pieces too, but long, bright ones.
+    """
+    if len(pts) < 3:
+        return pts
+    al, ac = (0, 1) if orientation == "vertical" else (1, 0)
+    pts = pts[np.argsort(pts[:, al])]
+    brk = np.r_[True, (np.diff(pts[:, al]) > max_gap) |
+                (np.abs(np.diff(pts[:, ac])) > max_jump)]
+    lab = np.cumsum(brk) - 1
+    n = np.bincount(lab)
+    ref = np.percentile(pts[:, 2], 90)
+    order = np.argsort(lab, kind="stable")
+    starts = np.r_[0, np.cumsum(n)[:-1]]
+    med = np.array([np.median(pts[order[s:s + k], 2]) for s, k in zip(starts, n)])
+    return pts[(n[lab] >= min_run) & (med[lab] >= rel_signal * ref)]
