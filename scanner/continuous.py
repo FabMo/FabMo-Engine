@@ -209,7 +209,7 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
             try:
                 fabmo.set_output(laser_out, 0)
             finally:
-                man["status_log"] = [list(r[:4]) + [r[4]] for r in st.rows]
+                man["status_log"] = [list(r[:5]) for r in st.rows]
                 man["frames"] = [list(f) for f in fr.frames]
                 man["duration_s"] = round(time.time() - t0, 1)
                 _assign_poses(man, ax, a0, a1, latency_ms, log)
@@ -232,11 +232,20 @@ def _assign_poses(man, ax, a0, a1, latency_ms, log=print):
     if len(rows) < 5 or not man["frames"]:
         man["fit"] = None
         return
+    # Only the constant-feed move: reports taken while the laser was on
+    # (the rapids to the start and back home also cross the scan range —
+    # fitting them gave 0.27 in/s for a 0.30 in/s move, 2026-11-08).
+    rows = [r for r in rows if len(r) > 4 and r[4] == 1]
+    if len(rows) < 5:
+        man["fit"] = None
+        log("continuous: too few position reports with the laser on (%d)" % len(rows))
+        return
     R = np.array([[r[0], r[k]] for r in rows], float)
     # first arrival of each new value only (repeats are stale reports)
     keep = np.r_[True, np.diff(R[:, 1]) != 0]
     R = R[keep]
     o = man["origin"]
+    # stay clear of the acceleration at both ends of the run-in
     lo = o[ax] + man["start"] - RUN_IN * 0.5
     hi = o[ax] + man["end"] + RUN_IN * 0.5
     seg = R[(R[:, 1] > lo) & (R[:, 1] < hi)]
