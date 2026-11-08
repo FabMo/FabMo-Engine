@@ -133,6 +133,12 @@ camera at the first shot) and levels heights to the table:
 
     python3 sweep.py capture block2 --axis y --start -0.5 --end 8.0 --step 0.1
     python3 sweep.py process captures/block2   # points.npy, cloud.ply, heightmap.png
+    python3 sweep.py stl captures/block2 [--all] [--base 2]   # closed STL solid
+
+The STL is the height surface closed into a watertight solid (walls + flat
+bottom `--base` mm below the table, gaps filled at table level), cropped
+to the part (+5 mm) unless `--all`. The app's scan list links to it
+(`GET /export/stl?session=…`).
 
 Moving +Y walks the line away from the camera across the part. Results
 at Z 5.22 / focus 470 (0.1 in steps):

@@ -22,6 +22,8 @@ API (all JSON; CORS open so the dashboard app can call cross-port):
   POST /confirm           acknowledge a manual-pan prompt
   GET  /sessions          list captured scan sessions (+ sweep stats)
   GET  /artifact/<path>   files under data/ (reference/, locate/, scans/)
+  GET  /export/stl?session=<name>[&crop=part|all][&base=2]
+                          closed STL solid of a sweep's height surface (mm)
   GET  /app/...           the dashboard app's files (open
                           http://<host>:3150/app/ directly while developing)
 """
@@ -325,6 +327,25 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, st)
         if path == "/settings":
             return self._send(200, scan_settings.load())
+        if path == "/export/stl":
+            q = dict(kv.split("=", 1) for kv in self.path.split("?", 1)[-1].split("&")
+                     if "=" in kv) if "?" in self.path else {}
+            session = re.sub(r"[^A-Za-z0-9_.-]", "_", q.get("session", ""))
+            crop = "all" if q.get("crop") == "all" else "part"
+            try:
+                base = min(50.0, max(0.5, float(q.get("base", 2.0))))
+            except ValueError:
+                base = 2.0
+            capdir = os.path.join(orbit.SCANS_DIR, session)
+            if not session or not os.path.isfile(os.path.join(capdir, "surface.bin")):
+                return self._send(404, {"error": "no processed scan %r" % session})
+            try:
+                data = sweep.surface_stl(capdir, crop, base)
+            except Exception as e:
+                return self._send(500, {"error": str(e)})
+            fname = "%s%s.stl" % (session, "" if crop == "part" else "_all")
+            return self._send(200, data, "model/stl", extra={
+                "Content-Disposition": 'attachment; filename="%s"' % fname})
         if path == "/live/points":
             # binary float32 x,y,z (mm, provisional heights) for shots >= from;
             # X-Shots-Done tells the client where to continue

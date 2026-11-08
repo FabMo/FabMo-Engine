@@ -314,7 +314,11 @@ function renderSessions() {
         var art = BASE + "/artifact/scans/" + encodeURIComponent(s.session) + "/";
         row.innerHTML = '<div class="nm"></div><div class="meta"></div>' +
             '<div class="acts">' +
-            (s.stats ? '<a href="' + art + 'cloud.ply" download>PLY</a>' : "") +
+            (s.stats ? '<a href="' + BASE + "/export/stl?session=" + encodeURIComponent(s.session) +
+                '" download title="Closed solid of the part (mm), base 2 mm below the table">STL</a>' +
+                '<a href="' + BASE + "/export/stl?crop=all&session=" + encodeURIComponent(s.session) +
+                '" download title="Closed solid of the whole scanned area">STL (all)</a>' +
+                '<a href="' + art + 'cloud.ply" download title="Raw point cloud (mm)">PLY</a>' : "") +
             (s.kind === "sweep" || s.stats ?
                 '<button class="small" data-act="process">Re-process</button>' : "") +
             "</div>";

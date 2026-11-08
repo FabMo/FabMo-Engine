@@ -612,8 +612,76 @@ def process_dir(capdir, signal="rg", log=print, progress=None):
     return stats
 
 
+def surface_stl(capdir, crop="part", base_mm=2.0, margin_mm=5.0, part_min_mm=3.0):
+    """Binary STL (bytes) of the scan's height surface as a closed solid:
+    the surface on top, vertical walls around the edge, and a flat bottom
+    base_mm below the table (z = 0 is the table). mm, machine X/Y axes.
+
+    crop="part": only the area where the surface rises more than
+    part_min_mm above the table, plus margin_mm; "all": the whole grid.
+    Cells with no data (laser shadows, gaps) are filled at table level so
+    the solid is watertight.
+    """
+    with open(os.path.join(capdir, "scan.json")) as fh:
+        meta = json.load(fh)["surface"]
+    H, W, cell = meta["height"], meta["width"], meta["cell_mm"]
+    g = np.fromfile(os.path.join(capdir, "surface.bin"), "<f4").reshape(H, W)
+    g = np.where(np.isfinite(g), g, 0.0).astype(np.float64)
+    r0, r1, c0, c1 = 0, H, 0, W
+    if crop == "part":
+        rr, cc = np.nonzero(g > part_min_mm)
+        if len(rr):
+            m = int(np.ceil(margin_mm / cell))
+            r0, r1 = max(0, rr.min() - m), min(H, rr.max() + m + 1)
+            c0, c1 = max(0, cc.min() - m), min(W, cc.max() + m + 1)
+    g = g[r0:r1, c0:c1]
+    H, W = g.shape
+    if H < 2 or W < 2:
+        raise RuntimeError("surface too small to export")
+    ox = meta["origin_mm"][0] + (c0 + 0.5) * cell
+    oy = meta["origin_mm"][1] + (r0 + 0.5) * cell
+    zb = min(0.0, float(g.min())) - base_mm
+
+    xs = ox + cell * np.arange(W)
+    ys = oy + cell * np.arange(H)
+    X, Y = np.meshgrid(xs, ys)                         # (H, W), rows = Y
+    top = np.stack([X, Y, g], -1).reshape(-1, 3)
+    idx = np.arange(H * W).reshape(H, W)
+    a, b = idx[:-1, :-1].ravel(), idx[:-1, 1:].ravel()
+    d, e = idx[1:, :-1].ravel(), idx[1:, 1:].ravel()
+    tris = [np.stack([top[a], top[b], top[e]], 1),      # normals +Z
+            np.stack([top[a], top[e], top[d]], 1)]
+
+    # boundary loop, counter-clockwise seen from above
+    loop = np.r_[idx[0, :], idx[1:, -1], idx[-1, -2::-1], idx[-2:0:-1, 0]]
+    p, q = top[loop], top[np.roll(loop, -1)]
+    pb, qb = p.copy(), q.copy()
+    pb[:, 2] = zb
+    qb[:, 2] = zb
+    tris += [np.stack([p, pb, qb], 1), np.stack([p, qb, q], 1)]   # walls, outward
+    ctr = np.array([xs.mean(), ys.mean(), zb])
+    tris.append(np.stack([np.broadcast_to(ctr, pb.shape), qb, pb], 1))  # bottom, -Z
+
+    T = np.concatenate(tris).astype(np.float32)        # (N, 3 vertices, 3)
+    n = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
+    n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+    rec = np.zeros(len(T), dtype=[("n", "<f4", 3), ("v", "<f4", (3, 3)), ("attr", "<u2")])
+    rec["n"], rec["v"] = n, T
+    header = ("scanner surface %s crop=%s base=%.1fmm" % (
+        os.path.basename(os.path.normpath(capdir)), crop, base_mm)).encode()[:80].ljust(80, b" ")
+    return header + np.uint32(len(T)).tobytes() + rec.tobytes()
+
+
 def process(args):
     process_dir(args.capdir, args.signal)
+
+
+def stl(args):
+    data = surface_stl(args.capdir, "all" if args.all else "part", args.base)
+    out = args.out or os.path.join(args.capdir, "surface.stl")
+    with open(out, "wb") as fh:
+        fh.write(data)
+    print("wrote %s (%d triangles)" % (out, (len(data) - 84) // 50))
 
 
 if __name__ == "__main__":
@@ -634,5 +702,11 @@ if __name__ == "__main__":
     p.add_argument("--signal", default="rg", choices=("r", "rg"),
                    help="stripe signal (see stripe.extract); rg copes with clipped red")
     p.set_defaults(fn=process)
+    t = sub.add_parser("stl", help="export the surface as a closed STL solid")
+    t.add_argument("capdir")
+    t.add_argument("--all", action="store_true", help="whole scan, not just the part")
+    t.add_argument("--base", type=float, default=2.0, help="base thickness below table, mm")
+    t.add_argument("--out")
+    t.set_defaults(fn=stl)
     a = ap.parse_args()
     a.fn(a)
