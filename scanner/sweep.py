@@ -410,8 +410,20 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 pose = {"x": s["posx"], "y": s["posy"], "z": s["posz"],
                         "a": s.get("posa"), "b": s.get("posb")}
                 # --- laser-on window
-                wait_for(lambda s: at(s, t) and s.get(out) == 1,
-                         "laser on at stop %d" % i, 5.0)
+                try:
+                    wait_for(lambda s: at(s, t) and s.get(out) == 1,
+                             "laser on at stop %d" % i, 5.0)
+                except RuntimeError as e:
+                    # never saw this stop's laser-on window (2026-11-08: one
+                    # stop in 70; cause unknown) — skip the stop like a
+                    # missed photo instead of abandoning the scan
+                    s = fabmo.status()
+                    log("  stop %d: %s (now %s out %s) — skipped" % (i, e, where(s), s.get(out)))
+                    missed.append({"stop": i, "window": "on-wait", "why": str(e)})
+                    if len(missed) > max(2, n // 10):
+                        raise RuntimeError("missed %d frame windows — timing too tight "
+                                           "(see scand log)" % len(missed))
+                    continue
                 te = time.time()
                 time.sleep(0.15)
                 on = lf.read()
