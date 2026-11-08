@@ -476,6 +476,71 @@ def fit(args):
         print("wrote pan.json")
 
 
+def fit_geom(args):
+    """Direct geometric model from per-shot PnP (no joint optimisation):
+    pivot axis + per-heading actual turn from the board orientations,
+    pivot -> camera offset from the camera positions (linear). Robust on a
+    head that isn't a perfect rigid rotation; ~1 mm — meant as the starting
+    guess for multi-heading registration. Writes pan.json."""
+    cam = load_json("camera.json")
+    K, D = np.array(cam["camera_matrix"]), np.array(cam["dist_coeffs"])
+    R_mc0 = np.array(load_json("mount.json")["R_machine_to_camera"])
+    with open(os.path.join(args.capdir, "manifest.json")) as fh:
+        man = json.load(fh)
+    o, sh = man["origin"], man["shots"]
+    objp = board_points(cam, tuple(man["square_mm"]) if man.get("square_mm") else None)
+    gm = (np.array([[s["pose"][k] for k in "xyz"] for s in sh]) -
+          np.array([o[k] for k in "xyz"])) * IN_TO_MM
+    poses = [pnp(np.array(s["corners_ref"]), objp, K, D) for s in sh]
+    i0 = [i for i, s in enumerate(sh) if s["b_cmd"] == 0 and s.get("z_off", 0) == 0][0]
+    R0, _ = poses[i0]
+    R_bm0 = R_mc0.T @ R0
+    Ra = np.array([(R @ R_bm0.T).T @ R_mc0 for R, _ in poses])
+    rv = np.array([cv2.Rodrigues(r)[0].ravel() for r in Ra])
+    big = np.linalg.norm(rv, axis=1) > np.radians(5)
+    a = rv[big] / np.linalg.norm(rv[big], axis=1, keepdims=True)
+    a *= np.sign(a[:, 2:3])
+    a = a.mean(0)
+    a /= np.linalg.norm(a)
+    th = rv @ a
+    Q = np.array([R_bm0 @ (-R.T @ t) for R, t in poses]) - gm
+    A = np.vstack([np.hstack([np.eye(3), rot(a, th[i])]) for i in range(len(Q))])
+    sol = np.linalg.lstsq(A, Q.ravel(), rcond=None)[0]
+    v = sol[3:] - (sol[3:] @ a) * a
+    r = (A @ sol - Q.ravel()).reshape(-1, 3)
+    tilt = [np.degrees(np.linalg.norm(cv2.Rodrigues(rot(a, t).T @ R)[0])) for t, R in zip(th, Ra)]
+    tab = {}
+    for s_, t in zip(sh, th):
+        tab.setdefault(s_["b_cmd"], []).append(np.degrees(t))
+    B = sorted(tab)
+    T = [round(float(np.mean(tab[b])), 3) for b in B]
+    pos_rms = float(np.sqrt((r ** 2).sum(1).mean()))
+    print("axis %.2f deg from vertical, camera %.1f mm off axis; orientation misfit "
+          "mean %.2f max %.2f deg; position misfit rms %.2f max %.2f mm"
+          % (np.degrees(np.arccos(a[2])), np.linalg.norm(v), np.mean(tilt), np.max(tilt),
+             pos_rms, np.sqrt((r ** 2).sum(1)).max()))
+    out = {"method": "pnp-geometric (fit_geom; ~1 mm — starting guess for registration)",
+           "axis_machine": a.tolist(), "pivot_to_camera_mm": v.tolist(),
+           "b_ref_deg": o["b"], "R_machine_to_camera_at_ref": R_mc0.tolist(),
+           "model": "theta = turn(B) [table, +B approach]; R_mc = R_mc_ref . Rot(axis_machine, "
+                    "theta)^T; camera centre = gantry + Rot(axis_machine, theta) . "
+                    "pivot_to_camera_mm (+const)",
+           "approach": man.get("approach", "+B (5 deg run-up from above)"),
+           "turn_table": {"b_cmd_deg": B, "turn_deg": T},
+           "orientation_misfit_deg": {"mean": float(np.mean(tilt)), "max": float(np.max(tilt))},
+           "position_residual_rms_mm": pos_rms,
+           "captured_from": os.path.relpath(args.capdir, HERE),
+           "created": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if not args.no_write:
+        if os.path.exists(os.path.join(HERE, "pan.json")):
+            os.makedirs(os.path.join(HERE, "calib"), exist_ok=True)
+            os.replace(os.path.join(HERE, "pan.json"),
+                       os.path.join(HERE, "calib", "pan.%s.json" % time.strftime("%Y%m%d_%H%M%S")))
+        with open(os.path.join(HERE, "pan.json"), "w") as fh:
+            json.dump(out, fh, indent=2)
+        print("wrote pan.json (previous copy in calib/)")
+
+
 def lm(fun, x, iters=200):
     """Levenberg-Marquardt with a numeric Jacobian (no SciPy on the Pi)."""
     r = fun(x)
@@ -525,6 +590,10 @@ if __name__ == "__main__":
     f.add_argument("--free-mount", action="store_true",
                    help="also fit the B~0 camera orientation (poorly conditioned)")
     f.set_defaults(fn=fit)
+    g = sub.add_parser("fit-geom", help="direct geometric model -> pan.json (recommended)")
+    g.add_argument("capdir")
+    g.add_argument("--no-write", action="store_true")
+    g.set_defaults(fn=fit_geom)
     a = ap.parse_args()
     if a.cmd == "capture" and (a.max > 95 or a.step < 1):
         raise SystemExit("--max must be <= 95 and --step >= 1")
