@@ -17,7 +17,7 @@ import cv2
 import numpy as np
 
 
-def height_map(P, cell=1.0, min_pts=2):
+def height_map(P, cell=1.0, min_pts=2, max_gap_mm=4.0):
     """Median height per cell -> (H, lo, cell); cells with < min_pts -> NaN."""
     lo = np.floor(P[:, :2].min(0) / cell) * cell - cell
     ij = np.floor((P[:, :2] - lo) / cell).astype(int)
@@ -32,7 +32,28 @@ def height_map(P, cell=1.0, min_pts=2):
     H = np.full(Hh * W, np.nan)
     ok = counts >= min_pts
     H[k[starts][ok]] = med[ok]
-    return H.reshape(Hh, W), lo, cell
+    H = H.reshape(Hh, W)
+    # Bridge the gaps between laser lines (2.5 mm apart at a 0.1 in step,
+    # wider than a cell): bilinear sampling needs all four corners, so an
+    # unfilled map gives no usable points at all (seen on the first
+    # multi-heading scan). Short gaps only; shadows stay empty.
+    gap = int(round(max_gap_mm / cell))
+    for col in range(W):
+        _fill_runs(H[:, col], gap)
+    for row in range(Hh):
+        _fill_runs(H[row, :], gap)
+    return H, lo, cell
+
+
+def _fill_runs(line, max_gap):
+    ok = ~np.isnan(line)
+    idx = np.nonzero(ok)[0]
+    if len(idx) < 2:
+        return
+    gaps = np.diff(idx)
+    for k in np.nonzero((gaps > 1) & (gaps <= max_gap + 1))[0]:
+        a, b = idx[k], idx[k + 1]
+        line[a + 1:b] = np.interp(np.arange(a + 1, b), [a, b], [line[a], line[b]])
 
 
 def _sample(H, lo, cell, xy):
