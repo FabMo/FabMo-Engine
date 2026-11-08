@@ -136,6 +136,7 @@ class Live:
         self.q = queue.Queue()
         self.lock = threading.Lock()
         self.shots = []          # per-shot float32 (N, 3), provisional heights
+        self.raw = {}            # img_off name -> (N, 4) triangulated, for process_dir
         self.z_ref = None
         self._raw = []           # raw z of early shots, for z_ref
         self.p0 = None
@@ -158,7 +159,9 @@ class Live:
                 if self.p0 is None:
                     self.p0 = np.array([pose[a] for a in AXES])
                 dp = (np.array([pose[a] for a in AXES]) - self.p0) * IN_TO_MM
-                P = triangulate_shot(off, on, self.cal, dp, self.signal)[:, :3]
+                P4 = triangulate_shot(off, on, self.cal, dp, self.signal)
+                self.raw[rec["img_off"]] = (tuple(self.p0), P4)
+                P = P4[:, :3]
                 if self.z_ref is None:
                     if len(P):
                         self._raw.append(P[:, 2])
@@ -178,7 +181,9 @@ class Live:
                 with self.lock:
                     self.shots.append(np.zeros((0, 3), np.float32))
 
-    def finish(self, timeout=60.0):
+    def finish(self, timeout=None):
+        """Wait for the queue to drain — the worker also WRITES the shot
+        images, so process_dir must not start before this returns."""
         self.q.put(None)
         self.thread.join(timeout=timeout)
 
@@ -259,6 +264,7 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     origin = fabmo.pose()
     targets = plan_stops(origin, ax, start, end, step, rows, row_spacing, row_start)
     n = len(targets)
+    fabmo.check_envelope([(t["x"], t["y"]) for t in targets])
     os.makedirs(outdir, exist_ok=True)
     out = "out%d" % laser_out
     lines = ["G90", "M100 ({%s:0})" % out]
@@ -547,9 +553,12 @@ def height_grid(P, cell, sweep_axis="y", max_gap_mm=4.0):
     return grid, lo
 
 
-def process_dir(capdir, signal="rg", log=print, progress=None):
+def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None):
     """Triangulate a sweep capture directory. Returns the stats dict (also
-    written to scan.json)."""
+    written to scan.json).
+
+    precomputed: Live.raw from the capture — shots already triangulated
+    during the scan are reused instead of being recomputed."""
     cal = load_cal()
     with open(os.path.join(capdir, "manifest.json")) as fh:
         man = json.load(fh)
@@ -558,14 +567,22 @@ def process_dir(capdir, signal="rg", log=print, progress=None):
         raise RuntimeError("no shots in %s" % capdir)
     p0 = np.array([shots[0]["pose"][a] for a in AXES])
     allP, shot_ids = [], []
+    reused = 0
     for i, s in enumerate(shots):
-        off = cv2.imread(os.path.join(capdir, s["img_off"]))
-        on = cv2.imread(os.path.join(capdir, s["img_on"]))
-        dp = (np.array([s["pose"][a] for a in AXES]) - p0) * IN_TO_MM
-        allP.append(triangulate_shot(off, on, cal, dp, signal))
+        pre = (precomputed or {}).get(s["img_off"])
+        if pre is not None and signal == "rg" and np.allclose(pre[0], p0):
+            allP.append(pre[1])
+            reused += 1
+        else:
+            off = cv2.imread(os.path.join(capdir, s["img_off"]))
+            on = cv2.imread(os.path.join(capdir, s["img_on"]))
+            dp = (np.array([s["pose"][a] for a in AXES]) - p0) * IN_TO_MM
+            allP.append(triangulate_shot(off, on, cal, dp, signal))
         shot_ids.append(np.full(len(allP[-1]), i))
         if progress:
             progress(i + 1, len(shots))
+    if reused:
+        log("reused %d of %d shots triangulated during the scan" % (reused, len(shots)))
     P = np.vstack(allP)
     sid = np.concatenate(shot_ids)
     rows_n = int(man.get("rows", 1) or 1)

@@ -212,7 +212,9 @@ def job_sweep(body):
     if not man["complete"]:
         return {"message": "sweep stopped early", "session": session}
     set_state(phase="triangulating", progress={"done": 0, "total": len(man["shots"])})
-    stats = sweep.process_dir(outdir, progress=progress_cb)
+    live = LIVE["live"]
+    stats = sweep.process_dir(outdir, progress=progress_cb,
+                              precomputed=live.raw if live is not None else None)
     result = {"session": session, "stats": stats}
     set_state(last_sweep=result)
     top = stats.get("top")

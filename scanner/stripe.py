@@ -28,19 +28,28 @@ def _extract_vertical(d, min_signal, snr, half_window):
     h, w = d.shape
     cols = np.argmax(d, axis=1)
     peak = d[np.arange(h), cols]
-    out = []
-    for r in np.nonzero((peak > min_signal) & (peak > snr * noise))[0]:
-        c = cols[r]
-        a, b = max(0, c - half_window), min(w, c + half_window + 1)
-        seg = d[r, a:b]
-        m = seg > 0.5 * peak[r]
-        # keep only the contiguous run around the peak (ignore side blobs)
-        lab = np.cumsum(np.r_[0, np.diff(m.astype(int)) != 0])
-        m &= lab == lab[c - a]
-        wts = seg[m]
-        xs = np.arange(a, b)[m]
-        out.append((r, float((wts * xs).sum() / wts.sum()), float(peak[r])))
-    return np.array(out, dtype=np.float64).reshape(-1, 3)
+    rows = np.nonzero((peak > min_signal) & (peak > snr * noise))[0]
+    if len(rows) == 0:
+        return np.zeros((0, 3))
+    # Vectorised over rows (was a per-row Python loop: ~90% of processing
+    # time, and it held the GIL against the capture threads). For each row:
+    # the window +-half_window around the peak, the samples above half the
+    # peak height, restricted to the contiguous run containing the peak;
+    # position = intensity centroid of that run.
+    k = 2 * half_window + 1
+    off = np.arange(-half_window, half_window + 1)
+    xs = cols[rows, None] + off[None, :]                       # (R, k) column indices
+    inside = (xs >= 0) & (xs < w)
+    seg = d[rows[:, None], np.clip(xs, 0, w - 1)]
+    pk = peak[rows, None]
+    m = inside & (seg > 0.5 * pk)
+    c = half_window                                            # the peak sits at the centre
+    right = np.cumprod(m[:, c:], axis=1).astype(bool)          # run from centre rightwards
+    left = np.cumprod(m[:, c::-1], axis=1).astype(bool)[:, ::-1]
+    run = np.concatenate([left[:, :-1], right], axis=1)        # (R, k), centre counted once
+    wts = np.where(run, seg, 0.0)
+    pos = (wts * xs).sum(1) / wts.sum(1)
+    return np.c_[rows, pos, peak[rows]].astype(np.float64)
 
 
 def extract(img_off, img_on, min_signal=12.0, snr=5.0, half_window=12,
@@ -89,7 +98,11 @@ def clean(pts, max_jump=3.0, max_line_dev=None, orientation="vertical"):
     al, ac = (0, 1) if orientation == "vertical" else (1, 0)
     pts = pts[np.argsort(pts[:, al])]
     c = pts[:, ac]
-    med = np.array([np.median(c[max(0, i - 3):i + 4]) for i in range(len(c))])
+    # running median over +-3 neighbours (window truncated at the ends)
+    win = np.lib.stride_tricks.sliding_window_view(
+        np.pad(c, 3, constant_values=np.nan), 7)
+    with np.errstate(all="ignore"):
+        med = np.nanmedian(win, axis=1)
     pts = pts[np.abs(c - med) <= max_jump]
     if max_line_dev is not None and len(pts) > 10:
         keep = np.ones(len(pts), bool)

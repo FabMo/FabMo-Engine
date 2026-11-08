@@ -72,6 +72,28 @@ def run_gcode(cmd):
     raise RuntimeError("timed out waiting for idle")
 
 
+def check_envelope(points):
+    """Raise if any (x, y) work-coordinate point lies outside the machine's
+    travel envelope (machine config, machine coords = work + g55 offset).
+    Limit switches are live on the PRS — a move past the envelope can trip
+    one mid-scan."""
+    cfg = _get("/config")["data"]["config"]
+    env = cfg["machine"].get("envelope") or {}
+    drv = cfg.get("driver", {})
+    bad = []
+    for x, y in points:
+        for ax, v in (("x", x), ("y", y)):
+            lo, hi = env.get(ax + "min"), env.get(ax + "max")
+            if lo is None or hi is None:
+                continue
+            m = v + float(drv.get("g55" + ax, 0) or 0)
+            if m < lo - 1e-6 or m > hi + 1e-6:
+                bad.append("%s%.3f (machine %.3f, travel %.2f..%.2f)" % (
+                    ax.upper(), v, m, lo, hi))
+    if bad:
+        raise RuntimeError("outside machine travel: " + "; ".join(sorted(set(bad))[:4]))
+
+
 def start_gcode(cmd):
     """Start a gcode program and return immediately (machine must be idle).
     The caller follows it through status()."""
