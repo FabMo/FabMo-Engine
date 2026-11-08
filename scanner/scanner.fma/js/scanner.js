@@ -217,7 +217,18 @@ $("btn-confirm").onclick = function () { api("POST", "/confirm"); };
 
 var SEC_PER_STOP = 1.7;   // single-job sweep, 0.8 s + 0.6 s dwells (measured 1.8 s at 0.9 + 0.7)
 
+function parseHeadings() {
+    var v = $("sw-headings").value.split(/[ ,;]+/).filter(function (x) { return x !== ""; })
+        .map(parseFloat);
+    return v.length ? v : [0];
+}
+
+function isMulti(hs) {
+    return hs.length > 1 || hs.some(function (h) { return Math.abs(h) > 0.05; });
+}
+
 function sweepParams() {
+    var hs = parseHeadings();
     var p = {
         axis: $("sw-axis").value,
         start: parseFloat($("sw-start").value),
@@ -227,6 +238,11 @@ function sweepParams() {
         row_spacing: parseFloat($("sw-rowsp").value) || 0,
         row_start: parseFloat($("sw-row0").value) || 0,
     };
+    if (isMulti(hs)) {
+        p.headings = hs;
+        p.length = parseFloat($("sw-length").value);
+        p.rows = 1;
+    }
     var name = $("sw-name").value.trim();
     if (name) { p.session = name; }
     return p;
@@ -234,6 +250,33 @@ function sweepParams() {
 
 function sweepEstimate() {
     var p = sweepParams();
+    var multi = !!p.headings;
+    Array.prototype.forEach.call(document.querySelectorAll(".single-only"), function (el) {
+        el.style.display = multi ? "none" : "";
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".multi-only"), function (el) {
+        el.style.display = multi ? "" : "none";
+    });
+    if (multi) {
+        var hs = p.headings;
+        if (hs.some(isNaN) || hs.some(function (h) { return Math.abs(h) > 95; })) {
+            $("sw-estimate").textContent = "Headings must be numbers within ±95°.";
+            return null;
+        }
+        if (!(p.length > 0) || !(p.step > 0)) {
+            $("sw-estimate").textContent = "Set a positive length and step (inches).";
+            return null;
+        }
+        var nm = (Math.round(p.length / p.step) + 1) * hs.length;
+        var tm = nm * SEC_PER_STOP + hs.length * 6;
+        $("sw-estimate").textContent = "Multi-heading scan at B " +
+            hs.slice().sort(function (a, b) { return a - b; }).join("°, ") + "°: at each heading the " +
+            "head sweeps " + p.length + " in across the spot where the laser line is now, " +
+            "turning B and moving diagonally as needed: " + nm + " stops, ~" +
+            (tm / 60).toFixed(1) + " min, relative to the current position. Head returns to " +
+            "its start and B 0; laser is switched off at the end.";
+        return p;
+    }
     if ([p.start, p.end, p.step].some(isNaN) || p.step <= 0 || p.end <= p.start) {
         $("sw-estimate").textContent = "Set From < To and a positive step (inches).";
         return null;
@@ -259,7 +302,8 @@ function sweepEstimate() {
         ". Head returns to its start; laser is switched off at the end.";
     return p;
 }
-["sw-axis", "sw-start", "sw-end", "sw-step", "sw-rows", "sw-rowsp", "sw-row0"].forEach(function (id) {
+["sw-axis", "sw-start", "sw-end", "sw-step", "sw-rows", "sw-rowsp", "sw-row0",
+    "sw-headings", "sw-length"].forEach(function (id) {
     $(id).oninput = sweepEstimate;
 });
 sweepEstimate();
@@ -278,7 +322,8 @@ $("btn-sweep").onclick = function () {
     if (!p) { return; }
     var n = Math.round((p.end - p.start) / p.step) + 1;
     pendingSweep = p;
-    $("sw-confirm-msg").textContent = "Start this " + (p.rows > 1 ? p.rows + "-row " : "") +
+    $("sw-confirm-msg").textContent = "Start this " + (p.headings ? "multi-heading " :
+        (p.rows > 1 ? p.rows + "-row " : "")) +
         "sweep? " + $("sw-estimate").textContent.split(", relative")[0] +
         ", relative to where the head is now. " +
         "Make sure the head clears the part over the whole area and keep hands clear.";
@@ -290,7 +335,8 @@ $("sw-confirm-go").onclick = function () {
     if (p) { startOp("/sweep", p, "Sweep"); }
 };
 $("sw-confirm-cancel").onclick = hideSweepConfirm;
-["sw-axis", "sw-start", "sw-end", "sw-step", "sw-name", "sw-rows", "sw-rowsp", "sw-row0"].forEach(function (id) {
+["sw-axis", "sw-start", "sw-end", "sw-step", "sw-name", "sw-rows", "sw-rowsp", "sw-row0",
+    "sw-headings", "sw-length"].forEach(function (id) {
     $(id).addEventListener("input", hideSweepConfirm);   // parameters changed: re-confirm
 });
 
@@ -434,6 +480,14 @@ function showInfo(s) {
             " in) · flat to " + fmt(t.rms_mm, 2) + " mm rms");
         lines.push("Top extent " + fmt(dx, 1) + " × " + fmt(dy, 1) + " mm (" +
             fmt(dx / 25.4, 2) + " × " + fmt(dy / 25.4, 2) + " in, along X × Y)");
+    }
+    if (st.registration) {
+        lines.push(st.registration.map(function (h) {
+            if (h.reference) { return "B" + Math.round(h.b) + "° ref"; }
+            if (!h.aligned) { return "B" + Math.round(h.b) + "° not aligned"; }
+            return "B" + Math.round(h.b) + "° aligned " + fmt(h.rms_before, 1) + "→" +
+                fmt(h.rms_after, 2) + " mm";
+        }).join(" · "));
     }
     $("v-info").innerHTML = lines.join("<br>");
     $("v-info").style.display = "block";

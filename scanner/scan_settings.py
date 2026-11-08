@@ -37,6 +37,14 @@ DEFAULTS = {
     "safe_z_in": 5.0,           # traverse height between passes
     "settle_s": 0.4,
 
+    # --- line sweeps / multi-heading ---
+    # Table height below the camera centre at the reference heading, measured
+    # from a sweep at table_ref_z_in (PRS, 2026-11-08: raw table level of the
+    # first shots). Multi-heading scans use it to put every heading's laser
+    # line on the same target; scaled with Z automatically.
+    "table_below_cam_mm": 141.98,
+    "table_ref_z_in": 5.21988,
+
     # --- hardware ---
     "laser_output": 5,          # M100 ({out<N>:...}); 1=spindle, 4=arm motion here
     "use_laser": True,          # False: capture laser-off frames only

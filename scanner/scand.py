@@ -170,13 +170,27 @@ def job_sweep(body):
         rows = int(body.get("rows", 1) or 1)
         row_spacing = float(body.get("row_spacing", 0) or 0)
         row_start = float(body.get("row_start", 0) or 0)
+        headings = [float(h) for h in (body.get("headings") or [0])]
+        length = float(body.get("length", 0) or 0)
     except (KeyError, TypeError, ValueError):
         raise RuntimeError("sweep needs numeric start, end, step (rows, row_spacing optional)")
     session = _session_name(body, "sweep")
     outdir = os.path.join(orbit.SCANS_DIR, session)
     if os.path.exists(outdir):
         raise RuntimeError("session %s already exists" % session)
-    n = (int(round((end - start) / step)) + 1) * max(1, rows) if step > 0 else 0
+    multi = len(headings) > 1 or any(abs(h) > 0.05 for h in headings)
+    if multi:
+        import pan as panmod
+        if not panmod.Pan.available():
+            raise RuntimeError("no pan.json — run the B-axis calibration (pan_calib.py) first")
+        if rows > 1:
+            raise RuntimeError("multi-heading scans use one sweep per heading (rows = 1)")
+        if length <= 0:
+            raise RuntimeError("multi-heading scans need a sweep length (inches)")
+        pan_model = panmod.Pan()
+        n = (int(round(length / step)) + 1) * len(headings)
+    else:
+        n = (int(round((end - start) / step)) + 1) * max(1, rows) if step > 0 else 0
     # Calibration is only valid at the calibrated resolution. If the video
     # app's camera server holds /dev/video0, camera.open_camera() falls back
     # to its MJPEG stream, which may be a different size — refuse that.
@@ -194,8 +208,8 @@ def job_sweep(body):
             "camera gives %dx%d, calibration is %dx%d — the video app's camera "
             "server probably holds the camera (sudo systemctl stop camera-server-2)"
             % (frame.shape[1], frame.shape[0], want_w, want_h))
-    set_state(phase="sweeping %s (%d stops%s)" % (
-        axis.upper(), n, ", %d rows" % rows if rows > 1 else ""),
+    set_state(phase=("scanning %d headings (%d stops)" % (len(headings), n)) if multi else
+              "sweeping %s (%d stops%s)" % (axis.upper(), n, ", %d rows" % rows if rows > 1 else ""),
               progress={"done": 0, "total": n})
 
     def on_live(live):
@@ -205,10 +219,21 @@ def job_sweep(body):
         if _cap[0] is None:
             _cap[0] = camera.open_camera()
             time.sleep(0.5)
-        man = sweep.run_capture_job(fabmo, _cap[0], outdir, axis, start, end, step,
-                                    int(s["laser_output"]), progress_cb, ABORT,
-                                    on_live=on_live, rows=rows, row_spacing=row_spacing,
-                                    row_start=row_start)
+        if multi:
+            def targets(origin):
+                h = float(s["table_below_cam_mm"]) + \
+                    (origin["z"] - float(s["table_ref_z_in"])) * 25.4
+                return sweep.plan_headings(origin, headings, length, step, pan_model, h)
+            man = sweep.run_capture_job(
+                fabmo, _cap[0], outdir, "y", 0, 1, step, int(s["laser_output"]),
+                progress_cb, ABORT, on_live=on_live, targets=targets, pan_model=pan_model,
+                extra_manifest={"kind": "multi", "headings": sorted(headings),
+                                "length": length, "rows": 1, "axis": "multi"})
+        else:
+            man = sweep.run_capture_job(fabmo, _cap[0], outdir, axis, start, end, step,
+                                        int(s["laser_output"]), progress_cb, ABORT,
+                                        on_live=on_live, rows=rows, row_spacing=row_spacing,
+                                        row_start=row_start)
     if not man["complete"]:
         return {"message": "sweep stopped early", "session": session}
     set_state(phase="triangulating", progress={"done": 0, "total": len(man["shots"])})

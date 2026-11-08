@@ -126,9 +126,11 @@ class Live:
     The final process_dir() re-levels to a fitted table plane.
     """
 
-    def __init__(self, outdir, total, signal="rg"):
+    def __init__(self, outdir, total, signal="rg", pan=None):
         import queue
         import threading
+        self.pan = pan           # pan.Pan for multi-heading scans (else reference heading)
+        self.pose0 = None
         self.outdir = outdir
         self.total = total
         self.signal = signal
@@ -158,8 +160,13 @@ class Live:
                 cv2.imwrite(os.path.join(self.outdir, rec["img_on"]), on)
                 if self.p0 is None:
                     self.p0 = np.array([pose[a] for a in AXES])
-                dp = (np.array([pose[a] for a in AXES]) - self.p0) * IN_TO_MM
-                P4 = triangulate_shot(off, on, self.cal, dp, self.signal)
+                    self.pose0 = dict(pose)
+                if self.pan is not None:
+                    R, dp = self.pan.shot_transform(pose, self.pose0)
+                    P4 = triangulate_shot(off, on, self.cal, dp, self.signal, R_cm=R)
+                else:
+                    dp = (np.array([pose[a] for a in AXES]) - self.p0) * IN_TO_MM
+                    P4 = triangulate_shot(off, on, self.cal, dp, self.signal)
                 self.raw[rec["img_off"]] = (tuple(self.p0), P4)
                 P = P4[:, :3]
                 if self.z_ref is None:
@@ -235,10 +242,46 @@ def plan_stops(origin, axis, start, end, step, rows=1, row_spacing=0.0, row_star
     return stops
 
 
+def plan_headings(origin, headings, length, step, pan_model, table_below_cam_mm,
+                  b_limit=95.0):
+    """Stops for a multi-heading scan, machine inches/deg, absolute.
+
+    Every heading's sweep walks the laser line across the SAME target: the
+    point where the line meets the table at the start pose (heading B = 0).
+    At heading B the head moves along the line's normal d(B), from
+    -length/2 to +length/2 (inches) about the position that puts the line
+    on the target. Headings run in increasing B (each reached moving +B).
+    -> list of {"x", "y", "b", "row": heading index}
+    """
+    with open(os.path.join(HERE, "laser.json")) as fh:
+        las = json.load(fh)
+    m, c = las["plane_normal_cam"], float(las["plane_offset_mm"])
+    hs = sorted(float(h) for h in headings)
+    if not hs or any(abs(h) > b_limit for h in hs):
+        raise ValueError("headings must be within +-%.0f deg" % b_limit)
+    if step <= 0 or length <= 0:
+        raise ValueError("need positive length and step")
+    n = int(round(length / step)) + 1
+    target = pan_model.line_centre(0.0, m, c, table_below_cam_mm)   # mm, gantry-relative
+    stops = []
+    for k, b in enumerate(hs):
+        d = pan_model.sweep_dir(b, m)
+        base = (target - pan_model.line_centre(b, m, c, table_below_cam_mm)) / IN_TO_MM
+        for i in range(n):
+            s_ = -length / 2.0 + step * i
+            stops.append({"x": round(origin["x"] + base[0] + s_ * d[0], 4),
+                          "y": round(origin["y"] + base[1] + s_ * d[1], 4),
+                          "b": b, "row": k})
+    if len(stops) > 3000:
+        raise ValueError("%d stops is too many" % len(stops))
+    return stops
+
+
 def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                     progress=None, abort=None, log=print, live=None,
                     dwell_off=0.8, dwell_on=0.6, on_live=None,
-                    rows=1, row_spacing=0.0, row_start=0.0):
+                    rows=1, row_spacing=0.0, row_start=0.0, targets=None,
+                    extra_manifest=None, pan_model=None):
     """Like run_capture(), but the whole sweep runs as ONE gcode program
     (moves, dwells, laser on/off), so the machine stays 'running' for the
     whole scan — the dashboard's job bar stays up and its Stop/Pause work
@@ -262,16 +305,36 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     if s0["state"] != "idle":
         raise RuntimeError("machine is %s (must be idle)" % s0["state"])
     origin = fabmo.pose()
-    targets = plan_stops(origin, ax, start, end, step, rows, row_spacing, row_start)
+    if targets is None:
+        targets = plan_stops(origin, ax, start, end, step, rows, row_spacing, row_start)
+    elif callable(targets):
+        targets = targets(origin)
     n = len(targets)
     fabmo.check_envelope([(t["x"], t["y"]) for t in targets])
     os.makedirs(outdir, exist_ok=True)
     out = "out%d" % laser_out
     lines = ["G90", "M100 ({%s:0})" % out]
+    cur_b = origin.get("b") or 0.0
+    import pan as panmod
     for t in targets:
-        lines += ["G0 X%.4f Y%.4f" % (t["x"], t["y"]), "G4 P%.2f" % dwell_off,
+        if "b" in t and abs(t["b"] - cur_b) > 0.01:
+            # new heading: final approach in +B (same as the calibration)
+            for bb in panmod.approach_moves(cur_b, t["b"], fabmo.B_LIMIT)[:-1]:
+                lines.append("G0 B%.4f" % bb)
+            lines.append("G0 X%.4f Y%.4f B%.4f" % (t["x"], t["y"], t["b"]))
+            cur_b = t["b"]
+        else:
+            lines.append("G0 X%.4f Y%.4f" % (t["x"], t["y"]))
+        lines += ["G4 P%.2f" % dwell_off,
                   "M100 ({%s:1})" % out, "G4 P%.2f" % dwell_on, "M100 ({%s:0})" % out]
-    lines += ["G0 X%.4f Y%.4f" % (origin["x"], origin["y"]), "M100 ({%s:0})" % out]
+    if any("b" in t for t in targets):
+        b_home = 0.0 if abs(origin.get("b") or 0) < 1 else origin["b"]
+        for bb in panmod.approach_moves(cur_b, b_home, fabmo.B_LIMIT)[:-1]:
+            lines.append("G0 B%.4f" % bb)
+        lines.append("G0 X%.4f Y%.4f B%.4f" % (origin["x"], origin["y"], b_home))
+    else:
+        lines.append("G0 X%.4f Y%.4f" % (origin["x"], origin["y"]))
+    lines.append("M100 ({%s:0})" % out)
     prog = "\n".join(lines) + "\n"
 
     log("origin %s; %d stops (%d row%s) along %s from %+.3f to %+.3f in; laser out%d; "
@@ -283,8 +346,10 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
            "laser_output": laser_out, "dwell_off": dwell_off, "dwell_on": dwell_on,
            "created": time.strftime("%Y-%m-%d %H:%M:%S"), "complete": False,
            "shots": []}
+    if extra_manifest:
+        man.update(extra_manifest)
     if live is None:
-        live = Live(outdir, n)
+        live = Live(outdir, n, pan=pan_model)
     if on_live:
         on_live(live)
 
@@ -294,10 +359,11 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     stopped_by = None
 
     def at(s, t):
-        return abs(s["posx"] - t["x"]) <= TOL and abs(s["posy"] - t["y"]) <= TOL
+        return (abs(s["posx"] - t["x"]) <= TOL and abs(s["posy"] - t["y"]) <= TOL and
+                ("b" not in t or abs((s.get("posb") or 0) - t["b"]) <= 0.15))
 
     def where(s):
-        return "X%.4f Y%.4f" % (s["posx"], s["posy"])
+        return "X%.4f Y%.4f B%.2f" % (s["posx"], s["posy"], s.get("posb") or 0)
 
     def wait_for(cond, what, timeout):
         """Poll status until cond(s); raise if the job ends or abort."""
@@ -371,8 +437,9 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 if progress:
                     progress(i + 1, n)
                 if i % 10 == 0 or i == n - 1:
-                    log("  [%d/%d] row %d X%.4f Y%.4f  %.0fs" % (
-                        i + 1, n, t["row"], pose["x"], pose["y"], time.time() - t0))
+                    log("  [%d/%d] row %d X%.4f Y%.4f B%.2f  %.0fs" % (
+                        i + 1, n, t["row"], pose["x"], pose["y"], pose.get("b") or 0,
+                        time.time() - t0))
             fabmo.wait_idle(timeout=60.0)             # program returns to origin
             man["complete"] = True
             man["missed"] = missed
@@ -447,8 +514,11 @@ def load_cal():
             "m": np.array(las["plane_normal_cam"]), "c": float(las["plane_offset_mm"])}
 
 
-def triangulate_shot(off, on, cal, dpose_mm, signal="rg"):
-    """-> (N, 4) [x, y, z, signal], mm, machine axes."""
+def triangulate_shot(off, on, cal, dpose_mm, signal="rg", R_cm=None):
+    """-> (N, 4) [x, y, z, signal], mm, machine axes.
+    R_cm: camera -> machine rotation of this shot (default: the reference
+    heading's, mount.json); dpose_mm is then the full offset (pan.Pan
+    .shot_transform gives both for a turned head)."""
     pts = stripe.extract(off, on, orientation="horizontal", signal=signal)
     pts = stripe.clean(pts, orientation="horizontal")
     pts = stripe.drop_weak_runs(pts, orientation="horizontal")
@@ -458,7 +528,10 @@ def triangulate_shot(off, on, cal, dpose_mm, signal="rg"):
                             cal["K"], cal["D"]).reshape(-1, 2)
     r = np.c_[u, np.ones(len(u))]                       # camera rays
     X = r * (cal["c"] / (r @ cal["m"]))[:, None]        # on the laser sheet, camera frame
-    P = X @ cal["R_mc"] + dpose_mm                      # R_mc^T X, machine axes, mm
+    if R_cm is None:
+        P = X @ cal["R_mc"] + dpose_mm                  # R_mc^T X, machine axes, mm
+    else:
+        P = X @ R_cm.T + dpose_mm
     return np.c_[P, pts[:, 2]]
 
 
@@ -529,7 +602,7 @@ def _fill_runs(line, max_gap):
         line[a + 1:b] = np.interp(np.arange(a + 1, b), [a, b], [line[a], line[b]])
 
 
-def height_grid(P, cell, sweep_axis="y", max_gap_mm=4.0):
+def height_grid(P, cell, sweep_axis="y", max_gap_mm=4.0, agg="max"):
     """Max-height grid: (H, W) float32 (rows = Y, cols = X) with NaN holes,
     and its origin (mm). Gaps between successive stripes are bridged by
     linear interpolation along the sweep direction (up to max_gap_mm);
@@ -538,19 +611,66 @@ def height_grid(P, cell, sweep_axis="y", max_gap_mm=4.0):
     ij = np.floor((P[:, :2] - lo) / cell).astype(int)
     W, H = ij.max(0) + 1
     grid = np.full((H, W), np.nan, np.float32)
-    order = np.argsort(P[:, 2])                       # last write wins -> max
-    grid[ij[order, 1], ij[order, 0]] = P[order, 2]
+    if agg == "median":
+        # several headings see each cell, aligned to ~0.2-0.3 mm: the
+        # median of the cell's points (max would pick the highest view)
+        key = ij[:, 1] * W + ij[:, 0]
+        order = np.lexsort((P[:, 2], key))
+        k, z = key[order], P[order, 2]
+        starts = np.r_[0, np.nonzero(np.diff(k))[0] + 1]
+        counts = np.diff(np.r_[starts, len(k)])
+        grid.ravel()[k[starts]] = z[starts + counts // 2]
+    else:
+        order = np.argsort(P[:, 2])                   # last write wins -> max
+        grid[ij[order, 1], ij[order, 0]] = P[order, 2]
     gap = int(round(max_gap_mm / cell))
-    if sweep_axis == "y":
+    if sweep_axis in ("y", "both"):
         for col in range(W):
             _fill_runs(grid[:, col], gap)
-    else:
+    if sweep_axis in ("x", "both"):
         for row in range(H):
             _fill_runs(grid[row, :], gap)
     # isolated single-cell holes across the stripe direction
     for row in range(H):
         _fill_runs(grid[row, :], 1)
     return grid, lo
+
+
+def register_headings(P, hsid, shots, heading_of_shot, log=print):
+    """Align every heading's points to the reference heading (B closest to
+    0, whose pose is mount.json's) by surface registration; returns the
+    merged points and a per-heading report."""
+    import register
+    bs = {}
+    for s, h in zip(shots, heading_of_shot):
+        bs.setdefault(int(h), s["pose"].get("b") or 0.0)
+    ref_h = min(bs, key=lambda h: abs(bs[h]))
+    out = [P[hsid == ref_h]]
+    report = [{"heading": ref_h, "b": bs[ref_h], "reference": True,
+               "n_points": int((hsid == ref_h).sum())}]
+    for h in sorted(bs):
+        if h == ref_h:
+            continue
+        Q = P[hsid == h]
+        if len(Q) < 500:
+            log("heading B%+.0f: only %d points, skipped" % (bs[h], len(Q)))
+            continue
+        try:
+            R, t, info = register.align(out[0][:, :3], Q[:, :3])
+        except RuntimeError as e:
+            log("heading B%+.0f: not aligned (%s) — kept at the pan-model pose" % (bs[h], e))
+            out.append(Q)
+            report.append({"heading": h, "b": bs[h], "aligned": False, "error": str(e)})
+            continue
+        Q = Q.copy()
+        Q[:, :3] = Q[:, :3] @ R.T + t
+        out.append(Q)
+        log("heading B%+.0f -> aligned: rms %.2f -> %.2f mm over %d pts, turn %.2f deg "
+            "(yaw %+.2f), shift %s mm" % (bs[h], info["rms_before"], info["rms_after"],
+                                          info["n_used"], info["rot_deg"], info["yaw_deg"],
+                                          info["shift_mm"]))
+        report.append(dict(info, heading=h, b=bs[h], aligned=True, n_points=len(Q)))
+    return np.vstack(out), report
 
 
 def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None):
@@ -566,6 +686,11 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
     if not shots:
         raise RuntimeError("no shots in %s" % capdir)
     p0 = np.array([shots[0]["pose"][a] for a in AXES])
+    multi = man.get("kind") == "multi"
+    pan_model = None
+    if multi:
+        import pan as panmod
+        pan_model = panmod.Pan()
     allP, shot_ids = [], []
     reused = 0
     for i, s in enumerate(shots):
@@ -576,8 +701,12 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
         else:
             off = cv2.imread(os.path.join(capdir, s["img_off"]))
             on = cv2.imread(os.path.join(capdir, s["img_on"]))
-            dp = (np.array([s["pose"][a] for a in AXES]) - p0) * IN_TO_MM
-            allP.append(triangulate_shot(off, on, cal, dp, signal))
+            if multi:
+                R, dp = pan_model.shot_transform(s["pose"], shots[0]["pose"])
+                allP.append(triangulate_shot(off, on, cal, dp, signal, R_cm=R))
+            else:
+                dp = (np.array([s["pose"][a] for a in AXES]) - p0) * IN_TO_MM
+                allP.append(triangulate_shot(off, on, cal, dp, signal))
         shot_ids.append(np.full(len(allP[-1]), i))
         if progress:
             progress(i + 1, len(shots))
@@ -607,10 +736,22 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
         P, sid = P[keep], sid[keep]
     n_raw = len(P)
     step_mm = abs(float(man.get("step", 0.1))) * IN_TO_MM
-    keep = drop_unsupported(P, sid, step_mm)
-    P = P[keep]
-    log("%d shots -> %d points (%d unsupported by neighbouring shots dropped)"
-        % (len(shots), len(P), n_raw - len(P)))
+    registration = None
+    if multi:
+        heading_of_shot = np.array([s.get("row", 0) for s in shots])
+        hsid = heading_of_shot[sid]
+        keep = np.zeros(len(P), bool)
+        for h in np.unique(hsid):                 # neighbour support within a heading
+            m_ = hsid == h
+            keep[np.nonzero(m_)[0][drop_unsupported(P[m_], sid[m_], step_mm)]] = True
+        P, sid, hsid = P[keep], sid[keep], hsid[keep]
+        log("%d shots -> %d points (%d unsupported dropped)" % (len(shots), len(P), n_raw - len(P)))
+        P, registration = register_headings(P, hsid, shots, heading_of_shot, log)
+    else:
+        keep = drop_unsupported(P, sid, step_mm)
+        P = P[keep]
+        log("%d shots -> %d points (%d unsupported by neighbouring shots dropped)"
+            % (len(shots), len(P), n_raw - len(P)))
     if len(P) < 100:
         raise RuntimeError("only %d stripe points found" % len(P))
 
@@ -628,6 +769,7 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
         "table": {"rms_mm": round(tab_rms, 3),
                   "tilt_x_deg": round(float(np.degrees(np.arctan(tab_co[0]))), 3),
                   "tilt_y_deg": round(float(np.degrees(np.arctan(tab_co[1]))), 3)},
+        "registration": registration,
         "bounds_mm": {"min": np.round(P[:, :3].min(0), 2).tolist(),
                       "max": np.round(P[:, :3].max(0), 2).tolist()},
         "top": None,
@@ -667,7 +809,8 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
     np.save(os.path.join(capdir, "points.npy"), P)
     P[:, :3].astype("<f4").tofile(os.path.join(capdir, "points.bin"))
     write_ply(os.path.join(capdir, "cloud.ply"), P)
-    grid, lo = height_grid(P, SURFACE_CELL_MM, man.get("axis", "y"))
+    grid, lo = height_grid(P, SURFACE_CELL_MM, "both" if multi else man.get("axis", "y"),
+                           agg="median" if multi else "max")
     grid.astype("<f4").tofile(os.path.join(capdir, "surface.bin"))
     stats["surface"] = {"cell_mm": SURFACE_CELL_MM, "origin_mm": lo.tolist(),
                         "width": int(grid.shape[1]), "height": int(grid.shape[0])}
