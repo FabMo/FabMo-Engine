@@ -45,6 +45,10 @@ DEFAULTS = {
     "table_below_cam_mm": 141.98,
     "table_ref_z_in": 5.21988,
 
+    # --- camera (set on every open; the device forgets them on replug) ---
+    "camera_focus": 470,        # focus_absolute the calibration (camera.json) was made at
+    "camera_brightness": 90,    # post-AE brightness: headroom for the laser in red
+
     # --- hardware ---
     "laser_output": 5,          # M100 ({out<N>:...}); 1=spindle, 4=arm motion here
     "use_laser": True,          # False: capture laser-off frames only

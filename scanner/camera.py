@@ -34,10 +34,22 @@ def find_device():
 
 
 def lock_controls(dev):
-    """Best-effort lock of autofocus / auto-exposure / auto-WB.
+    """Best-effort lock of autofocus / auto-exposure / auto-WB, then the
+    calibrated focus and the scanning brightness from the scanner settings
+    (camera_focus, camera_brightness).
 
+    The camera forgets everything when it's unplugged (back to continuous
+    autofocus, brightness default) — and the calibration (camera.json) is
+    only valid at the focus it was made at — so set them on every open
+    instead of trusting the device state (2026-11-08: a replug left AF on).
     Control names vary by camera; failures are fine (control absent).
     """
+    try:
+        import scan_settings
+        st = scan_settings.load()
+        focus, bright = st.get("camera_focus"), st.get("camera_brightness")
+    except Exception:
+        focus = bright = None
     settings = [
         ("focus_automatic_continuous", "0"),
         ("focus_auto", "0"),
@@ -46,6 +58,10 @@ def lock_controls(dev):
         ("white_balance_automatic", "0"),
         ("white_balance_temperature_auto", "0"),
     ]
+    if focus is not None:
+        settings.append(("focus_absolute", str(int(focus))))
+    if bright is not None:
+        settings.append(("brightness", str(int(bright))))
     for name, val in settings:
         subprocess.run(
             ["v4l2-ctl", "-d", dev, "--set-ctrl", "%s=%s" % (name, val)],
