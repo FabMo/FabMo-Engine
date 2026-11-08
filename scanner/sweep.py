@@ -602,10 +602,12 @@ def drop_unsupported(P, shot, step_mm, min_support=3, vz=2.0):
 
 
 def write_ply(path, P):
-    with open(path, "w") as fh:
-        fh.write("ply\nformat ascii 1.0\nelement vertex %d\n"
-                 "property float x\nproperty float y\nproperty float z\nend_header\n" % len(P))
-        np.savetxt(fh, P[:, :3], fmt="%.3f")
+    """Binary little-endian PLY (ASCII took ~4 s for a million points)."""
+    with open(path, "wb") as fh:
+        fh.write(("ply\nformat binary_little_endian 1.0\nelement vertex %d\n"
+                  "property float x\nproperty float y\nproperty float z\nend_header\n"
+                  % len(P)).encode())
+        fh.write(np.ascontiguousarray(P[:, :3], dtype="<f4").tobytes())
 
 
 def _fill_runs(line, max_gap):
@@ -723,8 +725,9 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
         allP = Ps
         shot_ids = [np.full(len(P_), i) for P_, i in zip(Ps, used)]
         man["step"] = frame_step * every          # for the neighbour-support filter
-        log("continuous: %d frames, every %d used (line step %.4f in)"
-            % (len(shots), every, frame_step * every))
+        log("continuous: %d frames, every %d used (line step %.4f in); image rows %s"
+            % (len(shots), every, frame_step * every, continuous.BAND[0]))
+        man["row_band"] = continuous.BAND[0]
         shots_iter = []
     else:
         shots_iter = shots

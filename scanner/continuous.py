@@ -272,19 +272,24 @@ def _assign_poses(man, ax, a0, a1, latency_ms, log=print):
 
 # ------------------------------------------------------------- processing
 _CAL = {}
+BAND = [None]          # row band used by the last triangulate_frames (for logs)
 
 
 def _tri(args):
     """Worker: one frame -> (index, (N, 4) points)."""
     import sweep
-    i, path, R_cm, dp = args
+    i, path, R_cm, dp, band = args
     if "cal" not in _CAL:
         _CAL["cal"] = sweep.load_cal()
+        cv2.setNumThreads(1)          # one process per core instead of oversubscribing
     cal = _CAL["cal"]
     img = cv2.imread(path)
     if img is None:
         return i, np.zeros((0, 4))
-    pts = stripe.extract_on_only(img)
+    r0, r1 = band if band else (0, img.shape[0])
+    pts = stripe.extract_on_only(np.ascontiguousarray(img[r0:r1]))
+    if len(pts):
+        pts[:, 0] += r0                       # back to full-image rows
     if len(pts) == 0:
         return i, np.zeros((0, 4))
     u = cv2.undistortPoints(pts[:, [1, 0]].reshape(-1, 1, 2).astype(np.float64),
@@ -295,7 +300,36 @@ def _tri(args):
     return i, np.c_[P, pts[:, 2]]
 
 
-def triangulate_frames(capdir, shots, every=1, progress=None, workers=3):
+def _band_rows(path):
+    img = cv2.imread(path)
+    if img is None:
+        return None
+    p = stripe.extract_on_only(img)
+    if len(p) < 50:
+        return None
+    return np.percentile(p[:, 0], [5, 99])     # 5th: ignore sparse stray points
+
+
+def _stripe_band(jobs, pool, n_sample=24, margin=120, min_rows=240):
+    """Image rows the laser line occupies in this scan, from a full search on
+    a sample of frames (+ margin; 120 px ~ 50 mm of extra height). Frame
+    processing then touches only that band: with 4 workers the Pi is limited
+    by memory bandwidth, not CPU. A feature taller than the band, seen only
+    between sampled frames, would be lost (not mis-measured)."""
+    paths = [j[1] for j in jobs[::max(1, len(jobs) // n_sample)]]
+    rows = [r for r in pool.map(_band_rows, paths) if r is not None]
+    if not rows:
+        return None
+    rows = np.array(rows)
+    r0 = int(max(0, rows[:, 0].min() - margin))
+    r1 = int(min(1080, rows[:, 1].max() + margin))
+    if r1 - r0 < min_rows:
+        mid = (r0 + r1) // 2
+        r0, r1 = max(0, mid - min_rows // 2), min(1080, mid + min_rows // 2)
+    return (r0, r1)
+
+
+def triangulate_frames(capdir, shots, every=1, progress=None, workers=4):
     """-> list of (N, 4) per used frame, list of shot indices used."""
     from multiprocessing import Pool
     p0 = np.array([shots[0]["pose"][a] for a in AXES])
@@ -306,6 +340,9 @@ def triangulate_frames(capdir, shots, every=1, progress=None, workers=3):
         jobs.append((i, os.path.join(capdir, s["img_on"]), None, dp))
     out = {}
     with Pool(workers) as pool:
+        band = _stripe_band(jobs, pool)
+        BAND[0] = band
+        jobs = [j + (band,) for j in jobs]
         for n, (i, P) in enumerate(pool.imap_unordered(_tri, jobs, chunksize=4)):
             out[i] = P
             if progress:

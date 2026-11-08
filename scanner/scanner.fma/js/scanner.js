@@ -274,7 +274,7 @@ function sweepEstimate() {
         var A = p.axis.toUpperCase(), sg = function (v) { return (v >= 0 ? "+" : "") + v; };
         var tmove = (p.end - p.start + 0.6) / p.speed + 3;
         var nfr = (p.end - p.start) / 0.04;            // processed lines at the 0.04 in default
-        var tproc = nfr * 0.12 + 10;
+        var tproc = nfr * 0.06 + 8;
         $("sw-estimate").textContent = "Continuous: laser on, head moves " + A + " from " + sg(p.start) +
             " to " + sg(p.end) + " in at " + p.speed + " in/s, relative to the current position: ~" +
             Math.round(tmove) + " s of motion + ~" + Math.round(tproc) + " s processing. " +

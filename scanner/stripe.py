@@ -20,11 +20,12 @@ import cv2
 import numpy as np
 
 
-def _extract_vertical(d, min_signal, snr, half_window):
-    """d: difference image, stripe running top-to-bottom. -> [row, col, sig]"""
+def _extract_vertical(d, min_signal, snr, half_window, sub=1):
+    """d: difference image, stripe running top-to-bottom. -> [row, col, sig]
+    sub: estimate each line's median / noise from every sub-th sample."""
     d = cv2.GaussianBlur(d, (5, 1), 0)              # smooth along the search line only
-    d = d - np.median(d, axis=1, keepdims=True)     # cancel AE brightness drift
-    noise = 1.4826 * np.median(np.abs(d), axis=1) + 1e-3
+    d = d - np.median(d[:, ::sub], axis=1, keepdims=True)   # cancel AE brightness drift
+    noise = 1.4826 * np.median(np.abs(d[:, ::sub]), axis=1) + 1e-3
     h, w = d.shape
     cols = np.argmax(d, axis=1)
     peak = d[np.arange(h), cols]
@@ -182,7 +183,58 @@ def drop_weak_runs(pts, orientation="vertical", min_run=15, max_gap=2, max_jump=
 
 # ------------------------------------------------------- laser-on frame only
 def extract_on_only(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
-                    max_blue=0.15):
+                    max_blue=0.15, fast_bg=True):
+    """Horizontal stripe from a single laser-ON frame (continuous scans:
+    no laser-off reference). Redness (R - G) minus its smooth background
+    (2-D median) leaves thin red features; each found piece must then look
+    like laser in colour too — red up, blue flat in the same high-pass
+    (scene edges and print show in every channel). Returns [row, col,
+    signal] like extract(). On the black-block scan this matched the off/on
+    method to ~0.003 mm on 85-99% of the points; weaker against clutter
+    (elbow-scan test: ~50 spike points left vs 0).
+
+    fast_bg: background medians on a 4x downscale (9 x 9 there ~ 36 px),
+    the colour test sampled only at the found points, noise from every 4th
+    sample — ~5x cheaper than full-res 31 x 31 medians, same points
+    (2026-11-08: 720 -> ~150 ms per frame, single thread)."""
+    h0, w0 = img_on.shape[:2]
+    if not fast_bg:
+        return _extract_on_only_full(img_on, min_signal, snr, half_window, win, max_blue)
+    sw, sh = w0 // 4, h0 // 4
+    small = cv2.resize(img_on, (sw, sh), interpolation=cv2.INTER_AREA)
+    bgs = [cv2.medianBlur(np.ascontiguousarray(small[..., k]), 9) for k in range(3)]
+    bg_rg = bgs[2].astype(np.float32) - bgs[1].astype(np.float32)
+    rg = cv2.subtract(img_on[..., 2], img_on[..., 1], dtype=cv2.CV_32F)
+    d = rg - cv2.resize(bg_rg, (w0, h0), interpolation=cv2.INTER_LINEAR)
+    t = _extract_vertical(np.ascontiguousarray(d.T), min_signal, snr, half_window, sub=4)
+    pts = clean(t[:, [1, 0, 2]], orientation="horizontal")
+    if len(pts) < 3:
+        return pts
+    pts = pts[np.argsort(pts[:, 1])]
+    # colour test at the points only: high-pass red / blue = 5x5 mean around
+    # the point minus the small-image background there
+    r = np.clip(np.round(pts[:, 0]).astype(int), 2, h0 - 3)
+    c = np.clip(np.round(pts[:, 1]).astype(int), 2, w0 - 3)
+    o = np.arange(-2, 3)
+    rr = r[:, None, None] + o[None, :, None]
+    cc = c[:, None, None] + o[None, None, :]
+    rs = np.clip(r // 4, 0, sh - 1)
+    cs = np.clip(c // 4, 0, sw - 1)
+    R = img_on[rr, cc, 2].reshape(len(r), -1).mean(1) - bgs[2][rs, cs]
+    B = img_on[rr, cc, 0].reshape(len(r), -1).mean(1) - bgs[0][rs, cs]
+    lab = _runs(pts, 1, 0, 2, 3.0)
+    n = np.bincount(lab)
+    starts = np.r_[0, np.cumsum(n)[:-1]]
+    ok = np.zeros(len(n), bool)
+    for k, (s0, m) in enumerate(zip(starts, n)):
+        mr, mb = np.median(R[s0:s0 + m]), np.median(B[s0:s0 + m])
+        ok[k] = mr > 0 and abs(mb) <= max_blue * mr
+    pts = pts[ok[lab]]
+    return drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)
+
+
+def _extract_on_only_full(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
+                          max_blue=0.15, fast_bg=False):
     """Horizontal stripe from a single laser-ON frame (continuous scans:
     no laser-off reference). Redness (R - G) high-passed across the line
     (minus a win x win median background) leaves thin red features; each
@@ -194,9 +246,19 @@ def extract_on_only(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
     """
     f = img_on.astype(np.float32)
     hp = []
+    h0, w0 = img_on.shape[:2]
     for k in range(3):
         c = img_on[..., k]
-        hp.append(f[..., k] - cv2.medianBlur(c, win).astype(np.float32))
+        if fast_bg:
+            # the background is smooth: median on a 4x downscale (9 x 9 there
+            # ~ 36 px here) and scale back — ~10x cheaper than a full-res
+            # 31 x 31 median, which was 55% of continuous-scan processing
+            small = cv2.resize(c, (w0 // 4, h0 // 4), interpolation=cv2.INTER_AREA)
+            bg = cv2.resize(cv2.medianBlur(small, 9), (w0, h0),
+                            interpolation=cv2.INTER_LINEAR).astype(np.float32)
+        else:
+            bg = cv2.medianBlur(c, win).astype(np.float32)
+        hp.append(f[..., k] - bg)
     hB, hG, hR = hp
     d = hR - hG
     t = _extract_vertical(np.ascontiguousarray(d.T), min_signal, snr, half_window)
@@ -221,3 +283,4 @@ def extract_on_only(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
         ok[k] = mr > 0 and abs(mb) <= max_blue * mr
     pts = pts[ok[lab]]
     return drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)
+
