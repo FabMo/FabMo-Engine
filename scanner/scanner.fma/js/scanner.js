@@ -238,7 +238,11 @@ function sweepParams() {
         row_spacing: parseFloat($("sw-rowsp").value) || 0,
         row_start: parseFloat($("sw-row0").value) || 0,
     };
+    p.mode = $("sw-mode").value;
+    if (p.mode === "continuous") { p.speed = parseFloat($("sw-speed").value); }
     if (isMulti(hs)) {
+        p.mode = "stops";                 // multi-heading scans are stop-and-go
+        delete p.speed;
         p.headings = hs;
         p.length = parseFloat($("sw-length").value);
         p.rows = 1;
@@ -257,6 +261,26 @@ function sweepEstimate() {
     Array.prototype.forEach.call(document.querySelectorAll(".multi-only"), function (el) {
         el.style.display = multi ? "" : "none";
     });
+    var cont = !multi && p.mode === "continuous";
+    Array.prototype.forEach.call(document.querySelectorAll(".cont-only"), function (el) {
+        el.style.display = cont ? "" : "none";
+    });
+    $("sw-rows").disabled = cont;
+    if (cont) {
+        if ([p.start, p.end].some(isNaN) || p.end <= p.start || !(p.speed > 0 && p.speed <= 2)) {
+            $("sw-estimate").textContent = "Set From < To and a speed up to 2 in/s.";
+            return null;
+        }
+        var A = p.axis.toUpperCase(), sg = function (v) { return (v >= 0 ? "+" : "") + v; };
+        var tmove = (p.end - p.start + 0.6) / p.speed + 3;
+        var nfr = (p.end - p.start) / 0.04;            // processed lines at the 0.04 in default
+        var tproc = nfr * 0.12 + 10;
+        $("sw-estimate").textContent = "Continuous: laser on, head moves " + A + " from " + sg(p.start) +
+            " to " + sg(p.end) + " in at " + p.speed + " in/s, relative to the current position: ~" +
+            Math.round(tmove) + " s of motion + ~" + Math.round(tproc) + " s processing. " +
+            "Head returns to its start; laser is switched off at the end.";
+        return p;
+    }
     if (multi) {
         var hs = p.headings;
         if (hs.some(isNaN) || hs.some(function (h) { return Math.abs(h) > 95; })) {
@@ -303,8 +327,9 @@ function sweepEstimate() {
     return p;
 }
 ["sw-axis", "sw-start", "sw-end", "sw-step", "sw-rows", "sw-rowsp", "sw-row0",
-    "sw-headings", "sw-length"].forEach(function (id) {
+    "sw-headings", "sw-length", "sw-mode", "sw-speed"].forEach(function (id) {
     $(id).oninput = sweepEstimate;
+    $(id).onchange = sweepEstimate;
 });
 sweepEstimate();
 
@@ -322,7 +347,8 @@ $("btn-sweep").onclick = function () {
     if (!p) { return; }
     var n = Math.round((p.end - p.start) / p.step) + 1;
     pendingSweep = p;
-    $("sw-confirm-msg").textContent = "Start this " + (p.headings ? "multi-heading " :
+    $("sw-confirm-msg").textContent = "Start this " + (p.mode === "continuous" ? "continuous " : "") +
+        (p.headings ? "multi-heading " :
         (p.rows > 1 ? p.rows + "-row " : "")) +
         "sweep? " + $("sw-estimate").textContent.split(", relative")[0] +
         ", relative to where the head is now. " +
@@ -336,7 +362,7 @@ $("sw-confirm-go").onclick = function () {
 };
 $("sw-confirm-cancel").onclick = hideSweepConfirm;
 ["sw-axis", "sw-start", "sw-end", "sw-step", "sw-name", "sw-rows", "sw-rowsp", "sw-row0",
-    "sw-headings", "sw-length"].forEach(function (id) {
+    "sw-headings", "sw-length", "sw-mode", "sw-speed"].forEach(function (id) {
     $(id).addEventListener("input", hideSweepConfirm);   // parameters changed: re-confirm
 });
 

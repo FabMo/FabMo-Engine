@@ -150,6 +150,12 @@
       <div class="panel">
         <h2>Line sweep</h2>
         <div class="params">
+          <span class="param single-only"><label>Mode</label>
+            <select id="sw-mode" style="width:150px">
+              <option value="stops">Stop-and-go (precise)</option>
+              <option value="continuous">Continuous (fast)</option>
+            </select></span>
+          <span class="param cont-only" style="display:none"><label>Speed (in/s)</label><input type="number" step="0.05" min="0.05" max="2" id="sw-speed" value="0.3"></span>
           <span class="param single-only"><label>Axis</label>
             <select id="sw-axis"><option value="y">Y</option><option value="x">X</option></select></span>
           <span class="param single-only"><label>From</label><input type="number" step="0.1" id="sw-start" value="-0.5"></span>
