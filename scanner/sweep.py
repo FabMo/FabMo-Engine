@@ -531,9 +531,16 @@ def triangulate_shot(off, on, cal, dpose_mm, signal="rg", R_cm=None):
     R_cm: camera -> machine rotation of this shot (default: the reference
     heading's, mount.json); dpose_mm is then the full offset (pan.Pan
     .shot_transform gives both for a turned head)."""
-    pts = stripe.extract(off, on, orientation="horizontal", signal=signal)
+    # low detection thresholds: the colour + run filters below remove what
+    # they let through, and dim line on glossy black plastic needs them
+    # (min 12 / snr 5 lost the far side of a black block's top, 2026-11-08)
+    pts = stripe.extract(off, on, orientation="horizontal", signal=signal,
+                         min_signal=6.0, snr=3.5)
     pts = stripe.clean(pts, orientation="horizontal")
-    pts = stripe.drop_weak_runs(pts, orientation="horizontal")
+    # colour test rejects auto-exposure clutter, so the brightness cut can be
+    # low enough to keep dim line on dark parts (black plastic)
+    pts = stripe.drop_off_colour_runs(pts, off, on, orientation="horizontal")
+    pts = stripe.drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)
     if len(pts) == 0:
         return np.zeros((0, 4))
     u = cv2.undistortPoints(pts[:, [1, 0]].reshape(-1, 1, 2).astype(np.float64),

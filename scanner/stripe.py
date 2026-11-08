@@ -116,6 +116,41 @@ def clean(pts, max_jump=3.0, max_line_dev=None, orientation="vertical"):
     return pts
 
 
+def _runs(pts, al, ac, max_gap, max_jump):
+    brk = np.r_[True, (np.diff(pts[:, al]) > max_gap) |
+                (np.abs(np.diff(pts[:, ac])) > max_jump)]
+    return np.cumsum(brk) - 1
+
+
+def drop_off_colour_runs(pts, img_off, img_on, orientation="vertical", max_gap=2,
+                         max_jump=3.0, max_blue=0.15):
+    """Keep only stripe pieces whose colour change looks like the red laser:
+    red goes UP and blue barely moves (|dB| <= max_blue * dR, medians over
+    the run, 5x5-averaged). The camera's auto-exposure shifting a patch of
+    clutter between the off/on frames changes all channels together (blue
+    with red, or red going down), so this rejects it without the shot-
+    relative brightness cut that also threw away dim real line on black
+    plastic (2026-11-08)."""
+    if len(pts) < 3:
+        return pts
+    al, ac = (0, 1) if orientation == "vertical" else (1, 0)
+    pts = pts[np.argsort(pts[:, al])]
+    d = cv2.blur(img_on.astype(np.float32) - img_off.astype(np.float32), (5, 5))
+    r = np.clip(np.round(pts[:, 0]).astype(int), 0, d.shape[0] - 1)
+    c = np.clip(np.round(pts[:, 1]).astype(int), 0, d.shape[1] - 1)
+    dR, dB = d[r, c, 2], d[r, c, 0]
+    lab = _runs(pts, al, ac, max_gap, max_jump)
+    n = np.bincount(lab)
+    order = np.argsort(lab, kind="stable")
+    starts = np.r_[0, np.cumsum(n)[:-1]]
+    ok = np.zeros(len(n), bool)
+    for k, (s0, m) in enumerate(zip(starts, n)):
+        idx = order[s0:s0 + m]
+        mr, mb = np.median(dR[idx]), np.median(dB[idx])
+        ok[k] = mr > 0 and abs(mb) <= max_blue * mr
+    return pts[ok[lab]]
+
+
 def drop_weak_runs(pts, orientation="vertical", min_run=15, max_gap=2, max_jump=3.0,
                    rel_signal=0.2):
     """Keep only stripe pieces that look like laser line: continuous runs of
