@@ -13,11 +13,17 @@ API (all JSON; CORS open so the dashboard app can call cross-port):
   POST /reference         survey empty table -> reference mosaic
   POST /locate            survey + diff -> part bbox
   POST /scan              {bbox_in?, session?, dry_run?} -> orbit scan
+  POST /sweep             {axis, start, end, step, session?} -> line sweep
+                          (offsets in inches from the current position),
+                          then triangulated (sweep.process_dir)
+  POST /process           {session} -> re-triangulate a sweep session
   GET  /plan              last generated orbit plan
   POST /abort             stop the running operation
   POST /confirm           acknowledge a manual-pan prompt
-  GET  /sessions          list captured scan sessions
+  GET  /sessions          list captured scan sessions (+ sweep stats)
   GET  /artifact/<path>   files under data/ (reference/, locate/, scans/)
+  GET  /app/...           the dashboard app's files (open
+                          http://<host>:3150/app/ directly while developing)
 """
 
 import argparse
@@ -33,6 +39,7 @@ import camera
 import fabmo_client as fabmo
 import orbit
 import scan_settings
+import sweep
 import table_map
 from scan_settings import DATA_DIR
 
@@ -47,6 +54,7 @@ STATE = {
     "waiting_confirm": None,  # message string when paused for manual pan
     "last_locate": None,
     "last_scan": None,
+    "last_sweep": None,
 }
 ABORT = threading.Event()
 CONFIRM = threading.Event()
@@ -69,13 +77,13 @@ _cap_lock = threading.Lock()
 _cap = [None]
 
 
-def camgrab():
+def camgrab(flush=4):
     with _cap_lock:
         if _cap[0] is None:
             _cap[0] = camera.open_camera()
             time.sleep(0.5)
         try:
-            return camera.grab(_cap[0])
+            return camera.grab(_cap[0], flush=flush)
         except RuntimeError:
             # stream hiccup: reopen once
             try:
@@ -84,7 +92,7 @@ def camgrab():
                 pass
             _cap[0] = camera.open_camera()
             time.sleep(0.5)
-            return camera.grab(_cap[0])
+            return camera.grab(_cap[0], flush=flush)
 
 
 # ---------------------------------------------------------------- jobs
@@ -146,7 +154,58 @@ def job_scan(body):
     return result
 
 
-JOBS = {"reference": job_reference, "locate": job_locate, "scan": job_scan}
+def _session_name(body, prefix):
+    session = body.get("session") or time.strftime(prefix + "_%Y%m%d_%H%M%S")
+    return re.sub(r"[^A-Za-z0-9_.-]", "_", session)
+
+
+def job_sweep(body):
+    s = scan_settings.load()
+    try:
+        axis = str(body.get("axis", "y")).lower()
+        start, end, step = (float(body[k]) for k in ("start", "end", "step"))
+    except (KeyError, TypeError, ValueError):
+        raise RuntimeError("sweep needs numeric start, end, step")
+    session = _session_name(body, "sweep")
+    outdir = os.path.join(orbit.SCANS_DIR, session)
+    if os.path.exists(outdir):
+        raise RuntimeError("session %s already exists" % session)
+    n = int(round((end - start) / step)) + 1 if step > 0 else 0
+    set_state(phase="sweeping %s (%d stops)" % (axis.upper(), n),
+              progress={"done": 0, "total": n})
+    man = sweep.run_capture(fabmo, lambda: camgrab(8), outdir, axis, start, end, step,
+                            int(s["laser_output"]), progress_cb, ABORT)
+    if not man["complete"]:
+        return {"message": "sweep stopped early", "session": session}
+    set_state(phase="triangulating", progress={"done": 0, "total": len(man["shots"])})
+    stats = sweep.process_dir(outdir, progress=progress_cb)
+    result = {"session": session, "stats": stats}
+    set_state(last_sweep=result)
+    top = stats.get("top")
+    msg = "sweep %s: %d points" % (session, stats["n_points"])
+    if top:
+        msg += ", top %.2f mm above table" % top["height_mm"]
+    result["message"] = msg
+    return result
+
+
+def job_process(body):
+    session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(body.get("session", "")))
+    outdir = os.path.join(orbit.SCANS_DIR, session)
+    if not session or not os.path.isfile(os.path.join(outdir, "manifest.json")):
+        raise RuntimeError("no such session %r" % session)
+    set_state(phase="triangulating " + session, progress={"done": 0, "total": 0})
+    stats = sweep.process_dir(outdir, progress=progress_cb)
+    result = {"session": session, "stats": stats,
+              "message": "re-processed %s: %d points" % (session, stats["n_points"])}
+    set_state(last_sweep=result)
+    return result
+
+
+JOBS = {"reference": job_reference, "locate": job_locate, "scan": job_scan,
+        "sweep": job_sweep, "process": job_process}
+# jobs that never move the machine may start while it is busy elsewhere
+NO_MOTION = {"process"}
 
 
 def run_job(op, body):
@@ -154,7 +213,7 @@ def run_job(op, body):
         result = JOBS[op](body)
         set_state(state="idle", op=None, phase="", message=result.get("message", "done"),
                   error=None)
-    except (orbit.Aborted, table_map.Aborted):
+    except (orbit.Aborted, table_map.Aborted, sweep.Aborted):
         set_state(state="idle", op=None, phase="", message="aborted", error=None)
     except Exception as e:
         traceback.print_exc()
@@ -165,12 +224,13 @@ def start_job(op, body):
     with STATE_LOCK:
         if STATE["state"] == "busy":
             return False, "busy with %s" % STATE["op"]
-    try:
-        mstate = fabmo.status()["state"]
-    except Exception as e:
-        return False, "engine unreachable: %s" % e
-    if mstate != "idle":
-        return False, "machine is %s (must be idle)" % mstate
+    if op not in NO_MOTION:
+        try:
+            mstate = fabmo.status()["state"]
+        except Exception as e:
+            return False, "engine unreachable: %s" % e
+        if mstate != "idle":
+            return False, "machine is %s (must be idle)" % mstate
     ABORT.clear()
     set_state(state="busy", op=op, phase="starting", message="", error=None,
               progress={"done": 0, "total": 0})
@@ -181,7 +241,10 @@ def start_job(op, body):
 # ---------------------------------------------------------------- HTTP
 
 MIME = {".png": "image/png", ".jpg": "image/jpeg", ".json": "application/json",
-        ".ply": "application/octet-stream"}
+        ".ply": "application/octet-stream", ".bin": "application/octet-stream",
+        ".html": "text/html; charset=utf-8", ".js": "application/javascript",
+        ".css": "text/css", ".svg": "image/svg+xml"}
+APP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scanner.fma")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -241,11 +304,34 @@ class Handler(BaseHTTPRequestHandler):
                         with open(man) as fh:
                             m = json.load(fh)
                         entry.update(complete=m.get("complete"),
+                                     kind=m.get("kind", "orbit" if "plan" in m else "sweep"),
+                                     created=m.get("created"),
                                      frames=len(m.get("shots", [])) * 2)
                     except (IOError, ValueError):
                         entry["complete"] = None
+                    stats = os.path.join(orbit.SCANS_DIR, name, "scan.json")
+                    if os.path.isfile(stats):
+                        try:
+                            with open(stats) as fh:
+                                entry["stats"] = json.load(fh)
+                        except ValueError:
+                            pass
+                        if not entry.get("created"):
+                            entry["created"] = time.strftime(
+                                "%Y-%m-%d %H:%M:%S", time.localtime(os.path.getmtime(man)))
                     out.append(entry)
             return self._send(200, out)
+        if path in ("/app", "/app/"):
+            path = "/app/index.html"
+        if path.startswith("/app/"):
+            rel = os.path.normpath(path[len("/app/"):])
+            full = os.path.join(APP_DIR, rel)
+            if rel.startswith("..") or os.path.isabs(rel) or not os.path.isfile(full):
+                return self._send(404, {"error": "not found"})
+            with open(full, "rb") as fh:
+                data = fh.read()
+            return self._send(200, data, MIME.get(os.path.splitext(full)[1].lower(),
+                                                  "application/octet-stream"))
         if path.startswith("/artifact/"):
             rel = os.path.normpath(path[len("/artifact/"):])
             if rel.startswith("..") or os.path.isabs(rel):
@@ -284,7 +370,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, p)
             except Exception as e:
                 return self._send(400, {"error": str(e)})
-        if path in ("/reference", "/locate", "/scan"):
+        if path in ("/reference", "/locate", "/scan", "/sweep", "/process"):
             ok, err = start_job(path[1:], body)
             if ok:
                 return self._send(202, {"started": path[1:]})

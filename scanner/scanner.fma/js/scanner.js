@@ -1,8 +1,22 @@
 /* 3D Scanner app — thin client over scand (scanner daemon, port 3150). */
-/* global FabMoDashboard */
+/* global FabMoDashboard, ScanViewer */
 
-var fabmo = new FabMoDashboard();
-var BASE = "http://" + location.hostname + ":3150";
+// Inside the dashboard the app is served by the engine; while developing it
+// can also be opened straight from scand at http://<host>:3150/app/.
+var STANDALONE = location.port === "3150";
+var fabmo;
+try {
+    fabmo = STANDALONE ? null : new FabMoDashboard();
+} catch (e) {
+    fabmo = null;
+}
+if (!fabmo) {
+    fabmo = { notify: function (level, msg) {
+        if (level === "error" || level === "warning") { window.alert(msg); }
+        else { console.log(msg); }
+    } };
+}
+var BASE = STANDALONE ? location.origin : "http://" + location.hostname + ":3150";
 document.getElementById("daemon-url").textContent = BASE;
 
 var $ = function (id) { return document.getElementById(id); };
@@ -194,22 +208,239 @@ $("btn-dryrun").onclick = function () {
 $("btn-abort").onclick = function () { api("POST", "/abort"); };
 $("btn-confirm").onclick = function () { api("POST", "/confirm"); };
 
+// ---------------------------------------------------------------- sweep
+
+var SEC_PER_STOP = 1.6;   // measured: 86 stops in 135 s
+
+function sweepParams() {
+    var p = {
+        axis: $("sw-axis").value,
+        start: parseFloat($("sw-start").value),
+        end: parseFloat($("sw-end").value),
+        step: parseFloat($("sw-step").value),
+    };
+    var name = $("sw-name").value.trim();
+    if (name) { p.session = name; }
+    return p;
+}
+
+function sweepEstimate() {
+    var p = sweepParams();
+    if ([p.start, p.end, p.step].some(isNaN) || p.step <= 0 || p.end <= p.start) {
+        $("sw-estimate").textContent = "Set From < To and a positive step (inches).";
+        return null;
+    }
+    var n = Math.round((p.end - p.start) / p.step) + 1;
+    var t = n * SEC_PER_STOP;
+    $("sw-estimate").textContent = "Moves " + p.axis.toUpperCase() + " from " +
+        (p.start >= 0 ? "+" : "") + p.start + " to " + (p.end >= 0 ? "+" : "") + p.end +
+        " in relative to the current position: " + n + " stops, ~" +
+        (t < 90 ? Math.round(t) + " s" : (t / 60).toFixed(1) + " min") +
+        ". Head returns to its start; laser is switched off at the end.";
+    return p;
+}
+["sw-axis", "sw-start", "sw-end", "sw-step"].forEach(function (id) {
+    $(id).oninput = sweepEstimate;
+});
+sweepEstimate();
+
+$("btn-sweep").onclick = function () {
+    var p = sweepEstimate();
+    if (!p) { return; }
+    var n = Math.round((p.end - p.start) / p.step) + 1;
+    if (!window.confirm("Start a " + n + "-stop sweep along " + p.axis.toUpperCase() +
+            "?\n\nThe machine will move. Make sure the head clears the part.")) {
+        return;
+    }
+    startOp("/sweep", p, "Sweep");
+};
+
 // ---------------------------------------------------------------- sessions
 
-function refreshSessions() {
-    api("GET", "/sessions").then(function (list) {
-        var tb = $("sessions");
-        tb.innerHTML = "";
-        list.slice(0, 8).forEach(function (s) {
-            var tr = document.createElement("tr");
-            var state = s.complete === true ? "complete" :
-                s.complete === false ? "partial" : "?";
-            tr.innerHTML = "<td>" + s.session + "</td><td>" +
-                (s.frames || 0) + " frames</td><td>" + state + "</td>";
-            tb.appendChild(tr);
-        });
+var sessions = [];
+var selected = null;
+
+function fmt(v, d) { return (v === undefined || v === null) ? "–" : v.toFixed(d); }
+
+function sessionMeta(s) {
+    var bits = [];
+    if (s.created) { bits.push(s.created.replace(/:\d\d$/, "")); }
+    var st = s.stats;
+    if (st) {
+        bits.push(Math.round(st.n_points / 1000) + "k pts");
+        if (st.top) { bits.push("top " + fmt(st.top.height_mm, 2) + " mm"); }
+    } else if (s.kind === "sweep") {
+        bits.push(s.complete === false ? "incomplete" : "not processed");
+    } else {
+        bits.push((s.kind || "scan") + ", " + (s.frames || 0) + " frames");
+    }
+    return bits.join(" · ");
+}
+
+function renderSessions() {
+    var box = $("sessions");
+    box.innerHTML = "";
+    if (!sessions.length) {
+        box.innerHTML = '<div class="hint">No scans yet.</div>';
+        return;
+    }
+    sessions.forEach(function (s) {
+        var row = document.createElement("div");
+        row.className = "srow" + (selected === s.session ? " sel" : "");
+        var art = BASE + "/artifact/scans/" + encodeURIComponent(s.session) + "/";
+        row.innerHTML = '<div class="nm"></div><div class="meta"></div>' +
+            '<div class="acts">' +
+            (s.stats ? '<a href="' + art + 'cloud.ply" download>PLY</a>' : "") +
+            (s.kind === "sweep" || s.stats ?
+                '<button class="small" data-act="process">Re-process</button>' : "") +
+            "</div>";
+        row.querySelector(".nm").textContent = s.session;
+        row.querySelector(".meta").textContent = sessionMeta(s);
+        row.onclick = function (e) {
+            if (e.target.tagName === "A") { return; }
+            if (e.target.dataset && e.target.dataset.act === "process") {
+                e.stopPropagation();
+                startOp("/process", { session: s.session }, "Re-processing " + s.session);
+                return;
+            }
+            selectSession(s);
+        };
+        box.appendChild(row);
     });
 }
+
+function refreshSessions(thenSelect) {
+    return api("GET", "/sessions").then(function (list) {
+        sessions = list;
+        renderSessions();
+        if (thenSelect) {
+            var s = list.filter(function (x) { return x.session === thenSelect; })[0];
+            if (s) { selectSession(s); }
+        } else if (!selected) {
+            var first = list.filter(function (x) {
+                return QS.session ? x.session === QS.session : x.stats;
+            })[0];
+            if (first) { selectSession(first); }
+        }
+    }).catch(function () {
+        $("sessions").innerHTML = '<div class="hint">Daemon unreachable.</div>';
+    });
+}
+
+// ---------------------------------------------------------------- viewer
+
+var viewer = null;
+// optional deep link: ?session=<name>&mode=points|surface&view=iso|top|front|side
+var QS = {};
+location.search.replace(/^\?/, "").split("&").forEach(function (kv) {
+    var p = kv.split("=");
+    if (p[0]) { QS[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || ""); }
+});
+
+function getBin(url) {
+    return fetch(url).then(function (r) {
+        if (!r.ok) { throw new Error("HTTP " + r.status + " for " + url); }
+        return r.arrayBuffer();
+    }).then(function (b) { return new Float32Array(b); });
+}
+
+function selectSession(s) {
+    selected = s.session;
+    renderSessions();
+    if (!s.stats) {
+        $("v-empty").textContent = s.kind === "sweep" ?
+            "This scan hasn't been processed — use Re-process." :
+            "No 3D data for this session (orbit scans aren't triangulated yet).";
+        $("v-empty").style.display = "flex";
+        return;
+    }
+    $("v-empty").textContent = "Loading " + s.session + "…";
+    $("v-empty").style.display = "flex";
+    var art = BASE + "/artifact/scans/" + encodeURIComponent(s.session) + "/";
+    var bust = "?t=" + encodeURIComponent(s.stats.processed || "");
+    Promise.all([
+        getBin(art + "points.bin" + bust),
+        s.stats.surface ? getBin(art + "surface.bin" + bust) : Promise.resolve(null),
+    ]).then(function (res) {
+        if (selected !== s.session) { return; }
+        if (!viewer) {
+            viewer = new ScanViewer($("viewer"), { onPick: showPicks });
+        }
+        if (QS.mode && !viewer.data) {
+            var mb = $("v-mode").querySelector('[data-mode="' + QS.mode + '"]');
+            if (mb) { mb.onclick(); }
+        }
+        viewer.load({ points: res[0], surface: res[1], meta: s.stats });
+        if (QS.view) { viewer.view(QS.view); QS.view = null; }
+        $("v-empty").style.display = "none";
+        $("v-title").textContent = s.session;
+        showInfo(s);
+        showLegend();
+    }).catch(function (e) {
+        $("v-empty").textContent = "Couldn't load scan: " + e.message;
+    });
+}
+
+function showInfo(s) {
+    var st = s.stats, t = st.top, lines = [];
+    lines.push("<b>" + st.n_points.toLocaleString() + "</b> points from " + st.n_shots +
+        " shots · table rms " + fmt(st.table.rms_mm, 2) + " mm");
+    if (t) {
+        var ex = t.extent_mm, dx = ex.x[1] - ex.x[0], dy = ex.y[1] - ex.y[0];
+        lines.push("Top <b>" + fmt(t.height_mm, 2) + " mm</b> (" + fmt(t.height_mm / 25.4, 3) +
+            " in) · flat to " + fmt(t.rms_mm, 2) + " mm rms");
+        lines.push("Top extent " + fmt(dx, 1) + " × " + fmt(dy, 1) + " mm (" +
+            fmt(dx / 25.4, 2) + " × " + fmt(dy / 25.4, 2) + " in, along X × Y)");
+    }
+    $("v-info").innerHTML = lines.join("<br>");
+    $("v-info").style.display = "block";
+}
+
+function showLegend() {
+    var l = viewer.legend();
+    $("v-legend-bar").style.background = l.gradient;
+    $("v-legend-min").textContent = l.min.toFixed(1) + " mm";
+    $("v-legend-max").textContent = l.max.toFixed(1) + " mm";
+    $("v-legend").style.display = "block";
+}
+
+function showPicks(picks) {
+    var el = $("v-pick");
+    if (!picks.length) { el.style.display = "none"; return; }
+    var f = function (p) {
+        return "X " + p.x.toFixed(1) + "  Y " + p.y.toFixed(1) + "  <b>Z " + p.z.toFixed(2) + "</b>";
+    };
+    var html = "A: " + f(picks[0]);
+    if (picks.length === 2) {
+        var a = picks[0], b = picks[1];
+        var d = a.distanceTo(b), dz = b.z - a.z;
+        var dxy = Math.hypot(b.x - a.x, b.y - a.y);
+        html += "<br>B: " + f(b) + "<br>distance <b>" + d.toFixed(2) + " mm</b> (" +
+            (d / 25.4).toFixed(3) + " in)<br>ΔXY " + dxy.toFixed(2) + " mm · ΔZ " +
+            dz.toFixed(2) + " mm";
+    }
+    html += '<br><button class="small" id="v-pick-clear">clear</button>';
+    el.innerHTML = html;
+    el.style.display = "block";
+    el.style.pointerEvents = "auto";
+    $("v-pick-clear").onclick = function () { viewer.clearPicks(); };
+}
+
+Array.prototype.forEach.call($("v-mode").querySelectorAll("button"), function (b) {
+    b.onclick = function () {
+        Array.prototype.forEach.call($("v-mode").querySelectorAll("button"), function (x) {
+            x.className = x === b ? "on" : "";
+        });
+        $("v-psize-wrap").style.display = b.dataset.mode === "points" ? "" : "none";
+        if (viewer) { viewer.setMode(b.dataset.mode); }
+    };
+});
+Array.prototype.forEach.call($("v-views").querySelectorAll("button"), function (b) {
+    b.onclick = function () { if (viewer) { viewer.view(b.dataset.view); } };
+});
+$("v-psize").oninput = function () {
+    if (viewer) { viewer.setPointSize(parseFloat($("v-psize").value)); }
+};
 
 // ---------------------------------------------------------------- polling
 
@@ -220,6 +451,7 @@ function setPill(id, text, cls) {
 }
 
 var prevBusy = false;
+var prevOp = null;
 
 function poll() {
     api("GET", "/status").then(function (st) {
@@ -232,7 +464,7 @@ function poll() {
             st.have_mount_cal ? "cal: hand-eye" : "cal: nominal mount",
             st.have_mount_cal ? "ok" : "busy");
 
-        ["btn-reference", "btn-locate", "btn-scan", "btn-dryrun"].forEach(function (id) {
+        ["btn-reference", "btn-locate", "btn-scan", "btn-dryrun", "btn-sweep"].forEach(function (id) {
             $(id).disabled = busy;
         });
         $("btn-abort").style.display = busy ? "" : "none";
@@ -267,14 +499,21 @@ function poll() {
 
         if (prevBusy && !busy) {   // an operation just finished
             mapShown = null;       // force image reload (cache-bust)
-            refreshSessions();
+            var done = st.last_sweep && st.last_sweep.session;
+            if (done && (prevOp === "sweep" || prevOp === "process")) {
+                selected = null;   // reload even if it was already shown
+                refreshSessions(done);
+            } else {
+                refreshSessions();
+            }
             if (st.last_locate && st.last_locate.found) { bboxToUI(st.last_locate.bbox_in); }
         }
         prevBusy = busy;
+        prevOp = busy ? st.op : prevOp;
         refreshMap(st.have_reference, st.last_locate);
     }).catch(function () {
         setPill("pill-daemon", "daemon: unreachable", "err");
-        ["btn-reference", "btn-locate", "btn-scan", "btn-dryrun"].forEach(function (id) {
+        ["btn-reference", "btn-locate", "btn-scan", "btn-dryrun", "btn-sweep"].forEach(function (id) {
             $(id).disabled = true;
         });
     });
