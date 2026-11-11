@@ -237,6 +237,12 @@ define(function(require) {
 //----------------------------------- These two routines are enough to communicate events from dash during running
 // Function to handle key events
 function handleKeyEvent(key) {
+    // Letter hotkeys are case-insensitive (Caps Lock / Shift report "K", not
+    // "k"). Only single characters are folded; symbols and "Escape" pass
+    // through unchanged.
+    if (typeof key === "string" && key.length === 1) {
+        key = key.toLowerCase();
+    }
     switch (key) {
         case "+":
             var $spinner = $('.spindle-speed input');

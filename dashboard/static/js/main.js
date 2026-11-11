@@ -2567,6 +2567,10 @@ if (slider) {
 
 // Key action from keyboard in Modal Keypad
 $(document).on("keydown", function (e) {
+    // Letter hotkeys must not care about case: with Caps Lock on (or Shift
+    // held) the browser reports "F", not "f", and the hotkey silently died.
+    // Only single characters are folded, so "Escape" etc. are untouched.
+    var hotkey = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
     // escape key press to quit the engine
     if (e.key === "Escape") {
         // Trigger exit any time the modal is visible. Checking modal
@@ -2583,7 +2587,7 @@ $(document).on("keydown", function (e) {
                     console.error("Error in ManualExit:", err);
                 });
         }
-    } else if (e.key === "k" && e.altKey) {
+    } else if (hotkey === "k" && e.altKey) {
         // changed to alt but still not very useful, only working outside iframe
         setUpManual();
         // toggle "Fixed" moves — "d" kept as an alias for SB3 muscle
@@ -2591,7 +2595,7 @@ $(document).on("keydown", function (e) {
         // being typed, and no jog gesture is live: flipping the mode
         // mid-gesture used to morph a continuous move into a "fixed" one,
         // whose release path never sends the stop (stuck move).
-    } else if (e.key === "f" || e.key === "d") {
+    } else if (hotkey === "f" || hotkey === "d") {
         var typing =
             document.activeElement &&
             (document.activeElement.tagName === "INPUT" ||
@@ -2842,7 +2846,7 @@ $(".axi").on("keydown", function (e) {
     if ([8, 9, 13, 27, 46, 110, 190].indexOf(e.keyCode) >= 0 ||
         e.keyCode === 189 || e.keyCode === 109 || // minus key
         (e.keyCode >= 35 && e.keyCode <= 40) ||    // home, end, arrows
-        (e.ctrlKey && (e.key === "a" || e.key === "c" || e.key === "v" || e.key === "x"))) {
+        (e.ctrlKey && ["a", "c", "v", "x"].indexOf((e.key || "").toLowerCase()) >= 0)) {
         return;
     }
     // Allow: digits (top row and numpad)
