@@ -19,6 +19,7 @@ var log = require("../../log").logger("manual");
 var config = require("../../config");
 var util = require("util");
 var events = require("events");
+var gestureLog = require("./gesture_log");
 
 // Parameters related to filling the queue, motion, etc.
 // These are fussy.
@@ -61,6 +62,26 @@ var JGV_WATCHDOG_MS = 500;
 // and the flush that ends the hold lands after them. See holdIsOurs().
 var OWN_HOLD_WINDOW_MS = 3000;
 
+// Per-gesture travel cap — the backstop for a client that is confidently
+// wrong. The motion lease and the firmware watchdog both feed on the client's
+// heartbeat, so a browser that missed a release but stays focused and healthy
+// keeps both satisfied forever. What it cannot fake is geometry: no deliberate
+// hold needs more commanded travel, on one heading, than the axis is long.
+// Each continuous gesture accrues commanded travel (speed x time, per axis);
+// past GESTURE_CAP_SPAN_FACTOR x the longest involved axis span it is stopped
+// and its heading latched off until the client actually sends a stop (i.e.
+// the operator lets go) or commands a different heading.
+//   - never trips before GESTURE_CAP_MIN_MS, however small the envelope
+//   - axes with no usable envelope span (rotary A/B/C, unset envelope) fall
+//     back to a plain time cap, GESTURE_CAP_FALLBACK_MS
+//   - machine.manual.gesture_cap = false disables it (field escape hatch)
+var GESTURE_CAP_SPAN_FACTOR = 1.5;
+var GESTURE_CAP_MIN_MS = 15000;
+var GESTURE_CAP_FALLBACK_MS = 120000;
+// Largest keep-alive gap that still accrues travel. Clients heartbeat at
+// ~50ms; a longer gap is a stall, not commanded motion.
+var GESTURE_ACCRUE_MAX_DT_MS = 1000;
+
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
 // streaming commands to it, as is done when in "pendant" mode or similar
@@ -101,6 +122,13 @@ function ManualDriver(drv, st, mode) {
     // GC pauses and a loaded Pi before the lease concludes the client is gone
     // and stops motion.
     this.lease_misses = 0;
+
+    // The live continuous gesture (see the GESTURE_CAP notes above and
+    // _trackGesture): heading key, start time, accrued commanded travel.
+    // null between gestures. _gestureLatch holds the heading key of a
+    // gesture the travel cap stopped, until the client releases it.
+    this._gesture = null;
+    this._gestureLatch = null;
 
     // Set to true to exit the manual state once the current operation is completed
     this.exit_pending = false;
@@ -148,6 +176,11 @@ function ManualDriver(drv, st, mode) {
     // → wait → start() sequence in analog mode would short-circuit on
     // stop_pending because we'd never know the firmware had finished.
     this._jogv_exit_handler = function () {
+        // A gesture still open here was ended by the FIRMWARE, not by a stop
+        // from us: its host-silence watchdog fired (client went quiet) or the
+        // cycle was ended underneath us. After an ordinary stop this is a
+        // no-op — stopMotion already closed the record.
+        this._endGesture("firmware_cycle_exit");
         if (this.analogMode || this.stop_pending) {
             this.moving        = false;
             this.keep_moving   = false;
@@ -243,7 +276,7 @@ ManualDriver.prototype.exit = function () {
         // Don't exit yet - just pend.
         log.debug("Pending the exit");
         this.exit_pending = true;
-        this.stopMotion();
+        this.stopMotion("manual_exit");
     } else {
         log.debug("Executing immediate exit");
         
@@ -378,6 +411,13 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     // against a pending exit or writes to a dead stream (engine crash).
     if (!this.stream || this.exiting || this.exited || this.exit_pending) {
         log.warn("startMotion(): ignored - manual mode is exiting");
+        return;
+    }
+
+    // Gesture bookkeeping + travel cap. Returns false when this keep-alive
+    // belongs to a gesture the cap has stopped (or just stopped): ignore it,
+    // or the wedged client's 50ms stream would re-prime motion immediately.
+    if (!this._trackGesture(axis, speed, second_axis, second_speed, primary_ratio, secondary_ratio)) {
         return;
     }
 
@@ -684,6 +724,11 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
 // This function only has any effect if the machine is already moving
 ManualDriver.prototype.maintainMotion = function () {
     if (this.moving) {
+        // A maint keep-alive extends the live gesture, so it accrues travel
+        // against the cap exactly like a re-sent start.
+        if (this._gesture && !this._accrueGesture(this._gesture.speed)) {
+            return;
+        }
         this.keep_moving = true;
         // In analog (jgv) mode the deadman is the firmware's host-silence
         // watchdog, which only actual jgv messages feed — re-send the last
@@ -711,8 +756,143 @@ ManualDriver.prototype.holdIsOurs = function () {
     return !!this._ownHoldAt && Date.now() - this._ownHoldAt < OWN_HOLD_WINDOW_MS;
 };
 
+// ---- continuous-gesture tracking / travel cap ------------------------------
+
+// Heading identity for a start command: axes and signs. A different key is a
+// different gesture as far as the cap is concerned (the operator steered).
+function gestureKey(axis, speed, second_axis, second_speed, primary_ratio, secondary_ratio) {
+    var hasRatios = primary_ratio !== undefined;
+    var s1 = Math.sign(hasRatios ? primary_ratio : speed) || 0;
+    var key = String(axis).toLowerCase() + (s1 < 0 ? "-" : "+");
+    if (second_axis) {
+        var s2 = Math.sign(hasRatios ? secondary_ratio || 0 : second_speed) || 0;
+        key += String(second_axis).toLowerCase() + (s2 < 0 ? "-" : "+");
+    }
+    return key;
+}
+
+ManualDriver.prototype._gestureCapEnabled = function () {
+    var manual = config.machine._cache.manual;
+    return !(manual && manual.gesture_cap === false);
+};
+
+// Longest envelope span among the gesture's axes, in the envelope's (display)
+// units; null when any involved axis has no usable span (rotary, unset).
+ManualDriver.prototype._gestureSpan = function (axis, second_axis) {
+    var envelope = config.machine._cache.envelope;
+    if (!envelope) return null;
+    var span = 0;
+    var axes = second_axis ? [axis, second_axis] : [axis];
+    for (var i = 0; i < axes.length; i++) {
+        var a = String(axes[i]).toLowerCase();
+        var s = envelope[a + "max"] - envelope[a + "min"];
+        if (!(typeof s === "number" && isFinite(s) && s > 0)) return null;
+        if (s > span) span = s;
+    }
+    return span;
+};
+
+// Called for every start command (i.e. every client keep-alive). Opens a
+// gesture record on a fresh heading, accrues commanded travel on a
+// continuing one, and enforces the cap. Returns false if the command must be
+// ignored.
+ManualDriver.prototype._trackGesture = function (axis, speed, second_axis, second_speed, primary_ratio, secondary_ratio) {
+    var key = gestureKey(axis, speed, second_axis, second_speed, primary_ratio, secondary_ratio);
+    if (this._gestureLatch) {
+        if (this._gestureLatch === key) {
+            return false; // capped; waiting for the client to let go
+        }
+        this._gestureLatch = null; // a new heading is a deliberate act
+    }
+    // Per-axis commanded speed (units/min). A two-axis move shares the
+    // toolpath speed; the 45-degree split is the conservative (slowest
+    // accruing) reading for any-angle analog vectors too.
+    var perAxisSpeed = Math.abs(speed) / (second_axis ? Math.SQRT2 : 1);
+    var now = Date.now();
+    var g = this._gesture;
+    if (g && now - g.last > 2 * GESTURE_ACCRUE_MAX_DT_MS) {
+        // The record went stale without any stop path closing it (motion
+        // ended some way we don't track). Close it rather than let a new
+        // gesture inherit its clock.
+        this._endGesture("stalled");
+        g = null;
+    }
+    if (!g || g.key !== key) {
+        // Fresh gesture, or the operator steered onto a new heading (analog
+        // stick sweep): same gesture for logging, new clock for the cap.
+        this._gesture = {
+            key: key,
+            axis: axis,
+            second_axis: second_axis || null,
+            path: primary_ratio !== undefined ? "analog" : "legacy",
+            started: g ? g.started : now,
+            capStarted: now,
+            last: now,
+            travel: 0,
+            speed: perAxisSpeed,
+            span: this._gestureSpan(axis, second_axis),
+        };
+        return true;
+    }
+    return this._accrueGesture(perAxisSpeed);
+};
+
+// Accrue commanded travel since the last keep-alive and enforce the cap.
+// Returns false if the cap tripped (motion has been stopped).
+ManualDriver.prototype._accrueGesture = function (perAxisSpeed) {
+    var g = this._gesture;
+    if (!g) return true;
+    var now = Date.now();
+    var dt = Math.min(Math.max(now - g.last, 0), GESTURE_ACCRUE_MAX_DT_MS);
+    g.travel += (g.speed / 60000) * dt;
+    g.last = now;
+    g.speed = perAxisSpeed;
+    if (!this._gestureCapEnabled()) return true;
+    var held = now - g.capStarted;
+    if (held < GESTURE_CAP_MIN_MS) return true;
+    var over = g.span != null ? g.travel > g.span * GESTURE_CAP_SPAN_FACTOR : held > GESTURE_CAP_FALLBACK_MS;
+    if (!over) return true;
+    log.warn(
+        "Manual gesture travel cap: " + g.key + " held " + (held / 1000).toFixed(1) + "s, commanded travel " +
+            g.travel.toFixed(2) + (g.span != null ? " vs axis span " + g.span : " (no envelope span; time cap)") +
+            " - stopping and ignoring this heading until the client releases it"
+    );
+    var key = g.key;
+    this.cancelNudges();
+    this.stopMotion("travel_cap");
+    this._gestureLatch = key;
+    return false;
+};
+
+// Close out the live gesture record, logging how it ended. No-op when no
+// gesture is live, so every stop path can call it.
+ManualDriver.prototype._endGesture = function (reason, source) {
+    var g = this._gesture;
+    if (!g) return;
+    this._gesture = null;
+    gestureLog.record({
+        reason: reason || "stop",
+        source: source || null,
+        path: g.path,
+        axis: g.axis,
+        second_axis: g.second_axis,
+        duration_ms: Date.now() - g.started,
+        travel: Math.round(g.travel * 1000) / 1000,
+    });
+};
+
 // Stop all movement
-ManualDriver.prototype.stopMotion = function () {
+//   reason - (optional) how the gesture ended, for the manual-gesture log:
+//            "client:<tag>" from a client stop command, or a server-side tag
+//            (lease_expired, client_disconnected, travel_cap, manual_exit).
+//            Omitted = an ordinary stop.
+//   source - (optional) input surface the client reported (keypad/keyboard/...)
+ManualDriver.prototype.stopMotion = function (reason, source) {
+    this._endGesture(reason, source);
+    // Any stop releases a travel-cap latch: either the client let go, or the
+    // motion is being torn down anyway. (The cap sets its latch AFTER its
+    // own stopMotion call.)
+    this._gestureLatch = null;
     this._invalidateSnapPlanned();
     // Analog (firmware velocity-jog cycle) path: emit jogStop and let the
     // firmware cycle ramp down on its own decel. Don't set stop_pending —
@@ -1402,7 +1582,7 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 log.warn("_renewMoves(): client disconnected during motion - stopping");
                 this.keep_moving = false;
                 this.cancelNudges();
-                this.stopMotion();
+                this.stopMotion("client_disconnected");
                 return;
             }
 
@@ -1590,7 +1770,7 @@ ManualDriver.prototype._renewMoves = function (reason) {
                 log.warn("_renewMoves(): motion lease expired (no client keep-alive) - stopping");
                 this.keep_moving = false;
                 this.cancelNudges();
-                this.stopMotion();
+                this.stopMotion("lease_expired");
                 return;
             }
             if (this.moving && !this.keep_moving) {
@@ -1772,6 +1952,8 @@ ManualDriver.prototype._done = function () {
     this.fixedQueue = [];
     this.moving = false;
     this.keep_moving = false;
+    this._endGesture("manual_exit");
+    this._gestureLatch = null;
     this.stream = null;
     this.entered = false;
     this.exiting = false; // Reset the flag

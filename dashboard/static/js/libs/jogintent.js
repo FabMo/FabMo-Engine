@@ -19,9 +19,13 @@
  *                    refreshInterval while the gesture is held. The server's
  *                    motion lease / the firmware jgv watchdog feed on this —
  *                    if this stream stops for any reason, motion stops.
- *   "stop"           end of continuous motion.
+ *   "stop"           end of continuous motion. Payload {reason}: "release"
+ *                    for a delivered release, otherwise whatever the adapter
+ *                    passed to cancelAll() (blur, lost pointer, ...). The
+ *                    host forwards it so the server can log HOW each gesture
+ *                    ended — the field record of lost release events.
  *   "nudgeCancel"    a fixed-mode hold ended after typematic repeats fired —
- *                    discard the server-side nudge backlog.
+ *                    discard the server-side nudge backlog. Payload {reason}.
  *
  * States: IDLE -> PENDING (tap window, owned by the newest pressed source)
  *              -> CONTINUOUS (tap window expired with the owner still held)
@@ -61,6 +65,7 @@
         this.heartbeat = null;
         this.repeatTimer = null;
         this.repeatCount = 0;
+        this.endReason = "release"; // why the gesture now ending is ending
     }
 
     JogIntent.prototype.setOptions = function (options) {
@@ -163,6 +168,7 @@
     // A source came up.
     JogIntent.prototype.release = function (id) {
         delete this.down[id];
+        this.endReason = "release";
         switch (this.state) {
             case PENDING:
                 if (id === this.owner) {
@@ -196,9 +202,15 @@
     // Hard gesture end for window blur, visibilitychange, modal close,
     // disable. Release events are not coming; clear everything, emitting
     // the stop/cancel the live gesture needs. Safe to call when idle.
-    JogIntent.prototype.cancelAll = function () {
+    //
+    // reason: short tag for WHY (e.g. "window_blur", "buttons_up"); carried
+    // on the stop/nudgeCancel payload. Anything but a plain release() is by
+    // definition a gesture whose release event did not arrive normally.
+    JogIntent.prototype.cancelAll = function (reason) {
         this.down = {};
+        this.endReason = typeof reason === "string" && reason ? reason : "cancel";
         this._enforceIdle();
+        this.endReason = "release";
     };
 
     // True if any gesture state or timer is live.
@@ -264,7 +276,7 @@
             this.heartbeat = null;
         }
         this._toIdle();
-        this.emit("stop", null);
+        this.emit("stop", { reason: this.endReason });
     };
 
     JogIntent.prototype._endFixed = function () {
@@ -277,7 +289,7 @@
         if (fired) {
             // Repeats queued server-side; stop the backlog with the in-flight
             // step. (No "stop" — a feedhold would race the nudge gcode.)
-            this.emit("nudgeCancel", null);
+            this.emit("nudgeCancel", { reason: this.endReason });
         }
     };
 

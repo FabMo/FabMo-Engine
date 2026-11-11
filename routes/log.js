@@ -204,6 +204,17 @@ var getLogBundle = function (req, res, next) {
             });
             zip.addFile("current-log.txt", Buffer.from(log.getLogBuffer() || ""));
             zip.addFile("system-snapshot-now.txt", Buffer.from(snapshotText || "snapshot failed"));
+            // How manual jog gestures have been ending (lost-release
+            // backstops firing); the per-event history is the
+            // manual-gesture-anomalies.log picked up from the log dir above.
+            try {
+                zip.addFile(
+                    "manual-gestures.txt",
+                    Buffer.from(require("../runtime/manual/gesture_log").summary())
+                );
+            } catch (e) {
+                skipped.push("manual-gestures.txt (" + e.message + ")");
+            }
             if (skipped.length) {
                 zip.addFile("bundle-warnings.txt", Buffer.from("Files skipped:\n" + skipped.join("\n")));
             }

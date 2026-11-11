@@ -650,8 +650,15 @@
         this.executeRuntimeCode("manual", { cmd: "maint" });
     };
 
-    FabMoAPI.prototype.manualStop = function (callback) {
-        this.executeRuntimeCode("manual", { cmd: "stop" });
+    // reason/source are optional diagnostic tags (how the gesture ended and
+    // which input surface it came from); the engine records them in its
+    // manual-gesture log. Non-string arguments (legacy callers pass a
+    // callback here) are ignored.
+    FabMoAPI.prototype.manualStop = function (reason, source) {
+        var code = { cmd: "stop" };
+        if (typeof reason === "string") code.reason = reason;
+        if (typeof source === "string") code.source = source;
+        this.executeRuntimeCode("manual", code);
     };
 
     FabMoAPI.prototype.manualQuit = function () {
