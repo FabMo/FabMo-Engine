@@ -5,7 +5,7 @@
   <title>Configuration</title>
   <meta charset="utf-8" />
   <link rel="stylesheet" href="../../css/dashboard.css">
-  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/style.css?v=users2">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
@@ -2590,11 +2590,11 @@
                 </div>
               </div>
             </div>
-            <div class="large-4 columns" id="section-user-isAdmin">
+            <div class="large-4 columns" id="section-user-role">
               <div class="row collapse">
-                <label data-i18n="config.users_tab.admin_permission">Admin permission</label>
-                <div class="small-1 columns">
-                  <input type="checkbox" id="user-isAdmin" disabled/>
+                <label data-i18n="config.users_tab.role">Role</label>
+                <div class="small-12 columns">
+                  <input type="text" id="user-role" class="input" disabled/>
                 </div>
               </div>
             </div>
@@ -2629,14 +2629,14 @@
         <div class="row hidden" id="user-manager-container">
           <fieldset>
             <legend data-i18n="config.users_tab.user_management">User Management</legend>
+            <p style="margin: 0.3rem 0 0.6rem 0.3rem; font-size: 0.85rem; color: #555;" data-i18n="config.users_tab.role_hint">Admins manage the machine and its users. Users get the full dashboard. Operators get only the Console app and the manual keypad &mdash; all settings are locked.</p>
             <div class="large-4 columns" id="section-user-manager">
               <table id="usermanager-table">
                 <thead>
                   <tr>
                     <th class="small-2" data-i18n="config.users_tab.username">Username</th>
-                    <th class="small-1" data-i18n="config.users_tab.admin">Admin</th>
+                    <th class="small-2" data-i18n="config.users_tab.role">Role</th>
                     <th class="small-2" data-i18n="config.users_tab.created">Created</th>
-                    <th class="small-1"></th>
                     <th class="small-1"></th>
                     <th class="small-1"></th>
                   </tr>

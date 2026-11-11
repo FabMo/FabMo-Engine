@@ -2307,6 +2307,19 @@ function runCommand(cmd) {
 }
 
 $(document).ready(function () {
+    // Operator accounts: hide every settings entry point (the gear buttons,
+    // layout editing, custom-macro add). The server refuses the config
+    // writes behind these regardless — this keeps the temptation off the
+    // screen. The dashboard shell separately pins operators to this app.
+    fabmo.getCurrentUser(function (err, user) {
+        if (!err && user && user.role === "operator") {
+            $(
+                "#btn-app-settings, #btn-machine-settings, #btn-shortcut-settings," +
+                    " #btn-tool-settings, #btn-edit-layout, #btn-add-macro"
+            ).hide();
+            $("body").addClass("operator-mode");
+        }
+    });
     refreshConfig();
     refreshJobs();
     refreshApps();

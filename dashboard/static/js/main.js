@@ -64,10 +64,34 @@ var supportsTouch = "ontouchstart" in window || navigator.msMaxTouchPoints;
 
 // Initial read of engine configuration
 
+// Operator accounts get a locked-down shell: only the Console app and the
+// manual keypad. The menu entries below are hidden for operators — and the
+// server refuses every settings-changing route for their session, so this
+// is presentation on top of real enforcement, not the enforcement itself.
+var OPERATOR_HIDDEN_MENU = [
+    '#left-menu a[href="#/app/job-manager"]',
+    '#left-menu a[href="#/app/editor"]',
+    '#left-menu a[href="#/app/macros"]',
+    '#left-menu a[href="#/app/apps"]',
+    '#left-menu a[href="#/app/video"]',
+    '#left-menu a[href="#/app/config"]',
+    "#left-menu #icon_calculator",
+].join(",");
+
+function applyUserRole(user) {
+    var role = user ? user.role || (user.isAdmin ? "admin" : "user") : null;
+    window.fabmoUserRole = role;
+    var operator = role === "operator";
+    $("body").toggleClass("operator-mode", operator);
+    $(OPERATOR_HIDDEN_MENU).closest("li").toggle(!operator);
+}
+
 // check user
 engine.getCurrentUser(function (err, user) {
     if (user === undefined) {
         window.location.href = "#/authentication";
+    } else {
+        applyUserRole(user);
     }
 });
 
@@ -397,7 +421,8 @@ function checkAuthenticationStatus(forceCheck = false) {
         
         if (err || user === undefined || user === null) {
             // console.log("DEBUG: User not authenticated, showing login");
-            
+            applyUserRole(null);
+
             // Clear any cached authentication state
             sessionStorage.removeItem('fabmo_authenticated');
             localStorage.removeItem('fabmo_authenticated');
@@ -412,6 +437,7 @@ function checkAuthenticationStatus(forceCheck = false) {
             }
         } else {
             // console.log("DEBUG: User authenticated:", user.username);
+            applyUserRole(user);
             sessionStorage.setItem('fabmo_authenticated', 'true');
         }
     });

@@ -27,6 +27,22 @@ var profiles = require("../profiles");
 var DEFAULT_ADMIN_PASSWORD = "go2fabmo";
 var DEFAULT_ADMIN_USER = "admin";
 
+// User roles:
+//   admin    - full access, may manage users
+//   user     - normal dashboard access (the legacy non-admin account)
+//   operator - restricted to the Console app and the manual keypad; all
+//              settings-changing routes are refused server-side
+// Stored per-user as `role`; records predating the field normalize from
+// isAdmin, and isAdmin is kept in sync (role === "admin") for back-compat.
+var ROLES = ["admin", "user", "operator"];
+
+function normalizeRole(record) {
+    if (record && ROLES.indexOf(record.role) !== -1) {
+        return record.role;
+    }
+    return record && record.isAdmin ? "admin" : "user";
+}
+
 var UserConfig = function (driver) {
     Config.call(this, "user");
 };
@@ -87,11 +103,15 @@ UserConfig.prototype.initUsers = function (data, callback) {
 //      and capitalization makes it seem like this is a constructor (which it kind of is, but isn't)
 //      isAdmin - boolean, true for user is an admin user
 //   created_at - Datetime for creation.  (Default = Date.now())
-UserConfig.prototype.User = function (username, password, isAdmin, created_at) {
+UserConfig.prototype.User = function (username, password, isAdmin, created_at, role) {
+    if (ROLES.indexOf(role) === -1) {
+        role = isAdmin ? "admin" : "user";
+    }
     var obj = {};
     obj[username] = {
         password: password,
-        isAdmin: isAdmin || false,
+        isAdmin: role === "admin",
+        role: role,
         created_at: created_at || Date.now(),
     };
     return obj;
@@ -193,7 +213,7 @@ UserConfig.prototype.revokeAdmin = function (username, callback) {
 //   username - The name of the user to add
 //   password - The password for the new user
 //   callback - Called with the new user object, or error if there was an error
-UserConfig.prototype.add = function (username, password, callback) {
+UserConfig.prototype.add = function (username, password, callback, role) {
     // The first new user that is created causes this function to be
     // called with two empty strings as username and password. Guard against that.
     if (username == "" && password == "") {
@@ -220,7 +240,7 @@ UserConfig.prototype.add = function (username, password, callback) {
                 callback("Username already taken !", null);
                 return;
             } else {
-                var newUser = this.User(username, pass_shasum);
+                var newUser = this.User(username, pass_shasum, false, null, role);
                 this.update(
                     newUser,
                     function (err, data) {
@@ -260,3 +280,5 @@ UserConfig.prototype.getAll = function (callback) {
 };
 
 exports.UserConfig = UserConfig;
+exports.ROLES = ROLES;
+exports.normalizeRole = normalizeRole;
