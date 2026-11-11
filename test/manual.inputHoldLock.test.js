@@ -106,6 +106,72 @@ describe("input-forced feedhold in the manual runtime", () => {
     });
 });
 
+// The real status sequence of a keypad stop, through the REAL helper: G2
+// reports stat:6 more than once while it decelerates, and the helper clears
+// stop_pending on the first of them. The reports that follow must still be
+// attributed to our own stop — otherwise an ordinary jog stop (most visibly
+// when reversing direction at speed) pops the input-hold Resume/Quit dialog.
+describe("our own keypad stop is never mistaken for an input-forced hold", () => {
+    function makeLive() {
+        var drv = makeG2();
+        var machine = makeMachine(drv);
+        var rt = new ManualRuntime();
+        rt.connect(machine);
+        rt.helper = new ManualDriver(drv, { write: jest.fn() });
+        return { rt: rt, machine: machine, drv: drv, md: rt.helper };
+    }
+    function report(t, stat) {
+        t.drv.status.stat = stat;
+        t.drv.emit("status", { stat: stat, inFeedHold: stat === 6 });
+    }
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        global.CLIENT_DISCONNECTED = false;
+    });
+    afterEach(() => {
+        jest.clearAllTimers();
+        jest.useRealTimers();
+    });
+
+    test("repeated stat:6 reports during our stop do not leave the manual state", () => {
+        var t = makeLive();
+        t.md.startMotion("X", 144);
+        report(t, 5);
+        t.md.stopMotion();
+        report(t, 6); // helper clears stop_pending here
+        expect(t.md.stop_pending).toBe(false);
+        report(t, 6); // ...and G2 is still decelerating
+        report(t, 6);
+        expect(t.machine.setState).not.toHaveBeenCalledWith(t.rt, "paused");
+        report(t, 3);
+        expect(t.machine.setState).not.toHaveBeenCalledWith(t.rt, "paused");
+    });
+
+    test("an input hold after our stop has completed is still caught", () => {
+        var t = makeLive();
+        t.md.startMotion("X", 144);
+        report(t, 5);
+        t.md.stopMotion();
+        report(t, 6);
+        report(t, 3); // our stop dance is over
+        report(t, 6); // a stop input trips right afterwards
+        expect(t.machine.setState).toHaveBeenCalledWith(t.rt, "paused");
+    });
+
+    test("a hold that outlives the stop dance is handed to the input-hold path", () => {
+        var t = makeLive();
+        t.md.startMotion("X", 144);
+        report(t, 5);
+        t.md.stopMotion();
+        report(t, 6);
+        jest.advanceTimersByTime(1500);
+        jest.setSystemTime(Date.now() + 3000);
+        report(t, 6);
+        expect(t.machine.setState).toHaveBeenCalledWith(t.rt, "paused");
+    });
+});
+
 describe("ManualDriver.exit() during an input-forced hold", () => {
     beforeEach(() => {
         jest.useFakeTimers();

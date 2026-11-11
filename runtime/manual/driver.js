@@ -55,6 +55,11 @@ var NUDGE_QUEUE_TTL = 3000;
 // the cycle exists. Clients heartbeat at ~50ms, so 500ms of host silence is
 // decisively "nobody is driving". Mirrors the firmware default on purpose.
 var JGV_WATCHDOG_MS = 500;
+// How long after our own stop (feedhold + flush) a G2 hold is still presumed
+// to be OURS. stop_pending alone can't answer that: the status handler clears
+// it on the FIRST stat:6 report, but G2 sends several while it decelerates,
+// and the flush that ends the hold lands after them. See holdIsOurs().
+var OWN_HOLD_WINDOW_MS = 3000;
 
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
@@ -283,7 +288,7 @@ ManualDriver.prototype.exit = function () {
         // themselves — their flush is already in flight — and a pending quit
         // (\x04) supersedes all of this.
         if (
-            !this.stop_pending &&
+            !this.holdIsOurs() &&
             !this.driver.quit_pending &&
             (this.driver.pause_flag || this.driver.status.stat === this.driver.STAT_HOLDING)
         ) {
@@ -691,6 +696,21 @@ ManualDriver.prototype.maintainMotion = function () {
     }
 };
 
+// True while a G2 feedhold should be attributed to our own stop dance rather
+// than to an input (stop/limit/driver fault) tripping. The stop dance is
+// feedhold -> one or more stat:6 reports while G2 decelerates -> flush ->
+// stat:3. stop_pending covers only the stretch up to the first stat:6 report
+// (the status handler clears it there), so the reports that follow looked
+// like a hold nobody asked for — and a plain keypad stop, most often when
+// reversing direction at speed, popped the input-hold Resume/Quit dialog.
+// The stamp set in stopMotion() covers the whole dance; it is cleared when
+// the cycle parks (stat:3/4) and expires on its own so a hold that outlives
+// the dance is still handed to the input-hold path.
+ManualDriver.prototype.holdIsOurs = function () {
+    if (this.stop_pending) return true;
+    return !!this._ownHoldAt && Date.now() - this._ownHoldAt < OWN_HOLD_WINDOW_MS;
+};
+
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
     this._invalidateSnapPlanned();
@@ -709,6 +729,7 @@ ManualDriver.prototype.stopMotion = function () {
     }
 
     // Legacy (cardinal/keypad) path: feedhold + queue flush.
+    this._ownHoldAt = Date.now();
     this.stop_pending = true;
     this.keep_moving = false;
     this.plannedPos = {};
@@ -1637,6 +1658,9 @@ ManualDriver.prototype._onG2Status = function (status) {
             this.stop_pending = false;
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
+            // The cycle has parked: any stop dance of ours is over, so a
+            // hold from here on is not ours (see holdIsOurs).
+            this._ownHoldAt = 0;
             // A goto is over once the cycle stops or ends (its trailing M0
             // parks at stat:3), so the goto-context flag must die with it.
             // It must NOT be cleared on STAT_HOLDING — a feedhold mid-goto

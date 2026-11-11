@@ -304,7 +304,10 @@ ManualRuntime.prototype._onG2Status = function (status) {
     } else if (
         status.inFeedHold === true &&
         this.helper &&
-        !this.helper.stop_pending &&
+        // Not a hold from our own stop dance. holdIsOurs() rather than bare
+        // stop_pending: stop_pending is cleared on the first stat:6 report,
+        // and G2 sends more of them while it decelerates.
+        !(typeof this.helper.holdIsOurs === "function" ? this.helper.holdIsOurs() : this.helper.stop_pending) &&
         this.machine.status.state === "manual"
     ) {
         // A feedhold we didn't initiate: a stop/limit/driver-fault input
