@@ -55,6 +55,11 @@ var NUDGE_QUEUE_TTL = 3000;
 // the cycle exists. Clients heartbeat at ~50ms, so 500ms of host silence is
 // decisively "nobody is driving". Mirrors the firmware default on purpose.
 var JGV_WATCHDOG_MS = 500;
+// How long after our own stop (feedhold + flush) a G2 hold is still presumed
+// to be OURS. stop_pending alone can't answer that: the status handler clears
+// it on the FIRST stat:6 report, but G2 sends several while it decelerates,
+// and the flush that ends the hold lands after them. See holdIsOurs().
+var OWN_HOLD_WINDOW_MS = 3000;
 
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
@@ -257,9 +262,45 @@ ManualDriver.prototype.exit = function () {
             if (this.driver.status.stat === this.driver.STAT_STOP) {
                 log.warn("Machining cycle still at stat:3 - re-sending M30 directly");
                 this.driver._write("M30\n");
+            } else if (this.driver.status.stat === this.driver.STAT_HOLDING) {
+                // An input-forced hold is pinning the cycle (any M30 from a
+                // previous exit is parked behind it). End the hold: the flush
+                // parks the cycle at stat:3, and the watchdog restarted here
+                // re-sends the M30 there.
+                log.warn("Machining cycle holding during manual exit - flushing the hold");
+                if (typeof this.driver.discardStreamBacklog === "function") {
+                    this.driver.discardStreamBacklog();
+                }
+                this.driver._write("%\n");
+                this._startExitWatchdog();
             }
             this._done();
             return;
+        }
+
+        // An input-forced feedhold (a stop/limit input tripped while the
+        // keypad was up) pauses the cycle stream: every line written below —
+        // the M30 included — would just buffer there and the cycle would never
+        // end, leaving the machine stuck in the manual state. End the hold
+        // first: discard any motion parked in the stream, then flush. The
+        // flush parks the cycle at stat:3, the stream resumes, and the exit
+        // lines flow. Holds from our own stop dance (stop_pending) resolve
+        // themselves — their flush is already in flight — and a pending quit
+        // (\x04) supersedes all of this.
+        if (
+            !this.holdIsOurs() &&
+            !this.driver.quit_pending &&
+            (this.driver.pause_flag || this.driver.status.stat === this.driver.STAT_HOLDING)
+        ) {
+            log.warn("Manual exit requested while G2 is holding - flushing the hold so the exit can land");
+            if (typeof this.driver.discardStreamBacklog === "function") {
+                this.driver.discardStreamBacklog();
+            }
+            this.driver.queueFlush(
+                function () {
+                    this.driver._write("%\n"); // Will send flush as callback
+                }.bind(this)
+            );
         }
 
         switch (this.mode) {
@@ -655,6 +696,21 @@ ManualDriver.prototype.maintainMotion = function () {
     }
 };
 
+// True while a G2 feedhold should be attributed to our own stop dance rather
+// than to an input (stop/limit/driver fault) tripping. The stop dance is
+// feedhold -> one or more stat:6 reports while G2 decelerates -> flush ->
+// stat:3. stop_pending covers only the stretch up to the first stat:6 report
+// (the status handler clears it there), so the reports that follow looked
+// like a hold nobody asked for — and a plain keypad stop, most often when
+// reversing direction at speed, popped the input-hold Resume/Quit dialog.
+// The stamp set in stopMotion() covers the whole dance; it is cleared when
+// the cycle parks (stat:3/4) and expires on its own so a hold that outlives
+// the dance is still handed to the input-hold path.
+ManualDriver.prototype.holdIsOurs = function () {
+    if (this.stop_pending) return true;
+    return !!this._ownHoldAt && Date.now() - this._ownHoldAt < OWN_HOLD_WINDOW_MS;
+};
+
 // Stop all movement
 ManualDriver.prototype.stopMotion = function () {
     this._invalidateSnapPlanned();
@@ -673,6 +729,7 @@ ManualDriver.prototype.stopMotion = function () {
     }
 
     // Legacy (cardinal/keypad) path: feedhold + queue flush.
+    this._ownHoldAt = Date.now();
     this.stop_pending = true;
     this.keep_moving = false;
     this.plannedPos = {};
@@ -1601,6 +1658,9 @@ ManualDriver.prototype._onG2Status = function (status) {
             this.stop_pending = false;
         // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
+            // The cycle has parked: any stop dance of ours is over, so a
+            // hold from here on is not ours (see holdIsOurs).
+            this._ownHoldAt = 0;
             // A goto is over once the cycle stops or ends (its trailing M0
             // parks at stat:3), so the goto-context flag must die with it.
             // It must NOT be cleared on STAT_HOLDING — a feedhold mid-goto
@@ -1682,6 +1742,17 @@ ManualDriver.prototype._startExitWatchdog = function () {
                 "Manual exit watchdog: cycle did not end (stat=" + stat + ") - re-sending M30 (attempt " + checks + ")"
             );
             driver._write("M30\n");
+        } else if (stat === driver.STAT_HOLDING) {
+            // An input-forced hold is pinning the cycle — and the parked M30
+            // with it; a directly-written M30 wouldn't execute either. Flush
+            // the hold (discarding any motion parked in the stream so it
+            // can't replay) — the cycle parks at stat:3 and the next check
+            // re-sends the M30 there.
+            log.warn("Manual exit watchdog: cycle is holding (input feedhold?) - flushing the hold (attempt " + checks + ")");
+            if (typeof driver.discardStreamBacklog === "function") {
+                driver.discardStreamBacklog();
+            }
+            driver._write("%\n");
         }
         timer = setTimeout(check, EXIT_WATCHDOG_INTERVAL);
     };

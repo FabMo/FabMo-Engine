@@ -301,6 +301,26 @@ ManualRuntime.prototype._onG2Status = function (status) {
             log.debug("Feedhold detected in goto mode");
             this.machine.setState(this, "paused");
         }
+    } else if (
+        status.inFeedHold === true &&
+        this.helper &&
+        // Not a hold from our own stop dance. holdIsOurs() rather than bare
+        // stop_pending: stop_pending is cleared on the first stat:6 report,
+        // and G2 sends more of them while it decelerates.
+        !(typeof this.helper.holdIsOurs === "function" ? this.helper.holdIsOurs() : this.helper.stop_pending) &&
+        this.machine.status.state === "manual"
+    ) {
+        // A feedhold we didn't initiate: a stop/limit/driver-fault input
+        // tripped while the keypad was up. G2 stays held until a resume or
+        // flush, and the hold pauses the cycle stream, so anything written to
+        // it (including exit's M30) just buffers — left in the manual state
+        // the keypad could never be dismissed. Hand the hold to setState,
+        // which re-classifies "paused" through the interlock table
+        // (lock/limit/driverFault) and puts up the standard dialog with a
+        // working Resume/Quit. Holds we initiated (stop_pending) and goto
+        // holds (above) keep their existing handling.
+        log.warn("Input-forced feedhold detected in manual mode - leaving the manual state");
+        this.machine.setState(this, "paused");
     }
     // Update machine status further because of inconsistent list match
     this.machine.status.currentCmd = currentCmd;
