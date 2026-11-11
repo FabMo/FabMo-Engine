@@ -185,22 +185,22 @@
         // losing the window is a hard gesture end, delivered while the
         // socket can still flush the stop. The server motion lease (and the
         // firmware jgv watchdog) backstop this if the send doesn't make it.
-        $(window).on("blur", this._onFocusLost.bind(this));
+        $(window).on("blur", this._onFocusLost.bind(this, "window_blur"));
         document.addEventListener(
             "visibilitychange",
             function () {
-                if (document.hidden) this._onFocusLost();
+                if (document.hidden) this._onFocusLost("tab_hidden");
             }.bind(this)
         );
-        window.addEventListener("pagehide", this._onFocusLost.bind(this));
+        window.addEventListener("pagehide", this._onFocusLost.bind(this, "pagehide"));
     };
 
-    Keyboard.prototype._onFocusLost = function () {
+    Keyboard.prototype._onFocusLost = function (reason) {
         if (this.intent.isActive()) {
             console.warn("Keyboard: window lost focus mid-gesture - forcing stop");
         }
         this._clearPendingReleases();
-        this.intent.cancelAll();
+        this.intent.cancelAll(typeof reason === "string" ? reason : "focus_lost");
         this._styleClear();
     };
 
@@ -237,7 +237,7 @@
             // Disabling mid-gesture must end the gesture properly (emitting
             // the stop/cancel the server needs), not just drop local state.
             this._clearPendingReleases();
-            this.intent.cancelAll();
+            this.intent.cancelAll("keyboard_disabled");
             this._styleClear();
         }
     };
@@ -245,7 +245,7 @@
     // Hard stop, for the host (modal close paths in main.js).
     Keyboard.prototype.stop = function () {
         this._clearPendingReleases();
-        this.intent.cancelAll();
+        this.intent.cancelAll("host_stop");
         this._styleClear();
     };
 

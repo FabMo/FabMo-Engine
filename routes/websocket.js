@@ -4,6 +4,7 @@ var log = require("../log").logger("websocket");
 var authentication = require("../authentication");
 var sessions = require("client-sessions");
 var parseCookie = require("./util").parseCookie;
+var gestureLog = require("../runtime/manual/gesture_log");
 var server = null;
 
 // eslint-disable-next-line no-unused-vars
@@ -187,6 +188,11 @@ var onPrivateConnect = function (socket) {
         } // make sure that if the user logout, he can't talk through the socket anymore.
         if ("rt" in data) {
             try {
+                if (data.rt === "manual") {
+                    // Who is driving — lets an abnormal gesture ending in
+                    // the manual-gesture log name the browser it came from.
+                    gestureLog.noteClient(handshakeData.headers["user-agent"], client_address);
+                }
                 machine.executeRuntimeCode(data.rt, data.data);
             } catch (e) {
                 log.error(e);

@@ -7,6 +7,7 @@
 var log = require("../../log").logger("manual");
 var stream = require("stream");
 var ManualDriver = require("./driver");
+var gestureLog = require("./gesture_log");
 
 // TODO - member of the instance rather than global to this file?!
 var currentCmd;
@@ -194,7 +195,9 @@ ManualRuntime.prototype.executeCode = function (code) {
                     break;
 
                 case "stop":
-                    this.helper.stopMotion();
+                    // reason/source: optional diagnostic tags from the
+                    // dashboard (how the gesture ended, which input surface).
+                    this.helper.stopMotion(gestureLog.clientReason(code.reason), gestureLog.cleanSource(code.source));
                     break;
 
                 case "softLimitOverride":

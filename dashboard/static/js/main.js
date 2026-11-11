@@ -792,7 +792,7 @@ engine.getVersion(function (err, version) {
                     // refresh keep-alive) — the server has left manual mode,
                     // so anything still ticking here is orphaned.
                     if (typeof keypad !== "undefined" && keypad && keypad.forceStop) {
-                        keypad.forceStop();
+                        keypad.forceStop("left_manual_state");
                     }
                     if (keyboard && (keyboard.going || keyboard.interval)) {
                         keyboard.stop();
@@ -2086,7 +2086,7 @@ function setupVirtualJoystick(state) {
         var ips = (typeof getManualMoveSpeed === "function" ? getManualMoveSpeed({ axis: "x" }) : null) || 0.1;
         var speed = 60.0 * ips;
         if (currentX === 0 && currentY === 0) {
-            dashboard.engine.manualStop();
+            dashboard.engine.manualStop("release", "joystick");
             return;
         }
         // Always emit X primary, Y secondary (matches F310 — keeps the axis
@@ -2114,11 +2114,21 @@ function setupVirtualJoystick(state) {
     function moveDrag(evt) {
         if (activePointerId === null) return;
         if (evt.pointerId != null && evt.pointerId !== activePointerId) return;
+        // Lost-release backstop: the dragging pointer is moving with no
+        // button down, so its pointerup never reached us. Stop now — the
+        // tick loop would otherwise keep heartbeating a live vector.
+        if (evt.buttons === 0) {
+            console.warn("Joystick: pointer moving with no button down mid-drag - release was lost, stopping");
+            stopDrag(evt, false, "buttons_up");
+            return;
+        }
         if (evt.preventDefault) evt.preventDefault();
         setRatiosFromEvent(evt);
     }
 
-    function stopDrag(evt, silent) {
+    // reason: how the drag ended, for the engine's manual-gesture log
+    // ("release" for a delivered pointerup; anything else is a backstop).
+    function stopDrag(evt, silent, reason) {
         if (activePointerId === null) return;
         if (evt && evt.pointerId != null && evt.pointerId !== activePointerId) return;
         if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
@@ -2133,7 +2143,7 @@ function setupVirtualJoystick(state) {
         dot.setAttribute("cx", "0");
         dot.setAttribute("cy", "0");
         dot.classList.remove("active");
-        if (!silent) dashboard.engine.manualStop();
+        if (!silent) dashboard.engine.manualStop(typeof reason === "string" ? reason : "release", "joystick");
         // Defer clearing the dragging flag so the next inbound pendant
         // update doesn't race the snap-to-center.
         setTimeout(function () { state.dragging = false; }, 100);
@@ -2141,11 +2151,14 @@ function setupVirtualJoystick(state) {
 
     indicator.addEventListener("pointerdown", startDrag);
     indicator.addEventListener("pointermove", moveDrag);
-    indicator.addEventListener("pointerup", stopDrag);
-    indicator.addEventListener("pointercancel", stopDrag);
+    indicator.addEventListener("pointerup", function (evt) { stopDrag(evt); });
+    indicator.addEventListener("pointercancel", function (evt) { stopDrag(evt, false, "pointercancel"); });
+    // Capture taken away (element hidden, another capture, OS gesture): no
+    // further events for this pointer will reach the indicator.
+    indicator.addEventListener("lostpointercapture", function (evt) { stopDrag(evt, false, "lost_pointer_capture"); });
     // Belt-and-braces for the rare case the pointer is released without an
     // event reaching us (e.g. context menu interception).
-    window.addEventListener("blur", function () { stopDrag(null); });
+    window.addEventListener("blur", function () { stopDrag(null, false, "window_blur"); });
 }
 
 function setupKeyboard() {
@@ -2172,7 +2185,7 @@ function setupKeyboard() {
     });
 
     keyboard.on("stop", function (evt) {
-        dashboard.engine.manualStop();
+        dashboard.engine.manualStop((evt && evt.reason) || "release", "keyboard");
     });
 
     keyboard.on("nudgeCancel", function () {
@@ -2291,7 +2304,7 @@ function setupKeypad() {
 
     keypad.on("stop", function (evt) {
         keyPressed = false;
-        dashboard.engine.manualStop();
+        dashboard.engine.manualStop((evt && evt.reason) || "release", "keypad");
     });
 
     keypad.on("nudgeCancel", function () {

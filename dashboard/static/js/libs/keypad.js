@@ -59,6 +59,11 @@
         this.currentTouchElement = null;
         this.slideOffDetected = false;
         this.nudgeExecuted = false; // dedupe between Hammer press and tap for one gesture
+        // Lost-release backstops (see _initPointerBackstops): the pointer that
+        // last went down on a drive button, and a per-gesture sequence number
+        // so a deferred check can tell "this gesture" from the next one.
+        this._pointerId = null;
+        this._gestureSeq = 0;
 
         // The one gesture state machine. tapWindow 0: Hammer already decided
         // tap vs hold by the time we call press().
@@ -76,9 +81,9 @@
         );
         this.intent.on(
             "stop",
-            function () {
+            function (evt) {
                 this._styleClear();
-                this.emit("stop", null);
+                this.emit("stop", evt);
             }.bind(this)
         );
         this.intent.on(
@@ -89,8 +94,8 @@
         );
         this.intent.on(
             "nudgeCancel",
-            function () {
-                this.emit("nudgeCancel", null);
+            function (evt) {
+                this.emit("nudgeCancel", evt);
             }.bind(this)
         );
 
@@ -162,8 +167,17 @@
                         // coming to this element, so end the gesture here —
                         // continuous or fixed hold alike.
                         if (this.going || this.target) {
-                            this.forceStop();
+                            this.forceStop("pan_off");
                         }
+                    }.bind(this)
+                );
+
+                // Remember which pointer is doing the pressing, for the
+                // window-level lost-release backstops.
+                element.addEventListener(
+                    "pointerdown",
+                    function (evt) {
+                        this._pointerId = evt.pointerId;
                     }.bind(this)
                 );
 
@@ -225,7 +239,7 @@
                         if (this.isExitButtonEvent(evt)) return;
                         this.nudgeExecuted = false; // Reset for next gesture
                         if ((this.going || this.target) && !this.slideOffDetected) {
-                            this.forceStop();
+                            this.forceStop("touchcancel");
                         }
                         this.slideOffDetected = false;
                     }.bind(this)
@@ -245,17 +259,75 @@
         // forever from a backgrounded tab. Losing the window or tab is a hard
         // gesture end; forceStop (not end) because the guardAgainstExitButton
         // swallow must not apply to focus loss.
-        $(window).on("blur", this.forceStop.bind(this));
+        $(window).on("blur", this.forceStop.bind(this, "window_blur"));
         document.addEventListener(
             "visibilitychange",
             function () {
-                if (document.hidden) this.forceStop();
+                if (document.hidden) this.forceStop("tab_hidden");
             }.bind(this)
         );
         // Window/tab closing (alt+F4, ctrl+W): fire the stop while the
         // socket can still flush it. The server's motion lease is the
         // backstop if this send doesn't make it out.
-        window.addEventListener("pagehide", this.forceStop.bind(this));
+        window.addEventListener("pagehide", this.forceStop.bind(this, "pagehide"));
+
+        this._initPointerBackstops();
+    };
+
+    // Lost-release backstops for the case nothing above catches: the release
+    // goes missing while the window stays focused and healthy, so the
+    // heartbeat keeps flowing and the server lease / firmware watchdog both
+    // see a live operator. Two independent pieces of evidence that the
+    // pointer is NOT down any more, both read at the window (capture phase,
+    // so no element handler can hide them):
+    //
+    //  1. A pointermove from the pressing pointer reporting NO buttons down
+    //     (evt.buttons === 0). The release happened and we never heard —
+    //     stop now.
+    //  2. The pressing pointer's pointerup / pointercancel arriving anywhere
+    //     in the window. The normal path (Hammer pressup / touchend -> end())
+    //     runs in this same dispatch; the check is deferred one tick and
+    //     only acts if the gesture is STILL live, i.e. the normal path
+    //     missed it or swallowed it (guardAgainstExitButton).
+    //
+    // Deliberately NOT setPointerCapture: capture suppresses mouseleave, and
+    // "slide off the button = stop" is a safety behavior we keep.
+    Keypad.prototype._initPointerBackstops = function () {
+        if (typeof window === "undefined" || !window.addEventListener) return;
+
+        var isPressingPointer = function (evt) {
+            return this._pointerId == null || evt.pointerId === this._pointerId;
+        }.bind(this);
+
+        window.addEventListener(
+            "pointermove",
+            function (evt) {
+                if (!this.intent.isActive()) return;
+                if (evt.buttons === 0 && isPressingPointer(evt)) {
+                    console.warn("Keypad: pointer moving with no button down mid-gesture - release was lost, stopping");
+                    this.forceStop("buttons_up");
+                }
+            }.bind(this),
+            true
+        );
+
+        var deferredCheck = function (reason) {
+            return function (evt) {
+                if (!this.intent.isActive() || !isPressingPointer(evt)) return;
+                var seq = this._gestureSeq;
+                setTimeout(
+                    function () {
+                        if (this._gestureSeq === seq && this.intent.isActive()) {
+                            console.warn("Keypad: " + reason + " seen but gesture still live - stopping");
+                            this.forceStop(reason);
+                        }
+                    }.bind(this),
+                    0
+                );
+            }.bind(this);
+        }.bind(this);
+        window.addEventListener("pointerup", deferredCheck("pointerup_backstop"), true);
+        window.addEventListener("pointercancel", deferredCheck("pointercancel_backstop"), true);
     };
 
     // Unconditional gesture end for focus-loss and exit paths. Unlike end(),
@@ -263,12 +335,16 @@
     // gesture is live (window blur happens constantly in normal use). The
     // intent machine emits the stop (continuous) or nudgeCancel (fixed hold
     // with repeats) the live gesture needs.
-    Keypad.prototype.forceStop = function () {
+    //
+    // reason: short tag recorded with the stop (server gesture log). Callers
+    // that are bound straight to DOM events must pass it explicitly — the
+    // event object arriving as the first argument is ignored.
+    Keypad.prototype.forceStop = function (reason) {
         this.target = null;
         this.targetId = null;
         this.enabled = false;
         this.nudgeExecuted = false;
-        this.intent.cancelAll();
+        this.intent.cancelAll(typeof reason === "string" ? reason : "force_stop");
         this._styleClear();
     };
 
@@ -277,9 +353,9 @@
     // "make sure the server is not moving", even from idle.
     Keypad.prototype.stop = function () {
         var wasContinuous = this.intent.isContinuous();
-        this.forceStop();
+        this.forceStop("host_stop");
         if (!wasContinuous) {
-            this.emit("stop", null);
+            this.emit("stop", { reason: "host_stop" });
         }
     };
 
@@ -437,9 +513,10 @@
         // button-to-button roll) switches to the new button: end the old
         // gesture properly first.
         if (this.intent.isActive()) {
-            this.intent.cancelAll();
+            this.intent.cancelAll("new_press");
             this._styleClear();
         }
+        this._gestureSeq += 1;
 
         var fixed = e.hasClass("drive-button-fixed");
         var move = fixed ? this.nudgeMoveFor(e) : this.startMoveFor(e);
@@ -515,7 +592,7 @@
             // hold whose repeats queued a backlog).
             this.intent.release(id);
         } else {
-            this.intent.cancelAll();
+            this.intent.cancelAll("release_untracked");
         }
         this._styleClear();
     };
@@ -536,7 +613,7 @@
         // to this element.
         if (this.going || this.target) {
             console.log("Keypad: Mouse left button mid-gesture - forcing stop");
-            this.forceStop();
+            this.forceStop("mouse_slide_off");
         } else {
             this.nudgeExecuted = false; // Reset for next gesture
         }
