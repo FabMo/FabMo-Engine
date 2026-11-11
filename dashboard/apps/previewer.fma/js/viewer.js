@@ -248,7 +248,6 @@ module.exports = function(container) {
     self.refresh();
     if (self.ar && (self.ar.enabled || self.ar.overhead)) {
       if (self._syncAROverlayDims) self._syncAROverlayDims();
-      if (typeof _renderCalHandles === 'function' && self.ar.calibrating) _renderCalHandles();
       // While entering or animating AR/overhead, skip camera setup so
       // the in-flight transition can interpolate from / to the right
       // poses without being snapped to ortho or AR each resize tick.
@@ -2568,22 +2567,8 @@ module.exports = function(container) {
       self.renderer.domElement.style.transformOrigin = '';
   }
 
-  function _saveCalibration() {
-      if (!window.fabmo || !self.ar.corners) return;
-      window.fabmo.setConfig({
-          machine: { cameraCalibration: {
-              corners: self.ar.corners,
-              // Barrel-correction edge midpoints; only user-placed handles
-              // are stored (null = straight edges, pre-existing behavior).
-              edges: self.ar.edges || null,
-              port: self.ar.cameraPort || 0,
-              savedAt: Date.now(),
-              calibrated: true,
-          }}
-      }, function (err) {
-          if (err) console.warn('AR calibration save failed:', err);
-      });
-  }
+  // Calibration is authored in the Camera app now (single source of truth
+  // for machine.cameraCalibration); this module only consumes it.
 
   function _loadCalibration(config) {
       var cal = config && config.machine && config.machine.cameraCalibration;
@@ -2596,259 +2581,19 @@ module.exports = function(container) {
   }
   self.loadARCalibration = _loadCalibration;
 
-  // Keep untouched edge handles glued to their projective (no-bow) default
-  // as the corners move; touched ones stay where the user put them.
-  function _refreshUntouchedEdgeDefaults() {
-      if (!self.ar._draftCorners) return;
-      var defaults = _projectiveEdgeDefaults(self.ar._draftCorners);
-      if (!defaults) return;
-      if (!self.ar._draftEdges) self.ar._draftEdges = {};
-      EDGE_KEYS.forEach(function (k) {
-          if (!self.ar._edgeTouched || !self.ar._edgeTouched[k]) {
-              self.ar._draftEdges[k] = defaults[k];
-          }
-      });
-  }
-
-  function _renderCalHandles() {
-      if (!self.ar._draftCorners) return;
-      var size = _previewSize();
-      _refreshUntouchedEdgeDefaults();
-      ['tl', 'tr', 'br', 'bl'].forEach(function (k) {
-          var p = self.ar._draftCorners[k];
-          container.find('.ar-cal-handle[data-corner="' + k + '"]').css({
-              left: (p.x * size.w) + 'px',
-              top:  (p.y * size.h) + 'px',
-          });
-      });
-      EDGE_KEYS.forEach(function (k) {
-          var p = self.ar._draftEdges && self.ar._draftEdges[k];
-          if (!p) return;
-          container.find('.ar-cal-handle[data-corner="' + k + '"]').css({
-              left: (p.x * size.w) + 'px',
-              top:  (p.y * size.h) + 'px',
-          });
-      });
-      var c = self.ar._draftCorners;
-      var e = self.ar._draftEdges || {};
-      // 8-gon through corners and edge midpoints shows the bow directly.
-      var ring = [c.tl, e.tm, c.tr, e.rm, c.br, e.bm, c.bl, e.lm];
-      var pts = ring.filter(Boolean).map(function (p) { return p.x + ',' + p.y; }).join(' ');
-      container.find('.ar-cal-quad').attr('points', pts);
-  }
-
-  function _startCalibration() {
-      // Reset 2D zoom/pan so the user marks corners against the raw,
-      // unscaled video frame. _applyARViewTransform also wipes transforms
-      // when calibrating=true, so the canvas/video render at 1:1.
-      _resetARView();
-      self.ar._backupCorners = self.ar.corners ? JSON.parse(JSON.stringify(self.ar.corners)) : null;
-      self.ar._backupEdges = self.ar.edges ? JSON.parse(JSON.stringify(self.ar.edges)) : null;
-      // Saved edges are exactly the touched ones; untouched keys re-derive
-      // from the corners in _renderCalHandles.
-      self.ar._draftEdges = self.ar.edges ? JSON.parse(JSON.stringify(self.ar.edges)) : {};
-      self.ar._edgeTouched = {};
-      EDGE_KEYS.forEach(function (k) {
-          self.ar._edgeTouched[k] = !!(self.ar.edges && self.ar.edges[k]);
-      });
-      if (self.ar.corners) {
-          self.ar._draftCorners = JSON.parse(JSON.stringify(self.ar.corners));
-      } else {
-          // Default the handles to the projected grid corners, then lift the
-          // bottom two by 100px so they're not jammed against the bottom of
-          // the window (where they're hard to grab). The initial warp is a
-          // mild trapezoid; the user fixes it by dragging.
-          var size = _previewSize();
-          var src = _envelopeCornersInCanvasPx();
-          var bottomPad = Math.min(100, size.h * 0.2);
-          self.ar._draftCorners = {
-              tl: { x: src[0][0] / size.w, y: src[0][1] / size.h },
-              tr: { x: src[1][0] / size.w, y: src[1][1] / size.h },
-              br: { x: src[2][0] / size.w, y: (src[2][1] - bottomPad) / size.h },
-              bl: { x: src[3][0] / size.w, y: (src[3][1] - bottomPad) / size.h },
-          };
-      }
-      self.ar.calibrating = true;
-      container.find('.ar-calibration').show();
-      _renderCalHandles();
-      // In overhead mode the user marks corners on the *raw* video — strip
-      // the matrix3d warp off the <img> so the calibration handles align
-      // with where the table actually appears in the camera feed. The
-      // 3D scene stays in top-down ortho with no canvas transform; live
-      // homography preview is suppressed (would re-warp the raw video).
-      if (self.ar.overhead) {
-          _ensureVideoPatches(false);
-          container.find('.ar-video').css('transform', '');
-      } else {
-          _applyHomography();
-      }
-  }
-
-  // --- Calibration loupe -------------------------------------------------
-  // The 32px corner handles sit exactly on top of the table corner the user
-  // is trying to hit. While a handle is held, hide it and show a circular
-  // magnifier instead: a zoomed crop of the raw MJPEG <img> (drawn to a
-  // canvas each animation frame, so it stays live) with a crosshair at the
-  // precise anchor point. On touch the loupe rides above the finger,
-  // iOS-style; the crosshair still marks the anchor regardless.
-  var LOUPE_ZOOM = 3;        // magnification relative to the on-screen video
-  var LOUPE_TOUCH_LIFT = 90; // px the loupe sits above the anchor on touch
-  var _loupeRAF = null;
-
-  function _drawLoupe(key, touchLift) {
-      var $loupe = container.find('#ar-cal-loupe');
-      var canvas = $loupe.find('canvas')[0];
-      var p = (self.ar._draftCorners && self.ar._draftCorners[key]) ||
-              (self.ar._draftEdges && self.ar._draftEdges[key]);
-      if (!canvas || !p) return;
-      var size = _previewSize();
-      var diamCss = $loupe.width() || 148;
-      var dpr = window.devicePixelRatio || 1;
-      var diamDev = Math.round(diamCss * dpr);
-      if (canvas.width !== diamDev) canvas.width = canvas.height = diamDev;
-      var ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      var img = container.find('.ar-video')[0];
-      if (img && img.naturalWidth && img.naturalHeight && size.w && size.h) {
-          // The video is object-fit:fill, so X and Y display scales differ.
-          // Crop in source pixels whatever (diam/zoom) screen pixels show,
-          // per axis — the loupe then matches what's on screen, only bigger.
-          var cropW = (diamCss / LOUPE_ZOOM) * (img.naturalWidth  / size.w);
-          var cropH = (diamCss / LOUPE_ZOOM) * (img.naturalHeight / size.h);
-          var sx = p.x * img.naturalWidth  - cropW / 2;
-          var sy = p.y * img.naturalHeight - cropH / 2;
-          // Clamp the source rect to the frame by hand and map only the
-          // visible part onto the matching canvas sub-rect — browsers
-          // disagree on drawImage with out-of-bounds source rects.
-          var vx0 = Math.max(0, sx), vy0 = Math.max(0, sy);
-          var vx1 = Math.min(img.naturalWidth,  sx + cropW);
-          var vy1 = Math.min(img.naturalHeight, sy + cropH);
-          if (vx1 > vx0 && vy1 > vy0) {
-              var kx = canvas.width / cropW, ky = canvas.height / cropH;
-              try {
-                  ctx.drawImage(img, vx0, vy0, vx1 - vx0, vy1 - vy0,
-                      (vx0 - sx) * kx, (vy0 - sy) * ky,
-                      (vx1 - vx0) * kx, (vy1 - vy0) * ky);
-              } catch (err) { /* stream not decodable yet — leave black */ }
-          }
-      }
-      $loupe.css({
-          left: (p.x * size.w) + 'px',
-          top:  (p.y * size.h - touchLift) + 'px',
-      });
-  }
-
-  function _showLoupe(key, isTouch) {
-      var lift = isTouch ? LOUPE_TOUCH_LIFT : 0;
-      container.find('.ar-cal-handle[data-corner="' + key + '"]').addClass('loupe-active');
-      var $loupe = container.find('#ar-cal-loupe');
-      $loupe.find('.ar-cal-loupe-label').text(String(key).toUpperCase());
-      $loupe.show();
-      var tick = function () {
-          if (!self.ar._dragging) return;
-          _drawLoupe(key, lift);
-          _loupeRAF = requestAnimationFrame(tick);
-      };
-      _drawLoupe(key, lift);
-      _loupeRAF = requestAnimationFrame(tick);
-  }
-
-  function _hideLoupe() {
-      if (_loupeRAF) { cancelAnimationFrame(_loupeRAF); _loupeRAF = null; }
-      container.find('#ar-cal-loupe').hide();
-      container.find('.ar-cal-handle').removeClass('loupe-active');
-  }
-
-  function _onHandleDown(e) {
-      if (!self.ar.calibrating) return;
-      e.preventDefault();
-      var key = $(e.currentTarget).data('corner');
-      self.ar._dragging = key;
-      _showLoupe(key, e.type === 'touchstart');
-      var move = function (ev) {
-          if (!self.ar._dragging) return;
-          var src = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
-          var rect = container[0].getBoundingClientRect();
-          var x = (src.clientX - rect.left) / rect.width;
-          var y = (src.clientY - rect.top)  / rect.height;
-          x = Math.max(0, Math.min(1, x));
-          y = Math.max(0, Math.min(1, y));
-          var dragKey = self.ar._dragging;
-          if (EDGE_KEYS.indexOf(dragKey) !== -1) {
-              if (!self.ar._draftEdges) self.ar._draftEdges = {};
-              self.ar._draftEdges[dragKey] = { x: x, y: y };
-              self.ar._edgeTouched[dragKey] = true;
-          } else {
-              self.ar._draftCorners[dragKey] = { x: x, y: y };
-          }
-          _renderCalHandles();
-          // In overhead recalibration the video must stay un-warped so the
-          // user can mark actual table corners on the raw feed.
-          if (!self.ar.overhead) _applyHomography();
-      };
-      var up = function () {
-          self.ar._dragging = null;
-          _hideLoupe();
-          $(document).off('mousemove.arcal touchmove.arcal mouseup.arcal touchend.arcal');
-      };
-      $(document).on('mousemove.arcal touchmove.arcal', move);
-      $(document).on('mouseup.arcal touchend.arcal', up);
-  }
-
-  function _saveCalibrationDraft() {
-      if (!self.ar._draftCorners) return;
-      _hideLoupe();
-      self.ar.corners = self.ar._draftCorners;
-      // Keep only the edges the user actually placed; untouched ones stay
-      // derived so they keep tracking the corners on future recalibrations.
-      var touched = {};
-      var any = false;
-      EDGE_KEYS.forEach(function (k) {
-          if (self.ar._edgeTouched && self.ar._edgeTouched[k] && self.ar._draftEdges && self.ar._draftEdges[k]) {
-              touched[k] = self.ar._draftEdges[k];
-              any = true;
-          }
-      });
-      self.ar.edges = any ? touched : null;
-      self.ar._draftCorners = null;
-      self.ar._draftEdges = null;
-      self.ar._edgeTouched = null;
-      self.ar._backupCorners = null;
-      self.ar._backupEdges = null;
-      self.ar.calibrating = false;
-      container.find('.ar-calibration').hide();
-      _saveCalibration();
-      _refreshOverheadToggleVisibility();
-      // Re-apply the active mode's warp with the new corners.
-      if (self.ar.overhead) _applyOverheadWarp();
-      else                  _applyHomography();
-  }
-
-  function _cancelCalibration() {
-      _hideLoupe();
-      self.ar.calibrating = false;
-      self.ar._draftCorners = null;
-      self.ar._draftEdges = null;
-      self.ar._edgeTouched = null;
-      container.find('.ar-calibration').hide();
-      if (self.ar._backupCorners) {
-          self.ar.corners = self.ar._backupCorners;
-          self.ar.edges = self.ar._backupEdges;
-          self.ar._backupCorners = null;
-          self.ar._backupEdges = null;
-          if (self.ar.overhead) _applyOverheadWarp();
-          else                  _applyHomography();
-      } else {
-          // No prior calibration to restore — leave AR but unwarped, or exit.
-          self.exitAR();
-      }
-  }
+  // The drag-to-calibrate editor (corner/edge handles, loupe, save/cancel)
+  // moved to the Camera app, which owns machine.cameraCalibration. The warp
+  // machinery below still consumes corners + barrel-correction edges.
 
   self.enterAR = function () {
       if (self.ar.enabled) return;
       if (!self.ar.cameraPort) return;
+      if (!self.ar.corners) {
+          // No saved calibration — it's authored in the Camera app now.
+          container.find('input[name="show-ar"]').prop('checked', false);
+          self.recalibrateAR();
+          return;
+      }
 
       var fromOverhead = !!self.ar.overhead;
 
@@ -2917,31 +2662,17 @@ module.exports = function(container) {
               onComplete: function () {
                   container.find('.ar-video').css('transform', '');
                   container.find('.ar-video-bg').hide().css('opacity', '');
-                  if (self.ar.corners) _applyARCamera();
-                  else                 _setTopDownCamera();
+                  _applyARCamera();
                   self.renderer.setClearAlpha(0);
-                  _fadeAR({ videoTo: 1, bgTo: 0, clearTo: 0, durationMs: 200,
-                      onComplete: function () {
-                          if (!self.ar.corners) _startCalibration();
-                      }
-                  });
+                  _fadeAR({ videoTo: 1, bgTo: 0, clearTo: 0, durationMs: 200 });
               }
           });
           return;
       }
 
-      // Regular → AR: the cool camera-tilt animation.
-      if (self.ar.corners) {
-          _animateToAR(1200);
-      } else {
-          // No saved calibration — go straight to top-down ortho for the
-          // calibration UI; no animation makes sense without a target pose.
-          self.renderer.setClearAlpha(0);
-          container.find('.ar-video').css('opacity', 1);
-          _setTopDownCamera();
-          self.refresh();
-          _startCalibration();
-      }
+      // Regular → AR: the cool camera-tilt animation. Corners are
+      // guaranteed by the entry gate above.
+      _animateToAR(1200);
   };
 
   // Snap the scene's AR styling — table mesh hidden, grid moved to table z and
@@ -3152,7 +2883,15 @@ module.exports = function(container) {
   }
 
   self.recalibrateAR = function () {
-      if (self.ar.enabled || self.ar.overhead) _startCalibration();
+      // Calibration lives in the Camera app; take the user there. The
+      // previewer reloads on return and picks up the fresh calibration.
+      if (window.fabmo && window.fabmo.notify) {
+          window.fabmo.notify('info',
+              'Camera calibration is set up in the Camera app — use "Calibrate AR" there, then return to the Previewer.');
+      }
+      if (window.fabmo && window.fabmo.launchApp) {
+          window.fabmo.launchApp('video');
+      }
   };
 
   self.isARAvailable = function () {
@@ -3492,15 +3231,6 @@ module.exports = function(container) {
   });
   container.on('click', '#ar-recalibrate', function () {
       self.recalibrateAR();
-  });
-  container.on('mousedown touchstart', '.ar-cal-handle', _onHandleDown);
-  container.on('click', '.ar-cal-save', function (e) {
-      e.stopPropagation();
-      _saveCalibrationDraft();
-  });
-  container.on('click', '.ar-cal-cancel', function (e) {
-      e.stopPropagation();
-      _cancelCalibration();
   });
 
   // 2D zoom/pan on the AR composite (canvas + warped video). Wheel zooms

@@ -25,11 +25,12 @@ function setupAppNavigation() {
     let current_App = localStorage.getItem("currentapp");
     
     if (this_App != current_App) {
+        // Return to the app we came from (e.g. the previewer's "Calibrate
+        // in Camera App" round-trip), falling back to the default app.
         back_App = current_App;
-        if (back_App === null || back_App === "") { 
+        if (back_App === null || back_App === "") {
             back_App = default_App;
         }
-        back_App = default_App;
         current_App = this_App;
         localStorage.setItem("currentapp", current_App);
         localStorage.setItem("backapp", back_App);
@@ -200,6 +201,8 @@ var calState = {
     g55: { x: 0, y: 0 },  // work offset, to place the position crosshair
     cal: null,            // machine.cameraCalibration
     draft: null,          // working corners during calibration
+    draftEdges: null,     // working barrel-correction edge midpoints
+    edgeTouched: null,    // which edge handles the user has actually placed
     calibrating: false,
     displayedCam: 1,
     dragKey: null,
@@ -217,7 +220,14 @@ var calState = {
     plate: null,          // stored table photo record (see PLATE below)
 };
 
-var GRID_K = 10; // SVG px per machine unit — arbitrary, the warp rescales
+// SVG px per machine unit. The browser rasterizes the svg at its layout
+// size BEFORE applying the matrix3d warp, so this sets the real on-screen
+// resolution: computed per-envelope so the raster's long edge lands near
+// screen size regardless of units. (A fixed K left inch machines blurry —
+// a 960px raster stretched across the screen — and gave mm machines absurd
+// 24k-px rasters the GPU downsampled into mush.)
+var GRID_RASTER = 1800; // target long-edge pixels of the grid raster
+var GRID_K = 10;        // set from the envelope in envSpans()
 
 // 4-point homography (same closed form as the previewer/Shop Tools AR)
 function h_squareToQuad(p) {
@@ -278,6 +288,7 @@ function envSpans() {
         var x0f = Number(e.xmin) || 0, y0f = Number(e.ymin) || 0;
         var xsf = Number(e.xmax) - x0f, ysf = Number(e.ymax) - y0f;
         if (!(xsf > 0 && ysf > 0)) return null;
+        GRID_K = GRID_RASTER / Math.max(xsf, ysf);
         return { x0: x0f, y0: y0f, xspan: xsf, yspan: ysf,
                  table: { x0: x0f, y0: y0f, x1: x0f + xsf, y1: y0f + ysf } };
     }
@@ -287,6 +298,7 @@ function envSpans() {
     var y0 = Math.min(0, isFinite(ymin) ? ymin : 0);
     var x1 = Math.max(xsize, isFinite(xmax) ? xmax : xsize);
     var y1 = Math.max(ysize, isFinite(ymax) ? ymax : ysize);
+    GRID_K = GRID_RASTER / Math.max(x1 - x0, y1 - y0);
     return { x0: x0, y0: y0, xspan: x1 - x0, yspan: y1 - y0,
              table: { x0: 0, y0: 0, x1: xsize, y1: ysize } };
 }
@@ -323,7 +335,8 @@ function buildGrid(svg, strong) {
     svg.setAttribute("height", H);
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     var line = strong ? "rgba(41,128,185,0.9)" : "rgba(41,128,185,0.45)";
-    var halo = 'paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round"';
+    var halo = 'paint-order="stroke" stroke="#fff" stroke-width="5" stroke-linejoin="round"' +
+        ' font-family="sans-serif" font-weight="700"';
     // Gridlines + border live in their own group so the Grid toggle can
     // hide them while zones and the crosshair stay visible.
     var parts = ['<g id="gridlines">'];
@@ -342,30 +355,35 @@ function buildGrid(svg, strong) {
     for (var gx = Math.ceil(s.x0 / stepM) * stepM; gx <= s.x0 + s.xspan; gx += stepM) {
         var xpx = (gx - s.x0) * GRID_K;
         if (xpx <= 0 || xpx >= W) continue;
-        parts.push('<line x1="' + xpx + '" y1="0" x2="' + xpx + '" y2="' + H + '" stroke="' + line + '" stroke-width="1"/>');
+        parts.push('<line x1="' + xpx + '" y1="0" x2="' + xpx + '" y2="' + H + '" stroke="' + line + '" stroke-width="2"/>');
     }
     for (var gy = Math.ceil(s.y0 / stepM) * stepM; gy <= s.y0 + s.yspan; gy += stepM) {
         var ypx = (s.y0 + s.yspan - gy) * GRID_K;
         if (ypx <= 0 || ypx >= H) continue;
-        parts.push('<line x1="0" y1="' + ypx + '" x2="' + W + '" y2="' + ypx + '" stroke="' + line + '" stroke-width="1"/>');
+        parts.push('<line x1="0" y1="' + ypx + '" x2="' + W + '" y2="' + ypx + '" stroke="' + line + '" stroke-width="2"/>');
     }
     // Table border strong; world (soft-limit travel) border dashed when it
     // extends beyond the table.
     parts.push('<rect x="' + tr.l + '" y="' + tr.t + '" width="' + (tr.r - tr.l) +
-        '" height="' + (tr.b - tr.t) + '" fill="none" stroke="' + line + '" stroke-width="4"/>');
+        '" height="' + (tr.b - tr.t) + '" fill="none" stroke="' + line + '" stroke-width="7"/>');
     if (tr.l > 0 || tr.t > 0 || tr.r < W || tr.b < H) {
         parts.push('<rect x="0" y="0" width="' + W + '" height="' + H +
-            '" fill="none" stroke="' + line + '" stroke-width="2" stroke-dasharray="8 6"/>');
+            '" fill="none" stroke="' + line + '" stroke-width="3" stroke-dasharray="16 12"/>');
     }
     parts.push('</g>');
     // Origin marker + axis arrows at machine (0,0) — offset from the svg
-    // bottom-left when the world extends into negative machine space.
+    // bottom-left when the world extends into negative machine space. Sized
+    // in raster px (GRID_K is adaptive, so raster px ≈ constant on screen);
+    // machine-unit sizing made these microscopic on mm machines.
     var ax = (0 - s.x0) * GRID_K, ay = (s.y0 + s.yspan) * GRID_K;
-    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + (ax + 3 * GRID_K) + '" y2="' + ay + '" stroke="#c0392b" stroke-width="3"/>');
-    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + ax + '" y2="' + (ay - 3 * GRID_K) + '" stroke="#27ae60" stroke-width="3"/>');
-    parts.push('<text x="' + (ax + 3.6 * GRID_K) + '" y="' + (ay - 2) + '" font-size="' + 1.8 * GRID_K + '" fill="#1a252f" ' + halo + '>X</text>');
-    parts.push('<text x="' + (ax + 2) + '" y="' + (ay - 3.6 * GRID_K) + '" font-size="' + 1.8 * GRID_K + '" fill="#1a252f" ' + halo + '>Y</text>');
-    parts.push('<text x="' + (ax + 4) + '" y="' + (ay - 4) + '" font-size="' + 1.6 * GRID_K + '" fill="#1a252f" ' + halo + '>0,0</text>');
+    var AL = 60, AH = 16; // arrow shaft length / head length, raster px
+    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + (ax + AL) + '" y2="' + ay + '" stroke="#c0392b" stroke-width="5"/>');
+    parts.push('<polygon points="' + (ax + AL + AH) + ',' + ay + ' ' + (ax + AL) + ',' + (ay - 8) + ' ' + (ax + AL) + ',' + (ay + 8) + '" fill="#c0392b"/>');
+    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + ax + '" y2="' + (ay - AL) + '" stroke="#27ae60" stroke-width="5"/>');
+    parts.push('<polygon points="' + ax + ',' + (ay - AL - AH) + ' ' + (ax - 8) + ',' + (ay - AL) + ' ' + (ax + 8) + ',' + (ay - AL) + '" fill="#27ae60"/>');
+    parts.push('<text x="' + (ax + AL + AH + 10) + '" y="' + (ay - 10) + '" font-size="34" fill="#1a252f" ' + halo + '>X</text>');
+    parts.push('<text x="' + (ax + 14) + '" y="' + (ay - AL - AH - 10) + '" font-size="34" fill="#1a252f" ' + halo + '>Y</text>');
+    parts.push('<text x="' + (ax + 16) + '" y="' + (ay - 16) + '" font-size="26" fill="#1a252f" ' + halo + '>0,0</text>');
     svg.innerHTML = parts.join("");
     return true;
 }
@@ -522,11 +540,11 @@ function updateCrosshair() {
         g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute("id", "cam-pos");
         g.innerHTML =
-            '<line x1="-12" y1="0" x2="12" y2="0" stroke="#fff" stroke-width="6" stroke-linecap="round"/>' +
-            '<line x1="0" y1="-12" x2="0" y2="12" stroke="#fff" stroke-width="6" stroke-linecap="round"/>' +
-            '<line x1="-12" y1="0" x2="12" y2="0" stroke="#c0392b" stroke-width="2.5"/>' +
-            '<line x1="0" y1="-12" x2="0" y2="12" stroke="#c0392b" stroke-width="2.5"/>' +
-            '<circle cx="0" cy="0" r="5" fill="none" stroke="#c0392b" stroke-width="2.5"/>';
+            '<line x1="-20" y1="0" x2="20" y2="0" stroke="#fff" stroke-width="9" stroke-linecap="round"/>' +
+            '<line x1="0" y1="-20" x2="0" y2="20" stroke="#fff" stroke-width="9" stroke-linecap="round"/>' +
+            '<line x1="-20" y1="0" x2="20" y2="0" stroke="#c0392b" stroke-width="4"/>' +
+            '<line x1="0" y1="-20" x2="0" y2="20" stroke="#c0392b" stroke-width="4"/>' +
+            '<circle cx="0" cy="0" r="8" fill="none" stroke="#c0392b" stroke-width="4"/>';
         live.appendChild(g);
     }
     g.setAttribute("transform", "translate(" + px + " " + py + ")");
@@ -538,10 +556,67 @@ function calHandles() {
     return Array.prototype.slice.call(document.querySelectorAll(".cal-handle"));
 }
 
+// ---- barrel-correction edge midpoints ----
+// A single 4-corner homography keeps straight lines straight, but lens
+// (barrel) distortion bows the table's edges in the raw video. The diamond
+// mid-edge handles let the user mark where each edge's midpoint ACTUALLY
+// appears; consumers (the previewer's AR warp) switch to piecewise patches
+// when any are set. Untouched handles track the projective (no-bow)
+// midpoints and are not stored. Same convention and storage as the
+// previewer used before calibration was consolidated here.
+
+var EDGE_KEYS = ["tm", "rm", "bm", "lm"];
+
+// Where each table edge's midpoint lands if the lens had no distortion:
+// the projective midpoints of the corner quad, via the unit-square
+// homography (framing cancels, so fractions in = fractions out).
+function edgeDefaults(c) {
+    var H = h_squareToQuad([[c.tl.x, c.tl.y], [c.tr.x, c.tr.y],
+                            [c.br.x, c.br.y], [c.bl.x, c.bl.y]]);
+    var mids = { tm: [0.5, 0], rm: [1, 0.5], bm: [0.5, 1], lm: [0, 0.5] };
+    var out = {};
+    EDGE_KEYS.forEach(function (k) {
+        var p = mids[k];
+        var w = H[2][0] * p[0] + H[2][1] * p[1] + H[2][2];
+        out[k] = {
+            x: (H[0][0] * p[0] + H[0][1] * p[1] + H[0][2]) / w,
+            y: (H[1][0] * p[0] + H[1][1] * p[1] + H[1][2]) / w,
+        };
+    });
+    return out;
+}
+
+// Untouched edge handles stay glued to their projective default as the
+// corners move; touched ones stay where the user put them.
+function refreshUntouchedEdges() {
+    if (!calState.draft) return;
+    var defaults = edgeDefaults(calState.draft);
+    if (!calState.draftEdges) calState.draftEdges = {};
+    EDGE_KEYS.forEach(function (k) {
+        if (!calState.edgeTouched || !calState.edgeTouched[k]) {
+            calState.draftEdges[k] = defaults[k];
+        }
+    });
+}
+
+// Screen-space 8-gon through corners and edge midpoints — shows the bow
+// directly over the video while calibrating.
+function drawCalRing() {
+    var c = calState.draft, e = calState.draftEdges || {};
+    if (!c) return;
+    var pts = [c.tl, e.tm, c.tr, e.rm, c.br, e.bm, c.bl, e.lm];
+    document.getElementById("cal-ring").querySelector("polygon").setAttribute(
+        "points",
+        pts.filter(Boolean).map(function (p) { return p.x + "," + p.y; }).join(" ")
+    );
+}
+
 function positionHandles() {
     var w = window.innerWidth, h = window.innerHeight;
     calHandles().forEach(function (el) {
-        var p = calState.draft[el.getAttribute("data-corner")];
+        var key = el.getAttribute("data-corner");
+        var p = calState.draft[key] || (calState.draftEdges && calState.draftEdges[key]);
+        if (!p) return;
         el.style.left = (p.x * w) + "px";
         el.style.top = (p.y * h) + "px";
     });
@@ -549,7 +624,9 @@ function positionHandles() {
 
 function redrawCalibration() {
     warpGrid(document.getElementById("cal-grid"), calState.draft);
+    refreshUntouchedEdges();
     positionHandles();
+    drawCalRing();
 }
 
 function enterCalibration() {
@@ -566,9 +643,17 @@ function enterCalibration() {
         tl: { x: 0.15, y: 0.15 }, tr: { x: 0.85, y: 0.15 },
         br: { x: 0.85, y: 0.85 }, bl: { x: 0.15, y: 0.85 },
     };
+    // Saved edges are exactly the touched ones; untouched keys re-derive
+    // from the corners in refreshUntouchedEdges.
+    calState.draftEdges = (c && c.edges) ? JSON.parse(JSON.stringify(c.edges)) : {};
+    calState.edgeTouched = {};
+    EDGE_KEYS.forEach(function (k) {
+        calState.edgeTouched[k] = !!(c && c.edges && c.edges[k]);
+    });
     calState.calibrating = true;
     buildGrid(document.getElementById("cal-grid"), true);
     document.getElementById("cal-grid").style.display = "block";
+    document.getElementById("cal-ring").style.display = "block";
     document.getElementById("cal-bar").style.display = "flex";
     document.getElementById("live-grid").style.display = "none";
     document.getElementById("btn-grid").style.display = "none";
@@ -583,8 +668,11 @@ function enterCalibration() {
 function exitCalibration() {
     calState.calibrating = false;
     calState.draft = null;
+    calState.draftEdges = null;
+    calState.edgeTouched = null;
     hideLoupe();
     document.getElementById("cal-grid").style.display = "none";
+    document.getElementById("cal-ring").style.display = "none";
     document.getElementById("cal-bar").style.display = "none";
     document.getElementById("btn-calibrate").style.display = "inline-block";
     calHandles().forEach(function (el) { el.style.display = "none"; });
@@ -592,8 +680,21 @@ function exitCalibration() {
 }
 
 function saveCalibration() {
+    // Keep only the edge midpoints the user actually placed; untouched ones
+    // stay derived so they keep tracking the corners on recalibration. The
+    // explicit null matters: config updates merge, and a stale bow from an
+    // old calibration must not survive under new corners.
+    var touched = {}, any = false;
+    EDGE_KEYS.forEach(function (k) {
+        if (calState.edgeTouched && calState.edgeTouched[k] &&
+            calState.draftEdges && calState.draftEdges[k]) {
+            touched[k] = calState.draftEdges[k];
+            any = true;
+        }
+    });
     calState.cal = {
         corners: calState.draft,
+        edges: any ? touched : null,
         port: calState.displayedCam,
         savedAt: Date.now(),
         calibrated: true,
@@ -616,7 +717,8 @@ var LOUPE_TOUCH_LIFT = 90;
 function drawLoupe(touchLift) {
     var loupe = document.getElementById("cal-loupe");
     var canvas = loupe.querySelector("canvas");
-    var p = calState.draft && calState.draft[calState.dragKey];
+    var p = (calState.draft && calState.draft[calState.dragKey]) ||
+            (calState.draftEdges && calState.draftEdges[calState.dragKey]);
     if (!canvas || !p) return;
     var w = window.innerWidth, h = window.innerHeight;
     var diamCss = loupe.clientWidth || 148;
@@ -717,9 +819,17 @@ function setupCalibration() {
     });
     document.addEventListener("pointermove", function (e) {
         if (!calState.dragKey) return;
-        var p = calState.draft[calState.dragKey];
-        p.x = Math.max(0, Math.min(1, e.clientX / window.innerWidth));
-        p.y = Math.max(0, Math.min(1, e.clientY / window.innerHeight));
+        var x = Math.max(0, Math.min(1, e.clientX / window.innerWidth));
+        var y = Math.max(0, Math.min(1, e.clientY / window.innerHeight));
+        if (EDGE_KEYS.indexOf(calState.dragKey) !== -1) {
+            if (!calState.draftEdges) calState.draftEdges = {};
+            calState.draftEdges[calState.dragKey] = { x: x, y: y };
+            calState.edgeTouched[calState.dragKey] = true;
+        } else {
+            var p = calState.draft[calState.dragKey];
+            p.x = x;
+            p.y = y;
+        }
         redrawCalibration();
     });
     document.addEventListener("pointerup", function () {
