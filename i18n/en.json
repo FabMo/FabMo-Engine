@@ -1086,6 +1086,8 @@
             "top": "Top",
             "recal_title": "Recalibrate table corners",
             "recalibrate": "Recalibrate",
+            "recal_camera_title": "Open the Camera app to recalibrate the table corners",
+            "recalibrate_camera": "Calibrate in Camera App",
             "play_title": "Start or continue path simulation.",
             "pause_title": "Pause path simulation.",
             "reset_title": "Restart path simulation.",
