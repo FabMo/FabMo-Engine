@@ -2145,6 +2145,24 @@ function jobMeta(job) {
 
 var dragging = false;
 
+// Queue-row controls: the same set, icons and tooltips as the Job Manager's
+// next-job icon row (preview, repeat, ghost run, edit, download, delete).
+// The image icons are the Job Manager's own files (copied to assets/job_*)
+// drawn as CSS masks so they take the row's text colour in every theme.
+function jobIconBtn(cls, icon, titleKey) {
+    return '<button class="ts-iconbtn ' + cls + '" title="' + window.t(titleKey) + '">' +
+        '<span class="ts-job-icon ts-job-icon-' + icon + '"></span></button>';
+}
+
+function jobRepeatBtn(job) {
+    var on = !!job.repeat;
+    var count = job.repeatCount === 0 || job.repeatCount ? parseInt(job.repeatCount, 10) : null;
+    var showCount = on && count !== null && isFinite(count);
+    return '<button class="ts-iconbtn ts-job-repeat' + (on ? " on" : "") + '" title="' +
+        window.t("job_manager.actions.repeat_job") + '"><i class="fa fa-repeat"></i>' +
+        '<span class="ts-repeat-badge' + (showCount ? " visible" : "") + '">' + (showCount ? count : "") + "</span></button>";
+}
+
 function renderJobs() {
     if (dragging) return; // don't rebuild the list out from under a drag
     var $q = $("#job-queue").empty();
@@ -2155,9 +2173,11 @@ function renderJobs() {
                     '<div class="ts-job-name"></div>' +
                     '<div class="ts-job-meta"><span class="ok">running&hellip;</span></div>' +
                 "</div>" +
+                '<div class="ts-job-actions">' + jobRepeatBtn(job) + "</div>" +
                 "</div>"
         );
         $row.find(".ts-job-name").text(job.name || "job " + job._id);
+        $row.find(".ts-iconbtn").data("id", job._id).data("job", job);
         $q.append($row);
     });
     if (!state.queue.length && !(state.running || []).length) {
@@ -2171,14 +2191,21 @@ function renderJobs() {
                         '<div class="ts-job-name"></div>' +
                         '<div class="ts-job-meta">' + jobMeta(job) + "</div>" +
                     "</div>" +
-                    '<button class="ts-iconbtn ts-job-preview" title="' + window.t("tool_status.jobs.preview_title") + '"><i class="fa fa-eye"></i></button>' +
-                    '<button class="ts-iconbtn ts-job-edit" title="' + window.t("tool_status.jobs.edit_title") + '"><i class="fa fa-code"></i></button>' +
-                    '<button class="ts-iconbtn ts-job-delete" title="' + window.t("tool_status.jobs.delete_title") + '"><i class="fa fa-trash"></i></button>' +
+                    '<div class="ts-job-actions">' +
+                        jobIconBtn("ts-job-preview", "preview", "job_manager.actions.preview_job") +
+                        jobRepeatBtn(job) +
+                        // Ghost run needs the OpenSBP runtime, as in the Job Manager
+                        (/\.sbp$/i.test(job.name || "") ? jobIconBtn("ts-job-ghost", "ghost", "job_manager.actions.ghost_run") : "") +
+                        jobIconBtn("ts-job-edit", "edit", "job_manager.actions.edit_job") +
+                        jobIconBtn("ts-job-download", "download", "job_manager.actions.download_job") +
+                        jobIconBtn("ts-job-delete", "delete", "job_manager.actions.cancel_job") +
+                    "</div>" +
                     "</div>"
             );
             $row.attr("data-id", job._id);
             $row.find(".ts-job-name").text(job.name || "job " + job._id);
-            $row.find(".ts-iconbtn").data("id", job._id);
+            $row.find(".ts-iconbtn").data("id", job._id).data("job", job);
+            $row.find(".ts-job-ghost").prop("disabled", !isIdle());
             $q.append($row);
         });
     }
@@ -3743,6 +3770,102 @@ $(document).ready(function () {
 
     $("#job-queue").on("click", ".ts-job-edit", function () {
         fabmo.launchApp("editor", { job: $(this).data("id") });
+    });
+
+    $("#job-queue").on("click", ".ts-job-download", function () {
+        fabmo.navigate("/job/" + $(this).data("id") + "/file");
+    });
+
+    // ---- Repeat (same dialog and API as the Job Manager) ----
+
+    var repeatJobId = null;
+
+    function closeRepeatModal() {
+        $("#job-repeat-modal").hide();
+        repeatJobId = null;
+    }
+
+    function saveRepeat(opts) {
+        var id = repeatJobId;
+        closeRepeatModal();
+        if (id === null) return;
+        fabmo.setJobRepeat(id, opts, function (err) {
+            if (err) fabmo.notify("error", err.message || err);
+            refreshJobs();
+        });
+    }
+
+    $("#job-queue").on("click", ".ts-job-repeat", function () {
+        var job = $(this).data("job") || {};
+        var count = job.repeatCount === 0 || job.repeatCount ? parseInt(job.repeatCount, 10) : null;
+        repeatJobId = $(this).data("id");
+        $("#job-repeat-count").val(count !== null && isFinite(count) ? count : "");
+        $("#btn-job-repeat-off").toggle(!!job.repeat);    // nothing to turn off unless it is on
+        $("#job-repeat-modal").css("display", "flex");
+        setTimeout(function () { $("#job-repeat-count").focus().select(); }, 50);
+    });
+    $("#btn-job-repeat-save").on("click", function () {
+        var n = parseInt($("#job-repeat-count").val(), 10);
+        saveRepeat({ repeat: true, count: isFinite(n) && n >= 1 ? n : null });    // blank = until canceled
+    });
+    $("#btn-job-repeat-off").on("click", function () {
+        saveRepeat({ repeat: false, count: null });
+    });
+    $("#btn-job-repeat-cancel").on("click", closeRepeatModal);
+    $("#job-repeat-count").on("keydown", function (e) {
+        if (e.which === 13) { e.preventDefault(); $("#btn-job-repeat-save").click(); }
+    });
+
+    // ---- Ghost / preview run (same dialog and API as the Job Manager) ----
+
+    var ghostJobId = null;
+
+    function syncGhostMode() {
+        var mode = $('input[name="job-ghost-mode"]:checked').val();
+        $("#job-ghost-lift-opts").toggle(mode === "lift");
+        $("#job-ghost-trace-opts").toggle(mode === "trace");
+    }
+
+    function closeGhostModal() {
+        $("#job-ghost-modal").hide();
+        ghostJobId = null;
+    }
+
+    $("#job-queue").on("click", ".ts-job-ghost", function () {
+        ghostJobId = $(this).data("id");
+        $("#job-ghost-mode-lift").prop("checked", true);
+        $("#job-ghost-zoffset").val("0.5");
+        syncGhostMode();
+        $("#job-ghost-modal").css("display", "flex");
+        setTimeout(function () { $("#job-ghost-zoffset").focus().select(); }, 50);
+    });
+    $('input[name="job-ghost-mode"]').on("change", syncGhostMode);
+    $("#btn-job-ghost-go").on("click", function () {
+        var mode = $('input[name="job-ghost-mode"]:checked').val() || "lift";
+        var payload = { mode: mode };
+        if (mode === "lift") {
+            var z = parseFloat($("#job-ghost-zoffset").val());
+            if (!isFinite(z) || z === 0) {
+                fabmo.notify("error", window.t("job_manager.notify.z_offset_nonzero"));
+                return;
+            }
+            payload.zOffset = z;
+        }
+        var id = ghostJobId;
+        closeGhostModal();
+        if (id === null) return;
+        fabmo.ghostRunJob(id, payload, function (err) {
+            if (err) fabmo.notify("error", err.message || err);
+            refreshJobs();
+        });
+    });
+    $("#btn-job-ghost-cancel").on("click", closeGhostModal);
+    $("#job-ghost-zoffset").on("keydown", function (e) {
+        if (e.which === 13) { e.preventDefault(); $("#btn-job-ghost-go").click(); }
+    });
+
+    $("#job-repeat-modal, #job-ghost-modal").on("click", function (e) {
+        if (e.target === this) { closeRepeatModal(); closeGhostModal(); }
     });
 
     $("#job-history, #history-list").on("click", ".ts-job-rerun", function () {
