@@ -69,17 +69,20 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
     if (this.stream) {
         log.warn("Cannot enter manual mode - stream still active from previous session");
         // Set a brief timeout to retry
-        setTimeout(function() {
-            if (!this.stream) {
-                log.info("Stream cleaned up, retrying manual enter");
-                this.enter(mode, hideKeypad);
-            } else {
-                log.error("Stream still active after retry, giving up");
-            }
-        }.bind(this), 100);
+        setTimeout(
+            function () {
+                if (!this.stream) {
+                    log.info("Stream cleaned up, retrying manual enter");
+                    this.enter(mode, hideKeypad);
+                } else {
+                    log.error("Stream still active after retry, giving up");
+                }
+            }.bind(this),
+            100,
+        );
         return;
     }
-    
+
     this.stream = new stream.PassThrough();
 
     // At a high level, this opens a stream to the driver, that subsequent commands

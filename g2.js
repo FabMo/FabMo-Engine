@@ -166,13 +166,13 @@ function G2() {
     this._currentData = [];
     this._currentGCodeData = [];
     this.g2_status = { stat: null, posx: 0, posy: 0, posz: 0 };
-    this.status = { 
-        stat: "idle", 
-        posx: 0, 
-        posy: 0, 
-        posz: 0, 
-        qr: null,  // G2 planner buffer remaining slots (0-48)
-        fabmo_gcode_queue: 0  // FabMo host gcode_queue length
+    this.status = {
+        stat: "idle",
+        posx: 0,
+        posy: 0,
+        posz: 0,
+        qr: null, // G2 planner buffer remaining slots (0-48)
+        fabmo_gcode_queue: 0, // FabMo host gcode_queue length
     };
     this._seen_ready = false;
     this.gcode_queue = new Queue();
@@ -1588,14 +1588,21 @@ G2.prototype.onMessage = function (response) {
         this.emit("jogv_exit");
     }
 
-    // Handle queue reports from G2. Queue reports indicate how many slots
-    // are available in G2's planner buffer (out of 48 total).
-    // This allows apps to monitor queue depth for joystick-style control.
+    // Handle queue reports from G2 ({qv:1} enables them; off by default, see
+    // g2_config). A queue report is the number of free slots in G2's planner
+    // buffer (out of 48). This lets apps monitor queue depth for
+    // joystick-style control.
+    //
+    // Record it, but do NOT emit "status" here: a queue report arrives the
+    // moment the planner changes, often before the status report that carries
+    // the new stat. Emitting status with the stale stat re-runs every stat
+    // handler (manual driver nudge/goto/exit logic, once("status") waiters)
+    // on bad data. The value rides out on the next real status report;
+    // anything that needs it sooner can listen for "qr".
     if (response.qr !== undefined) {
         this.status.qr = response.qr;
-        // Also include FabMo's host queue length for complete picture
         this.status.fabmo_gcode_queue = this.gcode_queue.getLength();
-        this.emit("status", this.status);
+        this.emit("qr", response.qr);
     }
 
     // Deal with G2 status (top priority)
