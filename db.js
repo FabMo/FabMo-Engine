@@ -50,10 +50,21 @@ function notifyChange() {
 // 25ms with a generous 10s ceiling; if the context is still held after
 // that, we abort the restart rather than crash the runtime — the next user
 // action will surface the underlying driver hang.
+//
+// The machine must also stay ready for SETTLE_MS before we restart. After
+// the M30 that ends a file, G2 keeps emitting trailing stat:4 status reports
+// for ~250ms (momo, out4-off, bare stat). Restarting inside that window lets
+// a trailing report land on the NEW run's cycle promise, which resolves "on
+// stat 4" and ends that run the instant it starts — its G-code still drains
+// and the next clone starts on top of it, so a count of 7 moved the tool
+// only a couple of times. How often it bit depended on timing, which is why
+// it looked device-specific.
 function scheduleRepeatRestart(srcJob, nextCount) {
     var MAX_WAIT_MS = 10000;
     var POLL_MS = 25;
+    var SETTLE_MS = 750;
     var deadline = Date.now() + MAX_WAIT_MS;
+    var readySince = null;
 
     function poll() {
         var machine = require("./machine").machine;
@@ -63,6 +74,7 @@ function scheduleRepeatRestart(srcJob, nextCount) {
             machine.status.state === "idle" &&
             (!machine.driver || !machine.driver.context);
         if (!ready) {
+            readySince = null;
             if (Date.now() < deadline) {
                 return setTimeout(poll, POLL_MS);
             }
@@ -76,6 +88,12 @@ function scheduleRepeatRestart(srcJob, nextCount) {
                     ")"
             );
             return;
+        }
+        if (readySince === null) {
+            readySince = Date.now();
+        }
+        if (Date.now() - readySince < SETTLE_MS) {
+            return setTimeout(poll, POLL_MS);
         }
         srcJob.clone({ repeatCount: nextCount }, function (cloneErr) {
             if (cloneErr) return log.error("Repeat clone failed: " + cloneErr);
