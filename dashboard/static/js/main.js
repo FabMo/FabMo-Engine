@@ -98,6 +98,10 @@ engine.getCurrentUser(function (err, user) {
         }
     } else {
         applyUserRole(user);
+        // Offer the browser's clock to the tool only once someone is logged
+        // in. This used to run unconditionally at load, so every visit to
+        // the login page set the machine's clock.
+        engine.sendTime();
     }
 });
 
@@ -715,7 +719,15 @@ engine.getVersion(function (err, version) {
             // PRINT OUTPUT widget — docked in the top bar (detachable later).
             setupPrintWidget(dashboard.engine);
 
-            setLocationDisplays();
+            // setLocationDisplays re-saves the axis-mode config (a nudge to
+            // get every enabled axis onto the DRO). Skip it when nobody is
+            // logged in: the DRO is hidden behind the login page, and a
+            // logged-out page load has no business writing machine config.
+            engine.getCurrentUser(function (err, user) {
+                if (!err && user) {
+                    setLocationDisplays();
+                }
+            });
 
             // Status-handler modals can fire on the very first status event,
             // before the i18n dictionaries arrive (two chained fetches) — and
@@ -3210,8 +3222,6 @@ function ping() {
 
 ping();
 
-engine.sendTime();
-
 function touchScreen() {
     // Removed: applying overflow-y:scroll + -webkit-overflow-scrolling:touch to
     // #app-client-container on narrow touch screens created a UIScrollView whose
@@ -3231,7 +3241,15 @@ $(".icon_sign_out").on("click", function (e) {
         okText: window.t("status.yes"),
         cancelText: window.t("status.no"),
         ok: function () {
-            window.location.href = "#/authentication";
+            // Log out here, explicitly. The login page used to do it as a
+            // side effect of being shown, which meant merely opening a link
+            // ending in #/authentication ended the session.
+            $.ajax({
+                url: "/authentication/logout",
+                complete: function () {
+                    window.location.href = "#/authentication";
+                },
+            });
         },
         cancel: function () {},
     });
