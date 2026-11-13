@@ -89,7 +89,13 @@ function applyUserRole(user) {
 // check user
 engine.getCurrentUser(function (err, user) {
     if (user === undefined) {
-        window.location.href = "#/authentication";
+        // Only navigate if we're not already there. iOS Safari treats
+        // assigning the URL the page is already on (same hash) as a full
+        // page load, not a no-op — so an unguarded assignment here reloaded
+        // the logged-out dashboard forever.
+        if (window.location.hash !== "#/authentication") {
+            window.location.href = "#/authentication";
+        }
     } else {
         applyUserRole(user);
     }
