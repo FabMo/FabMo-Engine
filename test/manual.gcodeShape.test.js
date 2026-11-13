@@ -69,14 +69,14 @@ describe("manual-drive wire protocol (golden)", () => {
         jest.useRealTimers();
     });
 
-    test("continuous start: incremental header + G61 + one renewal batch of 10 segments", () => {
+    test("continuous start: incremental header + G61 + one renewal batch of 5 segments", () => {
         var c = capture(false);
         c.md.startMotion("X", 60);
         // 60 units/min for T_RENEW=300ms at safety factor 4 => 1.2 units
-        // queued ahead, in 10 exact segments.
+        // queued ahead, in 5 exact segments (RENEW_SEGMENTS).
         expect(c.writes).toEqual([
             "G91 F60.000\nG61\n",
-            "G1X0.1200\n".repeat(10),
+            "G1X0.2400\n".repeat(5),
         ]);
     });
 
@@ -85,7 +85,7 @@ describe("manual-drive wire protocol (golden)", () => {
         c.md.startMotion("Z", -30);
         expect(c.writes).toEqual([
             "G91 F30.000\nG61\n",
-            "G1Z-0.0600\n".repeat(10),
+            "G1Z-0.1200\n".repeat(5),
         ]);
     });
 
