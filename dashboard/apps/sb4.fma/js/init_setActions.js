@@ -324,41 +324,53 @@ $(document).ready(function () {
         $(this).attr("readonly", true);
     });
 
-    // A readonly field shows no text caret, so draw our own (#cmd-caret, blink is in style.css).
-    // It sits at the field's (invisible but real) selection position, so clicking in the line,
-    // arrow keys, etc. still say where the next character goes.
+    // The command line's text caret is our own (#cmd-caret, looks are in style.css); the native one
+    // is hidden while the field is readonly. #cmd-caret is a transparent box laid exactly over the
+    // field with the same font/padding/border, holding an invisible copy of the text ahead of the
+    // field's (real) selection position followed by the caret bar -- so the browser's own text
+    // layout puts the bar where the next character goes, with nothing to measure or get wrong.
     var cmdInputEl = document.getElementById("cmd-input");
-    var cmdCaretEl = document.createElement("span");
-    var cmdMeasureCtx = document.createElement("canvas").getContext("2d");
+    var cmdCaretEl = document.createElement("div");
+    var cmdCaretLead = document.createElement("span");
+    var cmdCaretBar = document.createElement("span");
     cmdCaretEl.id = "cmd-caret";
+    cmdCaretEl.setAttribute("aria-hidden", "true");
+    cmdCaretLead.className = "cmd-caret-lead";
+    cmdCaretBar.className = "cmd-caret-bar";
+    cmdCaretEl.appendChild(cmdCaretLead);
+    cmdCaretEl.appendChild(cmdCaretBar);
     cmdInputEl.parentNode.insertBefore(cmdCaretEl, cmdInputEl.nextSibling);
 
-    function updateCmdCaret() {
+    function updateCmdCaret(event) {
         var el = cmdInputEl;
-        if (document.activeElement !== el || !el.readOnly || el.selectionStart !== el.selectionEnd) {
+        // Show only while the line really has the keyboard. activeElement alone is not enough: it
+        // still names the field after focus moves out of this app's frame (to the dashboard, another
+        // window ...), so also go by the blur event itself and by document.hasFocus().
+        if ((event && event.type === "blur") || document.activeElement !== el || !document.hasFocus() ||
+            !el.readOnly || el.selectionStart !== el.selectionEnd) {
             cmdCaretEl.style.display = "none";       // not in the line, native caret (touch), or a selection showing
             return;
         }
         var cs = window.getComputedStyle(el);
-        var text = el.value.slice(0, el.selectionStart);
-        if (cs.textTransform === "uppercase") { text = text.toUpperCase(); }
-        cmdMeasureCtx.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
-        var x = parseFloat(cs.paddingLeft) + cmdMeasureCtx.measureText(text).width - el.scrollLeft;
-        var h = Math.round(parseFloat(cs.fontSize) * 1.25);
-        if (x < 0 || x > el.clientWidth) {           // scrolled out of view on a long line
-            cmdCaretEl.style.display = "none";
-            return;
-        }
-        cmdCaretEl.style.left = (el.offsetLeft + el.clientLeft + x) + "px";
-        cmdCaretEl.style.top = (el.offsetTop + (el.offsetHeight - h) / 2) + "px";
-        cmdCaretEl.style.height = h + "px";
-        cmdCaretEl.style.display = "block";
-        cmdCaretEl.style.animation = "none";         // restart the blink so the caret is solid while typing
-        void cmdCaretEl.offsetWidth;
-        cmdCaretEl.style.animation = "";
+        var st = cmdCaretEl.style;
+        ["fontFamily", "fontSize", "fontWeight", "fontStyle", "fontStretch", "fontVariant", "fontKerning",
+            "fontFeatureSettings", "letterSpacing", "wordSpacing", "textTransform", "textIndent", "textRendering",
+            "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
+            "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth"
+        ].forEach(function (prop) { st[prop] = cs[prop]; });
+        st.left = el.offsetLeft + "px";
+        st.top = el.offsetTop + "px";
+        st.width = el.offsetWidth + "px";
+        st.height = el.offsetHeight + "px";
+        cmdCaretLead.textContent = el.value.slice(0, el.selectionStart);
+        cmdCaretLead.style.marginLeft = (-el.scrollLeft) + "px";    // follow a long line's scroll; overflow clips it
+        st.display = "flex";
+        cmdCaretBar.style.animation = "none";        // restart the blink so the caret is solid while typing
+        void cmdCaretBar.offsetWidth;
+        cmdCaretBar.style.animation = "";
     }
     $("#cmd-input").on("focus blur mouseup keyup select scroll", updateCmdCaret);
-    $(window).on("resize", updateCmdCaret);
+    $(window).on("resize blur focus", updateCmdCaret);
     // The line is filled in from many places with $("#cmd-input").val(...); catch those too
     $.valHooks.text = {
         set: function (elem) {
@@ -680,7 +692,14 @@ $(document).ready(function () {
         globals.TOol_a = status.posa;
         globals.TOol_b = status.posb;
         globals.TOol_c = status.posc;
+        var leftManual = globals.FAbMo_state === "manual" && status.state !== "manual";
         globals.FAbMo_state = status.state;
+        if (leftManual) {
+            // Keypad just closed: put the cursor back in the command line. The dashboard hands keyboard
+            // focus back to this frame at the same moment (refocusAppFrame in main.js), but the line is
+            // not necessarily the frame's active element any more, so claim it here.
+            setTimeout(function () { setSafeCmdFocus(9); }, 0);
+        }
         globals.G2_stat = status.stat;                                           // 5 means "in motion"
         globals.usbDrive = status.usbDrive;                                      // ... get the USB drive state
 

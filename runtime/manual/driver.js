@@ -35,7 +35,7 @@ var ANALOG_SAFETY_FACTOR = 1.0;
 var DEFAULT_SAFETY_FACTOR = 4.0;
 // TODO should be in the ManualDriver instance?!
 var count = 0;
-var RENEW_SEGMENTS = 10;
+var RENEW_SEGMENTS = 5;
 var RENEW_SEGMENTS_ROTARY = 2; // Fewer, larger segments for ABC rotary axes to provide adequate steps/segment
 var DEFAULT_MAX_NUDGES = 3;
 // Exit watchdog: g2core parked at stat:3 with an empty planner can swallow an
@@ -52,7 +52,7 @@ var EXIT_WATCHDOG_MAX_CHECKS = 5;
 // hold) — bursting the backlog out at that point is how bits get crashed.
 var NUDGE_QUEUE_TTL = 3000;
 
-// Firmware velocity-jog watchdog ($jvto), pinned at every manual enter when
+// Firmware velocity-jog watchdog ($jgvto), pinned at every manual enter when
 // the cycle exists. Clients heartbeat at ~50ms, so 500ms of host silence is
 // decisively "nobody is driving". Mirrors the firmware default on purpose.
 var JGV_WATCHDOG_MS = 500;
@@ -241,7 +241,7 @@ ManualDriver.prototype.enter = function () {
             // every jgv jog this session. Only when the capability probe
             // confirmed the cycle exists (an unknown key would error).
             if (this.driver.jgv_supported === true) {
-                this.stream.write("{jvto:" + JGV_WATCHDOG_MS + "}\n");
+                this.stream.write("{jgvto:" + JGV_WATCHDOG_MS + "}\n");
             }
             // Send "dummy" move to prod the machine into issuing a status report
             this.stream.write("M0\nG91\n G0 X0 Y0 Z0\n");
@@ -469,7 +469,11 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     // Per-axis velocity = speed × ratio in the host's current display units
     // (in/min if G20, mm/min if G21). The firmware's jgv setter converts to
     // canonical mm/min internally, so units round-trip cleanly.
-    if (hasRatios) {
+    // Gate on the capability probe: on firmware without CYCLE_JGV, ratio
+    // callers (pendant stick, dashboard virtual joystick) must fall through
+    // to the legacy G1 ratio-streaming path below — jgv tokens would just
+    // error and the joystick would be dead.
+    if (hasRatios && this.driver.jgv_supported === true) {
         var vec = {};
         vec[axis.toLowerCase()] = speed * dir;
         if (second_axis) {

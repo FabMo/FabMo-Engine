@@ -57,6 +57,11 @@ function setupAuthentication(svr) {
 
                     return next(err);
                 }
+            } else {
+                // Logged-out session cookie (passport: {}). Refuse the
+                // handshake; without this the middleware never called next()
+                // and the connection attempt hung until it timed out.
+                return next(new Error("Not logged in."));
             }
         } else {
             //log.error("Session content is undefined or passport is missing.");

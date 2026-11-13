@@ -106,7 +106,7 @@ describe("manual-drive wire protocol (golden)", () => {
             "{bjm:50}\n",
             "{cjm:50}\n",
             "{spph:false}\n",
-            "{jvto:500}\n",
+            "{jgvto:500}\n",
             "M0\nG91\n G0 X0 Y0 Z0\n",
         ]);
     });

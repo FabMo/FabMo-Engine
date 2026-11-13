@@ -14,6 +14,8 @@ var setTime = function (req, res, next) {
     if (req.params.ms) {
         engine.setTime(req.params.ms);
     }
+    // Always answer — this route used to leave the request hanging.
+    res.json({ status: "success", data: {} });
 };
 
 // eslint-disable-next-line no-unused-vars
