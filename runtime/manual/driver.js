@@ -35,7 +35,7 @@ var ANALOG_SAFETY_FACTOR = 1.0;
 var DEFAULT_SAFETY_FACTOR = 4.0;
 // TODO should be in the ManualDriver instance?!
 var count = 0;
-var RENEW_SEGMENTS = 10;
+var RENEW_SEGMENTS = 5;
 var RENEW_SEGMENTS_ROTARY = 2; // Fewer, larger segments for ABC rotary axes to provide adequate steps/segment
 var DEFAULT_MAX_NUDGES = 3;
 // Exit watchdog: g2core parked at stat:3 with an empty planner can swallow an
