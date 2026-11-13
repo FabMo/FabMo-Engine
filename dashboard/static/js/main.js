@@ -64,12 +64,12 @@ var supportsTouch = "ontouchstart" in window || navigator.msMaxTouchPoints;
 
 // Initial read of engine configuration
 
-// Operator accounts get a locked-down shell: only the Console app and the
-// manual keypad. The menu entries below are hidden for operators — and the
+// Operator accounts get a locked-down shell: the Console app, the manual
+// keypad, the Job Manager and (from the Job Manager) the Previewer. The menu
+// entries below are hidden for operators — and the
 // server refuses every settings-changing route for their session, so this
 // is presentation on top of real enforcement, not the enforcement itself.
 var OPERATOR_HIDDEN_MENU = [
-    '#left-menu a[href="#/app/job-manager"]',
     '#left-menu a[href="#/app/editor"]',
     '#left-menu a[href="#/app/macros"]',
     '#left-menu a[href="#/app/apps"]',
@@ -89,9 +89,19 @@ function applyUserRole(user) {
 // check user
 engine.getCurrentUser(function (err, user) {
     if (user === undefined) {
-        window.location.href = "#/authentication";
+        // Only navigate if we're not already there. iOS Safari treats
+        // assigning the URL the page is already on (same hash) as a full
+        // page load, not a no-op — so an unguarded assignment here reloaded
+        // the logged-out dashboard forever.
+        if (window.location.hash !== "#/authentication") {
+            window.location.href = "#/authentication";
+        }
     } else {
         applyUserRole(user);
+        // Offer the browser's clock to the tool only once someone is logged
+        // in. This used to run unconditionally at load, so every visit to
+        // the login page set the machine's clock.
+        engine.sendTime();
     }
 });
 
@@ -709,7 +719,15 @@ engine.getVersion(function (err, version) {
             // PRINT OUTPUT widget — docked in the top bar (detachable later).
             setupPrintWidget(dashboard.engine);
 
-            setLocationDisplays();
+            // setLocationDisplays re-saves the axis-mode config (a nudge to
+            // get every enabled axis onto the DRO). Skip it when nobody is
+            // logged in: the DRO is hidden behind the login page, and a
+            // logged-out page load has no business writing machine config.
+            engine.getCurrentUser(function (err, user) {
+                if (!err && user) {
+                    setLocationDisplays();
+                }
+            });
 
             // Status-handler modals can fire on the very first status event,
             // before the i18n dictionaries arrive (two chained fetches) — and
@@ -803,6 +821,7 @@ engine.getVersion(function (err, version) {
                     // dismissed (X, ESC, click-outside, iframe blur, or a
                     // server-side exit).
                     resetKeypadDialogUI();
+                    refocusAppFrame();
                 }
 
                 syncAuthorizeOverlay(status);
@@ -2425,6 +2444,34 @@ function resetKeypadDialogUI() {
     $(".manual-drive-message").removeClass("blinking-text");
 }
 
+// Hand keyboard focus back to the running app when the keypad closes. The
+// click that dismisses the keypad often lands on dashboard chrome (the DRO,
+// the top bar, the dimmed margin), which leaves focus on the dashboard
+// document — and an app that lives on its keyboard (the Console's command
+// line) goes dead until the user clicks back into it. Focusing the iframe's
+// window restores whatever element was active inside the app.
+function refocusAppFrame() {
+    var active = document.activeElement;
+    // Leave focus alone if the user is already in a dashboard field, or a
+    // dashboard dialog is up and wants the keyboard.
+    if (active && $(active).is("input, textarea, select, [contenteditable]") && $(active).is(":visible")) {
+        return;
+    }
+    if ($(".newModal").is(":visible")) {
+        return;
+    }
+    var iframe = document.getElementById("app-iframe");
+    if (!iframe || !iframe.contentWindow || !$(iframe).is(":visible")) {
+        return;
+    }
+    try {
+        iframe.focus();
+        iframe.contentWindow.focus();
+    } catch (e) {
+        // cross-origin or detached frame: nothing to hand focus to
+    }
+}
+
 $(".manual-drive-exit").on("click", function (evt) {
     // FIXED: Stop all event propagation immediately
     evt.preventDefault();
@@ -3175,8 +3222,6 @@ function ping() {
 
 ping();
 
-engine.sendTime();
-
 function touchScreen() {
     // Removed: applying overflow-y:scroll + -webkit-overflow-scrolling:touch to
     // #app-client-container on narrow touch screens created a UIScrollView whose
@@ -3196,7 +3241,15 @@ $(".icon_sign_out").on("click", function (e) {
         okText: window.t("status.yes"),
         cancelText: window.t("status.no"),
         ok: function () {
-            window.location.href = "#/authentication";
+            // Log out here, explicitly. The login page used to do it as a
+            // side effect of being shown, which meant merely opening a link
+            // ending in #/authentication ended the session.
+            $.ajax({
+                url: "/authentication/logout",
+                complete: function () {
+                    window.location.href = "#/authentication";
+                },
+            });
         },
         cancel: function () {},
     });

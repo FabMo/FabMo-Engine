@@ -3676,14 +3676,50 @@ input[type='range']:focus {
 @media (max-width: 650px) {
 /*@media (max-width: 650px) and (min-width: 285px) and (min-height: 500px) {*/
 
+    /* Phone-width top bar. The position readout is the widest row, so the
+       red status block spans the screen and the shorter Inputs/Outputs rows
+       leave free space at their left, beside the DRO pop-out button. The
+       keypad launcher lives there, inside the bar — it used to be hung
+       underneath, on top of the app. (The PNG has transparent padding; the
+       offsets put its yellow face level with the two lamp rows.) */
     #icon_keypad {
         cursor: pointer;
-        right: 50%;
-        top: 3.25rem;
-        height: 3rem;
+        right: auto;
+        left: 30px;
+        top: 9px;
+        height: 56px;
         position: absolute;
         opacity: 90%;
     }
+
+    /* No blue section at this width: the red status block fills the whole
+       bar and the connection icon (the only thing left in the blue) is
+       hidden, rather than a sliver of blue peeking in beside it. */
+    #left-position-container {
+        display: none;
+    }
+    #right-position-container {
+        left: 0;
+    }
+
+    /* STOP / LIMIT / INTERLOCK / DRIVE FAULT sit inline before the lamp rows
+       and reserve their width even while hidden. On a phone that pushed the
+       Outputs row past the screen edge, wrapping an invisible label onto a
+       line of its own — the gap between the Inputs and Outputs rows. Take
+       them out of the rows and show them as tags hanging under the bar. */
+    .inp-alert {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        padding: 2px 8px;
+        line-height: 16px;
+        white-space: nowrap;
+        background-color: #931B14;
+        border-radius: 0 0 0 4px;
+    }
+    #inp-limit { top: calc(100% + 20px); }
+    #inp-interlock { top: calc(100% + 40px); }
+    #inp-driverFault { top: calc(100% + 60px); }
 
     #transform_warning {
     position:absolute;

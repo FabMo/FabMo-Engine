@@ -276,6 +276,10 @@ function addQueueEntries(jobs) {
         menu.innerHTML = createQueueMenu(jobs[i]._id);
       // }
     };
+    queueJobsById = {};
+    for (var q = 0; q < jobs.length; q++) {
+      queueJobsById[jobs[q]._id] = jobs[q];
+    }
     setFirstCard(jobs[0]); //Add play button and css style for first card
     isTestJob = jobs[0];
     bindMenuEvents();
@@ -353,8 +357,16 @@ function addQueueEntries(jobs) {
 
 }
 
+// Jobs as last rendered into the queue, by id — lets setFirstCard() rebuild
+// the action row with the job's real state when called without a job.
+var queueJobsById = {};
+
 function setFirstCard(job) {
   var firstId = $('.job_item').first().attr('id');
+  if (!firstId) { return; }
+  // The drag-end path calls this bare. Without the job, the repeat button
+  // was redrawn as "off" with no count until the next queue refresh.
+  if (!job) { job = queueJobsById[firstId]; }
   var el = document.getElementById(firstId);
   var cardActions = document.createElement("div");
   hideDropDown();  ////## trying here to prevent clickability issue after choosing from 'recent'; update to #48395
@@ -983,10 +995,15 @@ function handleStatusReport(status) {
 function updateOrder(){
   var newOrder = sortable.toArray();
   fabmo.getJobsInQueue(function(err, jobs) {
-    for (i = 0; i < newOrder.length; i++) {
+    if (err || !jobs || !jobs.pending) { return; }
+    for (var i = 0; i < newOrder.length; i++) {
       var id = jobs.pending.filter(function(id) {
         return id._id == newOrder[i];
       });
+      // Cards that are no longer pending (the running job heads the list;
+      // a job may have started or been removed since the last render) have
+      // no order to set — this used to throw and abandon the rest.
+      if (!id.length) { continue; }
       id[0].order = i + 1;
       fabmo.updateOrder({
         id: id[0]._id,
@@ -1069,10 +1086,13 @@ var sortable = Sortable.create(el, {
     ctrl.removeAttribute("style");
   },
   onEnd: function(evt) {
-    var firstJob = document.getElementById('queue_table').firstChild;
-    var cardActions = document.createElement("div");
     setFirstCard();
-    updateOrder();
+    // Only write the order when something actually moved. On touch, a tap
+    // held past the drag delay starts and ends a "drag" in place; that used
+    // to re-save every pending job on each such tap.
+    if (evt.oldIndex !== evt.newIndex) {
+      updateOrder();
+    }
     $('.cancel').show(500);
     $('.download').show(500);
     $('.edit').show(500);
@@ -1442,6 +1462,15 @@ var notifyChange = function(err,id){
 var configData = null;
 $(document).ready(function() {
     $(document).foundation();
+
+    // Operator accounts get the full Job Manager and the Previewer, but not
+    // the Editor (the shell sends them back to the Console if they try).
+    // Take the "Edit" entries off the screen; see css/style.css.
+    fabmo.getCurrentUser(function (err, user) {
+        if (!err && user && user.role === "operator") {
+            $("body").addClass("operator-mode");
+        }
+    });
 
     fabmo.on('job_end',function (cmd) {
         updateQueue();

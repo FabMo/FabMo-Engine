@@ -145,13 +145,31 @@
     font-weight: bolder;
 }
 
-/* stand-in text caret for the readonly command line (positioned from init_setActions.js) */
+/* Text caret for the readonly command line. The native caret is hidden and ours
+   drawn instead: #cmd-caret overlays the field and init_setActions.js fills it
+   with an invisible copy of the text up to the caret, then the bar. */
+#cmd-input[readonly] {
+    caret-color: transparent;
+}
 #cmd-caret {
-    display: none;
+    display: none; /* flex while the line has focus */
     position: absolute;
-    width: 2px;
-    background-color: rgb(221, 98, 10);
+    box-sizing: border-box;
+    align-items: center;
+    overflow: hidden;
+    white-space: pre;
+    border: 0 solid transparent;
     pointer-events: none;
+}
+#cmd-caret .cmd-caret-lead {
+    flex: none;
+    visibility: hidden;
+}
+#cmd-caret .cmd-caret-bar {
+    flex: none;
+    width: 2px;
+    height: 1.25em;
+    background-color: rgb(221, 98, 10);
     animation: cmd-caret-blink 1.1s steps(1) infinite;
 }
 @keyframes cmd-caret-blink {

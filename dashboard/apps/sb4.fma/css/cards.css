@@ -80,7 +80,49 @@ body {
     padding: 6px 8px;
     background: #fafbfc;
 }
+.ts-job { flex-wrap: wrap; }   /* on a narrow card the icon row drops under the name */
 .ts-job .ts-iconbtn { padding: 4px 3px; }
+.ts-job-actions { display: flex; align-items: center; gap: 5px; margin-left: auto; flex: 0 0 auto; }
+/* Job Manager icon files, drawn as masks so they follow the button's colour */
+.ts-job-icon {
+    display: block;
+    width: 1.05em;
+    height: 1.05em;
+    background-color: currentColor;
+    -webkit-mask: center / contain no-repeat;
+    mask: center / contain no-repeat;
+}
+.ts-job-icon-preview  { -webkit-mask-image: url(../assets/job_preview.svg);  mask-image: url(../assets/job_preview.svg); }
+.ts-job-icon-ghost    { -webkit-mask-image: url(../assets/job_ghost.svg);    mask-image: url(../assets/job_ghost.svg); }
+.ts-job-icon-edit     { -webkit-mask-image: url(../assets/job_edit.png);     mask-image: url(../assets/job_edit.png); }
+.ts-job-icon-download { -webkit-mask-image: url(../assets/job_download.svg); mask-image: url(../assets/job_download.svg); }
+.ts-job-icon-delete   { -webkit-mask-image: url(../assets/job_delete.svg);   mask-image: url(../assets/job_delete.svg); }
+.ts-job-repeat { position: relative; }
+.ts-job .ts-job-repeat.on,
+body[class*="theme-"] .ts-job .ts-job-repeat.on { color: #32b433; }
+.ts-repeat-badge {
+    display: none;
+    position: absolute;
+    top: -3px;
+    right: -5px;
+    min-width: 13px;
+    height: 13px;
+    padding: 0 3px;
+    border-radius: 7px;
+    background: #32b433;
+    color: #fff;
+    font-size: 9px;
+    font-weight: bold;
+    line-height: 13px;
+    text-align: center;
+}
+.ts-repeat-badge.visible { display: inline-block; }
+.ts-modal.ts-modal-small { width: min(420px, 94vw); }
+.ts-modal-intro { font-size: 0.88em; margin: 0 0 10px; }
+.ts-radio-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.ts-radio-row input { margin: 0; }
+.ts-radio-row label { margin: 0; font-weight: 600; }
+.ts-radio-opts { margin: 4px 0 6px 22px; }
 .ts-job .ts-job-delete:hover { color: #c0392b; }
 .ts-job.next { border-color: #2980b9; background: #eef6fc; }
 .ts-drag-handle {
@@ -98,7 +140,7 @@ body {
 .ts-job-sortable:active .ts-drag-handle { cursor: grabbing; }
 .ts-drag-ghost { opacity: 0.4; }
 .ts-drag-chosen { border-color: #2980b9; box-shadow: 0 2px 6px rgba(41, 128, 185, 0.3); }
-.ts-job-info { flex: 1; min-width: 0; }
+.ts-job-info { flex: 1 1 110px; min-width: 0; }
 .ts-job-name {
     font-weight: 600;
     font-size: 0.92em;

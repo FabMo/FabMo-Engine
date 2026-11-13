@@ -120,7 +120,7 @@ function setupCameraToggle(img1, img2, videoCount) {
     if (videoCount < 2) return;
 
     img1.onclick = function() {
-        if (camera2_on && !calState.calibrating) {
+        if (camera2_on && !calState.calibrating && calState.viewMode !== "table") {
             img1.style.display = 'none';
             img2.style.display = 'block';
             document.getElementById("cam-label").innerHTML = "camera 2";
@@ -130,7 +130,7 @@ function setupCameraToggle(img1, img2, videoCount) {
     };
 
     img2.onclick = function() {
-        if (camera1_on && !calState.calibrating) {
+        if (camera1_on && !calState.calibrating && calState.viewMode !== "table") {
             img1.style.display = 'block';
             img2.style.display = 'none';
             document.getElementById("cam-label").innerHTML = "camera 1";
@@ -218,6 +218,7 @@ var calState = {
     units: "in",          // machine.units — only used to head the scan job
     mstate: "idle",       // last machine state seen on the status channel
     plate: null,          // stored table photo record (see PLATE below)
+    liveRectified: 0,     // camera port whose live picture is flattened into the table view (0 = none)
 };
 
 // SVG px per machine unit. The browser rasterizes the svg at its layout
@@ -462,13 +463,93 @@ function flatCorners() {
     };
 }
 
+// The calibrated camera, if it is up — its live picture can be flattened
+// into the table view (see rectifyLiveImg).
+function rectifiableCam() {
+    var c = calAnyCamera();
+    if (!c) return null;
+    var port = c.port || 1;
+    return (port === 2 ? camera2_on : camera1_on) ? { cal: c, port: port } : null;
+}
+
+// Table view with a calibrated camera: show the LIVE picture forced into
+// the overhead perspective. The calibration says where the table corners
+// sit in the camera picture; flatCorners() says where they sit in the flat
+// view; one homography between the two, applied to the <img> as a CSS
+// matrix3d, lays the table plane flat under the grid. Only the table
+// PLANE is true-to-scale — the gantry, clamps and anything else with
+// height lean away from the camera, as in any rectified photo.
+// The picture is clipped to the world rect (in its own, pre-warp
+// coordinates): beyond it the warp runs off toward the plane's horizon,
+// where the picture smears out and finally flips inside-out.
+function rectifyLiveImg(img, cal) {
+    var s = envSpans();
+    var flat = flatCorners();
+    var w = window.innerWidth, h = window.innerHeight;
+    if (!s || !flat || !w || !h) return false;
+    var c = cal.corners;
+    var Hm = h_quadToQuad(
+        [[c.tl.x * w, c.tl.y * h], [c.tr.x * w, c.tr.y * h],
+         [c.br.x * w, c.br.y * h], [c.bl.x * w, c.bl.y * h]],
+        [[flat.tl.x * w, flat.tl.y * h], [flat.tr.x * w, flat.tr.y * h],
+         [flat.br.x * w, flat.br.y * h], [flat.bl.x * w, flat.bl.y * h]]
+    );
+    // World rect on the flat screen, from the table rect and the scale
+    var t = s.table;
+    var kx = (flat.tr.x - flat.tl.x) * w / (t.x1 - t.x0);
+    var ky = (flat.bl.y - flat.tl.y) * h / (t.y1 - t.y0);
+    var L = flat.tl.x * w - (t.x0 - s.x0) * kx;
+    var T = flat.tl.y * h - (s.y0 + s.yspan - t.y1) * ky;
+    var R = L + s.xspan * kx, B = T + s.yspan * ky;
+    var Hinv = h_inverse3(Hm);
+    var poly = [[L, T], [R, T], [R, B], [L, B]].map(function (q) {
+        var d = Hinv[2][0] * q[0] + Hinv[2][1] * q[1] + Hinv[2][2];
+        return [(Hinv[0][0] * q[0] + Hinv[0][1] * q[1] + Hinv[0][2]) / d,
+                (Hinv[1][0] * q[0] + Hinv[1][1] * q[1] + Hinv[1][2]) / d, d];
+    });
+    // A world corner behind the camera's horizon (sign flip) can't be
+    // clipped to; fall back to the table quad itself, which is always sane.
+    var d0 = poly[0][2];
+    var sane = poly.every(function (q) { return isFinite(q[0]) && isFinite(q[1]) && q[2] * d0 > 0; });
+    if (!sane) {
+        poly = [[c.tl.x * w, c.tl.y * h], [c.tr.x * w, c.tr.y * h],
+                [c.br.x * w, c.br.y * h], [c.bl.x * w, c.bl.y * h]];
+    }
+    img.style.transformOrigin = "0 0";
+    img.style.transform = h_toMatrix3d(Hm);
+    img.style.clipPath = "polygon(" + poly.map(function (q) {
+        return q[0].toFixed(1) + "px " + q[1].toFixed(1) + "px";
+    }).join(",") + ")";
+    return true;
+}
+
+function unrectifyImg(img) {
+    img.style.transform = "";
+    img.style.clipPath = "";
+}
+
 function applyViewImgs() {
     var img1 = document.getElementById("camera1");
     var img2 = document.getElementById("camera2");
+    calState.liveRectified = 0;
     if (calState.viewMode === "table") {
-        img1.style.display = "none";
-        img2.style.display = "none";
+        var rc = calState.calibrating ? null : rectifiableCam();
+        var live = rc ? (rc.port === 2 ? img2 : img1) : null;
+        var other = live === img1 ? img2 : img1;
+        if (live && rectifyLiveImg(live, rc.cal)) {
+            live.style.display = "block";
+            calState.liveRectified = rc.port;
+            unrectifyImg(other);
+            other.style.display = "none";
+        } else {
+            unrectifyImg(img1);
+            unrectifyImg(img2);
+            img1.style.display = "none";
+            img2.style.display = "none";
+        }
     } else {
+        unrectifyImg(img1);
+        unrectifyImg(img2);
         img1.style.display = (calState.displayedCam === 1 && camera1_on) ? "block" : "none";
         img2.style.display = (calState.displayedCam === 2 && camera2_on) ? "block" : "none";
     }
@@ -524,6 +605,9 @@ function refreshLiveOverlay() {
     if (tableMode && !calState.zoneMode && calState.plate && plateMatchesTable()) {
         document.getElementById("cam-label").innerHTML =
             "table view &mdash; photo " + plateAge();
+    } else if (tableMode && !calState.zoneMode && calState.liveRectified) {
+        document.getElementById("cam-label").innerHTML =
+            "table view &mdash; live camera " + calState.liveRectified;
     }
 }
 

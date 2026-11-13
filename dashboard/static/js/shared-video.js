@@ -2,45 +2,82 @@
 window.FabMoVideo = (function () {
     // Shared camera detection
     function detectCamera(cameraNum) {
+        const port = cameraNum === 1 ? 3141 : 3142;
+        const testUrl = `http://${location.hostname}:${port}?${Math.random()}`;
+
+        console.log(`Testing camera ${cameraNum} at ${testUrl}`);
+
+        // The camera serves an endless MJPEG stream, and a camera slot with
+        // no device accepts the connection and never answers. Either way the
+        // probe's request does not end by itself, and anything that holds a
+        // request open during page load holds the document's load event
+        // hostage — the dashboard's app-launch gear waits on the iframe load
+        // event and would spin forever.
+        //
+        // Probe with fetch + AbortController: a fetch never delays the load
+        // event, and abort() really closes the connection. The old probe was
+        // an Image "aborted" by setting src = "" — iOS Safari keeps that
+        // request in the load-blocking set, so with a camera attached the
+        // Console never finished loading on an iPhone. The server sends its
+        // response headers with the first frame, so "headers arrived" means
+        // the same thing the image's onload did.
+        if (typeof fetch === "function" && typeof AbortController === "function") {
+            return new Promise((resolve) => {
+                const ctrl = new AbortController();
+                let done = false;
+                const finish = (ok, why) => {
+                    if (done) return;
+                    done = true;
+                    clearTimeout(timeout);
+                    try { ctrl.abort(); } catch (e) { /* already closed */ }
+                    console.log(`Camera ${cameraNum} ${why}`);
+                    resolve(ok);
+                };
+                const timeout = setTimeout(() => finish(false, "detection timeout"), 500);
+                fetch(testUrl, { mode: "no-cors", cache: "no-store", signal: ctrl.signal }).then(
+                    () => finish(true, "detected successfully"),
+                    () => finish(false, "failed to load")
+                );
+            });
+        }
+
+        // Fallback for browsers without fetch/AbortController: the image
+        // probe, but only once the page has finished loading so it cannot
+        // block the load event.
         return new Promise((resolve) => {
-            const port = cameraNum === 1 ? 3141 : 3142;
-            const testUrl = `http://${location.hostname}:${port}?${Math.random()}`;
-
-            console.log(`Testing camera ${cameraNum} at ${testUrl}`);
-
-            const testImg = new Image();
-
-            // The camera serves an endless MJPEG stream: onload fires on the
-            // first frame but the request stays open forever, which holds the
-            // document's load event hostage (the dashboard's app-launch gear
-            // waits on the iframe load event — it would spin indefinitely).
-            // Abort the probe on every exit path so the connection closes.
-            const abort = () => {
-                testImg.onload = testImg.onerror = null;
-                testImg.src = "";
+            const probe = () => {
+                const testImg = new Image();
+                const abort = () => {
+                    testImg.onload = testImg.onerror = null;
+                    testImg.src = "";
+                };
+                const timeout = setTimeout(() => {
+                    abort();
+                    console.log(`Camera ${cameraNum} detection timeout`);
+                    resolve(false);
+                }, 500);
+                testImg.onload = () => {
+                    clearTimeout(timeout);
+                    abort();
+                    console.log(`Camera ${cameraNum} detected successfully`);
+                    resolve(true);
+                };
+                testImg.onerror = () => {
+                    clearTimeout(timeout);
+                    abort();
+                    console.log(`Camera ${cameraNum} failed to load`);
+                    resolve(false);
+                };
+                testImg.src = testUrl;
             };
-
-            const timeout = setTimeout(() => {
-                abort();
-                console.log(`Camera ${cameraNum} detection timeout`);
-                resolve(false);
-            }, 500);  // 2000 works ...
-
-            testImg.onload = () => {
-                clearTimeout(timeout);
-                abort();
-                console.log(`Camera ${cameraNum} detected successfully`);
-                resolve(true);
-            };
-
-            testImg.onerror = () => {
-                clearTimeout(timeout);
-                abort();
-                console.log(`Camera ${cameraNum} failed to load`);
-                resolve(false);
-            };
-
-            testImg.src = testUrl;
+            if (document.readyState === "complete") {
+                probe();
+            } else {
+                window.addEventListener("load", function onLoad() {
+                    window.removeEventListener("load", onLoad);
+                    probe();
+                });
+            }
         });
     }
 

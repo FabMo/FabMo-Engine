@@ -118,12 +118,32 @@ define(function (require) {
                 $("#add_err").removeAttr("style");
             }
 
-            $.ajax({
-                url: "authentication/logout",
-                success: function (result) {},
-            });
-            $("#mainContent").show();
-            auth();
+            // Arriving with a message (kicked out / not authenticated)
+            // means the server has already disowned this session: clear it
+            // and show the login form, as before.
+            if (message) {
+                $.ajax({
+                    url: "/authentication/logout",
+                    success: function (result) {},
+                });
+                $("#mainContent").show();
+                auth();
+                return;
+            }
+            // A plain visit must not log anyone out (sign-out does that
+            // explicitly, before navigating here). If a user is still logged
+            // in — a bookmark, a stale tab, the back button — go to the
+            // dashboard instead of offering a login form over a live session.
+            engine.getCurrentUser(
+                function (err, user) {
+                    if (!err && user) {
+                        this.navigate("", { trigger: true, replace: true });
+                        return;
+                    }
+                    $("#mainContent").show();
+                    auth();
+                }.bind(this)
+            );
         },
         loadView: function (view) {
             this.view && this.view.remove();
