@@ -308,7 +308,14 @@ class Camera(object):
 
         path = str(device.device_node)
 
-        if action == 'add' and self.dev is None:
+        # Only take the device this server was started for (-c N). Two
+        # servers run side by side (one per camera slot) and both hear every
+        # udev event: opening whatever shows up let the second slot's server
+        # grab the first camera when it re-enumerated, leaving the first
+        # slot's server locked out (EBUSY) and the lone camera on the wrong
+        # port. It also kept both from trying a camera's metadata node.
+        if (action == 'add' and self.dev is None and
+            path == '/dev/video%d' % self.cam_index):
             self.have_camera = True
             self.open(path)
 
