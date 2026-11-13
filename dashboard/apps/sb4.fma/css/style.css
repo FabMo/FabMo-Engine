@@ -660,3 +660,35 @@ body[class*="theme-"] #insert-input {
     width: 0 !important;
     height: 0 !important;
 }
+
+/* ============================================== NARROW SCREENS: NO SIDEWAYS SCROLL */
+
+/* The "i" tooltips are up to 500px wide and positioned from their icon.
+   Hidden ones still count toward the page's scrollable width, so on a phone
+   the page could be dragged sideways into empty background. Clip sideways
+   overflow at the page (hidden is the fallback where clip is unsupported). */
+html,
+body {
+    overflow-x: hidden;
+    overflow-x: clip;
+}
+/* With sideways overflow clipped, a tooltip opened near the right edge of a
+   phone would be cut off — so on narrow screens show it as a full-width
+   strip along the bottom of the screen instead of beside its icon. */
+@media (max-width: 700px) {
+    .tooltip .tooltiptext,
+    .tooltip:hover .tooltiptext {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        top: auto;
+        width: auto;
+        max-width: none;
+        margin-left: 0;
+        z-index: 1000;
+    }
+    .tooltip .tooltiptext::after {
+        display: none;
+    }
+}
