@@ -3,17 +3,29 @@ initVideo = function() {
 var img = document.getElementById('video');
 var img1 = document.getElementById('video1');
 
-function resize() {                                 // use the retained setting
+// Which cameras answered the last detection. The saved layout is a
+// preference ("both", "cam1", "cam2"); what is actually shown is that
+// preference cut down to the cameras that exist, so a single camera gets
+// the whole pane no matter which port it came up on (a lone camera can
+// land on the second port) and a missing one never leaves a dead half.
+var present = { camera1: false, camera2: false };
+
+function effectiveLayout() {
     let layout = localStorage.getItem("fabmo_sb4_video_layout") || "none";
-    switch (layout) {
-    case 'none':
-        break;
+    if (layout === 'none') { return 'none'; }
+    if (present.camera1 && present.camera2) { return layout; }
+    if (present.camera1) { return 'cam1'; }
+    if (present.camera2) { return 'cam2'; }
+    return 'none';
+}
+
+function resize() {                                 // use the retained setting, as far as the cameras allow
+    switch (effectiveLayout()) {
     case 'cam1': // Cam1
         img.width = g.COnt_Width;
         img.height = g.COnt_Height;
         img1.width = 0;
         img1.height = 0;
-        //img.src = 'http://' + location.hostname + ':3141?' + Math.random();
         break;
     case 'cam2': // Cam2
         img.width = 0;
@@ -27,9 +39,11 @@ function resize() {                                 // use the retained setting
         img1.width = g.COnt_Width/2;
         img1.height = g.COnt_Height;
         break;
+    case 'none':
     default:
+        break;
     }
-}  
+}
 
 // Run fn only once the document has finished loading. An MJPEG <img>
 // request never completes (and with a streamer up but no camera it never
@@ -48,8 +62,6 @@ function whenLoaded(fn) {
 }
 
 function reload() {
-    let layout = localStorage.getItem("fabmo_sb4_video_layout") || "none";
-
     // Detection goes through shared-video's getCameraStatus(), which aborts
     // its probes on a deadline and maintains fabmo_sb4_has_video itself.
     let detect = (window.FabMoVideo && window.FabMoVideo.getCameraStatus)
@@ -58,12 +70,14 @@ function reload() {
 
     detect.then(function (status) {
         whenLoaded(function () {
-            if (status.camera1 && (layout === 'cam1' || layout === 'both')) {
+            present = { camera1: !!status.camera1, camera2: !!status.camera2 };
+            let layout = effectiveLayout();
+            if (layout === 'cam1' || layout === 'both') {
                 img.src = 'http://' + location.hostname + ':3141?' + Math.random();
             } else {
                 img.removeAttribute('src');
             }
-            if (status.camera2 && (layout === 'cam2' || layout === 'both')) {
+            if (layout === 'cam2' || layout === 'both') {
                 img1.src = 'http://' + location.hostname + ':3142?' + Math.random();
             } else {
                 img1.removeAttribute('src');
@@ -74,37 +88,18 @@ function reload() {
 }
 
 $('#sbp-container').on('click', function () {     // move forward to next layout on click
-    console.log("Video layout change requested");
     let layout = localStorage.getItem("fabmo_sb4_video_layout") || "none";
-    console.log("Current layout: " + layout);
-    switch (layout) {
-        case 'none':
-            break;
-        case 'both': // Next Cam1
-            layout = 'cam1';
-            img.width = g.COnt_Width;
-            img.height = g.COnt_Height;
-            img1.width = 0;
-            img1.height = 0;
-            break;
-        case 'cam1': // Next Cam2
-            layout = 'cam2';
-            img.width = 0;
-            img.height = 0;
-            img1.width = g.COnt_Width;
-            img1.height = g.COnt_Height;
-            break;
-        case 'cam2': // Next both
-            layout = 'both';
-            img.width = g.COnt_Width/2;
-            img.height = g.COnt_Height;
-            img1.width = g.COnt_Width/2;
-            img1.height = g.COnt_Height;
-            break;
-        case 'none': // Next Both
-        default:
+    if (layout === 'none') { return; }
+    if (!(present.camera1 && present.camera2)) {    // one camera: nothing to cycle through
+        return;
     }
-    console.log("New layout: " + layout);
+    switch (layout) {
+        case 'both': layout = 'cam1'; break;
+        case 'cam1': layout = 'cam2'; break;
+        case 'cam2':
+        default:     layout = 'both'; break;
+    }
+    console.log("New video layout: " + layout);
     localStorage.setItem("fabmo_sb4_video_layout", layout);
     reload();
 });

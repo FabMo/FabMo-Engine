@@ -2425,12 +2425,38 @@ module.exports = function(container) {
   //   • Convert OpenCV pose to three.js: same +X axis, but +Y and +Z flip
   //     (three.js camera has +Y up and looks down -Z; OpenCV is +Y down,
   //     looking +Z).
+  //
+  // The solve must run in the CAMERA's own pixel shape, not the canvas's.
+  // The video is stretched to fill the canvas (and was stretched to fill
+  // the Camera app's window when the corners were marked), and the corners
+  // are stored as fractions of the frame — so they are stretch-proof, but
+  // the canvas is generally not the camera's aspect ratio. Solving in
+  // canvas pixels treats that stretch as if the lens had square pixels of
+  // that shape; no single focal length fits, and the recovered pose lays
+  // the grid visibly off the table (the Camera app's flat homography is
+  // immune, which is why the two disagreed). So: image points are laid out
+  // on a frame of the camera's native aspect, and _applyARCamera gives the
+  // three.js camera that same native aspect — rendering it into the
+  // stretched canvas then stretches the scene exactly as the video is.
+  function _arNativeAspect() {
+      var img = container.find('.ar-video')[0];
+      if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+          self.ar._nativeAspect = img.naturalWidth / img.naturalHeight;
+      }
+      return self.ar._nativeAspect || null;
+  }
+
   function _solveCameraPose() {
       var c = self.ar.calibrating ? self.ar._draftCorners : self.ar.corners;
       if (!c) return null;
       var w = self.renderer.domElement.clientWidth;
       var h = self.renderer.domElement.clientHeight;
       if (!w || !h) return null;
+      // Frame of the camera's native shape, canvas-height tall. Until the
+      // first video frame reports its size, fall back to the canvas shape
+      // (the pose is re-solved when the frame arrives — see enterAR).
+      var nativeAspect = _arNativeAspect();
+      if (nativeAspect) w = h * nativeAspect;
       var halfX = (tableBounds.max.x - tableBounds.min.x) / 2;
       var halfY = (tableBounds.max.y - tableBounds.min.y) / 2;
       var cwx = tableBounds.loc.x;
@@ -2451,6 +2477,11 @@ module.exports = function(container) {
       ];
 
       var H = _h_quadToQuad(worldPts, imgPts);
+      // Fix the homography's free sign so the table centre has positive
+      // depth (w) — everything below reads w as "in front of the camera".
+      if (H[2][0] * cwx + H[2][1] * cwy + H[2][2] < 0) {
+          H = H.map(function (row) { return row.map(function (v) { return -v; }); });
+      }
       // Shift principal point: H' = T·H with T translating image origin to center.
       var pcx = w / 2, pcy = h / 2;
       var Hp = [
@@ -2513,7 +2544,65 @@ module.exports = function(container) {
       var ey = [-r1[1], -r2[1], -r3[1]];
       var ez = [-r1[2], -r2[2], -r3[2]];
 
-      return { ex: ex, ey: ey, ez: ez, C: C, f: f, w: w, h: h };
+      // Hybrid projection P (3x4, world [X,Y,Z,1] -> image [u,v,w] in this
+      // frame's pixels, w = depth along the view axis).
+      //
+      // The pose above is an ESTIMATE: it assumes an ideal lens centred on
+      // the frame, and any departure from that shows up as the grid sitting
+      // off the table. The Camera app has no such problem because it never
+      // estimates anything — it warps the table plane straight through the
+      // 4-corner homography H. So do the same here for the plane: the X, Y
+      // and offset columns of P are H itself (scaled by lambda so w is true
+      // depth), which puts every z=0 point exactly where the Camera app's
+      // grid puts it. Only the Z column — which way "up off the table"
+      // leans in the picture — comes from the estimated pose (K·r3).
+      // If the estimate is perfect this P equals the estimated camera's
+      // own projection; where it isn't, the table plane stays exact and
+      // only the height direction carries the error.
+      var r3c = [                       // world +Z in camera axes (pre any flip: t_z > 0 here)
+          r1[1]*r2[2] - r1[2]*r2[1],
+          r1[2]*r2[0] - r1[0]*r2[2],
+          r1[0]*r2[1] - r1[1]*r2[0],
+      ];
+      var Zc = [f * r3c[0] + pcx * r3c[2], f * r3c[1] + pcy * r3c[2], r3c[2]];
+      var P = [0, 1, 2].map(function (i) {
+          return [lambda * H[i][0], lambda * H[i][1], Zc[i], lambda * H[i][2]];
+      });
+
+      return { ex: ex, ey: ey, ez: ez, C: C, f: f, w: w, h: h, P: P };
+  }
+
+  // Turn the hybrid image projection into the three.js camera's projection
+  // matrix. World -> clip is M (image px -> NDC, plus a standard depth row
+  // from w); the renderer applies projectionMatrix x matrixWorldInverse, so
+  // projectionMatrix = M x matrixWorld makes the product exactly M while
+  // the camera keeps its estimated position/orientation for everything
+  // else that reads them (lighting, sorting, billboards).
+  function _applyHybridProjection(cam, pose) {
+      var P = pose.P;
+      if (!P) return;
+      var n = cam.near, fr = cam.far;
+      var A = (fr + n) / (fr - n), B = -2 * fr * n / (fr - n);
+      var sx = 2 / pose.w, sy = 2 / pose.h;
+      var r0 = [], r1 = [], r2 = [], r3 = [];
+      for (var j = 0; j < 4; j++) {
+          r0[j] = sx * P[0][j] - P[2][j];          // x_ndc = 2u/W - 1
+          r1[j] = P[2][j] - sy * P[1][j];          // y_ndc = 1 - 2v/H  (image y runs down)
+          r2[j] = A * P[2][j] + (j === 3 ? B : 0); // z_ndc = A + B/w
+          r3[j] = P[2][j];                         // w = depth
+      }
+      for (var k = 0; k < 4; k++) {
+          if (!isFinite(r0[k]) || !isFinite(r1[k]) || !isFinite(r2[k]) || !isFinite(r3[k])) return;
+      }
+      var M = new THREE.Matrix4();
+      M.set(r0[0], r0[1], r0[2], r0[3],
+            r1[0], r1[1], r1[2], r1[3],
+            r2[0], r2[1], r2[2], r2[3],
+            r3[0], r3[1], r3[2], r3[3]);
+      cam.projectionMatrix.multiplyMatrices(M, cam.matrixWorld);
+      if (cam.projectionMatrixInverse) {
+          cam.projectionMatrixInverse.getInverse(cam.projectionMatrix);
+      }
   }
 
   function _applyARCamera() {
@@ -2547,10 +2636,25 @@ module.exports = function(container) {
       ));
       cam.fov = 2 * Math.atan(pose.h / (2 * pose.f)) * 180 / Math.PI;
       cam.aspect = pose.w / pose.h;
-      cam.near = 0.01;
-      cam.far = 100000;
+      // Fit the depth range to the scene. A fixed 0.01..100000 range spends
+      // nearly all of the depth buffer's precision in the first fraction of
+      // a unit in front of the lens: at table distance two surfaces a few
+      // hundredths apart got the same depth value and z-fought, which showed
+      // as stripes and patches across the material in AR. Bracketing the
+      // camera-to-table distance keeps sub-thousandth resolution there.
+      var tdx = pose.C[0] - tableBounds.loc.x;
+      var tdy = pose.C[1] - tableBounds.loc.y;
+      var tableDist = Math.sqrt(tdx * tdx + tdy * tdy + pose.C[2] * pose.C[2]);
+      if (!isFinite(tableDist) || tableDist <= 0) tableDist = 100;
+      cam.near = Math.max(0.01, tableDist / 50);
+      cam.far = tableDist * 50;
       cam.updateMatrixWorld(true);
       cam.updateProjectionMatrix();
+      // Replace the estimated camera's projection with the hybrid one, so
+      // the table plane matches the Camera app's grid exactly. (Anything
+      // that calls updateProjectionMatrix() later resets it; the resize
+      // path re-enters here, which puts it back.)
+      _applyHybridProjection(cam, pose);
       self.camera = cam;
       self.controls.object = cam;
       // Re-apply the 2D view transform (zoom/pan) to the canvas; AR
@@ -2643,6 +2747,15 @@ module.exports = function(container) {
               _applyARStyling();
           }
           var $video0 = container.find('.ar-video');
+          // The pose needs the camera's native frame shape, known only once
+          // a frame has arrived: re-solve then if it is news.
+          $video0.off('load.arAspect').on('load.arAspect', function () {
+              var before = self.ar._nativeAspect || null;
+              var now = _arNativeAspect();
+              if (now && now !== before && self.ar.enabled && !self.ar._animating && !self.ar._entering && !self.ar._flyingToAR) {
+                  _applyARCamera();
+              }
+          });
           $video0.attr('src', _videoUrl(self.ar.cameraPort)).css('opacity', 0).show();
           self.controls.enabled = false;
       }
@@ -2770,6 +2883,9 @@ module.exports = function(container) {
       var endFov = 2 * Math.atan(pose.h / (2 * pose.f)) * 180 / Math.PI;
       var canvasAspect = (self.renderer.domElement.clientWidth || pose.w) /
                          (self.renderer.domElement.clientHeight || pose.h);
+      // The AR pose renders at the camera's native aspect (see
+      // _solveCameraPose); ease into it so the final snap doesn't jump.
+      var endAspect = pose.w / pose.h;
 
       var endCam = new THREE.PerspectiveCamera();
       endCam.position.copy(endPos);
@@ -2785,16 +2901,20 @@ module.exports = function(container) {
 
       var startTime = Date.now();
       var animId = (self.ar._animId = (self.ar._animId || 0) + 1);
+      self.ar._flyingToAR = true;   // cleared by the final snap below
 
       function tick() {
-          if (!self.ar.enabled || self.ar._animId !== animId) return;
+          if (!self.ar.enabled || self.ar._animId !== animId) {
+              if (self.ar._animId === animId) self.ar._flyingToAR = false;
+              return;
+          }
           var t = Math.min(1, (Date.now() - startTime) / durationMs);
           var ease = t * t * (3 - 2 * t);  // smoothstep
 
           self.camera.position.lerpVectors(startPos, endPos, ease);
           THREE.Quaternion.slerp(startQuat, endQuat, self.camera.quaternion, ease);
           self.camera.fov = startFov + (endFov - startFov) * ease;
-          self.camera.aspect = canvasAspect;
+          self.camera.aspect = canvasAspect + (endAspect - canvasAspect) * ease;
           self.camera.updateProjectionMatrix();
 
           $video.css('opacity', ease);
@@ -2806,6 +2926,7 @@ module.exports = function(container) {
               requestAnimationFrame(tick);
           } else {
               // Final snap to ensure exact pose + transparent canvas.
+              self.ar._flyingToAR = false;
               self.renderer.setClearAlpha(0);
               _applyARCamera();
           }
