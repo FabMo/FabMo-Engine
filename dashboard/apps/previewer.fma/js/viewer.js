@@ -2636,8 +2636,18 @@ module.exports = function(container) {
       ));
       cam.fov = 2 * Math.atan(pose.h / (2 * pose.f)) * 180 / Math.PI;
       cam.aspect = pose.w / pose.h;
-      cam.near = 0.01;
-      cam.far = 100000;
+      // Fit the depth range to the scene. A fixed 0.01..100000 range spends
+      // nearly all of the depth buffer's precision in the first fraction of
+      // a unit in front of the lens: at table distance two surfaces a few
+      // hundredths apart got the same depth value and z-fought, which showed
+      // as stripes and patches across the material in AR. Bracketing the
+      // camera-to-table distance keeps sub-thousandth resolution there.
+      var tdx = pose.C[0] - tableBounds.loc.x;
+      var tdy = pose.C[1] - tableBounds.loc.y;
+      var tableDist = Math.sqrt(tdx * tdx + tdy * tdy + pose.C[2] * pose.C[2]);
+      if (!isFinite(tableDist) || tableDist <= 0) tableDist = 100;
+      cam.near = Math.max(0.01, tableDist / 50);
+      cam.far = tableDist * 50;
       cam.updateMatrixWorld(true);
       cam.updateProjectionMatrix();
       // Replace the estimated camera's projection with the hybrid one, so
