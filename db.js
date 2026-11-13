@@ -170,10 +170,23 @@ Job.prototype.clone = function (overrides, callback) {
     job.save(callback);
 };
 
+// Set only the order field. This used to save() the whole document as it
+// was read a moment earlier, so a reorder racing a state change (dequeue,
+// repeat toggle) could write the stale state/repeat fields back.
 Job.prototype.update_order = function (order, callback) {
-    log.info("Upating " + this._id ? this._id : "<volatile job>");
+    log.info("Updating order of job " + (this._id ? this._id : "<volatile job>"));
     this.order = order;
-    this.save(callback);
+    jobs.update(
+        { _id: this._id },
+        { $set: { order: order } },
+        function (err) {
+            if (err) {
+                return callback(err);
+            }
+            notifyChange();
+            callback(null, this);
+        }.bind(this)
+    );
 };
 
 // The functions below update the state of the job object in the database.
