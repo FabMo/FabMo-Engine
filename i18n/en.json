@@ -851,7 +851,9 @@
             "smallest_moves_tip": "Set smallest move at normal Zoom"
         },
         "machine": {
-            "homed_ind_title": "Homed indicator: click to cycle not homed / homed / off"
+            "homed_ind_title": "Homed indicator is off: click to turn it back on",
+            "homed_ind_homed": "Homed. You can home again at any time. (Click this mark to change the indicator.)",
+            "homed_ind_unhomed": "Not homed since startup or a drive fault: home before cutting. (Click this mark to change the indicator.)"
         },
         "app_settings": {
             "collapse_note": "Click a card's title to fold it to a title bar; click again to open it."

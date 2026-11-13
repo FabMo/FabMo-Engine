@@ -287,17 +287,20 @@
     white-space: nowrap;
 }
 
+/* Fields are sized for a speed value, not stretched across the card: on a
+   wide card they used to become long empty bars. Extra axes (A/B/C) wrap to
+   a second line on a narrow screen instead of being squeezed. */
 .speed-inputs-container {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 0.5rem;
     align-items: flex-end;
-    width: 100%;
+    min-width: 0;
 }
 .speed-input-group {
     display: flex;
     flex-direction: column;
-    flex: 1 1 0;
+    flex: 0 1 5.5em;
     min-width: 50px;
 }
 .speed-axis-label {
@@ -324,10 +327,12 @@
 
 /* ============================================== MY WORKFLOW CARD */
 
-/* A running procedure list: one slim full-width button per step (the +
-   add button keeps its column at the right). */
+/* A running procedure list of slim buttons, read left to right, top to
+   bottom (the + add button keeps its column at the right). Buttons take a
+   sensible width and flow into as many columns as fit — two on a phone,
+   more on a wide card — rather than each stretching the full card width. */
 #machine-btn-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
     gap: 6px;
 }
 #machine-btn-grid .ts-cmd {
@@ -337,8 +342,11 @@
 /* ============================================== MACHINE CARD: HOMED INDICATORS */
 
 /* The two Home buttons carry Sb4's homed state (opensbp tempVariables
-   XYHOMED / ZHOMED, maintained by macros 2/3/9): yellow = not homed yet,
-   dimmed = homed. The ⦸ glyph cycles not-homed → homed → indicator off
+   XYHOMED / ZHOMED, maintained by macros 2/3/9 and cleared by the engine on
+   a drive fault): yellow with a "!" badge = needs homing; homed = an
+   ordinary, fully pressable button with a green check badge. Homed used to
+   be drawn dimmed, which read as "this button is disabled" rather than
+   "done". The badge cycles not-homed → homed → indicator off
    (tool_config.js). Id-prefixed so they win over theme-bridge's themed
    .ts-cmd / .machine-cmd rules. */
 #btn-home-xy,
@@ -350,26 +358,41 @@
     background: rgba(255, 243, 150, 0.99);
     color: #444;
 }
-#sb4app .ts-cmd.sb4-homed,
-#sb4app .ts-cmd.sb4-homed:hover:not(:disabled) {
-    background: rgba(235, 202, 47, 0.4);
-    color: #777;
-}
 .sb4-homed-ind {
     position: absolute;
-    right: 7px;
+    right: 6px;
     top: 50%;
     transform: translateY(-50%);
+    box-sizing: border-box;
+    width: 1.35em;
+    height: 1.35em;
+    border-radius: 50%;
     font-size: 0.8em;
-    line-height: 1;
-    color: #888;
+    font-weight: 700;
+    line-height: 1.35em;
+    text-align: center;
     cursor: pointer;
 }
+.sb4-homed-ind::before {
+    content: "\29B8"; /* indicator off */
+}
+.sb4-unhomed .sb4-homed-ind {
+    background: #b26a00;
+    color: #fff;
+}
+.sb4-unhomed .sb4-homed-ind::before {
+    content: "!";
+}
 .sb4-homed .sb4-homed-ind {
-    color: #2e7d32;
+    background: #2e7d32;
+    color: #fff;
+}
+.sb4-homed .sb4-homed-ind::before {
+    content: "\2713";
 }
 .sb4-ind-off .sb4-homed-ind {
-    opacity: 0.3;
+    color: #888;
+    opacity: 0.4;
 }
 
 /* ============================================== FOOTER */

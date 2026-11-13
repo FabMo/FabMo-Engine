@@ -295,6 +295,7 @@ function Machine(control_path, callback) {
             // operator sees it during the firmware-feedhold pause rather than
             // waiting until they click Resume to discover the lockout.
             this._checkInterlockEdge();
+            this._checkDriverFaultEdge();
 
             var auth_input = "in" + config.machine.get("auth_input");
             var quit_input = "in" + config.machine.get("quit_input");
@@ -1229,6 +1230,42 @@ Machine.prototype._checkInterlockEdge = function () {
         }
     }
     this._interlockWasActive = active;
+};
+
+// True iff a stepper-driver fault input is physically active: any input
+// assigned the "driverFault" action, or input 15 when it has no assignment
+// (the same fallback checkForInterlocks() applies).
+Machine.prototype.isDriverFaultInputActive = function () {
+    for (let pin = 1; pin < 16; pin++) {
+        let assigned = config.machine.get("di" + pin + "ac");
+        if (typeof assigned === "string" && assigned.toLowerCase() === "none") {
+            assigned = "";
+        }
+        if (!this.driver.status["in" + pin]) continue;
+        if (assigned && typeof assigned === "string" && assigned.toLowerCase() === "driverfault") return true;
+        if (pin === 15 && !assigned) return true;
+    }
+    return false;
+};
+
+// A drive fault means a motor may have lost steps, so the machine's position
+// can no longer be trusted. On the rising edge of the fault input, mark XY
+// and Z as not homed — the same XYHOMED / ZHOMED temp variables the homing
+// macros (2, 3, 9) maintain and the Console's Home buttons display. They are
+// already absent after an engine start, so restart and drive fault now both
+// leave the machine showing "not homed" until it is homed again.
+Machine.prototype._checkDriverFaultEdge = function () {
+    var active = this.isDriverFaultInputActive();
+    if (active && !this._driverFaultWasActive) {
+        log.warn("Driver fault input active — marking XY and Z as not homed.");
+        config.opensbp.setTempVariable({ name: "XYHOMED" }, "false", function (err) {
+            if (err) log.error("Could not clear XYHOMED after driver fault: " + err);
+            config.opensbp.setTempVariable({ name: "ZHOMED" }, "false", function (err2) {
+                if (err2) log.error("Could not clear ZHOMED after driver fault: " + err2);
+            });
+        });
+    }
+    this._driverFaultWasActive = active;
 };
 
 // Returns null if the (out, val) write is permitted, or a reason string if it
@@ -2600,3 +2637,4 @@ exports.connect = connect;
 
 //Any export below this line is for unit testing purposes only
 exports.private_decideNextAction = decideNextAction;
+exports.private_Machine = Machine;

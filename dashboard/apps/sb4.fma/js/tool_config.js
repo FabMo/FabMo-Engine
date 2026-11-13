@@ -101,8 +101,10 @@ function updateSpeedsFromEngineConfig() {  // ALSO update HOMING status at the s
 // set by macros 2/3/9 and absent again after an engine start; absent is read
 // and written back as "false", as Sb4 always did. Display only — nothing in
 // the engine or macros reads these except macro 99.
-// Button classes: sb4-unhomed (yellow), sb4-homed (dimmed), sb4-ind-off.
-// The ⦸ glyph cycles: not homed -> homed -> indicator off (per browser,
+// The engine also sets both to "false" when a drive-fault input trips.
+// Button classes: sb4-unhomed (yellow, "!" badge), sb4-homed (normal button,
+// green check badge — never dimmed, which read as disabled), sb4-ind-off.
+// The badge cycles: not homed -> homed -> indicator off (per browser,
 // localStorage sb4-homed-ind-<axis>) -> not homed.
 var HOMED_BTN = { xy: "#btn-home-xy", z: "#btn-home-z" };
 var homedState = { xy: null, z: null };   // "true" / "false" as last seen
@@ -133,6 +135,16 @@ function applyHomedIndicator(axis, raw) {
         .toggleClass("sb4-ind-off", off)
         .toggleClass("sb4-unhomed", !off && homed === "false")
         .toggleClass("sb4-homed", !off && homed === "true");
+    // Say what the badge means; the i18n pass only knows the generic title.
+    var key = off ? "homed_ind_title" : (homed === "true" ? "homed_ind_homed" : "homed_ind_unhomed");
+    var fallback = {
+        homed_ind_title: "Homed indicator is off: click to turn it back on",
+        homed_ind_homed: "Homed. You can home again at any time. (Click this mark to change the indicator.)",
+        homed_ind_unhomed: "Not homed since startup or a drive fault: home before cutting. (Click this mark to change the indicator.)"
+    }[key];
+    var text = (typeof window.t === "function") ? window.t("sb4.machine." + key) : fallback;
+    if (!text || text === "sb4.machine." + key) { text = fallback; }
+    $(HOMED_BTN[axis]).find(".sb4-homed-ind").attr("title", text).removeAttr("data-i18n-title");
 }
 
 function cycleHomedIndicator(axis) {
