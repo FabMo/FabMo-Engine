@@ -118,6 +118,22 @@ describe("keypad jog over the firmware velocity-jog cycle", () => {
         expect(drv.jogVelocity).toHaveBeenCalledWith({ x: 60 });
     });
 
+    test("ratio callers fall back to legacy G1 streaming on unsupported firmware", () => {
+        // Pendant stick / dashboard virtual joystick on pre-jgv firmware:
+        // sending jgv tokens would just error (dead joystick), so the ratio
+        // form must ride the legacy segment-streaming path instead.
+        var drv = makeG2(false);
+        var st = { write: jest.fn() };
+        var md = new ManualDriver(drv, st);
+
+        md.startMotion("X", 100, "Y", 100, 0.6, 0.8);
+        expect(drv.jogVelocity).not.toHaveBeenCalled();
+        expect(st.write).toHaveBeenCalled(); // G91 F header + segments
+        expect(md.analogMode).toBeFalsy();
+        expect(md.currentDirection).toBe(0.6);
+        expect(md.second_currentDirection).toBe(0.8);
+    });
+
     test("unsupported firmware falls back to legacy G1 streaming", () => {
         var drv = makeG2(false);
         var st = { write: jest.fn() };
@@ -150,7 +166,7 @@ describe("keypad jog over the firmware velocity-jog cycle", () => {
         expect(drv.jogVelocity).toHaveBeenCalledWith({ z: -60 });
     });
 
-    test("manual enter pins the firmware watchdog ($jvto) when the cycle exists", () => {
+    test("manual enter pins the firmware watchdog ($jgvto) when the cycle exists", () => {
         var drv = makeG2(true);
         var st = { write: jest.fn() };
         var md = new ManualDriver(drv, st);
@@ -160,12 +176,12 @@ describe("keypad jog over the firmware velocity-jog cycle", () => {
         });
         expect(
             wrote.some(function (line) {
-                return line.indexOf("{jvto:500}") !== -1;
+                return line.indexOf("{jgvto:500}") !== -1;
             })
         ).toBe(true);
     });
 
-    test("manual enter writes no jvto on firmware without the cycle", () => {
+    test("manual enter writes no jgvto on firmware without the cycle", () => {
         var drv = makeG2(false);
         var st = { write: jest.fn() };
         var md = new ManualDriver(drv, st);
@@ -175,7 +191,7 @@ describe("keypad jog over the firmware velocity-jog cycle", () => {
         });
         expect(
             wrote.some(function (line) {
-                return line.indexOf("jvto") !== -1;
+                return line.indexOf("jgvto") !== -1;
             })
         ).toBe(false);
     });
