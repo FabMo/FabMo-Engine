@@ -735,6 +735,56 @@
         </div>
     </div>
 
+    <!-- Job repeat modal (queue-row repeat icon; wording shared with the Job Manager) -->
+    <div class="ts-modal-backdrop" id="job-repeat-modal" style="display:none;">
+        <div class="ts-modal ts-modal-small">
+            <div class="ts-modal-header">
+                <span data-i18n="job_manager.repeat_modal.title">Repeat Job</span>
+            </div>
+            <div class="ts-modal-body">
+                <p class="ts-modal-intro" data-i18n="job_manager.repeat_modal.intro">After this job finishes, requeue and run it again. Set a total run count, or leave blank to repeat until you stop it manually.</p>
+                <label class="ts-label-field"><span data-i18n="job_manager.repeat_modal.count_label">Total times to run (blank = until canceled):</span>
+                    <input id="job-repeat-count" type="number" step="1" min="1" placeholder="blank = unlimited" data-i18n-placeholder="job_manager.repeat_modal.count_placeholder">
+                </label>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-job-repeat-cancel" data-i18n="job_manager.repeat_modal.cancel">Cancel</button>
+                <button class="ts-cmd" id="btn-job-repeat-off" data-i18n="job_manager.repeat_modal.turn_off">Turn Off</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-job-repeat-save" data-i18n="job_manager.repeat_modal.save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ghost / preview run modal (queue-row ghost icon; wording shared with the Job Manager) -->
+    <div class="ts-modal-backdrop" id="job-ghost-modal" style="display:none;">
+        <div class="ts-modal ts-modal-small">
+            <div class="ts-modal-header">
+                <span data-i18n="job_manager.ghost_modal.title">Ghost / Preview Run</span>
+            </div>
+            <div class="ts-modal-body">
+                <p class="ts-modal-intro" data-i18n="job_manager.ghost_modal.intro">Preview the job without cutting. The original job stays queued for a real run afterward.</p>
+                <div class="ts-radio-row">
+                    <input type="radio" name="job-ghost-mode" id="job-ghost-mode-lift" value="lift" checked>
+                    <label for="job-ghost-mode-lift" data-i18n="job_manager.ghost_modal.lift_run_file">Lift &amp; run file</label>
+                </div>
+                <div class="ts-radio-opts" id="job-ghost-lift-opts">
+                    <label class="ts-label-field"><span data-i18n="job_manager.ghost_modal.z_offset_label">Z offset to add (inches):</span>
+                        <input id="job-ghost-zoffset" type="number" step="0.05" min="0" value="0.5">
+                    </label>
+                </div>
+                <div class="ts-radio-row">
+                    <input type="radio" name="job-ghost-mode" id="job-ghost-mode-trace" value="trace">
+                    <label for="job-ghost-mode-trace" data-i18n="job_manager.ghost_modal.trace_rectangle">Trace bounding rectangle</label>
+                </div>
+                <div class="ts-radio-opts ts-note-inline" id="job-ghost-trace-opts" style="display:none;" data-i18n="job_manager.ghost_modal.trace_help"></div>
+            </div>
+            <div class="ts-modal-footer">
+                <button class="ts-cmd" id="btn-job-ghost-cancel" data-i18n="job_manager.ghost_modal.cancel">Cancel</button>
+                <button class="ts-cmd ts-cmd-primary" id="btn-job-ghost-go" data-i18n="job_manager.ghost_modal.start">Start</button>
+            </div>
+        </div>
+    </div>
+
     <!-- App shortcuts picker modal -->
     <div class="ts-modal-backdrop" id="shortcut-pick-modal" style="display:none;">
         <div class="ts-modal">

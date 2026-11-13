@@ -803,6 +803,7 @@ engine.getVersion(function (err, version) {
                     // dismissed (X, ESC, click-outside, iframe blur, or a
                     // server-side exit).
                     resetKeypadDialogUI();
+                    refocusAppFrame();
                 }
 
                 syncAuthorizeOverlay(status);
@@ -2423,6 +2424,34 @@ function resetKeypadDialogUI() {
     $(".manual-drive-message").html("");
     $(".manual-drive-message").hide();
     $(".manual-drive-message").removeClass("blinking-text");
+}
+
+// Hand keyboard focus back to the running app when the keypad closes. The
+// click that dismisses the keypad often lands on dashboard chrome (the DRO,
+// the top bar, the dimmed margin), which leaves focus on the dashboard
+// document — and an app that lives on its keyboard (the Console's command
+// line) goes dead until the user clicks back into it. Focusing the iframe's
+// window restores whatever element was active inside the app.
+function refocusAppFrame() {
+    var active = document.activeElement;
+    // Leave focus alone if the user is already in a dashboard field, or a
+    // dashboard dialog is up and wants the keyboard.
+    if (active && $(active).is("input, textarea, select, [contenteditable]") && $(active).is(":visible")) {
+        return;
+    }
+    if ($(".newModal").is(":visible")) {
+        return;
+    }
+    var iframe = document.getElementById("app-iframe");
+    if (!iframe || !iframe.contentWindow || !$(iframe).is(":visible")) {
+        return;
+    }
+    try {
+        iframe.focus();
+        iframe.contentWindow.focus();
+    } catch (e) {
+        // cross-origin or detached frame: nothing to hand focus to
+    }
 }
 
 $(".manual-drive-exit").on("click", function (evt) {
