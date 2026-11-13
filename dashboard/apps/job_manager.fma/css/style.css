@@ -1109,3 +1109,10 @@ table {
 .ghost-button {
   cursor: pointer;
 }
+
+/* Operator accounts: no Editor, so no "Edit" entries (first-card button and
+   the per-job menu item). The shell also refuses the launch. */
+body.operator-mode .edit,
+body.operator-mode .jobActions .editJob {
+  display: none !important;
+}

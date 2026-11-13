@@ -1463,6 +1463,15 @@ var configData = null;
 $(document).ready(function() {
     $(document).foundation();
 
+    // Operator accounts get the full Job Manager and the Previewer, but not
+    // the Editor (the shell sends them back to the Console if they try).
+    // Take the "Edit" entries off the screen; see css/style.css.
+    fabmo.getCurrentUser(function (err, user) {
+        if (!err && user && user.role === "operator") {
+            $("body").addClass("operator-mode");
+        }
+    });
+
     fabmo.on('job_end',function (cmd) {
         updateQueue();
         updateHistory();

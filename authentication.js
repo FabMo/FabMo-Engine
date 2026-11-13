@@ -346,8 +346,9 @@ var deleteUser = function (username, callback) {
 // Operator gate
 //
 // Operator accounts exist so a shop can hand the machine to someone who may
-// CUT but not CONFIGURE: they get the Console app and the manual keypad and
-// nothing else. The dashboard hides the rest of the UI, but this middleware
+// CUT but not CONFIGURE: they get the Console app, the manual keypad, the
+// Job Manager and the Previewer, and nothing else. The dashboard hides the
+// rest of the UI, but this middleware
 // is the enforcement: for a session logged in as an operator, every
 // state-mutating HTTP route is refused except the short allowlist below.
 // (The manual keypad and console commands ride the session-authenticated
@@ -365,6 +366,13 @@ var OPERATOR_ALLOWED = [
     /^\/eval$/, // SBP expression evaluation (read-only)
     /^\/(quit|pause|resume)$/, // safety — never block stopping the machine
     /^\/macros\/\d+\/run$/, // running admin-curated macros (editing them is blocked)
+    // The whole job pipeline — operators get the full Job Manager and the
+    // Previewer: submit, run, reorder, repeat, ghost-run, cancel/delete,
+    // clear the queue, re-run from history, and the Previewer's Arrange
+    // save (POST /job/:id/file). Jobs are the work, not the machine's setup.
+    /^\/job(\/|$)/, // POST /job, and everything under /job/:id
+    /^\/jobs\/queue(\/run)?$/, // clear the queue, run the next job
+    /^\/usb\/submit$/, // submit a job from a USB drive
     /^\/uix\/fr_override$/, // feed-rate override knob
     /^\/acc\/spindle_speed$/, // spindle RPM (configuring the VFD is blocked)
 ];
