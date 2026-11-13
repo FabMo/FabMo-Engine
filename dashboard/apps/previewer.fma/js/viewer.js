@@ -3204,8 +3204,24 @@ module.exports = function(container) {
   // Toolpath drawer: the tab (and the Toolpath Details header) slide the
   // panel into the right frame edge instead of rolling it up. Delegated
   // so re-renders of the panel contents can't double-bind.
+  //
+  // The operator's choice is remembered across reloads (localStorage, so it
+  // also survives closing the dashboard). Only an explicit click on the tab
+  // is saved: the places that force the drawer out (Arrange mode, a
+  // soft-limit warning) open it for that session without changing the
+  // preference.
+  var OPS_COLLAPSED_KEY = 'preview-ops-collapsed';
+  try {
+      if (localStorage.getItem(OPS_COLLAPSED_KEY) === '1') {
+          container.find('#operations-panel').addClass('collapsed');
+      }
+  } catch (e) { /* storage unavailable: start expanded */ }
   container.on('click', '.ops-drawer-tab, .ops-setup-header', function () {
-      container.find('#operations-panel').toggleClass('collapsed');
+      var $panel = container.find('#operations-panel');
+      $panel.toggleClass('collapsed');
+      try {
+          localStorage.setItem(OPS_COLLAPSED_KEY, $panel.hasClass('collapsed') ? '1' : '0');
+      } catch (e) { /* not remembered, still toggles */ }
   });
 
   // Wire UI: AR toggle, Top toggle, recalibrate, calibration click capture, cancel.
