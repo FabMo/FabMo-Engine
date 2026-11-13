@@ -40,7 +40,7 @@ module.exports = function (server) {
         const { path: dirPath } = req.query;
 
         if (!dirPath) {
-            return res.status(400).json({
+            return res.json(400, {
                 status: "fail",
                 data: {
                     message: "Directory path is required",
@@ -50,7 +50,7 @@ module.exports = function (server) {
 
         // Validate path is within USB mount point (security check)
         if (!isValidUSBPath(dirPath)) {
-            return res.status(403).json({
+            return res.json(403, {
                 status: "fail",
                 data: {
                     message: "Invalid USB path",
@@ -61,7 +61,7 @@ module.exports = function (server) {
         listDirectory(dirPath, function (err, contents) {
             if (err) {
                 logger.error("Error listing directory:", err);
-                return res.status(500).json({
+                return res.json(500, {
                     status: "fail",
                     data: {
                         message: "Failed to list directory",
@@ -84,7 +84,7 @@ module.exports = function (server) {
         const { path: filePath } = req.body;
 
         if (!filePath) {
-            return res.status(400).json({
+            return res.json(400, {
                 status: "fail",
                 data: {
                     message: "File path is required",
@@ -94,7 +94,7 @@ module.exports = function (server) {
 
         // Validate path is within USB mount point (security check)
         if (!isValidUSBPath(filePath)) {
-            return res.status(403).json({
+            return res.json(403, {
                 status: "fail",
                 data: {
                     message: "Invalid USB path",
@@ -105,7 +105,7 @@ module.exports = function (server) {
         // Check if file exists and is readable
         fs.access(filePath, fs.constants.R_OK, function (err) {
             if (err) {
-                return res.status(404).json({
+                return res.json(404, {
                     status: "fail",
                     data: {
                         message: "File not found or not readable",
@@ -118,7 +118,7 @@ module.exports = function (server) {
             // Reject disallowed files
             if (typeof util.allowed_file === "function" && !util.allowed_file(fileName)) {
                 logger.error(`File ${fileName} is not allowed.`);
-                return res.status(400).json({
+                return res.json(400, {
                     status: "fail",
                     data: {
                         message: `File ${fileName} is not allowed.`,
@@ -133,7 +133,7 @@ module.exports = function (server) {
             fs.copy(filePath, tempPath, function (err) {
                 if (err) {
                     logger.error("Error copying file from USB:", err);
-                    return res.status(500).json({
+                    return res.json(500, {
                         status: "fail",
                         data: {
                             message: "Failed to copy file from USB",
@@ -160,7 +160,7 @@ module.exports = function (server) {
                 db.createJob(fileObject, jobOptions, function (err, job) {
                     if (err) {
                         logger.error("Error creating job:", err);
-                        return res.status(500).json({
+                        return res.json(500, {
                             status: "fail",
                             data: {
                                 message: "Failed to create job",
