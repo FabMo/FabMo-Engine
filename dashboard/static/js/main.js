@@ -64,12 +64,12 @@ var supportsTouch = "ontouchstart" in window || navigator.msMaxTouchPoints;
 
 // Initial read of engine configuration
 
-// Operator accounts get a locked-down shell: only the Console app and the
-// manual keypad. The menu entries below are hidden for operators — and the
+// Operator accounts get a locked-down shell: the Console app, the manual
+// keypad, the Job Manager and (from the Job Manager) the Previewer. The menu
+// entries below are hidden for operators — and the
 // server refuses every settings-changing route for their session, so this
 // is presentation on top of real enforcement, not the enforcement itself.
 var OPERATOR_HIDDEN_MENU = [
-    '#left-menu a[href="#/app/job-manager"]',
     '#left-menu a[href="#/app/editor"]',
     '#left-menu a[href="#/app/macros"]',
     '#left-menu a[href="#/app/apps"]',

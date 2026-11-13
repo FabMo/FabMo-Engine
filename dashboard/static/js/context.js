@@ -61,12 +61,17 @@ define(function (require) {
     };
 
     ApplicationContext.prototype.launchApp = function (id, args, callback) {
-        // Operator accounts live in the Console app. Every launch path funnels
-        // through here — sidebar links, hash navigation, and launchApp calls
-        // from inside app iframes — so redirecting at this one chokepoint
-        // covers them all. The server refuses settings-changing routes for
-        // operator sessions regardless.
-        if (window.fabmoUserRole === "operator" && id !== "fabmo-sb4") {
+        // Operator accounts get the Console, the Job Manager and the
+        // Previewer; any other app sends them back to the Console. Every
+        // launch path funnels through here — sidebar links, hash navigation,
+        // and launchApp calls from inside app iframes — so redirecting at
+        // this one chokepoint covers them all. The server refuses
+        // settings-changing routes for operator sessions regardless.
+        var OPERATOR_APPS = ["fabmo-sb4", "job-manager", "previewer"];
+        if (
+            window.fabmoUserRole === "operator" &&
+            OPERATOR_APPS.indexOf(id) === -1
+        ) {
             if (this.apps && this.apps.get("fabmo-sb4")) {
                 id = "fabmo-sb4";
                 args = {};
