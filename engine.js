@@ -128,10 +128,16 @@ Engine.prototype.setTime = function (time) {
         var m = moment.unix(time / 1000.0);
         var t = m.utc().format("YYYY-MM-DD HH:mm:ss");
         var cmd = "timedatectl set-time " + t + "; timedatectl";
-        util.doshell(cmd, function (stdout) {
-            log.debug("Time Set To:  " + stdout);
-            this.time_synced = true;
-        });
+        util.doshell(
+            cmd,
+            function (stdout) {
+                log.debug("Time Set To:  " + stdout);
+                // Latch: accept one external time, then trust the local clock.
+                // (This callback was unbound, so the flag was set on the wrong
+                // object and every POST /time re-set the clock.)
+                this.time_synced = true;
+            }.bind(this)
+        );
     }
 };
 
