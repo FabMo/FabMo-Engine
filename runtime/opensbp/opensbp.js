@@ -2105,7 +2105,9 @@ SBPRuntime.prototype._execute = function (command, callback) {
                         ") and cannot be used as an event trigger. Line: " + (this.pc + 1)
                     );
                 }
-                if (this.machine.status["in" + sw]) {
+                // Read from driver.status, not machine.status, which is one status report behind when
+                // we are running synchronously from the "stat" (STAT_STOP) handler (see note in commands/probe.js).
+                if ((this.driver ? this.driver.status : this.machine.status)["in" + sw]) {
                     this.pc += 1;
                     throw new Error(
                         "ON INPUT: Input#" + sw + " is already active (ON) so cannot arm rising-edge watch. Line: " + (this.pc + 1)
@@ -3415,7 +3417,9 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
             if (this.simulation_mode) {
                 return this.simulated_inputs[n - 50] ? 1 : 0;
             }
-            return this.machine.status["in" + (n - 50)];
+            // Read from driver.status, not machine.status, which is one status report behind when
+            // we are running synchronously from the "stat" (STAT_STOP) handler (see note in commands/probe.js).
+            return (this.driver ? this.driver.status : this.machine.status)["in" + (n - 50)];
 
         // NOTE: More inputs are imagined here
 

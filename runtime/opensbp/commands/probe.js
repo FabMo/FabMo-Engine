@@ -117,7 +117,14 @@ function probe(runtime, opts) {
         default:
     }
     // Or, the input is already active (ON); then, also generate an error and terminate file
-    if (runtime.machine.status["in" + input]) {
+    // Read the input from the driver's status, not machine.status. A probe command breaks the stack, so it
+    //   usually runs synchronously from the runtime's "stat" (STAT_STOP) handler. In g2.js handleStatusReport
+    //   that "stat" event fires BEFORE the "status" event that copies the report into machine.status; so
+    //   machine.status is one status report behind at this point. If the report that carried stat:3 also
+    //   carried the input going OFF (eg. a short pull-off move before a re-probe), machine.status still shows
+    //   the input ON and we would falsely error here. driver.status is updated before either event fires.
+    var liveStatus = runtime.driver ? runtime.driver.status : runtime.machine.status;
+    if (liveStatus["in" + input]) {
         throw "Input#" + opts.inp + " is already active (ON) so cannot be used for Probing request ";
     }
 
