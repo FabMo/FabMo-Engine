@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Registration</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="rg-page">
+
+    <div class="rg-header">
+        <h1>Print Registration</h1>
+        <div class="rg-badges">
+            <span class="rg-badge" id="pos-badge">&mdash;</span>
+            <span class="rg-badge rg-state" id="state-badge">&mdash;</span>
+        </div>
+    </div>
+
+    <div class="rg-banner" id="active-banner" hidden>
+        <span><b>A registration correction is active on this machine.</b>
+        It shifts every OpenSBP file and command until it is cleared.</span>
+        <button class="rg-btn" id="btn-clear-active">Clear correction</button>
+    </div>
+
+    <div class="rg-split">
+
+        <!-- LEFT: the three steps -->
+        <div class="rg-steps">
+
+            <div class="rg-card">
+                <div class="rg-card-title"><span class="rg-num">1</span> Job</div>
+                <div class="rg-row">
+                    <button class="rg-btn" id="btn-demo">Load demo job</button>
+                    <button class="rg-btn" id="btn-file">Open .sbp file&hellip;</button>
+                    <input type="file" id="file-input" accept=".sbp,.SBP" hidden>
+                </div>
+                <div class="rg-note" id="job-info">No job loaded. Marks are read from a toolpath named
+                    <b>Regmarks</b>, or from <code>' REGMARK n, x, y</code> comment lines.</div>
+                <div class="rg-note">Demo sheet to print (letter, 100% scale):
+                    <a href="demo/regdemo.pdf" download>PDF</a> &middot;
+                    <a href="demo/regdemo.svg" download>SVG</a> &middot;
+                    <a href="demo/regdemo.sbp" download>job file</a></div>
+            </div>
+
+            <div class="rg-card">
+                <div class="rg-card-title"><span class="rg-num">2</span> Find the marks</div>
+                <div class="rg-seg" id="source-seg">
+                    <button data-source="sim" class="on">Simulated sheet</button>
+                    <button data-source="manual">Point with the bit</button>
+                    <button data-source="camera">Camera</button>
+                </div>
+
+                <div class="rg-source" data-for="sim">
+                    <div class="rg-note">No camera or machine needed: a virtual sheet is laid crooked and
+                        slightly stretched on a virtual table, and a virtual camera looks for the dots.</div>
+                    <div class="rg-row">
+                        <button class="rg-btn" id="btn-shuffle">Lay sheet down again</button>
+                        <button class="rg-btn rg-primary" id="btn-find-sim" disabled>Find marks</button>
+                    </div>
+                </div>
+
+                <div class="rg-source" data-for="manual" hidden>
+                    <div class="rg-note" id="manual-prompt">Load a job first.</div>
+                    <div class="rg-row">
+                        <button class="rg-btn" id="btn-goto-est" disabled>Go to estimate</button>
+                        <button class="rg-btn rg-primary" id="btn-capture" disabled>Capture this mark</button>
+                    </div>
+                </div>
+
+                <div class="rg-source" data-for="camera" hidden>
+                    <div class="rg-note">Jog until mark 1 is in the camera view, at the height you
+                        calibrated the camera at, then press Find marks. The machine will move to the rest.</div>
+                    <div class="rg-row">
+                        <button class="rg-btn rg-primary" id="btn-find-cam" disabled>Find marks</button>
+                        <button class="rg-btn" id="btn-snap">Test shot</button>
+                    </div>
+                </div>
+
+                <div class="rg-row">
+                    <button class="rg-btn" id="btn-reset" disabled>Start over</button>
+                    <button class="rg-btn rg-stop" id="btn-abort" hidden>Stop</button>
+                </div>
+                <div class="rg-progress" id="progress"></div>
+
+                <details class="rg-details" id="settings">
+                    <summary>Camera settings</summary>
+                    <div class="rg-grid">
+                        <label>Mark diameter <input class="rg-in" id="set-markDia" type="number" step="0.01"></label>
+                        <label>Pixels per <span class="unit">in</span> <input class="rg-in" id="set-pxPerUnit" type="number" step="1"></label>
+                        <label>Camera rotation (&deg;) <input class="rg-in" id="set-camRotDeg" type="number" step="0.1"></label>
+                        <label>Accept fit if worst mark under <input class="rg-in" id="set-maxResidual" type="number" step="0.001"></label>
+                        <label>Camera offset X (bit &rarr; camera) <input class="rg-in" id="set-offX" type="number" step="0.001"></label>
+                        <label>Camera offset Y <input class="rg-in" id="set-offY" type="number" step="0.001"></label>
+                    </div>
+                    <div class="rg-cal" data-for="camera" hidden>
+                        <div class="rg-note"><b>Scale and rotation:</b> put any dot in view, then press the
+                            button. The machine moves <span id="cal-step">0.25</span> <span class="unit">in</span>
+                            in X and Y and watches the dot shift.</div>
+                        <div class="rg-row"><button class="rg-btn" id="btn-cal-scale">Measure scale + rotation</button></div>
+                        <div class="rg-note"><b>Camera offset:</b> drill a small hole, and with the bit still
+                            over it press &ldquo;Bit is over the hole&rdquo;. Jog until the camera sees the hole,
+                            then press &ldquo;Camera sees the hole&rdquo;.</div>
+                        <div class="rg-row">
+                            <button class="rg-btn" id="btn-cal-hole">Bit is over the hole</button>
+                            <button class="rg-btn" id="btn-cal-see" disabled>Camera sees the hole</button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <div class="rg-card">
+                <div class="rg-card-title"><span class="rg-num">3</span> Cut to the print</div>
+                <div id="report" class="rg-report"><div class="rg-note">Find the marks to see how the sheet really lies.</div></div>
+                <div class="rg-row">
+                    <button class="rg-btn rg-primary" id="btn-apply" disabled>Queue registered job</button>
+                </div>
+                <div class="rg-note" id="apply-note"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT: what the machine sees -->
+        <div class="rg-views">
+            <div class="rg-card rg-card-view">
+                <div class="rg-card-title">Table
+                    <span class="rg-legend">
+                        <i class="lg lg-plan"></i> as programmed
+                        <i class="lg lg-fit"></i> registered
+                        <i class="lg lg-cam"></i> camera
+                    </span>
+                </div>
+                <canvas id="table-view" width="900" height="600"></canvas>
+            </div>
+            <div class="rg-lower">
+                <div class="rg-card rg-card-cam">
+                    <div class="rg-card-title">Camera <span class="rg-sub" id="cam-info"></span></div>
+                    <canvas id="cam-view" width="640" height="480"></canvas>
+                    <img id="cam-stream" crossorigin="anonymous" alt="" hidden>
+                </div>
+                <div class="rg-card rg-card-marks">
+                    <div class="rg-card-title">Marks</div>
+                    <table class="rg-table" id="mark-table">
+                        <thead><tr><th>#</th><th>In the file</th><th>On the table</th><th>Miss</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../../js/libs/fabmo.js"></script>
+<script src="js/regcore.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

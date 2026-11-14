@@ -1,0 +1,11 @@
+{
+    "name": "Print Registration",
+    "main": "./index.html",
+    "icon": "icon.png",
+    "icon_color": "#1f6fb2",
+    "version": "0.1.0",
+    "author": "ShopBot Tools",
+    "website": "http://shopbottools.com",
+    "id": "registration",
+    "description": "Print-and-cut registration: find the printed marks, fit the sheet's real position, rotation and stretch, and cut the job to the print"
+}
