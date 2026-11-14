@@ -210,6 +210,7 @@ function G2() {
     events.EventEmitter.call(this);
     this.setMaxListeners(50);
     this.lines_to_send = 4;
+    this._gcode_unacked = 0; // g-code lines written to G2 that it has not yet acknowledged (see allGcodeAcknowledged)
     this._ignored_responses = 0;
     this._primed = false;
     this._streamDone = false;
@@ -264,6 +265,7 @@ G2.prototype._resetInternalState = function () {
 
     // Streaming state
     this.lines_to_send = 4;
+    this._gcode_unacked = 0; // g-code lines written to G2 that it has not yet acknowledged (see allGcodeAcknowledged)
     this._ignored_responses = 0;
     this._primed = false;
     this._streamDone = false;
@@ -1473,6 +1475,7 @@ G2.prototype.handleStatusReport = function (response) {
                     case STAT_END:
                         log.info("Clearing the quit pending state.");
                         this.lines_to_send = 4;
+                        this._gcode_unacked = 0;
                         this.quit_pending = false;
                         this.pause_flag = false;
                         this.status.inFeedHold = false;
@@ -1571,6 +1574,9 @@ G2.prototype.onMessage = function (response) {
             this._ignored_responses--;
         } else {
             this.lines_to_send += 1;
+            if (this._gcode_unacked > 0) {
+                this._gcode_unacked -= 1;
+            }
             this.sendMore();
         }
         var r = response.r;
@@ -1673,6 +1679,7 @@ G2.prototype.queueFlush = function (callback) {
     log.debug("Sending FabMo Queue Clear");
     this.flushcallback = callback;
     this.lines_to_send = 4;
+    this._gcode_unacked = 0;
     this.gcode_queue.clear(); // clear FabMo
     this._write("%\n"); // clear G2, though redundant in case of quitting a file
 };
@@ -2045,6 +2052,30 @@ G2.prototype.runStream = function (s, manualPrime = false) {
     return this.context;
 };
 
+// True when G2 has acknowledged every g-code line handed to this driver: nothing is waiting in the cycle
+// stream, the line buffer or the g-code queue, and every line written has had its {"r":...} response.
+//
+// Why a runtime needs this: a stat:3 (stop) report does not say WHICH line it belongs to. G2 reports stat:3
+// for an M0, at the end of a probe cycle, and after any JSON command, so a stop can arrive just after a move
+// has been written but before G2 has taken it in. A runtime waiting for "everything before me has finished"
+// must not trust a stop while this is false. Once it is true, a {stat:null} query is reliable: G2 answers
+// stat:5 as soon as an acknowledged move is planned (bench-verified Nov 2026). Note that the query must be
+// sent AFTER the acknowledgements arrive; G2 answers JSON queries ahead of g-code sent in the same burst.
+//
+// This is read-only bookkeeping (_gcode_unacked shadows lines_to_send); it does not affect what is sent.
+G2.prototype.allGcodeAcknowledged = function () {
+    if (this.gcode_queue.getLength() > 0 || this._gcode_unacked > 0) {
+        return false;
+    }
+    if (this.lineBuffer && this.lineBuffer.length > 0) {
+        return false;
+    }
+    if (this.context && this.context._stream && this.context._stream.readableLength > 0) {
+        return false;
+    }
+    return true;
+};
+
 // G2 begins running G-Codes as soon as it recieves them, and in certain cases, it is possible for
 // G2 to "plan to a stop" when this is not the desired behavior.  This typically happens at the start of
 // of a run, when the host has only sent a few moves down, and G2's planner outpaces the moves coming in.
@@ -2110,6 +2141,7 @@ G2.prototype.sendMore = function () {
                 codes.push("");
                 if (codes.length > 1) {
                     this.lines_to_send -= to_send /*-offset*/;
+                    this._gcode_unacked += to_send;
                     this._write(codes.join("\n"), function () {});
                 }
             }

@@ -112,6 +112,13 @@ function SBPRuntime() {
     this._skExitNotifyShown = false;
     // Timer handle for the pending-gcodes deadlock guard (_armPendingGcodeNudge)
     this._pendingNudgeTimer = null;
+    // Stop confirmation (_confirmStop): _emitSeq counts emit_gcode calls; _stopQuery is the in-flight
+    // {stat:null} query (or null); _stopAwaitingAcks is set while a stop is on hold for G2 acknowledgements.
+    this._emitSeq = 0;
+    this._stopQuery = null;
+    this._stopQueryTimer = null;
+    this._stopAwaitingAcks = false;
+    this._stopAwaitingSince = 0;
     this.vs_change = 0;
     this.absoluteMode = true;
 
@@ -159,6 +166,8 @@ SBPRuntime.prototype.connect = function (machine) {
     this.driver = machine.driver;
     this.status_handler = this._onG2Status.bind(this);
     this.driver.on("status", this.status_handler);
+    this.response_handler = this._onG2Response.bind(this);
+    this.driver.on("response", this.response_handler);
     this.status_report = {};
     this.machine.status.line = null;
     this.machine.status.nb_lines = null;
@@ -193,6 +202,7 @@ SBPRuntime.prototype.disconnect = function () {
 
     if (this.ok_to_disconnect) {
         this.driver.removeListener("status", this.status_handler);
+        this.driver.removeListener("response", this.response_handler);
         this.machine = null;
         this.driver = null;
         this.connected = false;
@@ -1328,9 +1338,8 @@ SBPRuntime.prototype._run = function () {
                     break;
                 }
                 if (this.gcodesPending) {
-                    this.gcodesPending = false;
-                    log.info("COMPLETED PENDING GCODES =(cleared)============####");
-                    this._executeNext();
+                    // A stat:3 alone does not prove that what we emitted has run (see _confirmStop)
+                    this._confirmStop();
                     break;
                 }
                 break;
@@ -1655,6 +1664,130 @@ SBPRuntime.prototype._armPendingGcodeNudge = function () {
     );
 };
 
+// Decide whether a stat:3 (stop) from G2 really means "everything this runtime has emitted has run", and
+// only then clear gcodesPending and continue the program. Called from the STAT_STOP handler.
+//
+// THE PROBLEM: gcodesPending is one flag, and a stat:3 does not say which line it belongs to. G2 reports
+// stat:3 for an M0 (the zero commands send one), at the end of a probe cycle, and after any JSON command.
+// So a stop belonging to an EARLIER line can arrive just after a LATER move has been emitted, and before
+// G2 has started it. Accepting that stop runs the next stack-breaking command before the move has happened.
+// (Seen on a tool, Nov 2026: in homing, the stop for ZY's M0 released the second PY before the pull-back
+// jog had started, so PY found the prox still on and errored.)
+//
+// THE RULE: a stop only counts when
+//   1. everything emitted has been written to G2 and acknowledged by it, and
+//   2. G2, asked AFTER that point, says it is stopped ({stat:null} -> 3), and
+//   3. nothing more was emitted while we were asking.
+//
+// WHAT FIRES IN WHAT ORDER:
+//   stat:3 arrives -> not everything acknowledged yet -> set _stopAwaitingAcks and return. Each G2 response
+//     ("r") re-runs this via _onG2Response until the acknowledgements are all in.
+//   all acknowledged -> send {stat:null}. G2 has by now planned any move we sent, so it answers 5 (running)
+//     if there is motion still to do, 3 if there is not.
+//   reply 3 -> clear gcodesPending, _executeNext().
+//   reply not 3 -> do nothing; the stat:3 at the real end of that motion brings us back here.
+// IF THE ORDER FLIPS:
+//   - another stat:3 arrives while a query is in flight: ignored; the reply in flight decides. A stop that
+//     G2 reports AFTER sending that reply arrives after it on the wire, so it is not lost.
+//   - the reply is lost: _stopQueryTimer clears the query after 1s; the _armPendingGcodeNudge timer then
+//     produces a fresh stat:3 and we start over.
+//   - acknowledgements never arrive (accounting drifted): after 3s with G2 reporting stopped and no
+//     feedhold, we log a warning and ask anyway rather than hang the file.
+//   - the run ends or is quit meanwhile: _cancelStopConfirm() drops the query and a late reply is ignored.
+SBPRuntime.prototype._confirmStop = function () {
+    if (!this.gcodesPending || !this.driver) {
+        return;
+    }
+    if (this._stopQuery) {
+        return; // A query is in flight; its reply decides
+    }
+
+    if (!this._emittedGcodeAcknowledged()) {
+        var now = Date.now();
+        if (!this._stopAwaitingAcks) {
+            this._stopAwaitingAcks = true;
+            this._stopAwaitingSince = now;
+        }
+        var stuck =
+            now - this._stopAwaitingSince > 3000 &&
+            this.driver.status.stat === this.driver.STAT_STOP &&
+            !this.driver.pause_flag;
+        if (!stuck) {
+            log.debug("Stop reported but emitted g-codes not yet acknowledged by G2 - holding");
+            return;
+        }
+        log.warn("G-codes still unacknowledged 3s after G2 reported stopped - confirming stop anyway");
+    }
+    this._stopAwaitingAcks = false;
+
+    var query = { seq: this._emitSeq };
+    this._stopQuery = query;
+    this._stopQueryTimer = setTimeout(
+        function () {
+            if (this._stopQuery === query) {
+                log.warn("No reply to stop-confirmation query - will retry on the next stop report");
+                this._stopQuery = null;
+                this._stopQueryTimer = null;
+            }
+        }.bind(this),
+        1000
+    );
+    this.driver.get(
+        "stat",
+        function (err, stat) {
+            if (this._stopQuery !== query) {
+                return; // Cancelled, timed out, or superseded
+            }
+            clearTimeout(this._stopQueryTimer);
+            this._stopQueryTimer = null;
+            this._stopQuery = null;
+            if (!this.gcodesPending || !this.driver) {
+                return;
+            }
+            if (err) {
+                log.warn("Stop-confirmation query failed: " + err);
+                return;
+            }
+            if (this._emitSeq !== query.seq) {
+                // More g-code was emitted while we were asking, so this answer does not cover it
+                return this._confirmStop();
+            }
+            if (stat === this.driver.STAT_STOP) {
+                this.gcodesPending = false;
+                log.info("COMPLETED PENDING GCODES =(cleared)============####");
+                this._executeNext();
+            } else {
+                log.debug("Stop not confirmed (G2 stat=" + stat + ") - motion still to run");
+            }
+        }.bind(this)
+    );
+};
+
+// True when every g-code this runtime has emitted has reached G2 and been acknowledged by it
+SBPRuntime.prototype._emittedGcodeAcknowledged = function () {
+    if (this.stream && this.stream.readableLength > 0) {
+        return false; // still in our own stream, not yet handed to the driver
+    }
+    return this.driver.allGcodeAcknowledged();
+};
+
+// Every response from G2 may be the acknowledgement a held stop is waiting for (see _confirmStop)
+SBPRuntime.prototype._onG2Response = function () {
+    if (this._stopAwaitingAcks && this.gcodesPending && this.driver) {
+        this._confirmStop();
+    }
+};
+
+// Drop any stop confirmation in progress (end of run, quit, abort). A late reply is then ignored.
+SBPRuntime.prototype._cancelStopConfirm = function () {
+    if (this._stopQueryTimer) {
+        clearTimeout(this._stopQueryTimer);
+        this._stopQueryTimer = null;
+    }
+    this._stopQuery = null;
+    this._stopAwaitingAcks = false;
+};
+
 // Pick a feedrate to use when rewriting a G0 rapid as a G38.3 under an armed
 // ON INPUT watcher. Z-only moves use jogspeed_z; everything else uses jogspeed_xy.
 // Returns IPM/MMPM (units/min) — matches the F-word convention emitted by the
@@ -1892,6 +2025,7 @@ SBPRuntime.prototype.resetRuntimeState = function () {
         clearTimeout(this._pendingNudgeTimer);
         this._pendingNudgeTimer = null;
     }
+    this._cancelStopConfirm();
 
     if (this.machine) {
         this.machine.status.inFeedHold = false;
@@ -3641,6 +3775,7 @@ SBPRuntime.prototype.emit_gcode = function (s) {
         var n = this.pc;
     }
     this.gcodesPending = true;
+    this._emitSeq += 1;
     var temp_n = n + 20; ////## save low numbers for prepend/postpend; being done in util for gcode?
     var gcode = "N" + temp_n + " " + s;
     gcode = gcode + "\n";
