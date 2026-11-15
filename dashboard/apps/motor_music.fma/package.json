@@ -1,0 +1,11 @@
+{
+    "name": "Motor Music",
+    "main": "./index.html",
+    "icon": "icon.png",
+    "icon_color": "#7a3fa0",
+    "version": "0.1.0",
+    "author": "ShopBot Tools",
+    "website": "http://shopbottools.com",
+    "id": "motor_music",
+    "description": "Play the machine like an instrument: computer-keyboard keys sound notes on the X and Y motors"
+}

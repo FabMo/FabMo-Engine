@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Music</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="mm-page">
+
+    <div class="mm-header">
+        <h1>Motor Music</h1>
+        <div class="mm-badges">
+            <span class="mm-badge" id="pos-badge">&mdash;</span>
+            <span class="mm-badge mm-state" id="state-badge">&mdash;</span>
+        </div>
+    </div>
+
+    <div class="mm-card mm-arm">
+        <div>
+            <button class="mm-btn mm-primary" id="btn-arm">Start playing</button>
+            <button class="mm-btn mm-stop" id="btn-disarm" hidden>Stop playing</button>
+        </div>
+        <div class="mm-note" id="arm-note">
+            Playing moves the machine. Each note shuttles an axis back and forth inside a small area around
+            where the tool is now. Spindle off, tool raised, stay clear.
+        </div>
+    </div>
+
+    <div class="mm-card">
+        <div class="mm-voices" id="voices"></div>
+        <div class="mm-piano-wrap"><div class="mm-piano" id="piano"></div></div>
+        <div class="mm-note mm-help">
+            Play with the computer keyboard: bottom letter row (<b>Z</b>&hellip;<b>/</b>) is the lower octave with
+            <b>S D G H J</b> as its black keys; <b>Q</b>&hellip;<b>P</b> with the number row is the octave above.
+            <b>&uarr; &darr;</b> shift octaves &middot; hold <b>Shift</b> for vibrato &middot; <b>Space</b> silences
+            &middot; <b>Esc</b> stops playing. The picture of the keyboard is for display only.
+        </div>
+        <div class="mm-status" id="status-line"></div>
+    </div>
+
+    <div class="mm-card">
+        <div class="mm-card-title">Settings</div>
+        <div class="mm-grid">
+            <label>Voices
+                <select class="mm-in" id="set-voices">
+                    <option value="XY">X and Y (two notes)</option>
+                    <option value="X">X only</option>
+                    <option value="Y">Y only</option>
+                </select>
+            </label>
+            <label>Lowest octave <input class="mm-in" id="set-octave" type="number" min="0" max="6" step="1"></label>
+            <label>Transpose (semitones) <input class="mm-in" id="set-transpose" type="number" min="-48" max="48" step="1"></label>
+            <label>Fine tune (cents) <input class="mm-in" id="set-cents" type="number" min="-100" max="100" step="1"></label>
+            <label>Vibrato depth (semitones) <input class="mm-in" id="set-vibDepth" type="number" min="0" max="2" step="0.05"></label>
+            <label>Vibrato rate (per second) <input class="mm-in" id="set-vibRate" type="number" min="1" max="12" step="0.5"></label>
+            <label><span>Play area half-width (<span class="unit">in</span>)</span> <input class="mm-in" id="set-box" type="number" min="0.1" step="0.1"></label>
+            <label>Always vibrato <input id="set-vibAlways" type="checkbox"></label>
+            <label>Also sound through this computer <input id="set-speaker" type="checkbox"></label>
+        </div>
+        <div class="mm-note" id="tune-note"></div>
+    </div>
+</div>
+
+<script src="../../js/libs/fabmo.js"></script>
+<script src="js/synth.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -970,18 +970,31 @@
      * @method manualStart
      * @param {Number} axis One of `x`,`y`,`z`,`a`,`b`,`c`
      * @param {Number} speed Speed in current tool units.  Negative to move in the negative direction.
+     * @param {Number} [primary_ratio] Optional signed ratio for `axis`. When given (with
+     *   `secondary_ratio`), `speed` is a positive rate and each axis runs at speed x its ratio,
+     *   so the two axes can move at independent speeds (same form the pendant stick uses).
+     * @param {Number} [secondary_ratio] Signed ratio for `second_axis`.
      */
-    FabMoDashboard.prototype.manualStart = function (axis, speed, second_axis, second_speed) {
-        this._call(
-            "manualStart",
-            {
-                axis: axis,
-                speed: speed,
-                second_axis: second_axis,
-                second_speed: second_speed,
-            },
-            callback
-        );
+    FabMoDashboard.prototype.manualStart = function (
+        axis,
+        speed,
+        second_axis,
+        second_speed,
+        primary_ratio,
+        secondary_ratio,
+        callback
+    ) {
+        var data = {
+            axis: axis,
+            speed: speed,
+            second_axis: second_axis,
+            second_speed: second_speed,
+        };
+        if (typeof primary_ratio === "number") {
+            data.primary_ratio = primary_ratio;
+            data.secondary_ratio = secondary_ratio || 0;
+        }
+        this._call("manualStart", data, typeof callback === "function" ? callback : undefined);
     };
 
     FabMoDashboard.prototype.manualEnter = function (options, callback) {
@@ -998,7 +1011,7 @@
      *
      * @method manualHeartbeat
      */
-    FabMoDashboard.prototype.manualHeartbeat = function () {
+    FabMoDashboard.prototype.manualHeartbeat = function (callback) {
         this._call("manualHeartbeat", {}, callback);
     };
 
@@ -1007,7 +1020,7 @@
      *
      * @method manualStop
      */
-    FabMoDashboard.prototype.manualStop = function () {
+    FabMoDashboard.prototype.manualStop = function (callback) {
         this._call("manualStop", {}, callback);
     };
 

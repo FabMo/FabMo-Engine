@@ -856,19 +856,22 @@ define(function (require) {
         this._registerHandler(
             "manualStart",
             function (data, callback) {
-                this.engine.manualStart(
-                    data.axis,
-                    data.speed,
-                    data.second_axis,
-                    data.second_speed,
-                    function (err, result) {
-                        if (err) {
-                            callback(err);
-                        } else {
-                            callback(null);
-                        }
-                    }
-                );
+                // Ratios are optional: with them, each axis runs at
+                // speed x ratio (independent per-axis speeds). The engine
+                // call takes no callback, so answer the app directly.
+                if (typeof data.primary_ratio === "number") {
+                    this.engine.manualStart(
+                        data.axis,
+                        data.speed,
+                        data.second_axis,
+                        data.second_speed,
+                        data.primary_ratio,
+                        data.secondary_ratio || 0
+                    );
+                } else {
+                    this.engine.manualStart(data.axis, data.speed, data.second_axis, data.second_speed);
+                }
+                callback(null);
             }.bind(this)
         );
 
