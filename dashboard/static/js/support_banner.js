@@ -3,8 +3,8 @@
  *
  * A marker, visible on every page of the dashboard, that a remote-support
  * session is open - so nobody at the machine is unaware that someone outside
- * the shop can reach it. Opening and closing sessions is the Remote Support
- * app's job (dashboard/apps/support.fma); this only shows the state and
+ * the shop can reach it. Sessions are opened from the configuration app
+ * (General tab, Software section); this only shows the state and
  * offers the way out.
  *
  * It asks the engine once on load and again whenever the engine says the
@@ -31,9 +31,9 @@ function build(dashboard) {
     dot.className = "sb-dot";
     var text = document.createElement("span");
     text.className = "sb-text";
-    text.title = "Open Remote Support";
+    text.title = "Open Settings (Remote Support is under Software)";
     text.addEventListener("click", function () {
-        dashboard.launchApp("support");
+        dashboard.launchApp("config");
     });
     var end = document.createElement("button");
     end.type = "button";

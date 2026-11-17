@@ -117,6 +117,35 @@
                  data-i18n-title="config.software.open_updater">Advanced</a>
             </div>
 
+            <!-- Remote support: lets a ShopBot technician connect for two hours
+                 (js/remote_support.js; engine routes/support.js). One of the
+                 three states below is shown at a time. -->
+            <div class="large-12 columns" id="support-block">
+              <a id="btn-support-request" class="button radius small"
+                 data-i18n="config.software.support_get_code">Get a code for remote support</a>
+
+              <div id="support-waiting" style="display:none;">
+                <div id="support-code" style="display:inline-block; font:700 30px/1.1 Menlo,Consolas,monospace; letter-spacing:.14em; padding:10px 16px; background:#f2f3f5; border:1px solid #d9dce1; border-radius:6px; user-select:all;"></div>
+                <div id="support-wait-text" style="margin:6px 0;"></div>
+                <a id="btn-support-cancel" class="button secondary radius tiny"
+                   data-i18n="config.software.support_cancel">Cancel</a>
+              </div>
+
+              <div id="support-open" style="display:none;">
+                <div id="support-open-text" style="display:inline-block; font-weight:bold; margin-bottom:8px; padding:6px 10px; background:#fff8ec; border:1px solid #c77700; border-radius:5px;"></div>
+                <div>
+                  <a id="btn-support-elevate" class="button radius small"
+                     data-i18n="config.software.support_grant">Grant Full Access</a>
+                  <span id="support-elevated" style="display:none; font-weight:bold; margin-right:12px;"
+                        data-i18n="config.software.support_granted">Full access granted</span>
+                  <a id="btn-support-stop" class="button alert radius small"
+                     data-i18n="config.software.support_end">End session</a>
+                </div>
+              </div>
+
+              <div id="support-msg" style="color:#b3261e; font-size:0.9em;"></div>
+            </div>
+
           </fieldset>
 
           <fieldset>

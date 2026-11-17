@@ -346,7 +346,19 @@
             "update_download_step": "1. Download the update file",
             "update_drop_step": "2. Then drop the downloaded file here (or click to choose it)",
             "advanced": "Advanced",
-            "open_updater": "Open the FabMo Updater page (firmware tools, settings, update history)"
+            "open_updater": "Open the FabMo Updater page (firmware tools, settings, update history)",
+            "support_get_code": "Get a code for remote support",
+            "support_cancel": "Cancel",
+            "support_grant": "Grant Full Access",
+            "support_granted": "Full access granted",
+            "support_end": "End session",
+            "support_read_code": "Read this code to your technician",
+            "support_your_tech": "Your technician",
+            "support_is_connecting": "is connecting…",
+            "support_connected": "connected",
+            "support_nobody": "Open, nobody connected yet",
+            "support_closes": "closes",
+            "support_you_connected": "You are connected"
         },
         "axes": {
             "legend": "AXIS CONFIGURATIONS",
