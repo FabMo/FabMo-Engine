@@ -1,46 +1,23 @@
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: #f2f3f5; color: #23262b;
-       font: 15px/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif; }
-.rs-page { max-width: 760px; margin: 0 auto; padding: 18px 16px 40px; }
+       font: 16px/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.rs-page { max-width: 460px; margin: 0 auto; padding: 22px 16px 40px; }
 h1 { font-size: 22px; margin: 4px 0 14px; font-weight: 600; }
-p { margin: 0 0 10px; }
-.rs-card { background: #fff; border: 1px solid #d9dce1; border-radius: 6px;
-           padding: 16px 18px; margin-bottom: 14px; }
-.rs-card-title { font-weight: 600; margin-bottom: 8px; }
-.rs-lead { font-size: 17px; font-weight: 600; }
-.rs-open { border-color: #c77700; border-left: 6px solid #c77700; background: #fff8ec; }
-.rs-field { margin: 14px 0; }
-.rs-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.rs-inline .rs-label { margin: 0; }
-.rs-label { display: block; font-weight: 600; margin-bottom: 6px; }
-.rs-choice { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px;
-             border: 1px solid #d9dce1; border-radius: 5px; margin-bottom: 6px; cursor: pointer; }
-.rs-choice input { margin-top: 4px; }
-.rs-in { font: inherit; height: 30px; padding: 2px 8px; border: 1px solid #b9bec6;
-         border-radius: 4px; background: #fff; color: inherit; }
-.rs-key { width: 100%; font-family: Menlo, Consolas, monospace; font-size: 13px; }
-.rs-warn { background: #fdf3d7; border: 1px solid #e3c873; border-radius: 5px; padding: 9px 11px; }
-.rs-note { color: #666b73; font-size: 13px; margin-top: 8px; }
-.rs-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
-.rs-btn { font: inherit; font-weight: 600; padding: 8px 16px; border-radius: 5px; cursor: pointer;
-          border: 1px solid #b9bec6; background: #fff; color: inherit; }
+.rs-card { background: #fff; border: 1px solid #d9dce1; border-radius: 6px; padding: 20px;
+           display: flex; flex-direction: column; gap: 12px; }
+.rs-card > div:not(.rs-msg) { display: flex; flex-direction: column; gap: 12px; }
+.rs-btn { font: inherit; font-weight: 600; padding: 9px 16px; border-radius: 5px; cursor: pointer;
+          border: 1px solid #b9bec6; background: #fff; color: inherit; margin: 0; }
 .rs-btn:disabled { opacity: .5; cursor: default; }
+.rs-big { padding: 14px 16px; font-size: 17px; width: 100%; }
 .rs-primary { background: #2a6f6f; border-color: #2a6f6f; color: #fff; }
 .rs-stop { background: #b3261e; border-color: #b3261e; color: #fff; }
-.rs-msg { font-size: 14px; }
-.rs-msg.err { color: #b3261e; }
-.rs-facts { border-collapse: collapse; margin: 4px 0 12px; }
-.rs-facts th { text-align: left; font-weight: 600; padding: 3px 18px 3px 0; vertical-align: top; }
-.rs-facts td { padding: 3px 0; }
-.rs-log { width: 100%; border-collapse: collapse; font-size: 14px; }
-.rs-log th { text-align: left; font-weight: 600; border-bottom: 1px solid #d9dce1; padding: 4px 8px 4px 0; }
-.rs-log td { border-bottom: 1px solid #eceef1; padding: 5px 8px 5px 0; vertical-align: top; }
-.rs-log td:first-child { white-space: nowrap; color: #555a62; }
-.rs-log tr.rs-mark td { font-weight: 600; background: #f7f8fa; }
-@media (max-width: 520px) { .rs-log td:first-child { white-space: normal; } }
-.rs-code { font: 700 44px/1.1 Menlo, Consolas, monospace; letter-spacing: .14em; text-align: center;
-           padding: 18px 8px; margin: 6px 0 12px; background: #f2f3f5; border: 1px solid #d9dce1;
-           border-radius: 6px; user-select: all; }
-.rs-details { margin-top: 16px; border-top: 1px solid #eceef1; padding-top: 10px; }
-.rs-details summary { cursor: pointer; color: #555a62; font-size: 14px; }
+.rs-code { font: 700 46px/1.1 Menlo, Consolas, monospace; letter-spacing: .14em; text-align: center;
+           padding: 20px 8px; background: #f2f3f5; border: 1px solid #d9dce1; border-radius: 6px;
+           user-select: all; }
+.rs-status { text-align: center; }
+.rs-on { font-weight: 600; background: #fff8ec; border: 1px solid #c77700; border-radius: 5px; padding: 10px; }
+.rs-msg { color: #b3261e; text-align: center; min-height: 0; }
+.rs-msg:empty { display: none; }
 @media (max-width: 420px) { .rs-code { font-size: 34px; } }

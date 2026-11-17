@@ -8,108 +8,26 @@
 </head>
 <body>
 <div class="rs-page">
-
     <h1>Remote Support</h1>
 
-    <div class="rs-card" id="loading">Checking&hellip;</div>
-
-    <!-- No session: the customer can open one -->
-    <div class="rs-card" id="closed" hidden>
-        <p class="rs-lead">Nobody outside your shop can reach this machine.</p>
-        <p>If a ShopBot technician is helping you, you can let them connect for a limited time.
-            You get a short code to read to them; nothing connects until they enter it.
-            The connection closes by itself
-            when the time is up, when you press <b>End session</b>, or when the machine is restarted.</p>
-
-        <div class="rs-field">
-            <div class="rs-label">What the technician may do</div>
-            <label class="rs-choice">
-                <input type="radio" name="level" value="dashboard" checked>
-                <span><b>Use the dashboard</b><br>
-                    See and change settings, look at logs, manage jobs and macros, install updates,
-                    and run the machine from the dashboard as you can.</span>
-            </label>
-            <label class="rs-choice">
-                <input type="radio" name="level" value="system">
-                <span><b>Full system access</b><br>
-                    Everything above, plus a command line on the controller. The technician can
-                    change anything on it. Choose this only if they ask for it.</span>
-            </label>
-        </div>
-
-        <div class="rs-field rs-inline">
-            <label class="rs-label" for="minutes">Close the connection after</label>
-            <select id="minutes" class="rs-in">
-                <option value="30">30 minutes</option>
-                <option value="60">1 hour</option>
-                <option value="120" selected>2 hours</option>
-                <option value="240">4 hours</option>
-            </select>
-        </div>
-
-        <p class="rs-warn"><b>Stay with the machine.</b> A technician can move it from the dashboard
-            while they are connected. Keep clear of it, and keep the stop button within reach.</p>
-
-        <div class="rs-row">
-            <button class="rs-btn rs-primary" id="btn-request">Get a support code</button>
-            <span class="rs-msg" id="request-msg"></span>
-        </div>
-        <p class="rs-note">The machine needs an internet connection for this.</p>
-
-        <details class="rs-details">
-            <summary>I was given a support key instead</summary>
-            <div class="rs-field">
-                <label class="rs-label" for="key">Support key from your technician</label>
-                <input id="key" class="rs-in rs-key" type="text" autocomplete="off" autocapitalize="off"
-                       spellcheck="false" placeholder="tskey-auth-&hellip;">
-            </div>
-            <div class="rs-row">
-                <button class="rs-btn" id="btn-start">Connect with this key</button>
-                <span class="rs-msg" id="start-msg"></span>
-            </div>
-        </details>
-    </div>
-
-    <!-- A code is waiting for the technician -->
-    <div class="rs-card" id="waiting" hidden>
-        <p class="rs-lead" id="wait-title">Read this code to your technician</p>
-        <div class="rs-code" id="wait-code"></div>
-        <p id="wait-text"></p>
-        <div class="rs-row">
-            <button class="rs-btn" id="btn-cancel">Cancel</button>
-            <span class="rs-msg" id="cancel-msg"></span>
-        </div>
-    </div>
-
-    <!-- A session is open -->
-    <div class="rs-card rs-open" id="open" hidden>
-        <p class="rs-lead" id="open-title">A support session is open</p>
-        <table class="rs-facts">
-            <tr><th>Access</th><td id="open-level"></td></tr>
-            <tr><th>Connected</th><td id="open-techs"></td></tr>
-            <tr><th>Closes at</th><td id="open-until"></td></tr>
-        </table>
-        <div class="rs-row">
-            <button class="rs-btn rs-stop" id="btn-stop">End session now</button>
-            <span class="rs-msg" id="stop-msg"></span>
-        </div>
-    </div>
-
-    <!-- Seen by the technician, over the support connection, when no session
-         record is found (should not normally happen) -->
-    <div class="rs-card" id="remote-closed" hidden>
-        <p>A support session can only be opened by someone at the machine.</p>
-    </div>
-
     <div class="rs-card">
-        <div class="rs-card-title">Support activity on this machine</div>
-        <table class="rs-log" id="log">
-            <thead><tr><th>When</th><th>Who</th><th>What</th></tr></thead>
-            <tbody></tbody>
-        </table>
-        <p class="rs-note" id="log-empty" hidden>No support sessions have been opened on this machine.</p>
-        <p class="rs-note">Things done from the dashboard are listed here. Things done on the
-            command line during a full-system-access session are not.</p>
+        <!-- one of these three is shown at a time -->
+        <button class="rs-btn rs-primary rs-big" id="btn-request" hidden>Get a code for remote support</button>
+
+        <div id="waiting" hidden>
+            <div class="rs-code" id="wait-code"></div>
+            <div class="rs-status" id="wait-text"></div>
+            <button class="rs-btn" id="btn-cancel">Cancel</button>
+        </div>
+
+        <div id="open" hidden>
+            <div class="rs-status rs-on" id="open-text"></div>
+            <button class="rs-btn rs-primary rs-big" id="btn-elevate">Grant Full Access</button>
+            <div class="rs-status" id="elevated" hidden>Full access granted</div>
+            <button class="rs-btn rs-stop rs-big" id="btn-stop">End session</button>
+        </div>
+
+        <div class="rs-msg" id="msg"></div>
     </div>
 </div>
 

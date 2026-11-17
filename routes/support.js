@@ -10,6 +10,7 @@
  *   POST /support/request {level, minutes} -> {code, expires, state}  (normal way in)
  *   POST /support/cancel
  *   POST /support/start   {key, level: "dashboard"|"system", minutes}  (key in hand)
+ *   POST /support/elevate (dashboard session -> full system access; local side only)
  *   POST /support/stop
  *   GET  /support/log     -> [{time, what, who, from, detail}, ...] newest first
  */
@@ -119,6 +120,31 @@ var cancel = function (req, res, next) {
         });
 };
 
+// Raise the running session to full system access (the Grant Full Access
+// button). Only the customer's side may do this: a tech must never be able
+// to widen their own access.
+var elevate = function (req, res, next) {
+    if (support.isTunnelAddress(peer(req))) {
+        log.warn("Refused a support/elevate request that came in over the support tunnel");
+        support.audit("Tried to grant themselves full system access (refused)", peer(req));
+        res.json({
+            status: "error",
+            message: "Full access can only be granted from the machine's own network.",
+        });
+        return next();
+    }
+    got.post(support.updaterBase() + "/support/elevate", { responseType: "json", timeout: 60000 })
+        .then(function (r) {
+            support.onSessionChange();
+            res.json(r.body);
+            next();
+        })
+        .catch(function (err) {
+            relayError(res, err);
+            next();
+        });
+};
+
 // Anyone may end a session, from either side.
 var stop = function (req, res, next) {
     var from = peer(req);
@@ -205,6 +231,7 @@ module.exports = function (server) {
     server.post("/support/request", request);
     server.post("/support/cancel", cancel);
     server.post("/support/start", start);
+    server.post("/support/elevate", elevate);
     server.post("/support/stop", stop);
     server.get("/support/log", getLog);
     support.start();

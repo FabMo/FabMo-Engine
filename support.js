@@ -216,6 +216,9 @@ function onSessionChange() {
         audit("Support session ended");
         who = {};
         seen = {};
+    } else if (was && now && was.level !== now.level) {
+        // raised while running (the Grant Full Access button)
+        audit("Full system access granted");
     } else {
         return;
     }
