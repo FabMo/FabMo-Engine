@@ -38,3 +38,9 @@ p { margin: 0 0 10px; }
 .rs-log td:first-child { white-space: nowrap; color: #555a62; }
 .rs-log tr.rs-mark td { font-weight: 600; background: #f7f8fa; }
 @media (max-width: 520px) { .rs-log td:first-child { white-space: normal; } }
+.rs-code { font: 700 44px/1.1 Menlo, Consolas, monospace; letter-spacing: .14em; text-align: center;
+           padding: 18px 8px; margin: 6px 0 12px; background: #f2f3f5; border: 1px solid #d9dce1;
+           border-radius: 6px; user-select: all; }
+.rs-details { margin-top: 16px; border-top: 1px solid #eceef1; padding-top: 10px; }
+.rs-details summary { cursor: pointer; color: #555a62; font-size: 14px; }
+@media (max-width: 420px) { .rs-code { font-size: 34px; } }

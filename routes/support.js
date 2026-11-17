@@ -7,12 +7,15 @@
  *
  *   GET  /support/status  -> {active, level, address, name, started, expires,
  *                             viaTunnel, techs: [...]}
- *   POST /support/start   {key, level: "dashboard"|"system", minutes}
+ *   POST /support/request {level, minutes} -> {code, expires, state}  (normal way in)
+ *   POST /support/cancel
+ *   POST /support/start   {key, level: "dashboard"|"system", minutes}  (key in hand)
  *   POST /support/stop
  *   GET  /support/log     -> [{time, what, who, from, detail}, ...] newest first
  */
 var got = require("got");
 var log = require("../log").logger("routes");
+var config = require("../config");
 var support = require("../support");
 
 // The real peer address. Deliberately not util.getClientAddress(): that
@@ -67,6 +70,46 @@ var start = function (req, res, next) {
     })
         .then(function (r) {
             support.onSessionChange();
+            res.json(r.body);
+            next();
+        })
+        .catch(function (err) {
+            relayError(res, err);
+            next();
+        });
+};
+
+// Ask for a short code to read to the technician (the normal way in).
+// Same rule as start: only from the customer's side.
+var request = function (req, res, next) {
+    if (support.isTunnelAddress(peer(req))) {
+        log.warn("Refused a support/request that came in over the support tunnel");
+        support.audit("Tried to start a support session from the support side (refused)", peer(req));
+        res.json({
+            status: "error",
+            message: "A support session can only be started from the machine's own network.",
+        });
+        return next();
+    }
+    var body = req.body && typeof req.body === "object" ? req.body : req.params || {};
+    got.post(support.updaterBase() + "/support/request", {
+        json: { level: body.level, minutes: body.minutes, version: config.engine.get("version") || "" },
+        responseType: "json",
+        timeout: 30000,
+    })
+        .then(function (r) {
+            res.json(r.body);
+            next();
+        })
+        .catch(function (err) {
+            relayError(res, err);
+            next();
+        });
+};
+
+var cancel = function (req, res, next) {
+    got.post(support.updaterBase() + "/support/cancel", { responseType: "json", timeout: 15000 })
+        .then(function (r) {
             res.json(r.body);
             next();
         })
@@ -159,6 +202,8 @@ module.exports = function (server) {
     });
 
     server.get("/support/status", getStatus);
+    server.post("/support/request", request);
+    server.post("/support/cancel", cancel);
     server.post("/support/start", start);
     server.post("/support/stop", stop);
     server.get("/support/log", getLog);

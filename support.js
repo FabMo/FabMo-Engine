@@ -20,6 +20,8 @@ var log = require("./log").logger("support");
 
 // Written by the updater's fabmo-support script while a session is running
 var SESSION_FILE = "/run/fabmo-support/session.json";
+// ...and while a support code is waiting to be used (no secrets in it)
+var PENDING_FILE = "/run/fabmo-support/pending.json";
 
 // Outside /opt/fabmo on purpose: engine updates delete that tree wholesale,
 // and a record of who was on the machine should survive an update.
@@ -226,6 +228,11 @@ function onSessionChange() {
 function start() {
     lastSession = readSession();
     fs.watchFile(SESSION_FILE, { interval: 2000, persistent: false }, onSessionChange);
+    // each step of a code request (issued, claimed, failed) reaches the
+    // dashboard the same way
+    fs.watchFile(PENDING_FILE, { interval: 1000, persistent: false }, function () {
+        require("./machine").machine.emit("change", "support");
+    });
 }
 
 exports.isTunnelAddress = isTunnelAddress;

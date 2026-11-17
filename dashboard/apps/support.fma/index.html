@@ -17,7 +17,8 @@
     <div class="rs-card" id="closed" hidden>
         <p class="rs-lead">Nobody outside your shop can reach this machine.</p>
         <p>If a ShopBot technician is helping you, you can let them connect for a limited time.
-            They will give you a support key to paste in below. The connection closes by itself
+            You get a short code to read to them; nothing connects until they enter it.
+            The connection closes by itself
             when the time is up, when you press <b>End session</b>, or when the machine is restarted.</p>
 
         <div class="rs-field">
@@ -46,21 +47,38 @@
             </select>
         </div>
 
-        <div class="rs-field">
-            <label class="rs-label" for="key">Support key from your technician</label>
-            <input id="key" class="rs-in rs-key" type="text" autocomplete="off" autocapitalize="off"
-                   spellcheck="false" placeholder="tskey-auth-&hellip;">
-        </div>
-
         <p class="rs-warn"><b>Stay with the machine.</b> A technician can move it from the dashboard
             while they are connected. Keep clear of it, and keep the stop button within reach.</p>
 
         <div class="rs-row">
-            <button class="rs-btn rs-primary" id="btn-start">Let the technician connect</button>
-            <span class="rs-msg" id="start-msg"></span>
+            <button class="rs-btn rs-primary" id="btn-request">Get a support code</button>
+            <span class="rs-msg" id="request-msg"></span>
         </div>
-        <p class="rs-note">The machine needs an internet connection for this. The first time, it
-            downloads the support software, which can take a minute.</p>
+        <p class="rs-note">The machine needs an internet connection for this.</p>
+
+        <details class="rs-details">
+            <summary>I was given a support key instead</summary>
+            <div class="rs-field">
+                <label class="rs-label" for="key">Support key from your technician</label>
+                <input id="key" class="rs-in rs-key" type="text" autocomplete="off" autocapitalize="off"
+                       spellcheck="false" placeholder="tskey-auth-&hellip;">
+            </div>
+            <div class="rs-row">
+                <button class="rs-btn" id="btn-start">Connect with this key</button>
+                <span class="rs-msg" id="start-msg"></span>
+            </div>
+        </details>
+    </div>
+
+    <!-- A code is waiting for the technician -->
+    <div class="rs-card" id="waiting" hidden>
+        <p class="rs-lead" id="wait-title">Read this code to your technician</p>
+        <div class="rs-code" id="wait-code"></div>
+        <p id="wait-text"></p>
+        <div class="rs-row">
+            <button class="rs-btn" id="btn-cancel">Cancel</button>
+            <span class="rs-msg" id="cancel-msg"></span>
+        </div>
     </div>
 
     <!-- A session is open -->

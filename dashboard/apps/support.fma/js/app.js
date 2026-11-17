@@ -45,7 +45,7 @@
     }
 
     function show(id) {
-        ["loading", "closed", "open", "remote-closed"].forEach(function (k) {
+        ["loading", "closed", "waiting", "open", "remote-closed"].forEach(function (k) {
             $(k).hidden = k !== id;
         });
     }
@@ -64,8 +64,39 @@
                 ? "You are connected to this machine through a support session"
                 : "A support session is open";
             show("open");
+        } else if (session.pending && !session.viaTunnel) {
+            renderPending(session.pending);
+            show("waiting");
         } else {
             show(session.viaTunnel ? "remote-closed" : "closed");
+        }
+    }
+
+    // "ABC123" -> "ABC 123": easier to read aloud
+    function spaced(code) {
+        return String(code || "").replace(/^(.{3})(.+)$/, "$1 $2");
+    }
+
+    function renderPending(p) {
+        $("wait-code").textContent = spaced(p.code);
+        $("wait-code").hidden = p.state !== "waiting";
+        $("btn-cancel").disabled = p.state === "connecting";
+        $("cancel-msg").textContent = "";
+        if (p.state === "waiting") {
+            $("wait-title").textContent = "Read this code to your technician";
+            $("wait-text").textContent =
+                "The code works until " +
+                clock(p.expires * 1000) +
+                ". Nothing is connected yet: the machine joins only when your technician enters the code.";
+            $("btn-cancel").textContent = "Cancel";
+        } else if (p.state === "connecting") {
+            $("wait-title").textContent = (p.tech || "Your technician") + " is connecting…";
+            $("wait-text").textContent =
+                "The first time, the machine downloads the support software, which can take a minute.";
+        } else {
+            $("wait-title").textContent = "The connection was not made";
+            $("wait-text").textContent = p.error || "Something went wrong.";
+            $("btn-cancel").textContent = "Start again";
         }
     }
 
@@ -107,6 +138,45 @@
             });
     }
 
+    function chosen() {
+        return {
+            level: document.querySelector('input[name="level"]:checked').value,
+            minutes: parseInt($("minutes").value, 10),
+        };
+    }
+
+    $("btn-request").addEventListener("click", function () {
+        var msg = $("request-msg");
+        msg.className = "rs-msg";
+        msg.textContent = "Asking for a code…";
+        $("btn-request").disabled = true;
+        api("POST", "/support/request", chosen())
+            .then(function () {
+                msg.textContent = "";
+                refresh();
+            })
+            .catch(function (err) {
+                msg.className = "rs-msg err";
+                msg.textContent = err.message;
+            })
+            .then(function () {
+                $("btn-request").disabled = false;
+            });
+    });
+
+    $("btn-cancel").addEventListener("click", function () {
+        $("btn-cancel").disabled = true;
+        api("POST", "/support/cancel")
+            .then(refresh)
+            .catch(function (err) {
+                $("cancel-msg").className = "rs-msg err";
+                $("cancel-msg").textContent = err.message;
+            })
+            .then(function () {
+                $("btn-cancel").disabled = false;
+            });
+    });
+
     $("btn-start").addEventListener("click", function () {
         var key = $("key").value.trim();
         var msg = $("start-msg");
@@ -116,10 +186,10 @@
             msg.textContent = "Paste in the support key your technician gave you.";
             return;
         }
-        var level = document.querySelector('input[name="level"]:checked').value;
+        var choice = chosen();
         $("btn-start").disabled = true;
         msg.textContent = "Connecting… this can take up to a minute.";
-        api("POST", "/support/start", { key: key, level: level, minutes: parseInt($("minutes").value, 10) })
+        api("POST", "/support/start", { key: key, level: choice.level, minutes: choice.minutes })
             .then(function () {
                 $("key").value = "";
                 msg.textContent = "";
