@@ -683,6 +683,9 @@ engine.getVersion(function (err, version) {
                 }
             });
 
+            // "Remote support is open" marker (see support_banner.js)
+            require("./support_banner.js").init(dashboard);
+
             // Pendant joystick direction indicator (keypad center cell).
             // The pendant adapter publishes post-deadzone deflection on each
             // perceptible change; we just translate it into the dot's SVG
