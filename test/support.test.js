@@ -34,3 +34,46 @@ describe("support.isTunnelAddress", () => {
         });
     });
 });
+
+describe("what counts as moving the machine", () => {
+    test("requests that move the machine or run code", () => {
+        [
+            ["POST", "/code"],
+            ["POST", "/code/"],
+            ["POST", "//code"],
+            ["POST", "/macros/3/run"],
+            ["POST", "/jobs/queue/run"],
+            ["POST", "/job/abc123/ghost"],
+            ["POST", "/resume"],
+            ["POST", "/g2/raw"],
+            ["POST", "/code?x=1"],
+        ].forEach(([m, u]) => expect([m, u, support.isMotionRequest(m, u)]).toEqual([m, u, true]));
+    });
+
+    test("stopping, reading and settings are never treated as motion", () => {
+        [
+            ["POST", "/pause"],
+            ["POST", "/quit"],
+            ["POST", "/kill"],
+            ["POST", "/config"],
+            ["POST", "/job"],
+            ["POST", "/macros/3"],
+            ["POST", "/code/check_bounds"],
+            ["POST", "/support/stop"],
+            ["GET", "/code"],
+            ["GET", "/status"],
+            ["DELETE", "/jobs/queue"],
+        ].forEach(([m, u]) => expect([m, u, support.isMotionRequest(m, u)]).toEqual([m, u, false]));
+    });
+
+    test("websocket runtime messages: everything but the stopping ones", () => {
+        expect(support.isMotionCode({ rt: "manual", data: { cmd: "start", axis: "x" } })).toBe(true);
+        expect(support.isMotionCode({ rt: "manual", data: { cmd: "enter" } })).toBe(true);
+        expect(support.isMotionCode({ rt: "manual", data: { cmd: "goto" } })).toBe(true);
+        expect(support.isMotionCode({ rt: "manual", data: { cmd: "output" } })).toBe(true);
+        expect(support.isMotionCode({ rt: "sbp", data: "MX,1" })).toBe(true);
+        ["stop", "quit", "exit", "nudge_cancel"].forEach((cmd) => {
+            expect(support.isMotionCode({ rt: "manual", data: { cmd } })).toBe(false);
+        });
+    });
+});

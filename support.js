@@ -190,6 +190,104 @@ function noteTunnelMotion(address) {
     lastMotionNote[a] = now;
 }
 
+// ---------------------------------------------------------------------------
+// Moving the machine. A connected tech can look at and change things, but
+// cannot make the machine move until someone on the customer's side allows
+// it, for a few minutes at a time. Stopping is never blocked.
+// ---------------------------------------------------------------------------
+var MOTION_MINUTES = 10;
+var motion = { allowedUntil: 0, request: null, timer: null };
+
+function motionAllowed() {
+    return Date.now() < motion.allowedUntil;
+}
+
+function clearMotion() {
+    if (motion.timer) {
+        clearTimeout(motion.timer);
+    }
+    motion = { allowedUntil: 0, request: null, timer: null };
+}
+
+// A tech tried to move the machine without permission: put the question to
+// the customer's dashboards.
+function requestMotion(address) {
+    var a = String(address || "").replace(/^::ffff:/, "");
+    var asking = !motion.request;
+    motion.request = { who: who[a] || a, at: Date.now() };
+    if (asking) {
+        audit("Asked to move the machine", a);
+        require("./machine").machine.emit("change", "support");
+    }
+}
+
+// The customer's answer. allow=false also withdraws a permission already given.
+function answerMotion(allow) {
+    var asked = motion.request;
+    clearMotion();
+    if (allow) {
+        motion.allowedUntil = Date.now() + MOTION_MINUTES * 60000;
+        motion.timer = setTimeout(function () {
+            clearMotion();
+            require("./machine").machine.emit("change", "support");
+        }, MOTION_MINUTES * 60000);
+        if (motion.timer.unref) {
+            motion.timer.unref();
+        }
+        audit("Customer allowed the machine to be moved", null, "for " + MOTION_MINUTES + " minutes");
+    } else {
+        audit(
+            asked
+                ? "Customer did not allow the machine to be moved"
+                : "Customer stopped allowing the machine to be moved",
+        );
+    }
+    require("./machine").machine.emit("change", "support");
+}
+
+// For /support/status
+function motionView() {
+    return {
+        allowed: motionAllowed(),
+        until: motionAllowed() ? Math.floor(motion.allowedUntil / 1000) : null,
+        request: motion.request && !motionAllowed() ? { who: motion.request.who } : null,
+    };
+}
+
+// Is this HTTP request one that makes the machine move (or run code that
+// can)? Stopping, pausing and everything else is not.
+var MOTION_ROUTES = [
+    /^\/code$/,
+    /^\/macros\/[^/]+\/run$/,
+    /^\/jobs\/queue\/run$/,
+    /^\/job\/[^/]+\/ghost$/,
+    /^\/resume$/,
+    /^\/g2\/raw$/,
+];
+function isMotionRequest(method, url) {
+    if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+        // GET /resume is the one read-style route that moves the machine
+        if (!/^\/+resume\/?(\?|$)/.test(String(url || ""))) {
+            return false;
+        }
+    }
+    var path = String(url || "")
+        .split("?")[0]
+        .replace(/\/+/g, "/")
+        .replace(/(.)\/$/, "$1");
+    return MOTION_ROUTES.some(function (r) {
+        return r.test(path);
+    });
+}
+
+// Runtime messages over the websocket: everything moves or can move the
+// machine except the ones that stop it.
+var STOPPING = { stop: true, quit: true, exit: true, nudge_cancel: true };
+function isMotionCode(data) {
+    var cmd = data && data.data && data.data.cmd;
+    return !STOPPING[cmd];
+}
+
 // Techs seen in the current session, for the banner
 function connectedTechs() {
     return Object.keys(seen).map(function (a) {
@@ -205,6 +303,7 @@ function onSessionChange() {
         who = {};
         seen = {};
         lastMotionNote = {};
+        clearMotion();
         audit(
             "Support session started",
             null,
@@ -216,6 +315,7 @@ function onSessionChange() {
         audit("Support session ended");
         who = {};
         seen = {};
+        clearMotion();
     } else if (was && now && was.level !== now.level) {
         // raised while running (the Grant Full Access button)
         audit("Full system access granted");
@@ -245,6 +345,14 @@ exports.getAudit = getAudit;
 exports.noteTunnelClient = noteTunnelClient;
 exports.noteTunnelMotion = noteTunnelMotion;
 exports.connectedTechs = connectedTechs;
+exports.motionAllowed = motionAllowed;
+exports.requestMotion = requestMotion;
+exports.answerMotion = answerMotion;
+exports.motionView = motionView;
+exports.isMotionRequest = isMotionRequest;
+exports.isMotionCode = isMotionCode;
+exports.MOTION_REFUSAL =
+    "The customer has not allowed the machine to be moved. They have been asked on their dashboard.";
 exports.onSessionChange = onSessionChange;
 exports.updaterBase = updaterBase;
 exports.start = start;

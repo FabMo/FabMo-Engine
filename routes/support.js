@@ -11,6 +11,7 @@
  *   POST /support/cancel
  *   POST /support/start   {key, level: "dashboard"|"system", minutes}  (key in hand)
  *   POST /support/elevate (dashboard session -> full system access; local side only)
+ *   POST /support/motion  {allow: true|false} (may the tech move the machine; local side only)
  *   POST /support/stop
  *   GET  /support/log     -> [{time, what, who, from, detail}, ...] newest first
  */
@@ -40,6 +41,7 @@ var getStatus = function (req, res, next) {
             if (body.status === "success" && body.data) {
                 body.data.viaTunnel = support.isTunnelAddress(peer(req));
                 body.data.techs = body.data.active ? support.connectedTechs() : [];
+                body.data.motion = support.motionView();
             }
             res.json(body);
             next();
@@ -145,6 +147,28 @@ var elevate = function (req, res, next) {
         });
 };
 
+// The customer's answer to "may the technician move the machine?", or their
+// withdrawal of it. Only from the customer's side, for the obvious reason.
+var motion = function (req, res, next) {
+    if (support.isTunnelAddress(peer(req))) {
+        log.warn("Refused a support/motion request that came in over the support tunnel");
+        support.audit("Tried to allow themselves to move the machine (refused)", peer(req));
+        res.json({
+            status: "error",
+            message: "Moving the machine can only be allowed from the machine's own network.",
+        });
+        return next();
+    }
+    var body = req.body && typeof req.body === "object" ? req.body : req.params || {};
+    if (!support.readSession()) {
+        res.json({ status: "error", message: "No support session is running." });
+        return next();
+    }
+    support.answerMotion(body.allow === true || body.allow === "true");
+    res.json({ status: "success", data: support.motionView() });
+    next();
+};
+
 // Anyone may end a session, from either side.
 var stop = function (req, res, next) {
     var from = peer(req);
@@ -217,6 +241,12 @@ module.exports = function (server) {
         var from = peer(req);
         if (support.isTunnelAddress(from)) {
             support.noteTunnelClient(from);
+            // moving the machine needs the customer's say-so, each time
+            if (support.isMotionRequest(req.method, req.url) && !support.motionAllowed()) {
+                support.requestMotion(from);
+                res.json({ status: "error", message: support.MOTION_REFUSAL });
+                return next(false);
+            }
             if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "OPTIONS") {
                 var what = describe(req.method, req.url);
                 if (what) {
@@ -232,6 +262,7 @@ module.exports = function (server) {
     server.post("/support/cancel", cancel);
     server.post("/support/start", start);
     server.post("/support/elevate", elevate);
+    server.post("/support/motion", motion);
     server.post("/support/stop", stop);
     server.get("/support/log", getLog);
     support.start();

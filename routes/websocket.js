@@ -200,6 +200,11 @@ var onPrivateConnect = function (socket) {
             log.info("disconnect: authentication_failed, code");
             return socket.disconnect();
         } // make sure that if the user logout, he can't talk through the socket anymore.
+        if (via_support && support.isMotionCode(data) && !support.motionAllowed()) {
+            // a support tech may not move the machine until the customer allows it
+            support.requestMotion(peer_address);
+            return;
+        }
         if ("rt" in data) {
             try {
                 if (data.rt === "manual") {
@@ -226,6 +231,13 @@ var onPrivateConnect = function (socket) {
             return socket.disconnect();
         } // make sure that if the user logouts, he can't talk through the socket anymore.
         log.debug("This Command = " + data.name);
+        if (via_support && data && data.name === "resume" && !support.motionAllowed()) {
+            support.requestMotion(peer_address);
+            if (typeof callback === "function") {
+                callback(new Error(support.MOTION_REFUSAL));
+            }
+            return;
+        }
         if (via_support && data && (data.name === "pause" || data.name === "quit" || data.name === "resume")) {
             support.audit(
                 { pause: "Paused the machine", quit: "Quit the running job", resume: "Resumed the machine" }[data.name],
