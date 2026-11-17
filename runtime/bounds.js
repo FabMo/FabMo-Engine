@@ -207,7 +207,14 @@ function checkAgainstEnvelope(bounds, envelope, g55) {
 
 // Compute bounds for a job file (path on disk). Calls back with
 // { bounds, durationMs } or an error.
-function computeFileBounds(filePath, callback) {
+//   options.registration - job-attached registration (print-and-cut): the
+//   bounds are then those of the path as it will really be cut (optional)
+function computeFileBounds(filePath, options, callback) {
+    if (typeof options === "function") {
+        callback = options;
+        options = {};
+    }
+    options = options || {};
     var t0 = Date.now();
     fs.readFile(filePath, "utf8", function (err, data) {
         if (err) return callback(err);
@@ -218,6 +225,7 @@ function computeFileBounds(filePath, callback) {
             var SBPRuntime = require("./opensbp/opensbp").SBPRuntime;
             var runtime = new SBPRuntime();
             try {
+                runtime.setRegistration(options.registration || null);
                 runtime.simulateString(data, 0, 0, 0, function (err, gcode, info) {
                     if (err) return callback(err);
                     var result = { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 };

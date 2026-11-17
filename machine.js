@@ -1525,7 +1525,9 @@ Machine.prototype.runJob = function (job) {
             } else {
                 log.info("Running file " + file.path);
                 this.status.job = job;
-                this._runFile(file.path);
+                // A job registered to a print carries its own correction;
+                // it is handed to the runtime for this run only.
+                this._runFile(file.path, { registration: job.registration || null });
             }
         }.bind(this)
     );
@@ -1617,7 +1619,13 @@ Machine.prototype.setPreferredUnits = async function (units, lastunits, callback
 // Retrieve the G-Code output for a specific file ID.
 // If the file is a g-code file, just return its contents.
 // If the file is a shopbot file, instantiate a SBPRuntime, run it in simulation, and return the result
-Machine.prototype.getGCodeForFile = function (filename, callback) {
+//   options.registration - job-attached registration to preview with (optional)
+Machine.prototype.getGCodeForFile = function (filename, options, callback) {
+    if (typeof options === "function") {
+        callback = options;
+        options = {};
+    }
+    options = options || {};
     var ext = null;
     fs.readFile(
         filename,
@@ -1642,7 +1650,13 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
                     var tx = this.driver.status.posx;
                     var ty = this.driver.status.posy;
                     var tz = this.driver.status.posz;
-                    new SBPRuntime().simulateString(data, tx, ty, tz, function (err, gcode, info) {
+                    var sim = new SBPRuntime();
+                    try {
+                        sim.setRegistration(options.registration || null);
+                    } catch (e) {
+                        return callback(e);
+                    }
+                    sim.simulateString(data, tx, ty, tz, function (err, gcode, info) {
                         if (info && info.partial) {
                             log.warn("Preview simulation truncated for " + filename + " (likely unbounded GOTO/loop); rendering partial result.");
                         }
@@ -1656,9 +1670,23 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
     );
 };
 
+// Refuse to start a run, the same way the missing-file and interlock guards
+// in _runFile do: drop the job, disarm, and tell the operator why.
+Machine.prototype._refuseRun = function (message) {
+    log.warn("_runFile: refused -- " + message);
+    this.status.job = null;
+    this.disarm();
+    // Pass the message as stateinfo: setState with no stateinfo DELETES
+    // status.info, which would silently eat this warning.
+    this.setState(this, "idle", { message: message });
+    this.emit("status", this.status);
+};
+
 // Run a file given a filename on disk.  Choose the runtime that is appropriate for that file.
-Machine.prototype._runFile = function (filename) {
+//   options.registration - job-attached registration for this run (see runJob)
+Machine.prototype._runFile = function (filename, options) {
     var ext = path.extname(filename).toLowerCase();
+    var jobRegistration = (options && options.registration) || null;
 
     // Guard: the file must actually exist on disk. A job whose file was removed
     // (e.g. an update wiped /opt/fabmo/files while the job DB survived) would
@@ -1709,6 +1737,23 @@ Machine.prototype._runFile = function (filename) {
     // populated, which would contaminate this run's _analyzeLabels.
     if (ext === ".sbp" && this.sbp_runtime && typeof this.sbp_runtime._resetForTopLevelRun === "function") {
         this.sbp_runtime._resetForTopLevelRun();
+    }
+
+    // Job-attached registration (print-and-cut). Every run through here
+    // states it explicitly - the job's, or none - so a correction can never
+    // carry over from an earlier run. Only the OpenSBP runtime can apply
+    // one; refuse rather than cut a registered job uncorrected.
+    if (this.sbp_runtime && typeof this.sbp_runtime.setRegistration === "function") {
+        try {
+            this.sbp_runtime.setRegistration(ext === ".sbp" ? jobRegistration : null);
+        } catch (e) {
+            jobRegistration = null;
+            this.sbp_runtime.setRegistration(null);
+            return this._refuseRun("This job's print registration is not usable (" + e.message + "). Register the sheet again.");
+        }
+    }
+    if (jobRegistration && ext !== ".sbp") {
+        return this._refuseRun("This job is registered to a print, which only OpenSBP (.sbp) files support.");
     }
 
     // Save pre-run state for restoration after the run

@@ -4,6 +4,7 @@ var log = require("../log").logger("routes");
 var machine = require("../machine").machine;
 var config = require("../config");
 var bounds = require("../runtime/bounds");
+var registration = require("../runtime/opensbp/registration");
 var fs = require("fs");
 var os = require("os");
 var path = require("path");
@@ -19,7 +20,7 @@ function analyzeJobBounds(job) {
         if (err || !file || !file.path) {
             return log.warn("analyzeJobBounds: file lookup failed: " + (err || "no file"));
         }
-        bounds.computeFileBounds(file.path, function (err, result) {
+        bounds.computeFileBounds(file.path, { registration: job.registration }, function (err, result) {
             if (err) {
                 log.warn("analyzeJobBounds: " + err.message);
                 return;
@@ -71,6 +72,17 @@ var submitJob = function (req, res, next) {
                 // Reject disallowed files
                 if (!util.allowed_file(filename)) {
                     return callback(new Error("File " + filename + " is not allowed."));
+                }
+
+                // Print-and-cut: a job may carry its own registration. Check
+                // it here so a bad one is refused at submit, not at the cut.
+                try {
+                    item.registration = registration.normalize(item.registration);
+                } catch (e) {
+                    return callback(new Error("File " + filename + ": " + e.message));
+                }
+                if (item.registration && !/\.sbp$/i.test(filename)) {
+                    return callback(new Error("File " + filename + ": only OpenSBP (.sbp) jobs can be registered to a print."));
                 }
 
                 // Create a job and respond
@@ -150,7 +162,7 @@ function getOrComputeJobBounds(job, callback) {
         if (err || !file || !file.path) {
             return callback(err || new Error("File for job not found"));
         }
-        bounds.computeFileBounds(file.path, function (err, result) {
+        bounds.computeFileBounds(file.path, { registration: job.registration }, function (err, result) {
             if (err) {
                 return callback(err);
             }
@@ -733,13 +745,17 @@ var getJobGCode = function (req, res, next) {
             res.json(answer);
         } else {
             var gcode_filename = "gcode.nc";
-            machine.getGCodeForFile(file.path, function (err, gcode) {
-                if (err) {
-                    return res.send(403, err.message);
-                }
-                res.setHeader("content-type", "applications/octet-stream");
-                res.setHeader("content-disposition", 'filename="' + gcode_filename + '"');
-                res.send(gcode);
+            // A job registered to a print previews as it will be cut
+            db.Job.getById(req.params.id, function (jobErr, job) {
+                var opts = { registration: (!jobErr && job && job.registration) || null };
+                machine.getGCodeForFile(file.path, opts, function (err, gcode) {
+                    if (err) {
+                        return res.send(403, err.message);
+                    }
+                    res.setHeader("content-type", "applications/octet-stream");
+                    res.setHeader("content-disposition", 'filename="' + gcode_filename + '"');
+                    res.send(gcode);
+                });
             });
         }
     });
@@ -883,6 +899,7 @@ function runLiftGhost(original, body, res, fail) {
                 "ghost run, Z+" + zOffset,
             ghost: true,
             ghost_restore_move: snapshot,
+            registration: original.registration || null,
         });
         ghostJob.save(function (saveErr, saved) {
             if (saveErr) return fail(saveErr);

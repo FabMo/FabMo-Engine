@@ -122,6 +122,15 @@ The pattern for a push is `machine.emit("change", "<topic>")` as in
   (ATC macros, tool_status app), `$TOOL_IN`, `&CURRENT_TOOL` (diagnostics).
   Reconciliation is a tracked issue; don't rename in passing.
 - Macro 201 runs before the first file and initializes persistent variables.
+- Two different XY corrections, do not merge them. The opensbp `transforms`
+  config corrects the *machine* (squareness etc.): every move, macros
+  included, until the setting is changed. A job's `registration`
+  (`runtime/opensbp/registration.js`, set by the registration app for
+  print-and-cut) corrects *one sheet*: it rides on the `db.Job`, is handed to
+  the runtime by `machine.runJob` for that run only, applies only to moves of
+  the job's top-level file (`file_stack.length === 0` — never macros), runs
+  before `transforms` so they compose, turns arcs into short lines, and is
+  never written to config. Preview (`/job/:id/gcode`) and bounds use it too.
 - Tool-change macros: 9 (manual), 71/72/75 (ATC, dtatc profile).
 
 ## Apps

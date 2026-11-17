@@ -2,8 +2,8 @@
  * Print Registration — core maths (no DOM, no FabMo calls).
  *
  * Loaded by the app as window.RegCore and by jest via require(), so the
- * mark parsing, dot detection, fitting and the mapping onto the engine's
- * OpenSBP transforms are all testable off the machine.
+ * mark parsing, dot detection, fitting and the registration handed to the
+ * engine with the job are all testable off the machine.
  *
  * Conventions
  *   - "design" coordinates: the job file's own XY (where the marks are
@@ -312,45 +312,108 @@
     }
 
     /*
-     * The opensbp `transforms` config that reproduces a fit.
-     * Engine sign conventions (runtime/opensbp/transformation.js): a
-     * positive rotate angle is CLOCKWISE, and shearx's "angle" is used as
-     * a plain factor, x += (-angle*pi/180) * y.
-     * rotate.apply is always true: the engine only shears a move that has
-     * both X and Y, and its rotate step is what fills in the missing one
-     * for single-axis moves (MX, JY, ...).
+     * The registration that travels with the job (engine:
+     * runtime/opensbp/registration.js). It is the fit itself - the engine
+     * applies it to that job's own moves only and never stores it in the
+     * machine's settings. `units` are the units the marks were measured in.
      */
-    function toEngineTransforms(f) {
-        var d = decompose(f);
-        var r = function (v, n) {
-            var p = Math.pow(10, n);
-            return Math.round(v * p) / p;
-        };
-        return {
-            rotate: { apply: true, angle: r(-d.rotation, 6), x: 0, y: 0 },
-            shearx: { apply: Math.abs(d.shear) > 1e-9, angle: r((-d.shear * 180) / Math.PI, 6) },
-            sheary: { apply: false, angle: 0 },
-            scale: {
-                apply: Math.abs(d.scaleX - 1) > 1e-9 || Math.abs(d.scaleY - 1) > 1e-9,
-                scalex: r(d.scaleX, 7),
-                scaley: r(d.scaleY, 7),
-                scalez: 1,
-                x: 0,
-                y: 0,
-                z: 0,
-            },
-            move: { apply: true, x: r(d.moveX, 5), y: r(d.moveY, 5), z: 0 },
-        };
+    function toRegistration(f, units) {
+        return { a: f.a, b: f.b, c: f.c, d: f.d, tx: f.tx, ty: f.ty, units: units === "mm" ? "mm" : "in" };
     }
 
-    function clearedTransforms() {
-        return {
-            rotate: { apply: false, angle: 0, x: 0, y: 0 },
-            shearx: { apply: false, angle: 0 },
-            sheary: { apply: false, angle: 0 },
-            scale: { apply: false, scalex: 1, scaley: 1, scalez: 1, x: 0, y: 0, z: 0 },
-            move: { apply: false, x: 0, y: 0, z: 0 },
+    /*
+     * The machine's own OpenSBP transforms (a squareness correction, say)
+     * sit between what a file asks for and what the machine reports:
+     *     reported = move(scale(sheary(shearx(rotate(asked)))))
+     * The engine applies a job's registration BEFORE these, so marks must be
+     * fitted in "asked" coordinates: every position read off the machine
+     * goes through machineInverse first. Sign conventions follow
+     * runtime/opensbp/transformation.js (positive rotate is clockwise; the
+     * shear "angle" is used as a plain factor of -angle*pi/180).
+     * `tr` is the opensbp `transforms` config; null/absent = none.
+     */
+    function machineSteps(tr) {
+        tr = tr || {};
+        var on = function (k) {
+            return tr[k] && tr[k].apply;
         };
+        var n = function (v, dflt) {
+            v = Number(v);
+            return isFinite(v) ? v : dflt;
+        };
+        var st = { any: false };
+        if (on("rotate") && n(tr.rotate.angle, 0) !== 0) {
+            var ang = (-n(tr.rotate.angle, 0) * Math.PI) / 180;
+            st.rot = { cos: Math.cos(ang), sin: Math.sin(ang), x: n(tr.rotate.x, 0), y: n(tr.rotate.y, 0) };
+            st.any = true;
+        }
+        if (on("shearx")) {
+            st.kx = (-n(tr.shearx.angle, 0) * Math.PI) / 180;
+            st.any = st.any || st.kx !== 0;
+        }
+        if (on("sheary")) {
+            st.ky = (-n(tr.sheary.angle, 0) * Math.PI) / 180;
+            st.any = st.any || st.ky !== 0;
+        }
+        if (on("scale")) {
+            st.sc = { sx: n(tr.scale.scalex, 1), sy: n(tr.scale.scaley, 1), x: n(tr.scale.x, 0), y: n(tr.scale.y, 0) };
+            st.any = st.any || st.sc.sx !== 1 || st.sc.sy !== 1;
+        }
+        if (on("move")) {
+            st.mv = { x: n(tr.move.x, 0), y: n(tr.move.y, 0) };
+            st.any = st.any || st.mv.x !== 0 || st.mv.y !== 0;
+        }
+        return st;
+    }
+
+    function machineActive(tr) {
+        return machineSteps(tr).any;
+    }
+
+    function machineForward(tr, p) {
+        var st = machineSteps(tr);
+        var x = p.x,
+            y = p.y;
+        if (st.rot) {
+            var dx = x - st.rot.x,
+                dy = y - st.rot.y;
+            x = st.rot.cos * dx - st.rot.sin * dy + st.rot.x;
+            y = st.rot.sin * dx + st.rot.cos * dy + st.rot.y;
+        }
+        if (st.kx) x = x + st.kx * y;
+        if (st.ky) y = y + st.ky * x;
+        if (st.sc) {
+            x = st.sc.sx * x + st.sc.x * (1 - st.sc.sx);
+            y = st.sc.sy * y + st.sc.y * (1 - st.sc.sy);
+        }
+        if (st.mv) {
+            x += st.mv.x;
+            y += st.mv.y;
+        }
+        return { x: x, y: y };
+    }
+
+    function machineInverse(tr, p) {
+        var st = machineSteps(tr);
+        var x = p.x,
+            y = p.y;
+        if (st.mv) {
+            x -= st.mv.x;
+            y -= st.mv.y;
+        }
+        if (st.sc && st.sc.sx !== 0 && st.sc.sy !== 0) {
+            x = (x - st.sc.x * (1 - st.sc.sx)) / st.sc.sx;
+            y = (y - st.sc.y * (1 - st.sc.sy)) / st.sc.sy;
+        }
+        if (st.ky) y = y - st.ky * x;
+        if (st.kx) x = x - st.kx * y;
+        if (st.rot) {
+            var dx = x - st.rot.x,
+                dy = y - st.rot.y;
+            x = st.rot.cos * dx + st.rot.sin * dy + st.rot.x;
+            y = -st.rot.sin * dx + st.rot.cos * dy + st.rot.y;
+        }
+        return { x: x, y: y };
     }
 
     // Visit order: start at `first`, then always the nearest unvisited
@@ -723,8 +786,10 @@
         fitAffine: fitAffine,
         residuals: residuals,
         decompose: decompose,
-        toEngineTransforms: toEngineTransforms,
-        clearedTransforms: clearedTransforms,
+        toRegistration: toRegistration,
+        machineActive: machineActive,
+        machineForward: machineForward,
+        machineInverse: machineInverse,
         visitOrder: visitOrder,
         pixelToOffset: pixelToOffset,
         offsetToPixel: offsetToPixel,

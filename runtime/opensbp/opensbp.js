@@ -21,6 +21,7 @@ var log = require("../../log").logger("sbp");
 var sb3_commands = require("./sb3_commands");
 var events = require("events");
 var tform = require("./transformation");
+var registration = require("./registration");
 var macros = require("../../macros");
 var Leveler = require("./commands/leveler").Leveler;
 var u = require("../../util");
@@ -129,6 +130,13 @@ function SBPRuntime() {
     this.driver = null;
 
     this.inManualMode = false;
+
+    // Job-attached registration (print-and-cut): the affine map from the
+    // job file's coordinates to where its sheet really lies. Set through
+    // setRegistration() by whoever starts the run, cleared when the run ends.
+    // See runtime/opensbp/registration.js.
+    this.registration = null;
+    this._regSpace = "machine"; // which space cmd_posx/cmd_posy are in right now
 
     // Input simulation (debug mode) — set by caller before runFile/executeCode
     this.simulation_mode = false;
@@ -413,6 +421,8 @@ SBPRuntime.prototype.runString = function (s) {
         this._analyzeGOTOs();
         log.debug("GOTOs analyzed...");
 
+        if (this.file_stack.length === 0) this._regEnterFile();
+
         // Start running the actual code, now that everything is prepped
         return this._run();
     } catch (e) {
@@ -508,6 +518,8 @@ SBPRuntime.prototype.runStream = function (text_stream) {
                     this._analyzeGOTOs();
                     log.debug("GOTOs analyzed...");
                     log.tock("Analyzed GOTOs");
+
+                    if (this.file_stack.length === 0) this._regEnterFile();
 
                     // Start running the actual code, now that everything is prepped
                     return this._run();
@@ -1920,6 +1932,8 @@ SBPRuntime.prototype._end = function (error) {
     this.resetRuntimeState();
     this.init();
     this.currentFilename = null;
+    // A registration belongs to the job that just ended, however it ended
+    this.setRegistration(null);
 
     // Handle machine state restoration
     if (this.machine) {
@@ -3723,6 +3737,8 @@ SBPRuntime.prototype._unhandledCommand = function (command) {
 // Create an execution frame for the current program context and push it onto this.file_stack
 // The program context here means things like which coordinate system, speeds, the current PC, etc.
 SBPRuntime.prototype._pushFileStack = function () {
+    // Leaving the job's own file for a macro: macros run unregistered
+    if (this.file_stack.length === 0) this._regLeaveFile();
     var frame = {};
     frame.coordinateSystem = this.coordinateSystem;
     frame.movespeed_xy = this.movespeed_xy;
@@ -3761,7 +3777,105 @@ SBPRuntime.prototype._popFileStack = function () {
              "  leaving=" + leavingFilename + " (program.length=" + leavingLength + ")" +
              "  restored=" + this.currentFilename + " (program.length=" + this.program.length +
              ", pc=" + this.pc + ")");
-};    
+    // Back in the job's own file
+    if (this.file_stack.length === 0) this._regEnterFile();
+};
+
+// ---------------------------------------------------------------------------
+// Job-attached registration (print-and-cut). See registration.js for what it
+// is and why it is not the `transforms` config.
+
+// Attach a registration to the run that is about to start (null = none).
+// Throws if the registration is malformed.
+SBPRuntime.prototype.setRegistration = function (reg) {
+    this.registration = registration.normalize(reg);
+    this._regSpace = "machine";
+    if (this.registration) {
+        log.info("Registration attached to this run: " + JSON.stringify(this.registration));
+    }
+};
+
+// True while moves must be registered: only in the job's own (top-level)
+// file. Macros it calls - tool changes, homing, probing routines - address
+// the machine, not the sheet, and must not be bent by the sheet's fit.
+SBPRuntime.prototype._registrationActive = function () {
+    return !!this.registration && this.file_stack.length === 0;
+};
+
+// The registration in the units the runtime is working in right now
+SBPRuntime.prototype._regNow = function () {
+    return registration.inUnits(this.registration, this.units);
+};
+
+// cmd_posx/cmd_posy are "where the last move was told to go", in the
+// coordinates of whoever is issuing moves: file coordinates inside the
+// registered file, table coordinates everywhere else. Convert on each
+// crossing so single-axis and relative moves start from the right place.
+SBPRuntime.prototype._regEnterFile = function () {
+    if (!this.registration || this._regSpace === "file") return;
+    this._regSpace = "file";
+    if (isFinite(this.cmd_posx) && isFinite(this.cmd_posy) && this.cmd_posx !== null && this.cmd_posy !== null) {
+        var p = registration.invert(this._regNow(), this.cmd_posx, this.cmd_posy);
+        this.cmd_posx = p.x;
+        this.cmd_posy = p.y;
+    }
+};
+
+SBPRuntime.prototype._regLeaveFile = function () {
+    if (!this.registration || this._regSpace !== "file") return;
+    this._regSpace = "machine";
+    if (isFinite(this.cmd_posx) && isFinite(this.cmd_posy) && this.cmd_posx !== null && this.cmd_posy !== null) {
+        var p = registration.apply(this._regNow(), this.cmd_posx, this.cmd_posy);
+        this.cmd_posx = p.x;
+        this.cmd_posy = p.y;
+    }
+};
+
+// Current commanded XY in file coordinates. cmd_pos can be unknown (start of
+// a simulation, right after a probe): fall back to the last known table
+// position mapped back onto the sheet.
+SBPRuntime.prototype._regFileXY = function () {
+    var num = function (v) {
+        return typeof v === "number" && isFinite(v);
+    };
+    if (num(this.cmd_posx) && num(this.cmd_posy)) {
+        return { x: this.cmd_posx, y: this.cmd_posy };
+    }
+    var mx = num(this.posx) ? this.posx : num(this.cmd_StartX) ? this.cmd_StartX : 0;
+    var my = num(this.posy) ? this.posy : num(this.cmd_StartY) ? this.cmd_StartY : 0;
+    var f = registration.invert(this._regNow(), mx, my);
+    return { x: num(this.cmd_posx) ? this.cmd_posx : f.x, y: num(this.cmd_posy) ? this.cmd_posy : f.y };
+};
+
+// A registered arc is cut as short lines (see registration.arcChords)
+SBPRuntime.prototype._emitRegisteredArc = function (code, pt) {
+    if (pt.K !== undefined) {
+        throw new Error("Arcs outside the XY plane cannot be registered to a print");
+    }
+    var num = function (v) {
+        return typeof v === "number" && isFinite(v);
+    };
+    var s = this._regFileXY();
+    var start = { x: s.x, y: s.y, z: num(this.cmd_posz) ? this.cmd_posz : undefined };
+    var end = {
+        x: pt.X !== undefined ? Number(pt.X) : s.x,
+        y: pt.Y !== undefined ? Number(pt.Y) : s.y,
+        z: pt.Z !== undefined ? Number(pt.Z) : undefined,
+    };
+    var chords = registration.arcChords(code === "G2", start, end, Number(pt.I) || 0, Number(pt.J) || 0, this.units);
+    for (var n = 0; n < chords.length; n++) {
+        var m = { X: chords[n].x, Y: chords[n].y };
+        if (chords[n].z !== undefined) m.Z = chords[n].z;
+        if (n === chords.length - 1) {
+            // anything else riding on the arc lands with its last chord
+            ["A", "B", "C"].forEach(function (k) {
+                if (pt[k] !== undefined) m[k] = pt[k];
+            });
+        }
+        if (pt.F !== undefined) m.F = pt.F;
+        this.emit_move("G1", m);
+    }
+};
 
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word
@@ -3811,6 +3925,9 @@ SBPRuntime.prototype._keepoutDetour = function (pt) {
         return tr[k] && tr[k].apply;
     });
     if (transformed) return null;
+    // Same for a job registered to a print: the waypoints would be planned
+    // in file coordinates and then bent by the registration
+    if (this._registrationActive()) return null;
 
     var num = function (v) {
         return typeof v === "number" && !isNaN(v) ? v : 0;
@@ -3852,6 +3969,11 @@ SBPRuntime.prototype._keepoutDetour = function (pt) {
 // on the specified position after having applied transformations to that position
 // TODO - Gordon, provide some documentation here?
 SBPRuntime.prototype.emit_move = function (code, pt) {
+    // Job registered to a print: arcs go out as short lines, each of which
+    // comes back through here as a G1 and is registered below.
+    if ((code === "G2" || code === "G3") && this._registrationActive()) {
+        return this._emitRegisteredArc(code, pt);
+    }
     // Keep-out jog rerouting: a jog (G0) is transport, not geometry — any
     // path to the destination completes it — so a jog whose straight line
     // would cross a keep-out zone is replaced by waypoints routed around.
@@ -3926,8 +4048,29 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
         }.bind(this)
     );
 
+    // Job registered to a print: map this move from file coordinates onto
+    // the sheet. cmd_pos (just updated above) stays in file coordinates, so
+    // a move naming only X or only Y still knows where the other one is.
+    // This runs before the machine transforms below, so the two compose:
+    // file -> sheet on the table -> machine correction.
+    var regPt = null;
+    if (this._registrationActive() && (pt.X !== undefined || pt.Y !== undefined)) {
+        var filePt = this._regFileXY();
+        regPt = registration.apply(this._regNow(), filePt.x, filePt.y);
+        pt = Object.assign({}, pt);
+        pt.X = regPt.x;
+        pt.Y = regPt.y;
+    }
+
     ////## Should probably depend on transforms being active; evaluate ???
     var tPt = this.transformation(pt);
+    if (regPt && this.transforms.rotate && this.transforms.rotate.apply != false) {
+        // transformation() remembers the pre-rotation start of the next arc
+        // from cmd_pos, which is in file coordinates here - give it the
+        // table point instead (matters for an arc in a macro called next)
+        prevPt.xIni = regPt.x;
+        prevPt.yIni = regPt.y;
+    }
     //console.log('call point transform, ')
     //console.log(tPt);
 

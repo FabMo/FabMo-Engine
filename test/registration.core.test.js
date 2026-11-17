@@ -1,11 +1,13 @@
 /*
  * Print Registration app — core maths.
  * Covers mark parsing, the fit, dot detection on synthetic frames, and the
- * one thing that must not drift: that the opensbp `transforms` the app
- * writes reproduce its fit when run through the engine's own transform code.
+ * things that must not drift: that the registration the app queues with a
+ * job is its fit as the engine reads it, and that the app's model of the
+ * machine's own OpenSBP transforms matches the engine's transform code.
  */
 const core = require("../dashboard/apps/registration.fma/js/regcore.js");
 const tform = require("../runtime/opensbp/transformation.js");
+const engineReg = require("../runtime/opensbp/registration.js");
 
 // Same order as SBPRuntime.prototype.transformation
 function engineTransform(tr, x, y) {
@@ -179,36 +181,80 @@ describe("print registration: fit", () => {
     });
 });
 
-describe("print registration: engine transforms", () => {
-    test("the transforms written to opensbp config reproduce the fit", () => {
+describe("print registration: what is handed to the engine", () => {
+    const pts = [
+        { x: 0, y: 0 },
+        { x: 10.4, y: 0.6 },
+        { x: 0.6, y: 7.9 },
+        { x: 48, y: 96 },
+        { x: -3, y: 17.25 },
+    ];
+
+    test("the registration queued with the job is the fit, and the engine accepts it", () => {
         const T = truth();
-        const tr = core.toEngineTransforms(T);
-        expect(tr.rotate.apply).toBe(true);
-        const pts = [
-            { x: 0, y: 0 },
-            { x: 10.4, y: 0.6 },
-            { x: 0.6, y: 7.9 },
-            { x: 48, y: 96 },
-            { x: -3, y: 17.25 },
-        ];
+        const r = engineReg.normalize(core.toRegistration(T, "in"));
+        expect(r.units).toBe("in");
         pts.forEach((p) => {
             const want = core.apply(T, p);
-            const got = engineTransform(tr, p.x, p.y);
-            // 96 in from the origin, config values rounded: still < 0.0002 in
-            expect(Math.hypot(got.x - want.x, got.y - want.y)).toBeLessThan(2e-4);
+            const got = engineReg.apply(r, p.x, p.y);
+            expect(Math.hypot(got.x - want.x, got.y - want.y)).toBeLessThan(1e-12);
+        });
+        expect(core.toRegistration(T, "mm").units).toBe("mm");
+    });
+
+    // a machine with its own transforms set (squareness shear, a scale tweak, ...)
+    const machineT = {
+        rotate: { apply: true, angle: 0.35, x: 1, y: 2 },
+        shearx: { apply: true, angle: 0.2 },
+        sheary: { apply: false, angle: 0 },
+        scale: { apply: true, scalex: 1.0004, scaley: 0.9997, scalez: 1, x: 0, y: 0, z: 0 },
+        move: { apply: true, x: 0.125, y: -0.05, z: 0 },
+    };
+
+    test("machineForward matches the engine's own transform code", () => {
+        pts.forEach((p) => {
+            const want = engineTransform(machineT, p.x, p.y);
+            const got = core.machineForward(machineT, p);
+            expect(Math.hypot(got.x - want.x, got.y - want.y)).toBeLessThan(1e-9);
         });
     });
 
-    test("a pure shift needs no scale or shear", () => {
-        const tr = core.toEngineTransforms({ a: 1, b: 0, c: 0, d: 1, tx: 2, ty: -1 });
-        expect(tr.scale.apply).toBe(false);
-        expect(tr.shearx.apply).toBe(false);
-        expect(engineTransform(tr, 3, 4)).toEqual({ x: 5, y: 3 });
+    test("machineInverse undoes it, so marks are fitted in the coordinates a file asks in", () => {
+        pts.forEach((p) => {
+            const reported = engineTransform(machineT, p.x, p.y);
+            const asked = core.machineInverse(machineT, reported);
+            expect(Math.hypot(asked.x - p.x, asked.y - p.y)).toBeLessThan(1e-9);
+        });
     });
 
-    test("cleared transforms are all off", () => {
-        const c = core.clearedTransforms();
-        ["rotate", "shearx", "sheary", "scale", "move"].forEach((k) => expect(c[k].apply).toBe(false));
+    test("no transforms set: positions pass straight through", () => {
+        const off = { rotate: { apply: false, angle: 5 }, shearx: { apply: false, angle: 1 }, move: { apply: false, x: 3, y: 3 } };
+        expect(core.machineActive(off)).toBe(false);
+        expect(core.machineActive(null)).toBe(false);
+        expect(core.machineActive(machineT)).toBe(true);
+        expect(core.machineInverse(off, { x: 3, y: 4 })).toEqual({ x: 3, y: 4 });
+        expect(core.machineInverse(null, { x: 3, y: 4 })).toEqual({ x: 3, y: 4 });
+    });
+
+    test("on a machine with transforms, the registered cut still lands on the print", () => {
+        // marks as the machine reports them when the bit is over each one
+        const T = truth(); // file -> true spot on the table, in reported coordinates
+        const marks = [
+            { x: 0.5, y: 0.5 },
+            { x: 23.5, y: 0.5 },
+            { x: 23.5, y: 11.5 },
+            { x: 0.5, y: 11.5 },
+        ];
+        const reported = marks.map((m) => core.apply(T, m));
+        const asked = reported.map((r) => core.machineInverse(machineT, r));
+        const r = engineReg.normalize(core.toRegistration(core.fit(marks, asked), "in"));
+        // the engine registers the move, then applies the machine transforms
+        pts.forEach((p) => {
+            const onSheet = engineReg.apply(r, p.x, p.y);
+            const cut = engineTransform(machineT, onSheet.x, onSheet.y);
+            const want = core.apply(T, p);
+            expect(Math.hypot(cut.x - want.x, cut.y - want.y)).toBeLessThan(1e-6);
+        });
     });
 });
 
@@ -283,12 +329,12 @@ describe("print registration: end to end on a simulated sheet", () => {
         const fit = core.fit(src, dst);
         expect(core.residuals(fit, src, dst).rms).toBeLessThan(0.001);
 
-        const tr = core.toEngineTransforms(fit);
+        const r = engineReg.normalize(core.toRegistration(fit, "in"));
         let worst = 0;
         job.paths.forEach((path) =>
             path.forEach((p) => {
                 const want = core.apply(T, p);
-                const got = engineTransform(tr, p.x, p.y);
+                const got = engineReg.apply(r, p.x, p.y);
                 worst = Math.max(worst, Math.hypot(got.x - want.x, got.y - want.y));
             })
         );

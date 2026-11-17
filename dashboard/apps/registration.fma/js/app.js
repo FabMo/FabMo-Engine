@@ -6,8 +6,10 @@
  *   manual  operator jogs the bit over each mark and presses Capture
  *   camera  a plumb, downward camera beside the spindle (camera-server :3142)
  *
- * The result is a fit (RegCore) written to the engine's opensbp `transforms`,
- * then the job is queued with its Regmarks toolpath stripped.
+ * The result is a fit (RegCore) that is queued WITH the job, Regmarks
+ * toolpath stripped. The engine applies it to that job's own moves only
+ * (runtime/opensbp/registration.js); the machine's settings - including any
+ * OpenSBP transforms set to square the machine - are never touched.
  */
 (function () {
     "use strict";
@@ -31,11 +33,13 @@
         fit: null,
         res: null,
         sim: { truth: null, tool: { x: 0, y: 0 } },
-        status: { state: LIVE ? "" : "offline", posx: 0, posy: 0, unit: "in" },
+        // posx/posy are in "asked" coordinates (what a file or command would
+        // ask for to be here); rawx/rawy are what the machine reports. They
+        // differ only when the machine has its own OpenSBP transforms set.
+        status: { state: LIVE ? "" : "offline", posx: 0, posy: 0, rawx: 0, rawy: 0, unit: "in" },
+        machineT: null, // the machine's opensbp transforms when any XY one is on
         busy: false,
         abort: false,
-        activeCorrection: false,
-        pendingJob: null, // { name, started }
         frame: { w: SIM_W, h: SIM_H },
         calHole: null,
     };
@@ -315,10 +319,8 @@
 
     async function findAll() {
         if (!S.job || S.busy) return;
-        if (S.set.source !== "sim" && S.activeCorrection) {
-            return progress("Clear the active correction first — it would bend these moves.", true);
-        }
         setBusy(true);
+        if (S.set.source !== "sim") await loadMachineTransforms();
         S.found = [];
         S.fit = null;
         refresh();
@@ -385,7 +387,6 @@
     function gotoEstimate() {
         var idx = nextIndex();
         if (idx < 0 || !S.fit || S.busy) return;
-        if (S.activeCorrection) return progress("Clear the active correction first — it would bend this move.", true);
         var p = core.apply(S.fit, marks()[idx]);
         setBusy(true);
         progress("Moving near mark " + (idx + 1) + "…");
@@ -406,7 +407,6 @@
 
     async function calScale() {
         if (S.busy || !LIVE) return;
-        if (S.activeCorrection) return progress("Clear the active correction first.", true);
         var d = S.status.unit === "mm" ? 6 : 0.25;
         var home = { x: S.status.posx, y: S.status.posy };
         setBusy(true);
@@ -798,8 +798,8 @@
         $("btn-apply").textContent = src === "sim" ? "Show the correction" : "Queue registered job";
         $("state-badge").textContent = S.status.state || "—";
         $("state-badge").className = "rg-badge rg-state " + (S.status.state || "");
-        $("pos-badge").textContent = LIVE ? "X " + fmt(S.status.posx) + "  Y " + fmt(S.status.posy) + "  " + S.status.unit : "not connected";
-        $("active-banner").hidden = !S.activeCorrection;
+        $("pos-badge").textContent = LIVE ? "X " + fmt(S.status.rawx) + "  Y " + fmt(S.status.rawy) + "  " + S.status.unit : "not connected";
+        $("active-banner").hidden = !S.machineT || S.set.source === "sim";
     }
 
     function setBusy(b) {
@@ -885,70 +885,69 @@
 
     function applyFit() {
         if (!S.fit || !S.fitOk) return;
-        var tr = core.toEngineTransforms(S.fit);
+        var d = core.decompose(S.fit);
         var note = $("apply-note");
         if (S.set.source === "sim") {
             note.innerHTML =
-                "Simulated sheet — nothing is sent to the machine. On a real sheet these values go into the OpenSBP transforms " +
-                "and the job is queued without its Regmarks toolpath:<br><code>rotate " + tr.rotate.angle + "° · shear " + tr.shearx.angle +
-                " · scale " + tr.scale.scalex + " / " + tr.scale.scaley + " · move " + tr.move.x + ", " + tr.move.y + "</code>";
+                "Simulated sheet — nothing is sent to the machine. On a real sheet this correction is queued with the job " +
+                "(its Regmarks toolpath removed) and applies to that job only:<br><code>rotate " + fmt(d.rotation, 3) +
+                "° · skew " + fmt(d.skew, 3) + "° · scale " + fmt(d.scaleX, 5) + " / " + fmt(d.scaleY, 5) +
+                " · move " + fmt(d.moveX, 3) + ", " + fmt(d.moveY, 3) + "</code>";
             return;
         }
         var base = S.job.name.replace(/\.sbp$/i, "");
         var jobName = base + " (registered)";
         setBusy(true);
-        fabmo.setConfig({ opensbp: { transforms: tr } }, function (err) {
-            if (err) {
+        // The correction rides on the job. Nothing is written to the
+        // machine's settings, so there is nothing to clear afterwards -
+        // whether the job finishes, is stopped, or is never run.
+        fabmo.submitJob(
+            {
+                file: S.job.parsed.text,
+                filename: base + "_registered.sbp",
+                name: jobName,
+                description: "Registered to print: " + describe(d),
+                registration: core.toRegistration(S.fit, S.status.unit),
+            },
+            { stayHere: true },
+            function (err) {
                 setBusy(false);
-                refresh();
-                return progress("Could not set the correction: " + (err.message || err), true);
-            }
-            S.activeCorrection = true;
-            fabmo.submitJob(
-                {
-                    file: S.job.parsed.text,
-                    filename: base + "_registered.sbp",
-                    name: jobName,
-                    description: "Registered to print: " + describe(core.decompose(S.fit)),
-                },
-                { stayHere: true },
-                function (err2) {
-                    setBusy(false);
-                    if (err2) {
-                        progress("Correction set, but the job could not be queued: " + (err2.message || err2), true);
-                    } else {
-                        S.pendingJob = { name: jobName, started: false };
-                        note.textContent =
-                            "Job queued as “" + jobName + "”. The correction stays active until that job finishes, then clears itself.";
-                        progress("");
-                    }
-                    refresh();
+                if (err) {
+                    progress("The job could not be queued: " + (err.message || err), true);
+                } else {
+                    note.textContent =
+                        "Job queued as “" + jobName + "”. The correction belongs to that job only — " +
+                        "tool changes and other macros it calls are not shifted, and nothing else on the machine is changed.";
+                    progress("");
                 }
-            );
-        });
+                refresh();
+            }
+        );
     }
 
-    function clearCorrection(why) {
-        if (!LIVE) return;
-        fabmo.setConfig({ opensbp: { transforms: core.clearedTransforms() } }, function (err) {
-            if (err) return progress("Could not clear the correction: " + (err.message || err), true);
-            S.activeCorrection = false;
-            S.pendingJob = null;
-            if (why) $("apply-note").textContent = why;
-            refresh();
-        });
-    }
-
-    function checkActive() {
-        if (!LIVE) return;
-        fabmo.getConfig(function (err, cfg) {
-            if (err || !cfg || !cfg.opensbp || !cfg.opensbp.transforms) return;
-            var t = cfg.opensbp.transforms;
-            S.activeCorrection = ["rotate", "shearx", "sheary", "scale", "move"].some(function (k) {
-                return t[k] && t[k].apply;
+    // The machine's own OpenSBP transforms (a squareness correction, say).
+    // They are left exactly as they are; we only need to know them so mark
+    // positions read off the machine can be put in the coordinates a file
+    // asks in (see RegCore.machineInverse).
+    function loadMachineTransforms() {
+        return new Promise(function (resolve) {
+            if (!LIVE) return resolve();
+            fabmo.getConfig(function (err, cfg) {
+                var t = !err && cfg && cfg.opensbp && cfg.opensbp.transforms;
+                S.machineT = t && core.machineActive(t) ? t : null;
+                setPos(S.status.rawx, S.status.rawy);
+                refresh();
+                resolve();
             });
-            refresh();
         });
+    }
+
+    function setPos(rawx, rawy) {
+        var p = S.machineT ? core.machineInverse(S.machineT, { x: rawx, y: rawy }) : { x: rawx, y: rawy };
+        S.status.rawx = rawx;
+        S.status.rawy = rawy;
+        S.status.posx = p.x;
+        S.status.posy = p.y;
     }
 
     // ----------------------------------------------------------- settings
@@ -1020,9 +1019,6 @@
             if (LIVE && S.set.source !== "sim") fabmo.stop(function () {});
         };
         $("btn-apply").onclick = applyFit;
-        $("btn-clear-active").onclick = function () {
-            clearCorrection("Correction cleared.");
-        };
         $("btn-cal-scale").onclick = calScale;
         $("btn-cal-hole").onclick = calHole;
         $("btn-cal-see").onclick = calSee;
@@ -1044,20 +1040,9 @@
 
     function onStatus(st) {
         if (!st) return;
-        S.status = {
-            state: st.state,
-            posx: Number(st.posx) || 0,
-            posy: Number(st.posy) || 0,
-            unit: st.unit || S.status.unit,
-        };
-        // the correction belongs to one job: drop it when that job is done
-        if (S.pendingJob) {
-            var running = st.job && st.job.name === S.pendingJob.name;
-            if (running) S.pendingJob.started = true;
-            else if (S.pendingJob.started && !st.job && st.state === "idle") {
-                clearCorrection("Job finished — correction cleared.");
-            }
-        }
+        S.status.state = st.state;
+        S.status.unit = st.unit || S.status.unit;
+        setPos(Number(st.posx) || 0, Number(st.posy) || 0);
         if (!S.busy) refresh();
         else drawTable();
     }
@@ -1081,7 +1066,7 @@
             if (!err) onStatus(st);
             showSettings();
         });
-        checkActive();
+        loadMachineTransforms();
     }
 
     // test hook (headless checks drive the app through this)

@@ -140,6 +140,11 @@ var Job = function (options) {
     // transforms.move so we can put it back when the ghost run ends.
     this.ghost = !!options.ghost;
     this.ghost_restore_move = options.ghost_restore_move || null;
+    // Print-and-cut: the affine map from this job's file coordinates to
+    // where its sheet lies on the table ({a,b,c,d,tx,ty,units}, see
+    // runtime/opensbp/registration.js). Applied by the OpenSBP runtime to
+    // this job's own moves only, and never written to config.
+    this.registration = options.registration || null;
 };
 
 // Restore the transforms.move config snapshotted at the start of a ghost run.
@@ -177,6 +182,9 @@ Job.prototype.clone = function (overrides, callback) {
             overrides && Object.prototype.hasOwnProperty.call(overrides, "repeatCount")
                 ? overrides.repeatCount
                 : this.repeatCount,
+        // The file was prepared for one registered sheet; a copy of the job
+        // without its registration would cut that file uncorrected.
+        registration: this.registration,
     });
     // Bounds are a property of the file, which the clone shares — carry them
     // over so resubmitted/repeat/ghost jobs keep their soft-limit warning
@@ -879,6 +887,7 @@ var createJob = function (file, options, callback) {
                         name: options.name || file.name,
                         description: options.description,
                         order: order,
+                        registration: options.registration || null,
                     });
                 } catch (e) {
                     log.error(e);
