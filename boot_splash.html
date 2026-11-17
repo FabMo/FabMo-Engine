@@ -49,6 +49,23 @@
   .error .message { color: #ff8c7a; }
   .hint { font-size: .8rem; opacity: .6; margin-top: 14px; display: none; }
   .error .hint { display: block; }
+  /* Remote support: offered when startup has failed or is taking far too long */
+  .support { display: none; margin-top: 26px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.14); }
+  .error .support, .slow .support { display: block; }
+  .support button {
+    font: inherit; font-weight: 600; width: 100%; padding: 11px 14px; margin-top: 8px;
+    border: 0; border-radius: 6px; background: #2a6f6f; color: #fff; cursor: pointer;
+  }
+  .support button.plain { background: rgba(255,255,255,.14); }
+  .support button.stop { background: #b3261e; }
+  .support button:disabled { opacity: .5; cursor: default; }
+  .support .code {
+    font: 700 2.2rem/1.1 Menlo, Consolas, monospace; letter-spacing: .14em; padding: 14px 6px;
+    background: rgba(255,255,255,.08); border-radius: 6px; user-select: all;
+  }
+  .support .line { font-size: .9rem; margin-top: 8px; min-height: 1.2em; }
+  .support .bad { color: #ff8c7a; }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
@@ -61,6 +78,21 @@
     <div class="bar"><span></span></div>
     <p class="elapsed" id="elapsed"></p>
     <p class="hint">Check the controller's power and connections, then reload this page.</p>
+    <div class="support" id="support">
+      <button id="sup-get">Get a code for remote support</button>
+      <div id="sup-wait" hidden>
+        <div class="code" id="sup-code"></div>
+        <div class="line" id="sup-wait-text"></div>
+        <button class="plain" id="sup-cancel">Cancel</button>
+      </div>
+      <div id="sup-open" hidden>
+        <div class="line" id="sup-open-text"></div>
+        <button id="sup-full">Grant Full Access</button>
+        <div class="line" id="sup-granted" hidden>Full access granted</div>
+        <button class="stop" id="sup-end">End session</button>
+      </div>
+      <div class="line bad" id="sup-msg"></div>
+    </div>
   </div>
 <script>
 (function () {
@@ -103,6 +135,8 @@
         }
         if (typeof data.elapsed === "number") {
           elapsedEl.textContent = data.elapsed + "s";
+          // well past a normal start: offer remote support without waiting for a failure
+          if (data.elapsed >= 90) { document.body.classList.add("slow"); }
         }
       })
       .catch(function () {
@@ -115,6 +149,93 @@
 
   poll();
   setInterval(poll, 1000);
+})();
+
+/*
+ * Remote support from the startup page.
+ *
+ * When the engine cannot start, the dashboard's own button (Settings >
+ * General > Software) is out of reach - which is exactly when a technician
+ * is needed. The session is run by the updater, a separate service on the
+ * next port up, so this talks to it directly. Requests are sent without a
+ * body or custom headers so the browser allows them across the two ports.
+ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var updater = location.protocol + "//" + location.hostname + ":" + ((parseInt(location.port, 10) || 80) + 1);
+  var watching = null;
+
+  function call(method, path) {
+    return fetch(updater + path, { method: method, cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || j.status !== "success") { throw new Error((j && j.message) || "No answer from the machine."); }
+        return j.data;
+      });
+  }
+  function clock(seconds) {
+    return new Date(seconds * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  function say(text) {
+    text = String(text || "");
+    $("sup-msg").textContent = text.charAt(0).toUpperCase() + text.slice(1);
+  }
+  function show(id) {
+    ["sup-get", "sup-wait", "sup-open"].forEach(function (k) { $(k).hidden = k !== id; });
+  }
+
+  function render(s) {
+    var p = s.pending;
+    if (s.active) {
+      $("sup-open-text").textContent = "Remote support is open \u00b7 closes " + clock(s.expires);
+      $("sup-full").hidden = s.level === "system" || s.viaTunnel;
+      $("sup-granted").hidden = s.level !== "system";
+      show("sup-open");
+    } else if (p && p.state !== "failed" && !s.viaTunnel) {
+      $("sup-code").textContent = String(p.code || "").replace(/^(.{3})(.+)$/, "$1 $2");
+      $("sup-code").hidden = p.state !== "waiting";
+      $("sup-cancel").hidden = p.state !== "waiting";
+      $("sup-wait-text").textContent = p.state === "waiting"
+        ? "Read this code to your technician"
+        : (p.tech || "Your technician") + " is connecting\u2026";
+      show("sup-wait");
+    } else {
+      if (p && p.state === "failed") { say(p.error); }
+      $("sup-get").disabled = !!s.viaTunnel;
+      show("sup-get");
+    }
+    // follow a code or a session while there is one; otherwise stay quiet
+    var busy = s.active || (p && p.state !== "failed");
+    if (busy && !watching) { watching = setInterval(refresh, 3000); }
+    if (!busy && watching) { clearInterval(watching); watching = null; }
+  }
+
+  function refresh() {
+    return call("GET", "/support/status").then(render).catch(function () {
+      // no updater, or one without remote support: leave the section out
+      $("support").style.display = "none";
+    });
+  }
+
+  function act(button, run) {
+    say("");
+    button.disabled = true;
+    run().then(refresh).catch(function (e) { say(e.message); })
+      .then(function () { button.disabled = false; });
+  }
+
+  $("sup-get").addEventListener("click", function () {
+    act($("sup-get"), function () {
+      return call("POST", "/support/cancel").catch(function () {}).then(function () {
+        return call("POST", "/support/request");
+      });
+    });
+  });
+  $("sup-cancel").addEventListener("click", function () { act($("sup-cancel"), function () { return call("POST", "/support/cancel"); }); });
+  $("sup-full").addEventListener("click", function () { act($("sup-full"), function () { return call("POST", "/support/elevate"); }); });
+  $("sup-end").addEventListener("click", function () { act($("sup-end"), function () { return call("POST", "/support/stop"); }); });
+
+  refresh();
 })();
 </script>
 </body>

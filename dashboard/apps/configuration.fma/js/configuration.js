@@ -8,6 +8,7 @@ var moment = require('../../../static/js/libs/moment.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 require('../../../static/js/libs/i18n.js');   // installs window.t / window.i18nReady / window.i18nApply
 var fabmo = new Fabmo;
+require('./remote_support.js')(fabmo);   // remote-support controls (General tab, Software)
 
 // Having ABC operate differently than XYZ and G2 makes this axis overloaded with special cases
 // ... and using ips rather than G2's mps makes it even more complicated; lots of fussing here

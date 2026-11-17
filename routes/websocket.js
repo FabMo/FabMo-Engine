@@ -5,6 +5,7 @@ var authentication = require("../authentication");
 var sessions = require("client-sessions");
 var parseCookie = require("./util").parseCookie;
 var gestureLog = require("../runtime/manual/gesture_log");
+var support = require("../support");
 var server = null;
 
 // eslint-disable-next-line no-unused-vars
@@ -173,6 +174,14 @@ var onPrivateConnect = function (socket) {
     var client_address = util.getClientAddress(socket.client.request);
     log.info("Client #" + userId + " at " + client_address + " connected.");
 
+    // Remote support: is this socket a tech on the support tunnel? Decided
+    // from the socket's real peer address, never a forwarded-for header.
+    var peer_address = (socket.conn && socket.conn.remoteAddress) || socket.handshake.address || "";
+    var via_support = support.isTunnelAddress(peer_address);
+    if (via_support) {
+        support.noteTunnelClient(peer_address);
+    }
+
     socket.on("code", function (data) {
         var handshakeData = socket.request;
         var cookie = parseCookie(handshakeData.headers.cookie);
@@ -191,12 +200,20 @@ var onPrivateConnect = function (socket) {
             log.info("disconnect: authentication_failed, code");
             return socket.disconnect();
         } // make sure that if the user logout, he can't talk through the socket anymore.
+        if (via_support && support.isMotionCode(data) && !support.motionAllowed()) {
+            // a support tech may not move the machine until the customer allows it
+            support.requestMotion(peer_address);
+            return;
+        }
         if ("rt" in data) {
             try {
                 if (data.rt === "manual") {
                     // Who is driving — lets an abnormal gesture ending in
                     // the manual-gesture log name the browser it came from.
                     gestureLog.noteClient(handshakeData.headers["user-agent"], client_address);
+                    if (via_support) {
+                        support.noteTunnelMotion(peer_address);
+                    }
                 }
                 machine.executeRuntimeCode(data.rt, data.data);
             } catch (e) {
@@ -214,6 +231,19 @@ var onPrivateConnect = function (socket) {
             return socket.disconnect();
         } // make sure that if the user logouts, he can't talk through the socket anymore.
         log.debug("This Command = " + data.name);
+        if (via_support && data && data.name === "resume" && !support.motionAllowed()) {
+            support.requestMotion(peer_address);
+            if (typeof callback === "function") {
+                callback(new Error(support.MOTION_REFUSAL));
+            }
+            return;
+        }
+        if (via_support && data && (data.name === "pause" || data.name === "quit" || data.name === "resume")) {
+            support.audit(
+                { pause: "Paused the machine", quit: "Quit the running job", resume: "Resumed the machine" }[data.name],
+                peer_address
+            );
+        }
         try {
             switch (data.name) {
                 case "pause":
