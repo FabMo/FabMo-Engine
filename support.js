@@ -61,6 +61,26 @@ function isTunnelAddress(address) {
     return first === 100 && second >= 64 && second <= 127; // 100.64.0.0/10
 }
 
+// True when a browser sent this request from a page on some other site.
+// Opening a session, widening it and allowing motion are the customer's
+// decisions; a web page they happen to have open must not be able to make
+// them. Browsers put the page's origin on such requests; ours is the same
+// host as the machine (the port may differ: the startup page talks to the
+// updater one port up). No Origin header at all means not a cross-site
+// browser request.
+function fromAnotherSite(req) {
+    var origin = req && req.headers && req.headers.origin;
+    if (!origin) {
+        return false;
+    }
+    var mine = String((req.headers.host || "").replace(/:\d+$/, "")).toLowerCase();
+    try {
+        return new URL(origin).hostname.toLowerCase().replace(/^\[|\]$/g, "") !== mine.replace(/^\[|\]$/g, "");
+    } catch (e) {
+        return true; // "null" (a sandboxed or local page) or anything unreadable
+    }
+}
+
 function readSession() {
     try {
         var s = JSON.parse(fs.readFileSync(SESSION_FILE, "utf8"));
@@ -339,6 +359,7 @@ function start() {
 }
 
 exports.isTunnelAddress = isTunnelAddress;
+exports.fromAnotherSite = fromAnotherSite;
 exports.readSession = readSession;
 exports.audit = audit;
 exports.getAudit = getAudit;

@@ -77,3 +77,23 @@ describe("what counts as moving the machine", () => {
         });
     });
 });
+
+describe("support.fromAnotherSite", () => {
+    const req = (host, origin) => ({ headers: origin === undefined ? { host } : { host, origin } });
+
+    test("our own pages, on either port, are not another site", () => {
+        expect(support.fromAnotherSite(req("192.168.1.50", "http://192.168.1.50"))).toBe(false);
+        expect(support.fromAnotherSite(req("192.168.1.50:81", "http://192.168.1.50"))).toBe(false);
+        expect(support.fromAnotherSite(req("fabmo-1b5534.local", "http://FABMO-1b5534.local:80"))).toBe(false);
+    });
+
+    test("no Origin header (curl, the engine's own relay) is not a cross-site browser request", () => {
+        expect(support.fromAnotherSite(req("127.0.0.1"))).toBe(false);
+    });
+
+    test("pages on other sites, and sandboxed or local pages, are", () => {
+        expect(support.fromAnotherSite(req("192.168.1.50", "https://example.com"))).toBe(true);
+        expect(support.fromAnotherSite(req("192.168.1.50", "http://192.168.1.51"))).toBe(true);
+        expect(support.fromAnotherSite(req("192.168.1.50", "null"))).toBe(true);
+    });
+});

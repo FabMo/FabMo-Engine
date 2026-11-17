@@ -91,6 +91,32 @@ export/import) remain server-side but have no UI. After editing the app's
 `index.html`, copy it to `/opt/fabmo/approot/approot/configuration.fma/` —
 the approot only rebuilds on engine version change or debug mode.
 
+## Remote support
+
+A customer can let a ShopBot technician connect for two hours over Tailscale.
+The session itself (tunnel, firewall, expiry, the code from the broker) is the
+updater's — see FabMo-Updater `support/README.md`. The engine adds what the
+customer sees: `support.js`, `routes/support.js` (relay to the updater over
+loopback), the controls in the configuration app (General tab, Software;
+`js/remote_support.js`), the dashboard marker (`support_banner.js`), the same
+controls on the startup page (`boot_splash.html`), and an audit log in
+`/opt/fabmo-support/audit.log`.
+
+Rules that must stay true:
+- "Is this the technician?" is decided from the socket's real peer address
+  (`support.isTunnelAddress`), never `X-Forwarded-For` or
+  `util.getClientAddress`.
+- Opening a session, Grant Full Access and allowing motion are refused from
+  the tunnel and from pages on other sites (`refusedAsNotLocal`). The relay
+  to the updater comes from loopback, so the updater cannot make that check
+  for the engine.
+- A technician cannot move the machine until the customer allows it
+  (`support.isMotionRequest` / `isMotionCode`); stop, pause and quit are
+  never blocked. A new route or socket message that can cause motion must be
+  added to those lists.
+- State reaches the dashboard by `machine.emit("change", "support")`. No
+  client polling.
+
 ## Status pipeline (G2 → browser) — the classic silent failure
 
 ```

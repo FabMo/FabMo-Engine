@@ -26,6 +26,23 @@ function peer(req) {
     return (req.connection && req.connection.remoteAddress) || "";
 }
 
+// The customer-only actions: refuse them from the support tunnel and from
+// web pages on other sites. Answers the request and returns true if refused.
+function refusedAsNotLocal(req, res, attempted, message) {
+    if (support.isTunnelAddress(peer(req))) {
+        log.warn("Refused " + req.url + " from the support tunnel");
+        support.audit(attempted + " (refused)", peer(req));
+        res.json({ status: "error", message: message });
+        return true;
+    }
+    if (support.fromAnotherSite(req)) {
+        log.warn("Refused " + req.url + " sent by a page on another site (" + req.headers.origin + ")");
+        res.json({ status: "error", message: "That request did not come from this machine's own pages." });
+        return true;
+    }
+    return false;
+}
+
 function relayError(res, err) {
     var message = err && err.message ? err.message : String(err);
     if (err && err.code === "ECONNREFUSED") {
@@ -56,13 +73,14 @@ var getStatus = function (req, res, next) {
 // updater from loopback, so the updater's own check cannot see where the
 // request really came from - it has to be refused here.
 var start = function (req, res, next) {
-    if (support.isTunnelAddress(peer(req))) {
-        log.warn("Refused a support/start request that came in over the support tunnel");
-        support.audit("Tried to start a support session from the support side (refused)", peer(req));
-        res.json({
-            status: "error",
-            message: "A support session can only be started from the machine's own network.",
-        });
+    if (
+        refusedAsNotLocal(
+            req,
+            res,
+            "Tried to start a support session from the support side",
+            "A support session can only be started from the machine's own network.",
+        )
+    ) {
         return next();
     }
     var body = req.body && typeof req.body === "object" ? req.body : req.params || {};
@@ -85,13 +103,14 @@ var start = function (req, res, next) {
 // Ask for a short code to read to the technician (the normal way in).
 // Same rule as start: only from the customer's side.
 var request = function (req, res, next) {
-    if (support.isTunnelAddress(peer(req))) {
-        log.warn("Refused a support/request that came in over the support tunnel");
-        support.audit("Tried to start a support session from the support side (refused)", peer(req));
-        res.json({
-            status: "error",
-            message: "A support session can only be started from the machine's own network.",
-        });
+    if (
+        refusedAsNotLocal(
+            req,
+            res,
+            "Tried to start a support session from the support side",
+            "A support session can only be started from the machine's own network.",
+        )
+    ) {
         return next();
     }
     var body = req.body && typeof req.body === "object" ? req.body : req.params || {};
@@ -126,13 +145,14 @@ var cancel = function (req, res, next) {
 // button). Only the customer's side may do this: a tech must never be able
 // to widen their own access.
 var elevate = function (req, res, next) {
-    if (support.isTunnelAddress(peer(req))) {
-        log.warn("Refused a support/elevate request that came in over the support tunnel");
-        support.audit("Tried to grant themselves full system access (refused)", peer(req));
-        res.json({
-            status: "error",
-            message: "Full access can only be granted from the machine's own network.",
-        });
+    if (
+        refusedAsNotLocal(
+            req,
+            res,
+            "Tried to grant themselves full system access",
+            "Full access can only be granted from the machine's own network.",
+        )
+    ) {
         return next();
     }
     got.post(support.updaterBase() + "/support/elevate", { responseType: "json", timeout: 60000 })
@@ -150,13 +170,14 @@ var elevate = function (req, res, next) {
 // The customer's answer to "may the technician move the machine?", or their
 // withdrawal of it. Only from the customer's side, for the obvious reason.
 var motion = function (req, res, next) {
-    if (support.isTunnelAddress(peer(req))) {
-        log.warn("Refused a support/motion request that came in over the support tunnel");
-        support.audit("Tried to allow themselves to move the machine (refused)", peer(req));
-        res.json({
-            status: "error",
-            message: "Moving the machine can only be allowed from the machine's own network.",
-        });
+    if (
+        refusedAsNotLocal(
+            req,
+            res,
+            "Tried to allow themselves to move the machine",
+            "Moving the machine can only be allowed from the machine's own network.",
+        )
+    ) {
         return next();
     }
     var body = req.body && typeof req.body === "object" ? req.body : req.params || {};
