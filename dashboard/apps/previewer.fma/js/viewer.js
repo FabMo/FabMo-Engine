@@ -191,29 +191,7 @@ module.exports = function(container) {
           }
       });
 
-      // Z ceiling is fixed at machine_z = 0 (homed top) regardless of envelope.zmax.
-      // No Z min check — low Z in a CAM file is cut depth and depends on bit length.
-      // g55z of exactly 0 means Z has never been zeroed (a real zero always lands
-      // at a fractional offset) — skip the Z check rather than flag every file.
-      var bMaxZ = bounds.max.z;
-      if (typeof bMaxZ === 'number' && g55.z !== 0) {
-          var machineMaxZ = bMaxZ + g55.z;
-          if (machineMaxZ > 0) {
-              violations.push({ axis: 'z', direction: 'max', overage: machineMaxZ });
-          }
-      }
-      // Zeroed or not, the file's own Z range is a hard constraint: if it spans
-      // more than the machine's total Z travel, it goes out of bounds no matter
-      // where Z is zeroed. Travel is ceiling (machine 0 — zmax is not
-      // meaningful for Z) down to envelope.zmin.
-      var bMinZ = bounds.min.z;
-      if (typeof bMaxZ === 'number' && typeof bMinZ === 'number' &&
-          typeof env.zmin === 'number') {
-          var zTravel = -env.zmin;
-          if (zTravel > 0 && bMaxZ - bMinZ > zTravel) {
-              violations.push({ axis: 'z', direction: 'span', overage: bMaxZ - bMinZ - zTravel });
-          }
-      }
+      // Z is deliberately not checked — see runtime/bounds.js checkAgainstEnvelope.
       if (violations.length) {
           self.gui.showSoftLimitWarning(violations, softLimits.units);
       } else {
