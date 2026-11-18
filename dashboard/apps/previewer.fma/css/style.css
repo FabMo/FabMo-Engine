@@ -942,11 +942,20 @@ input[type="range"]::-webkit-slider-runnable-track {
 #preview .operations-panel .ops-drawer-tab:hover {
   background: var(--pv-accent-hover);
 }
+/* Solid arrowhead, same style as the dashboard's DRO in/out icon
+   (#icon_DROin-out): points right to push the panel away ... */
 #preview .operations-panel .ops-drawer-tab::after {
-  content: "\203A"; /* › — push the panel away */
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-left: 10px solid currentColor;
 }
+/* ... and left to pull it back out */
 #preview .operations-panel.collapsed .ops-drawer-tab::after {
-  content: "\2039"; /* ‹ — pull it back out */
+  border-left: 0;
+  border-right: 10px solid currentColor;
 }
 
 #preview .operations-panel .ops-setup {
