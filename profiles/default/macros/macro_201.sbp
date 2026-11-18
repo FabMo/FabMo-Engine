@@ -40,6 +40,7 @@ $sb_safe_Z               = %(28)    '- Retreived from system variables
 
 'Tool Change Variables
 $ATC.type               := 0        '- REQUIRED: Set to 0 for standard MTC tools
+$ATC.Manual             := 0        '- 1 = change tools by hand on an ATC machine (Macro 9); leave $ATC.type as the hardware type
 '$ToolIn                 := 0    'Don't think this var exists; REMOVE
 $sb_TOOLcurrent         := 0
 '$sb_MTCmode             := "QUIT"   '- IGNORE; QUIT; MTC ... defaulting to IGNORE for moment

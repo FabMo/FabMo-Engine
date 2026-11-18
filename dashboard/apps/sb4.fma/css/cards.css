@@ -720,8 +720,9 @@ body[class*="theme-"] .ts-job .ts-job-repeat.on { color: #32b433; }
 /* Buttons */
 .ts-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ts-btn-grid-single { grid-template-columns: 1fr; margin-top: 8px; }
-/* Tools card row: Measure Tool = half width, two quarter-width macro buttons */
-.ts-btn-grid-tools { grid-template-columns: 2fr 1fr 1fr; margin-top: 8px; }
+/* Tools card buttons: two rows of two (Measure Tool, Empty Spindle / Plate
+   Offset, Calibrate) */
+.ts-btn-grid-tools { grid-template-columns: 1fr 1fr; margin-top: 8px; }
 .ts-btn-grid-tools .ts-cmd {
     min-width: 0;
     padding-left: 4px;
@@ -902,6 +903,22 @@ body.ts-editing .ts-card { outline: 1px dashed #94b8d4; outline-offset: 2px; }
 .ts-settings-table col.dia, .ts-settings-table col.len, .ts-settings-table col.ang { width: 5.2em; }
 
 /* Tool rack row */
+/* Tools card: automatic / manual tool-change switch ($ATC.Manual) */
+.ts-tc-mode { display: flex; align-items: center; margin-bottom: 8px; font-size: 0.85em; }
+.ts-tc-mode-label { margin-right: 8px; color: #7f8c8d; }
+.ts-tc-mode-btn {
+    padding: 4px 10px;
+    border: 1px solid #b8c8d4;
+    background: #eef3f7;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.ts-tc-mode-btn:first-of-type { border-radius: 5px 0 0 5px; }
+.ts-tc-mode-btn:last-of-type { border-radius: 0 5px 5px 0; border-left: 0; }
+.ts-tc-mode-btn.active { background: #2980b9; border-color: #2471a3; color: #fff; cursor: default; }
+.ts-tc-mode-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ts-tc-mode-btn.active:disabled { opacity: 0.75; }
 .ts-rack { display: flex; flex-wrap: wrap; gap: 6px; }
 .ts-clip {
     min-width: 46px;

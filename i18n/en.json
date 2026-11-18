@@ -1548,6 +1548,8 @@
             "settings_title": "Tool settings",
             "measure": "Measure Tool",
             "measure_title": "Measure the current tool (C72)",
+            "empty_spindle": "Empty Spindle",
+            "empty_spindle_title": "Put the current tool back in its clip and leave the spindle empty",
             "plate_offset": "Plate Offset",
             "plate_offset_title": "Get plate offset (C73)",
             "calibrate": "Calibrate",
@@ -1555,7 +1557,13 @@
             "len": "len",
             "clip": "clip",
             "rack_idle_note": "press a tool to load it",
-            "rack_busy_note": "available when idle"
+            "rack_busy_note": "available when idle",
+            "rack_manual_note": "manual tool change - tool changer not in use",
+            "mode_label": "Tool change",
+            "mode_auto": "Automatic",
+            "mode_auto_title": "Tool changes use the tool changer",
+            "mode_manual": "Manual",
+            "mode_manual_title": "Tool changes prompt you to change the bit by hand"
         },
         "app_settings": {
             "title": "App Settings",
@@ -1609,10 +1617,22 @@
             "length": "Length",
             "name": "Name"
         },
+        "tc_mode": {
+            "manual_title": "Manual Tool Change",
+            "to_manual": "Switch to manual tool change? Tool changes will prompt you to change the bit by hand and zero it. The tool changer will not be used until you switch back.",
+            "manual_ok": "Switch to Manual",
+            "auto_title": "Automatic Tool Change",
+            "to_auto_loaded": "Switch back to the tool changer? It will assume Tool {tool} is in the spindle. If the spindle holds anything else, take it out by hand first.",
+            "to_auto_empty": "Switch back to the tool changer? It will assume the spindle is empty. If there is a bit in the spindle, take it out by hand first.",
+            "auto_ok": "Switch to Automatic"
+        },
         "tool_change": {
             "title": "Tool Change",
             "message": "Change to Tool {tool}{name}?",
-            "ok": "Change Tool"
+            "ok": "Change Tool",
+            "empty_title": "Empty Spindle",
+            "empty_message": "Put Tool {tool}{name} back in its clip and leave the spindle empty?",
+            "empty_ok": "Empty Spindle"
         },
         "notify": {
             "set_plane_depth": "Set a planing depth first.",

@@ -665,9 +665,15 @@
                             
                         </span>
                     </div>
+                    <div class="ts-tc-mode" id="tc-mode">
+                        <span class="ts-tc-mode-label" data-i18n="tool_status.tools.mode_label">Tool change</span>
+                        <button class="ts-tc-mode-btn" data-manual="0" title="Tool changes use the tool changer" data-i18n-title="tool_status.tools.mode_auto_title" data-i18n="tool_status.tools.mode_auto">Automatic</button>
+                        <button class="ts-tc-mode-btn" data-manual="1" title="Tool changes prompt you to change the bit by hand" data-i18n-title="tool_status.tools.mode_manual_title" data-i18n="tool_status.tools.mode_manual">Manual</button>
+                    </div>
                     <div class="ts-rack" id="rack"></div>
                     <div class="ts-btn-grid ts-btn-grid-tools">
                         <button class="ts-cmd machine-cmd" id="btn-measure" title="Measure the current tool (C72)" data-i18n-title="tool_status.tools.measure_title" data-i18n="tool_status.tools.measure">Measure Tool</button>
+                        <button class="ts-cmd" id="btn-empty-spindle" disabled title="Put the current tool back in its clip and leave the spindle empty" data-i18n-title="tool_status.tools.empty_spindle_title" data-i18n="tool_status.tools.empty_spindle">Empty Spindle</button>
                         <button class="ts-cmd machine-cmd" data-cmd="C73" title="Get plate offset (C73)" data-i18n-title="tool_status.tools.plate_offset_title" data-i18n="tool_status.tools.plate_offset">Plate Offset</button>
                         <button class="ts-cmd machine-cmd" data-cmd="C74" title="Calibrate toolbar (C74)" data-i18n-title="tool_status.tools.calibrate_title" data-i18n="tool_status.tools.calibrate">Calibrate</button>
                     </div>

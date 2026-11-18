@@ -19,6 +19,9 @@ IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 &Tool := -1                                                       ' Only overwrites if we did not get tool number from file
 &current_tool := 0                                                ' Only overwrites if there is not a know tool in spindle 
 
+$ATC.Manual := 0                                                  ' 1 = change tools by hand on an ATC machine (Console Tools card); $ATC.Type stays the hardware type
+
+IF $ATC.Manual == 1 THEN GOTO select_manual_change                ' ATC machine switched to manual tool change
 IF $ATC.Type = 0 THEN GOTO select_manual_change
 IF $ATC.Type = 6 THEN CN,671
 IF $ATC.Type = 7 THEN CN,71                                                             ' Switch to ATC Tool Change Subroutine if ATC
