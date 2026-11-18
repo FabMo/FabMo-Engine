@@ -924,28 +924,7 @@ $(document).ready(function () {
     //     }
     // });
 
-    // ** Allow editing of Fill-In parameters and paste usably into Command Line ready to run
-    $('#fi_container').on('change', '.fi_val', function () { // re-enter on each change in fill-in box
-        let thisCurCmd = ($("#cmd-input").val()).substring(0,2);
-        let thisFullCmd = "";
-
-        for (let index = 1; index < cmds[thisCurCmd].params.length; index++) {   //try to fix extra cmd
-            let thisValue = "";
-            let theFieldName = ("fi_" + index) ;  // can also get from id
-            if ($("#" + theFieldName).val()) {thisValue = $("#" + theFieldName).val()};     
-            thisFullCmd += thisValue + ", ";
-        };
-
-        //console.log(thisCurCmd + ", " + thisFullCmd);
-        $("#cmd-input").val(thisCurCmd + ", " + thisFullCmd);  // updated command line
-        ////## per above, this is not working as expected
-        // Check if the change was triggered by the Enter key
-        if (enterKeyPressed) {
-            $("#cmd-input").focus();  // Set focus to #cmd-input
-            enterKeyPressed = false;  // Reset the flag
-        }
-
-    });
+    // ** Editing of Fill-In parameters (and pasting them usably into the Command Line, ready to run) is in fill_in.js
 
     // Just for testing stuff ... 
     $("#other").click(function () {
@@ -1007,7 +986,7 @@ $(document).ready(function () {
 
     $(document).on('opened.fndtn.reveal', '[data-reveal]', function () {   // NOW "OPENED"
         if ($(this).context.id === "fi-modal") {
-            $("#fi_1").focus();
+            $("#fi-modal .fi-field").first().focus();   // first parameter shown (not always #fi_1)
         }
       });
 
