@@ -668,6 +668,10 @@ engine.getVersion(function (err, version) {
             router.setContext(context);
             dashboard.setRouter(router);
 
+            // Training Mode coach (simulated machine + lesson overlay)
+            var Coach = require("./coach.js");
+            dashboard.setCoach(new Coach(engine, context));
+
             // Sort of a hack, but works OK.
             $(".loader").hide();
 
