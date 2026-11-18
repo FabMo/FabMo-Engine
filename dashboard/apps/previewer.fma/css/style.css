@@ -384,8 +384,22 @@ body {
   opacity: 0.7;
 }
 
-#preview .run-now {
+#preview .run-now,
+#preview .run-not-next {
   display: none;
+}
+
+/* Stand-in for Run Full Job when the previewed job is not next in the
+   queue: same position and shape, greyed out, not clickable. */
+#preview .run-not-next {
+  padding: 6px 8px;
+  color: #888;
+  background-color: #dcdcdc;
+  font-weight: bold;
+  font-size: 11px;
+  text-align: center;
+  cursor: not-allowed;
+  user-select: none;
 }
 
 #preview .run-now:hover {
