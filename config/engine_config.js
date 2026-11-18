@@ -76,8 +76,11 @@ EngineConfig.prototype.update = function (data, callback) {
                 log.warn("Continuing restart with selected profile.");
                 save(callback);
             } else {
-                log.info("Profile issue!");
-                process.exit(1);
+                // Success path of a wholesale profile switch: exit and let
+                // systemd (Restart=always) bring the engine back up on the
+                // new profile.
+                log.info("Profile applied - restarting engine.");
+                process.exit(0);
             }
         });
     } else {
