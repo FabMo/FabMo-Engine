@@ -17,6 +17,7 @@
   "outputs": {
     "1": {
       "notify_on": "always",
+      "notify_on_timing": "after",
       "notify_on_message": "Press the green start button on your pendant to start the spindle."
     }
   },
