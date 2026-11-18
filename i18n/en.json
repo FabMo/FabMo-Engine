@@ -1025,6 +1025,8 @@
             "toggle_all": "All",
             "empty": "No operations parsed in file. Use Toolpath Details to set tool defaults, then run the full job.",
             "run_full_job": "Run Full Job",
+            "not_next_job": "Job Not at Top of Queue",
+            "not_next_job_title": "Only the job at the top of the queue can be run from here",
             "run_trimmed_title": "Run only the in/out selection",
             "run_trimmed": "Run Trimmed",
             "submit_trimmed_title": "Submit the in/out selection as a new job",

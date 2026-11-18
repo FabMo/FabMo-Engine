@@ -802,9 +802,14 @@ function nowPreviewJob() {
     // depending on the launcher (dataset.jobid vs jQuery .data()), and the
     // cookie fallback is always a string - compare as strings on both sides.
     fabmo.getJobsInQueue(function(err, jobs) {
-      if (jobs && jobs.pending.length &&
+      if (err || !jobs) return;
+      if (jobs.pending.length &&
           String(jobs.pending[0]._id) === String(jobID))
         $('.run-now').show();
+      else
+        // Not the next job: a greyed placeholder in the same spot says why
+        // there is no Run Full Job (runNext only ever runs the top job).
+        $('.run-not-next').show();
     });
 
     // $('.run-now').click(function() {

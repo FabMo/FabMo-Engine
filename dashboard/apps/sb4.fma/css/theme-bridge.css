@@ -507,6 +507,12 @@ body.theme-sb4 .machine-cmd:hover:not(:disabled) {
     border-color: rgb(136, 171, 190);
 }
 
+/* SB4: the next job stands out as the lightest row on the card (the shared
+   hover tint lands darker than the other rows on this grey theme) */
+body.theme-sb4 .ts-job.next {
+    background: rgb(247, 248, 249);
+}
+
 /* SB4: tool-change buttons and rack clips a step lighter than the panel */
 body.theme-sb4 #card-tools .ts-cmd:not(.ts-cmd-primary),
 body.theme-sb4 .ts-clip {
