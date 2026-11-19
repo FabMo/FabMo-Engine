@@ -10,7 +10,10 @@ var CodeMirror = require('./codemirror.js');
 
 // Regular expressions for matching various tokens
 var OPERATOR_REGEX = /^(<=|>=|==|!=|<|>|\+|\-|\*|\/|\^|!|=|:=)/i;
-var CMD_REGEX = /^[A-Z](?:[A-Z0-9]+|C#)\b/i;
+// Two-character commands (MX, J3, CN, C3 ...) plus C#, the alternate spelling
+// of CN. C# gets its own branch: '#' is not a word character, so a trailing \b
+// can never match between it and the ',' or space that follows.
+var CMD_REGEX = /^(?:C#(?![A-Z0-9_#])|[A-Z][A-Z0-9]+\b)/i;
 var LINENO_REGEX = /^N[0-9]+\b/i;
 var LABEL_REGEX = /^[A-Z_][A-Z0-9_]*:/i;
 //var IDENTIFIER_REGEX = /[A-Z_][A-Z0-9_]*/i;
