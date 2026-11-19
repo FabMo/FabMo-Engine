@@ -1,13 +1,16 @@
 {
+  "features": {
+    "atc": true
+  },
   "di2ac": "limit",
   "di3ac": "limit",
   "di5ac": "limit",
-  "di2type": "X Limit",
-  "di3type": "Y Limit",
-  "di5type": "Z Limit",
-  "di7type": "Tool Present in Spindle",
-  "di8type": "Draw Bar Open",
-  "di9type": "Tool Bar Up",
+  "di2type": "x_limit",
+  "di3type": "y_limit",
+  "di5type": "z_limit",
+  "di7type": "tool_present",
+  "di8type": "drawbar_open",
+  "di9type": "toolbar_up",
   "default_app": "fabmo-sb4",
   "envelope": {
     "xmin": -0.5,
@@ -16,14 +19,16 @@
     "ymax": 48.5,
     "zmax": 8.5,
     "xsize": 96,
-    "ysize": 48,
-    "zsize": 8
+    "ysize": 48
   },
   "outputs": {
     "1": {
-      "notify_on": "Once per cut",
-      "notify_on_timing": "after",
-      "notify_on_message": "Press the green start button on your pendant to start the spindle."
+      "notify_on": "once",
+      "notify_on_message": "Press the green start button on your pendant to start the spindle.",
+      "notify_on_timing": "after"
+    },
+    "2": {
+      "notify_on": "always"
     }
   },
   "manual": {
@@ -33,8 +38,5 @@
     "z_slow_speed": 0.25,
     "xy_jerk": 300,
     "z_jerk": 300
-  },
-  "features": {
-    "atc": true
   }
 }
