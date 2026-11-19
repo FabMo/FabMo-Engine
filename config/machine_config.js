@@ -228,6 +228,8 @@ MachineConfig.prototype.init = function (machine, callback) {
                         notify_off: "never",
                         notify_on_message: "",
                         notify_off_message: "",
+                        notify_on_timing: "before",
+                        notify_off_timing: "before",
                         on_position: { axis: "z", side: "below", value: 0 },
                         off_position: { axis: "z", side: "above", value: 0 },
                         on_input: { input: 1, state: "on" },
@@ -251,7 +253,7 @@ function round(number, units) {
 }
 
 // Normalize the per-output notify fields (machine.outputs.<n>.notify_on/
-// notify_off + *_message). Called at init (older configs predate the fields
+// notify_off + *_message + *_timing). Called at init (older configs predate the fields
 // or hold the early boolean form) and after every update (the /config route
 // runs values through util.fixJSON, whose Number() coercion turns a cleared
 // text field — "" — into 0).
@@ -269,6 +271,10 @@ MachineConfig.prototype._normalizeOutputNotify = function () {
         out.notify_off = normNotify(out.notify_off);
         if (typeof out.notify_on_message !== "string") out.notify_on_message = "";
         if (typeof out.notify_off_message !== "string") out.notify_off_message = "";
+        // Timing: "before" (pause, then change the output on resume) or
+        // "after" (change the output, then pause). Anything else = "before".
+        out.notify_on_timing = out.notify_on_timing === "after" ? "after" : "before";
+        out.notify_off_timing = out.notify_off_timing === "after" ? "after" : "before";
     }
 };
 

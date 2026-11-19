@@ -97,6 +97,7 @@ function SBPRuntime() {
     // whose notify-pause has already been shown, so re-execution after
     // resume drives the output instead of pausing again.
     this._notifiedPC = null;
+    this._notifyAfter = null;
     // "Once per cut" bookkeeping: keys ("<n>:on" / "<n>:off") that have
     // already notified during the current top-level run.
     this._notifiedOnce = {};
@@ -717,6 +718,7 @@ SBPRuntime.prototype._resetForTopLevelRun = function () {
     this.end_message = undefined;
     this.quit_pending = false;
     this._notifiedPC = null;
+    this._notifyAfter = null;
     this._notifiedOnce = {};
     this._spindleOnWhileRunning = false;
     this._resumeNotifyShown = false;
@@ -1037,7 +1039,12 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             // ON/OFF" breaks the stack: the machine must come to a stop before
             // we pause and show the notification modal (see case "cmd" in
             // _execute).
-            if (name === "SO" && this._soNotifyPolicy(cmd.args)) {
+            // While a "notify after" SO is between driving its output and
+            // showing the modal (_notifyAfter), it must still break the
+            // stack even though a "once" policy no longer matches: the
+            // revisit has to wait for G2 to finish executing the output
+            // change.
+            if (name === "SO" && (this._notifyAfter || this._soNotifyPolicy(cmd.args))) {
                 return true;
             }
             // Check if the command itself contains any expressions that break the stack
@@ -1138,7 +1145,7 @@ function soNotifyMode(v) {
 }
 
 // Output-change notification (machine.outputs.<n>.notify_on / notify_off,
-// modes "never" | "once" | "always"): returns { message, once, key } if this
+// modes "never" | "once" | "always"): returns { message, once, key, after } if this
 // SO command's target output should notify for the state it's being set to,
 // else null. "once" means once per cut — suppressed if this output+direction
 // already notified during the current top-level run (see _notifiedOnce; the
@@ -1170,11 +1177,32 @@ SBPRuntime.prototype._soNotifyPolicy = function (args) {
     if (mode === "once" && this._notifiedOnce && this._notifiedOnce[key]) return null;
 
     var label = p.label || "Output " + n;
+    // Timing (notify_on_timing / notify_off_timing): "before" pauses and then
+    // changes the output on resume; "after" changes the output first and then
+    // pauses. "after" is for spindles that also need a manual start button:
+    // the operator sees the spindle start while the message is still up.
+    var after = (side === "on" ? p.notify_on_timing : p.notify_off_timing) === "after";
     var msg = ((side === "on" ? p.notify_on_message : p.notify_off_message) || "").trim();
     if (!msg) {
-        msg = label + " will turn " + side.toUpperCase() + " when you resume.";
+        msg = after
+            ? label + " is now " + side.toUpperCase() + ". Resume to continue."
+            : label + " will turn " + side.toUpperCase() + " when you resume.";
     }
-    return { message: msg, once: mode === "once", key: key };
+    return { message: msg, once: mode === "once", key: key, after: after };
+};
+
+// Pause the program with the output-change notification modal (standard
+// PAUSE modal: Resume / Quit).
+SBPRuntime.prototype._pauseForOutputNotify = function (message) {
+    var notifyModal = u.packageModalParams({
+        message: message,
+        input: { name: null, type: null },
+        okText: null,
+        cancelText: null,
+    });
+    this.paused = true;
+    this.machine.driver.pause_hold = true;
+    this.machine.setState(this, "paused", notifyModal);
 };
 
 // The counterpart of _soNotifyPolicy for firmware-driven output changes:
@@ -2021,6 +2049,7 @@ SBPRuntime.prototype.resetRuntimeState = function () {
     this._spindleOnWhileRunning = false;
     this._resumeNotifyShown = false;
     this._skExitNotifyShown = false;
+    this._notifyAfter = null;
     if (this._pendingNudgeTimer) {
         clearTimeout(this._pendingNudgeTimer);
         this._pendingNudgeTimer = null;
@@ -2275,12 +2304,39 @@ SBPRuntime.prototype._execute = function (command, callback) {
 
         case "cmd":
             // Output-change notification: an SO command whose target output is
-            // configured with "Notify for ON/OFF" pauses with a modal BEFORE
-            // driving the output. _breaksStack returned true for this command,
-            // so the machine is already stopped when we get here. The pc is
-            // NOT advanced: after the user resumes, this same command executes
-            // again, the latch below skips the pause, and the output changes.
+            // configured with "Notify for ON/OFF" pauses with a modal.
+            // _breaksStack returned true for this command, so the machine is
+            // already stopped when we get here.
+            //
+            // Timing "before" (default): pause BEFORE driving the output. The
+            // pc is NOT advanced: after the user resumes, this same command
+            // executes again, the latch below skips the pause, and the output
+            // changes.
+            //
+            // Timing "after": three visits to this same pc.
+            //   1. drive the output now, keep the pc here (_notifyAfter
+            //      "driven"). The revisit breaks the stack, so it waits until
+            //      G2 has actually executed the change.
+            //   2. show the modal and pause ("shown").
+            //   3. after resume: step past the command without running it
+            //      again.
             if (command.cmd === "SO") {
+                if (this._notifyAfter && this._notifiedPC === this.pc) {
+                    if (this._notifyAfter.stage === "driven") {
+                        this._notifyAfter.stage = "shown";
+                        this._pauseForOutputNotify(this._notifyAfter.message);
+                        return true;
+                    }
+                    // "shown": resumed. The output was driven on visit 1.
+                    this._notifyAfter = null;
+                    this._notifiedPC = null;
+                    this.pc += 1;
+                    if (callback != undefined) {
+                        setImmediate(callback);
+                    }
+                    return false;
+                }
+                this._notifyAfter = null;
                 if (this._notifiedPC === this.pc) {
                     this._notifiedPC = null; // resumed — fall through and drive the output
                 } else {
@@ -2290,15 +2346,23 @@ SBPRuntime.prototype._execute = function (command, callback) {
                         if (notify.once) {
                             this._notifiedOnce[notify.key] = true;
                         }
-                        var notifyModal = u.packageModalParams({
-                            message: notify.message,
-                            input: { name: null, type: null },
-                            okText: null,
-                            cancelText: null,
-                        });
-                        this.paused = true;
-                        this.machine.driver.pause_hold = true;
-                        this.machine.setState(this, "paused", notifyModal);
+                        if (notify.after) {
+                            var soPC = this.pc;
+                            // No callback: we schedule the revisit ourselves.
+                            if (this._executeCommand(command)) {
+                                // Argument error — the run is aborting.
+                                this._notifiedPC = null;
+                                return true;
+                            }
+                            this.pc = soPC;
+                            this._notifyAfter = { stage: "driven", message: notify.message };
+                            this.prime();
+                            if (callback != undefined) {
+                                setImmediate(callback);
+                            }
+                            return false;
+                        }
+                        this._pauseForOutputNotify(notify.message);
                         return true;
                     }
                 }

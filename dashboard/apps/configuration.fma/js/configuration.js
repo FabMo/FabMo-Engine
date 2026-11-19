@@ -302,6 +302,15 @@ function buildOutputFieldset(n) {
             '<option value="once">' + window.t("config.outputs_tab.notify_once") + '</option>',
             '<option value="always">' + window.t("config.outputs_tab.notify_always") + '</option>'
         ].join('');
+        // Notify timing: "before" pauses and then changes the output on
+        // resume; "after" changes the output first and then pauses (a
+        // spindle that also needs its start button pressed: the operator
+        // sees it start while the message is up). Shown only while notify
+        // is not Never.
+        var notifyTimingOpts = [
+            '<option value="before">' + window.t("config.outputs_tab.notify_timing_before_" + side) + '</option>',
+            '<option value="after">' + window.t("config.outputs_tab.notify_timing_after_" + side) + '</option>'
+        ].join('');
         // Position-trigger condition: [above/below] [axis] [value], shown only
         // while the mode dropdown is set to Position. Value is in working
         // coordinates (what the DRO reads), current units.
@@ -367,6 +376,11 @@ function buildOutputFieldset(n) {
                     notifyOpts,
                   '</select>',
                 '</label>',
+                '<select id="machine-outputs-' + n + '-notify_' + side + '_timing" class="machine-output"',
+                  ' title="' + window.t("config.outputs_tab.notify_timing_title") + '"',
+                  ' style="display:none; margin-top:4px;">',
+                  notifyTimingOpts,
+                '</select>',
                 '<input type="text" id="machine-outputs-' + n + '-notify_' + side + '_message" class="machine-output"',
                   ' placeholder="' + window.t("config.outputs_tab.notify_message_placeholder") + '"' +
                   ' title="' + window.t("config.outputs_tab.notify_message_title_" + side) + '"',
@@ -439,7 +453,9 @@ function refreshInputOptionLabels(machineData) {
 // update()'s getConfig callback) and on every dropdown change.
 function syncNotifyVisibility(n, side) {
     var mode = $('#machine-outputs-' + n + '-notify_' + side).val();
-    $('#machine-outputs-' + n + '-notify_' + side + '_message').css('display', mode && mode !== 'never' ? '' : 'none');
+    var shown = mode && mode !== 'never' ? '' : 'none';
+    $('#machine-outputs-' + n + '-notify_' + side + '_message').css('display', shown);
+    $('#machine-outputs-' + n + '-notify_' + side + '_timing').css('display', shown);
 }
 
 function setupOutputsTab() {
