@@ -1,4 +1,5 @@
 {
-  "name" : "ShopBot Desktop MAX",
-  "description" : "The ShopBot DT3624 tool"
+  "name": "ShopBot Desktop MAX",
+  "description": "The ShopBot DT3624 tool",
+  "version": "v0.0.1"
 }
