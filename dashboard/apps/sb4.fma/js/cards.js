@@ -2107,7 +2107,7 @@ function renderToolRow() {
 }
 
 // ---------------------------------------------------------------------------
-// Custom macro buttons ($TS_MACRO_BUTTONS — stored as a JSON string so saves
+// Custom workflow buttons - macros and notes ($TS_MACRO_BUTTONS — stored as a JSON string so saves
 // replace the whole list atomically; util.extend's index-wise array merge
 // would otherwise leave stale entries behind on deletion)
 
@@ -2132,17 +2132,104 @@ function saveCustomButtons(list, callback) {
     );
 }
 
+// Besides macro buttons the list can hold notes: { type: "note", label,
+// done }. A note is a step the user ticks off by hand - clicking it only
+// toggles its completed check box; it never sends anything to the machine,
+// so it is not a .machine-cmd and stays clickable while the tool is busy.
+function isNoteButton(b) {
+    return !!b && b.type === "note";
+}
+
+function noteDefaultLabel() {
+    return tOr("sb4.workflow.note_default", "Note: ...");
+}
+
+// The four built-in buttons live in the markup. They take a place in the
+// stored list only once the user has moved something (press and hold, see
+// the reorder handlers below) - as { type: "builtin", cmd }. Any built-in
+// the list does not mention stays at the top in its markup order, so a list
+// saved before reordering existed (or rewritten by the Tool Status app,
+// which only knows macros) still shows every button.
+var WORKFLOW_BUILTINS = ["C3", "C2", "JH", "C79"];
+
+function isBuiltinButton(b) {
+    return !!b && b.type === "builtin" && WORKFLOW_BUILTINS.indexOf(b.cmd) !== -1;
+}
+
+// Set from pointer-down to pointer-up on a workflow button. While it is set
+// renderCustomButtons() leaves the grid alone: it runs on every status
+// report and rebuilds the user's buttons, which would pull the button out
+// from under a press-and-hold or a drag in progress.
+var workflowPress = null;
+
 function renderCustomButtons() {
+    if (workflowPress) return;
     var $grid = $("#machine-btn-grid");
     $grid.find(".ts-dyn").remove();
-    customButtons().forEach(function (b) {
+    var list = customButtons();
+
+    // Built-ins first: unlisted ones in markup order, then listed ones in
+    // list order. Only touch the DOM when that differs from what is there,
+    // so an ordinary status report never moves them.
+    var listed = [];
+    list.forEach(function (b) {
+        if (isBuiltinButton(b) && listed.indexOf(b.cmd) === -1) listed.push(b.cmd);
+    });
+    var unlisted = WORKFLOW_BUILTINS.filter(function (cmd) {
+        return listed.indexOf(cmd) === -1;
+    });
+    var want = unlisted.concat(listed);
+    var have = $grid
+        .children(".ts-cmd")
+        .map(function () {
+            return this.getAttribute("data-cmd");
+        })
+        .get();
+    if (have.join() !== want.join()) {
+        want.forEach(function (cmd) {
+            $grid.append($grid.children('.ts-cmd[data-cmd="' + cmd + '"]'));
+        });
+    }
+
+    // Then the user's buttons, each placed after whatever precedes it in
+    // the list (ahead of everything listed if nothing does).
+    var $prev = unlisted.length ? $grid.children('.ts-cmd[data-cmd="' + unlisted[unlisted.length - 1] + '"]') : null;
+    var seen = [];
+    var place = function ($el) {
+        if ($prev && $prev.length) $prev.after($el);
+        else $grid.prepend($el);
+        $prev = $el;
+    };
+    list.forEach(function (b, i) {
+        if (isBuiltinButton(b)) {
+            if (seen.indexOf(b.cmd) !== -1) return;
+            seen.push(b.cmd);
+            $prev = $grid.children('.ts-cmd[data-cmd="' + b.cmd + '"]').not(".ts-dyn");
+            return;
+        }
+        if (isNoteButton(b)) {
+            var $note = $(
+                '<button class="ts-cmd ts-dyn ts-note-btn">' +
+                    '<span class="ts-note-check"><i class="fa fa-check"></i></span>' +
+                    '<span class="ts-note-text"></span>' +
+                    "</button>"
+            )
+                .attr("data-idx", i)
+                .attr("aria-pressed", b.done ? "true" : "false")
+                .attr("title", tOr("sb4.workflow.note_title", "Note - click to mark completed or not completed"))
+                .toggleClass("ts-note-done", !!b.done);
+            $note.find(".ts-note-text").text(b.label || noteDefaultLabel());
+            place($note);
+            return;
+        }
         var macro = Number(b.macro);
         if (!(macro >= 1)) return;
         var $btn = $('<button class="ts-cmd machine-cmd ts-dyn"></button>')
+            .attr("data-idx", i)
             .attr("data-cmd", "C" + macro)
             .attr("title", window.t("tool_status.machine.run_macro_title", { n: macro }))
             .text(b.label || window.t("tool_status.machine.macro_n", { n: macro }));
-        $grid.append($btn);
+        place($btn);
     });
 }
 
@@ -2416,6 +2503,171 @@ $(document).ready(function () {
         runCommand(cmd === "C2" ? homeZCommand() : cmd);
     });
 
+    // ---- Reorder: press and hold a workflow button, then drag it up/down ----
+    //
+    // Order of events, and what each guards against:
+    //  1. pointerdown on a button: workflowPress is set (re-rendering stops)
+    //     and a hold timer starts.
+    //  2a. released, or moved more than a few px, before the timer: the press
+    //      is dropped and it is an ordinary click / scroll. Nothing changes.
+    //  2b. timer fires first: the button is "lifted". From here the release
+    //      must NOT act as a click - a click on these buttons runs a macro -
+    //      so the click that follows the release is swallowed (step 4).
+    //  3. pointermove while lifted: the button is moved in the DOM as the
+    //     pointer crosses its neighbours' midpoints.
+    //  4. pointerup: the click blocker is armed first, then the new order is
+    //     read from the DOM, written to state.vars and saved. The browser
+    //     fires the click after pointerup, so the blocker is always in place
+    //     before it. A cancelled pointer (scroll takeover, lost touch)
+    //     repaints from state.vars, which puts everything back.
+    var WORKFLOW_HOLD_MS = 450;
+    var WORKFLOW_SLOP_PX = 8;
+    var workflowClickBlockUntil = 0;
+    var workflowGrid = document.getElementById("machine-btn-grid");
+
+    function workflowEndPress() {
+        var p = workflowPress;
+        if (!p) return null;
+        clearTimeout(p.timer);
+        $(p.el).removeClass("ts-wf-lifted");
+        $(workflowGrid).removeClass("ts-wf-sorting");
+        workflowPress = null;
+        return p;
+    }
+
+    function workflowListFromDOM() {
+        var old = customButtons();
+        var list = [];
+        $(workflowGrid)
+            .children(".ts-cmd")
+            .each(function () {
+                if ($(this).hasClass("ts-dyn")) {
+                    var b = old[Number(this.getAttribute("data-idx"))];
+                    if (b) list.push(b);
+                } else {
+                    list.push({ type: "builtin", cmd: this.getAttribute("data-cmd") });
+                }
+            });
+        return list;
+    }
+
+    $(workflowGrid).on("pointerdown", ".ts-cmd", function (e) {
+        var ev = e.originalEvent || e;
+        // A press still on record here lost its pointerup (released outside
+        // the frame, say) - drop it rather than leave rendering held.
+        if (workflowPress) workflowEndPress();
+        if (this.disabled) return;
+        if (ev.pointerType === "mouse" && ev.button !== 0) return;
+        if ($(e.target).closest(".sb4-homed-ind").length) return; // the badge has its own click
+        var p = { el: this, id: ev.pointerId, x: ev.clientX, y: ev.clientY, lifted: false };
+        p.timer = setTimeout(function () {
+            if (workflowPress !== p) return;
+            p.lifted = true;
+            p.before = workflowListFromDOM();
+            $(p.el).addClass("ts-wf-lifted");
+            $(workflowGrid).addClass("ts-wf-sorting");
+        }, WORKFLOW_HOLD_MS);
+        workflowPress = p;
+    });
+
+    document.addEventListener("pointermove", function (ev) {
+        var p = workflowPress;
+        if (!p || ev.pointerId !== p.id) return;
+        if (!p.lifted) {
+            if (Math.abs(ev.clientX - p.x) > WORKFLOW_SLOP_PX || Math.abs(ev.clientY - p.y) > WORKFLOW_SLOP_PX) {
+                workflowEndPress();
+            }
+            return;
+        }
+        var kids = $(workflowGrid).children(".ts-cmd").get();
+        for (var i = 0; i < kids.length; i++) {
+            var k = kids[i];
+            if (k === p.el) continue;
+            var r = k.getBoundingClientRect();
+            var mid = r.top + r.height / 2;
+            var kIsAfter = !!(p.el.compareDocumentPosition(k) & Node.DOCUMENT_POSITION_FOLLOWING);
+            if (kIsAfter && ev.clientY > mid) {
+                workflowGrid.insertBefore(p.el, k.nextSibling);
+            } else if (!kIsAfter && ev.clientY < mid) {
+                workflowGrid.insertBefore(p.el, k);
+                break;
+            }
+        }
+    });
+
+    function workflowRelease(ev, cancelled) {
+        var p = workflowPress;
+        if (!p || ev.pointerId !== p.id) return;
+        workflowEndPress();
+        if (!p.lifted) return;
+        workflowClickBlockUntil = Date.now() + 600;
+        if (cancelled) return renderCustomButtons();
+        var list = workflowListFromDOM();
+        var json = JSON.stringify(list);
+        // Compare against the order on screen before the drag, not the raw
+        // stored string: a lift-and-put-back must not save anything.
+        var changed = json !== JSON.stringify(p.before);
+        if (!changed) return renderCustomButtons();
+        state.vars = state.vars || {};
+        state.vars.TS_MACRO_BUTTONS = json;
+        renderCustomButtons();
+        saveCustomButtons(list);
+    }
+    document.addEventListener("pointerup", function (ev) {
+        workflowRelease(ev, false);
+    });
+    document.addEventListener("pointercancel", function (ev) {
+        workflowRelease(ev, true);
+    });
+    window.addEventListener("blur", function () {
+        if (workflowEndPress()) renderCustomButtons();
+    });
+
+    // Swallow the click that ends a lift (capture phase, so it never reaches
+    // the button handlers below or the homed badges).
+    workflowGrid.addEventListener(
+        "click",
+        function (ev) {
+            if (Date.now() < workflowClickBlockUntil) {
+                ev.stopPropagation();
+                ev.preventDefault();
+            }
+        },
+        true
+    );
+
+    // Touch: once a button is lifted the drag must not scroll the page, and
+    // the long press must not open the browser's context menu. (Pointer
+    // events cannot stop a scroll after the touch has started; a
+    // non-passive touchmove can.)
+    workflowGrid.addEventListener(
+        "touchmove",
+        function (ev) {
+            if (workflowPress && workflowPress.lifted && ev.cancelable) ev.preventDefault();
+        },
+        { passive: false }
+    );
+    workflowGrid.addEventListener("contextmenu", function (ev) {
+        if (workflowPress) ev.preventDefault();
+    });
+
+    // Note buttons: toggle the completed check box. The list is re-rendered
+    // from state.vars on every status report, and state.vars is only
+    // refreshed once the save has come back - so write the new list into
+    // state.vars first. Otherwise the next status report would paint the
+    // old state back, and a second click before the save returned would
+    // start from the stale list and repeat the first click.
+    $("#machine-btn-grid").on("click", ".ts-note-btn", function () {
+        var idx = Number($(this).attr("data-idx"));
+        var list = customButtons();
+        if (!isNoteButton(list[idx])) return;
+        list[idx].done = !list[idx].done;
+        state.vars = state.vars || {};
+        state.vars.TS_MACRO_BUTTONS = JSON.stringify(list);
+        renderCustomButtons();
+        saveCustomButtons(list);
+    });
+
     // ---- App shortcuts: launch tiles + picker modal ----
 
     $("#shortcut-grid").on("click", ".ts-shortcut", function () {
@@ -2481,12 +2733,29 @@ $(document).ready(function () {
         closeShortcutPicker();
     });
 
-    // ---- Add-macro-button modal ----
+    // ---- Add-button modal (a macro, or a note at the end of the list) ----
 
     var pickedMacro = null;
+    var pickedNote = false;
+
+    function appendNotePick($list) {
+        var $row = $(
+            '<div class="ts-pick-entry ts-pick-entry-note">' +
+                '<div class="ts-pick-name"></div>' +
+                '<div class="ts-pick-desc"></div>' +
+                "</div>"
+        );
+        $row.find(".ts-pick-name").text(noteDefaultLabel());
+        $row.find(".ts-pick-desc").text(
+            tOr("sb4.workflow.note_desc", "A note or reminder with a completed check box; does not run a macro")
+        );
+        $row.data("note", true);
+        $list.append($row);
+    }
 
     $("#btn-add-macro").on("click", function () {
         pickedMacro = null;
+        pickedNote = false;
         $("#macro-btn-label").val("");
         $("#btn-macro-pick-save").prop("disabled", true);
         var $list = $("#macro-pick-list").html($('<div class="ts-empty">').text(window.t("tool_status.macro_pick.loading")));
@@ -2494,6 +2763,7 @@ $(document).ready(function () {
             $list.empty();
             if (err || !macros || !macros.length) {
                 $list.append($('<div class="ts-empty">').text(window.t("tool_status.macro_pick.none")));
+                appendNotePick($list);
                 return;
             }
             macros.forEach(function (m) {
@@ -2508,6 +2778,7 @@ $(document).ready(function () {
                 $row.data("macro", m);
                 $list.append($row);
             });
+            appendNotePick($list);
         });
         $("#macro-pick-modal").css("display", "flex");
     });
@@ -2515,6 +2786,15 @@ $(document).ready(function () {
     $("#macro-pick-list").on("click", ".ts-pick-entry", function () {
         $("#macro-pick-list .ts-pick-entry").removeClass("selected");
         $(this).addClass("selected");
+        if ($(this).data("note")) {
+            // Note: offer the default name selected, ready to type over
+            pickedMacro = null;
+            pickedNote = true;
+            $("#macro-btn-label").val(noteDefaultLabel()).trigger("focus").trigger("select");
+            $("#btn-macro-pick-save").prop("disabled", false);
+            return;
+        }
+        pickedNote = false;
         pickedMacro = $(this).data("macro");
         $("#macro-btn-label").val(pickedMacro.name || window.t("tool_status.machine.macro_n", { n: pickedMacro.index }));
         $("#btn-macro-pick-save").prop("disabled", false);
@@ -2533,8 +2813,18 @@ $(document).ready(function () {
     });
 
     $("#btn-macro-pick-save").on("click", function () {
+        var list;
+        if (pickedNote) {
+            list = customButtons();
+            list.push({
+                type: "note",
+                label: ($("#macro-btn-label").val() || "").trim() || noteDefaultLabel(),
+                done: false,
+            });
+            return saveCustomButtons(list, closeMacroPick);
+        }
         if (!pickedMacro) return;
-        var list = customButtons();
+        list = customButtons();
         list.push({
             macro: pickedMacro.index,
             label: ($("#macro-btn-label").val() || "").trim() || pickedMacro.name || window.t("tool_status.machine.macro_n", { n: pickedMacro.index }),
@@ -2559,18 +2849,25 @@ $(document).ready(function () {
         setNum($("#ms-park-z"), uuGet("SB_PARKUU", "Z"));
         var $custom = $("#ms-custom-list").empty();
         var buttons = customButtons();
-        if (!buttons.length) {
+        var userButtons = buttons.filter(function (b) {
+            return !isBuiltinButton(b);
+        });
+        if (!userButtons.length) {
             $custom.append($('<div class="ts-empty">').text(window.t("tool_status.machine_settings.no_custom")));
         }
-        buttons.forEach(function (b) {
+        buttons.forEach(function (b, i) {
+            if (isBuiltinButton(b)) return; // placed in the order, not editable here
+            var note = isNoteButton(b);
             var $row = $(
                 '<div class="ts-custom-row">' +
-                    '<span class="ts-custom-macro">C' + Number(b.macro) + "</span>" +
+                    '<span class="ts-custom-macro">' + (note ? tOr("sb4.workflow.note_tag", "Note") : "C" + Number(b.macro)) + "</span>" +
                     '<input type="text">' +
                     '<button class="ts-iconbtn ms-custom-remove" title="' + window.t("tool_status.machine_settings.remove_button_title") + '"><i class="fa fa-trash"></i></button>' +
                     "</div>"
             );
-            $row.data("macro", Number(b.macro));
+            $row.data("idx", i);
+            if (note) $row.data("note", true).data("done", !!b.done);
+            else $row.data("macro", Number(b.macro));
             $row.find("input").val(b.label || "");
             $custom.append($row);
         });
@@ -2618,9 +2915,26 @@ $(document).ready(function () {
                 Z: read("#ms-park-z", "SB_PARKUU", "Z"),
             }),
         };
-        var buttons = [];
+        // Walk the stored list so everything keeps its place in the order:
+        // built-ins pass through, the user's buttons take their edited row
+        // (a removed row drops the button).
+        var rows = {};
         $("#ms-custom-list .ts-custom-row").each(function () {
-            var $row = $(this);
+            rows[$(this).data("idx")] = $(this);
+        });
+        var buttons = [];
+        customButtons().forEach(function (b, i) {
+            if (isBuiltinButton(b)) return buttons.push(b);
+            var $row = rows[i];
+            if (!$row) return;
+            if ($row.data("note")) {
+                buttons.push({
+                    type: "note",
+                    label: ($row.find("input").val() || "").trim() || noteDefaultLabel(),
+                    done: !!$row.data("done"),
+                });
+                return;
+            }
             var macro = Number($row.data("macro"));
             if (!(macro >= 1)) return;
             buttons.push({

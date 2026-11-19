@@ -773,7 +773,18 @@
             "cut_part_tooltip": "Pick a Single Part File to Cut; FP",
             "manage_parts": "(D) - MANAGE PARTS",
             "manage_parts_tooltip": "Advanced: Select and Order Parts in Job Manager",
-            "card_title": "My Workflow"
+            "card_title": "My Workflow",
+            "add_title": "Add Button",
+            "add_button_title": "Add a button (macro or note)",
+            "add_label_placeholder": "select a button above",
+            "note_default": "Note: ...",
+            "note_desc": "A note or reminder with a completed check box; does not run a macro",
+            "note_title": "Note - click to mark completed or not completed",
+            "note_tag": "Note",
+            "custom_note": "rename or remove; to reorder, press and hold a button on the card and drag it"
+        },
+        "jobs": {
+            "title": "Job Queue (ordered)"
         },
         "macros": {
             "other_helpful": "Other Helpful Macros",
