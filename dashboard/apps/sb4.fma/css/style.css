@@ -357,6 +357,74 @@
     padding: 6px 12px;
 }
 
+/* Reorder: press and hold a button to lift it, then drag up or down
+   (cards.js). No text selection or touch callout, so the long press is
+   ours; the lifted button gets a blue outline and the others stop
+   reacting to hover while it is carried. */
+#machine-btn-grid .ts-cmd {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+#sb4app #machine-btn-grid .ts-cmd.ts-wf-lifted {
+    outline: 2px solid #2980b9;
+    outline-offset: 1px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+    transform: scale(1.02);
+    cursor: grabbing;
+    position: relative;
+    z-index: 2;
+}
+#machine-btn-grid.ts-wf-sorting,
+#machine-btn-grid.ts-wf-sorting .ts-cmd {
+    cursor: grabbing;
+}
+
+/* Note buttons: a user-written step in the list. Same shape as the macro
+   buttons, light tan instead of their light yellow, with a completed check
+   box at the left that a click toggles. Id-prefixed so the tan wins over
+   theme-bridge's themed .ts-cmd rules, as the homed indicators do below. */
+#sb4app .ts-cmd.ts-note-btn,
+#sb4app .ts-cmd.ts-note-btn:hover:not(:disabled) {
+    position: relative;
+    background: rgb(240, 226, 200);
+    color: #444;
+    border-color: rgb(176, 156, 122);
+    text-shadow: none;
+}
+#sb4app .ts-cmd.ts-note-btn:hover:not(:disabled) {
+    background: rgb(232, 213, 178);
+}
+.ts-note-check {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    width: 15px;
+    height: 15px;
+    margin-top: -8px;
+    box-sizing: border-box;
+    border: 1px solid rgb(140, 120, 88);
+    border-radius: 3px;
+    background: #fff;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #2e7d32;
+}
+.ts-note-check .fa {
+    visibility: hidden;
+}
+.ts-note-done .ts-note-check .fa {
+    visibility: visible;
+}
+/* keep a long note clear of the check box */
+.ts-note-btn .ts-note-text {
+    display: block;
+    padding: 0 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* ============================================== MACHINE CARD: HOMED INDICATORS */
 
 /* The two Home buttons carry Sb4's homed state (opensbp tempVariables

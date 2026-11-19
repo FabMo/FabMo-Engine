@@ -170,7 +170,7 @@
                 <div class="ts-card" data-card-id="jobs">
                     <span class="ts-card-grip" title="Drag to move card" data-i18n-title="tool_status.cards.drag_title">&#8942;&#8942;&#8942;</span>
                     <div class="ts-card-title ts-card-title-row">
-                        <span data-i18n="tool_status.jobs.title">Job Queue (ordered)</span>
+                        <span data-i18n="sb4.jobs.title">Job Queue (ordered)</span>
                         
                     </div>
                     <div class="ts-jobs-actions">
@@ -212,7 +212,7 @@
                             <button class="ts-cmd machine-cmd" data-cmd="JH" title="Jog Home X &amp; Y; Z to safe height (JH)" data-i18n-title="tool_status.machine.jog_home_title" data-i18n="tool_status.machine.jog_home">Jog Home</button>
                             <button class="ts-cmd machine-cmd" data-cmd="C79" title="Move to park location (C79)" data-i18n-title="tool_status.machine.jog_to_park_title" data-i18n="tool_status.machine.jog_to_park">Jog to Park</button>
                         </div>
-                        <button class="ts-cmd ts-cmd-add ts-cmd-add-side" id="btn-add-macro" title="Add a macro button" data-i18n-title="tool_status.machine.add_macro_title">+</button>
+                        <button class="ts-cmd ts-cmd-add ts-cmd-add-side" id="btn-add-macro" title="Add a button (macro or note)" data-i18n-title="sb4.workflow.add_button_title">+</button>
                     </div>
                 </div>
 
@@ -722,17 +722,17 @@
         </div>
     </div>
 
-    <!-- Add macro button modal -->
+    <!-- Add button modal (My Workflow: a macro button or a note) -->
     <div class="ts-modal-backdrop" id="macro-pick-modal" style="display:none;">
         <div class="ts-modal">
             <div class="ts-modal-header">
-                <span data-i18n="tool_status.macro_pick.title">Add Macro Button</span>
+                <span data-i18n="sb4.workflow.add_title">Add Button</span>
                 <a class="ts-link" id="macro-pick-manager" data-i18n="tool_status.macro_pick.open_manager">open Macro Manager</a>
             </div>
             <div class="ts-modal-body">
                 <div class="ts-pick-list" id="macro-pick-list"></div>
                 <label class="ts-label-field"><span data-i18n="tool_status.macro_pick.button_label">Button label</span>
-                    <input id="macro-btn-label" type="text" placeholder="select a macro above" data-i18n-placeholder="tool_status.macro_pick.label_placeholder">
+                    <input id="macro-btn-label" type="text" placeholder="select a button above" data-i18n-placeholder="sb4.workflow.add_label_placeholder">
                 </label>
             </div>
             <div class="ts-modal-footer">
@@ -861,7 +861,7 @@
                 </div>
 
                 <div class="ts-settings-section">
-                    <div class="ts-settings-heading"><span data-i18n="tool_status.machine_settings.custom_buttons">Custom Buttons</span> <span class="ts-note-inline" data-i18n="tool_status.machine_settings.custom_note">rename or remove</span></div>
+                    <div class="ts-settings-heading"><span data-i18n="tool_status.machine_settings.custom_buttons">Custom Buttons</span> <span class="ts-note-inline" data-i18n="sb4.workflow.custom_note">rename or remove; to reorder, press and hold a button on the card and drag it</span></div>
                     <div id="ms-custom-list"></div>
                 </div>
 
