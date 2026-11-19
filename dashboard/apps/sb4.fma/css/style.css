@@ -345,12 +345,12 @@
 
 /* ============================================== MY WORKFLOW CARD */
 
-/* A running procedure list of slim buttons, read left to right, top to
-   bottom (the + add button keeps its column at the right). Buttons take a
-   sensible width and flow into as many columns as fit — two on a phone,
-   more on a wide card — rather than each stretching the full card width. */
+/* A running procedure list of slim buttons, one full-width button per row,
+   so they read top to bottom as an order of operations (the + add button
+   keeps its column at the right). They used to flow into as many columns
+   as fit, which hid the sequence. */
 #machine-btn-grid {
-    grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
+    grid-template-columns: 1fr;
     gap: 6px;
 }
 #machine-btn-grid .ts-cmd {
