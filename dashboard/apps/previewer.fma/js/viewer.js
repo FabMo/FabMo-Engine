@@ -2304,7 +2304,15 @@ module.exports = function(container) {
       if (!self.ar.enabled && !self.ar.overhead) return;
       var c = self.renderer.domElement;
       var pRect = container[0].getBoundingClientRect();
+      // Measure the canvas's layout box, not its zoomed/panned one:
+      // getBoundingClientRect includes the AR view transform, and the
+      // overlays get that same transform applied on top of these
+      // dimensions. Sizing them from the transformed rect zoomed the video
+      // twice, so it no longer lined up with the toolpath.
+      var prevTransform = c.style.transform;
+      c.style.transform = '';
       var rect = c.getBoundingClientRect();
+      c.style.transform = prevTransform;
       var css = {
           left:   (rect.left - pRect.left) + 'px',
           top:    (rect.top  - pRect.top)  + 'px',
