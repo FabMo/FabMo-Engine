@@ -94,10 +94,25 @@ function configureUser(callback) {
 // it with the configuration of the actual physical driver.
 // Also, create `exports.driver` which is a G2Config object
 //   driver - An instance of the driver, which will be used to synchronize configuration
+// The one real G2Config instance. exports.driver normally points at it; while
+// there is no connection to G2 it is temporarily replaced by a dummy Config.
+var g2DriverConfig = new G2Config();
+
 function configureDriver(driver, callback) {
     if (driver) {
         log.info("Configuring G2 Driver...");
-        //exports.driver = new G2Config(driver);
+        // If the initial connect failed, exports.driver was swapped for a
+        // bare dummy Config (below). Put the real G2Config back before
+        // initializing: the dummy has no config name and its init() takes
+        // only a callback, so init(driver, callback) on it tried to load
+        // "undefined.json" and then called the driver object as a function
+        // ("callback is not a function"), leaving the machine not_ready
+        // after an otherwise successful reconnect. Reusing the original
+        // instance also keeps the listeners attached to it (machine.js).
+        if (exports.driver !== g2DriverConfig) {
+            log.info("Replacing dummy driver configuration with the G2 configuration");
+            exports.driver = g2DriverConfig;
+        }
         async.series(
             [
                 function (callback) {
@@ -170,7 +185,7 @@ function clearAppRoot(callback) {
 
 // These are created on module initialization
 exports.machine = new MachineConfig();
-exports.driver = new G2Config();
+exports.driver = g2DriverConfig;
 exports.profiles = new ProfileConfig();
 exports.profileDefinition = ProfileDefinition;
 
