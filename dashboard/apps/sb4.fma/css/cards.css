@@ -124,7 +124,23 @@ body[class*="theme-"] .ts-job .ts-job-repeat.on { color: #32b433; }
 .ts-radio-row label { margin: 0; font-weight: 600; }
 .ts-radio-opts { margin: 4px 0 6px 22px; }
 .ts-job .ts-job-delete:hover { color: #c0392b; }
-.ts-job.next { border-color: #2980b9; background: #eef6fc; }
+/* The pending queue sits in a tinted frame so it reads as the live part of
+   the card, apart from the history below it. */
+#job-queue {
+    border: 2px solid #9cc3e0;
+    border-radius: 6px;
+    padding: 6px;
+    background: #eaf3fa;
+}
+#job-queue .ts-empty { padding: 4px 2px; }
+/* The next job up: the brightest row on the card, with an accent bar */
+.ts-job.next {
+    border-color: #2980b9;
+    border-left-width: 5px;
+    background: #fff;
+    padding: 9px 8px;
+}
+.ts-job.next .ts-job-name { font-size: 1em; }
 .ts-drag-handle {
     color: #b2bec3;
     cursor: grab;
@@ -167,6 +183,15 @@ body[class*="theme-"] .ts-job .ts-job-repeat.on { color: #32b433; }
 .ts-empty { font-size: 0.85em; color: #b2bec3; padding: 8px 2px; }
 .ts-history-title { margin-top: 12px; }
 .ts-job-history .ts-job { background: #fff; }
+/* History rows on the card are slim one-liners (name, then date/result) so
+   the pending queue carries the weight. The full-history dialog keeps the
+   regular two-line rows. */
+.ts-job-history { gap: 2px; }
+.ts-job-history .ts-job { padding: 1px 8px; flex-wrap: nowrap; }
+.ts-job-history .ts-job-info { display: flex; align-items: baseline; gap: 8px; flex: 1 1 0; }
+.ts-job-history .ts-job-name { flex: 1 1 0; min-width: 0; font-weight: 500; font-size: 0.85em; }
+.ts-job-history .ts-job-meta { flex: 0 0 auto; white-space: nowrap; font-size: 0.72em; }
+.ts-job-history .ts-iconbtn { padding: 1px 3px; }
 
 /* USB browser */
 .ts-usb-list {
