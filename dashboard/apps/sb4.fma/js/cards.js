@@ -1927,6 +1927,13 @@ function atcType() {
     return Number(atcVar("TYPE", 0));
 }
 
+// An ATC machine switched to manual tool change ($ATC.Manual = 1). The
+// hardware type ($ATC.Type) is left alone: macros also use it to tell
+// machines apart (homing, calibration), so it is not the switch.
+function atcManual() {
+    return Number(atcVar("MANUAL", 0)) === 1;
+}
+
 function showToolRow() {
     return !!TOOL_ROW_TYPES[atcType()];
 }
@@ -1940,7 +1947,9 @@ function isIdle() {
 
 function renderHeader() {
     var type = atcType();
-    $("#atc-type-badge").text(ATC_TYPE_LABELS[type] || window.t("tool_status.header.atc_type", { type: type }));
+    var typeLabel = ATC_TYPE_LABELS[type] || window.t("tool_status.header.atc_type", { type: type });
+    if (type && atcManual()) typeLabel += " · " + window.t("tool_status.tools.mode_manual");
+    $("#atc-type-badge").text(typeLabel);
     var st = state.machineState || "—";
     $("#machine-state")
         .text(tOr("tool_status.states." + st, st))
@@ -2057,7 +2066,12 @@ function renderToolRow() {
     var clips = Number(atcVar("NUMCLIPS", 0));
     var current = Number(atcVar("TOOLIN", 0));
     var idle = isIdle();
+    var manual = atcManual();
     var table = toolTable();
+    $("#tc-mode .ts-tc-mode-btn").each(function () {
+        var isManualBtn = $(this).attr("data-manual") === "1";
+        $(this).toggleClass("active", isManualBtn === manual).prop("disabled", !idle);
+    });
     var $rack = $("#rack").empty();
     for (var n = 1; n <= clips; n++) {
         var h = (table[n] || {}).H;
@@ -2079,11 +2093,17 @@ function renderToolRow() {
         var tip = [name, h ? window.t("tool_status.tools.len") + " " + fmt(Number(h)) : "", clipLoc].filter(Boolean).join(" · ");
         if (tip) $clip.attr("title", tip);
         if (n === current) $clip.addClass("current");
-        else if (!idle) $clip.addClass("disabled");
+        if (manual || (n !== current && !idle)) $clip.addClass("disabled");
         $rack.append($clip);
     }
-    $("#rack-note").text(idle ? window.t("tool_status.tools.rack_idle_note") : window.t("tool_status.tools.rack_busy_note"));
-    $(".ts-btn-grid-tools .ts-cmd").prop("disabled", !idle);
+    $("#rack-note").text(
+        manual
+            ? window.t("tool_status.tools.rack_manual_note")
+            : idle
+              ? window.t("tool_status.tools.rack_idle_note")
+              : window.t("tool_status.tools.rack_busy_note")
+    );
+    renderToolCommands();
 }
 
 // ---------------------------------------------------------------------------
@@ -2128,6 +2148,18 @@ function renderCustomButtons() {
 
 function renderCommands() {
     $(".machine-cmd").prop("disabled", !isIdle());
+    renderToolCommands();
+}
+
+// Tools card buttons. All of them drive the tool changer, so they are off
+// in manual tool-change mode. "Empty Spindle" puts the current tool away
+// and leaves the spindle empty (a change to tool 0): nothing to do when
+// the spindle is already empty.
+function renderToolCommands() {
+    var usable = isIdle() && !atcManual();
+    $(".ts-btn-grid-tools .ts-cmd").prop("disabled", !usable);
+    var loaded = Number(atcVar("TOOLIN", 0)) >= 1;
+    $("#btn-empty-spindle").prop("disabled", !usable || !loaded);
 }
 
 // ---------------------------------------------------------------------------
@@ -2610,7 +2642,7 @@ $(document).ready(function () {
     $("#rack").on("click", ".ts-clip", function () {
         var tool = Number($(this).data("tool"));
         var current = Number(atcVar("TOOLIN", 0));
-        if (tool === current || !isIdle()) return;
+        if (tool === current || !isIdle() || atcManual()) return;
         var name = toolName(tool);
         fabmo.showModal({
             title: window.t("tool_status.tool_change.title"),
@@ -2627,13 +2659,56 @@ $(document).ready(function () {
         });
     });
 
+    // Empty Spindle: a change to tool 0, which the toolchange macros treat
+    // as "put the current tool away and pick nothing up".
+    $("#btn-empty-spindle").on("click", function () {
+        var current = Number(atcVar("TOOLIN", 0));
+        if (!isIdle() || atcManual() || !(current >= 1)) return;
+        var name = toolName(current);
+        fabmo.showModal({
+            title: window.t("tool_status.tool_change.empty_title"),
+            message: window.t("tool_status.tool_change.empty_message", {
+                tool: current,
+                name: name ? " (" + name + ")" : "",
+            }),
+            okText: window.t("tool_status.tool_change.empty_ok"),
+            cancelText: window.t("tool_status.common.cancel"),
+            ok: function () {
+                runCommand("&Tool = 0\nC9");
+            },
+            cancel: function () {},
+        });
+    });
+
+    // Automatic / Manual tool change: sets $ATC.Manual, which the toolchange
+    // dispatcher (macro 9) checks ahead of the ATC type.
+    $("#tc-mode").on("click", ".ts-tc-mode-btn", function () {
+        var toManual = $(this).attr("data-manual") === "1";
+        if (!isIdle() || toManual === atcManual()) return;
+        var current = Number(atcVar("TOOLIN", 0));
+        var key = toManual ? "to_manual" : current >= 1 ? "to_auto_loaded" : "to_auto_empty";
+        fabmo.showModal({
+            title: window.t("tool_status.tc_mode." + (toManual ? "manual_title" : "auto_title")),
+            message: window.t("tool_status.tc_mode." + key, { tool: current }),
+            okText: window.t("tool_status.tc_mode." + (toManual ? "manual_ok" : "auto_ok")),
+            cancelText: window.t("tool_status.common.cancel"),
+            ok: function () {
+                fabmo.setConfig({ opensbp: { variables: { ATC: { MANUAL: toManual ? 1 : 0 } } } }, function (err) {
+                    if (err) return fabmo.notify("error", err.message || err);
+                    refreshConfig();
+                });
+            },
+            cancel: function () {},
+        });
+    });
+
     $("#btn-measure").on("click", function () {
-        if (!isIdle()) return;
+        if (!isIdle() || atcManual()) return;
         runCommand("C72");
     });
 
     $(".ts-btn-grid-tools").on("click", "[data-cmd]", function () {
-        if (!isIdle()) return;
+        if (!isIdle() || atcManual()) return;
         runCommand($(this).attr("data-cmd"));
     });
 

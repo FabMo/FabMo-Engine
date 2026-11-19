@@ -203,7 +203,8 @@ const { last } = require("underscore");
 
     // Large DRO header bar ("INCH  [Manual]  idle") and the
     // "[Current Tool: n]" on the Spindle-1 bar. Units and state come from
-    // the status report; tool-change type ($ATC.Type, 0 = manual) and the
+    // the status report; tool-change type ($ATC.Type, 0 = manual; or
+    // $ATC.Manual = 1 on an ATC machine) and the
     // current tool ($SB_TOOLCURRENT) from the last config read.
     FabMoUI.prototype.updateDROHeader = function (status) {
         var cfg = this.tool.config || {};
@@ -219,6 +220,9 @@ const { last } = require("underscore");
         };
         $(".dro-head-units").text(status.unit === "mm" ? tr("status.dro_units_mm", "MM") : tr("status.dro_units_inch", "INCH"));
         var atcType = Number(vars.ATC && vars.ATC.TYPE) || 0;
+        // An ATC machine switched to manual tool change ($ATC.Manual = 1)
+        // reads as Manual; the hardware type itself is left alone.
+        if (Number(vars.ATC && vars.ATC.MANUAL) === 1) atcType = 0;
         var typeLabel = atcType ? tr("status.dro_tctype_atc", "ATC") : tr("status.dro_tctype_manual", "Manual");
         $(".dro-head-tctype").text(tr("status.dro_tool_change_type", "[{type}]", { type: typeLabel }));
         var st = status.state || "";
