@@ -193,8 +193,225 @@
         nav.appendChild(apps);
     }
 
+    // ---------- settings with a fixed set of choices ----------
+    //
+    // Some settings only accept one of a few values (the Configuration app
+    // edits them with dropdowns). Typed free-hand here, a near miss such as
+    // "Once per cut" instead of "once" was saved into the profile and then
+    // silently ignored by the engine. These rows render as dropdowns
+    // instead. Keep this table in step with the Configuration app's selects
+    // (configuration.fma index.html and js/configuration.js).
+    //
+    // Each rule: file, a RegExp tested against the dotted key path, and the
+    // choices as [value, label] pairs. Values carry the JSON type that is
+    // written to the profile.
+
+    function numbered(from, to, labelPrefix) {
+        var out = [];
+        for (var i = from; i <= to; i++) out.push([i, labelPrefix + " " + i]);
+        return out;
+    }
+
+    var INPUT_PICK = [[0, "None"]].concat(numbered(1, 12, "Input"));
+    var NOTIFY_MODES = [
+        ["never", "Never"],
+        ["once", "Once per cut"],
+        ["always", "Always"],
+    ];
+    var NOTIFY_TIMING = [
+        ["before", "Before the output changes"],
+        ["after", "After the output changes"],
+    ];
+    var AXES = [
+        ["x", "X"],
+        ["y", "Y"],
+        ["z", "Z"],
+        ["a", "A"],
+        ["b", "B"],
+        ["c", "C"],
+    ];
+
+    var CHOICES = [
+        // --- machine ---
+        { file: "machine", key: /^(units|last_units)$/, options: [["in", "Inches"], ["mm", "Millimeters"]] },
+        {
+            file: "machine",
+            key: /^di([1-9]|1[0-2])ac$/,
+            options: [
+                ["none", "None"],
+                ["stop", "Stop"],
+                ["faststop", "Stop-Fast"],
+                ["interlock", "Interlock"],
+                ["limit", "Limit"],
+                ["halt", "Stop-Immediate"],
+            ],
+        },
+        {
+            file: "machine",
+            key: /^di([1-9]|1[0-2])type$/,
+            options: [
+                ["none", "None"],
+                ["x_limit", "X Limit"],
+                ["y_limit", "Y Limit"],
+                ["z_limit", "Z Limit"],
+                ["a_limit", "A Limit"],
+                ["b_limit", "B Limit"],
+                ["c_limit", "C Limit"],
+                ["zzero_plate", "Z-Zero Plate"],
+                ["toolbar_present", "Tool Bar Present"],
+                ["toolbar_up", "Tool Bar Up"],
+                ["drawbar_open", "Draw Bar Open"],
+                ["tool_present", "Tool Present in Spindle"],
+            ],
+        },
+        {
+            file: "machine",
+            key: /^auth_scope$/,
+            options: [
+                ["all", "Files and manual control"],
+                ["file_only", "File runs only"],
+            ],
+        },
+        { file: "machine", key: /^(auth_input|quit_input|ap_input)$/, options: INPUT_PICK },
+        {
+            file: "machine",
+            key: /^outputs\.\d+\.on_mode$/,
+            options: [
+                ["file_start", "File Start"],
+                ["command", "Command"],
+                ["timed_after_file_end", "Timed after file end"],
+                ["position", "Position"],
+                ["input", "Input"],
+            ],
+        },
+        {
+            file: "machine",
+            key: /^outputs\.\d+\.off_mode$/,
+            options: [
+                ["file_end", "File End"],
+                ["command", "Command"],
+                ["timed_after_file_end", "Timed after file end"],
+                ["position", "Position"],
+                ["input", "Input"],
+            ],
+        },
+        { file: "machine", key: /^outputs\.\d+\.notify_(on|off)$/, options: NOTIFY_MODES },
+        { file: "machine", key: /^outputs\.\d+\.notify_(on|off)_timing$/, options: NOTIFY_TIMING },
+        { file: "machine", key: /^outputs\.\d+\.(on|off)_position\.axis$/, options: AXES },
+        {
+            file: "machine",
+            key: /^outputs\.\d+\.(on|off)_position\.side$/,
+            options: [
+                ["below", "Below"],
+                ["above", "Above"],
+            ],
+        },
+        { file: "machine", key: /^outputs\.\d+\.(on|off)_input\.input$/, options: numbered(1, 12, "Input") },
+        {
+            file: "machine",
+            key: /^outputs\.\d+\.(on|off)_input\.state$/,
+            options: [
+                ["on", "goes ON"],
+                ["off", "goes OFF"],
+            ],
+        },
+
+        // --- g2 ---
+        { file: "g2", key: /^gdi$/, options: [[0, "Absolute"], [1, "Relative/Incremental"]] },
+        { file: "g2", key: /^[xyz]am$/, options: [[0, "Disable"], [1, "Linear"]] },
+        {
+            file: "g2",
+            key: /^[abc]am$/,
+            options: [
+                [0, "Disable"],
+                [1, "Rotary"],
+                [2, "Linear"],
+                [3, "Speed/Radius"],
+            ],
+        },
+        { file: "g2", key: /^di\d+po$/, options: [[0, "Low"], [1, "High"]] },
+        { file: "g2", key: /^[1-6]po$/, options: [[0, "Normal"], [1, "Reversed"]] },
+        {
+            file: "g2",
+            key: /^[1-6]ma$/,
+            options: [
+                [0, "X"],
+                [1, "Y"],
+                [2, "Z"],
+                [3, "A"],
+                [4, "B"],
+                [5, "C"],
+            ],
+        },
+        { file: "g2", key: /^plmo$/, options: [[2, "2D planning mode"], [3, "3D planning mode"]] },
+
+        // --- engine ---
+        {
+            file: "engine",
+            key: /^log_level$/,
+            options: [
+                ["g2", "G2"],
+                ["debug", "Debug"],
+                ["info", "Informational"],
+                ["warning", "Warnings"],
+                ["error", "Error"],
+            ],
+        },
+        // "language" is added at startup from /i18n/languages
+    ];
+
+    function choicesFor(file, pathArr) {
+        var key = pathArr.join(".");
+        for (var i = 0; i < CHOICES.length; i++) {
+            if (CHOICES[i].file === file && CHOICES[i].key.test(key)) return CHOICES[i].options;
+        }
+        return null;
+    }
+
+    // A dropdown for a setting with fixed choices. Each option shows the
+    // friendly label plus the raw value that goes into the profile. A
+    // current value that is not one of the choices (an old hand-typed
+    // entry) stays selected and visible, flagged as invalid, until the
+    // user picks a real one.
+    function selectFor(file, pathArr, options) {
+        var val = getPath(state.edits[file], pathArr);
+        var select = document.createElement("select");
+        var values = [];
+        var matched = false;
+        options.forEach(function (opt) {
+            var o = document.createElement("option");
+            o.textContent = String(opt[1]) === String(opt[0]) ? String(opt[0]) : opt[1] + "  (" + opt[0] + ")";
+            // Loose match so a legacy "1" or true still lands on 1
+            if (!matched && (leafEqual(opt[0], val) || (val !== undefined && val !== null && String(opt[0]) === String(val)))) {
+                o.selected = true;
+                matched = true;
+            }
+            values.push(opt[0]);
+            select.appendChild(o);
+        });
+        if (!matched) {
+            var bad = document.createElement("option");
+            bad.textContent =
+                (val === undefined ? "(not set)" : JSON.stringify(val)) + "  — not a valid choice";
+            bad.selected = true;
+            select.insertBefore(bad, select.firstChild);
+            values.unshift(val);
+            select.classList.add("bad");
+            select.title = "This value is not one of the choices the engine accepts. Pick one from the list.";
+        }
+        select.addEventListener("change", function () {
+            setPath(state.edits[file], pathArr, values[select.selectedIndex]);
+            onEdit();
+        });
+        return select;
+    }
+
     function inputFor(file, pathArr, defVal) {
         var val = getPath(state.edits[file], pathArr);
+        var options = choicesFor(file, pathArr);
+        if (options) {
+            return selectFor(file, pathArr, options);
+        }
         // Profile-only keys have no default — type the input from the
         // current value instead.
         var typeVal = defVal === undefined ? val : defVal;
@@ -782,6 +999,26 @@
             .catch(function (e) {
                 setStatus("Could not load defaults: " + e.message, "error");
             });
+
+        // Language choices come from the engine's installed dictionaries.
+        // Best-effort: without them the language row stays a text box.
+        fetch("/i18n/languages")
+            .then(function (r) {
+                return r.json();
+            })
+            .then(function (resp) {
+                var langs = (resp && resp.available) || [];
+                if (langs.length === 0) return;
+                CHOICES.push({
+                    file: "engine",
+                    key: /^language$/,
+                    options: langs.map(function (l) {
+                        return [l.code, l.language];
+                    }),
+                });
+                if (state.tab) renderAll();
+            })
+            .catch(function () {});
     }
 
     document.addEventListener("DOMContentLoaded", init);
