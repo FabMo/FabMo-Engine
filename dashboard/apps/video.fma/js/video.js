@@ -95,19 +95,30 @@ async function setupCameras(img1, img2) {
     if (cameraStatus.camera1) {
         img1.style.display = 'block';
         img2.style.display = 'none';
-        document.getElementById("cam-label").innerHTML = "camera 1";
+        announceCamLabel("camera 1");
         calState.displayedCam = 1;
         console.log("Displaying camera 1");
     } else if (cameraStatus.camera2) {
         img1.style.display = 'none';
         img2.style.display = 'block';
-        document.getElementById("cam-label").innerHTML = "camera 2";
+        announceCamLabel("camera 2");
         calState.displayedCam = 2;
         console.log("Displaying camera 2");
     }
 
     setupCameraToggle(img1, img2, cameraStatus.count);
     setupCalibration();
+}
+
+// Old-TV input banner: the label comes up big, holds a few seconds, then
+// shrinks to its corner size (the animation lives in index.html). Used on
+// load and whenever the displayed camera changes.
+function announceCamLabel(text) {
+    var el = document.getElementById("cam-label");
+    el.innerHTML = text;
+    el.classList.remove("osd-announce");
+    void el.offsetWidth; // force a reflow so the animation restarts
+    el.classList.add("osd-announce");
 }
 
 function displayNoCamera() {
@@ -123,7 +134,7 @@ function setupCameraToggle(img1, img2, videoCount) {
         if (camera2_on && !calState.calibrating && calState.viewMode !== "table") {
             img1.style.display = 'none';
             img2.style.display = 'block';
-            document.getElementById("cam-label").innerHTML = "camera 2";
+            announceCamLabel("camera 2");
             calState.displayedCam = 2;
             refreshLiveOverlay();
         }
@@ -133,7 +144,7 @@ function setupCameraToggle(img1, img2, videoCount) {
         if (camera1_on && !calState.calibrating && calState.viewMode !== "table") {
             img1.style.display = 'block';
             img2.style.display = 'none';
-            document.getElementById("cam-label").innerHTML = "camera 1";
+            announceCamLabel("camera 1");
             calState.displayedCam = 1;
             refreshLiveOverlay();
         }
