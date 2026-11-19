@@ -457,93 +457,254 @@
     position: fixed;
 }
 
+/* The Fill-In sheet is drawn as the classic legal pad: brown leather
+   binding across the top (title + close), pale yellow paper, a red
+   double margin rule, and a blue line under every entry. Rows are a
+   three-column grid built by js/fill_in.js: name | entry | note.
+   Everything is under #fi-modal so it outranks the scoped Foundation
+   form styles, and it looks the same in every theme. */
+
 #fi-modal {
-    background-color: rgb(255, 250, 203);
+    background-color: #fdf6d0;
+    color: #2c3e50;
     border-radius: 10px;
-    border-color: rgb(136, 171, 190);
-    padding-top: 0.3rem;
-    padding-bottom: 0.4rem;
-    max-width: 700px;
-    max-height: 700px;
+    border: 1px solid #58371d;
+    padding: 0;
+    width: min(540px, 96%);
+    max-width: 540px;
+    min-height: 0;
+    overflow: hidden; /* clip the binding to the rounded corners */
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
 }
 
-#fi_container {
+#fi-modal form {
+    margin: 0;
+}
+
+/* Leather binding */
+#fi-modal .fi-binding {
     display: flex;
-    flex-direction: column;
-    padding: 0px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: linear-gradient(#7d5334, #58371d);
+    padding: 10px 14px 9px 16px;
+    border-bottom: 2px dashed rgba(245, 233, 208, 0.4); /* stitching */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-#fill_in_table,
-#fill_in_table table {
-    background-color: rgb(255, 250, 203);
-    align-self: center;
-    width: 350px;
-    max-height: 280px;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    margin-bottom: 20px;
-    border: none;
-    border-left: 2px double rgb(231, 85, 27);
+#fi-modal .fi-title {
+    color: #f5e9d0;
+    font-size: 1.25rem;
+    font-weight: bold;
+    line-height: 1.2;
+    margin: 0;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
 }
 
-.fi-params,
-.fi-params td {
-    background-color: rgb(255, 250, 203);
-    border: none;
-    height: 50%;
-    padding: 0rem;
+#fi-modal .fi-close {
+    flex: none;
+    color: #f5e9d0;
+    font-size: 1.7rem;
+    font-weight: bold;
+    line-height: 1;
+    padding: 0 6px 2px;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
-.fi_name,
-.fi_name td {
-    border: none;
-    float: right;
+#fi-modal .fi-close:hover {
+    background: rgba(0, 0, 0, 0.3);
 }
 
-.fi_name input {
-    margin: 2px;
-    padding: 0rem;
-    height: 50%;
-    border: none;
-    text-align: right;
-    background-color: rgb(255, 250, 203);
-    border-bottom: 2px solid cadetblue;
-    box-shadow: none;
+/* Paper, with the red margin rule */
+#fi-modal .fi-paper {
+    position: relative;
+    padding: 10px 16px 12px 46px;
+}
+
+#fi-modal .fi-paper::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 28px;
+    width: 3px;
+    border-left: 1px solid rgba(192, 57, 43, 0.6);
+    border-right: 1px solid rgba(192, 57, 43, 0.6);
     pointer-events: none;
 }
 
-.fi_val input {
-    margin: 2px;
-    padding: 0rem;
-    height: 50%;
-    border-top-style: hidden;
-    border-left-style: hidden;
-    border-right-style: hidden;
-    text-align: center;
-    color: #4e3cf2;
-    background-color: rgb(255, 250, 203);
-    border-bottom: 2px solid cadetblue;
-    box-shadow: none;
-}
-
-#fi-modal table td tr {
-    padding: 0px;
-    margin: 0px;
-    background-color: rgb(255, 250, 203);
-}
-
-#fi-modal table tr:nth-of-type(even) {
-    background: rgb(255, 250, 203);
-}
-
-.fi-title {
-    color: rgb(221, 98, 10);
-    margin-top: 0.1rem;
-    margin-bottom: 0.25rem;
-}
-
-#fi_cur_info {
+#fi-modal .fi-info {
     color: #327c7e;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    margin: 0 0 8px;
+}
+
+/* File Ready to Run (FP, FL): the info line is the file's name */
+#fi-modal.fi-file .fi-info {
+    color: #2c3e50;
+    font-size: 1.05rem;
+    font-weight: bold;
+    margin: 4px 0 12px;
+    overflow-wrap: anywhere;
+}
+
+#fi_container {
+    padding: 0;
+}
+
+#fill_in_table {
+    max-height: max(180px, calc(100vh - 400px)); /* the whole pad stays on screen */
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin: 0 0 10px;
+    padding-right: 4px;
+}
+
+#fi-modal .fi-listing {
+    display: grid;
+    grid-template-columns: max-content minmax(8.5em, max-content) 1fr;
+    align-items: stretch;
+}
+
+/* Blue line rule under each entry, unbroken across the three cells */
+#fi-modal .fi-listing > label,
+#fi-modal .fi-cell,
+#fi-modal .fi-note {
+    display: flex;
+    align-items: center;
+    min-height: 2.1rem;
+    margin: 0;
+    border-bottom: 1px solid #a9c6e8;
+}
+
+#fi-modal .fi-listing > label {
+    justify-content: flex-end;
+    text-align: right;
+    font-size: 0.9rem;
+    font-weight: normal;
+    line-height: 1.15;
+    color: #2c3e50;
+    cursor: help;
+    padding: 3px 10px 3px 0;
+    max-width: 13em;
+}
+
+#fi-modal .fi-req {
+    color: #c0392b;
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+/* Entries are written ON the line: no box, ballpoint blue */
+#fi-modal .fi-field {
+    width: 100%;
+    min-width: 0;
+    height: 1.8rem;
+    margin: 0;
+    padding: 1px 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #1a3a8f;
+    background-color: transparent;
+    border: none;
+    border-radius: 3px;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+
+#fi-modal input.fi-field {
+    width: 8em;
+}
+
+#fi-modal select.fi-field {
+    max-width: 15em;
+    padding-right: 1.4rem; /* room for the arrow */
+    background-color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+}
+
+#fi-modal .fi-field:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+/* A required entry that is still empty */
+#fi-modal .fi-field.fi-missing {
+    background-color: rgba(192, 57, 43, 0.12);
+}
+
+/* Margin notes: what the default means, the allowed range */
+#fi-modal .fi-note {
+    font-size: 0.78rem;
+    font-style: italic;
+    line-height: 1.15;
+    color: #7f8c8d;
+    padding: 3px 0 3px 8px;
+}
+
+/* The command as it will be sent */
+#fi-modal .fi-preview {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    color: #327c7e;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 0 0 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+#fi-modal .fi-preview code {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+#fi-modal .button-group {
+    margin: 0;
+}
+
+#fi-modal .button-group .button {
+    margin-bottom: 0;
+}
+
+/* Narrow screens: notes drop under their entry */
+@media only screen and (max-width: 30em) {
+    #fi-modal .fi-paper {
+        padding-left: 30px;
+    }
+    #fi-modal .fi-paper::before {
+        left: 16px;
+    }
+    #fi-modal .fi-listing {
+        grid-template-columns: max-content 1fr;
+    }
+    #fi-modal .fi-listing > label {
+        max-width: 9em;
+    }
+    #fi-modal .fi-note {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+        min-height: 0;
+        padding: 1px 0 3px;
+    }
+    #fi-modal .fi-note:empty {
+        display: none;
+    }
+    #fi-modal .fi-cell:has(+ .fi-note:not(:empty)),
+    #fi-modal .fi-listing > label:has(+ .fi-cell + .fi-note:not(:empty)) {
+        border-bottom: none;
+    }
 }
 
 /* ============================================== INSERT (beta) */

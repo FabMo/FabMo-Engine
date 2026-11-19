@@ -317,7 +317,7 @@ exports.VS = function (args) {
         this.jogspeed_b = args[8];
     }
     //Set C jog speed
-    if (args[9] !== undefined) {k
+    if (args[9] !== undefined) {
         this.jogspeed_c = args[9];
     }
 
