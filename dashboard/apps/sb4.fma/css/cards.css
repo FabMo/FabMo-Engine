@@ -1112,17 +1112,21 @@ body[class*="theme-"] .ts-fillin-modal .ts-modal-header {
     transform-origin: 0 0;
     pointer-events: none;
 }
+/* Exit X: upper right corner of the floating control palette (it lives
+   inside #st-ar-float, so it travels with the palette when dragged). */
 #st-ar-exit {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 3px;
+    right: 6px;
     z-index: 2;
-    font-size: 1.3em;
+    font-size: 1.2em;
+    line-height: 1;
     color: #fff;
-    background: rgba(44, 62, 80, 0.55);
+    background: rgba(44, 62, 80, 0.75);
     border-radius: 6px;
-    padding: 4px 10px;
+    padding: 3px 8px;
 }
+#st-ar-exit:hover { background: #c0392b; }
 /* Floating control palette: semitransparent, draggable by the grip
    strip. Starts docked top-right; stArEnter restores the last dragged
    position. max-height + scroll so tall panels never pin the exit

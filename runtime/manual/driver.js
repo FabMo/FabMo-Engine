@@ -480,99 +480,10 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
             vec[second_axis.toLowerCase()] = speed * second_dir;
         }
 
-        // Soft-limit speed cap for the velocity-jog cycle. The G1 path's
-        // planned-position clip in _renewMoves doesn't apply here — JGV is
-        // a firmware-side velocity setpoint, not queued segments — so we
-        // derive per-axis max velocity directly from the remaining margin
-        // and the configured jerk profile, then cap the requested velocity
-        // against it.
-        //
-        // Formula (jerk-limited S-curve stop):
-        //   stop_distance(v) ≈ v · √(v / j)   →   v_safe(m) ≈ (m² · j)^(1/3)
-        //
-        // Units: vec values are in display-units/min (IPM in G20), margin in
-        // display-units. Math runs in display-units/s; scale by 60 on the way
-        // out. The jerk coefficient scales linearly with xy_jerk so retuning
-        // jerk auto-retunes the cap.
-        //
-        // Lookahead: the formula above is the irreducible physical stop
-        // distance, but the cap → firmware → physical-decel loop has ~150ms
-        // of round-trip lag. Without compensation the tool travels v·τ past
-        // the point where the cap commanded stop. We reserve that distance
-        // up front by subtracting toolpath_speed·LOOKAHEAD_S from each
-        // axis's margin before applying the formula.
-        //
-        // Using the toolpath speed (not per-axis |v|) is an empirical fix
-        // for diagonals: with per-axis |v|, single-axis 6 IPS stops cleanly
-        // but 45° diagonals at 6 IPS total overshoot ~0.25" per axis. The
-        // multi-axis JGV path appears to have either longer effective lag
-        // or reduced per-axis jerk, and scaling reservation by toolpath
-        // speed (which is √2× larger than per-axis on a 45° diagonal)
-        // absorbs the difference without affecting single-axis behavior.
-        //
-        // softlimit_cushion (config) is an additional safety buffer on top
-        // of the lookahead. Default 0 → stop right at the soft limit.
-        //
-        // Per-axis (not toolpath) capping lets the user slide along a wall —
-        // push hard into +X, the stick still moves on Y. Skipped when
-        // softlimits_on is false or the user has overridden that axis.
-        if (config.machine._cache.softlimits_on) {
-            var manualCfg = config.machine._cache.manual || {};
-            var jerkXYCap = manualCfg.xy_jerk || 75;
-            // Z stops on its own (usually lower) jerk profile — capping its
-            // approach speed with the XY jerk would overstate how fast Z can
-            // shed speed and let it ride too hot into the Z limit. Now that
-            // the keypad (not just the XY-dominant pendant stick) rides this
-            // path, the cap must be per-axis.
-            var jerkZCap = manualCfg.z_jerk || jerkXYCap;
-            var buffer = manualCfg.softlimit_cushion || 0;
-            // Multi-axis JGV has more per-cycle timing jitter than single-
-            // axis, so multi-axis gets a slightly larger reservation.
-            var activeAxes = 0;
-            for (var k1 in vec) { if (vec[k1] !== 0) activeAxes++; }
-            var LOOKAHEAD_S = activeAxes > 1 ? 0.18 : 0.15;
-            // Don't let the cap park the tool short of the limit. Below this
-            // velocity the per-cycle stop distance is < 0.02" so we can ride
-            // it right up to the raw boundary safely.
-            var CREEP_IPM = 30;  // 0.5 IPS
-            // The same round-trip lag that motivates the high-speed lookahead
-            // also applies at creep, plus a fixed tail from the firmware's
-            // own decel ramp. Empirically the stop-from-creep distance is
-            // ~0.14" at CREEP_IPM=30 — pre-empt the zero-check by that much
-            // so the actual stop lands at the limit, not past it.
-            var creepStopDist = 0.14;
-            for (var axisKey in vec) {
-                var v = vec[axisKey];
-                if (v === 0) continue;
-                if (this.axisOverrides[axisKey]) continue;
-                var axisUpper = axisKey.toUpperCase();
-                var directionSign = v > 0 ? 1 : -1;
-                var margin = this._getMargin(axisUpper, directionSign);
-                // Only hard-stop when the actual margin (less any cushion
-                // and the creep-speed stop tail) is gone. The lookahead just
-                // sets when the high-speed cap kicks in — it shouldn't be
-                // the parking distance.
-                if (margin - buffer - creepStopDist <= 0) {
-                    vec[axisKey] = 0;
-                    continue;
-                }
-                var lookahead = (speed / 60) * LOOKAHEAD_S;
-                var effectiveMargin = Math.max(margin - buffer - lookahead, 0);
-                var k = (axisKey === "z" ? jerkZCap : jerkXYCap) * 0.18;
-                var vSafeIpm = 60 * Math.cbrt(effectiveMargin * effectiveMargin * k);
-                // Floor at creep so the tool keeps inching toward the limit
-                // instead of parking 0.5–1" short when the cap collapses.
-                if (vSafeIpm < CREEP_IPM) vSafeIpm = CREEP_IPM;
-                if (Math.abs(v) > vSafeIpm) {
-                    vec[axisKey] = directionSign * vSafeIpm;
-                }
-            }
-        }
-
-        this.driver.jogVelocity(vec);
-        // Remembered so maintainMotion (cmd:"maint") can refresh the
-        // firmware's host-silence watchdog for clients that heartbeat with
-        // maint instead of re-sending start.
+        // Soft-limit speed cap: see _capJGVVec. The uncapped request is what
+        // gets remembered, so maintainMotion (cmd:"maint") re-applies the cap
+        // against the current position instead of replaying a stale one.
+        this._sendJGV(vec);
         this._lastJGVVec = vec;
 
         // Track minimal state. analogMode is set here AND stays set through
@@ -724,6 +635,256 @@ ManualDriver.prototype.startMotion = function (axis, speed, second_axis, second_
     }
 };
 
+// ---- Soft-limit speed cap for the firmware velocity-jog cycle ----
+//
+// JGV is a velocity setpoint, not queued segments, so the planned-position
+// clip in _renewMoves doesn't apply. The host instead caps each axis's
+// commanded velocity from its remaining margin, using a model of how the
+// firmware cycle (FabMo-G2-Core cycle_jgv.cpp) responds to a lower setpoint:
+//
+//   1. Dead time. The cycle keeps 8 x 25ms segments queued in the planner,
+//      and a new setpoint only shapes segments appended behind them, so it
+//      reaches the motors ~0.2s later (longer when the feed-rate limit, xfr,
+//      holds the tool below the commanded velocity and stretches the queue).
+//      Bench logs on firmware 101.57.68 (Nov 2026) show 0.21-0.28s from a
+//      setpoint being sent to the tool running at it.
+//   2. Pre-fill. When the cycle starts it fills that queue at once with the
+//      first setpoint, so the first setpoint is committed for a full queue's
+//      worth of travel before any revision can take effect.
+//      Setpoints above the feed-rate limit are scaled down before sending
+//      (_limitJGVToFeed) precisely so the queue is not stretched: at a 720
+//      setpoint against a 300 limit the queue held 0.48s, and a released
+//      key coasted ~4".
+//   3. Linear ramp. The cycle changes velocity at a fixed rate of axis
+//      velocity_max / JGV_RAMP_TIME_S (0.25s). velocity_max is the OpenSBP
+//      jog speed (xvm = jogxy_speed * 60).
+//
+// Two things make the reported margin untrustworthy on its own:
+//   - the dead time: the tool is always executing setpoints sent up to LAG
+//     ago, and
+//   - status reports are not punctual. They normally come every ~100ms, but
+//     gaps of 200-450ms were logged (worst right after a cycle starts), during
+//     which the tool covered 1.75" on a "current" position that never moved.
+// So the cap dead-reckons. It keeps a short history of the setpoints it sent
+// per axis and charges against the margin everything sent since LAG before
+// that axis's position was last reported - travel that has either happened
+// since the report or is still queued:
+//
+//      travel = integral of |v_sent| from (t_report - LAG) to now
+//      m'     = margin - cushion - travel
+//      v_safe : v * HOLD + v^2 / (2a) = m',   a = vmax / RAMP
+//
+// i.e. the fastest speed that can be held for HOLD (a setpoint stays in
+// force until the next keep-alive re-evaluates it) and then ramp to zero
+// inside m'. On the setpoint that starts the cycle HOLD also covers the
+// pre-filled queue. If reports stop arriving the estimate keeps shrinking and the
+// axis stops, rather than running on the last position it heard.
+//
+// The previous cap assumed 0.15s of lag, a punctual position and a
+// jerk-limited stop, which let the tool run 0.2-0.7" past the limit.
+var JGV_RESPONSE_LAG_S = 0.33;
+var JGV_RAMP_TIME_S = 0.25;
+// How long a setpoint is assumed to stay in force before the cap gets to
+// revise it: two ~50ms keep-alive ticks.
+var JGV_HOLD_S = 0.1;
+// Status reports are stamped when the engine processes them, which can be
+// well after the firmware sampled the position (reports were seen arriving
+// in batches). Treat every reported position as at least this old.
+var JGV_REPORT_AGE_S = 0.1;
+// Slowest speed (inches/s) the cap will command. The taper toward the limit
+// is exponential, and left alone it commands ever-smaller speeds (0.002
+// in/min was logged). The firmware turns those into segments that take
+// seconds each, and its queue of eight then blocks every later setpoint -
+// including the one to back away from the limit: the keypad looks locked.
+// So the taper ends in a steady creep, and the axis stops once the creep
+// itself no longer fits in the remaining margin.
+var JGV_CREEP_IN_PER_S = 0.05;
+
+// Fastest speed (units/s) on one axis that can be held for `hold` seconds
+// (default JGV_HOLD_S) and then ramp to a stop within `margin` (units),
+// given that axis's firmware velocity_max (units/s).
+function jgvSafeSpeed(margin, vmax, hold) {
+    if (!(margin > 0) || !(vmax > 0)) return 0;
+    if (hold === undefined) hold = JGV_HOLD_S;
+    var a = vmax / JGV_RAMP_TIME_S;
+    return a * (Math.sqrt(hold * hold + (2 * margin) / a) - hold);
+}
+
+// Firmware velocity_max for an axis in units/s, as the engine last set it
+// (config/opensbp_config.js pushes xvm/yvm/zvm from the jog speeds).
+function jgvAxisVmax(axisLower) {
+    var sbp = (config.opensbp && config.opensbp._cache) || {};
+    var v = sbp[axisLower === "x" || axisLower === "y" ? "jogxy_speed" : "jog" + axisLower + "_speed"];
+    return typeof v === "number" && v > 0 ? v : null;
+}
+
+// Speed (units/s) the firmware will actually run an axis at for a setpoint:
+// the axis feed-rate limit (xfr) clamps it. Unknown limit: no clamp.
+function jgvEffectiveSpeed(axisLower, vPerSec) {
+    var fr = config.driver && config.driver.get ? config.driver.get(axisLower + "fr") : null;
+    if (typeof fr === "number" && fr > 0) {
+        var lim = fr / 60;
+        return Math.max(-lim, Math.min(lim, vPerSec));
+    }
+    return vPerSec;
+}
+
+// True when no nonzero setpoint is in force on any axis, so the next nonzero
+// one starts (or may start) a firmware cycle and gets pre-filled into its
+// queue. A re-press moments after a release is treated as a start even
+// though the old cycle may still be draining: that only over-reserves.
+ManualDriver.prototype._jgvIdle = function () {
+    for (var k in this._jgvSent || {}) {
+        var h = this._jgvSent[k];
+        if (h.length && h[h.length - 1][1] !== 0) return false;
+    }
+    return true;
+};
+
+// Record the setpoints (units/min) just sent to the firmware, per axis.
+ManualDriver.prototype._noteJGVSent = function (vec) {
+    var now = Date.now();
+    var hist = this._jgvSent || (this._jgvSent = {});
+    var starting = this._jgvIdle();
+    var prefill = this._jgvPrefill || (this._jgvPrefill = {});
+    for (var a in vec) {
+        var h = hist[a] || (hist[a] = []);
+        var v = jgvEffectiveSpeed(a, vec[a] / 60);
+        if (starting && v !== 0) {
+            (prefill[a] || (prefill[a] = [])).push([now, v]);
+        }
+        // An entry is "this setpoint from this time on", so a repeat of the
+        // one in force adds nothing (and keep-alives repeat constantly).
+        if (!h.length || h[h.length - 1][1] !== v) h.push([now, v]);
+        // Drop what the reported position already accounts for, keeping the
+        // one entry that was in force when the window opened. Pruning against
+        // the report time (not the clock) means a long report gap never
+        // discards travel that is still unaccounted for.
+        var seen = this._jgvPosSeen && this._jgvPosSeen[a];
+        var start = (seen ? seen.t : now) - (JGV_RESPONSE_LAG_S + JGV_REPORT_AGE_S) * 1000;
+        while (h.length > 1 && h[1][0] <= start) h.shift();
+        var pf = prefill[a];
+        while (pf && pf.length && pf[0][0] <= start) pf.shift();
+    }
+};
+
+// Note which axis positions the status report just refreshed. G2 only
+// reports values that changed, so a position counts as fresh when it changed
+// or when the machine reports itself stopped (the position is then final).
+ManualDriver.prototype._noteJGVPositions = function (status) {
+    var now = Date.now();
+    var seen = this._jgvPosSeen || (this._jgvPosSeen = {});
+    var stopped = status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END;
+    ["x", "y", "z", "a", "b", "c"].forEach(function (a) {
+        var p = status["pos" + a];
+        var rec = seen[a];
+        if (!rec) {
+            seen[a] = { pos: p, t: now };
+        } else if (stopped || p !== rec.pos) {
+            rec.pos = p;
+            rec.t = now;
+        }
+    });
+};
+
+// Travel (units, >= 0) toward `direction` on this axis that is not yet
+// reflected in its reported position: everything sent since LAG before the
+// position was last refreshed.
+ManualDriver.prototype._unreportedJGVTravel = function (axisLower, direction) {
+    var h = this._jgvSent && this._jgvSent[axisLower];
+    if (!h || !h.length) return 0;
+    var now = Date.now();
+    var seen = this._jgvPosSeen && this._jgvPosSeen[axisLower];
+    var start = (seen ? seen.t : now) - (JGV_RESPONSE_LAG_S + JGV_REPORT_AGE_S) * 1000;
+    var travel = 0;
+    for (var i = 0; i < h.length; i++) {
+        var from = Math.max(h[i][0], start);
+        var to = i + 1 < h.length ? h[i + 1][0] : now;
+        if (to <= from) continue;
+        var toward = h[i][1] * direction;
+        if (toward > 0) travel += (toward * (to - from)) / 1000;
+    }
+    // Queue pre-fill at each cycle start: the first setpoint runs for a
+    // queue's worth of time on top of how long it was commanded. That is the
+    // same as the setpoint having been in force for LAG before it was sent,
+    // so charge the part of that span the window covers.
+    var pf = this._jgvPrefill && this._jgvPrefill[axisLower];
+    for (var j = 0; pf && j < pf.length; j++) {
+        var span = Math.min(pf[j][0] - start, JGV_RESPONSE_LAG_S * 1000);
+        var pv = pf[j][1] * direction;
+        if (span > 0 && pv > 0) travel += (pv * span) / 1000;
+    }
+    return travel;
+};
+
+// Returns a copy of a jgv vector ({x: units/min, ...}) with each axis capped
+// so it can stop at its soft limit. Per-axis (not toolpath) capping lets the
+// user slide along a wall: push hard into +X and Y keeps moving. A no-op when
+// softlimits_on is false; axes the user has overridden are left alone.
+ManualDriver.prototype._capJGVVec = function (vec) {
+    var out = {};
+    for (var k0 in vec) out[k0] = vec[k0];
+    if (!config.machine._cache.softlimits_on) return out;
+
+    var manualCfg = config.machine._cache.manual || {};
+    // softlimit_cushion (config) parks the tool that much short of the limit.
+    var buffer = manualCfg.softlimit_cushion || 0;
+    var creep = JGV_CREEP_IN_PER_S * (config.machine._cache.units === "mm" ? 25.4 : 1);
+
+    // The setpoint that starts the firmware cycle is pre-filled into its
+    // queue, committing it for that much longer.
+    var hold = JGV_HOLD_S + (this._jgvIdle() ? JGV_RESPONSE_LAG_S : 0);
+
+    for (var axisKey in out) {
+        var v = out[axisKey];
+        if (!v) continue;
+        if (this.axisOverrides[axisKey]) continue;
+        var dir = v > 0 ? 1 : -1;
+        var margin = this._getMargin(axisKey.toUpperCase(), dir);
+        if (margin === Infinity) continue;
+        var vPerSec = Math.abs(v) / 60;
+        // Unknown velocity_max: assume it is no higher than the request,
+        // which gives the gentlest (longest) ramp consistent with it.
+        var vmax = jgvAxisVmax(axisKey) || vPerSec;
+        var usable = margin - buffer - this._unreportedJGVTravel(axisKey, dir);
+        var vSafe = jgvSafeSpeed(usable, vmax, hold);
+        if (vPerSec <= vSafe) continue;
+        if (vSafe < creep) {
+            // Creep while a creep-speed setpoint still fits (it is committed
+            // for `hold` and then has the queue behind it), otherwise stop.
+            vSafe = usable > creep * (hold + JGV_RESPONSE_LAG_S) ? Math.min(creep, vPerSec) : 0;
+        }
+        out[axisKey] = vSafe ? dir * vSafe * 60 : 0;
+    }
+    return out;
+};
+
+// Scale a jgv vector ({x: units/min, ...}) so no axis exceeds its feed-rate
+// limit (xfr...), keeping its direction. The planner would hold the tool to
+// that limit anyway; asking for more only stretches the cycle's queue, which
+// delays every later setpoint, the stop on key release included.
+function limitJGVToFeed(vec) {
+    var scale = 1;
+    for (var a in vec) {
+        var fr = config.driver && config.driver.get ? config.driver.get(a + "fr") : null;
+        if (typeof fr === "number" && fr > 0 && Math.abs(vec[a]) > fr) {
+            scale = Math.min(scale, fr / Math.abs(vec[a]));
+        }
+    }
+    if (scale === 1) return vec;
+    var out = {};
+    for (var k in vec) out[k] = vec[k] * scale;
+    return out;
+}
+
+// Send a jgv vector through the feed-rate and soft-limit caps and remember
+// what went out.
+ManualDriver.prototype._sendJGV = function (vec) {
+    var capped = this._capJGVVec(limitJGVToFeed(vec));
+    this.driver.jogVelocity(capped);
+    this._noteJGVSent(capped);
+};
+
 // Set the flag that indicates to this driver that motion is still requested along the current heading
 // This function only has any effect if the machine is already moving
 ManualDriver.prototype.maintainMotion = function () {
@@ -740,7 +901,7 @@ ManualDriver.prototype.maintainMotion = function () {
         // re-sending start) doesn't get auto-stopped mid-jog. The firmware
         // setter is a no-op when the velocity hasn't changed.
         if (this.analogMode && this._lastJGVVec) {
-            this.driver.jogVelocity(this._lastJGVVec);
+            this._sendJGV(this._lastJGVVec);
         }
     }
 };
@@ -907,6 +1068,7 @@ ManualDriver.prototype.stopMotion = function (reason, source) {
     // the cycle actually exits.
     if (this.analogMode) {
         this.driver.jogStop();
+        this._noteJGVSent({ x: 0, y: 0, z: 0, a: 0, b: 0, c: 0 });
         this.keep_moving = false;
         this._limShownThisAttempt = false;
         return;
@@ -1507,6 +1669,11 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
     var envelope = config.machine._cache.envelope;
     if (!envelope) return Infinity;
     var axisLower = axis.toLowerCase();
+    // Z soft limits are disabled (Nov 2026): they were not effective
+    // protection, the physical Z limit switch is. Unlimited margin means Z
+    // jogs and nudges are never clipped, blocked or prompted. X/Y unchanged.
+    // To be replaced by a more useful Z implementation later.
+    if (axisLower === "z") return Infinity;
     var currentPos = (pos !== undefined) ? pos : this.driver.status["pos" + axisLower];
     if (currentPos === undefined) return Infinity;
 
@@ -1514,11 +1681,7 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
     if (envelope[axisLower + "min"] === undefined || envelope[axisLower + "max"] === undefined) return Infinity;
     // Envelope is in table (G53) coords; convert to work coords by subtracting g55 offset.
     var workMin = envelope[axisLower + "min"] - offset;
-    // Z ceiling is fixed at machine_z = 0 (homed top of travel) regardless of
-    // envelope.zmax — work-Z zero shifts every bit change, so the only stable
-    // ceiling is the invariant table-base top.
-    var zmaxTable = (axisLower === "z") ? 0 : envelope[axisLower + "max"];
-    var workMax = zmaxTable - offset;
+    var workMax = envelope[axisLower + "max"] - offset;
 
     var margin;
     if (direction < 0) {
@@ -1803,6 +1966,7 @@ ManualDriver.prototype._renewMoves = function (reason) {
 
 // Status handler
 ManualDriver.prototype._onG2Status = function (status) {
+    this._noteJGVPositions(status);
     // Captured before the STAT_STOP case clears it — the flush decision
     // below needs to know whether this report concludes a stop we initiated.
     var hadStopPending = this.stop_pending;
@@ -1973,3 +2137,4 @@ module.exports = ManualDriver;
 module.exports._snapNudgeDistance = snapNudgeDistance;
 module.exports._SNAP_ON_LINE_EPS = SNAP_ON_LINE_EPS;
 module.exports._WIRE_MIN_MOVE = WIRE_MIN_MOVE;
+module.exports._jgvSafeSpeed = jgvSafeSpeed;

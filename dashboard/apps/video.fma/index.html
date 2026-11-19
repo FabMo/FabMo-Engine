@@ -39,17 +39,35 @@
             object-fit: fill; /* Use 'cover' or 'contain' to maintain aspect ratio rather than 'fill' */
         }
 
+        /* Old-TV on-screen display: green block text, no backing box. Sizes
+           and shadows are in em so the outline scales with the banner. */
         #cam-label {
             position: absolute;
             top: 10px;
-            left: 10px;
-            color: white;
+            left: 14px;
+            color: #2bff2b;
             z-index: 100;
-            font-family: sans-serif;
-            background: rgba(0,0,0,0.7);
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 14px;
+            font-family: "Lucida Console", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+            font-weight: bold;
+            font-size: 18px;
+            line-height: 1.1;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            text-shadow:
+                0.06em 0.06em 0 #000, -0.06em 0.06em 0 #000,
+                0.06em -0.06em 0 #000, -0.06em -0.06em 0 #000,
+                0 0 0.35em rgba(43,255,43,0.55);
+            /* clicks go through to the picture (click = switch camera) */
+            pointer-events: none;
+        }
+        /* Input banner: big for a moment, then snaps down to the corner size
+           (step-end holds the first keyframe until the animation ends) */
+        #cam-label.osd-announce {
+            animation: osd-announce 1.5s step-end;
+        }
+        @keyframes osd-announce {
+            0% { font-size: clamp(40px, 11vw, 120px); }
         }
 
         /* AR calibration + live overlay */
@@ -237,6 +255,6 @@
     </div>
 
     <script src="../../static/js/shared-video.js?v=3"></script>
-    <script src="../../video.js?v=151"></script></body>
+    <script src="../../video.js?v=152"></script></body>
 
 </html>
