@@ -458,9 +458,8 @@ function setFirstCard(job) {
 }
 
 // Mirror of runtime/bounds.js:checkAgainstEnvelope. X/Y use envelope min/max;
-// Z ceiling is hardcoded at machine_z=0 (homed top of travel) and there's no
-// Z min check (low-Z is cut depth, depends on bit length). Returns
-// { exceeds, violations } or null if inputs are missing.
+// Z is not checked. Returns { exceeds, violations } or null if inputs are
+// missing.
 function evaluateSoftLimits(jobBounds, cfg) {
   if (!jobBounds || !cfg || !cfg.machine || !cfg.driver) return null;
   // "Enforce Software Limits" unchecked → the user has opted out of envelope
@@ -490,26 +489,7 @@ function evaluateSoftLimits(jobBounds, cfg) {
       violations.push({ axis: a, direction: 'min', overage: envMin - (bMin + off) });
     }
   });
-  // g55z of exactly 0 means Z has never been zeroed (a real zero always lands
-  // at a fractional offset) — skip the Z check rather than flag every file.
-  var bMaxZ = jobBounds.max && jobBounds.max.z;
-  if (typeof bMaxZ === 'number' && g55.z !== 0 && bMaxZ + g55.z > 0) {
-    violations.push({ axis: 'z', direction: 'max', overage: bMaxZ + g55.z });
-  }
-  // Zeroed or not, the file's own Z range is a hard constraint: if it spans
-  // more than the machine's total Z travel, it goes out of bounds no matter
-  // where Z is zeroed. Travel is ceiling (machine 0 — zmax is not meaningful
-  // for Z) down to envelope.zmin.
-  var bMinZ = jobBounds.min && jobBounds.min.z;
-  if (
-    typeof bMaxZ === 'number' && typeof bMinZ === 'number' &&
-    typeof envelope.zmin === 'number'
-  ) {
-    var zTravel = -envelope.zmin;
-    if (zTravel > 0 && bMaxZ - bMinZ > zTravel) {
-      violations.push({ axis: 'z', direction: 'span', overage: bMaxZ - bMinZ - zTravel });
-    }
-  }
+  // Z is deliberately not checked — see runtime/bounds.js checkAgainstEnvelope.
   return { exceeds: violations.length > 0, violations: violations };
 }
 

@@ -1507,6 +1507,11 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
     var envelope = config.machine._cache.envelope;
     if (!envelope) return Infinity;
     var axisLower = axis.toLowerCase();
+    // Z soft limits are disabled (Nov 2026): they were not effective
+    // protection, the physical Z limit switch is. Unlimited margin means Z
+    // jogs and nudges are never clipped, blocked or prompted. X/Y unchanged.
+    // To be replaced by a more useful Z implementation later.
+    if (axisLower === "z") return Infinity;
     var currentPos = (pos !== undefined) ? pos : this.driver.status["pos" + axisLower];
     if (currentPos === undefined) return Infinity;
 
@@ -1514,11 +1519,7 @@ ManualDriver.prototype._getMargin = function (axis, direction, pos) {
     if (envelope[axisLower + "min"] === undefined || envelope[axisLower + "max"] === undefined) return Infinity;
     // Envelope is in table (G53) coords; convert to work coords by subtracting g55 offset.
     var workMin = envelope[axisLower + "min"] - offset;
-    // Z ceiling is fixed at machine_z = 0 (homed top of travel) regardless of
-    // envelope.zmax — work-Z zero shifts every bit change, so the only stable
-    // ceiling is the invariant table-base top.
-    var zmaxTable = (axisLower === "z") ? 0 : envelope[axisLower + "max"];
-    var workMax = zmaxTable - offset;
+    var workMax = envelope[axisLower + "max"] - offset;
 
     var margin;
     if (direction < 0) {
