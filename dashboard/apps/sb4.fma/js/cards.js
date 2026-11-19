@@ -159,7 +159,7 @@ applyTheme(currentTheme());
 var LAYOUT_KEY = "sb4-layout";
 
 var CARDS = [
-    { id: "jobs", label: "Jobs" },
+    { id: "jobs", label: "Job Queue (ordered)" },
     { id: "usb", label: "USB Drive", note: "shown when a drive is plugged in" },
     { id: "machine", label: "My Workflow" },
     { id: "current", label: "Current Tool" },
