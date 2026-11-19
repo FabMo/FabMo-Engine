@@ -148,6 +148,16 @@ body {
     font-size: 12px;
     width: 220px;
 }
+.pd-row select {
+    height: 24px;
+    padding: 1px 4px;
+    border: 1px solid #c4c4ce;
+    border-radius: 2px;
+    font-size: 12px;
+    width: 220px;
+    background: #fff;
+}
+.pd-row select.bad { border-color: #e03c2e; background: #ffe9e6; }
 .pd-row input.pd-json { width: 340px; font-family: Consolas, Menlo, monospace; }
 .pd-row input.bad { border-color: #e03c2e; background: #ffe9e6; }
 .pd-add-row { opacity: 0.55; }

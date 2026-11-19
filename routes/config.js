@@ -833,7 +833,7 @@ function neutralizeAutoProfileState(profileDef, targetDirName, callback) {
 //
 // IMPORTANT FLOW NOTE: config.engine.set("profile", ...) routes through
 // EngineConfig.update which detects a profile change, calls
-// profiles.apply(), and then synchronously calls process.exit(1) (see
+// profiles.apply(), and then synchronously calls process.exit(0) (see
 // config/engine_config.js). Control never returns to its callback. Any
 // bookkeeping we want to do for this manual change therefore has to
 // happen BEFORE we call config.engine.set - including updating
@@ -881,7 +881,7 @@ function applyManualProfileChange(profileName, res, next) {
             next();
 
             // Step 3: actually trigger the profile change. engine_config
-            // will call profiles.apply and then process.exit(1) - we
+            // will call profiles.apply and then process.exit(0) - we
             // don't expect this callback to fire on the happy path.
             config.engine.set("profile", profileName, function (err) {
                 if (err) {

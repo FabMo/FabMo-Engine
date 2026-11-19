@@ -30,6 +30,7 @@
 
     <script src="js/tool_config.js"></script>
     <script src="js/sb_app.js"></script>
+    <script src="js/fill_in.js"></script>
     <script src="js/init_setActions.js"></script>
     <script src="js/motion.js" defer></script>
     <script src="js/message_g2.js" defer></script>
@@ -918,9 +919,9 @@
     <div id="st-ar-stage" style="display:none;">
         <img id="st-ar-video" alt=""/>
         <svg id="st-ar-svg"></svg>
-        <button class="ts-iconbtn" id="st-ar-exit" title="Exit camera view" data-i18n-title="tool_status.shoptools.ar_exit_title"><i class="fa fa-times"></i></button>
         <div id="st-ar-float">
             <div id="st-ar-grip" title="Drag to move" data-i18n-title="tool_status.shoptools.ar_grip_title">&#8942;&#8942;</div>
+            <button class="ts-iconbtn" id="st-ar-exit" title="Exit camera view" data-i18n-title="tool_status.shoptools.ar_exit_title"><i class="fa fa-times"></i></button>
         </div>
         <input type="number" id="st-ar-edit" step="any">
     </div>
@@ -940,20 +941,27 @@
     <!-- Fill-In Sheet -->
     <div id="fi-modal" class="reveal-modal sb4-scope" data-reveal role="dialog">
       <form autocomplete="off">
-        <h3 class="fi-title" id="fi_modal_title" data-i18n="sb4.fillin.title_file_ready">File Ready to Run</h3>
-        <p class="fi-title" id="fi_cur_info"></p>
-        
-        <div id="fi_container">
-            <div id="fill_in_table"><table>
-                <tbody class="fi-params fi-listing"></tbody>
-            </table></div>
+        <!-- the pad's leather binding: title and close -->
+        <div class="fi-binding">
+            <h3 class="fi-title" id="fi_modal_title" data-i18n="sb4.fillin.title_file_ready">File Ready to Run</h3>
+            <a class="fi-close" id="fi_close_x" role="button" data-i18n-aria-label="sb4.fillin.close" aria-label="Close" data-i18n-title="sb4.fillin.close" title="Close">&#215;</a>
         </div>
+        <!-- the paper: rows are built by js/fill_in.js from the command table -->
+        <div class="fi-paper">
+            <p class="fi-info" id="fi_cur_info"></p>
 
-        <ul class="button-group">
-            <li><a class="secondary button fi-button" role="button" id="btn_ok_run" tabindex="0" style="background-color:green; color:white" data-i18n="sb4.fillin.ok_run">OK-RUN</a></li>
-            <li><a class="secondary button fi-button" role="button" id="btn_adv_file" data-i18n-title="sb4.fillin.advanced_tooltip" title="handle in Job Manager; Queue, Preview, Edit, Scale, etc.." data-i18n="sb4.fillin.advanced">Advanced Functions</a></li>
-            <li><a class="secondary button fi-button" role="button" id="btn_cmd_quit" data-i18n="sb4.fillin.close">Close</a></li>
-        </ul>
+            <div id="fi_container">
+                <div id="fill_in_table"><div class="fi-listing"></div></div>
+            </div>
+
+            <div class="fi-preview" id="fi_preview_row"><code id="fi_preview"></code></div>
+
+            <ul class="button-group">
+                <li><a class="secondary button fi-button" role="button" id="btn_ok_run" tabindex="0" style="background-color:green; color:white" data-i18n="sb4.fillin.ok_run">OK-RUN</a></li>
+                <li><a class="secondary button fi-button" role="button" id="btn_adv_file" data-i18n-title="sb4.fillin.advanced_tooltip" title="handle in Job Manager; Queue, Preview, Edit, Scale, etc.." data-i18n="sb4.fillin.advanced">Advanced Functions</a></li>
+                <li><a class="secondary button fi-button" role="button" id="btn_cmd_quit" data-i18n="sb4.fillin.close">Close</a></li>
+            </ul>
+        </div>
       </form>
 
     </div>

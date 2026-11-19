@@ -140,56 +140,26 @@ function getLastJob(callback) {
 }
 
 // Display Fill-In Dialog Box for certain Commands
+// (the parameter rows themselves are built in fill_in.js)
 function displayFillIn(command, title, info) {
-    $(".fi-listing").empty();
-    $("#fill_in_table").css("overflow-y", "scroll");
+    var fileMode = (title === window.t("sb4.fillin.title_file_ready") ||     // an FP run file case
+                    title === window.t("sb4.fillin.title_rerun_ready"));     // an FL run last file case
 
-    if (title === window.t("sb4.fillin.title_file_ready")) { // handle an FP run file case
-        $("#fill_in_table").css("overflow-y", "hidden");
-        $('#fill_in_table').css("visibility", "hidden");
-        $('#btn_adv_file').show();
-        $('#btn_ok_run').text(window.t("sb4.fillin.ok_run"))
-        $('#btn_ok_run').focus();
-    } else if (title === window.t("sb4.fillin.title_rerun_ready")) { // handle an FL run last file case
-        $("#fill_in_table").css("overflow-y", "hidden");
-        $('#fill_in_table').css("visibility", "hidden");
+    $("#fi-modal").toggleClass("fi-file", fileMode);
+    if (fileMode) {
+        fiClearRows();
+        $("#fi_container, #fi_preview_row").hide();
         $('#btn_adv_file').show();
         $('#btn_ok_run').text(window.t("sb4.fillin.ok_run"))
         $('#btn_ok_run').focus();
     } else {
-        $("#fill_in_table").css("overflow-y", "scroll");
-        $('#fill_in_table').css("visibility", "visible");
+        $("#fi_container, #fi_preview_row").show();
         $('#btn_adv_file').hide();
         $('#btn_ok_run').text(window.t("sb4.fillin.run_command"));
-        console.log(cmds[command])
-        param_num = 0;
-        cmds[command].params.forEach(function(entry) {
-            let dispSymbol = "";
-            if (entry.disptype ==="2") {dispSymbol = "*"} ;
-            let setVal = "";
-            if (entry.default) {setVal = entry.default} ;
-            let str_colon = dispSymbol + " : ";
-            param_num += 1;
-            // get itemInfo for tooltip to display all the value: and desc: from opts array when either type:= "opt" or type:= "ck" 
-            let itemInfo = "";
-            if (entry.type === "opt" || entry.type === "ck" || entry.type === "sng") {
-                if (entry.opts) {
-                    entry.opts.forEach(function(item) {
-                        itemInfo += item.value + " = " + item.desc + "\n";
-                    });
-                    if (entry.type === "ck" && itemInfo === "") {
-                        itemInfo = "0 = No\n1 = Yes\n";
-                    }
-                }        
-            }
-            html = [
-                '<tr>',
-                    '<td class="fi_name " title="' + entry.desc + '"><input value="' + entry.name + str_colon + '" tabindex="-1"></td>',
-                    '<td class="fi_val" title="' + itemInfo + '"><input id="fi_' + param_num + '" value="' + setVal + '"></td>',
-                '</tr>'
-            ].join('');
-            $(".fi-listing").append(html);
-        });
+        fiBuildRows(command);
+        if (info === "" && fiSetting) {
+            info = window.t("sb4.fillin.settings_info");
+        }
     }
 
     $('#fi_cur_info').empty();
@@ -204,6 +174,9 @@ function displayFillIn(command, title, info) {
     $('#fi-modal').foundation('reveal', 'open');
     globals.FIll_In_Open = true;
     $("#cmd-input").val(command);
+    if (!fileMode) {
+        fiSync();                    // Command Line shows the command as the sheet has it
+    }
     $("#cmd-input").focus();         // put focus here to collect an ENTER as a RUN
 }
 
@@ -400,6 +373,9 @@ function processCommandInput(command) {
             case "S":
             case "P":
             case "V":        
+                if (!cmds[command] || !cmds[command].params) {  // nothing to fill in (SA, SR, ..): no sheet
+                    break;
+                }
                 let titleCmd = "", parameters = "";
                 titleCmd = command + ": " + cmds[command].name;
                 displayFillIn(command, titleCmd, "");

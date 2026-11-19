@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="../../css/dashboard.css">
-    <link rel="stylesheet" href="./css/style.css?v=rn3">
+    <link rel="stylesheet" href="./css/style.css?v=rn4">
   </head>
 
   <body>
@@ -85,6 +85,7 @@
         <div class="ops-empty" id="ops-empty" style="display: none;" data-i18n="previewer.ops.empty">No operations parsed in file. Use Toolpath Details to set tool defaults, then run the full job.</div>
         <div class="ops-actions">
           <div class="run-now" data-i18n="previewer.ops.run_full_job">Run Full Job</div>
+          <div class="run-not-next" data-i18n-title="previewer.ops.not_next_job_title" title="Only the job at the top of the queue can be run from here" data-i18n="previewer.ops.not_next_job">Job Not at Top of Queue</div>
           <button class="run-trimmed" data-i18n-title="previewer.ops.run_trimmed_title" title="Run only the in/out selection" data-i18n="previewer.ops.run_trimmed">Run Trimmed</button>
           <button class="submit-trimmed" data-i18n-title="previewer.ops.submit_trimmed_title" title="Submit the in/out selection as a new job" data-i18n="previewer.ops.submit_trimmed">Submit Trimmed</button>
           <button class="run-selected-ops" data-i18n-title="previewer.ops.run_selected_title" title="Run only the checked operations" data-i18n="previewer.ops.run_selected">Run Selected</button>
@@ -479,6 +480,6 @@
     </div>
 
     <script src="../../static/js/shared-video.js?v=3"></script>
-    <script src="../../preview.js?v=rn4"></script>
+    <script src="../../preview.js?v=rn5"></script>
   </body>
 </html>
