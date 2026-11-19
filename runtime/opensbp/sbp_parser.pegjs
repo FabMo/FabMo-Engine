@@ -94,8 +94,10 @@ pause_args
    }
  / '' { return {}; }  // No arguments
 
+// SB3 accepted a comma after the word as well as a space: "PAUSE,2" and
+// "PAUSE 2" are the same statement.
 pause
-   = name:("PAUSE"i) __ args:pause_args? {
+   = name:("PAUSE"i) __ ","? __ args:pause_args? {
       var result = {'type':'pause'};
       result['expr'] = null;
       result['var'] = null;
