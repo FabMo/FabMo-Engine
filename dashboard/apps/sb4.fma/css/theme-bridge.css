@@ -138,10 +138,31 @@ body[class*="theme-"] .ts-pick-entry {
     border-radius: var(--t-radius);
     color: var(--t-text);
 }
-body[class*="theme-"] .ts-job.next,
 body[class*="theme-"] .ts-pick-entry.selected {
     border-color: var(--t-accent);
     background: var(--t-hover-bg);
+}
+/* Pending queue frame: accent-tinted, so it stands apart from the history */
+body[class*="theme-"] #job-queue {
+    border: 2px solid color-mix(in srgb, var(--t-accent) 55%, var(--t-bg-primary));
+    border-radius: var(--t-radius);
+    background: color-mix(in srgb, var(--t-accent) 10%, var(--t-bg-primary));
+}
+/* Next job: the row colour lifted toward white (--t-next-lift, lower on the
+   dark themes so their light text stays readable) plus an accent bar. */
+body[class*="theme-"] .ts-job.next {
+    border-color: var(--t-accent);
+    border-left-width: 5px;
+    background: color-mix(in srgb, var(--t-bg-tertiary), #fff var(--t-next-lift, 75%));
+}
+body.theme-shopbot1,
+body.theme-devdark,
+body.theme-toolpath-net {
+    --t-next-lift: 14%;
+}
+/* History rows recede: card colour rather than row colour */
+body[class*="theme-"] .ts-job-history .ts-job {
+    background: var(--t-bg-primary);
 }
 body[class*="theme-"] .ts-usb-entry:hover,
 body[class*="theme-"] .ts-pick-entry:hover {
@@ -507,10 +528,9 @@ body.theme-sb4 .machine-cmd:hover:not(:disabled) {
     border-color: rgb(136, 171, 190);
 }
 
-/* SB4: the next job stands out as the lightest row on the card (the shared
-   hover tint lands darker than the other rows on this grey theme) */
-body.theme-sb4 .ts-job.next {
-    background: rgb(247, 248, 249);
+/* SB4: the next job goes all the way to white on this grey theme */
+body.theme-sb4 {
+    --t-next-lift: 100%;
 }
 
 /* SB4: tool-change buttons and rack clips a step lighter than the panel */
