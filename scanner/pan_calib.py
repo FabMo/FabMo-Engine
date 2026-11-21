@@ -21,6 +21,21 @@ operator's OK):
     pivot as B turns). Ends back at the start X/Y and B.
     -> captures/<name>/ b_NN.jpg + manifest.json
 
+Hand-indexed head (no B motor; detents, e.g. every 45 deg) - one call per
+detent, the operator turns the head between calls:
+  python3 pan_calib.py shot <name> 0 [--square 7.80x7.80]
+    Head in the 0 detent, board flat on the table and fully in view. The
+    head re-centres the board (X/Y moves) and takes the reference shot.
+  python3 pan_calib.py shot <name> 45        (then 90, -45, ... any order)
+    After the head has been turned to that detent. First moves X/Y to where
+    the board should be in view again (old pan.json as the guess; tries the
+    other turning sense if the board isn't there), re-centres, shoots.
+    --no-move: skip the predictive move (jog the board into view yourself).
+  python3 pan_calib.py home <name>           back to the start X/Y
+  python3 pan_calib.py fit-geom captures/<name>  -> pan.json
+    The turn table then maps detent label -> measured turn, so whichever
+    way the operator calls "+45" is what scans must use too.
+
 Fit:
   python3 pan_calib.py fit captures/<name>  -> pan.json
     Joint least squares over every corner of every shot (reprojection, px):
@@ -241,6 +256,161 @@ def capture(args):
                            "created": time.strftime("%Y-%m-%d %H:%M:%S")}, fh, indent=1)
     print("wrote %s (%d shots); head back at X%.3f Y%.3f B0"
           % (outdir, len(shots), origin["x"], origin["y"]))
+
+
+# ------------------------------------------------- capture, hand-indexed
+def shot(args):
+    """One detent of a hand-indexed head (see the module docstring)."""
+    import camera
+    import fabmo_client as fabmo
+
+    cam = load_json("camera.json")
+    K, D = np.array(cam["camera_matrix"]), np.array(cam["dist_coeffs"])
+    R_mc0 = np.array(load_json("mount.json")["R_machine_to_camera"])
+    outdir = os.path.join(HERE, "captures", args.name)
+    mpath = os.path.join(outdir, "manifest.json")
+    h = float(args.heading)
+    if fabmo.status()["state"] != "idle":
+        raise SystemExit("machine must be idle")
+    p_now = fabmo.pose()
+    if os.path.isfile(mpath):
+        with open(mpath) as fh:
+            man = json.load(fh)
+    elif h != 0:
+        raise SystemExit("take the 0 detent first:  pan_calib.py shot %s 0" % args.name)
+    else:
+        os.makedirs(outdir, exist_ok=True)
+        sq = parse_square(args.square)
+        man = {"origin": dict(p_now, b=0.0), "shots": [], "square_mm": list(objp_sq(sq, cam)),
+               "zs": [0.0], "approach": "hand-indexed detents", "manual": True,
+               "created": time.strftime("%Y-%m-%d %H:%M:%S")}
+    shots, origin = man["shots"], man["origin"]
+    if any(s["b_cmd"] == h for s in shots):
+        raise SystemExit("detent %+g is already in %s" % (h, args.name))
+    objp = board_points(cam, tuple(man["square_mm"]))
+    if abs(p_now["z"] - origin["z"]) > 0.002:
+        raise SystemExit("Z is %.4f, this capture was started at Z %.4f" % (p_now["z"], origin["z"]))
+
+    cap = camera.open_camera()
+    time.sleep(1.0)
+
+    def look():
+        time.sleep(0.4)
+        img = camera.grab(cap, flush=8)
+        c = detect(img)
+        if c is None:
+            time.sleep(0.5)                          # one retry (AE settling)
+            img = camera.grab(cap, flush=8)
+            c = detect(img)
+        return img, c
+
+    def go(x, y):
+        fabmo.check_envelope([(x, y)])
+        fabmo.goto(x=x, y=y)
+        return {"x": x, "y": y}
+
+    pos = {"x": p_now["x"], "y": p_now["y"]}
+    try:
+        if not shots:
+            img, c = look()
+            if c is None:
+                cv2.imwrite(os.path.join(outdir, "fail_%+g.jpg" % h), img)
+                raise SystemExit("board not found at the start pose (frame saved in %s)" % outdir)
+            R, t = pnp(c, objp, K, D)
+            man["R_board_to_machine"] = (R_mc0.T @ R).tolist()
+            man["X_target_cam"] = [0.0, 0.0, float(np.linalg.norm(R @ objp.mean(0) + t))]
+        else:
+            img = c = None
+            if not args.no_move:
+                # where the board comes back into view: the target point is
+                # rigid with the head, at w from the pivot (reference detent)
+                v = np.zeros(3)
+                axis = np.array([0.0, 0.0, 1.0])
+                if os.path.isfile(os.path.join(HERE, "pan.json")):
+                    pj = load_json("pan.json")
+                    v, axis = np.array(pj["pivot_to_camera_mm"]), np.array(pj["axis_machine"])
+                w = v + R_mc0.T @ np.array(man["X_target_cam"])
+                o0 = shots[0]["pose"]
+                # better than the old model: w from the detents already taken
+                # (centred head position g_i - g_0 = w - Rot(turn_i) w, in XY)
+                R_bm_ = np.array(man["R_board_to_machine"])
+                Xt_ = np.array(man["X_target_cam"])
+                g, A_, b_ = [], [], []
+                for s_ in shots:
+                    Rs, ts = pnp(np.array(s_["corners_ref"]), objp, K, D)
+                    Rm = (Rs @ R_bm_.T).T
+                    dd = (Rm @ (Rs @ objp.mean(0) + ts) - Rm @ Xt_)[:2]
+                    g.append(np.array([s_["pose"]["x"], s_["pose"]["y"]]) * IN_TO_MM + dd)
+                for s_, gi in zip(shots[1:], g[1:]):
+                    th_ = np.radians(s_["turn_measured_deg"])
+                    if abs(th_) > 0.1:
+                        A_.append(np.eye(2) - rot([0, 0, 1.0], th_)[:2, :2])
+                        b_.append(gi - g[0])
+                if A_:
+                    w = w.copy()
+                    w[:2] = np.linalg.lstsq(np.vstack(A_), np.concatenate(b_), rcond=None)[0]
+                    axis = np.array([0.0, 0.0, 1.0])
+                    o0 = {"x": g[0][0] / IN_TO_MM, "y": g[0][1] / IN_TO_MM}
+                    print("  view centre is %.1f mm from the pivot (from %d detents)"
+                          % (np.linalg.norm(w[:2]), len(A_)), flush=True)
+                signs = [man["turn_sign"]] if man.get("turn_sign") else [1.0, -1.0]
+                for sg in signs:
+                    d = (w - rot(axis, np.radians(sg * h)) @ w)[:2] / IN_TO_MM
+                    pos = go(round(o0["x"] + d[0], 4), round(o0["y"] + d[1], 4))
+                    img, c = look()
+                    if c is not None:
+                        break
+                    print("  board not in view at X%.3f Y%.3f (turn sense %+d)"
+                          % (pos["x"], pos["y"], sg), flush=True)
+            else:
+                img, c = look()
+            if c is None:
+                cv2.imwrite(os.path.join(outdir, "fail_%+g.jpg" % h), img)
+                raise SystemExit("board not found for detent %+g (frame saved in %s). Jog X/Y "
+                                 "until the whole board is in view, then re-run with --no-move"
+                                 % (h, outdir))
+        R_bm = np.array(man["R_board_to_machine"])
+        X_target = np.array(man["X_target_cam"])
+        # nearest detent already taken, going round the circle (180 is 45 from -135)
+        near = (min(shots, key=lambda s: abs((s["b_cmd"] - h + 180.0) % 360.0 - 180.0))
+                if shots else None)
+        ref_c = np.array(near["corners_ref"]) if near else None
+        for attempt in range(5):                     # re-centre on the optical axis
+            c = orient_like(c, ref_c)
+            R, t = pnp(c, objp, K, D)
+            Xc = R @ objp.mean(0) + t
+            R_mc = R @ R_bm.T
+            d = (R_mc.T @ Xc - R_mc.T @ X_target)[:2] / IN_TO_MM
+            if np.hypot(*d) < 0.04 or args.no_centre:
+                break
+            pos = go(round(pos["x"] + d[0], 4), round(pos["y"] + d[1], 4))
+            img, c = look()
+            if c is None:
+                raise SystemExit("board lost while re-centring at X%.3f Y%.3f" % (pos["x"], pos["y"]))
+        rv = cv2.Rodrigues(R_mc.T @ R_mc0)[0].ravel()          # head turn, machine frame
+        turn = float(np.degrees(np.linalg.norm(rv)) * (np.sign(rv[2]) or 1.0))
+        if h != 0 and abs(abs(turn) - abs(h)) < 20 and abs(h) < 170:
+            man["turn_sign"] = float(np.sign(turn) * np.sign(h))
+        p = dict(fabmo.pose(), b=h)
+        f = "b_%02d.jpg" % len(shots)
+        cv2.imwrite(os.path.join(outdir, f), img)
+        shots.append({"file": f, "pose": p, "b_cmd": h, "heading": len(shots), "z_off": 0.0,
+                      "corners_ref": c.tolist(), "turn_measured_deg": round(turn, 3)})
+        with open(mpath, "w") as fh:
+            json.dump(man, fh, indent=1)
+        print("detent %+g: head turn measured %+.2f deg about Z (tilt part %.2f deg); shot at "
+              "X%.3f Y%.3f after %d re-centring moves; %d detents in %s"
+              % (h, turn, np.degrees(np.hypot(rv[0], rv[1])), p["x"], p["y"], attempt,
+                 len(shots), args.name))
+    finally:
+        cap.release()
+
+
+def home(args):
+    import fabmo_client as fabmo
+    o = load_json(os.path.join("captures", args.name, "manifest.json"))["origin"]
+    fabmo.goto(x=o["x"], y=o["y"])
+    print("head at the start X%.3f Y%.3f" % (o["x"], o["y"]))
 
 
 # -------------------------------------------------------------------- fit
@@ -515,6 +685,17 @@ def fit_geom(args):
     B = sorted(tab)
     T = [round(float(np.mean(tab[b])), 3) for b in B]
     pos_rms = float(np.sqrt((r ** 2).sum(1).mean()))
+    # Per-detent poses, straight from each shot's PnP (hand-indexed head: it
+    # seats a little differently in every detent, which one axis can't
+    # describe). Camera -> machine rotation and camera centre relative to the
+    # reference detent's, gantry motion removed. pan.Pan uses these for
+    # headings that match a detent and the axis model for any other.
+    detents = []
+    if man.get("manual"):
+        for s_, (R, _t), q in zip(sh, poses, Q):
+            if s_.get("z_off", 0) == 0:
+                detents.append({"b": s_["b_cmd"], "R_cam_to_machine": (R_mc0.T @ R0 @ R.T).tolist(),
+                                "camera_mm": (q - Q[i0]).tolist()})
     print("axis %.2f deg from vertical, camera %.1f mm off axis; orientation misfit "
           "mean %.2f max %.2f deg; position misfit rms %.2f max %.2f mm"
           % (np.degrees(np.arccos(a[2])), np.linalg.norm(v), np.mean(tilt), np.max(tilt),
@@ -528,7 +709,7 @@ def fit_geom(args):
            "approach": man.get("approach", "+B (5 deg run-up from above)"),
            "turn_table": {"b_cmd_deg": B, "turn_deg": T},
            "orientation_misfit_deg": {"mean": float(np.mean(tilt)), "max": float(np.max(tilt))},
-           "position_residual_rms_mm": pos_rms,
+           "position_residual_rms_mm": pos_rms, "detents": detents,
            "captured_from": os.path.relpath(args.capdir, HERE),
            "created": time.strftime("%Y-%m-%d %H:%M:%S")}
     if not args.no_write:
@@ -579,6 +760,19 @@ if __name__ == "__main__":
     c.add_argument("--step", type=int, default=10)
     c.add_argument("--max", type=int, default=90)
     c.set_defaults(fn=capture)
+    m = sub.add_parser("shot", help="hand-indexed head: capture one detent")
+    m.add_argument("name")
+    m.add_argument("heading", type=float, help="detent the head is in now, deg (0 first)")
+    m.add_argument("--square", help="measured square size LONGxSHORT mm (first shot only)")
+    m.add_argument("--no-move", action="store_true",
+                   help="don't move to the predicted view first (board already in view)")
+    m.add_argument("--no-centre", action="store_true",
+                   help="shoot where the head is, without re-centring the board (the fit "
+                        "doesn't need it centred; use near a travel limit)")
+    m.set_defaults(fn=shot)
+    hm = sub.add_parser("home", help="hand-indexed capture: back to the start X/Y")
+    hm.add_argument("name")
+    hm.set_defaults(fn=home)
     f = sub.add_parser("fit")
     f.add_argument("capdir")
     f.add_argument("--no-write", action="store_true")

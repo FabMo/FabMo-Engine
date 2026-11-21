@@ -110,7 +110,7 @@ def open_raw(dev=None, fps=60):
 
 def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
                    latency_ms=0.0, progress=None, abort=None, log=print, reverse=False,
-                   on_live=None):
+                   on_live=None, colour=None):
     """Laser-on constant-feed sweep of `axis` from origin+start to
     origin+end (inches). Returns the manifest. Laser off and the job
     stopped on error/abort; the head returns to the start only on success."""
@@ -131,6 +131,9 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
     fabmo.check_envelope(pts)
     os.makedirs(outdir, exist_ok=True)
     out = "out%d" % laser_out
+    if colour is None:
+        import sweep
+        colour = sweep.laser_colour()
     A = ax.upper()
     b0, b1 = (a1, a0) if reverse else (a0, a1)       # reverse: sweep end -> start
     prog = "\n".join([
@@ -147,7 +150,7 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
     man = {"kind": "continuous", "units": "inches", "origin": origin, "axis": ax,
            "reverse": bool(reverse),
            "start": start, "end": end, "speed_ips": speed_ips, "laser_output": laser_out,
-           "latency_ms": latency_ms, "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+           "laser_color": colour, "latency_ms": latency_ms, "created": time.strftime("%Y-%m-%d %H:%M:%S"),
            "complete": False, "shots": []}
     st = _StatusLog(fabmo)
     st.out_key = out
@@ -158,7 +161,7 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
     if on_live is not None:
         live = LiveCont(outdir, fr.frames, st.rows, ax, origin[ax] + start,
                         origin[ax] + start, origin[ax] + end, latency_ms,
-                        est_lines=(end - start) / speed_ips * 6.5)
+                        est_lines=(end - start) / speed_ips * 6.5, colour=colour)
         live.start()
         on_live(live)
     t0 = time.time()
@@ -245,8 +248,9 @@ class LiveCont(threading.Thread):
     replaces the preview."""
 
     def __init__(self, outdir, frames, status_rows, ax, ref_pos, lo, hi, latency_ms,
-                 workers=2, period=0.15, min_gap_in=0.015, est_lines=None):
+                 workers=2, period=0.15, min_gap_in=0.015, est_lines=None, colour="red"):
         threading.Thread.__init__(self, daemon=True)
+        self.colour = colour
         from multiprocessing import Pool
         self.outdir, self.frames, self.rows = outdir, frames, status_rows
         self.ax, self.ref, self.lo, self.hi = ax, ref_pos, lo, hi
@@ -297,7 +301,8 @@ class LiveCont(threading.Thread):
             dp[AXES.index(self.ax)] = (p - self.ref) * IN_TO_MM
             self.pending += 1
             try:
-                self.pool.apply_async(_tri, ((0, os.path.join(self.outdir, f), None, dp, None),),
+                self.pool.apply_async(_tri, ((0, os.path.join(self.outdir, f), None, dp, None,
+                                              self.colour),),
                                       callback=self._done, error_callback=self._err)
             except ValueError:            # pool closed
                 return
@@ -396,7 +401,7 @@ BAND = [None]          # row band used by the last triangulate_frames (for logs)
 def _tri(args):
     """Worker: one frame -> (index, (N, 4) points)."""
     import sweep
-    i, path, R_cm, dp, band = args
+    i, path, R_cm, dp, band, colour = args
     if "cal" not in _CAL:
         _CAL["cal"] = sweep.load_cal()
         cv2.setNumThreads(1)          # one process per core instead of oversubscribing
@@ -405,7 +410,7 @@ def _tri(args):
     if img is None:
         return i, np.zeros((0, 4))
     r0, r1 = band if band else (0, img.shape[0])
-    pts = stripe.extract_on_only(np.ascontiguousarray(img[r0:r1]))
+    pts = stripe.extract_on_only(np.ascontiguousarray(img[r0:r1]), colour=colour)
     if len(pts):
         pts[:, 0] += r0                       # back to full-image rows
     if len(pts) == 0:
@@ -418,24 +423,25 @@ def _tri(args):
     return i, np.c_[P, pts[:, 2]]
 
 
-def _band_rows(path):
+def _band_rows(args):
+    path, colour = args
     img = cv2.imread(path)
     if img is None:
         return None
-    p = stripe.extract_on_only(img)
+    p = stripe.extract_on_only(img, colour=colour)
     if len(p) < 50:
         return None
     return np.percentile(p[:, 0], [5, 99])     # 5th: ignore sparse stray points
 
 
-def _stripe_band(jobs, pool, n_sample=24, margin=120, min_rows=240):
+def _stripe_band(jobs, pool, n_sample=24, margin=120, min_rows=240, colour="red"):
     """Image rows the laser line occupies in this scan, from a full search on
     a sample of frames (+ margin; 120 px ~ 50 mm of extra height). Frame
     processing then touches only that band: with 4 workers the Pi is limited
     by memory bandwidth, not CPU. A feature taller than the band, seen only
     between sampled frames, would be lost (not mis-measured)."""
     paths = [j[1] for j in jobs[::max(1, len(jobs) // n_sample)]]
-    rows = [r for r in pool.map(_band_rows, paths) if r is not None]
+    rows = [r for r in pool.map(_band_rows, [(p, colour) for p in paths]) if r is not None]
     if not rows:
         return None
     rows = np.array(rows)
@@ -447,7 +453,7 @@ def _stripe_band(jobs, pool, n_sample=24, margin=120, min_rows=240):
     return (r0, r1)
 
 
-def triangulate_frames(capdir, shots, every=1, progress=None, workers=4):
+def triangulate_frames(capdir, shots, every=1, progress=None, workers=4, colour="red"):
     """-> list of (N, 4) per used frame, list of shot indices used."""
     from multiprocessing import Pool
     p0 = np.array([shots[0]["pose"][a] for a in AXES])
@@ -458,9 +464,9 @@ def triangulate_frames(capdir, shots, every=1, progress=None, workers=4):
         jobs.append((i, os.path.join(capdir, s["img_on"]), None, dp))
     out = {}
     with Pool(workers) as pool:
-        band = _stripe_band(jobs, pool)
+        band = _stripe_band(jobs, pool, colour=colour)
         BAND[0] = band
-        jobs = [j + (band,) for j in jobs]
+        jobs = [j + (band, colour) for j in jobs]
         for n, (i, P) in enumerate(pool.imap_unordered(_tri, jobs, chunksize=4)):
             out[i] = P
             if progress:

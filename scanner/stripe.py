@@ -3,8 +3,11 @@
 The stripe is searched as one peak per image line ACROSS it: per row for a
 roughly vertical stripe, per column for a roughly horizontal one
 (orientation="auto" tries both and keeps the one that finds more points).
-Works on the red-channel difference (on - off): the laser adds red, and
-differencing removes the scene.
+Works on the difference (on - off) in the laser's colour channel: the laser
+adds red (or blue), and differencing removes the scene. Every function
+takes colour="red" | "blue" (the scan setting laser_color; red is the
+default so older captures process as before). In the comments below
+"red"/"blue" describe the red laser; for a blue one they swap.
 
 The EMEET camera's auto-exposure can't be locked, so the two frames may
 differ slightly in overall brightness; each line's median difference is
@@ -18,6 +21,24 @@ Points are always returned in image coordinates as [row, col, signal].
 
 import cv2
 import numpy as np
+
+# BGR channel index of (laser channel, the channel the laser should leave flat)
+_CH = {"red": (2, 0), "blue": (0, 2)}
+
+
+def default_signal(colour):
+    """Best off/on signal per laser: red - green for the red laser (red
+    clips on pale wood); the blue channel alone for the blue one — where
+    blue clips, green rises under the line, and subtracting it carves a dip
+    into the peak (board fit 2026-11-21: 0.165 mm rms with "rg", 0.073 "r")."""
+    return "r" if colour == "blue" else "rg"
+
+
+def channels(colour):
+    try:
+        return _CH[colour or "red"]
+    except KeyError:
+        raise ValueError("laser colour must be 'red' or 'blue', not %r" % (colour,))
 
 
 def _extract_vertical(d, min_signal, snr, half_window, sub=1):
@@ -54,7 +75,7 @@ def _extract_vertical(d, min_signal, snr, half_window, sub=1):
 
 
 def extract(img_off, img_on, min_signal=12.0, snr=5.0, half_window=12,
-            orientation="auto", return_orientation=False, signal="r"):
+            orientation="auto", return_orientation=False, signal="r", colour="red"):
     """Stripe points as an (N, 3) array of [row, col_subpixel_or_row_subpixel,
     signal] in image coordinates — for a vertical stripe the column is
     sub-pixel, for a horizontal one the row is.
@@ -71,7 +92,8 @@ def extract(img_off, img_on, min_signal=12.0, snr=5.0, half_window=12,
     """
     on = img_on.astype(np.float32)
     off = img_off.astype(np.float32)
-    d = on[..., 2] - off[..., 2]
+    cm, _ = channels(colour)
+    d = on[..., cm] - off[..., cm]
     if signal == "rg":
         d = d - (on[..., 1] - off[..., 1])
     elif signal != "r":
@@ -124,7 +146,7 @@ def _runs(pts, al, ac, max_gap, max_jump):
 
 
 def drop_off_colour_runs(pts, img_off, img_on, orientation="vertical", max_gap=2,
-                         max_jump=3.0, max_blue=0.15):
+                         max_jump=3.0, max_blue=0.15, colour="red"):
     """Keep only stripe pieces whose colour change looks like the red laser:
     red goes UP and blue barely moves (|dB| <= max_blue * dR, medians over
     the run, 5x5-averaged). The camera's auto-exposure shifting a patch of
@@ -139,7 +161,8 @@ def drop_off_colour_runs(pts, img_off, img_on, orientation="vertical", max_gap=2
     d = cv2.blur(img_on.astype(np.float32) - img_off.astype(np.float32), (5, 5))
     r = np.clip(np.round(pts[:, 0]).astype(int), 0, d.shape[0] - 1)
     c = np.clip(np.round(pts[:, 1]).astype(int), 0, d.shape[1] - 1)
-    dR, dB = d[r, c, 2], d[r, c, 0]
+    cm, cf = channels(colour)
+    dR, dB = d[r, c, cm], d[r, c, cf]
     lab = _runs(pts, al, ac, max_gap, max_jump)
     n = np.bincount(lab)
     order = np.argsort(lab, kind="stable")
@@ -183,7 +206,7 @@ def drop_weak_runs(pts, orientation="vertical", min_run=15, max_gap=2, max_jump=
 
 # ------------------------------------------------------- laser-on frame only
 def extract_on_only(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
-                    max_blue=0.15, fast_bg=True):
+                    max_blue=0.15, fast_bg=True, colour="red"):
     """Horizontal stripe from a single laser-ON frame (continuous scans:
     no laser-off reference). Redness (R - G) minus its smooth background
     (2-D median) leaves thin red features; each found piece must then look
@@ -199,12 +222,14 @@ def extract_on_only(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
     (2026-11-08: 720 -> ~150 ms per frame, single thread)."""
     h0, w0 = img_on.shape[:2]
     if not fast_bg:
-        return _extract_on_only_full(img_on, min_signal, snr, half_window, win, max_blue)
+        return _extract_on_only_full(img_on, min_signal, snr, half_window, win, max_blue,
+                                     colour=colour)
+    cm, cf = channels(colour)
     sw, sh = w0 // 4, h0 // 4
     small = cv2.resize(img_on, (sw, sh), interpolation=cv2.INTER_AREA)
     bgs = [cv2.medianBlur(np.ascontiguousarray(small[..., k]), 9) for k in range(3)]
-    bg_rg = bgs[2].astype(np.float32) - bgs[1].astype(np.float32)
-    rg = cv2.subtract(img_on[..., 2], img_on[..., 1], dtype=cv2.CV_32F)
+    bg_rg = bgs[cm].astype(np.float32) - bgs[1].astype(np.float32)
+    rg = cv2.subtract(img_on[..., cm], img_on[..., 1], dtype=cv2.CV_32F)
     d = rg - cv2.resize(bg_rg, (w0, h0), interpolation=cv2.INTER_LINEAR)
     t = _extract_vertical(np.ascontiguousarray(d.T), min_signal, snr, half_window, sub=4)
     pts = clean(t[:, [1, 0, 2]], orientation="horizontal")
@@ -220,8 +245,8 @@ def extract_on_only(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
     cc = c[:, None, None] + o[None, None, :]
     rs = np.clip(r // 4, 0, sh - 1)
     cs = np.clip(c // 4, 0, sw - 1)
-    R = img_on[rr, cc, 2].reshape(len(r), -1).mean(1) - bgs[2][rs, cs]
-    B = img_on[rr, cc, 0].reshape(len(r), -1).mean(1) - bgs[0][rs, cs]
+    R = img_on[rr, cc, cm].reshape(len(r), -1).mean(1) - bgs[cm][rs, cs]
+    B = img_on[rr, cc, cf].reshape(len(r), -1).mean(1) - bgs[cf][rs, cs]
     lab = _runs(pts, 1, 0, 2, 3.0)
     n = np.bincount(lab)
     starts = np.r_[0, np.cumsum(n)[:-1]]
@@ -234,7 +259,7 @@ def extract_on_only(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
 
 
 def _extract_on_only_full(img_on, min_signal=6.0, snr=3.5, half_window=12, win=31,
-                          max_blue=0.15, fast_bg=False):
+                          max_blue=0.15, fast_bg=False, colour="red"):
     """Horizontal stripe from a single laser-ON frame (continuous scans:
     no laser-off reference). Redness (R - G) high-passed across the line
     (minus a win x win median background) leaves thin red features; each
@@ -259,7 +284,8 @@ def _extract_on_only_full(img_on, min_signal=6.0, snr=3.5, half_window=12, win=3
         else:
             bg = cv2.medianBlur(c, win).astype(np.float32)
         hp.append(f[..., k] - bg)
-    hB, hG, hR = hp
+    cm, cf = channels(colour)
+    hR, hG, hB = hp[cm], hp[1], hp[cf]
     d = hR - hG
     t = _extract_vertical(np.ascontiguousarray(d.T), min_signal, snr, half_window)
     pts = t[:, [1, 0, 2]]

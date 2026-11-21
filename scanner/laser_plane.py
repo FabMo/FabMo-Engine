@@ -49,6 +49,15 @@ IN_TO_MM = 25.4
 PATTERN = (9, 6)
 
 
+def _colour(man=None):
+    """Laser colour: of a capture (manifest; none recorded = red, before the
+    blue laser of Nov 2026), or the current laser_color setting."""
+    if man is not None:
+        return man.get("laser_color") or "red"
+    import scan_settings
+    return scan_settings.load()["laser_color"]
+
+
 # ---------------------------------------------------------------- capture
 def capture(args):
     import camera
@@ -57,6 +66,7 @@ def capture(args):
 
     s = scan_settings.load()
     out_n = int(s["laser_output"])
+    colour = s["laser_color"]
     zs = [float(v) for v in args.zs.split(",")]
     if any(z > 0 for z in zs):
         raise SystemExit("--zs offsets must be <= 0 (down from the start height)")
@@ -87,10 +97,14 @@ def capture(args):
             rec = {"pose": pose, "img_off": "off_%02d.jpg" % i, "img_on": "on_%02d.jpg" % i}
             cv2.imwrite(os.path.join(outdir, rec["img_off"]), off)
             cv2.imwrite(os.path.join(outdir, rec["img_on"]), on)
-            pts, ori = stripe.extract(off, on, return_orientation=True)
+            pts, ori = stripe.extract(off, on, return_orientation=True, colour=colour)
+            sig = np.median(pts[:, 2]) if len(pts) else 0
+            cm = stripe.channels(colour)[0]
+            clip = float((on[..., cm] >= 250).mean() * 100)
             n = len(stripe.clean(pts, orientation=ori))
-            print("  [%d/%d] z=%.4f  %s stripe, %d points" % (
-                i + 1, len(zs), pose["z"], ori, n), flush=True)
+            print("  [%d/%d] z=%.4f  %s stripe, %d points, signal %.0f, %.2f%% of the %s "
+                  "channel clipped" % (i + 1, len(zs), pose["z"], ori, n, sig, clip, colour),
+                  flush=True)
             shots.append(rec)
     finally:
         try:
@@ -98,8 +112,8 @@ def capture(args):
             fabmo.goto(z=origin["z"])
         finally:
             with open(os.path.join(outdir, "manifest.json"), "w") as fh:
-                json.dump({"units": "inches", "origin": origin,
-                           "laser_output": out_n, "shots": shots}, fh, indent=2)
+                json.dump({"units": "inches", "origin": origin, "laser_output": out_n,
+                           "laser_color": colour, "shots": shots}, fh, indent=2)
     print("wrote %s/manifest.json (%d shots); laser off, Z back to %.4f" % (
         outdir, len(shots), origin["z"]))
 
@@ -150,7 +164,8 @@ def fit_board(args):
             print("  shot %d: board not found — skipped" % i)
             continue
         Rb, tb, cc, perr, (L, S), pat = bp
-        pts, ori = stripe.extract(off, on, return_orientation=True, signal=args.signal)
+        pts, ori = stripe.extract(off, on, return_orientation=True, colour=_colour(man),
+                                  signal=args.signal or stripe.default_signal(_colour(man)))
         pts = stripe.clean(pts, orientation=ori)
         pts = stripe.drop_weak_runs(pts, orientation=ori)
         # keep stripe points on the printed board: within 1.5 squares of the
@@ -253,7 +268,7 @@ def fit(args):
     for sh in man["shots"]:
         off = cv2.imread(os.path.join(args.capdir, sh["img_off"]))
         on = cv2.imread(os.path.join(args.capdir, sh["img_on"]))
-        pts, ori = stripe.extract(off, on, return_orientation=True)
+        pts, ori = stripe.extract(off, on, return_orientation=True, colour=_colour(man))
         pts = stripe.clean(pts, max_line_dev=2.0, orientation=ori)
         dz = (sh["pose"]["z"] - z_ref) * IN_TO_MM
         print("  z %+.3f in: %s stripe, %d points, median signal %.0f, "
@@ -382,7 +397,7 @@ if __name__ == "__main__":
     fb.add_argument("--no-write", action="store_true")
     fb.add_argument("--square", help="measured square size LONGxSHORT mm of the board used "
                                      "(default: camera.json's intrinsics board)")
-    fb.add_argument("--signal", default="rg", choices=("r", "rg"),
-                    help="stripe signal; rg copes with red clipping on white paper")
+    fb.add_argument("--signal", default=None, choices=("r", "rg"),
+                    help="stripe signal (default by laser colour: rg for red, r for blue)")
     a = ap.parse_args()
     {"capture": capture, "fit": fit, "fitboard": fit_board}[a.cmd](a)

@@ -126,15 +126,15 @@ class Live:
     The final process_dir() re-levels to a fitted table plane.
     """
 
-    def __init__(self, outdir, total, signal="rg", pan=None):
+    def __init__(self, outdir, total, signal=None, pan=None, colour="red"):
         import queue
         import threading
         self.pan = pan           # pan.Pan for multi-heading scans (else reference heading)
         self.pose0 = None
         self.outdir = outdir
         self.total = total
-        self.signal = signal
-        self.cal = load_cal()
+        self.signal = signal or stripe.default_signal(colour)
+        self.cal = dict(load_cal(), colour=colour)
         self.q = queue.Queue()
         self.lock = threading.Lock()
         self.shots = []          # per-shot float32 (N, 3), provisional heights
@@ -243,26 +243,30 @@ def plan_stops(origin, axis, start, end, step, rows=1, row_spacing=0.0, row_star
 
 
 def plan_headings(origin, headings, length, step, pan_model, table_below_cam_mm,
-                  b_limit=95.0):
+                  b_limit=95.0, ref_heading=0.0):
     """Stops for a multi-heading scan, machine inches/deg, absolute.
 
     Every heading's sweep walks the laser line across the SAME target: the
-    point where the line meets the table at the start pose (heading B = 0).
-    At heading B the head moves along the line's normal d(B), from
-    -length/2 to +length/2 (inches) about the position that puts the line
-    on the target. Headings run in increasing B (each reached moving +B).
+    point where the line meets the table at the start pose, with the head
+    at ref_heading (0 on a motorised B axis; on a hand-indexed head, the
+    detent it is in when the scan starts). At heading B the head moves
+    along the line's normal d(B), from -length/2 to +length/2 (inches)
+    about the position that puts the line on the target. Headings run in
+    increasing B (each reached moving +B), except that ref_heading, if it
+    is one of them, comes first (hand-indexed: no turn before the scan).
     -> list of {"x", "y", "b", "row": heading index}
     """
     with open(os.path.join(HERE, "laser.json")) as fh:
         las = json.load(fh)
     m, c = las["plane_normal_cam"], float(las["plane_offset_mm"])
-    hs = sorted(float(h) for h in headings)
+    hs = sorted(set(float(h) for h in headings))
+    hs.sort(key=lambda h: abs(h - ref_heading) > 0.01)      # stable: ref first
     if not hs or any(abs(h) > b_limit for h in hs):
         raise ValueError("headings must be within +-%.0f deg" % b_limit)
     if step <= 0 or length <= 0:
         raise ValueError("need positive length and step")
     n = int(round(length / step)) + 1
-    target = pan_model.line_centre(0.0, m, c, table_below_cam_mm)   # mm, gantry-relative
+    target = pan_model.line_centre(ref_heading, m, c, table_below_cam_mm)   # mm, gantry-relative
     stops = []
     for k, b in enumerate(hs):
         d = pan_model.sweep_dir(b, m)
@@ -281,7 +285,8 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                     progress=None, abort=None, log=print, live=None,
                     dwell_off=0.8, dwell_on=0.6, on_live=None,
                     rows=1, row_spacing=0.0, row_start=0.0, targets=None,
-                    extra_manifest=None, pan_model=None):
+                    extra_manifest=None, pan_model=None, colour=None,
+                    manual_pan=None, head_heading=0.0):
     """Like run_capture(), but the whole sweep runs as ONE gcode program
     (moves, dwells, laser on/off), so the machine stays 'running' for the
     whole scan — the dashboard's job bar stays up and its Stop/Pause work
@@ -297,6 +302,17 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     On error/abort/Stop the job is stopped and the laser switched off; the
     head is NOT moved back (it stays where it stopped).
     on_live(live): called once with the Live object (for the daemon).
+
+    colour: laser colour for the live preview and the manifest (default:
+    the laser_color setting).
+
+    manual_pan: set on a hand-indexed head (no B motor). A callable
+    manual_pan(heading_deg) that returns once the operator has turned the
+    head to that detent (raise Aborted to give up). The program is then
+    split at every change of heading: the machine goes idle with the laser
+    off, manual_pan() is awaited, and the next piece starts. B is neither
+    commanded nor checked; shots record the detent as pose["b"].
+    head_heading: the detent the head is in at the start.
     """
     import camera
 
@@ -313,21 +329,35 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     fabmo.check_envelope([(t["x"], t["y"]) for t in targets])
     os.makedirs(outdir, exist_ok=True)
     out = "out%d" % laser_out
-    lines = ["G90", "M100 ({%s:0})" % out]
-    cur_b = origin.get("b") or 0.0
+    if colour is None:
+        colour = laser_colour()
+    manual = manual_pan is not None
+    head = [0, ["G90", "M100 ({%s:0})" % out], None]
+    segs = [head]        # [first stop, program lines, detent to turn to by hand first]
+    lines = head[1]
+    cur_b = float(head_heading) if manual else (origin.get("b") or 0.0)
     import pan as panmod
-    for t in targets:
+    for k, t in enumerate(targets):
         if "b" in t and abs(t["b"] - cur_b) > 0.01:
-            # new heading: final approach in +B (same as the calibration)
-            for bb in panmod.approach_moves(cur_b, t["b"], fabmo.B_LIMIT)[:-1]:
-                lines.append("G0 B%.4f" % bb)
-            lines.append("G0 X%.4f Y%.4f B%.4f" % (t["x"], t["y"], t["b"]))
+            if manual:
+                if k == 0:
+                    head[2] = t["b"]
+                else:                    # machine idles here while the head is turned
+                    lines.append("M100 ({%s:0})" % out)
+                    lines = ["G90", "M100 ({%s:0})" % out]
+                    segs.append([k, lines, t["b"]])
+                lines.append("G0 X%.4f Y%.4f" % (t["x"], t["y"]))
+            else:
+                # new heading: final approach in +B (same as the calibration)
+                for bb in panmod.approach_moves(cur_b, t["b"], fabmo.B_LIMIT)[:-1]:
+                    lines.append("G0 B%.4f" % bb)
+                lines.append("G0 X%.4f Y%.4f B%.4f" % (t["x"], t["y"], t["b"]))
             cur_b = t["b"]
         else:
             lines.append("G0 X%.4f Y%.4f" % (t["x"], t["y"]))
         lines += ["G4 P%.2f" % dwell_off,
                   "M100 ({%s:1})" % out, "G4 P%.2f" % dwell_on, "M100 ({%s:0})" % out]
-    if any("b" in t for t in targets):
+    if any("b" in t for t in targets) and not manual:
         b_home = 0.0 if abs(origin.get("b") or 0) < 1 else origin["b"]
         for bb in panmod.approach_moves(cur_b, b_home, fabmo.B_LIMIT)[:-1]:
             lines.append("G0 B%.4f" % bb)
@@ -335,32 +365,38 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     else:
         lines.append("G0 X%.4f Y%.4f" % (origin["x"], origin["y"]))
     lines.append("M100 ({%s:0})" % out)
-    prog = "\n".join(lines) + "\n"
 
-    log("origin %s; %d stops (%d row%s) along %s from %+.3f to %+.3f in; laser out%d; "
-        "single job (%d lines)" % (origin, n, rows, "" if rows == 1 else "s", ax, start,
-                                    end, laser_out, len(lines)))
+    log("origin %s; %d stops (%d row%s) along %s from %+.3f to %+.3f in; %s laser out%d; "
+        "%d job%s (%d lines)%s" % (origin, n, rows, "" if rows == 1 else "s", ax, start,
+                                   end, colour, laser_out, len(segs),
+                                   "" if len(segs) == 1 else "s",
+                                   sum(len(sg[1]) for sg in segs),
+                                   "; head turned by hand" if manual else ""))
     man = {"kind": "sweep", "mode": "job", "units": "inches", "origin": origin,
            "axis": ax, "start": start, "end": end, "step": step,
            "rows": rows, "row_spacing": row_spacing, "row_start": row_start,
-           "laser_output": laser_out, "dwell_off": dwell_off, "dwell_on": dwell_on,
+           "laser_output": laser_out, "laser_color": colour,
+           "dwell_off": dwell_off, "dwell_on": dwell_on,
            "created": time.strftime("%Y-%m-%d %H:%M:%S"), "complete": False,
            "shots": []}
+    if manual:
+        man["manual_pan"] = True
     if extra_manifest:
         man.update(extra_manifest)
     if live is None:
-        live = Live(outdir, n, pan=pan_model)
+        live = Live(outdir, n, pan=pan_model, colour=colour)
     if on_live:
         on_live(live)
 
     TOL = 0.003
     t0 = time.time()
+    t_job = [t0]             # start of the program piece now running
     started = False
     stopped_by = None
 
     def at(s, t):
         return (abs(s["posx"] - t["x"]) <= TOL and abs(s["posy"] - t["y"]) <= TOL and
-                ("b" not in t or abs((s.get("posb") or 0) - t["b"]) <= 0.15))
+                (manual or "b" not in t or abs((s.get("posb") or 0) - t["b"]) <= 0.15))
 
     def where(s):
         return "X%.4f Y%.4f B%.2f" % (s["posx"], s["posy"], s.get("posb") or 0)
@@ -372,7 +408,7 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
             s = fabmo.status()
             if cond(s):
                 return s
-            if s["state"] in ("idle", "stopped", "dead") and time.time() - t0 > 1.0:
+            if s["state"] in ("idle", "stopped", "dead") and time.time() - t_job[0] > 1.0:
                 raise _JobEnded(s["state"])
             if abort is not None and abort.is_set():
                 raise Aborted()
@@ -384,8 +420,6 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
 
     try:
         with camera.LatestFrame(cap) as lf:
-            fabmo.start_gcode(prog)
-            started = True
             missed = []
 
             def miss(k, window, why):
@@ -401,12 +435,32 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
             # resync to where it actually is, and record the skipped ones
             # (2026-11-08: waiting for a passed stop aborted a sweep).
             LOOK = 10
-            i = 0
+            i, i_first, i_end, seg_k = 0, 0, 0, -1
             while i < n:
-                # stop 0 is waited for exactly: before the job moves, the head
-                # sits at its start position, which can coincide with a later
-                # stop (start -0.5 in: stop 5 = the start position)
-                ahead = range(i, min(n, i + LOOK)) if i > 0 else range(0, 1)
+                if i >= i_end:
+                    # next piece of the program (the only one, unless the head
+                    # is turned by hand between headings)
+                    if seg_k >= 0:
+                        fabmo.wait_idle(timeout=60.0)
+                    seg_k += 1
+                    i_first, seg_lines, turn_to = segs[seg_k]
+                    i = i_first
+                    i_end = segs[seg_k + 1][0] if seg_k + 1 < len(segs) else n
+                    if turn_to is not None:
+                        log("  waiting for the head to be turned to %+g deg" % turn_to)
+                        manual_pan(turn_to)
+                        st = fabmo.status()["state"]
+                        if st != "idle":
+                            raise RuntimeError("machine is %s after the head was turned "
+                                               "(must be idle)" % st)
+                    fabmo.start_gcode("\n".join(seg_lines) + "\n")
+                    started = True
+                    t_job[0] = time.time()
+                # the first stop is waited for exactly: before the job moves,
+                # the head sits at its start position, which can coincide with
+                # a later stop (start -0.5 in: stop 5 = the start position)
+                ahead = (range(i, min(i_end, i + LOOK)) if i > i_first
+                         else range(i_first, i_first + 1))
                 ta = time.time()
                 s = wait_for(lambda s: s.get(out) == 0 and any(at(s, targets[j]) for j in ahead),
                              "stop %d (X%.4f Y%.4f)" % (i, targets[i]["x"], targets[i]["y"]), 30.0)
@@ -428,7 +482,8 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                     i += 1
                     continue
                 pose = {"x": s["posx"], "y": s["posy"], "z": s["posz"],
-                        "a": s.get("posa"), "b": s.get("posb")}
+                        "a": s.get("posa"),
+                        "b": t.get("b", float(head_heading)) if manual else s.get("posb")}
                 # --- laser-on window: wait for it, or for the head to leave
                 try:
                     s = wait_for(lambda s: (at(s, t) and s.get(out) == 1) or not at(s, t),
@@ -541,20 +596,29 @@ def load_cal():
             "m": np.array(las["plane_normal_cam"]), "c": float(las["plane_offset_mm"])}
 
 
-def triangulate_shot(off, on, cal, dpose_mm, signal="rg", R_cm=None):
+def laser_colour():
+    """The laser_color setting ("red" / "blue")."""
+    import scan_settings
+    return scan_settings.load()["laser_color"]
+
+
+def triangulate_shot(off, on, cal, dpose_mm, signal=None, R_cm=None, colour=None):
     """-> (N, 4) [x, y, z, signal], mm, machine axes.
+    colour: laser colour (default cal["colour"], else red).
     R_cm: camera -> machine rotation of this shot (default: the reference
     heading's, mount.json); dpose_mm is then the full offset (pan.Pan
     .shot_transform gives both for a turned head)."""
     # low detection thresholds: the colour + run filters below remove what
     # they let through, and dim line on glossy black plastic needs them
     # (min 12 / snr 5 lost the far side of a black block's top, 2026-11-08)
+    colour = colour or cal.get("colour") or "red"
+    signal = signal or stripe.default_signal(colour)
     pts = stripe.extract(off, on, orientation="horizontal", signal=signal,
-                         min_signal=6.0, snr=3.5)
+                         min_signal=6.0, snr=3.5, colour=colour)
     pts = stripe.clean(pts, orientation="horizontal")
     # colour test rejects auto-exposure clutter, so the brightness cut can be
     # low enough to keep dim line on dark parts (black plastic)
-    pts = stripe.drop_off_colour_runs(pts, off, on, orientation="horizontal")
+    pts = stripe.drop_off_colour_runs(pts, off, on, orientation="horizontal", colour=colour)
     pts = stripe.drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)
     if len(pts) == 0:
         return np.zeros((0, 4))
@@ -709,15 +773,35 @@ def register_headings(P, hsid, shots, heading_of_shot, log=print):
     return np.vstack(out), report
 
 
-def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None):
+def _tri_pair(args):
+    """Pool worker: one laser off/on pair -> (index, (N, 4))."""
+    i, off_path, on_path, dp, signal, colour = args
+    if "cal" not in _POOL_CAL:
+        _POOL_CAL["cal"] = load_cal()
+        cv2.setNumThreads(1)
+    off, on = cv2.imread(off_path), cv2.imread(on_path)
+    if off is None or on is None:
+        return i, np.zeros((0, 4))
+    return i, triangulate_shot(off, on, _POOL_CAL["cal"], dp, signal, colour=colour)
+
+
+_POOL_CAL = {}
+
+
+def process_dir(capdir, signal=None, log=print, progress=None, precomputed=None,
+                patch_precomputed=None):
     """Triangulate a sweep capture directory. Returns the stats dict (also
     written to scan.json).
 
     precomputed: Live.raw from the capture — shots already triangulated
     during the scan are reused instead of being recomputed."""
-    cal = load_cal()
     with open(os.path.join(capdir, "manifest.json")) as fh:
         man = json.load(fh)
+    # captures from before the blue laser (Nov 2026) carry no colour: red
+    colour = man.get("laser_color") or "red"
+    cal = dict(load_cal(), colour=colour)
+    auto_signal = stripe.default_signal(colour)      # what the live preview used
+    signal = signal or auto_signal
     shots = man["shots"]
     if not shots:
         raise RuntimeError("no shots in %s" % capdir)
@@ -736,7 +820,8 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
         frame_step = float(np.median(np.abs(np.diff(sp)))) if len(sp) > 1 else 0.01
         want = float(man.get("line_step_in", 0.02))
         every = max(1, int(round(want / max(frame_step, 1e-6))))
-        Ps, used = continuous.triangulate_frames(capdir, shots, every, progress)
+        Ps, used = continuous.triangulate_frames(capdir, shots, every, progress,
+                                                 colour=colour)
         allP = Ps
         shot_ids = [np.full(len(P_), i) for P_, i in zip(Ps, used)]
         man["step"] = frame_step * every          # for the neighbour-support filter
@@ -748,7 +833,7 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
         shots_iter = shots
     for i, s in enumerate(shots_iter):
         pre = (precomputed or {}).get(s["img_off"])
-        if pre is not None and signal == "rg" and np.allclose(pre[0], p0):
+        if pre is not None and signal == auto_signal and np.allclose(pre[0], p0):
             allP.append(pre[1])
             reused += 1
         else:
@@ -777,16 +862,33 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
             log("patch %s: no manifest, skipped" % pdir)
             continue
         n_before = len(allP)
+        pre = (patch_precomputed or {}).get(pdir) or {}
+        todo, reused_p = [], 0
         for ps in pm.get("shots", []):
-            off = cv2.imread(os.path.join(pd, ps["img_off"]))
-            on = cv2.imread(os.path.join(pd, ps["img_on"]))
-            if off is None or on is None:
-                continue
-            dp = (np.array([ps["pose"][a] for a in AXES]) - p0) * IN_TO_MM
-            allP.append(triangulate_shot(off, on, cal, dp, signal))
-            shot_ids.append(np.full(len(allP[-1]), next_id))
-            next_id += 1
-        log("patch %s: %d shots merged" % (pdir, len(allP) - n_before))
+            r = pre.get(ps["img_off"])
+            if r is not None and signal == auto_signal:
+                # live preview of the patch capture: points relative to the
+                # patch's first shot -> shift to this scan's first shot
+                P4 = r[1].copy()
+                P4[:, :3] += (np.array(r[0]) - p0) * IN_TO_MM
+                allP.append(P4)
+                shot_ids.append(np.full(len(P4), next_id))
+                next_id += 1
+                reused_p += 1
+            else:
+                dp = (np.array([ps["pose"][a] for a in AXES]) - p0) * IN_TO_MM
+                todo.append((len(todo), os.path.join(pd, ps["img_off"]),
+                             os.path.join(pd, ps["img_on"]), dp, signal, colour))
+        if todo:
+            from multiprocessing import Pool
+            with Pool(4) as pool:
+                res = dict(pool.imap_unordered(_tri_pair, todo, chunksize=2))
+            for k in range(len(todo)):
+                allP.append(res[k])
+                shot_ids.append(np.full(len(res[k]), next_id))
+                next_id += 1
+        log("patch %s: %d shots merged (%d reused from the capture)"
+            % (pdir, len(allP) - n_before, reused_p))
     P = np.vstack(allP)
     sid = np.concatenate(shot_ids)
     rows_n = int(man.get("rows", 1) or 1)
@@ -841,6 +943,7 @@ def process_dir(capdir, signal="rg", log=print, progress=None, precomputed=None)
     P[:, 2] -= P[:, 0] * tab_co[0] + P[:, 1] * tab_co[1] + tab_co[2]   # level to the table
     stats = {
         "n_shots": len(shots), "n_points": int(len(P)), "signal": signal,
+        "laser_color": colour,
         "table": {"rms_mm": round(tab_rms, 3),
                   "tilt_x_deg": round(float(np.degrees(np.arctan(tab_co[0]))), 3),
                   "tilt_y_deg": round(float(np.degrees(np.arctan(tab_co[1]))), 3)},
@@ -988,8 +1091,8 @@ if __name__ == "__main__":
     c.set_defaults(fn=capture)
     p = sub.add_parser("process")
     p.add_argument("capdir")
-    p.add_argument("--signal", default="rg", choices=("r", "rg"),
-                   help="stripe signal (see stripe.extract); rg copes with clipped red")
+    p.add_argument("--signal", default=None, choices=("r", "rg"),
+                   help="stripe signal (see stripe.extract); default by laser colour")
     p.set_defaults(fn=process)
     t = sub.add_parser("stl", help="export the surface as a closed STL solid")
     t.add_argument("capdir")

@@ -164,7 +164,8 @@
           <span class="param"><label>Name</label><input type="text" class="name" id="sw-name" placeholder="(auto)"></span>
         </div>
         <div class="params">
-          <span class="param"><label>Headings (B°)</label><input type="text" class="wide" id="sw-headings" value="0" title="e.g. 0  or  -90, 0, 90 — more than 0 makes a multi-heading scan"></span>
+          <span class="param"><label>Headings (°)</label><input type="text" class="wide" id="sw-headings" value="0" title="e.g. 0  or  -90, 0, 90 — more than 0 makes a multi-heading scan"></span>
+          <span class="param manual-only" style="display:none"><label>Head is at (°)</label><input type="number" step="45" id="sw-headat" value="0" title="The detent the camera head is in now. Kept up to date by scans; correct it here if the head was turned by hand outside a scan."></span>
           <span class="param multi-only" style="display:none"><label>Length</label><input type="number" step="0.5" min="0.5" id="sw-length" value="6.0"></span>
         </div>
         <div class="params single-only">
@@ -218,7 +219,7 @@
           </div>
           <div class="checkrow">
             <label><input type="checkbox" id="s-use_laser"> laser</label>
-            <label><input type="checkbox" id="s-use_pan"> pan (B axis)</label>
+            <label><input type="checkbox" id="s-use_pan"> motorised pan (B axis) — off: head turned by hand</label>
             <label><input type="checkbox" id="s-pan_prompt"> prompt for manual pan</label>
           </div>
           <div class="btnrow">

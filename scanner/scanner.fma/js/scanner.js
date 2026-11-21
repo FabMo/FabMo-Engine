@@ -217,6 +217,18 @@ $("btn-confirm").onclick = function () { api("POST", "/confirm"); };
 
 var SEC_PER_STOP = 1.7;   // single-job sweep, 0.8 s + 0.6 s dwells (measured 1.8 s at 0.9 + 0.7)
 
+var panInfo = { manual: false, heading: 0, index_deg: 45 };   // from /status
+
+$("sw-headat").onchange = function () {
+    var v = parseFloat($("sw-headat").value);
+    if (isNaN(v)) { return; }
+    api("POST", "/settings", { pan_heading_deg: v }).then(function (s) {
+        settings = s;
+        panInfo.heading = v;
+        sweepEstimate();
+    });
+};
+
 function parseHeadings() {
     var v = $("sw-headings").value.split(/[ ,;]+/).filter(function (x) { return x !== ""; })
         .map(parseFloat);
@@ -283,7 +295,16 @@ function sweepEstimate() {
     }
     if (multi) {
         var hs = p.headings;
-        if (hs.some(isNaN) || hs.some(function (h) { return Math.abs(h) > 95; })) {
+        if (panInfo.manual) {
+            var ix = panInfo.index_deg || 45;
+            if (hs.some(isNaN) || hs.some(function (h) {
+                return Math.abs(h) > 180 || Math.abs(h / ix - Math.round(h / ix)) > 1e-6;
+            })) {
+                $("sw-estimate").textContent = "Headings must be multiples of " + ix +
+                    "° within ±180° (the head's detents).";
+                return null;
+            }
+        } else if (hs.some(isNaN) || hs.some(function (h) { return Math.abs(h) > 95; })) {
             $("sw-estimate").textContent = "Headings must be numbers within ±95°.";
             return null;
         }
@@ -293,6 +314,18 @@ function sweepEstimate() {
         }
         var nm = (Math.round(p.length / p.step) + 1) * hs.length;
         var tm = nm * SEC_PER_STOP + hs.length * 6;
+        if (panInfo.manual) {
+            var turns = hs.filter(function (h) { return Math.abs(h - panInfo.heading) > 0.01; }).length;
+            $("sw-estimate").textContent = "Multi-heading scan at " +
+                hs.slice().sort(function (a, b) { return a - b; }).join("°, ") + "°: at each heading the " +
+                "head sweeps " + p.length + " in across the spot where the laser line is now, " +
+                "moving diagonally as needed: " + nm + " stops, ~" + (tm / 60).toFixed(1) +
+                " min of motion, relative to the current position. The machine stops " + turns +
+                " time" + (turns === 1 ? "" : "s") + " and asks you to turn the head by hand " +
+                "(it is at " + panInfo.heading + "° now), then goes on when you press Done. " +
+                "Head returns to its start X/Y; laser is switched off at the end.";
+            return p;
+        }
         $("sw-estimate").textContent = "Multi-heading scan at B " +
             hs.slice().sort(function (a, b) { return a - b; }).join("°, ") + "°: at each heading the " +
             "head sweeps " + p.length + " in across the spot where the laser line is now, " +
@@ -666,6 +699,16 @@ function poll() {
         } else if (st.message) {
             $("op-status").textContent = st.message;
             $("op-status").className = "statusline";
+        }
+
+        if (st.pan) {
+            var changed = st.pan.manual !== panInfo.manual || st.pan.heading !== panInfo.heading;
+            panInfo = st.pan;
+            Array.prototype.forEach.call(document.querySelectorAll(".manual-only"), function (el) {
+                el.style.display = panInfo.manual ? "" : "none";
+            });
+            if (document.activeElement !== $("sw-headat")) { $("sw-headat").value = panInfo.heading; }
+            if (changed) { sweepEstimate(); }
         }
 
         var cb = $("confirmbar");

@@ -56,9 +56,16 @@ DEFAULTS = {
 
     # --- hardware ---
     "laser_output": 5,          # M100 ({out<N>:...}); 1=spindle, 4=arm motion here
+    "laser_color": "red",       # "red" or "blue" (450 nm): which channel carries the line
     "use_laser": True,          # False: capture laser-off frames only
-    "use_pan": False,           # False until the B axis is wired: skip B moves
-    "pan_prompt": False,        # True: pause for manual head rotation per heading
+    # Pan head. use_pan True: motorised B axis (1 unit = 1 deg). False: the
+    # head is turned BY HAND between detents pan_index_deg apart — line sweeps
+    # then stop and ask before each heading, and pan_heading_deg tracks the
+    # detent the head is in now (set it if the head was turned outside a scan).
+    "use_pan": False,
+    "pan_prompt": False,        # orbit prototype: pause for manual rotation per heading
+    "pan_index_deg": 45.0,
+    "pan_heading_deg": 0.0,
 }
 
 

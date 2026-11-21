@@ -1,7 +1,8 @@
 """Quick check of the camera's orientation vs the machine axes (mount.json).
 
-The board lies still; the head (at B 0, reached moving +B like the pan
-calibration) moves by known amounts. For a fixed camera orientation R_mc
+The board lies still; the head (at heading 0: B 0 reached moving +B like the
+pan calibration, or the 0 detent of a hand-indexed head) moves by known
+amounts. For a fixed camera orientation R_mc
 (machine -> camera) the board's origin in the camera frame moves by
     t_i - t_0 = -R_mc . dm_i
 so the measured shifts for several non-parallel moves give R_mc directly
@@ -41,7 +42,9 @@ def main():
     import camera
     import fabmo_client as fabmo
     import pan
+    import scan_settings
 
+    st = scan_settings.load()
     ap = argparse.ArgumentParser()
     ap.add_argument("--square", default="7.80x7.80")
     ap.add_argument("--write", action="store_true")
@@ -55,11 +58,15 @@ def main():
     if fabmo.status()["state"] != "idle":
         raise SystemExit("machine must be idle")
     o = fabmo.pose()
-    if abs(o["b"] or 0) > 1:
-        raise SystemExit("start at B ~ 0 (B = %s)" % o["b"])
     fabmo.check_envelope([(o["x"] + dx, o["y"] + dy) for dx, dy, _ in MOVES])
-    for bb in pan.approach_moves(o["b"] or 0.0, 0.0, fabmo.B_LIMIT):   # +B approach
-        fabmo.goto(b=bb)
+    if st["use_pan"]:
+        if abs(o["b"] or 0) > 1:
+            raise SystemExit("start at B ~ 0 (B = %s)" % o["b"])
+        for bb in pan.approach_moves(o["b"] or 0.0, 0.0, fabmo.B_LIMIT):   # +B approach
+            fabmo.goto(b=bb)
+    elif abs(float(st["pan_heading_deg"])) > 0.01:
+        raise SystemExit("the head is recorded at %+g deg - turn it to the 0 detent and set "
+                         "pan_heading_deg to 0 first" % st["pan_heading_deg"])
     cap = camera.open_camera()
     time.sleep(1.0)
     ts, dms, ref = [], [], None

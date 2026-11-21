@@ -50,6 +50,21 @@ class Pan:
         else:                                   # older pan.json: theta = B - b_ref
             self.tb = np.array([-95.0, 95.0])
             self.tt = self.tb - p.get("b_ref_deg", 0.0)
+        # hand-indexed head: measured pose of each calibrated detent
+        self.detents = {float(d["b"]): (np.array(d["R_cam_to_machine"], float),
+                                        np.array(d["camera_mm"], float))
+                        for d in p.get("detents", [])}
+
+    def pose(self, b):
+        """(R_cm, C): camera -> machine rotation and camera centre (mm,
+        relative to the reference heading's) at heading b — the measured
+        detent if b is one, else the axis model."""
+        b = float(b)
+        for bd, rc in self.detents.items():
+            if abs((bd - b + 180.0) % 360.0 - 180.0) < 0.01:
+                return rc
+        Ra = rot(self.axis, self.turn(b))
+        return Ra @ self.R_cm0, Ra @ self.v - self.v
 
     @staticmethod
     def available(path=None):
@@ -73,17 +88,14 @@ class Pan:
 
     def R_cm(self, b):
         """camera -> machine rotation at heading B."""
-        return rot(self.axis, self.turn(b)) @ self.R_cm0
+        return self.pose(b)[0]
 
     def shot_transform(self, pose, pose0):
         """(R, o): machine P = X_cam @ R.T + o (mm) for a shot at `pose`
         (dict, inches/deg), relative to the reference pose0."""
-        th = self.turn(pose.get("b") or 0.0)
-        Ra = rot(self.axis, th)
-        R = Ra @ self.R_cm0
+        R, C = self.pose(pose.get("b") or 0.0)
         dp = np.array([pose[k] - pose0[k] for k in "xyz"]) * 25.4
-        o = Ra @ self.v - self.v + dp
-        return R, o
+        return R, C + dp
 
     def sweep_dir(self, b, laser_normal_cam):
         """Unit XY direction the head must move to walk the laser line
@@ -97,10 +109,7 @@ class Pan:
         machine XY mm relative to the gantry (+ the same constant for every
         heading). table_below_cam_mm: table height below the camera centre
         at the reference heading."""
-        th = self.turn(b)
-        Ra = rot(self.axis, th)
-        C = Ra @ self.v - self.v                       # camera centre (ref heading = 0)
-        R = Ra @ self.R_cm0
+        R, C = self.pose(b)                            # camera centre (ref heading = 0)
         o = R @ np.array([0, 0, 1.0])                  # optical axis
         zt = -table_below_cam_mm
         G = C + o * (zt - C[2]) / o[2]                 # optical axis hits the table

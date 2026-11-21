@@ -19,7 +19,9 @@ API (all JSON; CORS open so the dashboard app can call cross-port):
   POST /process           {session} -> re-triangulate a sweep session
   GET  /plan              last generated orbit plan
   POST /abort             stop the running operation
-  POST /confirm           acknowledge a manual-pan prompt
+  POST /confirm           acknowledge a manual-pan prompt ("turn the head to N deg");
+                          on a hand-indexed head (use_pan false) line sweeps ask
+                          before each heading, /status has pan.heading
   GET  /sessions          list captured scan sessions (+ sweep stats)
   GET  /artifact/<path>   files under data/ (reference/, locate/, scans/)
   GET  /export/stl?session=<name>[&crop=part|all][&base=2]
@@ -162,6 +164,25 @@ def _session_name(body, prefix):
     return re.sub(r"[^A-Za-z0-9_.-]", "_", session)
 
 
+def _norm_heading(h):
+    """Heading in (-180, 180]."""
+    h = (float(h) + 180.0) % 360.0 - 180.0
+    return 180.0 if h == -180.0 else h
+
+
+def turn_head(heading):
+    """Hand-indexed head: ask the operator to turn it to `heading`, wait for
+    Done (or abort), and remember where it now is."""
+    cur = float(scan_settings.load()["pan_heading_deg"])
+    prev = get_state()["phase"]
+    set_state(phase="waiting — turn the camera head to %+g°" % heading)
+    wait_confirm("Turn the camera head from %+g° to %+g° (machine is stopped, laser off). "
+                 "Then press Done — the machine starts moving again right away, so stand "
+                 "clear first." % (cur, heading))
+    scan_settings.update({"pan_heading_deg": heading})
+    set_state(phase=prev)
+
+
 def job_sweep(body):
     s = scan_settings.load()
     try:
@@ -179,13 +200,24 @@ def job_sweep(body):
     if os.path.exists(outdir):
         raise RuntimeError("session %s already exists" % session)
     mode = str(body.get("mode", "stops"))
+    manual = not s["use_pan"]               # head turned by hand between detents
+    head_at = float(s["pan_heading_deg"]) if manual else 0.0
+    multi = len(headings) > 1 or any(abs(h) > 0.05 for h in headings)
+    if manual:
+        idx = float(s["pan_index_deg"])
+        headings = sorted(set(_norm_heading(h) for h in headings))
+        if any(abs(h / idx - round(h / idx)) > 1e-6 for h in headings):
+            raise RuntimeError("the head indexes in %g° steps — headings must be multiples "
+                               "of that" % idx)
+        if not multi and abs(head_at) > 0.01:
+            turn_head(0.0)                  # plain sweeps are made at the reference detent
+            head_at = 0.0
     if mode == "continuous":
         return job_continuous(body, s, axis, start, end, session, outdir)
-    multi = len(headings) > 1 or any(abs(h) > 0.05 for h in headings)
     if multi:
         import pan as panmod
         if not panmod.Pan.available():
-            raise RuntimeError("no pan.json — run the B-axis calibration (pan_calib.py) first")
+            raise RuntimeError("no pan.json — run the pan calibration (pan_calib.py) first")
         if rows > 1:
             raise RuntimeError("multi-heading scans use one sweep per heading (rows = 1)")
         if length <= 0:
@@ -226,10 +258,14 @@ def job_sweep(body):
             def targets(origin):
                 h = float(s["table_below_cam_mm"]) + \
                     (origin["z"] - float(s["table_ref_z_in"])) * 25.4
+                if manual:
+                    return sweep.plan_headings(origin, headings, length, step, pan_model, h,
+                                               b_limit=180.0, ref_heading=head_at)
                 return sweep.plan_headings(origin, headings, length, step, pan_model, h)
             man = sweep.run_capture_job(
                 fabmo, _cap[0], outdir, "y", 0, 1, step, int(s["laser_output"]),
                 progress_cb, ABORT, on_live=on_live, targets=targets, pan_model=pan_model,
+                manual_pan=turn_head if manual else None, head_heading=head_at,
                 extra_manifest={"kind": "multi", "headings": sorted(headings),
                                 "length": length, "rows": 1, "axis": "multi"})
         else:
@@ -237,6 +273,13 @@ def job_sweep(body):
                                         int(s["laser_output"]), progress_cb, ABORT,
                                         on_live=on_live, rows=rows, row_spacing=row_spacing,
                                         row_start=row_start)
+            if manual:
+                # no B motor: the reported B is meaningless, the detent is known
+                man["manual_pan"] = True
+                for sh in man["shots"]:
+                    sh["pose"]["b"] = head_at
+                with open(os.path.join(outdir, "manifest.json"), "w") as fh:
+                    json.dump(man, fh, indent=2)
     if not man["complete"]:
         return {"message": "sweep stopped early", "session": session}
     set_state(phase="triangulating", progress={"done": 0, "total": len(man["shots"])})
@@ -310,7 +353,12 @@ def job_fillgaps(body):
     # the patch must be shot at the scan's own height and heading
     cur = fabmo.pose()
     ref = man["shots"][0]["pose"]
-    if abs((cur.get("b") or 0) - (ref.get("b") or 0)) > 0.2:
+    if not s["use_pan"]:                    # hand-indexed head: go by the tracked detent
+        head_at = float(s["pan_heading_deg"])
+        want = float(ref.get("b") or 0) if man.get("manual_pan") else 0.0
+        if abs(head_at - want) > 0.01:
+            turn_head(want)
+    elif abs((cur.get("b") or 0) - (ref.get("b") or 0)) > 0.2:
         raise RuntimeError("B is %.2f, the scan was made at B %.2f — turn back first"
                            % (cur.get("b") or 0, ref.get("b") or 0))
     if abs(cur["z"] - ref["z"]) > 0.001:
@@ -319,6 +367,7 @@ def job_fillgaps(body):
     pdir = "patch_%d" % (n_p + 1)
     set_state(phase="rescanning %d gap ranges (%d stops)" % (len(ranges), len(stops)),
               progress={"done": 0, "total": len(stops)})
+    patch_live = {}
     with _cap_lock:
         if _cap[0] is None:
             _cap[0] = camera.open_camera()
@@ -326,13 +375,16 @@ def job_fillgaps(body):
         sweep.run_capture_job(fabmo, _cap[0], os.path.join(capdir, pdir), "y", 0, 1, step,
                               int(s["laser_output"]), progress_cb, ABORT,
                               targets=lambda origin: stops,
+                              on_live=lambda lv: patch_live.update(live=lv),
                               extra_manifest={"kind": "patch", "ranges_mm": ranges,
                                               "for_session": session})
     man.setdefault("patches", []).append(pdir)
     with open(os.path.join(capdir, "manifest.json"), "w") as fh:
         json.dump(man, fh)
     set_state(phase="re-processing " + session, progress={"done": 0, "total": 0})
-    stats = sweep.process_dir(capdir, progress=progress_cb)
+    lv = patch_live.get("live")
+    stats = sweep.process_dir(capdir, progress=progress_cb,
+                              patch_precomputed={pdir: lv.raw} if lv is not None else None)
     g2, _, _ = gaps._grid(capdir)
     holes_after = int(gaps.hole_mask(g2).sum())
     stats["gapfill"] = {"holes_before": holes_before, "holes_after": holes_after,
@@ -412,7 +464,7 @@ class Handler(BaseHTTPRequestHandler):
         pass  # quiet; errors surface via API
 
     def _send(self, code, payload, ctype="application/json", extra=None):
-        body = json.dumps(payload).encode() if ctype == "application/json" else payload
+        body = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         for k, v in (extra or {}).items():
@@ -449,6 +501,10 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 st["machine"] = {"state": "unreachable", "error": str(e)}
             st["have_reference"] = table_map.have_reference()
+            ss = scan_settings.load()
+            st["pan"] = {"manual": not ss["use_pan"], "heading": ss["pan_heading_deg"],
+                         "index_deg": ss["pan_index_deg"]}
+            st["laser_color"] = ss["laser_color"]
             if LIVE["live"] is not None:
                 st["live"] = dict(LIVE["live"].info(), session=LIVE["session"])
             st["have_mount_cal"] = os.path.exists(
