@@ -1,0 +1,9 @@
+{
+    "name": "Training",
+    "main": "./index.html",
+    "icon": "icon.png",
+    "icon_color": "#b07a00",
+    "id": "fabmo-training",
+    "version": "0.1.0",
+    "description": "Guided hands-on lessons: practice FabMo's controls against a simulated machine -- the real tool never moves."
+}
