@@ -105,6 +105,7 @@ def open_raw(dev=None, fps=60):
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, camera.HEIGHT)
     cap.set(cv2.CAP_PROP_FPS, fps)
     cap.set(cv2.CAP_PROP_CONVERT_RGB, 0)
+    camera.apply_exposure(dev, cap)         # only takes effect once streaming
     return cap
 
 
@@ -492,6 +493,8 @@ if __name__ == "__main__":
     st = scan_settings.load()
     here = os.path.dirname(os.path.abspath(__file__))
     outdir = os.path.join(here, "data", "scans", a.name)
+    import camera
+    camera.EXPOSURE_KIND[0] = "scan"
     cap = open_raw()
     try:
         man = run_continuous(fabmo, cap, outdir, a.axis, a.start, a.end,

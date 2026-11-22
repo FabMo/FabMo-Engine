@@ -420,6 +420,9 @@ NO_MOTION = {"process"}
 
 def run_job(op, body):
     try:
+        # laser jobs run at the scan exposure, chessboard/photo jobs at the long one
+        if op != "process":
+            camera.set_exposure("scan" if op in ("sweep", "fillgaps") else "calib")
         result = JOBS[op](body)
         set_state(state="idle", op=None, phase="", message=result.get("message", "done"),
                   error=None)

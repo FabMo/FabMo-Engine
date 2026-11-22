@@ -572,6 +572,7 @@ def capture(args):
     import fabmo_client as fabmo
     import scan_settings
 
+    camera.EXPOSURE_KIND[0] = "scan"
     cap = camera.open_camera()
     time.sleep(1.0)
     outdir = os.path.join("captures", args.name)

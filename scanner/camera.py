@@ -55,6 +55,42 @@ def _find_device_v4l2():
     return None
 
 
+EXPOSURE_KIND = ["calib"]      # which exposure setting lock_controls applies
+
+
+def exposure_value(kind=None):
+    import scan_settings
+    st = scan_settings.load()
+    return int(st.get("camera_exposure_%s" % (kind or EXPOSURE_KIND[0])) or 300)
+
+
+def set_exposure(kind, dev=None, settle=1.2):
+    """Switch between the "scan" and "calib" exposure settings; it sticks
+    across reopens (lock_controls) until switched back. Returns the value."""
+    EXPOSURE_KIND[0] = kind
+    dev = dev or find_device()
+    val = exposure_value(kind)
+    if dev and str(dev).startswith("/dev/"):
+        apply_exposure(dev)
+        time.sleep(settle)                  # a few frames at the old exposure
+    return val
+
+
+def apply_exposure(dev, cap=None):
+    """Write the current exposure setting to the camera. The EMEET only
+    honours it while it is STREAMING: a value written before the first frame
+    reads back fine but the stream starts at its default (found 2026-11-22,
+    a whole scan ran at 300 with the control saying 75). So opens call this
+    after a first grab (pass cap), and the value is nudged so the write is
+    never a no-op."""
+    if cap is not None:
+        cap.grab()
+    val = exposure_value()
+    for v in (val + 1, val):
+        subprocess.run(["v4l2-ctl", "-d", dev, "--set-ctrl",
+                        "exposure_time_absolute=%d" % v], capture_output=True)
+
+
 def lock_controls(dev):
     """Best-effort lock of autofocus / auto-exposure / auto-WB, then the
     calibrated focus and the scanning brightness from the scanner settings
@@ -84,6 +120,11 @@ def lock_controls(dev):
         settings.append(("focus_absolute", str(int(focus))))
     if bright is not None:
         settings.append(("brightness", str(int(bright))))
+    try:
+        settings.append(("exposure_time_absolute", str(exposure_value())))
+        settings.append(("exposure_absolute", str(exposure_value())))
+    except Exception:
+        pass
     for name, val in settings:
         subprocess.run(
             ["v4l2-ctl", "-d", dev, "--set-ctrl", "%s=%s" % (name, val)],
@@ -111,6 +152,7 @@ def open_camera(dev=None):
         cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, WIDTH)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, HEIGHT)
+        apply_exposure(dev, cap)
     else:
         # video.fma's camera-server usually owns the device; read its
         # MJPEG stream instead (same frames the dashboard sees).

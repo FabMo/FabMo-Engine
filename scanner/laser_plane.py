@@ -76,7 +76,8 @@ def capture(args):
     def laser(on):
         fabmo.set_output(out_n, 1 if on else 0)       # verified
 
-    cap = camera.open_camera()
+    dev = camera.find_device()
+    cap = camera.open_camera(dev)
     subprocess.run(["v4l2-ctl", "-d", "/dev/video0", "--set-ctrl",
                     "brightness=%d" % args.brightness], capture_output=True)
     time.sleep(1.0)
@@ -89,12 +90,17 @@ def capture(args):
             fabmo.goto(z=origin["z"] + zo)
             time.sleep(0.5)
             pose = fabmo.pose()
+            camera.set_exposure("calib", dev)
+            board = camera.grab(cap, flush=10)      # bright frame for the chessboard
+            exp = camera.set_exposure("scan", dev)
             off = camera.grab(cap, flush=10)
             laser(True)
             time.sleep(0.3)
             on = camera.grab(cap, flush=10)
             laser(False)
-            rec = {"pose": pose, "img_off": "off_%02d.jpg" % i, "img_on": "on_%02d.jpg" % i}
+            rec = {"pose": pose, "img_off": "off_%02d.jpg" % i, "img_on": "on_%02d.jpg" % i,
+                   "img_board": "board_%02d.jpg" % i, "exposure": exp}
+            cv2.imwrite(os.path.join(outdir, rec["img_board"]), board)
             cv2.imwrite(os.path.join(outdir, rec["img_off"]), off)
             cv2.imwrite(os.path.join(outdir, rec["img_on"]), on)
             pts, ori = stripe.extract(off, on, return_orientation=True, colour=colour)
@@ -111,6 +117,7 @@ def capture(args):
             laser(False)
             fabmo.goto(z=origin["z"])
         finally:
+            camera.set_exposure("calib", dev, settle=0)
             with open(os.path.join(outdir, "manifest.json"), "w") as fh:
                 json.dump({"units": "inches", "origin": origin, "laser_output": out_n,
                            "laser_color": colour, "shots": shots}, fh, indent=2)
@@ -159,7 +166,9 @@ def fit_board(args):
     for i, sh in enumerate(man["shots"]):
         off = cv2.imread(os.path.join(args.capdir, sh["img_off"]))
         on = cv2.imread(os.path.join(args.capdir, sh["img_on"]))
-        bp = board_pose(off, K, D, cam)
+        # captures since 2026-11-22 carry a separate long-exposure board photo
+        bimg = cv2.imread(os.path.join(args.capdir, sh["img_board"])) if sh.get("img_board") else off
+        bp = board_pose(bimg, K, D, cam)
         if bp is None:
             print("  shot %d: board not found — skipped" % i)
             continue

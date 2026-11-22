@@ -53,6 +53,11 @@ DEFAULTS = {
     # --- camera (set on every open; the device forgets them on replug) ---
     "camera_focus": 470,        # focus_absolute the calibration (camera.json) was made at
     "camera_brightness": 90,    # post-AE brightness: headroom for the laser in red
+    # exposure_time_absolute (manual mode). The stripe centre moves by a few
+    # tenths of a pixel with exposure, so the laser plane must be calibrated at
+    # the scan exposure. Chessboard / table-photo work needs the long one.
+    "camera_exposure_scan": 300,    # laser frames: sweeps, laser_plane (blue head: 75)
+    "camera_exposure_calib": 300,   # chessboard and reference photos
 
     # --- hardware ---
     "laser_output": 5,          # M100 ({out<N>:...}); 1=spindle, 4=arm motion here
