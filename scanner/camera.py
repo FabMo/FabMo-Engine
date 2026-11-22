@@ -76,6 +76,12 @@ def set_exposure(kind, dev=None, settle=1.2):
     return val
 
 
+def write_exposure(dev, val):
+    """Raw exposure write on a streaming camera (takes effect in ~0.3 s)."""
+    subprocess.run(["v4l2-ctl", "-d", dev, "--set-ctrl",
+                    "exposure_time_absolute=%d" % int(val)], capture_output=True)
+
+
 def apply_exposure(dev, cap=None):
     """Write the current exposure setting to the camera. The EMEET only
     honours it while it is STREAMING: a value written before the first frame

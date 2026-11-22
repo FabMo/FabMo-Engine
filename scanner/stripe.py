@@ -310,3 +310,34 @@ def _extract_on_only_full(img_on, min_signal=6.0, snr=3.5, half_window=12, win=3
     pts = pts[ok[lab]]
     return drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)
 
+
+
+def merge_exposures(pts_long, pts_short, on_long, colour="red", clip=250, half=25,
+                    min_clipped=2):
+    """Combine the stripe found at the scan exposure with the one found in a
+    second, short-exposure laser frame (horizontal stripe, [row, col, sig]).
+    Per image column: the long-exposure point, unless the line is clipped
+    there (>= min_clipped saturated pixels within +-half rows of it) and the
+    short frame has a point — then that one. Columns only one frame found
+    keep what they have. Returns (points, n_from_short)."""
+    if len(pts_short) == 0:
+        return pts_long, 0
+    cm, _ = channels(colour)
+    h, w = on_long.shape[:2]
+    if len(pts_long) == 0:
+        return pts_short, len(pts_short)
+    r = np.round(pts_long[:, 0]).astype(int)
+    c = pts_long[:, 1].astype(int)
+    rr = np.clip(r[:, None] + np.arange(-half, half + 1)[None, :], 0, h - 1)
+    n_clip = (on_long[rr, c[:, None], cm] >= clip).sum(1)      # saturated px near each point
+    # vectorised lookup of the short frame's point in each long-point column
+    s_idx = np.full(w, -1, dtype=np.int64)
+    s_idx[np.clip(pts_short[:, 1].astype(int), 0, w - 1)] = np.arange(len(pts_short))
+    j = s_idx[c]
+    swap = (j >= 0) & (n_clip >= min_clipped)
+    has_long = np.zeros(w, bool)
+    has_long[c] = True
+    extra = ~has_long[np.clip(pts_short[:, 1].astype(int), 0, w - 1)]
+    out = np.vstack([pts_long[~swap], pts_short[j[swap]], pts_short[extra]])
+    n_short = int(swap.sum() + extra.sum())
+    return out[np.argsort(out[:, 1])], n_short

@@ -146,27 +146,30 @@ class Live:
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
-    def add(self, idx, pose, off, on, rec):
-        self.q.put((idx, pose, off, on, rec))
+    def add(self, idx, pose, off, on, rec, on2=None):
+        self.q.put((idx, pose, off, on, rec, on2))
 
     def _run(self):
         while True:
             item = self.q.get()
             if item is None:
                 return
-            idx, pose, off, on, rec = item
+            idx, pose, off, on, rec, on2 = item
+            hd = dict(on2=on2, ratio2=rec.get("exposure_ratio2"))
             try:
                 cv2.imwrite(os.path.join(self.outdir, rec["img_off"]), off)
                 cv2.imwrite(os.path.join(self.outdir, rec["img_on"]), on)
+                if on2 is not None:
+                    cv2.imwrite(os.path.join(self.outdir, rec["img_on2"]), on2)
                 if self.p0 is None:
                     self.p0 = np.array([pose[a] for a in AXES])
                     self.pose0 = dict(pose)
                 if self.pan is not None:
                     R, dp = self.pan.shot_transform(pose, self.pose0)
-                    P4 = triangulate_shot(off, on, self.cal, dp, self.signal, R_cm=R)
+                    P4 = triangulate_shot(off, on, self.cal, dp, self.signal, R_cm=R, **hd)
                 else:
                     dp = (np.array([pose[a] for a in AXES]) - self.p0) * IN_TO_MM
-                    P4 = triangulate_shot(off, on, self.cal, dp, self.signal)
+                    P4 = triangulate_shot(off, on, self.cal, dp, self.signal, **hd)
                 self.raw[rec["img_off"]] = (tuple(self.p0), P4)
                 P = P4[:, :3]
                 if self.z_ref is None:
@@ -332,6 +335,16 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
     if colour is None:
         colour = laser_colour()
     manual = manual_pan is not None
+    # second, short exposure inside each laser-on window (see scan_settings)
+    import scan_settings
+    _st = scan_settings.load()
+    exp1 = int(_st.get("camera_exposure_scan") or 0)
+    exp2 = int(_st.get("camera_exposure_scan2") or 0)
+    cam_dev = camera.find_device()
+    hdr = bool(exp1 and 0 < exp2 < exp1 and cam_dev)
+    if hdr:
+        dwell_on += 0.6       # switch + ~0.3 s for the new exposure to show
+        dwell_off += 0.2      # ... and for the long one to be back
     head = [0, ["G90", "M100 ({%s:0})" % out], None]
     segs = [head]        # [first stop, program lines, detent to turn to by hand first]
     lines = head[1]
@@ -377,6 +390,7 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
            "rows": rows, "row_spacing": row_spacing, "row_start": row_start,
            "laser_output": laser_out, "laser_color": colour,
            "dwell_off": dwell_off, "dwell_on": dwell_on,
+           "exposure": exp1, "exposure2": exp2 if hdr else 0,
            "created": time.strftime("%Y-%m-%d %H:%M:%S"), "complete": False,
            "shots": []}
     if manual:
@@ -471,7 +485,7 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 t = targets[i]
                 # --- laser-off window at stop i
                 tb = time.time()
-                time.sleep(0.2)                     # settle + camera latency
+                time.sleep(0.4 if hdr else 0.2)     # settle + camera latency
                 off = lf.read()
                 tc = time.time()
                 s = fabmo.status()
@@ -500,6 +514,12 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                 te = time.time()
                 time.sleep(0.15)
                 on = lf.read()
+                on2 = None
+                if hdr:
+                    camera.write_exposure(cam_dev, exp2)
+                    time.sleep(0.4)
+                    on2 = lf.read()
+                    camera.write_exposure(cam_dev, exp1)
                 s = fabmo.status()
                 tf = time.time()
                 if not (at(s, t) and s.get(out) == 1):
@@ -513,8 +533,11 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
                                   "off_grab": round(tc - tb, 3),
                                   "on_detect_to_verify": round(tf - te, 3),
                                   "stop_cycle": round(tf - ta, 3)}}
+                if on2 is not None:
+                    rec["img_on2"] = "on2_%03d.jpg" % i
+                    rec["exposure_ratio2"] = round(exp2 / float(exp1), 4)
                 man["shots"].append(rec)
-                live.add(i, pose, off, on, rec)
+                live.add(i, pose, off, on, rec, on2)
                 if progress:
                     progress(i + 1, n)
                 if i % 10 == 0 or i == n - 1:
@@ -550,6 +573,8 @@ def run_capture_job(fabmo, cap, outdir, axis, start, end, step, laser_out,
             try:
                 fabmo.set_output(laser_out, 0)
             finally:
+                if hdr:
+                    camera.write_exposure(cam_dev, exp1)
                 live.finish()
                 man["duration_s"] = round(time.time() - t0, 1)
                 if stopped_by:
@@ -603,9 +628,24 @@ def laser_colour():
     return scan_settings.load()["laser_color"]
 
 
-def triangulate_shot(off, on, cal, dpose_mm, signal=None, R_cm=None, colour=None):
+def _stripe_points(off, on, signal, colour):
+    pts = stripe.extract(off, on, orientation="horizontal", signal=signal,
+                         min_signal=6.0, snr=3.5, colour=colour)
+    pts = stripe.clean(pts, orientation="horizontal")
+    # colour test rejects auto-exposure clutter, so the brightness cut can be
+    # low enough to keep dim line on dark parts (black plastic)
+    pts = stripe.drop_off_colour_runs(pts, off, on, orientation="horizontal", colour=colour)
+    return stripe.drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)
+
+
+def triangulate_shot(off, on, cal, dpose_mm, signal=None, R_cm=None, colour=None,
+                     on2=None, ratio2=None):
     """-> (N, 4) [x, y, z, signal], mm, machine axes.
     colour: laser colour (default cal["colour"], else red).
+    on2, ratio2: second laser-on frame at a shorter exposure and its exposure
+    ratio to the main one (< 1); used where the main frame's line is clipped
+    (stripe.merge_exposures). Its laser-off reference is the main off frame
+    scaled by the ratio.
     R_cm: camera -> machine rotation of this shot (default: the reference
     heading's, mount.json); dpose_mm is then the full offset (pan.Pan
     .shot_transform gives both for a turned head)."""
@@ -614,13 +654,14 @@ def triangulate_shot(off, on, cal, dpose_mm, signal=None, R_cm=None, colour=None
     # (min 12 / snr 5 lost the far side of a black block's top, 2026-11-08)
     colour = colour or cal.get("colour") or "red"
     signal = signal or stripe.default_signal(colour)
-    pts = stripe.extract(off, on, orientation="horizontal", signal=signal,
-                         min_signal=6.0, snr=3.5, colour=colour)
-    pts = stripe.clean(pts, orientation="horizontal")
-    # colour test rejects auto-exposure clutter, so the brightness cut can be
-    # low enough to keep dim line on dark parts (black plastic)
-    pts = stripe.drop_off_colour_runs(pts, off, on, orientation="horizontal", colour=colour)
-    pts = stripe.drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)
+    pts = _stripe_points(off, on, signal, colour)
+    if on2 is not None:
+        off2 = cv2.convertScaleAbs(off, alpha=float(ratio2 or 0.0))
+        pts2 = _stripe_points(off2, on2, signal, colour)
+        if len(pts2):
+            pts2 = pts2.copy()
+            pts2[:, 2] /= max(float(ratio2 or 1.0), 1e-3)     # comparable signal scale
+        pts, _n = stripe.merge_exposures(pts, pts2, on, colour)
     if len(pts) == 0:
         return np.zeros((0, 4))
     u = cv2.undistortPoints(pts[:, [1, 0]].reshape(-1, 1, 2).astype(np.float64),
@@ -776,14 +817,17 @@ def register_headings(P, hsid, shots, heading_of_shot, log=print):
 
 def _tri_pair(args):
     """Pool worker: one laser off/on pair -> (index, (N, 4))."""
-    i, off_path, on_path, dp, signal, colour = args
+    i, off_path, on_path, dp, signal, colour = args[:6]
+    on2_path, ratio2 = args[6:8] if len(args) > 6 else (None, None)
     if "cal" not in _POOL_CAL:
         _POOL_CAL["cal"] = load_cal()
         cv2.setNumThreads(1)
     off, on = cv2.imread(off_path), cv2.imread(on_path)
     if off is None or on is None:
         return i, np.zeros((0, 4))
-    return i, triangulate_shot(off, on, _POOL_CAL["cal"], dp, signal, colour=colour)
+    on2 = cv2.imread(on2_path) if on2_path else None
+    return i, triangulate_shot(off, on, _POOL_CAL["cal"], dp, signal, colour=colour,
+                               on2=on2, ratio2=ratio2)
 
 
 _POOL_CAL = {}
@@ -840,12 +884,14 @@ def process_dir(capdir, signal=None, log=print, progress=None, precomputed=None,
         else:
             off = cv2.imread(os.path.join(capdir, s["img_off"]))
             on = cv2.imread(os.path.join(capdir, s["img_on"]))
+            on2 = cv2.imread(os.path.join(capdir, s["img_on2"])) if s.get("img_on2") else None
+            hd = dict(on2=on2, ratio2=s.get("exposure_ratio2"))
             if multi:
                 R, dp = pan_model.shot_transform(s["pose"], shots[0]["pose"])
-                allP.append(triangulate_shot(off, on, cal, dp, signal, R_cm=R))
+                allP.append(triangulate_shot(off, on, cal, dp, signal, R_cm=R, **hd))
             else:
                 dp = (np.array([s["pose"][a] for a in AXES]) - p0) * IN_TO_MM
-                allP.append(triangulate_shot(off, on, cal, dp, signal))
+                allP.append(triangulate_shot(off, on, cal, dp, signal, **hd))
         shot_ids.append(np.full(len(allP[-1]), i))
         if progress:
             progress(i + 1, len(shots))
@@ -879,7 +925,9 @@ def process_dir(capdir, signal=None, log=print, progress=None, precomputed=None,
             else:
                 dp = (np.array([ps["pose"][a] for a in AXES]) - p0) * IN_TO_MM
                 todo.append((len(todo), os.path.join(pd, ps["img_off"]),
-                             os.path.join(pd, ps["img_on"]), dp, signal, colour))
+                             os.path.join(pd, ps["img_on"]), dp, signal, colour,
+                             os.path.join(pd, ps["img_on2"]) if ps.get("img_on2") else None,
+                             ps.get("exposure_ratio2")))
         if todo:
             from multiprocessing import Pool
             with Pool(4) as pool:

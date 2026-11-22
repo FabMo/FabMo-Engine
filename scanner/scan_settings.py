@@ -58,6 +58,10 @@ DEFAULTS = {
     # the scan exposure. Chessboard / table-photo work needs the long one.
     "camera_exposure_scan": 300,    # laser frames: sweeps, laser_plane (blue head: 75)
     "camera_exposure_calib": 300,   # chessboard and reference photos
+    # second, short laser exposure per stop (0 = off). Surfaces differ ~40x in
+    # returned light (black plastic vs white PVC); where the line clips at the
+    # scan exposure, the short frame's line is used instead.
+    "camera_exposure_scan2": 0,
 
     # --- hardware ---
     "laser_output": 5,          # M100 ({out<N>:...}); 1=spindle, 4=arm motion here
