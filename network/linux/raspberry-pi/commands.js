@@ -21,7 +21,7 @@ class commands {
         exec(`nmcli connection modify wlan0_ap ipv4.addresses ${ip}/24 ipv4.method manual`, callback);
     }
 
-    // Use this plus systemctl start hostapd to start the AP
+    // Bring up the AP profile (NetworkManager runs the AP; hostapd is not used)
     static addApInterface(callback) {
         exec(`nmcli connection up wlan0_ap`, callback);
     }
@@ -112,10 +112,48 @@ class commands {
     }
 
     // Start AP mode
+    //
+    // NetworkManager owns the AP: the wlan0_ap profile is run by NM through
+    // wpa_supplicant. The standalone hostapd service must NOT be started here;
+    // it attaches to the same interface, and when it later lets go the AP goes
+    // off the air while NM still reports wlan0_ap as connected.
+    //
+    // Order of events:
+    //   1. Stop a stray standalone hostapd if one is running (left by an older
+    //      engine). Stopping it takes the AP down, so the profile is then
+    //      re-activated in step 3 even if NM believes it is active.
+    //   2. Make sure the wlan0_ap interface exists.
+    //   3. If the wlan0_ap profile is already active, leave it alone (an engine
+    //      restart must not bounce a working AP). Otherwise set its SSID and
+    //      bring it up.
+    //   4. Record wifi.enabled and make sure dnsmasq is running (start, not
+    //      restart; stopAP is the only thing here that stops it).
+    // On a cold boot step 3 usually fails because NM has not yet seen the
+    // interface created in step 2; NM then auto-activates the profile itself a
+    // few seconds later. That is the long-standing behavior and is unchanged.
     static startAP(callback) {
-        // Step 1: Ensure the wlan0_ap interface exists
-        exec("iw dev | grep wlan0_ap", (err, stdout, stderr) => {
-            if (err) {
+        let forceActivate = false;
+
+        // Step 1: Remove a stray standalone hostapd
+        exec("systemctl is-active --quiet hostapd", (notActive) => {
+            if (notActive) {
+                return ensureInterface();
+            }
+            console.warn("Standalone hostapd is running; stopping it (NetworkManager manages the AP).");
+            exec("systemctl stop hostapd", (stopErr, stdout, stderr) => {
+                if (stopErr) console.warn(`Warning: Could not stop hostapd: ${stderr}`);
+                forceActivate = true;
+                ensureInterface();
+            });
+        });
+
+        // Step 2: Ensure the wlan0_ap interface exists
+        function ensureInterface() {
+            exec("iw dev | grep wlan0_ap", (err) => {
+                if (!err) {
+                    console.log("wlan0_ap interface already exists.");
+                    return checkActive();
+                }
                 // If the interface does not exist, try to create it
                 exec("iw dev wlan0 interface add wlan0_ap type __ap", (err, stdout, stderr) => {
                     if (err && !stderr.includes("File exists")) {
@@ -124,67 +162,69 @@ class commands {
                         return callback(err);
                     }
                     console.log(`wlan0_ap interface created: ${stdout || stderr}`);
-                    proceedToStep2(); // Proceed to the next step
+                    checkActive();
                 });
-            } else {
-                console.log("wlan0_ap interface already exists.");
-                proceedToStep2(); // Proceed to the next step
-            }
-        });
-        // Step 2: Bring up the wlan0_ap connection
-        function proceedToStep2() {
-            exec("nmcli connection up wlan0_ap", (err, stdout, stderr) => {
-                if (err) {
-                    console.error(`Error bringing up wlan0_ap: ${stderr}`);
-                    return callback(err);
+            });
+        }
+
+        // Step 3: Bring up the wlan0_ap connection unless it is already active
+        function checkActive() {
+            exec("nmcli -t -f NAME connection show --active | grep -qx wlan0_ap", (notActive) => {
+                if (!notActive && !forceActivate) {
+                    console.log("wlan0_ap is already active; leaving it as is.");
+                    return finish("wlan0_ap already active");
                 }
-                console.log(`wlan0_ap brought up: ${stdout}`);
-                // Step 3: Update SSID in NM profile and hostapd.conf before restarting hostapd
-                const machineName = config.engine.get("machine_name") || config.engine.get("machine_id") || "fabmoAP";
-                exec("ip -4 addr show eth0 2>/dev/null | grep inet | awk '{print $2}' | cut -d/ -f1", (ipErr, ipStdout) => {
-                    const ethIp = (ipStdout || "").trim();
-                    const ssid = ethIp ? `${machineName}-LAN@${ethIp}` : `${machineName}-AP@192.168.42.1`;
-                    const truncatedSsid = ssid.substring(0, 32);
-                    // Update NM connection profile SSID
-                    exec(`nmcli con modify wlan0_ap 802-11-wireless.ssid "${truncatedSsid}"`, (modErr) => {
-                        if (modErr) console.warn(`Warning: Could not update NM SSID: ${modErr}`);
-                        // Update /etc/hostapd/hostapd.conf so standalone hostapd broadcasts the correct name
-                        exec(`sed -i "s|^ssid=.*|ssid=${truncatedSsid}|" /etc/hostapd/hostapd.conf`, (sedErr) => {
-                            if (sedErr) console.warn(`Warning: Could not update hostapd.conf SSID: ${sedErr}`);
-                            // Step 4: Restart hostapd only (fatal on failure)
-                            exec("systemctl restart hostapd", (hapdErr, hapdStdout, hapdStderr) => {
-                                if (hapdErr) {
-                                    console.error(`Error restarting hostapd: ${hapdStderr}`);
-                                    return callback(hapdErr);
-                                }
-                                console.log(`hostapd restarted: ${hapdStdout}`);
-                                // Step 5: Update config — AP is active regardless of dnsmasq
-                                const networkConfig = config.engine.get("network") || {};
-                                networkConfig.wifi = networkConfig.wifi || {};
-                                networkConfig.wifi.enabled = true;
-                                config.engine.set("network", networkConfig, (configErr) => {
-                                    if (configErr) {
-                                        console.error("Failed to update network configuration:", configErr);
-                                        return callback(configErr);
-                                    }
-                                    console.log("Network configuration updated successfully.");
-                                    // Step 6: Restart dnsmasq (non-fatal; managed by network-monitor in LAN mode)
-                                    exec("systemctl restart dnsmasq", (dnsErr, dnsStdout, dnsStderr) => {
-                                        if (dnsErr) {
-                                            console.warn(`Note: dnsmasq restart failed (expected in LAN mode): ${dnsStderr}`);
-                                        }
-                                        callback(null, hapdStdout);
-                                    });
-                                });
-                            });
-                        });
+                activate();
+            });
+        }
+
+        function activate() {
+            const machineName = config.engine.get("machine_name") || config.engine.get("machine_id") || "fabmoAP";
+            exec("ip -4 addr show eth0 2>/dev/null | grep inet | awk '{print $2}' | cut -d/ -f1", (ipErr, ipStdout) => {
+                const ethIp = (ipStdout || "").trim();
+                const ssid = ethIp ? `${machineName}-LAN@${ethIp}` : `${machineName}-AP@192.168.42.1`;
+                const truncatedSsid = ssid.substring(0, 32);
+                // Set the SSID in the NM profile first so it is applied by the activation below
+                exec(`nmcli con modify wlan0_ap 802-11-wireless.ssid "${truncatedSsid}"`, (modErr) => {
+                    if (modErr) console.warn(`Warning: Could not update NM SSID: ${modErr}`);
+                    exec("nmcli connection up wlan0_ap", (err, stdout, stderr) => {
+                        if (err) {
+                            console.error(`Error bringing up wlan0_ap: ${stderr}`);
+                            return callback(err);
+                        }
+                        console.log(`wlan0_ap brought up: ${stdout}`);
+                        finish(stdout);
                     });
+                });
+            });
+        }
+
+        // Step 4: Update config and make sure dnsmasq is running
+        function finish(result) {
+            const networkConfig = config.engine.get("network") || {};
+            networkConfig.wifi = networkConfig.wifi || {};
+            networkConfig.wifi.enabled = true;
+            config.engine.set("network", networkConfig, (configErr) => {
+                if (configErr) {
+                    console.error("Failed to update network configuration:", configErr);
+                    return callback(configErr);
+                }
+                console.log("Network configuration updated successfully.");
+                // Non-fatal; a no-op when dnsmasq is already running
+                exec("systemctl start dnsmasq", (dnsErr, dnsStdout, dnsStderr) => {
+                    if (dnsErr) {
+                        console.warn(`Note: dnsmasq start failed: ${dnsStderr}`);
+                    }
+                    callback(null, result);
                 });
             });
         }
     }
 
-    // Update the AP SSID in NetworkManager and hostapd.conf, restarting hostapd only if it is already running.
+    // Update the AP SSID in the NetworkManager profile. The running AP picks
+    // the new name up when ip-reporting.py re-activates wlan0_ap, which it does
+    // within a few seconds of a machine_name change. Standalone hostapd is not
+    // used (see startAP).
     static updateSSID(name, callback) {
         exec("ip -4 addr show eth0 2>/dev/null | grep inet | awk '{print $2}' | cut -d/ -f1", (ipErr, ipStdout) => {
             const ethIp = (ipStdout || "").trim();
@@ -192,20 +232,7 @@ class commands {
             const truncatedSsid = ssid.substring(0, 32);
             exec(`nmcli con modify wlan0_ap 802-11-wireless.ssid "${truncatedSsid}"`, (modErr) => {
                 if (modErr) console.warn(`Warning: Could not update NM SSID: ${modErr}`);
-                exec(`sed -i "s|^ssid=.*|ssid=${truncatedSsid}|" /etc/hostapd/hostapd.conf`, (sedErr) => {
-                    if (sedErr) console.warn(`Warning: Could not update hostapd.conf SSID: ${sedErr}`);
-                    // Restart hostapd only when AP mode is configured on
-                    const networkConfig = config.engine.get("network") || {};
-                    const apEnabled = networkConfig.wifi && networkConfig.wifi.enabled;
-                    if (apEnabled) {
-                        exec("systemctl restart hostapd", (hapdErr, hapdStdout, hapdStderr) => {
-                            if (hapdErr) console.error(`Error restarting hostapd: ${hapdStderr}`);
-                            callback(hapdErr || null, truncatedSsid);
-                        });
-                    } else {
-                        callback(null, truncatedSsid);
-                    }
-                });
+                callback(null, truncatedSsid);
             });
         });
     }
