@@ -196,6 +196,32 @@
       </div>
 
       <div class="panel">
+        <h2>Cut a copy</h2>
+        <div class="hint" id="cp-for">Select a processed scan above.</div>
+        <div class="params">
+          <span class="param"><label>Ball-nose bit (in)</label><input type="number" step="0.0625" min="0.03" max="2" id="cp-bit" value="0.25"></span>
+          <span class="param"><label>Stepover (%)</label><input type="number" step="1" min="1" max="100" id="cp-stepover" value="10"></span>
+          <span class="param" title="How far below the top of the part to cut. Anything lower (normally the table round the part) is cut flat at this depth. Keep it within the bit's cutting length."><label>Max depth (in)</label><input type="number" step="0.05" min="0.01" id="cp-depth" value="1.0"></span>
+          <span class="param" title="The first raster line is a full-width slot, so it is cut in steps of this depth. 0 = one pass."><label>First-line step (in)</label><input type="number" step="0.025" min="0" id="cp-rough" value="0.125"></span>
+          <span class="param"><label>Feed (in/min)</label><input type="number" step="10" min="1" id="cp-feed" value="100"></span>
+          <span class="param"><label>Plunge (in/min)</label><input type="number" step="5" min="1" id="cp-plunge" value="50"></span>
+          <span class="param"><label>Safe Z (in)</label><input type="number" step="0.1" min="0.05" id="cp-safez" value="0.5"></span>
+          <span class="param"><label>Spindle (rpm)</label><input type="number" step="500" min="0" id="cp-rpm" value="18000"></span>
+          <span class="param" title="Table kept round the part"><label>Margin (in)</label><input type="number" step="0.05" min="0" id="cp-margin" value="0.25"></span>
+          <span class="param"><label>Scale</label><input type="number" step="0.05" min="0.1" max="10" id="cp-scale" value="1"></span>
+        </div>
+        <div class="btnrow" style="margin-top:8px">
+          <button id="cp-go" disabled>Generate cut file</button>
+          <a id="cp-dl" style="display:none" download>Download .sbp</a>
+          <button id="cp-queue" style="display:none" title="Adds the file to the FabMo job queue as a pending job. It does not start cutting: you run it from the Job Manager when the blank is in place and zeroed.">Add to job queue</button>
+        </div>
+        <div class="statusline" id="cp-result"></div>
+        <div class="hint">Raster cut with a ball-nose bit (the Terrain Carver strategy). In the file, X0 Y0 is the
+          lower-left corner of the blank and Z0 is the top of the blank. The copy is cut from above only, so
+          undercuts and anything the scanner could not see are filled in.</div>
+      </div>
+
+      <div class="panel">
         <details class="adv">
           <summary>Advanced: table map &amp; orbit scan (earlier prototype)</summary>
           <div class="maparea" id="maparea">
@@ -259,6 +285,9 @@
           <button data-view="top">Top</button>
           <button data-view="front">Front</button>
           <button data-view="side">Side</button>
+        </span>
+        <span class="seg" id="v-path-wrap" style="display:none">
+          <button id="v-path" class="on" title="Show or hide the cut file's tool-tip path">Toolpath</button>
         </span>
         <label id="v-psize-wrap" style="display:none">size
           <input type="range" id="v-psize" min="1" max="5" step="0.5" value="1.5" style="width:70px"></label>

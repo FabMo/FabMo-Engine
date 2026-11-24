@@ -419,6 +419,7 @@ JOBS = {"reference": job_reference, "locate": job_locate, "scan": job_scan,
         "sweep": job_sweep, "process": job_process, "fillgaps": job_fillgaps}
 # jobs that never move the machine may start while it is busy elsewhere
 NO_MOTION = {"process"}
+COPY_LOCK = threading.Lock()
 
 
 def run_job(op, body):
@@ -537,6 +538,17 @@ class Handler(BaseHTTPRequestHandler):
             fname = "%s%s.stl" % (session, "" if crop == "part" else "_all")
             return self._send(200, data, "model/stl", extra={
                 "Content-Disposition": 'attachment; filename="%s"' % fname})
+        if path == "/copy/file":
+            q = dict(kv.split("=", 1) for kv in self.path.split("?", 1)[-1].split("&")
+                     if "=" in kv) if "?" in self.path else {}
+            session = re.sub(r"[^A-Za-z0-9_.-]", "_", q.get("session", ""))
+            full = os.path.join(orbit.SCANS_DIR, session, "copy.sbp")
+            if not session or not os.path.isfile(full):
+                return self._send(404, {"error": "no cut file for %r — generate it first" % session})
+            with open(full, "rb") as fh:
+                data = fh.read()
+            return self._send(200, data, "text/plain; charset=utf-8", extra={
+                "Content-Disposition": 'attachment; filename="%s_copy.sbp"' % session})
         if path == "/live/points":
             # binary float32 x,y,z (mm, provisional heights) for shots >= from;
             # X-Shots-Done tells the client where to continue
@@ -570,6 +582,11 @@ class Handler(BaseHTTPRequestHandler):
                                      frames=len(m.get("shots", [])) * 2)
                     except (IOError, ValueError):
                         entry["complete"] = None
+                    try:
+                        with open(os.path.join(orbit.SCANS_DIR, name, "copy.json")) as fh:
+                            entry["copy"] = json.load(fh)
+                    except (IOError, ValueError):
+                        pass
                     stats = os.path.join(orbit.SCANS_DIR, name, "scan.json")
                     if os.path.isfile(stats):
                         try:
@@ -631,6 +648,23 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, p)
             except Exception as e:
                 return self._send(400, {"error": str(e)})
+        if path == "/copy":
+            # cut file for a copy of a scanned part (carve.py). Only writes a
+            # file next to the scan: nothing is sent to the machine.
+            import carve
+            session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(body.get("session", "")))
+            capdir = os.path.join(orbit.SCANS_DIR, session)
+            if not session or not os.path.isfile(os.path.join(capdir, "points.npy")):
+                return self._send(404, {"error": "no processed scan %r" % session})
+            if not COPY_LOCK.acquire(blocking=False):
+                return self._send(409, {"error": "already generating a cut file"})
+            try:
+                return self._send(200, carve.make_copy(capdir, body.get("params") or {}))
+            except Exception as e:
+                traceback.print_exc()
+                return self._send(400, {"error": str(e)})
+            finally:
+                COPY_LOCK.release()
         if path in ("/reference", "/locate", "/scan", "/sweep", "/process", "/fillgaps"):
             ok, err = start_job(path[1:], body)
             if ok:

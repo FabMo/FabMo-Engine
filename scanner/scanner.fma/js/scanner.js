@@ -518,10 +518,89 @@ function getBin(url) {
     }).then(function (b) { return new Float32Array(b); });
 }
 
+// ---------------------------------------------------------------- cut a copy
+
+var copySession = null;
+
+function copyText(c) {
+    return "Blank " + c.blank_in.x.toFixed(2) + " × " + c.blank_in.y.toFixed(2) + " in, at least " +
+        c.blank_in.z_min.toFixed(2) + " in thick · " + c.passes + " lines, " +
+        c.length_in.toFixed(0) + " in of cutting, ~" + Math.round(c.minutes) + " min · " +
+        c.surface.filled_pct.toFixed(1) + "% of the area had no scan data and was filled in" +
+        (c.flattened_pct > 0.05 ? " · " + c.flattened_pct.toFixed(0) + "% cut flat at max depth" : "");
+}
+
+function showCopy(s) {
+    copySession = s && s.stats ? s.session : null;
+    $("cp-for").textContent = copySession ? "Scan: " + copySession : "Select a processed scan above.";
+    $("cp-go").disabled = !copySession;
+    var c = s && s.copy;
+    $("cp-result").textContent = c ? copyText(c) + " (made " + c.created + ")" : "";
+    $("cp-dl").style.display = c ? "" : "none";
+    $("cp-queue").style.display = c && !STANDALONE ? "" : "none";
+    if (c) { $("cp-dl").href = BASE + "/copy/file?session=" + encodeURIComponent(s.session); }
+}
+
+// The cut file's tool-tip path, drawn over the scan in the 3D viewer.
+function loadToolpath(s) {
+    var c = s && s.copy;
+    $("v-path-wrap").style.display = c ? "" : "none";
+    if (!viewer) { return; }
+    if (!c) { viewer.setToolpath(null); return; }
+    getBin(BASE + "/artifact/scans/" + encodeURIComponent(s.session) + "/copy_path.bin?t=" +
+        encodeURIComponent(c.created || "")).then(function (pts) {
+        if (selected !== s.session || !viewer) { return; }
+        viewer.setToolpath(pts);
+        viewer.showToolpath($("v-path").className === "on");
+    }).catch(function () { $("v-path-wrap").style.display = "none"; });
+}
+
+$("v-path").onclick = function () {
+    var on = $("v-path").className !== "on";
+    $("v-path").className = on ? "on" : "";
+    if (viewer) { viewer.showToolpath(on); }
+};
+
+$("cp-go").onclick = function () {
+    if (!copySession) { return; }
+    var session = copySession, num = function (id) { return parseFloat($(id).value); };
+    $("cp-go").disabled = true;
+    $("cp-result").textContent = "Generating…";
+    api("POST", "/copy", { session: session, params: {
+        bit_diameter: num("cp-bit"), stepover_pct: num("cp-stepover"), max_depth: num("cp-depth"),
+        roughing_depth: num("cp-rough"), feed_rate: num("cp-feed"), plunge_rate: num("cp-plunge"),
+        safe_z: num("cp-safez"), spindle_speed: num("cp-rpm"), margin: num("cp-margin"),
+        scale: num("cp-scale") } }).then(function (c) {
+        sessions.forEach(function (s) { if (s.session === session) { s.copy = c; } });
+        if (copySession === session) { showCopy({ session: session, stats: true, copy: c }); }
+        if (selected === session) { loadToolpath({ session: session, copy: c }); }
+    }).catch(function (e) {
+        $("cp-result").textContent = "Could not generate: " + e.message;
+    }).then(function () { $("cp-go").disabled = !copySession; });
+};
+
+$("cp-queue").onclick = function () {
+    if (!copySession) { return; }
+    var session = copySession;
+    fetch(BASE + "/copy/file?session=" + encodeURIComponent(session)).then(function (r) {
+        if (!r.ok) { throw new Error("no cut file"); }
+        return r.text();
+    }).then(function (text) {
+        fabmo.submitJob({ file: text, filename: session + "_copy.sbp", name: "Copy of " + session,
+            description: "Ball-nose raster copy of scan " + session }, { stayHere: true },
+            function (err) {
+                if (err) { fabmo.notify("error", "Could not add the job: " + (err.message || err)); }
+                else { fabmo.notify("success", "Added to the job queue (not started)"); }
+            });
+    }).catch(function (e) { fabmo.notify("error", e.message); });
+};
+
 function selectSession(s) {
     selected = s.session;
     renderSessions();
+    showCopy(s);
     if (!s.stats) {
+        $("v-path-wrap").style.display = "none";
         $("v-empty").textContent = s.kind === "sweep" ?
             "This scan hasn't been processed — use Re-process." :
             "No 3D data for this session (orbit scans aren't triangulated yet).";
@@ -545,6 +624,7 @@ function selectSession(s) {
             if (mb) { mb.onclick(); }
         }
         viewer.load({ points: res[0], surface: res[1], meta: s.stats });
+        loadToolpath(s);
         if (QS.view) { viewer.view(QS.view); QS.view = null; }
         $("v-empty").style.display = "none";
         $("v-title").textContent = s.session;

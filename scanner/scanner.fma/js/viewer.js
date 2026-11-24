@@ -66,6 +66,8 @@ var ScanViewer = (function () {
         this.scene.add(this.group);
         this.helpers = new THREE.Group();        // grid, markers
         this.scene.add(this.helpers);
+        this.pathGroup = new THREE.Group();      // cut-file toolpath (setToolpath)
+        this.scene.add(this.pathGroup);
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
@@ -109,6 +111,7 @@ var ScanViewer = (function () {
         this.live = null;
         this.data = data;
         this.picks = [];
+        this._clear(this.pathGroup);
         var p = data.points, n = p.length / 3, zs = new Float32Array(n);
         for (var i = 0; i < n; i++) { zs[i] = p[3 * i + 2]; }
         zs.sort();
@@ -262,6 +265,25 @@ var ScanViewer = (function () {
         this.mode = mode;
         if (this.live) { return; }          // live view is always points; applies on load()
         this._build();
+    };
+
+    /* Tool-tip path of the cut file over the scan: Float32Array of x, y, z
+       (scan mm) in cutting order, or null to remove it. Drawn a little
+       above its true height so it is not hidden in the surface it touches. */
+    ScanViewer.prototype.setToolpath = function (pts) {
+        this._clear(this.pathGroup);
+        if (!pts || pts.length < 6) { return; }
+        var p = new Float32Array(pts.length);
+        for (var i = 0; i < pts.length; i += 3) {
+            p[i] = pts[i]; p[i + 1] = pts[i + 1]; p[i + 2] = pts[i + 2] + 0.15;
+        }
+        var g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.BufferAttribute(p, 3));
+        this.pathGroup.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xffffff })));
+    };
+
+    ScanViewer.prototype.showToolpath = function (on) {
+        this.pathGroup.visible = !!on;
     };
 
     ScanViewer.prototype.setPointSize = function (s) {
