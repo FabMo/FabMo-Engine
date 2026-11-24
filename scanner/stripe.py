@@ -175,6 +175,49 @@ def drop_off_colour_runs(pts, img_off, img_on, orientation="vertical", max_gap=2
     return pts[ok[lab]]
 
 
+def drop_glow(pts, img_off, img_on, orientation="vertical", max_width=30, clip=245,
+              colour="red", reach=40):
+    """Drop points that sit on scattered laser light instead of the line.
+
+    On white, translucent parts (polystyrene letter, 2026-11-22) the whole
+    neighbourhood of the line glows. Where the line itself is hidden from
+    the camera behind a wall, the brightest thing left in the column is that
+    glow on the wall, and it triangulates as surface up to several mm too
+    high. The glow is dim and very wide — ~100 px at half its peak, against
+    ~10 px for line on MDF or black plastic; a clipped line is wide too
+    (~23 px on the same part) but saturated. So: a point is dropped when its
+    laser channel is below `clip` in the laser-on frame AND the off/on
+    difference stays above half the peak for more than max_width px across
+    the stripe (measured out to `reach` px each side)."""
+    if len(pts) == 0:
+        return pts
+    cm, _ = channels(colour)
+    on = img_on[..., cm]
+    d = on.astype(np.float32) - img_off[..., cm].astype(np.float32)
+    if orientation == "vertical":                  # work with the stripe horizontal
+        on, d = on.T, d.T
+        ac, al = pts[:, 1], pts[:, 0]
+    else:
+        ac, al = pts[:, 0], pts[:, 1]
+    d = cv2.GaussianBlur(d, (1, 5), 0)
+    h, w = d.shape
+    r = np.clip(np.round(ac).astype(int), 0, h - 1)
+    c = np.clip(np.round(al).astype(int), 0, w - 1)
+    cand = np.nonzero(on[r, c] < clip)[0]
+    if len(cand) == 0:
+        return pts
+    r, c = r[cand], c[cand]
+    half = 0.5 * d[r, c][:, None]
+    o = np.arange(1, reach + 1)
+    up = d[np.clip(r[:, None] - o[None], 0, h - 1), c[:, None]] > half
+    dn = d[np.clip(r[:, None] + o[None], 0, h - 1), c[:, None]] > half
+    width = (np.where(up.all(1), reach, np.argmin(up, 1)) +
+             np.where(dn.all(1), reach, np.argmin(dn, 1)) + 1)
+    keep = np.ones(len(pts), bool)
+    keep[cand[width > max_width]] = False
+    return pts[keep]
+
+
 def drop_weak_runs(pts, orientation="vertical", min_run=15, max_gap=2, max_jump=3.0,
                    rel_signal=0.2):
     """Keep only stripe pieces that look like laser line: continuous runs of

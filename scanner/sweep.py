@@ -635,6 +635,9 @@ def _stripe_points(off, on, signal, colour):
     # colour test rejects auto-exposure clutter, so the brightness cut can be
     # low enough to keep dim line on dark parts (black plastic)
     pts = stripe.drop_off_colour_runs(pts, off, on, orientation="horizontal", colour=colour)
+    # scattered light on white parts, before the run test so that what it
+    # leaves behind in short pieces goes too
+    pts = stripe.drop_glow(pts, off, on, orientation="horizontal", colour=colour)
     return stripe.drop_weak_runs(pts, orientation="horizontal", rel_signal=0.1)
 
 
