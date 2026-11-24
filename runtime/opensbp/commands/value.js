@@ -272,14 +272,18 @@ exports.VR = function (args, callback) {
         this.maxjerk_c = args[5];
         if (driver) driver.command({ cjm: this.maxjerk_c });
     }
+
     // XY Jerk Limit Manual Controls
     if (args[6] !== undefined) {
         this.manual.xy_jerk = args[6];
+        if (driver) driver.command({ xy_jerk: this.manual.xy_jerk });
     }
     // Z Jerk Limit Manual Controls
     if (args[7] !== undefined) {
         this.manual.z_jerk = args[7];
+        if (driver) driver.command({ z_jerk: this.manual.z_jerk});
     }
+
     // [JT] Junction Integration Time
     if (args[8] !== undefined) {
         this.jt = args[8];
