@@ -3490,6 +3490,7 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
 // CURRENTLY a work in progress ...
 SBPRuntime.prototype.evaluateSystemVariable = function (v) {
     var envelope = config.machine.get("envelope");
+    var manual = config.machine.get("manual");
     if (v === undefined) {
         return undefined;
     }
