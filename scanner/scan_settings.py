@@ -49,6 +49,9 @@ DEFAULTS = {
     "continuous_speed_ips": 0.3,     # head speed during the sweep
     "continuous_line_step_in": 0.04,  # process a frame every this many inches (~1 mm)
     "continuous_latency_ms": 0.0,     # frame-time vs position-report offset (calibrate)
+    # laser-off pass before the laser-on one; frames are paired by position
+    # and processed off/on like stop-and-go (rejects room light, surface colour)
+    "continuous_two_pass": False,
 
     # --- camera (set on every open; the device forgets them on replug) ---
     "camera_focus": 470,        # focus_absolute the calibration (camera.json) was made at

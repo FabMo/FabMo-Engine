@@ -6,6 +6,14 @@ here an 8.5 in sweep at 0.3 in/s takes ~30 s with a line every ~0.01 in
 (30 fps). There is no laser-off reference: the stripe is found in each
 laser-on frame alone (stripe.extract_on_only).
 
+Two-pass option (2026-11-24): the same sweep is made twice in one job,
+first with the laser off, then with it on. Every frame of both passes gets
+a position from its own pass's fit (same direction and speed, so the
+latency constant is the same in both and cancels), and each laser-on frame
+is processed against the laser-off frames taken at the same place — the
+two nearest, blended by position — with the off/on method of the
+stop-and-go sweeps (sweep._stripe_points).
+
 Timing. Frames carry the camera's buffer timestamp (CLOCK_MONOTONIC, ~16 ms
 before the frame reaches us). Machine position comes from /status, polled
 on a thread; reports arrive every ~100 ms with some delay. Over the
@@ -66,7 +74,9 @@ class _FrameLog(threading.Thread):
         self.cap, self.outdir = cap, outdir
         self.stop = threading.Event()
         self.record = threading.Event()
-        self.frames = []               # (t_frame_monotonic_s, file)
+        self.frames = []               # (t_frame_monotonic_s, file), laser on
+        self.frames_off = []           # same, laser-off pass (two-pass sweeps)
+        self.tag = "on"                # which pass is being recorded
         self.n = 0
 
     def run(self):
@@ -74,17 +84,22 @@ class _FrameLog(threading.Thread):
             if not self.cap.grab():
                 time.sleep(0.005)
                 continue
+            tag = self.tag
             if not self.record.is_set():
                 continue
             ts = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
             ok, buf = self.cap.retrieve()
             if not ok or buf is None:
                 continue
-            f = "f_%05d.jpg" % self.n
+            off = tag == "off"
+            f = ("o_%05d.jpg" % len(self.frames_off)) if off else ("f_%05d.jpg" % self.n)
             with open(os.path.join(self.outdir, f), "wb") as fh:
                 fh.write(buf.tobytes())
-            self.frames.append((ts, f))
-            self.n += 1
+            if off:
+                self.frames_off.append((ts, f))
+            else:
+                self.frames.append((ts, f))
+                self.n += 1
 
 
 def open_raw(dev=None, fps=60):
@@ -111,10 +126,12 @@ def open_raw(dev=None, fps=60):
 
 def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
                    latency_ms=0.0, progress=None, abort=None, log=print, reverse=False,
-                   on_live=None, colour=None):
+                   on_live=None, colour=None, two_pass=False):
     """Laser-on constant-feed sweep of `axis` from origin+start to
     origin+end (inches). Returns the manifest. Laser off and the job
-    stopped on error/abort; the head returns to the start only on success."""
+    stopped on error/abort; the head returns to the start only on success.
+    two_pass: first make the same sweep with the laser off (reference
+    frames), then the laser-on one."""
     ax = axis.lower()
     if ax not in ("x", "y"):
         raise ValueError("axis must be x or y")
@@ -137,19 +154,22 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
         colour = sweep.laser_colour()
     A = ax.upper()
     b0, b1 = (a1, a0) if reverse else (a0, a1)       # reverse: sweep end -> start
+    feed = "G1 F%.2f %s%.4f" % (speed_ips * 60.0, A, b1)
     prog = "\n".join([
         "G90", "M100 ({%s:0})" % out,
-        "G0 %s%.4f" % (A, b0),
+        "G0 %s%.4f" % (A, b0)] + ([
+        "G4 P0.8", feed,                           # laser-off pass, same start and feed
+        "G0 %s%.4f" % (A, b0)] if two_pass else []) + [
         "M100 ({%s:1})" % out, "G4 P0.8",          # laser on; camera exposure settles
         "G1 F%.2f %s%.4f" % (speed_ips * 60.0, A, b1),
         "M100 ({%s:0})" % out,
         "G0 X%.4f Y%.4f" % (origin["x"], origin["y"]),
     ]) + "\n"
-    dur = (a1 - a0) / speed_ips
-    log("continuous: origin %s; %s %+.3f..%+.3f in at %.2f in/s (~%.0f s), laser out%d"
-        % (origin, A, start, end, speed_ips, dur, laser_out))
+    dur = (a1 - a0) / speed_ips * (2 if two_pass else 1)
+    log("continuous: %sorigin %s; %s %+.3f..%+.3f in at %.2f in/s (~%.0f s), laser out%d"
+        % ("two-pass, " if two_pass else "", origin, A, start, end, speed_ips, dur, laser_out))
     man = {"kind": "continuous", "units": "inches", "origin": origin, "axis": ax,
-           "reverse": bool(reverse),
+           "reverse": bool(reverse), "two_pass": bool(two_pass),
            "start": start, "end": end, "speed_ips": speed_ips, "laser_output": laser_out,
            "laser_color": colour, "latency_ms": latency_ms, "created": time.strftime("%Y-%m-%d %H:%M:%S"),
            "complete": False, "shots": []}
@@ -172,7 +192,12 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
         fabmo.start_gcode(prog)
         started = True
         # record while the laser is on and the head is in the sweep
-        phase = "to start"
+        # The laser-off pass is followed by position (reach the start, leave
+        # it, reach the end); the laser-on pass by the laser output, as before.
+        phase = "off: to start" if two_pass else "to start"
+        dirn = 1.0 if b1 > b0 else -1.0
+        off_win = [None, None]             # monotonic times of the laser-off pass
+        man["off_window"] = off_win
         while True:
             if abort is not None and abort.is_set():
                 raise _Abort()
@@ -180,17 +205,36 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
             if s is not None:
                 p = s["pos" + ax]
                 on = s.get(out) == 1
-                if on and not fr.record.is_set():
-                    fr.record.set()
-                    phase = "sweeping"
-                if fr.record.is_set() and not on and time.time() - t0 > 2:
-                    break                                   # laser off: sweep done
+                frac = max(0.0, min(1.0, abs(p - b0) / (a1 - a0)))
+                if phase == "off: to start":
+                    if abs(p - b0) < 0.01:
+                        phase = "off: at start"
+                elif phase == "off: at start":
+                    if (p - b0) * dirn > 0.01:
+                        fr.tag = "off"
+                        off_win[0] = time.monotonic()
+                        fr.record.set()
+                        phase = "off: sweeping"
+                elif phase == "off: sweeping":
+                    if (b1 - p) * dirn < 0.01:
+                        fr.record.clear()
+                        off_win[1] = time.monotonic()
+                        fr.tag = "on"
+                        phase = "to start"
+                    elif progress:
+                        progress(int(frac * 50), 100)
+                else:
+                    if on and not fr.record.is_set():
+                        fr.record.set()
+                        phase = "sweeping"
+                    if fr.record.is_set() and not on and time.time() - t0 > 2:
+                        break                               # laser off: sweep done
                 if s["state"] in ("idle", "stopped", "dead") and time.time() - t0 > 2:
-                    if fr.record.is_set():
+                    if phase == "sweeping":
                         break
                     raise RuntimeError("job ended before the sweep (%s)" % s["state"])
                 if progress and phase == "sweeping":
-                    progress(int(max(0, min(1, abs(p - b0) / (a1 - a0))) * 100), 100)
+                    progress(int(50 + frac * 50) if two_pass else int(frac * 100), 100)
             if time.time() - t0 > dur + 60:
                 raise RuntimeError("sweep took too long")
             time.sleep(0.03)
@@ -225,12 +269,16 @@ def run_continuous(fabmo, cap, outdir, axis, start, end, speed_ips, laser_out,
             finally:
                 man["status_log"] = [list(r[:5]) for r in st.rows]
                 man["frames"] = [list(f) for f in fr.frames]
+                if two_pass:
+                    man["frames_off"] = [list(f) for f in fr.frames_off]
                 man["duration_s"] = round(time.time() - t0, 1)
                 _assign_poses(man, ax, a0, a1, latency_ms, log)
                 with open(os.path.join(outdir, "manifest.json"), "w") as fh:
                     json.dump(man, fh)
-    log("continuous: %d frames recorded, %d in range; %.0f s"
-        % (len(man["frames"]), len(man["shots"]), man["duration_s"]))
+    log("continuous: %d frames recorded%s, %d in range; %.0f s"
+        % (len(man["frames"]),
+           " (+ %d laser-off)" % len(man["frames_off"]) if two_pass else "",
+           len(man["shots"]), man["duration_s"]))
     return man
 
 
@@ -348,41 +396,46 @@ class LiveCont(threading.Thread):
         return {"shots_done": done, "total": self.total, "n_points": n}
 
 
-def _assign_poses(man, ax, a0, a1, latency_ms, log=print):
-    """Fit position(t) over the constant-feed part; give every frame inside
-    the scan range a pose."""
-    k = 1 + AXES.index(ax)
-    rows = [r for r in man["status_log"]]
-    if len(rows) < 5 or not man["frames"]:
-        man["fit"] = None
-        return
-    # Only the constant-feed move: reports taken while the laser was on
-    # (the rapids to the start and back home also cross the scan range —
-    # fitting them gave 0.27 in/s for a 0.30 in/s move, 2026-11-08).
-    rows = [r for r in rows if len(r) > 4 and r[4] == 1]
+def _fit_rows(rows, k, lo, hi):
+    """Straight line through (arrival time, position) of the reports inside
+    lo..hi -> (speed, intercept, rms residual, n), or a string saying why not."""
     if len(rows) < 5:
-        man["fit"] = None
-        log("continuous: too few position reports with the laser on (%d)" % len(rows))
-        return
+        return "too few position reports (%d)" % len(rows)
     R = np.array([[r[0], r[k]] for r in rows], float)
     # first arrival of each new value only (repeats are stale reports)
-    keep = np.r_[True, np.diff(R[:, 1]) != 0]
-    R = R[keep]
+    R = R[np.r_[True, np.diff(R[:, 1]) != 0]]
+    seg = R[(R[:, 1] > lo) & (R[:, 1] < hi)]
+    if len(seg) < 4:
+        return "too few position reports in the sweep (%d)" % len(seg)
+    A = np.c_[seg[:, 0], np.ones(len(seg))]
+    (v, c), *_ = np.linalg.lstsq(A, seg[:, 1], rcond=None)
+    res = seg[:, 1] - A @ np.array([v, c])
+    return float(v), float(c), float(res.std()), int(len(seg))
+
+
+def _assign_poses(man, ax, a0, a1, latency_ms, log=print):
+    """Fit position(t) over the constant-feed part; give every frame inside
+    the scan range a pose. Two-pass sweeps: also place the laser-off frames
+    (their own fit) and give every shot its two nearest ones."""
+    k = 1 + AXES.index(ax)
+    man["fit"] = None
+    if not man["frames"]:
+        return
     o = man["origin"]
     # stay clear of the acceleration at both ends of the run-in
     lo = o[ax] + man["start"] - RUN_IN * 0.5
     hi = o[ax] + man["end"] + RUN_IN * 0.5
-    seg = R[(R[:, 1] > lo) & (R[:, 1] < hi)]
-    if len(seg) < 4:
-        man["fit"] = None
-        log("continuous: too few position reports in the sweep (%d)" % len(seg))
+    # Only the constant-feed move: reports taken while the laser was on
+    # (the rapids to the start and back home also cross the scan range —
+    # fitting them gave 0.27 in/s for a 0.30 in/s move, 2026-11-08).
+    fit = _fit_rows([r for r in man["status_log"] if len(r) > 4 and r[4] == 1], k, lo, hi)
+    if isinstance(fit, str):
+        log("continuous: laser-on pass, " + fit)
         return
-    A = np.c_[seg[:, 0], np.ones(len(seg))]
-    (v, c), *_ = np.linalg.lstsq(A, seg[:, 1], rcond=None)
-    res = seg[:, 1] - A @ np.array([v, c])
-    man["fit"] = {"speed_ips": float(v), "rms_in": float(res.std()), "n": int(len(seg))}
+    v, c, rms, n = fit
+    man["fit"] = {"speed_ips": v, "rms_in": rms, "n": n}
     log("continuous: position fit %.4f in/s (commanded %.2f), residual %.4f in rms over %d reports"
-        % (v, man["speed_ips"], res.std(), len(seg)))
+        % (v, man["speed_ips"], rms, n))
     lat = latency_ms / 1000.0
     shots = []
     for ts, f in man["frames"]:
@@ -392,6 +445,43 @@ def _assign_poses(man, ax, a0, a1, latency_ms, log=print):
             pose[ax] = float(p)
             shots.append({"pose": pose, "img_on": f, "t": ts})
     man["shots"] = shots
+    if not man.get("two_pass"):
+        return
+    # ---- laser-off pass
+    man["fit_off"] = None
+    w0, w1 = man.get("off_window") or (None, None)
+    if w0 is None or w1 is None or not man.get("frames_off"):
+        log("continuous: no laser-off pass recorded — processing without it")
+        return
+    fit = _fit_rows([r for r in man["status_log"] if w0 <= r[0] <= w1], k, lo, hi)
+    if isinstance(fit, str):
+        log("continuous: laser-off pass, %s — processing without it" % fit)
+        return
+    v2, c2, rms2, n2 = fit
+    man["fit_off"] = {"speed_ips": v2, "rms_in": rms2, "n": n2}
+    P = np.array([v2 * (ts + lat) + c2 for ts, _ in man["frames_off"]])
+    F = [f for _, f in man["frames_off"]]
+    keep = (P > lo) & (P < hi)
+    order = np.argsort(P[keep])
+    P = P[keep][order]
+    F = [F[i] for i in np.flatnonzero(keep)[order]]
+    if len(P) < 2 or not shots:
+        log("continuous: too few laser-off frames in the sweep (%d)" % len(P))
+        man["fit_off"] = None
+        return
+    gaps = []
+    for sh in shots:
+        p = sh["pose"][ax]
+        j = int(np.searchsorted(P, p))
+        ia, ib = max(0, j - 1), min(len(P) - 1, j)
+        w = 0.0 if ib == ia else float(np.clip((p - P[ia]) / (P[ib] - P[ia]), 0.0, 1.0))
+        sh["off_a"], sh["off_b"], sh["off_w"] = F[ia], F[ib], round(w, 3)
+        gaps.append(min(abs(p - P[ia]), abs(p - P[ib])))
+    man["off_pair"] = {"n_off": int(len(P)), "frame_step_in": float(np.median(np.diff(P))),
+                       "gap_med_in": float(np.median(gaps)), "gap_max_in": float(np.max(gaps))}
+    log("continuous: laser-off pass %.4f in/s, residual %.4f in rms over %d reports; %d frames, "
+        "nearest one %.4f in from each laser-on frame (median; max %.4f)"
+        % (v2, rms2, n2, len(P), np.median(gaps), np.max(gaps)))
 
 
 # ------------------------------------------------------------- processing
@@ -399,10 +489,27 @@ _CAL = {}
 BAND = [None]          # row band used by the last triangulate_frames (for logs)
 
 
+def _off_image(off, r0, r1):
+    """Laser-off reference for one frame: the two laser-off frames either
+    side of its position, blended by distance (rows r0..r1)."""
+    pa, pb, w = off
+    a = cv2.imread(pa)
+    if a is None:
+        return None
+    a = a[r0:r1]
+    if pb != pa and w > 0.01:
+        b = cv2.imread(pb)
+        if b is not None:
+            a = b[r0:r1] if w > 0.99 else cv2.addWeighted(a, 1.0 - w, b[r0:r1], w, 0)
+    return np.ascontiguousarray(a)
+
+
 def _tri(args):
-    """Worker: one frame -> (index, (N, 4) points)."""
+    """Worker: one frame -> (index, (N, 4) points). A 7th element
+    (off_a path, off_b path, weight) selects the off/on method."""
     import sweep
-    i, path, R_cm, dp, band, colour = args
+    i, path, R_cm, dp, band, colour = args[:6]
+    off = args[6] if len(args) > 6 else None
     if "cal" not in _CAL:
         _CAL["cal"] = sweep.load_cal()
         cv2.setNumThreads(1)          # one process per core instead of oversubscribing
@@ -411,7 +518,12 @@ def _tri(args):
     if img is None:
         return i, np.zeros((0, 4))
     r0, r1 = band if band else (0, img.shape[0])
-    pts = stripe.extract_on_only(np.ascontiguousarray(img[r0:r1]), colour=colour)
+    ref = _off_image(off, r0, r1) if off else None
+    if ref is not None:
+        pts = sweep._stripe_points(ref, np.ascontiguousarray(img[r0:r1]),
+                                   stripe.default_signal(colour), colour)
+    else:
+        pts = stripe.extract_on_only(np.ascontiguousarray(img[r0:r1]), colour=colour)
     if len(pts):
         pts[:, 0] += r0                       # back to full-image rows
     if len(pts) == 0:
@@ -425,11 +537,16 @@ def _tri(args):
 
 
 def _band_rows(args):
-    path, colour = args
+    path, colour, off = args
     img = cv2.imread(path)
     if img is None:
         return None
-    p = stripe.extract_on_only(img, colour=colour)
+    ref = _off_image(off, 0, img.shape[0]) if off else None
+    if ref is not None:
+        import sweep
+        p = sweep._stripe_points(ref, img, stripe.default_signal(colour), colour)
+    else:
+        p = stripe.extract_on_only(img, colour=colour)
     if len(p) < 50:
         return None
     return np.percentile(p[:, 0], [5, 99])     # 5th: ignore sparse stray points
@@ -441,8 +558,9 @@ def _stripe_band(jobs, pool, n_sample=24, margin=120, min_rows=240, colour="red"
     processing then touches only that band: with 4 workers the Pi is limited
     by memory bandwidth, not CPU. A feature taller than the band, seen only
     between sampled frames, would be lost (not mis-measured)."""
-    paths = [j[1] for j in jobs[::max(1, len(jobs) // n_sample)]]
-    rows = [r for r in pool.map(_band_rows, [(p, colour) for p in paths]) if r is not None]
+    some = jobs[::max(1, len(jobs) // n_sample)]
+    rows = [r for r in pool.map(_band_rows, [(j[1], colour, j[4]) for j in some])
+            if r is not None]
     if not rows:
         return None
     rows = np.array(rows)
@@ -462,12 +580,16 @@ def triangulate_frames(capdir, shots, every=1, progress=None, workers=4, colour=
     for i in range(0, len(shots), max(1, every)):
         s = shots[i]
         dp = (np.array([s["pose"][a] for a in AXES]) - p0) * IN_TO_MM
-        jobs.append((i, os.path.join(capdir, s["img_on"]), None, dp))
+        off = None
+        if s.get("off_a"):
+            off = (os.path.join(capdir, s["off_a"]), os.path.join(capdir, s["off_b"]),
+                   float(s.get("off_w", 0.0)))
+        jobs.append((i, os.path.join(capdir, s["img_on"]), None, dp, off))
     out = {}
     with Pool(workers) as pool:
         band = _stripe_band(jobs, pool, colour=colour)
         BAND[0] = band
-        jobs = [j + (band, colour) for j in jobs]
+        jobs = [j[:4] + (band, colour, j[4]) for j in jobs]
         for n, (i, P) in enumerate(pool.imap_unordered(_tri, jobs, chunksize=4)):
             out[i] = P
             if progress:
@@ -488,6 +610,8 @@ if __name__ == "__main__":
     ap.add_argument("--end", type=float, default=5.5)
     ap.add_argument("--speed", type=float)
     ap.add_argument("--reverse", action="store_true")
+    ap.add_argument("--two-pass", action="store_true",
+                    help="laser-off pass first, then laser-on (off/on subtraction)")
     ap.add_argument("--line-step", type=float)
     a = ap.parse_args()
     st = scan_settings.load()
@@ -499,7 +623,8 @@ if __name__ == "__main__":
     try:
         man = run_continuous(fabmo, cap, outdir, a.axis, a.start, a.end,
                              a.speed or st["continuous_speed_ips"], int(st["laser_output"]),
-                             float(st["continuous_latency_ms"]), reverse=a.reverse)
+                             float(st["continuous_latency_ms"]), reverse=a.reverse,
+                             two_pass=a.two_pass or bool(st["continuous_two_pass"]))
     finally:
         cap.release()
     man["line_step_in"] = a.line_step or st["continuous_line_step_in"]

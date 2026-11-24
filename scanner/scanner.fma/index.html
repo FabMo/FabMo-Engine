@@ -156,6 +156,7 @@
               <option value="continuous">Continuous (fast)</option>
             </select></span>
           <span class="param cont-only" style="display:none"><label>Speed (in/s)</label><input type="number" step="0.05" min="0.05" max="2" id="sw-speed" value="0.3"></span>
+          <span class="param cont-only" style="display:none" title="Makes the sweep twice: first with the laser off, then with it on. Each laser-on frame is compared with the laser-off frame taken at the same place, as in stop-and-go. Better against room light and coloured surfaces; twice the motion time."><label>Laser-off pass</label><input type="checkbox" id="sw-twopass"></span>
           <span class="param single-only"><label>Axis</label>
             <select id="sw-axis"><option value="y">Y</option><option value="x">X</option></select></span>
           <span class="param single-only"><label>From</label><input type="number" step="0.1" id="sw-start" value="-0.5"></span>

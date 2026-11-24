@@ -299,7 +299,9 @@ def job_sweep(body):
 def job_continuous(body, s, axis, start, end, session, outdir):
     import continuous
     speed = float(body.get("speed") or s["continuous_speed_ips"])
-    set_state(phase="continuous sweep %s at %.2f in/s" % (axis.upper(), speed),
+    two_pass = bool(body["two_pass"] if "two_pass" in body else s["continuous_two_pass"])
+    set_state(phase="continuous sweep %s at %.2f in/s%s"
+              % (axis.upper(), speed, " (two passes)" if two_pass else ""),
               progress={"done": 0, "total": 100})
     with _cap_lock:              # raw-JPEG capture needs its own handle
         if _cap[0] is not None:
@@ -311,7 +313,8 @@ def job_continuous(body, s, axis, start, end, session, outdir):
                 LIVE.update(session=session, live=live)
             man = continuous.run_continuous(
                 fabmo, cap, outdir, axis, start, end, speed, int(s["laser_output"]),
-                float(s["continuous_latency_ms"]), progress_cb, ABORT, on_live=on_live)
+                float(s["continuous_latency_ms"]), progress_cb, ABORT, on_live=on_live,
+                two_pass=two_pass)
         finally:
             cap.release()
     if not man["complete"]:

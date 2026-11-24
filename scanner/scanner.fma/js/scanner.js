@@ -251,10 +251,14 @@ function sweepParams() {
         row_start: parseFloat($("sw-row0").value) || 0,
     };
     p.mode = $("sw-mode").value;
-    if (p.mode === "continuous") { p.speed = parseFloat($("sw-speed").value); }
+    if (p.mode === "continuous") {
+        p.speed = parseFloat($("sw-speed").value);
+        p.two_pass = $("sw-twopass").checked;
+    }
     if (isMulti(hs)) {
         p.mode = "stops";                 // multi-heading scans are stop-and-go
         delete p.speed;
+        delete p.two_pass;
         p.headings = hs;
         p.length = parseFloat($("sw-length").value);
         p.rows = 1;
@@ -284,10 +288,11 @@ function sweepEstimate() {
             return null;
         }
         var A = p.axis.toUpperCase(), sg = function (v) { return (v >= 0 ? "+" : "") + v; };
-        var tmove = (p.end - p.start + 0.6) / p.speed + 3;
+        var tmove = ((p.end - p.start + 0.6) / p.speed + 3) * (p.two_pass ? 2 : 1);
         var nfr = (p.end - p.start) / 0.04;            // processed lines at the 0.04 in default
-        var tproc = nfr * 0.06 + 8;
-        $("sw-estimate").textContent = "Continuous: laser on, head moves " + A + " from " + sg(p.start) +
+        var tproc = nfr * (p.two_pass ? 0.12 : 0.06) + 8;
+        $("sw-estimate").textContent = "Continuous" +
+            (p.two_pass ? ", two passes (laser off, then on): head moves " : ": laser on, head moves ") + A + " from " + sg(p.start) +
             " to " + sg(p.end) + " in at " + p.speed + " in/s, relative to the current position: ~" +
             Math.round(tmove) + " s of motion + ~" + Math.round(tproc) + " s processing. " +
             "Head returns to its start; laser is switched off at the end.";
@@ -360,7 +365,7 @@ function sweepEstimate() {
     return p;
 }
 ["sw-axis", "sw-start", "sw-end", "sw-step", "sw-rows", "sw-rowsp", "sw-row0",
-    "sw-headings", "sw-length", "sw-mode", "sw-speed"].forEach(function (id) {
+    "sw-headings", "sw-length", "sw-mode", "sw-speed", "sw-twopass"].forEach(function (id) {
     $(id).oninput = sweepEstimate;
     $(id).onchange = sweepEstimate;
 });
@@ -395,7 +400,7 @@ $("sw-confirm-go").onclick = function () {
 };
 $("sw-confirm-cancel").onclick = hideSweepConfirm;
 ["sw-axis", "sw-start", "sw-end", "sw-step", "sw-name", "sw-rows", "sw-rowsp", "sw-row0",
-    "sw-headings", "sw-length", "sw-mode", "sw-speed"].forEach(function (id) {
+    "sw-headings", "sw-length", "sw-mode", "sw-speed", "sw-twopass"].forEach(function (id) {
     $(id).addEventListener("input", hideSweepConfirm);   // parameters changed: re-confirm
 });
 
