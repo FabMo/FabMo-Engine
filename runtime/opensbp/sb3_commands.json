@@ -3079,230 +3079,133 @@
    },
    "VR": {
       "cmd": "VR",
-      "name": "Ramp values",
+      "name": "Accel/Decel Ramp",
       "params": [
          {
-            "name": "XY Move Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for XY Moves ",
-            "abrev": "mrXY",
+            "name": "X Jerk Limit",
+            "desc": "Sets Jerk Limit in Current Units for X motion (snappiness of accel/decel) ",
+            "abrev": "mjX",
             "typeext": 0,
             "disptype": "1",
-            "default": ".4",
-            "sysvar": 81,
+            "default": "75",
+            "sysvar": 141,
             "range": [
-               ".05",
-               "2"
+               "25",
+               "2000"
             ],
             "type": "distm"
          },
          {
-            "name": "Z Move Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for Z Moves ",
-            "abrev": "mrZ",
+            "name": "Y Jerk Limit",
+            "desc": "Sets Jerk Limit in Current Units for Y motion (snappiness of accel/decel) ",
+            "abrev": "mjY",
             "typeext": 0,
             "disptype": "1",
-            "default": ".4",
-            "sysvar": 83,
+            "default": "75",
+            "sysvar": 142,
             "range": [
-               ".05",
-               "2"
+               "25",
+               "2000"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Jerk Limit",
+            "desc": "Sets Jerk Limit in Current Units for Z motion (snappiness of accel/decel) ",
+            "abrev": "mjZ",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "50",
+            "sysvar": 143,
+            "range": [
+               "25",
+               "2000"
+            ],
+            "type": "distmz"
+         },
+         {
+            "name": "A Jerk Limit",
+            "desc": "Sets Jerk Limit in Current Units for A motion (snappiness of accel/decel) ",
+            "abrev": "mjA",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "50",
+            "sysvar": 144,
+            "range": [
+               "25",
+               "3000"
             ],
             "type": "distma"
          },
          {
-            "name": "A Move Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for A Moves ",
-            "abrev": "mrA",
+            "name": "B Jerk Limit",
+            "desc": "Sets Jerk Limit in Current Units for B motion (snappiness of accel/decel) ",
+            "abrev": "mjB",
             "typeext": 0,
             "disptype": "1",
-            "default": ".4",
-            "sysvar": 84,
+            "default": "1000",
+            "sysvar": 145,
             "range": [
-               ".05",
-               "100"
+               "25",
+               "3000"
             ],
             "type": "distmb"
          },
          {
-            "name": "B Move Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for B Moves ",
-            "abrev": "mrB",
+            "name": "C Jerk Limit",
+            "desc": "Sets Jerk Limit in Current Units for C motion (snappiness of accel/decel) ",
+            "abrev": "mjC",
             "typeext": 0,
             "disptype": "1",
-            "default": ".4",
-            "sysvar": 85,
+            "default": "1000",
+            "sysvar": 146,
             "range": [
-               ".05",
-               "100"
+               "25",
+               "3000"
+            ],
+            "type": "distmc"
+         },
+         {
+            "name": "Manual Keypad XY Jerk Limit",
+            "desc": "Sets the XY Jerk Limit for manual keypad movements",
+            "abrev": "mjKPXY",
+            "typeext": 0,
+            "disptype": "1",
+            "default": "75",
+            "sysvar": 147,
+            "range": [
+               25,
+               3000
             ],
             "type": "distm"
          },
          {
-            "name": "XY Jog Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for XY Jogs ",
-            "abrev": "jrXY",
+            "name": "Manual Keypad Z Jerk Limit",
+            "desc": "Sets the Z Jerk Limit for manual keypad movements",
+            "abrev": "mjKPZ",
             "typeext": 0,
-            "default": ".4",
-            "sysvar": 86,
+            "disptype": "1",
+            "default": "75",
+            "sysvar": 148,
             "range": [
-               ".05",
-               "2"
+               25,
+               3000
             ],
             "type": "distm"
          },
          {
-            "name": "Z Jog Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for Z Jogs ",
-            "abrev": "jrZ",
+            "name": "Junction Integration Time",
+            "desc": "Sets aggressiveness of cornering - higher values make corners more aggresive",
+            "abrev": "jt",
             "typeext": 0,
             "disptype": "1",
-            "default": ".4",
-            "sysvar": 88,
-            "range": [
-               ".05",
-               "2"
-            ],
-            "type": "distma"
-         },
-         {
-            "name": "A Jog Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for A Jogs ",
-            "abrev": "jrA",
-            "typeext": 0,
-            "disptype": "1",
-            "default": ".4",
-            "sysvar": 89,
-            "range": [
-               ".05",
-               "100"
-            ],
-            "type": "distmb"
-         },
-         {
-            "name": "B Jog Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for B Jogs ",
-            "abrev": "jrB",
-            "typeext": 0,
-            "disptype": "1",
-            "default": ".4",
-            "sysvar": 90,
-            "range": [
-               ".05",
-               "100"
-            ],
-            "type": "distm"
-         },
-         {
-            "name": "Move Ramp Rate",
-            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Move Ramps",
-            "abrev": "rateM",
-            "typeext": 0,
-            "disptype": "1",
-            "default": ".2",
+            "default": "1.5",
             "sysvar": 0,
             "range": [
-               ".025",
-               "10"
-            ],
-            "type": "distm"
-         },
-         {
-            "name": "Jog Ramp Rate",
-            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Jog Ramps",
-            "abrev": "rateJ",
-            "typeext": 0,
-            "disptype": "1",
-            "default": ".2",
-            "sysvar": 0,
-            "range": [
-               ".025",
-               "10"
+               ".5",
+               "3"
             ],
             "type": "sng"
-         },
-         {
-            "name": "3D Ramp Threshold",
-            "desc": "Sensitize (by decreasing) or desensitize 3D (vertical) ramping",
-            "abrev": "3dT",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "100",
-            "sysvar": 0,
-            "range": [
-               "1",
-               "1000"
-            ],
-            "type": "distm"
-         },
-         {
-            "name": "Minimum Dist to Check",
-            "desc": "Segment size required to test for ramp (should not need changing)",
-            "abrev": "minD",
-            "typeext": 0,
-            "disptype": "1",
-            "default": ".10",
-            "sysvar": 0,
-            "range": [
-               ".001",
-               "1"
-            ],
-            "type": "sng"
-         },
-         {
-            "name": "Slow Corner Speed",
-            "desc": "Percentage to slow from full speed on gentle corners",
-            "abrev": "crnr",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "65",
-            "sysvar": 0,
-            "range": [
-               "20",
-               "99"
-            ],
-            "type": "obs"
-         },
-         {
-            "name": "Fast Stop Threshold",
-            "desc": "",
-            "abrev": "fStop",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "0",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "obs"
-         },
-         {
-            "name": "KeyPad Stop Threshold",
-            "desc": "",
-            "abrev": "thStop",
-            "typeext": 0,
-            "disptype": "1",
-            "default": "0",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "distm"
-         },
-         {
-            "name": "KeyPad Ramp Rate",
-            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Move Ramps",
-            "abrev": "rateK",
-            "typeext": 0,
-            "disptype": "1",
-            "default": ".2",
-            "sysvar": 0,
-            "range": [
-               ".1",
-               "2"
-            ],
-            "type": "distm"
          }
       ]
    },

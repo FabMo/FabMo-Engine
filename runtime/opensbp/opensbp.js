@@ -3538,6 +3538,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         return value;
     }
 
+    // SYSTEM VARIABLE ASSIGNMENT LIST
     // Handle traditional numeric system variables (e.g., %(71))
     var n = this._eval(v.expr);
     switch (n) {
@@ -3695,6 +3696,37 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
             return envelope.cmax;
 
         // PLANNING for Movespeeds starting at 121
+
+        case 141: // JerkLimit X
+            return config.opensbp.get("xy_maxjerk");
+
+        case 142: // JerkLimit Y
+            return config.opensbp.get("y_maxjerk");
+
+        case 143: // JerkLimit Z
+            return config.opensbp.get("z_maxjerk");
+
+        case 144: // JerkLimit A
+            return config.opensbp.get("a_maxjerk");
+
+        case 145: // JerkLimit B
+            return config.opensbp.get("b_maxjerk");
+
+        case 146: // JerkLimit C
+            return config.opensbp.get("c_maxjerk");
+
+        case 148: // JerkLimit XY Manual
+            return manual.xy_jerk;
+
+        case 149: // JerkLimit Z Manual
+            return manual.z_jerk;
+    
+        case 151: // Junction Integration Time
+            return config.driver.get("jt");
+        
+        case 152: // Chordal Tolerance
+            return config.driver.get("ct");
+
 
         default:
             //throw new Error("Unknown System Variable: " + JSON.stringify(v) + " on line " + (this.pc + 1));

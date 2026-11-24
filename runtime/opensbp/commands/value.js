@@ -236,44 +236,58 @@ exports.VN = function (args, callback) {
 
 exports.VR = function (args, callback) {
     // Headless simulation (gcode preview, bounds check) has no machine:
-    // track the values but skip the live driver writes.
+   
+    // For present purposes X Jerk value is XY Jerk value for OpenSBP purposes,
+    // ... maintianing Y value for potential future use.
     var driver = this.machine && this.machine.driver;
-    // XY Move Ramp Speed
+    // X(Y) Jerk Limit
     if (args[0] !== undefined) {
         this.maxjerk_xy = args[0];
         if (driver) {
-            driver.command({ xjm: this.maxjerk_xy });
+            driver.command({ xjm: this.maxjerk_xy }); 'set both here'
             driver.command({ yjm: this.maxjerk_xy });
         }
     }
-    // Z Move Ramp Speed = args[0];
+    // Y Jerk Limit
     if (args[1] !== undefined) {
-        this.maxjerk_z = args[1];
+        this.maxjerk_y = args[1];
+    }
+    // Z Jerk Limit
+    if (args[2] !== undefined) {
+        this.maxjerk_z = args[2];
         if (driver) driver.command({ zjm: this.maxjerk_z });
     }
-    // A Move Ramp Speed
-    if (args[2] !== undefined) {
-        this.maxjerk_a = args[2];
+    // A Jerk Limit
+    if (args[3] !== undefined) {
+        this.maxjerk_a = args[3];
         if (driver) driver.command({ ajm: this.maxjerk_a });
     }
-    // B Move Ramp Speed
-    if (args[3] !== undefined) {
-        this.maxjerk_b = args[3];
+    // B Jerk Limit
+    if (args[4] !== undefined) {
+        this.maxjerk_b = args[4];
         if (driver) driver.command({ bjm: this.maxjerk_b });
     }
-    // C Move Ramp Speed
-    if (args[4] !== undefined) {
-        this.maxjerk_c = args[4];
+    // C Jerk Limit
+    if (args[5] !== undefined) {
+        this.maxjerk_c = args[5];
         if (driver) driver.command({ cjm: this.maxjerk_c });
     }
+    // XY Jerk Limit Manual Controls
+    if (args[6] !== undefined) {
+        this.manual.xy_jerk = args[6];
+    }
+    // Z Jerk Limit Manual Controls
+    if (args[7] !== undefined) {
+        this.manual.z_jerk = args[7];
+    }
     // [JT] Junction Integration Time
-    if (args[5] !== undefined) {
-        this.jt = args[5];
+    if (args[8] !== undefined) {
+        this.jt = args[8];
         if (driver) driver.command({ jt: this.jt });
     }
     // [CT] Chordal Tolerance
-    if (args[6] !== undefined) {
-        this.chordalTol = args[6];
+    if (args[9] !== undefined) {
+        this.chordalTol = args[9];
         if (driver) driver.command({ ct: this.chordalTol });
     }
     callback();
