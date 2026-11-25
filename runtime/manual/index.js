@@ -69,18 +69,7 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
     // Guard against re-entry before previous cycle context is cleaned up
     if (this.stream) {
         log.warn("Cannot enter manual mode - stream still active from previous session");
-        // Set a brief timeout to retry
-        setTimeout(
-            function () {
-                if (!this.stream) {
-                    log.info("Stream cleaned up, retrying manual enter");
-                    this.enter(mode, hideKeypad);
-                } else {
-                    log.error("Stream still active after retry, giving up");
-                }
-            }.bind(this),
-            100,
-        );
+        this._retryEnter(mode, hideKeypad);
         return;
     }
 
@@ -146,6 +135,52 @@ ManualRuntime.prototype.enter = function (mode, hideKeypad) {
     this.machine.setState(this, "manual");
 };
 
+// An enter that arrived while the previous session was still closing: wait
+// for that session's stream to finish, then enter again THROUGH THE MACHINE.
+//
+// When the old stream finishes, the machine goes idle and switches away from
+// this runtime (disconnecting it). Calling this.enter() directly at that point
+// opened a new stream on a runtime the machine no longer listened to: the
+// "manual" state change was ignored, the stream never ended, and every later
+// enter was refused until the engine was restarted. Going back through
+// machine.executeRuntimeCode makes this runtime current again first.
+var ENTER_RETRY_INTERVAL = 100;
+var ENTER_RETRY_LIMIT = 20;
+ManualRuntime.prototype._retryEnter = function (mode, hideKeypad) {
+    // One wait at a time; the most recent request wins.
+    this._pendingEnter = { mode: mode, hideKeypad: hideKeypad, tries: 0 };
+    if (this._enterRetryTimer) {
+        return;
+    }
+    var tick = function () {
+        this._enterRetryTimer = null;
+        var pending = this._pendingEnter;
+        if (!pending) {
+            return;
+        }
+        if (this.stream) {
+            pending.tries += 1;
+            if (pending.tries >= ENTER_RETRY_LIMIT) {
+                this._pendingEnter = null;
+                log.error("Stream still active after retry, giving up");
+                return;
+            }
+            this._enterRetryTimer = setTimeout(tick, ENTER_RETRY_INTERVAL);
+            return;
+        }
+        this._pendingEnter = null;
+        if (this.machine.status.state !== "idle") {
+            // Something else took the machine in the meantime (a file, a
+            // fault). Don't open the keypad underneath it.
+            log.warn("Not retrying manual enter - machine is " + this.machine.status.state);
+            return;
+        }
+        log.info("Stream cleaned up, retrying manual enter");
+        this.machine.executeRuntimeCode("manual", { cmd: "enter", mode: pending.mode, hideKeypad: pending.hideKeypad });
+    }.bind(this);
+    this._enterRetryTimer = setTimeout(tick, ENTER_RETRY_INTERVAL);
+};
+
 // Execute a command.  Command structure follows:
 // {cmd:"start",axis:"X",speed:2} - Start moving in +X direction at 2ips
 // TODO: The 2-axis form of 'start' is bonkers, we should just get to specify an N-dimensional speed vector
@@ -181,6 +216,10 @@ ManualRuntime.prototype.executeCode = function (code) {
         case "maint":
             global.CLIENT_DISCONNECTED = false;
             break;
+    }
+    // Closing the keypad cancels an enter that is still waiting its turn.
+    if (code.cmd === "exit") {
+        this._pendingEnter = null;
     }
     switch (code.cmd) {
         case "enter":
