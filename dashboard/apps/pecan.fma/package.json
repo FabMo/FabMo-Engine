@@ -1,0 +1,11 @@
+{
+    "name": "Pecan",
+    "main": "./index.html",
+    "icon": "icon.png",
+    "icon_color": "#5a3a1e",
+    "version": "0.3.0",
+    "author": "ShopBot Tools",
+    "website": "http://shopbottools.com",
+    "id": "pecan",
+    "description": "A tongue-in-cheek industrial CNC console for FabMo: big readout, softkeys, MDI, Cycle Start. No servos required."
+}

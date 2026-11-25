@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pecan</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="pc-console">
+
+    <header class="pc-top">
+        <div class="pc-brand">
+            <svg class="pc-logo" viewBox="0 0 48 48" aria-hidden="true">
+                <ellipse cx="24" cy="24" rx="13" ry="20" fill="#8a5a2b" stroke="#3a2412" stroke-width="2"/>
+                <path d="M24 5 C21 16 27 22 24 30 C22 36 25 40 24 43" fill="none" stroke="#3a2412" stroke-width="2" stroke-linecap="round"/>
+                <path d="M17 12 C19 18 17 26 19 34 M31 12 C29 18 31 26 29 34" fill="none" stroke="#b9824a" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div>
+                <div class="pc-name">PECAN</div>
+                <div class="pc-tag">A tougher nut. No servos required.</div>
+            </div>
+        </div>
+        <div class="pc-top-right">
+            <span class="pc-lamp" id="lamp"></span>
+            <span class="pc-state" id="state">—</span>
+        </div>
+    </header>
+
+    <main class="pc-main">
+
+        <section class="pc-left">
+            <div class="pc-dro" id="dro">
+                <div class="pc-axis" data-axis="x">
+                    <span class="pc-ax">X</span><span class="pc-val" id="pos-x">0.000</span>
+                    <button class="pc-key pc-small" data-zero="X">ZERO</button>
+                </div>
+                <div class="pc-axis" data-axis="y">
+                    <span class="pc-ax">Y</span><span class="pc-val" id="pos-y">0.000</span>
+                    <button class="pc-key pc-small" data-zero="Y">ZERO</button>
+                </div>
+                <div class="pc-axis" data-axis="z">
+                    <span class="pc-ax">Z</span><span class="pc-val" id="pos-z">0.000</span>
+                    <button class="pc-key pc-small" data-zero="Z">ZERO</button>
+                </div>
+                <div class="pc-dro-foot">
+                    <span id="wcs-name">G54 position</span><span id="wcs-offset"></span><span id="unit">in</span>
+                </div>
+                <div class="pc-wcs">
+                    <span class="pc-wcs-lbl">Work offset</span>
+                    <div class="pc-wcs-keys" id="wcs"></div>
+                </div>
+            </div>
+
+            <div class="pc-status">
+                <div class="pc-row"><span class="pc-lbl">Job</span><span class="pc-data" id="job-name">none loaded</span></div>
+                <div class="pc-row">
+                    <span class="pc-lbl">Line</span><span class="pc-data" id="job-line">—</span>
+                    <div class="pc-bar"><div class="pc-bar-fill" id="job-bar"></div></div>
+                </div>
+                <div class="pc-row pc-split">
+                    <span><span class="pc-lbl">Feed</span><span class="pc-data" id="feed">0</span></span>
+                    <span><span class="pc-lbl">Override</span><span class="pc-data" id="fro">100%</span></span>
+                    <span><span class="pc-lbl">Spindle</span><span class="pc-data" id="spindle">OFF</span></span>
+                </div>
+            </div>
+
+            <div class="pc-log" id="log" aria-live="polite"></div>
+
+            <form class="pc-mdi" id="mdi-form" autocomplete="off">
+                <label class="pc-lbl" for="mdi">MDI</label>
+                <input class="pc-mdi-in" id="mdi" type="text" spellcheck="false" placeholder="G0 X1 Y1   or   M2,1,1">
+                <span class="pc-mdi-kind" id="mdi-kind"></span>
+                <button class="pc-key pc-small" type="submit">ENTER</button>
+            </form>
+        </section>
+
+        <section class="pc-right">
+            <div class="pc-panel">
+                <div class="pc-panel-title">Jog</div>
+                <div class="pc-incs" id="incs"></div>
+                <div class="pc-jog">
+                    <button class="pc-key pc-jog-key" data-jog="Y" data-dir="1" style="grid-area:yp">Y+</button>
+                    <button class="pc-key pc-jog-key" data-jog="X" data-dir="-1" style="grid-area:xm">X&minus;</button>
+                    <button class="pc-key pc-jog-key" data-jog="X" data-dir="1" style="grid-area:xp">X+</button>
+                    <button class="pc-key pc-jog-key" data-jog="Y" data-dir="-1" style="grid-area:ym">Y&minus;</button>
+                    <button class="pc-key pc-jog-key" data-jog="Z" data-dir="1" style="grid-area:zp">Z+</button>
+                    <button class="pc-key pc-jog-key" data-jog="Z" data-dir="-1" style="grid-area:zm">Z&minus;</button>
+                </div>
+                <div class="pc-hint" id="jog-hint"></div>
+            </div>
+
+            <div class="pc-panel pc-cycle">
+                <button class="pc-big pc-start" id="btn-start">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 L20 12 L7 20 Z" fill="currentColor"/></svg>
+                    CYCLE<br>START
+                </button>
+                <button class="pc-big pc-hold" id="btn-hold">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4 H10 V20 H6 Z M14 4 H18 V20 H14 Z" fill="currentColor"/></svg>
+                    FEED<br>HOLD
+                </button>
+                <button class="pc-big pc-cancel" id="btn-cancel">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5 H19 V19 H5 Z" fill="currentColor"/></svg>
+                    CYCLE<br>CANCEL
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <nav class="pc-fkeys" id="fkeys"></nav>
+</div>
+
+<div class="pc-dialog-wrap" id="dialog" hidden>
+    <div class="pc-dialog" role="dialog" aria-modal="true">
+        <div class="pc-dialog-title" id="dialog-title"></div>
+        <div class="pc-dialog-body" id="dialog-body"></div>
+        <div class="pc-dialog-keys">
+            <button class="pc-key" id="dialog-cancel">CANCEL</button>
+            <button class="pc-key pc-ok" id="dialog-ok">OK</button>
+        </div>
+    </div>
+</div>
+
+<script src="../../js/libs/fabmo.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

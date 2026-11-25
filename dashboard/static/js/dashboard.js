@@ -856,19 +856,22 @@ define(function (require) {
         this._registerHandler(
             "manualStart",
             function (data, callback) {
-                this.engine.manualStart(
-                    data.axis,
-                    data.speed,
-                    data.second_axis,
-                    data.second_speed,
-                    function (err, result) {
-                        if (err) {
-                            callback(err);
-                        } else {
-                            callback(null);
-                        }
-                    }
-                );
+                // Ratios are optional: with them, each axis runs at
+                // speed x ratio (independent per-axis speeds). The engine
+                // call takes no callback, so answer the app directly.
+                if (typeof data.primary_ratio === "number") {
+                    this.engine.manualStart(
+                        data.axis,
+                        data.speed,
+                        data.second_axis,
+                        data.second_speed,
+                        data.primary_ratio,
+                        data.secondary_ratio || 0
+                    );
+                } else {
+                    this.engine.manualStart(data.axis, data.speed, data.second_axis, data.second_speed);
+                }
+                callback(null);
             }.bind(this)
         );
 
@@ -934,6 +937,26 @@ define(function (require) {
                         callback(null);
                     }
                 });
+            }.bind(this)
+        );
+
+        // Fixed-distance step (the keypad's "nudge"). The engine call takes
+        // no callback, so answer the app directly.
+        this._registerHandler(
+            "manualMoveFixed",
+            function (data, callback) {
+                this.engine.manualMoveFixed(data.axis, data.speed, data.dist, data.second_axis, data.second_dist);
+                callback(null);
+            }.bind(this)
+        );
+
+        // Set the current position of one or more axes (no motion), e.g.
+        // {X: 0} to zero X. Same path as the keypad's "set coordinates".
+        this._registerHandler(
+            "manualSet",
+            function (data, callback) {
+                this.engine.set(data.move);
+                callback(null);
             }.bind(this)
         );
 
