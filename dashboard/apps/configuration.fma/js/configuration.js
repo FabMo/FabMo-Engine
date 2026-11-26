@@ -117,6 +117,21 @@ function update() {
             }
           }
         });
+      // A/B keypad speeds and jerk default to 0, meaning "use the axis
+      // jog/move speed and Maximum Jerk" — show those instead of the 0.
+      var manualCfg = (data.machine && data.machine.manual) || {};
+      var sbpCfg = data.opensbp || {};
+      ['a', 'b'].forEach(function(ax) {
+          var fallbacks = {};
+          fallbacks[ax + '_fast_speed'] = sbpCfg['jog' + ax + '_speed'];
+          fallbacks[ax + '_slow_speed'] = sbpCfg['move' + ax + '_speed'];
+          fallbacks[ax + '_jerk'] = sbpCfg[ax + '_maxjerk'];
+          for (var k in fallbacks) {
+              if (!manualCfg[k] && fallbacks[k] !== undefined) {
+                  $('#machine-manual-' + k).val(String(fallbacks[k]));
+              }
+          }
+      });
       // Update all the labels based on the current unit setting
       var unit = data.machine.units;
       $.each(unit_label_index, function(key, value) {  // handles units for XYZ

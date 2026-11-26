@@ -2147,6 +2147,103 @@
                 </div>
               </div>
 
+              <!-- A/B keypad speeds and jerk. 0 (the default) = the axis jog/move speed and Maximum Jerk. -->
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.a_speed_fast">A Speed Fast</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.a_speed_fast_tooltip">
+                    The "fast" A speed used when driving the tool with the <br>
+                    Motion Keypad. [ &lt;&lt; &gt;&gt; ] Starts out as the A jog speed. <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-a_fast_speed" class="machine-input" min="0" step="any" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix a-axis-unit">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.a_speed_slow">A Speed Slow</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.a_speed_slow_tooltip">
+                    The "slow" A speed used when driving the tool with the <br>
+                    Motion Keypad. [ &lt; &gt; ] Starts out as the A move speed. <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-a_slow_speed" class="machine-input" min="0" step="any" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix a-axis-unit">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.a_max_jerk">A Max Jerk</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.a_max_jerk_tooltip">
+                    A acceleration for the Motion Keypad. Starts out as <br>
+                    the A axis Maximum Jerk. <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-a_jerk" class="machine-input" min="0" step="any" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix a-axis-jerk-unit">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.b_speed_fast">B Speed Fast</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.b_speed_fast_tooltip">
+                    The "fast" B speed used when driving the tool with the <br>
+                    Motion Keypad. [ &lt;&lt; &gt;&gt; ] Starts out as the B jog speed. <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-b_fast_speed" class="machine-input" min="0" step="any" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix b-axis-unit">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.b_speed_slow">B Speed Slow</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.b_speed_slow_tooltip">
+                    The "slow" B speed used when driving the tool with the <br>
+                    Motion Keypad. [ &lt; &gt; ] Starts out as the B move speed. <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-b_slow_speed" class="machine-input" min="0" step="any" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix b-axis-unit">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label> <span data-i18n="config.machine.b_max_jerk">B Max Jerk</span> <span class="tooltip">i
+                  <span class="tooltiptext" data-i18n-html="config.machine.b_max_jerk_tooltip">
+                    B acceleration for the Motion Keypad. Starts out as <br>
+                    the B axis Maximum Jerk. <br>
+                  </span>
+                </span>
+                </label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-b_jerk" class="machine-input" min="0" step="any" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix b-axis-jerk-unit">&nbsp;</span>
+                </div>
+              </div>
+
               <div class="row collapse">
                 <label><span data-i18n="config.machine.fixed_move_delay">Fixed Move Delay</span> <span class="tooltip">i
                   <span class="tooltiptext" data-i18n-html="config.machine.fixed_move_delay_tooltip">
