@@ -1868,6 +1868,7 @@ SBPRuntime.prototype._end = function (error) {
         return;
     }
     this._endCalled = true;
+    this.pendingZLift = 0; // a ghost-run lift never outlives its run
     var error_msg;
     if (!error && this.pending_error) {
         error = this.pending_error;
@@ -4052,6 +4053,23 @@ SBPRuntime.prototype._setupTransforms = function () {
     } else {
         log.warn("_setupTransforms: config.opensbp not available, using empty transforms");
         this.transforms = {};
+    }
+    // Ghost run: lift this one run in Z. The lift rides on top of the Move
+    // transform for this run only; the saved transform settings are not
+    // touched. One-shot — taken here and cleared so it cannot carry into the
+    // next run.
+    var lift = this.pendingZLift;
+    this.pendingZLift = 0;
+    if (typeof lift === "number" && isFinite(lift) && lift !== 0) {
+        var mv = this.transforms.move;
+        var on = !!(mv && mv.apply);
+        this.transforms.move = {
+            apply: true,
+            x: on ? Number(mv.x) || 0 : 0,
+            y: on ? Number(mv.y) || 0 : 0,
+            z: (on ? Number(mv.z) || 0 : 0) + lift,
+        };
+        log.info("Ghost run: lifting this run by Z" + (lift > 0 ? "+" : "") + lift);
     }
 };
 

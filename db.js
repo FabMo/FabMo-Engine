@@ -135,28 +135,19 @@ var Job = function (options) {
         options.repeatCount === undefined || options.repeatCount === null
             ? null
             : Math.max(0, Math.floor(options.repeatCount));
-    // Ghost mode: a transient one-shot clone that runs the job with a Z lift
-    // for a dry-run / preview pass. ghost_restore_move snapshots the user's
-    // transforms.move so we can put it back when the ghost run ends.
+    // Ghost run: a dry-run pass of a queued job (lifted in Z, or a trace of
+    // its bounding rectangle). It is never written to the database — the
+    // queued job it previews is left alone, still pending at the top of the
+    // queue, and nothing is added to the history. The object only exists so
+    // the runtimes and the dashboard have a "current job" while it runs.
+    //   ghost        - one-shot: never repeats
+    //   transient    - save() does nothing
+    //   ghost_of     - _id of the queued job being previewed
+    //   cleanup_path - a generated file to delete when the run ends
     this.ghost = !!options.ghost;
-    this.ghost_restore_move = options.ghost_restore_move || null;
-};
-
-// Restore the transforms.move config snapshotted at the start of a ghost run.
-// Called from finish/cancel/fail when this.ghost is true, so the user's
-// original transform state is restored regardless of how the ghost run ended.
-Job.prototype._restoreGhostTransform = function (callback) {
-    if (!this.ghost || !this.ghost_restore_move) {
-        return setImmediate(callback);
-    }
-    var snapshot = this.ghost_restore_move;
-    require("./config").opensbp.setMany(
-        { transforms: { move: snapshot } },
-        function (err) {
-            if (err) log.error("Failed to restore transform after ghost run: " + err);
-            callback();
-        }
-    );
+    this.transient = !!options.transient;
+    this.ghost_of = options.ghost_of || null;
+    this.cleanup_path = options.cleanup_path || null;
 };
 
 // Clone a job.  Used for re-running files, usually.
@@ -227,31 +218,29 @@ Job.prototype.finish = function (callback) {
     this.finished_at = Date.now();
     if (wasCancelled) this.repeat = false;
     var that = this;
-    this._restoreGhostTransform(function () {
-        that.save(function (err, saved) {
-            if (callback) callback(err, saved);
-            if (err || that.ghost || !that.repeat) return;
-            // Decide whether this finish triggers another run. Count semantics:
-            // repeatCount === null  → run forever
-            // repeatCount === N     → N total runs remain; this is one of them,
-            //                          so the next run only happens if N >= 2
-            //                          (the clone gets N-1).
-            var nextCount = null;
-            if (that.repeatCount !== null && that.repeatCount !== undefined) {
-                if (that.repeatCount < 2) return; // this was the final scheduled run
-                nextCount = that.repeatCount - 1;
-            }
-            // Repeat mode: clone the just-finished job back onto the queue and
-            // auto-start once the previous run's driver cycle is actually
-            // closed. Previously this fired on setImmediate, which usually
-            // happened to land after stat:4 cleared the G2 cycle context —
-            // but under event-loop pressure (e.g. an in-flight queue-change
-            // notification triggered by the repeat-modal save) the next
-            // runStream could start before context=null, throwing "Cannot
-            // create a new cycle context. One already exists." Skipped for
-            // ghost runs — those are intentionally one-shot.
-            scheduleRepeatRestart(that, nextCount);
-        });
+    this.save(function (err, saved) {
+        if (callback) callback(err, saved);
+        if (err || that.ghost || !that.repeat) return;
+        // Decide whether this finish triggers another run. Count semantics:
+        // repeatCount === null  → run forever
+        // repeatCount === N     → N total runs remain; this is one of them,
+        //                          so the next run only happens if N >= 2
+        //                          (the clone gets N-1).
+        var nextCount = null;
+        if (that.repeatCount !== null && that.repeatCount !== undefined) {
+            if (that.repeatCount < 2) return; // this was the final scheduled run
+            nextCount = that.repeatCount - 1;
+        }
+        // Repeat mode: clone the just-finished job back onto the queue and
+        // auto-start once the previous run's driver cycle is actually
+        // closed. Previously this fired on setImmediate, which usually
+        // happened to land after stat:4 cleared the G2 cycle context —
+        // but under event-loop pressure (e.g. an in-flight queue-change
+        // notification triggered by the repeat-modal save) the next
+        // runStream could start before context=null, throwing "Cannot
+        // create a new cycle context. One already exists." Skipped for
+        // ghost runs — those are intentionally one-shot.
+        scheduleRepeatRestart(that, nextCount);
     });
 };
 
@@ -260,10 +249,7 @@ Job.prototype.fail = function (callback) {
     this.state = "failed";
     this.finished_at = Date.now();
     this.repeat = false; // failure clears repeat so a broken job doesn't loop
-    var that = this;
-    this._restoreGhostTransform(function () {
-        that.save(callback);
-    });
+    this.save(callback);
 };
 
 Job.prototype.cancel = function (callback) {
@@ -272,10 +258,7 @@ Job.prototype.cancel = function (callback) {
         this.state = "cancelled";
         this.finished_at = Date.now();
         this.repeat = false; // user-cancel clears repeat
-        var that = this;
-        this._restoreGhostTransform(function () {
-            that.save(callback);
-        });
+        this.save(callback);
     } else {
         setImmediate(callback, new Error("Cannot cancel a job that is " + this.state));
     }
@@ -302,6 +285,20 @@ Job.prototype.cancelOrTrash = function (callback) {
 
 // Write this job to the database
 Job.prototype.save = function (callback) {
+    callback = callback || function () {};
+    if (this.transient) {
+        // Ghost runs are not stored. Once the run is over, remove the file
+        // that was generated for it, if any.
+        if (this.state !== "running" && this.cleanup_path) {
+            var stale = this.cleanup_path;
+            this.cleanup_path = null;
+            fs.unlink(stale, function (err) {
+                if (err) log.warn("Could not remove ghost-run file " + stale + ": " + err);
+            });
+        }
+        delete this.pending_cancel;
+        return setImmediate(callback, null, this);
+    }
     if (!this.file_id) {
         log.info("Not saving this job because no file_id");
         return callback(null, this);

@@ -847,51 +847,47 @@ var ghostRunJob = function (req, res, next) {
     });
 };
 
+// A ghost run does not create a job. The queued job stays where it is —
+// pending, at the top of the queue — and its file is run through a transient
+// Job object that is never stored (see db.js), so nothing lands in the queue
+// or the history.
+function makeGhostJob(original, label, description, cleanupPath) {
+    var job = new db.Job({
+        file_id: original.file_id,
+        name: original.name + " (" + label + ")",
+        description: (original.description ? original.description + " — " : "") + description,
+        ghost: true,
+        transient: true,
+        ghost_of: original._id,
+        cleanup_path: cleanupPath || null,
+    });
+    if (original.bounds) job.bounds = original.bounds;
+    job.state = "running";
+    job.started_at = Date.now();
+    return job;
+}
+
 function runLiftGhost(original, body, res, fail) {
     var zOffset = parseFloat(body.zOffset);
     if (!isFinite(zOffset) || zOffset === 0) {
         return fail("Invalid zOffset");
     }
 
-    // SBP only — gcode runtime ignores transforms entirely
+    // SBP only — the lift rides on the OpenSBP Move transform, which the
+    // gcode runtime does not have.
     if (!/\.sbp$/i.test(original.name || "")) {
         return fail("Lift mode is only available for OpenSBP (.sbp) jobs");
     }
 
-    var transforms = config.opensbp.get("transforms") || {};
-    var currentMove = transforms.move || { apply: false, x: 0, y: 0, z: 0 };
-    var snapshot = {
-        apply: !!currentMove.apply,
-        x: currentMove.x || 0,
-        y: currentMove.y || 0,
-        z: currentMove.z || 0,
-    };
-    var newMove = {
-        apply: true,
-        x: snapshot.x,
-        y: snapshot.y,
-        z: snapshot.z + zOffset,
-    };
-
-    config.opensbp.setMany({ transforms: { move: newMove } }, function (setErr) {
-        if (setErr) return fail("Failed to set transform: " + setErr);
-
-        var ghostJob = new db.Job({
-            file_id: original.file_id,
-            name: original.name + " (ghost)",
-            description: (original.description ? original.description + " — " : "") +
-                "ghost run, Z+" + zOffset,
-            ghost: true,
-            ghost_restore_move: snapshot,
-        });
-        ghostJob.save(function (saveErr, saved) {
-            if (saveErr) return fail(saveErr);
-            saved.start(function (startErr) {
-                if (startErr) return fail(startErr);
-                machine.runJob(saved);
-                res.json({ status: "success", data: { job: saved } });
-            });
-        });
+    db.File.getByID(original.file_id, function (fileErr, file) {
+        if (fileErr || !file || !file.path) {
+            return fail("Job file not found");
+        }
+        var job = makeGhostJob(original, "ghost", "ghost run, Z" + (zOffset > 0 ? "+" : "") + zOffset);
+        // The lift applies to this run only; the saved transform settings
+        // are not changed.
+        machine.runGhost(job, file.path, zOffset);
+        res.json({ status: "success", data: { job: job } });
     });
 }
 
@@ -913,31 +909,21 @@ function runPerimeterTrace(original, res, fail) {
     var curY = (machine.status && isFinite(machine.status.posy)) ? machine.status.posy : b.min.y;
     var sbp = buildPerimeterSBP(b, curX, curY);
 
+    // The trace is a generated file. It is run straight from the temp
+    // directory and removed when the run ends — it is not added to the
+    // file store.
     var tmpPath = path.join(os.tmpdir(), "fabmo_trace_" + Date.now() + ".sbp");
     fs.writeFile(tmpPath, sbp, function (writeErr) {
         if (writeErr) return fail("Failed to write trace file: " + writeErr.message);
-
-        db.File.add(original.name.replace(/\.[^.]+$/, "") + "_trace.sbp", tmpPath, function (addErr, dbfile) {
-            // File.add moves/cleans the source; nothing to unlink here.
-            if (addErr || !dbfile) return fail("Failed to store trace file: " + (addErr || "unknown"));
-
-            var ghostJob = new db.Job({
-                file_id: dbfile._id,
-                name: original.name + " (perimeter trace)",
-                description: (original.description ? original.description + " — " : "") +
-                    "perimeter trace of bounds X[" + b.min.x.toFixed(2) + "," + b.max.x.toFixed(2) +
-                    "] Y[" + b.min.y.toFixed(2) + "," + b.max.y.toFixed(2) + "]",
-                ghost: true,
-            });
-            ghostJob.save(function (saveErr, saved) {
-                if (saveErr) return fail(saveErr);
-                saved.start(function (startErr) {
-                    if (startErr) return fail(startErr);
-                    machine.runJob(saved);
-                    res.json({ status: "success", data: { job: saved } });
-                });
-            });
-        });
+        var job = makeGhostJob(
+            original,
+            "perimeter trace",
+            "perimeter trace of bounds X[" + b.min.x.toFixed(2) + "," + b.max.x.toFixed(2) +
+                "] Y[" + b.min.y.toFixed(2) + "," + b.max.y.toFixed(2) + "]",
+            tmpPath
+        );
+        machine.runGhost(job, tmpPath);
+        res.json({ status: "success", data: { job: job } });
     });
 }
 

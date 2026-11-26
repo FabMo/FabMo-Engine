@@ -956,8 +956,10 @@ var setProgress = function(status) {
  */
 
 function handleStatusReport(status) {
+  // A ghost run has a current job but no stored id (it is never saved), so
+  // key the progress ring on the job being there, not on its id.
   try {
-    var jobId = status.job._id || null;
+    var jobId = status.job._id || (status.job.ghost ? 'ghost' : null);
     var jobState = status.state;
   } catch (e) {
     var jobId = null;
