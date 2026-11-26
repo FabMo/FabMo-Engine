@@ -51,6 +51,7 @@ global.CLIENT_DISCONNECTED = false; // Special purpose kludge to stop any ongoin
 // TODO - One day, a folder-scan and auto-registration process might be nice here, this is all sort of hand-rolled.
 var GCodeRuntime = require("./runtime/gcode").GCodeRuntime;
 var SBPRuntime = require("./runtime/opensbp").SBPRuntime;
+var simService = require("./runtime/sim_service");
 var ManualRuntime = require("./runtime/manual").ManualRuntime;
 var PassthroughRuntime = require("./runtime/passthrough").PassthroughRuntime;
 var IdleRuntime = require("./runtime/idle").IdleRuntime;
@@ -1658,12 +1659,18 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
                     var tx = this.driver.status.posx;
                     var ty = this.driver.status.posy;
                     var tz = this.driver.status.posz;
-                    new SBPRuntime().simulateString(data, tx, ty, tz, function (err, gcode, info) {
-                        if (info && info.partial) {
-                            log.warn("Preview simulation truncated for " + filename + " (likely unbounded GOTO/loop); rendering partial result.");
+                    // The simulation runs in a separate process (see
+                    // runtime/sim_service.js) so a large file does not hold
+                    // up the engine while its preview is prepared.
+                    simService.simulate(
+                        { kind: "sbp", code: data, start: { x: tx, y: ty, z: tz }, want: { gcode: true } },
+                        function (err, result) {
+                            if (result && result.partial) {
+                                log.warn("Preview simulation truncated for " + filename + " (likely unbounded GOTO/loop); rendering partial result.");
+                            }
+                            callback(err, result && result.gcode);
                         }
-                        callback(err, gcode);
-                    });
+                    );
                 } else {
                     fs.readFile(filename, callback);
                 }
