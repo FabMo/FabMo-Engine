@@ -33,10 +33,10 @@ var fiEnterDown = false; // ENTER went down in a field (see the key handlers bel
 // by parameter position (same order as the command reads its arguments, see
 // runtime/opensbp/commands/value.js).
 var FI_CURRENT = {
-    VS: [
-        "movexy_speed", "movez_speed", "movea_speed", "moveb_speed", "movec_speed",
-        "jogxy_speed", "jogz_speed", "joga_speed", "jogb_speed", "jogc_speed"
-    ],
+    // VS: [
+    //     "movexy_speed", "movez_speed", "movea_speed", "moveb_speed", "movec_speed",
+    //     "jogxy_speed", "jogz_speed", "joga_speed", "jogb_speed", "jogc_speed"
+    // ],
     VC: ["cutterDia", null, null, "safeZpullUp", null, "pocketOverlap", "safeApullUp"]
 };
 

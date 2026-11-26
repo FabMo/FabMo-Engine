@@ -275,13 +275,13 @@ exports.VR = function (args, callback) {
 
     // XY Jerk Limit Manual Controls
     if (args[6] !== undefined) {
-        this.manual.xy_jerk = args[6];
-        if (driver) driver.command({ xy_jerk: this.manual.xy_jerk });
+        this.xy_jerk = args[6];
+        if (driver) driver.command({manual:{ xy_jerk: this.xy_jerk } });
     }
     // Z Jerk Limit Manual Controls
     if (args[7] !== undefined) {
-        this.manual.z_jerk = args[7];
-        if (driver) driver.command({ z_jerk: this.manual.z_jerk});
+        this.z_jerk = args[7];
+        if (driver) driver.command({manual:{ z_jerk: this.z_jerk }  });
     }
 
     // [JT] Junction Integration Time
@@ -302,40 +302,48 @@ exports.VS = function (args) {
     if (args[0] !== undefined) {
         this.movespeed_xy = args[0];
     }
-    //Set Z move speed
+    //Set Y move speed
     if (args[1] !== undefined) {
+        this.movespeed_y = args[0];
+    }
+    //Set Z move speed
+    if (args[2] !== undefined) {
         this.movespeed_z = args[1];
     }
     //Set A move speed
-    if (args[2] !== undefined) {
+    if (args[3] !== undefined) {
         this.movespeed_a = args[2];
     }
     //Set B move speed
-    if (args[3] !== undefined) {
+    if (args[4] !== undefined) {
         this.movespeed_b = args[3];
     }
     //Set C move speed
-    if (args[4] !== undefined) {
+    if (args[5] !== undefined) {
         this.movespeed_c = args[4];
     }
     //Set XY jog speed
-    if (args[5] !== undefined) {
+    if (args[6] !== undefined) {
         this.jogspeed_xy = args[5];
     }
+    //Set Y jog speed
+    if (args[7] !== undefined) {
+        this.jogspeed_y = args[5];
+    }
     //Set Z jog speed
-    if (args[6] !== undefined) {
+    if (args[8] !== undefined) {
         this.jogspeed_z = args[6];
     }
     //Set A jog speed
-    if (args[7] !== undefined) {
+    if (args[9] !== undefined) {
         this.jogspeed_a = args[7];
     }
     //Set B jog speed
-    if (args[8] !== undefined) {
+    if (args[10] !== undefined) {
         this.jogspeed_b = args[8];
     }
     //Set C jog speed
-    if (args[9] !== undefined) {
+    if (args[11] !== undefined) {
         this.jogspeed_c = args[9];
     }
 

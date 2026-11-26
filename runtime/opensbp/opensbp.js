@@ -3539,7 +3539,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         return value;
     }
 
-    // SYSTEM VARIABLE ASSIGNMENT LIST
+    // SYSTEM VARIABLES ASSIGNMENT LIST
     // Handle traditional numeric system variables (e.g., %(71))
     var n = this._eval(v.expr);
     switch (n) {
@@ -3612,8 +3612,15 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 59:
         case 60:
         case 61:
-        case 62: // End of current inputs at #12
+        case 62: 
         case 63:
+        case 64:
+        case 65:
+        case 66:
+        case 67:
+        case 68: // End of current inputs at #18
+        case 69:
+        case 70: 
             if (this.simulation_mode) {
                 return this.simulated_inputs[n - 50] ? 1 : 0;
             }
@@ -3621,111 +3628,110 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
             // we are running synchronously from the "stat" (STAT_STOP) handler (see note in commands/probe.js).
             return (this.driver ? this.driver.status : this.machine.status)["in" + (n - 50)];
 
-        // NOTE: More inputs are imagined here
-
-        // PLANNING to Start Outputs at 71 with speeds above 100; so the following are just remnants at the moment
-        case 71: // XY Move Speed
-            return config.opensbp.get("movexy_speed");
-
-        case 72: // XY Move Speed
-            return config.opensbp.get("movexy_speed");
-
-        case 73:
-            return config.opensbp.get("movez_speed");
-
-        case 74:
-            return config.opensbp.get("movea_speed");
-
-        case 75:
-            return config.opensbp.get("moveb_speed");
-
-        case 76:
-            return config.opensbp.get("movec_speed");
-
-        case 81:
-            return config.driver.get("xjm");
-
-        case 82:
-            return config.driver.get("yjm");
-
-        case 83:
-            return config.driver.get("zjm");
-
-        case 84:
-            return config.driver.get("ajm");
-
-        case 85:
-            return config.driver.get("bjm");
-
-        case 86:
-            return config.driver.get("cjm");
+        case 71: // Output 1
+            return config.machine.get("output1");
+        case 72: // Output 2
+            return config.machine.get("output2");
+        case 73: // Output 3
+            return config.machine.get("output3");
+        case 74: // Output 4
+            return config.machine.get("output4");
+        case 75: // Output 5
+            return config.machine.get("output5");
+        case 76: // Output 6
+            return config.machine.get("output6");
+        case 77: // Output 7
+            return config.machine.get("output7");
+        case 78: // Output 8
+            return config.machine.get("output8");
+        case 79: // Output 9
+            return config.machine.get("output9");
+        case 80: // Output 10
+            return config.machine.get("output10");
+        case 81: // Output 11
+            return config.machine.get("output11");
+        case 82: // Output 12
+            return config.machine.get("output12");
+        case 83: // Output 13
+            return config.machine.get("output13");
+        case 84: // Output 14
+            return config.machine.get("output14");
+        case 85: // Output 15
+            return config.machine.get("output15");
+        case 86: // Output 16
+            return config.machine.get("output16");
 
         case 101: //Min Table limit X
             return envelope.xmin;
-
         case 102: //Max Table limit X
             return envelope.xmax;
-
         case 103: //Min Table limit Y
             return envelope.ymin;
-
         case 104: //Max Table limit Y
             return envelope.ymax;
-
         case 105: //Min Table limit Z
             return envelope.zmin;
-
         case 106: //Max Table limit Z
             return envelope.zmax;
-
         case 107: //Min Table limit A
             return envelope.amin;
-
         case 108: //Max Table limit A
             return envelope.amax;
-
         case 109: //Min Table limit B
             return envelope.bmin;
-
         case 110: //Max Table limit B
             return envelope.bmax;
-
         case 111: //Min Table limit C
             return envelope.cmin;
-
         case 112: //Max Table limit C
             return envelope.cmax;
 
-        // PLANNING for Movespeeds starting at 121
+        case 121: // Move XY Speed
+            return config.opensbp.get("movexy_speed");
+        case 122: // Move Y Speed
+            return config.opensbp.get("movey_speed");
+        case 123: // Move Z Speed
+            return config.opensbp.get("movez_speed");
+        case 124: // Move A Speed
+            return config.opensbp.get("movea_speed");
+        case 125: // Move B Speed
+            return config.opensbp.get("moveb_speed");
+        case 126: // Move C Speed
+            return config.opensbp.get("movec_speed");
         
+        case 127: // Jog XY Speed
+            return config.opensbp.get("jogxy_speed");
+        case 128: // Jog Y Speed
+            return config.opensbp.get("jogy_speed");
+        case 129: // Jog Z Speed
+            return config.opensbp.get("jogz_speed");
+        case 130: // Jog A Speed
+            return config.opensbp.get("joga_speed");
+        case 131: // Jog B Speed
+            return config.opensbp.get("jogb_speed");
+        case 132: // Jog C Speed
+            return config.opensbp.get("jogc_speed");
 
         case 141: // JerkLimit X
             return config.opensbp.get("xy_maxjerk");
-
         case 142: // JerkLimit Y
             return config.opensbp.get("y_maxjerk");
-
         case 143: // JerkLimit Z
             return config.opensbp.get("z_maxjerk");
-
         case 144: // JerkLimit A
             return config.opensbp.get("a_maxjerk");
-
         case 145: // JerkLimit B
             return config.opensbp.get("b_maxjerk");
-
         case 146: // JerkLimit C
             return config.opensbp.get("c_maxjerk");
 
         case 148: // JerkLimit XY Manual
             return manual.xy_jerk;
-
         case 149: // JerkLimit Z Manual
             return manual.z_jerk;
     
         case 151: // Junction Integration Time
             return config.driver.get("jt");
-        
         case 152: // Chordal Tolerance
             return config.driver.get("ct");
 
