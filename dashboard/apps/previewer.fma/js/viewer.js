@@ -395,6 +395,10 @@ module.exports = function(container) {
       };
     }
 
+    // Likewise the lowest X/Y any cutting move reaches in the full file
+    // (see stockExtentsXY).
+    if (isFirstLoad) self.originalCutMin = cutMinXY();
+
     // Check the full-file extents against the machine soft-limit envelope.
     checkSoftLimits(self.originalBounds);
 
@@ -416,15 +420,16 @@ module.exports = function(container) {
     var materialTop = getEffectiveZOrigin() === 'table' ? stockThickness : 0;
 
     // Expand bounds to include material block
+    var stockXY = stockExtentsXY(sceneBounds);
     var materialBounds = {
       min: {
-        x: sceneBounds.min.x - 0.5,  // Add margin
-        y: sceneBounds.min.y - 0.5,
+        x: stockXY.min.x,
+        y: stockXY.min.y,
         z: materialTop - stockThickness  // Bottom of stock
       },
       max: {
-        x: sceneBounds.max.x + 0.5,
-        y: sceneBounds.max.y + 0.5,
+        x: stockXY.max.x,
+        y: stockXY.max.y,
         z: materialTop  // Top at Z=0
       }
     };
@@ -539,6 +544,51 @@ module.exports = function(container) {
         }
       );
     });
+  }
+
+  // Lowest X and Y reached by any cutting (non-rapid) move in the loaded
+  // path, or null if nothing cuts.
+  function cutMinXY() {
+    var moves = self.path && self.path.moves;
+    if (!moves || !moves.length) return null;
+    var minX = Infinity, minY = Infinity;
+    for (var i = 0; i < moves.length; i++) {
+      var m = moves[i];
+      if (m.rapid) continue;
+      if (m.start[0] < minX) minX = m.start[0];
+      if (m.end[0]   < minX) minX = m.end[0];
+      if (m.start[1] < minY) minY = m.start[1];
+      if (m.end[1]   < minY) minY = m.end[1];
+    }
+    if (!isFinite(minX) || !isFinite(minY)) return null;
+    return { x: minX, y: minY };
+  }
+
+  // X/Y extents of the stock drawn for the material preview.
+  //
+  // The previewer does not know the real sheet, so the stock is the path's
+  // extents plus a margin, there to show the full width of cuts that run
+  // along the edge of the path and a little material around them.
+  //
+  // On the low side that margin used to push the stock past work zero. With
+  // X/Y zeroed at the corner of the sheet (the usual case) that made the
+  // stock hang off the edge of the table and look off-centre. So: on an axis
+  // where no cutting move goes below zero, the stock stops at zero. Where a
+  // cut does go negative (work zero in the middle of the part), the margin
+  // is kept so nothing is lopped off.
+  var STOCK_MARGIN = 0.5;
+  function stockExtentsXY(sceneBounds) {
+    var out = {
+      min: { x: sceneBounds.min.x - STOCK_MARGIN, y: sceneBounds.min.y - STOCK_MARGIN },
+      max: { x: sceneBounds.max.x + STOCK_MARGIN, y: sceneBounds.max.y + STOCK_MARGIN }
+    };
+    var cutMin = self.originalCutMin;
+    ['x', 'y'].forEach(function (a) {
+      // No cutting moves at all: go by every move, rapids included.
+      var lowest = cutMin ? cutMin[a] : sceneBounds.min[a];
+      if (lowest >= -1e-6 && out.min[a] < 0 && out.max[a] > 0) out.min[a] = 0;
+    });
+    return out;
   }
 
   // Assign toolInfo from operations to each move based on sourceLine ranges.
@@ -712,9 +762,10 @@ module.exports = function(container) {
     var materialBottom = materialTop - stockThickness;
     self._materialParams.thickness = stockThickness;
     self._materialParams.materialTop = materialTop;
+    var stockXY = stockExtentsXY(sceneBounds);
     self._materialParams.bounds = {
-      min: { x: sceneBounds.min.x - 0.5, y: sceneBounds.min.y - 0.5, z: materialBottom },
-      max: { x: sceneBounds.max.x + 0.5, y: sceneBounds.max.y + 0.5, z: materialTop }
+      min: { x: stockXY.min.x, y: stockXY.min.y, z: materialBottom },
+      max: { x: stockXY.max.x, y: stockXY.max.y, z: materialTop }
     };
     if (!self.operations || self.operations.length === 0) {
       self._materialParams.toolDia = self.defaultTool.toolDiameter || 0.25;
