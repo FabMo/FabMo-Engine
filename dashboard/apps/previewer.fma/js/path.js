@@ -73,28 +73,19 @@ module.exports = function(scene, callbacks) {
     var positions = new THREE.BufferAttribute(self.positions, 3);
     var colors    = new THREE.BufferAttribute(self.colors, 3);
     self.buffers.push([positions, colors]);
-  }
 
-
-  self.flushBuffer = function () {
-    if (typeof self.positions == 'undefined' || self.fill == 0) return;
-
-    if (self.fill < buffer_size) {
-      self.positions = self.positions.slice(0, self.fill * 6);
-      self.colors = self.colors.slice(0, self.fill * 6);
-    }
-
+    // The line object for this buffer goes into the scene now, empty, and
+    // its draw range grows as segments are added (see showProgress), so the
+    // path can be painted while the file is still being processed. It used
+    // to be created only once the buffer was full.
+    //
+    // One object per buffer, in order, every buffer the same size:
+    // getMoveAtIntersection() relies on that to map a picked segment back
+    // to its move.
     var geometry = new THREE.BufferGeometry();
-    var buffers = self.buffers[self.buffers.length - 1];
-
-    geometry.setAttribute('position', buffers[0]);
-    geometry.setAttribute('color', buffers[1]);
-    // Cap the raycaster (and renderer) at the actually-used vertices.
-    // The BufferAttribute spans the full pre-allocated 10000-segment slab,
-    // so without this raycaster tests phantom zero-length segments at the
-    // origin that mask hits on the real toolpath nearby.
-    geometry.setDrawRange(0, self.fill * 2);
-    geometry.computeBoundingSphere();
+    geometry.setAttribute('position', positions);
+    geometry.setAttribute('color', colors);
+    geometry.setDrawRange(0, 0);
 
     var material = new THREE.LineBasicMaterial({
       vertexColors: THREE.VertexColors,
@@ -105,7 +96,39 @@ module.exports = function(scene, callbacks) {
       blendDst: THREE.OneMinusSrcAlphaFactor
     });
 
-    self.obj.add(new THREE.LineSegments(geometry, material));
+    self.liveLines = new THREE.LineSegments(geometry, material);
+    // No bounding sphere worth having until the buffer is finished; without
+    // this the renderer would cull the lines against a stale one.
+    self.liveLines.frustumCulled = false;
+    self.obj.add(self.liveLines);
+  }
+
+
+  // Make the segments added so far to the buffer being filled drawable.
+  // Cheap: it moves the draw range and re-sends this one buffer.
+  self.showProgress = function () {
+    if (!self.liveLines || typeof self.positions == 'undefined') return;
+    var geometry = self.liveLines.geometry;
+    var buffers = self.buffers[self.buffers.length - 1];
+    geometry.setDrawRange(0, self.fill * 2);
+    buffers[0].needsUpdate = true;
+    buffers[1].needsUpdate = true;
+  }
+
+
+  self.flushBuffer = function () {
+    if (typeof self.positions == 'undefined' || self.fill == 0) return;
+
+    // Cap the raycaster (and renderer) at the actually-used vertices.
+    // The BufferAttribute spans the full pre-allocated 10000-segment slab,
+    // so without this raycaster tests phantom zero-length segments at the
+    // origin that mask hits on the real toolpath nearby.
+    self.showProgress();
+    if (self.liveLines) {
+      self.liveLines.geometry.computeBoundingSphere();
+      self.liveLines.frustumCulled = true;
+    }
+    self.liveLines = null;
 
     self.positions = undefined;
     self.colors = undefined;
@@ -320,14 +343,6 @@ module.exports = function(scene, callbacks) {
 
     var segments = Math.ceil(Math.abs(angle) / segAngle);
 
-    // ADDED: Debug first segment (only once)
-    if (segments > 1) {
-      console.log('ARC PARSED: First segment of', segments, 'total');
-      console.log('  Radius:', radius.toFixed(4));
-      console.log('  Center:', center2D);
-      console.log('  Start angle:', (startAngle * 180 / Math.PI).toFixed(2), 'deg');
-      console.log('  Total angle:', (angle * 180 / Math.PI).toFixed(2), 'deg');
-    }
 
     // Render arc
     for (var i = 1; i < segments - 1; i++) {
@@ -515,17 +530,28 @@ module.exports = function(scene, callbacks) {
     }
   }
 
+  // Work through the file in slices of about SLICE_MS, handing control back
+  // to the browser between slices so it can paint and take input. This used
+  // to be 1000 lines and then a fixed 10 ms pause, which on a large file
+  // added up to seconds of doing nothing.
+  var SLICE_MS = 30;
+
   self.process = function (done) {
-    for (var i = 0; i < 1000 && !self.done; i++) {
-      if (self.gcode.length <= self.lines) break;
+    var sliceStart = performance.now();
+    while (!self.done && self.lines < self.gcode.length) {
       self.processLine(self.gcode[self.lines]);
       self.lines += 1;
+      // Reading the clock every line would cost more than it saves.
+      if ((self.lines & 127) === 0 && performance.now() - sliceStart >= SLICE_MS) break;
     }
 
     callbacks.progress(self.lines / self.gcode.length);
 
-    if (!self.done && self.lines < self.gcode.length)
-      setTimeout(function () {self.process(done)}, 10);
+    if (!self.done && self.lines < self.gcode.length) {
+      // Let the viewer paint what there is so far.
+      if (callbacks.partial) callbacks.partial();
+      setTimeout(function () {self.process(done)}, 0);
+    }
 
     else {
       if (!self.commands) self.addError('error', 'No commands.');
@@ -995,6 +1021,7 @@ module.exports = function(scene, callbacks) {
     self.fill        = 0;
     self.positions   = undefined;
     self.colors      = undefined;
+    self.liveLines   = null;
     self.currentLine.visible = false;
   };
 

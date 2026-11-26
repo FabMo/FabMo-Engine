@@ -1093,6 +1093,12 @@ function nowPreviewJob() {
         if (!err && job && job.name) {
           $('#preview .file-name').text(job.name).attr('title', job.name);
         }
+        // The engine records the job's extents when it is queued; with
+        // them the camera can be aimed at the whole job before the path
+        // has finished loading.
+        if (!err && job && job.bounds && viewer.setExpectedBounds) {
+          viewer.setExpectedBounds(job.bounds);
+        }
       });
 
       // Fetch original file first to extract VCarve/ShopBot metadata

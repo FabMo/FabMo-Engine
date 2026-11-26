@@ -467,29 +467,9 @@ module.exports = function(container) {
       var restored = self.restoreViewState();
 
       // If no saved state, position camera in ISO orientation
-      if (!restored) {
-        var center = util.getCenter(sceneBounds);
-        var dims = util.getDims(sceneBounds);
-        var zoom = 0.75 * size / Math.tan(Math.PI / 8);
-
-        var camera = [center[0], center[1], center[2]];
-        camera[1] -= (zoom + dims[1] / 2) / 1.4;
-        camera[2] += (zoom + dims[2] / 2) / 1.4;
-
-        self.controls.reset();
-        self.camera.position.set(camera[0], camera[1], camera[2]);
-        self.controls.target.set(center[0], center[1], center[2]);
-
-        // Apply zoom and near plane if in ortho mode
-        if (self.isOrtho) {
-          self.orthographicCamera.zoom = 2.0;
-          self.orthographicCamera.near = self.orthoNearClip;
-          self.orthographicCamera.updateProjectionMatrix();
-        }
-
-        self.controls.update();
-      }
+      if (!restored) frameISO(sceneBounds);
     }
+    loadFrame = null;
 
     // Tag each move with tool info so the material simulation can switch
     // bit size/type per operation; with no parsed ops, every move inherits
@@ -581,6 +561,110 @@ module.exports = function(container) {
     }
   }
 
+
+  // Point the camera at `b` in the default ISO orientation.
+  function frameISO(b) {
+    var size = util.maxDim(b);
+    var center = util.getCenter(b);
+    var dims = util.getDims(b);
+    var zoom = 0.75 * size / Math.tan(Math.PI / 8);
+
+    var camera = [center[0], center[1], center[2]];
+    camera[1] -= (zoom + dims[1] / 2) / 1.4;
+    camera[2] += (zoom + dims[2] / 2) / 1.4;
+
+    self.controls.reset();
+    self.camera.position.set(camera[0], camera[1], camera[2]);
+    self.controls.target.set(center[0], center[1], center[2]);
+
+    // Apply zoom and near plane if in ortho mode
+    if (self.isOrtho) {
+      self.orthographicCamera.zoom = 2.0;
+      self.orthographicCamera.near = self.orthoNearClip;
+      self.orthographicCamera.updateProjectionMatrix();
+    }
+
+    self.controls.update();
+  }
+
+  // ---- Painting the path while the file is still being processed ----
+  //
+  // The path's line buffers are in the scene as they fill (path.js), so all
+  // this has to do is aim the camera and redraw now and then.
+
+  // Extents the engine recorded for the job when it was queued (set by the
+  // app before the g-code arrives). Lets the camera be aimed at the whole
+  // job from the first paint instead of chasing the path as it grows.
+  var expectedBounds = null;
+  self.setExpectedBounds = function (b) {
+    expectedBounds = usableBox(b) ? b : null;
+  };
+
+  // What the camera was last aimed at during this load: a box, or
+  // 'restored' when a saved view was put back. Cleared when the load ends.
+  var loadFrame = null;
+  var lastLoadPaint = 0;
+  // Redraws get more expensive as the path grows; a few a second is plenty
+  // to watch it arrive and keeps a weak GPU from slowing the load.
+  var LOAD_PAINT_MS = 200;
+
+  function usableBox(b) {
+    if (!b || !b.min || !b.max) return false;
+    return ['x', 'y', 'z'].every(function (a) {
+      return typeof b.min[a] === 'number' && isFinite(b.min[a]) &&
+             typeof b.max[a] === 'number' && isFinite(b.max[a]);
+    }) && (b.max.x > b.min.x || b.max.y > b.min.y || b.max.z > b.min.z);
+  }
+
+  // Is box `inner` inside box `outer`, give or take `slack` of outer's size?
+  function boxContains(outer, inner, slack) {
+    return ['x', 'y', 'z'].every(function (a) {
+      var pad = slack * Math.max(outer.max[a] - outer.min[a], 1e-6) + 1e-6;
+      return inner.min[a] >= outer.min[a] - pad && inner.max[a] <= outer.max[a] + pad;
+    });
+  }
+
+  function copyBox(b) {
+    return { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z } };
+  }
+
+  function frameWhileLoading() {
+    // Only the first load of a file aims the camera (as in pathLoaded); a
+    // reload for operation filtering keeps the view. AR / overhead poses
+    // come from the camera calibration and must not be touched.
+    if (self.originalBounds) return;
+    if (self.ar && (self.ar.enabled || self.ar.overhead)) return;
+    if (loadFrame === 'restored') return;
+
+    var sofar = self.path.bounds;
+    if (!usableBox(sofar)) return;
+
+    if (loadFrame === null && self.restoreViewState()) {
+      loadFrame = 'restored';
+      return;
+    }
+
+    // Prefer the job's recorded extents, unless the path has already left
+    // them (different units, or a file changed since it was queued).
+    var want = expectedBounds && boxContains(expectedBounds, sofar, 0.1) ? expectedBounds : sofar;
+    if (loadFrame && boxContains(loadFrame, want, 0.02)) return;
+    loadFrame = copyBox(want);
+    frameISO(loadFrame);
+  }
+
+  function pathPartial() {
+    var now = performance.now();
+    if (now - lastLoadPaint < LOAD_PAINT_MS) return;
+    lastLoadPaint = now;
+    try {
+      self.path.showProgress();
+      frameWhileLoading();
+      self.refresh();
+    } catch (e) {
+      // Painting early is a nicety; the load itself must carry on.
+      console.warn('Progressive path paint failed:', e);
+    }
+  }
 
   function pathProgress(progress) {
     self.gui.showLoadingProgress(progress);
@@ -1681,6 +1765,7 @@ module.exports = function(container) {
   self.path = new Path(self.scene, {
     metric: self.setPathMetric,
     progress: pathProgress,
+    partial: pathPartial,
     position: updatePosition,
     update: self.refresh,
     materialUpdate: function(start, end, isArcSegment) {
