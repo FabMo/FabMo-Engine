@@ -2282,6 +2282,10 @@ function jobRepeatBtn(job) {
         '<span class="ts-repeat-badge' + (showCount ? " visible" : "") + '">' + (showCount ? count : "") + "</span></button>";
 }
 
+// Set where the ghost dialog is wired up; lets a redraw of the job list
+// update the dialog while it is open.
+var refreshGhostDialog = null;
+
 function renderJobs() {
     if (dragging) return; // don't rebuild the list out from under a drag
     var $q = $("#job-queue").empty();
@@ -2324,11 +2328,17 @@ function renderJobs() {
             $row.attr("data-id", job._id);
             $row.find(".ts-job-name").text(job.name || "job " + job._id);
             $row.find(".ts-iconbtn").data("id", job._id).data("job", job);
-            $row.find(".ts-job-ghost").prop("disabled", !isIdle());
+            // The ghost button always opens its dialog. It used to be
+            // disabled whenever this row was drawn while the machine was not
+            // idle, and stayed dead until the next redraw; the engine refuses
+            // a ghost run that cannot start and says why.
             $q.append($row);
         });
     }
     $("#btn-run-next").prop("disabled", !state.queue.length || !isIdle());
+    // The file's Z range is worked out in the background after a job is
+    // queued; if the ghost dialog is open, fill it in as it arrives.
+    if (typeof refreshGhostDialog === "function") refreshGhostDialog();
 
     var $h = $("#job-history").empty();
     if (!state.history.length) {
@@ -4208,6 +4218,86 @@ $(document).ready(function () {
     // ---- Ghost / preview run (same dialog and API as the Job Manager) ----
 
     var ghostJobId = null;
+    var ghostJob = null;
+    var ghostLiftEdited = false; // the operator typed a lift: leave it alone
+
+    function ghostFmt(v) {
+        return (Math.round(v * 1000) / 1000).toString();
+    }
+
+    // Same rule as the Job Manager's dialog. The engine records two Z values
+    // with a job's bounds: z.cut, the lowest Z any cutting move reaches, and
+    // z.travel, the height the file itself rapids across at. A lift of
+    // (travel - cut) puts the deepest cut at the file's own travel height,
+    // which clears the material whether Z zero is its top or the table.
+    // Returns the suggested lift, or null when there is nothing to go by.
+    function describeGhostZ(job) {
+        var units = state.unit === "mm" ? "mm" : "in";
+        var $info = $("#job-ghost-z-info");
+        var bounds = job && job.bounds;
+        var z = bounds && bounds.z;
+        if (!bounds && job && !job.bounds_failed) {
+            // Queued a moment ago: the engine is still scanning the file.
+            $info.html('<i class="fa fa-spinner fa-spin"></i> ').append(
+                document.createTextNode(window.t("job_manager.ghost_modal.z_info_calculating")));
+            return null;
+        }
+        if (!z || typeof z.cut !== "number") {
+            $info.text(window.t("job_manager.ghost_modal.z_info_unknown"));
+            return null;
+        }
+        var text = window.t("job_manager.ghost_modal.z_info_lowest", { cut: ghostFmt(z.cut), units: units });
+        if (typeof z.travel !== "number" || z.travel <= z.cut) {
+            $info.text(text + " " + window.t("job_manager.ghost_modal.z_info_no_travel"));
+            return null;
+        }
+        // Round up so the suggestion never falls short of the travel height.
+        var step = units === "mm" ? 0.1 : 0.01;
+        var lift = Math.round(Math.ceil((z.travel - z.cut) / step - 1e-9) * step * 1000) / 1000;
+        $info.text(text + " " + window.t("job_manager.ghost_modal.z_info_suggest",
+            { travel: ghostFmt(z.travel), lift: ghostFmt(lift), units: units }));
+        return lift;
+    }
+
+    // Warn when the lifted run would reach past the top of Z travel (machine
+    // Z 0). Skipped until Z has been zeroed, like the soft-limit check.
+    function checkGhostCeiling() {
+        var $warn = $("#job-ghost-z-warning");
+        var lift = parseFloat($("#job-ghost-zoffset").val());
+        var b = ghostJob && ghostJob.bounds;
+        var top = b && b.max && b.max.z;
+        var g55z = state.g55 && state.g55.z;
+        if (!isFinite(lift) || typeof top !== "number" || typeof g55z !== "number" || g55z === 0) {
+            return $warn.hide();
+        }
+        var over = top + lift + g55z;
+        if (over > 0.0005) {
+            $warn.text(window.t("job_manager.ghost_modal.z_warn_ceiling",
+                { over: ghostFmt(over), units: state.unit === "mm" ? "mm" : "in" })).show();
+        } else {
+            $warn.hide();
+        }
+    }
+
+    function fillGhostLift() {
+        var mm = state.unit === "mm";
+        $("#job-ghost-zoffset-units").text(mm ? "mm" : "in");
+        $("#job-ghost-zoffset").attr("step", mm ? 1 : 0.05);
+        var suggested = describeGhostZ(ghostJob);
+        if (!ghostLiftEdited) {
+            $("#job-ghost-zoffset").val(suggested !== null ? suggested : (mm ? 12 : 0.5));
+        }
+        checkGhostCeiling();
+    }
+
+    // Called on every redraw of the job list (see renderJobs).
+    refreshGhostDialog = function () {
+        if (ghostJobId === null || !$("#job-ghost-modal").is(":visible")) return;
+        var fresh = (state.queue || []).filter(function (j) { return String(j._id) === String(ghostJobId); })[0];
+        if (!fresh) return;
+        ghostJob = fresh;
+        fillGhostLift();
+    };
 
     function syncGhostMode() {
         var mode = $('input[name="job-ghost-mode"]:checked').val();
@@ -4218,17 +4308,24 @@ $(document).ready(function () {
     function closeGhostModal() {
         $("#job-ghost-modal").hide();
         ghostJobId = null;
+        ghostJob = null;
     }
 
     $("#job-queue").on("click", ".ts-job-ghost", function () {
         ghostJobId = $(this).data("id");
+        ghostJob = $(this).data("job") || null;
+        ghostLiftEdited = false;
         $("#job-ghost-mode-lift").prop("checked", true);
-        $("#job-ghost-zoffset").val("0.5");
+        // The Z summary is a convenience; nothing in it may stop the dialog
+        // from opening.
+        try { fillGhostLift(); } catch (e) { console.error("ghost dialog Z summary failed", e); }
         syncGhostMode();
         $("#job-ghost-modal").css("display", "flex");
         setTimeout(function () { $("#job-ghost-zoffset").focus().select(); }, 50);
     });
     $('input[name="job-ghost-mode"]').on("change", syncGhostMode);
+    $("#job-ghost-zoffset").on("input change", checkGhostCeiling);
+    $("#job-ghost-zoffset").on("input", function () { ghostLiftEdited = true; });
     $("#btn-job-ghost-go").on("click", function () {
         var mode = $('input[name="job-ghost-mode"]:checked').val() || "lift";
         var payload = { mode: mode };

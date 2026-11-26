@@ -1269,7 +1269,9 @@ function bindGhostRun() {
     var units = ghostUnits();
     $('#ghost-zoffset-units').text(units);
     $('#ghost-zoffset').attr('step', units === 'mm' ? 1 : 0.05);
-    fillGhostLift();
+    // The Z summary is a convenience; nothing in it may stop the dialog
+    // from opening.
+    try { fillGhostLift(); } catch (err) { console.error('ghost dialog Z summary failed', err); }
     syncGhostModeOpts();
     $('#ghost-modal').foundation('reveal', 'open');
     setTimeout(function() { $('#ghost-zoffset').focus().select(); }, 100);
