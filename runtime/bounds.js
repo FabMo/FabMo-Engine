@@ -50,7 +50,7 @@ function round3(v) {
 }
 
 // Walks gcode lines tracking modal absolute/relative motion and arc cardinal
-// extremes. Returns { min, max, path } in the file's coordinate space
+// extremes. Returns { min, max, z, path } in the file's coordinate space
 // (machine-coords are derived later via the active G55 offset). `path` is a
 // decimated [[x, y, z], ...] polyline of the moves, with arcs sampled, for
 // geometry-accurate keep-out checks.
@@ -65,6 +65,14 @@ function scanGCodeBounds(gcode) {
     // inherit the last one seen.
     var motion = 0;
     var path = [[0, 0, 0, 0]];
+    // Z summary for dry runs (ghost run): the lowest Z any cutting move
+    // reaches, and the lowest Z at which the file itself rapids across X/Y —
+    // its own travel height, which its author judged clear of the material.
+    // Lifting a run by (travel - cut) keeps every move at or above that
+    // height, wherever Z zero is (material top or table).
+    var zCut = Infinity;
+    var zTravel = Infinity;
+    var zKnown = false; // false until the file has set Z; the starting Z is a guess
 
     function update(x, y, z) {
         if (x < min.x) min.x = x;
@@ -103,6 +111,14 @@ function scanGCodeBounds(gcode) {
         pos.z = nz === null ? pos.z : (absolute ? nz : pos.z + nz);
 
         update(pos.x, pos.y, pos.z);
+
+        if (motion >= 1) {
+            if (pos.z < zCut) zCut = pos.z;
+        } else if (zKnown && (pos.x !== prev.x || pos.y !== prev.y)) {
+            var travelZ = Math.min(prev.z, pos.z);
+            if (travelZ < zTravel) zTravel = travelZ;
+        }
+        if (mz) zKnown = true;
 
         // Arc cardinal extremes — bounding box of an arc can extend past
         // its endpoints when the sweep crosses 0°, 90°, 180°, or 270°
@@ -147,7 +163,16 @@ function scanGCodeBounds(gcode) {
         }
     }
 
-    return seen ? { min: min, max: max, path: decimatePath(path, PATH_MAX_POINTS) } : null;
+    if (!seen) return null;
+    return {
+        min: min,
+        max: max,
+        z: {
+            cut: isFinite(zCut) ? round3(zCut) : null,
+            travel: isFinite(zTravel) ? round3(zTravel) : null,
+        },
+        path: decimatePath(path, PATH_MAX_POINTS),
+    };
 }
 
 // Compare bounds (work coords) against the soft-limit envelope (machine
@@ -180,58 +205,24 @@ function checkAgainstEnvelope(bounds, envelope, g55) {
     return { exceeds: violations.length > 0, violations: violations };
 }
 
+// Both of these run the file through the simulation service, which does the
+// work in a separate process so a large file does not hold up the engine.
+
 // Compute bounds for a job file (path on disk). Calls back with
 // { bounds, durationMs } or an error.
 function computeFileBounds(filePath, callback) {
-    var t0 = Date.now();
-    fs.readFile(filePath, "utf8", function (err, data) {
-        if (err) return callback(err);
-        var ext = path.extname(filePath).toLowerCase();
-
-        if (ext === ".sbp") {
-            // Lazy require to avoid circular deps at module load time.
-            var SBPRuntime = require("./opensbp/opensbp").SBPRuntime;
-            var runtime = new SBPRuntime();
-            try {
-                runtime.simulateString(data, 0, 0, 0, function (err, gcode, info) {
-                    if (err) return callback(err);
-                    var result = { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 };
-                    if (info && info.partial) result.partial = true;
-                    callback(null, result);
-                });
-            } catch (e) {
-                callback(e);
-            }
-        } else {
-            callback(null, { bounds: scanGCodeBounds(data), durationMs: Date.now() - t0 });
-        }
-    });
+    var kind = path.extname(filePath).toLowerCase() === ".sbp" ? "sbp" : "gcode";
+    require("./sim_service").simulate({ kind: kind, file: filePath, want: { bounds: true } }, callback);
 }
 
 // Compute bounds for in-memory code (no disk file). Used by the editor-run
 // pre-check so code typed/pasted in the editor gets the same soft-limit
 // scrutiny as submitted jobs. `runtime` is "sbp" or "gcode".
 function computeStringBounds(code, runtime, callback) {
-    var t0 = Date.now();
     if (typeof code !== "string") return callback(new Error("code must be a string"));
     var rt = (runtime || "gcode").toLowerCase();
-
-    if (rt === "sbp" || rt === "opensbp") {
-        var SBPRuntime = require("./opensbp/opensbp").SBPRuntime;
-        var sbp = new SBPRuntime();
-        try {
-            sbp.simulateString(code, 0, 0, 0, function (err, gcode, info) {
-                if (err) return callback(err);
-                var result = { bounds: scanGCodeBounds(gcode || ""), durationMs: Date.now() - t0 };
-                if (info && info.partial) result.partial = true;
-                callback(null, result);
-            });
-        } catch (e) {
-            callback(e);
-        }
-    } else {
-        callback(null, { bounds: scanGCodeBounds(code), durationMs: Date.now() - t0 });
-    }
+    var kind = rt === "sbp" || rt === "opensbp" ? "sbp" : "gcode";
+    require("./sim_service").simulate({ kind: kind, code: code, want: { bounds: true } }, callback);
 }
 
 // ---------------------------------------------------------------------------

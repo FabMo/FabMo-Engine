@@ -51,6 +51,7 @@ global.CLIENT_DISCONNECTED = false; // Special purpose kludge to stop any ongoin
 // TODO - One day, a folder-scan and auto-registration process might be nice here, this is all sort of hand-rolled.
 var GCodeRuntime = require("./runtime/gcode").GCodeRuntime;
 var SBPRuntime = require("./runtime/opensbp").SBPRuntime;
+var simService = require("./runtime/sim_service");
 var ManualRuntime = require("./runtime/manual").ManualRuntime;
 var PassthroughRuntime = require("./runtime/passthrough").PassthroughRuntime;
 var IdleRuntime = require("./runtime/idle").IdleRuntime;
@@ -1531,6 +1532,22 @@ Machine.prototype.runJob = function (job) {
     );
 };
 
+// Run a ghost (dry-run) pass. `job` is a transient Job (see db.js) that is
+// never stored; `filename` is the file to run; `zLift` (optional, OpenSBP
+// files only) raises this one run in Z without changing any saved setting.
+Machine.prototype.runGhost = function (job, filename, zLift) {
+    log.info("Ghost run of " + filename + (zLift ? " lifted Z" + zLift : ""));
+    this.status.job = job;
+    this._ghostZLift = zLift || 0;
+    this._runFile(filename);
+    // _runFile drops the job when it refuses to run (file missing,
+    // interlock). Nothing else will end a ghost job then, so end it here
+    // and let it clean up after itself.
+    if (this.status.job !== job) {
+        job.fail(function () {});
+    }
+};
+
 // Set the preferred units to the provided value ('in' or 'mm')
 // Changing the preferred units is a heavy duty operation. See below.
 Machine.prototype.setPreferredUnits = async function (units, lastunits, callback) {
@@ -1642,12 +1659,18 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
                     var tx = this.driver.status.posx;
                     var ty = this.driver.status.posy;
                     var tz = this.driver.status.posz;
-                    new SBPRuntime().simulateString(data, tx, ty, tz, function (err, gcode, info) {
-                        if (info && info.partial) {
-                            log.warn("Preview simulation truncated for " + filename + " (likely unbounded GOTO/loop); rendering partial result.");
+                    // The simulation runs in a separate process (see
+                    // runtime/sim_service.js) so a large file does not hold
+                    // up the engine while its preview is prepared.
+                    simService.simulate(
+                        { kind: "sbp", code: data, start: { x: tx, y: ty, z: tz }, want: { gcode: true } },
+                        function (err, result) {
+                            if (result && result.partial) {
+                                log.warn("Preview simulation truncated for " + filename + " (likely unbounded GOTO/loop); rendering partial result.");
+                            }
+                            callback(err, result && result.gcode);
                         }
-                        callback(err, gcode);
-                    });
+                    );
                 } else {
                     fs.readFile(filename, callback);
                 }
@@ -1659,6 +1682,15 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 // Run a file given a filename on disk.  Choose the runtime that is appropriate for that file.
 Machine.prototype._runFile = function (filename) {
     var ext = path.extname(filename).toLowerCase();
+
+    // A ghost-run Z lift applies to this run only. Take it now, so that a
+    // run refused below cannot leave it behind for the next one, and hand
+    // it to the runtime on every run so a normal job always gets zero.
+    var zLift = this._ghostZLift || 0;
+    this._ghostZLift = 0;
+    if (this.sbp_runtime) {
+        this.sbp_runtime.pendingZLift = ext === ".sbp" ? zLift : 0;
+    }
 
     // Guard: the file must actually exist on disk. A job whose file was removed
     // (e.g. an update wiped /opt/fabmo/files while the job DB survived) would
