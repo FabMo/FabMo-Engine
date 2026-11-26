@@ -221,10 +221,12 @@ ManualDriver.prototype.enter = function () {
             // machine (opensbp) jerk config — the same source exit() restores
             // XY/Z from. This makes sure the extra/rotary axes jog at their
             // configured rate instead of whatever (often low) value the firmware
-            // was last left with. These are NOT restored on exit: we are setting
-            // them to the general config values, not temporarily overriding them.
-            var jerkA = config.opensbp._cache.a_maxjerk || 50;
-            var jerkB = config.opensbp._cache.b_maxjerk || 50;
+            // was last left with. C is NOT restored on exit: it is set to the
+            // general config value, not temporarily overridden.
+            // A and B can have a keypad-specific jerk (manual.a_jerk /
+            // b_jerk; 0 = use the general value). Restored on exit.
+            var jerkA = config.machine._cache.manual.a_jerk || config.opensbp._cache.a_maxjerk || 50;
+            var jerkB = config.machine._cache.manual.b_jerk || config.opensbp._cache.b_maxjerk || 50;
             var jerkC = config.opensbp._cache.c_maxjerk || 50;
             // Read configurable manual control parameters
             this.safetyFactor = config.machine._cache.manual.safety_factor || DEFAULT_SAFETY_FACTOR;
@@ -344,6 +346,8 @@ ManualDriver.prototype.exit = function () {
                 this.stream.write("{xjm:" + jerkXY + "}\n");
                 this.stream.write("{yjm:" + jerkXY + "}\n");
                 this.stream.write("{zjm:" + jerkZ + "}\n");
+                this.stream.write("{ajm:" + (config.opensbp._cache.a_maxjerk || 50) + "}\n");
+                this.stream.write("{bjm:" + (config.opensbp._cache.b_maxjerk || 50) + "}\n");
                 this.stream.write("{spph:true}\n");
                 
                 var feedXY = config.opensbp._cache.movexy_speed || 3;

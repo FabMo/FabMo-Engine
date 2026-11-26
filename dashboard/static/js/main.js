@@ -2309,16 +2309,16 @@ function setupKeypad() {
             dashboard.engine.manualStart("z", move.dir * 60.0 * manualSpeedFor(move, engine.config.machine.manual.z_fast_speed));
         } else if (move.axis === "z_slow") {
             dashboard.engine.manualStart("z", move.dir * 60.0 * manualSpeedFor(move, engine.config.machine.manual.z_slow_speed));
-        } else if (move.axis === "a_fast") {
-            // A/B have no dedicated manual speeds: fast = the axis jog
-            // (rapid) speed, slow = its normal move speed
-            dashboard.engine.manualStart("a", move.dir * 60.0 * manualSpeedFor(move, engine.config.opensbp.joga_speed));
-        } else if (move.axis === "a_slow") {
-            dashboard.engine.manualStart("a", move.dir * 60.0 * manualSpeedFor(move, engine.config.opensbp.movea_speed));
-        } else if (move.axis === "b_fast") {
-            dashboard.engine.manualStart("b", move.dir * 60.0 * manualSpeedFor(move, engine.config.opensbp.jogb_speed));
-        } else if (move.axis === "b_slow") {
-            dashboard.engine.manualStart("b", move.dir * 60.0 * manualSpeedFor(move, engine.config.opensbp.moveb_speed));
+        } else if (move.axis === "a_fast" || move.axis === "a_slow" || move.axis === "b_fast" || move.axis === "b_slow") {
+            // A/B keypad speeds (machine.manual.a_fast_speed etc.) default
+            // to 0, which means: fast = the axis jog (rapid) speed, slow =
+            // its normal move speed.
+            var abAxis = move.axis.charAt(0);
+            var abFast = move.axis.slice(2) === "fast";
+            var abSpeed =
+                engine.config.machine.manual[abAxis + (abFast ? "_fast_speed" : "_slow_speed")] ||
+                engine.config.opensbp[(abFast ? "jog" : "move") + abAxis + "_speed"];
+            dashboard.engine.manualStart(abAxis, move.dir * 60.0 * manualSpeedFor(move, abSpeed));
         } else if (move) {
             dashboard.engine.manualStart(move.axis, move.dir * 60.0 * manualSpeedFor(move, getManualMoveSpeed(move) || 0.1));
         }
