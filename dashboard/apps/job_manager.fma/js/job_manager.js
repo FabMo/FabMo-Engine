@@ -381,6 +381,9 @@ function setFirstCard(job) {
   $('.repeat-button').data('id', firstId);
   $('.ghost-button').data('id', firstId);
   $('.ghost-button').data('bounds', (job && job.bounds) || null);
+  // Bounds are scanned in the background after a job is queued. If the ghost
+  // dialog is already open on this job, fill them in as they arrive.
+  if (typeof refreshGhostDialog === 'function') { refreshGhostDialog(firstId, job); }
 
   // Reflect persisted repeat state on the toggle button. Stash the count on
   // the button so the modal can pre-fill it. Badge shows remaining count when
@@ -1158,11 +1161,34 @@ function bindRepeatToggle() {
   });
 }
 
+// Set by bindGhostRun; lets a queue repaint update an open ghost dialog.
+var refreshGhostDialog = null;
+
 function bindGhostRun() {
   // Sandboxed iframes block window.prompt(), so we drive a Foundation
   // reveal-modal defined in index.html instead.
   var pendingJobId = null;
   var pendingBounds = null;
+  var pendingJob = null;
+  var liftEdited = false; // the operator typed a lift: don't overwrite it
+
+  function fillGhostLift() {
+    var units = ghostUnits();
+    var suggested = describeGhostZ(pendingBounds);
+    if (!liftEdited) {
+      $('#ghost-zoffset').val(suggested !== null ? suggested : (units === 'mm' ? 12 : 0.5));
+    }
+    checkGhostCeiling();
+  }
+
+  // Called on every queue repaint (see setFirstCard).
+  refreshGhostDialog = function(id, job) {
+    if (!pendingJobId || String(id) !== String(pendingJobId)) return;
+    if (!$('#ghost-modal').hasClass('open')) return;
+    pendingJob = job || pendingJob;
+    pendingBounds = (job && job.bounds) || pendingBounds;
+    fillGhostLift();
+  };
 
   function ghostUnits() {
     var u = configData && configData.machine && configData.machine.units;
@@ -1183,6 +1209,12 @@ function bindGhostRun() {
     var units = ghostUnits();
     var $info = $('#ghost-z-info');
     var z = bounds && bounds.z;
+    if (!bounds && pendingJob && pendingJob.state === 'pending' && !pendingJob.bounds_failed) {
+      // Queued a moment ago: the server is still scanning the file.
+      $info.html('<i class="fa fa-spinner fa-spin"></i> ').append(
+        document.createTextNode(window.t('job_manager.ghost_modal.z_info_calculating')));
+      return null;
+    }
     if (!z || typeof z.cut !== 'number') {
       $info.text(window.t('job_manager.ghost_modal.z_info_unknown'));
       return null;
@@ -1231,13 +1263,13 @@ function bindGhostRun() {
     pendingJobId = $(this).data('id') || $(this).closest('.job_item').attr('id');
     if (!pendingJobId) return;
     pendingBounds = $(this).data('bounds') || null;
+    pendingJob = queueJobsById[pendingJobId] || null;
+    liftEdited = false;
     $('#ghost-mode-lift').prop('checked', true);
     var units = ghostUnits();
     $('#ghost-zoffset-units').text(units);
     $('#ghost-zoffset').attr('step', units === 'mm' ? 1 : 0.05);
-    var suggested = describeGhostZ(pendingBounds);
-    $('#ghost-zoffset').val(suggested !== null ? suggested : (units === 'mm' ? 12 : 0.5));
-    checkGhostCeiling();
+    fillGhostLift();
     syncGhostModeOpts();
     $('#ghost-modal').foundation('reveal', 'open');
     setTimeout(function() { $('#ghost-zoffset').focus().select(); }, 100);
@@ -1245,6 +1277,7 @@ function bindGhostRun() {
 
   $('input[name="ghost-mode"]').on('change', syncGhostModeOpts);
   $('#ghost-zoffset').on('input change', checkGhostCeiling);
+  $('#ghost-zoffset').on('input', function() { liftEdited = true; });
 
   $('#ghost-go').on('click', function() {
     var mode = $('input[name="ghost-mode"]:checked').val() || 'lift';

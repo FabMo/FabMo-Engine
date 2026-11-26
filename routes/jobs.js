@@ -13,15 +13,41 @@ var upload = require("./util").upload;
 // submitted job and persist them on the job record. Runs after we've
 // already responded to the client so submit latency is unaffected; the
 // dashboard learns of the result via the `change` event from job.save().
+//
+// The scan simulates the whole file in this process and can hold the event
+// loop for seconds on a large job. Started straight away, that stalled the
+// dashboard's own request for the queue, so the new job took as long as the
+// scan to appear. Hold it back briefly so the job shows up first; the
+// dashboard shows the bounds as "calculating" until they land.
+var BOUNDS_SCAN_DELAY_MS = 2000;
+
+// Record that the scan could not produce bounds, so the dashboard stops
+// showing them as still being calculated.
+function markBoundsFailed(jobId) {
+    db.Job.getById(jobId, function (err, fresh) {
+        if (err || !fresh) return;
+        fresh.bounds_failed = true;
+        fresh.save(function () {});
+    });
+}
+
 function analyzeJobBounds(job) {
     if (!job || !job._id) return;
+    setTimeout(function () {
+        runJobBoundsScan(job);
+    }, BOUNDS_SCAN_DELAY_MS);
+}
+
+function runJobBoundsScan(job) {
     db.Job.getFileForJobId(job._id, function (err, file) {
         if (err || !file || !file.path) {
+            markBoundsFailed(job._id);
             return log.warn("analyzeJobBounds: file lookup failed: " + (err || "no file"));
         }
         bounds.computeFileBounds(file.path, function (err, result) {
-            if (err) {
-                log.warn("analyzeJobBounds: " + err.message);
+            if (err || !result || !result.bounds) {
+                markBoundsFailed(job._id);
+                log.warn("analyzeJobBounds: " + (err ? err.message : "no motion found in file"));
                 return;
             }
             var envelope = config.machine.get("envelope") || {};
