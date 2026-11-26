@@ -380,6 +380,7 @@ function setFirstCard(job) {
   $('.edit').data('id', firstId);
   $('.repeat-button').data('id', firstId);
   $('.ghost-button').data('id', firstId);
+  $('.ghost-button').data('bounds', (job && job.bounds) || null);
 
   // Reflect persisted repeat state on the toggle button. Stash the count on
   // the button so the modal can pre-fill it. Badge shows remaining count when
@@ -1161,6 +1162,62 @@ function bindGhostRun() {
   // Sandboxed iframes block window.prompt(), so we drive a Foundation
   // reveal-modal defined in index.html instead.
   var pendingJobId = null;
+  var pendingBounds = null;
+
+  function ghostUnits() {
+    var u = configData && configData.machine && configData.machine.units;
+    return u === 'mm' ? 'mm' : 'in';
+  }
+
+  function fmtZ(v) {
+    return (Math.round(v * 1000) / 1000).toString();
+  }
+
+  // Work out how much lift a dry run needs from the Z summary the server
+  // records with the job's bounds: z.cut is the lowest Z any cutting move
+  // reaches, z.travel is the height the file itself rapids across at. Lifting
+  // by (travel - cut) puts the deepest cut at the file's own travel height,
+  // which clears the material whether Z zero is its top or the table.
+  // Returns the suggested lift, or null when there is nothing to go by.
+  function describeGhostZ(bounds) {
+    var units = ghostUnits();
+    var $info = $('#ghost-z-info');
+    var z = bounds && bounds.z;
+    if (!z || typeof z.cut !== 'number') {
+      $info.text(window.t('job_manager.ghost_modal.z_info_unknown'));
+      return null;
+    }
+    var text = window.t('job_manager.ghost_modal.z_info_lowest', { cut: fmtZ(z.cut), units: units });
+    if (typeof z.travel !== 'number' || z.travel <= z.cut) {
+      $info.text(text + ' ' + window.t('job_manager.ghost_modal.z_info_no_travel'));
+      return null;
+    }
+    // Round up so the suggestion never falls short of the travel height.
+    var step = units === 'mm' ? 0.1 : 0.01;
+    var lift = Math.ceil((z.travel - z.cut) / step - 1e-9) * step;
+    lift = Math.round(lift * 1000) / 1000;
+    $info.text(text + ' ' + window.t('job_manager.ghost_modal.z_info_suggest',
+      { travel: fmtZ(z.travel), lift: fmtZ(lift), units: units }));
+    return lift;
+  }
+
+  // Warn when the lifted run would reach past the top of Z travel (machine
+  // Z 0). Same rule as the soft-limit badge: skipped until Z has been zeroed.
+  function checkGhostCeiling() {
+    var $warn = $('#ghost-z-warning');
+    var lift = parseFloat($('#ghost-zoffset').val());
+    var top = pendingBounds && pendingBounds.max && pendingBounds.max.z;
+    var g55z = configData && configData.driver && configData.driver.g55z;
+    if (!isFinite(lift) || typeof top !== 'number' || typeof g55z !== 'number' || g55z === 0) {
+      return $warn.hide();
+    }
+    var over = top + lift + g55z;
+    if (over > 0.0005) {
+      $warn.text(window.t('job_manager.ghost_modal.z_warn_ceiling', { over: fmtZ(over), units: ghostUnits() })).show();
+    } else {
+      $warn.hide();
+    }
+  }
 
   function syncGhostModeOpts() {
     var mode = $('input[name="ghost-mode"]:checked').val();
@@ -1173,14 +1230,21 @@ function bindGhostRun() {
     e.stopPropagation();
     pendingJobId = $(this).data('id') || $(this).closest('.job_item').attr('id');
     if (!pendingJobId) return;
+    pendingBounds = $(this).data('bounds') || null;
     $('#ghost-mode-lift').prop('checked', true);
-    $('#ghost-zoffset').val('0.5');
+    var units = ghostUnits();
+    $('#ghost-zoffset-units').text(units);
+    $('#ghost-zoffset').attr('step', units === 'mm' ? 1 : 0.05);
+    var suggested = describeGhostZ(pendingBounds);
+    $('#ghost-zoffset').val(suggested !== null ? suggested : (units === 'mm' ? 12 : 0.5));
+    checkGhostCeiling();
     syncGhostModeOpts();
     $('#ghost-modal').foundation('reveal', 'open');
     setTimeout(function() { $('#ghost-zoffset').focus().select(); }, 100);
   });
 
   $('input[name="ghost-mode"]').on('change', syncGhostModeOpts);
+  $('#ghost-zoffset').on('input change', checkGhostCeiling);
 
   $('#ghost-go').on('click', function() {
     var mode = $('input[name="ghost-mode"]:checked').val() || 'lift';

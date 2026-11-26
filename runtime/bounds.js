@@ -50,7 +50,7 @@ function round3(v) {
 }
 
 // Walks gcode lines tracking modal absolute/relative motion and arc cardinal
-// extremes. Returns { min, max, path } in the file's coordinate space
+// extremes. Returns { min, max, z, path } in the file's coordinate space
 // (machine-coords are derived later via the active G55 offset). `path` is a
 // decimated [[x, y, z], ...] polyline of the moves, with arcs sampled, for
 // geometry-accurate keep-out checks.
@@ -65,6 +65,14 @@ function scanGCodeBounds(gcode) {
     // inherit the last one seen.
     var motion = 0;
     var path = [[0, 0, 0, 0]];
+    // Z summary for dry runs (ghost run): the lowest Z any cutting move
+    // reaches, and the lowest Z at which the file itself rapids across X/Y —
+    // its own travel height, which its author judged clear of the material.
+    // Lifting a run by (travel - cut) keeps every move at or above that
+    // height, wherever Z zero is (material top or table).
+    var zCut = Infinity;
+    var zTravel = Infinity;
+    var zKnown = false; // false until the file has set Z; the starting Z is a guess
 
     function update(x, y, z) {
         if (x < min.x) min.x = x;
@@ -103,6 +111,14 @@ function scanGCodeBounds(gcode) {
         pos.z = nz === null ? pos.z : (absolute ? nz : pos.z + nz);
 
         update(pos.x, pos.y, pos.z);
+
+        if (motion >= 1) {
+            if (pos.z < zCut) zCut = pos.z;
+        } else if (zKnown && (pos.x !== prev.x || pos.y !== prev.y)) {
+            var travelZ = Math.min(prev.z, pos.z);
+            if (travelZ < zTravel) zTravel = travelZ;
+        }
+        if (mz) zKnown = true;
 
         // Arc cardinal extremes — bounding box of an arc can extend past
         // its endpoints when the sweep crosses 0°, 90°, 180°, or 270°
@@ -147,7 +163,16 @@ function scanGCodeBounds(gcode) {
         }
     }
 
-    return seen ? { min: min, max: max, path: decimatePath(path, PATH_MAX_POINTS) } : null;
+    if (!seen) return null;
+    return {
+        min: min,
+        max: max,
+        z: {
+            cut: isFinite(zCut) ? round3(zCut) : null,
+            travel: isFinite(zTravel) ? round3(zTravel) : null,
+        },
+        path: decimatePath(path, PATH_MAX_POINTS),
+    };
 }
 
 // Compare bounds (work coords) against the soft-limit envelope (machine

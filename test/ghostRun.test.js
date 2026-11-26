@@ -123,3 +123,35 @@ describe("ghost-run job", function () {
         });
     });
 });
+
+describe("Z summary for the lift suggestion", function () {
+    var bounds = require("../runtime/bounds");
+
+    test("Z zero at the material top: lowest cut and travel height", function () {
+        var b = bounds.scanGCodeBounds(
+            "G0 Z0.2\nG0 X1 Y1\nG1 Z-0.25\nG1 X5 Y1\nG1 Z-0.5\nG1 X1 Y1\nG0 Z0.2\nG0 X0 Y0\n"
+        );
+        expect(b.z).toEqual({ cut: -0.5, travel: 0.2 });
+    });
+
+    test("Z zero at the table: travel height is still above the sheet", function () {
+        var b = bounds.scanGCodeBounds("G0 Z1.55\nG0 X2 Y2\nG0 Z0.95\nG1 Z0.517\nG1 X4 Y2\nG1 Z-0.01\nG1 X2 Y2\nG0 Z1.55\n");
+        // Lift = travel - cut = 1.56: the deepest cut rides at the travel height.
+        expect(b.z).toEqual({ cut: -0.01, travel: 1.55 });
+    });
+
+    test("a first move across the table before Z is set does not count as travel height", function () {
+        var b = bounds.scanGCodeBounds("G0 X1 Y1\nG0 Z0.5\nG0 X2 Y2\nG1 Z-0.1\n");
+        expect(b.z).toEqual({ cut: -0.1, travel: 0.5 });
+    });
+
+    test("a rapid that only changes Z is not travel", function () {
+        var b = bounds.scanGCodeBounds("G0 Z1\nG0 X1 Y1\nG0 Z0.1\nG1 Z-0.2\nG0 Z1\n");
+        expect(b.z.travel).toBe(1);
+    });
+
+    test("no rapid travel in the file: no travel height", function () {
+        var b = bounds.scanGCodeBounds("G1 Z-0.1\nG1 X5\n");
+        expect(b.z).toEqual({ cut: -0.1, travel: null });
+    });
+});

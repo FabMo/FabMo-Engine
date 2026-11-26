@@ -14,8 +14,10 @@
 			<input type="radio" name="ghost-mode" id="ghost-mode-lift" value="lift" checked />
 			<label for="ghost-mode-lift" style="display:inline; font-weight:bold;" data-i18n="job_manager.ghost_modal.lift_run_file">Lift &amp; run file</label>
 			<div id="ghost-mode-lift-opts" style="margin:0.25em 0 0.5em 1.75em;">
-				<label for="ghost-zoffset" data-i18n="job_manager.ghost_modal.z_offset_label">Z offset to add (inches):</label>
+				<div id="ghost-z-info" style="font-size:0.9em; color:#666; margin-bottom:0.4em;"></div>
+				<label for="ghost-zoffset"><span data-i18n="job_manager.ghost_modal.z_offset_label">Z offset to add</span> (<span id="ghost-zoffset-units">in</span>):</label>
 				<input id="ghost-zoffset" type="number" step="0.05" min="0" value="0.5" />
+				<div id="ghost-z-warning" style="font-size:0.9em; color:#b00020; display:none;"></div>
 			</div>
 		</div>
 		<div class="row">
