@@ -17,7 +17,8 @@ var Table         = require('./table');
 var Tool          = require('./tool');
 var Gui           = require('./gui');
 var PointCloud    = require('./pointcloud');
-var Material      = require('./material');  // ADD THIS
+var Material      = require('./material');
+var FiveAxis      = require('./fiveaxis');  // ADD THIS
 
 module.exports = function(container) {
   var self = this;
@@ -405,7 +406,7 @@ module.exports = function(container) {
     // Check the full-file extents against the machine soft-limit envelope.
     // A rotary file's drawn path is wrapped around the work, so its extents
     // say nothing about axis travel; check what the axes actually do.
-    checkSoftLimits(self.path.rotary ? self.path.machineBounds : self.originalBounds);
+    checkSoftLimits(self.path.rotary || self.path.fiveAxis ? self.path.machineBounds : self.originalBounds);
 
     // Always use original bounds for material, camera, and scene setup
     var sceneBounds = self.originalBounds;
@@ -443,6 +444,7 @@ module.exports = function(container) {
     var materialBottom = materialTop - stockThickness;
     self.table.setZZoff(materialBottom);
     buildRotaryStock();
+    buildFiveAxis();
     self.tool.setBitDiameter(self.defaultTool.toolDiameter);
     self.tool.refresh();
 
@@ -583,13 +585,100 @@ module.exports = function(container) {
   }
 
 
+  // ---- 5-axis files ---------------------------------------------------
+  // Ported from the ShopBot Labs 5-axis visualizer: the path is the trail
+  // of the tool tip, a second trail follows the A/B pivot, and the machine
+  // is drawn with its turret and tilting spindle.
+  var fiveModel = null;
+  var pivotTrail = null;
+  var fiveSettings = null;
+
+  self.setFiveAxis = function (config, units) {
+    var k = FiveAxis.settings(config, units === 'mm' ? 25.4 : 1);
+    // The Z column is as long as the machine's Z travel unless told otherwise.
+    var env = softLimits && softLimits.envelope;
+    if (!(config && config.zTravel) && env && isFinite(env.zmax - env.zmin) && env.zmax > env.zmin)
+      k.zTravel = env.zmax - env.zmin;
+    fiveSettings = k;
+    self.path.fiveAxisSettings = k;
+  }
+
+  function machineStyle() { return cookie.get('machine-style', 'outlined'); }
+
+  function clearFiveAxis() {
+    if (fiveModel) FiveAxis.dispose(fiveModel);
+    fiveModel = null;
+    if (pivotTrail) {
+      self.scene.remove(pivotTrail);
+      pivotTrail.geometry.dispose();
+      pivotTrail.material.dispose();
+    }
+    pivotTrail = null;
+  }
+
+  function buildFiveAxis() {
+    clearFiveAxis();
+    var k = self.path.fiveAxis;
+    self.tool.setHidden(!!k);
+    if (!k) return;
+
+    // Gantry posts stand at the table's Y edges; the tip is on the table
+    // at height zero.
+    self.table.setZZoff(0);
+    var table = self.table.table;
+    var half = table.geometry.parameters.height / 2;
+    fiveModel = FiveAxis.buildMachine(k, table.position.y - half, table.position.y + half);
+    FiveAxis.setStyle(fiveModel, machineStyle());
+    self.scene.add(fiveModel.root);
+
+    // Pivot trail, set slightly aside so it does not hide the tip trail
+    // where the two coincide.
+    var moves = self.path.moves, pts = [];
+    for (var i = 0; i < moves.length; i++) {
+      var mv = moves[i];
+      if (!mv.m0 || mv.rapid) continue;
+      [[mv.m0, mv.rot0], [mv.m1, mv.rot1]].forEach(function (e) {
+        var p = FiveAxis.pivot(FiveAxis.tune([e[0][0], e[0][1], e[0][2], e[1][0], e[1][1]], k), k);
+        pts.push(p[0] + 0.15 * k.unit, p[1], p[2]);
+      });
+    }
+    var geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    pivotTrail = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({color: 0x4488ff}));
+    pivotTrail.frustumCulled = false;
+    pivotTrail.visible = !!parseInt(cookie.get('show-pivot', 1));
+    self.scene.add(pivotTrail);
+
+    placeFiveAxis();
+  }
+
+  function placeFiveAxis() {
+    var k = self.path.fiveAxis;
+    if (!k || !fiveModel) return;
+    var m = self.path.machineState || [0, 0, 0, 0, 0];
+    FiveAxis.updateMachine(fiveModel, FiveAxis.tune(m, k), k);
+  }
+
+  util.connectSetting('machine-style', machineStyle(), function (style) {
+    cookie.set('machine-style', style);
+    if (fiveModel) FiveAxis.setStyle(fiveModel, style);
+    self.refresh();
+  });
+
+  util.connectSetting('show-pivot', parseInt(cookie.get('show-pivot', 1)), function (show) {
+    cookie.set('show-pivot', show ? 1 : 0);
+    if (pivotTrail) pivotTrail.visible = !!show;
+    self.refresh();
+  });
+
+
   function computeMaterial(onDone) {
     if (!self.material || !self.path || !self._materialParams) {
       if (onDone) onDone();
       return;
     }
-    if (self.path.rotary) {
-      // The height-map stock cannot represent turned work.
+    if (self.path.rotary || self.path.fiveAxis) {
+      // The height-map stock cannot represent turned or tilted-tool work.
       self.material.clear();
       if (onDone) onDone();
       return;
@@ -1350,8 +1439,12 @@ module.exports = function(container) {
     // Rotary files: the path is drawn on the workpiece, so the reported
     // machine position is carried there by the reported indexer (B) angle.
     var machinePosition = position;
-    if (self.path.rotary && position && typeof position[3] === 'number')
-      position = self.path.wrapPoint(position, position[3]);
+    if (self.path.rotary && position && typeof position[4] === 'number')
+      position = self.path.wrapPoint(position, position[4]);
+    // 5-axis files are drawn by the tool tip, so match on that.
+    if (self.path.fiveAxis && position && typeof position[4] === 'number')
+      position = FiveAxis.tipOf([position[0], position[1], position[2],
+                                 position[3] || 0, position[4]], self.path.fiveAxis);
 
     // Upper bound: backward search for the largest mapped N <= the planner
     // line. Handles gaps from preamble lines, non-motion commands, etc.
@@ -1474,6 +1567,7 @@ module.exports = function(container) {
   }
 
   function updatePosition (position) {
+    placeFiveAxis();
     self.tool.setPosition(placeRotaryWork(position));
     if (self.gui) self.gui.updateTimeline(self.path.moveTime);
     self.refresh();

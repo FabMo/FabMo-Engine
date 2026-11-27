@@ -11,6 +11,7 @@ var parser = require('./parser');
 var util   = require('./util');
 var cookie = require('./cookie');
 var Move   = require('./move');
+var FiveAxis = require('./fiveaxis');
 
 
 var buffer_size = 10000;
@@ -225,7 +226,9 @@ module.exports = function(scene, callbacks) {
       }
     }
 
-    if (!turns || turnsA) return null;
+    // A turning means a 5-axis head, drawn by the tip of the tool.
+    if (turnsA) return {fiveAxis: true};
+    if (!turns) return null;
 
     var spanX = range.x[1] - range.x[0], spanY = range.y[1] - range.y[0];
     return {
@@ -273,45 +276,57 @@ module.exports = function(scene, callbacks) {
     }
   }
 
-  // Add a move given in machine coordinates. Plain files go straight to
-  // the line buffer; rotary files are wrapped onto the workpiece, with a
-  // turning move broken into short chords.
-  self.addLine = function(start, end, rapid, a0, a1) {
+  // Add a move given in machine coordinates. rot0/rot1 are the [A, B]
+  // angles at its ends. Plain files go straight to the line buffer.
+  // Indexer files are wrapped onto the workpiece and 5-axis files are
+  // drawn by the tool tip; either way a turning move becomes short chords.
+  self.addLine = function(start, end, rapid, rot0, rot1) {
     growMachineBounds(start);
     growMachineBounds(end);
 
-    var r = self.rotary;
-    if (!r) return addSegment(start, end, rapid);
+    var r = self.rotary, five = self.fiveAxis;
+    if (!r && !five) return addSegment(start, end, rapid);
 
-    if (typeof a0 == 'undefined') a0 = a1 = self.a;
-    if (!r.centre && (a0 || a1)) {
-      // First turned move: the tool is over the rotation axis here.
-      // With Z zeroed on the surface the centre is one stock radius down;
-      // the viewer supplies that from Setup.
-      r.centre = [end[0], end[1], r.zeroAtCentre ? 0 : -(self.rotaryStockRadius || 0)];
-      if (r.axis === 'y') r.centre[1] = 0; else r.centre[0] = 0;
-      r.axisVector = rotaryAxisVector();
-    }
-    if (!rapid) {
-      var radius = Math.min(start[2], end[2]) - (r.centre ? r.centre[2] : 0);
-      if (typeof r.minRadius == 'undefined' || radius < r.minRadius) r.minRadius = radius;
-      if (typeof r.maxRadius == 'undefined' || radius > r.maxRadius) r.maxRadius = radius;
+    if (typeof rot0 == 'undefined') rot0 = rot1 = self.rot;
+    var turn = Math.abs(rot1[1] - rot0[1]);
+
+    if (r) {
+      if (!r.centre && (rot0[1] || rot1[1])) {
+        // First turned move: the tool is over the rotation axis here.
+        // With Z zeroed on the surface the centre is one stock radius down;
+        // the viewer supplies that from Setup.
+        r.centre = [end[0], end[1], r.zeroAtCentre ? 0 : -(self.rotaryStockRadius || 0)];
+        if (r.axis === 'y') r.centre[1] = 0; else r.centre[0] = 0;
+        r.axisVector = rotaryAxisVector();
+      }
+      if (!rapid) {
+        var radius = Math.min(start[2], end[2]) - (r.centre ? r.centre[2] : 0);
+        if (typeof r.minRadius == 'undefined' || radius < r.minRadius) r.minRadius = radius;
+        if (typeof r.maxRadius == 'undefined' || radius > r.maxRadius) r.maxRadius = radius;
+      }
+    } else {
+      turn = Math.max(turn, Math.abs(rot1[0] - rot0[0]));
     }
 
-    var steps = Math.max(1, Math.ceil(Math.abs(a1 - a0) * Math.PI / 180 / ROTARY_STEP));
-    var prev = self.wrapPoint(start, a0), prevA = a0;
+    function drawn(m, rot) {
+      return r ? self.wrapPoint(m, rot[1])
+               : FiveAxis.tipOf([m[0], m[1], m[2], rot[0], rot[1]], five);
+    }
+
+    var steps = Math.max(1, Math.ceil(turn * Math.PI / 180 / ROTARY_STEP));
+    var prevM = start, prevRot = rot0, prev = drawn(start, rot0);
     for (var i = 1; i <= steps; i++) {
       var t = i / steps;
-      var a = a0 + (a1 - a0) * t;
+      var rot = [rot0[0] + (rot1[0] - rot0[0]) * t, rot0[1] + (rot1[1] - rot0[1]) * t];
       var m = [start[0] + (end[0] - start[0]) * t,
                start[1] + (end[1] - start[1]) * t,
                start[2] + (end[2] - start[2]) * t];
-      var next = self.wrapPoint(m, a);
+      var next = drawn(m, rot);
       var move = addSegment(prev, next, rapid);
-      move.a0 = prevA;
-      move.a1 = a;
-      prev = next;
-      prevA = a;
+      // Where the axes are at each end of this piece.
+      move.m0 = prevM;  move.rot0 = prevRot;
+      move.m1 = m;      move.rot1 = rot;
+      prev = next; prevM = m; prevRot = rot;
     }
   }
 
@@ -609,8 +624,9 @@ module.exports = function(scene, callbacks) {
     if (unitSetInFile) self.feed = line.words.f / (self.metric ? 25.4 : .03937);
 
     var next = self.nextPosition(line.words);
-    var nextA = self.a;      // indexer (B axis) angle
-    if (isFinite(line.words.b)) nextA = line.words.b + (self.relative ? self.a : 0);
+    var nextRot = [self.rot[0], self.rot[1]];      // [A, B] angles
+    if (isFinite(line.words.a)) nextRot[0] = line.words.a + (self.relative ? self.rot[0] : 0);
+    if (isFinite(line.words.b)) nextRot[1] = line.words.b + (self.relative ? self.rot[1] : 0);
 
     for (var j = 0; j < line.cmds.length; j++) {
       var cmd = line.cmds[j];
@@ -630,7 +646,7 @@ module.exports = function(scene, callbacks) {
 
       switch (cmd) {
       case 'G0': case 'G1':
-        self.addLine(self.position, next, cmd == 'G0', self.a, nextA);
+        self.addLine(self.position, next, cmd == 'G0', self.rot, nextRot);
         break;
 
       case 'G2': case 'G3':
@@ -654,7 +670,7 @@ module.exports = function(scene, callbacks) {
 
       self.position = next;
     }
-    self.a = nextA;
+    self.rot = nextRot;
   }
 
 
@@ -728,10 +744,13 @@ module.exports = function(scene, callbacks) {
     }
 
     self.gcode = gcode.split('\n');
-    self.a = 0;
+    self.rot = [0, 0];
     self.angle = 0;
+    self.machineState = null;
     self.machineBounds = {min: {}, max: {}};
-    self.rotary = detectRotary(self.gcode);
+    var kind = detectRotary(self.gcode);
+    self.fiveAxis = kind && kind.fiveAxis ? (self.fiveAxisSettings || FiveAxis.settings()) : null;
+    self.rotary = kind && !kind.fiveAxis ? kind : null;
     self.process(done);
     self.reset();                            // put cone at starting location
   }
@@ -786,7 +805,7 @@ module.exports = function(scene, callbacks) {
 
   // Helper: apply material removal for a range of moves
   function applyMaterialForMoves(fromMove, toMove) {
-    if (!callbacks.materialUpdate || self.rotary) return;
+    if (!callbacks.materialUpdate || self.rotary || self.fiveAxis) return;
     for (var i = fromMove; i < toMove; i++) {
       var currentMove = self.moves[i];
       if (currentMove.rapid) continue;
@@ -922,10 +941,15 @@ module.exports = function(scene, callbacks) {
     }
 
     // Rotary files: the indexer angle at this instant, for turning the work.
-    if (self.rotary) {
+    if ((self.rotary || self.fiveAxis) && move.rot0) {
       var frac = move.getDuration() ? (time - move.startTime) / move.getDuration() : 1;
       frac = Math.max(0, Math.min(1, frac));
-      self.angle = (move.a0 || 0) + ((move.a1 || 0) - (move.a0 || 0)) * frac;
+      var lerp = function (u, v) { return u + (v - u) * frac; };
+      // Indexer angle, and all five axis values for the 5-axis head.
+      self.angle = lerp(move.rot0[1], move.rot1[1]);
+      self.machineState = [lerp(move.m0[0], move.m1[0]), lerp(move.m0[1], move.m1[1]),
+                           lerp(move.m0[2], move.m1[2]),
+                           lerp(move.rot0[0], move.rot1[0]), self.angle];
     }
 
     callbacks.position(p);
@@ -934,7 +958,7 @@ module.exports = function(scene, callbacks) {
 
     // Force final material update when simulation completes
     // DO NOT AUTO-RESET - User wants to explore the result!
-    if (time >= self.duration && callbacks.materialForceUpdate && !self.rotary) {
+    if (time >= self.duration && callbacks.materialForceUpdate && !self.rotary && !self.fiveAxis) {
       callbacks.materialForceUpdate();
     }
     
@@ -1190,9 +1214,11 @@ module.exports = function(scene, callbacks) {
     self.positions   = undefined;
     self.colors      = undefined;
     self.liveLines   = null;
-    self.a           = 0;
+    self.rot         = [0, 0];
     self.angle       = 0;
+    self.machineState = null;
     self.rotary      = null;
+    self.fiveAxis    = null;
     self.machineBounds = {min: {}, max: {}};
     self.work.rotation.set(0, 0, 0);
     self.work.position.set(0, 0, 0);
