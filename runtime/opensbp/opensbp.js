@@ -38,6 +38,10 @@ var ManualDriver = require("../manual").ManualDriver;
 // keeps whatever gcode was produced, and surfaces `info.partial = true`
 // to the simulateString callback so the bounds/previewer paths can warn
 // rather than refuse.
+//
+// This is the allowance for looping, on top of the length of the program
+// itself: a long file with no loops at all (a 3D or rotary finishing pass
+// runs to hundreds of thousands of lines) must never be cut short.
 var MAX_SIM_LINES = 200000;
 
 // Constructor for the OpenSBP runtime
@@ -365,6 +369,7 @@ SBPRuntime.prototype.runString = function (s) {
     // _end() calls init() as part of cleanup, which would otherwise clear
     // sim_budget_exceeded before simulateString's "end" callback reads it.
     this.sim_lines_executed = 0;
+    this.sim_line_budget = MAX_SIM_LINES;
     this.sim_budget_exceeded = false;
     //log.info("####=.runString");
     try {
@@ -1537,8 +1542,12 @@ SBPRuntime.prototype._executeNext = function () {
     // counting so we don't re-log on the EOF-handling tail recursions.
     if (!this.driver && !this.sim_budget_exceeded) {
         this.sim_lines_executed++;
-        if (this.sim_lines_executed > MAX_SIM_LINES) {
-            log.warn("Simulation budget exhausted at " + MAX_SIM_LINES + " lines — likely infinite loop in source. Truncating.");
+        // Budget = the longest program seen this run (the file, not a macro
+        // it calls) plus the looping allowance.
+        var budget = MAX_SIM_LINES + this.program.length;
+        if (budget > this.sim_line_budget) this.sim_line_budget = budget;
+        if (this.sim_lines_executed > this.sim_line_budget) {
+            log.warn("Simulation budget exhausted at " + this.sim_line_budget + " lines — likely infinite loop in source. Truncating.");
             this.sim_budget_exceeded = true;
             // Jump past end-of-program so the existing EOF handling in
             // _executeNext flushes output and calls _end() cleanly. Avoids
