@@ -1514,6 +1514,13 @@ module.exports = function(scene, update) {
   /**
    * Toggle visibility
    */
+  // Remove the stock from the scene (files the height map cannot show).
+  self.clear = function() {
+    self.mesh = disposeMesh(self.mesh);
+    self.wireMesh = disposeMesh(self.wireMesh);
+    update();
+  };
+
   self.setShow = function(show) {
     self.show = show;
     if (self.mesh) self.mesh.visible = !!show;

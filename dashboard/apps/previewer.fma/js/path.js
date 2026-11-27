@@ -168,7 +168,155 @@ module.exports = function(scene, callbacks) {
   }
 
 
-  self.addLine = function(start, end, rapid) {
+  // ---- Rotary (indexer) files ----------------------------------------
+  // On an indexer the tool stays over the rotation axis and the B axis
+  // turns the work under it, so the raw X/Y/Z path is a line along the
+  // axis. The path is drawn on the workpiece instead: each point is turned
+  // about the rotation axis by the B angle it was cut at. During playback
+  // the viewer turns the whole path back by the current angle, so the cut
+  // point stays under the tool as it does on the machine.
+
+  var ROTARY_STEP = 6 * Math.PI / 180;    // longest turn drawn as one chord
+  var ROTARY_SIGN = 1;                     // sense of positive B (looking down the axis)
+  var wrapTmp = new THREE.Vector3();
+
+  function wordValue(line, letter) {
+    var m = new RegExp(letter + '\\s*(-?\\d*\\.?\\d+)', 'i').exec(line);
+    return m ? parseFloat(m[1]) : undefined;
+  }
+
+  // Look through the file for indexer motion. The indexer is the B axis; a
+  // file that also turns A is 5-axis work, which this does not draw. The
+  // indexer is parallel to whichever of X and Y the cutting moves travel
+  // along; the other one sits still over the rotation axis.
+  function detectRotary(lines) {
+    var x = 0, y = 0, z = 0, a = 0, b = 0, cutting = false, turns = false, turnsA = false;
+    var range = {x: [Infinity, -Infinity], y: [Infinity, -Infinity]};
+    var minCutZ = Infinity;
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var paren = line.indexOf('(');
+      if (paren !== -1) line = line.substring(0, paren);
+      if (!line) continue;
+      // Drop the N word so its digits are not read as an axis value.
+      line = line.replace(/^\s*N\d+\s*/i, '');
+
+      if (/G0*1(?!\d)/i.test(line)) cutting = true;
+      else if (/G0*0(?!\d)/i.test(line)) cutting = false;
+
+      var v;
+      if ((v = wordValue(line, 'B')) !== undefined) {
+        if (v !== b) turns = true;
+        b = v;
+      }
+      if ((v = wordValue(line, 'A')) !== undefined) {
+        if (v !== a) turnsA = true;
+        a = v;
+      }
+      if ((v = wordValue(line, 'X')) !== undefined) x = v;
+      if ((v = wordValue(line, 'Y')) !== undefined) y = v;
+      if ((v = wordValue(line, 'Z')) !== undefined) z = v;
+
+      if (cutting) {
+        range.x[0] = Math.min(range.x[0], x); range.x[1] = Math.max(range.x[1], x);
+        range.y[0] = Math.min(range.y[0], y); range.y[1] = Math.max(range.y[1], y);
+        minCutZ = Math.min(minCutZ, z);
+      }
+    }
+
+    if (!turns || turnsA) return null;
+
+    var spanX = range.x[1] - range.x[0], spanY = range.y[1] - range.y[0];
+    return {
+      // Axis the indexer is parallel to. Y is the usual arrangement, and
+      // the answer when the file gives nothing to choose by.
+      axis: (isFinite(spanX) && spanY < spanX) ? 'x' : 'y',
+      centre: null,          // set from the first turned move
+      // Z zero at the centre of rotation when every cut is above zero;
+      // otherwise the file is zeroed somewhere this cannot work out.
+      zeroAtCentre: minCutZ > 0
+    };
+  }
+
+  function rotaryAxisVector() {
+    return self.rotary.axis === 'y' ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+  }
+
+  // Machine position + indexer angle (degrees) -> point on the workpiece.
+  self.wrapPoint = function (p, aDeg) {
+    var r = self.rotary;
+    if (!r || !r.centre || !aDeg) return [p[0], p[1], p[2]];
+    var c = r.centre;
+    wrapTmp.set(p[0] - c[0], p[1] - c[1], p[2] - c[2])
+      .applyAxisAngle(r.axisVector, -ROTARY_SIGN * aDeg * Math.PI / 180);
+    return [wrapTmp.x + c[0], wrapTmp.y + c[1], wrapTmp.z + c[2]];
+  }
+
+  // Point on the workpiece -> where it is on the machine at angle aDeg.
+  self.unwrapPoint = function (p, aDeg) {
+    return self.wrapPoint(p, -aDeg);
+  }
+
+  // Angle the work group has to be turned by so the workpiece is shown as
+  // it sits on the machine at angle aDeg (radians, about rotary.axisVector).
+  self.workAngle = function (aDeg) {
+    return ROTARY_SIGN * aDeg * Math.PI / 180;
+  }
+
+  function growMachineBounds(p) {
+    var b = self.machineBounds, axes = ['x', 'y', 'z'];
+    for (var i = 0; i < 3; i++) {
+      var k = axes[i];
+      if (typeof b.min[k] == 'undefined' || p[i] < b.min[k]) b.min[k] = p[i];
+      if (typeof b.max[k] == 'undefined' || b.max[k] < p[i]) b.max[k] = p[i];
+    }
+  }
+
+  // Add a move given in machine coordinates. Plain files go straight to
+  // the line buffer; rotary files are wrapped onto the workpiece, with a
+  // turning move broken into short chords.
+  self.addLine = function(start, end, rapid, a0, a1) {
+    growMachineBounds(start);
+    growMachineBounds(end);
+
+    var r = self.rotary;
+    if (!r) return addSegment(start, end, rapid);
+
+    if (typeof a0 == 'undefined') a0 = a1 = self.a;
+    if (!r.centre && (a0 || a1)) {
+      // First turned move: the tool is over the rotation axis here.
+      // With Z zeroed on the surface the centre is one stock radius down;
+      // the viewer supplies that from Setup.
+      r.centre = [end[0], end[1], r.zeroAtCentre ? 0 : -(self.rotaryStockRadius || 0)];
+      if (r.axis === 'y') r.centre[1] = 0; else r.centre[0] = 0;
+      r.axisVector = rotaryAxisVector();
+    }
+    if (!rapid) {
+      var radius = Math.min(start[2], end[2]) - (r.centre ? r.centre[2] : 0);
+      if (typeof r.minRadius == 'undefined' || radius < r.minRadius) r.minRadius = radius;
+      if (typeof r.maxRadius == 'undefined' || radius > r.maxRadius) r.maxRadius = radius;
+    }
+
+    var steps = Math.max(1, Math.ceil(Math.abs(a1 - a0) * Math.PI / 180 / ROTARY_STEP));
+    var prev = self.wrapPoint(start, a0), prevA = a0;
+    for (var i = 1; i <= steps; i++) {
+      var t = i / steps;
+      var a = a0 + (a1 - a0) * t;
+      var m = [start[0] + (end[0] - start[0]) * t,
+               start[1] + (end[1] - start[1]) * t,
+               start[2] + (end[2] - start[2]) * t];
+      var next = self.wrapPoint(m, a);
+      var move = addSegment(prev, next, rapid);
+      move.a0 = prevA;
+      move.a1 = a;
+      prev = next;
+      prevA = a;
+    }
+  }
+
+
+  function addSegment(start, end, rapid) {
     if (typeof self.positions == 'undefined') self.newBuffer();
 
     var rerouted = rapid && self.inReroute;
@@ -208,6 +356,7 @@ module.exports = function(scene, callbacks) {
     self.moves.push(move);
 
     if (++self.fill == buffer_size) self.flushBuffer();
+    return move;
   }
 
 
@@ -460,6 +609,8 @@ module.exports = function(scene, callbacks) {
     if (unitSetInFile) self.feed = line.words.f / (self.metric ? 25.4 : .03937);
 
     var next = self.nextPosition(line.words);
+    var nextA = self.a;      // indexer (B axis) angle
+    if (isFinite(line.words.b)) nextA = line.words.b + (self.relative ? self.a : 0);
 
     for (var j = 0; j < line.cmds.length; j++) {
       var cmd = line.cmds[j];
@@ -479,7 +630,7 @@ module.exports = function(scene, callbacks) {
 
       switch (cmd) {
       case 'G0': case 'G1':
-        self.addLine(self.position, next, cmd == 'G0');
+        self.addLine(self.position, next, cmd == 'G0', self.a, nextA);
         break;
 
       case 'G2': case 'G3':
@@ -503,6 +654,7 @@ module.exports = function(scene, callbacks) {
 
       self.position = next;
     }
+    self.a = nextA;
   }
 
 
@@ -576,6 +728,10 @@ module.exports = function(scene, callbacks) {
     }
 
     self.gcode = gcode.split('\n');
+    self.a = 0;
+    self.angle = 0;
+    self.machineBounds = {min: {}, max: {}};
+    self.rotary = detectRotary(self.gcode);
     self.process(done);
     self.reset();                            // put cone at starting location
   }
@@ -630,7 +786,7 @@ module.exports = function(scene, callbacks) {
 
   // Helper: apply material removal for a range of moves
   function applyMaterialForMoves(fromMove, toMove) {
-    if (!callbacks.materialUpdate) return;
+    if (!callbacks.materialUpdate || self.rotary) return;
     for (var i = fromMove; i < toMove; i++) {
       var currentMove = self.moves[i];
       if (currentMove.rapid) continue;
@@ -765,13 +921,20 @@ module.exports = function(scene, callbacks) {
       last.setStart(last.start)
     }
 
+    // Rotary files: the indexer angle at this instant, for turning the work.
+    if (self.rotary) {
+      var frac = move.getDuration() ? (time - move.startTime) / move.getDuration() : 1;
+      frac = Math.max(0, Math.min(1, frac));
+      self.angle = (move.a0 || 0) + ((move.a1 || 0) - (move.a0 || 0)) * frac;
+    }
+
     callbacks.position(p);
 
     setCurrentLine(move.getLine(), self.hasSourceLines ? move.sourceLine : undefined);
 
     // Force final material update when simulation completes
     // DO NOT AUTO-RESET - User wants to explore the result!
-    if (time >= self.duration && callbacks.materialForceUpdate) {
+    if (time >= self.duration && callbacks.materialForceUpdate && !self.rotary) {
       callbacks.materialForceUpdate();
     }
     
@@ -955,9 +1118,14 @@ module.exports = function(scene, callbacks) {
   util.connectSetting('speed', self.speed, setSpeed);
 
   // THREE.js
+  // Everything that belongs to the workpiece hangs off self.work, so the
+  // viewer can turn it as one for rotary files.
+  self.work = new THREE.Group();
+  scene.add(self.work);
+
   self.obj = new THREE.Object3D();
   self.obj.visible = !!self.show;  // Respect initial setting
-  scene.add(self.obj);
+  self.work.add(self.obj);
 
   var material = new THREE.LineBasicMaterial({color: 0xff00ff});
   var geometry = new THREE.Geometry();
@@ -965,7 +1133,7 @@ module.exports = function(scene, callbacks) {
   geometry.vertices.push(new THREE.Vector3(0, 0, 0));
   self.currentLine = new THREE.Line(geometry, material);
   self.currentLine.visible = !!self.show;
-  scene.add(self.currentLine);
+  self.work.add(self.currentLine);
 
   // NEW: Add setShow method
   self.setShow = function(show) {
@@ -1022,6 +1190,12 @@ module.exports = function(scene, callbacks) {
     self.positions   = undefined;
     self.colors      = undefined;
     self.liveLines   = null;
+    self.a           = 0;
+    self.angle       = 0;
+    self.rotary      = null;
+    self.machineBounds = {min: {}, max: {}};
+    self.work.rotation.set(0, 0, 0);
+    self.work.position.set(0, 0, 0);
     self.currentLine.visible = false;
   };
 

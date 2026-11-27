@@ -396,7 +396,9 @@ module.exports = function(container) {
     }
 
     // Check the full-file extents against the machine soft-limit envelope.
-    checkSoftLimits(self.originalBounds);
+    // A rotary file's drawn path is wrapped around the work, so its extents
+    // say nothing about axis travel; check what the axes actually do.
+    checkSoftLimits(self.path.rotary ? self.path.machineBounds : self.originalBounds);
 
     // Always use original bounds for material, camera, and scene setup
     var sceneBounds = self.originalBounds;
@@ -432,6 +434,7 @@ module.exports = function(container) {
     // Align table surface with the bottom of the material
     var materialBottom = materialTop - stockThickness;
     self.table.setZZoff(materialBottom);
+    buildRotaryStock();
 
     // Tool info is now per-operation; initial material diameter uses the first
     // operation's tool when available, falling back to the Setup default tool.
@@ -495,8 +498,89 @@ module.exports = function(container) {
     });
   }
 
+  // ---- Rotary (indexer) files ----------------------------------------
+  // path.js draws the toolpath wrapped onto the workpiece. Here: a simple
+  // round blank and chuck that turn with it, a fixed headstock, and the
+  // turning of the whole work group to the indexer angle being played.
+  var rotaryParts = [];
+
+  function clearRotaryStock() {
+    rotaryParts.forEach(function (o) {
+      if (o.parent) o.parent.remove(o);
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+    rotaryParts = [];
+  }
+
+  function buildRotaryStock() {
+    clearRotaryStock();
+    var r = self.path.rotary;
+    if (!r || !r.centre) return;
+
+    var d = self.isMetric() ? 25.4 : 1;
+    var along = r.axis;                         // 'x' or 'y'
+    var mb = self.path.machineBounds;
+    var lo = mb.min[along] - 1 * d, hi = mb.max[along] + 1 * d;
+    var length = hi - lo;
+    // The deepest cut is the largest round that is certainly still there.
+    var radius = r.minRadius > 0 ? r.minRadius * 0.99 : 0;
+    var outer = Math.max(r.maxRadius || 0, radius, 0.5 * d);
+
+    function place(mesh, centreAlong, parent) {
+      if (along === 'x') mesh.rotation.z = Math.PI / 2;   // cylinder axis Y -> X
+      mesh.position.set(r.centre[0], r.centre[1], r.centre[2]);
+      mesh.position[along] = centreAlong;
+      parent.add(mesh);
+      rotaryParts.push(mesh);
+    }
+
+    if (radius > 0) {
+      place(new THREE.Mesh(
+        new THREE.CylinderBufferGeometry(radius, radius, length, 48),
+        new THREE.MeshPhongMaterial({color: 0xd4b585, shininess: 10})),
+        (lo + hi) / 2, self.path.work);
+    }
+
+    // Chuck turns with the work; the headstock behind it does not.
+    var chuckLen = 1 * d, chuckR = outer * 0.6 + 0.5 * d;
+    place(new THREE.Mesh(
+      new THREE.CylinderBufferGeometry(chuckR, chuckR, chuckLen, 6),
+      new THREE.MeshPhongMaterial({color: 0x4a4a4a, shininess: 30})),
+      lo - chuckLen / 2, self.path.work);
+
+    var headLen = 3 * d, headSize = 2 * chuckR + 1 * d;
+    var head = new THREE.Mesh(
+      new THREE.BoxBufferGeometry(headSize, headLen, headSize),
+      new THREE.MeshPhongMaterial({color: 0x1f3a6e, shininess: 30}));
+    place(head, lo - chuckLen - headLen / 2, self.scene);
+
+    // The table sits under the indexer, not through the middle of the work.
+    self.table.setZZoff(r.centre[2] - headSize / 2);
+  }
+
+  // Turn the work to the angle being played and return where the tool is
+  // on the machine for a path position given on the workpiece.
+  function placeRotaryWork(position) {
+    var r = self.path.rotary;
+    if (!r || !r.centre) return position;
+    var work = self.path.work;
+    var c = new THREE.Vector3(r.centre[0], r.centre[1], r.centre[2]);
+    work.quaternion.setFromAxisAngle(r.axisVector, self.path.workAngle(self.path.angle));
+    // Rotation about the axis through c, not through the origin.
+    work.position.copy(c).sub(c.clone().applyQuaternion(work.quaternion));
+    return self.path.unwrapPoint(position, self.path.angle);
+  }
+
+
   function computeMaterial(onDone) {
     if (!self.material || !self.path || !self._materialParams) {
+      if (onDone) onDone();
+      return;
+    }
+    if (self.path.rotary) {
+      // The height-map stock cannot represent turned work.
+      self.material.clear();
       if (onDone) onDone();
       return;
     }
@@ -1071,6 +1155,9 @@ module.exports = function(container) {
       self.path.clearPath();
     }
 
+    // Used only for rotary files zeroed on the surface: Setup's material
+    // thickness is taken as the blank's diameter.
+    self.path.rotaryStockRadius = getEffectiveStockThickness() / 2;
     self.path.load(gcode, pathLoaded);
   }
 
@@ -1247,6 +1334,11 @@ module.exports = function(container) {
   function applyLiveStatus(line, position) {
     if (!self.path || !self.path.loaded || !self.path.moves.length) return;
     var moves = self.path.moves;
+    // Rotary files: the path is drawn on the workpiece, so the reported
+    // machine position is carried there by the reported indexer (B) angle.
+    var machinePosition = position;
+    if (self.path.rotary && position && typeof position[3] === 'number')
+      position = self.path.wrapPoint(position, position[3]);
 
     // Upper bound: backward search for the largest mapped N <= the planner
     // line. Handles gaps from preamble lines, non-motion commands, etc.
@@ -1303,7 +1395,7 @@ module.exports = function(container) {
       var offPathTol = self.isMetric() ? 6 : 0.25;
       if (bestDist > offPathTol) {
         self.path.pause();
-        self.tool.setPosition(position);
+        self.tool.setPosition(machinePosition);
         self.refresh();
         return;
       }
@@ -1369,7 +1461,7 @@ module.exports = function(container) {
   }
 
   function updatePosition (position) {
-    self.tool.setPosition(position);
+    self.tool.setPosition(placeRotaryWork(position));
     if (self.gui) self.gui.updateTimeline(self.path.moveTime);
     self.refresh();
   }
