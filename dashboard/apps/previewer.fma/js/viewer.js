@@ -629,6 +629,7 @@ module.exports = function(container) {
     var half = table.geometry.parameters.height / 2;
     fiveModel = FiveAxis.buildMachine(k, table.position.y - half, table.position.y + half);
     FiveAxis.setStyle(fiveModel, machineStyle());
+    fiveModel.root.visible = !!parseInt(cookie.get('show-machine', 1));
     self.scene.add(fiveModel.root);
 
     // Pivot trail, set slightly aside so it does not hide the tip trail
@@ -662,6 +663,13 @@ module.exports = function(container) {
   util.connectSetting('machine-style', machineStyle(), function (style) {
     cookie.set('machine-style', style);
     if (fiveModel) FiveAxis.setStyle(fiveModel, style);
+    self.refresh();
+  });
+
+  // The bottom-bar Machine toggle hides the 5-axis machine too (the tool
+  // widget owns the setting and its cookie).
+  util.connectSetting('show-machine', parseInt(cookie.get('show-machine', 1)), function (show) {
+    if (fiveModel) fiveModel.root.visible = !!show;
     self.refresh();
   });
 
