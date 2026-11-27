@@ -775,9 +775,11 @@
                     <label for="job-ghost-mode-lift" data-i18n="job_manager.ghost_modal.lift_run_file">Lift &amp; run file</label>
                 </div>
                 <div class="ts-radio-opts" id="job-ghost-lift-opts">
-                    <label class="ts-label-field"><span data-i18n="job_manager.ghost_modal.z_offset_label">Z offset to add (inches):</span>
+                    <div class="ts-note-inline" id="job-ghost-z-info"></div>
+                    <label class="ts-label-field"><span><span data-i18n="job_manager.ghost_modal.z_offset_label">Z offset to add</span> (<span id="job-ghost-zoffset-units">in</span>):</span>
                         <input id="job-ghost-zoffset" type="number" step="0.05" min="0" value="0.5">
                     </label>
+                    <div class="ts-note-inline" id="job-ghost-z-warning" style="display:none; color:#c0392b;"></div>
                 </div>
                 <div class="ts-radio-row">
                     <input type="radio" name="job-ghost-mode" id="job-ghost-mode-trace" value="trace">
