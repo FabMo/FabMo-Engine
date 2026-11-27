@@ -46,7 +46,7 @@ module.exports = function(scene, update, getTableMesh) {
 
 
   function machineWanted() {
-    return self.showMachine && !self.suppressMachine &&
+    return self.showMachine && !self.suppressMachine && !self.hidden &&
       (self.gantryAxis === 'x' || self.gantryAxis === 'y');
   }
 
@@ -209,7 +209,7 @@ module.exports = function(scene, update, getTableMesh) {
     if (self.mesh) {
       var v = self.position;
       self.mesh.position.set(v[0], v[1], v[2] + self.size / 2);
-      self.mesh.visible = !!self.show && !wantMachine;
+      self.mesh.visible = !!self.show && !wantMachine && !self.hidden;
     }
   }
 
@@ -281,6 +281,13 @@ module.exports = function(scene, update, getTableMesh) {
   // Camera overlay views show the real machine, so the model steps aside.
   self.setSuppressMachine = function (suppress) {
     self.suppressMachine = !!suppress;
+    sync();
+  }
+
+
+  // Draw nothing at all: another model (the 5-axis head) marks the tool.
+  self.setHidden = function (hidden) {
+    self.hidden = !!hidden;
     sync();
   }
 

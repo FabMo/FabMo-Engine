@@ -993,6 +993,7 @@ function nowPreviewJob() {
     );
 
     viewer.setGantryAxis(cached_Config.machine.gantry_axis);
+    viewer.setFiveAxis(cached_Config.machine.fiveaxis, cached_Config.machine.units);
 
     // Keep-out zones render on the table, and rerouted (amber) jogs show why
     viewer.setKeepoutZones(
@@ -1057,7 +1058,7 @@ function nowPreviewJob() {
       // This handles the case where the user opens the previewer while a job is already running
       var isLive = job_started || status.state === 'running';
       if (isLive)
-        viewer.updateStatus(status.line, [status.posx, status.posy, status.posz]);
+        viewer.updateStatus(status.line, [status.posx, status.posy, status.posz, status.posa, status.posb]);
       else if (status.state === 'manual')
         // Keypad / pendant jogging with no job running: follow the
         // physical tool (path and progress state are left alone).
@@ -1094,6 +1095,12 @@ function nowPreviewJob() {
       fabmo.getJobInfo(jobID, function(err, job) {
         if (!err && job && job.name) {
           $('#preview .file-name').text(job.name).attr('title', job.name);
+        }
+        // The engine records the job's extents when it is queued; with
+        // them the camera can be aimed at the whole job before the path
+        // has finished loading.
+        if (!err && job && job.bounds && viewer.setExpectedBounds) {
+          viewer.setExpectedBounds(job.bounds);
         }
       });
 

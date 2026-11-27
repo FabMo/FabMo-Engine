@@ -11,6 +11,7 @@ var parser = require('./parser');
 var util   = require('./util');
 var cookie = require('./cookie');
 var Move   = require('./move');
+var FiveAxis = require('./fiveaxis');
 
 
 var buffer_size = 10000;
@@ -73,28 +74,19 @@ module.exports = function(scene, callbacks) {
     var positions = new THREE.BufferAttribute(self.positions, 3);
     var colors    = new THREE.BufferAttribute(self.colors, 3);
     self.buffers.push([positions, colors]);
-  }
 
-
-  self.flushBuffer = function () {
-    if (typeof self.positions == 'undefined' || self.fill == 0) return;
-
-    if (self.fill < buffer_size) {
-      self.positions = self.positions.slice(0, self.fill * 6);
-      self.colors = self.colors.slice(0, self.fill * 6);
-    }
-
+    // The line object for this buffer goes into the scene now, empty, and
+    // its draw range grows as segments are added (see showProgress), so the
+    // path can be painted while the file is still being processed. It used
+    // to be created only once the buffer was full.
+    //
+    // One object per buffer, in order, every buffer the same size:
+    // getMoveAtIntersection() relies on that to map a picked segment back
+    // to its move.
     var geometry = new THREE.BufferGeometry();
-    var buffers = self.buffers[self.buffers.length - 1];
-
-    geometry.setAttribute('position', buffers[0]);
-    geometry.setAttribute('color', buffers[1]);
-    // Cap the raycaster (and renderer) at the actually-used vertices.
-    // The BufferAttribute spans the full pre-allocated 10000-segment slab,
-    // so without this raycaster tests phantom zero-length segments at the
-    // origin that mask hits on the real toolpath nearby.
-    geometry.setDrawRange(0, self.fill * 2);
-    geometry.computeBoundingSphere();
+    geometry.setAttribute('position', positions);
+    geometry.setAttribute('color', colors);
+    geometry.setDrawRange(0, 0);
 
     var material = new THREE.LineBasicMaterial({
       vertexColors: THREE.VertexColors,
@@ -105,7 +97,39 @@ module.exports = function(scene, callbacks) {
       blendDst: THREE.OneMinusSrcAlphaFactor
     });
 
-    self.obj.add(new THREE.LineSegments(geometry, material));
+    self.liveLines = new THREE.LineSegments(geometry, material);
+    // No bounding sphere worth having until the buffer is finished; without
+    // this the renderer would cull the lines against a stale one.
+    self.liveLines.frustumCulled = false;
+    self.obj.add(self.liveLines);
+  }
+
+
+  // Make the segments added so far to the buffer being filled drawable.
+  // Cheap: it moves the draw range and re-sends this one buffer.
+  self.showProgress = function () {
+    if (!self.liveLines || typeof self.positions == 'undefined') return;
+    var geometry = self.liveLines.geometry;
+    var buffers = self.buffers[self.buffers.length - 1];
+    geometry.setDrawRange(0, self.fill * 2);
+    buffers[0].needsUpdate = true;
+    buffers[1].needsUpdate = true;
+  }
+
+
+  self.flushBuffer = function () {
+    if (typeof self.positions == 'undefined' || self.fill == 0) return;
+
+    // Cap the raycaster (and renderer) at the actually-used vertices.
+    // The BufferAttribute spans the full pre-allocated 10000-segment slab,
+    // so without this raycaster tests phantom zero-length segments at the
+    // origin that mask hits on the real toolpath nearby.
+    self.showProgress();
+    if (self.liveLines) {
+      self.liveLines.geometry.computeBoundingSphere();
+      self.liveLines.frustumCulled = true;
+    }
+    self.liveLines = null;
 
     self.positions = undefined;
     self.colors = undefined;
@@ -145,7 +169,169 @@ module.exports = function(scene, callbacks) {
   }
 
 
-  self.addLine = function(start, end, rapid) {
+  // ---- Rotary (indexer) files ----------------------------------------
+  // On an indexer the tool stays over the rotation axis and the B axis
+  // turns the work under it, so the raw X/Y/Z path is a line along the
+  // axis. The path is drawn on the workpiece instead: each point is turned
+  // about the rotation axis by the B angle it was cut at. During playback
+  // the viewer turns the whole path back by the current angle, so the cut
+  // point stays under the tool as it does on the machine.
+
+  var ROTARY_STEP = 6 * Math.PI / 180;    // longest turn drawn as one chord
+  var ROTARY_SIGN = 1;                     // sense of positive B (looking down the axis)
+  var wrapTmp = new THREE.Vector3();
+
+  function wordValue(line, letter) {
+    var m = new RegExp(letter + '\\s*(-?\\d*\\.?\\d+)', 'i').exec(line);
+    return m ? parseFloat(m[1]) : undefined;
+  }
+
+  // Look through the file for indexer motion. The indexer is the B axis; a
+  // file that also turns A is 5-axis work, which this does not draw. The
+  // indexer is parallel to whichever of X and Y the cutting moves travel
+  // along; the other one sits still over the rotation axis.
+  function detectRotary(lines) {
+    var x = 0, y = 0, z = 0, a = 0, b = 0, cutting = false, turns = false, turnsA = false;
+    var range = {x: [Infinity, -Infinity], y: [Infinity, -Infinity]};
+    var minCutZ = Infinity;
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var paren = line.indexOf('(');
+      if (paren !== -1) line = line.substring(0, paren);
+      if (!line) continue;
+      // Drop the N word so its digits are not read as an axis value.
+      line = line.replace(/^\s*N\d+\s*/i, '');
+
+      if (/G0*1(?!\d)/i.test(line)) cutting = true;
+      else if (/G0*0(?!\d)/i.test(line)) cutting = false;
+
+      var v;
+      if ((v = wordValue(line, 'B')) !== undefined) {
+        if (v !== b) turns = true;
+        b = v;
+      }
+      if ((v = wordValue(line, 'A')) !== undefined) {
+        if (v !== a) turnsA = true;
+        a = v;
+      }
+      if ((v = wordValue(line, 'X')) !== undefined) x = v;
+      if ((v = wordValue(line, 'Y')) !== undefined) y = v;
+      if ((v = wordValue(line, 'Z')) !== undefined) z = v;
+
+      if (cutting) {
+        range.x[0] = Math.min(range.x[0], x); range.x[1] = Math.max(range.x[1], x);
+        range.y[0] = Math.min(range.y[0], y); range.y[1] = Math.max(range.y[1], y);
+        minCutZ = Math.min(minCutZ, z);
+      }
+    }
+
+    // A turning means a 5-axis head, drawn by the tip of the tool.
+    if (turnsA) return {fiveAxis: true};
+    if (!turns) return null;
+
+    var spanX = range.x[1] - range.x[0], spanY = range.y[1] - range.y[0];
+    return {
+      // Axis the indexer is parallel to. Y is the usual arrangement, and
+      // the answer when the file gives nothing to choose by.
+      axis: (isFinite(spanX) && spanY < spanX) ? 'x' : 'y',
+      centre: null,          // set from the first turned move
+      // Z zero at the centre of rotation when every cut is above zero;
+      // otherwise the file is zeroed somewhere this cannot work out.
+      zeroAtCentre: minCutZ > 0
+    };
+  }
+
+  function rotaryAxisVector() {
+    return self.rotary.axis === 'y' ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+  }
+
+  // Machine position + indexer angle (degrees) -> point on the workpiece.
+  self.wrapPoint = function (p, aDeg) {
+    var r = self.rotary;
+    if (!r || !r.centre || !aDeg) return [p[0], p[1], p[2]];
+    var c = r.centre;
+    wrapTmp.set(p[0] - c[0], p[1] - c[1], p[2] - c[2])
+      .applyAxisAngle(r.axisVector, -ROTARY_SIGN * aDeg * Math.PI / 180);
+    return [wrapTmp.x + c[0], wrapTmp.y + c[1], wrapTmp.z + c[2]];
+  }
+
+  // Point on the workpiece -> where it is on the machine at angle aDeg.
+  self.unwrapPoint = function (p, aDeg) {
+    return self.wrapPoint(p, -aDeg);
+  }
+
+  // Angle the work group has to be turned by so the workpiece is shown as
+  // it sits on the machine at angle aDeg (radians, about rotary.axisVector).
+  self.workAngle = function (aDeg) {
+    return ROTARY_SIGN * aDeg * Math.PI / 180;
+  }
+
+  function growMachineBounds(p) {
+    var b = self.machineBounds, axes = ['x', 'y', 'z'];
+    for (var i = 0; i < 3; i++) {
+      var k = axes[i];
+      if (typeof b.min[k] == 'undefined' || p[i] < b.min[k]) b.min[k] = p[i];
+      if (typeof b.max[k] == 'undefined' || b.max[k] < p[i]) b.max[k] = p[i];
+    }
+  }
+
+  // Add a move given in machine coordinates. rot0/rot1 are the [A, B]
+  // angles at its ends. Plain files go straight to the line buffer.
+  // Indexer files are wrapped onto the workpiece and 5-axis files are
+  // drawn by the tool tip; either way a turning move becomes short chords.
+  self.addLine = function(start, end, rapid, rot0, rot1) {
+    growMachineBounds(start);
+    growMachineBounds(end);
+
+    var r = self.rotary, five = self.fiveAxis;
+    if (!r && !five) return addSegment(start, end, rapid);
+
+    if (typeof rot0 == 'undefined') rot0 = rot1 = self.rot;
+    var turn = Math.abs(rot1[1] - rot0[1]);
+
+    if (r) {
+      if (!r.centre && (rot0[1] || rot1[1])) {
+        // First turned move: the tool is over the rotation axis here.
+        // With Z zeroed on the surface the centre is one stock radius down;
+        // the viewer supplies that from Setup.
+        r.centre = [end[0], end[1], r.zeroAtCentre ? 0 : -(self.rotaryStockRadius || 0)];
+        if (r.axis === 'y') r.centre[1] = 0; else r.centre[0] = 0;
+        r.axisVector = rotaryAxisVector();
+      }
+      if (!rapid) {
+        var radius = Math.min(start[2], end[2]) - (r.centre ? r.centre[2] : 0);
+        if (typeof r.minRadius == 'undefined' || radius < r.minRadius) r.minRadius = radius;
+        if (typeof r.maxRadius == 'undefined' || radius > r.maxRadius) r.maxRadius = radius;
+      }
+    } else {
+      turn = Math.max(turn, Math.abs(rot1[0] - rot0[0]));
+    }
+
+    function drawn(m, rot) {
+      return r ? self.wrapPoint(m, rot[1])
+               : FiveAxis.tipOf([m[0], m[1], m[2], rot[0], rot[1]], five);
+    }
+
+    var steps = Math.max(1, Math.ceil(turn * Math.PI / 180 / ROTARY_STEP));
+    var prevM = start, prevRot = rot0, prev = drawn(start, rot0);
+    for (var i = 1; i <= steps; i++) {
+      var t = i / steps;
+      var rot = [rot0[0] + (rot1[0] - rot0[0]) * t, rot0[1] + (rot1[1] - rot0[1]) * t];
+      var m = [start[0] + (end[0] - start[0]) * t,
+               start[1] + (end[1] - start[1]) * t,
+               start[2] + (end[2] - start[2]) * t];
+      var next = drawn(m, rot);
+      var move = addSegment(prev, next, rapid);
+      // Where the axes are at each end of this piece.
+      move.m0 = prevM;  move.rot0 = prevRot;
+      move.m1 = m;      move.rot1 = rot;
+      prev = next; prevM = m; prevRot = rot;
+    }
+  }
+
+
+  function addSegment(start, end, rapid) {
     if (typeof self.positions == 'undefined') self.newBuffer();
 
     var rerouted = rapid && self.inReroute;
@@ -185,6 +371,7 @@ module.exports = function(scene, callbacks) {
     self.moves.push(move);
 
     if (++self.fill == buffer_size) self.flushBuffer();
+    return move;
   }
 
 
@@ -320,14 +507,6 @@ module.exports = function(scene, callbacks) {
 
     var segments = Math.ceil(Math.abs(angle) / segAngle);
 
-    // ADDED: Debug first segment (only once)
-    if (segments > 1) {
-      console.log('ARC PARSED: First segment of', segments, 'total');
-      console.log('  Radius:', radius.toFixed(4));
-      console.log('  Center:', center2D);
-      console.log('  Start angle:', (startAngle * 180 / Math.PI).toFixed(2), 'deg');
-      console.log('  Total angle:', (angle * 180 / Math.PI).toFixed(2), 'deg');
-    }
 
     // Render arc
     for (var i = 1; i < segments - 1; i++) {
@@ -445,6 +624,9 @@ module.exports = function(scene, callbacks) {
     if (unitSetInFile) self.feed = line.words.f / (self.metric ? 25.4 : .03937);
 
     var next = self.nextPosition(line.words);
+    var nextRot = [self.rot[0], self.rot[1]];      // [A, B] angles
+    if (isFinite(line.words.a)) nextRot[0] = line.words.a + (self.relative ? self.rot[0] : 0);
+    if (isFinite(line.words.b)) nextRot[1] = line.words.b + (self.relative ? self.rot[1] : 0);
 
     for (var j = 0; j < line.cmds.length; j++) {
       var cmd = line.cmds[j];
@@ -464,7 +646,7 @@ module.exports = function(scene, callbacks) {
 
       switch (cmd) {
       case 'G0': case 'G1':
-        self.addLine(self.position, next, cmd == 'G0');
+        self.addLine(self.position, next, cmd == 'G0', self.rot, nextRot);
         break;
 
       case 'G2': case 'G3':
@@ -488,6 +670,7 @@ module.exports = function(scene, callbacks) {
 
       self.position = next;
     }
+    self.rot = nextRot;
   }
 
 
@@ -515,17 +698,28 @@ module.exports = function(scene, callbacks) {
     }
   }
 
+  // Work through the file in slices of about SLICE_MS, handing control back
+  // to the browser between slices so it can paint and take input. This used
+  // to be 1000 lines and then a fixed 10 ms pause, which on a large file
+  // added up to seconds of doing nothing.
+  var SLICE_MS = 30;
+
   self.process = function (done) {
-    for (var i = 0; i < 1000 && !self.done; i++) {
-      if (self.gcode.length <= self.lines) break;
+    var sliceStart = performance.now();
+    while (!self.done && self.lines < self.gcode.length) {
       self.processLine(self.gcode[self.lines]);
       self.lines += 1;
+      // Reading the clock every line would cost more than it saves.
+      if ((self.lines & 127) === 0 && performance.now() - sliceStart >= SLICE_MS) break;
     }
 
     callbacks.progress(self.lines / self.gcode.length);
 
-    if (!self.done && self.lines < self.gcode.length)
-      setTimeout(function () {self.process(done)}, 10);
+    if (!self.done && self.lines < self.gcode.length) {
+      // Let the viewer paint what there is so far.
+      if (callbacks.partial) callbacks.partial();
+      setTimeout(function () {self.process(done)}, 0);
+    }
 
     else {
       if (!self.commands) self.addError('error', 'No commands.');
@@ -550,6 +744,13 @@ module.exports = function(scene, callbacks) {
     }
 
     self.gcode = gcode.split('\n');
+    self.rot = [0, 0];
+    self.angle = 0;
+    self.machineState = null;
+    self.machineBounds = {min: {}, max: {}};
+    var kind = detectRotary(self.gcode);
+    self.fiveAxis = kind && kind.fiveAxis ? (self.fiveAxisSettings || FiveAxis.settings()) : null;
+    self.rotary = kind && !kind.fiveAxis ? kind : null;
     self.process(done);
     self.reset();                            // put cone at starting location
   }
@@ -604,7 +805,7 @@ module.exports = function(scene, callbacks) {
 
   // Helper: apply material removal for a range of moves
   function applyMaterialForMoves(fromMove, toMove) {
-    if (!callbacks.materialUpdate) return;
+    if (!callbacks.materialUpdate || self.rotary || self.fiveAxis) return;
     for (var i = fromMove; i < toMove; i++) {
       var currentMove = self.moves[i];
       if (currentMove.rapid) continue;
@@ -739,13 +940,25 @@ module.exports = function(scene, callbacks) {
       last.setStart(last.start)
     }
 
+    // Rotary files: the indexer angle at this instant, for turning the work.
+    if ((self.rotary || self.fiveAxis) && move.rot0) {
+      var frac = move.getDuration() ? (time - move.startTime) / move.getDuration() : 1;
+      frac = Math.max(0, Math.min(1, frac));
+      var lerp = function (u, v) { return u + (v - u) * frac; };
+      // Indexer angle, and all five axis values for the 5-axis head.
+      self.angle = lerp(move.rot0[1], move.rot1[1]);
+      self.machineState = [lerp(move.m0[0], move.m1[0]), lerp(move.m0[1], move.m1[1]),
+                           lerp(move.m0[2], move.m1[2]),
+                           lerp(move.rot0[0], move.rot1[0]), self.angle];
+    }
+
     callbacks.position(p);
 
     setCurrentLine(move.getLine(), self.hasSourceLines ? move.sourceLine : undefined);
 
     // Force final material update when simulation completes
     // DO NOT AUTO-RESET - User wants to explore the result!
-    if (time >= self.duration && callbacks.materialForceUpdate) {
+    if (time >= self.duration && callbacks.materialForceUpdate && !self.rotary && !self.fiveAxis) {
       callbacks.materialForceUpdate();
     }
     
@@ -929,9 +1142,14 @@ module.exports = function(scene, callbacks) {
   util.connectSetting('speed', self.speed, setSpeed);
 
   // THREE.js
+  // Everything that belongs to the workpiece hangs off self.work, so the
+  // viewer can turn it as one for rotary files.
+  self.work = new THREE.Group();
+  scene.add(self.work);
+
   self.obj = new THREE.Object3D();
   self.obj.visible = !!self.show;  // Respect initial setting
-  scene.add(self.obj);
+  self.work.add(self.obj);
 
   var material = new THREE.LineBasicMaterial({color: 0xff00ff});
   var geometry = new THREE.Geometry();
@@ -939,7 +1157,7 @@ module.exports = function(scene, callbacks) {
   geometry.vertices.push(new THREE.Vector3(0, 0, 0));
   self.currentLine = new THREE.Line(geometry, material);
   self.currentLine.visible = !!self.show;
-  scene.add(self.currentLine);
+  self.work.add(self.currentLine);
 
   // NEW: Add setShow method
   self.setShow = function(show) {
@@ -995,6 +1213,15 @@ module.exports = function(scene, callbacks) {
     self.fill        = 0;
     self.positions   = undefined;
     self.colors      = undefined;
+    self.liveLines   = null;
+    self.rot         = [0, 0];
+    self.angle       = 0;
+    self.machineState = null;
+    self.rotary      = null;
+    self.fiveAxis    = null;
+    self.machineBounds = {min: {}, max: {}};
+    self.work.rotation.set(0, 0, 0);
+    self.work.position.set(0, 0, 0);
     self.currentLine.visible = false;
   };
 

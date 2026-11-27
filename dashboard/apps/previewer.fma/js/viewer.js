@@ -17,7 +17,8 @@ var Table         = require('./table');
 var Tool          = require('./tool');
 var Gui           = require('./gui');
 var PointCloud    = require('./pointcloud');
-var Material      = require('./material');  // ADD THIS
+var Material      = require('./material');
+var FiveAxis      = require('./fiveaxis');  // ADD THIS
 
 module.exports = function(container) {
   var self = this;
@@ -407,7 +408,9 @@ module.exports = function(container) {
     if (isFirstLoad) self.originalCutMin = cutMinXY();
 
     // Check the full-file extents against the machine soft-limit envelope.
-    checkSoftLimits(self.originalBounds);
+    // A rotary file's drawn path is wrapped around the work, so its extents
+    // say nothing about axis travel; check what the axes actually do.
+    checkSoftLimits(self.path.rotary || self.path.fiveAxis ? self.path.machineBounds : self.originalBounds);
 
     // Always use original bounds for material, camera, and scene setup
     var sceneBounds = self.originalBounds;
@@ -445,6 +448,8 @@ module.exports = function(container) {
     // Align table surface with the bottom of the material
     var materialBottom = materialTop - stockThickness;
     self.table.setZZoff(materialBottom);
+    buildRotaryStock();
+    buildFiveAxis();
     self.tool.setBitDiameter(self.defaultTool.toolDiameter);
     self.tool.refresh();
 
@@ -482,29 +487,9 @@ module.exports = function(container) {
       var restored = self.restoreViewState();
 
       // If no saved state, position camera in ISO orientation
-      if (!restored) {
-        var center = util.getCenter(sceneBounds);
-        var dims = util.getDims(sceneBounds);
-        var zoom = 0.75 * size / Math.tan(Math.PI / 8);
-
-        var camera = [center[0], center[1], center[2]];
-        camera[1] -= (zoom + dims[1] / 2) / 1.4;
-        camera[2] += (zoom + dims[2] / 2) / 1.4;
-
-        self.controls.reset();
-        self.camera.position.set(camera[0], camera[1], camera[2]);
-        self.controls.target.set(center[0], center[1], center[2]);
-
-        // Apply zoom and near plane if in ortho mode
-        if (self.isOrtho) {
-          self.orthographicCamera.zoom = 2.0;
-          self.orthographicCamera.near = self.orthoNearClip;
-          self.orthographicCamera.updateProjectionMatrix();
-        }
-
-        self.controls.update();
-      }
+      if (!restored) frameISO(sceneBounds);
     }
+    loadFrame = null;
 
     // Tag each move with tool info so the material simulation can switch
     // bit size/type per operation; with no parsed ops, every move inherits
@@ -530,8 +515,184 @@ module.exports = function(container) {
     });
   }
 
+  // ---- Rotary (indexer) files ----------------------------------------
+  // path.js draws the toolpath wrapped onto the workpiece. Here: a simple
+  // round blank and chuck that turn with it, a fixed headstock, and the
+  // turning of the whole work group to the indexer angle being played.
+  var rotaryParts = [];
+
+  function clearRotaryStock() {
+    rotaryParts.forEach(function (o) {
+      if (o.parent) o.parent.remove(o);
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+    rotaryParts = [];
+  }
+
+  function buildRotaryStock() {
+    clearRotaryStock();
+    var r = self.path.rotary;
+    if (!r || !r.centre) return;
+
+    var d = self.isMetric() ? 25.4 : 1;
+    var along = r.axis;                         // 'x' or 'y'
+    var mb = self.path.machineBounds;
+    var lo = mb.min[along] - 1 * d, hi = mb.max[along] + 1 * d;
+    var length = hi - lo;
+    // The deepest cut is the largest round that is certainly still there.
+    var radius = r.minRadius > 0 ? r.minRadius * 0.99 : 0;
+    var outer = Math.max(r.maxRadius || 0, radius, 0.5 * d);
+
+    function place(mesh, centreAlong, parent) {
+      if (along === 'x') mesh.rotation.z = Math.PI / 2;   // cylinder axis Y -> X
+      mesh.position.set(r.centre[0], r.centre[1], r.centre[2]);
+      mesh.position[along] = centreAlong;
+      parent.add(mesh);
+      rotaryParts.push(mesh);
+    }
+
+    if (radius > 0) {
+      place(new THREE.Mesh(
+        new THREE.CylinderBufferGeometry(radius, radius, length, 48),
+        new THREE.MeshPhongMaterial({color: 0xd4b585, shininess: 10})),
+        (lo + hi) / 2, self.path.work);
+    }
+
+    // Chuck turns with the work; the headstock behind it does not.
+    var chuckLen = 1 * d, chuckR = outer * 0.6 + 0.5 * d;
+    place(new THREE.Mesh(
+      new THREE.CylinderBufferGeometry(chuckR, chuckR, chuckLen, 6),
+      new THREE.MeshPhongMaterial({color: 0x4a4a4a, shininess: 30})),
+      lo - chuckLen / 2, self.path.work);
+
+    var headLen = 3 * d, headSize = 2 * chuckR + 1 * d;
+    var head = new THREE.Mesh(
+      new THREE.BoxBufferGeometry(headSize, headLen, headSize),
+      new THREE.MeshPhongMaterial({color: 0x1f3a6e, shininess: 30}));
+    place(head, lo - chuckLen - headLen / 2, self.scene);
+
+    // The table sits under the indexer, not through the middle of the work.
+    self.table.setZZoff(r.centre[2] - headSize / 2);
+  }
+
+  // Turn the work to the angle being played and return where the tool is
+  // on the machine for a path position given on the workpiece.
+  function placeRotaryWork(position) {
+    var r = self.path.rotary;
+    if (!r || !r.centre) return position;
+    var work = self.path.work;
+    var c = new THREE.Vector3(r.centre[0], r.centre[1], r.centre[2]);
+    work.quaternion.setFromAxisAngle(r.axisVector, self.path.workAngle(self.path.angle));
+    // Rotation about the axis through c, not through the origin.
+    work.position.copy(c).sub(c.clone().applyQuaternion(work.quaternion));
+    return self.path.unwrapPoint(position, self.path.angle);
+  }
+
+
+  // ---- 5-axis files ---------------------------------------------------
+  // Ported from the ShopBot Labs 5-axis visualizer: the path is the trail
+  // of the tool tip, a second trail follows the A/B pivot, and the machine
+  // is drawn with its turret and tilting spindle.
+  var fiveModel = null;
+  var pivotTrail = null;
+  var fiveSettings = null;
+
+  self.setFiveAxis = function (config, units) {
+    var k = FiveAxis.settings(config, units === 'mm' ? 25.4 : 1);
+    // The Z column is as long as the machine's Z travel unless told otherwise.
+    var env = softLimits && softLimits.envelope;
+    if (!(config && config.zTravel) && env && isFinite(env.zmax - env.zmin) && env.zmax > env.zmin)
+      k.zTravel = env.zmax - env.zmin;
+    fiveSettings = k;
+    self.path.fiveAxisSettings = k;
+  }
+
+  function machineStyle() { return cookie.get('machine-style', 'outlined'); }
+
+  function clearFiveAxis() {
+    if (fiveModel) FiveAxis.dispose(fiveModel);
+    fiveModel = null;
+    if (pivotTrail) {
+      self.scene.remove(pivotTrail);
+      pivotTrail.geometry.dispose();
+      pivotTrail.material.dispose();
+    }
+    pivotTrail = null;
+  }
+
+  function buildFiveAxis() {
+    clearFiveAxis();
+    var k = self.path.fiveAxis;
+    self.tool.setHidden(!!k);
+    if (!k) return;
+
+    // Gantry posts stand at the table's Y edges; the tip is on the table
+    // at height zero.
+    self.table.setZZoff(0);
+    var table = self.table.table;
+    var half = table.geometry.parameters.height / 2;
+    fiveModel = FiveAxis.buildMachine(k, table.position.y - half, table.position.y + half);
+    FiveAxis.setStyle(fiveModel, machineStyle());
+    fiveModel.root.visible = !!parseInt(cookie.get('show-machine', 1));
+    self.scene.add(fiveModel.root);
+
+    // Pivot trail, set slightly aside so it does not hide the tip trail
+    // where the two coincide.
+    var moves = self.path.moves, pts = [];
+    for (var i = 0; i < moves.length; i++) {
+      var mv = moves[i];
+      if (!mv.m0 || mv.rapid) continue;
+      [[mv.m0, mv.rot0], [mv.m1, mv.rot1]].forEach(function (e) {
+        var p = FiveAxis.pivot(FiveAxis.tune([e[0][0], e[0][1], e[0][2], e[1][0], e[1][1]], k), k);
+        pts.push(p[0] + 0.15 * k.unit, p[1], p[2]);
+      });
+    }
+    var geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    pivotTrail = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({color: 0x4488ff}));
+    pivotTrail.frustumCulled = false;
+    pivotTrail.visible = !!parseInt(cookie.get('show-pivot', 1));
+    self.scene.add(pivotTrail);
+
+    placeFiveAxis();
+  }
+
+  function placeFiveAxis() {
+    var k = self.path.fiveAxis;
+    if (!k || !fiveModel) return;
+    var m = self.path.machineState || [0, 0, 0, 0, 0];
+    FiveAxis.updateMachine(fiveModel, FiveAxis.tune(m, k), k);
+  }
+
+  util.connectSetting('machine-style', machineStyle(), function (style) {
+    cookie.set('machine-style', style);
+    if (fiveModel) FiveAxis.setStyle(fiveModel, style);
+    self.refresh();
+  });
+
+  // The bottom-bar Machine toggle hides the 5-axis machine too (the tool
+  // widget owns the setting and its cookie).
+  util.connectSetting('show-machine', parseInt(cookie.get('show-machine', 1)), function (show) {
+    if (fiveModel) fiveModel.root.visible = !!show;
+    self.refresh();
+  });
+
+  util.connectSetting('show-pivot', parseInt(cookie.get('show-pivot', 1)), function (show) {
+    cookie.set('show-pivot', show ? 1 : 0);
+    if (pivotTrail) pivotTrail.visible = !!show;
+    self.refresh();
+  });
+
+
   function computeMaterial(onDone) {
     if (!self.material || !self.path || !self._materialParams) {
+      if (onDone) onDone();
+      return;
+    }
+    if (self.path.rotary || self.path.fiveAxis) {
+      // The height-map stock cannot represent turned or tilted-tool work.
+      self.material.clear();
       if (onDone) onDone();
       return;
     }
@@ -641,6 +802,110 @@ module.exports = function(container) {
     }
   }
 
+
+  // Point the camera at `b` in the default ISO orientation.
+  function frameISO(b) {
+    var size = util.maxDim(b);
+    var center = util.getCenter(b);
+    var dims = util.getDims(b);
+    var zoom = 0.75 * size / Math.tan(Math.PI / 8);
+
+    var camera = [center[0], center[1], center[2]];
+    camera[1] -= (zoom + dims[1] / 2) / 1.4;
+    camera[2] += (zoom + dims[2] / 2) / 1.4;
+
+    self.controls.reset();
+    self.camera.position.set(camera[0], camera[1], camera[2]);
+    self.controls.target.set(center[0], center[1], center[2]);
+
+    // Apply zoom and near plane if in ortho mode
+    if (self.isOrtho) {
+      self.orthographicCamera.zoom = 2.0;
+      self.orthographicCamera.near = self.orthoNearClip;
+      self.orthographicCamera.updateProjectionMatrix();
+    }
+
+    self.controls.update();
+  }
+
+  // ---- Painting the path while the file is still being processed ----
+  //
+  // The path's line buffers are in the scene as they fill (path.js), so all
+  // this has to do is aim the camera and redraw now and then.
+
+  // Extents the engine recorded for the job when it was queued (set by the
+  // app before the g-code arrives). Lets the camera be aimed at the whole
+  // job from the first paint instead of chasing the path as it grows.
+  var expectedBounds = null;
+  self.setExpectedBounds = function (b) {
+    expectedBounds = usableBox(b) ? b : null;
+  };
+
+  // What the camera was last aimed at during this load: a box, or
+  // 'restored' when a saved view was put back. Cleared when the load ends.
+  var loadFrame = null;
+  var lastLoadPaint = 0;
+  // Redraws get more expensive as the path grows; a few a second is plenty
+  // to watch it arrive and keeps a weak GPU from slowing the load.
+  var LOAD_PAINT_MS = 200;
+
+  function usableBox(b) {
+    if (!b || !b.min || !b.max) return false;
+    return ['x', 'y', 'z'].every(function (a) {
+      return typeof b.min[a] === 'number' && isFinite(b.min[a]) &&
+             typeof b.max[a] === 'number' && isFinite(b.max[a]);
+    }) && (b.max.x > b.min.x || b.max.y > b.min.y || b.max.z > b.min.z);
+  }
+
+  // Is box `inner` inside box `outer`, give or take `slack` of outer's size?
+  function boxContains(outer, inner, slack) {
+    return ['x', 'y', 'z'].every(function (a) {
+      var pad = slack * Math.max(outer.max[a] - outer.min[a], 1e-6) + 1e-6;
+      return inner.min[a] >= outer.min[a] - pad && inner.max[a] <= outer.max[a] + pad;
+    });
+  }
+
+  function copyBox(b) {
+    return { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z } };
+  }
+
+  function frameWhileLoading() {
+    // Only the first load of a file aims the camera (as in pathLoaded); a
+    // reload for operation filtering keeps the view. AR / overhead poses
+    // come from the camera calibration and must not be touched.
+    if (self.originalBounds) return;
+    if (self.ar && (self.ar.enabled || self.ar.overhead)) return;
+    if (loadFrame === 'restored') return;
+
+    var sofar = self.path.bounds;
+    if (!usableBox(sofar)) return;
+
+    if (loadFrame === null && self.restoreViewState()) {
+      loadFrame = 'restored';
+      return;
+    }
+
+    // Prefer the job's recorded extents, unless the path has already left
+    // them (different units, or a file changed since it was queued).
+    var want = expectedBounds && boxContains(expectedBounds, sofar, 0.1) ? expectedBounds : sofar;
+    if (loadFrame && boxContains(loadFrame, want, 0.02)) return;
+    loadFrame = copyBox(want);
+    frameISO(loadFrame);
+  }
+
+  function pathPartial() {
+    var now = performance.now();
+    if (now - lastLoadPaint < LOAD_PAINT_MS) return;
+    lastLoadPaint = now;
+    try {
+      self.path.showProgress();
+      frameWhileLoading();
+      self.refresh();
+    } catch (e) {
+      // Painting early is a nicety; the load itself must carry on.
+      console.warn('Progressive path paint failed:', e);
+    }
+  }
 
   function pathProgress(progress) {
     self.gui.showLoadingProgress(progress);
@@ -1050,6 +1315,9 @@ module.exports = function(container) {
       self.path.clearPath();
     }
 
+    // Used only for rotary files zeroed on the surface: Setup's material
+    // thickness is taken as the blank's diameter.
+    self.path.rotaryStockRadius = getEffectiveStockThickness() / 2;
     self.path.load(gcode, pathLoaded);
   }
 
@@ -1227,6 +1495,15 @@ module.exports = function(container) {
   function applyLiveStatus(line, position) {
     if (!self.path || !self.path.loaded || !self.path.moves.length) return;
     var moves = self.path.moves;
+    // Rotary files: the path is drawn on the workpiece, so the reported
+    // machine position is carried there by the reported indexer (B) angle.
+    var machinePosition = position;
+    if (self.path.rotary && position && typeof position[4] === 'number')
+      position = self.path.wrapPoint(position, position[4]);
+    // 5-axis files are drawn by the tool tip, so match on that.
+    if (self.path.fiveAxis && position && typeof position[4] === 'number')
+      position = FiveAxis.tipOf([position[0], position[1], position[2],
+                                 position[3] || 0, position[4]], self.path.fiveAxis);
 
     // Upper bound: backward search for the largest mapped N <= the planner
     // line. Handles gaps from preamble lines, non-motion commands, etc.
@@ -1283,7 +1560,7 @@ module.exports = function(container) {
       var offPathTol = self.isMetric() ? 6 : 0.25;
       if (bestDist > offPathTol) {
         self.path.pause();
-        self.tool.setPosition(position);
+        self.tool.setPosition(machinePosition);
         self.refresh();
         return;
       }
@@ -1349,7 +1626,8 @@ module.exports = function(container) {
   }
 
   function updatePosition (position) {
-    self.tool.setPosition(position);
+    placeFiveAxis();
+    self.tool.setPosition(placeRotaryWork(position));
     if (self.gui) self.gui.updateTimeline(self.path.moveTime);
     self.refresh();
   }
@@ -1745,6 +2023,7 @@ module.exports = function(container) {
   self.path = new Path(self.scene, {
     metric: self.setPathMetric,
     progress: pathProgress,
+    partial: pathPartial,
     position: updatePosition,
     update: self.refresh,
     materialUpdate: function(start, end, isArcSegment) {

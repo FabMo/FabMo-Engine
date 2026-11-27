@@ -285,6 +285,20 @@
           </label>
 
           <label>
+            <input type="checkbox" name="show-pivot"/>
+            <span data-i18n="previewer.settings.show_pivot">Show Pivot Trail (5-Axis)</span>
+          </label>
+
+          <label>
+            <span data-i18n="previewer.settings.machine_style">5-Axis Machine Style</span>
+            <select name="machine-style">
+              <option value="outlined" data-i18n="previewer.settings.machine_style_outlined">Outlined</option>
+              <option value="solid" data-i18n="previewer.settings.machine_style_solid">Solid</option>
+              <option value="wireframe" data-i18n="previewer.settings.machine_style_wireframe">Wireframe</option>
+            </select>
+          </label>
+
+          <label>
             <input name="show-pointcloud" type="checkbox"/>
             <span data-i18n="previewer.settings.show_pc">Show Point Cloud Shape for Leveler</span>
           </label>
@@ -483,6 +497,6 @@
     </div>
 
     <script src="../../static/js/shared-video.js?v=3"></script>
-    <script src="../../preview.js?v=rn6"></script>
+    <script src="../../preview.js?v=rn7"></script>
   </body>
 </html>
