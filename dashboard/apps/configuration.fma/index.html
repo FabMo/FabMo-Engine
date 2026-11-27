@@ -1489,6 +1489,22 @@
               The corner dots set where machine <strong>0,0</strong> lives.
             </p>
 
+            <div class="row" style="margin-bottom: 12px;">
+              <div class="large-4 columns">
+                <label><span data-i18n="config.layout.gantry_axis">Gantry Beam Runs Along</span> <span class="tooltip tooltip-right">i
+                  <span class="tooltiptext" data-i18n="config.layout.gantry_axis_tooltip">
+                    The axis the gantry beam spans (the axis the Z carriage rides along). The gantry itself travels along the other axis. Used to draw the machine in the previewer.
+                  </span>
+                </span>
+                </label>
+                <select id="machine-gantry_axis" class="machine-input">
+                  <option value="y" data-i18n="config.layout.gantry_axis_y">Y axis</option>
+                  <option value="x" data-i18n="config.layout.gantry_axis_x">X axis</option>
+                  <option value="none" data-i18n="config.layout.gantry_axis_none">No gantry</option>
+                </select>
+              </div>
+            </div>
+
             <div class="layout-orientation-container" style="display: flex; gap: 24px; align-items: flex-start;">
 
               <!-- Overhead view of the machine. Prototype geometry — replace

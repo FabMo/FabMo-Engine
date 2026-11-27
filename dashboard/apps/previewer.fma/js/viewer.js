@@ -86,6 +86,13 @@ module.exports = function(container) {
   }
 
 
+  // Which axis the gantry beam spans (machine.gantry_axis), for the machine
+  // model that marks the tool position.
+  self.setGantryAxis = function (axis) {
+      self.tool.setGantryAxis(axis);
+  }
+
+
   // Soft-limit envelope and active work offsets, supplied by app.js.
   // Used to flag files whose cutting extents would exceed the machine envelope.
   var softLimits = null;
@@ -409,7 +416,8 @@ module.exports = function(container) {
     updateLights(sceneBounds);
     self.dims.update(sceneBounds, self.isMetric());
     self.axes.update(size);
-    self.tool.update(size, self.path.position);
+    self.tool.setBitDiameter(self.defaultTool.toolDiameter);
+    self.tool.update(size, self.path.position, self.isMetric());
 
     // Lift toolpath fractionally so on-surface segments don't z-fight the stock top.
     if (self.path.obj) self.path.obj.position.z = self.isMetric() ? 0.13 : 0.005;
@@ -437,6 +445,8 @@ module.exports = function(container) {
     // Align table surface with the bottom of the material
     var materialBottom = materialTop - stockThickness;
     self.table.setZZoff(materialBottom);
+    self.tool.setBitDiameter(self.defaultTool.toolDiameter);
+    self.tool.refresh();
 
     // Tool info is now per-operation; initial material diameter uses the first
     // operation's tool when available, falling back to the Setup default tool.
@@ -771,6 +781,8 @@ module.exports = function(container) {
       self._materialParams.toolDia = self.defaultTool.toolDiameter || 0.25;
     }
     self.table.setZZoff(materialBottom);
+    self.tool.setBitDiameter(self.defaultTool.toolDiameter);
+    self.tool.refresh();
     if (self.path.moves && self.path.moves.length) {
       tagMovesWithToolInfo();
       computeMaterial(function() {
@@ -1141,6 +1153,7 @@ module.exports = function(container) {
       self.dims.update(self.path.bounds, metric);
       self.grid.update(tableBounds, metric);
       self.table.update(tableBounds, metric);
+      if (self.tool) self.tool.refresh();
     }
   }
 
@@ -1724,7 +1737,7 @@ module.exports = function(container) {
   self.grid = new Grid(self.scene, self.refresh);
   self.table = new Table(self.scene, self.refresh);
   self.axes = new Axes(self.scene, self.refresh);
-  self.tool = new Tool(self.scene, self.refresh);
+  self.tool = new Tool(self.scene, self.refresh, function () { return self.table.table; });
   self.pointcloud = new PointCloud(self.scene, self.refresh);
   self.material = new Material(self.scene, self.refresh);
 
@@ -2832,6 +2845,8 @@ module.exports = function(container) {
           self.ar._tableWasVisible = self.table.table.visible;
           self.table.table.visible = false;
       }
+      // The camera shows the real gantry; fall back to the cone marker.
+      if (self.tool) self.tool.setSuppressMachine(true);
       if (self.grid && self.grid.grid && typeof self.ar._gridZ === 'undefined') {
           self.ar._gridZ = self.grid.grid.position.z;
           // Sit the grid at the calibration plane (scene z=0), where the user
@@ -3000,6 +3015,7 @@ module.exports = function(container) {
           self.table.table.visible = self.ar._tableWasVisible;
           delete self.ar._tableWasVisible;
       }
+      if (self.tool) self.tool.setSuppressMachine(false);
       if (self.grid && self.grid.grid && typeof self.ar._gridZ !== 'undefined') {
           self.grid.grid.position.z = self.ar._gridZ;
           if (self.grid.grid.material && typeof self.ar._gridOpacity !== 'undefined') {
@@ -3588,6 +3604,7 @@ module.exports = function(container) {
     self.grid = null;
     self.table = null;
     self.axes = null;
+    if (self.tool && self.tool.dispose) self.tool.dispose();
     self.tool = null;
     self.pointcloud = null;
     self.gui = null;
