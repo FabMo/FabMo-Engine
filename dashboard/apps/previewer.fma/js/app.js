@@ -992,6 +992,8 @@ function nowPreviewJob() {
       cached_Config.machine.units
     );
 
+    viewer.setGantryAxis(cached_Config.machine.gantry_axis);
+
     // Keep-out zones render on the table, and rerouted (amber) jogs show why
     viewer.setKeepoutZones(
       (cached_Config.machine.keepout && cached_Config.machine.keepout.zones) || []

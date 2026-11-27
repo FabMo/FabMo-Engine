@@ -9,6 +9,7 @@
 	"auth_input" : 5,
 	"ap_input" : 0,
 	"ap_time" : 8,
+    "gantry_axis" : "y",
     "limits_on" : true,
     "softlimits_on" : false,
     "features" : {
